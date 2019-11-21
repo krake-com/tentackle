@@ -42,10 +42,34 @@ import java.lang.annotation.Target;
 public @interface FxControllerService {
 
   /**
-   * set <code>resources=FxControllerService.RESOURCES_NONE</code> to disable resources.
+   * Disables loading of the resource bundle.<br>
+   * Set <code>resources=FxControllerService.RESOURCES_NONE</code>.
    */
   String RESOURCES_NONE = Constants.NAME_NONE;
 
+  /**
+   * Disables the fxml-loader if the view is provided by the controller.<br>
+   * Set <code>url=FxControllerService.FXML_NONE</code>.<br>
+   * The controller needs one of the following constructors:
+   * <ol>
+   *   <li>If <code>resources=FxControllerService.RESOURCES_NONE</code>:
+   *      <pre>
+   *        public &lt;Controllername&gt; () {
+   *
+   *        }
+   *      </pre>
+   *   </li>
+   *   <li>otherwise:
+   *     <pre>
+   *        public &lt;Controllername&gt; (ResourceBundle resources) {
+   *
+   *        }
+   *      </pre>
+   *      Notice that {@code resources} is never null.
+   *   </li>
+   * </ol>
+   */
+  String FXML_NONE = Constants.NAME_NONE;
 
   /**
    * Type of controller caching.
@@ -89,9 +113,9 @@ public @interface FxControllerService {
 
 
   /**
-   * Gets the URL for annotated controller.
+   * Gets the fxml-URL for annotated controller.
    *
-   * @return the FXML-URL or empty string if <code>&lt;controller-classname&gt;.fxml</code>
+   * @return the fxml-URL or empty string if <code>&lt;controller-classname&gt;.fxml</code>
    */
   String url() default "";
 

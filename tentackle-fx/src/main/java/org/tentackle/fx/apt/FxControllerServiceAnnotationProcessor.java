@@ -21,12 +21,18 @@ package org.tentackle.fx.apt;
 
 import org.tentackle.apt.AbstractServiceAnnotationProcessor;
 import org.tentackle.common.AnnotationProcessor;
+import org.tentackle.fx.FxControllerService;
 
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.ExecutableType;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVisitor;
+import javax.lang.model.util.SimpleTypeVisitor8;
 import javax.tools.Diagnostic;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -55,12 +61,35 @@ public class FxControllerServiceAnnotationProcessor extends AbstractServiceAnnot
   @Override
   protected void processClass(Element element) {
     super.processClass(element);
-    if (!verifyConstructor(element, noArgsVisitor)) {
-      processingEnv.getMessager().printMessage(
-          Diagnostic.Kind.ERROR,
-          "class " + element + " needs a no-args constructor", element);
+    FxControllerService fxControllerService = element.getAnnotation(FxControllerService.class);
+    if (!FxControllerService.FXML_NONE.equals(fxControllerService.url()) ||
+        FxControllerService.RESOURCES_NONE.equals(fxControllerService.resources())) {
+      // loaded by FXML or instantiated without resourcebundle
+      if (!verifyConstructor(element, noArgsVisitor)) {
+        processingEnv.getMessager().printMessage(
+            Diagnostic.Kind.ERROR,
+            "class " + element + " needs a no-args constructor", element);
+      }
+    }
+    else {
+      // programmatically instantiated with resourcebundle
+      if (!verifyConstructor(element, resourceBundleVisitor)) {
+        processingEnv.getMessager().printMessage(
+            Diagnostic.Kind.ERROR,
+            "class " + element + " needs constructor (ResourceBundle)", element);
+      }
     }
     verifyImplements(element, "org.tentackle.fx.FxController");
   }
+
+  private final TypeVisitor<Boolean, Void> resourceBundleVisitor = new SimpleTypeVisitor8<>() {
+    @Override
+    public Boolean visitExecutable(ExecutableType t, Void v) {
+      List<? extends TypeMirror> typeList = t.getParameterTypes();
+      return typeList.size() == 1 &&
+             // m.accept does not work with ResourceBundle.class
+             typeUtils.erasure(typeList.get(0)).toString().equals("java.util.ResourceBundle");
+    }
+  };
 
 }
