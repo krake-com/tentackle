@@ -266,18 +266,20 @@ public class DefaultFxFactory implements FxFactory {
 
     if (fxmlUrl == null) {
       String urlStr = service.url();
-      if (!urlStr.isEmpty()) {
-        fxmlUrl = controllerClass.getResource(urlStr);
-        if (fxmlUrl == null) {
-          throw new FxRuntimeException("no such URL '" + urlStr +
-                                       "' -> check @FxControllerService of " + controllerClass.getName());
+      if (!FxControllerService.FXML_NONE.equals(urlStr)) {
+        if (!urlStr.isEmpty()) {
+          fxmlUrl = controllerClass.getResource(urlStr);
+          if (fxmlUrl == null) {
+            throw new FxRuntimeException("no such URL '" + urlStr +
+                                         "' -> check @FxControllerService of " + controllerClass.getName());
+          }
         }
-      }
-      else {
-        urlStr = ReflectionHelper.getClassBaseName(controllerClass) + ".fxml";
-        fxmlUrl = controllerClass.getResource(urlStr);
-        if (fxmlUrl == null) {
-          throw new FxRuntimeException("no such default URL '" + urlStr + "'");
+        else {
+          urlStr = ReflectionHelper.getClassBaseName(controllerClass) + ".fxml";
+          fxmlUrl = controllerClass.getResource(urlStr);
+          if (fxmlUrl == null) {
+            throw new FxRuntimeException("no such default URL '" + urlStr + "'");
+          }
         }
       }
     }
@@ -293,12 +295,21 @@ public class DefaultFxFactory implements FxFactory {
       }
     }
 
-    FXMLLoader loader = new FXMLLoader(fxmlUrl, resources, getBuilderFactory());
-
     try {
-      Parent view = loader.load();
-      controller = loader.getController();
-      controller.setView(view);
+      Parent view;
+      if (fxmlUrl == null) {
+        controller = resources == null ?
+                     controllerClass.getConstructor().newInstance() :
+                     controllerClass.getConstructor(ResourceBundle.class).newInstance(resources);
+        view = controller.getView();
+      }
+      else {
+        FXMLLoader loader = new FXMLLoader(fxmlUrl, resources, getBuilderFactory());
+        view = loader.load();
+        controller = loader.getController();
+        controller.setView(view);
+      }
+
       if (view instanceof FxContainer) {
         ((FxContainer) view).setController(controller);
       }
@@ -348,6 +359,9 @@ public class DefaultFxFactory implements FxFactory {
     }
     catch (IOException iox) {
       throw new FxRuntimeException("loading controller " + controllerClass + " failed", iox);
+    }
+    catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException ex) {
+      throw new FxRuntimeException("creating controller instance " + controllerClass + " failed", ex);
     }
     catch (Throwable t) {
       LOGGER.severe("loading controller failed", t);
