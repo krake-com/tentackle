@@ -192,11 +192,11 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
   @Override
   public void configure() {
     TablePopup<Security> classRulesPopup = RdcFactory.getInstance().createTablePopup(
-            classRulesNode, "classRules", false, resources.getString("Class Rules"));
+            classRulesNode, "classRules", resources.getString("Class Rules"));
     classRulesPopup.loadPreferences();
     classRulesNode.setSortable(false);
     TablePopup<Security> pdoRulesPopup = RdcFactory.getInstance().createTablePopup(
-            pdoRulesNode, "pdoRules", false, resources.getString("Object Rules"));
+            pdoRulesNode, "pdoRules", resources.getString("Object Rules"));
     pdoRulesPopup.loadPreferences();
     pdoRulesNode.setSortable(false);
   }

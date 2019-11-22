@@ -133,11 +133,10 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
    *
    * @param suffix the configuration suffix, null if none
    * @param system true if load from system prefs only, else user prefs first
-   * @param noViewSize true if don't set the table view's size
    */
-  public void loadPreferences(String suffix, boolean system, boolean noViewSize) {
+  public void loadPreferences(String suffix, boolean system) {
     if (configuration != null) {
-      configuration.loadPreferences(this, suffix, system, noViewSize);
+      configuration.loadPreferences(this, suffix, system);
     }
   }
 

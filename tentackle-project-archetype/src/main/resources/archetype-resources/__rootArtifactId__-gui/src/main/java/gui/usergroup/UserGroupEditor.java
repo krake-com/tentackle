@@ -68,7 +68,7 @@ public class UserGroupEditor extends PdoEditor<UserGroup> {
     emptyLabel.setContextMenu(createContextMenu(null));
     groupUsersNode.setPlaceholder(emptyLabel);
 
-    popup = RdcFactory.getInstance().createTablePopup(groupUsersNode, "UserGroupEditor", false, "Users");
+    popup = RdcFactory.getInstance().createTablePopup(groupUsersNode, "UserGroupEditor", resources.getString("Users"));
   }
 
   @Override

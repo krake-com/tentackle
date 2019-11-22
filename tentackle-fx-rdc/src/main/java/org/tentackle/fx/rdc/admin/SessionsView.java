@@ -96,7 +96,7 @@ public class SessionsView extends AbstractFxController {
 
   @Override
   public void configure() {
-    popup = RdcFactory.getInstance().createTablePopup(sessionsNode, "Sessions", false, resources.getString("Sessions"));
+    popup = RdcFactory.getInstance().createTablePopup(sessionsNode, "Sessions", resources.getString("Sessions"));
     DomainContext context = Pdo.createDomainContext();
     if (context.getSession().isRemote()) {    // needs check to run tests
       PdoRemoteSession remoteSession = (PdoRemoteSession) context.getSession().getRemoteSession();

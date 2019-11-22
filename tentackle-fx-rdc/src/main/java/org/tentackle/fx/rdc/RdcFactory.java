@@ -91,11 +91,10 @@ public interface RdcFactory {
    *
    * @param <S> the row type
    * @param table the table
-   * @param preferencesSuffix the preferences suffix to load/save table preferences
-   * @param noViewSize true if don't set the table view's size
-   * @param title the title of the printed table
+   * @param preferencesSuffix the optional preferences suffix to load/save table preferences
+   * @param title the optional title of the printed table
    * @return the popup
    */
-  <S> TablePopup<S> createTablePopup(FxTableView<S> table, String preferencesSuffix, boolean noViewSize, String title);
+  <S> TablePopup<S> createTablePopup(FxTableView<S> table, String preferencesSuffix, String title);
 
 }

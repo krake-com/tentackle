@@ -54,7 +54,6 @@ public class TablePopup<S> {
 
   private final FxTableView<S> table;           // the table
   private final String preferencesSuffix;       // suffix for the preferences
-  private final boolean noViewSize;             // true if don't set the table view's size
   private String title;                         // the title of the printed table
   private boolean columnMenuEnabled = true;     // true if user is allowed to hide/show columns (default)
 
@@ -64,14 +63,12 @@ public class TablePopup<S> {
    * Creates a table popup.
    *
    * @param table the table
-   * @param preferencesSuffix the preferences suffix to load/save table preferences
-   * @param noViewSize true if don't set the table view's size
-   * @param title the title of the printed table
+   * @param preferencesSuffix the preferences suffix to load/save table preferences, null if from table config
+   * @param title the title of the printed table, null if from table config
    */
-  public TablePopup(FxTableView<S> table, String preferencesSuffix, boolean noViewSize, String title) {
+  public TablePopup(FxTableView<S> table, String preferencesSuffix, String title) {
     this.table = table;
     this.preferencesSuffix = preferencesSuffix;
-    this.noViewSize = noViewSize;
     this.title = title;
 
     ContextMenu menu = createContextMenu();
@@ -356,7 +353,7 @@ public class TablePopup<S> {
    */
   public void loadPreferences(boolean system) {
     try {
-      table.loadPreferences(preferencesSuffix, system, noViewSize);
+      table.loadPreferences(preferencesSuffix, system);
     }
     catch (RuntimeException ex) {
       LOGGER.severe("loading table preferences failed", ex);

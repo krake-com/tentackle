@@ -300,7 +300,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
         }
       }
     });
-    TablePopup<T> tablePopup = RdcFactory.getInstance().createTablePopup(tableView, null, false, pdo.getPlural());
+    TablePopup<T> tablePopup = RdcFactory.getInstance().createTablePopup(tableView, null, pdo.getPlural());
     tablePopup.loadPreferences();
 
     treeView = Fx.createNode(TreeView.class);
