@@ -30,7 +30,7 @@ import org.tentackle.fx.rdc.app.LoginFailedHandler;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.BlockingHolder;
 import org.tentackle.session.SessionInfo;
-import org.tentackle.session.VersionInfoIncompatibleException;
+import org.tentackle.session.VersionIncompatibleException;
 import org.tentackle.update.ClientInfo;
 import org.tentackle.update.ClientUpdateUtilities;
 import org.tentackle.update.UpdateInfo;
@@ -64,7 +64,7 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
   @Override
   @SuppressWarnings("unchecked")
   public Runnable handle(Exception ex) {
-    if (ex instanceof VersionInfoIncompatibleException ||
+    if (ex instanceof VersionIncompatibleException ||
         // or SSL certificate changed due to new server version
         ExceptionHelper.extractException(true, ex, SSLHandshakeException.class) != null) {
 

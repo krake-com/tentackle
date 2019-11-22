@@ -27,7 +27,7 @@ import org.tentackle.log.Logger;
 import org.tentackle.session.AlreadyLoggedInException;
 import org.tentackle.session.LoginFailedException;
 import org.tentackle.session.SessionInfo;
-import org.tentackle.session.VersionInfoIncompatibleException;
+import org.tentackle.session.VersionIncompatibleException;
 
 import java.text.MessageFormat;
 
@@ -99,8 +99,8 @@ public class LoginFailedHandler {
     if (ex instanceof AlreadyLoggedInException) {
       application.showApplicationStatus(ex.getLocalizedMessage(), 0.0);
     }
-    else if (ex instanceof VersionInfoIncompatibleException) {
-      VersionInfoIncompatibleException vx = (VersionInfoIncompatibleException) ex;
+    else if (ex instanceof VersionIncompatibleException) {
+      VersionIncompatibleException vx = (VersionIncompatibleException) ex;
       Platform.runLater(() -> {
         Fx.info(MessageFormat.format(AppFxRdcBundle.getString(
                 "client version {0} does not match server version {1}"),

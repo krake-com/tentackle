@@ -42,12 +42,12 @@ import java.rmi.RemoteException;
 public interface RemoteDbConnection extends Remote {
 
   /**
-   * Gets the application-specific version information of the server.<br>
+   * Gets the application-specific version of the server.<br>
    *
-   * @return the version info
+   * @return the server version
    * @throws RemoteException if failed
    */
-  Serializable getServerVersionInfo() throws RemoteException;
+  String getServerVersion() throws RemoteException;
 
 
   /**

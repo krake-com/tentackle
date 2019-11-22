@@ -49,7 +49,7 @@ import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionPool;
 import org.tentackle.session.SessionTaskDispatcher;
 import org.tentackle.session.SessionUtilities;
-import org.tentackle.session.VersionInfoIncompatibleException;
+import org.tentackle.session.VersionIncompatibleException;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendInfo;
@@ -629,7 +629,7 @@ public class Db implements Session, Cloneable {
          * Check that server matches expected version. The server checks the client's version in rcon.login() below. So,
          * we have a double check.
          */
-        sessionInfo.checkServerVersionInfo(rcon.getServerVersionInfo());
+        sessionInfo.checkServerVersion(rcon.getServerVersion());
 
         // get session
         rses = rcon.login(sessionInfo);    // throws exception if login denied
@@ -666,8 +666,7 @@ public class Db implements Session, Cloneable {
         LOGGER.info("session {0} opened", this);
       }
     }
-    catch (MalformedURLException | URISyntaxException | NotBoundException | RemoteException |
-           VersionInfoIncompatibleException ex) {
+    catch (MalformedURLException | URISyntaxException | NotBoundException | RemoteException | VersionIncompatibleException ex) {
       throw handleConnectException(ex);
     }
   }

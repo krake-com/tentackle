@@ -162,18 +162,18 @@ public interface SessionInfo extends Immutable, Serializable {
   boolean isCloned();
 
   /**
-   * Sets the client's version info.
+   * Sets the client's version.
    *
-   * @param clientVersionInfo the version info
+   * @param clientVersion the client version
    */
-  void setClientVersionInfo(Serializable clientVersionInfo);
+  void setClientVersion(String clientVersion);
 
   /**
-   * Gets the client version info.
+   * Gets the client version.
    *
-   * @return the version info
+   * @return the client version
    */
-  Serializable getClientVersionInfo();
+  String getClientVersion();
 
   /**
    * Sets the connection properties.
@@ -288,14 +288,14 @@ public interface SessionInfo extends Immutable, Serializable {
   void setTimeZone(TimeZone timeZone);
 
   /**
-   * Checks the version information (of the server).
+   * Checks the version of the server.
    * <p>
    * The default implementation does nothing.
    *
-   * @param serverVersionInfo the server's version info
-   * @throws VersionInfoIncompatibleException if versions are not compatible
+   * @param serverVersion the server's version
+   * @throws VersionIncompatibleException if versions are not compatible
    */
-  void checkServerVersionInfo(Serializable serverVersionInfo);
+  void checkServerVersion(String serverVersion);
 
   /**
    * Determines whether tokenlocks are removed when session is closed.<br>

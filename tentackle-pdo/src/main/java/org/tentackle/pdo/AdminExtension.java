@@ -75,12 +75,12 @@ public interface AdminExtension extends DomainContextDependable {
     long getApplicationId();
 
     /**
-     * Gets the client version info.
+     * Gets the client version.
      *
-     * @return the version info
+     * @return the client version
      */
     @Bindable
-    String getClientVersionInfo();
+    String getClientVersion();
 
     /**
      * Gets the session's locale.

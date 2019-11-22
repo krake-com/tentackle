@@ -142,7 +142,7 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDelegateImpl<
     private final Timestamp since;
     private final String applicationName;
     private final long applicationId;
-    private final String clientVersionInfo;
+    private final String clientVersion;
     private final String locale;
     private final String vmInfo;
     private final String osInfo;
@@ -160,7 +160,7 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDelegateImpl<
       since = new Timestamp(info.getSince());
       applicationName = info.getApplicationName();
       applicationId = info.getApplicationId();
-      clientVersionInfo = info.getClientVersionInfo() == null ? "?" : info.getClientVersionInfo().toString();
+      clientVersion = info.getClientVersion() == null ? "?" : info.getClientVersion().toString();
       locale = info.getLocale() == null ? "?" : info.getLocale().toString();
       vmInfo = info.getVmInfo();
       osInfo = info.getOsInfo();
@@ -202,8 +202,8 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDelegateImpl<
     }
 
     @Override
-    public String getClientVersionInfo() {
-      return clientVersionInfo;
+    public String getClientVersion() {
+      return clientVersion;
     }
 
     @Override

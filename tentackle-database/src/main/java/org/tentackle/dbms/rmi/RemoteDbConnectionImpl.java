@@ -23,8 +23,8 @@ import org.tentackle.io.ServerSocketConfigurator;
 import org.tentackle.io.ServerSocketConfiguratorHolder;
 import org.tentackle.log.Logger;
 import org.tentackle.session.SessionInfo;
+import org.tentackle.session.VersionIncompatibleException;
 
-import java.io.Serializable;
 import java.net.BindException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -88,16 +88,16 @@ public abstract class RemoteDbConnectionImpl extends RemoteServerObject implemen
 
 
   /**
-   * Checks the client's version information.
+   * Checks the client's version.
    * <p>
    * The default implementation does nothing.
    * It is invoked only for remote connections.
    * <p>
-   * Throws {@link org.tentackle.session.VersionInfoIncompatibleException} if versions are not compatible.
+   * Throws {@link VersionIncompatibleException} if versions are not compatible.
    *
-   * @param clientVersionInfo the rmiServer's version info from {@link org.tentackle.dbms.rmi.RemoteDbConnection}.
+   * @param clientVersion the client version
    */
-  public void checkClientVersionInfo(Serializable clientVersionInfo) {
+  public void checkClientVersion(String clientVersion) {
     // default is ok
   }
 
@@ -191,7 +191,7 @@ public abstract class RemoteDbConnectionImpl extends RemoteServerObject implemen
   // ------------------ implements RemoteDbConnection -----------------
 
   @Override
-  public Serializable getServerVersionInfo() throws RemoteException {
+  public String getServerVersion() throws RemoteException {
     return null;
   }
 
@@ -199,7 +199,7 @@ public abstract class RemoteDbConnectionImpl extends RemoteServerObject implemen
   @Override
   public RemoteDbSession login(SessionInfo clientInfo) throws RemoteException {
     // check client compatibility
-    checkClientVersionInfo(clientInfo.getClientVersionInfo());
+    checkClientVersion(clientInfo.getClientVersion());
     // create the session
     RemoteDbSession session = createSession(clientInfo);
     // export the session
