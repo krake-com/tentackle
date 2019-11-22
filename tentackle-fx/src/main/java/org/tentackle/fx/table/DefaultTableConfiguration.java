@@ -86,12 +86,12 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   /**
    * The column configs mapped by column name.
    */
-  private final Map<String, TableColumnConfiguration<S, ?>> nameColumnConfigMap;
+  private final Map<String, TableColumnConfiguration<S, ?>> nameColumnConfigMap = new LinkedHashMap<>();
 
   /**
    * The column configs mapped by table column.
    */
-  private final Map<TableColumn<S, ?>, TableColumnConfiguration<S, ?>> columnColumnConfigMap;
+  private final Map<TableColumn<S, ?>, TableColumnConfiguration<S, ?>> columnColumnConfigMap = new LinkedHashMap<>();
 
   /**
    * The binder.
@@ -106,7 +106,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   /**
    * Whether preferences include the view size.
    */
-  private boolean viewSizeIncluded;
+  private boolean viewSizeIncluded = true;
 
   /**
    * The edit mode.
@@ -125,9 +125,6 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
     this.template = template;
     this.objectClass = (Class<S>) EffectiveClassProvider.getEffectiveClass(template);
     this.name = name == null ? ReflectionHelper.getClassBaseName(objectClass) : name;
-    this.nameColumnConfigMap = new LinkedHashMap<>();
-    this.columnColumnConfigMap = new LinkedHashMap<>();
-    viewSizeIncluded = true;
   }
 
   /**
@@ -141,8 +138,6 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
     this.template = null;
     this.objectClass = objectClass;
     this.name = name == null ? ReflectionHelper.getClassBaseName(objectClass) : name;
-    this.nameColumnConfigMap = new LinkedHashMap<>();
-    this.columnColumnConfigMap = new LinkedHashMap<>();
   }
 
   /**
