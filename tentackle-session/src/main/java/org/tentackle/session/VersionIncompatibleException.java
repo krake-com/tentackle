@@ -28,12 +28,12 @@ import java.io.Serializable;
  *
  * @author harald
  */
-public class VersionInfoIncompatibleException extends LoginFailedException {
+public class VersionIncompatibleException extends LoginFailedException {
 
   private static final long serialVersionUID = -9655629806960356L;
 
-  private final Serializable clientVersion;
-  private final Serializable serverVersion;
+  private final String clientVersion;
+  private final String serverVersion;
 
   /**
    * Creates a version incompatible exception.
@@ -42,7 +42,7 @@ public class VersionInfoIncompatibleException extends LoginFailedException {
    * @param clientVersion the client version
    * @param serverVersion the server version
    */
-  public VersionInfoIncompatibleException(String message, Serializable clientVersion, Serializable serverVersion) {
+  public VersionIncompatibleException(String message, String clientVersion, String serverVersion) {
     super(message);
     this.clientVersion = clientVersion;
     this.serverVersion = serverVersion;
@@ -53,7 +53,7 @@ public class VersionInfoIncompatibleException extends LoginFailedException {
    *
    * @return the version
    */
-  public Serializable getClientVersion() {
+  public String getClientVersion() {
     return clientVersion;
   }
 
@@ -62,7 +62,7 @@ public class VersionInfoIncompatibleException extends LoginFailedException {
    *
    * @return the version
    */
-  public Serializable getServerVersion() {
+  public String getServerVersion() {
     return serverVersion;
   }
 

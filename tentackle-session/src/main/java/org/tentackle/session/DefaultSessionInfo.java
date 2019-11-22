@@ -28,7 +28,6 @@ import org.tentackle.misc.ImmutableException;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Objects;
@@ -56,7 +55,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
   private int userClassId;                      // the user class id
   private String applicationName;               // an optional application name
   private long applicationId;                   // application instance id
-  private Serializable clientVersionInfo;       // the version info of the client
+  private String clientVersion;                 // the version of the client
   private long since;                           // logged in since
   private String propertiesName;                // filename of backend properties
   private Properties properties;                // db properties (send over via RMI)
@@ -190,57 +189,30 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
   }
 
 
-  /**
-   * Sets the epochal time when the user logged in.
-   *
-   * @param since logged in since
-   */
   @Override
   public void setSince(long since) {
     assertMutable();
     this.since = since;
   }
 
-  /**
-   * Gets the time since when logged in.
-   *
-   * @return logged in since, null if not logged in
-   */
   @Override
   public long getSince() {
     return since;
   }
 
 
-  /**
-   * Sets the username
-   *
-   * @param userName the username
-   */
   @Override
   public void setUserName (String userName)  {
     assertMutable();
     this.userName = userName;
   }
 
-
-  /**
-   * Gets the username.
-   *
-   * @return the username
-   */
   @Override
   public String getUserName()  {
     return userName;
   }
 
 
-
-  /**
-   * Sets the password.
-   *
-   * @param password the password
-   */
   @Override
   public void setPassword(char[] password)  {
     assertMutable();
@@ -256,15 +228,14 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
     }
   }
 
+  @Override
+  public char[] getPassword() {
+    if (encryptedPassword != null) {
+      return Cryptor.getInstance().decryptToChars(encryptedPassword);
+    }
+    return password;
+  }
 
-  /**
-   * Clears the password.
-   * Password should be cleared when no more used
-   * to remove them physically from memory.
-   * This is the reason why we store passwords as a
-   * character array and not a string.<p>
-   * Sadly enough, the JDBC api requires passwords as strings :-(
-   */
   @Override
   public void clearPassword() {
     if (password != null) {
@@ -280,41 +251,17 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
   }
 
 
-  /**
-   * Gets the password.
-   *
-   * @return the password, null if cleared or not set at all
-   */
   @Override
-  public char[] getPassword() {
-    if (encryptedPassword != null) {
-      return Cryptor.getInstance().decryptToChars(encryptedPassword);
-    }
-    return password;
+  public String getClientVersion() {
+    return clientVersion;
   }
 
-
-  /**
-   * Gets the client version info.
-   *
-   * @return the version info
-   */
   @Override
-  public Serializable getClientVersionInfo() {
-    return clientVersionInfo;
-  }
-
-
-  /**
-   * Sets the client's version info.
-   *
-   * @param clientVersionInfo the version info
-   */
-  @Override
-  public void setClientVersionInfo(Serializable clientVersionInfo) {
+  public void setClientVersion(String clientVersion) {
     assertMutable();
-    this.clientVersionInfo = clientVersionInfo;
+    this.clientVersion = clientVersion;
   }
+
 
   @Override
   public Locale getLocale() {
@@ -326,6 +273,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
     this.locale = locale;
   }
 
+
   @Override
   public String getVmInfo() {
     return vmInfo;
@@ -335,6 +283,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
   public void setVmInfo(String vmInfo) {
     this.vmInfo = vmInfo;
   }
+
 
   @Override
   public TimeZone getTimeZone() {
@@ -346,6 +295,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
     this.timeZone = timeZone;
   }
 
+
   @Override
   public String getOsInfo() {
     return osInfo;
@@ -355,6 +305,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
   public void setOsInfo(String osInfo) {
     this.osInfo = osInfo;
   }
+
 
   @Override
   public String getHostInfo() {
@@ -440,20 +391,11 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
   }
 
 
-  /**
-   * Checks whether this DefaultSessionInfo is cloned.
-   *
-   * @return true if cloned
-   */
   @Override
   public boolean isCloned() {
     return cloned;
   }
 
-  /**
-   * Cleares the cloned flag.<br>
-   * Useful if the userinfo should no longer be treated as cloned.
-   */
   @Override
   public void clearCloned() {
     assertMutable();
@@ -462,43 +404,17 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
   }
 
 
-  /**
-   * Gets the name of the property file.
-   *
-   * @return the filename
-   */
   @Override
   public String getPropertiesName() {
     return propertiesName;
   }
 
-
-  /**
-   * Sets the name of the property file, i.e.
-   * without the extension {@code .properties}.
-   *
-   * @param propertiesName the filename
-   */
   @Override
   public void setPropertiesName(String propertiesName) {
     assertMutable();
     this.propertiesName = propertiesName;
   }
 
-
-  /**
-   * Gets the connection properties.<br>
-   * If the properties are not set so far, the method will load
-   * the properties file by adding the extension {@code ".properties"}
-   * to {@code propertiesName} (if it does not contain an extension already).<br>
-   * If there is no such file, the properties will be read as a resource according
-   * to the classpath.<br>
-   * If all fails the db errorhandler will be invoked (which will usually terminate the application).
-   * <p>
-   * However, if {@code propertiesName} is null, empty properties are returned.
-   *
-   * @return the connection properties, never null
-   */
   @Override
   public Properties getProperties() {
     if (properties == null) {
@@ -517,18 +433,11 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
     return properties;
   }
 
-
-  /**
-   * Sets the connection properties.
-   *
-   * @param properties the connection properties.
-   */
   @Override
   public void setProperties(Properties properties) {
     assertMutable();
     this.properties = properties;
   }
-
 
   @Override
   public void applyProperties() {
@@ -542,24 +451,11 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
     }
   }
 
-
-  /**
-   * Gets the application name.
-   *
-   * @return the name
-   */
   @Override
   public String getApplicationName() {
     return applicationName;
   }
 
-
-  /**
-   * Sets the application name.
-   * Application server may need that to classify the client.
-   *
-   * @param application the name
-   */
   @Override
   public void setApplicationName(String application) {
     assertMutable();
@@ -567,38 +463,19 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
   }
 
 
-  /**
-   * Sets the application id.<br>
-   * Should be unique among the same application name.
-   *
-   * @param applicationId the optional application id
-   */
   @Override
   public void setApplicationId(long applicationId) {
     this.applicationId = applicationId;
   }
 
-  /**
-   * Returns the application id.
-   *
-   * @return the id, 0 if none
-   */
   @Override
   public long getApplicationId() {
     return applicationId;
   }
 
 
-  /**
-   * Checks the version information (of the server).
-   * <p>
-   * The default implementation does nothing.
-   *
-   * @param serverVersionInfo the server's version info
-   * @throws VersionInfoIncompatibleException if versions are not compatible
-   */
   @Override
-  public void checkServerVersionInfo(Serializable serverVersionInfo) {
+  public void checkServerVersion(String serverVersion) {
     // default is ok
   }
 
@@ -624,6 +501,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
     assertMutable();
     this.userClassId = userClassId;
   }
+
 
   @Override
   public boolean isLockLingerEnabled() {

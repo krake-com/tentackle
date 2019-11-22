@@ -177,7 +177,7 @@ public class SessionsView extends AbstractFxController {
     config.addColumn("userName", resources.getString("user"));
     config.addColumn("applicationName", resources.getString("application"));
     config.addColumn("applicationId", resources.getString("appl.-ID"));
-    config.addColumn("clientVersionInfo", resources.getString("version"));
+    config.addColumn("clientVersion", resources.getString("version"));
     config.addColumn("locale", resources.getString("locale"));
     config.addColumn("timeZone", resources.getString("timezone"));
     config.addColumn("vmInfo", resources.getString("VM"));

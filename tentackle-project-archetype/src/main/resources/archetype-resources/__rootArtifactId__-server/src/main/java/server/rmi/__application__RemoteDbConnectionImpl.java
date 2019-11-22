@@ -15,7 +15,7 @@ import org.tentackle.dbms.rmi.RemoteDbConnectionImpl;
 import org.tentackle.dbms.rmi.RemoteDbSession;
 import org.tentackle.dbms.rmi.RmiServer;
 import org.tentackle.session.SessionInfo;
-import org.tentackle.session.VersionInfoIncompatibleException;
+import org.tentackle.session.VersionIncompatibleException;
 
 import java.io.Serializable;
 import java.rmi.Remote;
@@ -51,9 +51,9 @@ public class ${application}RemoteDbConnectionImpl extends RemoteDbConnectionImpl
   }
 
   @Override
-  public void checkClientVersionInfo(Serializable clientVersionInfo) {
-    if (!Objects.equals(clientVersionInfo, Version.RELEASE)) {
-      throw new VersionInfoIncompatibleException("incompatible client", clientVersionInfo, Version.RELEASE);
+  public void checkClientVersion(String clientVersion) {
+    if (!Version.RELEASE.equals(clientVersion)) {
+      throw new VersionIncompatibleException("incompatible client", clientVersion, Version.RELEASE);
     }
   }
 
