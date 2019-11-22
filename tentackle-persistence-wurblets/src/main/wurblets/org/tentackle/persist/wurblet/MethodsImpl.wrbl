@@ -217,7 +217,7 @@ For more options, see {\@link DbModelWurblet}.
     if (!modified) {
 @[
       for (Attribute attr: getEntity().getAttributes())  {
-        if (!attr.getOptions().isNoMethod() && !attr.getOptions().isMute())    {
+        if (!attr.getOptions().isFromSuper() && !attr.getOptions().isMute())    {
           if (isFullTracked()) {
 ]@
       @(attr.getName())@Persisted = @(attr.getName())@;
@@ -245,7 +245,7 @@ For more options, see {\@link DbModelWurblet}.
     return super.differsPersisted()
 @[
       for (Attribute attr: getEntity().getAttributes())  {
-        if (!attr.getOptions().isNoMethod() && !attr.getOptions().isMute() &&
+        if (!attr.getOptions().isFromSuper() && !attr.getOptions().isMute() &&
             !attr.getOptions().isReadOnly() && !isIdOrSerialAttribute(attr)) {
           if (attr.getDataType().isPrimitive()) {
 ]@
