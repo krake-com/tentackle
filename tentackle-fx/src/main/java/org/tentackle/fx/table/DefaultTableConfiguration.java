@@ -104,6 +104,11 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   private boolean sortingIncluded;
 
   /**
+   * Whether preferences include the view size.
+   */
+  private boolean viewSizeIncluded;
+
+  /**
    * The edit mode.
    */
   private EDITMODE editMode = EDITMODE.NO;
@@ -122,6 +127,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
     this.name = name == null ? ReflectionHelper.getClassBaseName(objectClass) : name;
     this.nameColumnConfigMap = new LinkedHashMap<>();
     this.columnColumnConfigMap = new LinkedHashMap<>();
+    viewSizeIncluded = true;
   }
 
   /**
@@ -208,6 +214,16 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   }
 
   @Override
+  public boolean isViewSizeIncluded() {
+    return viewSizeIncluded;
+  }
+
+  @Override
+  public void setViewSizeIncluded(boolean viewSizeIncluded) {
+    this.viewSizeIncluded = viewSizeIncluded;
+  }
+
+  @Override
   public void savePreferences(FxTableView<S> table, String suffix, boolean system) {
 
     StringBuilder prefName = new StringBuilder();
@@ -262,7 +278,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   }
 
   @Override
-  public void loadPreferences(FxTableView<S> table, String suffix, boolean system, boolean noViewSize) {
+  public void loadPreferences(FxTableView<S> table, String suffix, boolean system) {
 
     StringBuilder prefName = new StringBuilder();
     prefName.append(name);
@@ -328,7 +344,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
       table.getSortOrder().addAll(sortOrder.values());
 
       // read table dimensions
-      if (!noViewSize) {
+      if (isViewSizeIncluded()) {
         double width = -1.0;
         String key = PREF_WIDTH;
         if (!system) {

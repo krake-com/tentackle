@@ -149,23 +149,36 @@ public interface TableConfiguration<S> {
    * @param table the table
    * @param suffix the configuration suffix, null if none
    * @param system true if load from system prefs only, else user prefs first
-   * @param noViewSize true if don't set the table view's size
    */
-  void loadPreferences(FxTableView<S> table, String suffix, boolean system, boolean noViewSize);
+  void loadPreferences(FxTableView<S> table, String suffix, boolean system);
 
   /**
    * Returns whether the preferences include the column sorting.
    *
-   * @return true if included (default is false)
+   * @return true if sorting is restored from the preferences (default is false)
    */
   boolean isSortingIncluded();
 
   /**
    * Sets whether the preferences include the column sorting.
    *
-   * @param sortingIncluded true if included (default is false)
+   * @param sortingIncluded true if sorting is restored from the preferences (default is false)
    */
   void setSortingIncluded(boolean sortingIncluded);
+
+  /**
+   * Returns whether the preferences include the view size.
+   *
+   * @return true if the preferred size is restored from the preferences (default is true)
+   */
+  boolean isViewSizeIncluded();
+
+  /**
+   * Sets whether the preferences include the view size.
+   *
+   * @param viewSizeIncluded true if the preferred size is restored from the preferences (default is true)
+   */
+  void setViewSizeIncluded(boolean viewSizeIncluded);
 
   /**
    * Gets the type of binding.

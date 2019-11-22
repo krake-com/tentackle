@@ -96,7 +96,7 @@ public class SessionsView extends AbstractFxController {
 
   @Override
   public void configure() {
-    popup = RdcFactory.getInstance().createTablePopup(sessionsNode, "Sessions", false, resources.getString("Sessions"));
+    popup = RdcFactory.getInstance().createTablePopup(sessionsNode, "Sessions", resources.getString("Sessions"));
     DomainContext context = Pdo.createDomainContext();
     if (context.getSession().isRemote()) {    // needs check to run tests
       PdoRemoteSession remoteSession = (PdoRemoteSession) context.getSession().getRemoteSession();
@@ -177,7 +177,7 @@ public class SessionsView extends AbstractFxController {
     config.addColumn("userName", resources.getString("user"));
     config.addColumn("applicationName", resources.getString("application"));
     config.addColumn("applicationId", resources.getString("appl.-ID"));
-    config.addColumn("clientVersionInfo", resources.getString("version"));
+    config.addColumn("clientVersion", resources.getString("version"));
     config.addColumn("locale", resources.getString("locale"));
     config.addColumn("timeZone", resources.getString("timezone"));
     config.addColumn("vmInfo", resources.getString("VM"));
