@@ -121,13 +121,13 @@ public abstract class AbstractServerApplication extends AbstractApplication
 
 
   /**
-   * Creates the logical SessionPool.
-   * The default implementation creates a DefaultDbPool.
+   * Creates the session pool to serve the client sessions.
    *
-   * @return the database pool, null if don't use a pool
+   * @return the session pool
    */
   public SessionPool createSessionPool() {
-
+    // cannot be done via SessionPoolFactory because the pool uses another connection manager,
+    // and ConnectionManager is low-level persistence layer, i.e. not available to the factory's module.
     return new DefaultDbPool(getConnectionManager(), getSessionInfo()) {
 
       @Override

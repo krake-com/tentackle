@@ -1203,23 +1203,12 @@ public class Db implements Session, Cloneable {
   }
 
 
-  /**
-   * Registers a close handler.
-   *
-   * @param closeHandler the handler
-   * @return true if added, false if already registered
-   */
+  @Override
   public boolean registerCloseHandler(SessionCloseHandler closeHandler) {
     return resources.closeHandlers.add(closeHandler);
   }
 
-
-  /**
-   * Unregisters a close handler.
-   *
-   * @param closeHandler the handler
-   * @return true if removed, false if not registered
-   */
+  @Override
   public boolean unregisterCloseHandler(SessionCloseHandler closeHandler) {
     return resources.closeHandlers.remove(closeHandler);
   }
