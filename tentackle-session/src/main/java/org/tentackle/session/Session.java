@@ -184,6 +184,22 @@ public interface Session extends Comparable<Session>, AutoCloseable {
   void close();
 
   /**
+   * Registers a close handler.
+   *
+   * @param closeHandler the handler
+   * @return true if added, false if already registered
+   */
+  boolean registerCloseHandler(SessionCloseHandler closeHandler);
+
+  /**
+   * Unregisters a close handler.
+   *
+   * @param closeHandler the handler
+   * @return true if removed, false if not registered
+   */
+  boolean unregisterCloseHandler(SessionCloseHandler closeHandler);
+
+  /**
    * Clones a session.<br>
    * If the session is closed, a PersistenceException is thrown.<br>
    * The cloned session will always be non-grouped.
