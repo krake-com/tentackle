@@ -262,6 +262,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
           }
           // reset the user info for this db for sure (the application may have changed it to clientInfo)
           db.setSessionInfo(serverInfo);
+          db.setSessionGroupId(0);    // remove from session group
           db.getPool().putSession(db);
         }
         else {

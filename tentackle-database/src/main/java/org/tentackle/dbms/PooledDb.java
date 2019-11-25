@@ -19,6 +19,7 @@
 package org.tentackle.dbms;
 
 import org.tentackle.common.Constants;
+import org.tentackle.common.StringHelper;
 import org.tentackle.common.Timestamp;
 import org.tentackle.log.Logger;
 import org.tentackle.session.PersistenceException;
@@ -238,11 +239,15 @@ public class PooledDb {
    */
   protected SessionInfo createSessionInfo(int slotNumber) {
     SessionInfo sessionInfo = pool.getSessionInfo().clone();
-    String application = sessionInfo.getApplicationName();
-    if (application == null) {
-      application = pool.getName();
+    StringBuilder buf = new StringBuilder();
+    if (!StringHelper.isAllWhitespace(sessionInfo.getApplicationName())) {
+      buf.append(sessionInfo.getApplicationName());
     }
-    sessionInfo.setApplicationName(application + '#' + slotNumber);
+    else {
+      buf.append("<unnamed>");
+    }
+    buf.append('|').append(pool.getName()).append('#').append(slotNumber);
+    sessionInfo.setApplicationName(buf.toString());
     return sessionInfo;
   }
 
@@ -255,7 +260,11 @@ public class PooledDb {
   protected Db createSession(int slotNumber) {
     LOGGER.fine("open pooled Db for {0}, connection manager {1}, slot {2}",
         pool.getSessionInfo(), pool.getConnectionManager(), slotNumber);
-    return new Db(pool.getConnectionManager(), createSessionInfo(slotNumber));
+    Db session = new Db(pool.getConnectionManager(), createSessionInfo(slotNumber));
+    if (pool.getSessionGroupId() > 0) {
+      session.groupWith(pool.getSessionGroupId());
+    }
+    return session;
   }
 
 }

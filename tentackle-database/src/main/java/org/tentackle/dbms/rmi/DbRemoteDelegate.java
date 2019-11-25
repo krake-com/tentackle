@@ -41,8 +41,6 @@ public interface DbRemoteDelegate extends RemoteDelegate {
 
   int getSessionId() throws RemoteException;
 
-  void setSessionGroupId(int number) throws RemoteException;
-
   int groupWith(int number) throws RemoteException;
 
   boolean isAlive() throws RemoteException;

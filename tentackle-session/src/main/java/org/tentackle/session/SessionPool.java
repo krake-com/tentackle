@@ -35,6 +35,13 @@ public interface SessionPool extends ReturnableSessionProvider {
   SessionInfo getSessionInfo();
 
   /**
+   * Gets the session group id.
+   *
+   * @return the session group, 0 if ungrouped
+   */
+  int getSessionGroupId();
+
+  /**
    * Gets the name of this pool.
    *
    * @return the name

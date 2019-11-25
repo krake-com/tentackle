@@ -18,16 +18,18 @@
 
 package org.tentackle.dbms;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.testng.Assert;
+import org.testng.Reporter;
+import org.testng.annotations.Test;
+
 import org.tentackle.session.DefaultSessionInfo;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionPool;
 import org.tentackle.sql.BackendInfo;
-import org.testng.Assert;
-import org.testng.Reporter;
-import org.testng.annotations.Test;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Session pool and connection manager test.
@@ -82,7 +84,7 @@ public class DbPoolTest {
     BackendInfo backendInfo = new BackendInfo(sessionInfo.getProperties());
     ConnectionManager conMgr = new MpxConnectionManager("mpx", backendInfo,
             NUM_THREADS, 1, NUM_THREADS / 8, 1, NUM_THREADS / 8, NUM_THREADS / 2, 720, 2160);
-    pool = new DefaultDbPool("default", conMgr, sessionInfo, 8, 2, 4, conMgr.getMaxSessions(), 60, 0);
+    pool = new DefaultDbPool("default", conMgr, sessionInfo, 0, 8, 2, 4, conMgr.getMaxSessions(), 60, 0);
   }
 
 
