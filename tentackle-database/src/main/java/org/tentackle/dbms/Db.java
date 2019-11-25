@@ -2211,14 +2211,8 @@ public class Db implements Session, Cloneable {
    */
   public void setSessionGroupId(int number) {
     assertOpen();
-    if (isRemote()) {
-      try {
-        resources.rdel.setSessionGroupId(number);
-      }
-      catch (RemoteException e)  {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
-    }
+    assertNotRemote();
+
     if (number != sessionGroupId) {
       if (number != 0) {
         LOGGER.info("{0} joined group {1}", this, number);
@@ -2262,6 +2256,9 @@ public class Db implements Session, Cloneable {
         if (db != null && db.resources.sessionId == sessionId) {
           if (db.sessionGroupId > 0 && sessionId != db.sessionGroupId) {
             throw new PersistenceException(db, "session already belongs to group " + db.sessionGroupId);
+          }
+          if (!getSessionInfo().equals(db.getSessionInfo())) {
+            throw new PersistenceException(db, "session does not belong to " + getSessionInfo().getUserName());
           }
           db.setSessionGroupId(sessionId);
           break;

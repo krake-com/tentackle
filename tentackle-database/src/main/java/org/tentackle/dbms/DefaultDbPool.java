@@ -52,8 +52,9 @@ public class DefaultDbPool implements SessionPool {
 
 
   private final String name;                  // the pool's name
-  private final ConnectionManager conMgr;     // the connection manager
-  private final SessionInfo sessionInfo;      // the server's session info
+  private final ConnectionManager conMgr;     // the connection manager (if local)
+  private final SessionInfo sessionInfo;      // the session info
+  private final int sessionGroupId;           // optional session group id for new sessions
   private final int iniSize;                  // initial size of the pool (0 if initialization completed)
   private int incSize;                        // increment size
   private int minSize;                        // min pool size
@@ -76,8 +77,9 @@ public class DefaultDbPool implements SessionPool {
    * Creates a pool.
    *
    * @param name the name of the pool
-   * @param conMgr the connection manager to use for new Db instances
-   * @param sessionInfo the server's session info
+   * @param conMgr the connection manager to use for new local sessions, null if remote
+   * @param sessionInfo the session info
+   * @param sessionGroupId the session group, 0 if none
    * @param iniSize the initial poolsize
    * @param incSize the number of Db instances to enlarge the pool if all in use
    * @param minSize the minimum number of Db instances to keep in pool
@@ -85,7 +87,7 @@ public class DefaultDbPool implements SessionPool {
    * @param maxIdleMinutes the idle timeout in minutes to close unused Db instances, 0 = unlimited
    * @param maxUsageMinutes the max. used time in minutes, 0 = unlimited
    */
-  public DefaultDbPool (String name, ConnectionManager conMgr, SessionInfo sessionInfo,
+  public DefaultDbPool (String name, ConnectionManager conMgr, SessionInfo sessionInfo, int sessionGroupId,
                         int iniSize, int incSize, int minSize, int maxSize, long maxIdleMinutes, long maxUsageMinutes) {
 
     if (maxSize > 0 && (maxSize < iniSize || maxSize < minSize) ||
@@ -96,8 +98,9 @@ public class DefaultDbPool implements SessionPool {
     }
 
     this.name = Objects.requireNonNull(name, "name");
-    this.conMgr = Objects.requireNonNull(conMgr, "conMgr");
+    this.conMgr = conMgr;
     this.sessionInfo = Objects.requireNonNull(sessionInfo, "sessionInfo");
+    this.sessionGroupId = sessionGroupId;
     this.iniSize = iniSize;
     this.incSize = incSize;
     this.minSize = minSize;
@@ -129,7 +132,7 @@ public class DefaultDbPool implements SessionPool {
    * @param ui the userinfo for the created Db
    */
   public DefaultDbPool (ConnectionManager conMgr, SessionInfo ui) {
-    this("default-pool", conMgr, ui, 8, 2, 4, conMgr.getMaxSessions(), 60L, 24*60L);
+    this("default-pool", conMgr, ui, 0, 8, 2, 4, conMgr.getMaxSessions(), 60L, 24*60L);
   }
 
 
@@ -146,6 +149,11 @@ public class DefaultDbPool implements SessionPool {
   @Override
   public SessionInfo getSessionInfo() {
     return sessionInfo;
+  }
+
+  @Override
+  public int getSessionGroupId() {
+    return sessionGroupId;
   }
 
   /**
@@ -381,7 +389,6 @@ public class DefaultDbPool implements SessionPool {
           unusedList[unusedCount++] = poolId;
         }
         db.setPoolId(0);            // returned to pool
-        db.setSessionGroupId(0);    // clear group
         db.setOwnerThread(null);    // unlink any owner thread
       } // else: not an error to return a db more than once
 
@@ -558,16 +565,24 @@ public class DefaultDbPool implements SessionPool {
               int index = pool.unusedList[i];
               PooledDb pooledDb = pool.pooledSessions[index];  // pooledDb.db != null because unused
 
-              long idleMinutes = pooledDb.idleMinutes(curtime);
-              boolean idleTimedOut = idleMinutes > pool.getMaxIdleMinutes();
-              if (idleTimedOut) {
-                LOGGER.info("{0} idle for {1} (max={2}) -> closed", pooledDb, idleMinutes, pool.getMaxIdleMinutes());
+              boolean idleTimedOut = false;
+              long maxIdleMinutes = pool.getMaxIdleMinutes();
+              if (maxIdleMinutes > 0) {
+                long idleMinutes = pooledDb.idleMinutes(curtime);
+                idleTimedOut = idleMinutes > maxIdleMinutes;
+                if (idleTimedOut) {
+                  LOGGER.info("{0} idle for {1} (max={2}) -> closed", pooledDb, idleMinutes, maxIdleMinutes);
+                }
               }
 
-              long usedMinutes = pooledDb.usedMinutes(curtime);
-              boolean usageTimedOut = usedMinutes > pool.getMaxUsageMinutes();
-              if (usageTimedOut) {
-                LOGGER.info("{0} used for {1} (max={2}) -> closed", pooledDb, usedMinutes, pool.getMaxUsageMinutes());
+              boolean usageTimedOut = false;
+              long maxUsageMinutes = pool.getMaxUsageMinutes();
+              if (maxUsageMinutes > 0) {
+                long usedMinutes = pooledDb.usedMinutes(curtime);
+                usageTimedOut = usedMinutes > maxUsageMinutes;
+                if (usageTimedOut) {
+                  LOGGER.info("{0} used for {1} (max={2}) -> closed", pooledDb, usedMinutes, maxUsageMinutes);
+                }
               }
 
               // if used at all and unused interval elapsed

@@ -73,15 +73,6 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     }
   }
 
-  @Override
-  public void setSessionGroupId(int number) throws RemoteException {
-    try {
-      getSession().setSessionGroupId(number);
-    }
-    catch (RuntimeException ex)  {
-      throw createException(ex);
-    }
-  }
 
   @Override
   public int groupWith(int number) throws RemoteException {
