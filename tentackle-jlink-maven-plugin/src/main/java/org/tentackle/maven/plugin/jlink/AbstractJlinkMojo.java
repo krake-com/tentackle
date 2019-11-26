@@ -108,7 +108,7 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   /**
    * File of the jdeps tool.
    */
-  @Parameter
+  @Parameter(property = "jdepsTool")
   private File jdepsTool;
 
   /**
