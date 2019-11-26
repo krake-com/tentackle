@@ -16,27 +16,32 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.reflect.interceptabletest;
 
-import java.io.Serializable;
-import org.tentackle.reflect.Interceptable;
+
+package org.tentackle.reflect.interceptable;
+
+import org.tentackle.reflect.Interception;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * This is the interface describing the class to be handled.
+ * Interceptable test annotation.
  *
  * @author harald
  */
-public interface Calculator extends Interceptable, Serializable {
+@Documented
+@Inherited
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+@Interception(implementedBy=OffsetInterceptor.class)
+public @interface Offset {
 
-  /**
-   * Adds two integers.
-   *
-   * @param op1 operand one
-   * @param op2 operand two
-   * @return the result
-   */
-  @LogIt
-  @Offset(100)
-  int add(int op1, int op2);
+  // the offset value
+  int value();
 
 }

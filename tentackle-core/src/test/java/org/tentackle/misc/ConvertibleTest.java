@@ -17,13 +17,14 @@
  */
 package org.tentackle.misc;
 
-import org.tentackle.misc.convertibletest.TestConvertible;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import static org.tentackle.misc.convertibletest.TestConvertible.ONE;
-import static org.tentackle.misc.convertibletest.TestConvertible.THREE;
-import static org.tentackle.misc.convertibletest.TestConvertible.TWO;
+import org.tentackle.misc.convertibles.SomeConvertible;
+
+import static org.tentackle.misc.convertibles.SomeConvertible.ONE;
+import static org.tentackle.misc.convertibles.SomeConvertible.THREE;
+import static org.tentackle.misc.convertibles.SomeConvertible.TWO;
 
 /**
  * Tests the Convertible Helper.
@@ -37,9 +38,9 @@ public class ConvertibleTest {
     Integer oneInt = ONE.toExternal();
     Integer twoInt = TWO.toExternal();
     Integer threeInt = THREE.toExternal();
-    TestConvertible oneEnum = ConvertibleHelper.toInternal(TestConvertible.class, oneInt);
-    TestConvertible twoEnum = ConvertibleHelper.toInternal(TestConvertible.class, twoInt);
-    TestConvertible threeEnum = ConvertibleHelper.toInternal(TestConvertible.class, threeInt);
+    SomeConvertible oneEnum = ConvertibleHelper.toInternal(SomeConvertible.class, oneInt);
+    SomeConvertible twoEnum = ConvertibleHelper.toInternal(SomeConvertible.class, twoInt);
+    SomeConvertible threeEnum = ConvertibleHelper.toInternal(SomeConvertible.class, threeInt);
     Assert.assertEquals(oneInt, Integer.valueOf(100));
     Assert.assertEquals(twoInt, Integer.valueOf(200));
     Assert.assertEquals(threeInt, Integer.valueOf(300));
@@ -47,7 +48,7 @@ public class ConvertibleTest {
     Assert.assertEquals(twoEnum.toExternal(), twoInt);
     Assert.assertEquals(threeEnum.toExternal(), threeInt);
     try {
-      ConvertibleHelper.toInternal(TestConvertible.class, 400);
+      ConvertibleHelper.toInternal(SomeConvertible.class, 400);
       Assert.fail("creating internal value for external 400 should not be possible");
     }
     catch (RuntimeException e) {

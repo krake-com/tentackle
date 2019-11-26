@@ -16,26 +16,31 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.reflect.interceptabletest;
 
-import org.tentackle.reflect.InterceptionService;
+package org.tentackle.reflect.interceptable;
+
+import org.testng.Reporter;
+
+import org.tentackle.reflect.AbstractInterceptor;
+
+import java.lang.reflect.Method;
 
 /**
- * Interceptable implementation.
+ * Logging interceptor.
  *
  * @author harald
  */
-@InterceptionService(Calculator.class)
-public class CalculatorImpl implements Calculator {
+public class LogItInterceptor extends AbstractInterceptor {
 
-  private static final long serialVersionUID = 328147818793269691L;
+  public static Object lastResult;
 
-  public CalculatorImpl(Calculator calc) {
-  }
 
   @Override
-  public int add(int op1, int op2) {
-    return op1 + op2;
+  public Object proceed(Object proxy, Method method, Object[] args, Object orgProxy, Method orgMethod, Object[] orgArgs) throws Throwable {
+    Reporter.log("intercepting " + orgMethod.toGenericString() + "<br/>");
+    lastResult = method.invoke(proxy, args);
+    return lastResult;
   }
 
 }
+
