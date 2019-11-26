@@ -17,12 +17,14 @@
  */
 package org.tentackle.reflect;
 
-import java.util.Map;
-import java.util.TreeMap;
-import org.tentackle.reflect.classmappertest.CollectiveInvoice;
-import org.tentackle.reflect.classmappertest.Invoice;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+
+import org.tentackle.reflect.classmapper.CollectiveInvoice;
+import org.tentackle.reflect.classmapper.Invoice;
+
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Classmapper tests.
@@ -35,20 +37,20 @@ public class ClassMapperTest {
   public void testClassMapper() {
 
     Map<String, String> nameMap = new TreeMap<>();
-    nameMap.put("org.tentackle.reflect.classmappertest.Invoice", "org.tentackle.reflect.classmappertest.InvoicePersistence");
+    nameMap.put("org.tentackle.reflect.classmapper.Invoice", "org.tentackle.reflect.classmapper.InvoicePersistence");
 
     ClassMapper mapper = new DefaultClassMapper(
-            "test", getClass().getClassLoader(), nameMap, new String[]{"org.tentackle.reflect.classmappertest"});
+            "test", getClass().getClassLoader(), nameMap, new String[]{"org.tentackle.reflect.classmapper"});
 
     try {
-      Assert.assertEquals("org.tentackle.reflect.classmappertest.InvoicePersistence", mapper.map(Invoice.class).getName());
+      Assert.assertEquals("org.tentackle.reflect.classmapper.InvoicePersistence", mapper.map(Invoice.class).getName());
     }
     catch (ClassNotFoundException ex) {
       Assert.fail(ex.toString());
     }
 
     try {
-      Assert.assertEquals("org.tentackle.reflect.classmappertest.InvoicePersistence", mapper.mapLenient(
+      Assert.assertEquals("org.tentackle.reflect.classmapper.InvoicePersistence", mapper.mapLenient(
               CollectiveInvoice.class).getName());
     }
     catch (ClassNotFoundException ex) {
@@ -56,14 +58,14 @@ public class ClassMapperTest {
     }
 
     nameMap = new TreeMap<>();
-    nameMap.put("org.tentackle.reflect.classmappertest.Invoice", "org.tentackle.reflect.classmappertest.InvoicePersistence");
-    nameMap.put("org.tentackle.reflect.classmappertest.CollectiveInvoice",
-            "org.tentackle.reflect.classmappertest.CollectiveInvoicePersistence");
+    nameMap.put("org.tentackle.reflect.classmapper.Invoice", "org.tentackle.reflect.classmapper.InvoicePersistence");
+    nameMap.put("org.tentackle.reflect.classmapper.CollectiveInvoice",
+            "org.tentackle.reflect.classmapper.CollectiveInvoicePersistence");
     mapper = new DefaultClassMapper(
-            "test", getClass().getClassLoader(), nameMap, new String[]{"org.tentackle.reflect.classmappertest"});
+            "test", getClass().getClassLoader(), nameMap, new String[]{"org.tentackle.reflect.classmapper"});
 
     try {
-      Assert.assertEquals("org.tentackle.reflect.classmappertest.CollectiveInvoicePersistence", mapper.map(
+      Assert.assertEquals("org.tentackle.reflect.classmapper.CollectiveInvoicePersistence", mapper.map(
               CollectiveInvoice.class).getName());
     }
     catch (ClassNotFoundException ex) {

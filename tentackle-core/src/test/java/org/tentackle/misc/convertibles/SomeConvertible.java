@@ -17,7 +17,7 @@
  */
 
 
-package org.tentackle.misc.convertibletest;
+package org.tentackle.misc.convertibles;
 
 import org.tentackle.misc.Convertible;
 
@@ -26,7 +26,7 @@ import org.tentackle.misc.Convertible;
  *
  * @author harald
  */
-public enum TestConvertible implements Convertible<Integer> {
+public enum SomeConvertible implements Convertible<Integer> {
 
   ONE(100),
   TWO(200),
@@ -39,7 +39,7 @@ public enum TestConvertible implements Convertible<Integer> {
    *
    * @param whatsoever the integer
    */
-  TestConvertible(Integer whatsoever) {
+  SomeConvertible(Integer whatsoever) {
     this.whatsoever = whatsoever;
   }
 
@@ -49,9 +49,9 @@ public enum TestConvertible implements Convertible<Integer> {
    * @param external the external value
    * @return the convertible
    */
-  public static TestConvertible toInternal(Integer external) {
+  public static SomeConvertible toInternal(Integer external) {
     if (external != null) {
-      for (TestConvertible value: values()) {
+      for (SomeConvertible value: values()) {
         if (value.whatsoever.equals(external)) {
           return value;
         }

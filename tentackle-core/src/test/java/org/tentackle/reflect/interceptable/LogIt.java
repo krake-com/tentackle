@@ -17,28 +17,28 @@
  */
 
 
-package org.tentackle.reflect.interceptabletest;
 
-import java.lang.reflect.Method;
-import org.tentackle.reflect.AbstractInterceptor;
-import org.testng.Reporter;
+package org.tentackle.reflect.interceptable;
+
+import org.tentackle.reflect.Interception;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Logging interceptor.
+ * Logging interceptor annotation.
  *
  * @author harald
  */
-public class LogItInterceptor extends AbstractInterceptor {
-
-  public static Object lastResult;
-
-
-  @Override
-  public Object proceed(Object proxy, Method method, Object[] args, Object orgProxy, Method orgMethod, Object[] orgArgs) throws Throwable {
-    Reporter.log("intercepting " + orgMethod.toGenericString() + "<br/>");
-    lastResult = method.invoke(proxy, args);
-    return lastResult;
-  }
+@Documented
+@Inherited
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+@Interception(implementedBy=LogItInterceptor.class)
+public @interface LogIt {
 
 }
-

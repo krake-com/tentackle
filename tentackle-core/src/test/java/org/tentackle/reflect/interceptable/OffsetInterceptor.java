@@ -17,30 +17,35 @@
  */
 
 
+package org.tentackle.reflect.interceptable;
 
-package org.tentackle.reflect.interceptabletest;
+import org.tentackle.reflect.AbstractInterceptor;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-import org.tentackle.reflect.Interception;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 
 /**
- * Interceptable test annotation.
+ * Interceptor.
  *
  * @author harald
  */
-@Documented
-@Inherited
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-@Interception(implementedBy=OffsetInterceptor.class)
-public @interface Offset {
+public class OffsetInterceptor extends AbstractInterceptor {
 
-  // the offset value
-  int value();
+  private int offset;
+
+  @Override
+  public void setAnnotation(Annotation annotation) {
+    super.setAnnotation(annotation);
+    if (annotation instanceof Offset) {
+      offset = ((Offset) annotation).value();
+    }
+  }
+
+
+  @Override
+  public Object proceed(Object proxy, Method method, Object[] args, Object orgProxy, Method orgMethod, Object[] orgArgs) throws Throwable {
+    return (Integer) method.invoke(proxy, args) + offset;
+  }
 
 }
+

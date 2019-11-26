@@ -17,7 +17,7 @@
  */
 
 
-package org.tentackle.reflect.classmappertest;
+package org.tentackle.reflect.classmapper;
 
 /**
  * Collective invoice persistence interface.

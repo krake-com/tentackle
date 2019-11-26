@@ -17,15 +17,13 @@
  */
 
 
-package org.tentackle.reflect.classmappertest;
-
+package org.tentackle.reflect.classmapper;
 
 /**
- * Invoice interface.
+ * Collective invoice interface.
  *
  * @author harald
  */
-public interface Invoice extends InvoicePersistence {
-
+public interface CollectiveInvoice extends Invoice, CollectiveInvoicePersistence {
 
 }

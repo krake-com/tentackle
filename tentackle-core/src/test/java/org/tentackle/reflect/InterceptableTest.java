@@ -18,9 +18,10 @@
 
 package org.tentackle.reflect;
 
-import org.tentackle.reflect.interceptabletest.Calculator;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+
+import org.tentackle.reflect.interceptable.Calculator;
 
 /**
  * Interceptable test.

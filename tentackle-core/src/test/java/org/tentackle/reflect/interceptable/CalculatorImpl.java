@@ -16,35 +16,26 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+package org.tentackle.reflect.interceptable;
 
-package org.tentackle.reflect.interceptabletest;
-
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
-import org.tentackle.reflect.AbstractInterceptor;
+import org.tentackle.reflect.InterceptionService;
 
 /**
- * Interceptor.
+ * Interceptable implementation.
  *
  * @author harald
  */
-public class OffsetInterceptor extends AbstractInterceptor {
+@InterceptionService(Calculator.class)
+public class CalculatorImpl implements Calculator {
 
-  private int offset;
+  private static final long serialVersionUID = 328147818793269691L;
 
-  @Override
-  public void setAnnotation(Annotation annotation) {
-    super.setAnnotation(annotation);
-    if (annotation instanceof Offset) {
-      offset = ((Offset) annotation).value();
-    }
+  public CalculatorImpl(Calculator calc) {
   }
 
-
   @Override
-  public Object proceed(Object proxy, Method method, Object[] args, Object orgProxy, Method orgMethod, Object[] orgArgs) throws Throwable {
-    return (Integer) method.invoke(proxy, args) + offset;
+  public int add(int op1, int op2) {
+    return op1 + op2;
   }
 
 }
-
