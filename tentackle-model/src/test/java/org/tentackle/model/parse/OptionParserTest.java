@@ -39,6 +39,15 @@ public class OptionParserTest {
     assertEquals(next, "productId[getHeight()]");
     next = parser.nextOption(1);
     assertNull(next);
+
+    args = "blah ... [cached , +name ] and some other stuff";
+    parser = new OptionParser(args, true);
+    next = parser.nextOption();
+    assertEquals(next, "cached");
+    next = parser.nextOption();
+    assertEquals(next, "+name");
+    next = parser.nextOption();
+    assertNull(next);
   }
 
 }

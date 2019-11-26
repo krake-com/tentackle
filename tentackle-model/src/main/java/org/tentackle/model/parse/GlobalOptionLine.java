@@ -54,7 +54,7 @@ public class GlobalOptionLine extends SingleLine {
   @Override
   public void parse() throws ModelException {
     super.parse();
-    String optionsText = getText();
+    String optionsText = getText().trim();    // trim because of endsWith below
     String sortingText = null;
     int ndx = optionsText.lastIndexOf('|');   // sorting?
     if (ndx >= 0 && optionsText.length() > ndx) {

@@ -233,7 +233,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
 
         default:
           // sorted column?
-          // this is just a convenience hack to allow ommitting the pipe sign.
+          // this is just a convenience hack to allow omitting the pipe sign.
           // works, however, only if the column to sort is not an option keyword.
           if (ctrl != null) {
             if (sorting == null) {
