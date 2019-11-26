@@ -112,7 +112,7 @@ public class JlinkMojo extends AbstractJlinkMojo {
   /**
    * File of the jlink tool.
    */
-  @Parameter
+  @Parameter(property = "jlinkTool")
   private File jlinkTool;
 
   /**

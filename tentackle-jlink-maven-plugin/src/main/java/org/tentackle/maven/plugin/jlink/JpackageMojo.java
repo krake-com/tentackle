@@ -68,7 +68,7 @@ public class JpackageMojo extends AbstractJlinkMojo {
   /**
    * File of the jpackage tool.
    */
-  @Parameter
+  @Parameter(property = "jpackageTool")
   private File jpackageTool;
 
   /**
