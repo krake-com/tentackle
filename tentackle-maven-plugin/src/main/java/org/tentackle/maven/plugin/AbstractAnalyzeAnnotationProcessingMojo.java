@@ -71,12 +71,18 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
    */
   private Set<String> generatedServices;
 
+  /**
+   * Epochal time in ms when mojo was started. Used to detect which of the analyze directories
+   * are just created within this run.
+   */
+  private final long startedMillis;
 
   /**
    * Creates a mojo.
    */
   public AbstractAnalyzeAnnotationProcessingMojo() {
     addProcessor(new AnalyzeProcessor());
+    startedMillis = System.currentTimeMillis();
   }
 
   /**
@@ -173,17 +179,23 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
       long minOutputLastModified = 0;
       File outputDir = new File(outputDirPath);
       if (outputDir.exists()) {
-        // get the oldest timestamp
-        minOutputLastModified = outputDir.lastModified();
-        File[] files = outputDir.listFiles();
-        if (files != null) {
-          for (File file : files) {
-            long lastModified = file.lastModified();
-            if (lastModified < minOutputLastModified) {
-              minOutputLastModified = lastModified;
+        long lastModified = outputDir.lastModified();
+        if (lastModified < startedMillis) {
+          // get the oldest timestamp of this directory and its files or subdirs
+          minOutputLastModified = lastModified;
+          File[] files = outputDir.listFiles();
+          if (files != null) {
+            for (File file : files) {
+              lastModified = file.lastModified();
+              if (lastModified < minOutputLastModified) {
+                minOutputLastModified = lastModified;
+              }
             }
           }
         }
+        // else: created within this run: always add the source file!
+        // this also solves the windows fs case-insensitivity problem:
+        // sub-package with the same name as a class (within the same package)
       }
       else  {
         outputDir.mkdirs();   // create dir if it doesnt
