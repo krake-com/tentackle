@@ -9,7 +9,7 @@ cd ..
 if not exist logs mkdir logs
   <#if mainModule != "">
     <#-- modular application -->
-bin\java${(modulePath!="")?then(" -p " + modulePath, "")}${(classPath!="")?then(" -cp " + classPath, "")} ^
+start bin\javaw${(modulePath!="")?then(" -p " + modulePath, "")}${(classPath!="")?then(" -cp " + classPath, "")} ^
   --add-exports javafx.graphics/com.sun.javafx.css=org.tentackle.fx ^
   --add-exports javafx.graphics/com.sun.javafx.scene=org.tentackle.fx ^
   --add-exports javafx.graphics/com.sun.javafx.scene.traversal=org.tentackle.fx ^
@@ -19,7 +19,7 @@ bin\java${(modulePath!="")?then(" -p " + modulePath, "")}${(classPath!="")?then(
   -m ${mainModule}/${mainClass}
   <#else>
     <#-- classpath application -->
-bin\java -cp ${classPath} ${mainClass}
+start bin\javaw -cp ${classPath} ${mainClass}
   </#if>
 <#else>
 #!/bin/sh
