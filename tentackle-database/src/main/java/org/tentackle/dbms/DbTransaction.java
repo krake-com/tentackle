@@ -39,6 +39,12 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class DbTransaction {
 
+  /**
+   * Maximum recursion depth of tx runnables.<br>
+   * To detect recursion loops when tx runnables create other runnables.
+   */
+  public static int maxTxRunnableDepth = 100;
+
   // the jvm-wide transaction counter
   private static final AtomicLong TX_COUNT = new AtomicLong();
 
@@ -460,11 +466,19 @@ public class DbTransaction {
   public void invokeCommitTxRunnables() {
     if (commitTxRunnables != null) {
       /*
-       * execute pending runnables.
+       * execute pending commit runnables.
        * Notice: the runnables should throw PersistenceException on failure!
+       * Runnables may create other runnables up to maxTxRunnableDepth recursion depth.
        */
-      for (CommitTxRunnable r: commitTxRunnables.values())  {
-        r.commit(db);
+      int depth = 0;
+      while (!commitTxRunnables.isEmpty()) {
+        for (Map.Entry<DbTransactionHandle, CommitTxRunnable> entry : Map.copyOf(commitTxRunnables).entrySet()) {
+          entry.getValue().commit(db);
+          commitTxRunnables.remove(entry.getKey());
+        }
+        if (++depth > maxTxRunnableDepth) {
+          throw new PersistenceException(getSession(), "commit runnables nesting level too deep");
+        }
       }
       commitTxRunnables = null;
     }
@@ -477,11 +491,19 @@ public class DbTransaction {
   public void invokeRollbackTxRunnables() {
     if (rollbackTxRunnables != null) {
       /*
-       * execute pending runnables.
+       * execute pending rollback runnables.
        * Notice: the runnables should throw PersistenceException on failure!
+       * Runnables may create other runnables up to maxTxRunnableDepth recursion depth.
        */
-      for (RollbackTxRunnable r: rollbackTxRunnables.values())  {
-        r.rollback(db);
+      int depth = 0;
+      while (!rollbackTxRunnables.isEmpty()) {
+        for (Map.Entry<DbTransactionHandle, RollbackTxRunnable> entry : Map.copyOf(rollbackTxRunnables).entrySet()) {
+          entry.getValue().rollback(db);
+          rollbackTxRunnables.remove(entry.getKey());
+        }
+        if (++depth > maxTxRunnableDepth) {
+          throw new PersistenceException(getSession(), "rollback runnables nesting level too deep");
+        }
       }
       rollbackTxRunnables = null;
     }
