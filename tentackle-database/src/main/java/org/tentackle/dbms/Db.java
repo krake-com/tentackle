@@ -1901,11 +1901,11 @@ public class Db implements Session, Cloneable {
           // within a transaction: commit!
           LOGGER.fine("{0}: commit transaction, voucher {1}", this, txVoucher);
           transaction.assertValidTxVoucher(txVoucher);
-          logCommitTx();
           if (transaction.isTxLevelValid() && transaction.getTxLevel() != 1) {
             LOGGER.warning(this + ": txLevel=" + transaction.getTxLevel() + ", should be 1");
           }
           transaction.invokeCommitTxRunnables();
+          logCommitTx();
           setAutoCommit(true);    // according to the specs: this will commit!
           logModificationDeferred = false;
           long txNo = getTxNumber();
