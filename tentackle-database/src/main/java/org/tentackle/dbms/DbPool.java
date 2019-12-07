@@ -34,7 +34,7 @@ import java.util.Objects;
 
 
 /**
- * An implementation of a database pool.<br>
+ * An implementation of a session pool.<br>
  * It allows min/max sizes, fixed increments and timeouts for unused instances.
  * <p>
  * The pool can be used with any ConnectionManager.
@@ -44,9 +44,9 @@ import java.util.Objects;
  * This is the preferred configuration in server applications with a lot of clients.
  * In order to clear the PdoCache on db-close, you have to override the closeDb method.
  */
-public class DefaultDbPool implements SessionPool {
+public class DbPool implements SessionPool {
 
-  private static final Logger LOGGER = Logger.get(DefaultDbPool.class);
+  private static final Logger LOGGER = Logger.get(DbPool.class);
 
   private static final long SLEEP_INTERVAL = Constants.SECOND_MS * 10;   // sleep interval for timeout thread (10secs)
 
@@ -87,8 +87,8 @@ public class DefaultDbPool implements SessionPool {
    * @param maxIdleMinutes the idle timeout in minutes to close unused Db instances, 0 = unlimited
    * @param maxUsageMinutes the max. used time in minutes, 0 = unlimited
    */
-  public DefaultDbPool (String name, ConnectionManager conMgr, SessionInfo sessionInfo, int sessionGroupId,
-                        int iniSize, int incSize, int minSize, int maxSize, long maxIdleMinutes, long maxUsageMinutes) {
+  public DbPool(String name, ConnectionManager conMgr, SessionInfo sessionInfo, int sessionGroupId,
+                int iniSize, int incSize, int minSize, int maxSize, long maxIdleMinutes, long maxUsageMinutes) {
 
     if (maxSize > 0 && (maxSize < iniSize || maxSize < minSize) ||
         minSize < 1 ||
@@ -131,7 +131,7 @@ public class DefaultDbPool implements SessionPool {
    * @param conMgr the connection manager
    * @param ui the userinfo for the created Db
    */
-  public DefaultDbPool (ConnectionManager conMgr, SessionInfo ui) {
+  public DbPool(ConnectionManager conMgr, SessionInfo ui) {
     this("default-pool", conMgr, ui, 0, 8, 2, 4, conMgr.getMaxSessions(), 60L, 24*60L);
   }
 
@@ -530,9 +530,9 @@ public class DefaultDbPool implements SessionPool {
    */
   private static class TimeoutThread extends Thread implements Scavenger {
 
-    private final WeakReference<DefaultDbPool> poolRef;
+    private final WeakReference<DbPool> poolRef;
 
-    private TimeoutThread(DefaultDbPool pool) {
+    private TimeoutThread(DbPool pool) {
       super("Sessionpool '" + pool.getName() + "' Timeout Thread");
       poolRef = new WeakReference<>(pool);
       setDaemon(true);
@@ -550,7 +550,7 @@ public class DefaultDbPool implements SessionPool {
             // check termination condition below (pool == null)
           }
 
-          DefaultDbPool pool = poolRef.get();
+          DbPool pool = poolRef.get();
           if (pool == null || pool.shutdownRequested) {
             break;
           }

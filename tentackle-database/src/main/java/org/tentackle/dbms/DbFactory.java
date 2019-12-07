@@ -25,6 +25,7 @@ import org.tentackle.session.SessionCloseHandler;
 import org.tentackle.session.SessionFactory;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionInfoFactory;
+import org.tentackle.session.SessionPool;
 
 /**
  * Session factory for Db instances.
@@ -45,6 +46,11 @@ public class DbFactory implements SessionFactory {
   }
 
   @Override
+  public Session create(SessionPool sessionPool, SessionInfo sessionInfo) {
+    return new Db(((DbPool) sessionPool).getConnectionManager(), sessionInfo);
+  }
+
+  @Override
   public boolean registerGlobalCloseHandler(SessionCloseHandler closeHandler) {
     return Db.registerGlobalCloseHandler(closeHandler);
   }
@@ -61,11 +67,11 @@ public class DbFactory implements SessionFactory {
    * must contain all the necessary information to distinguish the managers.
    * The default implementation returns the single default connection manager.
    * <p>
-   * Notice that only local connections need a connection manager and the method
-   * may return null in such a case.
+   * Notice that only local connections need a connection manager. Remote sessions
+   * will simply ignore it.
    *
    * @param sessionInfo the session info
-   * @return the connection manager
+   * @return the connection manager, null if remote
    * @see DbUtilities#getDefaultConnectionManager()
    */
   protected synchronized ConnectionManager getConnectionManager(SessionInfo sessionInfo) {

@@ -23,6 +23,7 @@ import org.tentackle.common.StringHelper;
 import org.tentackle.common.Timestamp;
 import org.tentackle.log.Logger;
 import org.tentackle.session.PersistenceException;
+import org.tentackle.session.SessionFactory;
 import org.tentackle.session.SessionInfo;
 
 import java.lang.ref.WeakReference;
@@ -34,7 +35,7 @@ public class PooledDb {
 
   private static final Logger LOGGER = Logger.get(PooledDb.class);
 
-  private final DefaultDbPool pool;         // the session pool
+  private final DbPool pool;                // the session pool
   private final int slotNumber;             // the slot number
   private Db db;                            // the managed db, null if currently lended
   private final String dbStr;               // the db string (not the reference!)
@@ -51,7 +52,7 @@ public class PooledDb {
    *
    * @param pool the session pool
    */
-  public PooledDb(DefaultDbPool pool, int slotNumber) {
+  public PooledDb(DbPool pool, int slotNumber) {
     this.pool = pool;
     this.slotNumber = slotNumber;
 
@@ -67,7 +68,7 @@ public class PooledDb {
    *
    * @return the pool
    */
-  public DefaultDbPool getPool() {
+  public DbPool getPool() {
     return pool;
   }
 
@@ -260,7 +261,7 @@ public class PooledDb {
   protected Db createSession(int slotNumber) {
     LOGGER.fine("open pooled Db for {0}, connection manager {1}, slot {2}",
         pool.getSessionInfo(), pool.getConnectionManager(), slotNumber);
-    Db session = new Db(pool.getConnectionManager(), createSessionInfo(slotNumber));
+    Db session = (Db) SessionFactory.getInstance().create(pool, createSessionInfo(slotNumber));
     if (pool.getSessionGroupId() > 0) {
       session.groupWith(pool.getSessionGroupId());
     }

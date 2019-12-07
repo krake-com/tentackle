@@ -24,7 +24,7 @@ import org.tentackle.common.StringHelper;
 import org.tentackle.dbms.ConnectionManager;
 import org.tentackle.dbms.ConnectionManagerProvider;
 import org.tentackle.dbms.Db;
-import org.tentackle.dbms.DefaultDbPool;
+import org.tentackle.dbms.DbPool;
 import org.tentackle.dbms.ManagedConnection;
 import org.tentackle.dbms.MpxConnectionManager;
 import org.tentackle.dbms.StatementStatistics;
@@ -128,7 +128,7 @@ public abstract class AbstractServerApplication extends AbstractApplication
   public SessionPool createSessionPool() {
     // cannot be done via SessionPoolFactory because the pool uses another connection manager,
     // and ConnectionManager is low-level persistence layer, i.e. not available to the factory's module.
-    return new DefaultDbPool(getConnectionManager(), getSessionInfo()) {
+    return new DbPool(getConnectionManager(), getSessionInfo()) {
 
       @Override
       public Db getSession() {

@@ -84,7 +84,7 @@ public class DbPoolTest {
     BackendInfo backendInfo = new BackendInfo(sessionInfo.getProperties());
     ConnectionManager conMgr = new MpxConnectionManager("mpx", backendInfo,
             NUM_THREADS, 1, NUM_THREADS / 8, 1, NUM_THREADS / 8, NUM_THREADS / 2, 720, 2160);
-    pool = new DefaultDbPool("default", conMgr, sessionInfo, 0, 8, 2, 4, conMgr.getMaxSessions(), 60, 0);
+    pool = new DbPool("default", conMgr, sessionInfo, 0, 8, 2, 4, conMgr.getMaxSessions(), 60, 0);
   }
 
 
