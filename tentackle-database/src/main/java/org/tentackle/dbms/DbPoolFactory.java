@@ -33,8 +33,8 @@ public class DbPoolFactory implements SessionPoolFactory {
                             int iniSize, int incSize, int minSize, int maxSize, long maxIdleMinutes, long maxUsageMinutes) {
 
     Db db = (Db) session;
-    return new DefaultDbPool(name, db.getConnectionManager(), db.getSessionInfo(), db.getSessionGroupId(),
-                             iniSize, incSize, minSize, maxSize, maxIdleMinutes, maxUsageMinutes);
+    return new DbPool(name, db.getConnectionManager(), db.getSessionInfo(), db.getSessionGroupId(),
+                      iniSize, incSize, minSize, maxSize, maxIdleMinutes, maxUsageMinutes);
   }
 
 }

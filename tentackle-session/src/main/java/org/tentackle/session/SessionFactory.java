@@ -59,6 +59,17 @@ public interface SessionFactory {
   Session create(SessionInfo sessionInfo);
 
   /**
+   * Creates a session for a pool.<br>
+   * Notice that this method is provided for {@link SessionPool} implementations only.
+   * Applications must use {@link SessionPool#getSession()} instead.
+   *
+   * @param sessionPool the pool requesting a new session
+   * @param sessionInfo the session info
+   * @return the open session
+   */
+  Session create(SessionPool sessionPool, SessionInfo sessionInfo);
+
+  /**
    * Registers a global close handler for all sessions.
    *
    * @param closeHandler the handler
