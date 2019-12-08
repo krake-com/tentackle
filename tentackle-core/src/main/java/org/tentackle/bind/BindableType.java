@@ -51,7 +51,7 @@ public @interface BindableType {
   boolean declaredOnly() default true;
 
   /**
-   * Gets the resources bundle for annotated controller.
+   * Gets the resources bundle.
    *
    * @return the bundle url, empty string if <code>&lt;annotated-classname&gt;.properties</code>, no resources if {@link #RESOURCES_NONE}
    */
