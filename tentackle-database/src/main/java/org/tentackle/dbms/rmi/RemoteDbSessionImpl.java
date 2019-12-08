@@ -19,7 +19,6 @@
 
 package org.tentackle.dbms.rmi;
 
-import org.tentackle.dbms.ConnectionManager;
 import org.tentackle.dbms.Db;
 import org.tentackle.dbms.DbUtilities;
 import org.tentackle.io.ServerSocketConfigurator;
@@ -35,6 +34,7 @@ import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.LoginFailedException;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
+import org.tentackle.session.SessionFactory;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionPool;
 
@@ -620,19 +620,14 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
 
 
   /**
-   * Opens a new Db.<br>
-   * The default implementation opens a new Db.
-   * Can be overridden if, for example, pools are used instead.
+   * Gets an open db for this remote session.
+   *
    * @return the db connection
    * @throws LoginFailedException if opening the db failed
    */
   protected Db openDb() {
-
     SessionPool dbPool = DbUtilities.getInstance().getDefaultSessionPool();
-    ConnectionManager conMgr = DbUtilities.getInstance().getDefaultConnectionManager();
-
     if (dbPool != null) {
-      // if pooled
       try {
         Db pooledDb = (Db) dbPool.getSession();
         LOGGER.info("using {0}", pooledDb);
@@ -643,7 +638,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
       }
     }
     else  {
-      return new Db(conMgr, resources.serverInfo);
+      return (Db) SessionFactory.getInstance().create(resources.serverInfo);
     }
   }
 
