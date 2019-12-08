@@ -28,12 +28,13 @@ String  name    the object's name
 int     count   the counter
 </pre>
 If the line is prefixed with "^", the property is passed to the super entity within the constructor.<br>
-This option is ignored in builder pattern mode.<br>
+In builder pattern mode, standard java inheritance must be used instead.<br>
 Example:
 <pre>
 ^String name   the name
 </pre>
 If the line is prefixed with "=", the property is mutable and a setter is generated.<br>
+In builder pattern mode, no builder method is generated for this property.<br>
 Example:
 <pre>
 =String name   the name
