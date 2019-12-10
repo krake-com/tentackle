@@ -28,6 +28,8 @@ import org.tentackle.misc.ScrollableResource;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainDelegate;
 import org.tentackle.pdo.PdoCache;
+import org.tentackle.pdo.PdoMethodCache;
+import org.tentackle.pdo.PdoMethodCacheProvider;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.PersistentObject;
 import org.tentackle.security.Permission;
@@ -39,6 +41,8 @@ import org.tentackle.validate.ValidationScope;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A mocked persistence object.
@@ -48,9 +52,10 @@ import java.util.List;
  * @author harald
  */
 public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends MockPersistentObject<T,P>>
-       implements PersistentObject<T> {
+       implements PersistentObject<T>, PdoMethodCacheProvider<T> {
 
   private static final String UNSUPPORTED = "not implemented";
+  private static final Map<Class, PdoMethodCache> METHOD_CACHE_MAP = new ConcurrentHashMap<>();
 
 
   private DomainContext context;                  // application database context
@@ -64,6 +69,7 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
   private long tableSerial;                       // last table serial from countModification (only if isTableSerialValid() == true)
   private long rootId;                            // root entity id
   private int rootClassId;                        // class if of the root entity
+
 
   /**
    * Creates an application database object.
@@ -126,6 +132,12 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
    */
   public void setPdo(T pdo) {
     this.pdo = pdo;
+  }
+
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  @Override
+  public PdoMethodCache<T> getPdoMethodCache() {
+    return METHOD_CACHE_MAP.computeIfAbsent(getClass(), clazz -> new PdoMethodCache(clazz));
   }
 
   @Override

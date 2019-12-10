@@ -26,10 +26,14 @@
       <artifactId>${rootArtifactId}-pdo</artifactId>
       <version>${symbol_dollar}{project.version}</version>
     </dependency>
-
     <dependency>
       <groupId>org.tentackle</groupId>
       <artifactId>tentackle-domain</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.tentackle</groupId>
+      <artifactId>tentackle-test-pdo</artifactId>
     </dependency>
   </dependencies>
 

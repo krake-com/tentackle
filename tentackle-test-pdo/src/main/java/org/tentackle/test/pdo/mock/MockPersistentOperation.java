@@ -22,9 +22,14 @@ package org.tentackle.test.pdo.mock;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainDelegate;
 import org.tentackle.pdo.Operation;
+import org.tentackle.pdo.OperationMethodCache;
+import org.tentackle.pdo.OperationMethodCacheProvider;
 import org.tentackle.pdo.PersistentOperation;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A mocked persistence object.
@@ -33,9 +38,11 @@ import org.tentackle.session.Session;
  * @author harald
  */
 public class MockPersistentOperation<T extends Operation<T>>
-       implements PersistentOperation<T> {
+       implements PersistentOperation<T>, OperationMethodCacheProvider<T> {
 
   private static final String UNSUPPORTED = "not implemented";
+  private static final Map<Class, OperationMethodCache> METHOD_CACHE_MAP = new ConcurrentHashMap<>();
+
 
   private DomainContext context;                  // application database context
   private T operation;                            // the operation instance this is a delegate for
@@ -86,6 +93,11 @@ public class MockPersistentOperation<T extends Operation<T>>
   public MockPersistentOperation() {
   }
 
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  @Override
+  public OperationMethodCache<T> getOperationMethodCache() {
+    return METHOD_CACHE_MAP.computeIfAbsent(getClass(), clazz -> new OperationMethodCache(clazz));
+  }
 
   @Override
   public void setSessionImmutable(boolean sessionImmutable) {

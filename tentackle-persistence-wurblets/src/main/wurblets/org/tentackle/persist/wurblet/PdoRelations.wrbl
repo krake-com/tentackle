@@ -7,7 +7,7 @@ usage:<br>
     [--loadcomponents|--noloadcomponents]
     [--insertcomponents|--noinsertcomponents]
     [--deletecomponents|--nodeletecomponents]
-    [--nori] [--noselects] [--nodeletes]
+    [--nori] [--noselects] [--nodeletes] [--mock]
 <p>
 arguments:
 <ul>
@@ -18,6 +18,7 @@ arguments:
 <li><em>--noselects:</em> don't generate PdoSelect... wurblet anchors.</li>
 <li><em>--nodeletes:</em> don't generate PdoDelete... wurblet anchors.</li>
 <li><em>--novalidate:</em> don't generate validate method.</li>
+<li><em>--mock:</em> generate code for mock object.</li>
 </ul>
 For more options, see {\@link DbModelWurblet}.
 }@
@@ -61,6 +62,7 @@ For more options, see {\@link DbModelWurblet}.
     boolean generateClearOnRemoteSave               = false;
     boolean generateAlignComponents                 = false;
     boolean generateCreateNormText                  = false;
+    boolean generateMock                            = false;
 
     for (Relation rel: getEntity().getReferencingRelations()) {
       if (!rel.isComposite() && rel.getRelationType() == RelationType.OBJECT &&
@@ -101,6 +103,9 @@ For more options, see {\@link DbModelWurblet}.
       }
       else if (arg.equals("nodeletes")) {
         generateDeletes = false;
+      }
+      else if ("mock".equals(arg)) {
+        generateMock = true;
       }
     }
 
@@ -163,10 +168,10 @@ For more options, see {\@link DbModelWurblet}.
       generateDeleteComponents = generateIsComposite && (!useDatabaseRefInt || getEntity().isRootEntity());
     }
 
-    if (generateDeclarations) {
+    if (generateDeclarations || generateMock) {
       // declarations
       for (Relation rel: getEntity().getRelations()) {
-        if (rel.getSelectionType() != SelectionType.ALWAYS || rel.isComposite())  {
+        if (rel.getSelectionType() != SelectionType.ALWAYS || rel.isComposite() || generateMock)  {
           String type = rel.getDeclaredJavaType(false);
           String transientModifier = isRelationTransient(rel) ? "transient " : "";
 ]@
@@ -174,21 +179,23 @@ For more options, see {\@link DbModelWurblet}.
   // @(rel)@
   private @(transientModifier)@@(type)@ @(rel.getVariableName())@;
 @[
-          if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER)  {
+          if (!generateMock) {
+            if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER)  {
 ]@
   private @(transientModifier)@boolean @(rel.getVariableName())@Loaded;
 @[
-          }
-          if (rel.isComposite())  {
-            if (rel.getRelationType() == RelationType.OBJECT || rel.isTracked()) {
+            }
+            if (rel.isComposite())  {
+              if (rel.getRelationType() == RelationType.OBJECT || rel.isTracked()) {
 ]@
   private transient @(type)@ @(rel.getVariableName())@Snapshot;
 @[
-            }
-            if (rel.getRelationType() == RelationType.OBJECT) {
+              }
+              if (rel.getRelationType() == RelationType.OBJECT) {
 ]@
   private long @(rel.getVariableName())@RemovedId;
 @[
+              }
             }
           }
         }
@@ -208,7 +215,7 @@ For more options, see {\@link DbModelWurblet}.
       }
     }
 
-    if (generateClearOnRemoteSave) {
+    if (generateClearOnRemoteSave && !generateMock) {
 ]@
 
   \@Override
@@ -296,49 +303,35 @@ For more options, see {\@link DbModelWurblet}.
 ]@
   @(scope)@ @(type)@ @(rel.getGetterName())@()  {
 @[
-        if (rel.getSelectionType() == SelectionType.ALWAYS) {
-          if (rel.getRelationType() == RelationType.LIST) {
-            if (rel.isSelectionCached()) {
+        if (generateMock) {
+]@
+    return @(var)@;
+  }
+@[
+        }
+        else {
+          if (rel.getSelectionType() == SelectionType.ALWAYS) {
+            if (rel.getRelationType() == RelationType.LIST) {
+              if (rel.isSelectionCached()) {
 ]@
     @(var)@ = @(createRelationSelectCode(rel))@;
 @[
-            }
-            else {
+              }
+              else {
 ]@
     @(type)@ @(var)@ = @(createRelationSelectCode(rel))@;
 @[
-            }
-            if (rel.isReferenced()) {
-              if (rel.getLinkMethodIndex() != null) {
+              }
+              if (rel.isReferenced()) {
+                if (rel.getLinkMethodIndex() != null) {
 ]@
     int ndx = 0;
 @[
-              }
+                }
 ]@
     for (@(rel.getClassName())@ obj: @(var)@)  {
       obj.@(createRelationUpdateReferenceCode(rel))@;
     }
-@[
-            }
-]@
-    return @(var)@;
-@[
-          }
-          else  {
-            if (rel.isComposite()) {
-]@
-    @(var)@ = @(checkNull)@ ? null : @(createRelationSelectCode(rel))@;
-@[
-              if (rel.isReferenced()) {
-]@
-    if (@(var)@ != null) {
-      @(var)@.@(createRelationUpdateReferenceCode(rel))@;
-    }
-@[
-              }
-              if (rel.isProcessed()) {
-]@
-    @(var)@ = process@(rel.getMethodNameSuffix())@(@(var)@);
 @[
               }
 ]@
@@ -346,7 +339,28 @@ For more options, see {\@link DbModelWurblet}.
 @[
             }
             else  {
-              if (rel.isReferenced()) {
+              if (rel.isComposite()) {
+]@
+    @(var)@ = @(checkNull)@ ? null : @(createRelationSelectCode(rel))@;
+@[
+                if (rel.isReferenced()) {
+]@
+    if (@(var)@ != null) {
+      @(var)@.@(createRelationUpdateReferenceCode(rel))@;
+    }
+@[
+                }
+                if (rel.isProcessed()) {
+]@
+    @(var)@ = process@(rel.getMethodNameSuffix())@(@(var)@);
+@[
+                }
+]@
+    return @(var)@;
+@[
+              }
+              else  {
+                if (rel.isReferenced()) {
 ]@
     @(type)@ obj = @(checkNull)@ ? null : @(createRelationSelectCode(rel))@;
     if (obj != null) {
@@ -354,127 +368,127 @@ For more options, see {\@link DbModelWurblet}.
     }
     return obj;
 @[
-              }
-              else {
+                }
+                else {
 ]@
     return @(checkNull)@ ? null : @(createRelationSelectCode(rel))@;
 @[
+                }
               }
             }
           }
-        }
-        else if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER) {
+          else if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER) {
 ]@
     if (!@(var)@Loaded) {
 @[
-          if (rel.isComposite())  {
-            if (rel.getRelationType() == RelationType.LIST) {
-              String condition = "isNew()";
-              Attribute countAttribute = rel.getCountAttribute();
-              if (countAttribute != null) {
-                condition += " || " + countAttribute.getName() + " == 0";
-              }
+            if (rel.isComposite())  {
+              if (rel.getRelationType() == RelationType.LIST) {
+                String condition = "isNew()";
+                Attribute countAttribute = rel.getCountAttribute();
+                if (countAttribute != null) {
+                  condition += " || " + countAttribute.getName() + " == 0";
+                }
 ]@
       @(var)@ = @(condition)@ ? new @(effType)@(@(rel.isTracked() ? "false" : "")@) : @(createRelationSelectCode(rel))@;
 @[
-              if (rel.isReferenced()) {
-                if (rel.getLinkMethodIndex() != null) {
+                if (rel.isReferenced()) {
+                  if (rel.getLinkMethodIndex() != null) {
 ]@
       int ndx = 0;
 @[
-                }
+                  }
 ]@
       for (@(rel.getClassName())@ obj: @(var)@)  {
         obj.@(createRelationUpdateReferenceCode(rel))@;
       }
 @[
+                }
               }
-            }
-            else  {
+              else  {
 ]@
       @(var)@ =  @(checkNull)@ ? null : @(createRelationSelectCode(rel))@;
 @[
-              if (rel.isReferenced()) {
+                if (rel.isReferenced()) {
 ]@
       if (@(var)@ != null) {
         @(var)@.@(createRelationUpdateReferenceCode(rel))@;
       }
 @[
+                }
               }
-            }
 
-            if (rel.isProcessed()) {
+              if (rel.isProcessed()) {
 ]@
       @(var)@ = process@(rel.getMethodNameSuffix())@(@(var)@);
 @[
-            }
+              }
 
-            if (rel.getRelationType() == RelationType.LIST) {
-              if (rel.isTracked()) {
-                if (rel.isImmutable()) {
+              if (rel.getRelationType() == RelationType.LIST) {
+                if (rel.isTracked()) {
+                  if (rel.isImmutable()) {
 ]@
       @(var)@.setImmutable(true);
 @[
-                }
-                else {
+                  }
+                  else {
 ]@
       if (isImmutable()) {
         @(var)@.setImmutable(true);
       }
 @[
+                  }
                 }
               }
-            }
-            else  {
-              if (rel.isImmutable()) {
+              else  {
+                if (rel.isImmutable()) {
 ]@
       @(var)@.setImmutable(true, true);
 @[
-              }
-              else {
+                }
+                else {
 ]@
       if (isImmutable() && @(var)@ != null) {
         @(var)@.setImmutable(true);
       }
 @[
+                }
               }
             }
-          }
-          else  {
-            if (rel.getRelationType() == RelationType.LIST) {
+            else  {
+              if (rel.getRelationType() == RelationType.LIST) {
 ]@
       @(var)@ = @(createRelationSelectCode(rel))@;
 @[
-              if (rel.isReferenced()) {
-                if (rel.getLinkMethodIndex() != null) {
+                if (rel.isReferenced()) {
+                  if (rel.getLinkMethodIndex() != null) {
 ]@
       int ndx = 0;
 @[
-                }
+                  }
 ]@
       for (@(rel.getClassName())@ obj: @(var)@)  {
         obj.@(createRelationUpdateReferenceCode(rel))@;
       }
 @[
+                }
               }
-            }
-            else  {
+              else  {
 ]@
       @(var)@ = @(checkNull)@ ? null : @(createRelationSelectCode(rel))@;
 @[
-              if (rel.isReferenced()) {
+                if (rel.isReferenced()) {
 ]@
       if (@(var)@ != null) {
         @(var)@.@(createRelationUpdateReferenceCode(rel))@;
       }
 @[
+                }
               }
             }
-          }
 ]@
       @(var)@Loaded = true;
 @[
-          if (nmRel != null) {
+            if (nmRel != null) {
 ]@
       @(var)@.addListener(new TrackedListListener<>() {
 
@@ -489,24 +503,24 @@ For more options, see {\@link DbModelWurblet}.
         }
       });
 @[
-          }
+            }
 ]@
     }
     return @(var)@;
 @[
-        }
+          }
 ]@
   }
 @[
-        if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER) {
-          if (rel.getRelationType() == RelationType.LIST && !rel.isReversed()) {
-            if (rel.isBluntDeclared()) {
+          if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER) {
+            if (rel.getRelationType() == RelationType.LIST && !rel.isReversed()) {
+              if (rel.isBluntDeclared()) {
 ]@
 
   \@Override
 @[
-            }
-            else {
+              }
+              else {
 ]@
 
   /**
@@ -515,7 +529,7 @@ For more options, see {\@link DbModelWurblet}.
    * \@return @(var)@ @(rel.getComment())@
    */
 @[
-            }
+              }
 ]@
   @(scope)@ @(type)@ @(rel.getGetterName())@Blunt() {
     if (!@(var)@Loaded) {
@@ -528,15 +542,15 @@ For more options, see {\@link DbModelWurblet}.
     return @(var)@;
   }
 @[
-          }
-          else if (rel.getRelationType() == RelationType.OBJECT && rel.isSerialized()) {
-            if (rel.isBluntDeclared()) {
+            }
+            else if (rel.getRelationType() == RelationType.OBJECT && rel.isSerialized()) {
+              if (rel.isBluntDeclared()) {
 ]@
 
   \@Override
 @[
-            }
-            else {
+              }
+              else {
 ]@
 
   /**
@@ -545,12 +559,13 @@ For more options, see {\@link DbModelWurblet}.
    * \@return @(var)@ @(rel.getComment())@
    */
 @[
-            }
+              }
 ]@
   @(scope)@ @(type)@ @(rel.getGetterName())@Blunt() {
     return @(var)@;
   }
 @[
+            }
           }
         }
 
@@ -560,6 +575,9 @@ For more options, see {\@link DbModelWurblet}.
 
   \@Override
   public TrackedList<@(nmType)@> get@(nmName)@() {
+@[
+          if (!generateMock) {
+]@
     if (@(nmVar)@ == null) {
       @(nmVar)@ = new TrackedArrayList<>() {
 
@@ -594,12 +612,15 @@ For more options, see {\@link DbModelWurblet}.
         }
       });
     }
+@[
+          }
+]@
     return @(nmVar)@;
   }
 @[
         }
 
-        if (rel.isComposite() &&
+        if (!generateMock && rel.isComposite() &&
             (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER)) {
           if (rel.getAccessScope() == AccessScope.PUBLIC) {
 ]@
@@ -627,94 +648,110 @@ For more options, see {\@link DbModelWurblet}.
 
 
       if (createSetter)  {
-        String nullVal = attr != null && !attr.getDataType().isPrimitive() ? "null" : "0";
-        String linkMethodIndex = rel.getForeignRelation() != null ? rel.getForeignRelation().getLinkMethodIndex() : null;
+        if (generateMock) {
 ]@
 
 @[
-        if (!hidden) {
+          if (!hidden) {
 ]@
   \@Override
 @[
-        }
-        if (linkMethodIndex != null) {
+          }
 ]@
-  @(scope)@ void @(rel.getForeignRelation().getLinkMethodName())@(@(type)@ @(var)@, int index)  {
+  @(scope)@ void @(rel.getSetterName())@(@(type)@ @(var)@)  {
+    this.@(var)@ = @(var)@;
+  }
 @[
         }
         else {
+          String nullVal = attr != null && !attr.getDataType().isPrimitive() ? "null" : "0";
+          String linkMethodIndex = rel.getForeignRelation() != null ? rel.getForeignRelation().getLinkMethodIndex() : null;
+]@
+
+@[
+          if (!hidden) {
+]@
+  \@Override
+@[
+          }
+          if (linkMethodIndex != null) {
+]@
+  @(scope)@ void @(rel.getForeignRelation().getLinkMethodName())@(@(type)@ @(var)@, int index)  {
+@[
+          }
+          else {
 ]@
   @(scope)@ void @(rel.getSetterName())@(@(type)@ @(var)@)  {
 @[
-        }
-        if (!rel.isReversed()) {
+          }
+          if (!rel.isReversed()) {
 ]@
     assertMutable();
 @[
-        }
-        if ((rel.getRelationType() == RelationType.LIST && !rel.isReversed()) ||
-            rel.getSelectionType() != SelectionType.ALWAYS || rel.isComposite()) {
-          if (rel.isComposite() && rel.getRelationType() == RelationType.OBJECT) {
+          }
+          if ((rel.getRelationType() == RelationType.LIST && !rel.isReversed()) ||
+              rel.getSelectionType() != SelectionType.ALWAYS || rel.isComposite()) {
+            if (rel.isComposite() && rel.getRelationType() == RelationType.OBJECT) {
 ]@
     if (!attributesModified()) {
       setModified(!Objects.equals(this.@(var)@, @(var)@));
     }
 @[
-          }
+            }
 ]@
     this.@(var)@ = @(var)@;
 @[
-          if (linkMethodIndex != null) {
+            if (linkMethodIndex != null) {
 ]@
     set@(StringHelper.firstToUpper(linkMethodIndex))@(index);
 @[
+            }
           }
-        }
-        if (rel.getRelationType() == RelationType.OBJECT) {
-          if (rel.isComposite())  {
-            if (attr != null && !attr.getDataType().isPrimitive()) {
+          if (rel.getRelationType() == RelationType.OBJECT) {
+            if (rel.isComposite())  {
+              if (attr != null && !attr.getDataType().isPrimitive()) {
 ]@
     @(attr.getJavaType())@ oldId = @(rel.getMethodArgs().get(0).getMethodArgument())@;
 @[
-            }
-            else {
+              }
+              else {
 ]@
     long oldId = @(rel.getMethodArgs().get(0).getMethodArgument())@;
 @[
+              }
             }
-          }
 ]@
     @(createRelationSetFirstArgMethodName(rel))@(@(var)@ == null ? @(nullVal)@ : @(var)@.getId());
 @[
-        }
-        if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER) {
+          }
+          if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER) {
 ]@
     @(var)@Loaded = true;
 @[
-        }
-        if (rel.getRelationType() == RelationType.OBJECT && rel.isComposite())  {
-          if (attr != null && !attr.getDataType().isPrimitive()) {
+          }
+          if (rel.getRelationType() == RelationType.OBJECT && rel.isComposite())  {
+            if (attr != null && !attr.getDataType().isPrimitive()) {
 ]@
     if (oldId != null && oldId != 0 && @(rel.getVariableName())@RemovedId == 0 && !Objects.equals(@(rel.getMethodArgs().get(0).getMethodArgument())@, oldId)) {
       @(rel.getVariableName())@RemovedId = oldId;
     }
 @[
-          }
-          else {
+            }
+            else {
 ]@
     if (oldId != 0 && @(rel.getVariableName())@RemovedId == 0 && @(rel.getMethodArgs().get(0).getMethodArgument())@ != oldId) {
       @(rel.getVariableName())@RemovedId = oldId;
     }
 @[
+            }
           }
-        }
 ]@
   }
 @[
-      }
+        }
 
-      if (rel.getRelationType() == RelationType.OBJECT && rel.isSerialized() &&
-          (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER)) {
+        if (rel.getRelationType() == RelationType.OBJECT && rel.isSerialized() &&
+            (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER)) {
 ]@
 
   /**
@@ -727,8 +764,8 @@ For more options, see {\@link DbModelWurblet}.
     @(var)@Loaded = true;
   }
 @[
+        }
       }
-
     }
 
 
@@ -776,7 +813,7 @@ For more options, see {\@link DbModelWurblet}.
 
     // generate code to remove delete composite relations
 
-    if (generateDeleteReferencingRelations)  {
+    if (generateDeleteReferencingRelations && !generateMock)  {
       if (useDatabaseRefInt) {
 ]@
 
@@ -910,7 +947,7 @@ For more options, see {\@link DbModelWurblet}.
     }
 
 
-    if (generateDeleteReferencedRelations)  {
+    if (generateDeleteReferencedRelations && !generateMock)  {
       if (useDatabaseRefInt) {
 ]@
 
@@ -1027,7 +1064,7 @@ For more options, see {\@link DbModelWurblet}.
 
     // save composite relations
 
-    if (generateSaveReferencingRelations)  {
+    if (generateSaveReferencingRelations && !generateMock)  {
 ]@
 
   \@Override
@@ -1091,7 +1128,7 @@ For more options, see {\@link DbModelWurblet}.
     }
 
 
-    if (generateSaveReferencedRelations)  {
+    if (generateSaveReferencedRelations && !generateMock)  {
 ]@
 
   \@Override
@@ -1195,7 +1232,7 @@ For more options, see {\@link DbModelWurblet}.
 
 
     // generate code to check set the immutable flag
-    if (generateSetImmutable)  {
+    if (generateSetImmutable && !generateMock)  {
 ]@
 
   \@Override
@@ -1219,7 +1256,7 @@ For more options, see {\@link DbModelWurblet}.
 
 
     // generate code to check for modifications
-    if (generateIsModified)  {
+    if (generateIsModified && !generateMock)  {
 ]@
 
   \@Override
@@ -1246,7 +1283,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
     }
 
-    if (generateAlignComponents) {
+    if (generateAlignComponents && !generateMock) {
 ]@
 
   \@Override
@@ -1327,7 +1364,7 @@ For more options, see {\@link DbModelWurblet}.
 
 
     //  load all components
-    if (generateLoadComponents)  {
+    if (generateLoadComponents && !generateMock)  {
 
 ]@
 
@@ -1391,7 +1428,7 @@ For more options, see {\@link DbModelWurblet}.
 
 
     //  insert all components
-    if (generateInsertComponents)  {
+    if (generateInsertComponents && !generateMock)  {
 
 ]@
 
@@ -1426,7 +1463,7 @@ For more options, see {\@link DbModelWurblet}.
 
 
     //  delete all components
-    if (generateDeleteComponents)  {
+    if (generateDeleteComponents && !generateMock)  {
 
 ]@
 
@@ -1471,7 +1508,7 @@ For more options, see {\@link DbModelWurblet}.
 
 
     // mark object and all components deleted
-    if (generateMarkDeleted)  {
+    if (generateMarkDeleted && !generateMock)  {
 ]@
 
   \@Override
@@ -1493,7 +1530,7 @@ For more options, see {\@link DbModelWurblet}.
 
 
     // generate snapshot methods
-    if (generateSnapshot) {
+    if (generateSnapshot && !generateMock) {
 ]@
 
   /**
@@ -1581,7 +1618,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
     }
 
-    if (generateCreateNormText) {
+    if (generateCreateNormText && !generateMock) {
 ]@
 
   \@Override
@@ -1614,7 +1651,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
     }
 
-    if (generateIsReferencing && isEntityPersistable()) {
+    if (generateIsReferencing && isEntityPersistable() && !generateMock) {
       for (Relation rel: getEntity().getTableRelations()) {
         if (!rel.isComposite() && rel.getRelationType() == RelationType.OBJECT &&
             (rel.getForeignRelation() == null || !rel.getForeignRelation().isComposite()) &&
@@ -1630,7 +1667,7 @@ For more options, see {\@link DbModelWurblet}.
       }
     }
 
-    if (generateSelects && isEntityPersistable()) {
+    if (generateSelects && isEntityPersistable() && !generateMock) {
       Set<String> wurbletArgSet = new HashSet<>();   // to avoid duplicates if args= is used
       for (Relation rel: getEntity().getReferencingRelations()) {
         if (rel.getAccessScope() != AccessScope.PUBLIC) {
@@ -1686,7 +1723,7 @@ For more options, see {\@link DbModelWurblet}.
       }
     }
 
-    if (generateDeletes && isEntityPersistable()) {
+    if (generateDeletes && isEntityPersistable() && !generateMock) {
       for (Relation rel: getEntity().getReferencingRelations()) {
         if (rel.getAccessScope() != AccessScope.PUBLIC) {
           continue;   // skip non-public in interfaces
@@ -1704,7 +1741,7 @@ For more options, see {\@link DbModelWurblet}.
       }
     }
 
-    if (generateAddReferencing) {
+    if (generateAddReferencing && !generateMock) {
       List<Relation> refRels = new ArrayList<>();
       for (Relation rel: getEntity().getReferencingRelations()) {
         if (!rel.isComposite() && rel.getRelationType() == RelationType.OBJECT &&

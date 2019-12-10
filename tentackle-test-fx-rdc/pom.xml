@@ -34,11 +34,7 @@
       <artifactId>tentackle-test-pdo</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>org.codehaus.groovy</groupId>
-      <artifactId>groovy</artifactId>
-      <classifier>indy</classifier>
-    </dependency>
+
     <dependency>
       <groupId>org.testng</groupId>
       <artifactId>testng</artifactId>
@@ -48,6 +44,25 @@
       <groupId>org.reflections</groupId>
       <artifactId>reflections</artifactId>
       <scope>compile</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tentackle-persistence</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tentackle-domain</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.codehaus.groovy</groupId>
+      <artifactId>groovy</artifactId>
+      <classifier>indy</classifier>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 

@@ -27,7 +27,7 @@ import org.tentackle.pdo.Pdo;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.test.pdo.AbstractPdoTest;
-import org.tentackle.test.pdo.TestServer;
+
 import org.testng.annotations.Test;
 
 
