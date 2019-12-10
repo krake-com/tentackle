@@ -3,12 +3,13 @@
 <strong>({\@code \@wurblet})</strong> Generate code to declare the attributes of an entity.
 <p>
 usage:<br>
-&#064;wurblet &lt;tag&gt; Declare [--protected] [--annotations]
+&#064;wurblet &lt;tag&gt; Declare [--protected] [--annotations] [--mock]
 <p>
 arguments:
 <ul>
 <li><em>--protected:</em> makes the fields protected (default is private).</li>
 <li><em>--annotations:</em> to generate annotations. Default is no generation as they will be generated for the methods.</li>
+<li><em>--mock:</em> generate code for mock object.</li>
 </ul>
 For more options, see {\@link DbModelWurblet}.
 }@
@@ -19,6 +20,7 @@ For more options, see {\@link DbModelWurblet}.
 
     String protection = "private";
     boolean generateAnnotations = false;
+    boolean generateMock = false;
 
     for (String arg: getOptionArgs())  {
       if (arg.equals("protected")) {
@@ -26,6 +28,9 @@ For more options, see {\@link DbModelWurblet}.
       }
       else if (arg.equals("annotations")) {
         generateAnnotations = true;
+      }
+      else if ("mock".equals(arg)) {
+        generateMock = true;
       }
     }
 
@@ -54,7 +59,7 @@ For more options, see {\@link DbModelWurblet}.
   @(protection)@ @(attr.getJavaType())@ @(attr.getName())@;
 @[
         }
-        if (isAttracked()) {
+        if (!generateMock && isAttracked()) {
           if (isFullTracked()) {
 ]@
   /** the last persisted value of @(attr)@. */

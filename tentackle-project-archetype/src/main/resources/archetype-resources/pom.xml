@@ -165,6 +165,12 @@
                 <goal>analyze</goal>
               </goals>
             </execution>
+            <execution>
+              <id>test-analyze</id>
+              <goals>
+                <goal>test-analyze</goal>
+              </goals>
+            </execution>
           </executions>
           <configuration>
             <verbosity>info</verbosity>
@@ -238,8 +244,15 @@
           <version>\${symbol_dollar}{wurbelizer.version}</version>
           <executions>
             <execution>
+              <id>wurbel</id>
               <goals>
                 <goal>wurbel</goal>
+              </goals>
+            </execution>
+            <execution>
+              <id>test-wurbel</id>
+              <goals>
+                <goal>test-wurbel</goal>
               </goals>
             </execution>
           </executions>
