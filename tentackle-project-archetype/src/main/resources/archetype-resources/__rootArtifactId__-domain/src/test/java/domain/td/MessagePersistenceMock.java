@@ -22,7 +22,7 @@ import org.tentackle.session.Session;
 import org.tentackle.test.pdo.mock.MockPersistentObject;
 
 /**
- * Persistence mock for Message.
+ * Sample persistence mock.
  */
 @PersistentObjectService(Message.class)
 public class MessagePersistenceMock extends MockPersistentObject<Message, MessagePersistenceMock> implements MessagePersistence {

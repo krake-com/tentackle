@@ -7,6 +7,7 @@
 
 package ${package}.domain.td;
 
+import ${package}.pdo.MessageType;
 import ${package}.pdo.td.Message;
 import org.testng.annotations.Test;
 import org.tentackle.pdo.Pdo;
@@ -14,15 +15,22 @@ import org.tentackle.pdo.Pdo;
 import static org.testng.Assert.*;
 
 /**
- * Tests for Message.
+ * Sample domain test.
  */
 public class MessageTest {
 
   @Test
   public void justToShowHow() {
-    Message message = Pdo.create(Message.class);              // creates a Message PDO with persistence mock
-    message.setMessageNumber(message.nextMessageNumber());    // invoke persistence methods to configure PDO
-    String msg = message.toDiagnosticString();                // invoke domain method to test
-    assertEquals(msg.substring(0, 6), "1000 -");
+    // create PDO with persistence mock
+    Message message = Pdo.create(Message.class);
+
+    // configure
+    message.setMessageNumber(message.nextMessageNumber());
+    message.setMessageType(MessageType.LOGOUT);
+    message.setText("blah");
+
+    // test domain method
+    String msg = message.toDiagnosticString();
+    assertEquals(msg, "1000 - Logout @ null: blah");
   }
 }
