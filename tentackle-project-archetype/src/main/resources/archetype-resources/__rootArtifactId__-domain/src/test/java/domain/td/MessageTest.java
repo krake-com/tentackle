@@ -32,5 +32,11 @@ public class MessageTest {
     // test domain method
     String msg = message.toDiagnosticString();
     assertEquals(msg, "1000 - Logout @ null: blah");
+
+    // Notice for mockito users:
+    // Mocking a concrete PDO instance works with:
+    // Message message = mock(Message.class, delegatesTo(Pdo.create(Message.class)));
+    // Whereas mock(Message.class) creates an instance of a standard mockito proxy (not a tentackle proxy!),
+    // which is not backed by your domain- or persistence implementations and ignores any tentackle interceptors.
   }
 }
