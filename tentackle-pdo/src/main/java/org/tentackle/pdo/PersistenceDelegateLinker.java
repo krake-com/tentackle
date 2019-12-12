@@ -19,9 +19,51 @@
 package org.tentackle.pdo;
 
 import org.tentackle.common.ServiceFactory;
+import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.log.Logger;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 interface PersistenceDelegateLinkerHolder {
-  PersistenceDelegateLinker INSTANCE = ServiceFactory.createService(PersistenceDelegateLinker.class);
+
+  static PersistenceDelegateLinker createLinker() {
+    try {
+      return ServiceFactory.createService(PersistenceDelegateLinker.class);
+    }
+    catch (TentackleRuntimeException rx) {
+      // this is the case in domain unit tests, for example, since the DefaultPersistenceDelegateLinker resides
+      // in the persistence-layer, which is not within the dependencies of the domain module(s).
+      Logger.get(PersistenceDelegateLinkerHolder.class).warning("no PersistenceDelegateLinker configured -> fallback to reflection");
+
+      return new PersistenceDelegateLinker() {
+
+        @Override
+        public <T extends PersistentDomainObject<T>> void linkPersistentObject(T pdo, PersistentObject<T> delegate) {
+          try {
+            Method setPdoMethod = delegate.getClass().getMethod("setPdo", PersistentDomainObject.class);
+            setPdoMethod.invoke(delegate, pdo);
+          }
+          catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            throw new TentackleRuntimeException(e);
+          }
+        }
+
+        @Override
+        public <T extends Operation<T>> void linkPersistentOperation(T operation, PersistentOperation<T> delegate) {
+          try {
+            Method setPdoMethod = delegate.getClass().getMethod("setOperation", Operation.class);
+            setPdoMethod.invoke(delegate, operation);
+          }
+          catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            throw new TentackleRuntimeException(e);
+          }
+        }
+      };
+    }
+  }
+
+  PersistenceDelegateLinker INSTANCE = createLinker();
 }
 
 /**
