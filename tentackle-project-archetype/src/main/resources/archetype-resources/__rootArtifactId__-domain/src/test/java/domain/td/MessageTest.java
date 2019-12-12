@@ -33,10 +33,24 @@ public class MessageTest {
     String msg = message.toDiagnosticString();
     assertEquals(msg, "1000 - Logout @ null: blah");
 
-    // Notice for mockito users:
-    // Mocking a concrete PDO instance works with:
-    // Message message = mock(Message.class, delegatesTo(Pdo.create(Message.class)));
-    // Whereas mock(Message.class) creates an instance of a standard mockito proxy (not a tentackle proxy!),
-    // which is not backed by your domain- or persistence implementations and ignores any tentackle interceptors.
+    /*
+     * As an alternative, you can use Mockito and mock the PersistentObject,
+     * i.e. you don't need classes like MessagePersistenceMock at all:
+     *
+     *  MessagePersistence po = (MessagePersistence) mock(MockPersistentObject.class, withSettings().
+     *         defaultAnswer(CALLS_REAL_METHODS).extraInterfaces(MessagePersistence.class));
+     *  when(po.getMessageNumber()).thenReturn("1000");
+     *  when(po.getMessageType()).thenReturn(MessageType.LOGOUT);
+     *  when(po.getText()).thenReturn("blah");
+     *  Message message = Pdo.create(Message.class, po);
+     *  String msg = message.toDiagnosticString();
+     *  ...
+     *
+     * Other Mockito hints:
+     *  Mocking a concrete PDO instance works with:
+     *  Message message = mock(Message.class, delegatesTo(Pdo.create(Message.class)));
+     *
+     *  Whereas mock(Message.class) creates a plain mockito proxy, not a tentackle proxy!
+     */
   }
 }

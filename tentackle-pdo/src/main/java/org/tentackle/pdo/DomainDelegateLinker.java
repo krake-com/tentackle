@@ -19,9 +19,51 @@
 package org.tentackle.pdo;
 
 import org.tentackle.common.ServiceFactory;
+import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.log.Logger;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 interface DomainDelegateLinkerHolder {
-  DomainDelegateLinker INSTANCE = ServiceFactory.createService(DomainDelegateLinker.class);
+
+  static DomainDelegateLinker createLinker() {
+    try {
+      return ServiceFactory.createService(DomainDelegateLinker.class);
+    }
+    catch (TentackleRuntimeException rx) {
+      // this is the case in persistence unit tests, for example, since the DefaultDomainDelegateLinker resides
+      // in the domain-layer, which is not within the dependencies of the persistence module(s).
+      Logger.get(DomainDelegateLinkerHolder.class).warning("no DomainDelegateLinker configured -> fallback to reflection");
+
+      return new DomainDelegateLinker() {
+
+        @Override
+        public <T extends PersistentDomainObject<T>> void linkDomainObject(T pdo, DomainObject<T> delegate) {
+          try {
+            Method setPdoMethod = delegate.getClass().getMethod("setPdo", PersistentDomainObject.class);
+            setPdoMethod.invoke(delegate, pdo);
+          }
+          catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            throw new TentackleRuntimeException(e);
+          }
+        }
+
+        @Override
+        public <T extends Operation<T>> void linkDomainOperation(T operation, DomainOperation<T> delegate) {
+          try {
+            Method setPdoMethod = delegate.getClass().getMethod("setOperation", Operation.class);
+            setPdoMethod.invoke(delegate, operation);
+          }
+          catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            throw new TentackleRuntimeException(e);
+          }
+        }
+      };
+    }
+  }
+
+  DomainDelegateLinker INSTANCE = createLinker();
 }
 
 /**
