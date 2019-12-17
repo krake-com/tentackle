@@ -2001,25 +2001,6 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   }
 
 
-
-
-  /**
-   * Begins a transaction.<br>
-   * Also sets the txObject if a transaction was started.
-   *
-   * @param txName the transaction name
-   * @return true if tx begun
-   */
-  protected long beginTx(String txName) {
-    Db db = getSession();
-    long txVoucher = db.begin(txName);
-    if (txVoucher != 0) {
-      db.setTxObject(this);
-    }
-    return txVoucher;
-  }
-
-
   /**
    * Prepares the attributes concerning composite relations.<br>
    * Overridden, for example, to update list counts.
@@ -2076,7 +2057,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
         long oldId = id;            // remember old id and serial
         long oldSerial = serial;
 
-        long txVoucher = beginTx(TX_INSERT_OBJECT);
+        long txVoucher = db.begin(TX_INSERT_OBJECT);
 
         try {
 
@@ -2148,7 +2129,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
         long oldId = id;            // remember old id and serial
         long oldSerial = serial;
 
-        long txVoucher = beginTx(TX_UPDATE_OBJECT);  // start transaction
+        long txVoucher = db.begin(TX_UPDATE_OBJECT);  // start transaction
 
         try {
           boolean updated = true; // cleared to false if this object was NOT updated, only components
@@ -2283,7 +2264,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       }
 
       long oldId = id;    // saveObject in case of error
-      long txVoucher = beginTx(TX_SAVE);   // obtaining ID should be used in transaction with insert()
+      long txVoucher = db.begin(TX_SAVE);   // obtaining ID should be used in transaction with insert()
 
       try {
         if (id <= 0) {
@@ -2414,7 +2395,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       }
       if (db.isPersistenceOperationAllowed(this, ModificationLog.DELETE)) {
 
-        long txVoucher = beginTx(TX_DELETE_OBJECT);
+        long txVoucher = db.begin(TX_DELETE_OBJECT);
 
         try {
           initModification(ModificationLog.DELETE);

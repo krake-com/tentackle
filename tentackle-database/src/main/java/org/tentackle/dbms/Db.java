@@ -1318,33 +1318,6 @@ public class Db implements Session, Cloneable {
   }
 
 
-  /**
-   * Sets the optional transaction object.<br>
-   * By default, whenever a transaction is initiated by a persistence operation of
-   * a {@link AbstractDbObject}, that object becomes the "parent" of the
-   * transaction.<br>
-   * The {@code txObject} is mainly used for logging and enhanced auditing (partial history) during transactions.<br>
-   * The {@code txObject} is cleared at the end of the transaction.
-   *
-   * @param txObject the transaction object, null to clear
-   */
-  public void setTxObject(AbstractDbObject<?> txObject) {
-    assertTxRunning();
-    transaction.setTxObject(txObject);
-  }
-
-
-  /**
-   * Gets the optional transaction object.
-   *
-   * @return the transaction object, null if none
-   */
-  public AbstractDbObject<?> getTxObject() {
-    assertTxRunning();
-    return transaction.getTxObject();
-  }
-
-
   @Override
   public <T, E extends Exception> T transaction(String txName, Provider<T, E> txe) throws E {
     if (txName == null) {

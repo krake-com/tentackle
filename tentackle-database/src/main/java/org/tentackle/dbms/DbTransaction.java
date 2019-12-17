@@ -58,8 +58,6 @@ public class DbTransaction {
   private int handleCount;              // the last handle number
   private int txLevel;                  // number of nested begin() (only for local Db), Integer.MIN_VALUE if invalid
   private Deque<String> nestedTxNames;  // transaction names for nested transactions
-  private int updateCount;              // number of object modified by executeUpdate since the last begin()
-  private AbstractDbObject<?> txObject; // optional top-level object initiating the transaction
 
   private Map<DbTransactionHandle,PersistenceVisitor> visitors;            // the visitors
   private Map<DbTransactionHandle,CommitTxRunnable> commitTxRunnables;     // the commit runnables
@@ -125,28 +123,6 @@ public class DbTransaction {
    */
   public long getCreationTime() {
     return creationTime;
-  }
-
-
-  /**
-   * Gets the number of objects modified since the last begin().
-   * The method is provided to check whether objects have been
-   * modified at all.
-   *
-   * @return the number of modified objects
-   */
-  public int getUpdateCount() {
-    return updateCount;
-  }
-
-
-  /**
-   * Add to updateCount.
-   *
-   * @param count the number of updates to add
-   */
-  public void addToUpdateCount(int count) {
-    updateCount += count;
   }
 
 
@@ -261,30 +237,6 @@ public class DbTransaction {
     if (this.txVoucher != txVoucher) {
       throw new PersistenceException(db, "invalid voucher " + txVoucher);
     }
-  }
-
-
-  /**
-   * Sets the optional transaction object.<br>
-   * By default, whenever a transaction is initiated by a persistence operation of
-   * a PDO, that object becomes the "parent" of the transaction.<br>
-   * The {@code txObject} is mainly used for logging and enhanced auditing (partial history) during transactions.
-   * The {@code txObject} is cleared at the end of the transaction.
-   *
-   * @param txObject the transaction object, null to clear
-   */
-  public void setTxObject(AbstractDbObject<?> txObject) {
-    this.txObject = txObject;
-  }
-
-
-  /**
-   * Gets the optional transaction object.
-   *
-   * @return the transaction object, null if none
-   */
-  public AbstractDbObject<?> getTxObject() {
-    return txObject;
   }
 
 
