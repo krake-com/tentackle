@@ -83,7 +83,7 @@
     <javac.lint>unchecked,deprecation,removal,requires-transitive-automatic,requires-automatic</javac.lint>
     <javac.version.src>13</javac.version.src>
     <javac.version.target>${javac.version.src}</javac.version.target>
-    <javafx.version>13.0.1</javafx.version>
+    <javafx.version>13.0.2</javafx.version>
     <ow2.asm.version>7.2</ow2.asm.version>
     <maven.version>3.6.0</maven.version>
     <postgresql.version>42.2.9</postgresql.version>
