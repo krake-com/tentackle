@@ -144,5 +144,22 @@
     </plugins>
   </build>
 
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <additionalJOptions>
+            <additionalJOption>--add-exports=javafx.graphics/com.sun.javafx.css=org.tentackle.fx</additionalJOption>
+            <additionalJOption>--add-exports=javafx.graphics/com.sun.javafx.scene=org.tentackle.fx</additionalJOption>
+            <additionalJOption>--add-exports=javafx.graphics/com.sun.javafx.scene.traversal=org.tentackle.fx</additionalJOption>
+            <additionalJOption>--add-exports=javafx.fxml/com.sun.javafx.fxml=org.tentackle.fx</additionalJOption>
+          </additionalJOptions>
+        </configuration>
+      </plugin>
+    </plugins>
+  </reporting>
+
 </project>
 
