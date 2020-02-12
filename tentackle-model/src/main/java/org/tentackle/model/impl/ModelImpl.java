@@ -580,7 +580,7 @@ public class ModelImpl implements Model {
       Entity entity = modelEntity.getEntity();
       boolean isRootEntity = true;
       for (Relation relation: entity.getAllReferencingRelations()) {
-        if (relation.isComposite()) {
+        if (relation.isComposite() && !entity.equals(relation.getEntity())) {
           isRootEntity = false;
           break;
         }
