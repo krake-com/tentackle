@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>8.2.7.2</version>
+    <version>8.2.7.3-SNAPSHOT</version>
   </parent>
 
   <artifactId>tentackle-swing-print</artifactId>
