@@ -62,7 +62,7 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   /**
    * The displayed name.
    */
-  private final String displayedName;
+  private String displayedName;
 
   /**
    * The table column.
@@ -200,6 +200,14 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   @Override
   public String getDisplayedName() {
     return displayedName;
+  }
+
+  @Override
+  public void setDisplayedName(String displayedName) {
+    this.displayedName = displayedName;
+    if (tableColumn != null) {
+      tableColumn.setText(displayedName);
+    }
   }
 
   @Override

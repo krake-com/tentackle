@@ -27,15 +27,18 @@ import javafx.scene.control.TableView;
 import org.tentackle.bind.BindableType;
 import org.tentackle.common.BundleFactory;
 import org.tentackle.common.LocaleProvider;
+import org.tentackle.common.StringHelper;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.ValueTranslatorService;
 import org.tentackle.fx.component.FxTableView;
+import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Collection;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.function.Function;
@@ -121,6 +124,36 @@ public class ObservableListTranslator<T, C extends List<T>> extends AbstractValu
       }
       TableConfiguration<T> configuration = FxFactory.getInstance().createTableConfiguration(elemClass, null);
       configuration.addBindableColumns(elemClass, bindableType.declaredOnly(), bundle);
+
+      if (bundle == null) {
+        // no bundle: try to shorten dotted names, if the remaining tail is unique among all columns
+        Collection<TableColumnConfiguration<T, ?>> columnConfigurations = configuration.getColumnConfigurations();
+        for (TableColumnConfiguration column : columnConfigurations) {
+          String displayedName = column.getDisplayedName();
+          if (displayedName != null) {
+            int ndx = displayedName.lastIndexOf('.');
+            if (ndx >= 0) {
+              String shortName = displayedName.substring(ndx + 1);
+              if (!StringHelper.isAllWhitespace(shortName)) {
+                boolean shorten = true;
+                for (TableColumnConfiguration otherColumn : columnConfigurations) {
+                  if (otherColumn != column) {
+                    String otherName = otherColumn.getDisplayedName();
+                    if (displayedName.equals(otherName) || shortName.equals(otherName)) {
+                      shorten = false;
+                      break;
+                    }
+                  }
+                }
+                if (shorten) {
+                  column.setDisplayedName(shortName);
+                }
+              }
+            }
+          }
+        }
+      }
+
       if (bindableType.declaredOnly()) {
         configuration.getBinder().bind();
       }
