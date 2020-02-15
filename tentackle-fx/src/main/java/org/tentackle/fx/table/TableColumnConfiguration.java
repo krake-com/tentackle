@@ -57,14 +57,21 @@ public interface TableColumnConfiguration<S,T> {
   String getName();
 
   /**
-   * Gets the column name displayed in the column header.<br>
+   * Gets the column name displayed in the column header.
    *
    * @return the display name of the column
    */
   String getDisplayedName();
 
   /**
-   * Determines the class for a given column.<br>
+   * Sets the column name displayed in the column header.
+   *
+   * @param displayName the display name of the column
+   */
+  void setDisplayedName(String displayName);
+
+  /**
+   * Determines the class for a given column.
    *
    * @return the column class
    */
