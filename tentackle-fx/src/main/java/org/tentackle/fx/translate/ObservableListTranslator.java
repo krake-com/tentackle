@@ -24,6 +24,7 @@ import javafx.collections.transformation.SortedList;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 
+import org.tentackle.bind.BindableElement;
 import org.tentackle.bind.BindableType;
 import org.tentackle.common.BundleFactory;
 import org.tentackle.common.LocaleProvider;
@@ -32,6 +33,7 @@ import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.ValueTranslatorService;
+import org.tentackle.fx.bind.FxBindingFactory;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
@@ -40,6 +42,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.function.Function;
 
@@ -106,7 +109,7 @@ public class ObservableListTranslator<T, C extends List<T>> extends AbstractValu
 
 
   /**
-   * Configures the tableview if translator bound to it.
+   * Configures the tableview.
    *
    * @param tableView the tableview
    * @param elemClass the list's elememt class
@@ -114,19 +117,9 @@ public class ObservableListTranslator<T, C extends List<T>> extends AbstractValu
   protected void configureTableView(FxTableView<T> tableView, Class<T> elemClass) {
     BindableType bindableType = elemClass.getAnnotation(BindableType.class);
     if (bindableType != null) {
-      ResourceBundle bundle = null;
-      String bundleName = bindableType.resources();
-      if (bundleName.isEmpty()) {
-        bundleName = elemClass.getName();
-      }
-      if (!BindableType.RESOURCES_NONE.equals(bundleName)) {
-        bundle = BundleFactory.getBundle(bundleName, LocaleProvider.getInstance().getLocale());
-      }
       TableConfiguration<T> configuration = FxFactory.getInstance().createTableConfiguration(elemClass, null);
-      configuration.addBindableColumns(elemClass, bindableType.declaredOnly(), bundle);
-
-      if (bundle == null) {
-        // no bundle: try to shorten dotted names, if the remaining tail is unique among all columns
+      if (addBindableColumns(configuration, "", "", elemClass) > 0) {
+        // try to shorten dotted names, if the remaining tail is unique among all columns
         Collection<TableColumnConfiguration<T, ?>> columnConfigurations = configuration.getColumnConfigurations();
         for (TableColumnConfiguration column : columnConfigurations) {
           String displayedName = column.getDisplayedName();
@@ -153,7 +146,6 @@ public class ObservableListTranslator<T, C extends List<T>> extends AbstractValu
           }
         }
       }
-
       if (bindableType.declaredOnly()) {
         configuration.getBinder().bind();
       }
@@ -163,6 +155,48 @@ public class ObservableListTranslator<T, C extends List<T>> extends AbstractValu
       configuration.getBinder().assertAllBound();
       configuration.configure(tableView);
     }
+  }
+
+  /**
+   * Recursively adds all bindable columns including components.<br>
+   * The classes must be annotated with {@link org.tentackle.bind.BindableType} to be analyzed for
+   * the {@link org.tentackle.bind.Bindable}-annotated methods.
+   *
+   * @param configuration the table configuration
+   * @param columnPrefix the prefix for the column names
+   * @param displayPrefix the prefix for the display names
+   * @param objectClass the object class
+   * @return the number of bound columns
+   */
+  protected int addBindableColumns(TableConfiguration<T> configuration, String columnPrefix, String displayPrefix, Class<?> objectClass) {
+    int boundTotal = 0;
+    BindableType bindableType = objectClass.getAnnotation(BindableType.class);
+    if (bindableType != null) {
+      ResourceBundle bundle = null;
+      if (bundle == null) {
+        String bundleName = bindableType.resources();
+        if (!BindableType.RESOURCES_NONE.equals(bundleName)) {
+          bundle = BundleFactory.getBundle(bundleName.isEmpty() ? objectClass.getName() : bundleName,
+                                           LocaleProvider.getInstance().getLocale());
+        }
+      }
+
+      for (Map.Entry<String, BindableElement> entry :
+          FxBindingFactory.getInstance().getBindableCache().getBindableMap(objectClass, bindableType.declaredOnly()).entrySet()) {
+
+        String columnName = columnPrefix + StringHelper.firstToLower(entry.getKey());
+        String displayName = displayPrefix + (bundle != null ? bundle.getString(entry.getKey()) : entry.getKey());
+        int boundCount = addBindableColumns(configuration, columnName + ".", displayName + ".", entry.getValue().getType());
+        if (boundCount == 0) {
+          configuration.addColumn(columnName, displayName);
+          boundTotal++;
+        }
+        else {
+          boundTotal += boundCount;
+        }
+      }
+    }
+    return boundTotal;
   }
 
 }

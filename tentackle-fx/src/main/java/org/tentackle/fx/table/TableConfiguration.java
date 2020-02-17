@@ -25,7 +25,6 @@ import org.tentackle.fx.bind.FxTableBinder;
 import org.tentackle.fx.component.FxTableView;
 
 import java.util.Collection;
-import java.util.ResourceBundle;
 
 /**
  * Configuration for a table view.<br>
@@ -117,15 +116,6 @@ public interface TableConfiguration<S> {
    * @return the created configuration
    */
   TableColumnConfiguration<S, ?> addColumn(String name, String displayedName);
-
-  /**
-   * Adds all bindable columns.
-   *
-   * @param objectClass the object class
-   * @param declaredOnly true if only declared elements, else inherited as well
-   * @param bundle the optional bundle to translate member- to display-names, null if no translation
-   */
-  void addBindableColumns(Class<? extends S> objectClass, boolean declaredOnly, ResourceBundle bundle);
 
   /**
    * Adds a column configuration.
