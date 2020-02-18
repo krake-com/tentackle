@@ -174,6 +174,6 @@ public interface StoredBundlePersistence extends PersistentObject<StoredBundle> 
    * @param udk the unique key
    * @return the pdo, null if no such object
    */
-  StoredBundle findByUniqueDomainKeyForCache(StoredBundle.StoredBundleUDK udk);
+  StoredBundle selectByUniqueDomainKeyForCache(StoredBundle.StoredBundleUDK udk);
 
 }

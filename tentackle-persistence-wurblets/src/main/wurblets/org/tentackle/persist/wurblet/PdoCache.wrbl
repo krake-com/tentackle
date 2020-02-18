@@ -380,13 +380,28 @@ For more options, see {\@link DbModelWurblet}.
         String type = key.getAttribute().getJavaType();
         String suffix = Character.toUpperCase(name.charAt(0)) + name.substring(1);
         if (isRemote()) {
-          suffix += "ForCache";
-        }
+          RemoteIncludes genInc = new RemoteIncludes(this);
+          PrintStream implOut   = genInc.getImplStream();
+          PrintStream remoteOut = genInc.getRemoteStream();
 ]@
+@{to remoteOut}@
+  @(pdoName)@ selectBy@(suffix)@ForCache(DomainContext context, @(type)@ @(name)@) throws RemoteException;
+@{to implOut}@
+
+  \@Override
+  public @(pdoName)@ selectBy@(suffix)@ForCache(DomainContext context, @(type)@ @(name)@) throws RemoteException {
+    try {
+      return newInstance(context).selectCachedBy@(suffix)@(@(name)@);
+    }
+    catch (RuntimeException e) {
+      throw createException(e);
+    }
+  }
+@{to}@
       @(name)@Index = new PdoCacheIndex<>("@(pdoName)@:@(name)@") {
         \@Override
         public @(pdoName)@ select(DomainContext context, @(type)@ @(name)@) {
-          return Pdo.create(@(pdoName)@.class, context).selectBy@(suffix)@(@(name)@);
+          return Pdo.create(@(pdoName)@.class, context).selectBy@(suffix)@ForCache(@(name)@);
         }
         \@Override
         public @(type)@ extract(@(pdoName)@ pdo) {
@@ -394,6 +409,21 @@ For more options, see {\@link DbModelWurblet}.
         }
       };
 @[
+        }
+        else {
+]@
+      @(name)@Index = new PdoCacheIndex<>("@(pdoName)@:@(name)@") {
+        \@Override
+        public @(pdoName)@ select(DomainContext context, @(type)@ @(name)@) {
+          return Pdo.create(@(pdoName)@.class, context).findBy@(suffix)@(@(name)@);
+        }
+        \@Override
+        public @(type)@ extract(@(pdoName)@ pdo) {
+          return pdo.get@(suffix)@();
+        }
+      };
+@[
+        }
       }
 
       if (genudk) {
@@ -421,12 +451,12 @@ For more options, see {\@link DbModelWurblet}.
     }
   }
 @{to}@
-          return Pdo.create(@(pdoName)@.class, context).findByUniqueDomainKeyForCache(@(udkName)@);
+          return Pdo.create(@(pdoName)@.class, context).selectByUniqueDomainKeyForCache(@(udkName)@);
 @[
         }
         else {
 ]@
-          return Pdo.create(@(pdoName)@.class, context).findByUniqueDomainKey(@(udkName)@);
+          return Pdo.create(@(pdoName)@.class, context).selectByUniqueDomainKey(@(udkName)@);
 @[
         }
 ]@
@@ -512,6 +542,31 @@ For more options, see {\@link DbModelWurblet}.
   public @(pdoName)@ selectCachedBy@(suffix)@(@(type)@ @(name)@)  {
     return getCache().select(@(name)@Index, getDomainContext(), @(name)@);
   }
+
+  /**
+   * Selects via remote cache by @(name)@, if session is remote.
+   *
+   * \@param @(name)@ the unique key
+   * \@return the pdo, null if no such object
+   */
+  \@Override
+  public @(pdoName)@ selectBy@(suffix)@ForCache(@(type)@ @(name)@) {
+    @(pdoName)@ obj;
+    if (getSession().isRemote()) {
+      try {
+        DomainContext context = getDomainContext();
+        obj = getRemoteDelegate().selectBy@(suffix)@ForCache(context, @(name)@);
+        configureRemoteObject(context, obj);
+      }
+      catch (RemoteException e) {
+        throw PersistenceException.createFromRemoteException(this, e);
+      }
+    }
+    else {
+      obj = me().findBy@(suffix)@(@(name)@);
+    }
+    return obj;
+  }
 @[
       }
 
@@ -547,7 +602,7 @@ For more options, see {\@link DbModelWurblet}.
    * \@return the pdo, null if no such object
    */
   \@Override
-  public @(pdoName)@ findByUniqueDomainKeyForCache(@(udkType)@ @(udkName)@) {
+  public @(pdoName)@ selectByUniqueDomainKeyForCache(@(udkType)@ @(udkName)@) {
     @(pdoName)@ obj;
     if (getSession().isRemote()) {
       try {

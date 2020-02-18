@@ -515,7 +515,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
       udkIndex = new PdoCacheIndex<>("StoredBundle:UDK") {
         @Override
         public StoredBundle select(DomainContext context, StoredBundle.StoredBundleUDK udk) {
-          return Pdo.create(StoredBundle.class, context).findByUniqueDomainKeyForCache(udk);
+          return Pdo.create(StoredBundle.class, context).selectByUniqueDomainKeyForCache(udk);
         }
         @Override
         public StoredBundle.StoredBundleUDK extract(StoredBundle pdo) {
@@ -587,7 +587,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
    * @return the pdo, null if no such object
    */
   @Override
-  public StoredBundle findByUniqueDomainKeyForCache(StoredBundle.StoredBundleUDK udk) {
+  public StoredBundle selectByUniqueDomainKeyForCache(StoredBundle.StoredBundleUDK udk) {
     StoredBundle obj;
     if (getSession().isRemote()) {
       try {
