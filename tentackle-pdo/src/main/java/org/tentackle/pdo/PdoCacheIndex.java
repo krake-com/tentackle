@@ -19,6 +19,9 @@
 
 package org.tentackle.pdo;
 
+import org.tentackle.log.Logger;
+import org.tentackle.session.Session;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,8 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import org.tentackle.log.Logger;
-import org.tentackle.session.Session;
 
 
 /**
@@ -95,7 +96,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
    *
    * @param object is the object to extract the key from (never null)
    *
-   * @return the Comparable (can be null)
+   * @return the Comparable, null if don't add to the cache
    *
    */
   public abstract C extract(T object);
@@ -402,7 +403,11 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
   protected boolean add(T object) {
     processPdo(object);
     try {
-      return cacheMap.put(new CacheKey(object.getPersistenceDelegate().getDomainContext(), extract(object)), object) == null;
+      C keyValue = extract(object);
+      if (keyValue != null) {
+        return cacheMap.put(new CacheKey(object.getPersistenceDelegate().getDomainContext(), keyValue), object) == null;
+      }
+      return false;
     }
     catch (PdoCacheException e)  {
       logInvalidKey(e);
@@ -422,18 +427,21 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
    */
   protected void addUnique(T object) {
     processPdo(object);
-    CacheKey ck;
-    try {
-      ck = new CacheKey(object.getPersistenceDelegate().getDomainContext(), extract(object));
-    }
-    catch (PdoCacheException e)  {
-      logInvalidKey(e);
-      return;   // don't add to index (but no reason to invalidate the cache)
-    }
-    if (cacheMap.put(ck, object) != null) {
-      throw new PdoCacheException(object,
-                                  "unique cache violation detected in " + this + " for " + object.toGenericString() +
-                                  ", key = " + ck);
+    C keyValue = extract(object);
+    if (keyValue != null) {
+      CacheKey ck;
+      try {
+        ck = new CacheKey(object.getPersistenceDelegate().getDomainContext(), keyValue);
+      }
+      catch (PdoCacheException e) {
+        logInvalidKey(e);
+        return;   // don't add to index (but no reason to invalidate the cache)
+      }
+      if (cacheMap.put(ck, object) != null) {
+        throw new PdoCacheException(object,
+                                    "unique cache violation detected in " + this + " for " + object.toGenericString() +
+                                    ", key = " + ck);
+      }
     }
   }
 
@@ -469,17 +477,20 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
    */
   protected void removeExisting(T object) {
     CacheKey ck;
-    try {
-      ck = new CacheKey(object.getPersistenceDelegate().getDomainContext(), extract(object));
-    }
-    catch (PdoCacheException e)  {
-      logInvalidKey(e);
-      return;   // nothing removed (but no reason to invalidate cache)
-    }
-    if (cacheMap.remove(ck) == null) {
-      throw new PdoCacheException(object,
-                                  "remove from cache failed from " + this + " for " + object.toGenericString() +
-                                  ", key='" + ck + "'");
+    C keyValue = extract(object);
+    if (keyValue != null) {   // null keys cannot be in the cache and are silently skipped
+      try {
+        ck = new CacheKey(object.getPersistenceDelegate().getDomainContext(), keyValue);
+      }
+      catch (PdoCacheException e) {
+        logInvalidKey(e);
+        return;   // nothing removed (but no reason to invalidate cache)
+      }
+      if (cacheMap.remove(ck) == null) {
+        throw new PdoCacheException(object,
+                                    "remove from cache failed from " + this + " for " + object.toGenericString() +
+                                    ", key='" + ck + "'");
+      }
     }
   }
 
