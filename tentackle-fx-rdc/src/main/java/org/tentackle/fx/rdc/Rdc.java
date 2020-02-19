@@ -25,6 +25,7 @@ import javafx.scene.control.TreeCell;
 import javafx.stage.Modality;
 import javafx.stage.Window;
 
+import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.rdc.app.DesktopApplication;
 import org.tentackle.fx.rdc.crud.PdoCrud;
@@ -237,11 +238,24 @@ public class Rdc {
    *
    * @param runner the code running in another thread in parallel to the FX thread
    * @param updateUI optional UI updater invoked from within the FX event queue
+   * @param failedUI optional UI updater invoked if execution failed
    * @param <V> the type returned by the runner
-   * @see RdcUtilities#runInBackground(Supplier, Consumer)
+   * @see RdcUtilities#runInBackground(Supplier, Consumer, Consumer)
+   */
+  public static <V> void bg(Supplier<V> runner, Consumer<V> updateUI, Consumer<RuntimeException> failedUI) {
+    RdcUtilities.getInstance().runInBackground(runner, updateUI, failedUI);
+  }
+
+  /**
+   * Same as {@link #bg(Supplier, Consumer, Consumer)} but with a predefined exception consumer.<br>
+   * The exception is shown as an error dialog.
+   *
+   * @param runner the code running in another thread in parallel to the FX thread
+   * @param updateUI optional UI updater invoked from within the FX event queue
+   * @param <V> the type returned by the runner
    */
   public static <V> void bg(Supplier<V> runner, Consumer<V> updateUI) {
-    RdcUtilities.getInstance().runInBackground(runner, updateUI);
+    bg(runner, updateUI, rx -> Fx.error(rx.getLocalizedMessage(), rx));
   }
 
   /**
