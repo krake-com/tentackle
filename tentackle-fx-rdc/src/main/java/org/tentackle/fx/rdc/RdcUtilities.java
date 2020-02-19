@@ -367,10 +367,10 @@ public class RdcUtilities {
    *
    * @param runner the code running in another thread in parallel to the FX thread
    * @param updateUI optional UI updater invoked from within the FX event queue, null if none
+   * @param failedUI optional UI updater invoked if execution failed, null if log only as error
    * @param <V> the type returned by the runner
-   * @see Rdc#bg(Supplier, Consumer)
    */
-  public <V> void runInBackground(Supplier<V> runner, Consumer<V> updateUI) {
+  public <V> void runInBackground(Supplier<V> runner, Consumer<V> updateUI, Consumer<RuntimeException> failedUI) {
     ModificationTracker.getInstance().addTask(new AbstractSessionTask() {
       @Override
       public void run() {
@@ -381,8 +381,12 @@ public class RdcUtilities {
           }
         }
         catch (RuntimeException rx) {
-          LOGGER.severe("background task failed", rx);
-          Platform.runLater(() -> Fx.error(rx.getLocalizedMessage(), rx));
+          if (failedUI != null) {
+            Platform.runLater(() -> failedUI.accept(rx));
+          }
+          else {
+            LOGGER.severe("background task failed", rx);
+          }
         }
       }
     });
