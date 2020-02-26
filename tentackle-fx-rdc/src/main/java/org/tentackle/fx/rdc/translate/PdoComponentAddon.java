@@ -52,7 +52,12 @@ import java.util.function.Supplier;
  */
 public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
 
-  private static final String PDO_STYLE = "tt-pdo-style";
+  /**
+   * The PDO style.<br>
+   * Remove this style to disable PDO features.
+   */
+  public static final String PDO_STYLE = "tt-pdo-style";
+
 
   private final FxComponent component;
   private final Supplier<T> pdoSupplier;
@@ -75,7 +80,8 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
     Control control = (Control) component;
     control.addEventFilter(KeyEvent.ANY, event -> {
       if (!event.isAltDown() && !event.isControlDown() && !event.isMetaDown() &&
-          !event.isShiftDown() && !event.isShortcutDown()) {
+          !event.isShiftDown() && !event.isShortcutDown() &&
+          control.getStyleClass().contains(PDO_STYLE)) {
 
         if (event.getCode() == KeyCode.F2) {
           event.consume();
@@ -95,25 +101,43 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
     if (!control.getStyleClass().contains(PDO_STYLE)) {
       control.getStyleClass().add(PDO_STYLE);
 
-      ContextMenu menu = control.getContextMenu();
-      if (menu == null) {
+      MenuItem separatorItem;
+      ContextMenu menu;
+
+      if (control.getContextMenu() == null) {
         menu = new ContextMenu();
         // this replaces the default context menu in TextFields, but that's ok.
         // otherwise we would have to quirk TextFieldBehaviour which is still private API
         control.setContextMenu(menu);
+        separatorItem = null;
       }
       else {
         // append to existing menu
-        menu.getItems().add(new SeparatorMenuItem());
+        separatorItem = new SeparatorMenuItem();
+        menu = control.getContextMenu();
+        menu.getItems().add(separatorItem);
       }
       MenuItem editItem = new MenuItem(RdcFxRdcBundle.getString("EDIT"));
       editItem.setAccelerator(new KeyCodeCombination(KeyCode.F2));
       editItem.setOnAction(event -> edit());
-      menu.setOnShowing(event -> editItem.setDisable(pdoSupplier.get() == null));
       MenuItem searchItem = new MenuItem(RdcFxRdcBundle.getString("SEARCH"));
       searchItem.setAccelerator(new KeyCodeCombination(KeyCode.F3));
       searchItem.setOnAction(event -> search());
       menu.getItems().addAll(editItem, searchItem);
+
+      menu.setOnShowing(event -> {
+        if (control.getStyleClass().contains(PDO_STYLE)) {
+          editItem.setDisable(pdoSupplier.get() == null);
+        }
+        else {
+          // remove items again (application removed PDO_STYLE after creatiobn of this component)
+          menu.getItems().remove(searchItem);
+          menu.getItems().remove(editItem);
+          if (separatorItem != null) {
+            menu.getItems().remove(separatorItem);
+          }
+        }
+      });
     }
   }
 
@@ -214,7 +238,21 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
   @SuppressWarnings("unchecked")
   public T createPdo() {
     Class<T> pdoClass = (Class<T>) component.getType();
-    DomainContext context;
+    DomainContext context = getDomainContext();
+    if (context == null) {
+      throw new FxRuntimeException("missing binding property for DomainContext");
+    }
+    return Pdo.create(pdoClass, context);
+  }
+
+
+  /**
+   * Gets the domain context from the binding properties.
+   *
+   * @return the domain context, null if not defined in properties
+   */
+  public DomainContext getDomainContext() {
+    DomainContext context = null;
     if (component.getParentContainer() != null) {
       context = component.getBinding().getBinder().getBindingProperty(DomainContext.class);
     }
@@ -224,10 +262,7 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
     else {
       context = (DomainContext) ((Node) component).getProperties().get(DomainContext.class);
     }
-    if (context == null) {
-      throw new FxRuntimeException("missing binding property for DomainContext");
-    }
-    return Pdo.create(pdoClass, context);
+    return context;
   }
 
 

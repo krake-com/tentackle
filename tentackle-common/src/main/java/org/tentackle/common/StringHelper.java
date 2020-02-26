@@ -1594,6 +1594,27 @@ public final class StringHelper {
   }
 
 
+  /**
+   * Gets the uppercase letters only.<br>
+   * Useful to get the camel case letters of a string.
+   *
+   * @param str the string
+   * @return the upper case letters
+   */
+  public static String filterUpperCase(String str) {
+    if (str != null) {
+      StringBuilder buf = new StringBuilder();
+      for (int i = 0; i < str.length(); i++) {
+        char c = str.charAt(i);
+        if (Character.isUpperCase(c)) {
+          buf.append(c);
+        }
+      }
+      return buf.toString();
+    }
+    return null;
+  }
+
 
   /**
    * prevent instantiation.
