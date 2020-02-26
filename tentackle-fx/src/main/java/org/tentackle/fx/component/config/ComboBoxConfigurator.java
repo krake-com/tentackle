@@ -40,7 +40,7 @@ public class ComboBoxConfigurator<T extends ComboBox<?>> extends ComboBoxBaseCon
     new PrefixSelectionFeature<>(control,
                                  () -> !control.isEditable(),
                                  control::getItems,
-                                 control.getConverter(),
+                                 control::getConverter,
                                  index -> control.getSelectionModel().select(index))
         .configure();
   }

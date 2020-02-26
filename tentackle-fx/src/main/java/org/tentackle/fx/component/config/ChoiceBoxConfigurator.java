@@ -37,13 +37,15 @@ public class ChoiceBoxConfigurator<T extends ChoiceBox<?>> extends ComponentConf
   public void configure(T control) {
     super.configure(control);
     // make change visible immediately (not only after focus lost)
-    control.setOnAction(e -> updateModelAndView((FxControl) control));
+    if (control instanceof FxControl) {
+      control.setOnAction(e -> updateModelAndView((FxControl) control));
+    }
 
     control.getProperties().put(PrefixSelectionFeature.ENABLED, "");
     new PrefixSelectionFeature<>(control,
                                  () -> true,
                                  control::getItems,
-                                 control.getConverter(),
+                                 control::getConverter,
                                  index -> control.getSelectionModel().select(index))
         .configure();
   }
