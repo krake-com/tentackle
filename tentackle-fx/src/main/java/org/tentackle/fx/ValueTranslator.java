@@ -61,7 +61,6 @@ public interface ValueTranslator<M,V> {
    */
   boolean isLenient();
 
-
   /**
    * Returns whether toModel must be invoked twice.<br>
    * An example is a DoubleStringTranslator:<br>
@@ -75,6 +74,21 @@ public interface ValueTranslator<M,V> {
    */
   default boolean needsToModelTwice() {
     return false;
+  }
+
+  /**
+   * Invoked explicitly by the application after binding properties have been updated.<br>
+   * May be necessary if action must be taken by the translator.<br>
+   * The method is provided for custom translators. Not used by the framework itself.
+   * <p>
+   * Example:
+   * <pre>
+   *   getBinder().putBindingProperty(DomainContext.class, getDomainContext());
+   *   pdoField.getValueTranslator().bindingPropertiesUpdated();
+   * </pre>
+   */
+  default void bindingPropertiesUpdated() {
+    // default does nothing.
   }
 
   /**
