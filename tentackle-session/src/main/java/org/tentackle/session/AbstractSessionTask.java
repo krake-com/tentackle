@@ -27,11 +27,12 @@ import org.tentackle.task.AbstractTask;
  *
  * @author harald
  */
-public abstract class AbstractSessionTask extends AbstractTask {
+public abstract class AbstractSessionTask extends AbstractTask implements SessionDependable {
 
   private static final long serialVersionUID = -702889862433380249L;
 
-  private transient Session session;        // the session to use
+  private transient Session session;          // the session to use
+  private transient boolean sessionImmutable; // true if session cannot be changed
 
 
   /**
@@ -41,6 +42,10 @@ public abstract class AbstractSessionTask extends AbstractTask {
    * @param session the session
    */
   public void setSession(Session session) {
+    if (isSessionImmutable() && this.session != session) {
+      throw new PersistenceException(this.session, "illegal attempt to change the immutable session of " + this +
+                                                   " from " + this.session + " to " + session);
+    }
     this.session = session;
   }
 
@@ -53,4 +58,13 @@ public abstract class AbstractSessionTask extends AbstractTask {
     return session;
   }
 
+  @Override
+  public void setSessionImmutable(boolean sessionImmutable) {
+    this.sessionImmutable = sessionImmutable;
+  }
+
+  @Override
+  public boolean isSessionImmutable() {
+    return sessionImmutable;
+  }
 }
