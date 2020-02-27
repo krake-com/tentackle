@@ -18,22 +18,12 @@
 
 package org.tentackle.fx.rdc.table;
 
-import javafx.application.Platform;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.fxml.FXML;
-import javafx.print.PageLayout;
-import javafx.print.PrinterJob;
-import javafx.scene.Scene;
-import javafx.scene.control.IndexedCell;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.skin.TableViewSkin;
-import javafx.scene.control.skin.VirtualFlow;
-import javafx.scene.transform.Scale;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-import javafx.util.Callback;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ResourceBundle;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 import org.tentackle.common.Timestamp;
 import org.tentackle.fx.AbstractFxController;
@@ -54,12 +44,22 @@ import org.tentackle.misc.Duration;
 import org.tentackle.misc.FormatHelper;
 import org.tentackle.session.AbstractSessionTask;
 
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ResourceBundle;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
+import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.fxml.FXML;
+import javafx.print.PageLayout;
+import javafx.print.PrinterJob;
+import javafx.scene.Scene;
+import javafx.scene.control.IndexedCell;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.skin.TableViewSkin;
+import javafx.scene.control.skin.VirtualFlow;
+import javafx.scene.transform.Scale;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import javafx.util.Callback;
 
 /**
  * A controller to print a table.
@@ -301,7 +301,7 @@ public class TablePrinter extends AbstractFxController {
     //    doesnt always work
     //    hence -> Task running in background and invoking Fx.runAndWait from bg task.
 
-    Rdc.bg(new PrinterTask(items, job, pageLayout, stage), null);
+    Rdc.bg(new PrinterTask(items, job, pageLayout, stage), null, null);
   }
 
 

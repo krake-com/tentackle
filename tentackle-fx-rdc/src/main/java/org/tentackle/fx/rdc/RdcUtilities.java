@@ -373,28 +373,36 @@ public class RdcUtilities {
    * @param <V> the type returned by the runner
    */
   public <V> void runInBackground(Supplier<V> runner, Consumer<V> updateUI, Consumer<RuntimeException> failedUI) {
-    ModificationTracker.getInstance().addTask(new AbstractSessionTask() {
-      @Override
-      public void run() {
-        try {
-          if (runner instanceof SessionDependable) {
-            ((SessionDependable) runner).setSession(getSession());
+    AbstractSessionTask task;
+    if (runner instanceof AbstractSessionTask && updateUI == null && failedUI == null) {
+      task = (AbstractSessionTask) runner;
+    }
+    else {
+      task = new AbstractSessionTask() {
+        @Override
+        public void run() {
+          try {
+            if (runner instanceof SessionDependable) {
+              ((SessionDependable) runner).setSession(getSession());
+            }
+            V value = runner.get();
+            if (updateUI != null) {
+              Platform.runLater(() -> updateUI.accept(value));
+            }
           }
-          V value = runner.get();
-          if (updateUI != null) {
-            Platform.runLater(() -> updateUI.accept(value));
+          catch (RuntimeException rx) {
+            if (failedUI != null) {
+              Platform.runLater(() -> failedUI.accept(rx));
+            }
+            else {
+              LOGGER.severe("background task failed", rx);
+            }
           }
         }
-        catch (RuntimeException rx) {
-          if (failedUI != null) {
-            Platform.runLater(() -> failedUI.accept(rx));
-          }
-          else {
-            LOGGER.severe("background task failed", rx);
-          }
-        }
-      }
-    });
+      };
+    }
+
+    ModificationTracker.getInstance().addTask(task);
   }
 
 }
