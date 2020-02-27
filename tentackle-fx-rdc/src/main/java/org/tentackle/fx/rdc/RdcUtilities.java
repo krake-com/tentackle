@@ -43,6 +43,7 @@ import org.tentackle.log.Logger;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.session.AbstractSessionTask;
 import org.tentackle.session.ModificationTracker;
+import org.tentackle.session.SessionDependable;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -361,9 +362,10 @@ public class RdcUtilities {
    * Use this method whenever some lengthy operation (database I/O, for example) would otherwise
    * block the event queue.
    * <p>
-   * The default implementation creates a {@link org.tentackle.task.Task} and runs it
-   * on behalf of the {@link ModificationTracker}. The result is then passed to {@code updateUI}
-   * and executed via {@link Platform#runLater(Runnable)}.
+   * The default implementation creates a {@link AbstractSessionTask} and runs it
+   * on behalf of the {@link ModificationTracker}. If the runner itself is a {@link SessionDependable}
+   * it gets the session set as well before it is invoked. The result is then passed to {@code updateUI}
+   * and executed via {@link Platform#runLater(Runnable)}.<br>
    *
    * @param runner the code running in another thread in parallel to the FX thread
    * @param updateUI optional UI updater invoked from within the FX event queue, null if none
@@ -375,6 +377,9 @@ public class RdcUtilities {
       @Override
       public void run() {
         try {
+          if (runner instanceof SessionDependable) {
+            ((SessionDependable) runner).setSession(getSession());
+          }
           V value = runner.get();
           if (updateUI != null) {
             Platform.runLater(() -> updateUI.accept(value));

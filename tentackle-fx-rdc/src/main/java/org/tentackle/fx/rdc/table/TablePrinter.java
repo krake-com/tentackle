@@ -43,6 +43,7 @@ import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.component.FxLabel;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.container.FxHBox;
+import org.tentackle.fx.rdc.Rdc;
 import org.tentackle.fx.rdc.RdcFxRdcBundle;
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.FxTableColumn;
@@ -52,13 +53,13 @@ import org.tentackle.log.Logger;
 import org.tentackle.misc.Duration;
 import org.tentackle.misc.FormatHelper;
 import org.tentackle.session.AbstractSessionTask;
-import org.tentackle.session.ModificationTracker;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 /**
  * A controller to print a table.
@@ -298,9 +299,9 @@ public class TablePrinter extends AbstractFxController {
     //      int printableRows = getVisibleRowCount(tableView);
     //      ... etc...
     //    doesnt always work
-    //    hence -> Task running in ModificationTracker with Fx.runAndWait.
+    //    hence -> Task running in background and invoking Fx.runAndWait from bg task.
 
-    ModificationTracker.getInstance().addTask(new PrinterTask(items, job, pageLayout, stage));
+    Rdc.bg(new PrinterTask(items, job, pageLayout, stage), null);
   }
 
 
@@ -314,7 +315,7 @@ public class TablePrinter extends AbstractFxController {
    * Task using the ModificationTracker to print the table.
    */
   @SuppressWarnings({"serial", "rawtypes" })
-  private class PrinterTask extends AbstractSessionTask {
+  private class PrinterTask extends AbstractSessionTask implements Supplier<Void> {
 
     private final ObservableList items;
     private final PrinterJob job;
@@ -436,6 +437,12 @@ public class TablePrinter extends AbstractFxController {
         }
       }
       return count;
+    }
+
+    @Override
+    public Void get() {
+      run();
+      return null;
     }
   }
 
