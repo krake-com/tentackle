@@ -301,7 +301,7 @@ public class TablePrinter extends AbstractFxController {
     //    doesnt always work
     //    hence -> Task running in background and invoking Fx.runAndWait from bg task.
 
-    Rdc.bg(new PrinterTask(items, job, pageLayout, stage), null);
+    Rdc.bg(new PrinterTask(items, job, pageLayout, stage), null, null);
   }
 
 
