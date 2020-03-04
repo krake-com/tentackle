@@ -1759,6 +1759,25 @@ public class ResultSetWrapper implements AutoCloseable {
     }
   }
 
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * an <code>int</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @param type Class representing the Java data type
+   * @return the column value, null if SQL value is null
+   * @param <T> the object's type
+   */
+  public <T> T getObject(String name, Class<T> type) {
+    try {
+      return resources.rs.getObject(name, type);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
+
 
 
   // ------------------- getter with positions -----------------------------
@@ -2557,6 +2576,25 @@ public class ResultSetWrapper implements AutoCloseable {
     }
   }
 
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * an <code>Object</code> of given type <code>T</code>.
+   *
+   * @param pos the parameter index in the result set
+   * @param type Class representing the Java data type
+   * @return the column value, null if SQL value is null
+   * @param <T> the object's type
+   */
+  public <T> T getObject(int pos, Class<T> type) {
+    try {
+      return resources.rs.getObject(pos + columnOffset, type);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
+
 
   // ------------------- getter with automatic column index -----------------------------
 
@@ -3290,6 +3328,41 @@ public class ResultSetWrapper implements AutoCloseable {
       return Binary.createBinary(resources.rs.getBinaryStream(nextConfiguredIndex() + columnOffset), bufSize, true);
     }
     catch (SQLException | IOException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * an <code>Object</code> of given type <code>T</code>.
+   *
+   * @return the column value, null if SQL value is null
+   */
+  public Object getObject() {
+    try {
+      return resources.rs.getObject(nextConfiguredIndex() + columnOffset);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * an <code>Object</code> of given type <code>T</code>.
+   *
+   * @param type Class representing the Java data type
+   * @return the column value, null if SQL value is null
+   * @param <T> the object's type
+   */
+  public <T> T getObject(Class<T> type) {
+    try {
+      return resources.rs.getObject(nextConfiguredIndex() + columnOffset, type);
+    }
+    catch (SQLException e)  {
       throw new PersistenceException(resources.db, e);
     }
   }
