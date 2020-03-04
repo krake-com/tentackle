@@ -209,8 +209,8 @@ public class PrefixSelectionFeature<T extends Control> {
    * @param item the item
    * @return true if matching
    */
+  @SuppressWarnings("unchecked")
   protected boolean isItemMatching(String prefix, Object item) {
-    @SuppressWarnings("unchecked")
     StringConverter converter = itemConverter == null ? null : itemConverter.get();
     String itemText = converter == null ? item.toString() : converter.toString(item);
     return itemText != null && itemText.toUpperCase().startsWith(prefix);
