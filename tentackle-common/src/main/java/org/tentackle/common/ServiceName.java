@@ -48,6 +48,14 @@ public @interface ServiceName {
   String value();
 
   /**
+   * The method name of the mapped service that provides the value.<br>
+   * The default is "value".
+   *
+   * @return the method name
+   */
+  String method() default "value";
+
+  /**
    * Determines whether the servicing class is the annotated class or the value of the annotated annotation.<br>
    * Notice the difference between the serviced and servicing class!
    * <p>

@@ -85,6 +85,7 @@ public class ServiceAnalyzeHandler extends AbstractAnalyzeHandler {
 
         // determine the serviced class
         String servicedClassName = null;
+        String methodName = "value";
         boolean meta = false;
 
         // check if this is meta-annotation annotated by @Service or @ServiceName
@@ -101,9 +102,16 @@ public class ServiceAnalyzeHandler extends AbstractAnalyzeHandler {
               else if ("meta".equals(argName)) {
                 meta = true;    // get servicing class from value of annotated annotation
               }
+              else if ("method".equals(entry.getKey().getSimpleName().toString())) {
+                methodName = StringHelper.parseString(entry.getValue().toString());
+              }
             }
             break;
           }
+        }
+        if (methodName == null) {
+          print(Kind.ERROR, "method name set to null in @" + StringHelper.lastAfter(annotationName, '.'), element);
+          continue;
         }
 
         if (servicedClassName == null || meta) {
@@ -112,7 +120,7 @@ public class ServiceAnalyzeHandler extends AbstractAnalyzeHandler {
             if (annoMirror.getAnnotationType().toString().equals(annotationName)) {
               for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry :
                       annoMirror.getElementValues().entrySet()) {
-                if ("value".equals(entry.getKey().getSimpleName().toString())) {
+                if (methodName.equals(entry.getKey().getSimpleName().toString())) {
                   String name = extractServicedClassName(entry.getValue());
                   if (meta) {
                     servicingClassName = name;
@@ -127,31 +135,30 @@ public class ServiceAnalyzeHandler extends AbstractAnalyzeHandler {
             }
           }
         }
-
         if (servicedClassName == null) {
-          print(Kind.ERROR, "no value method in @" + StringHelper.lastAfter(annotationName, '.'), element);
+          print(Kind.ERROR, "no '" + methodName + "' method in @" + StringHelper.lastAfter(annotationName, '.'), element);
+          continue;
         }
-        else {
-          // remove double quotes if service was given as a name (@ServiceName)
-          if (servicedClassName.charAt(0) == '"' && servicedClassName.length() > 1) {
-            servicedClassName = servicedClassName.substring(1, servicedClassName.length() - 1);
-          }
 
-          String relativeName = (meta ? Constants.META_SERVICE_PATH : Constants.DEFAULT_SERVICE_PATH) + servicedClassName;
+        // remove double quotes if service was given as a name (@ServiceName)
+        if (servicedClassName.charAt(0) == '"' && servicedClassName.length() > 1) {
+          servicedClassName = servicedClassName.substring(1, servicedClassName.length() - 1);
+        }
 
-          if (processor.isDebugLogging()) {
-            print(Kind.NOTE, "appending '" + servicingClassName + "' to " + relativeName, element);
-          }
+        String relativeName = (meta ? Constants.META_SERVICE_PATH : Constants.DEFAULT_SERVICE_PATH) + servicedClassName;
 
-          try {
-            processor.getResourceManager(processor.getServiceDir()).getWriter(relativeName).println(servicingClassName);
-            processor.getResourceManager(processor.getAnalyzeDir())
-                     .getWriter(servicingClassName.replace('.', '/') + "/service.log").println(servicedClassName);
-          }
-          catch (IOException ex) {
-            print(Kind.ERROR, "file generation error: " + ex, element);
-            return;
-          }
+        if (processor.isDebugLogging()) {
+          print(Kind.NOTE, "appending '" + servicingClassName + "' to " + relativeName, element);
+        }
+
+        try {
+          processor.getResourceManager(processor.getServiceDir()).getWriter(relativeName).println(servicingClassName);
+          processor.getResourceManager(processor.getAnalyzeDir())
+                   .getWriter(servicingClassName.replace('.', '/') + "/service.log").println(servicedClassName);
+        }
+        catch (IOException ex) {
+          print(Kind.ERROR, "file generation error: " + ex, element);
+          return;
         }
       }
       else {
