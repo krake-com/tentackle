@@ -79,36 +79,45 @@ public class MappedServiceAnalyzeHandler extends AbstractAnalyzeHandler {
 
         // determine the service which is configured by @MappedService
         String serviceClassName = null;
+        String methodName = "value";
+
         for (AnnotationMirror annoMirror: annotationType.getAnnotationMirrors()) {
           if (annoMirror.getAnnotationType().toString().equals(ANNOTATION_NAME)) {
             // this is the correct annotation: find the value element
             for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry :
                     annoMirror.getElementValues().entrySet()) {
               if ("value".equals(entry.getKey().getSimpleName().toString())) {
-                serviceClassName = entry.getValue().toString();    // found
+                serviceClassName = entry.getValue().toString();
                 // cut trailing .class
                 int ndx = serviceClassName.lastIndexOf(".class");
                 if (ndx >= 0) {
                   serviceClassName = serviceClassName.substring(0, ndx);
                 }
-                break;
+              }
+              else if ("method".equals(entry.getKey().getSimpleName().toString())) {
+                methodName = StringHelper.parseString(entry.getValue().toString());
               }
             }
             break;
           }
         }
+        if (methodName == null) {
+          print(Kind.ERROR, "method name set to null in @" + StringHelper.lastAfter(ANNOTATION_NAME, '.'), element);
+          continue;
+        }
         if (serviceClassName == null) {
-          print(Kind.ERROR, "no value method in @" + StringHelper.lastAfter(ANNOTATION_NAME, '.'), element);
+          print(Kind.ERROR, "no '" + methodName + "' method in @" + StringHelper.lastAfter(ANNOTATION_NAME, '.'), element);
           continue;
         }
 
-        // determine the serviced pdo class
+
+        // determine the serviced class (or some other index value)
         String servicedClassName = null;
         for (AnnotationMirror annoMirror: element.getAnnotationMirrors()) {
           if (annoMirror.getAnnotationType().toString().equals(annotationName)) {
             for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry :
                     annoMirror.getElementValues().entrySet()) {
-              if ("value".equals(entry.getKey().getSimpleName().toString())) {
+              if (methodName.equals(entry.getKey().getSimpleName().toString())) {
                 servicedClassName = entry.getValue().toString();    // found
                 // cut trailing .class
                 int ndx = servicedClassName.lastIndexOf(".class");
@@ -124,7 +133,7 @@ public class MappedServiceAnalyzeHandler extends AbstractAnalyzeHandler {
 
         if (servicedClassName == null) {
           print(Kind.ERROR, "cannot determine " + serviceClassName +
-                            " via @" + StringHelper.lastAfter(ANNOTATION_NAME, '.'), element);
+                            " via @" + StringHelper.lastAfter(ANNOTATION_NAME, '.') + "#" + methodName, element);
         }
         else {
           String configuration = servicingClassName + " = " + servicedClassName;
@@ -150,6 +159,5 @@ public class MappedServiceAnalyzeHandler extends AbstractAnalyzeHandler {
       }
     }
   }
-
 
 }
