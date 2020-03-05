@@ -37,6 +37,8 @@ import org.tentackle.fx.bind.FxBindingFactory;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
+import org.tentackle.fx.table.TableConfigurationProvider;
+import org.tentackle.fx.table.TableConfigurationProviderFactory;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -115,46 +117,62 @@ public class ObservableListTranslator<T, C extends List<T>> extends AbstractValu
    * @param elemClass the list's elememt class
    */
   protected void configureTableView(FxTableView<T> tableView, Class<T> elemClass) {
-    BindableType bindableType = elemClass.getAnnotation(BindableType.class);
-    if (bindableType != null) {
-      TableConfiguration<T> configuration = FxFactory.getInstance().createTableConfiguration(elemClass, null);
-      if (addBindableColumns(configuration, "", "", elemClass) > 0) {
-        // try to shorten dotted names, if the remaining tail is unique among all columns
-        Collection<TableColumnConfiguration<T, ?>> columnConfigurations = configuration.getColumnConfigurations();
-        for (TableColumnConfiguration column : columnConfigurations) {
-          String displayedName = column.getDisplayedName();
-          if (displayedName != null) {
-            int ndx = displayedName.lastIndexOf('.');
-            if (ndx >= 0) {
-              String shortName = displayedName.substring(ndx + 1);
-              if (!StringHelper.isAllWhitespace(shortName)) {
-                boolean shorten = true;
-                for (TableColumnConfiguration otherColumn : columnConfigurations) {
-                  if (otherColumn != column) {
-                    String otherName = otherColumn.getDisplayedName();
-                    if (displayedName.equals(otherName) || shortName.equals(otherName)) {
-                      shorten = false;
-                      break;
+    // determine optional table configuration provider for elemClass
+    TableConfigurationProvider<T> provider = TableConfigurationProviderFactory.getInstance().createTableConfigurationProvider(elemClass);
+    if (provider != null) {
+      TableConfiguration<T> configuration = provider.createTableConfiguration();
+      if (configuration.getBindingType() == TableConfiguration.BINDING.YES) {
+        configuration.getBinder().bind();
+      }
+      else if (configuration.getBindingType() == TableConfiguration.BINDING.INHERITED) {
+        configuration.getBinder().bindAllInherited();
+      }
+      configuration.configure(tableView);
+    }
+    else {
+      // no provider: check if elemClass is annotated with BindableType
+      BindableType bindableType = elemClass.getAnnotation(BindableType.class);
+      if (bindableType != null) {
+        TableConfiguration<T> configuration = FxFactory.getInstance().createTableConfiguration(elemClass, null);
+        if (addBindableColumns(configuration, "", "", elemClass) > 0) {
+          // try to shorten dotted names, if the remaining tail is unique among all columns
+          Collection<TableColumnConfiguration<T, ?>> columnConfigurations = configuration.getColumnConfigurations();
+          for (TableColumnConfiguration column : columnConfigurations) {
+            String displayedName = column.getDisplayedName();
+            if (displayedName != null) {
+              int ndx = displayedName.lastIndexOf('.');
+              if (ndx >= 0) {
+                String shortName = displayedName.substring(ndx + 1);
+                if (!StringHelper.isAllWhitespace(shortName)) {
+                  boolean shorten = true;
+                  for (TableColumnConfiguration otherColumn : columnConfigurations) {
+                    if (otherColumn != column) {
+                      String otherName = otherColumn.getDisplayedName();
+                      if (displayedName.equals(otherName) || shortName.equals(otherName)) {
+                        shorten = false;
+                        break;
+                      }
                     }
                   }
-                }
-                if (shorten) {
-                  column.setDisplayedName(shortName);
+                  if (shorten) {
+                    column.setDisplayedName(shortName);
+                  }
                 }
               }
             }
           }
         }
+        if (bindableType.declaredOnly()) {
+          configuration.getBinder().bind();
+        }
+        else {
+          configuration.getBinder().bindAllInherited();
+        }
+        configuration.getBinder().assertAllBound();
+        configuration.configure(tableView);
       }
-      if (bindableType.declaredOnly()) {
-        configuration.getBinder().bind();
-      }
-      else {
-        configuration.getBinder().bindAllInherited();
-      }
-      configuration.getBinder().assertAllBound();
-      configuration.configure(tableView);
     }
+    // else: no configuration possible -> must be done in application explicitly
   }
 
   /**
