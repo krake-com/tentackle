@@ -28,15 +28,23 @@ String  name    the object's name
 int     count   the counter
 </pre>
 If the line is prefixed with "^", the property is passed to the super entity within the constructor.<br>
-This option is ignored in builder pattern mode.<br>
+In builder pattern mode, standard java inheritance must be used instead.<br>
 Example:
 <pre>
 ^String name   the name
 </pre>
-If the line is prefixed with "=", the property is mutable and a setter is generated.<br>
-Example:
+If the line is prefixed with "=" or "~", the property is mutable and a setter is generated. "~" marks
+the property transient as well.<br>
+In builder pattern mode, no builder method is generated for this property.<br>
+Examples:
 <pre>
 =String name   the name
+</pre>
+Only for builder mode: lines prefixed with "!" are considered as required and a TentackleRuntimeException is
+thrown by the build-method, if a required attribute was not configured. Notice that a required attribute
+is always immutable.
+<pre>
+!String name   the name
 </pre>
 The comment may contain optional annotations enclosed in square brackets.
 <pre>
@@ -59,16 +67,16 @@ of the superclass'es builder.
     // create declarations
     for (Property property: properties) {
       if (!property.isInherited()) {
-        if (property.isMutable()) {
-]@
-  private @(property.getType())@ @(property.getName())@;  // @(property.getComment())@
-@[
+        String decl = "private";
+        if (!property.isMutable()) {
+          decl += " final";
         }
-        else {
-]@
-  private final @(property.getType())@ @(property.getName())@;  // @(property.getComment())@
-@[
+        else if (property.isTransient()) {
+          decl += " transient";
         }
+]@
+  @(decl)@ @(property.getType())@ @(property.getName())@;  // @(property.getComment())@
+@[
       }
     }
 
@@ -127,6 +135,13 @@ of the superclass'es builder.
         }
         for (Property property: properties) {
           if (!property.isInherited() && !property.isMutable()) {
+            if (property.isRequired()) {
+]@
+    if (!builder.@(property.getName())@Provided) {
+      throw new TentackleRuntimeException("@(property.getName())@ is required");
+    }
+@[
+            }
 ]@
     this.@(property.getName())@ = builder.@(property.getName())@;
 @[
@@ -230,9 +245,16 @@ of the superclass'es builder.
 
 @[
       for (Property property: properties) {
+        if (!property.isMutable()) {
 ]@
     private @(property.getType())@ @(property.getName())@;  // @(property.getComment())@
 @[
+          if (property.isRequired()) {
+]@
+    private boolean @(property.getName())@Provided;  // true if @(property.getComment())@ was provided
+@[
+          }
+        }
       }
 ]@
 
@@ -255,6 +277,7 @@ of the superclass'es builder.
       }
 
       for (Property property: properties) {
+        if (!property.isMutable()) {
 ]@
 
     /**
@@ -265,9 +288,17 @@ of the superclass'es builder.
      */
     public Builder @(property.getName())@(@(property.getType())@ @(property.getName())@) {
       this.@(property.getName())@ = @(property.getName())@;
+@[
+        if (property.isRequired()) {
+]@
+      @(property.getName())@Provided = true;
+@[
+        }
+]@
       return this;
     }
 @[
+        }
       }
 ]@
 

@@ -1,5 +1,5 @@
-/**
- * Tentackle - http://www.tentackle.org
+/*
+ * Tentackle - https://tentackle.org
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -35,7 +35,7 @@ import java.util.StringTokenizer;
 /**
  * Base class for the {@code @DTO}-wurblet.
  * <p>
- * Parses wurblet args and the simple model.
+ * Parses wurblet args and the model.
  *
  * @author harald
  */
@@ -51,23 +51,45 @@ public class DTOWurblet extends AbstractJavaWurblet {
     private final String comment;             // the comment
     private final boolean inherited;          // true if inherited
     private final boolean mutable;            // true if with setter instead of final
+    private final boolean unserialized;       // true if transient
+    private final boolean required;           // true if attribute is required (builder mode only)
     private final List<String> annotations;   // optional annotations for getters and setters
 
     public Property(String type, String name, String comment) {
       if (type.startsWith("^")) {
         inherited = true;
         mutable = false;
+        required = false;
+        unserialized = false;
         this.type = type.substring(1);
       }
       else if (type.startsWith("=")) {
         mutable = true;
         inherited = false;
+        required = false;
+        unserialized = false;
+        this.type = type.substring(1);
+      }
+      else if (type.startsWith("~")) {
+        mutable = true;
+        inherited = false;
+        required = false;
+        unserialized = true;
+        this.type = type.substring(1);
+      }
+      else if (type.startsWith("!")) {
+        mutable = false;
+        inherited = false;
+        required = true;
+        unserialized = false;
         this.type = type.substring(1);
       }
       else {
         this.type = type;
         inherited = false;
         mutable = false;
+        unserialized = false;
+        required = false;
       }
       this.name = name;
       StringBuilder buf = new StringBuilder(comment == null || comment.isEmpty() ? "the " + name + " property" : comment);
@@ -81,6 +103,14 @@ public class DTOWurblet extends AbstractJavaWurblet {
 
     public boolean isMutable() {
       return mutable;
+    }
+
+    public boolean isRequired() {
+      return required;
+    }
+
+    public boolean isTransient() {
+      return unserialized;
     }
 
     public String getType() {
@@ -214,6 +244,27 @@ public class DTOWurblet extends AbstractJavaWurblet {
       for (String annotation: annotations) {
         for (Property property : properties) {
           property.addGlobalAnnotation(annotation);
+        }
+      }
+
+      // validate
+      for (Property property : properties) {
+        if (property.getType().isEmpty()) {
+          throw new WurbelException("missing property type");
+        }
+        if (!Character.isLetter(property.getType().charAt(0))) {
+          throw new WurbelException("property '" + property.getName() + "' has a malformed Java type '" + property.getType() + "'");
+        }
+        if (!StringHelper.isValidJavaIdentifier(property.getName())) {
+          throw new WurbelException("property '" + property.getName() + "' is not a valid Java identifier");
+        }
+        if (withBuilder) {
+          if (property.isInherited()) {
+            throw new WurbelException("property '" + property.getName() + "': inherit-option not applicable in builder mode");
+          }
+        }
+        else if (property.isRequired()) {
+          throw new WurbelException("property '" + property.getName() + "': required-option only applicable in builder mode");
         }
       }
     }
