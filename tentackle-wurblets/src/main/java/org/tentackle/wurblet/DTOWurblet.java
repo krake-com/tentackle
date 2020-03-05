@@ -51,6 +51,7 @@ public class DTOWurblet extends AbstractJavaWurblet {
     private final String comment;             // the comment
     private final boolean inherited;          // true if inherited
     private final boolean mutable;            // true if with setter instead of final
+    private final boolean unserialized;       // true if transient
     private final boolean required;           // true if attribute is required (builder mode only)
     private final List<String> annotations;   // optional annotations for getters and setters
 
@@ -59,24 +60,35 @@ public class DTOWurblet extends AbstractJavaWurblet {
         inherited = true;
         mutable = false;
         required = false;
+        unserialized = false;
         this.type = type.substring(1);
       }
       else if (type.startsWith("=")) {
         mutable = true;
         inherited = false;
         required = false;
+        unserialized = false;
+        this.type = type.substring(1);
+      }
+      else if (type.startsWith("~")) {
+        mutable = true;
+        inherited = false;
+        required = false;
+        unserialized = true;
         this.type = type.substring(1);
       }
       else if (type.startsWith("!")) {
         mutable = false;
         inherited = false;
         required = true;
+        unserialized = false;
         this.type = type.substring(1);
       }
       else {
         this.type = type;
         inherited = false;
         mutable = false;
+        unserialized = false;
         required = false;
       }
       this.name = name;
@@ -95,6 +107,10 @@ public class DTOWurblet extends AbstractJavaWurblet {
 
     public boolean isRequired() {
       return required;
+    }
+
+    public boolean isTransient() {
+      return unserialized;
     }
 
     public String getType() {

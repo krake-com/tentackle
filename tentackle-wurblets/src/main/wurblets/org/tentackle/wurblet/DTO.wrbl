@@ -33,9 +33,10 @@ Example:
 <pre>
 ^String name   the name
 </pre>
-If the line is prefixed with "=", the property is mutable and a setter is generated.<br>
+If the line is prefixed with "=" or "~", the property is mutable and a setter is generated. "~" marks
+the property transient as well.<br>
 In builder pattern mode, no builder method is generated for this property.<br>
-Example:
+Examples:
 <pre>
 =String name   the name
 </pre>
@@ -66,16 +67,16 @@ of the superclass'es builder.
     // create declarations
     for (Property property: properties) {
       if (!property.isInherited()) {
-        if (property.isMutable()) {
-]@
-  private @(property.getType())@ @(property.getName())@;  // @(property.getComment())@
-@[
+        String decl = "private";
+        if (!property.isMutable()) {
+          decl += " final";
         }
-        else {
-]@
-  private final @(property.getType())@ @(property.getName())@;  // @(property.getComment())@
-@[
+        else if (property.isTransient()) {
+          decl += " transient";
         }
+]@
+  @(decl)@ @(property.getType())@ @(property.getName())@;  // @(property.getComment())@
+@[
       }
     }
 
