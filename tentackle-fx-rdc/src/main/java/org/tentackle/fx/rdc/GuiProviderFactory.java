@@ -48,7 +48,7 @@ public interface GuiProviderFactory {
    *
    * @param <T> the PDO's class
    * @param pdo the PDO
-   * @return the service object
+   * @return the GUI provider
    */
   <T extends PersistentDomainObject<T>> GuiProvider<T> createGuiProvider(T pdo);
 

@@ -28,7 +28,7 @@ import javafx.scene.input.Dragboard;
 
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.component.FxTableView;
-import org.tentackle.fx.table.TableConfiguration;
+import org.tentackle.fx.table.TableConfigurationProvider;
 import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.PdoProvider;
 import org.tentackle.pdo.PersistentDomainObject;
@@ -43,7 +43,8 @@ import java.util.ResourceBundle;
  * @param <T> the PDO type
  * @author harald
  */
-public interface GuiProvider<T extends PersistentDomainObject<T>> extends PdoProvider<T>, DomainContextProvider {
+public interface GuiProvider<T extends PersistentDomainObject<T>>
+       extends PdoProvider<T>, TableConfigurationProvider<T>, DomainContextProvider {
 
   /**
    * Returns whether a resource bundle is provided.
@@ -237,13 +238,6 @@ public interface GuiProvider<T extends PersistentDomainObject<T>> extends PdoPro
    * @return the parents
    */
   <P extends PersistentDomainObject<P>> Collection<? extends PersistentDomainObject<?>> getTreeParentObjects(P parent);
-
-  /**
-   * Creates the table configuration.<br>
-   *
-   * @return the table configuration
-   */
-  TableConfiguration<T> createTableConfiguration();
 
   /**
    * Creates the table view for given configuration.
