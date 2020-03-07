@@ -19,7 +19,7 @@
 package org.tentackle.fx.table;
 
 /**
- * Creates a {@link org.tentackle.fx.table.TableConfiguration} for an object.
+ * Creates a {@link org.tentackle.fx.table.TableConfiguration}.
  *
  * @param <T> the type
  */

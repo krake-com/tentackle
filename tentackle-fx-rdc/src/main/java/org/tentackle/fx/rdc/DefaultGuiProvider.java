@@ -74,7 +74,11 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
     }
   }
 
-  @Override
+  /**
+   * Returns whether a resource bundle is provided.
+   *
+   * @return true if provided, false if no bundle
+   */
   public boolean isBundleProvided() {
     if (bundleProvided == null) {
       try {
@@ -88,7 +92,13 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
     return bundleProvided;
   }
 
-  @Override
+  /**
+   * Gets the resource bundle for this provider.
+   * <p>
+   * Throws {@link java.util.MissingResourceException} if no bundle found.
+   *
+   * @return the resource bundle
+   */
   public ResourceBundle getBundle() {
     if (bundle == null) {
       bundle = BundleFactory.getBundle(getClass().getName());

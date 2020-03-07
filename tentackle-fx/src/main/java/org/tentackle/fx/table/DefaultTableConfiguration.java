@@ -111,6 +111,10 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
    */
   private EDITMODE editMode = EDITMODE.NO;
 
+  /**
+   * The binding type.
+   */
+  private BINDING bindingType = BINDING.YES;
 
   /**
    * Creates a configuration.
@@ -393,7 +397,12 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
 
   @Override
   public BINDING getBindingType() {
-    return BINDING.YES;
+    return bindingType;
+  }
+
+  @Override
+  public void setBindingType(BINDING bindingType) {
+    this.bindingType = bindingType;
   }
 
   @Override

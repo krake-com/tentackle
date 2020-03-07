@@ -35,10 +35,11 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DefaultTableConfigurationProviderFactory implements TableConfigurationProviderFactory {
 
   /**
-   * maps classes to the constructors of the provider classes.
+   * maps classes to the providers.
+   * Notice that providers are per class!
    */
   @SuppressWarnings("rawtypes")
-  private final ConcurrentHashMap<Class, Constructor> serviceMap = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<Class, TableConfigurationProvider> serviceMap = new ConcurrentHashMap<>();
 
   /**
    * maps classes to providers.
@@ -48,48 +49,46 @@ public class DefaultTableConfigurationProviderFactory implements TableConfigurat
   /**
    * Value for no co provider found.
    */
-  private final Constructor noProvider;
+  private final TableConfigurationProvider noProvider;
 
   /**
    * Creates the factory.
    */
   public DefaultTableConfigurationProviderFactory() {
     classMapper = ClassMapper.create("FX table-config-provider", TableConfigurationProvider.class);
-    noProvider = getClass().getConstructors()[0];
+    noProvider = new DefaultTableConfigurationProvider();
   }
 
 
   @Override
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public <T> TableConfigurationProvider<T> createTableConfigurationProvider(Class<T> clazz) {
-    Constructor<TableConfigurationProvider<T>> constructor = serviceMap.get(clazz);
-    if (constructor == null) {
+    TableConfigurationProvider<T> provider = serviceMap.get(clazz);
+    if (provider == null) {
       // no harm if replaced by concurrent threads...
       try {
         Class serviceClass = classMapper.mapLenient(clazz);
-        constructor = serviceClass.getConstructor();
-      }
-      catch (NoSuchMethodException nx) {
-        throw new FxRuntimeException("missing default constructor in table configuration service class for " + clazz.getName(), nx);
-      }
-      catch (ClassNotFoundException ex) {
-        constructor = noProvider;
-      }
-      serviceMap.put(clazz, constructor);
-    }
-
-    TableConfigurationProvider<T> provider = null;
-
-    if (constructor != noProvider) {
-      try {
-        provider = constructor.newInstance();
+        // find matching constructor
+        for (Constructor<TableConfigurationProvider<T>> con : serviceClass.getConstructors()) {
+          if (con.getParameterTypes().length == 0) {
+            provider = con.newInstance();
+            break;
+          }
+        }
+        if (provider == null) {
+          throw new FxRuntimeException("no default constructor found for " + serviceClass.getName());
+        }
       }
       catch (IllegalAccessException | IllegalArgumentException | InstantiationException | InvocationTargetException e) {
         throw new FxRuntimeException("cannot instantiate table configuration service object for " + clazz.getName(), e);
       }
+      catch (ClassNotFoundException ex) {
+        provider = noProvider;
+      }
+      serviceMap.put(clazz, provider);
     }
 
-    return provider;
+    return provider == noProvider ? null : provider;
   }
 
 }

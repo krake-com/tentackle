@@ -178,6 +178,13 @@ public interface TableConfiguration<S> {
   BINDING getBindingType();
 
   /**
+   * Sets the type of binding.
+   *
+   * @param bindingType the binding type
+   */
+  void setBindingType(BINDING bindingType);
+
+  /**
    * Gets the table binder.<br>
    * Don't mix up the table's binder with the FxController's binder!
    * The table binder is responsible to bind the cells to the model, whereas the
