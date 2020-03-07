@@ -54,5 +54,12 @@ public @interface TableConfigurationProviderService {
    */
   boolean noBundle() default false;
 
+  /**
+   * Gets the binding type.
+   *
+   * @return the binding type (defaults to {@link org.tentackle.fx.table.TableConfiguration.BINDING#YES})
+   */
+  TableConfiguration.BINDING binding() default TableConfiguration.BINDING.YES;
+
 }
 

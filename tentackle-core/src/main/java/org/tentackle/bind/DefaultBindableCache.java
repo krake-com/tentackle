@@ -19,15 +19,16 @@
 
 package org.tentackle.bind;
 
+import org.tentackle.common.StringHelper;
+import org.tentackle.log.Logger;
+import org.tentackle.reflect.ReflectionHelper;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
-import org.tentackle.log.Logger;
-import org.tentackle.common.StringHelper;
-import org.tentackle.reflect.ReflectionHelper;
 
 /**
  * Cache for bindable elements per class.<br>
@@ -96,47 +97,49 @@ public class DefaultBindableCache implements BindableCache {
 
       // find all declared methods with the @Bindable annotation
       for (Method method : methods) {
-
-        if (!method.isBridge() && method.isAnnotationPresent(Bindable.class)) {
-          BindableElement info = null;
-          String bindingOptions = method.getAnnotation(Bindable.class).options();
-          String camelName = ReflectionHelper.getPathGetterName(method);
-          if (camelName != null) {
-            info = bindingFactory.createBindableElement(method.getReturnType(), camelName);
-            info.setGetter(method);
-          }
-          else {
-            camelName = ReflectionHelper.getPathSetterName(method);
+        if (!method.isBridge()) {
+          Bindable annotation = method.getAnnotation(Bindable.class);
+          if (annotation != null) {
+            BindableElement element = null;
+            String bindingOptions = annotation.options();
+            String camelName = ReflectionHelper.getPathGetterName(method);
             if (camelName != null) {
-              info = bindingFactory.createBindableElement(method.getParameterTypes()[0], camelName);
-              info.setSetter(method);
-            }
-          }
-          if (info != null) {
-            camelName = StringHelper.firstToUpper(camelName);
-            LOGGER.finer("bindable method {0} found", method);
-            BindableElement oldInfo = bindableMap.get(camelName);
-            if (oldInfo != null) {
-              // merge with existing info
-              oldInfo.addBindingOptions(bindingOptions);
-              if (info.getGetter() != null) {
-                if (oldInfo.getGetter() == null) {
-                  oldInfo.setGetter(info.getGetter());
-                }
-                // else: keep @overridden covariant method, if !declaredOnly
-              }
-              else if (info.getSetter() != null) {
-                if (oldInfo.getSetter() != null) {
-                  throw new BindingException("more than one setters annotated with @Bindable in "
-                          + clazz.getName() + " for " + camelName);
-                }
-                oldInfo.setSetter(info.getSetter());
-              }
+              element = bindingFactory.createBindableElement(method.getReturnType(), camelName);
+              element.setGetter(method);
             }
             else {
-              // new binding
-              info.setBindingOptions(bindingOptions);
-              bindableMap.put(camelName, info);
+              camelName = ReflectionHelper.getPathSetterName(method);
+              if (camelName != null) {
+                element = bindingFactory.createBindableElement(method.getParameterTypes()[0], camelName);
+                element.setSetter(method);
+              }
+            }
+            if (element != null) {
+              camelName = StringHelper.firstToUpper(camelName);
+              LOGGER.finer("bindable method {0} found", method);
+              BindableElement oldInfo = bindableMap.get(camelName);
+              if (oldInfo != null) {
+                // merge with existing info
+                oldInfo.addBindingOptions(bindingOptions);
+                if (element.getGetter() != null) {
+                  if (oldInfo.getGetter() == null) {
+                    oldInfo.setGetter(element.getGetter());
+                  }
+                  // else: keep @overridden covariant method, if !declaredOnly
+                }
+                else if (element.getSetter() != null) {
+                  if (oldInfo.getSetter() != null) {
+                    throw new BindingException("more than one setters annotated with @Bindable in "
+                                               + clazz.getName() + " for " + camelName);
+                  }
+                  oldInfo.setSetter(element.getSetter());
+                }
+              }
+              else {
+                // new binding
+                element.setBindingOptions(bindingOptions);
+                bindableMap.put(camelName, element);
+              }
             }
           }
         }
@@ -147,23 +150,23 @@ public class DefaultBindableCache implements BindableCache {
               (declaredOnly
               ? clazz.getDeclaredFields()
               : ReflectionHelper.getAllFields(clazz, null, true, null, true))) {
-
-        if (field.isAnnotationPresent(Bindable.class)) {
+        Bindable annotation = field.getAnnotation(Bindable.class);
+        if (annotation != null) {
           LOGGER.finer("bindable field {0} found", field);
-          String bindingOptions = field.getAnnotation(Bindable.class).options();
+          String bindingOptions = annotation.options();
           String camelName = StringHelper.firstToUpper(field.getName());
-          BindableElement info = bindableMap.get(camelName);
-          if (info != null) {
+          BindableElement element = bindableMap.get(camelName);
+          if (element != null) {
             // merge
-            info.setField(field);
-            info.addBindingOptions(bindingOptions);
+            element.setField(field);
+            element.addBindingOptions(bindingOptions);
           }
           else {
             // new
-            info = bindingFactory.createBindableElement(field.getType(), camelName);
-            info.setField(field);
-            info.setBindingOptions(bindingOptions);
-            bindableMap.put(camelName, info);
+            element = bindingFactory.createBindableElement(field.getType(), camelName);
+            element.setField(field);
+            element.setBindingOptions(bindingOptions);
+            bindableMap.put(camelName, element);
           }
         }
       }

@@ -50,5 +50,13 @@ public @interface Bindable {
    */
   String options() default "";
 
+  /**
+   * Returns whether the annotated element itself is a component that holds other bindables.<br>
+   * Such elements will not be bound themselves but their elements, which are annotated with {@code @Bindable}.
+   *
+   * @return true if bind subelements of this element
+   */
+  boolean isComponent() default false;
+
 }
 
