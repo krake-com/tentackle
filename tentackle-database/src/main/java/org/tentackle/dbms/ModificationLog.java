@@ -69,8 +69,8 @@ import java.util.List;
  * ## indexes
  * index next := processed, id
  * index txid := txid
- * index object := processed, objectid, classid
- * index user := processed, userid
+ * index object := objectid, classid, processed
+ * index user := userid, processed
  *
  * @<
  */
