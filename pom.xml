@@ -7,7 +7,7 @@
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-parent</artifactId>
-  <version>13.0-SNAPSHOT</version>
+  <version>14.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Tentackle Parent</name>
@@ -81,18 +81,18 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <dependency.locations.enabled>false</dependency.locations.enabled>
     <javac.lint>unchecked,deprecation,removal,requires-transitive-automatic,requires-automatic</javac.lint>
-    <javac.version.src>13</javac.version.src>
+    <javac.version.src>14</javac.version.src>
     <javac.version.target>${javac.version.src}</javac.version.target>
     <javafx.version>14</javafx.version>
-    <ow2.asm.version>7.2</ow2.asm.version>
-    <maven.version>3.6.0</maven.version>
-    <postgresql.version>42.2.9</postgresql.version>
+    <ow2.asm.version>8.0</ow2.asm.version>
+    <maven.version>3.6.3</maven.version>
+    <postgresql.version>42.2.11</postgresql.version>
     <maven.resources.plugin.version>3.1.0</maven.resources.plugin.version>
     <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
     <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
     <maven.install.plugin.version>2.5.2</maven.install.plugin.version>
     <maven.deploy.plugin.version>2.8.2</maven.deploy.plugin.version>
-    <maven.archetype.plugin.version>3.1.1</maven.archetype.plugin.version>
+    <maven.archetype.plugin.version>3.1.2</maven.archetype.plugin.version>
     <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
 
     <tentackle.serviceDir>${project.build.directory}/generated-resources/services</tentackle.serviceDir>
@@ -100,7 +100,7 @@
     <tentackle.manifestDirectory>${project.build.directory}/generated-resources/manifest</tentackle.manifestDirectory>
     <netbeans.hint.license>tentackle</netbeans.hint.license>
 
-    <wurbelizer.version>13.0-SNAPSHOT</wurbelizer.version>
+    <wurbelizer.version>14.0-SNAPSHOT</wurbelizer.version>
     <!-- override the default wurbelDir for multi-module project -->
     <wurbel.wurbelDir>${rootBasedir}/target/wurbel</wurbel.wurbelDir>
 
@@ -175,7 +175,7 @@
       <dependency>
         <groupId>org.apache.poi</groupId>
         <artifactId>poi</artifactId>
-        <version>4.1.1</version>
+        <version>4.1.2</version>
       </dependency>
 
       <dependency>
@@ -187,13 +187,13 @@
       <dependency>
         <groupId>org.apache.logging.log4j</groupId>
         <artifactId>log4j-api</artifactId>
-        <version>2.13.0</version>
+        <version>2.13.1</version>
       </dependency>
       <!-- still not modularized -->
       <dependency>
         <groupId>org.apache.logging.log4j</groupId>
         <artifactId>log4j-core</artifactId>
-        <version>2.13.0</version>
+        <version>2.13.1</version>
       </dependency>
 
       <dependency>
@@ -205,20 +205,20 @@
       <dependency>
         <groupId>org.jruby</groupId>
         <artifactId>jruby</artifactId>
-        <version>9.2.9.0</version>
+        <version>9.2.11.1</version>
       </dependency>
 
       <dependency>
         <groupId>org.codehaus.groovy</groupId>
         <artifactId>groovy</artifactId>
-        <version>2.5.8</version>
+        <version>3.0.2</version>
         <classifier>indy</classifier>
       </dependency>
 
       <dependency>
         <groupId>org.freemarker</groupId>
         <artifactId>freemarker</artifactId>
-        <version>2.3.29</version>
+        <version>2.3.30</version>
       </dependency>
 
       <!-- test dependencies -->
@@ -260,7 +260,7 @@
       <dependency>
         <groupId>org.apache.maven</groupId>
         <artifactId>maven-plugin-api</artifactId>
-        <version>3.6.1</version>
+        <version>3.6.3</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven.shared</groupId>
@@ -280,17 +280,17 @@
       <dependency>
         <groupId>org.apache.maven.shared</groupId>
         <artifactId>maven-artifact-transfer</artifactId>
-        <version>0.11.0</version>
+        <version>0.12.0</version>
       </dependency>
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-java</artifactId>
-        <version>1.0.3</version>
+        <version>1.0.5</version>
       </dependency>
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-archiver</artifactId>
-        <version>4.1.0</version>
+        <version>4.2.2</version>
       </dependency>
 
     </dependencies>
@@ -364,7 +364,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-site-plugin</artifactId>
-          <version>3.8.2</version>
+          <version>3.9.0</version>
           <configuration>
             <siteDirectory>${rootBasedir}/src/site</siteDirectory>
           </configuration>
@@ -372,7 +372,7 @@
             <dependency>
               <groupId>org.apache.maven.wagon</groupId>
               <artifactId>wagon-ssh</artifactId>
-              <version>3.3.3</version>
+              <version>3.3.4</version>
             </dependency>
             <dependency>
               <groupId>org.ow2.asm</groupId>
@@ -435,12 +435,12 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-source-plugin</artifactId>
-          <version>3.1.0</version>
+          <version>3.2.1</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <!-- need to stick with 3.0.1 since 3.1.0 and 3.1.1 cannot doc a non-module referencing a module
+          <!-- need to stick with 3.0.1 since 3.1.0, 3.1.1 and 3.2.0 cannot doc a non-module referencing a module
                (such as buildsupport which deps on common) -->
           <version>3.0.1</version>
           <dependencies>
@@ -454,7 +454,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
-          <version>3.1.2</version>
+          <version>3.2.0</version>
           <configuration>
             <archive>
               <manifest>
@@ -469,7 +469,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-dependency-plugin</artifactId>
-          <version>3.1.1</version>
+          <version>3.1.2</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
