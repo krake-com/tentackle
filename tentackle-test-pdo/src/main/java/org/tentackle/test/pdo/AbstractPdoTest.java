@@ -232,7 +232,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
     }
     catch (PersistenceException ex) {
       // no database? wrong database? whatever: testing environment incomplete
-      throw new SkipException("no backend found -> no tests");
+      throw new SkipException("no backend found -> no tests", ex);
     }
     s.makeCurrent();
     return s;
