@@ -102,6 +102,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
     this.name = name;
     this.version = version;
     creationTime = System.currentTimeMillis();
+    Thread.setDefaultUncaughtExceptionHandler((t, e) -> LOGGER.severe("uncaught exception", e));
   }
 
 
