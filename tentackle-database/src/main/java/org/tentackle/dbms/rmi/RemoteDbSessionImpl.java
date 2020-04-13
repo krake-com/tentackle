@@ -53,7 +53,6 @@ import java.rmi.server.ServerNotActiveException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -77,8 +76,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * with timed out db-connections. These are typically caused by clients
    * not properly closing the rmi-session.
    */
-  private static final Set<WeakReference<RemoteDbSessionImpl>> SESSIONS =
-          Collections.newSetFromMap(new ConcurrentHashMap<>());
+  private static final Set<WeakReference<RemoteDbSessionImpl>> SESSIONS = ConcurrentHashMap.newKeySet();
 
 
   /**
