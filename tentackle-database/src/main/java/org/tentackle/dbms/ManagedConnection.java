@@ -39,7 +39,6 @@ import java.sql.Savepoint;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.ConcurrentModificationException;
 import java.util.Date;
 import java.util.Iterator;
@@ -71,8 +70,7 @@ public class ManagedConnection {
    * The set is used to figure out which Db is attached to what connection
    * for debugging purposes.
    */
-  private static final Set<WeakReference<ManagedConnection>> MANAGED_CONNECTIONS =
-          Collections.newSetFromMap(new ConcurrentHashMap<>());
+  private static final Set<WeakReference<ManagedConnection>> MANAGED_CONNECTIONS = ConcurrentHashMap.newKeySet();
 
 
   /**
@@ -346,8 +344,8 @@ public class ManagedConnection {
     statementHistory = new ArrayList<>();
     preparedStatements = new ConcurrentHashMap<>();
     // use a threadsafe set due to concurrent cleanup of weakreferences in getOpenResultSets and cancelRunningStatements
-    openResultSets = Collections.newSetFromMap(new ConcurrentHashMap<>());
-    runningStatements = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    openResultSets = ConcurrentHashMap.newKeySet();
+    runningStatements = ConcurrentHashMap.newKeySet();
 
     resources = new Resources(connection);
     resources.name = toString();    // cannot be a constructor arg because of chicken egg

@@ -73,7 +73,6 @@ import java.sql.SQLException;
 import java.sql.Savepoint;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -230,8 +229,7 @@ public class Db implements Session, Cloneable {
   /**
    * Global close handlers.
    */
-  private static final Set<SessionCloseHandler> GLOBAL_CLOSE_HANDLERS =
-                       Collections.newSetFromMap(new ConcurrentHashMap<>());
+  private static final Set<SessionCloseHandler> GLOBAL_CLOSE_HANDLERS = ConcurrentHashMap.newKeySet();
 
   /**
    * Registers a global close handler.
@@ -259,8 +257,7 @@ public class Db implements Session, Cloneable {
    * session still will be finalized when the session isn't used anymore.
    * The set of sessions is used to enhance the diagnostic utilities.
    */
-  private static final Set<WeakReference<Db>> SESSIONS =
-          Collections.newSetFromMap(new ConcurrentHashMap<>());
+  private static final Set<WeakReference<Db>> SESSIONS = ConcurrentHashMap.newKeySet();
 
 
   /**
@@ -2212,9 +2209,7 @@ public class Db implements Session, Cloneable {
         throw new PersistenceException(this,
                 "session to join group " + sessionId + " already belongs to group " + sessionGroupId);
       }
-      setSessionGroupId(sessionId);
-      for (WeakReference<Db> dbRef: SESSIONS) {
-        Db db = dbRef.get();
+      for (Db db: getAllOpenSessions()) {
         if (db != null && db.resources.sessionId == sessionId) {
           if (db.sessionGroupId > 0 && sessionId != db.sessionGroupId) {
             throw new PersistenceException(db, "session already belongs to group " + db.sessionGroupId);
@@ -2226,6 +2221,7 @@ public class Db implements Session, Cloneable {
           break;
         }
       }
+      setSessionGroupId(sessionId);
     }
     return sessionGroupId;
   }
