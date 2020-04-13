@@ -2179,8 +2179,8 @@ public class Db implements Session, Cloneable {
       else  {
         LOGGER.info("{0} removed from group {1}", this, sessionGroupId);
       }
+      sessionGroupId = number;
     }
-    sessionGroupId = number;
   }
 
 
