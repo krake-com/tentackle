@@ -298,6 +298,28 @@ public class Db implements Session, Cloneable {
     return dbList;
   }
 
+  /**
+   * Gets an open session by its ID.
+   *
+   * @param sessionId the session ID
+   * @return the session, null if no such open session
+   */
+  public static Db getOpenSession(int sessionId) {
+    for (Iterator<WeakReference<Db>> iter = SESSIONS.iterator(); iter.hasNext(); ) {
+      WeakReference<Db> ref = iter.next();
+      Db refDb = ref.get();
+      if (refDb != null && refDb.isOpen()) {
+        if (refDb.getSessionId() == sessionId) {
+          return refDb;
+        }
+      }
+      else  {
+        iter.remove();
+      }
+    }
+    return null;
+  }
+
 
   private static final AtomicInteger INSTANCE_COUNTER = new AtomicInteger(); // global instance counter
 
@@ -381,6 +403,14 @@ public class Db implements Session, Cloneable {
                 }
               }
               if (me != null) {
+                if (sessionId == me.sessionGroupId) {
+                  // this was the root of a session group: clear session group
+                  for (Db db: getAllOpenSessions()) {
+                    if (!db.isRemote() && db.sessionGroupId == sessionId) {
+                      db.setSessionGroupId(0);
+                    }
+                  }
+                }
                 conMgr.logout(me);
                 LOGGER.info("session {0} closed", name);
               }
@@ -2192,10 +2222,8 @@ public class Db implements Session, Cloneable {
 
   @Override
   public int groupWith(int sessionId) {
-    if (sessionId <= 0) {
-      throw new PersistenceException(this, "invalid session id " + sessionId);
-    }
     assertOpen();
+
     if (isRemote()) {
       try {
         sessionGroupId = resources.rdel.groupWith(sessionId);
@@ -2205,23 +2233,17 @@ public class Db implements Session, Cloneable {
       }
     }
     else  {
-      if (sessionGroupId > 0 && sessionId != sessionGroupId) {
-        throw new PersistenceException(this,
-                "session to join group " + sessionId + " already belongs to group " + sessionGroupId);
+      Db db = getOpenSession(sessionId);
+      if (db == null) {
+        throw new PersistenceException(this, "no open session with ID " + sessionId);
       }
-      for (Db db: getAllOpenSessions()) {
-        if (db != null && db.resources.sessionId == sessionId) {
-          if (db.sessionGroupId > 0 && sessionId != db.sessionGroupId) {
-            throw new PersistenceException(db, "session already belongs to group " + db.sessionGroupId);
-          }
-          if (!getSessionInfo().equals(db.getSessionInfo())) {
-            throw new PersistenceException(db, "session does not belong to " + getSessionInfo().getUserName());
-          }
-          db.setSessionGroupId(sessionId);
-          break;
-        }
+      if (sessionGroupId != 0 && sessionId != sessionGroupId) {
+        throw new PersistenceException(this, "session to join group " + db.getSessionGroupId() + " already belongs to group " + sessionGroupId);
       }
-      setSessionGroupId(sessionId);
+      if (db.getSessionGroupId() == 0) {
+        db.setSessionGroupId(sessionId);    // if not already set: this is now the root session of the group
+      } // else: use the group id which has already been set in the referenced session
+      setSessionGroupId(db.getSessionGroupId());
     }
     return sessionGroupId;
   }

@@ -157,7 +157,9 @@ public abstract class AbstractServerApplication extends AbstractApplication
    * @return the connection manager
    */
   protected ConnectionManager createConnectionManager() {
-    return new MpxConnectionManager(getSession().getBackendInfo(), getSession().getSessionId() + 1);
+    return new MpxConnectionManager(getSession().getBackendInfo(),
+                                    getSession().getConnectionManager().getSessionIdOffset() +
+                                    getSession().getConnectionManager().getMaxSessions());
   }
 
 

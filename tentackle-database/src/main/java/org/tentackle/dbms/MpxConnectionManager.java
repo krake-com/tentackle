@@ -91,8 +91,8 @@ public class MpxConnectionManager extends DefaultConnectionManager {
    *
    * @param name the name of the connection manager
    * @param backendInfo the backend info to use for creating connections
-   * @param maxSessions the maximum number of Db instances, 0 = no limit
-   * @param idOffset the offset for connection ids (&gt; 0)
+   * @param maxSessions the maximum number of session instances, 0 = no limit
+   * @param idOffset the offset for the session ids (&gt; 0)
    * @param iniSize the initial size of the connection pool
    * @param incSize the number of connections to add if all in use
    * @param minSize the minimum number of connections
