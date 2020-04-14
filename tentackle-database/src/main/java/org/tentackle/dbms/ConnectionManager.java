@@ -92,6 +92,15 @@ public interface ConnectionManager {
 
 
   /**
+   * Gets the mininum session id.
+   *
+   * @return the lowest valid session ID.
+   * @see #getMaxSessions()
+   */
+  int getSessionIdOffset();
+
+
+  /**
    * Gets the number of sessions.
    *
    * @return the number of concurrent logins

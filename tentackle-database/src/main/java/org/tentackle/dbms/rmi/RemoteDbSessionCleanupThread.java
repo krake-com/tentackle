@@ -184,7 +184,7 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
       else  {
         if (session.isOpen()) {
           int group = session.getSession().getSessionGroupId();
-          if (group > 0) {
+          if (group != 0) {
             boolean deadInTransaction = deadTxGroups.contains(group);
             boolean notAlive = !aliveGroups.contains(group);
             if (deadInTransaction || notAlive) {

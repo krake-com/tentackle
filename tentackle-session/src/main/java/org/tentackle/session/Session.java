@@ -161,12 +161,15 @@ public interface Session extends Comparable<Session>, AutoCloseable {
   /**
    * Gets the session's group ID.<br>
    *
-   * @return the group id, 0 if not member of a session group
+   * @return the ID of the session this session is grouped with, 0 if not member of a session group
    */
   int getSessionGroupId();
 
   /**
-   * Assigns this session to another session building a session group.
+   * Assigns this session to another session building a session group.<br>
+   * If the referenced session already belongs to a group, this session will be added to that group.
+   * If the referenced session does not belong to a group, it will become the root session of the group
+   * and the group id will be the session id of the root session.
    *
    * @param sessionId the ID of the session to build a group with
    * @return the group id
@@ -175,7 +178,8 @@ public interface Session extends Comparable<Session>, AutoCloseable {
 
   /**
    * Close a session.<br>
-   * Closing an already closed session is okay and ignored.
+   * Closing an already closed session is okay and ignored.<br>
+   * If this session is the root of a session group, all grouped sessions will be ungrouped.
    * <p>
    * Notice: a non-blocking close can be requested by {@link #setKeepAliveInterval(long)} with
    * an interval &lt; 0.
@@ -212,6 +216,7 @@ public interface Session extends Comparable<Session>, AutoCloseable {
    * Re-opens a session.<br>
    * If the session is open, it will be closed first.<br>
    * If the session belongs to a group, the re-opened session will be grouped as well.
+   * If this session is the root of a session group, all grouped sessions will be ungrouped.
    */
   void reOpen();
 

@@ -262,7 +262,7 @@ public class PooledDb {
     LOGGER.fine("open pooled Db for {0}, connection manager {1}, slot {2}",
         pool.getSessionInfo(), pool.getConnectionManager(), slotNumber);
     Db session = (Db) SessionFactory.getInstance().create(pool, createSessionInfo(slotNumber));
-    if (pool.getSessionGroupId() > 0) {
+    if (pool.getSessionGroupId() != 0) {
       session.groupWith(pool.getSessionGroupId());
     }
     return session;
