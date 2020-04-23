@@ -219,7 +219,7 @@ public class DefaultLockManager implements LockManager {
   @Override
   public <T extends PersistentDomainObject<T>> TokenLock getLock(T pdo) {
     synchronized (lockMap) {
-      return lockMap.get(new PdoKey(pdo.getClassId(), pdo.getId()));
+      return lockMap.get(new PdoKey(pdo));
     }
   }
 
@@ -374,17 +374,26 @@ public class DefaultLockManager implements LockManager {
       throw new PersistenceException(context.getSession(), "no PDO class for classId " + lock.getPdoClassId());
     }
     PersistentDomainObject<?> pdo = Pdo.create(className, context).select(lock.getId());
+    String poStr;
     if (pdo == null) {
-      throw new PersistenceException(context.getSession(), "no " + className + " for id " + lock.getId());
+      poStr = className + "[" + lock.getId() + "]";
+      LOGGER.severe("missing {0} for id {1} in {2}", className, lock.getId(), context.getSession());
+      // just remove from map
+      synchronized (lockMap) {
+        lockMap.remove(new PdoKey(lock));
+      }
     }
-    AbstractPersistentObject<?,?> po = (AbstractPersistentObject<?,?>) pdo.getPersistenceDelegate();
-    po.clearTokenLock();
-    po.updateTokenLockOnly();   // this will also remove the DbTokenLock if in map
+    else {
+      AbstractPersistentObject<?, ?> po = (AbstractPersistentObject<?, ?>) pdo.getPersistenceDelegate();
+      poStr = po.toGenericString();
+      po.clearTokenLock();
+      po.updateTokenLockOnly();   // this will also remove the DbTokenLock if in map
+    }
     if (!lock.isDeleted()) {    // wasn't in map
       lock.deleteObject();
     }
     LOGGER.warning("stale tokenlock removed for {0}, userId {1}, since {2}, expiry {3}",
-                   po.toGenericString(), lock.getLockedBy(), lock.getLockedSince(), lock.getLockExpiry());
+                   poStr, lock.getLockedBy(), lock.getLockedSince(), lock.getLockExpiry());
   }
 
 
