@@ -523,7 +523,10 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
    */
   public void delete() {
     T pdo = getPdo();
-    pdo.delete();
+    getPdo().getSession().transaction(() -> {
+      pdo.delete();
+      return null;
+    });
     if (!closeIfModal()) {
       setPdo(on());
       getEditor().requestInitialFocus();
