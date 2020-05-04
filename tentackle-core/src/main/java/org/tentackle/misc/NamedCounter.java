@@ -18,11 +18,15 @@
 
 package org.tentackle.misc;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Counter per name.
+ * Counter per name.<br>
+ * The counter is threadsafe.
  * <p>
  * Example:
  * <pre>
@@ -41,28 +45,50 @@ import java.util.Map;
  */
 public class NamedCounter {
 
-
-  // simple counter to avoid a Long and puts
-  private static class Counter {
-    private long count;
-  }
-
   /**
    * Counters for instances with the same name.
    */
-  private final Map<String,Counter> counters = new HashMap<>();
+  private final Map<String, AtomicLong> counters = new ConcurrentHashMap<>();
 
 
   /**
    * Returns the next number for given name.
    *
-   * @param name the name
+   * @param name the counter's name
    * @return the number, starting at 1
    */
-  public synchronized long next(String name) {
-    Counter counter = counters.computeIfAbsent(name, k -> new Counter());
-    // create new counter
-    return ++counter.count;
+  public long next(String name) {
+    return counters.computeIfAbsent(name, n -> new AtomicLong()).incrementAndGet();
+  }
+
+  /**
+   * Returns the previous number for given name.
+   *
+   * @param name the counter's name
+   * @return the number, starting at -1
+   */
+  public long previous(String name) {
+    return counters.computeIfAbsent(name, n -> new AtomicLong()).decrementAndGet();
+  }
+
+  /**
+   * Gets the current value of the counter.
+   *
+   * @param name the counter's name
+   * @return the counter's value, 0 if no such counter (yet)
+   */
+  public long get(String name) {
+    AtomicLong counter = counters.get(name);
+    return counter == null ? 0 : counter.get();
+  }
+
+  /**
+   * Gets the names of the counters.
+   *
+   * @return the counter names
+   */
+  public Collection<String> names() {
+    return new ArrayList<>(counters.keySet());
   }
 
 }
