@@ -1182,12 +1182,11 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
   /**
-   * Indicates whether some other object is "equal to" this one.
+   * Indicates whether some other object is "equal to" this one.<br>
+   * Method is final!<br>
    * <p>
-   * DbObjects are identical if their IDs and classes are identical.<br>
-   * IDs are *NOT* necessarily unique among all db-tables! (see poolkeeper).
-   * Does not throw any exception, so its safe to add null-objects
-   * to set of DbObjects.<br>
+   * Objects are identical if their IDs and classes are identical.<br>
+   * IDs are *NOT* necessarily unique among all db-tables!
    * If this or the passed object has an Id of 0, there is no domain identity
    * and {@link Object#equals(java.lang.Object)}
    * will be invoked.
@@ -1208,14 +1207,10 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   }
 
 
-
   /**
    * Compare two objects.<br>
-   * We are using the ID to compare objects. Makes only sense within
-   * the same class hierarchy.
-   * Must be overridden if other sortings are desired.
-   * Does not throw any exception, so its safe to add null-objects
-   * to a sorted set of DbObjects.
+   * Objects are compared by ID.<br>
+   * Method is final!<br>
    *
    * @param obj the object to compare this object with
    * @return 0 if objects are equal, &lt; 0 if this is logically less than obj, &gt; 0 if this is logically greater than obj
@@ -1236,9 +1231,9 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   }
 
 
-
   /**
-   * The hashcode for a Db-object is simply the ID.<br>
+   * The hashcode is the ID.<br>
+   * Method is final!<br>
    * It is ok -- according to the contract of hashCode() -- that objects
    * in different tables with the same id may return the same hashcode.<br>
    * If the id is 0, i.e. the object has no domain-identity,
