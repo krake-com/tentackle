@@ -333,7 +333,7 @@ public interface TableColumnConfiguration<S,T> {
   /**
    * Gets the table column.
    *
-   * @return the table column
+   * @return the table column, never null
    */
   TableColumn<S,T> getTableColumn();
 

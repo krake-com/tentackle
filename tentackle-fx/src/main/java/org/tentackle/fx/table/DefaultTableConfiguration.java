@@ -166,6 +166,15 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   }
 
   @Override
+  public TableColumnConfiguration<S, ?> removeColumn(String name) {
+    TableColumnConfiguration<S, ?> columnConfiguration = nameColumnConfigMap.remove(name);
+    if (columnConfiguration != null) {
+      columnColumnConfigMap.remove(columnConfiguration.getTableColumn());
+    }
+    return columnConfiguration;
+  }
+
+  @Override
   public void addColumnConfiguration(TableColumnConfiguration<S, ?> columnConfiguration) {
     nameColumnConfigMap.put(columnConfiguration.getName(), columnConfiguration);
     columnColumnConfigMap.put(columnConfiguration.getTableColumn(), columnConfiguration);
