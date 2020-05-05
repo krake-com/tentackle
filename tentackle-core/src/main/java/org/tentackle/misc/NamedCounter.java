@@ -58,7 +58,7 @@ public class NamedCounter {
    * @return the number, starting at 1
    */
   public long next(String name) {
-    return counters.computeIfAbsent(name, n -> new AtomicLong()).incrementAndGet();
+    return getCounter(name).incrementAndGet();
   }
 
   /**
@@ -68,18 +68,17 @@ public class NamedCounter {
    * @return the number, starting at -1
    */
   public long previous(String name) {
-    return counters.computeIfAbsent(name, n -> new AtomicLong()).decrementAndGet();
+    return getCounter(name).decrementAndGet();
   }
 
   /**
    * Gets the current value of the counter.
    *
    * @param name the counter's name
-   * @return the counter's value, 0 if no such counter (yet)
+   * @return the counter's value
    */
   public long get(String name) {
-    AtomicLong counter = counters.get(name);
-    return counter == null ? 0 : counter.get();
+    return getCounter(name).get();
   }
 
   /**
@@ -91,4 +90,8 @@ public class NamedCounter {
     return new ArrayList<>(counters.keySet());
   }
 
+
+  private AtomicLong getCounter(String name) {
+    return counters.computeIfAbsent(name, n -> new AtomicLong());
+  }
 }
