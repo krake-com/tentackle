@@ -113,9 +113,17 @@ public interface TableConfiguration<S> {
    *
    * @param name the column's binding path
    * @param displayedName the displayed column name
-   * @return the created configuration
+   * @return the created column configuration
    */
   TableColumnConfiguration<S, ?> addColumn(String name, String displayedName);
+
+  /**
+   * Removes a column via binding path.
+   *
+   * @param name the column's binding path
+   * @return the old column configuration, null if no such column
+   */
+  TableColumnConfiguration<S, ?> removeColumn(String name);
 
   /**
    * Adds a column configuration.
