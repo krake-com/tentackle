@@ -28,8 +28,8 @@ import java.util.concurrent.CountDownLatch;
 
 public class NamedCounterTest {
 
-  private static final int THREAD_NUM = 100;
-  private static final int NAMES_NUM = 10000;
+  private static final int THREAD_NUM = 500;
+  private static final int NAMES_NUM = 1000;
   private static final int ITERATIONS = 100000;
 
 
