@@ -22,7 +22,11 @@ package org.tentackle.fx.component;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TablePosition;
 import javafx.scene.control.TableView;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.KeyCode;
 
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxContainer;
@@ -150,6 +154,34 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
     for (TableColumn<S,?> col: getColumns()) {
       col.setSortable(sortable);
     }
+  }
+
+
+  /**
+   * Configures the table to copy a cell via Crtl-C to the clipboard.<br>
+   * If cell selection and multi is enabled, multiple cells are separated via TAB.
+   */
+  @SuppressWarnings("unchecked")
+  public void enableCopyToClipboard() {
+    setOnKeyPressed(e -> {
+      if (e.isControlDown() && e.getCode() == KeyCode.C) {
+        StringBuilder buf = new StringBuilder();
+        for (TablePosition<S,?> pos: getSelectionModel().getSelectedCells()) {
+          Object cell = getColumns().get(pos.getColumn()).getCellData(pos.getRow());
+          if (cell != null) {
+            if (buf.length() > 0) {
+              buf.append('\t');
+            }
+            buf.append(cell);
+          }
+        }
+        if (buf.length() > 0) {
+          ClipboardContent cbc = new ClipboardContent();
+          cbc.putString(buf.toString());
+          Clipboard.getSystemClipboard().setContent(cbc);
+        }
+      }
+    });
   }
 
 

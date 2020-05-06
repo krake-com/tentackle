@@ -19,13 +19,10 @@
 
 package org.tentackle.fx.component.config;
 
-import javafx.scene.control.TablePosition;
 import javafx.scene.control.TableView;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.KeyCode;
 
 import org.tentackle.fx.ConfiguratorService;
+import org.tentackle.fx.component.FxTableView;
 
 /**
  * Configures a TableView.
@@ -40,27 +37,9 @@ public class TableViewConfigurator<T extends TableView<?>> extends ComponentConf
   public void configure(T control) {
     // no super.configure()... -> no key remapping!
 
-    // Enable cell copy via Crtl-C to the clipboard.
-    // If cell selection and multi is enabled, multiple cells are separated via TAB.
-    control.setOnKeyPressed(e -> {
-      if (e.isControlDown() && e.getCode() == KeyCode.C) {
-        StringBuilder buf = new StringBuilder();
-        for (TablePosition<?, ?> pos : control.getSelectionModel().getSelectedCells()) {
-          Object cell = control.getColumns().get(pos.getColumn()).getCellData(pos.getRow());
-          if (cell != null) {
-            if (buf.length() > 0) {
-              buf.append('\t');
-            }
-            buf.append(cell);
-          }
-        }
-        if (buf.length() > 0) {
-          ClipboardContent cbc = new ClipboardContent();
-          cbc.putString(buf.toString());
-          Clipboard.getSystemClipboard().setContent(cbc);
-        }
-      }
-    });
+    if (control instanceof FxTableView) {
+      ((FxTableView) control).enableCopyToClipboard();
+    }
   }
 
 }
