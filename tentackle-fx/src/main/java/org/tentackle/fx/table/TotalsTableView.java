@@ -23,11 +23,7 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
-import javafx.scene.control.TablePosition;
 import javafx.scene.control.TableView;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.KeyCode;
 
 import org.tentackle.fx.component.FxTableView;
 
@@ -73,7 +69,9 @@ public class TotalsTableView<S> extends FxTableView<S> {
    */
   public TotalsTableView() {
     applyCSS();
-    enableCopyToClipboard();
+    // allow ctrl-c copy of multiple cells (see TableViewConfigurator)
+    getSelectionModel().setCellSelectionEnabled(true);
+    getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
   }
 
 
@@ -105,34 +103,6 @@ public class TotalsTableView<S> extends FxTableView<S> {
     // the totals table uses its own CSS file that makes the header and horizontal scrollbar invisible
     getStylesheets().addAll(TotalsTableView.class.getResource("totalstable.css").toExternalForm());
     getStyleClass().add("totalstable");
-  }
-
-  /**
-   * Configures the table to copy a cell via Crtl-C to the clipboard.
-   */
-  @SuppressWarnings("unchecked")
-  protected void enableCopyToClipboard() {
-    getSelectionModel().setCellSelectionEnabled(true);
-    getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-    setOnKeyPressed(e -> {
-      if (e.isControlDown() && e.getCode() == KeyCode.C) {
-        StringBuilder buf = new StringBuilder();
-        for (TablePosition<S,?> pos: getSelectionModel().getSelectedCells()) {
-          Object cell = getColumns().get(pos.getColumn()).getCellData(pos.getRow());
-          if (cell != null) {
-            if (buf.length() > 0) {
-              buf.append('\t');
-            }
-            buf.append(cell);
-          }
-        }
-        if (buf.length() > 0) {
-          ClipboardContent cbc = new ClipboardContent();
-          cbc.putString(buf.toString());
-          Clipboard.getSystemClipboard().setContent(cbc);
-        }
-      }
-    });
   }
 
   /**
