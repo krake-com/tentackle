@@ -158,30 +158,38 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
 
 
   /**
-   * Configures the table to copy a cell via Crtl-C to the clipboard.<br>
-   * If cell selection and multi is enabled, multiple cells are separated via TAB.
+   * Configures the table to copy a cell via Crtl-C to the clipboard.
    */
-  @SuppressWarnings("unchecked")
   public void enableCopyToClipboard() {
     setOnKeyPressed(e -> {
       if (e.isControlDown() && e.getCode() == KeyCode.C) {
-        StringBuilder buf = new StringBuilder();
-        for (TablePosition<S,?> pos: getSelectionModel().getSelectedCells()) {
-          Object cell = getColumns().get(pos.getColumn()).getCellData(pos.getRow());
-          if (cell != null) {
-            if (buf.length() > 0) {
-              buf.append('\t');
-            }
-            buf.append(cell);
-          }
-        }
-        if (buf.length() > 0) {
-          ClipboardContent cbc = new ClipboardContent();
-          cbc.putString(buf.toString());
-          Clipboard.getSystemClipboard().setContent(cbc);
-        }
+        copyToClipboard();
       }
     });
+  }
+
+
+  /**
+   * Copies the selected cells to the clipboard.<br>
+   * Multiple cells are separated by tabs.
+   */
+  @SuppressWarnings("unchecked")
+  public void copyToClipboard() {
+    StringBuilder buf = new StringBuilder();
+    for (TablePosition<S,?> pos: getSelectionModel().getSelectedCells()) {
+      Object cell = getColumns().get(pos.getColumn()).getCellData(pos.getRow());
+      if (cell != null) {
+        if (buf.length() > 0) {
+          buf.append('\t');
+        }
+        buf.append(cell);
+      }
+    }
+    if (buf.length() > 0) {
+      ClipboardContent cbc = new ClipboardContent();
+      cbc.putString(buf.toString());
+      Clipboard.getSystemClipboard().setContent(cbc);
+    }
   }
 
 
