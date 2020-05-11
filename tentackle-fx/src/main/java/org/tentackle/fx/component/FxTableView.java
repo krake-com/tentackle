@@ -21,6 +21,8 @@ package org.tentackle.fx.component;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.scene.Node;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TablePosition;
 import javafx.scene.control.TableView;
@@ -41,6 +43,8 @@ import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.fx.table.TotalsTableView;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Extended TableView.
@@ -60,6 +64,12 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
    * The optional totals table.
    */
   private TotalsTableView<S> totalsTableView;
+
+  /**
+   * Currently displayed info notes.
+   */
+  private List<Note> infoNotes;
+
 
   /**
    * Creates a default TableView control with no content.
@@ -163,7 +173,28 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
   public void enableCopyToClipboard() {
     setOnKeyPressed(e -> {
       if (e.isControlDown() && e.getCode() == KeyCode.C) {
-        copyToClipboard();
+        String text = copyToClipboard();
+        if (text != null) {
+          // display copied text for as long as the control button is held down (see setOnKeyReleased below)
+          Note infoNote = new Note(Note.Position.CENTER, Note.Type.INFO);
+          infoNote.setText(text);
+          infoNote.show(this);
+          if (infoNotes == null) {
+            infoNotes = new ArrayList<>();
+          }
+          infoNotes.add(infoNote);
+        }
+      }
+    });
+    setOnKeyReleased(e -> {
+      if (e.getCode() == KeyCode.CONTROL) {
+        if (infoNotes != null) {
+          // hide all info notes with the release of the control button
+          for (Note infoNote : infoNotes) {
+            infoNote.hide();
+          }
+          infoNotes = null;
+        }
       }
     });
   }
@@ -172,24 +203,41 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
   /**
    * Copies the selected cells to the clipboard.<br>
    * Multiple cells are separated by tabs.
+   *
+   * @return the copied text, null if nothing copied
    */
   @SuppressWarnings("unchecked")
-  public void copyToClipboard() {
+  public String copyToClipboard() {
     StringBuilder buf = new StringBuilder();
     for (TablePosition<S,?> pos: getSelectionModel().getSelectedCells()) {
-      Object cell = getColumns().get(pos.getColumn()).getCellData(pos.getRow());
-      if (cell != null) {
+      Object item = getColumns().get(pos.getColumn()).getCellData(pos.getRow());
+      if (item != null) {
+        String text = null;
+        // try to lookup the rendered text
+        for (Node c: lookupAll(".table-cell")) {    // all visible cells only
+          TableCell<?, ?> tc=(TableCell<?, ?>) c;
+          if (tc.getItem() == item) {   // == is ok here, must be the same instance!
+            text = tc.getText();
+            break;
+          }
+        }
         if (buf.length() > 0) {
           buf.append('\t');
         }
-        buf.append(cell);
+        if (text == null) {
+          text = item.toString();   // fallback if no rendered text found
+        }
+        buf.append(text);
       }
     }
     if (buf.length() > 0) {
       ClipboardContent cbc = new ClipboardContent();
-      cbc.putString(buf.toString());
+      String text = buf.toString();
+      cbc.putString(text);
       Clipboard.getSystemClipboard().setContent(cbc);
+      return text;
     }
+    return null;
   }
 
 

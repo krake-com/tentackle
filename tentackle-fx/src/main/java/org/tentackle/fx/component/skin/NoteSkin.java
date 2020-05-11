@@ -99,7 +99,7 @@ public class NoteSkin implements Skin<Note> {
         rootPane.getChildren().add(leftNote);
         break;
 
-      default:  // RIGHT
+      case RIGHT:
         HBox rightNote = new HBox();
         rightNote.setSpacing(0.0);
         rightNote.setAlignment(Pos.CENTER);
@@ -107,6 +107,15 @@ public class NoteSkin implements Skin<Note> {
         rightNote.getChildren().add(note.getContentNode());
         rightNote.getStyleClass().add("box");
         rootPane.getChildren().add(rightNote);
+
+      default:  // CENTER
+        HBox centerNote = new HBox();
+        centerNote.setSpacing(0.0);
+        centerNote.setAlignment(Pos.CENTER);
+        // no link for center
+        centerNote.getChildren().add(note.getContentNode());
+        centerNote.getStyleClass().add("box");
+        rootPane.getChildren().add(centerNote);
     }
 
     // to move the popup along with the linked node/window
@@ -156,8 +165,12 @@ public class NoteSkin implements Skin<Note> {
           note.setAnchorY(linkedNodeLocation.getY() + linkedNodeBounds.getHeight() / 2 - note.getHeight() / 2);
           break;
 
-        default:  // RIGHT
+        case RIGHT:
           note.setAnchorX(linkedNodeLocation.getX() + linkedNodeBounds.getWidth() - CIRCLE_RADIUS);
+          note.setAnchorY(linkedNodeLocation.getY() + linkedNodeBounds.getHeight() / 2 - note.getHeight() / 2);
+
+        default:  // CENTER
+          note.setAnchorX(linkedNodeLocation.getX() + linkedNodeBounds.getWidth() / 2 - note.getWidth() / 2);
           note.setAnchorY(linkedNodeLocation.getY() + linkedNodeBounds.getHeight() / 2 - note.getHeight() / 2);
       }
     }

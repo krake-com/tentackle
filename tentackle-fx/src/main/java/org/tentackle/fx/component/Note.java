@@ -110,7 +110,12 @@ public class Note extends PopupControl {
     /**
      * below the node.
      */
-    BOTTOM("bottom");
+    BOTTOM("bottom"),
+
+    /**
+     * in the middle of the node.
+     */
+    CENTER("center");
 
     private final String cssClass;
 
