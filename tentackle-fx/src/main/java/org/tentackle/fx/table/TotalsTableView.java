@@ -69,17 +69,12 @@ public class TotalsTableView<S> extends FxTableView<S> {
    */
   public TotalsTableView() {
     applyCSS();
-    enableCopyToClipboard();
-  }
-
-
-  @Override
-  public void enableCopyToClipboard() {
     // allow ctrl-c copy of multiple cells (see TableViewConfigurator)
     getSelectionModel().setCellSelectionEnabled(true);
     getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-    super.enableCopyToClipboard();
+    setCopyToClipboardEnabled(true);
   }
+
 
   /**
    * Sets the bound table.<br>
