@@ -29,6 +29,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxContainer;
@@ -70,6 +71,11 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
    */
   private List<Note> infoNotes;
 
+  /**
+   * Copy to clipboard feature toggle.
+   */
+  private boolean copyToClipboardEnabled;
+
 
   /**
    * Creates a default TableView control with no content.
@@ -77,7 +83,7 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
    * Refer to the {@link TableView} class documentation for details on the default state of other properties.
    */
   public FxTableView() {
-    super();
+    addEventHandler(KeyEvent.ANY, this::handleKeyEvent);
   }
 
 
@@ -169,10 +175,30 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
 
   /**
    * Configures the table to copy a cell via Crtl-C to the clipboard.
+   *
+   * @param copyToClipboardEnabled true to enable
    */
-  public void enableCopyToClipboard() {
-    setOnKeyPressed(e -> {
-      if (e.isControlDown() && e.getCode() == KeyCode.C) {
+  public void setCopyToClipboardEnabled(boolean copyToClipboardEnabled) {
+    this.copyToClipboardEnabled = copyToClipboardEnabled;
+  }
+
+  /**
+   * Returns whether the copy to clipboard feature is enabled.
+   *
+   * @return true if enabled
+   */
+  public boolean isCopyToClipboardEnabled() {
+    return copyToClipboardEnabled;
+  }
+
+  /**
+   * Handles all key events.
+   *
+   * @param event the key event
+   */
+  protected void handleKeyEvent(KeyEvent event) {
+    if (isCopyToClipboardEnabled()) {
+      if (event.getEventType() == KeyEvent.KEY_PRESSED && event.isControlDown() && event.getCode() == KeyCode.C) {
         String text = copyToClipboard();
         if (text != null) {
           // display copied text for as long as the control button is held down (see setOnKeyReleased below)
@@ -185,9 +211,7 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
           infoNotes.add(infoNote);
         }
       }
-    });
-    setOnKeyReleased(e -> {
-      if (e.getCode() == KeyCode.CONTROL) {
+      else if (event.getEventType() == KeyEvent.KEY_RELEASED && event.getCode() == KeyCode.CONTROL) {
         if (infoNotes != null) {
           // hide all info notes with the release of the control button
           for (Note infoNote : infoNotes) {
@@ -196,7 +220,7 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
           infoNotes = null;
         }
       }
-    });
+    }
   }
 
 
