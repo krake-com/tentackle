@@ -290,7 +290,17 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
 @[
-        if (!hidden) {
+        if (hidden) {
+]@
+
+  /**
+   * Gets @(rel)@.
+   *
+   * \@return @(var)@ @(rel.getComment())@
+   */
+@[
+        }
+        else {
 ]@
   \@Override
 @[
@@ -299,6 +309,16 @@ For more options, see {\@link DbModelWurblet}.
 ]@
   \@SuppressWarnings("unchecked")
 @[
+        }
+        if (!generateMock) {
+          for (String annotation: rel.getAnnotations()) {
+            AnnotationOption anno = new AnnotationOption(annotation);
+            if (anno.isHidden() && !anno.isSetterOnly()) {
+]@
+  @(anno.getAnnotation())@
+@[
+            }
+          }
         }
 ]@
   @(scope)@ @(type)@ @(rel.getGetterName())@()  {
@@ -669,10 +689,35 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
 @[
-          if (!hidden) {
+          if (hidden) {
+]@
+
+  /**
+   * Sets @(rel)@.
+   *
+   * \@param @(var)@ @(rel.getComment())@
+@[
+        if (linkMethodIndex != null) {
+]@
+   * \@param index the index starting at 0
+@[
+        }
+]@
+   */
+@[
+          }
+          else {
 ]@
   \@Override
 @[
+          }
+          for (String annotation: rel.getAnnotations()) {
+            AnnotationOption anno = new AnnotationOption(annotation);
+            if (anno.isHidden() && (anno.isSetterOnly() || anno.isSetterAndGetter())) {
+]@
+  @(anno.getAnnotation())@
+@[
+            }
           }
           if (linkMethodIndex != null) {
 ]@
