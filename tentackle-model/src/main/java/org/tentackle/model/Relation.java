@@ -99,9 +99,20 @@ public interface Relation extends ModelElement {
 
   /**
    * Gets the list of annotations.<br>
-   * Annotations start with an &#64; and are applied to the interfaces.
-   * However, if the at-sign is followed by a <code>~</code>, the implementation
-   * will be annotated instead.
+   * Annotations start with an &#64;. By default, they are applied to the getters
+   * of the interfaces only. However, the at-sign may be followed by one or two modifiers
+   * that changes the code generation:
+   *
+   * <ul>
+   *   <li><code>=</code>: annotate setter only.</li>
+   *   <li><code>+</code>: annotate setter and getter.</li>
+   *   <li><code>~</code>: annotation is hidden, i.e. applied to the implementations instead of the interfaces.</li>
+   * </ul>
+   * Example:
+   * <pre>
+   *   <code>&#64;=~MyAnno</code>
+   *   will be applied to the implementation of the setter only.
+   * </pre>
    *
    * @return the annotations
    */

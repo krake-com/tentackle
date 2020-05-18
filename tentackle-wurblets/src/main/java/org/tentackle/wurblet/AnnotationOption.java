@@ -17,12 +17,11 @@
  */
 package org.tentackle.wurblet;
 
-import org.tentackle.model.ModelException;
+import org.tentackle.model.AttributeOptions;
 
 /**
  * Maps the annotation string of the model.<br>
- *
- * Implements the modifiers.
+ * Implements the modifiers as described in {@link AttributeOptions#getAnnotations()}.
  */
 public class AnnotationOption {
 
@@ -37,11 +36,7 @@ public class AnnotationOption {
     HIDDEN
   }
 
-  public AnnotationOption(String annotation) throws ModelException {
-    if (annotation == null || !annotation.startsWith("@") || annotation.length() < 2) {
-      throw new ModelException("malformed annotation " + annotation);
-    }
-
+  public AnnotationOption(String annotation) {
     if (annotation.length() > 2) {
       Modifier modifier = toModifier(annotation.charAt(1));
       if (modifier != null) {
@@ -56,7 +51,6 @@ public class AnnotationOption {
         }
       }
     }
-
     this.annotation = annotation;
   }
 

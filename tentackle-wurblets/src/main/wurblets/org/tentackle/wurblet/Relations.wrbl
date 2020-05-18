@@ -82,9 +82,12 @@ For more options, see {\@link ModelWurblet}.
           }
         }
         for (String annotation: rel.getAnnotations()) {
+          AnnotationOption anno = new AnnotationOption(annotation);
+          if (!anno.isHidden() && !anno.isSetterOnly()) {
 ]@
-  @(annotation)@
+  @(anno.getAnnotation())@
 @[
+          }
         }
 ]@
   @(type)@ @(rel.getGetterName())@();
@@ -155,6 +158,14 @@ For more options, see {\@link ModelWurblet}.
 ]@
   @(attr.getBindableAnnotation())@
 @[
+        }
+        for (String annotation: rel.getAnnotations()) {
+          AnnotationOption anno = new AnnotationOption(annotation);
+          if (!anno.isHidden() && (anno.isSetterOnly() || anno.isSetterAndGetter())) {
+]@
+  @(anno.getAnnotation())@
+@[
+          }
         }
         if (linkMethodIndexed) {
 ]@
