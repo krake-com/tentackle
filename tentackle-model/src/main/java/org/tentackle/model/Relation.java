@@ -98,7 +98,10 @@ public interface Relation extends ModelElement {
   AccessScope getAccessScope();
 
   /**
-   * list of annotations.
+   * Gets the list of annotations.<br>
+   * Annotations start with an &#64; and are applied to the interfaces.
+   * However, if the at-sign is followed by a <code>~</code>, the implementation
+   * will be annotated instead.
    *
    * @return the annotations
    */

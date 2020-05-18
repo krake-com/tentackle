@@ -816,6 +816,14 @@ For more options, see {\@link DbModelWurblet}.
   \@Override
 @[
           }
+          for (String annotation: attr.getOptions().getAnnotations()) {
+            AnnotationOption anno = new AnnotationOption(annotation);
+            if (anno.isHidden() && !anno.isSetterOnly()) {
+]@
+  @(anno.getAnnotation())@
+@[
+            }
+          }
 ]@
   @(protection)@ @(type)@ @(getter)@()    {
     return @(attr.getName())@;
@@ -853,6 +861,14 @@ For more options, see {\@link DbModelWurblet}.
 
   \@Override
 @[
+          }
+          for (String annotation: attr.getOptions().getAnnotations()) {
+            AnnotationOption anno = new AnnotationOption(annotation);
+            if (anno.isHidden() && (anno.isSetterOnly() || anno.isSetterAndGetter())) {
+]@
+  @(anno.getAnnotation())@
+@[
+            }
           }
 ]@
   @(setterProtection)@ void @(setter)@(@(type)@ @(attr.getName())@) {
