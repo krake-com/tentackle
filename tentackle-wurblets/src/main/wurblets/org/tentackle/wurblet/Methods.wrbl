@@ -51,9 +51,12 @@ For more options, see {\@link ModelWurblet}.
   \@Persistent(ordinal=@(attr.getOrdinal())@, comment=@(StringHelper.toDoubleQuotes(attr.getOptions().getComment()))@)
 @[
           for (String annotation: attr.getOptions().getAnnotations()) {
+            AnnotationOption anno = new AnnotationOption(annotation);
+            if (!anno.isHidden() && !anno.isSetterOnly()) {
 ]@
-  @(annotation)@
+  @(anno.getAnnotation())@
 @[
+            }
           }
           if (attr.getOptions().isBindable()) {
 ]@
@@ -88,6 +91,14 @@ For more options, see {\@link ModelWurblet}.
    * \@param @(attr.getName())@ @(attr.getOptions().getComment())@
    */
 @[
+            for (String annotation: attr.getOptions().getAnnotations()) {
+              AnnotationOption anno = new AnnotationOption(annotation);
+              if (!anno.isHidden() && (anno.isSetterOnly() || anno.isSetterAndGetter())) {
+]@
+  @(anno.getAnnotation())@
+@[
+              }
+            }
             if (attr.getOptions().isBindable()) {
 ]@
   \@Bindable
