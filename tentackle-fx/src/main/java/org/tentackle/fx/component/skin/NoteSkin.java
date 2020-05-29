@@ -107,6 +107,7 @@ public class NoteSkin implements Skin<Note> {
         rightNote.getChildren().add(note.getContentNode());
         rightNote.getStyleClass().add("box");
         rootPane.getChildren().add(rightNote);
+        break;
 
       default:  // CENTER
         HBox centerNote = new HBox();
@@ -168,6 +169,7 @@ public class NoteSkin implements Skin<Note> {
         case RIGHT:
           note.setAnchorX(linkedNodeLocation.getX() + linkedNodeBounds.getWidth() - CIRCLE_RADIUS);
           note.setAnchorY(linkedNodeLocation.getY() + linkedNodeBounds.getHeight() / 2 - note.getHeight() / 2);
+          break;
 
         default:  // CENTER
           note.setAnchorX(linkedNodeLocation.getX() + linkedNodeBounds.getWidth() / 2 - note.getWidth() / 2);
