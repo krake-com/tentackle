@@ -55,15 +55,19 @@ public abstract class NumberStringTranslator<M extends Number> extends ValueStri
    * @return the number
    */
   protected Number parse(String s) {
-    try {
-      return getFormat().parse(s);
+    if (s != null) {
+      try {
+        return getFormat().parse(s);
+      }
+      catch (ParseException pex) {
+        getComponent().setErrorOffset(pex.getErrorOffset());
+        // ParseExceptions are not localized, unfortunately
+        getComponent().setError(MessageFormat.format(FxFxBundle.getString("INVALID NUMBER: {0}"), s));
+        getComponent().setErrorTemporary(true);
+        throw new FxRuntimeException("conversion failed for '" + s + "'", pex);
+      }
     }
-    catch (ParseException pex) {
-      getComponent().setErrorOffset(pex.getErrorOffset());
-          // ParseExceptions are not localized, unfortunately
-      getComponent().setError(MessageFormat.format(FxFxBundle.getString("INVALID NUMBER: {0}"), s));
-      throw new FxRuntimeException("conversion failed for '" + s + "'", pex);
-    }
+    return null;
   }
 
   @Override

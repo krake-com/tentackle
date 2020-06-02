@@ -105,18 +105,23 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
   /**
    * The saved view value.
    */
-  private Object savedObject;
+  private Object savedViewObject;
 
   /**
    * True if saveView() invoked at least once.
    */
-  private boolean savedObjectValid;
+  private boolean savedViewObjectValid;
 
   /**
    * The error message if conversion failed.<br>
    * This message is shown to the user in a tooltip.
    */
   private String errorMessage;
+
+  /**
+   * True if temporary error.
+   */
+  private boolean errorTemporary;
 
   /**
    * The error popup shown.<br>
@@ -293,6 +298,7 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
         updatingModel = true;
         if (!getNode().isDisabled()) {
           try {
+            String oldError = getError();
             if (binding != null) {
               binding.setModelValue(binding.getViewValue());
               List<ValidationResult> results = binding.validate();
@@ -302,6 +308,9 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
             }
             fireViewToModelListeners();
             modelUpdated = true;
+            if (getError() != null && !getError().equals(oldError)) {
+              handleInputFailure(getError());
+            }
           }
           catch (RuntimeException rex) {
             if (getError() == null) {
@@ -322,16 +331,7 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
               }
               // some conversion/mapping failed (usually parse-exception):
               // -> show error popup and stay in component
-              setError(msg);
-              Scene scene = getNode().getScene();
-              if (scene != null) {
-                Node node = scene.getFocusOwner();
-                if (node != getNode() &&
-                    (!(node instanceof FxComponent) || ((FxComponent) node).getError() == null)) {
-                  // only if other component currently holding the focus has no error (would loop otherwise)
-                  Platform.runLater(((Node) getComponent())::requestFocus);
-                }
-              }
+              handleInputFailure(msg);
             }
           }
           triggerViewModified();
@@ -339,6 +339,25 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
       }
       finally {
         updatingModel = false;
+      }
+    }
+  }
+
+  /**
+   * Handles a failure during conversion of the user's input to the model.
+   *
+   * @param msg the failure message
+   */
+  protected void handleInputFailure(String msg) {
+    setError(msg);
+    setErrorTemporary(true);
+    Scene scene = getNode().getScene();
+    if (scene != null) {
+      Node node = scene.getFocusOwner();
+      if (node != getNode() &&
+          (!(node instanceof FxComponent) || ((FxComponent) node).getError() == null)) {
+        // only if other component currently holding the focus has no error (would loop otherwise)
+        Platform.runLater(((Node) getComponent())::requestFocus);
       }
     }
   }
@@ -374,6 +393,19 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
     if (changed) {
       updateErrorStyle(errorMessage != null && isChangeable());
     }
+    if (errorMessage == null) {
+      errorTemporary = false;
+    }
+  }
+
+  @Override
+  public void setErrorTemporary(boolean errorTemporary) {
+    this.errorTemporary = errorTemporary;
+  }
+
+  @Override
+  public boolean isErrorTemporary() {
+    return errorTemporary;
   }
 
   /**
@@ -441,37 +473,43 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
 
   @Override
   public void triggerViewModified() {
-    if (savedObjectValid) {
+    if (isSavedViewObjectValid()) {
+      // application maintains a validation lifecycle
       boolean viewModified = !Objects.equals(getViewObject(), getSavedViewObject());
       setViewModified(viewModified);
       if (getParentContainer() != null) {
         getParentContainer().triggerViewModified();
       }
-      if (viewModified) {
-        setError(null);
+      if (viewModified && !isErrorTemporary()) {
+        setError(null);   // error will be re-checked by application on operations like "save" or alike
       }
     }
   }
 
   @Override
   public void saveView() {
-    savedObject = getViewObject();
-    savedObjectValid = true;
+    savedViewObject = getViewObject();
+    savedViewObjectValid = true;
     setViewModified(false);
   }
 
   @Override
   public void invalidateSavedView() {
-    savedObjectValid = false;
+    savedViewObjectValid = false;
+  }
+
+  @Override
+  public boolean isSavedViewObjectValid() {
+    return savedViewObjectValid;
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public Object getSavedViewObject() {
-    if (!savedObjectValid) {
+    if (!savedViewObjectValid) {
       throw new FxRuntimeException("saved value is invalid in " + getComponent());
     }
-    return savedObject;
+    return savedViewObject;
   }
 
   @Override

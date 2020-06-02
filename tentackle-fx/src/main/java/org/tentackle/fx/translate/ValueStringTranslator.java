@@ -51,11 +51,14 @@ public abstract class ValueStringTranslator<M> extends AbstractValueTranslator<M
         text = text.replace(filler, ' ');
       }
       text = text.trim();
-      if (!text.isEmpty()) {
-        return super.toModel(text);
+      if (text.isEmpty()) {
+        text = null;
       }
     }
-    return null;
+    if (getComponent().isErrorTemporary()) {
+      getComponent().setError(null);    // clear temporary parsing error, if any
+    }
+    return super.toModel(text);
   }
 
 

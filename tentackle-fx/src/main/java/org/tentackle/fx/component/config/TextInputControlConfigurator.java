@@ -51,6 +51,7 @@ public class TextInputControlConfigurator<T extends TextInputControl> extends Co
         if (event.getEventType() == KeyEvent.KEY_PRESSED &&
             !control.isDisabled() && control.isEditable()) {
           control.clear();
+          ((FxComponent) control).triggerViewModified();
         }
         event.consume();
       }

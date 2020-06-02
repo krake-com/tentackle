@@ -70,17 +70,6 @@ public class BMoneyStringTranslator extends FractionNumberStringTranslator<BMone
   @Override
   protected BMoney parse(String str) {
     if (str != null) {
-
-      getComponent().setErrorOffset(null);
-      getComponent().setError(null);
-
-      str = str.replace(getComponent().getFiller(), ' ').trim();
-      int slen = str.length();
-
-      if (slen == 0) {
-        return null;
-      }
-
       DecimalFormat decimalFormat = getFormat();
       char commaChar = decimalFormat.getDecimalFormatSymbols().getDecimalSeparator();
       boolean parseDMoney = DMoney.class.isAssignableFrom(getComponent().getType());

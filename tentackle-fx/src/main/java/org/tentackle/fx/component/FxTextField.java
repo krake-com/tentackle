@@ -123,6 +123,11 @@ public class FxTextField extends TextField implements FxTextComponent {
   }
 
   @Override
+  public boolean isSavedViewObjectValid() {
+    return getDelegate().isSavedViewObjectValid();
+  }
+
+  @Override
   public <V> V getViewValue() {
     return getDelegate().getViewValue();
   }
@@ -335,6 +340,16 @@ public class FxTextField extends TextField implements FxTextComponent {
   @Override
   public String getError() {
     return getDelegate().getError();
+  }
+
+  @Override
+  public void setErrorTemporary(boolean errorTemporary) {
+    getDelegate().setErrorTemporary(errorTemporary);
+  }
+
+  @Override
+  public boolean isErrorTemporary() {
+    return getDelegate().isErrorTemporary();
   }
 
   @Override
