@@ -42,6 +42,22 @@ public interface ErrorPopupSupported {
   void setError(String error);
 
   /**
+   * Returns whether this is a temporary error.<br>
+   * Temporary errors are set by the value translators typically if some parsing failed.
+   * Non-temporary are set by the application, for example when a persistence validation failed.
+   *
+   * @return true if temporary error
+   */
+  boolean isErrorTemporary();
+
+  /**
+   * Sets the temporary error flag.
+   *
+   * @param errorTemporary true if this is a temporary error
+   */
+  void setErrorTemporary(boolean errorTemporary);
+
+  /**
    * Shows the error popup.<br>
    * Requires the error message set.
    */

@@ -114,6 +114,13 @@ public interface FxComponent extends FxControl, ErrorPopupSupported, InfoPopupSu
   void setViewObject(Object viewObject);
 
   /**
+   * Returns whether the view object is saved.
+   *
+   * @return true if saved, false if invalid
+   */
+  boolean isSavedViewObjectValid();
+
+  /**
    * Retrieves the view value saved with {@link #saveView()}.<br>
    * The returned type is the internal native type of the component.
    *

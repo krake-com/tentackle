@@ -19,8 +19,6 @@
 
 package org.tentackle.fx;
 
-import java.util.function.Function;
-import java.util.function.UnaryOperator;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.geometry.Pos;
 import javafx.scene.control.TextFormatter;
@@ -28,6 +26,9 @@ import javafx.scene.control.TextInputControl;
 
 import org.tentackle.fx.translate.ValueStringTranslator;
 import org.tentackle.reflect.ReflectionHelper;
+
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 /**
  * Delegate implementing FxComponent.
@@ -188,6 +189,14 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate
   @Override
   public void setErrorOffset(Integer errorOffset) {
     this.errorOffset = errorOffset;
+  }
+
+  @Override
+  public void setError(String errorMessage) {
+    super.setError(errorMessage);
+    if (errorMessage == null) {
+      setErrorOffset(null);
+    }
   }
 
   @Override

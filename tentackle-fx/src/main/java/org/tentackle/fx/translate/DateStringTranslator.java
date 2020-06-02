@@ -43,7 +43,17 @@ import java.util.GregorianCalendar;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static java.util.Calendar.*;
+import static java.util.Calendar.DATE;
+import static java.util.Calendar.DAY_OF_MONTH;
+import static java.util.Calendar.DAY_OF_WEEK;
+import static java.util.Calendar.DAY_OF_YEAR;
+import static java.util.Calendar.HOUR;
+import static java.util.Calendar.HOUR_OF_DAY;
+import static java.util.Calendar.MINUTE;
+import static java.util.Calendar.MONTH;
+import static java.util.Calendar.SECOND;
+import static java.util.Calendar.WEEK_OF_YEAR;
+import static java.util.Calendar.YEAR;
 
 /**
  * Date translator.
@@ -265,7 +275,6 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
       // decode format string, retry twice
       for (int loop=0; loop < 3; loop++)  {
 
-        getComponent().setErrorOffset(null);
         getComponent().setError(null);
 
         str = str.replace(getComponent().getFiller(), ' ').trim();
@@ -480,6 +489,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
           catch (ParseException e) {
             getComponent().setErrorOffset(e.getErrorOffset());
             getComponent().setError(e.getMessage());
+            getComponent().setErrorTemporary(true);
             return null;    // start over
           }
           catch (RuntimeException e) {
@@ -515,6 +525,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
           getComponent().setErrorOffset(e.getErrorOffset());
           getComponent().setError(MessageFormat.format(FxFxBundle.getString(
                   withDate ? "INVALID DATE: {0}" : "INVALID TIME: {0}"), str));
+          getComponent().setErrorTemporary(true);
           char errorChar = 0;
           if (e.getErrorOffset() > 0 && e.getErrorOffset() == slen) {
             errorChar = str.charAt(e.getErrorOffset() - 1);
@@ -587,7 +598,6 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
                   cal.set(HOUR_OF_DAY, hour);
                   cal.set(MINUTE, minute);
                   cal.set(SECOND, second);
-                  getComponent().setErrorOffset(null);
                   getComponent().setError(null);
                   return cal.getTime();
                 }
