@@ -23,8 +23,6 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.TextFormatter;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
 
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.FxContainer;
@@ -82,17 +80,6 @@ public class FxComboBoxDelegate extends FxTextComponentDelegate {
     // important to set the type before creating the translator,
     // since the translator may need to know the type
     super.setType(type);
-
-    // deselect by DELETE- or BACKSPACE-key (with or without shift)
-    component.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
-      if (!event.isAltDown() && !event.isControlDown() && !event.isMetaDown() && !event.isShortcutDown() &&
-          (event.getCode() == KeyCode.DELETE || event.getCode() == KeyCode.BACK_SPACE) &&
-          !component.isEditable() && !component.isDisabled() && isDeselectAllowed()) {
-        
-        event.consume();
-        component.getSelectionModel().clearSelection();
-      }
-    });
 
     if (type.isEnum()) {
       ObservableList items = component.getItems();
