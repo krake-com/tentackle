@@ -23,6 +23,8 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.geometry.Pos;
 import javafx.scene.control.ComboBox;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 
 import org.tentackle.fx.CaseConversion;
 import org.tentackle.fx.FxContainer;
@@ -54,7 +56,34 @@ public class FxComboBox<T> extends ComboBox<T> implements FxTextComponent {
    * selection model.
    */
   public FxComboBox() {
-    super();
+    addEventFilter(KeyEvent.KEY_PRESSED, this::filterKeyPressed);
+  }
+
+
+  /**
+   * Filter keyboard events.
+   *
+   * @param event the key event
+   */
+  protected void filterKeyPressed(KeyEvent event) {
+    if (!isDisabled()) {
+      if (isEditable()) {
+        if (event.getCode() == KeyCode.BACK_SPACE && event.isShiftDown() &&
+            !event.isControlDown() && !event.isAltDown() && !event.isMetaDown()) {
+          // shift BACKSPACE -> clear editor contents
+          event.consume();
+          getEditor().clear();
+        }
+      }
+      else {
+        // deselect by DELETE- or BACKSPACE-key (with or without shift) in non-editable comboboxes
+        if (isDeselectAllowed() && !event.isAltDown() && !event.isControlDown() && !event.isMetaDown() && !event.isShortcutDown() &&
+            (event.getCode() == KeyCode.DELETE || event.getCode() == KeyCode.BACK_SPACE)) {
+          event.consume();
+          getSelectionModel().clearSelection();
+        }
+      }
+    }
   }
 
 
