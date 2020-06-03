@@ -22,6 +22,8 @@ package org.tentackle.fx.component;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxContainer;
@@ -49,7 +51,20 @@ public class FxChoiceBox<T> extends ChoiceBox<T> implements FxComponent {
    * Create a new ChoiceBox which has an empty list of items.
    */
   public FxChoiceBox() {
-    super();
+    addEventFilter(KeyEvent.KEY_PRESSED, this::filterKeyPressed);
+  }
+
+  /**
+   * Filter keyboard events.
+   *
+   * @param event the key event
+   */
+  protected void filterKeyPressed(KeyEvent event) {
+    if (event.getCode() == KeyCode.ESCAPE && !isDisabled() && !isShowing()) {
+      // ignore ESC if no drop-down shown as this would pass the ESC to the cancel-button.
+      // -> same behaviour as in combobox.
+      event.consume();
+    }
   }
 
   /**
