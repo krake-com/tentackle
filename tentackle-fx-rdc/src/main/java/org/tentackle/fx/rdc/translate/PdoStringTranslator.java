@@ -43,8 +43,6 @@ import java.util.function.Function;
 /**
  * PDO to String translator.
  *
- * TODO: DnD support
- *
  * @author harald
  * @param <T> the PDO type
  */
@@ -211,7 +209,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
    * @return the implementation
    */
   protected PdoComponentAddon<T> createPdoAddon() {
-    return new PdoComponentAddon<>(getComponent(), this::getPdo);
+    return new PdoComponentAddon<>(getComponent(), this::getPdo, this::setPdo);
   }
 
   /**
@@ -224,6 +222,18 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
   @SuppressWarnings("unchecked")
   protected T getPdo() {
     return (T) getComponent().getBinding().getModelValue();
+  }
+
+  /**
+   * Sets the PDO via binding.<br>
+   * Mainly used by DnD.
+   *
+   * @param pdo the PDO, null to clear
+   */
+  protected void setPdo(T pdo) {
+    getComponent().getBinding().setModelValue(pdo);
+    pdoAddon.setPdo(pdo);
+    getComponent().updateView();
   }
 
   /**

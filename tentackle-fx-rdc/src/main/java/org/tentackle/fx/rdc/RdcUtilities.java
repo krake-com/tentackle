@@ -22,11 +22,15 @@ package org.tentackle.fx.rdc;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.geometry.Point2D;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.TransferMode;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -40,6 +44,10 @@ import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.rdc.crud.PdoCrud;
 import org.tentackle.fx.rdc.search.PdoSearch;
 import org.tentackle.log.Logger;
+import org.tentackle.misc.IdentifiableKey;
+import org.tentackle.pdo.DomainContext;
+import org.tentackle.pdo.Pdo;
+import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.session.AbstractSessionTask;
 import org.tentackle.session.ModificationTracker;
@@ -403,6 +411,51 @@ public class RdcUtilities {
     }
 
     ModificationTracker.getInstance().addTask(task);
+  }
+
+
+  /**
+   * Creates the dragboard for a pdo and node.
+   *
+   * @param node the drag source
+   * @param pdo the pdo
+   * @return the dragboard, enull if PDO is not a DnD source
+   */
+  public Dragboard createDragboard(Node node, PersistentDomainObject<?> pdo) {
+    if (pdo.getClassId() != 0 && !pdo.isNew()) {
+      Dragboard dragboard = node.startDragAndDrop(TransferMode.COPY);
+      ClipboardContent content = new ClipboardContent();
+      content.putString(pdo.toIdString());
+      dragboard.setContent(content);
+      return dragboard;
+    }
+    return null;
+  }
+
+
+  /**
+   * Gets the PDO key from the dragboard.
+   *
+   * @param dragboard the dragboard
+   * @return the key, null if dragboard's string is null or empty
+   */
+  public IdentifiableKey<PersistentDomainObject<?>> getPdoKeyFromDragboard(Dragboard dragboard) {
+    String idString = dragboard.getString();
+    return idString == null || idString.isEmpty() ? null : PdoUtilities.getInstance().idStringToIdentifiableKey(idString);
+  }
+
+
+  /**
+   * Gets the PDO from a dragboard.
+   *
+   * @param dragboard the dragboard
+   * @param context the domain context
+   * @return the PDO, null if dragboard doesn't contain a pdo key or no such pdo
+   */
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public PersistentDomainObject<?> getPdoFromDragboard(Dragboard dragboard, DomainContext context) {
+    IdentifiableKey pdoKey = getPdoKeyFromDragboard(dragboard);
+    return pdoKey == null ? null : Pdo.create(pdoKey.getIdentifiableClass(), context).select(pdoKey.getIdentifiableId());
   }
 
 }

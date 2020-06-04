@@ -83,7 +83,7 @@ public class RdcChoiceBoxDelegate extends FxChoiceBoxDelegate {
    */
   @SuppressWarnings("unchecked")
   protected PdoComponentAddon createPdoAddon() {
-    return new PdoComponentAddon(getComponent(), this::getViewValue);
+    return new PdoComponentAddon(getComponent(), this::getViewValue, this::setViewValue);
   }
 
 }

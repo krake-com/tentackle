@@ -23,10 +23,8 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
-import javafx.scene.input.TransferMode;
 
 import org.tentackle.common.BundleFactory;
 import org.tentackle.fx.Fx;
@@ -38,8 +36,6 @@ import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.misc.IdentifiableKey;
 import org.tentackle.misc.ShortLongText;
 import org.tentackle.pdo.DomainContext;
-import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
 
 import java.util.ArrayList;
@@ -169,14 +165,7 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
 
   @Override
   public Dragboard createDragboard(Node node) {
-    if (pdo.getClassId() != 0 && !pdo.isNew()) {
-      Dragboard db = node.startDragAndDrop(TransferMode.COPY);
-      ClipboardContent content = new ClipboardContent();
-      content.putString(pdo.toIdString());
-      db.setContent(content);
-      return db;
-    }
-    return null;
+    return RdcUtilities.getInstance().createDragboard(node, pdo);
   }
 
   @Override
@@ -192,25 +181,15 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
    * @param dragboard the dragboard
    * @return the key, null if dragboard's string is null or empty
    */
-  public IdentifiableKey<PersistentDomainObject<?>> getPdoKeyFromDragboard(Dragboard dragboard) {
-    String idString = dragboard.getString();
-    if (idString != null && !idString.isEmpty()) {
-      return PdoUtilities.getInstance().idStringToIdentifiableKey(idString);
-    }
-    return null;
+  protected IdentifiableKey<PersistentDomainObject<?>> getPdoKeyFromDragboard(Dragboard dragboard) {
+    return RdcUtilities.getInstance().getPdoKeyFromDragboard(dragboard);
   }
 
   @Override
   public void dropDragboard(Dragboard dragbord) {
-    IdentifiableKey<PersistentDomainObject<?>> key = getPdoKeyFromDragboard(dragbord);
-    if (key != null) {
-      // load the PDO
-      @SuppressWarnings("unchecked")
-      PersistentDomainObject<?> pdoToDrop =
-              Pdo.create((Class) key.getIdentifiableClass(), pdo.getDomainContext()).select(key.getIdentifiableId());
-      if (pdoToDrop != null) {
-        dropPdo(pdoToDrop);
-      }
+    PersistentDomainObject<?> pdoToDrop = RdcUtilities.getInstance().getPdoFromDragboard(dragbord, pdo.getDomainContext());
+    if (pdoToDrop != null) {
+      dropPdo(pdoToDrop);
     }
   }
 
