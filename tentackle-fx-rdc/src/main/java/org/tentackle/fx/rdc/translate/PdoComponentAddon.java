@@ -29,16 +29,20 @@ import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.TransferMode;
 import javafx.stage.Modality;
 
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxRuntimeException;
+import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.rdc.RdcFxRdcBundle;
 import org.tentackle.fx.rdc.RdcUtilities;
+import org.tentackle.misc.IdentifiableKey;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoRuntimeException;
+import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
 
 import java.util.List;
@@ -46,7 +50,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Adds style, context-menu and function-keys to components bound to a PDO.
+ * Adds style, context-menu, DnD and function-keys to components bound to a PDO.
  *
  * @param <T> the PDO type
  */
@@ -61,6 +65,7 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
 
   private final FxComponent component;
   private final Supplier<T> pdoSupplier;
+  private final Consumer<T> pdoConsumer;
   private boolean inSearchOrEdit;
   private T pdo;
 
@@ -69,15 +74,19 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
    *
    * @param component the fx component
    * @param pdoSupplier a supplier for the currently displayed PDO
+   * @param pdoConsumer a consumer for the PDO (changed by DnD)
    */
-  public PdoComponentAddon(FxComponent component, Supplier<T> pdoSupplier) {
+  @SuppressWarnings("unchecked")
+  public PdoComponentAddon(FxComponent component, Supplier<T> pdoSupplier, Consumer<T> pdoConsumer) {
     this.component = component;
     this.pdoSupplier = pdoSupplier;
+    this.pdoConsumer = pdoConsumer;
+
+    Control control = (Control) component;
 
     // register function keys:
     // F2 = edit/view current PDO
     // F3 = invoke search
-    Control control = (Control) component;
     control.addEventFilter(KeyEvent.ANY, event -> {
       if (!event.isAltDown() && !event.isControlDown() && !event.isMetaDown() &&
           !event.isShiftDown() && !event.isShortcutDown() &&
@@ -95,6 +104,51 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
             Platform.runLater(this::search);
           }
         }
+      }
+    });
+
+    control.setOnDragDetected(event -> {
+      T pdo = pdoSupplier.get();
+      if (pdo != null && RdcUtilities.getInstance().createDragboard((Node) component, pdo) != null) {
+        event.consume();
+      }
+    });
+
+    control.setOnDragOver(e -> {
+      if (e.getGestureSource() != component) {
+        Class<?> type = component.getType();
+        if (type != null) {
+          String idString = e.getDragboard().getString();
+          if (idString != null && !idString.isEmpty()) {
+            IdentifiableKey<PersistentDomainObject<?>> key = PdoUtilities.getInstance().idStringToIdentifiableKey(idString);
+            if (type.isAssignableFrom(key.getIdentifiableClass())) {
+              e.acceptTransferModes(TransferMode.COPY);
+              e.consume();
+            }
+          }
+        }
+      }
+    });
+
+    control.setOnDragDropped(e -> {
+      Class<?> type = component.getType();
+      boolean dropped = false;
+      if (type != null) {
+        FxComponentBinding binding = component.getBinding();
+        if (binding != null) {
+          DomainContext context = binding.getBinder().getBindingProperty(DomainContext.class);
+          if (context != null) {
+            PersistentDomainObject<?> pdoToDrop = RdcUtilities.getInstance().getPdoFromDragboard(e.getDragboard(), context);
+            if (pdoToDrop != null && type.isAssignableFrom(pdoToDrop.getEffectiveClass())) {
+              pdoConsumer.accept((T) pdoToDrop);
+              e.setDropCompleted(true);
+              dropped = true;
+            }
+          }
+        }
+      }
+      if (!dropped) {
+        e.consume();
       }
     });
 

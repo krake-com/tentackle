@@ -67,6 +67,7 @@ public class PdoTreeCell<T extends PersistentDomainObject<T>> extends TreeCell<T
     setOnDragDropped(e -> {
       if (provider != null) {
         provider.dropDragboard(e.getDragboard());
+        e.setDropCompleted(true);
         T reloadedPdo = provider.getPdo().reload();
         TreeItem<T> root = getTreeItem().getParent();
         if (root != null) {
@@ -83,6 +84,8 @@ public class PdoTreeCell<T extends PersistentDomainObject<T>> extends TreeCell<T
             i++;
           }
         }
+      }
+      else {
         e.consume();
       }
     });
