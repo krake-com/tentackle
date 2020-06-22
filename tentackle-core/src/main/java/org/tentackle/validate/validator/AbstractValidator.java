@@ -131,12 +131,10 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public Class<? extends ValidationScope>[] getConfiguredScopes(ValidationContext validationContext) {
     Class<? extends ValidationScope>[] scopes = getScope();
-    if (scopes.length == 1 && DefaultScope.class.isAssignableFrom(scopes[0])) {
-      // the default scope applies
-      if (validationContext != null && validationContext.getParentObject() instanceof ScopeConfigurator) {
-        return ((ScopeConfigurator) validationContext.getParentObject()).getDefaultScopes();
-      }
-      return new Class[] { DefaultScope.class };
+    if (scopes.length == 1 && DefaultScope.class.isAssignableFrom(scopes[0]) &&   // only the default scope applies ...
+        validationContext != null && validationContext.getParentObject() instanceof ScopeConfigurator) {
+      // ... and the parent is a ScopeConfigurator
+      scopes = ((ScopeConfigurator) validationContext.getParentObject()).getDefaultScopes();
     }
     return scopes;
   }
