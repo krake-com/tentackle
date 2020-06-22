@@ -150,11 +150,11 @@ public interface Validator {
   /**
    * Gets the configured scopes for this annotation.
    * <p>
-   * If the annotation has the {@link DefaultScope} configured
-   * the rules defined in {@link ScopeConfigurator} apply.
-   * Otherwise the annotations parameter will be returned.
+   * If the annotation has the {@link DefaultScope} configured, i.e. no other scopes mentioned in the annotation,
+   * the rules defined in the context's parent object apply, if the parent is a {@link ScopeConfigurator}.
+   * Otherwise the annotation's parameter will be returned unchanged.
    *
-   * @param validationContext the validation context
+   * @param validationContext the validation context (may be null)
    * @return the configured scopes
    */
   Class<? extends ValidationScope>[] getConfiguredScopes(ValidationContext validationContext);
