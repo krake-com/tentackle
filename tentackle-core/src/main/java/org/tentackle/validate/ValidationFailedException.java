@@ -19,8 +19,9 @@
 
 package org.tentackle.validate;
 
-import java.util.List;
 import org.tentackle.log.Loggable;
+
+import java.util.List;
 
 
 /**
@@ -39,7 +40,7 @@ public class ValidationFailedException extends RuntimeException implements Logga
 
 
   /**
-   * No-args constructor for deserialization.
+   * Creates an empty validation exception.
    */
   public ValidationFailedException() {
     super();
