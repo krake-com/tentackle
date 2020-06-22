@@ -37,13 +37,56 @@ public abstract class AbstractValidationResult implements ValidationResult {
 
   private static final long serialVersionUID = 415899327881601354L;
 
-  private String message;                                       // the validation failed message
-  private String errorCode;                                     // error code
-  private String validationPath;                                // the validation path
-  private transient Object object;                              // the validated object
-  private transient Object parentObject;                        // the validated parent object
-  private Class<? extends ValidationScope>[] configuredScopes;  // the configured scopes
-  private transient Validator validator;                        // the validator
+  private final String message;                                       // the validation failed message
+  private final String errorCode;                                     // error code
+  private final String validationPath;                                // the validation path
+  private final Class<? extends ValidationScope>[] configuredScopes;  // the configured scopes
+
+  // transient because we cannot be sure that those objects are serializable
+  private final transient Object object;                              // the validated object
+  private final transient Object parentObject;                        // the validated parent object
+  private final transient Validator validator;                        // the validator
+
+
+  /**
+   * Creates a validation result.
+   *
+   * @param validator the validator
+   * @param validationPath the validation path
+   * @param parentObject the parent object
+   * @param object the validated object
+   * @param message the message
+   * @param errorCode the error code
+   */
+  public AbstractValidationResult(Validator validator, String validationPath, Object parentObject, Object object, String message, String errorCode) {
+    this.validator = Objects.requireNonNull(validator, "validator");
+    this.validationPath = validationPath;
+    this.parentObject = parentObject;
+    this.object = object;
+    this.message = message;
+    this.errorCode = errorCode != null ? errorCode : validator.getErrorCode();
+
+    configuredScopes = validator.getConfiguredScopes(null);
+  }
+
+  /**
+   * Creates a validation result.
+   *
+   * @param validator the validator
+   * @param validationContext the validation context
+   * @param message the message
+   * @param errorCode the error code, null to take it from the validator (default)
+   */
+  public AbstractValidationResult(Validator validator, ValidationContext validationContext, String message, String errorCode) {
+    this.validator = Objects.requireNonNull(validator, "validator");
+    this.message = message;
+    this.errorCode = errorCode != null ? errorCode : validator.getErrorCode();
+
+    configuredScopes = validator.getConfiguredScopes(Objects.requireNonNull(validationContext, "validationContext"));
+    validationPath = validationContext.getValidationPath();
+    object = validationContext.getObject();
+    parentObject = validationContext.getParentObject();
+  }
 
   /**
    * Creates a validation result.
@@ -53,28 +96,7 @@ public abstract class AbstractValidationResult implements ValidationResult {
    * @param message the message
    */
   public AbstractValidationResult(Validator validator, ValidationContext validationContext, String message) {
-    setValidator(validator, validationContext);
-    this.message = message;
-  }
-
-  /**
-   * Creates a validation result.
-   *
-   * @param validator the validator
-   * @param validationContext the validation context
-   * @param message the message
-   * @param errorCode the error code (to override the code from the validator)
-   */
-  public AbstractValidationResult(Validator validator, ValidationContext validationContext, String message, String errorCode) {
-    this(validator, validationContext, message);
-    this.errorCode = errorCode;
-  }
-
-  /**
-   * No args constructor to allow deserializtion.
-   */
-  public AbstractValidationResult() {
-    // to allow deserialization
+    this(validator, validationContext, message, null);
   }
 
 
@@ -106,22 +128,6 @@ public abstract class AbstractValidationResult implements ValidationResult {
   @Override
   public Validator getValidator() {
     return validator;
-  }
-
-  /**
-   * Sets validator and copies validation-specific parameters.
-   * <p>
-   * Note: validators exist only once per annotation!
-   * @param validator the validator
-   * @param validationContext the validation context
-   */
-  protected void setValidator(Validator validator, ValidationContext validationContext) {
-    this.validator    = Objects.requireNonNull(validator, "validator");
-    configuredScopes  = validator.getConfiguredScopes(Objects.requireNonNull(validationContext, "validationContext"));
-    errorCode         = validator.getErrorCode();
-    validationPath    = validationContext.getValidationPath();
-    object            = validationContext.getObject();
-    parentObject      = validationContext.getParentObject();
   }
 
   @Override

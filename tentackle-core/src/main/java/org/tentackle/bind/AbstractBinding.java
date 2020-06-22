@@ -298,7 +298,7 @@ public abstract class AbstractBinding implements Binding {
     if (validators != null && parentObject != null && isValidationRequired()) {
       List<ValidationResult> results = ValidationUtilities.getInstance().validateObject(
               validators, binder.getValidationScope(), member.getMemberPath(),
-              parentObject, getModelValue(), getMember().getType());
+              parentObject, getModelValue(), member.getType());
       fireValidated(results);
       binder.fireValidated(this, results);
       return results;

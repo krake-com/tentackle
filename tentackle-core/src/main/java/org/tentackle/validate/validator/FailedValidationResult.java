@@ -61,13 +61,6 @@ public class FailedValidationResult extends AbstractValidationResult {
   }
 
   /**
-   * No args constructor to allow deserializtion.
-   */
-  public FailedValidationResult() {
-    this(null, null, DEFAULT_MESSAGE, null);
-  }
-
-  /**
    * Checks the arguments.
    * <p>
    * Throws IllegalArgumentException if message is empty.
