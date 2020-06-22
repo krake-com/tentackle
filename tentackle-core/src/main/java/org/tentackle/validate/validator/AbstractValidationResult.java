@@ -56,7 +56,7 @@ public abstract class AbstractValidationResult implements ValidationResult {
    * @param parentObject the parent object
    * @param object the validated object
    * @param message the message
-   * @param errorCode the error code
+   * @param errorCode the error code, null to take it from the validator (default)
    */
   public AbstractValidationResult(Validator validator, String validationPath, Object parentObject, Object object, String message, String errorCode) {
     this.validator = Objects.requireNonNull(validator, "validator");
