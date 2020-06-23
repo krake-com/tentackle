@@ -407,7 +407,7 @@ public class ValidationUtilities {
    *                       null if {@link #getDefaultValidationPath(java.lang.Object) }
    * @param parentObject the parent object the validated object is declared in
    * @param object the object to verify
-   * @param type the type of the object
+   * @param type the type of the object, null if derive from object
    * @return the list of validation results
    */
   public List<ValidationResult> validateObject(

@@ -33,7 +33,19 @@ public class FailedValidationResult extends AbstractValidationResult {
 
   private static final long serialVersionUID = 7944890568191272731L;
 
-  private static final String DEFAULT_MESSAGE = "unspecified";   // only for deserialization
+  /**
+   * Creates a validation result.
+   *
+   * @param validator the validator
+   * @param validationPath the validation path
+   * @param parentObject the parent object
+   * @param object the validated object
+   * @param message the message
+   * @param errorCode the error code, null to take it from the validator (default)
+   */
+  public FailedValidationResult(Validator validator, String validationPath, Object parentObject, Object object, String message, String errorCode) {
+    super(validator, validationPath, parentObject, object, message, errorCode);
+  }
 
   /**
    * Creates a failed validation result.
@@ -53,7 +65,7 @@ public class FailedValidationResult extends AbstractValidationResult {
    * @param validator the validator
    * @param validationContext the validation context
    * @param message the message
-   * @param errorCode the error code (to override the code from the validator)
+   * @param errorCode the error code, null to take it from the validator (default)
    */
   public FailedValidationResult(Validator validator, ValidationContext validationContext, String message, String errorCode) {
     super(validator, validationContext, message, errorCode);

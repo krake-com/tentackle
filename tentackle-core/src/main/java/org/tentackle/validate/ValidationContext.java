@@ -42,7 +42,7 @@ public class ValidationContext {
    * Creates a validation context.
    *
    * @param validationPath the validation path
-   * @param type the type of the object to validate
+   * @param type the type of the object to validate, null if derive from object
    * @param object the element to validate
    * @param parentObject the parent object containing the element
    * @param effectiveScope the effective validation scope
@@ -68,7 +68,7 @@ public class ValidationContext {
    * if the pre condition fails. Useful for lazy list relations, for example.
    *
    * @param validationPath the validation path
-   * @param type the type of the object to validate
+   * @param type the type of the object to validate, null if derive from object
    * @param objectSupplier the supplier providing the element to validate
    * @param parentObject the parent object containing the element
    * @param effectiveScope the effective validation scope
@@ -85,6 +85,31 @@ public class ValidationContext {
     this.objectSupplier = objectSupplier;
     this.parentObject = parentObject;
     this.effectiveScope = effectiveScope;
+  }
+
+  /**
+   * Creates a dummy context for a given object.
+   *
+   * @param object the object, may be null
+   */
+  public ValidationContext(Object object) {
+    this(object == null ? "null" : "object", null, object, object, null);
+  }
+
+  /**
+   * Creates a validation context from another one with a replaced parent object.
+   *
+   * @param validationContext the original context
+   * @param parentObject the parent object
+   */
+  public ValidationContext(ValidationContext validationContext, Object parentObject) {
+    this.validationPath = validationContext.validationPath;
+    this.type = validationContext.type;
+    this.object = validationContext.object;
+    this.objectSupplier = validationContext.objectSupplier;
+    this.effectiveScope = validationContext.effectiveScope;
+
+    this.parentObject = parentObject;
   }
 
 
@@ -111,7 +136,7 @@ public class ValidationContext {
   /**
    * Gets the type of the object.
    *
-   * @return the type
+   * @return the type, null if derive from object
    */
   public Class<?> getType() {
     return type;
