@@ -24,7 +24,7 @@ For more options, see {\@link ModelWurblet}.
     }
 
     for (Attribute attr: getEntity().getAttributes())  {
-      if (!attr.getOptions().isNoConstant() && !attr.getOptions().isFromSuper())    {
+      if (!attr.getOptions().isNoConstant() && !attr.getOptions().isFromSuper() && !attr.getOptions().isMute())    {
           String name = attr.getName().toUpperCase();
 ]@
 
