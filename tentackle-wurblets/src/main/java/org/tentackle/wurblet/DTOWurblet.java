@@ -28,6 +28,7 @@ import org.tentackle.common.StringHelper;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
 
@@ -149,11 +150,22 @@ public class DTOWurblet extends AbstractJavaWurblet {
             annoName.append(c);
           }
         }
-        if (annoName.toString().equals(globalAnnotation)) {
+        String anno = annoName.toString();
+        if (anno.equals(globalAnnotation) || anno.substring(1).equals(globalAnnotation)) {
+          // redefined or explicitly removed via -@ or !@
           return;
         }
       }
       annotations.add(globalAnnotation);
+    }
+
+    public void cleanupAnnotations() {
+      for (Iterator<String> iter = annotations.iterator(); iter.hasNext(); ) {
+        String anno = iter.next();
+        if (anno.startsWith("-@") || anno.startsWith("!@")) {
+          iter.remove();
+        }
+      }
     }
   }
 
@@ -241,10 +253,11 @@ public class DTOWurblet extends AbstractJavaWurblet {
 
       // apply global annotations but only if not already used in properties
       // for example @Bindable overridden in property line with @Bindable(MAXCOLS=50)
-      for (String annotation: annotations) {
-        for (Property property : properties) {
+      for (Property property: properties) {
+        for (String annotation: annotations) {
           property.addGlobalAnnotation(annotation);
         }
+        property.cleanupAnnotations();
       }
 
       // validate
@@ -298,7 +311,7 @@ public class DTOWurblet extends AbstractJavaWurblet {
       else {
         if (c == ']') {
           String an = anno.toString().trim();
-          if (!an.isEmpty() && an.startsWith("@")) {
+          if (an.startsWith("@") || an.startsWith("-@") || an.startsWith("!@")) {
             annos.add(an);
           }
           anno = null;
