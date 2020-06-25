@@ -1020,7 +1020,7 @@ For more options, see {\@link DbModelWurblet}.
 
         boolean needRevertAttributes = false;
         for (Attribute attr: getEntity().getAttributes())  {
-          if (!attr.getOptions().isMute() && !isAttributeDerived(attr) && !attr.getOptions().isShallow() && !attr.getOptions().isMute()) {
+          if (!attr.getOptions().isMute() && !isAttributeDerived(attr) && !attr.getOptions().isShallow()) {
             needRevertAttributes = true;
             break;
           }
