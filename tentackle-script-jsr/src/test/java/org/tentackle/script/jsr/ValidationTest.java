@@ -85,7 +85,7 @@ public class ValidationTest {
     for (ValidationResult result : results) {
       Reporter.log("2: " + result + "<br/>");
     }
-    Assert.assertTrue(results.size() == 5);
+    Assert.assertEquals(results.size(), 5);
 
     object.text = "blah";
     object.percent = 80;
@@ -103,11 +103,11 @@ public class ValidationTest {
     for (ValidationResult result : results) {
       Reporter.log("4: " + result + "<br/>");
     }
-    Assert.assertTrue(results.size() == 1);
+    Assert.assertEquals(results.size(), 1);
 
     object.percent = 50;
     validators = ValidatorCache.getInstance().getObjectValidators(object.getClass());
-    Assert.assertTrue(validators.size() == 1);
+    Assert.assertEquals(validators.size(), 1);
 
     results = ValidationUtilities.getInstance().validateObject(validators, null, "object", null, object, object.getClass());
     for (ValidationResult result : results) {

@@ -65,12 +65,12 @@ public class CompoundValueTest {
     CompoundValue par = new CompoundValue("#!{ 'the method says ' + object.sayHello() }");
     result = par.getValue(this);
     Assert.assertTrue(result instanceof String);
-    Assert.assertTrue(result.equals("the method says " + sayHello()));
+    Assert.assertEquals(result, "the method says " + sayHello());
 
     par = new CompoundValue("#!js{ 'the method says ' + object.sayHello() }");
     result = par.getValue(this);
     Assert.assertTrue(result instanceof String);
-    Assert.assertEquals(((String) result), "the method says " + sayHello());
+    Assert.assertEquals(result, "the method says " + sayHello());
 
     // test parsing only
     new CompoundValue("100", Integer.class).parse(this.getClass());
