@@ -88,7 +88,7 @@
     <javac.lint>unchecked,deprecation</javac.lint>
     <maven.version>3.6.0</maven.version>
     <postgresql.version>42.2.14</postgresql.version>
-    <graalvm.version>19.1.1</graalvm.version>
+    <graalvm.version>20.1.0</graalvm.version>
 
     <!-- for tentackle-fx+rdc: java 9 multi-release jars via antrun because not supported by maven yet -->
     <java9.sourceDirectory>${project.basedir}/src/main/java9</java9.sourceDirectory>
