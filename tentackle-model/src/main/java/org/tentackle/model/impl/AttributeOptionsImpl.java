@@ -18,8 +18,6 @@
 
 package org.tentackle.model.impl;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.tentackle.common.Constants;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.AttributeOptions;
@@ -27,6 +25,9 @@ import org.tentackle.model.DataType;
 import org.tentackle.model.EntityOptions;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.SourceInfo;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -52,6 +53,9 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
   /** hidden attribute (no interface definition). */
   public static final String OPTION_HIDDEN = "HIDDEN";
 
+  /** mute attribute (not part of PDO). */
+  public static final String OPTION_MUTE = "MUTE";
+
 
 
   private final AttributeImpl attribute;    // associated attribute (only for diagnostics)
@@ -65,6 +69,7 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
   private boolean withTimezone;
   private boolean unsigned;
   private boolean hidden;
+  private boolean mute;
 
 
   /**
@@ -161,6 +166,14 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
         setWithTimezone(on);
         applied = true;
       }
+      else if (uco.equals(OPTION_HIDDEN)) {
+        setHidden(on);
+        applied = true;
+      }
+      else if (uco.equals(OPTION_MUTE)) {
+        setMute(on);
+        applied = true;
+      }
       else if (uco.equals(Constants.BIND_UTC)) {
         setUTC(on);
         processBindOption(uco, on);
@@ -253,10 +266,18 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
     return hidden;
   }
 
+  @Override
+  public boolean isMute() {
+    return mute;
+  }
+
   public void setHidden(boolean hidden) {
     this.hidden = hidden;
   }
 
+  public void setMute(boolean mute) {
+    this.mute = mute;
+  }
 
   @Override
   public ModelException createModelException(String message) {

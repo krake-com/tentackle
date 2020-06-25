@@ -471,6 +471,10 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
           throw createModelException("MAPNULL option not applicable to " + dataType);
       }
     }
+
+    if (getOptions().isMute() && dataType.isPrimitive() && getOptions().getDefaultValue() == null) {
+      throw createModelException("MUTE only applicable to nullable columns or columns with a default value");
+    }
   }
 
   /**

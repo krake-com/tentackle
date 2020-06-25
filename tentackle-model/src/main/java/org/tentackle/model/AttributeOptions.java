@@ -104,4 +104,11 @@ public interface AttributeOptions extends CommonOptions {
    */
   boolean isHidden();
 
+  /**
+   * Attribute is mute.
+   *
+   * @return true if not part of the pdo
+   */
+  boolean isMute();
+
 }

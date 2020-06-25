@@ -199,7 +199,7 @@ For more options, see {\@link DbModelWurblet}.
     if (!modified) {
 @[
       for (Attribute attr: getEntity().getAttributes())  {
-        if (!attr.getOptions().isNoMethod())    {
+        if (!attr.getOptions().isNoMethod() && !attr.getOptions().isMute())    {
           if (isFullTracked()) {
 ]@
       @(attr.getName())@Persisted = @(attr.getName())@;
@@ -227,7 +227,7 @@ For more options, see {\@link DbModelWurblet}.
     return super.differsPersisted()
 @[
       for (Attribute attr: getEntity().getAttributes())  {
-        if (!attr.getOptions().isNoMethod() && !attr.getOptions().isDerived() &&
+        if (!attr.getOptions().isNoMethod() && !attr.getOptions().isDerived() && !attr.getOptions().isMute() &&
             !attr.getOptions().isReadOnly() && !isIdOrSerialAttribute(attr)) {
           if (attr.getDataType().isPrimitive()) {
 ]@
@@ -273,7 +273,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
       boolean needIfClause = false;
       for (Attribute attr: getEntity().getMappedAttributes())  {
-        if (!attr.getOptions().isDerived())  {
+        if (!attr.getOptions().isDerived() && !attr.getOptions().isMute())  {
           for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
             needIfClause = true;
             break;
@@ -285,7 +285,7 @@ For more options, see {\@link DbModelWurblet}.
     if (rs.configureSection(CLASSVARIABLES)) {
 @[
         for (Attribute attr: getEntity().getMappedAttributes())  {
-          if (!attr.getOptions().isDerived())  {
+          if (!attr.getOptions().isDerived() && !attr.getOptions().isMute())  {
             for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
               String name = attr.getName().toUpperCase() + sp.getPostfix();
 ]@
@@ -309,7 +309,7 @@ For more options, see {\@link DbModelWurblet}.
     }
 @[
       for (Attribute attr: getEntity().getMappedAttributes())  {
-        if (!attr.getOptions().isDerived())  {
+        if (!attr.getOptions().isDerived() && !attr.getOptions().isMute())  {
           String getterMethod = createJdbcGetterName(attr);
           String name = attr.getName().toUpperCase();
           boolean useSetter = isSetGetRequired(attr);
@@ -402,7 +402,7 @@ For more options, see {\@link DbModelWurblet}.
         }
 
         for (Attribute attr: getEntity().getMappedAttributes()) {
-          if (!attr.getOptions().isDerived() && !attr.getOptions().isReadOnly())  {
+          if (!attr.getOptions().isDerived() && !attr.getOptions().isMute() && !attr.getOptions().isReadOnly())  {
             String setterName = createJdbcSetterName(attr);
 
             String modelCode;
@@ -462,7 +462,7 @@ For more options, see {\@link DbModelWurblet}.
 
       if (!readOnly) {
         for (Attribute attr: attributes)  {
-          if (!attr.getOptions().isDerived() && !attr.getOptions().isReadOnly()) {
+          if (!attr.getOptions().isDerived() && !attr.getOptions().isMute() && !attr.getOptions().isReadOnly()) {
             for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
               String name = attr.getName().toUpperCase() + sp.getPostfix();
               names.add(name);
@@ -515,7 +515,7 @@ For more options, see {\@link DbModelWurblet}.
 
         names.clear();
         for (Attribute attr: attributes)  {
-          if (!attr.getOptions().isDerived() && !attr.getOptions().isReadOnly() && !isIdOrSerialAttribute(attr)) {
+          if (!attr.getOptions().isDerived() && !attr.getOptions().isMute() && !attr.getOptions().isReadOnly() && !isIdOrSerialAttribute(attr)) {
             for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
               String name = attr.getName().toUpperCase() + sp.getPostfix();
               names.add(name);
@@ -745,6 +745,9 @@ For more options, see {\@link DbModelWurblet}.
     }
 
     for (Attribute attr: getEntity().getAttributes())  {
+      if (attr.getOptions().isMute()) {
+        continue;   // skip
+      }
       if (!attr.getOptions().isNoDeclare() && !attr.getOptions().isSetGet()) {
         generateSnapshot = true;
       }
@@ -971,7 +974,7 @@ For more options, see {\@link DbModelWurblet}.
 
       boolean needRevertAttributes = false;
       for (Attribute attr: getEntity().getAttributes())  {
-        if (!attr.getOptions().isDerived() && !attr.getOptions().isSetGet()) {
+        if (!attr.getOptions().isDerived() && !attr.getOptions().isMute() && !attr.getOptions().isSetGet()) {
           needRevertAttributes = true;
           break;
         }
@@ -989,7 +992,7 @@ For more options, see {\@link DbModelWurblet}.
     super.revertAttributesToSnapshot(snapshot);
 @[
         for (Attribute attr: getEntity().getAttributes()) {
-          if (!attr.getOptions().isNoDeclare() && !attr.getOptions().isSetGet())    {
+          if (!attr.getOptions().isNoDeclare() && !attr.getOptions().isMute() && !attr.getOptions().isSetGet())    {
             String name = attr.getName();
 ]@
     // @(attr.getOptions().getComment())@

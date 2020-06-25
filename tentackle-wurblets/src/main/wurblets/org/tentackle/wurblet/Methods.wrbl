@@ -20,6 +20,7 @@ For more options, see {\@link ModelWurblet}.
 
       if (attr.getOptions().getAccessScope() != AccessScope.PUBLIC ||
           attr.getOptions().isFromSuper() ||
+          attr.getOptions().isMute() ||
           attr.getOptions().isHidden()) {
         continue; // skip
       }
