@@ -171,15 +171,15 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
         applied = true;
       }
       else if (uco.equals(OPTION_HIDDEN)) {
-        setHidden(true);
+        setHidden(on);
         applied = true;
       }
       else if (uco.equals(OPTION_SHALLOW)) {
-        setShallow(true);
+        setShallow(on);
         applied = true;
       }
       else if (uco.equals(OPTION_NORMTEXT)) {
-        setPartOfNormText(true);
+        setPartOfNormText(on);
         applied = true;
       }
       else if (uco.equals(Constants.BIND_UTC)) {
