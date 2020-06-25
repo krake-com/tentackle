@@ -19,6 +19,7 @@
 package org.tentackle.maven.sql;
 
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.shared.model.fileset.FileSet;
@@ -67,6 +68,10 @@ import java.util.TreeMap;
 public class MigrateSqlMojo extends AbstractSqlMojo {
 
   private static final String DEFAULT_SCHEMA = "<default>";     // default schema name
+
+  private static final String STR_CHANGES_DETECTED = "database meta data differs from object model";
+  private static final String STR_NO_CHANGES_DETECTED = "database meta data matches object model";
+
 
   /**
    * The name of the created sql file.
@@ -168,7 +173,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   }
 
   @Override
-  protected void closeResources(BackendInfo backendInfo) throws MojoExecutionException {
+  protected void closeResources(BackendInfo backendInfo) throws MojoExecutionException, MojoFailureException {
 
     boolean migrationNecessary = false;
 
@@ -229,11 +234,14 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       }
     }
 
-    if (validate) {
-      if (migrationNecessary) {
-        throw new MojoExecutionException("database meta data differs from object model");
+    if (migrationNecessary) {
+      if (validate) {
+        throw new MojoFailureException(STR_CHANGES_DETECTED);
       }
-      getLog().info("database meta data matches object model");
+      getLog().warn(STR_CHANGES_DETECTED);
+    }
+    else {
+      getLog().info(STR_NO_CHANGES_DETECTED);
     }
   }
 
