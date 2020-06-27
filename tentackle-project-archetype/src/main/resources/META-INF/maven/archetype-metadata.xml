@@ -69,6 +69,12 @@
         <include>**/*.ftl</include>
       </includes>
     </fileSet>
+    <fileSet encoding="UTF-8">
+      <directory>templates</directory>
+      <includes>
+        <include>**/*.ftl</include>
+      </includes>
+    </fileSet>
   </fileSets>
 
   <modules>
