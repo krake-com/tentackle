@@ -684,7 +684,7 @@ public class CompoundValue {
           }
         }
       }
-      else if (Double.class == clazz) {
+      else if (Double.class == clazz || Double.TYPE == clazz) {
         if (value instanceof Double) {
           return value;
         }
@@ -697,7 +697,7 @@ public class CompoundValue {
           }
         }
       }
-      else if (Float.class == clazz) {
+      else if (Float.class == clazz || Float.TYPE == clazz) {
         if (value instanceof Float) {
           return value;
         }
@@ -710,7 +710,7 @@ public class CompoundValue {
           }
         }
       }
-      else if (Long.class == clazz) {
+      else if (Long.class == clazz || Long.TYPE == clazz) {
         if (value instanceof Long) {
           return value;
         }
@@ -723,7 +723,7 @@ public class CompoundValue {
           }
         }
       }
-      else if (Integer.class == clazz) {
+      else if (Integer.class == clazz || Integer.TYPE == clazz) {
         if (value instanceof Integer) {
           return value;
         }
@@ -736,7 +736,7 @@ public class CompoundValue {
           }
         }
       }
-      else if (Short.class == clazz) {
+      else if (Short.class == clazz || Short.TYPE == clazz) {
         if (value instanceof Short) {
           return value;
         }
@@ -749,7 +749,7 @@ public class CompoundValue {
           }
         }
       }
-      else if (Byte.class == clazz) {
+      else if (Byte.class == clazz || Byte.TYPE == clazz) {
         if (value instanceof Byte) {
           return value;
         }
@@ -762,20 +762,20 @@ public class CompoundValue {
           }
         }
       }
-      else if (Character.class == clazz) {
+      else if (Character.class == clazz || Character.TYPE == clazz) {
         if (value instanceof Character) {
           return value;
         }
       }
       else if (String.class == clazz) {
-        if (value instanceof Character) {
+        if (value instanceof String) {
           return value;
         }
         else  {
           return value.toString();
         }
       }
-      else if (Boolean.class == clazz) {
+      else if (Boolean.class == clazz || Boolean.TYPE == clazz) {
         if (value instanceof Boolean) {
           return value;
         }
