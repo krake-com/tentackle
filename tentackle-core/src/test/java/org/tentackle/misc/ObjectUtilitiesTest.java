@@ -22,6 +22,7 @@ import org.testng.annotations.Test;
 import org.tentackle.bind.BindingEvent;
 import org.tentackle.common.BMoney;
 import org.tentackle.common.DMoney;
+import org.tentackle.common.LocaleProvider;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -29,6 +30,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.util.Currency;
 import java.util.TimeZone;
 
 import static org.testng.Assert.assertEquals;
@@ -44,13 +46,18 @@ public class ObjectUtilitiesTest {
 
   @Test
   public void testConverters() {
+
+    int moneyScale = Currency.getInstance(LocaleProvider.getInstance().getLocale()).getDefaultFractionDigits();
+
     assertEquals(ObjectUtilities.getInstance().convert(String.class, this), MAGIC_WORD);
     assertEquals(ObjectUtilities.getInstance().convert(Character.TYPE, MAGIC_WORD), (Character) MAGIC_WORD.charAt(0));
     assertEquals(ObjectUtilities.getInstance().convert(Double.class, 10L), 10.0d);
     assertEquals(ObjectUtilities.getInstance().convert(Float.class, 10), 10.0f);
+    assertEquals(ObjectUtilities.getInstance().convert(Float.TYPE, 1.5), 1.5f);
     assertEquals(ObjectUtilities.getInstance().convert(Integer.TYPE, (byte) 5), Integer.valueOf(5));
-    assertEquals(ObjectUtilities.getInstance().convert(DMoney.class, "100"), new DMoney(100.0d, 0));
-    assertEquals(ObjectUtilities.getInstance().convert(BMoney.class, new BigDecimal(new BigInteger("10000"), 2)), new BMoney(100.0d, 2));
+    assertEquals(ObjectUtilities.getInstance().convert(DMoney.class, 100), new DMoney(100.0d, moneyScale));
+    assertEquals(ObjectUtilities.getInstance().convert(BMoney.class, 100), new BMoney(100.0d, moneyScale));
+    assertEquals(ObjectUtilities.getInstance().convert(BMoney.class, new BigDecimal(new BigInteger("10000"), 4)), new BMoney(1.0d, 4));
     assertEquals(ObjectUtilities.getInstance().convert(Boolean.TYPE, "true"), Boolean.TRUE);
     assertEquals(ObjectUtilities.getInstance().convert(BigInteger.class, 1000), BigInteger.valueOf(1000));
     assertEquals(ObjectUtilities.getInstance().convert(BigDecimal.class, 1.5), BigDecimal.valueOf(15, 1));
