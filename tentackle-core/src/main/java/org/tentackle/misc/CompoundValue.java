@@ -1,5 +1,5 @@
-/**
- * Tentackle - http://www.tentackle.org
+/*
+ * Tentackle - https://tentackle.org
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,19 +18,12 @@
 
 package org.tentackle.misc;
 
-import org.tentackle.common.BMoney;
-import org.tentackle.common.DMoney;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.script.Script;
 import org.tentackle.script.ScriptFactory;
 import org.tentackle.script.ScriptRuntimeException;
 import org.tentackle.script.ScriptVariable;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.util.Date;
 import java.util.StringTokenizer;
 
 
@@ -389,7 +382,7 @@ public class CompoundValue {
       case CONSTANT:
         if (constantValue == null) {
           // create it once
-          constantValue = createConstantValue(clazz, constant);
+          constantValue = ObjectUtilities.getInstance().convert(clazz, constant);
         }
         return constantValue;
 
@@ -434,9 +427,9 @@ public class CompoundValue {
           }
           script.execute(variables);
           Object result = script.getResult();
-          if (clazz != null && result != null && !(clazz.isAssignableFrom(result.getClass()))) {
-            // convert if possible
-            result = convertValue(clazz, result);
+          if (clazz != null) {
+            // convert if necessary
+            result = ObjectUtilities.getInstance().convert(clazz, result);
           }
           return result;
         }
@@ -484,7 +477,7 @@ public class CompoundValue {
     switch (type) {
 
       case CONSTANT:
-        createConstantValue(clazz, constant);
+        ObjectUtilities.getInstance().convert(clazz, constant);
         break;
 
       case REFERENCE:
@@ -539,281 +532,6 @@ public class CompoundValue {
     else  {
       throw new IllegalArgumentException("value of " + this + " is not boolean");
     }
-  }
-
-
-  /**
-   * Creates the comparable of the given type from the given string.
-   *
-   * @param clazz the type
-   * @param value the value
-   * @return the constant value
-   */
-  @SuppressWarnings("unchecked")
-  private Object createConstantValue(Class<?> clazz, String value) throws IllegalArgumentException {
-
-    if (clazz.isPrimitive()) {
-      clazz = ReflectionHelper.primitiveToWrapperClass(clazz);
-    }
-
-    if (value == null) {
-      throw new IllegalArgumentException("value must be non-null");
-    }
-    if (value.length() == 0) {
-      throw new IllegalArgumentException("value must not be the empty string");
-    }
-
-    try {
-      if (clazz.isEnum()) {
-        return Enum.valueOf((Class<Enum>) clazz, value);
-      }
-      else if (DMoney.class.isAssignableFrom(clazz)) {
-        return new DMoney(value, FormatHelper.determineScale(value));
-      }
-      else if (BMoney.class.isAssignableFrom(clazz)) {
-        return new BMoney(value, FormatHelper.determineScale(value));
-      }
-      else if (BigDecimal.class.isAssignableFrom(clazz)) {
-        return new BigDecimal(value);
-      }
-      else if (BigInteger.class.isAssignableFrom(clazz)) {
-        return new BigInteger(value);
-      }
-      else if (Double.class == clazz) {
-        return Double.valueOf(value);
-      }
-      else if (Float.class == clazz) {
-        return Float.valueOf(value);
-      }
-      else if (Long.class == clazz) {
-        return Long.valueOf(value);
-      }
-      else if (Integer.class == clazz) {
-        return Integer.valueOf(value);
-      }
-      else if (Short.class == clazz) {
-        return Short.valueOf(value);
-      }
-      else if (Byte.class == clazz) {
-        return Byte.valueOf(value);
-      }
-      else if (Character.class == clazz) {
-        return value.charAt(0);
-      }
-      else if (String.class == clazz) {
-        return value;
-      }
-      else if (Boolean.class == clazz) {
-        return Boolean.valueOf(value);
-      }
-      else if (Timestamp.class.isAssignableFrom(clazz)) {
-        return FormatHelper.parseTimestamp(value);
-      }
-      else if (Time.class.isAssignableFrom(clazz)) {
-        return FormatHelper.parseTime(value);
-      }
-      else if (Date.class.isAssignableFrom(clazz)) {
-        return FormatHelper.parseDate(value);
-      }
-    }
-    catch (Exception ex) {
-      throw new IllegalArgumentException("cannot create " + clazz.getName() + " from '" + value + "'", ex);
-    }
-
-    throw new IllegalArgumentException("unsupported type: " + clazz.getName());
-  }
-
-
-  /**
-   * Converts the value to the given type, if possible.
-   *
-   * @param clazz the type
-   * @param value the value
-   * @return the converted value
-   */
-  @SuppressWarnings("unchecked")
-  private Object convertValue(Class<?> clazz, Object value) {
-
-    try {
-      if (clazz.isEnum() && value instanceof String) {
-        return Enum.valueOf((Class<Enum>) clazz, (String) value);
-      }
-      if (DMoney.class.isAssignableFrom(clazz)) {
-        if (value instanceof DMoney) {
-          return value;
-        }
-        else  {
-          if (value instanceof BigDecimal) {
-            return new DMoney((BigDecimal) value);
-          }
-          else if (value instanceof String) {
-            return new DMoney((String) value, FormatHelper.determineScale((String) value));
-          }
-        }
-      }
-      if (BMoney.class.isAssignableFrom(clazz)) {
-        if (value instanceof BMoney) {
-          return value;
-        }
-        else  {
-          if (value instanceof BigDecimal) {
-            return new BMoney((BigDecimal) value);
-          }
-          else if (value instanceof String) {
-            return new BMoney((String) value, FormatHelper.determineScale((String) value));
-          }
-        }
-      }
-      else if (BigDecimal.class.isAssignableFrom(clazz)) {
-        if (value instanceof BigDecimal) {
-          return value;
-        }
-        else if (value instanceof String) {
-          return new BMoney((String) value, FormatHelper.determineScale((String) value));
-        }
-      }
-      else if (BigInteger.class.isAssignableFrom(clazz)) {
-        if (value instanceof BigInteger) {
-          return value;
-        }
-        else  {
-          if (value instanceof Number) {
-            return BigInteger.valueOf(((Number) value).longValue());
-          }
-          else if (value instanceof String) {
-            return new BigInteger((String) value);
-          }
-        }
-      }
-      else if (Double.class == clazz) {
-        if (value instanceof Double) {
-          return value;
-        }
-        else  {
-          if (value instanceof Number) {
-            return ((Number) value).doubleValue();
-          }
-          else if (value instanceof String) {
-            return Double.parseDouble((String) value);
-          }
-        }
-      }
-      else if (Float.class == clazz) {
-        if (value instanceof Float) {
-          return value;
-        }
-        else  {
-          if (value instanceof Number) {
-            return ((Number) value).floatValue();
-          }
-          else if (value instanceof String) {
-            return Float.parseFloat((String) value);
-          }
-        }
-      }
-      else if (Long.class == clazz) {
-        if (value instanceof Long) {
-          return value;
-        }
-        else  {
-          if (value instanceof Number) {
-            return ((Number) value).longValue();
-          }
-          else if (value instanceof String) {
-            return Long.parseLong((String) value);
-          }
-        }
-      }
-      else if (Integer.class == clazz) {
-        if (value instanceof Integer) {
-          return value;
-        }
-        else  {
-          if (value instanceof Number) {
-            return ((Number) value).intValue();
-          }
-          else if (value instanceof String) {
-            return Integer.parseInt((String) value);
-          }
-        }
-      }
-      else if (Short.class == clazz) {
-        if (value instanceof Short) {
-          return value;
-        }
-        else  {
-          if (value instanceof Number) {
-            return ((Number) value).shortValue();
-          }
-          else if (value instanceof String) {
-            return Short.parseShort((String) value);
-          }
-        }
-      }
-      else if (Byte.class == clazz) {
-        if (value instanceof Byte) {
-          return value;
-        }
-        else  {
-          if (value instanceof Number) {
-            return ((Number) value).byteValue();
-          }
-          else if (value instanceof String) {
-            return Byte.parseByte((String) value);
-          }
-        }
-      }
-      else if (Character.class == clazz) {
-        if (value instanceof Character) {
-          return value;
-        }
-      }
-      else if (String.class == clazz) {
-        if (value instanceof Character) {
-          return value;
-        }
-        else  {
-          return value.toString();
-        }
-      }
-      else if (Boolean.class == clazz) {
-        if (value instanceof Boolean) {
-          return value;
-        }
-        else if (value instanceof String) {
-          return Boolean.valueOf((String) value);
-        }
-      }
-      else if (Timestamp.class.isAssignableFrom(clazz)) {
-        if (value instanceof Timestamp) {
-          return value;
-        }
-        else if (value instanceof String) {
-          return FormatHelper.parseTimestamp(((String) value));
-        }
-      }
-      else if (Time.class.isAssignableFrom(clazz)) {
-        if (value instanceof Time) {
-          return value;
-        }
-        else if (value instanceof String) {
-          return FormatHelper.parseTime(((String) value));
-        }
-      }
-      else if (Date.class.isAssignableFrom(clazz)) {
-        if (value instanceof Date) {
-          return value;
-        }
-        else if (value instanceof String) {
-          return FormatHelper.parseDate(((String) value));
-        }
-      }
-    }
-    catch (Exception ex) {
-      throw new IllegalArgumentException("conversion failed", ex);
-    }
-
-    throw new IllegalArgumentException("unsupported conversion: " + value.getClass().getName() + " -> "+ clazz.getName());
   }
 
 }

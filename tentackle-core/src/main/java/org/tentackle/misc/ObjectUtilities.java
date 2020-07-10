@@ -1,0 +1,352 @@
+/*
+ * Tentackle - https://tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+package org.tentackle.misc;
+
+import org.tentackle.common.BMoney;
+import org.tentackle.common.DMoney;
+import org.tentackle.common.Service;
+import org.tentackle.common.ServiceFactory;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.sql.Time;
+import java.text.ParseException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.TimeZone;
+import java.util.function.Function;
+
+interface ObjectUtilitiesHolder {
+  ObjectUtilities INSTANCE = ServiceFactory.createService(ObjectUtilities.class);
+}
+
+/**
+ * Object utility methods.
+ * <p>
+ * Mainly used by {@link CompoundValue}.<br>
+ * Applications should extend and replace via {@link Service} annotation for application-specific types.
+ */
+@Service(ObjectUtilities.class)   // defaults to self
+public class ObjectUtilities {
+
+  /**
+   * The singleton.
+   *
+   * @return the singleton
+   */
+  public static ObjectUtilities getInstance() {
+    return ObjectUtilitiesHolder.INSTANCE;
+  }
+
+
+  private final Map<Class<?>, Function<Object,?>> converterMap = new HashMap<>();
+
+
+  public ObjectUtilities() {
+    setConverter(String.class, this::toString);
+    setConverter(DMoney.class, this::toDMoney);
+    setConverter(BMoney.class, this::toBMoney);
+    setConverter(BigDecimal.class, this::toBigDecimal);
+    setConverter(BigInteger.class, this::toBigInteger);
+    setConverter(Double.class, this::toDouble);
+    setConverter(Double.TYPE, this::toDouble);
+    setConverter(Float.class, this::toFloat);
+    setConverter(Float.TYPE, this::toFloat);
+    setConverter(Long.class, this::toLong);
+    setConverter(Long.TYPE, this::toLong);
+    setConverter(Integer.class, this::toInteger);
+    setConverter(Integer.TYPE, this::toInteger);
+    setConverter(Short.class, this::toShort);
+    setConverter(Short.TYPE, this::toShort);
+    setConverter(Byte.class, this::toByte);
+    setConverter(Byte.TYPE, this::toByte);
+    setConverter(Character.class, this::toCharacter);
+    setConverter(Character.TYPE, this::toCharacter);
+    setConverter(Boolean.class, this::toBoolean);
+    setConverter(Boolean.TYPE, this::toBoolean);
+    setConverter(java.sql.Timestamp.class, this::toSqlTimestamp);
+    setConverter(org.tentackle.common.Timestamp.class, this::toTimestamp);
+    setConverter(java.sql.Time.class, this::toSqlTime);
+    setConverter(org.tentackle.common.Time.class, this::toTime);
+    setConverter(java.util.Date.class, this::toUtilDate);
+    setConverter(java.sql.Date.class, this::toSqlDate);
+    setConverter(org.tentackle.common.Date.class, this::toDate);
+    setConverter(LocalDateTime.class, this::toLocalDateTime);
+    setConverter(LocalDate.class, this::toLocalDate);
+    setConverter(LocalTime.class, this::toLocalTime);
+  }
+
+
+  /**
+   * Converts value to the given type.
+   * <p>
+   * Throws {@link IllegalArgumentException} if unsupported type or conversion failed.
+   *
+   * @param clazz the type
+   * @param value the value
+   * @return the converted value, null if value is null
+   */
+  @SuppressWarnings("unchecked")
+  public <T> T convert(Class<T> clazz, Object value) {
+
+    if (value == null) {
+      return null;
+    }
+
+    Objects.requireNonNull(clazz, "clazz");
+
+    final Object object;
+
+    if (clazz.isAssignableFrom(value.getClass())) {
+      object = value;   // no conversion necessary
+    }
+    else {
+      Function<Object,T> converter = (Function<Object, T>) converterMap.get(clazz);
+      if (converter != null) {
+        object = converter.apply(value);
+      }
+      else if (clazz.isEnum()) {
+        object = Enum.valueOf((Class<Enum>) clazz, value.toString());
+      }
+      else {
+        throw new IllegalArgumentException("unsupported conversion: " + value.getClass().getName() + " -> " + clazz.getName());
+      }
+    }
+
+    return (T) object;
+  }
+
+  /**
+   * Sets a converter for a given class.
+   *
+   * @param clazz the class to convert to
+   * @param converter the converter function
+   * @param <T> the destination type
+   */
+  protected <T> void setConverter(Class<T> clazz, Function<Object,T> converter) {
+    converterMap.put(clazz, converter);
+  }
+
+
+
+  // ------------------ converters ----------------------------
+
+  private String toString(Object value) {
+    return value.toString();
+  }
+
+  private DMoney toDMoney(Object value) {
+    if (value instanceof BigDecimal) {
+      return new DMoney((BigDecimal) value);
+    }
+    else {
+      String str = value.toString();
+      return new DMoney(str, FormatHelper.determineScale(str));
+    }
+  }
+
+  private BMoney toBMoney(Object value) {
+    if (value instanceof BigDecimal) {
+      return new BMoney((BigDecimal) value);
+    }
+    String str = value.toString();
+    return new BMoney(str, FormatHelper.determineScale(str));
+  }
+
+  private BigDecimal toBigDecimal(Object value) {
+    String str = value.toString();
+    return new BMoney(str, FormatHelper.determineScale(str));   // BMoney is a BigDecimal
+  }
+
+  private BigInteger toBigInteger(Object value) {
+    if (value instanceof Number) {
+      return BigInteger.valueOf(((Number) value).longValue());
+    }
+    return new BigInteger(value.toString());
+  }
+
+  private Double toDouble(Object value) {
+    if (value instanceof Number) {
+      return ((Number) value).doubleValue();
+    }
+    return Double.parseDouble(value.toString());
+  }
+
+  private Float toFloat(Object value) {
+    if (value instanceof Number) {
+      return  ((Number) value).floatValue();
+    }
+    return Float.parseFloat(value.toString());
+  }
+
+  private Long toLong(Object value) {
+    if (value instanceof Number) {
+      return ((Number) value).longValue();
+    }
+    return Long.parseLong(value.toString());
+  }
+
+  private Integer toInteger(Object value) {
+    if (value instanceof Number) {
+      return  ((Number) value).intValue();
+    }
+    return Integer.parseInt(value.toString());
+  }
+
+  private Short toShort(Object value) {
+    if (value instanceof Number) {
+      return  ((Number) value).shortValue();
+    }
+    return Short.parseShort(value.toString());
+  }
+
+  private Byte toByte(Object value) {
+    if (value instanceof Number) {
+      return  ((Number) value).byteValue();
+    }
+    return Byte.parseByte(value.toString());
+  }
+
+  private Character toCharacter(Object value) {
+    String s = value.toString();
+    return s.isEmpty() ? 0 : s.charAt(0);
+  }
+
+  private Boolean toBoolean(Object value) {
+    return Boolean.valueOf(value.toString());
+  }
+
+  private java.sql.Timestamp toSqlTimestamp(Object value) {
+    if (value instanceof LocalDateTime) {
+      return java.sql.Timestamp.from(((LocalDateTime) value).atZone(ZoneId.systemDefault()).toInstant());
+    }
+    try {
+      return FormatHelper.parseTimestamp(value.toString());   // tentackle Timestamp extends sql Timestamp
+    }
+    catch (ParseException px) {
+      throw new IllegalArgumentException(px);
+    }
+  }
+
+  private org.tentackle.common.Timestamp toTimestamp(Object value) {
+    if (value instanceof LocalDateTime) {
+      return new org.tentackle.common.Timestamp(((LocalDateTime) value).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
+    }
+    try {
+      return FormatHelper.parseTimestamp(value.toString());
+    }
+    catch (ParseException px) {
+      throw new IllegalArgumentException(px);
+    }
+  }
+
+  private java.sql.Time toSqlTime(Object value) {
+    if (value instanceof LocalTime) {
+      ;
+      return new java.sql.Time(((LocalTime) value).toSecondOfDay() * 1000 - TimeZone.getDefault().getRawOffset());
+    }
+    try {
+      return FormatHelper.parseTime(value.toString());   // tentackle Time extends sql Time
+    }
+    catch (ParseException px) {
+      throw new IllegalArgumentException(px);
+    }
+  }
+
+  private org.tentackle.common.Time toTime(Object value) {
+    if (value instanceof LocalTime) {
+      return new org.tentackle.common.Time(((LocalTime) value).toSecondOfDay() * 1000 - TimeZone.getDefault().getRawOffset());
+    }
+    try {
+      return FormatHelper.parseTime(value.toString());
+    }
+    catch (ParseException px) {
+      throw new IllegalArgumentException(px);
+    }
+  }
+
+  private java.util.Date toUtilDate(Object value) {
+    if (value instanceof LocalDate) {
+      return new java.util.Date(((LocalDate) value).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli());
+    }
+    try {
+      return FormatHelper.parseDate(value.toString());   // tentackle Date extends sql Date which extends util Date
+    }
+    catch (ParseException px) {
+      throw new IllegalArgumentException(px);
+    }
+  }
+
+  private java.sql.Date toSqlDate(Object value) {
+    if (value instanceof LocalDate) {
+      return new java.sql.Date(((LocalDate) value).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli());
+    }
+    try {
+      return FormatHelper.parseDate(value.toString());   // tentackle Date extends sql Date
+    }
+    catch (ParseException px) {
+      throw new IllegalArgumentException(px);
+    }
+  }
+
+  private org.tentackle.common.Date toDate(Object value) {
+    if (value instanceof LocalDate) {
+      return new org.tentackle.common.Date(((LocalDate) value).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli());
+    }
+    try {
+      return FormatHelper.parseDate(value.toString());
+    }
+    catch (ParseException px) {
+      throw new IllegalArgumentException(px);
+    }
+  }
+
+  private LocalDateTime toLocalDateTime(Object value) {
+    if (value instanceof java.sql.Timestamp) {
+      return LocalDateTime.ofInstant(((java.sql.Timestamp) value).toInstant(), ZoneId.systemDefault());
+    }
+    return FormatHelper.parseLocalDateTime(value.toString());
+  }
+
+  @SuppressWarnings("deprecation")
+  private LocalDate toLocalDate(Object value) {
+    if (value instanceof java.util.Date) {
+      java.util.Date date = (Date) value;
+      // ofInstant not available in java 8 -> must use deprecated methods
+      return LocalDate.of(date.getYear() + 1900, date.getMonth() + 1, date.getDate());
+    }
+    return FormatHelper.parseLocalDate(value.toString());
+  }
+
+  @SuppressWarnings("deprecation")
+  private LocalTime toLocalTime(Object value) {
+    if (value instanceof java.sql.Time) {
+      java.sql.Time time = (Time) value;
+      // ofInstant not available in java 8 -> must use deprecated methods
+      return LocalTime.of(time.getHours(), time.getMinutes(), time.getSeconds());
+    }
+    return FormatHelper.parseLocalTime(value.toString());
+  }
+}
