@@ -43,7 +43,7 @@ public class ObjectUtilitiesTest {
   private final String MAGIC_WORD = "wave rod";
 
   @Test
-  public void testCoverters() {
+  public void testConverters() {
     assertEquals(ObjectUtilities.getInstance().convert(String.class, this), MAGIC_WORD);
     assertEquals(ObjectUtilities.getInstance().convert(Character.TYPE, MAGIC_WORD), (Character) MAGIC_WORD.charAt(0));
     assertEquals(ObjectUtilities.getInstance().convert(Double.class, 10L), 10.0d);
