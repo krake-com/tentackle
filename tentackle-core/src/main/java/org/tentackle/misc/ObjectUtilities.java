@@ -31,10 +31,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TimeZone;
 import java.util.function.Function;
 
 interface ObjectUtilitiesHolder {
@@ -239,7 +239,7 @@ public class ObjectUtilities {
 
   private java.sql.Timestamp toSqlTimestamp(Object value) {
     if (value instanceof LocalDateTime) {
-      return new java.sql.Timestamp(((LocalDateTime) value).toInstant(ZoneOffset.UTC).toEpochMilli());
+      return java.sql.Timestamp.from(((LocalDateTime) value).atZone(ZoneId.systemDefault()).toInstant());
     }
     try {
       return FormatHelper.parseTimestamp(value.toString());   // tentackle Timestamp extends sql Timestamp
@@ -251,7 +251,7 @@ public class ObjectUtilities {
 
   private org.tentackle.common.Timestamp toTimestamp(Object value) {
     if (value instanceof LocalDateTime) {
-      return new org.tentackle.common.Timestamp(((LocalDateTime) value).toInstant(ZoneOffset.UTC).toEpochMilli());
+      return new org.tentackle.common.Timestamp(((LocalDateTime) value).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
     }
     try {
       return FormatHelper.parseTimestamp(value.toString());
@@ -263,7 +263,8 @@ public class ObjectUtilities {
 
   private java.sql.Time toSqlTime(Object value) {
     if (value instanceof LocalTime) {
-      return new java.sql.Time(((LocalTime) value).toSecondOfDay() * 1000);
+      ;
+      return new java.sql.Time(((LocalTime) value).toSecondOfDay() * 1000 - TimeZone.getDefault().getRawOffset());
     }
     try {
       return FormatHelper.parseTime(value.toString());   // tentackle Time extends sql Time
@@ -275,7 +276,7 @@ public class ObjectUtilities {
 
   private org.tentackle.common.Time toTime(Object value) {
     if (value instanceof LocalTime) {
-      return new org.tentackle.common.Time(((LocalTime) value).toSecondOfDay() * 1000);
+      return new org.tentackle.common.Time(((LocalTime) value).toSecondOfDay() * 1000 - TimeZone.getDefault().getRawOffset());
     }
     try {
       return FormatHelper.parseTime(value.toString());
@@ -323,7 +324,7 @@ public class ObjectUtilities {
 
   private LocalDateTime toLocalDateTime(Object value) {
     if (value instanceof java.sql.Timestamp) {
-      return LocalDateTime.ofInstant(((java.sql.Timestamp) value).toInstant(), ZoneOffset.UTC);
+      return LocalDateTime.ofInstant(((java.sql.Timestamp) value).toInstant(), ZoneId.systemDefault());
     }
     return FormatHelper.parseLocalDateTime(value.toString());
   }
@@ -337,7 +338,7 @@ public class ObjectUtilities {
 
   private LocalTime toLocalTime(Object value) {
     if (value instanceof java.sql.Time) {
-      return LocalTime.ofInstant(Instant.ofEpochMilli(((java.sql.Time) value).getTime()), ZoneOffset.UTC);
+      return LocalTime.ofInstant(Instant.ofEpochMilli(((java.sql.Time) value).getTime()), ZoneId.systemDefault());
     }
     return FormatHelper.parseLocalTime(value.toString());
   }

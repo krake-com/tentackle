@@ -28,7 +28,8 @@ import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
+import java.util.TimeZone;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
@@ -56,7 +57,7 @@ public class ObjectUtilitiesTest {
 
     LocalDateTime localDateTime = LocalDateTime.now();
     localDateTime = localDateTime.minusNanos(localDateTime.getNano());
-    java.sql.Timestamp sqlTs = new java.sql.Timestamp(localDateTime.toInstant(ZoneOffset.UTC).toEpochMilli());
+    java.sql.Timestamp sqlTs = java.sql.Timestamp.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant());
     assertEquals(ObjectUtilities.getInstance().convert(java.sql.Timestamp.class, localDateTime), sqlTs);
     assertEquals(ObjectUtilities.getInstance().convert(LocalDateTime.class, sqlTs), localDateTime);
 
@@ -67,7 +68,7 @@ public class ObjectUtilitiesTest {
 
     LocalTime localTime = LocalTime.now();
     localTime = localTime.minusNanos(localTime.getNano());
-    org.tentackle.common.Time time = new org.tentackle.common.Time(localTime.toSecondOfDay() * 1000);
+    org.tentackle.common.Time time = new org.tentackle.common.Time(localTime.toSecondOfDay() * 1000 - TimeZone.getDefault().getRawOffset());
     assertEquals(ObjectUtilities.getInstance().convert(org.tentackle.common.Time.class, localTime), time);
     assertEquals(ObjectUtilities.getInstance().convert(LocalTime.class, time), localTime);
 
