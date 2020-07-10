@@ -20,6 +20,7 @@ package org.tentackle.misc;
 
 import org.tentackle.common.BMoney;
 import org.tentackle.common.DMoney;
+import org.tentackle.common.LocaleProvider;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 
@@ -31,6 +32,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.util.Currency;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -160,6 +162,9 @@ public class ObjectUtilities {
     if (value instanceof BigDecimal) {
       return new DMoney((BigDecimal) value);
     }
+    if (value instanceof Number) {
+      return new DMoney(((Number) value).doubleValue(), Currency.getInstance(LocaleProvider.getInstance().getLocale()).getDefaultFractionDigits());
+    }
     else {
       String str = value.toString();
       return new DMoney(str, FormatHelper.determineScale(str));
@@ -169,6 +174,9 @@ public class ObjectUtilities {
   private BMoney toBMoney(Object value) {
     if (value instanceof BigDecimal) {
       return new BMoney((BigDecimal) value);
+    }
+    if (value instanceof Number) {
+      return new BMoney(((Number) value).doubleValue(), Currency.getInstance(LocaleProvider.getInstance().getLocale()).getDefaultFractionDigits());
     }
     String str = value.toString();
     return new BMoney(str, FormatHelper.determineScale(str));
@@ -180,6 +188,9 @@ public class ObjectUtilities {
   }
 
   private BigInteger toBigInteger(Object value) {
+    if (value instanceof BigDecimal) {
+      return ((BigDecimal) value).toBigInteger();
+    }
     if (value instanceof Number) {
       return BigInteger.valueOf(((Number) value).longValue());
     }
@@ -238,6 +249,9 @@ public class ObjectUtilities {
   }
 
   private java.sql.Timestamp toSqlTimestamp(Object value) {
+    if (value instanceof java.util.Date) {
+      return new java.sql.Timestamp(((java.util.Date) value).getTime());
+    }
     if (value instanceof LocalDateTime) {
       return java.sql.Timestamp.from(((LocalDateTime) value).atZone(ZoneId.systemDefault()).toInstant());
     }
@@ -250,6 +264,9 @@ public class ObjectUtilities {
   }
 
   private org.tentackle.common.Timestamp toTimestamp(Object value) {
+    if (value instanceof java.util.Date) {
+      return new org.tentackle.common.Timestamp(((java.util.Date) value).getTime());
+    }
     if (value instanceof LocalDateTime) {
       return new org.tentackle.common.Timestamp(((LocalDateTime) value).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
     }
@@ -262,8 +279,10 @@ public class ObjectUtilities {
   }
 
   private java.sql.Time toSqlTime(Object value) {
+    if (value instanceof java.util.Date) {
+      return new java.sql.Time(((java.util.Date) value).getTime());
+    }
     if (value instanceof LocalTime) {
-      ;
       return new java.sql.Time(((LocalTime) value).toSecondOfDay() * 1000 - TimeZone.getDefault().getRawOffset());
     }
     try {
@@ -275,6 +294,9 @@ public class ObjectUtilities {
   }
 
   private org.tentackle.common.Time toTime(Object value) {
+    if (value instanceof java.util.Date) {
+      return new org.tentackle.common.Time(((java.util.Date) value).getTime());
+    }
     if (value instanceof LocalTime) {
       return new org.tentackle.common.Time(((LocalTime) value).toSecondOfDay() * 1000 - TimeZone.getDefault().getRawOffset());
     }
@@ -299,6 +321,9 @@ public class ObjectUtilities {
   }
 
   private java.sql.Date toSqlDate(Object value) {
+    if (value instanceof java.util.Date) {
+      return new java.sql.Date(((java.util.Date) value).getTime());
+    }
     if (value instanceof LocalDate) {
       return new java.sql.Date(((LocalDate) value).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli());
     }
@@ -311,6 +336,9 @@ public class ObjectUtilities {
   }
 
   private org.tentackle.common.Date toDate(Object value) {
+    if (value instanceof java.util.Date) {
+      return new org.tentackle.common.Date(((java.util.Date) value).getTime());
+    }
     if (value instanceof LocalDate) {
       return new org.tentackle.common.Date(((LocalDate) value).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli());
     }
@@ -333,10 +361,16 @@ public class ObjectUtilities {
     if (value instanceof java.util.Date) {
       return LocalDate.ofInstant(Instant.ofEpochMilli(((java.util.Date) value).getTime()), ZoneId.systemDefault());
     }
+    if (value instanceof LocalDateTime) {
+      return ((LocalDateTime) value).toLocalDate();
+    }
     return FormatHelper.parseLocalDate(value.toString());
   }
 
   private LocalTime toLocalTime(Object value) {
+    if (value instanceof LocalDateTime) {
+      return ((LocalDateTime) value).toLocalTime();
+    }
     if (value instanceof java.sql.Time) {
       return LocalTime.ofInstant(Instant.ofEpochMilli(((java.sql.Time) value).getTime()), ZoneId.systemDefault());
     }
