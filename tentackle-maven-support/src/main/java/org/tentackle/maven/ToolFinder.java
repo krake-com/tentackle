@@ -20,11 +20,17 @@ package org.tentackle.maven;
 import org.apache.maven.toolchain.Toolchain;
 
 import java.io.File;
+import java.util.Optional;
+import java.util.StringTokenizer;
 
 /**
  * Finds java tools to execute on behalf of a maven plugin.
  */
 public class ToolFinder {
+
+  private static final String[] WINDOWS_SUFFIXES = { ".exe", ".cmd", ".bat" };
+  private static final String[] UNIX_SUFFIXES = { ".sh" };
+
 
   private final Toolchain toolchain;
 
@@ -38,7 +44,23 @@ public class ToolFinder {
   }
 
   /**
+   * Creates a toolfinder without toolchain.
+   */
+  public ToolFinder() {
+    this(null);
+  }
+
+  /**
    * Finds the file of a tool's excecutable.
+   * <p>
+   * First, it looks in the same directory where the current command (usually java) is located.
+   * This is safe for all JDK tools, whether JAVA_HOME or PATH is configured correctly or not.<br>
+   * If not found, the environment JAVA_HOME ist tried.<br>
+   * If still not found, the environment's PATH variable is consulted.
+   * <p>
+   * Depending on the OS, it will also try to append well-known suffixes to the toolName.
+   * Windows: ".exe", ".cmd" and ".bat".
+   * Others (Unixes): ".sh".
    *
    * @param toolName the platform independent tool name
    * @return file representing the tool's executable, or null if the tool can not be found
@@ -55,21 +77,70 @@ public class ToolFinder {
     }
 
     if (file == null) {
-      // no toolchain or no such tool found: try JAVA_HOME
-      String javaHomeEnv = System.getenv("JAVA_HOME");
-      if (javaHomeEnv != null) {
-        File binDir = new File(javaHomeEnv, "bin");
-        file = new File(binDir, toolName);
-        if (!file.isFile()) {
-          // try to append .exe for windozes
-          file = new File(binDir, toolName + ".exe");
-          if (!file.isFile()) {
-            file = null;
+      // no toolchain or no such tool found: try java tool dir
+      File toolDir = locateJavaToolDir();
+      if (toolDir != null) {
+        file = loadTool(toolDir, toolName);
+      }
+      if (file == null) {
+        // try JAVA_HOME
+        String javaHomeEnv = System.getenv("JAVA_HOME");
+        if (javaHomeEnv != null) {
+          toolDir = new File(javaHomeEnv, "bin");
+          file = loadTool(toolDir, toolName);
+        }
+      }
+      if (file == null) {
+        // try along the PATH
+        String path = System.getenv("PATH");    // same name for unixes and windozes
+        if (path != null) {
+          StringTokenizer stok = new StringTokenizer(path, File.pathSeparator);
+          while (file == null && stok.hasMoreTokens()) {
+            toolDir = new File(stok.nextToken().trim());
+            file = loadTool(toolDir, toolName);
           }
         }
       }
     }
 
+    return file;
+  }
+
+  /**
+   * Locate the directory of the currently running process.
+   * This is usually something like .../bin/java.
+   *
+   * @return the tooldir, null if could not be determined
+   */
+  private File locateJavaToolDir() {
+    File toolDir = null;
+    Optional<String> javaCommand = ProcessHandle.current().info().command();
+    if (javaCommand.isPresent()) {
+      toolDir = new File(javaCommand.get()).getParentFile();
+    }
+    return toolDir;
+  }
+
+  /**
+   * Loads a tool by its name.<br>
+   * Tries OS specific suffixes.
+   *
+   * @param toolDir the directory of the tool
+   * @param toolName the tool's name
+   * @return the tool's file, null if not found
+   */
+  private File loadTool(File toolDir, String toolName) {
+    File file = new File(toolDir, toolName);
+    if (!file.isFile()) {
+      file = null;
+      for (String suffix: File.pathSeparatorChar == ':' ? UNIX_SUFFIXES : WINDOWS_SUFFIXES) {
+        file = new File(toolDir, toolName + suffix);
+        if (file.isFile()) {
+          break;    // found!
+        }
+        file = null;
+      }
+    }
     return file;
   }
 
