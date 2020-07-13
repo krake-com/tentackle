@@ -184,10 +184,10 @@ public class ColumnMigrator {
   private String addColumn() throws ModelException {
     StringBuilder buf = new StringBuilder();
     buf.append(backend.sqlAddColumn(entity.getTableName(), columnName, comment,
-               sqlType, columnSize, columnScale, true, defaultValue));
+               sqlType, columnSize, columnScale, defaultValue == null, defaultValue));
     if (!attribute.isNullable() && defaultValue == null) {
       buf.append(updateToNotNull());      // set default value before ...
-      buf.append(alterNull());  // ... change to not nullable
+      buf.append(alterNull());            // ... change to not nullable
     }
     if (comment != null) {
       buf.append(backend.sqlCreateColumnComment(entity.getTableName(), columnName, comment));
