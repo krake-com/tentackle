@@ -121,6 +121,45 @@ public class Oracle extends AbstractSql2003Backend {
   // maximum length for identifiers, names, etc...
   private static final int MAX_NAME_LENGTH = 30;
 
+  private static final String[] RESERVED_SCHEMAS = {
+      "ANONYMOUS",
+      "APEX_030200",
+      "APEX_PUBLIC_USER",
+      "APPQOSSYS",
+      "BI",
+      "CTXSYS",
+      "DBSNMP",
+      "DIP",
+      "EXFSYS",
+      "FLOWS_FILES",
+      "HR",
+      "IX",
+      "MDDATA",
+      "MDSYS",
+      "MGMT_VIEW",
+      "OE",
+      "OLAPSYS",
+      "ORACLE_OCM",
+      "ORDDATA",
+      "ORDPLUGINS",
+      "ORDSYS",
+      "OUTLN",
+      "OWBSYS",
+      "OWBSYS_AUDIT",
+      "PM",
+      "SCOTT",
+      "SH",
+      "SI_INFORMTN_SCHEMA",
+      "SPATIAL_CSW_ADMIN_USR",
+      "SPATIAL_WFS_ADMIN_USR",
+      "SYS",
+      "SYSMAN",
+      "SYSTEM",
+      "WMSYS",
+      "XDB",
+      "XS$NULL"
+  };
+
 
 
   /**
@@ -232,6 +271,16 @@ public class Oracle extends AbstractSql2003Backend {
   @Override
   public boolean isReservedTableName(String name) {
     return name != null && name.contains("$");
+  }
+
+  @Override
+  public boolean isReservedSchemaName(String name) {
+    for (String reserved_schema: RESERVED_SCHEMAS) {
+      if (reserved_schema.equalsIgnoreCase(name)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   // Oracle supports function-based indexes, but does not return a usable JDBC metadata.
