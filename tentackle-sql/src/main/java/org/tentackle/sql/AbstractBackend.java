@@ -182,6 +182,11 @@ public abstract class AbstractBackend implements Backend {
   }
 
   @Override
+  public boolean isReservedSchemaName(String name) {
+    return false;
+  }
+
+  @Override
   public String getEmptyString() {
     return "";
   }
@@ -906,10 +911,24 @@ public abstract class AbstractBackend implements Backend {
       if (getReservedWords().contains(name.toUpperCase())) {
         throw new BackendException(nameType + " '" + name + "' is a reserved word for backend " + this);
       }
-      if (SqlNameType.TABLE_NAME == nameType && isReservedTableName(name)) {
-        throw new BackendException("'" + name + "' conflicts with reserved names for backend " + this);
+      if (SqlNameType.TABLE_NAME == nameType) {
+        int ndx = name.indexOf('.');
+        String sn = ndx >= 0 ? name.substring(0, ndx) : "";
+        String tn = ndx >= 0 ? name.substring(ndx + 1) : name;
+        if (isReservedTableName(tn)) {
+          throw new BackendException("'" + tn + "' conflicts with reserved table names for backend " + this);
+        }
+        if (isReservedSchemaName(sn)) {
+          throw new BackendException("'" + sn + "' conflicts with reserved schema names for backend " + this);
+        }
+        if (isTemporaryName(tn)) {
+          throw new BackendException(nameType + " '" + tn + "' is a temporary identifier for backend " + this);
+        }
+        if (isTemporaryName(sn)) {
+          throw new BackendException("schema '" + sn + "' is a temporary identifier for backend " + this);
+        }
       }
-      if (isTemporaryName(name)) {
+      else if (isTemporaryName(name)) {
         throw new BackendException(nameType + " '" + name + "' is a temporary identifier for backend " + this);
       }
     }
