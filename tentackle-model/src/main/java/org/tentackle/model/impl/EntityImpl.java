@@ -320,11 +320,11 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
       tableNameWithoutSchema = null;
     }
     else  {
-      this.tableName = tableName;
-      int ndx = tableName.indexOf('.');
+      this.tableName = tableName.toLowerCase();
+      int ndx = this.tableName.indexOf('.');
       if (ndx > 0) {
-        schemaName = tableName.substring(0, ndx);
-        tableNameWithoutSchema = tableName.substring(ndx + 1);
+        schemaName = this.tableName.substring(0, ndx);
+        tableNameWithoutSchema = this.tableName.substring(ndx + 1);
       }
       else  {
         tableNameWithoutSchema = this.tableName;
@@ -338,7 +338,12 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
    * @param tableAlias the alias
    */
   public void setTableAlias(String tableAlias) {
-    this.tableAlias = tableAlias;
+    if (tableAlias != null) {
+      this.tableAlias = tableAlias.toLowerCase();
+    }
+    else {
+      this.tableAlias = null;
+    }
   }
 
   /**

@@ -20,6 +20,7 @@
 package org.tentackle.sql;
 
 import org.tentackle.sql.metadata.ColumnMetaData;
+import org.tentackle.sql.metadata.DatabaseMetaDataTableHeader;
 import org.tentackle.sql.metadata.IndexColumnMetaData;
 import org.tentackle.sql.metadata.IndexMetaData;
 import org.tentackle.sql.metadata.ModelMetaData;
@@ -28,6 +29,7 @@ import org.tentackle.sql.metadata.TableMetaData;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -273,6 +275,15 @@ public interface Backend {
   DatabaseMetaData[] getMetaData(BackendInfo backendInfo) throws SQLException;
 
   /**
+   * Gets all table headers for a given metadata.
+   *
+   * @param metaData the database metadata
+   * @return the list of table headers
+   * @throws SQLException if failed
+   */
+  List<DatabaseMetaDataTableHeader> getTableHeaders(DatabaseMetaData metaData) throws SQLException;
+
+  /**
    * Checks whether this is a temporary name.<br>
    * Returns whether an entity-, attribute- or index-name is temporary and should not
    * be taken into account for migration or even used in the model.<br>
@@ -283,6 +294,17 @@ public interface Backend {
    * @return true temporary (invalid) name
    */
   boolean isTemporaryName(String name);
+
+  /**
+   * Checks whether this a reserved table name for this backend.<br>
+   * Applies only to tables. Not to be mixed up with {@link #getReservedWords()}.<br>
+   * Useful to avoid conflicts with naming conventions for backend specific things,
+   * such as snapshots.
+   *
+   * @param name the table name
+   * @return true if reserved by backend
+   */
+  boolean isReservedTableName(String name);
 
   /**
    * Creates a select statement string from an inner sql string.
@@ -842,6 +864,15 @@ public interface Backend {
    * @return the SQL code
    */
   String sqlDropIndex(String schemaName, String tableNameWithoutSchema, String indexName);
+
+  /**
+   * Generates the DROP TABLE statement.
+   *
+   * @param schemaName the optional schema, null if none
+   * @param tableNameWithoutSchema the table name without the schema
+   * @return the SQL code
+   */
+  String sqlDropTable(String schemaName, String tableNameWithoutSchema);
 
   /**
    * Generates the ALTER TABLE statement to add a foreign key constraint.

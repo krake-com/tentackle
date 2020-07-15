@@ -22,6 +22,7 @@ package org.tentackle.sql;
 import org.tentackle.common.Cryptor;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.sql.metadata.ColumnMetaData;
+import org.tentackle.sql.metadata.DatabaseMetaDataTableHeader;
 import org.tentackle.sql.metadata.IndexColumnMetaData;
 import org.tentackle.sql.metadata.IndexMetaData;
 import org.tentackle.sql.metadata.ModelMetaData;
@@ -30,6 +31,7 @@ import org.tentackle.sql.metadata.TableMetaData;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
@@ -154,8 +156,29 @@ public abstract class AbstractBackend implements Backend {
   }
 
   @Override
+  public List<DatabaseMetaDataTableHeader> getTableHeaders(DatabaseMetaData metaData) throws SQLException {
+    List<DatabaseMetaDataTableHeader> headers = new ArrayList<>();
+    try (ResultSet rs = metaData.getTables(null, null, null, null)) {
+      while (rs.next()) {
+        headers.add(new DatabaseMetaDataTableHeader(metaData,
+                                                    rs.getString("TABLE_CAT"),
+                                                    rs.getString("TABLE_SCHEM"),
+                                                    rs.getString("TABLE_NAME"),
+                                                    rs.getString("TABLE_TYPE"),
+                                                    rs.getString("REMARKS")));
+      }
+    }
+    return headers;
+  }
+
+  @Override
   public boolean isTemporaryName(String name) {
     return name != null && name.startsWith("_");
+  }
+
+  @Override
+  public boolean isReservedTableName(String name) {
+    return false;
   }
 
   @Override
@@ -762,6 +785,21 @@ public abstract class AbstractBackend implements Backend {
   }
 
   @Override
+  public String sqlDropTable(String schemaName, String tableNameWithoutSchema) {
+    StringBuilder buf = new StringBuilder("DROP TABLE ");
+    if (isDropIfExistsEnabled()) {
+      buf.append(SQL_IF_EXISTS);
+    }
+    if (schemaName != null) {
+      buf.append(schemaName);
+      buf.append(".");
+    }
+    buf.append(tableNameWithoutSchema);
+    buf.append(";\n");
+    return buf.toString();
+  }
+
+  @Override
   public void sqlJoinSelects(JoinType type, boolean addColumns, StringBuilder select,
                              String joinSelect, String joinSelectIdAlias, String joinAlias, String join) {
 
@@ -867,6 +905,9 @@ public abstract class AbstractBackend implements Backend {
     if (name != null) {
       if (getReservedWords().contains(name.toUpperCase())) {
         throw new BackendException(nameType + " '" + name + "' is a reserved word for backend " + this);
+      }
+      if (SqlNameType.TABLE_NAME == nameType && isReservedTableName(name)) {
+        throw new BackendException("'" + name + "' conflicts with reserved names for backend " + this);
       }
       if (isTemporaryName(name)) {
         throw new BackendException(nameType + " '" + name + "' is a temporary identifier for backend " + this);

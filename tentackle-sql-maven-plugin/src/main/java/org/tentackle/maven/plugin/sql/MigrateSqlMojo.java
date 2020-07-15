@@ -37,6 +37,7 @@ import org.tentackle.model.migrate.TableMigrator;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendInfo;
+import org.tentackle.sql.metadata.DatabaseMetaDataTableHeader;
 import org.tentackle.sql.metadata.ModelMetaData;
 import org.tentackle.sql.metadata.TableMetaData;
 
@@ -110,6 +111,12 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   @Parameter
   protected boolean validate;
 
+  /**
+   * Fail if unexpected tables are found in the database.
+   */
+  @Parameter(defaultValue = "false")
+  protected boolean failOnUnexpectedTables;
+
 
   /**
    * The database meta data retrieved from the backend.
@@ -156,6 +163,15 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
    */
   private Map<String, Boolean> migratedEntitiesMap;   // <entity-name>:TRUE|FALSE
 
+  /**
+   * All other remaining tables in the database, except the alien tables.
+   */
+  private Map<String, DatabaseMetaDataTableHeader> otherTablesMap;
+
+  /**
+   * Found alien tables.
+   */
+  private Map<String, DatabaseMetaDataTableHeader> alienTablesMap;
 
   @Override
   protected void openResources(BackendInfo backendInfo) throws MojoExecutionException {
@@ -164,6 +180,33 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       try {
         DatabaseMetaData[] metaData = backendInfo.getBackend().getMetaData(backendInfo);
         modelMetaData = new ModelMetaData(backendInfo.getBackend(), metaData, backendInfo.getSchemas());
+        // collect other tables (not in model)
+        otherTablesMap = new TreeMap<>();
+        alienTablesMap = new HashMap<>();
+        String[] schemas = backendInfo.getSchemas();
+        for (DatabaseMetaDataTableHeader header: modelMetaData.getAllTablesInDatabase()) {
+          if (!backendInfo.getBackend().isReservedTableName(header.getName()) &&
+              header.isUserTable() && (!checkReservedTables || !header.isReserved())) {
+            if (schemas != null) {
+              boolean inSchemas = false;
+              for (String schema : schemas) {
+                if (schema.equalsIgnoreCase(header.getSchema())) {
+                  inSchemas = true;
+                  break;
+                }
+              }
+              if (!inSchemas) {
+                continue;
+              }
+            }
+            if (isAlienTable(header.getName())) {
+              alienTablesMap.put(header.getName(), header);
+            }
+            else {
+              otherTablesMap.put(header.getName(), header);
+            }
+          }
+        }
       }
       catch (SQLException sqx) {
         throw new MojoExecutionException("could not retrieve metadata from " + backendInfo, sqx);
@@ -225,6 +268,21 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
             .append(Integer.toString(processedEntites))
             .append(", skipped=")
             .append(Integer.toString(skippedEntites)).append("\n");
+
+        if (!otherTablesMap.isEmpty()) {
+          sqlWriter.append("-- unexpected tables in database not belonging to the model: ").append(Integer.toString(otherTablesMap.size())).append("\n");
+          for (DatabaseMetaDataTableHeader header : otherTablesMap.values()) {
+            if (failOnUnexpectedTables) {
+              sqlWriter.append(backendInfo.getBackend().sqlDropTable(header.getSchema(), header.getName()));
+            }
+            else {
+              sqlWriter.append("--     ").append(header.toString()).append("\n");
+            }
+          }
+          if (!failOnUnexpectedTables) {
+            sqlWriter.append("-- please add to <alienTables> or consider removal\n");
+          }
+        }
       }
 
       if (!split) {
@@ -297,6 +355,15 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
     }
     else {
       getLog().info(STR_NO_CHANGES_DETECTED);
+    }
+
+    if (failOnUnexpectedTables && !otherTablesMap.isEmpty()) {
+      StringBuilder buf = new StringBuilder();
+      buf.append(otherTablesMap.size()).append(" unexpected tables found in database:");
+      for (DatabaseMetaDataTableHeader header: otherTablesMap.values()) {
+        buf.append('\n').append(header);
+      }
+      throw new MojoFailureException(buf.toString());
     }
   }
 
@@ -410,12 +477,40 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
               }
 
               processedEntites++;
+              String plainTableName = entity.getTableNameWithoutSchema();
 
               TableMetaData table = backendInfo.getBackend().getTableMetaData(modelMetaData, entity.getTableName());
               if (table != null) {
-                modelMetaData.addTableMetaData(table);
-                countTableStats(table);
+                // verify that this is a user-defined table we can migrate
+                try {
+                  DatabaseMetaDataTableHeader tableHeader = modelMetaData.getTableInDatabase(entity.getTableName());
+                  if (tableHeader != null && !tableHeader.isUserTable()) {
+                    getLog().error("'" + entity.getTableName() + "' already exists as " + tableHeader.getType());
+                    errorCount++;
+                    continue;
+                  }
+                }
+                catch (SQLException sqx) {
+                  getLog().warn("could not retrieve table header info for table " + entity.getTableName(), sqx);
+                }
+
+                if (isAlienTable(plainTableName)) {
+                  DatabaseMetaDataTableHeader header = alienTablesMap.get(plainTableName);
+                  StringBuilder buf = new StringBuilder();
+                  buf.append("table '").append(entity.getTableName()).append("' is reserved for other uses");
+                  if (header != null && !StringHelper.isAllWhitespace(header.getComment())) {
+                    buf.append(": ").append(header.getComment());
+                  }
+                  getLog().error(buf.toString());
+                  errorCount++;
+                  continue;
+                }
+                else {
+                  modelMetaData.addTableMetaData(table);
+                  countTableStats(table);
+                }
               }
+              otherTablesMap.remove(plainTableName);
 
               StringBuilder tableSql = new StringBuilder();
 
@@ -432,7 +527,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
               }
               TableMigrator tableMigrator = new TableMigrator(entity, relatedForeignKeys, backendInfo.getBackend(), table);
               TableMigrator.Result migrationResult = tableMigrator.migrate(
-                      hints.getHints(tableName), hints.getColumnMigrations(tableName));
+                  hints.getHints(tableName), hints.getColumnMigrations(tableName));
 
               // table will have to be migrated?
               boolean migrated = !migrationResult.getTableSql().isEmpty();
@@ -450,7 +545,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
                   tableSql.append(sql);
                   tableSql.append('\n');
                 }
-                else  {
+                else {
                   // run the generated migration
                   sql = backendMigrationHints.getBeforeTable(tableName);
                   if (sql != null) {
@@ -483,8 +578,8 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
                 flushSqlForTable(tableName, tableSql.toString());
 
                 // check if we can now migrate some pending table
-                for (Iterator<Map.Entry<String,String>> iter = pendingMigrations.entrySet().iterator(); iter.hasNext(); ) {
-                  Map.Entry<String,String> entry = iter.next();
+                for (Iterator<Map.Entry<String, String>> iter = pendingMigrations.entrySet().iterator(); iter.hasNext(); ) {
+                  Map.Entry<String, String> entry = iter.next();
                   String pendingTablename = entry.getKey();
                   if (!isMigrationPending(backendMigrationHints.getDependencies(pendingTablename), migratedTablenames)) {
                     migratedTablenames.add(pendingTablename);
