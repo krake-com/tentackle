@@ -109,6 +109,15 @@ public interface Model {
   Entity getByFilePath(String filePath) throws ModelException;
 
   /**
+   * Gets the entity by its table name.
+   *
+   * @param tableName the table name (optional leading schema will be ignored)
+   * @return the entity, null if no such entity
+   * @throws ModelException if the model is inconsistent
+   */
+  Entity getByTableName(String tableName) throws ModelException;
+
+  /**
    * Gets the entity by its name.
    *
    * @param entityName the name
@@ -118,7 +127,7 @@ public interface Model {
   Entity getByEntityName(String entityName) throws ModelException;
 
   /**
-   * Gets the entity by its id.
+   * Gets the entity by its class id.
    *
    * @param classId the class id
    * @return the entity, null if no such entity

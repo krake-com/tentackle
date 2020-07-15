@@ -18,13 +18,17 @@
 
 package org.tentackle.sql.metadata;
 
+import org.tentackle.sql.Backend;
+import org.tentackle.sql.BackendInfo;
+
 import java.sql.DatabaseMetaData;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
-import org.tentackle.sql.Backend;
-import org.tentackle.sql.BackendInfo;
 
 /**
  * The whole metadata for the connected database.
@@ -35,9 +39,12 @@ public class ModelMetaData {
 
   private final Backend backend;                      // the backend
   private final DatabaseMetaData[] metaData;          // the connection's meta data
-  private final Map<String,TableMetaData> tableMap;   // the tables
+  private final Map<String, TableMetaData> tableMap;  // the tables of the model <modelname : metadata>
   private final String[] schemas;                     // optional schemas
   private final Properties properties;                // migration properties
+
+  private Map<String, DatabaseMetaDataTableHeader> metaDataTableHeaderMap;  // table header info (lazy)
+
 
   /**
    * Creates a database meta instance.
@@ -63,6 +70,27 @@ public class ModelMetaData {
    */
   public Properties getProperties() {
     return properties;
+  }
+
+  /**
+   * Gets the header info of all tables in the database.
+   *
+   * @return the table headers
+   * @throws SQLException if failed
+   */
+  public List<DatabaseMetaDataTableHeader> getAllTablesInDatabase() throws SQLException {
+    return new ArrayList<>(getMetaDataTableHeaderMap().values());
+  }
+
+  /**
+   * Gets the header info for given tablename.
+   *
+   * @param tableName the tablename
+   * @return the header info, null if no such table in database
+   * @throws SQLException
+   */
+  public DatabaseMetaDataTableHeader getTableInDatabase(String tableName) throws SQLException {
+    return getMetaDataTableHeaderMap().get(tableName.toLowerCase());
   }
 
   /**
@@ -137,6 +165,19 @@ public class ModelMetaData {
       buf.append(table);
     }
     return buf.toString();
+  }
+
+
+  private Map<String, DatabaseMetaDataTableHeader> getMetaDataTableHeaderMap() throws SQLException {
+    if (metaDataTableHeaderMap == null) {
+      metaDataTableHeaderMap = new TreeMap<>();   // sorted by tablename
+      for (DatabaseMetaData md: metaData) {
+        for (DatabaseMetaDataTableHeader header : backend.getTableHeaders(md)) {
+          metaDataTableHeaderMap.put(header.getName(), header);
+        }
+      }
+    }
+    return metaDataTableHeaderMap;
   }
 
 }

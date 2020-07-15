@@ -263,7 +263,7 @@ public class ColumnMetaData {
   public String toString() {
     StringBuilder buf = new StringBuilder(columnName);
     buf.append(" ");
-    buf.append(MetaDataHelper.jdbcTypeToString(type));
+    buf.append(MetaDataUtilities.getInstance().jdbcTypeToString(type));
     if (size > 0) {
       buf.append("(");
       buf.append(size);

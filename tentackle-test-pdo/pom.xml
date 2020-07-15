@@ -96,6 +96,7 @@
         <configuration>
           <verbosity>info</verbosity>
           <generateHeaderComment>false</generateHeaderComment>
+          <checkReservedTables>false</checkReservedTables>
           <backendNames>all</backendNames>
           <sqlDir>${project.build.directory}/generated-resources/sql</sqlDir>
           <sqlFileName>createttmodel.sql</sqlFileName>

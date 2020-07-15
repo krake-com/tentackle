@@ -65,6 +65,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
 
 
 /**
@@ -185,6 +186,26 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
    */
   @Parameter(defaultValue = "true")
   protected boolean generateHeaderComment;
+
+  /**
+   * Check for reserved table names.<br>
+   * Invokes {@link org.tentackle.sql.metadata.MetaDataUtilities#isReservedTable(String)}.
+   */
+  @Parameter(defaultValue = "true")
+  protected boolean checkReservedTables;
+
+  /**
+   * Optional list of tables names not belonging to the model.<br>
+   * Could be just simple names, but in fact is a regular expression.<br>
+   * Must not contain the schema name, only the table name!
+   */
+  @Parameter
+  private List<String> alienTables;
+
+  /**
+   * Compiled regexes for other tables.
+   */
+  private List<Pattern> alienTablePatterns;
 
 
   /**
@@ -682,6 +703,34 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
         throw new MojoExecutionException("cannot write to sql file " + sqlFile.getAbsolutePath(), iox);
       }
     }
+  }
+
+
+  /**
+   * Returns whether given table name is reserved and must not be used by the model.
+   *
+   * @param tableName the tablename (without schema)
+   * @return true if belongs to the alien tables
+   */
+  protected boolean isAlienTable(String tableName) {
+    boolean isOther = false;
+    if (tableName != null && alienTables != null) {
+      if (alienTablePatterns == null) {
+        alienTablePatterns = new ArrayList<>();
+        for (String otherTable : alienTables) {
+          if (!StringHelper.isAllWhitespace(otherTable)) {
+            alienTablePatterns.add(Pattern.compile(otherTable));
+          }
+        }
+      }
+      for (Pattern pattern: alienTablePatterns) {
+        if (pattern.matcher(tableName).matches()) {
+          isOther = true;
+          break;
+        }
+      }
+    }
+    return isOther;
   }
 
   /**
