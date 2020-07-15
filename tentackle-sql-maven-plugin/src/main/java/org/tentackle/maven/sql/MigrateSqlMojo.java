@@ -175,16 +175,21 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         for (DatabaseMetaDataTableHeader header: modelMetaData.getAllTablesInDatabase()) {
           if (!backendInfo.getBackend().isReservedTableName(header.getName()) &&
               header.isUserTable() && (!checkReservedTables || !header.isReserved())) {
-            if (schemas != null) {
-              boolean inSchemas = false;
-              for (String schema : schemas) {
-                if (schema.equalsIgnoreCase(header.getSchema())) {
-                  inSchemas = true;
-                  break;
-                }
-              }
-              if (!inSchemas) {
+            if (header.getSchema() != null && !header.getSchema().isEmpty()) {
+              if (backendInfo.getBackend().isReservedSchemaName(header.getSchema())) {
                 continue;
+              }
+              if (schemas != null) {
+                boolean inSchemas = false;
+                for (String schema : schemas) {
+                  if (schema.equalsIgnoreCase(header.getSchema())) {
+                    inSchemas = true;
+                    break;
+                  }
+                }
+                if (!inSchemas) {
+                  continue;
+                }
               }
             }
             if (isAlienTable(header.getName())) {

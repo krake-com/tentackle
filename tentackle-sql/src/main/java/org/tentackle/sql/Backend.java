@@ -307,6 +307,14 @@ public interface Backend {
   boolean isReservedTableName(String name);
 
   /**
+   * Checks whether this is a reserved schema name for this backend.
+   *
+   * @param name the schema name
+   * @return true if reserved by backend
+   */
+  boolean isReservedSchemaName(String name);
+
+  /**
    * Creates a select statement string from an inner sql string.
    * <p>
    * {@code sqlBuilder} is anything as {@code FROM... WHERE... ORDER BY...}.<br>

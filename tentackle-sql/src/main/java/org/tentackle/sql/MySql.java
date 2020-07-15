@@ -56,6 +56,13 @@ public class MySql extends AbstractSql92Backend {
   /** OFFSET ? string. */
   public static final String SQL_OFFSET_PAR = SQL_OFFSET + SQL_PAR;
 
+  private static final String[] RESERVED_SCHEMAS = {
+      "information_schema",
+      "mysql",
+      "performance_schema",
+      "sys"
+  };
+
 
   @Override
   public boolean isMatchingUrl(String url) {
@@ -84,6 +91,16 @@ public class MySql extends AbstractSql92Backend {
     catch (SQLException ex) {
       throw new TentackleRuntimeException("cannot determine backend id", ex);
     }
+  }
+
+  @Override
+  public boolean isReservedSchemaName(String name) {
+    for (String reserved_schema: RESERVED_SCHEMAS) {
+      if (reserved_schema.equalsIgnoreCase(name)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override

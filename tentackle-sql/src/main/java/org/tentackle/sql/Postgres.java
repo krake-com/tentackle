@@ -71,6 +71,15 @@ public class Postgres extends AbstractSql92Backend {
     "TEXT"
   };
 
+
+  private static final String[] RESERVED_SCHEMAS = {
+    "information_schema",
+    "pg_catalog",
+    "pg_temp_1",
+    "pg_toast",
+    "pg_toast_temp_1"
+  };
+
   /** set of reserved words (built only once). */
   private static Set<String> reservedWords;
 
@@ -116,6 +125,16 @@ public class Postgres extends AbstractSql92Backend {
   @Override
   public boolean isReleaseSavepointSupported() {
     return true;
+  }
+
+  @Override
+  public boolean isReservedSchemaName(String name) {
+    for (String reserved_schema: RESERVED_SCHEMAS) {
+      if (reserved_schema.equalsIgnoreCase(name)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override

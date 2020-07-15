@@ -119,6 +119,10 @@ public class CreateSqlMojo extends AbstractSqlMojo {
                 getLog().error("table '" + entity.getTableName() + "' is reserved for other uses");
                 errorCount++;
               }
+              if (entity.getSchemaName() != null && backendInfo.getBackend().isReservedSchemaName(entity.getSchemaName())) {
+                getLog().error("schema '" + entity.getSchemaName() + "' is reserved in " + backendInfo.getBackend());
+                errorCount++;
+              }
               // create table
               sqlWriter.append('\n');
               sqlWriter.append(entity.sqlCreateTable(backendInfo.getBackend()));
