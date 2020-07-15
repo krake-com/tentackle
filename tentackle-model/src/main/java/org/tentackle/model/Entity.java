@@ -18,9 +18,10 @@
 
 package org.tentackle.model;
 
+import org.tentackle.sql.Backend;
+
 import java.util.List;
 import java.util.Set;
-import org.tentackle.sql.Backend;
 
 /**
  * The entity.
@@ -42,8 +43,13 @@ public interface Entity extends ModelElement {
   /**
    * Gets the database table name.<br>
    * An optional schema may be prepended separated by a dot.
+   * <p>
+   * Important: similar to the entity name, the table name must be unique among the whole model
+   * and all schemas.
+   * This restriction avoids unnecessary confusion and reduces the potential for errors
+   * in SQL statements.
    *
-   * @return the tablename (always in lowercase)
+   * @return the tablename (always in lowercase), null if entity doesn't map to its own table
    */
   String getTableName();
 
@@ -56,8 +62,13 @@ public interface Entity extends ModelElement {
 
   /**
    * Gets the tablename without the leading schema.
+   * <p>
+   * Important: similar to the entity name, the table name must be unique among the whole model
+   * and all schemas.
+   * This restriction avoids unnecessary confusion and reduces the potential for errors
+   * in SQL statements.
    *
-   * @return the tablename relative to its schema (always in lowercase)
+   * @return the tablename relative to its schema (always in lowercase), null if entity doesn't map to its own table
    */
   String getTableNameWithoutSchema();
 

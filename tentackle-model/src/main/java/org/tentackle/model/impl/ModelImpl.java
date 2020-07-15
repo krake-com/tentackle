@@ -73,7 +73,10 @@ public class ModelImpl implements Model {
   /** cached entities mapped by entity name. */
   private final Map<String,ModelEntity> mapByEntityName;
 
-  /** cached entities mapped by entity id. */
+  /** cached entities mapped by the tablename (for entities associated with a table). */
+  private final Map<String,ModelEntity> mapByTableName;
+
+  /** cached entities mapped by entity id (for entities associated with a class id). */
   private final Map<Integer,ModelEntity> mapByClassId;
 
   /** model dirs processed so far. */
@@ -99,6 +102,7 @@ public class ModelImpl implements Model {
   public ModelImpl() {
     entityFactory = createEntityFactory();
     mapByEntityName = new TreeMap<>();    // tree map for implicit sort by name
+    mapByTableName = new HashMap<>();
     mapByClassId = new HashMap<>();
     mapByFileName = new HashMap<>();
     modelDirs = new HashMap<>();
@@ -188,6 +192,7 @@ public class ModelImpl implements Model {
   @Override
   public synchronized void clearModel() {
     mapByEntityName.clear();
+    mapByTableName.clear();
     mapByClassId.clear();
     mapByFileName.clear();
     modelDirs.clear();
@@ -240,6 +245,21 @@ public class ModelImpl implements Model {
     if (modelEntity != null && modelEntity.hasChanged()) {
       refreshModel();
       modelEntity = mapByEntityName.get(name);
+    }
+    return modelEntity == null ? null : modelEntity.getEntity();
+  }
+
+  @Override
+  public synchronized Entity getByTableName(String tableName) throws ModelException {
+    tableName = tableName.toLowerCase();
+    int ndx = tableName.indexOf('.');
+    if (ndx >= 0) {
+      tableName = tableName.substring(ndx + 1); // skip schema
+    }
+    ModelEntity modelEntity = mapByTableName.get(tableName);
+    if (modelEntity != null && modelEntity.hasChanged()) {
+      refreshModel();
+      modelEntity = mapByTableName.get(tableName);
     }
     return modelEntity == null ? null : modelEntity.getEntity();
   }
@@ -360,6 +380,15 @@ public class ModelImpl implements Model {
       oldModelEntity = mapByClassId.put(modelEntity.getEntity().getClassId(), modelEntity);
       if (oldModelEntity != null && !oldModelEntity.getEntity().getName().equals(modelEntity.getEntity().getName())) {
         throw new ModelException("duplicate entity id " + modelEntity.getEntity().getClassId() + " for " + modelEntity.getEntity().getName() +
+                                 ", already assigned to " + oldModelEntity.getEntity().getName(), modelEntity.getEntity());
+      }
+    }
+
+    String tableName = modelEntity.getEntity().getTableNameWithoutSchema();
+    if (tableName != null) {
+      oldModelEntity = mapByTableName.put(tableName, modelEntity);
+      if (oldModelEntity != null && !oldModelEntity.getEntity().getName().equals(modelEntity.getEntity().getName())) {
+        throw new ModelException("duplicate table name '" + modelEntity.getEntity().getTableNameWithoutSchema() + "' for " + modelEntity.getEntity().getName() +
                                  ", already assigned to " + oldModelEntity.getEntity().getName(), modelEntity.getEntity());
       }
     }

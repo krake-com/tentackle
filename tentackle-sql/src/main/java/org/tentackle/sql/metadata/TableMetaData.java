@@ -18,6 +18,8 @@
 
 package org.tentackle.sql.metadata;
 
+import org.tentackle.sql.BackendException;
+
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -26,10 +28,9 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
-import org.tentackle.sql.BackendException;
 
 /**
- * Meta data for a table.
+ * Database meta data for a table that is part of the model.
  *
  * @author harald
  */

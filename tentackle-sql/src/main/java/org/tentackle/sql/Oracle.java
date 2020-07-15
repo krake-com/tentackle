@@ -229,6 +229,11 @@ public class Oracle extends AbstractSql2003Backend {
     return name != null && (name.startsWith("tmp_") || name.startsWith("TMP_"));
   }
 
+  @Override
+  public boolean isReservedTableName(String name) {
+    return name != null && name.contains("$");
+  }
+
   // Oracle supports function-based indexes, but does not return a usable JDBC metadata.
   // -> migration would always fail.
 //  @Override

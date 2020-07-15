@@ -18,21 +18,23 @@
 
 package org.tentackle.maven.sql;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
+
 import org.tentackle.model.Entity;
 import org.tentackle.model.ForeignKey;
 import org.tentackle.model.Index;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelException;
 import org.tentackle.sql.BackendInfo;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
 
 /**
  * Generate sql script to create the tables.
@@ -112,12 +114,17 @@ public class CreateSqlMojo extends AbstractSqlMojo {
               throw new MojoExecutionException("no entity for path " + modelFile.getPath());
             }
             if (entity.getTableProvidingEntity() == entity && !entity.getOptions().isProvided()) {
+              if (isAlienTable(entity.getTableNameWithoutSchema())) {
+                // let the goal fail, but generate SQL despite the error (to see what it would look like)
+                getLog().error("table '" + entity.getTableName() + "' is reserved for other uses");
+                errorCount++;
+              }
               // create table
               sqlWriter.append('\n');
               sqlWriter.append(entity.sqlCreateTable(backendInfo.getBackend()));
 
               // create indexes
-              for (Index index: entity.getTableIndexes()) {
+              for (Index index : entity.getTableIndexes()) {
                 sqlWriter.append(index.sqlCreateIndex(backendInfo.getBackend(), entity));
               }
             }
