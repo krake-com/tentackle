@@ -44,42 +44,54 @@ public class SemanticVersionFileFilter implements VersionFileFilter {
       if (!Character.isDigit(dirName.charAt(0))) {    // permanent if not starting with a digit
         return true;
       }
-      int ndx = dirName.indexOf('-');    // cut -SNAPSHOT and things like that
-      if (ndx > 0) {
-        dirName = dirName.substring(0, ndx);
-      }
-      // split version major/minor/hotfix
-      StringTokenizer versionTokenizer = new StringTokenizer(version, ".");
-      StringTokenizer hintTokenizer = new StringTokenizer(dirName, "._");    // allows directory names M_X_Y as well as M.X.Y
-      boolean allEqual = true;
-      while (versionTokenizer.hasMoreTokens() && hintTokenizer.hasMoreTokens()) {
-        String versionToken = versionTokenizer.nextToken();
-        String hintToken = hintTokenizer.nextToken();
+      return isHintApplying(version, dirName);
+    }
+    return false;
+  }
+
+  /**
+   * Checks whether hint applies.
+   *
+   * @param version the application's database version
+   * @param hint the migration hint number, either dotted or with underscores with optional trailing -SNAPSHOT, -M1 or whatever
+   * @return true if hint applies
+   */
+  public boolean isHintApplying(String version, String hint) {
+    int ndx = hint.indexOf('-');    // cut -SNAPSHOT, -M1 and things like that
+    if (ndx > 0) {
+      hint = hint.substring(0, ndx);
+    }
+    // split version major/minor/hotfix
+    StringTokenizer versionTokenizer = new StringTokenizer(version, ".");
+    StringTokenizer hintTokenizer = new StringTokenizer(hint, "._");    // allows directory names M_X_Y as well as M.X.Y
+
+    while (versionTokenizer.hasMoreTokens() && hintTokenizer.hasMoreTokens()) {
+      String versionToken = versionTokenizer.nextToken();
+      String hintToken = hintTokenizer.nextToken();
+      try {
+        int versionNumber = Integer.parseInt(versionToken);
         try {
-          int versionNumber = Integer.parseInt(versionToken);
-          try {
-            int hintNumber = Integer.parseInt(hintToken);
-            if (versionNumber > hintNumber) {
-              return false;
-            }
-            allEqual &= versionNumber == hintNumber;
+          int hintNumber = Integer.parseInt(hintToken);
+          if (versionNumber < hintNumber) {
+            return true;
           }
-          catch (NumberFormatException nfx) {
-            // not a number
+          if (versionNumber > hintNumber) {
             return false;
           }
         }
         catch (NumberFormatException nfx) {
-          // not a number: compare as strings
-          if (versionToken.compareTo(hintToken) > 0) {
-            return false;
-          }
+          // not a number
+          return false;
         }
       }
-      return !allEqual ||
-             !versionTokenizer.hasMoreTokens() && hintTokenizer.hasMoreTokens();    // 3.2.0 is newer than 3.2-SNAPSHOT
+      catch (NumberFormatException nfx) {
+        // not a number: compare as strings
+        if (versionToken.compareTo(hintToken) > 0) {
+          return false;
+        }
+      }
     }
-    return true;
+    return !versionTokenizer.hasMoreTokens() && hintTokenizer.hasMoreTokens();    // 3.2.0 is newer than 3.2-SNAPSHOT
   }
 
 }
