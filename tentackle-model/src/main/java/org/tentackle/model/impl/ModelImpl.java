@@ -69,6 +69,9 @@ public class ModelImpl implements Model {
   /** cached entities mapped by filepath. */
   private final Map<String,ModelEntity> mapByFilePath;
 
+  /** cached java source paths mapped to filepaths. */
+  private final Map<String,String> mapJavaFilePath;
+
   /** cached entities mapped by entity name. */
   private final Map<String,ModelEntity> mapByEntityName;
 
@@ -104,6 +107,7 @@ public class ModelImpl implements Model {
     mapByTableName = new HashMap<>();
     mapByClassId = new HashMap<>();
     mapByFilePath = new HashMap<>();
+    mapJavaFilePath = new HashMap<>();
     modelDirs = new HashMap<>();
     customModelValidators = CustomModelValidator.loadValidators();
   }
@@ -191,6 +195,7 @@ public class ModelImpl implements Model {
     mapByTableName.clear();
     mapByClassId.clear();
     mapByFilePath.clear();
+    mapJavaFilePath.clear();
     modelDirs.clear();
   }
 
@@ -366,6 +371,15 @@ public class ModelImpl implements Model {
 
     // append to maps
     mapByFilePath.put(filePath, modelEntity);    // must be new...
+
+    String javaPath = modelEntity.getEntity().getSourceInfo().getFileName();
+
+    String oldFilePath = mapJavaFilePath.put(javaPath, filePath);
+    if (oldFilePath != null && !oldFilePath.equals(filePath)) {
+      throw new ModelException("entity " + modelEntity.getEntity() + " defined from more than one model file:\n" +
+                               oldFilePath + "\n" + filePath);
+    }
+
     ModelEntity oldModelEntity = mapByEntityName.put(modelEntity.getEntity().getName().toLowerCase(), modelEntity);
     if (modelEntity.getEntity().getClassId() != 0) {
       if (oldModelEntity != null && oldModelEntity.getEntity().getClassId() != modelEntity.getEntity().getClassId()) {

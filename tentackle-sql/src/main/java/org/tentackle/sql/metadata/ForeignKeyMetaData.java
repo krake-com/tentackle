@@ -18,6 +18,8 @@
 
 package org.tentackle.sql.metadata;
 
+import org.tentackle.common.StringHelper;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -25,7 +27,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
-import org.tentackle.common.StringHelper;
 
 /**
  * Meta data for foreign keys.
@@ -201,6 +202,20 @@ public class ForeignKeyMetaData {
     deleteRule = ForeignKeyAction.createFromAction(resultSet.getShort("DELETE_RULE"));
 
     validate();
+  }
+
+
+  /**
+   * Updates the primary table name.<br>
+   * This is necessary, if a table was renamed. The meta data then still holds
+   * the old tablename. However, after a RENAME TABLE the foreign keys will be
+   * updated by the database automatically, so there's no need to drop and re-create
+   * the FK.
+   *
+   * @param primaryKeyTable the new primary table name
+   */
+  public void setPrimaryKeyTable(String primaryKeyTable) {
+    this.primaryKeyTable = primaryKeyTable;
   }
 
 
