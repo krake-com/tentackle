@@ -595,7 +595,13 @@ public abstract class AbstractBackend implements Backend {
     return strategies.toArray(new MigrationStrategy[0]);
   }
 
-
+  @Override
+  public String sqlRenameTable(String tableName, String newTableName) {
+    return SQL_ALTER_TABLE + tableName +
+           " RENAME TO " +
+           newTableName +
+           ";\n";
+  }
 
   @Override
   public String sqlRenameColumn(String tableName, String oldColumnName, String newColumnName) {

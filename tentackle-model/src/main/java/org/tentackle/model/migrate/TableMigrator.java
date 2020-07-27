@@ -1,5 +1,5 @@
 /*
- * Tentackle - http://www.tentackle.org.
+ * Tentackle - https://tentackle.org.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -162,10 +162,11 @@ public class TableMigrator {
    *
    * @param hints hints to control the created output
    * @param columnMigrations explicit column migrations, null if none
+   * @param renameColumns  explict column rename hints, null if none
    * @return the migration result
    * @throws ModelException if migration failed
    */
-  public Result migrate(Collection<Pattern> hints, Collection<ColumnMigration> columnMigrations) throws ModelException {
+  public Result migrate(Collection<Pattern> hints, Collection<ColumnMigration> columnMigrations, Map<String, String> renameColumns) throws ModelException {
 
     StringBuilder tableSql = new StringBuilder();
     StringBuilder foreignKeySql = new StringBuilder();
@@ -177,7 +178,7 @@ public class TableMigrator {
     else  {
       IndexMigrator.Result indexResult = migrateIndexes();
       tableSql.append(indexResult.getDropSql());
-      tableSql.append(migrateColumns(hints, columnMigrations));
+      tableSql.append(migrateColumns(hints, columnMigrations, renameColumns));
       tableSql.append(migrateTable());
       tableSql.append(indexResult.getCreateSql());
       foreignKeySql.append(migrateForeignKeys());
@@ -278,11 +279,13 @@ public class TableMigrator {
    * Migrates the columns.
    *
    * @param hints the migration hints
-   * @param columnMigrations explicit column migrations
+   * @param columnMigrations explicit column migrations, null if none
+   * @param renameColumns  explict column rename hints, null if none
    * @return the sql
-   * @throws ModelException
+   * @throws ModelException if failed
    */
-  private String migrateColumns(Collection<Pattern> hints, Collection<ColumnMigration> columnMigrations) throws ModelException {
+  private String migrateColumns(Collection<Pattern> hints, Collection<ColumnMigration> columnMigrations, Map<String, String> renameColumns)
+          throws ModelException {
 
     StringBuilder buf = new StringBuilder();
 
@@ -295,31 +298,48 @@ public class TableMigrator {
       columnsToDrop.put(column.getColumnName(), column);
     }
 
-    /**
-     * First guess by column name.
-     */
+    // first guess by column name.
     for (Attribute attribute: entity.getTableAttributes()) {
-      if (!attribute.getOptions().isDerived()) {
-        Collection<ColumnMetaData> matchingColumns = new ArrayList<>();
-        for (DataType.SqlTypeWithPostfix sp: attribute.getDataType().getSqlTypesWithPostfix()) {
-          ColumnMetaData column = table.getColumnByName(attribute.getColumnName() + sp.getPostfix());
-          if (column != null) {
-            matchingColumns.add(column);
+      Collection<ColumnMetaData> matchingColumns = new ArrayList<>();
+      for (DataType.SqlTypeWithPostfix sp: attribute.getDataType().getSqlTypesWithPostfix()) {
+        ColumnMetaData column = table.getColumnByName(attribute.getColumnName() + sp.getPostfix());
+        if (column != null) {
+          matchingColumns.add(column);
+        }
+      }
+      if (matchingColumns.isEmpty()) {
+        String oldColumnName = null;
+        if (renameColumns != null) {
+          oldColumnName = renameColumns.get(attribute.getColumnName());
+          if (oldColumnName != null) {
+            // matching rename hint!
+            ColumnMetaData oldColumn = columnsToDrop.get(oldColumnName);
+            if (oldColumn != null) {
+              columnsToDrop.remove(oldColumnName);
+              for (DataType.SqlTypeWithPostfix sp: attribute.getDataType().getSqlTypesWithPostfix()) {
+                ColumnMetaData column = table.getColumnByName(oldColumnName + sp.getPostfix());
+                if (column != null) {
+                  matchingColumns.add(column);
+                }
+              }
+              if (!matchingColumns.isEmpty()) {
+                attributesToMigrate.put(attribute, matchingColumns);
+                continue;
+              }
+            }
           }
         }
-        if (matchingColumns.isEmpty()) {
-          attributesToAdd.add(attribute);
+        attributesToAdd.add(attribute);
+      }
+      else  {
+        for (ColumnMetaData matchingColumn: matchingColumns) {
+          columnsToDrop.remove(matchingColumn.getColumnName());
         }
-        else  {
-          for (ColumnMetaData matchingColumn: matchingColumns) {
-            columnsToDrop.remove(matchingColumn.getColumnName());
-          }
-          attributesToMigrate.put(attribute, matchingColumns);
-        }
+        attributesToMigrate.put(attribute, matchingColumns);
       }
     }
 
-    /**
+    /*
      * attributesToAdd and columnsToDrop may contain columns that just need to be renamed.
      * rule: if a column is to drop and there is _one_ _exact_ type match in attributes to add,
      * this column is probably just renamed. Generate the rename statement, but keep the drop/add-
@@ -413,7 +433,7 @@ public class TableMigrator {
       }
     }
 
-    /**
+    /*
      * for all columns to drop and add:
      * some may be just renamed.
      * Check all permutations whether a hint applies.
@@ -620,6 +640,7 @@ public class TableMigrator {
         }
       }
       if (!found) {
+        // drop
         buf.append(new ForeignKeyMigrator(backend, null, existingForeignKey).migrate());
       }
     }
@@ -633,6 +654,7 @@ public class TableMigrator {
         }
       }
       if (!found) {
+        // create
         buf.append(new ForeignKeyMigrator(backend, foreignKey, null).migrate());
       }
     }

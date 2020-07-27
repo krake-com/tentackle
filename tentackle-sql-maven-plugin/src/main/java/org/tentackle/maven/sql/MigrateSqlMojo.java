@@ -38,6 +38,7 @@ import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendInfo;
 import org.tentackle.sql.metadata.DatabaseMetaDataTableHeader;
+import org.tentackle.sql.metadata.ForeignKeyMetaData;
 import org.tentackle.sql.metadata.ModelMetaData;
 import org.tentackle.sql.metadata.TableMetaData;
 
@@ -196,7 +197,11 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
               alienTablesMap.put(header.getName(), header);
             }
             else {
-              otherTablesMap.put(header.getName(), header);
+              DatabaseMetaDataTableHeader oldHeader = otherTablesMap.put(header.getName(), header);
+              if (oldHeader != null) {
+                getLog().warn("table '" + header.getName() + "' found in more than one schema: " +
+                              header.getSchema() + ", " + oldHeader.getSchema());
+              }
             }
           }
         }
@@ -358,10 +363,14 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       }
 
       writeModelIntroComment(backendInfo, modelDirName);
+      MigrationHints hints = migrationHints.get(backendInfo.getUrl());
       ModelDefaults defaults = getModelDefaults();
       EntityAliases aliases = getEntityAliases();
 
-      Collection<ForeignKey> foreignKeys = null;
+      Map<String, String> renamedTables;      // map <new:old> tablename
+      Map<String, String> revRenamedTables;   // map <old:new> tablename
+
+      Collection<ForeignKey> foreignKeys;
       try {
         Model model = Model.getInstance();
         if (mapSchemas) {
@@ -369,13 +378,20 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         }
         model.loadModel(modelDirName, defaults, aliases);
         foreignKeys = Model.getInstance().getForeignKeys();
+        // build table rename maps if hints given
+        renamedTables = determineRenamedTables(hints);
+        revRenamedTables = new HashMap<>();
+        for (Map.Entry<String, String> entry: renamedTables.entrySet()) {
+          String dup = revRenamedTables.put(entry.getValue(), entry.getKey());
+          if (dup != null) {
+            getLog().error("rename of '" + entry.getValue() + "' not unique! Found '" + entry.getKey() + "' and '" + dup + "'");
+            errorCount++;
+          }
+        }
       }
       catch (ModelException mex) {
-        getLog().error("parsing model failed in directory " + modelDirName, mex);
-        errorCount++;
+        throw new MojoExecutionException("parsing model failed in directory " + modelDirName, mex);
       }
-
-      MigrationHints hints = migrationHints.get(backendInfo.getUrl());
 
       Set<String> migratedTablenames = new HashSet<>();          // to check for dependencies on other tables
       Map<String,String> pendingMigrations = new HashMap<>();    // pending migrations <tablename:sql>
@@ -419,13 +435,19 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
               }
 
               processedEntites++;
+              StringBuilder tableSql = new StringBuilder();
+              String tableName = entity.getTableName();
               String plainTableName = entity.getTableNameWithoutSchema();
+              String plainOldTableName = renamedTables.get(plainTableName);
+              String oldTableName = entity.getSchemaName() != null && plainOldTableName != null ?
+                oldTableName = entity.getSchemaName() + "." + plainOldTableName : plainOldTableName;
 
-              TableMetaData table = backendInfo.getBackend().getTableMetaData(modelMetaData, entity.getTableName());
+              TableMetaData table = backendInfo.getBackend().getTableMetaData(modelMetaData, oldTableName != null ? oldTableName : tableName);
+
               if (table != null) {
                 // verify that this is a user-defined table we can migrate
                 try {
-                  DatabaseMetaDataTableHeader tableHeader = modelMetaData.getTableInDatabase(entity.getTableName());
+                  DatabaseMetaDataTableHeader tableHeader = modelMetaData.getTableInDatabase(tableName);
                   if (tableHeader != null && !tableHeader.isUserTable()) {
                     getLog().error("'" + entity.getTableName() + "' already exists as " + tableHeader.getType());
                     errorCount++;
@@ -433,7 +455,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
                   }
                 }
                 catch (SQLException sqx) {
-                  getLog().warn("could not retrieve table header info for table " + entity.getTableName(), sqx);
+                  getLog().warn("could not retrieve table header info for table " + tableName, sqx);
                 }
 
                 if (isAlienTable(plainTableName)) {
@@ -451,12 +473,14 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
                   modelMetaData.addTableMetaData(table);
                   countTableStats(table);
                 }
+
+                if (oldTableName != null) {
+                  // generate RENAME TABLE first
+                  otherTablesMap.remove(plainOldTableName);
+                  tableSql.append('\n').append(backendInfo.getBackend().sqlRenameTable(oldTableName, plainTableName));
+                }
               }
               otherTablesMap.remove(plainTableName);
-
-              StringBuilder tableSql = new StringBuilder();
-
-              String tableName = entity.getTableName();
 
               // filter foreign keys
               Collection<ForeignKey> relatedForeignKeys = new ArrayList<>();
@@ -467,9 +491,18 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
                   }
                 }
               }
+
+              // migrate foreign key metadata (since RENAME TABLE migrates the FK as well and we don't need explicit migrations)
+              for (ForeignKeyMetaData foreignKeyMetaData: table.getForeignKeys()) {
+                String oldPrimaryKeyTable = revRenamedTables.get(foreignKeyMetaData.getPrimaryKeyTable());
+                if (oldPrimaryKeyTable != null) {
+                  foreignKeyMetaData.setPrimaryKeyTable(oldPrimaryKeyTable);
+                }
+              }
+
               TableMigrator tableMigrator = new TableMigrator(entity, relatedForeignKeys, backendInfo.getBackend(), table);
               TableMigrator.Result migrationResult = tableMigrator.migrate(
-                  hints.getHints(tableName), hints.getColumnMigrations(tableName));
+                  hints.getHints(tableName), hints.getColumnMigrations(tableName), hints.getRenameColumns(tableName));
 
               // table will have to be migrated?
               boolean migrated = !migrationResult.getTableSql().isEmpty();
@@ -577,6 +610,29 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
     }
   }
 
+  /**
+   * Applies the rename table hints to determine the renamed tables.
+   *
+   * @param hints the migration hints
+   * @return the map of tablenames (without schema) mapped to their old names
+   * @throws ModelException if model is inconsistent
+   */
+  private Map<String, String> determineRenamedTables(MigrationHints hints) throws ModelException {
+    Map<String, String> renameMap = new HashMap<>();
+    for (Entity entity: Model.getInstance().getAllEntitites()) {
+      String name = entity.getTableNameWithoutSchema();
+      String oldName = hints.getRenameTable(name);
+      if (oldName != null && otherTablesMap.get(name) == null) {
+        // old name is in database and current name not in database -> rename hint applies!
+        int ndx = oldName.indexOf('.');
+        if (ndx >= 0) {
+          oldName = oldName.substring(ndx + 1);
+        }
+        renameMap.put(name, oldName);
+      }
+    }
+    return renameMap;
+  }
 
   /**
    * Flushes the SQL statements for a table.

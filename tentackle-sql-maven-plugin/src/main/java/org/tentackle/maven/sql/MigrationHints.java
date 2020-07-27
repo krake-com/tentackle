@@ -34,9 +34,11 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -68,6 +70,10 @@ import java.util.regex.PatternSyntaxException;
  * <li>after &lt;tablename&gt;: SQL code to be executed after the migration of given table</li>
  * <li>migrate &lt;tablename&gt;: explicit SQL code to migrate given table</li>
  * <li>migrate &lt;tablename&gt;#&lt;columnname&gt;[/&lt;newcolumnname&gt;]: explicit SQL code to migrate given column</li>
+ * <li>rename &lt;tablename&gt;: &lt;newtablename&gt;. Rename table hint. If <em>newtablename</em> does not exist and belongs to the model and
+ * <em>tablename</em> exists, but does not belong to the model, then rename <em>tablename</em> to <em>newtablename</em> and continue with migration.</li>
+ * <li>rename &lt;tablename&gt;#&lt;columnname&gt;: &lt;newcolumnname&gt;. Rename column hint. If <em>newcolumn</em> does not exist and belongs to the model and
+ * <em>columnname</em> exists, but does not belong to the model, then rename <em>columnname</em> to <em>newcolumnname</em> and continue with migration.</li>
  * <li>hint &lt;tablename&gt;: migration hint (regular expression). Used to select automatic migrations that were commented out
  * as alternatives by the table migrator.</li>
  * <li>depend &lt;tablename&gt;: tablename, tablename,... wait until all given tablenames are migrated
@@ -88,6 +94,7 @@ public class MigrationHints {
   private static final String BEFORE = "before";
   private static final String AFTER = "after";
   private static final String MIGRATE = "migrate";
+  private static final String RENAME = "rename";
   private static final String HINT = "hint";
   private static final String DEPEND = "depend";
 
@@ -133,6 +140,8 @@ public class MigrationHints {
   private final Map<String,String> afterTable;                    // SQL to execute after automatic table migration <tablename:sql>
   private final Map<String,String> migrateTable;                  // SQL to execute instead automatic table migration <tablename:sql>
   private final Map<String,Map<ColumnKey,String>> migrateColumns; // SQL to execute instead automatic table migration <tablename:<column:sql>>
+  private final Map<String,String> renameTable;                   // rename table hint <newtablename:oldtablename>
+  private final Map<String, Set<ColumnKey>> renameColumns;        // rename column hint <tablemae:<column>>
   private final Map<String,Collection<String>> dependencies;      // dependencies <tablename:<tablenames>>
   private final Map<String,Collection<Pattern>> hints;            // hints for the automatic table migrators
 
@@ -217,6 +226,20 @@ public class MigrationHints {
           }
           break;
 
+        case RENAME:
+          if (oldColumnName != null) {
+            // rename column
+            Set<ColumnKey> keys = renameColumns.computeIfAbsent(tableName, k -> new HashSet<>());
+            String newColumnName = toName(text.toString());
+            keys.add(new ColumnKey(oldColumnName, newColumnName));
+          }
+          else {
+            // rename table
+            String newTableName = toName(text.toString());
+            renameTable.put(newTableName, tableName);
+          }
+          break;
+
         case HINT:
           try {
             Pattern pattern = Pattern.compile(text.toString(), Pattern.DOTALL);
@@ -230,7 +253,7 @@ public class MigrationHints {
 
         case DEPEND:
           Collection<String> tables = dependencies.computeIfAbsent(tableName, k -> new ArrayList<>());
-          StringTokenizer stok = new StringTokenizer(text.toString(), ", \t\r\n");
+          StringTokenizer stok = new StringTokenizer(text.toString(), ",; \t\r\n");
           while (stok.hasMoreTokens()) {
             tables.add(stok.nextToken().trim().toLowerCase());
           }
@@ -252,6 +275,8 @@ public class MigrationHints {
     afterTable = new HashMap<>();
     migrateTable = new HashMap<>();
     migrateColumns = new HashMap<>();
+    renameTable = new HashMap<>();
+    renameColumns = new HashMap<>();
     hints = new HashMap<>();
     dependencies = new HashMap<>();
   }
@@ -302,6 +327,34 @@ public class MigrationHints {
    */
   public String getMigrateTable(String tableName) {
     return migrateTable.get(tableName);
+  }
+
+  /**
+   * Gets the rename table hint.
+   *
+   * @param newTableName the new tablename
+   * @return the old tablename
+   */
+  public String getRenameTable(String newTableName) {
+    return renameTable.get(newTableName);
+  }
+
+  /**
+   * Gets the name columns hints.
+   *
+   * @param tableName the tablename
+   * @return a map of new- to old column names, null if none
+   */
+  public Map<String, String> getRenameColumns(String tableName) {
+    Set<ColumnKey> keys = renameColumns.get(tableName);
+    if (keys != null) {
+      Map<String, String> columnMap = new HashMap<>();
+      for (ColumnKey key: keys) {
+        columnMap.put(key.newColumnName, key.columnName);
+      }
+      return columnMap;
+    }
+    return null;
   }
 
   /**
@@ -463,6 +516,9 @@ public class MigrationHints {
     else if (line.startsWith(MIGRATE)) {
       section = new Section(MIGRATE);
     }
+    else if (line.startsWith(RENAME)) {
+      section = new Section(RENAME);
+    }
     else if (line.startsWith(HINT)) {
       section = new Section(HINT);
     }
@@ -497,6 +553,7 @@ public class MigrationHints {
           case BEFORE:
           case AFTER:
           case MIGRATE:
+          case RENAME:
           case HINT:
           case DEPEND:
             if (section.tableName.isEmpty()) {
@@ -560,6 +617,14 @@ public class MigrationHints {
     else {
       return false;
     }
+  }
+
+  private String toName(String str) {
+    str = str.trim();
+    while(str.endsWith(";")) {    // prevents a common mistake...
+      str = str.substring(0,str.length() - 1).trim();
+    }
+    return str;
   }
 
 }

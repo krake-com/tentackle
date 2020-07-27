@@ -455,6 +455,14 @@ public class Oracle extends AbstractSql2003Backend {
   }
 
   @Override
+  public String sqlRenameTable(String tableName, String newTableName) {
+    return "RENAME TABLE " + tableName +
+           " TO " +
+           newTableName +
+           ";\n";
+  }
+
+  @Override
   public String sqlCreateTableComment(String tableName, String comment) {
     return NonStandardCommons.sqlCreateCommentOnTable(this, tableName, comment);
   }

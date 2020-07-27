@@ -1,5 +1,5 @@
 /*
- * Tentackle - http://www.tentackle.org.
+ * Tentackle - https://tentackle.org.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -70,6 +70,9 @@ public class ModelImpl implements Model {
   /** cached entities mapped by filename. */
   private final Map<String,ModelEntity> mapByFileName;
 
+  /** cached java source paths mapped to filepaths. */
+  private final Map<String,String> mapJavaFilePath;
+
   /** cached entities mapped by entity name. */
   private final Map<String,ModelEntity> mapByEntityName;
 
@@ -105,6 +108,7 @@ public class ModelImpl implements Model {
     mapByTableName = new HashMap<>();
     mapByClassId = new HashMap<>();
     mapByFileName = new HashMap<>();
+    mapJavaFilePath = new HashMap<>();
     modelDirs = new HashMap<>();
     customModelValidators = CustomModelValidator.loadValidators();
   }
@@ -195,6 +199,7 @@ public class ModelImpl implements Model {
     mapByTableName.clear();
     mapByClassId.clear();
     mapByFileName.clear();
+    mapJavaFilePath.clear();
     modelDirs.clear();
   }
 
@@ -372,6 +377,15 @@ public class ModelImpl implements Model {
 
     // append to maps
     mapByFileName.put(fileName, modelEntity);    // must be new...
+
+    String javaPath = modelEntity.getEntity().getSourceInfo().getFileName();
+
+    String oldFilePath = mapJavaFilePath.put(javaPath, fileName);
+    if (oldFilePath != null && !oldFilePath.equals(fileName)) {
+      throw new ModelException("entity " + modelEntity.getEntity() + " defined from more than one model file:\n" +
+                               oldFilePath + "\n" + fileName);
+    }
+
     ModelEntity oldModelEntity = mapByEntityName.put(modelEntity.getEntity().getName().toLowerCase(), modelEntity);
     if (modelEntity.getEntity().getClassId() != 0) {
       if (oldModelEntity != null && oldModelEntity.getEntity().getClassId() != modelEntity.getEntity().getClassId()) {
