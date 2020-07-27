@@ -162,10 +162,11 @@ public class TableMigrator {
    *
    * @param hints hints to control the created output
    * @param columnMigrations explicit column migrations, null if none
+   * @param renameColumns  explict column rename hints, null if none
    * @return the migration result
    * @throws ModelException if migration failed
    */
-  public Result migrate(Collection<Pattern> hints, Collection<ColumnMigration> columnMigrations) throws ModelException {
+  public Result migrate(Collection<Pattern> hints, Collection<ColumnMigration> columnMigrations, Map<String, String> renameColumns) throws ModelException {
 
     StringBuilder tableSql = new StringBuilder();
     StringBuilder foreignKeySql = new StringBuilder();
@@ -177,7 +178,7 @@ public class TableMigrator {
     else  {
       IndexMigrator.Result indexResult = migrateIndexes();
       tableSql.append(indexResult.getDropSql());
-      tableSql.append(migrateColumns(hints, columnMigrations));
+      tableSql.append(migrateColumns(hints, columnMigrations, renameColumns));
       tableSql.append(migrateTable());
       tableSql.append(indexResult.getCreateSql());
       foreignKeySql.append(migrateForeignKeys());
@@ -278,11 +279,13 @@ public class TableMigrator {
    * Migrates the columns.
    *
    * @param hints the migration hints
-   * @param columnMigrations explicit column migrations
+   * @param columnMigrations explicit column migrations, null if none
+   * @param renameColumns  explict column rename hints, null if none
    * @return the sql
    * @throws ModelException if failed
    */
-  private String migrateColumns(Collection<Pattern> hints, Collection<ColumnMigration> columnMigrations) throws ModelException {
+  private String migrateColumns(Collection<Pattern> hints, Collection<ColumnMigration> columnMigrations, Map<String, String> renameColumns)
+          throws ModelException {
 
     StringBuilder buf = new StringBuilder();
 
@@ -305,6 +308,27 @@ public class TableMigrator {
         }
       }
       if (matchingColumns.isEmpty()) {
+        String oldColumnName = null;
+        if (renameColumns != null) {
+          oldColumnName = renameColumns.get(attribute.getColumnName());
+          if (oldColumnName != null) {
+            // matching rename hint!
+            ColumnMetaData oldColumn = columnsToDrop.get(oldColumnName);
+            if (oldColumn != null) {
+              columnsToDrop.remove(oldColumnName);
+              for (DataType.SqlTypeWithPostfix sp: attribute.getDataType().getSqlTypesWithPostfix()) {
+                ColumnMetaData column = table.getColumnByName(oldColumnName + sp.getPostfix());
+                if (column != null) {
+                  matchingColumns.add(column);
+                }
+              }
+              if (!matchingColumns.isEmpty()) {
+                attributesToMigrate.put(attribute, matchingColumns);
+                continue;
+              }
+            }
+          }
+        }
         attributesToAdd.add(attribute);
       }
       else  {
@@ -616,6 +640,7 @@ public class TableMigrator {
         }
       }
       if (!found) {
+        // drop
         buf.append(new ForeignKeyMigrator(backend, null, existingForeignKey).migrate());
       }
     }
@@ -629,6 +654,7 @@ public class TableMigrator {
         }
       }
       if (!found) {
+        // create
         buf.append(new ForeignKeyMigrator(backend, foreignKey, null).migrate());
       }
     }

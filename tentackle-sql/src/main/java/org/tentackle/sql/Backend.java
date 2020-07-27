@@ -733,6 +733,15 @@ public interface Backend {
                                            int size, int scale, boolean nullable, Object defaultValue);
 
   /**
+   * Generate sql code to rename a table.
+   *
+   * @param tableName the old tablename (with leading schema, if any)
+   * @param newTableName the new tablename (without schema)
+   * @return the SQL code
+   */
+  String sqlRenameTable(String tableName, String newTableName);
+
+  /**
    * Generates sql code to rename a column.
    *
    * @param tableName the tablename

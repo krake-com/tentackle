@@ -42,8 +42,8 @@ public class TableMetaData {
   private String tableName;                                   // the tablename without schema
   private String comment;                                     // the comment
   private final Collection<ColumnMetaData> columns;           // the columns
-  private final Map<String,IndexMetaData> indexes;            // the indexes
-  private final Map<String,ForeignKeyMetaData> foreignKeys;   // the foreign keys
+  private final Map<String,IndexMetaData> indexes;            // the indexes <index-name: index>
+  private final Map<String,ForeignKeyMetaData> foreignKeys;   // the foreign keys <foreignkey-name: foreignkey>
 
 
   /**
