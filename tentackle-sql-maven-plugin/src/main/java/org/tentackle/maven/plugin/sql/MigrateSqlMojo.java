@@ -542,6 +542,14 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
                   otherTablesMap.remove(plainOldTableName);
                   tableSql.append('\n').append(backendInfo.getBackend().sqlRenameTable(oldTableName, plainTableName));
                 }
+
+                // migrate foreign key metadata (since RENAME TABLE migrates the FK as well and we don't need explicit migrations)
+                for (ForeignKeyMetaData foreignKeyMetaData : table.getForeignKeys()) {
+                  String oldPrimaryKeyTable = revRenamedTables.get(foreignKeyMetaData.getPrimaryKeyTable());
+                  if (oldPrimaryKeyTable != null) {
+                    foreignKeyMetaData.setPrimaryKeyTable(oldPrimaryKeyTable);
+                  }
+                }
               }
               otherTablesMap.remove(plainTableName);
 
@@ -551,16 +559,6 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
                 for (ForeignKey key : foreignKeys) {
                   if (key.getReferencingEntity().equals(entity)) {
                     relatedForeignKeys.add(key);
-                  }
-                }
-              }
-
-              // migrate foreign key metadata (since RENAME TABLE migrates the FK as well and we don't need explicit migrations)
-              if (table != null) {
-                for (ForeignKeyMetaData foreignKeyMetaData : table.getForeignKeys()) {
-                  String oldPrimaryKeyTable = revRenamedTables.get(foreignKeyMetaData.getPrimaryKeyTable());
-                  if (oldPrimaryKeyTable != null) {
-                    foreignKeyMetaData.setPrimaryKeyTable(oldPrimaryKeyTable);
                   }
                 }
               }
