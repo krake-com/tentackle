@@ -556,10 +556,12 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
               }
 
               // migrate foreign key metadata (since RENAME TABLE migrates the FK as well and we don't need explicit migrations)
-              for (ForeignKeyMetaData foreignKeyMetaData: table.getForeignKeys()) {
-                String oldPrimaryKeyTable = revRenamedTables.get(foreignKeyMetaData.getPrimaryKeyTable());
-                if (oldPrimaryKeyTable != null) {
-                  foreignKeyMetaData.setPrimaryKeyTable(oldPrimaryKeyTable);
+              if (table != null) {
+                for (ForeignKeyMetaData foreignKeyMetaData : table.getForeignKeys()) {
+                  String oldPrimaryKeyTable = revRenamedTables.get(foreignKeyMetaData.getPrimaryKeyTable());
+                  if (oldPrimaryKeyTable != null) {
+                    foreignKeyMetaData.setPrimaryKeyTable(oldPrimaryKeyTable);
+                  }
                 }
               }
 
