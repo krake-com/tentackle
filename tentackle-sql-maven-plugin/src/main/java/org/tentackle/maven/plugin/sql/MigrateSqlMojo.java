@@ -135,6 +135,11 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   private StringBuilder sqlCode;
 
   /**
+   * Generated warnings as optional SQL code in comments.
+   */
+  private StringBuilder sqlWarnings;
+
+  /**
    * Number of processed tables per schema.
    */
   private Map<String,Integer> tableStats;
@@ -178,12 +183,18 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   protected void openResources(BackendInfo backendInfo) throws MojoExecutionException {
     if (backendInfo.isConnectable()) {
       super.openResources(backendInfo);
+
+      sqlCode = new StringBuilder();
+      sqlWarnings = new StringBuilder();
+      splittedMigrations = new LinkedHashMap<>();
+      migratedEntitiesMap = new HashMap<>();
+      otherTablesMap = new TreeMap<>();
+      alienTablesMap = new HashMap<>();
+
       try {
         DatabaseMetaData[] metaData = backendInfo.getBackend().getMetaData(backendInfo);
         modelMetaData = new ModelMetaData(backendInfo.getBackend(), metaData, backendInfo.getSchemas());
         // collect other tables (not in model)
-        otherTablesMap = new TreeMap<>();
-        alienTablesMap = new HashMap<>();
         String[] schemas = backendInfo.getSchemas();
         for (DatabaseMetaDataTableHeader header: modelMetaData.getAllTablesInDatabase()) {
           if (!backendInfo.getBackend().isReservedTableName(header.getName()) &&
@@ -205,14 +216,16 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
                 }
               }
             }
-            if (isAlienTable(header.getName())) {
-              alienTablesMap.put(header.getName(), header);
+
+            String tableName = header.getName().toLowerCase();
+            if (isAlienTable(tableName)) {
+              alienTablesMap.put(tableName, header);
             }
             else {
-              DatabaseMetaDataTableHeader oldHeader = otherTablesMap.put(header.getName(), header);
+              DatabaseMetaDataTableHeader oldHeader = otherTablesMap.put(tableName, header);
               if (oldHeader != null) {
-                getLog().warn("table '" + header.getName() + "' found in more than one schema: " +
-                              header.getSchema() + ", " + oldHeader.getSchema());
+                sqlWarnings.append("-- table '").append(tableName).append("' found in more than one schema: ")
+                           .append(header.getSchema()).append(", ").append(oldHeader.getSchema()).append('\n');
               }
             }
           }
@@ -221,7 +234,9 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       catch (SQLException sqx) {
         throw new MojoExecutionException("could not retrieve metadata from " + backendInfo, sqx);
       }
+
       getLog().info("migration hint filter: " + VersionFileFilter.getInstance().getName());
+
       backendMigrationHints = migrationHints.get(backendInfo.getUrl());
       if (backendMigrationHints != null) {
         if (backendMigrationHints.getHintFileNames().isEmpty()) {
@@ -240,19 +255,17 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
             }
             buf.append(hintFileName);
             if (buf.length() > 80) {
-              getLog().info(buf.toString());
+              getLog().info(buf);
               buf.setLength(0);
               needComma = false;
             }
           }
           if (needComma) {
-            getLog().info(buf.toString());
+            getLog().info(buf);
           }
         }
       }
-      sqlCode = new StringBuilder();
-      splittedMigrations = new LinkedHashMap<>();
-      migratedEntitiesMap = new HashMap<>();
+
       if (useDropIfExists) {
         Backend backend = backendInfo.getBackend();
         backend.setDropIfExistsEnabled(true);
@@ -280,7 +293,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
             .append(Integer.toString(skippedEntites)).append("\n");
 
         if (!otherTablesMap.isEmpty()) {
-          sqlWriter.append("-- unexpected tables in database not belonging to the model: ").append(Integer.toString(otherTablesMap.size())).append("\n");
+          sqlWriter.append("\n-- unexpected tables in database not belonging to the model: ").append(Integer.toString(otherTablesMap.size())).append("\n");
           for (DatabaseMetaDataTableHeader header : otherTablesMap.values()) {
             if (failOnUnexpectedTables) {
               sqlWriter.append(backendInfo.getBackend().sqlDropTable(header.getSchema(), header.getName()));
@@ -322,7 +335,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         migrationNecessary = true;
       }
       else if (generateHeaderComment) {
-        sqlWriter.append("-- database meta data matches object model -> no migration necessary\n");
+        sqlWriter.append("\n-- ").append(STR_NO_CHANGES_DETECTED).append(" -> no migration necessary\n");
       }
 
       if (!split) {
@@ -330,6 +343,11 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         if (!sql.isEmpty()) {
           sqlWriter.append("\n\n-- always after\n").append(sql).append("\n\n--\n");
         }
+      }
+
+      if (sqlWarnings.length() > 0) {
+        sqlWriter.append("\n-- ============================== WARNINGS ==============================\n");
+        sqlWriter.append(sqlWarnings);
       }
     }
     catch (IOException iox) {
@@ -456,6 +474,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       Set<String> migratedTablenames = new HashSet<>();          // to check for dependencies on other tables
       Map<String,String> pendingMigrations = new HashMap<>();    // pending migrations <tablename:sql>
 
+      StringBuilder warningSql = new StringBuilder();       // collected optional migrations as warnings
       StringBuilder foreignKeySql = new StringBuilder();    // collected foreignkey migration code
       String[] fileNames = new FileSetManager(getLog(), verbosityLevel.isDebug()).getIncludedFiles(fileSet);
 
@@ -528,7 +547,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
                   if (header != null && !StringHelper.isAllWhitespace(header.getComment())) {
                     buf.append(": ").append(header.getComment());
                   }
-                  getLog().error(buf.toString());
+                  getLog().error(buf);
                   errorCount++;
                   continue;
                 }
@@ -601,6 +620,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
 
               // foreign key migration is separate at end of migration
               foreignKeySql.append(migrationResult.getForeignKeySql());
+              warningSql.append(migrationResult.getWarningSql());
 
               // check if migration needs to be delayed
               boolean migrate = true;
@@ -654,8 +674,10 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
 
       if (foreignKeySql.length() > 0) {
         sqlCode.append("\n");
-        sqlCode.append(foreignKeySql.toString());
+        sqlCode.append(foreignKeySql);
       }
+
+      sqlWarnings.append(warningSql);
 
       if (depErrors.length() > 0) {
         sqlCode.append("\n\n-- ************* CAUTION *************\n");

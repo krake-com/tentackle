@@ -43,6 +43,7 @@ public class ModelMetaData {
   private final String[] schemas;                     // optional schemas
   private final Properties properties;                // migration properties
 
+  private List<DatabaseMetaDataTableHeader> metaDataTableHeaderList;        // all table headers (names may be not unique!)
   private Map<String, DatabaseMetaDataTableHeader> metaDataTableHeaderMap;  // table header info (lazy)
 
 
@@ -76,10 +77,11 @@ public class ModelMetaData {
    * Gets the header info of all tables in the database.
    *
    * @return the table headers
-   * @throws SQLException if failed
+   * @throws SQLException if cannot retrieve meta data from database
    */
   public List<DatabaseMetaDataTableHeader> getAllTablesInDatabase() throws SQLException {
-    return new ArrayList<>(getMetaDataTableHeaderMap().values());
+    getMetaDataTableHeaderMap();
+    return new ArrayList<>(metaDataTableHeaderList);
   }
 
   /**
@@ -87,7 +89,7 @@ public class ModelMetaData {
    *
    * @param tableName the tablename
    * @return the header info, null if no such table in database
-   * @throws SQLException
+   * @throws SQLException if cannot retrieve meta data from database
    */
   public DatabaseMetaDataTableHeader getTableInDatabase(String tableName) throws SQLException {
     return getMetaDataTableHeaderMap().get(tableName.toLowerCase());
@@ -170,9 +172,12 @@ public class ModelMetaData {
 
   private Map<String, DatabaseMetaDataTableHeader> getMetaDataTableHeaderMap() throws SQLException {
     if (metaDataTableHeaderMap == null) {
+      metaDataTableHeaderList = new ArrayList<>();
       metaDataTableHeaderMap = new TreeMap<>();   // sorted by tablename
       for (DatabaseMetaData md: metaData) {
-        for (DatabaseMetaDataTableHeader header : backend.getTableHeaders(md)) {
+        List<DatabaseMetaDataTableHeader> tableHeaders = backend.getTableHeaders(md);
+        metaDataTableHeaderList.addAll(tableHeaders);
+        for (DatabaseMetaDataTableHeader header : tableHeaders) {
           metaDataTableHeaderMap.put(header.getName(), header);
         }
       }
