@@ -399,16 +399,26 @@ public class MySql extends AbstractSql92Backend {
           SqlType sqlType, int size, int scale, boolean nullable, Object defaultValue) {
 
     List<MigrationStrategy> strategies = new ArrayList<>();
+    int maxSize = getMaxSize(sqlType);
+
     boolean nameChanged = !column.getColumnName().equalsIgnoreCase(columnName);
     boolean commentChanged = !Objects.equals(column.getComment(), comment);
     boolean defaultChanged = !isDefaultEqual(column, sqlType, defaultValue);
     boolean nullChanged = column.isNullable() != nullable;
     boolean typeChanged = !column.matchesSqlType(sqlType);
-    boolean sizeChanged = size > column.getSize();    // smaller model size is allowed
+    boolean sizeChanged = size > column.getSize() ||    // model size increased
+                          // or changed from VARCHAR(x) to VARCHAR(maxSize)
+                          size == 0 && sqlType == SqlType.VARCHAR &&
+                          column.getSize() > 0 && column.getSize() != maxSize;
+    boolean sizeWarning = maxSize != -1 && size != 0 && size < column.getSize();
     boolean scaleChanged = scale > column.getScale(); // smaller model scale is allowed
+    boolean scaleWarning = maxSize != -1 && scale < column.getScale();
 
     if (nameChanged || typeChanged || sizeChanged || scaleChanged || nullChanged || defaultChanged || commentChanged) {
       strategies.add(MigrationStrategy.NAME_AND_TYPE);
+    }
+    else if (sizeWarning || scaleWarning) {
+      strategies.add(MigrationStrategy.TYPE_WARNING); // only as comment
     }
 
     return strategies.toArray(new MigrationStrategy[strategies.size()]);

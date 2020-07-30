@@ -58,16 +58,19 @@ public class TableMigrator {
 
     private final String tableSql;
     private final String foreignKeySql;
+    private final String warningSql;
 
     /**
      * Creates the migration result.
      *
      * @param tableSql the sql code to migrate the table
      * @param foreignKeySql the sql code to migrate the foreign keys
+     * @param warningSql generated SQL as comments
      */
-    public Result(String tableSql, String foreignKeySql) {
+    public Result(String tableSql, String foreignKeySql, String warningSql) {
       this.tableSql = tableSql;
       this.foreignKeySql = foreignKeySql;
+      this.warningSql = warningSql;
     }
 
     /**
@@ -86,6 +89,15 @@ public class TableMigrator {
      */
     public String getForeignKeySql() {
       return foreignKeySql;
+    }
+
+    /**
+     * Gets the optional SQL code as comment.
+     *
+     * @return the warnings containing migrations that are not really necessary to run the application properly
+     */
+    public String getWarningSql() {
+      return warningSql;
     }
   }
 
@@ -170,6 +182,7 @@ public class TableMigrator {
 
     StringBuilder tableSql = new StringBuilder();
     StringBuilder foreignKeySql = new StringBuilder();
+    StringBuilder warningSql = new StringBuilder();
 
     if (table == null) {
       tableSql.append(createTable());
@@ -178,7 +191,9 @@ public class TableMigrator {
     else  {
       IndexMigrator.Result indexResult = migrateIndexes();
       tableSql.append(indexResult.getDropSql());
-      tableSql.append(migrateColumns(hints, columnMigrations, renameColumns));
+      Result columnResult = migrateColumns(hints, columnMigrations, renameColumns);
+      tableSql.append(columnResult.getTableSql());
+      warningSql.append(columnResult.getWarningSql());
       tableSql.append(migrateTable());
       tableSql.append(indexResult.getCreateSql());
       foreignKeySql.append(migrateForeignKeys());
@@ -189,7 +204,7 @@ public class TableMigrator {
       tableSql.insert(0, '\n');
     }
 
-    return new Result(tableSql.toString(), foreignKeySql.toString());
+    return new Result(tableSql.toString(), foreignKeySql.toString(), warningSql.toString());
   }
 
 
@@ -284,10 +299,11 @@ public class TableMigrator {
    * @return the sql
    * @throws ModelException if failed
    */
-  private String migrateColumns(Collection<Pattern> hints, Collection<ColumnMigration> columnMigrations, Map<String, String> renameColumns)
+  private Result migrateColumns(Collection<Pattern> hints, Collection<ColumnMigration> columnMigrations, Map<String, String> renameColumns)
           throws ModelException {
 
-    StringBuilder buf = new StringBuilder();
+    StringBuilder sqlBuf = new StringBuilder();
+    StringBuilder warnBuf = new StringBuilder();
 
     Map<String, ColumnMetaData> columnsToDrop = new HashMap<>();          // columns to drop in database
     Set<Attribute> attributesToAdd = new HashSet<>();                     // attributes to create in database
@@ -405,22 +421,22 @@ public class TableMigrator {
         else  {
           // no rename hint
           if (addHint != null || dropHint != null) {
-            buf.append(backend.sqlComment(renameSql));
-            buf.append("-- disabled by hint '");
+            sqlBuf.append(backend.sqlComment(renameSql));
+            sqlBuf.append("-- disabled by hint '");
             if (addHint != null) {
-              buf.append(addHint);
+              sqlBuf.append(addHint);
             }
             if (dropHint != null) {
-              buf.append(dropHint);
+              sqlBuf.append(dropHint);
             }
-            buf.append("'\n");
+            sqlBuf.append("'\n");
             continue;   // next attribute to add
           }
           else  {
             // else: no add- or drop hint either -> default to rename
             // create alternate commands as comment
-            buf.append(backend.sqlComment(addSql));
-            buf.append(backend.sqlComment(dropSql));
+            sqlBuf.append(backend.sqlComment(addSql));
+            sqlBuf.append(backend.sqlComment(dropSql));
           }
         }
 
@@ -472,13 +488,13 @@ public class TableMigrator {
     // create migration code
     for (ColumnMetaData dropColumn: columnsToDrop.values()) {
       if (getColumnMigrationForColumn(dropColumn.getColumnName(), columnMigrations) == null) {
-        buf.append(new ColumnMigrator(entity, null, backend, dropColumn).migrate());
+        sqlBuf.append(new ColumnMigrator(entity, null, backend, dropColumn).migrate());
       }
     }
 
     for (Attribute addAttribute: attributesToAdd) {
       if (getColumnMigrationForNewColumn(addAttribute.getColumnName(), columnMigrations) == null) {
-        buf.append(new ColumnMigrator(entity, addAttribute, backend).migrate());
+        sqlBuf.append(new ColumnMigrator(entity, addAttribute, backend).migrate());
       }
     }
 
@@ -493,24 +509,29 @@ public class TableMigrator {
         }
       }
       else {
-        if (explicitMigration == null) {
-          buf.append(migrationCode);
+        if (migrationCode.startsWith("-- ")) {
+          warnBuf.append(migrationCode);
         }
-        else  {
-          buf.append(backend.sqlComment(migrationCode));    // show as comment
+        else {
+          if (explicitMigration == null) {
+            sqlBuf.append(migrationCode);
+          }
+          else {
+            sqlBuf.append(backend.sqlComment(migrationCode));    // show as comment
+          }
         }
       }
     }
 
     // add explicit migrations (if there is anything to migrate at all)
-    if (buf.length() > 0 && columnMigrations != null) {
+    if (sqlBuf.length() > 0 && columnMigrations != null) {
       for (ColumnMigration migration: columnMigrations) {
-        buf.append(migration.getSql());
-        buf.append('\n');
+        sqlBuf.append(migration.getSql());
+        sqlBuf.append('\n');
       }
     }
 
-    if (buf.length() > 0 && hints != null && !hints.isEmpty()) {
+    if (sqlBuf.length() > 0 && hints != null && !hints.isEmpty()) {
       StringBuilder hintsBuf = new StringBuilder();
       hintsBuf.append("-- hints for ");
       hintsBuf.append(entity);
@@ -520,10 +541,10 @@ public class TableMigrator {
         hintsBuf.append(hint);
         hintsBuf.append('\n');
       }
-      buf.insert(0, hintsBuf);
+      sqlBuf.insert(0, hintsBuf);
     }
 
-    return buf.toString();
+    return new Result(sqlBuf.toString(), "", warnBuf.toString());
   }
 
 

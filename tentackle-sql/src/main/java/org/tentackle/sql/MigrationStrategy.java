@@ -31,6 +31,9 @@ public enum MigrationStrategy {
   /** use {@link Backend#sqlAlterColumnType}. */
   TYPE,
 
+  /** use {@link Backend#sqlAlterColumnType} to generate a comment. */
+  TYPE_WARNING,
+
   /** use {@link Backend#sqlRenameAndAlterColumnType}. */
   NAME_AND_TYPE,
 

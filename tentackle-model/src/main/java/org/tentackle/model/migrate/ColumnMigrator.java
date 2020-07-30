@@ -230,6 +230,10 @@ public class ColumnMigrator {
           buf.append(alterType());
           break;
 
+        case TYPE_WARNING:
+          buf.append("-- ").append(alterType());
+          break;
+
         case NAME_AND_TYPE:
           buf.append(alterNameAndType());
           break;
