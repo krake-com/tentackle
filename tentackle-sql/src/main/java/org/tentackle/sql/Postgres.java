@@ -365,13 +365,20 @@ public class Postgres extends AbstractSql92Backend {
           SqlType sqlType, int size, int scale, boolean nullable, Object defaultValue) {
 
     List<MigrationStrategy> strategies = new ArrayList<>();
+    int maxSize = getMaxSize(sqlType);
+
     boolean nameChanged = !column.getColumnName().equalsIgnoreCase(columnName);
     boolean commentChanged = !Objects.equals(column.getComment(), comment);
     boolean defaultChanged = !isDefaultEqual(column, sqlType, defaultValue);
     boolean nullChanged = column.isNullable() != nullable;
     boolean typeChanged = !column.matchesSqlType(sqlType);
-    boolean sizeChanged = size > column.getSize();    // smaller model size is allowed
+    boolean sizeChanged = size > column.getSize() ||    // model size increased
+                          // or changed from VARCHAR(x) to TEXT
+                          size == 0 && (sqlType == SqlType.VARCHAR || sqlType == SqlType.CLOB) &&
+                          column.getSize() > 0 && column.getSize() != Integer.MAX_VALUE;
+    boolean sizeWarning = maxSize != -1 && size != 0 && size < column.getSize();
     boolean scaleChanged = scale > column.getScale(); // smaller model scale is allowed
+    boolean scaleWarning = maxSize != -1 && scale < column.getScale();
 
     // ideal backend: name, comment, null and default can be changed separately from type,size and scale
     if (nameChanged) {
@@ -379,6 +386,9 @@ public class Postgres extends AbstractSql92Backend {
     }
     if (typeChanged || sizeChanged || scaleChanged) {
       strategies.add(MigrationStrategy.TYPE);
+    }
+    else if (sizeWarning || scaleWarning) {
+      strategies.add(MigrationStrategy.TYPE_WARNING); // only as comment
     }
     if (nullChanged) {
       strategies.add(MigrationStrategy.NULL);

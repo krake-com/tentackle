@@ -18,7 +18,6 @@
 
 package org.tentackle.model.migrate;
 
-import java.util.Collection;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.DataType;
 import org.tentackle.model.Entity;
@@ -27,6 +26,8 @@ import org.tentackle.sql.Backend;
 import org.tentackle.sql.MigrationStrategy;
 import org.tentackle.sql.SqlType;
 import org.tentackle.sql.metadata.ColumnMetaData;
+
+import java.util.Collection;
 
 /**
  * Handles the migration of columns.
@@ -227,6 +228,10 @@ public class ColumnMigrator {
 
         case TYPE:
           buf.append(alterType());
+          break;
+
+        case TYPE_WARNING:
+          buf.append("-- ").append(alterType());
           break;
 
         case NAME_AND_TYPE:
