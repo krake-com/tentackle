@@ -220,6 +220,19 @@ public class ForeignKeyMetaData {
 
 
   /**
+   * Updates the foreign table name.<br>
+   * This is necessary, if a table was renamed. The meta data then still holds
+   * the old tablename. However, after a RENAME TABLE the foreign keys will be
+   * updated by the database automatically, so there's no need to drop and re-create
+   * the FK.
+   *
+   * @param foreignKeyTable the foreign key table name
+   */
+  public void setForeignKeyTable(String foreignKeyTable) {
+    this.foreignKeyTable = foreignKeyTable;
+  }
+
+  /**
    * Validates and postprocesses the foreign key data.
    */
   public void validate() {

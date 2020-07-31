@@ -43,8 +43,8 @@ public class ModelMetaData {
   private final String[] schemas;                     // optional schemas
   private final Properties properties;                // migration properties
 
-  private List<DatabaseMetaDataTableHeader> metaDataTableHeaderList;        // all table headers (names may be not unique!)
-  private Map<String, DatabaseMetaDataTableHeader> metaDataTableHeaderMap;  // table header info (lazy)
+  private List<DatabaseMetaDataTableHeader> metaDataTableHeaderList;              // all table headers (names may be not unique!)
+  private Map<String, List<DatabaseMetaDataTableHeader>> metaDataTableHeaderMap;  // table header info mapped by tablename (lazy)
 
 
   /**
@@ -81,17 +81,18 @@ public class ModelMetaData {
    */
   public List<DatabaseMetaDataTableHeader> getAllTablesInDatabase() throws SQLException {
     getMetaDataTableHeaderMap();
-    return new ArrayList<>(metaDataTableHeaderList);
+    return metaDataTableHeaderList;
   }
 
   /**
-   * Gets the header info for given tablename.
+   * Gets the header infos for given tablename.<br>
+   * May return more than one entry if the same tablename is used in more than one schema.
    *
    * @param tableName the tablename
-   * @return the header info, null if no such table in database
+   * @return the non-empty list of header infos, null if no such table in database
    * @throws SQLException if cannot retrieve meta data from database
    */
-  public DatabaseMetaDataTableHeader getTableInDatabase(String tableName) throws SQLException {
+  public List<DatabaseMetaDataTableHeader> getTableInDatabase(String tableName) throws SQLException {
     return getMetaDataTableHeaderMap().get(tableName.toLowerCase());
   }
 
@@ -170,7 +171,7 @@ public class ModelMetaData {
   }
 
 
-  private Map<String, DatabaseMetaDataTableHeader> getMetaDataTableHeaderMap() throws SQLException {
+  private Map<String, List<DatabaseMetaDataTableHeader>> getMetaDataTableHeaderMap() throws SQLException {
     if (metaDataTableHeaderMap == null) {
       metaDataTableHeaderList = new ArrayList<>();
       metaDataTableHeaderMap = new TreeMap<>();   // sorted by tablename
@@ -178,7 +179,8 @@ public class ModelMetaData {
         List<DatabaseMetaDataTableHeader> tableHeaders = backend.getTableHeaders(md);
         metaDataTableHeaderList.addAll(tableHeaders);
         for (DatabaseMetaDataTableHeader header : tableHeaders) {
-          metaDataTableHeaderMap.put(header.getName(), header);
+          List<DatabaseMetaDataTableHeader> headersForName = metaDataTableHeaderMap.computeIfAbsent(header.getName().toLowerCase(), n -> new ArrayList<>());
+          headersForName.add(header);
         }
       }
     }
