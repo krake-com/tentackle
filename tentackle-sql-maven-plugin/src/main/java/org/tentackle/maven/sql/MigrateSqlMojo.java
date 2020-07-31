@@ -39,6 +39,7 @@ import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendInfo;
 import org.tentackle.sql.metadata.DatabaseMetaDataTableHeader;
 import org.tentackle.sql.metadata.ForeignKeyMetaData;
+import org.tentackle.sql.metadata.MetaDataUtilities;
 import org.tentackle.sql.metadata.ModelMetaData;
 import org.tentackle.sql.metadata.TableMetaData;
 
@@ -57,6 +58,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -461,14 +463,44 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
               String oldTableName = entity.getSchemaName() != null && plainOldTableName != null ?
                 oldTableName = entity.getSchemaName() + "." + plainOldTableName : plainOldTableName;
 
+              if (checkReservedTables && MetaDataUtilities.getInstance().isReservedTable(plainTableName)) {
+                getLog().warn("table name '" + plainTableName + "' of entity " + entity + " is reserved by framework -> consider renaming");
+              }
+
               TableMetaData table = backendInfo.getBackend().getTableMetaData(modelMetaData, oldTableName != null ? oldTableName : tableName);
 
               if (table != null) {
-                // verify that this is a user-defined table we can migrate
+                // verify that this is a user-defined table we can migrate and that we picked the correct table
                 try {
-                  DatabaseMetaDataTableHeader tableHeader = modelMetaData.getTableInDatabase(tableName);
-                  if (tableHeader != null && !tableHeader.isUserTable()) {
-                    getLog().error("'" + entity.getTableName() + "' already exists as " + tableHeader.getType());
+                  List<DatabaseMetaDataTableHeader> tableHeaders = modelMetaData.getTableInDatabase(plainTableName);
+                  if (tableHeaders != null) {
+                    boolean conflicts = false;
+                    int schemaCount = 0;
+                    StringBuilder schemaBuf = new StringBuilder();
+                    for (DatabaseMetaDataTableHeader tableHeader: tableHeaders) {
+                      if (tableHeader.isUserTable()) {
+                        schemaCount++;
+                        if (schemaBuf.length() > 0) {
+                          schemaBuf.append(", ");
+                        }
+                        schemaBuf.append(tableHeader.getSchema());
+                      }
+                      else {
+                        getLog().error("table " + entity.getTableName() + " of entity " + entity + " conflicts with " + tableHeader);
+                        errorCount++;
+                        conflicts = true;
+                      }
+                    }
+                    if (conflicts) {
+                      continue;
+                    }
+                    if (schemaCount > 1) {
+                      getLog().warn("table " + entity.getTableNameWithoutSchema() + " of entity " + entity +
+                                    " exists in different schemas: " + schemaBuf);
+                    }
+                  }
+                  else {
+                    getLog().warn("table found in wrong schema: " + table.getFullTableName());
                     errorCount++;
                     continue;
                   }
@@ -501,9 +533,14 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
 
                 // migrate foreign key metadata (since RENAME TABLE migrates the FK as well and we don't need explicit migrations)
                 for (ForeignKeyMetaData foreignKeyMetaData : table.getForeignKeys()) {
+                  // FKs to other entities, which are renamed
                   String oldPrimaryKeyTable = revRenamedTables.get(foreignKeyMetaData.getPrimaryKeyTable());
                   if (oldPrimaryKeyTable != null) {
                     foreignKeyMetaData.setPrimaryKeyTable(oldPrimaryKeyTable);
+                  }
+                  // my own FKs if this table is renamed
+                  if (plainOldTableName != null) {
+                    foreignKeyMetaData.setForeignKeyTable(plainTableName);
                   }
                 }
               }

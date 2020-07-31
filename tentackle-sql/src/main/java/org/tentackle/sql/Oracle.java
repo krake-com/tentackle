@@ -270,7 +270,8 @@ public class Oracle extends AbstractSql2003Backend {
 
   @Override
   public boolean isReservedTableName(String name) {
-    return name != null && name.contains("$");
+    return super.isReservedTableName(name) ||
+           name != null && name.contains("$");
   }
 
   @Override
