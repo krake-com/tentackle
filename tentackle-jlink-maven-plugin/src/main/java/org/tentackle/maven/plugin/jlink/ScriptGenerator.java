@@ -35,7 +35,7 @@ import java.util.StringTokenizer;
  */
 public class ScriptGenerator extends AbstractGenerator {
 
-  private final AbstractJlinkMojo mojo;
+  private final JlinkMojo mojo;
   private final JlinkResolver.Result result;
 
   /**
@@ -44,7 +44,7 @@ public class ScriptGenerator extends AbstractGenerator {
    * @param mojo the jlink mojo
    * @param result the resolver results
    */
-  public ScriptGenerator(AbstractJlinkMojo mojo, JlinkResolver.Result result) {
+  public ScriptGenerator(JlinkMojo mojo, JlinkResolver.Result result) {
     this.mojo = mojo;
     this.result = result;
     setTemplateDirectory(mojo.getTemplateDir());
@@ -65,7 +65,7 @@ public class ScriptGenerator extends AbstractGenerator {
       if (stok.hasMoreTokens()) {
         // generate run script
         String fileName = stok.nextToken();
-        File scriptFile = new File(new File(mojo.getApplicationDirectory(), "bin"), fileName);
+        File scriptFile = new File(new File(mojo.getImageDirectory(), "bin"), fileName);
         GeneratedFile generatedFile = new GeneratedFile(cfg, model, mojo.getRunTemplate(), scriptFile);
         generatedFile.generate();
         scriptFile.setExecutable(true);
@@ -83,7 +83,7 @@ public class ScriptGenerator extends AbstractGenerator {
           if (ndx >= 0) {
             fileName = fileName.substring(0, ndx);
           }
-          scriptFile = new File(new File(mojo.getApplicationDirectory(), "bin"), fileName + fileExtension);
+          scriptFile = new File(new File(mojo.getImageDirectory(), "bin"), fileName + fileExtension);
           generatedFile = new GeneratedFile(cfg, model, mojo.getUpdateTemplate(), scriptFile);
           generatedFile.generate();
           scriptFile.setExecutable(true);

@@ -28,8 +28,8 @@ import org.apache.maven.project.MavenProjectHelper;
 import org.codehaus.plexus.languages.java.jpms.LocationManager;
 
 import org.tentackle.common.FileHelper;
-import org.tentackle.common.StringHelper;
 import org.tentackle.maven.AbstractTentackleMojo;
+import org.tentackle.maven.ToolRunner;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -86,30 +86,58 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   private File templateDir;
 
   /**
-   * The name of the template to generate the name of the runner script.<br>
-   * For *nixes this is usually {@code run.sh}, for windozes {@code run.cmd} or {@code run.bat}.
-   */
-  @Parameter(defaultValue = "name.ftl")
-  private String nameTemplate;
-
-  /**
-   * The name of the runner script template.
-   */
-  @Parameter(defaultValue = "run.ftl")
-  private String runTemplate;
-
-  /**
-   * The name of the update script template.<br>
-   * Empty to disable.
-   */
-  @Parameter(defaultValue = "update.ftl")
-  private String updateTemplate;
-
-  /**
    * File of the jdeps tool.
    */
   @Parameter(property = "jdepsTool")
   private File jdepsTool;
+
+  /**
+   * File of the jlink tool.
+   */
+  @Parameter(property = "jlinkTool")
+  private File jlinkTool;
+
+  /**
+   * The optional file holding the jlink options.<br>
+   * Corresponds to the <code>jlink</code> option <code>--save-opts</code>.
+   */
+  @Parameter
+  private File saveOpts;
+
+  /**
+   * Strip debug information.<br>
+   * Corresponds to the <code>jlink</code> option <code>--strip-debug</code>.
+   */
+  @Parameter(defaultValue = "false")
+  private boolean stripDebug;
+
+  /**
+   * Compression of resources.<br>
+   * Corresponds to the <code>jlink</code> option <code>--compress</code>.
+   */
+  @Parameter
+  private Integer compress;
+
+  /**
+   * Suppresses a fatal error when signed modular JARs are linked in the runtime image.<br>
+   * Corresponds to the <code>jlink</code> option <code>--ignore-signing-information</code>
+   */
+  @Parameter(defaultValue = "false")
+  private boolean ignoreSigningInformation;
+
+  /**
+   * Suppress the <code>includes</code> directory.<br>
+   * Corresponds to the <code>jlink</code> option <code>--no-header-files</code>.
+   */
+  @Parameter(defaultValue = "false")
+  private boolean noHeaderFiles;
+
+  /**
+   * Suppress the <code>man</code> directory.<br>
+   * Corresponds to the <code>jlink</code> option <code>--no-man-pages</code>
+   */
+  @Parameter(defaultValue = "false")
+  private boolean noManPages;
 
   /**
    * The directory holding extra resources, such as logger configurations or database
@@ -169,6 +197,19 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   private String variablesPrecedence;
 
   /**
+   * The directory created by jlink holding the image.
+   */
+  @Parameter(defaultValue = "${project.build.directory}/jlink", required = true)
+  private File imageDirectory;
+
+  /**
+   * Additional classifier to add to deployed artifacts.
+   */
+  @Parameter
+  private String extraClassifier;
+
+
+  /**
    * Gets the template directory.
    *
    * @return the directory holding the wizard templates
@@ -182,7 +223,9 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
    *
    * @return the image dir, never null
    */
-  abstract public File getImageDirectory();
+  public File getImageDirectory() {
+    return imageDirectory;
+  }
 
   /**
    * Gets the name of the module holding the main class.
@@ -229,34 +272,6 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
     return jdepsTool;
   }
 
-
-  /**
-   * Gets the name of the name template.
-   *
-   * @return the template to generate the name of the runner script
-   */
-  public String getNameTemplate() {
-    return nameTemplate;
-  }
-
-  /**
-   * Gets the name of the runner template.
-   *
-   * @return the template to generate the runner script
-   */
-  public String getRunTemplate() {
-    return runTemplate;
-  }
-
-  /**
-   * Gets the name of the update template.
-   *
-   * @return the template to generate the update script, null if none
-   */
-  public String getUpdateTemplate() {
-    return StringHelper.isAllWhitespace(updateTemplate) ? null : updateTemplate;
-  }
-
   /**
    * Gets extra jre or jdk modules to add to the image.
    *
@@ -293,11 +308,22 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
     return variablesPrecedence;
   }
 
+  /**
+   * Gets the optional extra deployment classifier.
+   *
+   * @return the extra classifier
+   */
+  public String getExtraClassifier() {
+    return extraClassifier;
+  }
 
   @Override
   public void prepareExecute() throws MojoExecutionException, MojoFailureException {
     if (jdepsTool == null) {
       jdepsTool = getToolFinder().find("jdeps");
+    }
+    if (jlinkTool == null) {
+      jlinkTool = getToolFinder().find("jlink");
     }
   }
 
@@ -305,44 +331,92 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   public void executeImpl() throws MojoExecutionException, MojoFailureException {
     // analyze project, determine jlink strategy
     JlinkResolver.Result result = new JlinkResolver(this, getMavenProject().getArtifacts()).resolve();
+    // generate image
+    createImageAndArtifacts(result);
+    // and the shell scripts
+    generateFiles(result);
+  }
 
-    // and run jlink
+
+  /**
+   * Gets the prefix to the jars and dirs in the runtime image.
+   *
+   * @return the prefix
+   */
+  public String getImagePathPrefix() {
+    return "";
+  }
+
+
+  /**
+   * Invokes the jlink tool and copies other artifacts and resources.
+   *
+   * @param result the resolver result
+   */
+  protected void createImageAndArtifacts(JlinkResolver.Result result) throws MojoFailureException, MojoExecutionException {
+    // run jlink
     createImage(result);
 
     // copy artifacts not covered by jlink to modulepath and classpath subdirectories
     copyArtifacts(result);
 
     // copy resources such as backend.properties or logging config to the conf subdirectory
-    if (resourcesDirectory != null && resourcesDirectory.isDirectory()) {
-      int resCount = copyResources(resourcesDirectory, new File(getApplicationDirectory(), "conf"));
-      if (resCount > 0) {
-        result.addToClasspath("conf");
-      }
-    }
-    else {
-      result.addToClasspath(".");
-    }
-
-    // generate the script to run the application in the bin subdirectory
-    new ScriptGenerator(this, result).generate();
+    copyResources(result);
   }
 
+
   /**
-   * Creates the application image.
+   * Generates additional files such as shell scripts or command files.
+   *
+   * @param result the resolver result
+   * @throws MojoExecutionException if generation failed
+   */
+  abstract protected void generateFiles(JlinkResolver.Result result) throws MojoExecutionException;
+
+
+  /**
+   * Creates the jlink image.
    *
    * @param result the resolver info
    * @throws MojoExecutionException if building the JPMS info failed
    * @throws MojoFailureException if jlink returned an error code
    */
-  abstract protected void createImage(JlinkResolver.Result result) throws MojoExecutionException, MojoFailureException;
+  protected void createImage(JlinkResolver.Result result) throws MojoExecutionException, MojoFailureException {
+    getLog().info("creating jlink image for a " +
+                  (result.isPlainModular() ? "plain " : "") +
+                  (result.isModular() ? "modular" : "classpath") + " application");
+    getLog().debug(result.toString());
 
-  /**
-   * Gets the application directory.
-   *
-   * @return the destination base directory for the application
-   */
-  protected File getApplicationDirectory() {
-    return getImageDirectory();
+    ToolRunner jlinkRunner = new ToolRunner(jlinkTool);
+    if (saveOpts != null) {
+      jlinkRunner.arg("--save-opts").arg(saveOpts);
+    }
+    jlinkRunner.arg("--output").arg(getImageDirectory());
+    if (stripDebug) {
+      jlinkRunner.arg("--strip-debug");
+    }
+    if (compress != null) {
+      jlinkRunner.arg("--compress=" + compress);
+    }
+    if (ignoreSigningInformation) {
+      jlinkRunner.arg("--ignore-signing-information");
+    }
+    if (noHeaderFiles) {
+      jlinkRunner.arg("--no-header-files");
+    }
+    if (noManPages) {
+      jlinkRunner.arg("--no-man-pages");    // is this implemented in jlink at all???
+    }
+    result.generateJlinkModulePath(jlinkRunner);
+    result.generateJlinkModules(jlinkRunner);
+
+    getLog().debug(jlinkRunner.toString());
+
+    int errCode = jlinkRunner.run().getErrCode();
+    if (errCode != 0) {
+      throw new MojoFailureException("jlink failed: " + errCode + "\n" + jlinkRunner.getErrorsAsString() +
+                                     "\n" + jlinkRunner.getOutputAsString());
+    }
   }
 
   /**
@@ -355,7 +429,7 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
     try {
       // module path, if any
       if (result.isModular() && !result.getModulePath().isEmpty()) {
-        File mpDir = new File(getApplicationDirectory(), "mp");
+        File mpDir = new File(getImageDirectory(), "mp");
         mpDir.mkdir();
         for (ModularArtifact artifact : result.getModulePath()) {
           File dest = new File(mpDir, artifact.getFileName());
@@ -365,7 +439,7 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
       }
       // classpath, if any
       if (!result.getClassPath().isEmpty()) {
-        File cpDir = new File(getApplicationDirectory(), "cp");
+        File cpDir = new File(getImageDirectory(), "cp");
         cpDir.mkdir();
         for (Artifact artifact : result.getClassPath()) {
           File dest = new File(cpDir, artifact.getFile().getName());
@@ -378,6 +452,23 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
       throw new MojoExecutionException("copying artifacts failed", ex);
     }
   }
+
+  /**
+   * Copies the resources to the <code>conf</code> directory.
+   *
+   * @param result the resolver info
+   * @throws MojoExecutionException if copy failed
+   */
+  protected void copyResources(JlinkResolver.Result result) throws MojoExecutionException {
+    // copy resources such as backend.properties or logging config to the conf subdirectory
+    if (resourcesDirectory != null && resourcesDirectory.isDirectory()) {
+      int resCount = copyResources(resourcesDirectory, new File(getImageDirectory(), "conf"));
+      if (resCount > 0) {
+        result.addToClasspath("conf");
+      }
+    }
+  }
+  
 
   /**
    * Copies the resources.
@@ -423,6 +514,11 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
       }
       getLog().debug("using " + jdepsTool);
 
+      if (jlinkTool == null) {
+        throw new MojoExecutionException("jlink tool not found");
+      }
+      getLog().debug("using " + jlinkTool);
+
       if (templateDir.exists()) {
         if (!templateDir.isDirectory()) {
           throw new MojoExecutionException(templateDir.getPath() + " is not a directory");
@@ -430,19 +526,11 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
       }
       else {
         getLog().info("template directory created: " + templateDir.getPath());
-        installTemplates();
       }
+      installTemplates(false);    // install any missing template
 
       if (mainClass == null) {
         throw new MojoExecutionException("mainClass missing");
-      }
-
-      if (nameTemplate == null) {
-        throw new MojoExecutionException("nameTemplate missing");
-      }
-
-      if (runTemplate == null) {
-        throw new MojoExecutionException("runTemplate missing");
       }
 
       return true;
@@ -476,27 +564,44 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
    * Copies the templates to the template directory.<br>
    * Overwrites any existing templates.
    *
-   * @throws MojoExecutionException if failed
+   * @param overwrite true if overwrite existing templates, false if install only missing
+   * @throws MojoExecutionException if installation failed
    */
-  protected void installTemplates() throws MojoExecutionException {
-    installTemplate(nameTemplate);
-    installTemplate(runTemplate);
-    if (getUpdateTemplate() != null) {
-      installTemplate(updateTemplate);
+  abstract protected void installTemplates(boolean overwrite) throws MojoExecutionException;
+
+  /**
+   * Installs the template with the given name.
+   *
+   * @param template the name
+   * @param overwrite true if overwrite existing template, false if leave unchanged
+   * @throws MojoExecutionException if installation failed
+   */
+  protected void installTemplate(String template, boolean overwrite) throws MojoExecutionException {
+    templateDir.mkdirs();
+    File file = new File(templateDir, template);
+    if (overwrite || !file.exists()) {
+      String path = "/templates/" + template;
+      String text = loadResourceFileIntoString(path);
+      try (PrintStream ps = new PrintStream(new FileOutputStream(file))) {
+        ps.print(text);
+        getLog().info("installed template " + template);
+      }
+      catch (IOException e) {
+        throw new MojoExecutionException("cannot install template " + path, e);
+      }
     }
   }
 
-  private void installTemplate(String template) throws MojoExecutionException {
-    templateDir.mkdirs();
-    File file = new File(templateDir, template);
-    String path = "/templates/" + template;
-    String text = loadResourceFileIntoString(path);
-    try (PrintStream ps = new PrintStream(new FileOutputStream(file))) {
-      ps.print(text);
-      getLog().info("installed template " + template);
-    }
-    catch (IOException e) {
-      throw new MojoExecutionException("cannot install template " + path, e);
+  /**
+   * Logs the toolrunner's output at info level.
+   *
+   * @param runner the toolrunner
+   * @throws MojoExecutionException if runner not invoked so far
+   */
+  protected void logToolOutput(ToolRunner runner) throws MojoExecutionException {
+    String out = runner.getOutputAsString();
+    if (!out.isEmpty()) {
+      getLog().info(out);
     }
   }
 

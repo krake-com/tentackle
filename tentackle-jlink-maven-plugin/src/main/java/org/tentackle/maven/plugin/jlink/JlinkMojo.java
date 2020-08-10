@@ -29,13 +29,13 @@ import org.codehaus.plexus.archiver.ArchiverException;
 import org.codehaus.plexus.archiver.zip.ZipArchiver;
 
 import org.tentackle.common.StringHelper;
-import org.tentackle.maven.ToolRunner;
 
 import java.io.File;
 import java.io.IOException;
 
 /**
- * Creates a self-contained java application zip-file with <code>jlink</code>.<br>
+ * Creates a self-contained java application with the <code>jlink</code> tool.
+ * <p>
  * This mojo works for modular, non-modular and even mixed applications.
  * It does so by analyzing the dependencies and finding the best strategy to invoke <code>jlink</code>, which
  * creates a directory containing an application-specific <code>jimage</code> module.<br>
@@ -101,61 +101,41 @@ import java.io.IOException;
  */
 @Mojo(name = "jlink",
       requiresDependencyResolution = ResolutionScope.RUNTIME,
-      defaultPhase = LifecyclePhase.PACKAGE,
-      requiresProject = true)
+      defaultPhase = LifecyclePhase.PACKAGE)
 
 public class JlinkMojo extends AbstractJlinkMojo {
+
+  /** filename of the NAME template. */
+  public static final String TEMPLATE_NAME = "name.ftl";
+
+  /** filename of the RUN template. */
+  public static final String TEMPLATE_RUN = "run.ftl";
+
+  /** filename of the UPDATE template. */
+  public static final String TEMPLATE_UPDATE = "update.ftl";
 
   /** file extension for ZIP files. */
   public static final String ZIP_EXTENSION = "zip";
 
   /**
-   * File of the jlink tool.
+   * The name of the template to generate the name of the runner script.<br>
+   * For *nixes this is usually {@code run.sh}, for windozes {@code run.cmd} or {@code run.bat}.
    */
-  @Parameter(property = "jlinkTool")
-  private File jlinkTool;
+  @Parameter(defaultValue = TEMPLATE_NAME)
+  private String nameTemplate;
 
   /**
-   * The optional file holding the jlink options.<br>
-   * Corresponds to the <code>jlink</code> option <code>--save-opts</code>.
+   * The name of the runner script template.
    */
-  @Parameter
-  private File saveOpts;
+  @Parameter(defaultValue = TEMPLATE_RUN)
+  private String runTemplate;
 
   /**
-   * Strip debug information.<br>
-   * Corresponds to the <code>jlink</code> option <code>--strip-debug</code>.
+   * The name of the update script template.<br>
+   * Empty to disable.
    */
-  @Parameter(defaultValue = "false")
-  private boolean stripDebug;
-
-  /**
-   * Compression of resources.<br>
-   * Corresponds to the <code>jlink</code> option <code>--compress</code>.
-   */
-  @Parameter
-  private Integer compress;
-
-  /**
-   * Suppresses a fatal error when signed modular JARs are linked in the runtime image.<br>
-   * Corresponds to the <code>jlink</code> option <code>--ignore-signing-information</code>
-   */
-  @Parameter(defaultValue = "false")
-  private boolean ignoreSigningInformation;
-
-  /**
-   * Suppress the <code>includes</code> directory.<br>
-   * Corresponds to the <code>jlink</code> option <code>--no-header-files</code>.
-   */
-  @Parameter(defaultValue = "false")
-  private boolean noHeaderFiles;
-
-  /**
-   * Suppress the <code>man</code> directory.<br>
-   * Corresponds to the <code>jlink</code> option <code>--no-man-pages</code>
-   */
-  @Parameter(defaultValue = "false")
-  private boolean noManPages;
+  @Parameter(defaultValue = TEMPLATE_UPDATE)
+  private String updateTemplate;
 
   /**
    * The archiver to zip the image.
@@ -182,12 +162,16 @@ public class JlinkMojo extends AbstractJlinkMojo {
   @Parameter(defaultValue = "${project.build.finalName}", required = true, readonly = true)
   private String finalName;
 
-  /**
-   * The directory created by jlink holding the image.
-   */
-  @Parameter(defaultValue = "${project.build.directory}/jlink", required = true)
-  private File imageDirectory;
 
+  /**
+   * Gets the ZIP file's name without extension.<br>
+   * Invoked by the {@link ArtifactCreator}.
+   *
+   * @return the final name
+   */
+  public String getFinalName() {
+    return finalName;
+  }
 
   /**
    * Gets the directory where to store the ZIP-file.
@@ -199,25 +183,36 @@ public class JlinkMojo extends AbstractJlinkMojo {
   }
 
   /**
-   * Gets the ZIP file's name without extension.
+   * Gets the name of the name template.
    *
-   * @return the final name
+   * @return the template to generate the name of the runner script
    */
-  public String getFinalName() {
-    return finalName;
+  public String getNameTemplate() {
+    return nameTemplate;
   }
 
   /**
-   * Gets the directory created by jlink holding the image.
+   * Gets the name of the runner template.
    *
-   * @return the image dir, never null
+   * @return the template to generate the runner script
    */
-  public File getImageDirectory() {
-    return imageDirectory;
+  public String getRunTemplate() {
+    return runTemplate;
   }
 
   /**
-   * Creates the zip file.
+   * Gets the name of the update template.
+   *
+   * @return the template to generate the update script, empty if none
+   */
+  public String getUpdateTemplate() {
+    return updateTemplate;
+  }
+
+
+  /**
+   * Creates the zip file.<br>
+   * Invoked by the {@link ArtifactCreator}.
    *
    * @param name the filename without extension
    * @return the created file
@@ -245,18 +240,14 @@ public class JlinkMojo extends AbstractJlinkMojo {
    */
   public String getClassifier() throws MojoExecutionException {
     try {
-      return StringHelper.getPlatform() + "-" + StringHelper.getArchitecture();
+      String classifier = StringHelper.getPlatform() + "-" + StringHelper.getArchitecture();
+      if (getExtraClassifier() != null) {
+        classifier += "-" + getExtraClassifier();
+      }
+      return classifier;
     }
     catch (RuntimeException ex) {
       throw new MojoExecutionException(ex.getMessage());
-    }
-  }
-
-  @Override
-  public void prepareExecute() throws MojoExecutionException, MojoFailureException {
-    super.prepareExecute();
-    if (jlinkTool == null) {
-      jlinkTool = getToolFinder().find("jlink");
     }
   }
 
@@ -269,61 +260,32 @@ public class JlinkMojo extends AbstractJlinkMojo {
     }
   }
 
-  /**
-   * Creates the jlink image.
-   *
-   * @param result the resolver info
-   * @throws MojoExecutionException if building the JPMS info failed
-   * @throws MojoFailureException if jlink returned an error code
-   */
-  protected void createImage(JlinkResolver.Result result) throws MojoExecutionException, MojoFailureException {
-    getLog().info("creating jlink image for a " +
-                      (result.isPlainModular() ? "plain " : "") +
-                      (result.isModular() ? "modular" : "classpath") + " application");
-    getLog().debug(result.toString());
-
-    ToolRunner jlinkRunner = new ToolRunner(jlinkTool);
-    if (saveOpts != null) {
-      jlinkRunner.arg("--save-opts").arg(saveOpts);
-    }
-    jlinkRunner.arg("--output").arg(getImageDirectory());
-    if (stripDebug) {
-      jlinkRunner.arg("--strip-debug");
-    }
-    if (compress != null) {
-      jlinkRunner.arg("--compress=" + compress);
-    }
-    if (ignoreSigningInformation) {
-      jlinkRunner.arg("--ignore-signing-information");
-    }
-    if (noHeaderFiles) {
-      jlinkRunner.arg("--no-header-files");
-    }
-    if (noManPages) {
-      jlinkRunner.arg("--no-man-pages");    // is this implemented in jlink at all???
-    }
-    result.generateJlinkModulePath(jlinkRunner);
-    result.generateJlinkModules(jlinkRunner);
-
-    getLog().debug(jlinkRunner.toString());
-
-    int errCode = jlinkRunner.run().getErrCode();
-    if (errCode != 0) {
-      throw new MojoFailureException("jlink failed: " + errCode + "\n" + jlinkRunner.getErrorsAsString() +
-                                         "\n" + jlinkRunner.getOutputAsString());
-    }
+  @Override
+  protected void generateFiles(JlinkResolver.Result result) throws MojoExecutionException {
+    // generate the script to run the application in the bin subdirectory
+    new ScriptGenerator(this, result).generate();
   }
 
   @Override
   protected boolean validate() throws MojoExecutionException {
     if (super.validate()) {
-      if (jlinkTool == null) {
-        throw new MojoExecutionException("jlink tool not found");
+      if (nameTemplate == null) {
+        throw new MojoExecutionException("nameTemplate missing");
       }
-      getLog().debug("using " + jlinkTool);
+      if (runTemplate == null) {
+        throw new MojoExecutionException("runTemplate missing");
+      }
       return true;
     }
     return false;
   }
 
+  @Override
+  protected void installTemplates(boolean overwrite) throws MojoExecutionException {
+    installTemplate(nameTemplate, overwrite);
+    installTemplate(runTemplate, overwrite);
+    if (!StringHelper.isAllWhitespace(updateTemplate)) {
+      installTemplate(updateTemplate, overwrite);
+    }
+  }
 }
