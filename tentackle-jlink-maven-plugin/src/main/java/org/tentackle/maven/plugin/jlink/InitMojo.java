@@ -20,16 +20,73 @@ package org.tentackle.maven.plugin.jlink;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 
 import java.io.File;
 
 /**
  * Initializes the templates.<br>
- * Copies the default templates to the configured templateDir.<br>
- * Needs to be executed only to restore the templates to their defaults.
+ * Copies the default templates to the project's template directory.
  */
 @Mojo(name = "init", inheritByDefault = false, aggregator = true)
 public class InitMojo extends AbstractJlinkMojo {
+
+  private static final String[] TEMPLATES_ALL = {
+      JlinkMojo.TEMPLATE_NAME,
+      JlinkMojo.TEMPLATE_RUN,
+      JlinkMojo.TEMPLATE_UPDATE,
+      JPackageMojo.PACKAGE_IMAGE_TEMPLATE,
+      JPackageMojo.PACKAGE_INSTALLER_TEMPLATE
+  };
+
+  /**
+   * Controls whether all or only already installed templates should be copied.<br>
+   * By default (true), all templates will be copied to the template folder.<br>
+   * Otherwise (false), only those templates that already exist in the template folder
+   * will be overwritten.<br>
+   */
+  @Parameter(defaultValue = "true")
+  private boolean copyAll;
+
+  @Override
+  public void executeImpl() throws MojoExecutionException, MojoFailureException {
+    installTemplates(true);
+  }
+
+  @Override
+  protected void installTemplates(boolean overwrite) throws MojoExecutionException {
+    File templateDir = getTemplateDir();
+    if (copyAll) {
+      for (String name : TEMPLATES_ALL) {
+        installTemplate(name, true);
+        getLog().info("template '" + name + "' copied to " + templateDir);
+      }
+    }
+    else {
+      String[] names = templateDir.list();
+      if (names != null) {
+        for (String name : names) {    // overwrite each existing file
+          File template = new File(templateDir, name);
+          if (template.isFile()) {
+            try {
+              installTemplate(name, true);
+              getLog().info("template '" + name + "' restored to its default");
+            }
+            catch (MojoExecutionException mx) {
+              getLog().warn("no default template for '" + name + "' -> skipped");
+            }
+          }
+        }
+      }
+    }
+  }
+
+
+  // ------------- unused abstract methods -----------------
+
+  @Override
+  protected void createImage(JlinkResolver.Result result) throws MojoExecutionException, MojoFailureException {
+  }
 
   @Override
   public File getImageDirectory() {
@@ -37,13 +94,7 @@ public class InitMojo extends AbstractJlinkMojo {
   }
 
   @Override
-  public void executeImpl() throws MojoExecutionException, MojoFailureException {
-    installTemplates();
-  }
-
-  @Override
-  protected void createImage(JlinkResolver.Result result) throws MojoExecutionException, MojoFailureException {
-    // nothing to do
+  protected void generateFiles(JlinkResolver.Result result) throws MojoExecutionException {
   }
 
 }

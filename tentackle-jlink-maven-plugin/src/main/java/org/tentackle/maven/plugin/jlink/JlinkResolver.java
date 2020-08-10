@@ -30,7 +30,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -55,7 +54,7 @@ public class JlinkResolver {
   /**
    * Holds the resolver results.
    */
-  public static class Result {
+  public class Result {
 
     private final List<ModularArtifact> jlinkModules;
     private final List<String> runtimeModuleNames;
@@ -209,12 +208,22 @@ public class JlinkResolver {
     }
 
     /**
-     * Sets whether the conf directory should be added to the classpath.
+     * Adds additional elements to the classpath.<br>
+     * Such as the conf directory.
      *
      * @param element the classpath element to add
      */
     public void addToClasspath(String element) {
       extraClassPathElements.add(element);
+    }
+
+    /**
+     * Gets the additional elements added to the classpath.
+     *
+     * @return the extra classpath elements
+     */
+    public List<String> getExtraClassPathElements() {
+      return extraClassPathElements;
     }
 
     /**
@@ -273,6 +282,15 @@ public class JlinkResolver {
     }
 
     /**
+     * Returns whether the module path is not empty.
+     *
+     * @return true if modulepath must be configured
+     */
+    public boolean isModulePathRequired() {
+      return modular && !modulePath.isEmpty();
+    }
+
+    /**
      * Generates the module path option to be passed to bin/java.
      *
      * @return the option, empty if no extra module path
@@ -288,10 +306,19 @@ public class JlinkResolver {
           else {
             needSep = true;
           }
-          buf.append("mp").append(File.separatorChar).append(artifact.getFileName());
+          buf.append(mojo.getImagePathPrefix()).append("mp").append(File.separatorChar).append(artifact.getFileName());
         }
       }
       return buf.toString();
+    }
+
+    /**
+     * Returns whether the class path is not empty.
+     *
+     * @return true if classpath must be configured
+     */
+    public boolean isClassPathRequired() {
+      return !extraClassPathElements.isEmpty() || !classPath.isEmpty();
     }
 
     /**
@@ -309,7 +336,7 @@ public class JlinkResolver {
         else {
           needSep = true;
         }
-        buf.append(element);
+        buf.append(mojo.getImagePathPrefix()).append(element);
       }
       for (Artifact artifact : classPath) {
         if (needSep) {
@@ -318,7 +345,7 @@ public class JlinkResolver {
         else {
           needSep = true;
         }
-        buf.append("cp").append(File.separatorChar).append(artifact.getFile().getName());
+        buf.append(mojo.getImagePathPrefix()).append("cp").append(File.separatorChar).append(artifact.getFile().getName());
       }
       return buf.toString();
     }

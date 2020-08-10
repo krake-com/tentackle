@@ -75,11 +75,20 @@ public interface ArtifactCreator {
   }
 
   /**
-   * Creates and attaches the artifact.
+   * Creates and attaches the ZIP file created by the jlink goal.
    *
    * @param mojo the jlink mojo
    * @throws MojoExecutionException if failed
    */
   void createAndAttachArtifact(JlinkMojo mojo) throws MojoExecutionException;
+
+  /**
+   * Creates and attaches the installers created by the jpackage goal.
+   *
+   * @param mojo the jpackage mojo
+   * @param minTime the minimum creating time of the artifacts
+   * @throws MojoExecutionException if failed
+   */
+  void createAndAttachInstallers(JPackageMojo mojo, long minTime) throws MojoExecutionException;
 
 }
