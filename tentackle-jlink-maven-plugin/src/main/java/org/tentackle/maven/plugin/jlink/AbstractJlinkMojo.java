@@ -428,20 +428,24 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   protected void copyArtifacts(JlinkResolver.Result result) throws MojoExecutionException {
     try {
       // module path, if any
-      if (result.isModular() && !result.getModulePath().isEmpty()) {
-        File mpDir = new File(getImageDirectory(), "mp");
-        mpDir.mkdir();
-        for (ModularArtifact artifact : result.getModulePath()) {
-          File dest = new File(mpDir, artifact.getFileName());
-          getLog().debug("copying " + artifact.getPath() + " to " + mpDir);
-          FileHelper.copy(artifact.getFile(), dest);
+      if (result.isModular()) {
+        List<ModularArtifact> modulePath = result.getModulePath();
+        if (!modulePath.isEmpty()) {
+          File mpDir = new File(getImageDirectory(), "mp");
+          mpDir.mkdir();
+          for (ModularArtifact artifact : modulePath) {
+            File dest = new File(mpDir, artifact.getFileName());
+            getLog().debug("copying " + artifact.getPath() + " to " + mpDir);
+            FileHelper.copy(artifact.getFile(), dest);
+          }
         }
       }
       // classpath, if any
-      if (!result.getClassPath().isEmpty()) {
+      List<Artifact> classPath = result.getClassPath();
+      if (!classPath.isEmpty()) {
         File cpDir = new File(getImageDirectory(), "cp");
         cpDir.mkdir();
-        for (Artifact artifact : result.getClassPath()) {
+        for (Artifact artifact : classPath) {
           File dest = new File(cpDir, artifact.getFile().getName());
           getLog().debug("copying " + artifact.getFile() + " to " + cpDir);
           FileHelper.copy(artifact.getFile(), dest);
