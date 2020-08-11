@@ -56,6 +56,9 @@ import java.io.IOException;
  * The minimum plugin configuration is very simple:
  *
  * <pre>
+ *   ...
+ *   &lt;packaging&gt;jlink&lt;/packaging&gt;
+ *   ...
  *       &lt;plugin&gt;
  *         &lt;groupId&gt;org.tentackle&lt;/groupId&gt;
  *         &lt;artifactId&gt;tentackle-jlink-maven-plugin&lt;/artifactId&gt;
@@ -68,9 +71,9 @@ import java.io.IOException;
  *       &lt;/plugin&gt;
  * </pre>
  *
- * The freemarker templates are copied to the project's template folder, if it does not exist, i.e.
- * when the goal is invoked the first time.
+ * The freemarker templates are copied to the project's template folder, if missing.
  * They become part of the project and can be changed easily according to project specific needs (for example by adding runtime arguments).
+ * To install and edit the templates before running jlink (or jpackage, see {@link JPackageMojo}), use {@link InitMojo} first.
  * <p>
  * The template model provides the following variables:
  *
@@ -241,7 +244,7 @@ public class JlinkMojo extends AbstractJlinkMojo {
   public String getClassifier() throws MojoExecutionException {
     try {
       String classifier = StringHelper.getPlatform() + "-" + StringHelper.getArchitecture();
-      if (getExtraClassifier() != null) {
+      if (!StringHelper.isAllWhitespace(getExtraClassifier())) {
         classifier += "-" + getExtraClassifier();
       }
       return classifier;
