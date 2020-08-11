@@ -58,18 +58,18 @@ public class JlinkResolver {
 
     private final List<ModularArtifact> jlinkModules;
     private final List<String> runtimeModuleNames;
-    private final List<ModularArtifact> modulePath;
-    private final List<Artifact> classPath;
-    private final List<String> extraClassPathElements;
+    private final LinkedHashSet<ModularArtifact> modulePath;
+    private final LinkedHashSet<Artifact> classPath;
+    private final LinkedHashSet<String> extraClassPathElements;
     private boolean modular;
     private boolean isPlainModular;
 
     public Result() {
       jlinkModules = new ArrayList<>();
       runtimeModuleNames = new ArrayList<>();
-      modulePath = new ArrayList<>();
-      classPath = new ArrayList<>();
-      extraClassPathElements = new ArrayList<>();
+      modulePath = new LinkedHashSet<>();
+      classPath = new LinkedHashSet<>();
+      extraClassPathElements = new LinkedHashSet<>();
     }
 
     /**
@@ -87,7 +87,7 @@ public class JlinkResolver {
      * @return the modules not passed to jlink
      */
     public List<ModularArtifact> getModulePath() {
-      return modulePath;
+      return new ArrayList<>(modulePath);
     }
 
     /**
@@ -96,7 +96,7 @@ public class JlinkResolver {
      * @return the class path
      */
     public List<Artifact> getClassPath() {
-      return classPath;
+      return new ArrayList<>(classPath);
     }
 
     private void addJlinkModules(Collection<ModularArtifact> modules) {
@@ -223,7 +223,7 @@ public class JlinkResolver {
      * @return the extra classpath elements
      */
     public List<String> getExtraClassPathElements() {
-      return extraClassPathElements;
+      return new ArrayList<>(extraClassPathElements);
     }
 
     /**
