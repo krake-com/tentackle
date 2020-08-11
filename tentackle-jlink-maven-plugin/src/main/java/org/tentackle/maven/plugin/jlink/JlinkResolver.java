@@ -58,9 +58,9 @@ public class JlinkResolver {
 
     private final List<ModularArtifact> jlinkModules;
     private final List<String> runtimeModuleNames;
-    private final LinkedHashSet<ModularArtifact> modulePath;
-    private final LinkedHashSet<Artifact> classPath;
-    private final LinkedHashSet<String> extraClassPathElements;
+    private final Set<ModularArtifact> modulePath;
+    private final Set<Artifact> classPath;
+    private final Set<String> extraClassPathElements;
     private boolean modular;
     private boolean isPlainModular;
 
