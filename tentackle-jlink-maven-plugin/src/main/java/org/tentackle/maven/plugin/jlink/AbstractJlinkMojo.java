@@ -68,6 +68,20 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   private List<ClasspathDependency> classpathDependencies;
 
   /**
+   * Extra directories to copy to the image.<br>
+   * Relative to the <code>src</code> directory.
+   */
+  @Parameter
+  private List<String> extraDirectories;
+
+  /**
+   * Extra classpath elements.<br>
+   * Pathnames are relative to the image root.
+   */
+  @Parameter
+  private List<String> extraClasspathElements;
+
+  /**
    * JPMS support.
    */
   @Component
@@ -144,8 +158,7 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
    * credentials, that will be copied to the <code>conf</code> directory.<br>
    * Defaults to the maven-resources-plugin's destination directory, usually <code>target/classes</code>.<br>
    * If no resources must be copied, for example in server-images for production, set this to any
-   * non-existent directory, for example <code>"none"</code>. This will also add <code>"."</code> to
-   * the classpath, which is not overridden when the image is unzipped.
+   * non-existent directory, for example <code>"none"</code>.
    */
   @Parameter(defaultValue = "${project.build.directory}/classes")
   private File resourcesDirectory;
@@ -317,6 +330,24 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
     return extraClassifier;
   }
 
+  /**
+   * Gets optional extra classpath elements.<br>
+   *
+   * @return pathnames relative to the image root, null if none
+   */
+  public List<String> getExtraClasspathElements() {
+    return extraClasspathElements;
+  }
+
+  /**
+   * Extra directories to copy to the image.
+   *
+   * @return pathnames relative to the <code>src</code> directory, null if none
+   */
+  public List<String> getExtraDirectories() {
+    return extraDirectories;
+  }
+
   @Override
   public void prepareExecute() throws MojoExecutionException, MojoFailureException {
     if (jdepsTool == null) {
@@ -332,7 +363,7 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
     // analyze project, determine jlink strategy
     JlinkResolver.Result result = new JlinkResolver(this, getMavenProject().getArtifacts()).resolve();
     // generate image
-    createImageAndArtifacts(result);
+    createImage(result);
     // and the shell scripts
     generateFiles(result);
   }
@@ -341,7 +372,7 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   /**
    * Gets the prefix to the jars and dirs in the runtime image.
    *
-   * @return the prefix
+   * @return the prefix, empty string if none (never null)
    */
   public String getImagePathPrefix() {
     return "";
@@ -353,15 +384,18 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
    *
    * @param result the resolver result
    */
-  protected void createImageAndArtifacts(JlinkResolver.Result result) throws MojoFailureException, MojoExecutionException {
+  protected void createImage(JlinkResolver.Result result) throws MojoFailureException, MojoExecutionException {
     // run jlink
-    createImage(result);
+    createJLinkImage(result);
 
     // copy artifacts not covered by jlink to modulepath and classpath subdirectories
     copyArtifacts(result);
 
     // copy resources such as backend.properties or logging config to the conf subdirectory
     copyResources(result);
+
+    // extra directories, if any
+    copyExtraDirectories();
   }
 
 
@@ -381,7 +415,7 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
    * @throws MojoExecutionException if building the JPMS info failed
    * @throws MojoFailureException if jlink returned an error code
    */
-  protected void createImage(JlinkResolver.Result result) throws MojoExecutionException, MojoFailureException {
+  protected void createJLinkImage(JlinkResolver.Result result) throws MojoExecutionException, MojoFailureException {
     getLog().info("creating jlink image for a " +
                   (result.isPlainModular() ? "plain " : "") +
                   (result.isModular() ? "modular" : "classpath") + " application");
@@ -472,37 +506,47 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
       }
     }
   }
+
+  /**
+   * Copies optional extra directories to the image directory.
+   *
+   * @throws MojoExecutionException if failed
+   */
+  protected void copyExtraDirectories() throws MojoExecutionException {
+    // extra directories, if any
+    try {
+      if (getExtraDirectories() != null) {
+        String src = getMavenProject().getBuild().getSourceDirectory();
+        if (src != null) {
+          File srcDir = new File(src);
+          while (srcDir != null && !"src".equals(srcDir.getName())) {   // step up to "src"
+            srcDir = srcDir.getParentFile();
+          }
+          if (srcDir != null) {
+            for (String name : getExtraDirectories()) {
+              FileHelper.copyDirectory(new File(srcDir, name), new File(getImageDirectory(), name), true, null);
+            }
+          }
+        }
+      }
+    }
+    catch (IOException ex) {
+      throw new MojoExecutionException("copying extra directories failed", ex);
+    }
+  }
   
 
   /**
    * Copies the resources.
    *
+   * @param srcDir the resource directory
+   * @param dstDir the destination directory
    * @return number of resource files copied
    * @throws MojoExecutionException if copy failed
    */
   private int copyResources(File srcDir, File dstDir) throws MojoExecutionException {
     try {
-      int count = 0;
-      File[] files = srcDir.listFiles();
-      if (files != null) {
-        for (File file: files) {
-          if (file.isFile()) {
-            getLog().debug("copying " + file + " to " + dstDir);
-            File dest = new File(dstDir, file.getName());
-            FileHelper.copy(file, dest);
-            ++count;
-          }
-          else if (file.isDirectory()) {
-            File subDir = new File(dstDir, file.getName());
-            subDir.mkdir();
-            count += copyResources(file, subDir);
-          }
-          else {
-            getLog().debug("skipping " + file);
-          }
-        }
-      }
-      return count;
+      return FileHelper.copyDirectory(srcDir, dstDir,true, null);
     }
     catch (IOException ex) {
       throw new MojoExecutionException("copying resources failed", ex);

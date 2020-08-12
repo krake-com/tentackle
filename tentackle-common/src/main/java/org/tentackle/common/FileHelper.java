@@ -22,6 +22,7 @@ package org.tentackle.common;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -139,6 +140,43 @@ public class FileHelper {
         destChannel.transferFrom(sourceChannel, 0, sourceChannel.size());
       }
     }
+  }
+
+  /**
+   * Copies all files from one directory to another.
+   *
+   * @param srcDir the source directory
+   * @param dstDir the destination directory
+   * @param recursive true if copy also subdirectories
+   * @param filter optional file filter, null if none
+   *
+   * @return number of files copied
+   * @throws MojoExecutionException if copy failed
+   */
+  public static int copyDirectory(File srcDir, File dstDir, boolean recursive, FileFilter filter) throws IOException {
+    int count = 0;
+    File[] files = srcDir.listFiles();
+    if (files != null) {
+      boolean dstExists = dstDir.isDirectory();
+      for (File file : files) {
+        if (filter == null || filter.accept(file)) {
+          if (file.isFile()) {
+            if (!dstExists) {
+              dstExists = dstDir.mkdirs();
+            }
+            File dest = new File(dstDir, file.getName());
+            FileHelper.copy(file, dest);
+            ++count;
+          }
+          else if (recursive && file.isDirectory()) {
+            File subDir = new File(dstDir, file.getName());
+            subDir.mkdir();
+            count += copyDirectory(file, subDir, recursive, filter);
+          }
+        }
+      }
+    }
+    return count;
   }
 
 

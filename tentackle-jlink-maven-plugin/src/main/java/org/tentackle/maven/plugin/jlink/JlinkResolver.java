@@ -329,6 +329,7 @@ public class JlinkResolver {
     public String generateClassPath() {
       StringBuilder buf = new StringBuilder();
       boolean needSep = false;
+      String prefix = mojo.getImagePathPrefix();
       for (String element : extraClassPathElements) {
         if (needSep) {
           buf.append(File.pathSeparatorChar);
@@ -336,7 +337,13 @@ public class JlinkResolver {
         else {
           needSep = true;
         }
-        buf.append(mojo.getImagePathPrefix()).append(element);
+        if (".".equals(element) && prefix.endsWith(File.separator)) {
+          // translate dot prefixed by a directory to the directory alone (without trailing slash)
+          buf.append(prefix.substring(0, prefix.length() - 1));
+        }
+        else {
+          buf.append(prefix).append(element);
+        }
       }
       for (Artifact artifact : classPath) {
         if (needSep) {
@@ -345,7 +352,7 @@ public class JlinkResolver {
         else {
           needSep = true;
         }
-        buf.append(mojo.getImagePathPrefix()).append("cp").append(File.separatorChar).append(artifact.getFile().getName());
+        buf.append(prefix).append("cp").append(File.separatorChar).append(artifact.getFile().getName());
       }
       return buf.toString();
     }
@@ -479,6 +486,13 @@ public class JlinkResolver {
 
     // add explicit additional modules, such as jdk.jcmd
     result.addRuntimeModuleNames(mojo.getAddModules());
+
+    // add explicit extra classpath elements
+    if (mojo.getExtraClasspathElements() != null) {
+      for (String element: mojo.getExtraClasspathElements()) {
+        result.addToClasspath(element);
+      }
+    }
 
     return result;
   }
