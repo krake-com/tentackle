@@ -157,7 +157,7 @@ public class JPackageMojo extends AbstractJlinkMojo {
 
   /**
    * The name of the main jar holding the main class.<br>
-   * Only necessary for classpath applications and only if not the first dependency is the main jar.<br>
+   * Only necessary for classpath applications and only if the top-level artifact of the maven dependency tree is not the main jar.<br>
    * A unique substring is sufficient, e.g. "myapp-server".
    */
   @Parameter
@@ -170,8 +170,16 @@ public class JPackageMojo extends AbstractJlinkMojo {
   @Override
   public String getImagePathPrefix() {
     if (imagePathPrefix == null) {
-      // lazy at runtime!
-      imagePathPrefix = "$ROOTDIR" + File.separator + "lib" + File.separator + "runtime" + File.separator;
+      String platform = StringHelper.getPlatform();
+      if (platform.contains("win")) {
+        imagePathPrefix = "$ROOTDIR" + File.separator + "runtime" + File.separator;
+      }
+      else if (platform.contains("mac")) {
+        imagePathPrefix = "$ROOTDIR/Contents/runtime/";
+      }
+      else {    // linux
+        imagePathPrefix = "$ROOTDIR/lib/runtime/";
+      }
     }
     return imagePathPrefix;
   }
