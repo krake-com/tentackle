@@ -240,13 +240,13 @@ public class JPackageMojo extends AbstractJlinkMojo {
   }
 
   @Override
-  protected void createImageAndArtifacts(JlinkResolver.Result result) throws MojoFailureException, MojoExecutionException {
+  protected void createImage(JlinkResolver.Result result) throws MojoFailureException, MojoExecutionException {
     if (getImageDirectory().exists()) {
       getLog().info("using already existing jlink image in " + getImageDirectory().getPath());
       copyResources(result);    // to add the "conf" directory to the classpath, if resources found
     }
     else {
-      super.createImageAndArtifacts(result);
+      super.createImage(result);
     }
   }
 

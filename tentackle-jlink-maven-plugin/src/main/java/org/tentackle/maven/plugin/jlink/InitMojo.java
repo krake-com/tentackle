@@ -85,7 +85,7 @@ public class InitMojo extends AbstractJlinkMojo {
   // ------------- unused abstract methods -----------------
 
   @Override
-  protected void createImage(JlinkResolver.Result result) throws MojoExecutionException, MojoFailureException {
+  protected void createJLinkImage(JlinkResolver.Result result) throws MojoExecutionException, MojoFailureException {
   }
 
   @Override
