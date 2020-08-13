@@ -524,7 +524,9 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
           }
           if (srcDir != null) {
             for (String name : getExtraDirectories()) {
-              FileHelper.copyDirectory(new File(srcDir, name), new File(getImageDirectory(), name), true, null);
+              File fromDir = new File(srcDir, name);
+              File toDir = new File(getImageDirectory(), fromDir.getName());
+              FileHelper.copyDirectory(fromDir, toDir, true, null);
             }
           }
         }
