@@ -175,7 +175,7 @@ public class JPackageMojo extends AbstractJlinkMojo {
         imagePathPrefix = "$ROOTDIR" + File.separator + "runtime" + File.separator;
       }
       else if (platform.contains("mac")) {
-        imagePathPrefix = "$ROOTDIR/Contents/runtime/";
+        imagePathPrefix = "$ROOTDIR/runtime/Contents/Home/";
       }
       else {    // linux
         imagePathPrefix = "$ROOTDIR/lib/runtime/";
