@@ -12,7 +12,7 @@
   </parent>
 
   <artifactId>${rootArtifactId}-jlink-client</artifactId>
-  <packaging>jlink</packaging>
+  <packaging>jlink</packaging>    <!-- change to "jpackage" to create installer instead -->
   <name>${application} JLink Client Image</name>
   <description>Client JLink Module for ${application}</description>
 

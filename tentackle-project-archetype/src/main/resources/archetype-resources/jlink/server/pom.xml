@@ -12,7 +12,7 @@
   </parent>
 
   <artifactId>${rootArtifactId}-jlink-server</artifactId>
-  <packaging>jlink</packaging>
+  <packaging>jlink</packaging>     <!-- change to "jpackage" to create installer instead -->
   <name>${application} JLink Server Image</name>
   <description>Server JLink Module for ${application}</description>
 

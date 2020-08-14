@@ -12,7 +12,7 @@
   </parent>
 
   <artifactId>${rootArtifactId}-jlink-daemon</artifactId>
-  <packaging>jlink</packaging>
+  <packaging>jlink</packaging>     <!-- change to "jpackage" to create installer instead -->
   <name>${application} JLink Daemon Image</name>
   <description>Daemon JLink Module for ${application}</description>
 
