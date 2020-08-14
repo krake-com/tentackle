@@ -76,6 +76,8 @@ import java.util.regex.PatternSyntaxException;
  * <em>tablename</em> exists, but does not belong to the model, then rename <em>tablename</em> to <em>newtablename</em> and continue with migration.</li>
  * <li>rename &lt;tablename&gt;#&lt;columnname&gt;: &lt;newcolumnname&gt;. Rename column hint. If <em>newcolumn</em> does not exist and belongs to the model and
  * <em>columnname</em> exists, but does not belong to the model, then rename <em>columnname</em> to <em>newcolumnname</em> and continue with migration.</li>
+ * <li>drop &lt;tablename&gt;: <em>comment</em>. Drop table hint. If <em>tablename</em> exists in the database, but does not belong to
+ * the model, generate a drop table statement at the end of the migration script.</li>
  * <li>hint &lt;tablename&gt;: migration hint (regular expression). Used to select automatic migrations that were commented out
  * as alternatives by the table migrator.</li>
  * <li>depend &lt;tablename&gt;: tablename, tablename,... wait until all given tablenames are migrated
@@ -99,6 +101,7 @@ public class MigrationHints {
   private static final String AFTER = "after";
   private static final String MIGRATE = "migrate";
   private static final String RENAME = "rename";
+  private static final String DROP = "drop";
   private static final String HINT = "hint";
   private static final String DEPEND = "depend";
 
@@ -148,6 +151,7 @@ public class MigrationHints {
   private final Map<String,String> migrateTable;                  // SQL to execute instead automatic table migration <tablename:sql>
   private final Map<String,Map<ColumnKey,String>> migrateColumns; // SQL to execute instead automatic table migration <tablename:<column:sql>>
   private final Map<String,String> renameTable;                   // rename table hint <newtablename:oldtablename>
+  private final Set<String> dropTable;                            // drop table hint <oldtablename>
   private final Map<String, Set<ColumnKey>> renameColumns;        // rename column hint <tablemae:<column>>
   private final Map<String,Collection<String>> dependencies;      // dependencies <tablename:<tablenames>>
   private final Map<String,Collection<Pattern>> hints;            // hints for the automatic table migrators
@@ -261,6 +265,10 @@ public class MigrationHints {
           }
           break;
 
+        case DROP:
+          dropTable.add(tableName);
+          break;
+
         case HINT:
           try {
             Pattern pattern = Pattern.compile(text.toString(), Pattern.DOTALL);
@@ -301,6 +309,7 @@ public class MigrationHints {
     migrateColumns = new HashMap<>();
     renameTable = new HashMap<>();
     renameColumns = new HashMap<>();
+    dropTable = new HashSet<>();
     hints = new HashMap<>();
     dependencies = new HashMap<>();
   }
@@ -389,6 +398,15 @@ public class MigrationHints {
    */
   public String getRenameTable(String newTableName) {
     return renameTable.get(newTableName);
+  }
+
+  /**
+   * Gets the drop table hints.
+   *
+   * @return the old tablenames
+   */
+  public Set<String> getDropTables() {
+    return dropTable;
   }
 
   /**
@@ -578,6 +596,9 @@ public class MigrationHints {
     else if (line.startsWith(RENAME)) {
       section = new Section(RENAME);
     }
+    else if (line.startsWith(DROP)) {
+      section = new Section(DROP);
+    }
     else if (line.startsWith(HINT)) {
       section = new Section(HINT);
     }
@@ -613,6 +634,7 @@ public class MigrationHints {
           case AFTER:
           case MIGRATE:
           case RENAME:
+          case DROP:
           case HINT:
           case DEPEND:
             if (section.tableName.isEmpty()) {
