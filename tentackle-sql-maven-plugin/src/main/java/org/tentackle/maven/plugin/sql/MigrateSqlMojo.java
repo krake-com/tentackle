@@ -142,6 +142,11 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   private StringBuilder sqlWarnings;
 
   /**
+   * Generated drop table statements.
+   */
+  private StringBuilder sqlDrops;
+
+  /**
    * Number of processed tables per schema.
    */
   private Map<String,Integer> tableStats;
@@ -188,6 +193,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
 
       sqlCode = new StringBuilder();
       sqlWarnings = new StringBuilder();
+      sqlDrops = new StringBuilder();
       splittedMigrations = new LinkedHashMap<>();
       migratedEntitiesMap = new HashMap<>();
       otherTablesMap = new TreeMap<>();
@@ -347,6 +353,12 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         }
       }
 
+      if (sqlDrops.length() > 0) {
+        sqlWriter.append("\n-- tables removed from the model\n");
+        sqlWriter.append(sqlDrops);
+        migrationNecessary = true;
+      }
+
       if (sqlWarnings.length() > 0) {
         sqlWriter.append("\n-- ============================== WARNINGS ==============================\n");
         sqlWriter.append(sqlWarnings);
@@ -449,6 +461,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
 
       Map<String, String> renamedTables;      // map <new:old> tablename
       Map<String, String> revRenamedTables;   // map <old:new> tablename
+      Set<String> droppedTables;              // set of tables to drop
 
       Collection<ForeignKey> foreignKeys;
       try {
@@ -468,6 +481,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
             errorCount++;
           }
         }
+        droppedTables = determineDroppedTables(hints);
       }
       catch (ModelException mex) {
         throw new MojoExecutionException("parsing model failed in directory " + modelDirName, mex);
@@ -714,6 +728,13 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         sqlCode.append(foreignKeySql);
       }
 
+      for (String droppedTable : droppedTables) {
+        int ndx = droppedTable.indexOf('.');
+        String schema = ndx >= 0 ? droppedTable.substring(0, ndx) : null;
+        String name = ndx >= 0 ? droppedTable.substring(ndx + 1) : droppedTable;
+        sqlDrops.append(backendInfo.getBackend().sqlDropTable(schema, name));
+      }
+
       sqlWarnings.append(warningSql);
 
       if (depErrors.length() > 0) {
@@ -756,6 +777,31 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       }
     }
     return renameMap;
+  }
+
+  /**
+   * Applies the drop table hints to determine the tables to drop.
+   *
+   * @param hints the migration hints
+   * @return a set of tablenames to drop
+   * @throws ModelException if model is inconsistent
+   */
+  private Set<String> determineDroppedTables(MigrationHints hints) throws ModelException {
+    Set<String> dropSet = new HashSet<>();
+    for (String dropName : hints.getDropTables()) {
+      int ndx = dropName.indexOf('.');
+      String dropNameWithoutSchema = ndx >= 0 ? dropName.substring(ndx + 1) : dropName;
+      Entity entity = Model.getInstance().getByTableName(dropNameWithoutSchema);
+      if (entity == null) {
+        // no more in model: check if exists in database
+        DatabaseMetaDataTableHeader tableHeader = otherTablesMap.get(dropNameWithoutSchema);
+        if (tableHeader != null) {
+          dropSet.add(dropName);
+          otherTablesMap.remove(dropNameWithoutSchema);   // don't show in unexpected tables anymore
+        }
+      }
+    }
+    return dropSet;
   }
 
   /**
