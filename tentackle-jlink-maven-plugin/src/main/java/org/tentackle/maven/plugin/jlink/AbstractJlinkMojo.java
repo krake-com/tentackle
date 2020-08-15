@@ -243,7 +243,7 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   /**
    * Gets the name of the module holding the main class.
    *
-   * @return the main module, null to build an application running on the classpath
+   * @return the main module, null or empty string to build an application running on the classpath
    */
   public String getMainModule() {
     return mainModule;
