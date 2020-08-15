@@ -307,7 +307,7 @@ public class JlinkResolver {
           else {
             needSep = true;
           }
-          buf.append(mojo.getImagePathPrefix()).append("mp").append(File.separatorChar).append(artifact.getFileName());
+          buf.append(mojo.getImagePathPrefix()).append("mp/").append(artifact.getFileName());
         }
       }
       return buf.toString();
@@ -338,7 +338,7 @@ public class JlinkResolver {
         else {
           needSep = true;
         }
-        if (".".equals(element) && prefix.endsWith(File.separator)) {
+        if (".".equals(element) && prefix.endsWith("/")) {
           // translate dot prefixed by a directory to the directory alone (without trailing slash)
           buf.append(prefix, 0, prefix.length() - 1);
         }
@@ -353,7 +353,7 @@ public class JlinkResolver {
         else {
           needSep = true;
         }
-        buf.append(prefix).append("cp").append(File.separatorChar).append(artifact.getFile().getName());
+        buf.append(prefix).append("cp/").append(artifact.getFile().getName());
       }
       return buf.toString();
     }
