@@ -36,23 +36,28 @@ import java.io.IOException;
 /**
  * Creates a self-contained java application with the <code>jlink</code> tool.
  * <p>
- * This mojo works for modular, non-modular and even mixed applications.
- * It does so by analyzing the dependencies and finding the best strategy to invoke <code>jlink</code>, which
- * creates a directory containing an application-specific <code>jimage</code> module.<br>
- * Artifacts not processed by <code>jlink</code> are copied to separate folders. Next, a platform-specific run-script will be generated according to
- * a template provided by the project. Finally, the created directory is packed into a zip file.
+ * This mojo works for modular, non-modular and even mixed applications. It's not just a wrapper for <en>jlink</en>,
+ * but analyzes the project's dependencies and finds the best strategy to invoke <code>jlink</code> to
+ * create a directory containing an application-specific <code>jimage</code> module. As a result, it requires
+ * only minimum configuration.
  * <p>
  * Basically, applications fall into one of 3 categories:
  * <ol>
- *   <li>full-blown modular applications: all module-infos must only require real modules. Jlink is used to create
- *   an image from the application modules. Optional (but not required!) real and automatic modules are allowed and will be added
- *   to the module path via the generated run-script.</li>
- *   <li>modular applications with non-modular dependencies: jlink is used to create an image from java's runtime modules only,
- *   which are determined by the plugin either from the module-infos or via <code>jdeps</code>.
- *   The application's dependencies are placed on the module-path via the generated run-script.</li>
- *   <li>non-modular applications: same as 2, but all dependencies are placed on the classpath.</li>
+ *   <li>Full-blown modular applications: all module-infos must require real modules only. Jlink creates
+ *   an image from those modules. Optional artifacts and runtime modules can still be added.</li>
+ *   <li>Modular applications with non-modular dependencies: jlink is used to create an image from the mininum necessary java runtime modules only,
+ *   which are determined by the plugin either from the module-infos or via the <code>jdeps</code> tool.
+ *   The application's dependencies are placed on the modulepath via the generated run-script.</li>
+ *   <li>Non-modular traditional classpath applications: same as 2, but all dependencies are placed on the classpath.</li>
  * </ol>
- *
+ * Since it is very likely, that even modern modular applications require some 3rd-party dependencies not modularized yet,
+ * most of those applications will probably fall into the second category.
+ * <p>
+ * Artifacts not processed by <code>jlink</code> are copied to separate folders and passed to the java runtime explicitly
+ * via the module- and/or classpath. A platform-specific launch script will be generated according to
+ * the {@link #runTemplate}. For applications using Tentackle's auto update feature, an update script is generated via the {@link #updateTemplate}
+ * as well. Finally, the created directory is packed into a deployable zip file.
+ * <p>
  * The minimum plugin configuration is very simple:
  *
  * <pre>
@@ -94,8 +99,8 @@ import java.io.IOException;
  * and added to the <code>modulePath</code> template variable. If no such modules are detected, no folder is created.<br>
  * Non-modular classpath artifacts are copied to the <code>cp</code> folder and added to the <code>classPath</code> template variable.
  * Again, the folder is only created if necessary.<br>
- * Additional resources, such as property files or logger configurations, are copied to the <code>conf</code> directory and
- * this directory is added to the classpath.
+ * Additional project resources, such as property files or logger configurations, are copied to the <code>conf</code> directory and
+ * this directory is prepended to the classpath.
  * <p>
  * The generation of the ZIP-file and attachment of the artifact for installation and deployment can be replaced by an
  * application-specific implementation. This allows further modification of the generated image or files in the jlink target
