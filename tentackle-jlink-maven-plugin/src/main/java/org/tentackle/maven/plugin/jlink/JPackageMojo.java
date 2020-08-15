@@ -178,7 +178,7 @@ public class JPackageMojo extends AbstractJlinkMojo {
     if (imagePathPrefix == null) {
       String platform = StringHelper.getPlatform();
       if (platform.contains("win")) {
-        imagePathPrefix = "$ROOTDIR" + File.separator + "runtime" + File.separator;
+        imagePathPrefix = "$ROOTDIR/runtime/";    // no backslashes!
       }
       else if (platform.contains("mac")) {
         imagePathPrefix = "$ROOTDIR/runtime/Contents/Home/";
@@ -424,7 +424,7 @@ public class JPackageMojo extends AbstractJlinkMojo {
           // replace mainjar
           getLog().debug("old mainjar = " + line.substring(TAG_APP_MAINJAR.length()));
           buf.setLength(buf.length() - line.length() + TAG_APP_MAINJAR.length());
-          buf.append(getImagePathPrefix()).append("cp").append(File.separatorChar).append(mainJarName);
+          buf.append(getImagePathPrefix()).append("cp/").append(mainJarName);
           mainJarPatched = true;
         }
         if (patchModulePath && line.equals(TAG_JAVA_OPTIONS)) {

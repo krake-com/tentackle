@@ -36,7 +36,7 @@ import java.io.IOException;
 /**
  * Creates a self-contained java application with the <code>jlink</code> tool.
  * <p>
- * This mojo works for modular, non-modular and even mixed applications. It's not just a wrapper for <en>jlink</en>,
+ * This mojo works for modular, non-modular and even mixed applications. It's not just a wrapper for <em>jlink</em>,
  * but analyzes the project's dependencies and finds the best strategy to invoke <code>jlink</code> to
  * create a directory containing an application-specific <code>jimage</code> module. As a result, it requires
  * only minimum configuration.
