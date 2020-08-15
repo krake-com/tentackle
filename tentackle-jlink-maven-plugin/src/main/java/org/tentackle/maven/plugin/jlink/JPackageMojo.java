@@ -424,7 +424,7 @@ public class JPackageMojo extends AbstractJlinkMojo {
           // replace mainjar
           getLog().debug("old mainjar = " + line.substring(TAG_APP_MAINJAR.length()));
           buf.setLength(buf.length() - line.length() + TAG_APP_MAINJAR.length());
-          buf.append(getImagePathPrefix() + mainJarName);
+          buf.append(getImagePathPrefix()).append("cp").append(File.separatorChar).append(mainJarName);
           mainJarPatched = true;
         }
         if (patchModulePath && line.equals(TAG_JAVA_OPTIONS)) {

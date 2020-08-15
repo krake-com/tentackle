@@ -340,7 +340,7 @@ public class JlinkResolver {
         }
         if (".".equals(element) && prefix.endsWith(File.separator)) {
           // translate dot prefixed by a directory to the directory alone (without trailing slash)
-          buf.append(prefix.substring(0, prefix.length() - 1));
+          buf.append(prefix, 0, prefix.length() - 1);
         }
         else {
           buf.append(prefix).append(element);
