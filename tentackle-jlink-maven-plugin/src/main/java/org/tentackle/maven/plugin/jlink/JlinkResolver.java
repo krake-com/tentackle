@@ -24,6 +24,7 @@ import org.apache.maven.toolchain.java.DefaultJavaToolChain;
 import org.codehaus.plexus.languages.java.jpms.JavaModuleDescriptor;
 import org.codehaus.plexus.languages.java.jpms.ResolvePathsRequest;
 
+import org.tentackle.common.StringHelper;
 import org.tentackle.maven.ToolRunner;
 
 import java.io.File;
@@ -464,7 +465,7 @@ public class JlinkResolver {
           mojo.getLog().info("required " + unresolvedModule + " is not a full-blown module");
           result.addToModulePath(unresolvedModule);   // must go to modulepath!
         }
-        mojo.getLog().info("all dependencies moved to module-path for bin/java");
+        mojo.getLog().info("linking runtime modules only: project dependencies moved to the module-path");
         result.addRuntimeModuleNames(runtimeModules);
         for (ModularArtifact artifact: modules.values()) {
           addToModuleOrClasspath(artifact, result);
@@ -556,7 +557,7 @@ public class JlinkResolver {
   }
 
   private boolean isModularApplication() throws MojoExecutionException {
-    if (mojo.getMainModule() != null) {
+    if (!StringHelper.isAllWhitespace(mojo.getMainModule())) {
       if (modules.get(mojo.getMainModule()) != null) {
         return true;
       }

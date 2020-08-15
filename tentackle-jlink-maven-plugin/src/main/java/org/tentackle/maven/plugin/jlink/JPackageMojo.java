@@ -51,7 +51,13 @@ import java.util.List;
  *   <li>Invokes the <code>jpackage</code> tool to generate the application image from the previously
  *   created runtime image. Application- and platform specific options can be configured via the {@link #packageImageTemplate}.</li>
  *   <li>If the runtime image contains extra classpath- or modulepath-elements, the generated config files
- *   will be patched.</li>
+ *   will be patched. For modular applications the modulepath is added via the <code>[JavaOptions]</code> section
+ *   and the classpath is set via the <code>app.classpath</code> variable.
+ *   For classpath applications the <code>app.mainjar</code> and <code>app.classpath</code> are replaced in order to
+ *   point to the runtime image and not the app directory and to provide the correct
+ *   classpath order according to the maven/module dependency tree. The order usually differs
+ *   from the one determined by <code>jpackage</code>, because <code>jpackage</code> has no idea about the maven project structure
+ *   (which may become an issue when classpath order is critical, such as configuration overrides in META-INF).</li>
  *   <li>Finally, the installer will be generated from the application image. The {@link #packageInstallerTemplate}
  *   is used to provide additional options to the <code>jpackage</code> tool.</li>
  * </ol>
@@ -374,12 +380,13 @@ public class JPackageMojo extends AbstractJlinkMojo {
 
   /**
    * Patches a configuration file.<br>
-   * For modular apps the patch is necessary to add the module path and set the classpath.
-   * For non-modular apps the mainjar and the classpath must be replaced in order to
+   * For modular apps it adds the modulepath via the <code>[JavaOptions]</code> section
+   * and sets the classpath via the <code>app.classpath</code> variable.<br>
+   * For non-modular apps the mainjar and the classpath are replaced in order to
    * point to the runtime image and not the app directory and to provide the correct
-   * classpath order according to the maven dependency tree. The latter cannot be guessed
-   * by the jpackage tool, especially when classes need to be replaced via ServiceLoader
-   * or ServiceFinde (META-INF).
+   * classpath order according to the maven/module dependency tree. The order usually differs
+   * from the one determined by jpackage, because jpackage has no idea about the maven project structure
+   * (which may become an issue when classpath order is critical, such as configuration overrides in META-INF).
    *
    * @param configFile the config file
    * @param result the resolver result
@@ -405,6 +412,7 @@ public class JPackageMojo extends AbstractJlinkMojo {
             throw new MojoExecutionException("more than one '" + TAG_APP_CLASSPATH + "' found in " + configFile);
           }
           // replace the classpath
+          getLog().debug("old classpath = " + line.substring(TAG_APP_CLASSPATH.length()));
           buf.setLength(buf.length() - line.length() + TAG_APP_CLASSPATH.length());
           buf.append(result.generateClassPath());
           classPathPatched = true;
@@ -414,6 +422,7 @@ public class JPackageMojo extends AbstractJlinkMojo {
             throw new MojoExecutionException("more than one '" + TAG_APP_MAINJAR + "' found in " + configFile);
           }
           // replace mainjar
+          getLog().debug("old mainjar = " + line.substring(TAG_APP_MAINJAR.length()));
           buf.setLength(buf.length() - line.length() + TAG_APP_MAINJAR.length());
           buf.append(getImagePathPrefix() + mainJarName);
           mainJarPatched = true;
