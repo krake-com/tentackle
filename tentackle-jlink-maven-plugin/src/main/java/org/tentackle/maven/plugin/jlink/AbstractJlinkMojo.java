@@ -50,7 +50,7 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
 
   /**
    * The name of the module holding the main class.<br>
-   * If none, the plugin will build an application running on the classpath.
+   * If missing, the plugin will build an application running on the classpath.
    */
   @Parameter
   private String mainModule;

@@ -49,11 +49,11 @@ import java.util.List;
  *   <li>Invokes the <code>jlink</code> tool as described in {@link JlinkMojo}. This will generate
  *   a directory holding the runtime impage. However, no run or update scripts and no zip file will be created.</li>
  *   <li>Invokes the <code>jpackage</code> tool to generate the application image from the previously
- *   created runtime image. Application specific options can be configured via a <code>package-image</code> template.</li>
+ *   created runtime image. Application- and platform specific options can be configured via the {@link #packageImageTemplate}.</li>
  *   <li>If the runtime image contains extra classpath- or modulepath-elements, the generated config files
  *   will be patched.</li>
- *   <li>Finally, the installer will be generated from the application image. Again, a <code>package-installer</code>
- *   template can be used to provide additional options to the <code>jpackage</code> tool.</li>
+ *   <li>Finally, the installer will be generated from the application image. The {@link #packageInstallerTemplate}
+ *   is used to provide additional options to the <code>jpackage</code> tool.</li>
  * </ol>
  *
  * The minimum plugin configuration is very simple:
@@ -97,7 +97,7 @@ import java.util.List;
  * </pre>
  * The jpackage goal will re-use the jlink image.
  * <p>
- * Important: needs at least Java 14,
+ * Important: needs at least Java 14!
  */
 @Mojo(name = "jpackage",
       requiresDependencyResolution = ResolutionScope.RUNTIME,
