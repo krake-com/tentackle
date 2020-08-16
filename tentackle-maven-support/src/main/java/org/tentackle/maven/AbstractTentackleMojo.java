@@ -40,9 +40,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 
@@ -52,6 +55,10 @@ import java.util.stream.Collectors;
  * @author harald
  */
 public abstract class AbstractTentackleMojo extends AbstractMojo {
+
+  /** Name of the default JDK toolchain. */
+  public static final String JDK_TOOLCHAIN = "jdk";
+
 
   /**
    * The Maven Project.
@@ -87,6 +94,25 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
       readonly = true,
       required = true)
   private MavenSession mavenSession;
+
+  /**
+   * Toolchain for invocation of external tools.<br>
+   * Explicitly specifies the <code>"jdk"</code> toolchain for this plugin only.
+   * Overrides the toolchain selected by the maven-toolchain-plugin, if any.
+   * <p>
+   * Example:
+   * <pre>
+   *   &lt;jdkToolchain&gt;
+   *     &lt;version&gt;14&lt;/version&gt;
+   *   &lt;/jdkToolchain&gt;
+   * </pre>
+   * To deselect the toolchain configured by the maven-toolchain-plugin:
+   * <pre>
+   *   &lt;jdkToolchain&gt;&lt;/jdkToolchain&gt;
+   * </pre>
+   */
+  @Parameter
+  private Map<String, String> jdkToolchain;
 
   /**
    * Toolchain manager to locate tools.
@@ -188,16 +214,74 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   }
 
   /**
-   * Gets the toolchain.
+   * Gets the <code>"jdk"</code> toolchain.
    *
    * @return the toolchain, null if none
+   * @throws MojoExecutionException if toolchain specified but cannot be loaded
    */
-  public Toolchain getToolChain() {
-    Toolchain toolChain = toolchainManager.getToolchainFromBuildContext("jdk", mavenSession);
-    if (toolChain != null) {
-      getLog().debug("using toolchain " + toolChain);
+  public Toolchain getToolchain() throws MojoExecutionException {
+    return getToolchain(JDK_TOOLCHAIN);
+  }
+
+  /**
+   * Gets a toolchain for given type and selector.
+   *
+   * @param type the toolchain type
+   * @param selector the selector map
+   * @return the toolchain, null if no match found
+   * @throws MojoExecutionException if loading the toolchain failed
+   */
+  public Toolchain getToolchain(String type, Map<String, String> selector) throws MojoExecutionException {
+    try {
+      Method method = toolchainManager.getClass().getMethod("getToolchains", MavenSession.class, String.class, Map.class);
+      @SuppressWarnings("unchecked")
+      List<Toolchain> toolchains = (List<Toolchain>) method.invoke(toolchainManager, mavenSession, type, selector);
+      return toolchains != null && !toolchains.isEmpty() ? toolchains.get(0) : null;
     }
-    return toolChain;
+    catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+      throw new MojoExecutionException("loading toolchain failed for type=" + type + ", selector=" + selector, e);
+    }
+  }
+
+  /**
+   * Gets the toolchain for a given type.
+   *
+   * @param type the toolchain type
+   * @return the toolchain, null if none
+   * @throws MojoExecutionException if toolchain specified but cannot be loaded
+   */
+  public Toolchain getToolchain(String type) throws MojoExecutionException {
+    Toolchain toolchain;
+
+    if (jdkToolchain != null) {
+      if (jdkToolchain.isEmpty()) {
+        toolchain = null;
+      }
+      else {
+        toolchain = getToolchain(type, jdkToolchain);
+        if (toolchain == null) {
+          throw new MojoExecutionException("no matching '" + type + "' toolchain for: " + jdkToolchain);
+        }
+      }
+    }
+    else {
+      toolchain = toolchainManager.getToolchainFromBuildContext(type, mavenSession);
+    }
+
+    if (getLog().isDebugEnabled()) {
+      StringBuilder buf = new StringBuilder();
+      buf.append("using ");
+      if (toolchain == null) {
+        buf.append("no ");
+      }
+      buf.append("toolchain for type ").append(type);
+      if (toolchain != null) {
+        buf.append(": ").append(toolchain);
+      }
+      getLog().debug(buf);
+    }
+
+    return toolchain;
   }
 
   @Override
@@ -353,13 +437,14 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   }
 
   /**
-   * Gets the toolfinder to locate tools like java, jdeps, jlink, etc.
+   * Gets the default toolfinder to locate tools like java, jdeps, jlink, etc.
    *
-   * @return the toolfinder
+   * @return the toolfinder, never null
+   * @throws MojoExecutionException if toolchain cannot be loaded
    */
-  public ToolFinder getToolFinder() {
+  public ToolFinder getToolFinder() throws MojoExecutionException {
     if (toolFinder == null) {
-      toolFinder = new ToolFinder(getToolChain());
+      toolFinder = new ToolFinder(getToolchain());
     }
     return toolFinder;
   }

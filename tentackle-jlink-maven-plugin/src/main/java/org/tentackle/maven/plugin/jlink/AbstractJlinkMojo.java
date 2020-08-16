@@ -100,13 +100,13 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   private File templateDir;
 
   /**
-   * File of the jdeps tool.
+   * Explicit path to the <code>jdeps</code> tool.
    */
   @Parameter(property = "jdepsTool")
   private File jdepsTool;
 
   /**
-   * File of the jlink tool.
+   * Explicit path to the <code>jlink</code> tool.
    */
   @Parameter(property = "jlinkTool")
   private File jlinkTool;
