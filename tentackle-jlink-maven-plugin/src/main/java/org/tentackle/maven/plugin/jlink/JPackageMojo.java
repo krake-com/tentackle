@@ -25,9 +25,11 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.apache.maven.toolchain.Toolchain;
 
 import org.tentackle.common.Settings;
 import org.tentackle.common.StringHelper;
+import org.tentackle.maven.ToolFinder;
 import org.tentackle.maven.ToolRunner;
 
 import java.io.BufferedReader;
@@ -40,6 +42,7 @@ import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Creates a java application installer with the <code>jpackage</code> tool.
@@ -101,9 +104,13 @@ import java.util.List;
  *           &lt;/execution&gt;
  *         &lt;/executions&gt;
  * </pre>
- * The jpackage goal will re-use the jlink image.
+ * The jpackage goal will then re-use the previously created jlink image.
  * <p>
- * Important: needs at least Java 14!
+ * Important: the <code>jpackage</code> is available since Java 14.
+ * <p>
+ * Notice that you can create an image for a different java version than the one used by the maven build process
+ * via {@link #jdkToolchain}. Furthermore, you can select the <code>jpackage</code> tool explicitly from another JDK
+ * via {@link #jpackageToolchain} or {@link #jpackageTool}.
  */
 @Mojo(name = "jpackage",
       requiresDependencyResolution = ResolutionScope.RUNTIME,
@@ -138,10 +145,28 @@ public class JPackageMojo extends AbstractJlinkMojo {
 
 
   /**
-   * File of the jpackage tool.
+   * Explicit path to the <code>jpackage</code> tool.
    */
   @Parameter(property = "jpackageTool")
   private File jpackageTool;
+
+  /**
+   * Toolchain for invocation of the <code>jpackage</code> tool only.<br>
+   * Allows to create installers for older java runtime versions not supporting the jpackage tool yet.
+   * <p>
+   * Example:
+   * <pre>
+   *   &lt;jpackageToolchain&gt;
+   *     &lt;version&gt;14&lt;/version&gt;
+   *   &lt;/jpackageToolchain&gt;
+   * </pre>
+   * To deselect the toolchain configured by the maven-toolchain-plugin:
+   * <pre>
+   *   &lt;jpackageToolchain&gt;&lt;/jpackageToolchain&gt;
+   * </pre>
+   */
+  @Parameter
+  private Map<String, String> jpackageToolchain;
 
   /**
    * The filename of the jpackage options template to create the application image.
@@ -221,7 +246,23 @@ public class JPackageMojo extends AbstractJlinkMojo {
   public void prepareExecute() throws MojoExecutionException, MojoFailureException {
     super.prepareExecute();
     if (jpackageTool == null) {
-      jpackageTool = getToolFinder().find("jpackage");
+      ToolFinder toolFinder;
+      if (jpackageToolchain == null) {
+        toolFinder = getToolFinder();
+      }
+      else {
+        if (jpackageToolchain.isEmpty()) {
+          toolFinder = new ToolFinder();    // explicitly no toolchain!
+        }
+        else {
+          Toolchain toolchain = getToolchain(JDK_TOOLCHAIN, jpackageToolchain);
+          if (toolchain == null) {
+            throw new MojoExecutionException("no matching toolchain for the jpackage tool: " + jpackageToolchain);
+          }
+          toolFinder = new ToolFinder(toolchain);
+        }
+      }
+      jpackageTool = toolFinder.find("jpackage");
     }
   }
 

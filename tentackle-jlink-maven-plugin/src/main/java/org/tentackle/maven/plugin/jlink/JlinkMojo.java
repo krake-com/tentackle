@@ -106,6 +106,9 @@ import java.io.IOException;
  * application-specific implementation. This allows further modification of the generated image or files in the jlink target
  * directory. It is also possible to add a more than one artifact, for example, each with a different configuration.
  * To do so, you simply provide a plugin dependency that contains a class annotated with {@code @Service(ArtifactCreator.class)}.
+ * <p>
+ * Notice that you can create an image for a different java version than the one used for the maven build process
+ * by specifying an explicit {@link #jdkToolchain}.
  */
 @Mojo(name = "jlink",
       requiresDependencyResolution = ResolutionScope.RUNTIME,
