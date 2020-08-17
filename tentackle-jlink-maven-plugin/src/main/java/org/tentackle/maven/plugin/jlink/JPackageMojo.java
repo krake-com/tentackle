@@ -133,6 +133,9 @@ public class JPackageMojo extends AbstractJlinkMojo {
   /** extension of the config files (platform independent). */
   private static final String CONFIG_EXTENSION = ".cfg";
 
+  /** extension added by macos to the application folder's name. */
+  private static final String MAC_APPNAME_EXTENSION = ".app";
+
   /** config variable for the classpath. */
   private static final String TAG_APP_CLASSPATH = "app.classpath=";
 
@@ -379,7 +382,11 @@ public class JPackageMojo extends AbstractJlinkMojo {
 
     // run jpackage again to create the installer(s) from the app-image
     jpackageRunner = new ToolRunner(jpackageTool);
-    jpackageRunner.arg("-n").arg(applicationName)
+    // remove ".app" from application name, if on MAC
+    if (applicationName.endsWith(MAC_APPNAME_EXTENSION)) {
+      applicationName = applicationName.substring(0, applicationName.length() - MAC_APPNAME_EXTENSION.length());
+    }
+    jpackageRunner.arg("-n").arg(applicationName)   // can be overridden via options file below
                   .arg("--app-image").arg(appImageDir)
                   .arg("-d").arg(getMavenProject().getBuild().getDirectory());
     jpackageRunner.arg("@" + getMavenProject().getBuild().getDirectory() + File.separator + OPTIONS_INSTALLER);
