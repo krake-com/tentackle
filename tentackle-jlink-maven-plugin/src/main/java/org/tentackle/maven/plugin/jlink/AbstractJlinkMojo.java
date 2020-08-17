@@ -221,6 +221,10 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   @Parameter
   private String extraClassifier;
 
+  /**
+   * The java runtime version used by the application.
+   */
+  private String javaRuntimeVersion;
 
   /**
    * Gets the template directory.
@@ -348,6 +352,15 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
     return extraDirectories;
   }
 
+  /**
+   * Gets the java runtime version used by the application.
+   *
+   * @return the java version
+   */
+  public String getJavaRuntimeVersion() {
+    return javaRuntimeVersion;
+  }
+
   @Override
   public void prepareExecute() throws MojoExecutionException, MojoFailureException {
     if (jdepsTool == null) {
@@ -418,7 +431,7 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   protected void createJLinkImage(JlinkResolver.Result result) throws MojoExecutionException, MojoFailureException {
     getLog().info("creating jlink image for a " +
                   (result.isPlainModular() ? "plain " : "") +
-                  (result.isModular() ? "modular" : "classpath") + " application");
+                  (result.isModular() ? "modular" : "classpath") + " application with Java " + javaRuntimeVersion);
     getLog().debug(result.toString());
 
     ToolRunner jlinkRunner = new ToolRunner(jlinkTool);
@@ -563,6 +576,7 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
         throw new MojoExecutionException("jdeps tool not found");
       }
       getLog().debug("using " + jdepsTool);
+      javaRuntimeVersion = new ToolRunner(jdepsTool).arg("--version").run().getOutputAsString();
 
       if (jlinkTool == null) {
         throw new MojoExecutionException("jlink tool not found");
