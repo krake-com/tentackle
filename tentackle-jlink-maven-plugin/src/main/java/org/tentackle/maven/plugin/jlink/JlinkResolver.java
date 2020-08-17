@@ -389,7 +389,7 @@ public class JlinkResolver {
     runtimeModules = new HashSet<>();
 
     // we use at least java 11. But TT works with 12 and above as well...
-    jdeps12AndNewer = !new ToolRunner(mojo.getJdepsTool()).arg("--version").run().getOutputAsString().startsWith("11");
+    jdeps12AndNewer = !mojo.getJavaRuntimeVersion().startsWith("11");
   }
 
   /**
