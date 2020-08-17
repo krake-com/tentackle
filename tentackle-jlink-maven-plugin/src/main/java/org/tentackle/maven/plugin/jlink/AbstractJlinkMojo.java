@@ -611,8 +611,7 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
 
 
   /**
-   * Copies the templates to the template directory.<br>
-   * Overwrites any existing templates.
+   * Copies the templates to the template directory.
    *
    * @param overwrite true if overwrite existing templates, false if install only missing
    * @throws MojoExecutionException if installation failed
