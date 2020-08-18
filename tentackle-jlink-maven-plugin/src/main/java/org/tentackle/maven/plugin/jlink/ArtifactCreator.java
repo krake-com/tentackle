@@ -89,6 +89,7 @@ public interface ArtifactCreator {
    * Processes the created application image.
    *
    * @param mojo the jpackage mojo
+   * @param imageDir the directory of the application image created by the jpackage tool
    * @throws MojoExecutionException if failed
    */
   void processApplicationImage(JPackageMojo mojo, File imageDir) throws MojoExecutionException;
