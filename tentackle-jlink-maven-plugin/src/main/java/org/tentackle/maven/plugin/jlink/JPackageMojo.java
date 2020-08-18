@@ -294,7 +294,7 @@ public class JPackageMojo extends AbstractJlinkMojo {
   public void executeImpl() throws MojoExecutionException, MojoFailureException {
     long startTime = System.currentTimeMillis();    // to detect generated installers for deployment
     super.executeImpl();
-    ArtifactCreator.getInstance().createAndAttachInstallers(this, startTime);
+    ArtifactCreator.getInstance().attachInstallers(this, startTime);
   }
 
   @Override
@@ -352,6 +352,8 @@ public class JPackageMojo extends AbstractJlinkMojo {
     String applicationName = imageDirNames[0];
     File appImageDir = new File(getPackageDirectory(), applicationName);
     getLog().debug("application image found in " + appImageDir.getPath());
+
+    ArtifactCreator.getInstance().processApplicationImage(this, appImageDir);
 
     File configDir = locateAppDirectory(appImageDir);
 
