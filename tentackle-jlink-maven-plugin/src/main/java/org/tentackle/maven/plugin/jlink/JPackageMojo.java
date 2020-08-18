@@ -327,7 +327,7 @@ public class JPackageMojo extends AbstractJlinkMojo {
     }
     else {
       mainJarName = StringHelper.isAllWhitespace(mainJar) ? determineMainJar(result) : mainJar;
-      cpDir = new File(getImageDirectory(), "cp");
+      cpDir = new File(getImageDirectory(), DEST_CLASSPATH);
       jpackageRunner.arg("--main-jar").arg(mainJarName)
                     .arg("--main-class").arg(getMainClass())
                     .arg("--input").arg(cpDir);
@@ -472,7 +472,7 @@ public class JPackageMojo extends AbstractJlinkMojo {
           // replace mainjar
           getLog().debug("old mainjar = " + line.substring(TAG_APP_MAINJAR.length()));
           buf.setLength(buf.length() - line.length() + TAG_APP_MAINJAR.length());
-          buf.append(getImagePathPrefix()).append("cp/").append(mainJarName);
+          buf.append(getImagePathPrefix()).append(DEST_CLASSPATH).append('/').append(mainJarName);
           mainJarPatched = true;
         }
         if (patchModulePath && line.equals(TAG_JAVA_OPTIONS)) {

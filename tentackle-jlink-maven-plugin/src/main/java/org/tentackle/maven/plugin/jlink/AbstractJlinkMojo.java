@@ -49,6 +49,23 @@ import java.util.Objects;
 public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
 
   /**
+   * Name of the destination subfolder containing the classpath artifacts.
+   */
+  public static final String DEST_CLASSPATH = "cp";
+
+  /**
+   * Name of the destination subfolder containing the modulepath artifacts.
+   */
+  public static final String DEST_MODULEPATH = "mp";
+
+  /**
+   * Name of the destination subfolder containing the resources.
+   */
+  public static final String DEST_RESOURCES = "conf";
+
+
+
+  /**
    * The name of the module holding the main class.<br>
    * If missing, the plugin will build an application running on the classpath.
    */
@@ -478,7 +495,7 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
       if (result.isModular()) {
         List<ModularArtifact> modulePath = result.getModulePath();
         if (!modulePath.isEmpty()) {
-          File mpDir = new File(getImageDirectory(), "mp");
+          File mpDir = new File(getImageDirectory(), DEST_MODULEPATH);
           mpDir.mkdir();
           for (ModularArtifact artifact : modulePath) {
             File dest = new File(mpDir, artifact.getFileName());
@@ -490,7 +507,7 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
       // classpath, if any
       List<Artifact> classPath = result.getClassPath();
       if (!classPath.isEmpty()) {
-        File cpDir = new File(getImageDirectory(), "cp");
+        File cpDir = new File(getImageDirectory(), DEST_CLASSPATH);
         cpDir.mkdir();
         for (Artifact artifact : classPath) {
           File dest = new File(cpDir, artifact.getFile().getName());
@@ -513,9 +530,9 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   protected void copyResources(JlinkResolver.Result result) throws MojoExecutionException {
     // copy resources such as backend.properties or logging config to the conf subdirectory
     if (resourcesDirectory != null && resourcesDirectory.isDirectory()) {
-      int resCount = copyResources(resourcesDirectory, new File(getImageDirectory(), "conf"));
+      int resCount = copyResources(resourcesDirectory, new File(getImageDirectory(), DEST_RESOURCES));
       if (resCount > 0) {
-        result.addToClasspath("conf");
+        result.addToClasspath(DEST_RESOURCES);
       }
     }
   }

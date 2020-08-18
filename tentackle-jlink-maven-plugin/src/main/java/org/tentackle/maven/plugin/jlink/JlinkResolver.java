@@ -308,7 +308,7 @@ public class JlinkResolver {
           else {
             needSep = true;
           }
-          buf.append(mojo.getImagePathPrefix()).append("mp/").append(artifact.getFileName());
+          buf.append(mojo.getImagePathPrefix()).append(mojo.DEST_MODULEPATH).append('/').append(artifact.getFileName());
         }
       }
       return buf.toString();
@@ -354,7 +354,7 @@ public class JlinkResolver {
         else {
           needSep = true;
         }
-        buf.append(prefix).append("cp/").append(artifact.getFile().getName());
+        buf.append(prefix).append(mojo.DEST_CLASSPATH).append('/').append(artifact.getFile().getName());
       }
       return buf.toString();
     }
