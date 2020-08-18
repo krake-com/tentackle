@@ -41,7 +41,12 @@ public class DefaultArtifactCreator implements ArtifactCreator {
   }
 
   @Override
-  public void createAndAttachInstallers(JPackageMojo mojo, long minTime) throws MojoExecutionException {
+  public void processApplicationImage(JPackageMojo mojo, File imageDir) throws MojoExecutionException {
+    // the default implementation does nothing
+  }
+
+  @Override
+  public void attachInstallers(JPackageMojo mojo, long minTime) throws MojoExecutionException {
     File targetDir = new File(mojo.getMavenProject().getBuild().getDirectory());
     String[] names = targetDir.list((dir, name) -> {
       String fileName = name.toLowerCase();

@@ -22,13 +22,15 @@ import org.apache.maven.plugin.MojoExecutionException;
 
 import org.tentackle.common.ServiceFactory;
 
+import java.io.File;
+
 
 interface ArtifactCreatorHolder {
   ArtifactCreator INSTANCE = ServiceFactory.createService(ArtifactCreator.class, DefaultArtifactCreator.class, false);
 }
 
 /**
- * Creates and attaches the artifact to be deployed.<br>
+ * Modifies, creates and attaches the artifacts to be deployed.<br>
  * May be replaced via &#64;{@link org.tentackle.common.Service} annotation from within an application-specific plugin dependency.
  * For example, to further modify the files or create a bunch of artifacts with different configurations.
  * <p>
@@ -75,7 +77,8 @@ public interface ArtifactCreator {
   }
 
   /**
-   * Creates and attaches the ZIP file created by the jlink goal.
+   * Creates and attaches the ZIP file created by the jlink goal.<br>
+   * This also provides the option to modify the created jlink directory before zipping it.
    *
    * @param mojo the jlink mojo
    * @throws MojoExecutionException if failed
@@ -83,12 +86,20 @@ public interface ArtifactCreator {
   void createAndAttachArtifact(JlinkMojo mojo) throws MojoExecutionException;
 
   /**
-   * Creates and attaches the installers created by the jpackage goal.
+   * Processes the created application image.
+   *
+   * @param mojo the jpackage mojo
+   * @throws MojoExecutionException if failed
+   */
+  void processApplicationImage(JPackageMojo mojo, File imageDir) throws MojoExecutionException;
+
+  /**
+   * Attaches the installers created by the jpackage goal.
    *
    * @param mojo the jpackage mojo
    * @param minTime the minimum creating time of the artifacts
    * @throws MojoExecutionException if failed
    */
-  void createAndAttachInstallers(JPackageMojo mojo, long minTime) throws MojoExecutionException;
+  void attachInstallers(JPackageMojo mojo, long minTime) throws MojoExecutionException;
 
 }
