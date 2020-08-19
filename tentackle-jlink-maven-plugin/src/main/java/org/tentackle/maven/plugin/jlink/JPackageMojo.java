@@ -106,6 +106,10 @@ import java.util.Map;
  * </pre>
  * The jpackage goal will then re-use the previously created jlink image.
  * <p>
+ * The contents of the application image and attachment of the artifacts for installation and deployment can be customized by an
+ * application-specific implementation.
+ * To do so, provide a plugin dependency that contains a class annotated with {@code @Service(}{@link ArtifactCreator}).
+ * <p>
  * Important: the <code>jpackage</code> is available since Java 14.
  * <p>
  * Notice that you can create an image for a different java version than the one used by the maven build process
@@ -137,13 +141,13 @@ public class JPackageMojo extends AbstractJlinkMojo {
   private static final String MAC_APPNAME_EXTENSION = ".app";
 
   /** config variable for the classpath. */
-  private static final String TAG_APP_CLASSPATH = "app.classpath=";
+  private static final String APP_CLASSPATH = "app.classpath=";
 
   /** config variable for the main jar. */
-  private static final String TAG_APP_MAINJAR = "app.mainjar=";
+  private static final String APP_MAINJAR = "app.mainjar=";
 
   /** config section for the java options. */
-  private static final String TAG_JAVA_OPTIONS = "[JavaOptions]";
+  private static final String JAVA_OPTIONS = "[JavaOptions]";
 
 
 
@@ -414,7 +418,10 @@ public class JPackageMojo extends AbstractJlinkMojo {
       }
       getLog().debug("using " + jpackageTool);
       if (packageImageTemplate == null) {
-        throw new MojoExecutionException("packageTemplate missing");
+        throw new MojoExecutionException("packageImageTemplate missing");
+      }
+      if (packageInstallerTemplate == null) {
+        throw new MojoExecutionException("packageInstallerTemplate missing");
       }
       return true;
     }
@@ -423,8 +430,8 @@ public class JPackageMojo extends AbstractJlinkMojo {
 
   @Override
   protected void installTemplates(boolean overwrite) throws MojoExecutionException {
-    installTemplate(packageImageTemplate, overwrite);
-    installTemplate(packageInstallerTemplate, overwrite);
+    installTemplate(PACKAGE_IMAGE_TEMPLATE, packageImageTemplate, overwrite);
+    installTemplate(PACKAGE_INSTALLER_TEMPLATE, packageInstallerTemplate, overwrite);
   }
 
 
@@ -457,29 +464,29 @@ public class JPackageMojo extends AbstractJlinkMojo {
       String line;
       while ((line = reader.readLine()) != null) {
         buf.append(line);
-        if (patchClassPath && line.startsWith(TAG_APP_CLASSPATH)) {
+        if (patchClassPath && line.startsWith(APP_CLASSPATH)) {
           if (classPathPatched) {
-            throw new MojoExecutionException("more than one '" + TAG_APP_CLASSPATH + "' found in " + configFile);
+            throw new MojoExecutionException("more than one '" + APP_CLASSPATH + "' found in " + configFile);
           }
           // replace the classpath
-          getLog().debug("old classpath = " + line.substring(TAG_APP_CLASSPATH.length()));
-          buf.setLength(buf.length() - line.length() + TAG_APP_CLASSPATH.length());
+          getLog().debug("old classpath = " + line.substring(APP_CLASSPATH.length()));
+          buf.setLength(buf.length() - line.length() + APP_CLASSPATH.length());
           buf.append(result.generateClassPath());
           classPathPatched = true;
         }
-        if (patchMainJar && line.startsWith(TAG_APP_MAINJAR)) {
+        if (patchMainJar && line.startsWith(APP_MAINJAR)) {
           if (mainJarPatched) {
-            throw new MojoExecutionException("more than one '" + TAG_APP_MAINJAR + "' found in " + configFile);
+            throw new MojoExecutionException("more than one '" + APP_MAINJAR + "' found in " + configFile);
           }
           // replace mainjar
-          getLog().debug("old mainjar = " + line.substring(TAG_APP_MAINJAR.length()));
-          buf.setLength(buf.length() - line.length() + TAG_APP_MAINJAR.length());
+          getLog().debug("old mainjar = " + line.substring(APP_MAINJAR.length()));
+          buf.setLength(buf.length() - line.length() + APP_MAINJAR.length());
           buf.append(getImagePathPrefix()).append(DEST_CLASSPATH).append('/').append(mainJarName);
           mainJarPatched = true;
         }
-        if (patchModulePath && line.equals(TAG_JAVA_OPTIONS)) {
+        if (patchModulePath && line.equals(JAVA_OPTIONS)) {
           if (modulePathPatched) {
-            throw new MojoExecutionException("more than one '" + TAG_JAVA_OPTIONS + "' found in " + configFile);
+            throw new MojoExecutionException("more than one '" + JAVA_OPTIONS + "' found in " + configFile);
           }
           // insert the module path
           buf.append("\n-p\n").append(result.generateModulePath());

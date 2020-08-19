@@ -652,19 +652,20 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   /**
    * Installs the template with the given name.
    *
-   * @param template the name
+   * @param pluginTemplate the plugin's name of the template
+   * @param projectTemplate the project's name of the template
    * @param overwrite true if overwrite existing template, false if leave unchanged
    * @throws MojoExecutionException if installation failed
    */
-  protected void installTemplate(String template, boolean overwrite) throws MojoExecutionException {
+  protected void installTemplate(String pluginTemplate, String projectTemplate, boolean overwrite) throws MojoExecutionException {
     templateDir.mkdirs();
-    File file = new File(templateDir, template);
+    File file = new File(templateDir, projectTemplate);
     if (overwrite || !file.exists()) {
-      String path = "/templates/" + template;
+      String path = "/templates/" + pluginTemplate;
       String text = loadResourceFileIntoString(path);
       try (PrintStream ps = new PrintStream(new FileOutputStream(file))) {
         ps.print(text);
-        getLog().info("installed template " + template);
+        getLog().info("installed template " + projectTemplate);
       }
       catch (IOException e) {
         throw new MojoExecutionException("cannot install template " + path, e);

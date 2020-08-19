@@ -21,6 +21,7 @@ import freemarker.template.Configuration;
 import freemarker.template.TemplateException;
 import org.apache.maven.plugin.MojoExecutionException;
 
+import org.tentackle.common.StringHelper;
 import org.tentackle.maven.AbstractGenerator;
 import org.tentackle.maven.GeneratedFile;
 import org.tentackle.maven.GeneratedString;
@@ -78,7 +79,7 @@ public class ScriptGenerator extends AbstractGenerator {
           fileExtension = fileName.substring(ndx);
         }
         fileName = mojo.getUpdateTemplate();
-        if (fileName != null) {
+        if (!StringHelper.isAllWhitespace(fileName)) {
           ndx = fileName.lastIndexOf('.');
           if (ndx >= 0) {
             fileName = fileName.substring(0, ndx);
