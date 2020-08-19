@@ -102,10 +102,10 @@ import java.io.IOException;
  * Additional project resources, such as property files or logger configurations, are copied to the <code>conf</code> directory and
  * this directory is prepended to the classpath.
  * <p>
- * The generation of the ZIP-file and attachment of the artifact for installation and deployment can be replaced by an
+ * The generation of the ZIP-file and attachment of the artifact for installation and deployment can be customized by an
  * application-specific implementation. This allows further modification of the generated image or files in the jlink target
- * directory. It is also possible to add a more than one artifact, for example, each with a different configuration.
- * To do so, you simply provide a plugin dependency that contains a class annotated with {@code @Service(ArtifactCreator.class)}.
+ * directory. It is also possible to add more than one artifact, for example, each with a different configuration.
+ * To do so, provide a plugin dependency that contains a class annotated with {@code @Service(}{@link ArtifactCreator}).
  * <p>
  * Notice that you can create an image for a different java version than the one used for the maven build process
  * by specifying an explicit {@link #jdkToolchain}.
@@ -117,13 +117,13 @@ import java.io.IOException;
 public class JlinkMojo extends AbstractJlinkMojo {
 
   /** filename of the NAME template. */
-  public static final String TEMPLATE_NAME = "name.ftl";
+  public static final String NAME_TEMPLATE = "name.ftl";
 
   /** filename of the RUN template. */
-  public static final String TEMPLATE_RUN = "run.ftl";
+  public static final String RUN_TEMPLATE = "run.ftl";
 
   /** filename of the UPDATE template. */
-  public static final String TEMPLATE_UPDATE = "update.ftl";
+  public static final String UPDATE_TEMPLATE = "update.ftl";
 
   /** file extension for ZIP files. */
   public static final String ZIP_EXTENSION = "zip";
@@ -132,20 +132,20 @@ public class JlinkMojo extends AbstractJlinkMojo {
    * The name of the template to generate the name of the runner script.<br>
    * For *nixes this is usually {@code run.sh}, for windozes {@code run.cmd} or {@code run.bat}.
    */
-  @Parameter(defaultValue = TEMPLATE_NAME)
+  @Parameter(defaultValue = NAME_TEMPLATE)
   private String nameTemplate;
 
   /**
    * The name of the runner script template.
    */
-  @Parameter(defaultValue = TEMPLATE_RUN)
+  @Parameter(defaultValue = RUN_TEMPLATE)
   private String runTemplate;
 
   /**
    * The name of the update script template.<br>
    * Empty to disable.
    */
-  @Parameter(defaultValue = TEMPLATE_UPDATE)
+  @Parameter(defaultValue = UPDATE_TEMPLATE)
   private String updateTemplate;
 
   /**
@@ -280,10 +280,10 @@ public class JlinkMojo extends AbstractJlinkMojo {
   @Override
   protected boolean validate() throws MojoExecutionException {
     if (super.validate()) {
-      if (nameTemplate == null) {
+      if (StringHelper.isAllWhitespace(nameTemplate)) {
         throw new MojoExecutionException("nameTemplate missing");
       }
-      if (runTemplate == null) {
+      if (StringHelper.isAllWhitespace(runTemplate)) {
         throw new MojoExecutionException("runTemplate missing");
       }
       return true;
@@ -293,10 +293,10 @@ public class JlinkMojo extends AbstractJlinkMojo {
 
   @Override
   protected void installTemplates(boolean overwrite) throws MojoExecutionException {
-    installTemplate(nameTemplate, overwrite);
-    installTemplate(runTemplate, overwrite);
+    installTemplate(NAME_TEMPLATE, nameTemplate, overwrite);
+    installTemplate(RUN_TEMPLATE, runTemplate, overwrite);
     if (!StringHelper.isAllWhitespace(updateTemplate)) {
-      installTemplate(updateTemplate, overwrite);
+      installTemplate(UPDATE_TEMPLATE, updateTemplate, overwrite);
     }
   }
 }

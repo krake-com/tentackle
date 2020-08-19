@@ -32,16 +32,16 @@ import java.io.File;
 public class InitMojo extends AbstractJlinkMojo {
 
   private static final String[] TEMPLATES_ALL = {
-      JlinkMojo.TEMPLATE_NAME,
-      JlinkMojo.TEMPLATE_RUN,
-      JlinkMojo.TEMPLATE_UPDATE,
+      JlinkMojo.NAME_TEMPLATE,
+      JlinkMojo.RUN_TEMPLATE,
+      JlinkMojo.UPDATE_TEMPLATE,
       JPackageMojo.PACKAGE_IMAGE_TEMPLATE,
       JPackageMojo.PACKAGE_INSTALLER_TEMPLATE
   };
 
   /**
    * Controls whether all or only already installed templates should be copied.<br>
-   * By default (true), all templates will be copied to the template folder.<br>
+   * By default (true), all templates are copied to the project's template folder.<br>
    * Otherwise (false), only those templates that already exist in the template folder
    * will be overwritten.<br>
    */
@@ -58,7 +58,7 @@ public class InitMojo extends AbstractJlinkMojo {
     File templateDir = getTemplateDir();
     if (copyAll) {
       for (String name : TEMPLATES_ALL) {
-        installTemplate(name, true);
+        installTemplate(name, name, true);
         getLog().info("template '" + name + "' copied to " + templateDir);
       }
     }
@@ -69,7 +69,7 @@ public class InitMojo extends AbstractJlinkMojo {
           File template = new File(templateDir, name);
           if (template.isFile()) {
             try {
-              installTemplate(name, true);
+              installTemplate(name, name,true);
               getLog().info("template '" + name + "' restored to its default");
             }
             catch (MojoExecutionException mx) {
