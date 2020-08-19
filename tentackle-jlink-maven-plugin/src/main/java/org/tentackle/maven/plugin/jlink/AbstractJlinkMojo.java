@@ -28,8 +28,8 @@ import org.apache.maven.project.MavenProjectHelper;
 import org.codehaus.plexus.languages.java.jpms.LocationManager;
 
 import org.tentackle.common.FileHelper;
+import org.tentackle.common.ToolRunner;
 import org.tentackle.maven.AbstractTentackleMojo;
-import org.tentackle.maven.ToolRunner;
 
 import java.io.File;
 import java.io.FileOutputStream;

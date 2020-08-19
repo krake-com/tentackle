@@ -29,8 +29,8 @@ import org.apache.maven.toolchain.Toolchain;
 
 import org.tentackle.common.Settings;
 import org.tentackle.common.StringHelper;
-import org.tentackle.maven.ToolFinder;
-import org.tentackle.maven.ToolRunner;
+import org.tentackle.common.ToolRunner;
+import org.tentackle.maven.JavaToolFinder;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -253,20 +253,20 @@ public class JPackageMojo extends AbstractJlinkMojo {
   public void prepareExecute() throws MojoExecutionException, MojoFailureException {
     super.prepareExecute();
     if (jpackageTool == null) {
-      ToolFinder toolFinder;
+      JavaToolFinder toolFinder;
       if (jpackageToolchain == null) {
         toolFinder = getToolFinder();
       }
       else {
         if (jpackageToolchain.isEmpty()) {
-          toolFinder = new ToolFinder();    // explicitly no toolchain!
+          toolFinder = new JavaToolFinder();    // explicitly no toolchain!
         }
         else {
           Toolchain toolchain = getToolchain(JDK_TOOLCHAIN, jpackageToolchain);
           if (toolchain == null) {
             throw new MojoExecutionException("no matching toolchain for the jpackage tool: " + jpackageToolchain);
           }
-          toolFinder = new ToolFinder(toolchain);
+          toolFinder = new JavaToolFinder(toolchain);
         }
       }
       jpackageTool = toolFinder.find("jpackage");

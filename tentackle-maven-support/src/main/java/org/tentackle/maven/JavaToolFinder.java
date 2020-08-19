@@ -15,22 +15,20 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
 package org.tentackle.maven;
 
 import org.apache.maven.toolchain.Toolchain;
 
+import org.tentackle.common.ToolFinder;
+
 import java.io.File;
 import java.util.Optional;
-import java.util.StringTokenizer;
 
 /**
  * Finds java tools to execute on behalf of a maven plugin.
  */
-public class ToolFinder {
-
-  private static final String[] WINDOWS_SUFFIXES = { ".exe", ".cmd", ".bat" };
-  private static final String[] UNIX_SUFFIXES = { ".sh" };
-
+public class JavaToolFinder extends ToolFinder {
 
   private final Toolchain toolchain;
 
@@ -39,21 +37,22 @@ public class ToolFinder {
    *
    * @param toolchain the optional toolchain
    */
-  public ToolFinder(Toolchain toolchain) {
+  public JavaToolFinder(Toolchain toolchain) {
     this.toolchain = toolchain;
   }
 
   /**
    * Creates a toolfinder without toolchain.
    */
-  public ToolFinder() {
+  public JavaToolFinder() {
     this(null);
   }
 
   /**
-   * Finds the file of a tool's excecutable.
+   * Finds the file of a java tool.
    * <p>
-   * First, it looks in the same directory where the current command (usually java) is located.
+   * If the finder was created with {@link #JavaToolFinder(Toolchain)}, the toolchain is consulted first.
+   * Otherwise or if not found by the toolchain, it looks in the same directory where the current command (usually java) is located.
    * This is safe for all JDK tools, whether JAVA_HOME or PATH is configured correctly or not.<br>
    * If not found, the environment JAVA_HOME ist tried.<br>
    * If still not found, the environment's PATH variable is consulted.
@@ -64,7 +63,9 @@ public class ToolFinder {
    *
    * @param toolName the platform independent tool name
    * @return file representing the tool's executable, or null if the tool can not be found
+   * @see ToolFinder#find(String)
    */
+  @Override
   public File find(String toolName) {
     File file = null;
 
@@ -91,15 +92,7 @@ public class ToolFinder {
         }
       }
       if (file == null) {
-        // try along the PATH
-        String path = System.getenv("PATH");    // same name for unixes and windozes
-        if (path != null) {
-          StringTokenizer stok = new StringTokenizer(path, File.pathSeparator);
-          while (file == null && stok.hasMoreTokens()) {
-            toolDir = new File(stok.nextToken().trim());
-            file = loadTool(toolDir, toolName);
-          }
-        }
+        file = super.find(toolName);
       }
     }
 
@@ -119,29 +112,6 @@ public class ToolFinder {
       toolDir = new File(javaCommand.get()).getParentFile();
     }
     return toolDir;
-  }
-
-  /**
-   * Loads a tool by its name.<br>
-   * Tries OS specific suffixes.
-   *
-   * @param toolDir the directory of the tool
-   * @param toolName the tool's name
-   * @return the tool's file, null if not found
-   */
-  private File loadTool(File toolDir, String toolName) {
-    File file = new File(toolDir, toolName);
-    if (!file.isFile()) {
-      file = null;
-      for (String suffix: File.pathSeparatorChar == ':' ? UNIX_SUFFIXES : WINDOWS_SUFFIXES) {
-        file = new File(toolDir, toolName + suffix);
-        if (file.isFile()) {
-          break;    // found!
-        }
-        file = null;
-      }
-    }
-    return file;
   }
 
 }

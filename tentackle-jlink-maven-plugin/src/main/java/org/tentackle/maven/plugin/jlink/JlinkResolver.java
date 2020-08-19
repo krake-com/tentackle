@@ -26,7 +26,7 @@ import org.codehaus.plexus.languages.java.jpms.JavaModuleDescriptor;
 import org.codehaus.plexus.languages.java.jpms.ResolvePathsRequest;
 
 import org.tentackle.common.StringHelper;
-import org.tentackle.maven.ToolRunner;
+import org.tentackle.common.ToolRunner;
 
 import java.io.File;
 import java.io.IOException;
