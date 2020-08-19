@@ -392,7 +392,6 @@ public class JlinkResolver {
   private final Set<String> requiredModules;                        // all required application modules
   private final Set<String> runtimeModules;                         // all required java runtime modules
 
-  private final boolean jdeps12AndNewer;                            // true if jdeps since java 12, requires --ignore-missing-deps
 
   /**
    * Creates a resolver.
@@ -409,9 +408,6 @@ public class JlinkResolver {
     modules = new LinkedHashMap<>();
     requiredModules = new HashSet<>();
     runtimeModules = new HashSet<>();
-
-    // we use at least java 11. But TT works with 12 and above as well...
-    jdeps12AndNewer = !mojo.getJavaRuntimeVersion().startsWith("11");
   }
 
   /**
@@ -594,7 +590,7 @@ public class JlinkResolver {
     List<String> lines = JDEPS_MAP.get(artifact);   // no computeIfAbsent due to checked exception
     if (lines == null) {
       ToolRunner jdepsRunner = new ToolRunner(mojo.getJdepsTool()).arg("--list-deps");
-      if (jdeps12AndNewer) {
+      if (mojo.getJavaMajorRuntimeVersion() >= 12) {
         // necessary since java 12
         jdepsRunner.arg("--ignore-missing-deps");
       }
