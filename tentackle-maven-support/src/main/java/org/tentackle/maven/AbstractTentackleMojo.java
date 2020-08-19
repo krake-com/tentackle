@@ -156,7 +156,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   /**
    * The toolfinder.
    */
-  private ToolFinder toolFinder;
+  private JavaToolFinder toolFinder;
 
 
   /**
@@ -442,9 +442,9 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    * @return the toolfinder, never null
    * @throws MojoExecutionException if toolchain cannot be loaded
    */
-  public ToolFinder getToolFinder() throws MojoExecutionException {
+  public JavaToolFinder getToolFinder() throws MojoExecutionException {
     if (toolFinder == null) {
-      toolFinder = new ToolFinder(getToolchain());
+      toolFinder = new JavaToolFinder(getToolchain());
     }
     return toolFinder;
   }

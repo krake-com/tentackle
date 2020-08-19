@@ -16,9 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.maven;
-
-import org.apache.maven.plugin.MojoExecutionException;
+package org.tentackle.common;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -41,17 +39,18 @@ public class ToolRunner {
 
   /**
    * Creates a runner for a tool.
+   * <p>
+   * Throws {@link TentackleRuntimeException} if tool not found or not executable.
    *
    * @param tool the tool
-   * @throws MojoExecutionException if tool not found or not executable
    */
-  public ToolRunner(File tool) throws MojoExecutionException {
+  public ToolRunner(File tool) {
     this.tool = tool;
     if (!tool.isFile()) {
-      throw new MojoExecutionException(tool + " not found");
+      throw new TentackleRuntimeException(tool + " not found");
     }
     if (!tool.canExecute()) {
-      throw new MojoExecutionException(tool + " is not executable");
+      throw new TentackleRuntimeException(tool + " is not executable");
     }
     command = new ArrayList<>();
     arg(tool);
@@ -88,11 +87,12 @@ public class ToolRunner {
 
   /**
    * Runs the tool.
+   * <p>
+   * Throws {@link TentackleRuntimeException} if running the tool failed.
    *
    * @return this runner
-   * @throws MojoExecutionException if running the tool failed
    */
-  public ToolRunner run() throws MojoExecutionException {
+  public ToolRunner run() {
     try {
       Process process = new ProcessBuilder(command).start();
       errCode = process.waitFor();
@@ -101,7 +101,7 @@ public class ToolRunner {
       return this;
     }
     catch (InterruptedException | IOException e) {
-      throw new MojoExecutionException("running tool " + tool + " failed", e);
+      throw new TentackleRuntimeException("running tool " + tool + " failed", e);
     }
   }
 
@@ -109,9 +109,8 @@ public class ToolRunner {
    * Gets the standard output.
    *
    * @return the output lines, never null
-   * @throws MojoExecutionException if run method not invoked
    */
-  public List<String> getOutput() throws MojoExecutionException {
+  public List<String> getOutput() {
     assertExecuted();
     return output;
   }
@@ -120,40 +119,42 @@ public class ToolRunner {
    * Gets the standard output.
    *
    * @return the output, never null
-   * @throws MojoExecutionException if run method not invoked
    */
-  public String getOutputAsString() throws MojoExecutionException {
+  public String getOutputAsString() {
     return linesToString(getOutput());
   }
 
   /**
    * Gets the standard error output.
+   * <p>
+   * Throws {@link TentackleRuntimeException} if run method not invoked yet.
    *
    * @return the error lines, never null
-   * @throws MojoExecutionException if run method not invoked
    */
-  public List<String> getErrors() throws MojoExecutionException {
+  public List<String> getErrors() {
     assertExecuted();
     return errors;
   }
 
   /**
    * Gets the standard error output.
+   * <p>
+   * Throws {@link TentackleRuntimeException} if run method not invoked yet.
    *
    * @return the errors, never null
-   * @throws MojoExecutionException if run method not invoked
    */
-  public String getErrorsAsString() throws MojoExecutionException {
+  public String getErrorsAsString() {
     return linesToString(getErrors());
   }
 
   /**
    * Gets the error code.
+   * <p>
+   * Throws {@link TentackleRuntimeException} if run method not invoked yet.
    *
    * @return the error, 0 if ok
-   * @throws MojoExecutionException if run method not invoked
    */
-  public int getErrCode() throws MojoExecutionException {
+  public int getErrCode() {
     assertExecuted();
     return errCode;
   }
@@ -187,9 +188,9 @@ public class ToolRunner {
     return lines;
   }
 
-  private void assertExecuted() throws MojoExecutionException {
+  private void assertExecuted() {
     if (output == null) {
-      throw new MojoExecutionException("run() method must be invoked first");
+      throw new TentackleRuntimeException("run() method must be invoked first");
     }
   }
 

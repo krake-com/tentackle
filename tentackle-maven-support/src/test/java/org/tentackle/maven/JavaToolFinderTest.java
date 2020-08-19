@@ -18,34 +18,36 @@
 
 package org.tentackle.maven;
 
-import org.apache.maven.plugin.MojoExecutionException;
 import org.testng.Assert;
 import org.testng.Reporter;
 import org.testng.annotations.Test;
 
+import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.common.ToolRunner;
+
 import java.io.File;
 
 /**
- * Tests for the {@link ToolFinder}.
+ * Tests for the {@link JavaToolFinder}.
  */
-public class ToolFinderTest {
+public class JavaToolFinderTest {
 
   @Test
   public void findProgs() {
-    File tool = new ToolFinder().find("java");
+    File tool = new JavaToolFinder().find("java");
     Assert.assertNotNull(tool);
     Reporter.log("java is " + tool.getAbsolutePath() + "<br>");
-    tool = new ToolFinder().find("mvn");
+    tool = new JavaToolFinder().find("mvn");
     if (tool != null) {
       Reporter.log("maven is " + tool.getAbsolutePath() + "<br>");
       try {
         Reporter.log(new ToolRunner(tool).arg("--version").run().getOutputAsString() + "<br>");
       }
-      catch (MojoExecutionException e) {
+      catch (TentackleRuntimeException e) {
         Assert.fail("maven execution failed", e);
       }
     }
-    tool = new ToolFinder().find("jdeps");
+    tool = new JavaToolFinder().find("jdeps");
     Assert.assertNotNull(tool);
     Reporter.log("jdeps is " + tool.getAbsolutePath() + "<br>");
   }
