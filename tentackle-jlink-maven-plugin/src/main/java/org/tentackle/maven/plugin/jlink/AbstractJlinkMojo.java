@@ -244,6 +244,12 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   private String javaRuntimeVersion;
 
   /**
+   * The java major version as a comparable integer.
+   */
+  private int javaMajorRuntimeVersion;
+
+
+  /**
    * Gets the template directory.
    *
    * @return the directory holding the wizard templates
@@ -376,6 +382,15 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
    */
   public String getJavaRuntimeVersion() {
     return javaRuntimeVersion;
+  }
+
+  /**
+   * Gets the java major runtime version as a comparable integer.
+   *
+   * @return the major version
+   */
+  public int getJavaMajorRuntimeVersion() {
+    return javaMajorRuntimeVersion;
   }
 
   @Override
@@ -594,6 +609,8 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
       }
       getLog().debug("using " + jdepsTool);
       javaRuntimeVersion = new ToolRunner(jdepsTool).arg("--version").run().getOutputAsString();
+      int ndx = javaRuntimeVersion.indexOf('.');
+      javaMajorRuntimeVersion = Integer.valueOf(ndx >= 0 ? javaRuntimeVersion.substring(0, ndx) : javaRuntimeVersion);
 
       if (jlinkTool == null) {
         throw new MojoExecutionException("jlink tool not found");

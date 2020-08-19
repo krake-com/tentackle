@@ -315,6 +315,28 @@ public class JlinkResolver {
     }
 
     /**
+     * Gets a modular artifact by its name.
+     *
+     * @param moduleName the module name
+     * @return the artifact, null if no such artifact
+     */
+    public ModularArtifact getModuleArtifact(String moduleName) {
+      if (modular) {
+        for (ModularArtifact artifact : modulePath) {
+          if (artifact.getModuleName().equals(moduleName)) {
+            return artifact;
+          }
+        }
+        for (ModularArtifact artifact : jlinkModules) {
+          if (artifact.getModuleName().equals(moduleName)) {
+            return artifact;
+          }
+        }
+      }
+      return null;
+    }
+
+    /**
      * Returns whether the class path is not empty.
      *
      * @return true if classpath must be configured
