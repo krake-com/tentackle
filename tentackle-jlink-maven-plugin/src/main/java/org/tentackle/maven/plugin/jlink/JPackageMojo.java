@@ -27,6 +27,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.toolchain.Toolchain;
 
+import org.tentackle.common.FileHelper;
 import org.tentackle.common.Settings;
 import org.tentackle.common.StringHelper;
 import org.tentackle.common.ToolRunner;
@@ -148,6 +149,9 @@ public class JPackageMojo extends AbstractJlinkMojo {
 
   /** config section for the java options. */
   private static final String JAVA_OPTIONS = "[JavaOptions]";
+
+  /** config for the module path (beginning with java 15). */
+  private static final String APPDIR_MODS = "java-options=$APPDIR/mods";
 
 
 
@@ -327,6 +331,15 @@ public class JPackageMojo extends AbstractJlinkMojo {
                   .arg("-d").arg(packageDirectory)
                   .arg("--runtime-image").arg(getImageDirectory());
     if (result.isModular()) {
+      ModularArtifact mainArtifact = result.getModuleArtifact(getMainModule());
+      if (mainArtifact == null) {
+        throw new MojoExecutionException("no such main module: " + getMainModule());
+      }
+      if (result.isModulePathRequired() && getJavaMajorRuntimeVersion() >= 15) {
+        // jpackage >= 15 needs a module path if built from with --runtime-image
+        // we will remove the artifacts copied to the app directory below...
+        jpackageRunner.arg("-p").arg(getImageDirectory() + "/" + DEST_MODULEPATH);
+      }
       jpackageRunner.arg("-m").arg(getMainModule() + "/" + getMainClass());
     }
     else {
@@ -383,6 +396,16 @@ public class JPackageMojo extends AbstractJlinkMojo {
       }
       for (File configFile : configFiles) {
         patchConfigFile(configFile, result, mainJarName);
+      }
+      if (result.isModulePathRequired() && getJavaMajorRuntimeVersion() >= 15) {
+        // remove duplicate jars (see above)
+        File modsDir = new File(configDir, "mods");
+        try {
+          FileHelper.removeDirectory(modsDir.getPath());
+        }
+        catch (IOException e) {
+          throw new MojoExecutionException("cannot remove obsolete module directory " + modsDir);
+        }
       }
     }
 
@@ -465,8 +488,11 @@ public class JPackageMojo extends AbstractJlinkMojo {
       while ((line = reader.readLine()) != null) {
         buf.append(line);
         if (patchClassPath && line.startsWith(APP_CLASSPATH)) {
-          if (classPathPatched) {
-            throw new MojoExecutionException("more than one '" + APP_CLASSPATH + "' found in " + configFile);
+          if (classPathPatched && getJavaMajorRuntimeVersion() >= 15) {
+            // starting with Java 15 app.classpath is used once per artifact: just ignore succeeding lines
+            getLog().debug("removed line: " + line);
+            buf.setLength(buf.length() - line.length());
+            continue;
           }
           // replace the classpath
           getLog().debug("old classpath = " + line.substring(APP_CLASSPATH.length()));
@@ -484,13 +510,33 @@ public class JPackageMojo extends AbstractJlinkMojo {
           buf.append(getImagePathPrefix()).append(DEST_CLASSPATH).append('/').append(mainJarName);
           mainJarPatched = true;
         }
-        if (patchModulePath && line.equals(JAVA_OPTIONS)) {
-          if (modulePathPatched) {
-            throw new MojoExecutionException("more than one '" + JAVA_OPTIONS + "' found in " + configFile);
+        if (patchModulePath) {
+          if (line.equals(JAVA_OPTIONS)) {
+            if (modulePathPatched) {
+              throw new MojoExecutionException("more than one '" + JAVA_OPTIONS + "' found in " + configFile);
+            }
+            if (getJavaMajorRuntimeVersion() >= 15) {
+              if (patchClassPath && !classPathPatched) {
+                // missing app.classname (beginning with java 15)
+                buf.setLength(buf.length() - JAVA_OPTIONS.length() - 2);
+                buf.append('\n').append(APP_CLASSPATH).append(result.generateClassPath())
+                   .append("\n\n").append(JAVA_OPTIONS);
+                classPathPatched = true;
+              }
+            }
+            else {
+              // insert the module path
+              buf.append("\n-p\n").append(result.generateModulePath());
+              modulePathPatched = true;
+            }
           }
-          // insert the module path
-          buf.append("\n-p\n").append(result.generateModulePath());
-          modulePathPatched = true;
+          else if (line.equals(APPDIR_MODS) && getJavaMajorRuntimeVersion() >= 15) {
+            // java options end with module path: replace it
+            buf.setLength(buf.length() - APPDIR_MODS.length());
+            buf.append("java-options=").append(result.generateModulePath()).append('\n');
+            modulePathPatched = true;
+            break;
+          }
         }
         buf.append('\n');
       }
