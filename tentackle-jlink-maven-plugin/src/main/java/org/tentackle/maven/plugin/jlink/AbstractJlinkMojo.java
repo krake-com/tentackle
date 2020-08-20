@@ -208,6 +208,17 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
 
   /**
    * Extra variables for template or artifact generation.
+   * <p>
+   * For example the subproject's basedir:
+   * <pre>
+   *  &lt;variables&gt;
+   *    &lt;project&gt;${project.basedir}&lt;/project&gt;
+   *  &lt;/variables&gt;
+   * </pre>
+   * And then use it in <code>package-image.ftl</code> for file paths, such as:
+   * <pre>
+   *   --icon ${project}/src/pkg/myapp.ico
+   * </pre>
    */
   @Parameter
   private Map<String, Object> variables;
@@ -322,7 +333,7 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   }
 
   /**
-   * Gets modules to exclude.
+   * Gets the modules to exclude.
    *
    * @return excluded module names, never null
    */

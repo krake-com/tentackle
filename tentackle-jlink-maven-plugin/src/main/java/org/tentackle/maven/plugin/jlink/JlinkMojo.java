@@ -92,7 +92,7 @@ import java.io.IOException;
  *   <li><code>id</code>: the execution id</li>
  *   <li>all system properties (dots in property names translated to camelCase, e.g. "os.name" becomes "osName"</li>
  *   <li>all maven properties (translated to camelCase as well)</li>
- *   <li>the optional variables from the plugin configuration</li>
+ *   <li>the plugin configuration {@link #variables}</li>
  * </ul>
  *
  * Modules not passed to <code>jlink</code> and automatic modules are copied to the <code>mp</code> folder
