@@ -155,6 +155,7 @@ public class JPackageMojo extends AbstractJlinkMojo {
 
   /** config for the module path (>= java 15). */
   private static final String APPDIR_MODS = "java-options=$APPDIR/" + MODS_DIR;
+  private static final String APPDIR_MODS_WINDOWS = "java-options=$APPDIR\\" + MODS_DIR;
 
 
 
@@ -423,8 +424,8 @@ public class JPackageMojo extends AbstractJlinkMojo {
     }
     jpackageRunner.arg("-n").arg(applicationName)   // can be overridden via options file below
                   .arg("--app-image").arg(appImageDir)
-                  .arg("-d").arg(getMavenProject().getBuild().getDirectory());
-    jpackageRunner.arg("@" + getMavenProject().getBuild().getDirectory() + File.separator + OPTIONS_INSTALLER);
+                  .arg("-d").arg(getMavenProject().getBuild().getDirectory())
+                  .arg("@" + getMavenProject().getBuild().getDirectory() + File.separator + OPTIONS_INSTALLER);
     if (verbosityLevel.isDebug()) {
       jpackageRunner.arg("--verbose");
     }
@@ -536,7 +537,7 @@ public class JPackageMojo extends AbstractJlinkMojo {
               modulePathPatched = true;
             }
           }
-          else if (line.equals(APPDIR_MODS) && getJavaMajorRuntimeVersion() >= 15) {
+          else if ((line.equals(APPDIR_MODS) || line.equals(APPDIR_MODS_WINDOWS)) && getJavaMajorRuntimeVersion() >= 15) {
             if (modulePathPatched) {
               throw new MojoExecutionException("more than one '" + APPDIR_MODS + "' found in " + configFile);
             }
