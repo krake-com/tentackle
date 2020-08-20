@@ -150,8 +150,11 @@ public class JPackageMojo extends AbstractJlinkMojo {
   /** config section for the java options. */
   private static final String JAVA_OPTIONS = "[JavaOptions]";
 
-  /** config for the module path (beginning with java 15). */
-  private static final String APPDIR_MODS = "java-options=$APPDIR/mods";
+  /** name of the subdir jpackage >= 15 puts the modulpath jars. */
+  private static final String MODS_DIR = "mods";
+
+  /** config for the module path (>= java 15). */
+  private static final String APPDIR_MODS = "java-options=$APPDIR/" + MODS_DIR;
 
 
 
@@ -331,7 +334,7 @@ public class JPackageMojo extends AbstractJlinkMojo {
                   .arg("-d").arg(packageDirectory)
                   .arg("--runtime-image").arg(getImageDirectory());
     if (result.isModular()) {
-      ModularArtifact mainArtifact = result.getModuleArtifact(getMainModule());
+      ModularArtifact mainArtifact = result.getModuleArtifact(getMainModule());   // just check before
       if (mainArtifact == null) {
         throw new MojoExecutionException("no such main module: " + getMainModule());
       }
@@ -388,8 +391,8 @@ public class JPackageMojo extends AbstractJlinkMojo {
     if (configDir != null && (result.isClassPathRequired() || result.isModulePathRequired())) {
       // cfg file must be modified.
       // Notice that we cannot add the classpath via -cp in [JavaOptions] section, since it is ignored there -- for whatever reason.
-      // Instead, we must set app.classpath in the [Application] section. Notice further, that -p works, but there
-      // is no app.modulepath. Hmm...
+      // Instead, we must set app.classpath in the [Application] section. Notice further that -p works and there
+      // is no app.modulepath.
       List<File> configFiles = loadConfigFiles(configDir);
       if (configFiles.isEmpty()) {
         throw new MojoExecutionException("no application configuration files found");
@@ -397,14 +400,17 @@ public class JPackageMojo extends AbstractJlinkMojo {
       for (File configFile : configFiles) {
         patchConfigFile(configFile, result, mainJarName);
       }
-      if (result.isModulePathRequired() && getJavaMajorRuntimeVersion() >= 15) {
+      if (getJavaMajorRuntimeVersion() >= 15) {
         // remove duplicate jars (see above)
-        File modsDir = new File(configDir, "mods");
-        try {
-          FileHelper.removeDirectory(modsDir.getPath());
-        }
-        catch (IOException e) {
-          throw new MojoExecutionException("cannot remove obsolete module directory " + modsDir);
+        File modsDir = new File(configDir, MODS_DIR);
+        if (modsDir.isDirectory()) {
+          try {
+            getLog().debug("removing " + modsDir);
+            FileHelper.removeDirectory(modsDir.getPath());
+          }
+          catch (IOException e) {
+            throw new MojoExecutionException("cannot remove obsolete module directory " + modsDir);
+          }
         }
       }
     }
@@ -531,11 +537,13 @@ public class JPackageMojo extends AbstractJlinkMojo {
             }
           }
           else if (line.equals(APPDIR_MODS) && getJavaMajorRuntimeVersion() >= 15) {
+            if (modulePathPatched) {
+              throw new MojoExecutionException("more than one '" + APPDIR_MODS + "' found in " + configFile);
+            }
             // java options end with module path: replace it
             buf.setLength(buf.length() - APPDIR_MODS.length());
             buf.append("java-options=").append(result.generateModulePath()).append('\n');
             modulePathPatched = true;
-            break;
           }
         }
         buf.append('\n');
