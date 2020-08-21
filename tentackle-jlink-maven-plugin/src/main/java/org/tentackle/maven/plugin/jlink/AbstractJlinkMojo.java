@@ -619,9 +619,9 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
         throw new MojoExecutionException("jdeps tool not found");
       }
       getLog().debug("using " + jdepsTool);
-      javaRuntimeVersion = new ToolRunner(jdepsTool).arg("--version").run().getOutputAsString();
-      int ndx = javaRuntimeVersion.indexOf('.');
-      javaMajorRuntimeVersion = Integer.valueOf(ndx >= 0 ? javaRuntimeVersion.substring(0, ndx) : javaRuntimeVersion);
+
+      javaRuntimeVersion = determineJavaToolVersion(jdepsTool);
+      javaMajorRuntimeVersion = getMajorVersion(javaRuntimeVersion);
 
       if (jlinkTool == null) {
         throw new MojoExecutionException("jlink tool not found");

@@ -209,6 +209,10 @@ public class JPackageMojo extends AbstractJlinkMojo {
   @Parameter
   private String mainJar;
 
+  /**
+   * Major version of the jpackage tool.
+   */
+  private int jpackageMajorRuntimeVersion;
 
 
   private String imagePathPrefix;
@@ -339,7 +343,7 @@ public class JPackageMojo extends AbstractJlinkMojo {
       if (mainArtifact == null) {
         throw new MojoExecutionException("no such main module: " + getMainModule());
       }
-      if (result.isModulePathRequired() && getJavaMajorRuntimeVersion() >= 15) {
+      if (result.isModulePathRequired() && jpackageMajorRuntimeVersion >= 15) {
         // jpackage >= 15 needs a module path if built from with --runtime-image
         // we will remove the artifacts copied to the app directory below...
         jpackageRunner.arg("-p").arg(getImageDirectory() + "/" + DEST_MODULEPATH);
@@ -401,7 +405,7 @@ public class JPackageMojo extends AbstractJlinkMojo {
       for (File configFile : configFiles) {
         patchConfigFile(configFile, result, mainJarName);
       }
-      if (getJavaMajorRuntimeVersion() >= 15) {
+      if (jpackageMajorRuntimeVersion >= 15) {
         // remove duplicate jars (see above)
         File modsDir = new File(configDir, MODS_DIR);
         if (modsDir.isDirectory()) {
@@ -447,6 +451,11 @@ public class JPackageMojo extends AbstractJlinkMojo {
         throw new MojoExecutionException("jpackageTool tool not found");
       }
       getLog().debug("using " + jpackageTool);
+      jpackageMajorRuntimeVersion = getMajorVersion(determineJavaToolVersion(jpackageTool));
+      getLog().debug("major version of jpackage is " + jpackageMajorRuntimeVersion);
+      if (jpackageMajorRuntimeVersion != getJavaMajorRuntimeVersion()) {
+        getLog().warn("jpackage tool's major version " + jpackageMajorRuntimeVersion + " differs from jlink/jdeps version " + getJavaMajorRuntimeVersion());
+      }
       if (packageImageTemplate == null) {
         throw new MojoExecutionException("packageImageTemplate missing");
       }
@@ -495,7 +504,7 @@ public class JPackageMojo extends AbstractJlinkMojo {
       while ((line = reader.readLine()) != null) {
         buf.append(line);
         if (patchClassPath && line.startsWith(APP_CLASSPATH)) {
-          if (classPathPatched && getJavaMajorRuntimeVersion() >= 15) {
+          if (classPathPatched && jpackageMajorRuntimeVersion >= 15) {
             // starting with Java 15 app.classpath is used once per artifact: just ignore succeeding lines
             getLog().debug("removed line: " + line);
             buf.setLength(buf.length() - line.length());
@@ -522,7 +531,7 @@ public class JPackageMojo extends AbstractJlinkMojo {
             if (modulePathPatched) {
               throw new MojoExecutionException("more than one '" + JAVA_OPTIONS + "' found in " + configFile);
             }
-            if (getJavaMajorRuntimeVersion() >= 15) {
+            if (jpackageMajorRuntimeVersion >= 15) {
               if (patchClassPath && !classPathPatched) {
                 // missing app.classname (beginning with java 15)
                 buf.setLength(buf.length() - JAVA_OPTIONS.length() - 2);
@@ -537,7 +546,7 @@ public class JPackageMojo extends AbstractJlinkMojo {
               modulePathPatched = true;
             }
           }
-          else if ((line.equals(APPDIR_MODS) || line.equals(APPDIR_MODS_WINDOWS)) && getJavaMajorRuntimeVersion() >= 15) {
+          else if ((line.equals(APPDIR_MODS) || line.equals(APPDIR_MODS_WINDOWS)) && jpackageMajorRuntimeVersion >= 15) {
             if (modulePathPatched) {
               throw new MojoExecutionException("more than one '" + APPDIR_MODS + "' found in " + configFile);
             }
