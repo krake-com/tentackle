@@ -34,6 +34,7 @@ import org.apache.maven.toolchain.ToolchainManager;
 import org.wurbelizer.misc.Verbosity;
 
 import org.tentackle.common.Settings;
+import org.tentackle.common.ToolRunner;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -46,6 +47,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.StringTokenizer;
 import java.util.stream.Collectors;
 
 
@@ -447,6 +449,41 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
       toolFinder = new JavaToolFinder(getToolchain());
     }
     return toolFinder;
+  }
+
+  /**
+   * Determines the version number string of a given java tool.<br>
+   * Invokes the tool with <code>--version</code>.<br>
+   * Skips noise like <code>WARNING: Using incubator modules</code>.
+   *
+   * @param javaTool the java tool
+   * @return the version string
+   * @throws MojoExecutionException if the tool's output does not contain a java version
+   */
+  public String determineJavaToolVersion(File javaTool) throws MojoExecutionException {
+    String output = new ToolRunner(javaTool).arg("--version").run().getOutputAsString();
+    StringTokenizer stok = new StringTokenizer(output);
+    while (stok.hasMoreTokens()) {
+      String token = stok.nextToken();
+      if (Character.isDigit(token.charAt(0)) &&
+          (token.length() == 2 || (token.length() > 2 && token.charAt(2) == '.'))) {
+        // 14, 14.0.2, etc.. but not 100, 8, 7.3
+        // this should work up to java 99 ;)
+        return token;
+      }
+    }
+    throw new MojoExecutionException("cannot determine version string from tool's output:\n" + output);
+  }
+
+  /**
+   * Determines the major version number integer of a given version string.
+   *
+   * @param version the version string
+   * @return the version number
+   */
+  public int getMajorVersion(String version) {
+    int ndx = version.indexOf('.');
+    return Integer.valueOf(ndx >= 0 ? version.substring(0, ndx) : version);
   }
 
   /**
