@@ -29,14 +29,15 @@ import java.io.File;
  * Copies the default templates to the project's template directory.
  */
 @Mojo(name = "init", inheritByDefault = false, aggregator = true)
-public class InitMojo extends AbstractJlinkMojo {
+public class InitMojo extends AbstractJLinkMojo {
 
   private static final String[] TEMPLATES_ALL = {
-      JlinkMojo.NAME_TEMPLATE,
-      JlinkMojo.RUN_TEMPLATE,
-      JlinkMojo.UPDATE_TEMPLATE,
+      JLinkMojo.NAME_TEMPLATE,
+      JLinkMojo.RUN_TEMPLATE,
+      JLinkMojo.UPDATE_TEMPLATE,
       JPackageMojo.PACKAGE_IMAGE_TEMPLATE,
-      JPackageMojo.PACKAGE_INSTALLER_TEMPLATE
+      JPackageMojo.PACKAGE_INSTALLER_TEMPLATE,
+      JPackageMojo.PACKAGE_UPDATE_TEMPLATE
   };
 
   /**
@@ -85,7 +86,7 @@ public class InitMojo extends AbstractJlinkMojo {
   // ------------- unused abstract methods -----------------
 
   @Override
-  protected void createJLinkImage(JlinkResolver.Result result) throws MojoExecutionException, MojoFailureException {
+  protected void createJLinkImage(JLinkResolver.Result result) throws MojoExecutionException, MojoFailureException {
   }
 
   @Override
@@ -94,7 +95,7 @@ public class InitMojo extends AbstractJlinkMojo {
   }
 
   @Override
-  protected void generateFiles(JlinkResolver.Result result) throws MojoExecutionException {
+  protected void generateFiles(JLinkResolver.Result result) throws MojoExecutionException {
   }
 
 }

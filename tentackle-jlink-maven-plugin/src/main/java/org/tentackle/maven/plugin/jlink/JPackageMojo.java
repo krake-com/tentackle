@@ -50,7 +50,7 @@ import java.util.Map;
  * <p>
  * The mojo works in 4 phases:
  * <ol>
- *   <li>Invokes the <code>jlink</code> tool as described in {@link JlinkMojo}. This will generate
+ *   <li>Invokes the <code>jlink</code> tool as described in {@link JLinkMojo}. This will generate
  *   a directory holding the runtime impage. However, no run or update scripts and no zip file will be created.</li>
  *   <li>Invokes the <code>jpackage</code> tool to generate the application image from the previously
  *   created runtime image. Application- and platform specific options can be configured via the {@link #packageImageTemplate}.</li>
@@ -86,11 +86,14 @@ import java.util.Map;
  *
  * The freemarker templates are copied to the project's template folder, if missing.
  * They become part of the project and can be changed easily according to project specific needs (for example by adding runtime arguments).
- * To install and edit the templates before running jpackage (or jlink, see {@link JlinkMojo}), use {@link InitMojo} first.
+ * To install and edit the templates before running jpackage (or jlink, see {@link JLinkMojo}), use {@link InitMojo} first.
  * <p>
- * Notice that applications deployed by an installer are maintained by the platform specific
- * package manager. As a result, Tentackle's auto update feature cannot be used in such cases. If auto update
- * is required, consider using {@link JlinkMojo} instead.
+ * Notice that applications deployed by an installer are usually maintained by a platform specific
+ * package manager. If the installation is system-wide, the installation files cannot be changed by
+ * a regular user and Tentackle's auto update feature isn't available. In such cases consider using {@link JLinkMojo} instead.<br>
+ * Some platforms, however, also provide per-user installations that can be updated. For Windows, the <code>jpackage</code>
+ * tool provides the option <code>--win-per-user-install</code>. MacOS allows the user to decide whether to install
+ * system-wide or for the current user only. See {@link #withUpdater} configuration.
  * <p>
  * If both jlink zip-files and jpackage installers are required, change the packaging type to <code>jar</code>
  * and add executions, like this:
@@ -121,13 +124,16 @@ import java.util.Map;
       requiresDependencyResolution = ResolutionScope.RUNTIME,
       defaultPhase = LifecyclePhase.PACKAGE)
 
-public class JPackageMojo extends AbstractJlinkMojo {
+public class JPackageMojo extends AbstractJLinkMojo {
 
   /** filename of the options template to create the application image. */
   public static final String PACKAGE_IMAGE_TEMPLATE = "package-image.ftl";
 
   /** filename of the options template to create the installer. */
   public static final String PACKAGE_INSTALLER_TEMPLATE = "package-installer.ftl";
+
+  /** filename of the template to create the package updater script. */
+  public static final String PACKAGE_UPDATE_TEMPLATE = "package-update.ftl";
 
   /** filename of the generated jpackage options to create the application image. */
   public static final String OPTIONS_IMAGE = "jpackage-image.options";
@@ -196,6 +202,12 @@ public class JPackageMojo extends AbstractJlinkMojo {
   private String packageInstallerTemplate;
 
   /**
+   * The name of the update script template.
+   */
+  @Parameter(defaultValue = PACKAGE_UPDATE_TEMPLATE)
+  private String packageUpdateTemplate;
+
+  /**
    * The directory where to create the installers.
    */
   @Parameter(defaultValue = "${project.build.directory}/jpackage")
@@ -208,6 +220,9 @@ public class JPackageMojo extends AbstractJlinkMojo {
    */
   @Parameter
   private String mainJar;
+
+
+
 
   /**
    * Major version of the jpackage tool.
@@ -253,6 +268,15 @@ public class JPackageMojo extends AbstractJlinkMojo {
   }
 
   /**
+   * Gets the name of the package updater template.
+   *
+   * @return the template file name, null if update feature disabled
+   */
+  public String getPackageUpdateTemplate() {
+    return isWithUpdater() ? packageUpdateTemplate : null;
+  }
+
+  /**
    * Gets the directory where to create the installers.
    *
    * @return the installer target directory
@@ -285,27 +309,6 @@ public class JPackageMojo extends AbstractJlinkMojo {
     }
   }
 
-  /**
-   * The installers will be installed and deployed with an additional classifier
-   * showing platform's architecture.
-   *
-   * @return the classifier
-   * @throws MojoExecutionException if no os.name
-   */
-  public String getClassifier() throws MojoExecutionException {
-    try {
-      // we don't need the platform since it is already defined by the installer's extension
-      String classifier = StringHelper.getArchitecture();
-      if (!StringHelper.isAllWhitespace(getExtraClassifier())) {
-        classifier += "-" + getExtraClassifier();
-      }
-      return classifier;
-    }
-    catch (RuntimeException ex) {
-      throw new MojoExecutionException(ex.getMessage());
-    }
-  }
-
   @Override
   public void executeImpl() throws MojoExecutionException, MojoFailureException {
     long startTime = System.currentTimeMillis();    // to detect generated installers for deployment
@@ -314,7 +317,7 @@ public class JPackageMojo extends AbstractJlinkMojo {
   }
 
   @Override
-  protected void createImage(JlinkResolver.Result result) throws MojoFailureException, MojoExecutionException {
+  protected void createImage(JLinkResolver.Result result) throws MojoFailureException, MojoExecutionException {
     if (getImageDirectory().exists()) {
       getLog().info("using already existing jlink image in " + getImageDirectory().getPath());
       copyResources(result);    // to add the "conf" directory to the classpath, if resources found
@@ -325,10 +328,11 @@ public class JPackageMojo extends AbstractJlinkMojo {
   }
 
   @Override
-  protected void generateFiles(JlinkResolver.Result result) throws MojoExecutionException {
+  protected void generateFiles(JLinkResolver.Result result) throws MojoExecutionException {
 
     // generate the options file for the jpackage tool
-    new JPackageOptionsGenerator(this, result).generate();
+    JPackageGenerator generator = new JPackageGenerator(this, result);
+    generator.generateOptions();
 
     String mainJarName = null;    // only for classpath apps
     File cpDir = null;            // the classpath artifact directory (only for classpath apps)
@@ -441,6 +445,11 @@ public class JPackageMojo extends AbstractJlinkMojo {
                                        "\n" + jpackageRunner.getOutputAsString());
     }
     logToolOutput(jpackageRunner);
+
+    if (isWithUpdater()) {
+      generator.generateUpdateScript(appImageDir);
+      ArtifactCreator.getInstance().createAndAttachUpdateZip(this, appImageDir);
+    }
   }
 
 
@@ -462,6 +471,9 @@ public class JPackageMojo extends AbstractJlinkMojo {
       if (packageInstallerTemplate == null) {
         throw new MojoExecutionException("packageInstallerTemplate missing");
       }
+      if (isWithUpdater() && StringHelper.isAllWhitespace(packageUpdateTemplate)) {
+        throw new MojoExecutionException("packageUpdateTemplate missing");
+      }
       return true;
     }
     return false;
@@ -471,6 +483,9 @@ public class JPackageMojo extends AbstractJlinkMojo {
   protected void installTemplates(boolean overwrite) throws MojoExecutionException {
     installTemplate(PACKAGE_IMAGE_TEMPLATE, packageImageTemplate, overwrite);
     installTemplate(PACKAGE_INSTALLER_TEMPLATE, packageInstallerTemplate, overwrite);
+    if (getPackageUpdateTemplate() != null) {
+      installTemplate(PACKAGE_UPDATE_TEMPLATE, packageUpdateTemplate, overwrite);
+    }
   }
 
 
@@ -489,7 +504,7 @@ public class JPackageMojo extends AbstractJlinkMojo {
    * @param mainJarName the name of the mainjar (only if classpath application)
    * @throws MojoExecutionException if patch failed
    */
-  private void patchConfigFile(File configFile, JlinkResolver.Result result, String mainJarName) throws MojoExecutionException {
+  private void patchConfigFile(File configFile, JLinkResolver.Result result, String mainJarName) throws MojoExecutionException {
     final boolean patchClassPath = result.isClassPathRequired();
     boolean classPathPatched = false;
     final boolean patchModulePath = result.isModulePathRequired();
@@ -646,7 +661,7 @@ public class JPackageMojo extends AbstractJlinkMojo {
    * @return the name of the main jar, never null
    * @throws MojoExecutionException if main jar could not be determined
    */
-  private String determineMainJar(JlinkResolver.Result result) throws MojoExecutionException {
+  private String determineMainJar(JLinkResolver.Result result) throws MojoExecutionException {
     String jarName = null;
     if (mainJar == null) {
       jarName = result.getClassPath().iterator().next().getFile().getName();

@@ -21,6 +21,7 @@ package org.tentackle.update;
 import org.tentackle.common.StringHelper;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * Client application info sent to the update server.
@@ -33,6 +34,7 @@ public class ClientInfo implements Serializable {
   private final String version;
   private final String platform;
   private final String architecture;
+  private final InstallationType installationType;
 
   /**
    * Creates a client application info.
@@ -42,11 +44,12 @@ public class ClientInfo implements Serializable {
    * @param platform the operating system
    * @param architecture the hardware architecture
    */
-  public ClientInfo(String application, String version, String platform, String architecture) {
-    this.application = application;
-    this.version = version;
-    this.platform = platform;
-    this.architecture = architecture;
+  public ClientInfo(String application, String version, String platform, String architecture, InstallationType installationType) {
+    this.application = Objects.requireNonNull(application);
+    this.version = Objects.requireNonNull(version);
+    this.platform = Objects.requireNonNull(platform);
+    this.architecture = Objects.requireNonNull(architecture);
+    this.installationType = Objects.requireNonNull(installationType);
   }
 
   /**
@@ -56,8 +59,8 @@ public class ClientInfo implements Serializable {
    * @param application the client application name
    * @param version the client application version
    */
-  public ClientInfo(String application, String version) {
-    this(application, version, StringHelper.getPlatform(), StringHelper.getArchitecture());
+  public ClientInfo(String application, String version, InstallationType installationType) {
+    this(application, version, StringHelper.getPlatform(), StringHelper.getArchitecture(), installationType);
   }
 
   /**
@@ -96,6 +99,14 @@ public class ClientInfo implements Serializable {
     return architecture;
   }
 
+  /**
+   * Gets the installation type.
+   *
+   * @return the installation type
+   */
+  public InstallationType getInstallationType() {
+    return installationType;
+  }
 
   @Override
   public String toString() {
@@ -104,6 +115,7 @@ public class ClientInfo implements Serializable {
            ", version='" + version + '\'' +
            ", platform='" + platform + '\'' +
            ", architecture='" + architecture + '\'' +
+           ", installationType=" + installationType +
            '}';
   }
 }

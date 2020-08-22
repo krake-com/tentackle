@@ -9,12 +9,8 @@ package ${package}.server.rmi;
 
 import ${package}.common.Version;
 
-import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.update.AbstractUpdateServiceImpl;
-import org.tentackle.update.ClientInfo;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.rmi.RemoteException;
 
 
@@ -37,37 +33,13 @@ public class UpdateServiceImpl extends AbstractUpdateServiceImpl {
   }
 
   @Override
-  protected String createServerVersion() {
+  public String getArtifactName() {
+    return "${rootArtifactId}-jlink-client";
+  }
+
+  @Override
+  public String getVersion() {
     return Version.RELEASE;
   }
 
-  @Override
-  protected String createUpdateExecutor(ClientInfo clientInfo) {
-    return clientInfo.getPlatform().contains("win") ? "update.cmd" : "update.sh";
-  }
-
-  @Override
-  protected URL createZipURL(ClientInfo clientInfo) {
-    try {
-      return new URL(getBaseUrlName(clientInfo) + ".zip");
-    }
-    catch (MalformedURLException e) {
-      throw new TentackleRuntimeException(e);
-    }
-  }
-
-  @Override
-  protected URL createShaURL(ClientInfo clientInfo) {
-    try {
-      return new URL(getBaseUrlName(clientInfo) + ".sha256");
-    }
-    catch (MalformedURLException e) {
-      throw new TentackleRuntimeException(e);
-    }
-  }
-
-  private String getBaseUrlName(ClientInfo clientInfo) {
-    return getUpdateURL() + "${rootArtifactId}-jlink-client-" + Version.RELEASE +
-           "-" + clientInfo.getPlatform() + "-" + clientInfo.getArchitecture();
-  }
 }

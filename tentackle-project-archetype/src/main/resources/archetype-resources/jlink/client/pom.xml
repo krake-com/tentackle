@@ -55,6 +55,7 @@
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-jlink-maven-plugin</artifactId>
         <configuration>
+          <withUpdater>true</withUpdater>
           <mainModule>${package}.client</mainModule>
           <mainClass>${package}.client.${application}FxClient</mainClass>
           <addModules>

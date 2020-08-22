@@ -6,7 +6,6 @@ set script_dir=%CD%
 popd
 cd %script_dir%
 cd ..
-if not exist logs mkdir logs
   <#if mainModule != "">
 <#-- modular application -->
 bin\java${(modulePath!="")?then(" -p " + modulePath, "")}${(classPath!="")?then(" -cp " + classPath, "")} -m ${mainModule}/${mainClass}
@@ -20,11 +19,10 @@ bin\java -cp ${classPath} ${mainClass}
 abs_path() {
   echo "$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
 }
-cd $(dirname $(dirname $(abs_path "$0")))
+cd "$(dirname "$(dirname "$(abs_path "$0")")")"
   <#else>
-cd $(dirname $(dirname $(readlink -f "$0")))
+cd "$(dirname "$(dirname "$(readlink -f "$0")")")"
   </#if>
-mkdir logs 2>/dev/null
   <#if mainModule != "">
 <#-- modular application -->
 bin/java${(modulePath!="")?then(" -p " + modulePath, "")}${(classPath!="")?then(" -cp " + classPath, "")} -m ${mainModule}/${mainClass}

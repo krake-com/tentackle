@@ -44,7 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Determines the strategy how to invoke jlink.
  */
-public class JlinkResolver {
+public class JLinkResolver {
 
   /**
    * Jdeps output cache.
@@ -385,22 +385,20 @@ public class JlinkResolver {
 
 
   private final Set<Artifact> artifacts;                            // project's dependencies (maven artifacts)
-  private final AbstractJlinkMojo mojo;                             // the jlink mojo
+  private final AbstractJLinkMojo mojo;                             // the jlink mojo
 
   private final Map<String, ModularArtifact> automaticModules;      // <module-name>:<artifact>
   private final Map<String, ModularArtifact> modules;               // <module-name>:<artifact>
   private final Set<String> requiredModules;                        // all required application modules
   private final Set<String> runtimeModules;                         // all required java runtime modules
 
-
   /**
    * Creates a resolver.
    *
    * @param mojo the base mojo
    * @param artifacts the maven artifacts
-   * @throws MojoExecutionException if jdeps version could not be determined
    */
-  public JlinkResolver(AbstractJlinkMojo mojo, Set<Artifact> artifacts) throws MojoExecutionException {
+  public JLinkResolver(AbstractJLinkMojo mojo, Set<Artifact> artifacts) {
     this.artifacts = artifacts;
     this.mojo = mojo;
 

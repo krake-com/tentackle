@@ -31,7 +31,7 @@ import java.util.StringTokenizer;
 public class DefaultTemplateModelFactory implements TemplateModelFactory {
 
   @Override
-  public TemplateModel create(AbstractJlinkMojo mojo, JlinkResolver.Result result) throws MojoExecutionException {
+  public TemplateModel create(AbstractJLinkMojo mojo, JLinkResolver.Result result) throws MojoExecutionException {
 
     TemplateModel model = new TemplateModel(mojo.getLog());
 

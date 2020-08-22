@@ -19,8 +19,10 @@
 package org.tentackle.update;
 
 import org.tentackle.common.FileHelper;
+import org.tentackle.common.TentackleRuntimeException;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.http.HttpClient;
@@ -75,9 +77,28 @@ public abstract class AbstractUpdateServiceImpl extends UnicastRemoteObject impl
   }
 
   /**
+   * Gets the artifact name excluding the version.
+   * <p>
+   * Example:
+   * <pre>admin-jlink-client</pre>
+   *
+   * @return
+   */
+  public abstract String getArtifactName();
+
+  /**
+   * Gets the server version.
+   *
+   * @return the version
+   */
+  public abstract String getVersion();
+
+
+
+  /**
    * Gets the update base URL.
    *
-   * @return the url
+   * @return the url (with trailing slash!)
    */
   public String getUpdateURL() {
     return updateURL;
@@ -89,8 +110,9 @@ public abstract class AbstractUpdateServiceImpl extends UnicastRemoteObject impl
    * @param updateURL the url
    */
   public void setUpdateURL(String updateURL) {
-    this.updateURL = updateURL.endsWith("/") ? updateURL : updateURL + "/";
+    this.updateURL = updateURL.endsWith("/") ? updateURL : (updateURL + "/");
   }
+
 
   @Override
   public UpdateInfo getInfo(ClientInfo clientInfo) throws RemoteException {
@@ -100,7 +122,7 @@ public abstract class AbstractUpdateServiceImpl extends UnicastRemoteObject impl
       String shaHash = determineShaHash(shaURL);
       long size = determineDownloadSize(zipURL);
       String updateExecutor = createUpdateExecutor(clientInfo);
-      UpdateInfo updateInfo = new UpdateInfo(createServerVersion(), zipURL, shaHash, size, updateExecutor);
+      UpdateInfo updateInfo = new UpdateInfo(getVersion(), zipURL, shaHash, size, updateExecutor);
       return updateInfo;
     }
     catch (IOException ex) {
@@ -108,12 +130,7 @@ public abstract class AbstractUpdateServiceImpl extends UnicastRemoteObject impl
     }
   }
 
-  /**
-   * Gets the server version.
-   *
-   * @return the version
-   */
-  protected abstract String createServerVersion();
+
 
   /**
    * Creates the name of the update executor.
@@ -121,7 +138,9 @@ public abstract class AbstractUpdateServiceImpl extends UnicastRemoteObject impl
    * @param clientInfo the client info
    * @return the executor name
    */
-  protected abstract String createUpdateExecutor(ClientInfo clientInfo);
+  protected String createUpdateExecutor(ClientInfo clientInfo) {
+    return clientInfo.getPlatform().contains("win") ? "update.cmd" : "update.sh";
+  }
 
   /**
    * Creates the URL for the ZIP file.
@@ -129,7 +148,14 @@ public abstract class AbstractUpdateServiceImpl extends UnicastRemoteObject impl
    * @param clientInfo the client info
    * @return the URL
    */
-  protected abstract URL createZipURL(ClientInfo clientInfo);
+  protected URL createZipURL(ClientInfo clientInfo) {
+    try {
+      return new URL(createBaseUrlName(clientInfo) + ".zip");
+    }
+    catch (MalformedURLException e) {
+      throw new TentackleRuntimeException(e);
+    }
+  }
 
   /**
    * Creates the URL for the SHA256 file.
@@ -137,8 +163,33 @@ public abstract class AbstractUpdateServiceImpl extends UnicastRemoteObject impl
    * @param clientInfo the client info
    * @return the URL
    */
-  protected abstract URL createShaURL(ClientInfo clientInfo);
+  protected URL createShaURL(ClientInfo clientInfo) {
+    try {
+      return new URL(createBaseUrlName(clientInfo) + ".sha256");
+    }
+    catch (MalformedURLException e) {
+      throw new TentackleRuntimeException(e);
+    }
+  }
 
+  /**
+   * Creates the base URL name without extension.
+   *
+   * @param clientInfo the client info
+   * @return the URL string
+   */
+  protected String createBaseUrlName(ClientInfo clientInfo) {
+    StringBuilder buf = new StringBuilder();
+    buf.append(getUpdateURL())
+       .append(getArtifactName())
+       .append('-').append(getVersion())
+       .append('-').append(clientInfo.getPlatform())
+       .append('-').append(clientInfo.getArchitecture());
+    if (clientInfo.getInstallationType() == InstallationType.JPACKAGE) {
+      buf.append("-pkg");
+    }
+    return buf.toString();
+  }
 
   /**
    * Determines the SHA hash.

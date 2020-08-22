@@ -83,7 +83,7 @@ public interface ArtifactCreator {
    * @param mojo the jlink mojo
    * @throws MojoExecutionException if failed
    */
-  void createAndAttachArtifact(JlinkMojo mojo) throws MojoExecutionException;
+  void createAndAttachArtifact(JLinkMojo mojo) throws MojoExecutionException;
 
   /**
    * Processes the created application image.
@@ -102,5 +102,16 @@ public interface ArtifactCreator {
    * @throws MojoExecutionException if failed
    */
   void attachInstallers(JPackageMojo mojo, long minTime) throws MojoExecutionException;
+
+  /**
+   * Creates and attaches the update ZIP file.<br>
+   * Only if update feature is enabled.
+   *
+   * @param mojo the jpackage mojo
+   * @param appImageDir the application image directory
+   * @throws MojoExecutionException
+   * @see AbstractJLinkMojo#withUpdater
+   */
+  void createAndAttachUpdateZip(JPackageMojo mojo, File appImageDir) throws MojoExecutionException;
 
 }
