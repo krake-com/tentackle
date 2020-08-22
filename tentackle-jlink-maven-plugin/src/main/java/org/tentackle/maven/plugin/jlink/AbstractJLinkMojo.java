@@ -25,9 +25,13 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProjectHelper;
+import org.codehaus.plexus.archiver.Archiver;
+import org.codehaus.plexus.archiver.ArchiverException;
+import org.codehaus.plexus.archiver.zip.ZipArchiver;
 import org.codehaus.plexus.languages.java.jpms.LocationManager;
 
 import org.tentackle.common.FileHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.common.ToolRunner;
 import org.tentackle.maven.AbstractTentackleMojo;
 
@@ -46,7 +50,7 @@ import java.util.Objects;
  *
  * @author harald
  */
-public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
+public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
 
   /**
    * Name of the destination subfolder containing the classpath artifacts.
@@ -62,6 +66,11 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
    * Name of the destination subfolder containing the resources.
    */
   public static final String DEST_RESOURCES = "conf";
+
+  /**
+   * File extension for ZIP files.
+   */
+  public static final String ZIP_EXTENSION = "zip";
 
 
 
@@ -134,6 +143,37 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
    */
   @Parameter
   private File saveOpts;
+
+  /**
+   * Enables the auto update feature.
+   * <p>
+   * For the <code>jlink</code> gaol an extra update script will be generated
+   * via the {@link JLinkMojo#updateTemplate}.
+   * The update script will be named <code>update.&lt;extension&gt;</code> where
+   * the extension is derived from the platform (<code>cmd</code> on windows,
+   * otherwise <code>sh</code> for unixes).
+   * <p>
+   * For the <code>jpackage</code> goal an extra ZIP-file is created holding
+   * the jpackage image's files to update and an update script generated via
+   * {@link JPackageMojo#packageUpdateTemplate}.
+   * <p>
+   * For an implementation of the auto-update feature see the Tentackle modules
+   * <code>tentackle-update</code> and <code>tentackle-fx-rdc-update</code>.
+   */
+  @Parameter
+  private boolean withUpdater;
+
+  /**
+   * The archiver to zip the image.
+   */
+  @Component(role = Archiver.class, hint = ZIP_EXTENSION)
+  private ZipArchiver zipArchiver;
+
+  /**
+   * The directory where to store the ZIP files.
+   */
+  @Parameter(defaultValue = "${project.build.directory}")
+  private File zipDirectory;
 
   /**
    * Strip debug information.<br>
@@ -250,6 +290,13 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   private String extraClassifier;
 
   /**
+   * The generated ZIP file name.
+   */
+  @Parameter(defaultValue = "${project.build.finalName}", required = true, readonly = true)
+  private String finalName;
+
+
+  /**
    * The java runtime version used by the application.
    */
   private String javaRuntimeVersion;
@@ -259,6 +306,35 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
    */
   private int javaMajorRuntimeVersion;
 
+
+
+  /**
+   * Gets the ZIP file's name without extension.<br>
+   * Invoked by the {@link ArtifactCreator}.
+   *
+   * @return the final name
+   */
+  public String getFinalName() {
+    return finalName;
+  }
+
+  /**
+   * Returns whether the update feature is enabled.
+   *
+   * @return true if generate artifacts with auto-update feature
+   */
+  public boolean isWithUpdater() {
+    return withUpdater;
+  }
+
+  /**
+   * Gets the directory where to store the ZIP-file.
+   *
+   * @return the ZIP target folder
+   */
+  public File getZipDirectory() {
+    return zipDirectory;
+  }
 
   /**
    * Gets the template directory.
@@ -417,13 +493,32 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   @Override
   public void executeImpl() throws MojoExecutionException, MojoFailureException {
     // analyze project, determine jlink strategy
-    JlinkResolver.Result result = new JlinkResolver(this, getMavenProject().getArtifacts()).resolve();
+    JLinkResolver.Result result = new JLinkResolver(this, getMavenProject().getArtifacts()).resolve();
     // generate image
     createImage(result);
     // and the shell scripts
     generateFiles(result);
   }
 
+  /**
+   * The zip file will be installed and deployed with an additional classifier
+   * showing the operating system and the platform.
+   *
+   * @return the classifier
+   * @throws MojoExecutionException if no os.name
+   */
+  public String getClassifier() throws MojoExecutionException {
+    try {
+      String classifier = StringHelper.getPlatform() + "-" + StringHelper.getArchitecture();
+      if (!StringHelper.isAllWhitespace(getExtraClassifier())) {
+        classifier += "-" + getExtraClassifier();
+      }
+      return classifier;
+    }
+    catch (RuntimeException ex) {
+      throw new MojoExecutionException(ex.getMessage());
+    }
+  }
 
   /**
    * Gets the prefix to the jars and dirs in the runtime image.
@@ -436,11 +531,34 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
 
 
   /**
+   * Creates the zip file.<br>
+   * Invoked by the {@link ArtifactCreator}.
+   *
+   * @param dir the directory to create a zip file from
+   * @param name the zip filename without extension
+   * @return the created zip file
+   * @throws MojoExecutionException if some archiver or IO errors occurred
+   */
+  public File createZipFile(File dir, String name) throws MojoExecutionException {
+    File zipFile = new File(zipDirectory, name + "." + ZIP_EXTENSION);
+    zipArchiver.addDirectory(dir);
+    zipArchiver.setDestFile(zipFile);
+    try {
+      zipArchiver.createArchive();
+    }
+    catch (ArchiverException | IOException e) {
+      throw new MojoExecutionException(e.getMessage(), e);
+    }
+    return zipFile;
+  }
+
+
+  /**
    * Invokes the jlink tool and copies other artifacts and resources.
    *
    * @param result the resolver result
    */
-  protected void createImage(JlinkResolver.Result result) throws MojoFailureException, MojoExecutionException {
+  protected void createImage(JLinkResolver.Result result) throws MojoFailureException, MojoExecutionException {
     // run jlink
     createJLinkImage(result);
 
@@ -461,7 +579,7 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
    * @param result the resolver result
    * @throws MojoExecutionException if generation failed
    */
-  abstract protected void generateFiles(JlinkResolver.Result result) throws MojoExecutionException;
+  abstract protected void generateFiles(JLinkResolver.Result result) throws MojoExecutionException;
 
 
   /**
@@ -471,7 +589,7 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
    * @throws MojoExecutionException if building the JPMS info failed
    * @throws MojoFailureException if jlink returned an error code
    */
-  protected void createJLinkImage(JlinkResolver.Result result) throws MojoExecutionException, MojoFailureException {
+  protected void createJLinkImage(JLinkResolver.Result result) throws MojoExecutionException, MojoFailureException {
     getLog().info("creating jlink image for a " +
                   (result.isPlainModular() ? "plain " : "") +
                   (result.isModular() ? "modular" : "classpath") + " application with Java " + javaRuntimeVersion);
@@ -515,7 +633,7 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
    * @param result the resolver info
    * @throws MojoExecutionException if copy failed
    */
-  protected void copyArtifacts(JlinkResolver.Result result) throws MojoExecutionException {
+  protected void copyArtifacts(JLinkResolver.Result result) throws MojoExecutionException {
     try {
       // module path, if any
       if (result.isModular()) {
@@ -553,7 +671,7 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
    * @param result the resolver info
    * @throws MojoExecutionException if copy failed
    */
-  protected void copyResources(JlinkResolver.Result result) throws MojoExecutionException {
+  protected void copyResources(JLinkResolver.Result result) throws MojoExecutionException {
     // copy resources such as backend.properties or logging config to the conf subdirectory
     if (resourcesDirectory != null && resourcesDirectory.isDirectory()) {
       int resCount = copyResources(resourcesDirectory, new File(getImageDirectory(), DEST_RESOURCES));

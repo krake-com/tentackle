@@ -19,19 +19,12 @@ package org.tentackle.maven.plugin.jlink;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
-import org.codehaus.plexus.archiver.Archiver;
-import org.codehaus.plexus.archiver.ArchiverException;
-import org.codehaus.plexus.archiver.zip.ZipArchiver;
 
 import org.tentackle.common.StringHelper;
-
-import java.io.File;
-import java.io.IOException;
 
 /**
  * Creates a self-contained java application with the <code>jlink</code> tool.
@@ -114,7 +107,7 @@ import java.io.IOException;
       requiresDependencyResolution = ResolutionScope.RUNTIME,
       defaultPhase = LifecyclePhase.PACKAGE)
 
-public class JlinkMojo extends AbstractJlinkMojo {
+public class JLinkMojo extends AbstractJLinkMojo {
 
   /** filename of the NAME template. */
   public static final String NAME_TEMPLATE = "name.ftl";
@@ -125,8 +118,6 @@ public class JlinkMojo extends AbstractJlinkMojo {
   /** filename of the UPDATE template. */
   public static final String UPDATE_TEMPLATE = "update.ftl";
 
-  /** file extension for ZIP files. */
-  public static final String ZIP_EXTENSION = "zip";
 
   /**
    * The name of the template to generate the name of the runner script.<br>
@@ -142,23 +133,10 @@ public class JlinkMojo extends AbstractJlinkMojo {
   private String runTemplate;
 
   /**
-   * The name of the update script template.<br>
-   * Empty to disable.
+   * The name of the update script template.
    */
   @Parameter(defaultValue = UPDATE_TEMPLATE)
   private String updateTemplate;
-
-  /**
-   * The archiver to zip the image.
-   */
-  @Component(role = Archiver.class, hint = ZIP_EXTENSION)
-  private ZipArchiver zipArchiver;
-
-  /**
-   * The directory where to store the ZIP file.
-   */
-  @Parameter(defaultValue = "${project.build.directory}")
-  private File zipDirectory;
 
   /**
    * Disables the generation of a ZIP file and does not add an artifact for installation and deployment.<br>
@@ -167,31 +145,7 @@ public class JlinkMojo extends AbstractJlinkMojo {
   @Parameter(defaultValue = "false")
   private boolean noArtifact;
 
-  /**
-   * The generated ZIP file name.
-   */
-  @Parameter(defaultValue = "${project.build.finalName}", required = true, readonly = true)
-  private String finalName;
 
-
-  /**
-   * Gets the ZIP file's name without extension.<br>
-   * Invoked by the {@link ArtifactCreator}.
-   *
-   * @return the final name
-   */
-  public String getFinalName() {
-    return finalName;
-  }
-
-  /**
-   * Gets the directory where to store the ZIP-file.
-   *
-   * @return the ZIP target folder
-   */
-  public File getZipDirectory() {
-    return zipDirectory;
-  }
 
   /**
    * Gets the name of the name template.
@@ -214,52 +168,10 @@ public class JlinkMojo extends AbstractJlinkMojo {
   /**
    * Gets the name of the update template.
    *
-   * @return the template to generate the update script, empty if none
+   * @return the template to generate the update script, null if don't generate an update script
    */
   public String getUpdateTemplate() {
-    return updateTemplate;
-  }
-
-
-  /**
-   * Creates the zip file.<br>
-   * Invoked by the {@link ArtifactCreator}.
-   *
-   * @param name the filename without extension
-   * @return the created file
-   * @throws MojoExecutionException if some archiver or IO errors occurred
-   */
-  public File createZipFile(String name) throws MojoExecutionException {
-    File zipFile = new File(zipDirectory, name + "." + ZIP_EXTENSION);
-    zipArchiver.addDirectory(getImageDirectory());
-    zipArchiver.setDestFile(zipFile);
-    try {
-      zipArchiver.createArchive();
-    }
-    catch (ArchiverException | IOException e) {
-      throw new MojoExecutionException(e.getMessage(), e);
-    }
-    return zipFile;
-  }
-
-  /**
-   * The zip file will be installed and deployed with an additional classifier
-   * showing the operating system and the platform.
-   *
-   * @return the classifier
-   * @throws MojoExecutionException if no os.name
-   */
-  public String getClassifier() throws MojoExecutionException {
-    try {
-      String classifier = StringHelper.getPlatform() + "-" + StringHelper.getArchitecture();
-      if (!StringHelper.isAllWhitespace(getExtraClassifier())) {
-        classifier += "-" + getExtraClassifier();
-      }
-      return classifier;
-    }
-    catch (RuntimeException ex) {
-      throw new MojoExecutionException(ex.getMessage());
-    }
+    return isWithUpdater() ? updateTemplate : null;
   }
 
   @Override
@@ -272,9 +184,9 @@ public class JlinkMojo extends AbstractJlinkMojo {
   }
 
   @Override
-  protected void generateFiles(JlinkResolver.Result result) throws MojoExecutionException {
+  protected void generateFiles(JLinkResolver.Result result) throws MojoExecutionException {
     // generate the script to run the application in the bin subdirectory
-    new ScriptGenerator(this, result).generate();
+    new JLinkGenerator(this, result).generateScripts();
   }
 
   @Override
@@ -286,6 +198,9 @@ public class JlinkMojo extends AbstractJlinkMojo {
       if (StringHelper.isAllWhitespace(runTemplate)) {
         throw new MojoExecutionException("runTemplate missing");
       }
+      if (isWithUpdater() && StringHelper.isAllWhitespace(updateTemplate)) {
+        throw new MojoExecutionException("updateTemplate missing");
+      }
       return true;
     }
     return false;
@@ -295,8 +210,8 @@ public class JlinkMojo extends AbstractJlinkMojo {
   protected void installTemplates(boolean overwrite) throws MojoExecutionException {
     installTemplate(NAME_TEMPLATE, nameTemplate, overwrite);
     installTemplate(RUN_TEMPLATE, runTemplate, overwrite);
-    if (!StringHelper.isAllWhitespace(updateTemplate)) {
-      installTemplate(UPDATE_TEMPLATE, updateTemplate, overwrite);
+    if (getUpdateTemplate() != null) {
+      installTemplate(UPDATE_TEMPLATE, getUpdateTemplate(), overwrite);
     }
   }
 }

@@ -83,6 +83,6 @@ public interface TemplateModelFactory {
    * @return the model
    * @throws MojoExecutionException if model creation failed
    */
-  TemplateModel create(AbstractJlinkMojo mojo, JlinkResolver.Result result) throws MojoExecutionException;
+  TemplateModel create(AbstractJLinkMojo mojo, JLinkResolver.Result result) throws MojoExecutionException;
 
 }

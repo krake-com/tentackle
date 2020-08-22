@@ -33,11 +33,11 @@ public class DefaultArtifactCreator implements ArtifactCreator {
 
 
   @Override
-  public void createAndAttachArtifact(JlinkMojo mojo) throws MojoExecutionException {
+  public void createAndAttachArtifact(JLinkMojo mojo) throws MojoExecutionException {
     mojo.getProjectHelper().attachArtifact(mojo.getMavenProject(),
-                                           JlinkMojo.ZIP_EXTENSION,
+                                           AbstractJLinkMojo.ZIP_EXTENSION,
                                            mojo.getClassifier(),
-                                           mojo.createZipFile(mojo.getFinalName()));
+                                           mojo.createZipFile(mojo.getImageDirectory(), mojo.getFinalName()));
   }
 
   @Override
@@ -74,4 +74,12 @@ public class DefaultArtifactCreator implements ArtifactCreator {
     }
   }
 
+  @Override
+  public void createAndAttachUpdateZip(JPackageMojo mojo, File appImageDir) throws MojoExecutionException {
+    mojo.getProjectHelper().attachArtifact(mojo.getMavenProject(),
+                                           AbstractJLinkMojo.ZIP_EXTENSION,
+                                           mojo.getClassifier() + "-pkg",
+                                           mojo.createZipFile(appImageDir,
+                                                              mojo.getFinalName() + "-" + mojo.getPackageDirectory().getName()));
+  }
 }

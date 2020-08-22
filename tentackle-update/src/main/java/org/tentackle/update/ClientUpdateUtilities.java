@@ -42,6 +42,7 @@ import java.rmi.registry.Registry;
 import java.rmi.server.RMIClientSocketFactory;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 interface ClientUpdateUtilitiesHolder {
@@ -63,22 +64,114 @@ public class ClientUpdateUtilities {
     return ClientUpdateUtilitiesHolder.INSTANCE;
   }
 
-  private static final String[] DIR_NAMES = { ".", "bin", "conf", "include", "legal", "lib" };
+  private static final String[] JLINK_SUBDIR_NAMES = {".", "bin", "conf", "include", "legal", "lib" };
 
 
   /**
-   * Checks whether the application is running in an updatable directory.
+   * Checks whether given directory an updatable jlink image.
    *
-   * @return true if updatable
+   * @param dir the directory to check
+   * @return true if updatable jlink structure found
    */
-  public boolean isApplicationUpdatable() {
-    for (String dirName: DIR_NAMES) {
-      File dir = new File(dirName);
-      if (!dir.isDirectory() || !dir.canWrite()) {
-        return false;
+  public boolean isUpdatableJlinkDirectory(File dir) {
+    boolean isJlinkDirectory = true;
+    if (dir.isDirectory() && dir.canWrite()) {
+      for (String dirName : JLINK_SUBDIR_NAMES) {
+        File subdir = new File(dir, dirName);
+        if (!subdir.isDirectory() || !subdir.canWrite()) {
+          isJlinkDirectory = false;
+          break;
+        }
       }
     }
-    return true;
+    else {
+      isJlinkDirectory = false;
+    }
+    return isJlinkDirectory;
+  }
+
+  /**
+   * Checks whether the application is running in an updatable jlink directory.
+   *
+   * @return true if current workling directory contains an updatable jlink image
+   */
+  public boolean isUpdateableJlinkApplication() {
+    return isUpdatableJlinkDirectory(new File("."));
+  }
+
+  /**
+   * Checks whether
+   * @return true if jlink structure and updatable
+   */
+  public boolean isUpdatableJPackageApplication() {
+    File runtimeDir = null;
+    File rootDir = determineJPackageRoot();
+    if (rootDir != null) {
+      String platform = StringHelper.getPlatform();
+      if (platform.contains("win")) {
+        runtimeDir = new File(rootDir, "runtime");
+      }
+      else if (platform.contains("mac")) {
+        runtimeDir = new File(rootDir, "Contents/runtime/Contents/Home");
+      }
+      else { // linux
+        runtimeDir = new File(rootDir, "lib/runtime");
+      }
+    }
+    return runtimeDir != null && isUpdatableJlinkDirectory(runtimeDir);
+  }
+
+  /**
+   * Determines the jpackage's root installation directory.
+   *
+   * @return the installation directory, null if not a jpackage installation
+   */
+  public File determineJPackageRoot() {
+    File rootDir = null;
+    Optional<String> javaCommand = ProcessHandle.current().info().command();
+    if (javaCommand.isPresent()) {
+      File appDir = new File(javaCommand.get()).getParentFile();
+      String platform = StringHelper.getPlatform();
+      if (platform.contains("win")) {
+        rootDir = appDir;
+        if (!new File(rootDir, "app").isDirectory()) {
+          rootDir = null;   // not a windows package
+        }
+      }
+      else if (platform.contains("mac")) {
+        if ("MacOS".equals(appDir.getName())) {
+          rootDir = appDir.getParentFile().getParentFile();
+          if (!new File(rootDir, "Contents").isDirectory()) {
+            rootDir = null;   // not a MacOS package
+          }
+        }
+      }
+      else { // linux
+        if ("bin".equals(appDir.getName())) {
+          rootDir = appDir.getParentFile();
+          if (!new File(rootDir, "lib/app").isDirectory()) {
+            rootDir = null; // not a linux package
+          }
+        }
+      }
+    }
+    return rootDir;
+  }
+
+  /**
+   * Determines the installation type of the running application.
+   *
+   * @return the installation type, null if not an updatable installation
+   */
+  public InstallationType determineInstallationType() {
+    InstallationType type = null;
+    if (isUpdateableJlinkApplication()) {
+      type = InstallationType.JLINK;
+    }
+    else if (isUpdatableJPackageApplication()) {
+      type = InstallationType.JPACKAGE;
+    }
+    return type;
   }
 
   /**

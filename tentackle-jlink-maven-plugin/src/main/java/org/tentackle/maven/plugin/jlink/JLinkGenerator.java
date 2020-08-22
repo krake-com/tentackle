@@ -21,20 +21,23 @@ import freemarker.template.Configuration;
 import freemarker.template.TemplateException;
 import org.apache.maven.plugin.MojoExecutionException;
 
+import org.tentackle.common.StringHelper;
 import org.tentackle.maven.AbstractGenerator;
 import org.tentackle.maven.GeneratedFile;
+import org.tentackle.maven.GeneratedString;
 import org.tentackle.maven.TemplateModel;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.StringTokenizer;
 
 /**
- * Generator for the jpackage tool's options files.
+ * Generator for the jlink image's run and update scripts.
  */
-public class JPackageOptionsGenerator extends AbstractGenerator {
+public class JLinkGenerator extends AbstractGenerator {
 
-  private final JPackageMojo mojo;
-  private final JlinkResolver.Result result;
+  private final JLinkMojo mojo;
+  private final JLinkResolver.Result result;
 
   /**
    * Creates the generator.
@@ -42,7 +45,7 @@ public class JPackageOptionsGenerator extends AbstractGenerator {
    * @param mojo the jlink mojo
    * @param result the resolver results
    */
-  public JPackageOptionsGenerator(JPackageMojo mojo, JlinkResolver.Result result) {
+  public JLinkGenerator(JLinkMojo mojo, JLinkResolver.Result result) {
     this.mojo = mojo;
     this.result = result;
     setTemplateDirectory(mojo.getTemplateDir());
@@ -54,19 +57,36 @@ public class JPackageOptionsGenerator extends AbstractGenerator {
    *
    * @throws MojoExecutionException if I/O or template error
    */
-  public void generate() throws MojoExecutionException {
+  public void generateScripts() throws MojoExecutionException {
     try {
       Configuration cfg = createFreemarkerConfiguration();
       TemplateModel model = TemplateModelFactory.getInstance().create(mojo, result);
-      File optionsFile = new File(mojo.getMavenProject().getBuild().getDirectory(), JPackageMojo.OPTIONS_IMAGE);
-      GeneratedFile generatedFile = new GeneratedFile(cfg, model, mojo.getPackageImageTemplate(), optionsFile);
-      generatedFile.generate();
-      optionsFile = new File(mojo.getMavenProject().getBuild().getDirectory(), JPackageMojo.OPTIONS_INSTALLER);
-      generatedFile = new GeneratedFile(cfg, model, mojo.getPackageInstallerTemplate(), optionsFile);
-      generatedFile.generate();
+      String output = new GeneratedString(cfg, model, mojo.getNameTemplate()).generate();
+      StringTokenizer stok = new StringTokenizer(output);
+      if (stok.hasMoreTokens()) {
+        // generate run script
+        String fileName = stok.nextToken();
+        File scriptFile = new File(new File(mojo.getImageDirectory(), "bin"), fileName);
+        GeneratedFile generatedFile = new GeneratedFile(cfg, model, mojo.getRunTemplate(), scriptFile);
+        generatedFile.generate();
+        scriptFile.setExecutable(true);
+
+        // generate update script
+        model.putValue("runScript", fileName);    // if update script also restarts the application
+        if (mojo.getUpdateTemplate() != null) {
+          scriptFile = new File(new File(mojo.getImageDirectory(), "bin"),
+                                StringHelper.getPlatform().contains("win") ? "update.cmd" : "update.sh");
+          generatedFile = new GeneratedFile(cfg, model, mojo.getUpdateTemplate(), scriptFile);
+          generatedFile.generate();
+          scriptFile.setExecutable(true);
+        }
+      }
+      else {
+        throw new MojoExecutionException("no valid name for runner script");
+      }
     }
     catch (IOException | TemplateException e) {
-      throw new MojoExecutionException("generating jpackage options failed", e);
+      throw new MojoExecutionException("generating run script failed", e);
     }
   }
 
