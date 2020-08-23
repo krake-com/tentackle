@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.maven.plugin.jlink;
 
 import org.apache.maven.artifact.Artifact;
@@ -46,7 +45,7 @@ import java.util.Objects;
 
 
 /**
- * Base jlink mojo.
+ * Base class for all mojos of the <code>tentackle-jlink-maven-plugin</code>.
  *
  * @author harald
  */
@@ -108,31 +107,23 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   private List<String> extraClasspathElements;
 
   /**
-   * JPMS support.
-   */
-  @Component
-  private LocationManager locationManager;
-
-  /**
-   * To attach artifacts with classifier.
-   */
-  @Component
-  private MavenProjectHelper projectHelper;
-
-  /**
    * The directory holding the script templates.
    */
   @Parameter(defaultValue = "${project.basedir}/templates")
   private File templateDir;
 
   /**
-   * Explicit path to the <code>jdeps</code> tool.
+   * Explicit path to the <code>jdeps</code> tool.<br>
+   * Only if toolchains cannot be used.
+   * @see #jdkToolchain
    */
   @Parameter(property = "jdepsTool")
   private File jdepsTool;
 
   /**
-   * Explicit path to the <code>jlink</code> tool.
+   * Explicit path to the <code>jlink</code> tool.<br>
+   * Only if toolchains cannot be used.
+   * @see #jdkToolchain
    */
   @Parameter(property = "jlinkTool")
   private File jlinkTool;
@@ -149,12 +140,12 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    * <p>
    * For the <code>jlink</code> gaol an extra update script will be generated
    * via the {@link JLinkMojo#updateTemplate}.
-   * The update script will be named <code>update.&lt;extension&gt;</code> where
+   * The update script will be named <code>bin/update.&lt;extension&gt;</code> where
    * the extension is derived from the platform (<code>cmd</code> on windows,
    * otherwise <code>sh</code> for unixes).
    * <p>
    * For the <code>jpackage</code> goal an extra ZIP-file is created holding
-   * the jpackage image's files to update and an update script generated via
+   * the jpackage image's files and an update script generated via
    * {@link JPackageMojo#packageUpdateTemplate}.
    * <p>
    * For an implementation of the auto-update feature see the Tentackle modules
@@ -162,12 +153,6 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    */
   @Parameter
   private boolean withUpdater;
-
-  /**
-   * The archiver to zip the image.
-   */
-  @Component(role = Archiver.class, hint = ZIP_EXTENSION)
-  private ZipArchiver zipArchiver;
 
   /**
    * The directory where to store the ZIP files.
@@ -294,6 +279,26 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    */
   @Parameter(defaultValue = "${project.build.finalName}", required = true, readonly = true)
   private String finalName;
+
+
+  /**
+   * JPMS support.
+   */
+  @Component
+  private LocationManager locationManager;
+
+  /**
+   * To attach artifacts with classifier.
+   */
+  @Component
+  private MavenProjectHelper projectHelper;
+
+  /**
+   * The archiver to zip the image.
+   */
+  @Component(role = Archiver.class, hint = ZIP_EXTENSION)
+  private ZipArchiver zipArchiver;
+
 
 
   /**
@@ -480,6 +485,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
     return javaMajorRuntimeVersion;
   }
 
+
   @Override
   public void prepareExecute() throws MojoExecutionException, MojoFailureException {
     if (jdepsTool == null) {
@@ -490,6 +496,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
     }
   }
 
+
   @Override
   public void executeImpl() throws MojoExecutionException, MojoFailureException {
     // analyze project, determine jlink strategy
@@ -499,6 +506,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
     // and the shell scripts
     generateFiles(result);
   }
+
 
   /**
    * The zip file will be installed and deployed with an additional classifier
@@ -519,6 +527,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
       throw new MojoExecutionException(ex.getMessage());
     }
   }
+
 
   /**
    * Gets the prefix to the jars and dirs in the runtime image.
@@ -554,6 +563,46 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
 
 
   /**
+   * Returns whether an artifact should be moved to the classpath explicitly.
+   *
+   * @param artifact the artifact
+   * @return true if move to classpath, else modulepath
+   */
+  public boolean isClasspathDependency(Artifact artifact) {
+    if (classpathDependencies != null) {
+      for (ClasspathDependency classpathDependency: classpathDependencies) {
+        if (Objects.equals(classpathDependency.getGroupId(), artifact.getGroupId()) &&
+            Objects.equals(classpathDependency.getArtifactId(), artifact.getArtifactId()) &&
+            Objects.equals(classpathDependency.getClassifier(), artifact.getClassifier())) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+
+
+  /**
+   * Generates additional files such as shell scripts or command files.
+   *
+   * @param result the resolver result
+   * @throws MojoExecutionException if generation failed
+   */
+  abstract protected void generateFiles(JLinkResolver.Result result) throws MojoExecutionException;
+
+
+  /**
+   * Copies the templates to the template directory.
+   *
+   * @param overwrite true if overwrite existing templates, false if install only missing
+   * @throws MojoExecutionException if installation failed
+   */
+  abstract protected void installTemplates(boolean overwrite) throws MojoExecutionException;
+
+
+
+  /**
    * Invokes the jlink tool and copies other artifacts and resources.
    *
    * @param result the resolver result
@@ -571,16 +620,6 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
     // extra directories, if any
     copyExtraDirectories();
   }
-
-
-  /**
-   * Generates additional files such as shell scripts or command files.
-   *
-   * @param result the resolver result
-   * @throws MojoExecutionException if generation failed
-   */
-  abstract protected void generateFiles(JLinkResolver.Result result) throws MojoExecutionException;
-
 
   /**
    * Creates the jlink image.
@@ -711,25 +750,6 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
     }
   }
   
-
-  /**
-   * Copies the resources.
-   *
-   * @param srcDir the resource directory
-   * @param dstDir the destination directory
-   * @return number of resource files copied
-   * @throws MojoExecutionException if copy failed
-   */
-  private int copyResources(File srcDir, File dstDir) throws MojoExecutionException {
-    try {
-      return FileHelper.copyDirectory(srcDir, dstDir,true, null);
-    }
-    catch (IOException ex) {
-      throw new MojoExecutionException("copying resources failed", ex);
-    }
-  }
-
-
   @Override
   protected boolean validate() throws MojoExecutionException {
     if (super.validate()) {
@@ -765,36 +785,6 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
     return false;
   }
 
-
-
-  /**
-   * Returns whether an artifact should be moved to the classpath explicitly.
-   *
-   * @param artifact the artifact
-   * @return true if move to classpath, else modulepath
-   */
-  public boolean isClasspathDependency(Artifact artifact) {
-    if (classpathDependencies != null) {
-      for (ClasspathDependency classpathDependency: classpathDependencies) {
-        if (Objects.equals(classpathDependency.getGroupId(), artifact.getGroupId()) &&
-            Objects.equals(classpathDependency.getArtifactId(), artifact.getArtifactId()) &&
-            Objects.equals(classpathDependency.getClassifier(), artifact.getClassifier())) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-
-  /**
-   * Copies the templates to the template directory.
-   *
-   * @param overwrite true if overwrite existing templates, false if install only missing
-   * @throws MojoExecutionException if installation failed
-   */
-  abstract protected void installTemplates(boolean overwrite) throws MojoExecutionException;
-
   /**
    * Installs the template with the given name.
    *
@@ -829,6 +819,24 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
     String out = runner.getOutputAsString();
     if (!out.isEmpty()) {
       getLog().info(out);
+    }
+  }
+
+
+  /**
+   * Copies the resources.
+   *
+   * @param srcDir the resource directory
+   * @param dstDir the destination directory
+   * @return number of resource files copied
+   * @throws MojoExecutionException if copy failed
+   */
+  private int copyResources(File srcDir, File dstDir) throws MojoExecutionException {
+    try {
+      return FileHelper.copyDirectory(srcDir, dstDir,true, null);
+    }
+    catch (IOException ex) {
+      throw new MojoExecutionException("copying resources failed", ex);
     }
   }
 

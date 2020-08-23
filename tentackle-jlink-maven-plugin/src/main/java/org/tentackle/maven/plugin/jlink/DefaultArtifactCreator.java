@@ -15,6 +15,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
 package org.tentackle.maven.plugin.jlink;
 
 import org.apache.maven.plugin.MojoExecutionException;
@@ -37,7 +38,8 @@ public class DefaultArtifactCreator implements ArtifactCreator {
     mojo.getProjectHelper().attachArtifact(mojo.getMavenProject(),
                                            AbstractJLinkMojo.ZIP_EXTENSION,
                                            mojo.getClassifier(),
-                                           mojo.createZipFile(mojo.getImageDirectory(), mojo.getFinalName()));
+                                           mojo.createZipFile(mojo.getImageDirectory(),
+                                           mojo.getFinalName()  + "-" + mojo.getImageDirectory().getName()));
   }
 
   @Override
@@ -75,7 +77,7 @@ public class DefaultArtifactCreator implements ArtifactCreator {
   }
 
   @Override
-  public void createAndAttachUpdateZip(JPackageMojo mojo, File appImageDir) throws MojoExecutionException {
+  public void createAndAttachArtifact(JPackageMojo mojo, File appImageDir) throws MojoExecutionException {
     mojo.getProjectHelper().attachArtifact(mojo.getMavenProject(),
                                            AbstractJLinkMojo.ZIP_EXTENSION,
                                            mojo.getClassifier() + "-pkg",

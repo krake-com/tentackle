@@ -18,7 +18,6 @@
 
 package org.tentackle.maven.plugin.jlink;
 
-
 import org.apache.maven.artifact.Artifact;
 import org.codehaus.plexus.languages.java.jpms.JavaModuleDescriptor;
 
@@ -60,7 +59,6 @@ public class ModularArtifact implements Comparable<ModularArtifact> {
   public JavaModuleDescriptor getModuleDescriptor() {
     return moduleDescriptor;
   }
-
 
   /**
    * Gets the module name.
