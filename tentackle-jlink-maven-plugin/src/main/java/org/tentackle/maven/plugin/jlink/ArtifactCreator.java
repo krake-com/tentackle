@@ -104,14 +104,14 @@ public interface ArtifactCreator {
   void attachInstallers(JPackageMojo mojo, long minTime) throws MojoExecutionException;
 
   /**
-   * Creates and attaches the update ZIP file.<br>
-   * Only if update feature is enabled.
+   * Creates and attaches the update ZIP file created by the jpackage goal.<br>
+   * Invoked only if update feature is enabled.
    *
    * @param mojo the jpackage mojo
    * @param appImageDir the application image directory
    * @throws MojoExecutionException
    * @see AbstractJLinkMojo#withUpdater
    */
-  void createAndAttachUpdateZip(JPackageMojo mojo, File appImageDir) throws MojoExecutionException;
+  void createAndAttachArtifact(JPackageMojo mojo, File appImageDir) throws MojoExecutionException;
 
 }

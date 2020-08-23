@@ -161,12 +161,15 @@ public class JPackageMojo extends AbstractJLinkMojo {
 
   /** config for the module path (>= java 15). */
   private static final String APPDIR_MODS = "java-options=$APPDIR/" + MODS_DIR;
+
+  /** config for the module path (>= java 15 on windows) */
   private static final String APPDIR_MODS_WINDOWS = "java-options=$APPDIR\\" + MODS_DIR;
 
 
-
   /**
-   * Explicit path to the <code>jpackage</code> tool.
+   * Explicit path to the <code>jpackage</code> tool.<br>
+   * Only if toolchains cannot be used.
+   * @see #jpackageToolchain
    */
   @Parameter(property = "jpackageTool")
   private File jpackageTool;
@@ -222,15 +225,16 @@ public class JPackageMojo extends AbstractJLinkMojo {
   private String mainJar;
 
 
-
-
   /**
    * Major version of the jpackage tool.
    */
   private int jpackageMajorRuntimeVersion;
 
-
+  /**
+   * Lazily created image path prefix according to the platform.
+   */
   private String imagePathPrefix;
+
 
   @Override
   public String getImagePathPrefix() {
@@ -315,6 +319,7 @@ public class JPackageMojo extends AbstractJLinkMojo {
     super.executeImpl();
     ArtifactCreator.getInstance().attachInstallers(this, startTime);
   }
+
 
   @Override
   protected void createImage(JLinkResolver.Result result) throws MojoFailureException, MojoExecutionException {
@@ -447,11 +452,11 @@ public class JPackageMojo extends AbstractJLinkMojo {
     logToolOutput(jpackageRunner);
 
     if (isWithUpdater()) {
+      getLog().info("creating updater");
       generator.generateUpdateScript(appImageDir);
-      ArtifactCreator.getInstance().createAndAttachUpdateZip(this, appImageDir);
+      ArtifactCreator.getInstance().createAndAttachArtifact(this, appImageDir);
     }
   }
-
 
   @Override
   protected boolean validate() throws MojoExecutionException {

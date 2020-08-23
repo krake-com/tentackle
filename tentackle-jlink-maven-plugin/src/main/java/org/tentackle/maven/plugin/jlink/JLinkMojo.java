@@ -15,6 +15,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
 package org.tentackle.maven.plugin.jlink;
 
 import org.apache.maven.plugin.MojoExecutionException;
@@ -146,7 +147,6 @@ public class JLinkMojo extends AbstractJLinkMojo {
   private boolean noArtifact;
 
 
-
   /**
    * Gets the name of the name template.
    *
@@ -182,6 +182,7 @@ public class JLinkMojo extends AbstractJLinkMojo {
       ArtifactCreator.getInstance().createAndAttachArtifact(this);
     }
   }
+
 
   @Override
   protected void generateFiles(JLinkResolver.Result result) throws MojoExecutionException {
