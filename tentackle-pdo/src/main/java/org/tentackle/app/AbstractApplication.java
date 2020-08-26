@@ -21,6 +21,7 @@ package org.tentackle.app;
 
 import org.tentackle.common.ModuleInfo;
 import org.tentackle.common.ModuleSorter;
+import org.tentackle.common.StringHelper;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.CommandLine;
@@ -51,6 +52,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
+import java.util.function.Function;
 
 
 /**
@@ -463,8 +465,11 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    * If the given properties are different from the application properties, they will be copied to
    * the application properties.
    * <p>
-   * The default implementation first parses the properties for system properties. System properties start with
-   * {@code SYSTEM_} or {@code ^} followed by the property name.
+   * The default implementation first parses the properties for system properties and replaces
+   * any system properties according to {@link StringHelper#replaceVariables(String, Function)}.<br>
+   * System properties start with {@code SYSTEM_} or {@code ^} followed by the property name.
+   * <p>
+   * Other well-known properties that can be set:
    * <p>
    * {@code scripting=...} sets the default scripting language
    * <p>
@@ -476,23 +481,33 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    */
   public void applyProperties(Properties properties) {
     if (properties != null) {
-
-      // set system properties and copy the rest
+      // translate variables, set system properties and copy the rest
+      Function<String, String> systemVariableProvider = System.getProperties()::getProperty;
       for (String propName : properties.stringPropertyNames()) {
         String propValue = properties.getProperty(propName);
-        String sysKey = null;
-        if (propName.startsWith("SYSTEM_")) {
-          sysKey = propName.substring(7);
-        }
-        else if (propName.startsWith("^")) {
-          sysKey = propName.substring(1);
-        }
-        if (sysKey != null) {
-          System.setProperty(sysKey, propValue);
-          LOGGER.info("system property {0} set", sysKey);  // don't log the value, could be a password...
-        }
-        else if (props != properties && !props.containsKey(propName)) { // cmd props take precedence
-          props.setProperty(propName, propValue);
+        if (propValue != null) {  // null should not happen, but multi threading...
+          String processedValue = StringHelper.replaceVariables(propValue, systemVariableProvider);
+          if (!propValue.equals(processedValue)) {
+            propValue = processedValue;
+            if (properties == props) {
+              props.setProperty(propName, processedValue);
+            }
+            // else override below...
+          }
+          String sysKey = null;
+          if (propName.startsWith("SYSTEM_")) {
+            sysKey = propName.substring(7);
+          }
+          else if (propName.startsWith("^")) {
+            sysKey = propName.substring(1);
+          }
+          if (sysKey != null) {
+            System.setProperty(sysKey, propValue);
+            LOGGER.info("system property {0} set", sysKey);  // don't log the value, could be a password...
+          }
+          else if (props != null && props != properties && !props.containsKey(propName)) { // cmd props take precedence
+            props.setProperty(propName, propValue);
+          }
         }
       }
 

@@ -65,6 +65,7 @@ public class JLinkResolver {
     private final Set<String> extraClassPathElements;
     private boolean modular;
     private boolean isPlainModular;
+    private String imagePathPrefix;
 
     public Result() {
       jlinkModules = new ArrayList<>();
@@ -72,6 +73,21 @@ public class JLinkResolver {
       modulePath = new LinkedHashSet<>();
       classPath = new LinkedHashSet<>();
       extraClassPathElements = new LinkedHashSet<>();
+    }
+
+    /**
+     * Gets the prefix to the runtime image path.
+     *
+     * @return the path, empty if jlink image, else path to runtime image
+     */
+    public String getImagePathPrefix() {
+      if (imagePathPrefix == null) {
+        imagePathPrefix = mojo.getImagePathPrefix();
+        if (!imagePathPrefix.isEmpty() && !imagePathPrefix.endsWith("/")) {
+          imagePathPrefix += "/";
+        }
+      }
+      return imagePathPrefix;
     }
 
     /**
@@ -308,7 +324,7 @@ public class JLinkResolver {
           else {
             needSep = true;
           }
-          buf.append(mojo.getImagePathPrefix()).append(mojo.DEST_MODULEPATH).append('/').append(artifact.getFileName());
+          buf.append(getImagePathPrefix()).append(mojo.DEST_MODULEPATH).append('/').append(artifact.getFileName());
         }
       }
       return buf.toString();
@@ -353,7 +369,7 @@ public class JLinkResolver {
     public String generateClassPath() {
       StringBuilder buf = new StringBuilder();
       boolean needSep = false;
-      String prefix = mojo.getImagePathPrefix();
+      String prefix = getImagePathPrefix();
       for (String element : extraClassPathElements) {
         if (needSep) {
           buf.append(File.pathSeparatorChar);
@@ -361,7 +377,7 @@ public class JLinkResolver {
         else {
           needSep = true;
         }
-        if (".".equals(element) && prefix.endsWith("/")) {
+        if (".".equals(element) && !prefix.isEmpty()) {
           // translate dot prefixed by a directory to the directory alone (without trailing slash)
           buf.append(prefix, 0, prefix.length() - 1);
         }

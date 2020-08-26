@@ -241,13 +241,13 @@ public class JPackageMojo extends AbstractJLinkMojo {
     if (imagePathPrefix == null) {
       String platform = StringHelper.getPlatform();
       if (platform.contains("win")) {
-        imagePathPrefix = "$ROOTDIR/runtime/";    // no backslashes!
+        imagePathPrefix = "$ROOTDIR/runtime";    // no backslashes!
       }
       else if (platform.contains("mac")) {
-        imagePathPrefix = "$ROOTDIR/runtime/Contents/Home/";
+        imagePathPrefix = "$ROOTDIR/runtime/Contents/Home";
       }
       else {    // linux
-        imagePathPrefix = "$ROOTDIR/lib/runtime/";
+        imagePathPrefix = "$ROOTDIR/lib/runtime";
       }
     }
     return imagePathPrefix;
@@ -366,7 +366,10 @@ public class JPackageMojo extends AbstractJLinkMojo {
                     .arg("--main-class").arg(getMainClass())
                     .arg("--input").arg(cpDir);
     }
-    jpackageRunner.arg("@" + getMavenProject().getBuild().getDirectory() + File.separator + OPTIONS_IMAGE);
+    jpackageRunner.arg("--java-options").arg("-DROOTDIR=$ROOTDIR")
+                  .arg("--java-options").arg("-DAPPDIR=$APPDIR")
+                  .arg("--java-options").arg("-DRUNTIMEDIR=" + getImagePathPrefix())
+                  .arg("@" + getMavenProject().getBuild().getDirectory() + File.separator + OPTIONS_IMAGE);
     if (verbosityLevel.isDebug()) {
       jpackageRunner.arg("--verbose");
     }
@@ -543,7 +546,7 @@ public class JPackageMojo extends AbstractJLinkMojo {
           // replace mainjar
           getLog().debug("old mainjar = " + line.substring(APP_MAINJAR.length()));
           buf.setLength(buf.length() - line.length() + APP_MAINJAR.length());
-          buf.append(getImagePathPrefix()).append(DEST_CLASSPATH).append('/').append(mainJarName);
+          buf.append(getImagePathPrefix()).append('/').append(DEST_CLASSPATH).append('/').append(mainJarName);
           mainJarPatched = true;
         }
         if (patchModulePath) {
