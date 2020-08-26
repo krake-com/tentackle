@@ -1617,6 +1617,111 @@ public final class StringHelper {
 
 
   /**
+   * Replaces variables.<br>
+   * The semantics are very much the same as used by the maven resources plugin, but
+   * with the extension of optional default values and that <code>@</code> is not a valid delimiter.
+   * <p>
+   * Syntax: <code>${name[?default]}</code>, where <code>name</code> is the variable name
+   * and <code>default</code> is the default value to be used if there is no such variable.
+   * <p>
+   * Characters can be quoted with a backslash.
+   * A double backslash is treated as a single backslash.
+   *
+   * @param str the string
+   * @param variableProvider the variables as properties
+   * @return the processed string
+   */
+  public static String replaceVariables(String str, Function<String,String> variableProvider) {
+
+    StringBuilder buf = new StringBuilder();  // output buffer
+    StringBuilder variableName = null;        // holds the name of the variable, null if not parsing a variable
+    StringBuilder defaultValue = null;        // holds the default value, null not parsing a default value
+    boolean quoted = false;                   // true if next character is quoted
+
+    for (int i = 0; i < str.length(); i++) {
+      char c = str.charAt(i);
+      if (quoted) {
+        if (variableName == null) {
+          buf.append(c);
+        }
+        else {
+          if (defaultValue == null) {
+            variableName.append(c);
+          }
+          else {
+            defaultValue.append(c);
+          }
+        }
+        quoted = false;
+      }
+      else {
+        if (c == '\\') {
+          quoted = true;
+        }
+        else {
+          if (variableName == null) {
+            if (c == '$') {
+              if (i < str.length() - 1 && str.charAt(i + 1) == '{') {
+                variableName = new StringBuilder();
+                ++i;
+              }
+              else {
+                buf.append(c);
+              }
+            }
+            else {
+              buf.append(c);
+            }
+          }
+          else {
+            if (c == '}') {
+              String key = variableName.toString();
+              String value = variableProvider.apply(key);
+              if (value != null) {
+                buf.append(value);
+              }
+              else {
+                if (defaultValue != null) {
+                  buf.append(defaultValue);
+                }
+                else {
+                  // no such variable and no default
+                  buf.append("${").append(variableName).append('}');
+                }
+              }
+              // else: treat as empty
+              variableName = null;
+              defaultValue = null;
+            }
+            else {
+              if (c == '?' && defaultValue == null) {
+                defaultValue = new StringBuilder();
+              }
+              else {
+                if (defaultValue == null) {
+                  variableName.append(c);
+                }
+                else {
+                  defaultValue.append(c);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    if (variableName != null) {
+      // missing closing }
+      buf.append("${").append(variableName);
+      if (defaultValue != null) {
+        buf.append("?").append(defaultValue);
+      }
+    }
+    return buf.toString();
+  }
+
+
+  /**
    * prevent instantiation.
    */
   private StringHelper() {}
