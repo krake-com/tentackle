@@ -65,14 +65,16 @@ public class Backends extends AbstractFxController {
    *
    * @param application the application name
    * @param system true if user system preferences, else user preferences
+   * @param updatedRunnable invoked whenever the backend were modified, null if none
    */
-  public static void editBackends(String application, boolean system) {
+  public static void editBackends(String application, boolean system, Runnable updatedRunnable) {
     Backends controller = Fx.load(Backends.class);
     Scene scene = new Scene(controller.getView());
     Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
     stage.setScene(scene);
     stage.setTitle(RdcFxRdcBundle.getString("Backends"));
     controller.setApplication(application, system);
+    controller.setUpdatedRunnable(updatedRunnable);
     controller.getView().addEventFilter(KeyEvent.KEY_RELEASED, event -> {
       if (event.getCode() == KeyCode.ESCAPE) {
         controller.persist();
@@ -85,8 +87,9 @@ public class Backends extends AbstractFxController {
 
 
 
-  private String application;     // the application name
-  private boolean system;         // system preferences?
+  private String application;         // the application name
+  private boolean system;             // system preferences?
+  private Runnable updatedRunnable;   // backends were updated
 
 
   // list of backends with buttons to add and remove a backend
@@ -295,6 +298,24 @@ public class Backends extends AbstractFxController {
   }
 
   /**
+   * Gets the runnable invoked when backends were updated.
+   *
+   * @return the runnable, null if none
+   */
+  public Runnable getUpdatedRunnable() {
+    return updatedRunnable;
+  }
+
+  /**
+   * Sets the runnable invoked when backends were updated.
+   *
+   * @param updatedRunnable the runnable, null if none
+   */
+  public void setUpdatedRunnable(Runnable updatedRunnable) {
+    this.updatedRunnable = updatedRunnable;
+  }
+
+  /**
    * Gets the selected backend.
    *
    * @return the backend, null if none selected
@@ -315,6 +336,9 @@ public class Backends extends AbstractFxController {
     if (driver != null) {
       driverPane.updateModel();
       persist(driver);
+    }
+    if (updatedRunnable != null) {
+      updatedRunnable.run();
     }
   }
 
