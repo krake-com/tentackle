@@ -440,6 +440,7 @@ public class JPackageMojo extends AbstractJLinkMojo {
     }
     jpackageRunner.arg("-n").arg(applicationName)   // can be overridden via options file below
                   .arg("--app-image").arg(appImageDir)
+                  .arg("--app-version").arg(getMavenProject().getVersion())
                   .arg("-d").arg(getMavenProject().getBuild().getDirectory())
                   .arg("@" + getMavenProject().getBuild().getDirectory() + File.separator + OPTIONS_INSTALLER);
     if (verbosityLevel.isDebug()) {
