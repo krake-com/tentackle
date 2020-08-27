@@ -29,7 +29,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 
 
@@ -1617,7 +1619,7 @@ public final class StringHelper {
 
 
   /**
-   * Replaces variables.<br>
+   * Evaluates a string replacing variables.<br>
    * The semantics are very much the same as used by the maven resources plugin, but
    * with the extension of optional default values and that <code>@</code> is not a valid delimiter.
    * <p>
@@ -1626,12 +1628,26 @@ public final class StringHelper {
    * <p>
    * Characters can be quoted with a backslash.
    * A double backslash is treated as a single backslash.
+   * <p>
+   * Variables may contain other variables.
    *
    * @param str the string
    * @param variableProvider the variables as properties
    * @return the processed string
    */
-  public static String replaceVariables(String str, Function<String,String> variableProvider) {
+  public static String evaluate(String str, Function<String,String> variableProvider) {
+    return evaluateImpl(str, variableProvider, new HashSet<>());
+  }
+
+  /**
+   * Recursive workhorse for {@link #evaluate(String, Function)}.
+   *
+   * @param str the string
+   * @param variableProvider the variables as properties
+   * @param processedVariables set of recursively processed variables to detect endless loops
+   * @return the processed string
+   */
+  private static String evaluateImpl(String str, Function<String,String> variableProvider, Set<String> processedVariables) {
 
     StringBuilder buf = new StringBuilder();  // output buffer
     StringBuilder variableName = null;        // holds the name of the variable, null if not parsing a variable
@@ -1678,6 +1694,10 @@ public final class StringHelper {
               String key = variableName.toString();
               String value = variableProvider.apply(key);
               if (value != null) {
+                Set<String> variableBranch = new HashSet<>(processedVariables);
+                if (variableBranch.add(key)) {
+                  value = evaluateImpl(value, variableProvider, variableBranch);
+                }
                 buf.append(value);
               }
               else {

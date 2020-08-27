@@ -108,7 +108,7 @@ public class StringHelperTest {
   }
 
   @Test
-  public void replaceVariables() {
+  public void evaluateVariables() {
     Properties properties = new Properties();
     Function<String,String> variables = properties::getProperty;
     properties.setProperty("alpha", "100");
@@ -116,24 +116,35 @@ public class StringHelperTest {
     properties.setProperty("zet?a", "ZZZ");
     properties.setProperty("delt}a", "DDD");
     properties.setProperty("delt{a", "ddd");
-    properties.setProperty("gamma", StringHelper.replaceVariables("${alpha}${beta}", variables));
-    assertEquals(StringHelper.replaceVariables("bla=${alpha}xx", variables), "bla=100xx");
-    assertEquals(StringHelper.replaceVariables("bla=$${alpha}xx", variables), "bla=$100xx");
-    assertEquals(StringHelper.replaceVariables("bla=${alph}xx", variables), "bla=${alph}xx");
-    assertEquals(StringHelper.replaceVariables("bla=${alph}xx$", variables), "bla=${alph}xx$");
-    assertEquals(StringHelper.replaceVariables("bla=${alph? y y}xx", variables), "bla= y yxx");
-    assertEquals(StringHelper.replaceVariables("bla=${alph??y?y}xx", variables), "bla=?y?yxx");
-    assertEquals(StringHelper.replaceVariables("bla=${alph?zzzz", variables), "bla=${alph?zzzz");
-    assertEquals(StringHelper.replaceVariables("bla=${zet\\?a}yy", variables), "bla=ZZZyy");
-    assertEquals(StringHelper.replaceVariables("bla=${delt\\}a}yy", variables), "bla=DDDyy");
-    assertEquals(StringHelper.replaceVariables("bla=${delt{a}yy", variables), "bla=dddyy");
-    assertEquals(StringHelper.replaceVariables("bla=${delt\\{a}yy", variables), "bla=dddyy");
-    assertEquals(StringHelper.replaceVariables("bla=${alpha}\\xx", variables), "bla=100xx");
-    assertEquals(StringHelper.replaceVariables("bla=${alpha}\\\\xx", variables), "bla=100\\xx");
-    assertEquals(StringHelper.replaceVariables("bla=${alpha}xx${beta}", variables), "bla=100xx200");
-    assertEquals(StringHelper.replaceVariables("bla=${gamma}xx${beta}", variables), "bla=100200xx200");
-    assertEquals(StringHelper.replaceVariables("bla=\\${gamma}xx", variables), "bla=${gamma}xx");
-    assertEquals(StringHelper.replaceVariables("bla=${gamma\\}xx", variables), "bla=${gamma}xx");
+    properties.setProperty("gamma", StringHelper.evaluate("${alpha}${beta}", variables));
+    assertEquals(StringHelper.evaluate("bla=${alpha}xx", variables), "bla=100xx");
+    assertEquals(StringHelper.evaluate("bla=$${alpha}xx", variables), "bla=$100xx");
+    assertEquals(StringHelper.evaluate("bla=${alph}xx", variables), "bla=${alph}xx");
+    assertEquals(StringHelper.evaluate("bla=${alph}xx$", variables), "bla=${alph}xx$");
+    assertEquals(StringHelper.evaluate("bla=${alph? y y}xx", variables), "bla= y yxx");
+    assertEquals(StringHelper.evaluate("bla=${alph??y?y}xx", variables), "bla=?y?yxx");
+    assertEquals(StringHelper.evaluate("bla=${alph?zzzz", variables), "bla=${alph?zzzz");
+    assertEquals(StringHelper.evaluate("bla=${zet\\?a}yy", variables), "bla=ZZZyy");
+    assertEquals(StringHelper.evaluate("bla=${delt\\}a}yy", variables), "bla=DDDyy");
+    assertEquals(StringHelper.evaluate("bla=${delt{a}yy", variables), "bla=dddyy");
+    assertEquals(StringHelper.evaluate("bla=${delt\\{a}yy", variables), "bla=dddyy");
+    assertEquals(StringHelper.evaluate("bla=${alpha}\\xx", variables), "bla=100xx");
+    assertEquals(StringHelper.evaluate("bla=${alpha}\\\\xx", variables), "bla=100\\xx");
+    assertEquals(StringHelper.evaluate("bla=${alpha}xx${beta}", variables), "bla=100xx200");
+    assertEquals(StringHelper.evaluate("bla=${gamma}xx${beta}", variables), "bla=100200xx200");
+    assertEquals(StringHelper.evaluate("bla=\\${gamma}xx", variables), "bla=${gamma}xx");
+    assertEquals(StringHelper.evaluate("bla=${gamma\\}xx", variables), "bla=${gamma}xx");
+
+    // check nested variables
+    properties.setProperty("omega", "a=${alpha}");
+    assertEquals(StringHelper.evaluate("${omega}=a", variables), "a=100=a");
+    properties.setProperty("lambda", "XX${omega}");
+    assertEquals(StringHelper.evaluate("${lambda}ZZ", variables), "XXa=100ZZ");
+
+    // detect recursion loop
+    properties.setProperty("alpha", "KK${lambda}KK");
+    assertEquals(StringHelper.evaluate("${lambda}ZZ", variables), "XXa=KKXX${omega}KKZZ");
+    assertEquals(StringHelper.evaluate("${lambda}ZZ${omega}", variables), "XXa=KKXX${omega}KKZZa=KKXXa=${alpha}KK");
   }
 
 }

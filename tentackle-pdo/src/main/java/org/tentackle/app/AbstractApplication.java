@@ -466,7 +466,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    * the application properties.
    * <p>
    * The default implementation first parses the properties for system properties and replaces
-   * any system properties according to {@link StringHelper#replaceVariables(String, Function)}.<br>
+   * any system properties according to {@link StringHelper#evaluate(String, Function)}.<br>
    * System properties start with {@code SYSTEM_} or {@code ^} followed by the property name.
    * <p>
    * Other well-known properties that can be set:
@@ -486,7 +486,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
       for (String propName : properties.stringPropertyNames()) {
         String propValue = properties.getProperty(propName);
         if (propValue != null) {  // null should not happen, but multi threading...
-          String processedValue = StringHelper.replaceVariables(propValue, systemVariableProvider);
+          String processedValue = StringHelper.evaluate(propValue, systemVariableProvider);
           if (!propValue.equals(processedValue)) {
             propValue = processedValue;
             if (properties == props) {
