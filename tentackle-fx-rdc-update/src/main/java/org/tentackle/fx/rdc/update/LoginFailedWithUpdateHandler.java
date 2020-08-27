@@ -155,8 +155,19 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
     LOGGER.info("download successful: {0}", zipFile);
 
     try {
+      String updatePath = updateDir.getCanonicalPath();
       FileHelper.unzip(zipFile, updateDir, file -> {
-        getApplication().showApplicationStatus(MessageFormat.format(UpdateFxRdcBundle.getString("INSTALLING_{0}"), file), 1.0, 20);
+        String fileName;    // shortened name
+        try {
+          fileName = file.getCanonicalPath();
+          if (fileName.startsWith(updatePath)) {
+            fileName = fileName.substring(updatePath.length() + 1);   // +1 due to File.separator
+          }
+        }
+        catch (IOException iox) {
+          fileName = file.getPath();    // better than nothing...
+        }
+        getApplication().showApplicationStatus(MessageFormat.format(UpdateFxRdcBundle.getString("INSTALLING_{0}"), fileName), 1.0, 20);
         LOGGER.info("{0} unzipped", file);
       });
       zipFile.delete();
