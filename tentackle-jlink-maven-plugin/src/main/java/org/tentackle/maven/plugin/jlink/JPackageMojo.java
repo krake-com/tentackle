@@ -439,9 +439,23 @@ public class JPackageMojo extends AbstractJLinkMojo {
       applicationName = applicationName.substring(0, applicationName.length() - MAC_APPNAME_EXTENSION.length());
     }
     jpackageRunner.arg("-n").arg(applicationName)   // can be overridden via options file below
-                  .arg("--app-image").arg(appImageDir)
-                  .arg("--app-version").arg(getMavenProject().getVersion())
-                  .arg("-d").arg(getMavenProject().getBuild().getDirectory())
+                  .arg("--app-image").arg(appImageDir);
+    // version must only contain digits and dots (else error "Version ... contains invalid component ...", at least on windows)
+    StringBuilder appVersion = new StringBuilder();
+    String projectVersion = getMavenProject().getVersion();
+    for (int i=0; i < projectVersion.length(); i++) {
+      char c = projectVersion.charAt(i);
+      if (c == '.' || Character.isDigit(c)) {
+        appVersion.append(c);
+      }
+      else {
+        break;
+      }
+    }
+    if (appVersion.length() > 0) {
+      jpackageRunner.arg("--app-version").arg(appVersion);  // can be overridden via options file below
+    }
+    jpackageRunner.arg("-d").arg(getMavenProject().getBuild().getDirectory())
                   .arg("@" + getMavenProject().getBuild().getDirectory() + File.separator + OPTIONS_INSTALLER);
     if (verbosityLevel.isDebug()) {
       jpackageRunner.arg("--verbose");
