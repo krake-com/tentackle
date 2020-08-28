@@ -27,7 +27,7 @@ import javafx.scene.control.ProgressBar;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.GridPane;
-import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 
 import org.tentackle.app.AbstractApplication;
 import org.tentackle.common.Constants;
@@ -46,7 +46,6 @@ import org.tentackle.session.BackendConfiguration;
 import org.tentackle.session.SessionInfo;
 
 import java.util.ResourceBundle;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Login controller.
@@ -62,9 +61,10 @@ public class Login extends AbstractFxController {
   private boolean autoLogin;                  // true if login immediately
   private boolean backendFromSystemPrefs;     // if select backend from system preferences
   private char[] password;                    // password buffer
+  private TimeoutThread timeoutThread;        // != null if timeout thread started
+  private boolean backendsEditable;           // true if user can edit the backends configuration
   private int inactivityTimeout;              // inactivity timeout in seconds (0 if turned off)
-  private boolean backendVisible;             // true if backends are configurable
-  private AtomicLong lastActivity = new AtomicLong();
+  private long lastActivity;                  // last key press epochal time
 
   @FXML
   private ResourceBundle resources;           // localization bundle
@@ -114,9 +114,7 @@ public class Login extends AbstractFxController {
     passwordField.addViewToModelListener(() -> password = passwordField.getPassword());   // this clears the password in the component!
     passwordField.addModelToViewListener(() -> passwordField.setPassword(password));
     backendButton.setGraphic(Fx.createImageView("edit"));
-    backendButton.setOnAction(e -> {
-      Backends.editBackends(sessionInfo.getApplicationName(), backendFromSystemPrefs, () -> loadBackendConfigurations());
-    });
+    backendButton.setOnAction(e -> Backends.editBackends(sessionInfo.getApplicationName(), backendFromSystemPrefs, this::loadBackendConfigurations));
 
     backendField.setOnAction(event -> {
       BackendConfiguration backendConfiguration = backendField.getValue();
@@ -161,7 +159,7 @@ public class Login extends AbstractFxController {
   @Override
   public void configure() {
     getView().addEventFilter(KeyEvent.KEY_RELEASED, event -> {
-      lastActivity.set(System.currentTimeMillis());
+      lastActivity = System.currentTimeMillis();
       if (event.getCode() == KeyCode.ESCAPE) {
         cancel();
       }
@@ -170,7 +168,27 @@ public class Login extends AbstractFxController {
       }
     });
 
-    new TimeoutThread().start();
+    getView().sceneProperty().addListener(
+        (observable, oldValue, newValue) -> {
+          if (newValue != null) {
+            newValue.windowProperty().addListener(
+                (observable1, oldValue1, newValue1) -> {
+                  if (newValue != null) {
+                    newValue1.addEventHandler(WindowEvent.WINDOW_SHOWN, event -> {
+                      if (timeoutThread == null) {
+                        timeoutThread = new TimeoutThread();
+                        timeoutThread.start();
+                      }
+                    });
+                    newValue1.addEventHandler(WindowEvent.WINDOW_HIDDEN, event -> {
+                      if (timeoutThread != null) {
+                        timeoutThread.interrupt();
+                      }
+                    });
+                  }
+                });
+          }
+        });
   }
 
   /**
@@ -190,22 +208,22 @@ public class Login extends AbstractFxController {
     usernameField.setText(sessionInfo.getUserName());
     passwordField.setPassword(sessionInfo.getPassword());
     String backendInfo = sessionInfo.getProperties().getProperty(Constants.BACKEND_INFO);
-    backendVisible = false;
+    backendsEditable = false;
     if (Constants.BACKEND_INFO_USER.equals(backendInfo)) {
-      backendVisible = true;
+      backendsEditable = true;
       backendFromSystemPrefs = false;
     }
     else if (Constants.BACKEND_INFO_SYSTEM.equals(backendInfo)) {
-      backendVisible = true;
+      backendsEditable = true;
       backendFromSystemPrefs = true;
     }
-    backendLabel.setVisible(backendVisible);
-    backendLabel.setManaged(backendVisible);
-    backendField.setVisible(backendVisible);
-    backendField.setManaged(backendVisible);
-    backendButton.setVisible(backendVisible);
-    backendButton.setManaged(backendVisible);
-    if (backendVisible) {
+    backendLabel.setVisible(backendsEditable);
+    backendLabel.setManaged(backendsEditable);
+    backendField.setVisible(backendsEditable);
+    backendField.setManaged(backendsEditable);
+    backendButton.setVisible(backendsEditable);
+    backendButton.setManaged(backendsEditable);
+    if (backendsEditable) {
       loadBackendConfigurations();
     }
     else if (backendInfo != null) {
@@ -287,6 +305,15 @@ public class Login extends AbstractFxController {
 
 
   /**
+   * Returns whether login is in progress.
+   *
+   * @return true if currently logging in
+   */
+  private boolean isLoginInProgress() {
+    return progressBar.getProgress() > 0.0;
+  }
+
+  /**
    * Performs the login.
    */
   private void login() {
@@ -298,7 +325,7 @@ public class Login extends AbstractFxController {
         String backendInfo = sessionInfo.getProperties().getProperty(Constants.BACKEND_INFO) + ":" + backendConfiguration;
         sessionInfo.getProperties().setProperty(Constants.BACKEND_INFO, backendInfo);
       }
-      setProgress(0.01);
+      setProgress(0.01);    // login is in progress...
       ((DesktopApplication) AbstractApplication.getRunningApplication()).login(getView(), sessionInfo);
     }
     else {
@@ -352,36 +379,42 @@ public class Login extends AbstractFxController {
   }
 
 
+  /**
+   * Timeout thread.<br>
+   * Closes the login dialog if no user activity for a given time.
+   */
   private class TimeoutThread extends Thread {
+
+    public TimeoutThread() {
+      super("login timeout");
+    }
 
     @Override
     public void run() {
-      lastActivity = new AtomicLong(System.currentTimeMillis());
-      boolean wasShowingOnce = false;
+      LOGGER.fine("{0} started", this);
+      lastActivity = System.currentTimeMillis();
       while (!interrupted()) {
         try {
           sleep(1000);
-          Stage stage = Fx.getStage(getView());
-          if (stage != null) {
-            boolean showing = stage.isShowing();
-            if (showing) {
-              wasShowingOnce = true;
+          Platform.runLater(() -> {
+            long now = System.currentTimeMillis();
+            long inactiveSeconds = (now - lastActivity) / 1000;
+            if (autoLogin || backendsEditable || isLoginInProgress()) {
+              lastActivity = now;
             }
-            else if (wasShowingOnce) {
-              break;
+            else {
+              if (inactivityTimeout > 0 && inactiveSeconds > inactivityTimeout) {
+                LOGGER.info("login timed out after {0} seconds -> closed", inactiveSeconds);
+                Platform.runLater(Login.this::cancel);
+              }
             }
-          }
-          long inactiveSeconds = (System.currentTimeMillis() - lastActivity.get()) / 1000;
-          if (!backendVisible && inactivityTimeout > 0 && inactiveSeconds > inactivityTimeout) {
-            LOGGER.info("login timed out after {0} seconds -> closed", inactiveSeconds);
-            Platform.runLater(Login.this::cancel);
-            break;
-          }
+          });
         }
         catch (InterruptedException e) {
           break;
         }
       }
+      LOGGER.fine("{0} terminated", this);
     }
   }
 
