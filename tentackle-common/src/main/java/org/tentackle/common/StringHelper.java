@@ -1620,18 +1620,21 @@ public final class StringHelper {
 
   /**
    * Evaluates a string replacing variables.<br>
-   * The semantics are very much the same as used by the maven resources plugin, but
+   * The semantics are very much the same as known from the maven resources plugin, but
    * with the extension of optional default values and that <code>@</code> turns off nested variable processing.
    * <p>
-   * Syntax: <code>${name[?default]}</code>, where <code>name</code> is the variable name
+   * Syntax: <code>$|&#64;{name[?default]}</code>, where <code>name</code> is the variable name
    * and <code>default</code> is the default value to be used if there is no such variable.
    * <p>
-   * Same without nested processing: <code>@{name[?default]}</code> (useful for windows pathnames).
-   * <p>?
    * Characters can be quoted with a backslash.
    * A double backslash is treated as a single backslash.
    * <p>
-   * Variables may contain other variables.
+   * Example:
+   * <pre>
+   *    &#64;{user.home}/somedir
+   * </pre>
+   * Notice that <code>${...}</code> may lead to unexpected results, if the variable's value contains backslashes,
+   * as with windows pathnames, for example.
    *
    * @param str the string
    * @param variableProvider the variables as properties
