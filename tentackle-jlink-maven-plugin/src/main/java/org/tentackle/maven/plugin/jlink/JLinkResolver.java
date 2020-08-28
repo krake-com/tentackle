@@ -570,7 +570,7 @@ public class JLinkResolver {
       JavaModuleDescriptor moduleDescriptor = artifactJavaModuleDescriptorMap.get(artifact);
       if (moduleDescriptor != null) {
         if (isEmptyFxDummyArtifact(moduleDescriptor)) {
-          mojo.getLog().debug("empty dummy FX artifacy " + moduleDescriptor.name() + " skipped");
+          mojo.getLog().debug("empty dummy FX artifact " + moduleDescriptor.name() + " skipped");
         }
         else {
           if (moduleDescriptor.isAutomatic()) {
