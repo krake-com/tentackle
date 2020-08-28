@@ -405,7 +405,7 @@ public class Login extends AbstractFxController {
             else {
               if (inactivityTimeout > 0 && inactiveSeconds > inactivityTimeout) {
                 LOGGER.info("login timed out after {0} seconds -> closed", inactiveSeconds);
-                Platform.runLater(Login.this::cancel);
+                cancel();
               }
             }
           });
