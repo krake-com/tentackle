@@ -440,14 +440,12 @@ public class JLinkResolver {
       JavaModuleDescriptor moduleDescriptor = entry.getValue();
       String moduleName = moduleDescriptor.name();
 
-      if (moduleDescriptor.isAutomatic()) {
-        if (moduleName.startsWith("javafx.") && moduleName.endsWith("Empty")) {
-          mojo.getLog().debug(moduleName + " is an automatic dummy javafx module -> skipped");
-        }
-        else {
-          mojo.getLog().debug(moduleName + " is an automatic module");
-          automaticModules.put(moduleName, new ModularArtifact(artifact, moduleDescriptor));
-        }
+      if (isEmptyFxDummyArtifact(moduleDescriptor)) {
+        mojo.getLog().debug(moduleName + " is an automatic dummy javafx module -> skipped");
+      }
+      else if (moduleDescriptor.isAutomatic()) {
+        mojo.getLog().debug(moduleName + " is an automatic module");
+        automaticModules.put(moduleName, new ModularArtifact(artifact, moduleDescriptor));
       }
       else {
         mojo.getLog().debug(moduleName + " is a full-blown module");
@@ -570,21 +568,24 @@ public class JLinkResolver {
     // run jdeps on non-JPMS modules
     for (Artifact artifact: artifacts) {
       JavaModuleDescriptor moduleDescriptor = artifactJavaModuleDescriptorMap.get(artifact);
-      String msg;
       if (moduleDescriptor != null) {
-        if (moduleDescriptor.isAutomatic()) {
-          msg = String.format("automatic module   %-" + maxNameLength + "s  %s", moduleDescriptor.name(), artifact);
-          runJdeps(artifact);
+        if (isEmptyFxDummyArtifact(moduleDescriptor)) {
+          mojo.getLog().debug("empty dummy FX artifacy " + moduleDescriptor.name() + " skipped");
         }
         else {
-          msg = String.format("full-blown module  %-" + maxNameLength + "s  %s", moduleDescriptor.name(), artifact);
+          if (moduleDescriptor.isAutomatic()) {
+            mojo.getLog().info(String.format("automatic module   %-" + maxNameLength + "s  %s", moduleDescriptor.name(), artifact));
+            runJdeps(artifact);
+          }
+          else {
+            mojo.getLog().info(String.format("full-blown module  %-" + maxNameLength + "s  %s", moduleDescriptor.name(), artifact));
+          }
         }
       }
       else {
-        msg = String.format("artifact           %-" + maxNameLength + "s  %s", "", artifact);
+        mojo.getLog().info(String.format("artifact           %-" + maxNameLength + "s  %s", "", artifact));
         runJdeps(artifact);
       }
-      mojo.getLog().info(msg);
     }
 
     return artifactJavaModuleDescriptorMap;
@@ -645,4 +646,10 @@ public class JLinkResolver {
       result.addToModulePath(artifact);
     }
   }
+
+  private boolean isEmptyFxDummyArtifact(JavaModuleDescriptor moduleDescriptor) {
+    return moduleDescriptor.isAutomatic() &&
+           moduleDescriptor.name().startsWith("javafx.") && moduleDescriptor.name().endsWith("Empty");
+  }
+
 }
