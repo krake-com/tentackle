@@ -1621,11 +1621,13 @@ public final class StringHelper {
   /**
    * Evaluates a string replacing variables.<br>
    * The semantics are very much the same as used by the maven resources plugin, but
-   * with the extension of optional default values and that <code>@</code> is not a valid delimiter.
+   * with the extension of optional default values and that <code>@</code> turns off nested variable processing.
    * <p>
    * Syntax: <code>${name[?default]}</code>, where <code>name</code> is the variable name
    * and <code>default</code> is the default value to be used if there is no such variable.
    * <p>
+   * Same without nested processing: <code>@{name[?default]}</code> (useful for windows pathnames).
+   * <p>?
    * Characters can be quoted with a backslash.
    * A double backslash is treated as a single backslash.
    * <p>
@@ -1651,6 +1653,7 @@ public final class StringHelper {
 
     StringBuilder buf = new StringBuilder();  // output buffer
     StringBuilder variableName = null;        // holds the name of the variable, null if not parsing a variable
+    char lead = '@';                          // '$' with nesting, '@' without nesting
     StringBuilder defaultValue = null;        // holds the default value, null not parsing a default value
     boolean quoted = false;                   // true if next character is quoted
 
@@ -1676,9 +1679,10 @@ public final class StringHelper {
         }
         else {
           if (variableName == null) {
-            if (c == '$') {
+            if (c == '$' || c == '@') {
               if (i < str.length() - 1 && str.charAt(i + 1) == '{') {
                 variableName = new StringBuilder();
+                lead = c;
                 ++i;
               }
               else {
@@ -1694,9 +1698,11 @@ public final class StringHelper {
               String key = variableName.toString();
               String value = variableProvider.apply(key);
               if (value != null) {
-                Set<String> variableBranch = new HashSet<>(processedVariables);
-                if (variableBranch.add(key)) {
-                  value = evaluateImpl(value, variableProvider, variableBranch);
+                if (lead == '$') {
+                  Set<String> variableBranch = new HashSet<>(processedVariables);
+                  if (variableBranch.add(key)) {
+                    value = evaluateImpl(value, variableProvider, variableBranch);
+                  }
                 }
                 buf.append(value);
               }
@@ -1706,7 +1712,7 @@ public final class StringHelper {
                 }
                 else {
                   // no such variable and no default
-                  buf.append("${").append(variableName).append('}');
+                  buf.append(lead).append('{').append(variableName).append('}');
                 }
               }
               // else: treat as empty
@@ -1732,9 +1738,9 @@ public final class StringHelper {
     }
     if (variableName != null) {
       // missing closing }
-      buf.append("${").append(variableName);
+      buf.append(lead).append('{').append(variableName);
       if (defaultValue != null) {
-        buf.append("?").append(defaultValue);
+        buf.append('?').append(defaultValue);
       }
     }
     return buf.toString();
