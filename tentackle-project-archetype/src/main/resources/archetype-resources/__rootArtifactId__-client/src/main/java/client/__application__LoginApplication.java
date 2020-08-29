@@ -21,7 +21,9 @@ public class ${application}LoginApplication extends LoginApplication {
   @Override
   protected Login loadLoginController() {
     URL cssUrl = ${application}LoginApplication.class.getResource("/${packageInPathFormat}/client/Login.css");
-    return FxFactory.getInstance().createController(Login.class, null, null, cssUrl);
+    Login loginController = FxFactory.getInstance().createController(Login.class, null, null, cssUrl);
+    loginController.setInactivityTimeout(30);
+    return loginController;
   }
 
 }
