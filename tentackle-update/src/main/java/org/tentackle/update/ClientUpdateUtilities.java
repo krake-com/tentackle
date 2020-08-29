@@ -35,6 +35,8 @@ import java.net.URISyntaxException;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -75,10 +77,10 @@ public class ClientUpdateUtilities {
    */
   public boolean isUpdatableJlinkDirectory(File dir) {
     boolean isJlinkDirectory = true;
-    if (dir.isDirectory() && dir.canWrite()) {
+    if (dir.isDirectory() && Files.isWritable(Paths.get(dir.getAbsolutePath()))) {
       for (String dirName : JLINK_SUBDIR_NAMES) {
         File subdir = new File(dir, dirName);
-        if (!subdir.isDirectory() || !subdir.canWrite()) {
+        if (!subdir.isDirectory() || !Files.isWritable(Paths.get(subdir.getAbsolutePath()))) {
           isJlinkDirectory = false;
           break;
         }
