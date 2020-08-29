@@ -22,11 +22,12 @@
 
 package org.tentackle.pdo;
 
-import java.io.ObjectStreamException;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
+
+import java.io.ObjectStreamException;
 
 
 /**
@@ -251,7 +252,14 @@ public class DefaultDomainContext implements DomainContext {
     else if (isSessionImmutable()) {
       buf.append("immutable ");
     }
-    buf.append("session ").append(getSession().getName());
+    buf.append("session ");
+    Session session = getSession();
+    if (session != null) {
+      buf.append(session.getName());
+    }
+    else {
+      buf.append("<none>");
+    }
     return buf.toString();
   }
 

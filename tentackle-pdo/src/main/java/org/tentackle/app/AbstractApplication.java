@@ -488,11 +488,12 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
         if (propValue != null) {  // null should not happen, but multi threading...
           String processedValue = StringHelper.evaluate(propValue, systemVariableProvider);
           if (!propValue.equals(processedValue)) {
+            LOGGER.fine("property {0}: {1} evaluated to {2}", propName, propValue, processedValue);
             propValue = processedValue;
             if (properties == props) {
               props.setProperty(propName, processedValue);
             }
-            // else override below...
+            // else override below if not already set via commandline
           }
           String sysKey = null;
           if (propName.startsWith("SYSTEM_")) {
@@ -503,10 +504,16 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
           }
           if (sysKey != null) {
             System.setProperty(sysKey, propValue);
-            LOGGER.info("system property {0} set", sysKey);  // don't log the value, could be a password...
+            if (LOGGER.isFineLoggable()) {
+              LOGGER.fine("system property {0} set to {1}", sysKey, propValue);
+            }
+            else {
+              LOGGER.info("system property {0} set", sysKey);  // don't log the value, could be a password...
+            }
           }
           else if (props != null && props != properties && !props.containsKey(propName)) { // cmd props take precedence
             props.setProperty(propName, propValue);
+            LOGGER.fine("property {0} set to {1}", propName, propValue);
           }
         }
       }

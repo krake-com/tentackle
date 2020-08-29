@@ -247,7 +247,17 @@ public class JPackageMojo extends AbstractJLinkMojo {
         imagePathPrefix = "$ROOTDIR/runtime/Contents/Home";
       }
       else {    // linux
-        imagePathPrefix = "$ROOTDIR/lib/runtime";
+        if (jpackageMajorRuntimeVersion >= 15) {
+          // since 15 the ROOTDIR is no more defined (see linux/native/applauncher/Package.cpp).
+          // However, if we move the installation to another directory, so that dpkg can't find it anymore,
+          // ROOTDIR will be set properly. Bug or feature?
+          // anyway... -> using APPDIR instead fixes this issue
+          // TODO: check whether fixed in future versions (JDK 15 RC2 at time of writing)
+          imagePathPrefix = "$APPDIR/../runtime";
+        }
+        else {
+          imagePathPrefix = "$ROOTDIR/lib/runtime";
+        }
       }
     }
     return imagePathPrefix;

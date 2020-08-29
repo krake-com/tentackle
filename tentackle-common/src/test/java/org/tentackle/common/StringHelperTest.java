@@ -152,6 +152,9 @@ public class StringHelperTest {
 
     // suppress nested evaluation
     assertEquals(StringHelper.evaluate("@{lambda}ZZ", variables), "XX${omega}ZZ");
+
+    properties.setProperty("RUNTIMEDIR", "/opt/adminclient/lib/app/../runtime");
+    assertEquals(StringHelper.evaluate("@{RUNTIMEDIR?.}/conf/truststore.jks", variables), "/opt/adminclient/lib/app/../runtime/conf/truststore.jks");
   }
 
 }
