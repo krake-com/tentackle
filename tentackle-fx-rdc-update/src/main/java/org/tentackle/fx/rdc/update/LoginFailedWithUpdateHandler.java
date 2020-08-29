@@ -106,7 +106,10 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
         }
       }
       else {
-        LOGGER.info("client not running within an updatable directory");
+        LOGGER.info("client not running within an updatable directory", ex);
+        terminate(MessageFormat.format(UpdateFxRdcBundle.getString(
+            "{0}_{1}_OUTDATED_CALL_ADMIN"), getApplication().getName(), getApplication().getVersion()), null);
+        return null;
       }
     }
 
