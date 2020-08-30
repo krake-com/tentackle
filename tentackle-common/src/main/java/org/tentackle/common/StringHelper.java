@@ -1623,15 +1623,18 @@ public final class StringHelper {
    * The semantics are very much the same as known from the maven resources plugin, but
    * with the extension of optional default values and that <code>@</code> turns off nested variable processing.
    * <p>
-   * Syntax: <code>$|&#64;{name[?default]}</code>, where <code>name</code> is the variable name
-   * and <code>default</code> is the default value to be used if there is no such variable.
+   * Syntax: <code>$|&#64;{name[?|!default]}</code>, where <code>name</code> is the variable name
+   * and <code>default</code> is the default value to be used if there is no such variable (!) or
+   * variable is empty (@{link {@link #isAllWhitespace(String)}}) or doesn't exist (?).
    * <p>
    * Characters can be quoted with a backslash.
    * A double backslash is treated as a single backslash.
    * <p>
-   * Example:
+   * Examples:
    * <pre>
    *    &#64;{user.home}/somedir
+   *    &#64;{user.home?/tmp}/somedir
+   *    &#64;{user.home!/tmp}/somedir
    * </pre>
    * Notice that <code>${...}</code> may lead to unexpected results, if the variable's value contains backslashes,
    * as with windows pathnames, for example.
@@ -1656,7 +1659,8 @@ public final class StringHelper {
 
     StringBuilder buf = new StringBuilder();  // output buffer
     StringBuilder variableName = null;        // holds the name of the variable, null if not parsing a variable
-    char lead = '@';                          // '$' with nesting, '@' without nesting
+    char varLead = '@';                       // '$' with nesting, '@' without nesting
+    char defLead = '?';                       // '?' empty or missinh, '!' missing only
     StringBuilder defaultValue = null;        // holds the default value, null not parsing a default value
     boolean quoted = false;                   // true if next character is quoted
 
@@ -1685,7 +1689,7 @@ public final class StringHelper {
             if (c == '$' || c == '@') {
               if (i < str.length() - 1 && str.charAt(i + 1) == '{') {
                 variableName = new StringBuilder();
-                lead = c;
+                varLead = c;
                 ++i;
               }
               else {
@@ -1700,8 +1704,8 @@ public final class StringHelper {
             if (c == '}') {
               String key = variableName.toString();
               String value = variableProvider.apply(key);
-              if (value != null) {
-                if (lead == '$') {
+              if (value != null && (defaultValue == null || defLead == '!' || !isAllWhitespace(value))) {
+                if (varLead == '$') {
                   Set<String> variableBranch = new HashSet<>(processedVariables);
                   if (variableBranch.add(key)) {
                     value = evaluateImpl(value, variableProvider, variableBranch);
@@ -1715,7 +1719,7 @@ public final class StringHelper {
                 }
                 else {
                   // no such variable and no default
-                  buf.append(lead).append('{').append(variableName).append('}');
+                  buf.append(varLead).append('{').append(variableName).append('}');
                 }
               }
               // else: treat as empty
@@ -1723,8 +1727,9 @@ public final class StringHelper {
               defaultValue = null;
             }
             else {
-              if (c == '?' && defaultValue == null) {
+              if ((c == '?' || c == '!') && defaultValue == null) {
                 defaultValue = new StringBuilder();
+                defLead = c;
               }
               else {
                 if (defaultValue == null) {
@@ -1741,9 +1746,9 @@ public final class StringHelper {
     }
     if (variableName != null) {
       // missing closing }
-      buf.append(lead).append('{').append(variableName);
+      buf.append(varLead).append('{').append(variableName);
       if (defaultValue != null) {
-        buf.append('?').append(defaultValue);
+        buf.append(defLead).append(defaultValue);
       }
     }
     return buf.toString();

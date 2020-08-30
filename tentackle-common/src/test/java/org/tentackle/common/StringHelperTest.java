@@ -116,6 +116,7 @@ public class StringHelperTest {
     properties.setProperty("zet?a", "ZZZ");
     properties.setProperty("delt}a", "DDD");
     properties.setProperty("delt{a", "ddd");
+    properties.setProperty("empty", " \t\n\r");
     properties.setProperty("gamma", StringHelper.evaluate("${alpha}${beta}", variables));
     assertEquals(StringHelper.evaluate("bla=${alpha}xx", variables), "bla=100xx");
     assertEquals(StringHelper.evaluate("bla=$${alpha}xx", variables), "bla=$100xx");
@@ -124,8 +125,16 @@ public class StringHelperTest {
     assertEquals(StringHelper.evaluate("bla=${alph}xx$", variables), "bla=${alph}xx$");
     assertEquals(StringHelper.evaluate("bla=@{alph}xx$", variables), "bla=@{alph}xx$");
     assertEquals(StringHelper.evaluate("bla=${alph? y y}xx", variables), "bla= y yxx");
+    assertEquals(StringHelper.evaluate("bla=${alph! y y}xx", variables), "bla= y yxx");
+    assertEquals(StringHelper.evaluate("bla=${alph!}xx", variables), "bla=xx");
+    assertEquals(StringHelper.evaluate("bla=${empty? y y}xx", variables), "bla= y yxx");
+    assertEquals(StringHelper.evaluate("bla=${empty?}xx", variables), "bla=xx");
+    assertEquals(StringHelper.evaluate("bla=${empty?}}xx", variables), "bla=}xx");
+    assertEquals(StringHelper.evaluate("bla=${empty! y y}xx", variables), "bla= \t\n\rxx");
+    assertEquals(StringHelper.evaluate("bla=${empty!}xx", variables), "bla= \t\n\rxx");
     assertEquals(StringHelper.evaluate("bla=${alph??y?y}xx", variables), "bla=?y?yxx");
     assertEquals(StringHelper.evaluate("bla=${alph?zzzz", variables), "bla=${alph?zzzz");
+    assertEquals(StringHelper.evaluate("bla=${alph!zzzz", variables), "bla=${alph!zzzz");
     assertEquals(StringHelper.evaluate("bla=${zet\\?a}yy", variables), "bla=ZZZyy");
     assertEquals(StringHelper.evaluate("bla=${delt\\}a}yy", variables), "bla=DDDyy");
     assertEquals(StringHelper.evaluate("bla=${delt{a}yy", variables), "bla=dddyy");
@@ -137,7 +146,8 @@ public class StringHelperTest {
     assertEquals(StringHelper.evaluate("bla=\\${gamma}xx", variables), "bla=${gamma}xx");
     assertEquals(StringHelper.evaluate("bla=\\@{gamma}xx", variables), "bla=@{gamma}xx");
     assertEquals(StringHelper.evaluate("bla=${gamma\\}xx", variables), "bla=${gamma}xx");
-    assertEquals(StringHelper.evaluate("bla=@{gamma\\}xx", variables), "bla=@{gamma}xx");
+    assertEquals(StringHelper.evaluate("bl!a=@{gamma\\}xx", variables), "bl!a=@{gamma}xx");
+    assertEquals(StringHelper.evaluate("bl?}a=@{gamma\\}xx", variables), "bl?}a=@{gamma}xx");
 
     // check nested variables
     properties.setProperty("omega", "a=${alpha}");
