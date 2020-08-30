@@ -150,6 +150,9 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    * <p>
    * For an implementation of the auto-update feature see the Tentackle modules
    * <code>tentackle-update</code> and <code>tentackle-fx-rdc-update</code>.
+   * Whereas <code>tentackle-update</code> can be used by any kind of application,
+   * the frontend part <code>tentackle-fx-rdc-update</code> requires a Tentackle FX
+   * application.
    */
   @Parameter
   private boolean withUpdater;

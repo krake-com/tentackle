@@ -55,13 +55,11 @@ import java.util.Map;
  *   <li>Invokes the <code>jpackage</code> tool to generate the application image from the previously
  *   created runtime image. Application- and platform specific options can be configured via the {@link #packageImageTemplate}.</li>
  *   <li>If the runtime image contains extra classpath- or modulepath-elements, the generated config files
- *   will be patched. For modular applications the modulepath is added via the <code>[JavaOptions]</code> section
- *   and the classpath is set via the <code>app.classpath</code> variable.
- *   For classpath applications the <code>app.mainjar</code> and <code>app.classpath</code> are replaced in order to
- *   point to the runtime image and not the app directory and to provide the correct
- *   classpath order according to the maven/module dependency tree. The order usually differs
+ *   will be patched. This is especially necessary to provide the correct
+ *   classpath order according to the maven/module dependency tree, which usually differs
  *   from the one determined by <code>jpackage</code>, because <code>jpackage</code> has no idea about the maven project structure
- *   (which may become an issue when classpath order is critical, such as configuration overrides in META-INF).</li>
+ *   and does its own guess according to the packages referenced from within the jars.
+ *   This may become an issue if the classpath order is critical, such as configurations overridden in META-INF.</li>
  *   <li>Finally, the installer will be generated from the application image. The {@link #packageInstallerTemplate}
  *   is used to provide additional options to the <code>jpackage</code> tool.</li>
  * </ol>
@@ -88,12 +86,13 @@ import java.util.Map;
  * They become part of the project and can be changed easily according to project specific needs (for example by adding runtime arguments).
  * To install and edit the templates before running jpackage (or jlink, see {@link JLinkMojo}), use {@link InitMojo} first.
  * <p>
- * Notice that applications deployed by an installer are usually maintained by a platform specific
+ * If the application is built with Tentackle's update feature, please keep in mind that
+ * applications deployed by an installer are maintained by a platform specific
  * package manager. If the installation is system-wide, the installation files cannot be changed by
- * a regular user and Tentackle's auto update feature isn't available. In such cases consider using {@link JLinkMojo} instead.<br>
+ * a regular user.
  * Some platforms, however, also provide per-user installations that can be updated. For Windows, the <code>jpackage</code>
  * tool provides the option <code>--win-per-user-install</code>. MacOS allows the user to decide whether to install
- * system-wide or for the current user only. See {@link #withUpdater} configuration.
+ * system-wide or for the current user only. See {@link #withUpdater} for more details.
  * <p>
  * If both jlink zip-files and jpackage installers are required, change the packaging type to <code>jar</code>
  * and add executions, like this:
@@ -114,7 +113,7 @@ import java.util.Map;
  * application-specific implementation.
  * To do so, provide a plugin dependency that contains a class annotated with {@code @Service(}{@link ArtifactCreator}).
  * <p>
- * Important: the <code>jpackage</code> is available since Java 14.
+ * Important: the <code>jpackage</code> tool is available since Java 14.
  * <p>
  * Notice that you can create an image for a different java version than the one used by the maven build process
  * via {@link #jdkToolchain}. Furthermore, you can select the <code>jpackage</code> tool explicitly from another JDK
