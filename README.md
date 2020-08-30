@@ -56,7 +56,7 @@ Change to that directory and build the project:
 cd myapp
 mvn -Pjlink clean install
 ```
-Notice: the profile `jlink` instructs Maven to build the Jlink images as well.
+Notice: the profile `jlink` instructs Maven to build the Jlink and/or JPackage images as well.
 
 ## Database Setup
 Log into postgres and create a user with the same name and password as the `artifactId`. 
