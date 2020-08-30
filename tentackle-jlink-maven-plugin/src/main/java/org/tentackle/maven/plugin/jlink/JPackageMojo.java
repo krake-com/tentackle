@@ -51,7 +51,7 @@ import java.util.Map;
  * The mojo works in 4 phases:
  * <ol>
  *   <li>Invokes the <code>jlink</code> tool as described in {@link JLinkMojo}. This will generate
- *   a directory holding the runtime impage. However, no run or update scripts and no zip file will be created.</li>
+ *   a directory holding the runtime image. However, no run or update scripts and no zip file will be created.</li>
  *   <li>Invokes the <code>jpackage</code> tool to generate the application image from the previously
  *   created runtime image. Application- and platform specific options can be configured via the {@link #packageImageTemplate}.</li>
  *   <li>If the runtime image contains extra classpath- or modulepath-elements, the generated config files
