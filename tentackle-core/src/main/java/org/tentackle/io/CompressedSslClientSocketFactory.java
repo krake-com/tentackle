@@ -19,10 +19,10 @@
 
 package org.tentackle.io;
 
+import javax.rmi.ssl.SslRMIClientSocketFactory;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.Objects;
-import javax.rmi.ssl.SslRMIClientSocketFactory;
 
 
 /**
@@ -40,8 +40,9 @@ public class CompressedSslClientSocketFactory extends SslRMIClientSocketFactory 
   @Override
   public Socket createSocket(String host, int port) throws IOException {
     Socket socket = new CompressedSocketWrapper(super.createSocket(host, port));
-    if (socketConfigurator != null) {
-      socketConfigurator.configure(socket);
+    SocketConfigurator localConfigurator = socketConfigurator;
+    if (localConfigurator != null) {
+      localConfigurator.configure(socket);
     }
     return socket;
   }
