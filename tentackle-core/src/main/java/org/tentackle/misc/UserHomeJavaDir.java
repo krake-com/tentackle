@@ -18,10 +18,11 @@
 
 package org.tentackle.misc;
 
-import java.io.File;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
+
+import java.io.File;
 
 /**
  * The user's home cache.
@@ -36,45 +37,52 @@ public class UserHomeJavaDir {
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(UserHomeJavaDir.class);
 
-
-  private static volatile boolean initialized;    // true if cacheDir initialized
-  private static volatile File cacheDir;          // the cache directory, null if cache backup disabled
+  private static volatile File cacheDir;          // the cache directory
 
 
   /**
    * Gets the directory tentackle files in the user's home directory.<br>
    * Defaults to {@code ${user.home}/.java/tentackle}.<br>
    * May be configured by the system property {@code "tentackle.user.home.java.dir"}.
+   * <p>
+   * Throws {@link TentackleRuntimeException} if failed.
    *
-   * @return the directory
+   * @return the directory, never null
    */
   public static File getDirectory() {
-    if (!initialized) {
-      cacheDir = new File(System.getProperty("tentackle.user.home.java.dir", System.getProperty("user.home")),
-                          ".java" + File.separator + "tentackle");
-      checkDir(cacheDir);
-      initialized = true;
+    File localDir = cacheDir;
+    if (localDir == null) {
+      synchronized (UserHomeJavaDir.class) {
+        localDir = cacheDir;
+        if (localDir == null) {
+          localDir = new File(System.getProperty("tentackle.user.home.java.dir", System.getProperty("user.home")),
+                              ".java" + File.separator + "tentackle");
+          checkDir(localDir);
+          cacheDir = localDir;
+        }
+      }
     }
-    return cacheDir;
+    return localDir;
   }
 
 
   /**
    * Gets a subdirectory of the cache dir.<br>
    * The directories are created if it does not exist.
+   * <p>
+   * Throws {@link TentackleRuntimeException} if failed.
    *
-   * @param subDirNames the names of the subdirectories
-   * @return the directory
+   * @param subDirNames the chain of subdirectories
+   * @return the directory, never null
    */
   public static File getDirectory(String... subDirNames) {
     File subDir = getDirectory();
     for (String subDirName: subDirNames) {
-      subDir = new File(getDirectory(), subDirName);
+      subDir = new File(subDir, subDirName);
     }
     checkDir(subDir);
     return subDir;
   }
-
 
 
   private static void checkDir(File dir) {
@@ -90,7 +98,6 @@ public class UserHomeJavaDir {
       throw new TentackleRuntimeException("directory " + dir.getAbsolutePath() + " is not writable");
     }
   }
-
 
 
   private UserHomeJavaDir() {

@@ -235,7 +235,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   private transient ModificationLog modlog;
 
   // for PropertyListeners
-  private transient volatile PropertySupport changeSupport;
+  private transient volatile PropertySupport propertySupport;
 
 
 
@@ -413,7 +413,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     sessionHolder = snapshot.sessionHolder;
     overloadable = snapshot.overloadable;
     modlog = snapshot.modlog;
-    changeSupport = snapshot.changeSupport;
+    propertySupport = snapshot.propertySupport;
   }
 
 
@@ -442,6 +442,24 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     return new PropertySupport(this);
   }
 
+  /**
+   * Gets the property support.<br>
+   * Creates it atomtically if it doesn't exist.
+   *
+   * @return the property support, never null
+   */
+  protected PropertySupport getPropertySupport() {
+    PropertySupport localSupport = propertySupport;
+    if (localSupport == null) {
+      synchronized (this) {
+        localSupport = propertySupport;
+        if (localSupport == null) {
+          localSupport = propertySupport = createPropertySupport();
+        }
+      }
+    }
+    return localSupport;
+  }
 
   /**
    * Adds a {@link PropertyListener} to the listener list.<br>
@@ -453,14 +471,9 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    *
    * @see #setModified(boolean)
    */
-  public void addPropertyChangeListener(PropertyListener listener) {
+  public void addPropertyListener(PropertyListener listener) {
     if (listener != null) {
-      synchronized(this) {
-        if (changeSupport == null) {
-          changeSupport = createPropertySupport();
-        }
-        changeSupport.addPropertyListener(listener);
-      }
+      getPropertySupport().addPropertyListener(listener);
     }
   }
 
@@ -469,9 +482,12 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    *
    * @param listener the PropertyChangeListener to be removed
    */
-  public void removePropertyChangeListener(PropertyListener listener) {
-    if (listener != null && changeSupport != null) {
-      changeSupport.removePropertyListener(listener);
+  public void removePropertyListener(PropertyListener listener) {
+    if (listener != null) {
+      PropertySupport localSupport = propertySupport;
+      if (localSupport != null) {
+        localSupport.removePropertyListener(listener);
+      }
     }
   }
 
@@ -489,12 +505,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    */
   public void addPropertyListener(String propertyName, PropertyListener listener) {
     if (listener != null) {
-      synchronized (this) {
-        if (changeSupport == null) {
-          changeSupport = createPropertySupport();
-        }
-        changeSupport.addPropertyListener(propertyName, listener);
-      }
+      getPropertySupport().addPropertyListener(propertyName, listener);
     }
   }
 
@@ -508,8 +519,11 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * @param listener the PropertyChangeListener to be removed
    */
   public void removePropertyListener(String propertyName, PropertyListener listener) {
-    if (listener != null && changeSupport != null) {
-      changeSupport.removePropertyListener(propertyName, listener);
+    if (listener != null) {
+      PropertySupport localSupport = propertySupport;
+      if (localSupport != null) {
+        localSupport.removePropertyListener(propertyName, listener);
+      }
     }
   }
 
@@ -517,15 +531,15 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   /**
    * Removes all {@link PropertyListener}s.
    * <p>
-   * Using <code>PropertyChangeListeners</code> implies the risk to "forget"
+   * Using <code>PropertyListeners</code> implies the risk to "forget"
    * about such listeners for long living objects as it is the case in
    * desktop client applications. This method safely removes all listeners.
    * It is invoked from setModified(false).
    *
    * @see #setModified(boolean)
    */
-  public void removeAllPropertyChangeListeners() {
-    changeSupport = null;
+  public void removeAllPropertyListeners() {
+    propertySupport = null;
   }
 
   /**
@@ -539,8 +553,9 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * @param newValue the property's new value
    */
   protected void firePropertyChange(String propertyName, Object oldValue, Object newValue) {
-    if (changeSupport != null) {
-      changeSupport.firePropertyChanged(propertyName, oldValue, newValue);
+    PropertySupport localSupport = propertySupport;
+    if (localSupport != null) {
+      localSupport.firePropertyChanged(propertyName, oldValue, newValue);
     }
   }
 
@@ -889,7 +904,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     this.modified = modified;
     if (!modified) {
       // loaded from storage or persisted: remove property change listeners
-      removeAllPropertyChangeListeners();
+      removeAllPropertyListeners();
     }
   }
 

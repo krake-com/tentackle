@@ -220,7 +220,8 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
 
   @Override
   public boolean isDead() {
-    return deadInterval > 0 && lastMillis > 0 && System.currentTimeMillis() > lastMillis + deadInterval;
+    long localLastMillis = lastMillis;
+    return deadInterval > 0 && localLastMillis > 0 && System.currentTimeMillis() > localLastMillis + deadInterval;
   }
 
   @Override

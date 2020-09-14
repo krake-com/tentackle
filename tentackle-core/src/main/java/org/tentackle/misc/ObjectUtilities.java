@@ -106,6 +106,7 @@ public class ObjectUtilities {
    * <p>
    * Throws {@link IllegalArgumentException} if unsupported type or conversion failed.
    *
+   * @param <T> the type
    * @param clazz the type
    * @param value the value
    * @return the converted value, null if value is null

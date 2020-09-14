@@ -40,8 +40,9 @@ public class ClientSocketFactory implements RMIClientSocketFactory, SocketConfig
   @Override
   public Socket createSocket(String host, int port) throws IOException {
     Socket socket = new Socket(host, port);
-    if (socketConfigurator != null) {
-      socketConfigurator.configure(socket);
+    SocketConfigurator localConfigurator = socketConfigurator;
+    if (localConfigurator != null) {
+      localConfigurator.configure(socket);
     }
     return socket;
   }
