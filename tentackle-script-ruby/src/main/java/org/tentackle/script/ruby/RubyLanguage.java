@@ -18,10 +18,15 @@
 
 package org.tentackle.script.ruby;
 
+import org.jruby.embed.ScriptingContainer;
+
 import org.tentackle.common.Service;
 import org.tentackle.script.AbstractScriptingLanguage;
 import org.tentackle.script.Script;
+import org.tentackle.script.ScriptConverter;
 import org.tentackle.script.ScriptingLanguage;
+
+import java.util.function.Function;
 
 /**
  * The groovy scripting language.
@@ -36,6 +41,7 @@ public class RubyLanguage extends AbstractScriptingLanguage {
 
   private static final String[] abbreviations = new String[] { NAME, "jruby", "rb" };
 
+  private final ScriptingContainer container = new ScriptingContainer();
 
   @Override
   public String getName() {
@@ -48,8 +54,8 @@ public class RubyLanguage extends AbstractScriptingLanguage {
   }
 
   @Override
-  public Script createScript(boolean cached) {
-    return new RubyScript(this);
+  public Script createScript(String code, boolean cached, boolean threadSafe, Function<String, ScriptConverter> converterProvider) {
+    return new RubyScript(this, container, getEffectiveCode(code, converterProvider), cached, threadSafe);
   }
 
   @Override

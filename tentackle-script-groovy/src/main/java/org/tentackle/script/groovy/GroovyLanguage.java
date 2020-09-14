@@ -18,10 +18,15 @@
 
 package org.tentackle.script.groovy;
 
+import groovy.lang.GroovyClassLoader;
+
 import org.tentackle.common.Service;
 import org.tentackle.script.AbstractScriptingLanguage;
 import org.tentackle.script.Script;
+import org.tentackle.script.ScriptConverter;
 import org.tentackle.script.ScriptingLanguage;
+
+import java.util.function.Function;
 
 /**
  * The groovy scripting language.
@@ -36,6 +41,12 @@ public class GroovyLanguage extends AbstractScriptingLanguage {
 
   private static final String[] abbreviations = new String[] { NAME, "gv" };
 
+  /** the single groovy classloader. */
+  private final GroovyClassLoader groovyClassLoader;
+
+  public GroovyLanguage() {
+    groovyClassLoader = new GroovyClassLoader(getClass().getClassLoader());
+  }
 
   @Override
   public String getName() {
@@ -48,8 +59,8 @@ public class GroovyLanguage extends AbstractScriptingLanguage {
   }
 
   @Override
-  public Script createScript(boolean cached) {
-    return new GroovyScript(this, cached);
+  public Script createScript(String code, boolean cached, boolean theadSafe, Function<String, ScriptConverter> converterProvider) {
+    return new GroovyScript(this, groovyClassLoader, getEffectiveCode(code, converterProvider), cached, theadSafe);
   }
 
 }

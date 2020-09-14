@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * Default implementation of a script factory.
@@ -89,11 +90,9 @@ public class DefaultScriptFactory implements ScriptFactory {
   }
 
   @Override
-  public Script createScript(String abbreviation, String code, boolean cached, boolean threadSafe) {
+  public Script createScript(String abbreviation, String code, boolean cached, boolean threadSafe, Function<String, ScriptConverter> converterProvider) {
     ScriptingLanguage language = getLanguage(abbreviation);
-    Script script = language.createScript(cached);
-    script.setCode(code);
-    script.setThreadSafe(threadSafe);
+    Script script = language.createScript(code, cached, threadSafe, converterProvider);
     LOGGER.fine("created scripting object {0}", script);
     return script;
   }

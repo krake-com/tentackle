@@ -21,6 +21,9 @@ package org.tentackle.script.truffle;
 import org.graalvm.polyglot.Language;
 
 import org.tentackle.script.Script;
+import org.tentackle.script.ScriptConverter;
+
+import java.util.function.Function;
 
 
 /**
@@ -46,8 +49,8 @@ public class JavaScriptTruffleLanguage extends TruffleLanguage {
   }
 
   @Override
-  public Script createScript(boolean cached) {
-    return new TruffleScript(this, cached);
+  public Script createScript(String code, boolean cached, boolean threadSafe, Function<String, ScriptConverter> converterProvider) {
+    return new TruffleScript(this, getEffectiveCode(code, converterProvider), cached, threadSafe);
   }
 
 }

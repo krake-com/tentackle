@@ -43,7 +43,7 @@ public class JSR223ScriptFactory extends DefaultScriptFactory {
     // load all languages via ScriptEngineManager
     for (ScriptEngineFactory engineFactory : new ScriptEngineManager().getEngineFactories()) {
       if (engineFactory != null) {
-        JSR223ScriptingLanguage language = new JSR223ScriptingLanguage(engineFactory);
+        JSR223Language language = new JSR223Language(engineFactory);
         for (String abbrv : language.getAbbreviations()) {
           if (abbrv != null && languages.putIfAbsent(abbrv, language) == null) {
             LOGGER.info("added scripting language {0} as {1}", language, abbrv);

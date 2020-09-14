@@ -27,6 +27,8 @@ import org.tentackle.script.AbstractScript;
 import org.tentackle.script.ScriptRuntimeException;
 import org.tentackle.script.ScriptVariable;
 
+import java.util.Set;
+
 /**
  * A script based on GraalVM Truffle Scripting.
  *
@@ -38,107 +40,24 @@ public class TruffleScript extends AbstractScript {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TruffleScript.class);
 
-
-  private volatile String scriptCode;         // the source code of the compiled script
-  private boolean executed;                   // true if script has been executed and result is val
-  private Object result;                      // the last execution result
-  private Source source;                      // the truffle source
+  private volatile Source compiledScript;                      // the truffle source
 
 
   /**
    * Creates a script.
    *
    * @param language the language instance
-   * @param cached   true if use caching, if possible
+   * @param code the scripting code
+   * @param cached true if use caching if possible
+   * @param threadSafe true if thread safe execution required
    */
-  public TruffleScript(TruffleLanguage language, boolean cached) {
-    super(language, cached);
+  public TruffleScript(TruffleLanguage language, String code, boolean cached, boolean threadSafe) {
+    super(language, code, cached, threadSafe);
   }
-
 
   @Override
   public TruffleLanguage getLanguage() {
     return (TruffleLanguage) super.getLanguage();
-  }
-
-  @Override
-  public boolean isParsed() {
-    return source != null;
-  }
-
-  @Override
-  public void clearParsed() {
-    source = null;
-  }
-
-  public Source parse() {
-    try {
-      scriptCode = getEffectiveCode();
-      if (source == null) {
-        LOGGER.fine("parsing language {0}, script:\n{1}", getLanguage().getName(), scriptCode);
-        try {
-          source = Source.newBuilder(getLanguage().getGraalVmLanguage().getId(), scriptCode, null).cached(isCached()).name(null).interactive(false).buildLiteral();
-        }
-        catch (Exception e) {
-          LOGGER.warning("error creating sozrce", e);
-          e.printStackTrace();
-        }
-      }
-      else {
-        LOGGER.fine("re-using parse script:\n{0}", scriptCode);
-      }
-      return source;
-    }
-    catch (Exception ex) {
-      throw new ScriptRuntimeException("creating script failed: " + this, ex);
-    }
-  }
-
-
-  @Override
-  public void execute(ScriptVariable... variables) {
-
-    Source source = parse();
-
-    executed = false;
-    result = null;
-
-    if (LOGGER.isFinerLoggable()) {
-      LOGGER.finer("execute: \n" + scriptCode + "\nwith args: " + ScriptVariable.variablesToString(variables));
-    }
-
-    try {
-      if (variables != null) {
-        Value bindings = TruffleScriptFactory.getContext().getBindings(getLanguage().getGraalVmLanguage().getId());
-        for (ScriptVariable variable : variables) {
-          bindings.putMember(variable.getName(), variable.getValue());
-        }
-      }
-
-      if (isThreadSafe()) {
-        synchronized (source) {
-          result = executeImpl(source);
-        }
-      }
-      else {
-        result = executeImpl(source);
-      }
-    }
-    catch (RuntimeException ex) {
-      throw new ScriptRuntimeException(ex);
-    }
-
-    LOGGER.finer("returned: {0}", result.toString());
-
-    executed = true;
-  }
-
-  @Override
-  public Object getResult() {
-    if (!executed) {
-      throw new ScriptRuntimeException("script not executed");
-    }
-    return result;
   }
 
   /**
@@ -205,8 +124,82 @@ public class TruffleScript extends AbstractScript {
    * @param source the source code unit
    * @return the script result
    */
-  protected Object executeImpl(Source source) {
-    return toObject(TruffleScriptFactory.getContext().eval(source));
+  @SuppressWarnings("unchecked")
+  protected <T> T  executeImpl(Source source) {
+    return (T) toObject(TruffleScriptFactory.getContext().eval(source));
+  }
+
+  @Override
+  public void validate() {
+    getCompiledScript();
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public <T> T execute(Set<ScriptVariable> variables) {
+    T result = null;
+    Source source = getCompiledScript();
+    if (LOGGER.isFinerLoggable()) {
+      LOGGER.finer("execute: \n" + getCode() + "\nwith args: " + ScriptVariable.variablesToString(variables));
+    }
+    try {
+      if (variables != null) {
+        Value bindings = TruffleScriptFactory.getContext().getBindings(getLanguage().getGraalVmLanguage().getId());
+        for (ScriptVariable variable : variables) {
+          bindings.putMember(variable.getName(), variable.getValue());
+        }
+      }
+      if (isThreadSafe()) {
+        synchronized (source) {
+          result = executeImpl(source);
+        }
+      }
+      else {
+        result = executeImpl(source);
+      }
+    }
+    catch (RuntimeException ex) {
+      throw new ScriptRuntimeException(ex);
+    }
+    LOGGER.finer("returned: {0}", result);
+    return result;
+  }
+
+
+  /**
+   * Gets the compiled script.<br>
+   * Will be parsed if not done yet.
+   *
+   * @return the compiled script, never null
+   */
+  protected Source getCompiledScript() {
+    Source localScript = compiledScript;
+    if (localScript == null) {
+      synchronized (this) {
+        localScript = compiledScript;
+        if (localScript == null) {
+          localScript = compiledScript = compileScript(getCode());
+        }
+      }
+    }
+    return localScript;
+  }
+
+  /**
+   * Compiles script code.
+   *
+   * @param code the scripting source code
+   * @return the compiled script
+   */
+  protected Source compileScript(String code) {
+    try {
+      String langId = getLanguage().getGraalVmLanguage().getId();
+      LOGGER.fine("compiling script with {0}:\n{1}", langId, code);
+      return Source.newBuilder(langId, getCode(), null).cached(isCached()).name(null).interactive(false).buildLiteral();
+    }
+    catch (RuntimeException ex) {
+      throw new ScriptRuntimeException("creating script failed: " + this, ex);
+    }
   }
 
 }

@@ -20,13 +20,12 @@ public class JavaScriptLanguageTest {
     }
 
     String code = "amount * (rate / 12) / (1 - Math.pow((1 + rate / 12), -numberOfMonths))";
-    Script script = ScriptFactory.getInstance().createScript("js", code, false, false);
+    Script script = ScriptFactory.getInstance().createScript("js", code, false, false, null);
 
-    script.execute(
+    Object result = script.execute(
         new ScriptVariable("amount", 154000),
         new ScriptVariable("rate", 3.75 / 100),
         new ScriptVariable("numberOfMonths", 240));
-    Object result = script.getResult();
     Assert.assertEquals(result, 913.0480050387337);
 
     long startTime = System.currentTimeMillis();

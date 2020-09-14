@@ -19,6 +19,8 @@
 package org.tentackle.script;
 
 
+import java.util.Set;
+
 /**
  * A generic script.
  *
@@ -35,27 +37,20 @@ public interface Script {
 
 
   /**
-   * Sets whether the script will execute in a threadsafe manner.<br>
-   * The default is not threadsafe.
+   * Returns whether script may be invoked from more than one thread in parallel.
    *
-   * @param threadSafe true if threadsafe
-   */
-  void setThreadSafe(boolean threadSafe);
-
-  /**
-   * Returns whether the script will execute in a threadsafe manner.
-   *
-   * @return true if threadsafe
+   * @return true if threadsafe execution required
    */
   boolean isThreadSafe();
 
 
   /**
-   * Sets the source code.
+   * Returns whether there is only one compiled script for the same code.
    *
-   * @param code the main code
+   * @return true if cached
    */
-  void setCode(String code);
+  boolean isCached();
+
 
   /**
    * Gets the scripting source code.
@@ -66,67 +61,35 @@ public interface Script {
 
 
   /**
-   * Gets the effective scripting code.
-   *
-   * @return the code to be compiled/executed
+   * Validates the script.<br>
+   * The script will be compiled, if not already done, but not executed.<br>
+   * <p>
+   * Throws {@link ScriptRuntimeException} if compiling failed.
    */
-  String getEffectiveCode();
+  void validate();
 
 
   /**
-   * Parses the script.
+   * Executes a script.
+   * <p>
+   * Throws {@link ScriptRuntimeException} if execution failed.
    *
-   * @return the compilation result (usually a script object)
-   * @throws ScriptRuntimeException if parsing failed
+   * @param <T> the result type
+   * @param variables the script variables, null if none
+   * @return the evaluated value, null if none
    */
-  Object parse();
+  <T> T execute(Set<ScriptVariable> variables);
 
 
   /**
-   * Clears the parsed script.
-   */
-  void clearParsed();
-
-  /**
-   * Checks whether the script is already parsed.
+   * Executes a script.
+   * <p>
+   * Throws {@link ScriptRuntimeException} if execution failed.
    *
-   * @return true if parsed
+   * @param <T> the result type
+   * @param variables the script variables, null if none
+   * @return the evaluated value, null if none
    */
-  boolean isParsed();
-
-
-  /**
-   * Sets a converter that will translate the script before being parsed.
-   *
-   * @param converter the converter, null if none (default)
-   */
-  void setConverter(ScriptConverter converter);
-
-
-  /**
-   * Gets the converter that will translate the script before being parsed.
-   *
-   * @return the converter
-   */
-  ScriptConverter getConverter();
-
-
-  /**
-   * Executes a script.<br>
-   * If the script hasn't been compiled yet, it will be compiled.
-   *
-   * @param variables the script variables
-   * @throws ScriptRuntimeException if execution failed
-   */
-  void execute(ScriptVariable... variables);
-
-
-  /**
-   * Gets the execution result.
-   *
-   * @return the evaluated value
-   * @throws ScriptRuntimeException if never executed before or previous execution failed
-   */
-  Object getResult();
+  <T> T execute(ScriptVariable... variables);
 
 }

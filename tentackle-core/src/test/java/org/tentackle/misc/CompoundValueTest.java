@@ -1,5 +1,5 @@
-/**
- * Tentackle - http://www.tentackle.org
+/*
+ * Tentackle - https://tentackle.org
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,10 +19,11 @@
 
 package org.tentackle.misc;
 
-import java.sql.Timestamp;
 import org.testng.Assert;
 import org.testng.Reporter;
 import org.testng.annotations.Test;
+
+import java.sql.Timestamp;
 
 /**
  * CompoundValue Test.
@@ -31,13 +32,14 @@ import org.testng.annotations.Test;
  */
 public class CompoundValueTest {
 
+  private static final String HELLO = "hello!";
 
   /**
    * The method grabbed by CompoundValue("$sayHello").
    * @return the hello string
    */
   public String sayHello() {
-    return "hello!";
+    return HELLO;
   }
 
   public boolean thisIsFalse() {
@@ -49,12 +51,12 @@ public class CompoundValueTest {
     CompoundValue par = new CompoundValue("100", Integer.class);
     Object result = par.getValue();
     Assert.assertTrue(result instanceof Integer);
-    Assert.assertTrue(((Integer) result) == 100);
+    Assert.assertEquals((int) ((Integer) result), 100);
 
     par = new CompoundValue("$sayHello");
     result = par.getValue(this);
     Assert.assertTrue(result instanceof String);
-    Assert.assertTrue(result.equals(sayHello()));
+    Assert.assertEquals(result, sayHello());
 
     par = new CompoundValue("!$thisIsFalse");
     result = par.getValue(this);
@@ -65,10 +67,7 @@ public class CompoundValueTest {
     Assert.assertTrue(result instanceof Timestamp);
     Reporter.log(result.toString() + "<br/>");
 
-    // test parsing only
-    new CompoundValue("100", Integer.class).parse(this.getClass());
-    new CompoundValue("$sayHello").parse(this.getClass());
-    new CompoundValue("$org.tentackle.misc.DateHelper.now").parse(this.getClass());
+    // scripts are tested in the corresponding scripting language tt-modules
   }
 
 }

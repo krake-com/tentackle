@@ -20,7 +20,6 @@ package org.tentackle.script.jsr;
 
 import org.testng.Assert;
 import org.testng.Reporter;
-import org.testng.SkipException;
 import org.testng.annotations.Test;
 
 import org.tentackle.misc.CompoundValue;
@@ -28,8 +27,6 @@ import org.tentackle.script.ScriptFactory;
 
 /**
  * CompoundValue Test.
- *
- * @author harald, bei
  */
 public class CompoundValueTest {
 
@@ -46,12 +43,8 @@ public class CompoundValueTest {
   }
 
   @Test
-  public void testCompountValue() {
-    if (!ScriptFactory.getInstance().isLanguageAvailable("js")) {
-      throw new SkipException("testValidate test skipped, js language not available");
-    }
-
-    ScriptFactory.getInstance().setDefaultLanguage("js");
+  public void testCompoundValue() {
+    ScriptFactory.getInstance().setDefaultLanguage("groovy");
 
     Object result = new CompoundValue("#!{ 200 > 100 }").getValue();
     Assert.assertTrue(result instanceof Boolean);
@@ -67,20 +60,15 @@ public class CompoundValueTest {
     Assert.assertTrue(result instanceof String);
     Assert.assertEquals(result, "the method says " + sayHello());
 
-    par = new CompoundValue("#!js{ 'the method says ' + object.sayHello() }");
+    par = new CompoundValue("#!Groovy{ 'the method says ' + object.sayHello() }");
     result = par.getValue(this);
     Assert.assertTrue(result instanceof String);
     Assert.assertEquals(result, "the method says " + sayHello());
 
-    // test parsing only
-    new CompoundValue("100", Integer.class).parse(this.getClass());
-    new CompoundValue("$sayHello").parse(this.getClass());
-    new CompoundValue("$org.tentackle.misc.DateHelper.now").parse(this.getClass());
-    new CompoundValue("#!{ 200 > 100 }").parse(this.getClass());
-    new CompoundValue("#!{ 123.0 + 101.0 }", String.class).parse(this.getClass());
-
-    new CompoundValue("#!{ 'the method says ' + object.sayHello() }").parse(this.getClass());
-    new CompoundValue("#!js{ 'the method says ' + object.sayHello }").parse(this.getClass());
+    par = new CompoundValue("#!Ruby{ 'the method says ' + @object.sayHello() }");
+    result = par.getValue(this);
+    Assert.assertTrue(result instanceof String);
+    Assert.assertEquals(result, "the method says " + sayHello());
   }
 
 }

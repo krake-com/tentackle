@@ -21,7 +21,6 @@ package org.tentackle.validate.validator;
 
 import java.util.List;
 import org.tentackle.misc.CompoundValue;
-import org.tentackle.script.ScriptVariable;
 import org.tentackle.validate.ValidationContext;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationRuntimeException;
@@ -36,8 +35,8 @@ import org.tentackle.validate.ValidationSeverity;
 public class PatternImpl extends AbstractValidator<Pattern> {
 
 
-  protected CompoundValue patternParameter;   // the regular expression
-  protected java.util.regex.Pattern regex;    // the compiled pattern
+  protected volatile CompoundValue patternParameter;   // the regular expression
+  protected volatile java.util.regex.Pattern regex;    // the compiled pattern
 
 
 
@@ -104,20 +103,23 @@ public class PatternImpl extends AbstractValidator<Pattern> {
    * @return the pattern
    */
   protected java.util.regex.Pattern getPattern(ValidationContext validationContext) {
-    if (patternParameter == null) {
-      // determine the parameter once
-      patternParameter = createCompoundValue(annotation.value(), String.class);
+    CompoundValue localPar = patternParameter;
+    if (localPar == null) {
+      synchronized (this) {
+        localPar = patternParameter;
+        if (localPar == null) {
+          // determine the parameter once
+          localPar = patternParameter = createCompoundValue(annotation.value(), String.class, VALIDATION_CONVERTER_MAP::get);
+        }
+      }
     }
-    if (regex == null || patternParameter.getType() != CompoundValue.Type.CONSTANT) {
-      Object parentObject = validationContext.getParentObject();
-      Object object = validationContext.getObject();
-      ScriptVariable[] variables = new ScriptVariable[]{
-        new ScriptVariable("value", object)
-      };
-      String pattern = (String) patternParameter.getValue(parentObject, variables);
-      regex = java.util.regex.Pattern.compile(pattern, annotation.flag());
+
+    java.util.regex.Pattern localRegex = regex;
+    if (localRegex == null || localPar.getType() != CompoundValue.Type.CONSTANT) {
+      String pattern = (String) localPar.getValue(validationContext.getParentObject(), createScriptVariables(validationContext));
+      localRegex = regex = java.util.regex.Pattern.compile(pattern, annotation.flag());
     }
-    return regex;
+    return localRegex;
   }
 
 }

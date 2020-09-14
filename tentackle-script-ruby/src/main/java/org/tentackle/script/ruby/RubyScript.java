@@ -1,5 +1,5 @@
-/**
- * Tentackle - http://www.tentackle.org
+/*
+ * Tentackle - https://tentackle.org
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -29,6 +29,11 @@ import org.tentackle.script.AbstractScript;
 import org.tentackle.script.ScriptRuntimeException;
 import org.tentackle.script.ScriptVariable;
 
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 
 /**
  * A Ruby script.
@@ -45,119 +50,44 @@ public class RubyScript extends AbstractScript {
   private static final Logger LOGGER = LoggerFactory.getLogger(RubyScript.class);
 
 
-  /**
-   * The compiled ruby script.
-   */
-  public static class CompiledScript {
+  /** map of code:scripts. */
+  private static final Map<String, CompiledRubyScript> SCRIPT_CACHE = new ConcurrentHashMap<>();
 
-    private final ScriptingContainer container;     // the scripting container
-    private final String effectiveCode;             // the effective source code
-    private final EmbedEvalUnit rubyScript;         // the compiled script
-
-    /**
-     * Creates a compiled ruby script.
-     *
-     * @param container the scripting container
-     * @param effectiveCode the source code
-     * @param rubyScript the ruby script object
-     */
-    public CompiledScript(ScriptingContainer container, String effectiveCode, EmbedEvalUnit rubyScript) {
-      this.container = container;
-      this.effectiveCode = effectiveCode;
-      this.rubyScript = rubyScript;
-    }
-
-    /**
-     * @return the container
-     */
-    public ScriptingContainer getContainer() {
-      return container;
-    }
-
-    /**
-     * @return the effectiveCode
-     */
-    public String getEffectiveCode() {
-      return effectiveCode;
-    }
-
-    /**
-     * @return the rubyScript
-     */
-    public EmbedEvalUnit getRubyScript() {
-      return rubyScript;
-    }
-  }
+  /** the ruby container. */
+  private final ScriptingContainer container;
 
   /** the compiled script instance, null if not compiled yet. */
-  private volatile CompiledScript compiledScript;
-
-
-  private boolean executed;     // true if script has been executed and result is valid
-  private Object result;        // the last execution result
+  private volatile CompiledRubyScript compiledScript;
 
 
   /**
    * Creates a ruby script.
    *
    * @param language the language
+   * @param code the scripting code
+   * @param cached true if cached
+   * @param threadSafe true if threadsafety required
    */
-  public RubyScript(RubyLanguage language) {
-    super(language, false);
-  }
-
-  /**
-   * Gets the compiled script.<br>
-   * Will be parsed if not done yet.
-   *
-   * @return the compiled script
-   */
-  public CompiledScript getCompiledScript() {
-    return compiledScript == null ? parse() : compiledScript;
-  }
-
-
-  @Override
-  public boolean isParsed() {
-    return compiledScript != null;
+  public RubyScript(RubyLanguage language, ScriptingContainer container, String code, boolean cached, boolean threadSafe) {
+    super(language, code, cached, threadSafe);
+    this.container = container;
   }
 
   @Override
-  public void clearParsed() {
-    compiledScript = null;
+  public void validate() {
+    getCompiledScript();
   }
 
   @Override
-  public CompiledScript parse() throws ScriptRuntimeException {
-    try {
-      String effectiveCode = getEffectiveCode();
-      LOGGER.fine("compiling script:\n{0}", effectiveCode);
-      ScriptingContainer container = new ScriptingContainer();
-      EmbedEvalUnit script = container.parse(effectiveCode);
-      compiledScript = new CompiledScript(container, effectiveCode, script);
-      return compiledScript;
-    }
-    catch (RuntimeException ex) {
-      throw new ScriptRuntimeException("parsing failed: " + this, ex);
-    }
-  }
-
-
-  @Override
-  public void execute(ScriptVariable... variables) throws ScriptRuntimeException {
-
-    executed = false;
-    result = null;
-
-    final CompiledScript script = getCompiledScript();
-
+  public <T> T execute(Set<ScriptVariable> variables) {
+    T result = null;
+    CompiledRubyScript script = getCompiledScript();
     if (LOGGER.isFinerLoggable()) {
-      LOGGER.finer("execute: \n" + script.getEffectiveCode() + "\nwith args: " + ScriptVariable.variablesToString(variables));
+      LOGGER.finer("execute: \n" + script.getCode() + "\nwith args: " + ScriptVariable.variablesToString(variables));
     }
-
     try {
       if (isThreadSafe()) {
-        synchronized (script) {
+        synchronized (script.getContainer()) {
           result = executeImpl(script, variables);
         }
       }
@@ -165,34 +95,62 @@ public class RubyScript extends AbstractScript {
         result = executeImpl(script, variables);
       }
     }
-    catch (Exception ex) {
+    catch (RuntimeException ex) {
       throw new ScriptRuntimeException(ex);
     }
-
     LOGGER.finer("returned: {0}", result);
-    executed = true;
-  }
-
-  @Override
-  public Object getResult() {
-    if (!executed) {
-      throw new ScriptRuntimeException("script not executed");
-    }
     return result;
   }
 
 
+  /**
+   * Gets the compiled script.<br>
+   * Will be parsed if not done yet.
+   *
+   * @return the compiled script
+   */
+  protected CompiledRubyScript getCompiledScript() {
+    CompiledRubyScript localScript = compiledScript;
+    if (localScript == null) {
+      synchronized (this) {
+        localScript = compiledScript;
+        if (localScript == null) {
+          localScript = compiledScript = isCached() ?
+                                         SCRIPT_CACHE.computeIfAbsent(getCode(), this::compileScript) :
+                                         compileScript(getCode());
+        }
+      }
+    }
+    return localScript;
+  }
 
+  /**
+   * Compiles script code.
+   *
+   * @param code the scripting source code
+   * @return the compiled script
+   */
+  @SuppressWarnings("unchecked")
+  protected CompiledRubyScript compileScript(String code) {
+    try {
+      LOGGER.fine("compiling script:\n{0}", code);
+      EmbedEvalUnit rubyScript = container.parse(code);
+      return new CompiledRubyScript(container, code, rubyScript);
+    }
+    catch (RuntimeException ex) {
+      throw new ScriptRuntimeException("parsing failed: " + this, ex);
+    }
+  }
 
   @SuppressWarnings("unchecked")
-  private Object executeImpl(CompiledScript script, ScriptVariable... variables) {
+  protected <T> T executeImpl(CompiledRubyScript script, Collection<ScriptVariable> variables) {
     if (variables != null) {
       for (ScriptVariable variable: variables) {
         script.getContainer().put(getLanguage().createLocalVariableReference(variable.getName()), variable.getValue());
       }
     }
     IRubyObject rubyResult = script.getRubyScript().run();
-    return rubyResult == null ? null : rubyResult.toJava(rubyResult.getJavaClass());
+    return rubyResult == null ? null : (T) rubyResult.toJava(rubyResult.getJavaClass());
   }
 
 }

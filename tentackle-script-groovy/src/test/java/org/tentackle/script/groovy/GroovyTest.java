@@ -19,12 +19,16 @@
 
 package org.tentackle.script.groovy;
 
-import org.tentackle.script.Script;
-import org.tentackle.script.ScriptFactory;
-import org.tentackle.script.ScriptVariable;
 import org.testng.Assert;
 import org.testng.Reporter;
 import org.testng.annotations.Test;
+
+import org.tentackle.script.Script;
+import org.tentackle.script.ScriptFactory;
+import org.tentackle.script.ScriptVariable;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Groovy test.
@@ -33,30 +37,32 @@ import org.testng.annotations.Test;
  */
 public class GroovyTest {
 
+  private static final int LOOPS = 1000000;
+
   @Test
   public void testGroovy() {
-
+    ScriptVariable monthsVar = new ScriptVariable("numberOfMonths");
+    Set<ScriptVariable> variables = new HashSet<>();
+    variables.add(new ScriptVariable("amount", 154000));
+    variables.add(new ScriptVariable("rate", 3.75 / 100));
+    variables.add(monthsVar);
     String code = "amount * (rate / 12) / (1 - (1 + rate / 12) ** -numberOfMonths)";
-    Script script = ScriptFactory.getInstance().createScript("groovy", code, false, false);
-    script.execute(
-            new ScriptVariable("amount", 154000),
-            new ScriptVariable("rate", 3.75 / 100),
-            new ScriptVariable("numberOfMonths", 240));
-    Object result = script.getResult();
+    Script script = ScriptFactory.getInstance().createScript("groovy", code, false, false, null);
+    monthsVar.setValue(240);
+    Double result = script.execute(variables);
     Assert.assertEquals(result, 913.0480050387337);
 
     long startTime = System.currentTimeMillis();
-    for (int i = 1; i < 10000; i++) {
-      script.execute(
-              new ScriptVariable("amount", 154000),
-              new ScriptVariable("rate", 3.75 / 100),
-              new ScriptVariable("numberOfMonths", i));
+
+    for (int i = 1; i < LOOPS; i++) {
+      monthsVar.setValue(i);
+      script.execute(variables);
     }
     long endTime = System.currentTimeMillis();
     Reporter.log("duration (groovy): " + (endTime - startTime) / 1000.0 + " seconds<br/>");
 
     startTime = System.currentTimeMillis();
-    for (int i = 1; i < 10000; i++) {
+    for (int i = 1; i < LOOPS; i++) {
       sameInJava(i);
     }
     endTime = System.currentTimeMillis();

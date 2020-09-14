@@ -19,23 +19,19 @@
 
 package org.tentackle.maven.check;
 
-import java.io.File;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.MissingResourceException;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.ResolutionScope;
+
 import org.tentackle.buildsupport.AbstractTentackleProcessor;
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.common.LocaleProvider;
 import org.tentackle.common.ServiceFactory;
+import org.tentackle.common.StringHelper;
 import org.tentackle.maven.check.CheckValidationsProcessor.ValidatorEntry;
 import org.tentackle.misc.CompoundValue;
-import org.tentackle.common.StringHelper;
 import org.tentackle.script.Script;
 import org.tentackle.script.ScriptConverter;
 import org.tentackle.validate.ValidationRuntimeException;
@@ -43,6 +39,12 @@ import org.tentackle.validate.ValidationUtilities;
 import org.tentackle.validate.Validator;
 import org.tentackle.validate.validator.MessageScriptConverter;
 import org.tentackle.validate.validator.ValidationScriptConverter;
+
+import java.io.File;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.MissingResourceException;
 
 
 /**
@@ -161,23 +163,21 @@ public class CheckValidationsMojo extends AbstractCheckMojo {
       Class<?> enclosingClass = getProcessingClassloader().loadClass(validatorEntry.getClassName());
       String message = validator.getMessage();
       if (message != null && !message.isEmpty()) {
-        CompoundValue cv = new CompoundValue(message, String.class);
+        CompoundValue cv = new CompoundValue(message, String.class, false, false,
+                                             messageConverterMap::get);
         if (cv.getType() == CompoundValue.Type.SCRIPT) {
           Script script = cv.getScript();
           if (script != null) {
             scriptCount++;
             if (message.contains("@(")) {   // i18n script
-              // set the translator
-              ScriptConverter converter = messageConverterMap.get(script.getLanguage().getName());
-              if (converter == null) {
+              if (messageConverterMap.get(script.getLanguage().getName()) == null) {
                 throw new MojoFailureException("missing message script converter for " + script.getLanguage());
               }
-              script.setConverter(converter);
               cv.getValue(enclosingClass);
             }
             else {
               // some other script: just compile
-              script.parse();
+              script.validate();
             }
           }
         }
@@ -209,13 +209,13 @@ public class CheckValidationsMojo extends AbstractCheckMojo {
       Validator validator = validatorEntry.getValidator();
       String condition = validator.getCondition();
       if (condition != null && !condition.isEmpty()) {
-        CompoundValue cv = new CompoundValue(condition, Boolean.class);
+        CompoundValue cv = new CompoundValue(condition, Boolean.class, false, false,
+                                             validationConverterMap::get);
         if (cv.getType() == CompoundValue.Type.SCRIPT) {
           Script script = cv.getScript();
           if (script != null) {
-            script.setConverter(validationConverterMap.get(script.getLanguage().getName()));
             scriptCount++;
-            script.parse();
+            script.validate();
           }
         }
       }

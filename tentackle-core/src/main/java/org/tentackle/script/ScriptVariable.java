@@ -20,6 +20,9 @@ package org.tentackle.script;
 
 import org.tentackle.reflect.EffectiveClassProvider;
 
+import java.util.Objects;
+import java.util.Set;
+
 /**
  * Script variable.
  *
@@ -27,11 +30,27 @@ import org.tentackle.reflect.EffectiveClassProvider;
  */
 public class ScriptVariable {
 
+  /** script variable for effective scope. */
+  public static final String VAR_SCOPE = "scope";
+
+  /** script variable for validation path. */
+  public static final String VAR_PATH = "path";
+
+  /** script variable for the parent object. */
+  public static final String VAR_OBJECT = "object";
+
+  /** script variable for the value. */
+  public static final String VAR_VALUE = "value";
+
+  /** script variable for the parent class. */
+  public static final String VAR_CLASS = "clazz";
+
+
   private static final long serialVersionUID = 7698497385959487231L;
 
 
-  private final String name;     // the variable name
-  private final Object value;    // the value
+  private final String name;      // the variable name (never null)
+  private Object value;           // the value
 
   /**
    * Creates a {@link ScriptVariable}.
@@ -40,22 +59,45 @@ public class ScriptVariable {
    * @param value its value
    */
   public ScriptVariable(String name, Object value) {
-    this.name = name;
+    this.name = Objects.requireNonNull(name);
     this.value = value;
   }
 
   /**
-   * @return the variable's name
+   * Creates a {@link ScriptVariable} without value.
+   *
+   * @param name the variable's name
+   */
+  public ScriptVariable(String name) {
+    this.name = Objects.requireNonNull(name);
+    this.value = value;
+  }
+
+  /**
+   * Gets the variable's name.
+   *
+   * @return the variable's name, never null
    */
   public String getName() {
     return name;
   }
 
   /**
+   * Gets the variable's value.
+   *
    * @return the value
    */
   public Object getValue() {
     return value;
+  }
+
+  /**
+   * Sets the variable's value.
+   *
+   * @param value the new value
+   */
+  public void setValue(Object value) {
+    this.value = value;
   }
 
   @Override
@@ -77,6 +119,19 @@ public class ScriptVariable {
     return buf.toString();
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    ScriptVariable that = (ScriptVariable) o;
+    if (!name.equals(that.name)) return false;
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    return name.hashCode();
+  }
 
   /**
    * Returns the string of a list of variables.
@@ -84,7 +139,7 @@ public class ScriptVariable {
    * @param variables the list of variables
    * @return the string representation
    */
-  public static String variablesToString(ScriptVariable... variables) {
+  public static String variablesToString(Set<ScriptVariable> variables) {
     StringBuilder args = new StringBuilder();
     if (variables != null) {
       boolean needComma = false;

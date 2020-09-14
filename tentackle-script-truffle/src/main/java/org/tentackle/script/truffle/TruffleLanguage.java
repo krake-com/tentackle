@@ -22,8 +22,10 @@ import org.graalvm.polyglot.Language;
 
 import org.tentackle.script.AbstractScriptingLanguage;
 import org.tentackle.script.Script;
+import org.tentackle.script.ScriptConverter;
 
 import java.util.Locale;
+import java.util.function.Function;
 
 
 /**
@@ -65,8 +67,8 @@ public abstract class TruffleLanguage extends AbstractScriptingLanguage {
   }
 
   @Override
-  public Script createScript(boolean cached) {
-    return new TruffleScript(this, cached);
+  public Script createScript(String code, boolean cached, boolean threadSafe, Function<String, ScriptConverter> converterProvider) {
+    return new TruffleScript(this, getEffectiveCode(code, converterProvider), cached, threadSafe);
   }
 
 }
