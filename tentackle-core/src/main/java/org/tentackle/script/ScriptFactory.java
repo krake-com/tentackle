@@ -108,7 +108,7 @@ public interface ScriptFactory {
    * if caching not supported by the language or the caching refers to class instances instead of objects.
    * Caching should not be used for scripts that are executed only once.
    * <p>
-   * If there are chances that scripts are invoked from different threads at a time, <em>all</em>> scripts must be executed
+   * If there are chances that scripts are invoked from different threads at a time, <em>all</em> scripts must be executed
    * in a thread-safe manner. Although some languages are threadsafe by design, others may need some extra synchronization.
    * If in doubt, set <code>threadSafe</code> to <code>true</code>
    * <p>
