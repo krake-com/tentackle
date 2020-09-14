@@ -95,11 +95,6 @@ public class RubyScript extends AbstractScript {
     return result;
   }
 
-  @Override
-  public <T> T execute(ScriptVariable... variables) {
-    return execute(Set.of(variables));
-  }
-
 
   /**
    * Gets the compiled script.<br>
