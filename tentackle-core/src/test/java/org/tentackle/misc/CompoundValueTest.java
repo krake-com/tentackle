@@ -19,10 +19,11 @@
 
 package org.tentackle.misc;
 
-import java.sql.Timestamp;
 import org.testng.Assert;
 import org.testng.Reporter;
 import org.testng.annotations.Test;
+
+import java.sql.Timestamp;
 
 /**
  * CompoundValue Test.
@@ -31,13 +32,14 @@ import org.testng.annotations.Test;
  */
 public class CompoundValueTest {
 
+  private static final String HELLO = "hello!";
 
   /**
    * The method grabbed by CompoundValue("$sayHello").
    * @return the hello string
    */
   public String sayHello() {
-    return "hello!";
+    return HELLO;
   }
 
   public boolean thisIsFalse() {
@@ -64,11 +66,6 @@ public class CompoundValueTest {
     result = new CompoundValue("$org.tentackle.misc.DateHelper.now").getValue();
     Assert.assertTrue(result instanceof Timestamp);
     Reporter.log(result.toString() + "<br/>");
-
-    // test parsing only
-    new CompoundValue("100", Integer.class).parse(this.getClass());
-    new CompoundValue("$sayHello").parse(this.getClass());
-    new CompoundValue("$org.tentackle.misc.DateHelper.now").parse(this.getClass());
 
     // scripts are tested in the corresponding scripting language tt-modules
   }

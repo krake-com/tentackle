@@ -32,45 +32,47 @@ public abstract class AbstractScript implements Script {
   /** the language instance. */
   private final ScriptingLanguage language;
 
+  /** main scripting code. */
+  private final String code;
+
+  /** true if execution requested for more than one thread. */
+  private final boolean threadSafe;
+
   /** true if use caching if possible. */
   private final boolean cached;
-
-  /** main scripting code. */
-  private String code;
-
-  /** code converter. */
-  private ScriptConverter converter;
-
-  /** true if execution works in parallel for more than one thread. */
-  private volatile boolean threadSafe;
 
 
   /**
    * Creates a script.
    *
    * @param language the language instance
+   * @param code the scripting code
    * @param cached true if use caching, if possible
+   * @param threadSafe true if threadsafety is required
    */
-  public AbstractScript(ScriptingLanguage language, boolean cached) {
-    this.language = language;
+  public AbstractScript(ScriptingLanguage language, String code, boolean cached, boolean threadSafe) {
+    this.language = Objects.requireNonNull(language);
+    this.code = Objects.requireNonNull(code);
     this.cached = cached;
+    this.threadSafe = threadSafe;
   }
 
   @Override
   public String toString() {
     StringBuilder buf = new StringBuilder();
     buf.append("#!").append(getLanguage()).append("{ ");
-    if (code != null) {
-      String codeInfo = StringHelper.trim(code.replace('\n', ' '), 64);
-      buf.append(codeInfo);
-      if (codeInfo.length() < code.length()) {
-        buf.append(" ...");
-      }
-    }
-    else {
-      buf.append("<null>");
+    String codeInfo = StringHelper.trim(getCode().replace('\n', ' '), 64);
+    buf.append(codeInfo);
+    if (codeInfo.length() < getCode().length()) {
+      buf.append(" ...");
     }
     buf.append(" }");
+    if (isCached()) {
+      buf.append(" (cached)");
+    }
+    if (isThreadSafe()) {
+      buf.append(" (mt)");
+    }
     return buf.toString();
   }
 
@@ -80,57 +82,18 @@ public abstract class AbstractScript implements Script {
   }
 
   @Override
-  public void setThreadSafe(boolean threadSafe) {
-    this.threadSafe = threadSafe;
-  }
-
-  @Override
   public boolean isThreadSafe() {
     return threadSafe;
   }
 
-  /**
-   * Returns whether script should be cached.
-   *
-   * @return true if cached
-   */
+  @Override
   public boolean isCached() {
     return cached;
   }
 
   @Override
-  public void setCode(String code) {
-    if (Objects.requireNonNull(code, "code").isEmpty()) {
-      throw new IllegalArgumentException("empty code");
-    }
-    this.code = code;
-    clearParsed();
-  }
-
-  @Override
   public String getCode() {
     return code;
-  }
-
-
-  @Override
-  public String getEffectiveCode() {
-    String effectiveCode = getCode();
-    ScriptConverter cnvrtr = getConverter();
-    if (cnvrtr != null) {
-      effectiveCode = cnvrtr.convert(effectiveCode, getLanguage());
-    }
-    return effectiveCode;
-  }
-
-  @Override
-  public void setConverter(ScriptConverter converter) {
-    this.converter = converter;
-  }
-
-  @Override
-  public ScriptConverter getConverter() {
-    return converter;
   }
 
 }

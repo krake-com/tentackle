@@ -85,6 +85,7 @@
     <javac.version.target>${javac.version.src}</javac.version.target>
     <javafx.version>14.0.2.1</javafx.version>
     <ow2.asm.version>8.0.1</ow2.asm.version>
+    <groovy.version>3.0.5</groovy.version>
     <maven.version>3.6.3</maven.version>
     <postgresql.version>42.2.16</postgresql.version>
     <maven.resources.plugin.version>3.1.0</maven.resources.plugin.version>
@@ -211,8 +212,13 @@
       <dependency>
         <groupId>org.codehaus.groovy</groupId>
         <artifactId>groovy</artifactId>
-        <version>3.0.5</version>
+        <version>${groovy.version}</version>
         <classifier>indy</classifier>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.groovy</groupId>
+        <artifactId>groovy-jsr223</artifactId>
+        <version>${groovy.version}</version>
       </dependency>
 
       <dependency>
