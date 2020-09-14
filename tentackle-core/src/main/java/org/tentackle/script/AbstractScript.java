@@ -21,6 +21,7 @@ package org.tentackle.script;
 import org.tentackle.common.StringHelper;
 
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Abstract implementation of a script.
@@ -94,6 +95,11 @@ public abstract class AbstractScript implements Script {
   @Override
   public String getCode() {
     return code;
+  }
+
+  @Override
+  public <T> T execute(ScriptVariable... variables) {
+    return execute(Set.of(variables));
   }
 
 }
