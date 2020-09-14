@@ -18,29 +18,22 @@
 
 package org.tentackle.script.jsr;
 
-import org.testng.Assert;
-import org.testng.Reporter;
 import org.testng.annotations.Test;
 
 import org.tentackle.script.ScriptFactory;
-import org.tentackle.script.ScriptingLanguage;
 
-public class ScriptFactoryTest {
+/**
+ * Multithreading penetration test for JavaScript (Nashorn, removed with JDK15).
+ */
+public class JSR223ThreadingJavaScriptTest {
+
+  private static final String LANG = "js";
 
   @Test
-  public void testGetLanguages() {
-    try {
-      ScriptFactory factory = ScriptFactory.getInstance();
-      for (ScriptingLanguage language : factory.getLanguages()) {
-        for (String abbrv : language.getAbbreviations()) {
-          Reporter.log("found scripting language " + language + " as " + abbrv + "<br>");
-        }
-      }
-    }
-    catch (Exception e) {
-      e.printStackTrace();
-      Assert.fail("Exception thrown", e);
-    }
+  public void jsr223JavaScriptMultiTtest() {
+    new JSR223ThreadingTest(LANG, 100, 1000).runIt(
+        ScriptFactory.getInstance().createScript(LANG, "a + b", false, true, null),
+        ScriptFactory.getInstance().createScript(LANG, "b + a", false, true, null));
   }
 
 }

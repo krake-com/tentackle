@@ -19,6 +19,7 @@
 package org.tentackle.script;
 
 import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * Common code for scripting languages.
@@ -54,6 +55,23 @@ public abstract class AbstractScriptingLanguage implements ScriptingLanguage {
     }
     final AbstractScriptingLanguage other = (AbstractScriptingLanguage) obj;
     return Objects.equals(getName(), other.getName());
+  }
+
+  /**
+   * Converts the script code via an optional converter provider.
+   *
+   * @param code the original script code
+   * @param converterProvider the converter provider, null if none
+   * @return the effective code to execute
+   */
+  protected String getEffectiveCode(String code, Function<String, ScriptConverter> converterProvider) {
+    if (converterProvider != null) {
+      ScriptConverter converter = converterProvider.apply(getName());
+      if (converter != null) {
+        code = converter.convert(code, this);
+      }
+    }
+    return code;
   }
 
 }

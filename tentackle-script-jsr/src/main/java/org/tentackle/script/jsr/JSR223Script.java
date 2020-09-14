@@ -29,6 +29,9 @@ import javax.script.CompiledScript;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A script based on JSR-223.
@@ -41,119 +44,107 @@ public class JSR223Script extends AbstractScript {
 
   private static final Logger LOGGER = Logger.get(JSR223Script.class);
 
+  /** map of code:scripts. */
+  private static final Map<String, CompiledJSR223Script> SCRIPT_CACHE = new ConcurrentHashMap<>();
 
-  private CompiledScript compiledScript;      // the JSR compiled script
-  private volatile String scriptCode;         // the source code of the compiled script
-  private boolean executed;                   // true if script has been executed and result is valid
-  private Object result;                      // the last execution result
+  private volatile CompiledJSR223Script compiledScript;      // the JSR compiled script
 
   /**
    * Creates a script.
    *
    * @param language the language instance
+   * @param code the scripting code
+   * @param cached true if use caching if possible
+   * @param threadSafe true if thread safe execution required
    */
-  public JSR223Script(JSR223ScriptingLanguage language) {
-    super(language, false);   // JSR does not provide the concept of caching script classes
+  public JSR223Script(JSR223Language language, String code, boolean cached, boolean threadSafe) {
+    super(language, code, cached, threadSafe);
   }
 
   @Override
-  public JSR223ScriptingLanguage getLanguage() {
-    return (JSR223ScriptingLanguage) super.getLanguage();
+  public JSR223Language getLanguage() {
+    return (JSR223Language) super.getLanguage();
   }
+
+
+  @Override
+  public void validate() {
+    getCompiledScript();
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public <T> T execute(Set<ScriptVariable> variables) {
+    T result = null;
+    CompiledJSR223Script script = getCompiledScript();
+    LOGGER.finer(() -> "execute: \n" + script.getCode() + "\nwith args: " + ScriptVariable.variablesToString(variables));
+    try {
+      Bindings bindings = new SimpleBindings();
+      if (variables != null) {
+        for (ScriptVariable variable: variables) {
+          bindings.put(getLanguage().createLocalVariableReference(variable.getName()), variable.getValue());
+        }
+      }
+      CompiledScript jsrScript = script.getCompiledScript();
+      if (getLanguage().isThreadSafe() || !isThreadSafe()) {
+        result = (T) jsrScript.eval(bindings);
+      }
+      else {
+        synchronized (jsrScript.getEngine()) {
+          result = (T) jsrScript.eval(bindings);
+        }
+      }
+    }
+    catch (RuntimeException | ScriptException ex) {
+      throw new ScriptRuntimeException(ex);
+    }
+    LOGGER.finer("returned: {0}", result);
+    return result;
+  }
+
+  @Override
+  public <T> T execute(ScriptVariable... variables) {
+    return execute(Set.of(variables));
+  }
+
 
   /**
    * Gets the compiled script.<br>
    * Will be parsed if not done yet.
    *
-   * @return the compiled script
+   * @return the compiled script, never null
    */
-  public CompiledScript getCompiledScript() {
-    return compiledScript == null ? parse() : compiledScript;
-  }
-
-  @Override
-  public boolean isParsed() {
-    return compiledScript != null;
-  }
-
-  @Override
-  public void clearParsed() {
-    compiledScript = null;
-  }
-
-  @Override
-  public CompiledScript parse() {
-    try {
-      scriptCode = getEffectiveCode();
-      if (compiledScript == null) {
-        ScriptEngine engine = getLanguage().getEngineFactory().getScriptEngine();
-        LOGGER.fine("compiling script with {0}:\n{1}", engine, scriptCode);
-        compiledScript = ((Compilable) engine).compile(scriptCode);
-      }
-      else {
-        LOGGER.fine("re-using compiled script:\n{0}", scriptCode);
-      }
-      return compiledScript;
-    }
-    catch (ScriptException ex) {
-      throw new ScriptRuntimeException("creating script failed: " + this, ex);
-    }
-  }
-
-
-  @Override
-  public void execute(ScriptVariable... variables) {
-
-    executed = false;
-    result = null;
-
-    final CompiledScript script = getCompiledScript();
-
-    LOGGER.finer(() -> "execute: \n" + scriptCode + "\nwith args: " + ScriptVariable.variablesToString(variables));
-
-    try {
-      Bindings bindings = new SimpleBindings();
-      if (variables != null) {
-        for (ScriptVariable variable: variables) {
-          bindings.put(variable.getName(), variable.getValue());
+  protected CompiledJSR223Script getCompiledScript() {
+    CompiledJSR223Script localScript = compiledScript;
+    if (localScript == null) {
+      synchronized (this) {
+        localScript = compiledScript;
+        if (localScript == null) {
+          localScript = compiledScript = isCached() ?
+                                         SCRIPT_CACHE.computeIfAbsent(getCode(), this::compileScript) :
+                                         compileScript(getCode());
         }
       }
-      if (isThreadSafe()) {
-        synchronized (script) {
-          result = executeImpl(script, bindings);
-        }
-      }
-      else {
-        result = executeImpl(script, bindings);
-      }
     }
-    catch (ScriptException ex) {
-      throw new ScriptRuntimeException(ex);
-    }
-
-    LOGGER.finer("returned: {0}", result);
-
-    executed = true;
-  }
-
-  @Override
-  public Object getResult() {
-    if (!executed) {
-      throw new ScriptRuntimeException("script not executed");
-    }
-    return result;
+    return localScript;
   }
 
   /**
-   * Executes the given script.
+   * Compiles script code.
    *
-   * @param script the compiled script
-   * @param bindings the bindings
-   * @return the evaluated value
-   * @throws ScriptException if execution failed
+   * @param code the scripting source code
+   * @return the compiled script
    */
-  protected Object executeImpl(CompiledScript script, Bindings bindings) throws ScriptException {
-    return compiledScript == null ? null : compiledScript.eval(bindings);
+  protected CompiledJSR223Script compileScript(String code) {
+    try {
+      ScriptEngine engine = getLanguage().getEngine();
+      LOGGER.fine("compiling script with {0}:\n{1}", engine, code);
+      CompiledScript script = ((Compilable) engine).compile(code);
+      return new CompiledJSR223Script(code, script);
+    }
+    catch (RuntimeException | ScriptException ex) {
+      throw new ScriptRuntimeException("creating script failed: " + this, ex);
+    }
   }
 
 }

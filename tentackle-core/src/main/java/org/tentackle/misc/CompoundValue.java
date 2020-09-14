@@ -20,11 +20,15 @@ package org.tentackle.misc;
 
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.script.Script;
+import org.tentackle.script.ScriptConverter;
 import org.tentackle.script.ScriptFactory;
 import org.tentackle.script.ScriptRuntimeException;
 import org.tentackle.script.ScriptVariable;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.function.Function;
 
 
 /**
@@ -59,10 +63,6 @@ import java.util.StringTokenizer;
  */
 public class CompoundValue {
 
-  /** script variable for the parent object. */
-  public static final String VAR_OBJECT = "object";
-
-
   /**
    * The value type of strings.
    * <ul>
@@ -87,20 +87,19 @@ public class CompoundValue {
 
 
 
-  // configuration parameters
-  private String str;                         // the original string
-  private Class<?> clazz;                     // the value's type
+  private final String str;                                                   // the original string
+  private final Class<?> clazz;                                               // the value's type
+  private final Function<String, ScriptConverter> scriptConverterProvider;    // the optional script converter provider
+  private final boolean scriptCached;                                         // use caching for script, if possible
+  private final boolean scriptThreadSafe;                                     // execute script thread safe
 
-  // derived from configuration
-  private Type type;                          // the type
-  private String constant;                    // the constant value string, null if none
-  private Object constantValue;               // the cached constant value
-  private String reference;                   // the reference, null if none
-  private String staticClassName;             // the name of the static class reference
-  private boolean negate;                     // true if negate the (boolean) reference
-  private Script script;                      // the script, null if none
-  private boolean scriptCached;               // use caching for script, if possible
-  private boolean scriptExecutedThreadSafe;   // execute script thread safe
+  private Type type;                                                          // the type
+  private String constant;                                                    // the constant value string, null if none
+  private Object constantValue;                                               // the cached constant value
+  private String reference;                                                   // the reference, null if none
+  private String staticClassName;                                             // the name of the static class reference
+  private boolean negate;                                                     // true if negate the (boolean) reference
+  private Script script;                                                      // the script, null if none
 
 
 
@@ -110,91 +109,22 @@ public class CompoundValue {
    * The <code>clazz</code> is required for {@link Type#CONSTANT}.
    * For {@link Type#SCRIPT} it is optional and if given, the returned value is
    * converted to the given type, if possible.
+   * <p>
+   * The parameters <code>scriptConverterProviderscriptCached</code>, <code>scriptCached</code> and <code>scriptThreadSafe</code>
+   * are for {@link Type#SCRIPT} only.
    *
    * @param str the string value
    * @param clazz the class of the value
+   * @param scriptCached true if use caching if possible because script code may used more than once
+   * @param scriptThreadSafe true if the script may be invoked in parallel from different threads
+   * @param scriptConverterProvider the optional provider for the script converter
    */
-  public CompoundValue(String str, Class<?> clazz) {
-    configure(str, clazz);
-  }
-
-  /**
-   * Creates and configures a compound value.<br>
-   *
-   * @param str the string value
-   */
-  public CompoundValue(String str) {
-    configure(str, null);
-  }
-
-  /**
-   * Creates an unconfigured compound value
-   */
-  public CompoundValue() {
-  }
-
-
-
-
-  @Override
-  public String toString() {
-    return "[" + type + "] " + str;
-  }
-
-
-  /**
-   * Returns whether script should be cached if possible.
-   *
-   * @return true if cached
-   */
-  public boolean isScriptCached() {
-    return scriptCached;
-  }
-
-  /**
-   * Sets whether script should be cached if possible.
-   *
-   * @param scriptCached true if script code is used more than once by the application
-   */
-  public void setScriptCached(boolean scriptCached) {
-    this.scriptCached = scriptCached;
-  }
-
-
-  /**
-   * Returns whether script must be executed in a thread-safe way.
-   *
-   * @return true if execute thread synchronized
-   */
-  public boolean isScriptExecutedThreadSafe() {
-    return scriptExecutedThreadSafe;
-  }
-
-  /**
-   * Sets whether script must be executed in a thread-safe way.
-   *
-   * @param scriptExecutedThreadSafe true if execute thread synchronized
-   */
-  public void setScriptExecutedThreadSafe(boolean scriptExecutedThreadSafe) {
-    this.scriptExecutedThreadSafe = scriptExecutedThreadSafe;
-  }
-
-
-
-  /**
-   * Configures or re-configures a compound value.
-   * <p>
-   * The <code>clazz</code> is required for {@link Type#CONSTANT}.
-   * For {@link Type#SCRIPT} it is optional and if given, the returned value is
-   * converted to the given type, if possible.
-   *
-   * @param str the string value
-   * @param clazz the class of the value.
-   */
-  public void configure(String str, Class<?> clazz) {
-
-    this.str   = str;
+  public CompoundValue(String str, Class<?> clazz, boolean scriptCached, boolean scriptThreadSafe, Function<String, ScriptConverter> scriptConverterProvider) {
+    this.str = str;
     this.clazz = clazz;
+    this.scriptConverterProvider = scriptConverterProvider;
+    this.scriptCached = scriptCached;
+    this.scriptThreadSafe = scriptThreadSafe;
 
     // reset in case re-configured
     type              = null;
@@ -233,7 +163,7 @@ public class CompoundValue {
           // in parallel in servers.
           String language = str.substring(ndx == 0 ? 0 : 2, ndx);
           String code = str.substring(ndx + 1, length - 1);
-          script = ScriptFactory.getInstance().createScript(language, code, isScriptCached(), isScriptExecutedThreadSafe());
+          script = ScriptFactory.getInstance().createScript(language, code, isScriptCached(), isScriptThreadSafe(), getScriptConverterProvider());
         }
         catch (ScriptRuntimeException ex) {
           throw new IllegalArgumentException("creating script '" + str + "' failed", ex);
@@ -286,15 +216,63 @@ public class CompoundValue {
     }
   }
 
+  /**
+   * Creates and configures a compound value.
+   * <p>
+   * The <code>clazz</code> is required for {@link Type#CONSTANT}.
+   * For {@link Type#SCRIPT} it is optional and if given, the returned value is
+   * converted to the given type, if possible.
+   *
+   * @param str the string value
+   * @param clazz the class of the value
+   */
+  public CompoundValue(String str, Class<?> clazz) {
+    this(str, clazz, false, false, null);
+  }
+
+  /**
+   * Creates and configures a compound value.<br>
+   *
+   * @param str the string value
+   */
+  public CompoundValue(String str) {
+    this(str, null, false, false, null);
+  }
+
+
+  @Override
+  public String toString() {
+    return "[" + type + "] " + str;
+  }
 
 
   /**
-   * Checks whether this compound value is configured.
+   * Gets the provider for the script converter that will translate the script before being parsed.
    *
-   * @return true if configured
+   * @return the provider, null if none
    */
-  public boolean isConfigured() {
-    return getType() != null;
+  public Function<String, ScriptConverter> getScriptConverterProvider() {
+    return scriptConverterProvider;
+  }
+
+
+  /**
+   * Returns whether script should be cached if possible.
+   *
+   * @return true if cached
+   */
+  public boolean isScriptCached() {
+    return scriptCached;
+  }
+
+
+  /**
+   * Returns whether script must be executed in a thread-safe manner.
+   *
+   * @return true if script may be invoked from more than one thread
+   */
+  public boolean isScriptThreadSafe() {
+    return scriptThreadSafe;
   }
 
 
@@ -337,6 +315,7 @@ public class CompoundValue {
     return reference;
   }
 
+
   /**
    * Gets the static classname.
    *
@@ -363,19 +342,15 @@ public class CompoundValue {
    * The <code>parentObject</code> is required for {@link Type#REFERENCE} and denotes the
    * object the reference refers to.<br>
    * For {@link Type#SCRIPT} it is optional and if given will set the script's variable
-   * {@link #VAR_OBJECT}.
+   * {@link ScriptVariable#VAR_OBJECT}.
+   * <p>
+   * Throws {@link IllegalArgumentException} if evaluating the value failed.
    *
    * @param parentObject the parent object
-   * @param variables the script variables (only for scripts)
+   * @param variables the script variables (only for scripts), null if none
    * @return some value
-   * @throws IllegalArgumentException if evaluating the value failed
-   * @throws IllegalStateException if compound value is not configured
    */
-  public Object getValue(Object parentObject, ScriptVariable... variables) {
-
-    if (!isConfigured()) {
-      throw new IllegalStateException("compound value is not configured");
-    }
+  public Object getValue(Object parentObject, Set<ScriptVariable> variables) {
 
     switch (type) {
 
@@ -413,20 +388,13 @@ public class CompoundValue {
 
       case SCRIPT:
         try {
-          // always set the parent object
-          ScriptVariable objectVariable = new ScriptVariable(VAR_OBJECT, parentObject);
-          if (variables == null) {
-            variables = new ScriptVariable[] { objectVariable };
+          if (parentObject != null) {
+            if (variables == null) {
+              variables = new HashSet<>();
+            }
+            variables.add(new ScriptVariable(ScriptVariable.VAR_OBJECT, parentObject));   // replace if already present
           }
-          else  {
-            // add to array, the last one counts if "object" is already defined
-            ScriptVariable[] newVariables = new ScriptVariable[variables.length + 1];
-            System.arraycopy(variables, 0, newVariables, 0, variables.length);
-            newVariables[variables.length] = objectVariable;
-            variables = newVariables;
-          }
-          script.execute(variables);
-          Object result = script.getResult();
+          Object result = script.execute(variables);
           if (clazz != null) {
             // convert if necessary
             result = ObjectUtilities.getInstance().convert(clazz, result);
@@ -443,79 +411,41 @@ public class CompoundValue {
   }
 
 
-
   /**
-   * Gets the value according to the type.<br>
+   * Gets the value according to the type.
+   * <p>
+   * Throws {@link IllegalArgumentException} if evaluating the value failed.<br>
    *
-   * @param variables the script variables (only for scripts)
+   * @param variables the script variables (only for scripts), null if none
    * @return some value
-   * @throws IllegalArgumentException if evaluating the value failed
-   * @throws IllegalStateException if compound value is not configured
    */
-  public Object getValue(ScriptVariable... variables) {
+  public Object getValue(Set<ScriptVariable> variables) {
     return getValue(null, variables);
   }
 
 
+  /**
+   * Gets the value according to the type.
+   * <p>
+   * Throws {@link IllegalArgumentException} if evaluating the value failed.<br>
+   *
+   * @param parentObject the parent object
+   * @return some value
+   */
+  public Object getValue(Object parentObject) {
+    return getValue(parentObject, null);
+  }
+
 
   /**
-   * Parses the compound value.<br>
-   * According to the type of the compound value the following tests will be done:
+   * Gets the value according to the type.
+   * <p>
+   * Throws {@link IllegalArgumentException} if evaluating the value failed.<br>
    *
-   * <ul>
-   * <li>{@link Type#CONSTANT}: the constant value will be evaluated from the value-string</li>
-   * <li>{@link Type#REFERENCE} and {@link Type#STATIC_REFERENCE}: the reference will be parsed (but no value evaluated).
-   *      See {@link ReflectionHelper#verifyPath(java.lang.Class, java.lang.String)} </li>
-   * <li>{@link Type#SCRIPT}: the script will be parsed</li>
-   * </ul>
-   *
-   * @param parentObjectClass for {@link Type#REFERENCE}
-   * @throws IllegalArgumentException if parsing failed
+   * @return some value
    */
-  public void parse(Class<?> parentObjectClass) {
-
-    switch (type) {
-
-      case CONSTANT:
-        ObjectUtilities.getInstance().convert(clazz, constant);
-        break;
-
-      case REFERENCE:
-        try {
-          if (!ReflectionHelper.verifyPath(parentObjectClass, reference)) {
-            throw new IllegalArgumentException("'" + parentObjectClass.getName() + "." + reference + "' is not a valid path");
-          }
-          break;
-        }
-        catch (RuntimeException ex) {
-          throw new IllegalArgumentException("cannot parse reference '" + reference + "'", ex);
-        }
-
-      case STATIC_REFERENCE:
-        try {
-          Class<?> staticClass = Class.forName(staticClassName);
-          if (!ReflectionHelper.verifyPath(staticClass, reference)) {
-            throw new IllegalArgumentException("'" + staticClassName + "." + reference + "' is not a valid path");
-          }
-          break;
-        }
-        catch (ClassNotFoundException e1) {
-          throw new IllegalArgumentException("cannot parse static reference '" + staticClassName + "." + reference + "'", e1);
-        }
-        catch (RuntimeException e2) {
-          throw new IllegalArgumentException("cannot parse reference '" + reference + "'", e2);
-        }
-
-      case SCRIPT:
-        try {
-          script.parse();
-          break;
-        }
-        catch (ScriptRuntimeException ex) {
-          throw new IllegalArgumentException(ex);
-        }
-
-    }
+  public Object getValue() {
+    return getValue(null, null);
   }
 
 

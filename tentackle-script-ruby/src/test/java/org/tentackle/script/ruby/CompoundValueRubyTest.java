@@ -28,8 +28,6 @@ import org.tentackle.script.ScriptFactory;
 
 /**
  * CompoundValue with Groovy scripts.
- *
- * @author harald
  */
 public class CompoundValueRubyTest {
 
@@ -38,7 +36,7 @@ public class CompoundValueRubyTest {
   }
 
   @Test
-  public void testCompountValue() {
+  public void testCompoundValue() {
 
     ScriptFactory.getInstance().setDefaultLanguage("ruby");
 
@@ -60,12 +58,6 @@ public class CompoundValueRubyTest {
     result = par.getValue(this);
     Assert.assertTrue(result instanceof String);
     Assert.assertEquals(((String) result), "the method says " + sayHello());
-
-    // test parsing only
-    new CompoundValue("#!{ 200 > 100 }").parse(this.getClass());
-    new CompoundValue("#!{ 123.0 + 101.0 }", String.class).parse(this.getClass());
-    new CompoundValue("#!{ 'the method says ' + @object.sayHello() }").parse(this.getClass());
-    new CompoundValue("#!rb{ 'the method says ' + @object.sayHello }").parse(this.getClass());
   }
 
 }

@@ -26,12 +26,8 @@ import org.testng.annotations.Test;
 import org.tentackle.misc.CompoundValue;
 import org.tentackle.script.ScriptFactory;
 
-import java.sql.Timestamp;
-
 /**
  * CompoundValue with Groovy scripts.
- *
- * @author harald
  */
 public class CompoundValueGroovyTest {
 
@@ -40,7 +36,7 @@ public class CompoundValueGroovyTest {
   }
 
   @Test
-  public void testCompountValue() {
+  public void testCompoundValue() {
 
     ScriptFactory.getInstance().setDefaultLanguage("groovy");
 
@@ -62,12 +58,6 @@ public class CompoundValueGroovyTest {
     result = par.getValue(this);
     Assert.assertTrue(result instanceof String);
     Assert.assertEquals(((String) result), "the method says " + sayHello());
-
-    // test parsing only
-    new CompoundValue("#!{ 200 > 100 }").parse(this.getClass());
-    new CompoundValue("#!{ 123.0 + 101.0 }", String.class).parse(this.getClass());
-    new CompoundValue("#!{ 'the method says ' + object.sayHello() }").parse(this.getClass());
-    new CompoundValue("#!gv{ 'the method says ' + object.sayHello }").parse(this.getClass());
   }
 
 }

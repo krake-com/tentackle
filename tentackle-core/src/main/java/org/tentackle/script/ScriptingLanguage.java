@@ -18,6 +18,8 @@
 
 package org.tentackle.script;
 
+import java.util.function.Function;
+
 /**
  * Interface tentackle scripting languages must implement.
  * <br>
@@ -55,10 +57,13 @@ public interface ScriptingLanguage {
    * <p>
    * Throws {@link ScriptRuntimeException} if script cannot be created.
    *
+   * @param code the scripting code
    * @param cached true if use caching if possible because script code may used more than once
+   * @param threadSafe true if the script may be invoked in parallel from different threads
+   * @param converterProvider the optional script converter provider
    * @return the created script object
    */
-  Script createScript(boolean cached);
+  Script createScript(String code, boolean cached, boolean threadSafe, Function<String, ScriptConverter> converterProvider);
 
   /**
    * Creates a local reference for a variable name.<br>

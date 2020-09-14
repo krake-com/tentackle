@@ -27,6 +27,18 @@
       <version>${project.version}</version>
       <optional>true</optional>   <!-- avoid transitive dependency -->
     </dependency>
+
+    <!-- for testing only (since removal of nashorn) -->
+    <dependency>
+      <groupId>org.codehaus.groovy</groupId>
+      <artifactId>groovy-jsr223</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <properties>

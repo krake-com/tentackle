@@ -21,6 +21,7 @@ package org.tentackle.script;
 import org.tentackle.common.ServiceFactory;
 
 import java.util.Set;
+import java.util.function.Function;
 
 
 interface ScriptFactoryHolder {
@@ -102,16 +103,29 @@ public interface ScriptFactory {
   /**
    * Creates a script object.
    * <p>
-   * Implementations of the {@link ScriptFactory} must implement this method.
+   * Scripts will be cached to optimize memory consumption and performance, if <code>cached=true</code>. The same source code
+   * will refer to the same compiled evaluation unit. The implementation may still return a new {@link Script} instance
+   * if caching not supported by the language or the caching refers to class instances instead of objects.
+   * Caching should not be used for scripts that are executed only once.
+   * <p>
+   * If there are chances that scripts are invoked from different threads at a time, <em>all</em>> scripts must be executed
+   * in a thread-safe manner. Although some languages are threadsafe by design, others may need some extra synchronization.
+   * If in doubt, set <code>threadSafe</code> to <code>true</code>
+   * <p>
+   * An optional function provides a {@link ScriptConverter} for the given scripting language to translate the
+   * code before being compiled.
+   * <p>
+   * Notice that the script will be compiled when first used. To compile it without execution, invoke {@link Script#validate()}.
    * <p>
    * Throws {@link ScriptRuntimeException} if creating the script failed.
    *
-   * @param abbreviation the scripting language, null or empty for default
+   * @param abbreviation the scripting language abbreviation, null or empty for default language
    * @param code the scripting code
-   * @param cached use caching if possible (script may be used more than once)
-   * @param threadSafe true if script must be threadsafe
-   * @return the script
+   * @param cached the same code should refer to the same compiled script object
+   * @param threadSafe true if script may used by more than one thread in parallel
+   * @param converterProvider the optional script converter provider
+   * @return the script, never null
    */
-  Script createScript(String abbreviation, String code, boolean cached, boolean threadSafe);
+  Script createScript(String abbreviation, String code, boolean cached, boolean threadSafe, Function<String, ScriptConverter> converterProvider);
 
 }

@@ -166,23 +166,21 @@ public class CheckValidationsMojo extends AbstractCheckMojo {
       Class<?> enclosingClass = getProcessingClassloader().loadClass(validatorEntry.getClassName());
       String message = validator.getMessage();
       if (message != null && !message.isEmpty()) {
-        CompoundValue cv = new CompoundValue(message, String.class);
+        CompoundValue cv = new CompoundValue(message, String.class, false, false,
+                                             messageConverterMap::get);
         if (cv.getType() == CompoundValue.Type.SCRIPT) {
           Script script = cv.getScript();
           if (script != null) {
             scriptCount++;
             if (message.contains("@(")) {   // i18n script
-              // set the translator
-              ScriptConverter converter = messageConverterMap.get(script.getLanguage().getName());
-              if (converter == null) {
+              if (messageConverterMap.get(script.getLanguage().getName()) == null) {
                 throw new MojoFailureException("missing message script converter for " + script.getLanguage());
               }
-              script.setConverter(converter);
               cv.getValue(enclosingClass);
             }
             else {
               // some other script: just compile
-              script.parse();
+              script.validate();
             }
           }
         }
@@ -214,13 +212,13 @@ public class CheckValidationsMojo extends AbstractCheckMojo {
       Validator validator = validatorEntry.getValidator();
       String condition = validator.getCondition();
       if (condition != null && !condition.isEmpty()) {
-        CompoundValue cv = new CompoundValue(condition, Boolean.class);
+        CompoundValue cv = new CompoundValue(condition, Boolean.class, false, false,
+                                             validationConverterMap::get);
         if (cv.getType() == CompoundValue.Type.SCRIPT) {
           Script script = cv.getScript();
           if (script != null) {
-            script.setConverter(validationConverterMap.get(script.getLanguage().getName()));
             scriptCount++;
-            script.parse();
+            script.validate();
           }
         }
       }

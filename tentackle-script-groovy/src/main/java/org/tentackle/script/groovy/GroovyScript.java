@@ -16,19 +16,20 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.script.groovy;
 
 import groovy.lang.Binding;
 import groovy.lang.GroovyClassLoader;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import org.codehaus.groovy.control.CompilationFailedException;
+
 import org.tentackle.log.Logger;
 import org.tentackle.script.AbstractScript;
 import org.tentackle.script.ScriptRuntimeException;
 import org.tentackle.script.ScriptVariable;
 
+import java.lang.reflect.InvocationTargetException;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A Groovy script.
@@ -41,127 +42,39 @@ public class GroovyScript extends AbstractScript {
 
   private static final Logger LOGGER = Logger.get(GroovyScript.class);
 
-  /** compiled script classes. */
-  private static final GroovyScriptClassCache SCRIPT_CACHE = new GroovyScriptClassCache();
-
-
-
-  /**
-   * The compiled groovy script.
-   */
-  public static class CompiledScript {
-
-    private final String effectiveCode;             // the effective source code
-    private final groovy.lang.Script groovyScript;  // the compiled script
-
-    /**
-     * Creates a compiled script.
-     *
-     * @param effectiveCode the source code
-     * @param groovyScript the groovy script object
-     */
-    public CompiledScript(String effectiveCode, groovy.lang.Script groovyScript) {
-      this.effectiveCode = effectiveCode;
-      this.groovyScript = groovyScript;
-    }
-
-    /**
-     * @return the effectiveCode
-     */
-    public String getEffectiveCode() {
-      return effectiveCode;
-    }
-
-    /**
-     * @return the groovyScript
-     */
-    public groovy.lang.Script getGroovyScript() {
-      return groovyScript;
-    }
-  }
+  private static final Map<String, CompiledGroovyScript> SCRIPT_CACHE = new ConcurrentHashMap<>();    // <code>:<script>
 
 
   /** the compiled script instance, null if not compiled yet. */
-  private volatile CompiledScript compiledScript;
+  private volatile CompiledGroovyScript compiledScript;
 
-
-  private boolean executed;                   // true if script has been executed and result is valid
-  private Object result;                      // the last execution result
+  private final GroovyClassLoader groovyClassLoader;
 
   /**
    * Creates a groovy script.
    *
    * @param language the language instance
-   * @param cached true if use caching, if possible
+   * @param groovyClassLoader the groovy classloader
+   * @param code the scripting code
+   * @param cached true if use code caching
+   * @param threadSafe true if threadsafety required
    */
-  public GroovyScript(GroovyLanguage language, boolean cached) {
-    super(language, cached);
-  }
-
-  /**
-   * Gets the compiled script.<br>
-   * Will be parsed if not done yet.
-   *
-   * @return the compiled script
-   */
-  public CompiledScript getCompiledScript() {
-    return compiledScript == null ? parse() : compiledScript;
-  }
-
-
-  @Override
-  public boolean isParsed() {
-    return compiledScript != null;
+  public GroovyScript(GroovyLanguage language, GroovyClassLoader groovyClassLoader, String code, boolean cached, boolean threadSafe) {
+    super(language, code, cached, threadSafe);
+    this.groovyClassLoader = groovyClassLoader;
   }
 
   @Override
-  public void clearParsed() {
-    compiledScript = null;
+  public void validate() {
+    getCompiledScript();
   }
-
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompiledScript parse() {
-    try {
-      String effectiveCode = getEffectiveCode();
-      Class<groovy.lang.Script> scriptClass = SCRIPT_CACHE.getScriptClass(effectiveCode);
-      if (scriptClass == null) {
-        LOGGER.fine("compiling script:\n{0}", effectiveCode);
-        ClassLoader parent = getClass().getClassLoader();
-        try (GroovyClassLoader loader = new GroovyClassLoader(parent)) {
-          scriptClass = loader.parseClass(effectiveCode);
-        }
-        catch (IOException ix) {
-          throw new ScriptRuntimeException("closing groovy classloader failed", ix);
-        }
-        if (isCached()) {
-          SCRIPT_CACHE.putScriptClass(effectiveCode, scriptClass);
-        }
-      }
-      else  {
-        LOGGER.fine("re-using compiled script:\n{0}", effectiveCode);
-      }
-      compiledScript = new CompiledScript(effectiveCode, scriptClass.getDeclaredConstructor().newInstance());
-      return compiledScript;
-    }
-    catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
-           SecurityException | InvocationTargetException | CompilationFailedException ex) {
-      throw new ScriptRuntimeException("creating script failed: " + this, ex);
-    }
-  }
-
-
-  @Override
-  public void execute(ScriptVariable... variables) {
-
-    executed = false;
-    result = null;
-
-    final CompiledScript script = getCompiledScript();
-
-    LOGGER.finer(() -> "execute: \n" + compiledScript.getEffectiveCode() + "\nwith args: " + ScriptVariable.variablesToString(variables));
-
+  public <T> T execute(Set<ScriptVariable> variables) {
+    T result = null;
+    CompiledGroovyScript script = getCompiledScript();
+    LOGGER.finer(() -> "execute: \n" + script.getCode() + "\nwith args: " + ScriptVariable.variablesToString(variables));
     try {
       Binding binding = new Binding();
       if (variables != null) {
@@ -169,35 +82,59 @@ public class GroovyScript extends AbstractScript {
           binding.setVariable(variable.getName(), variable.getValue());
         }
       }
-      if (isThreadSafe()) {
-        synchronized (script) {
-          result = executeImpl(script, binding);
-        }
-      }
-      else {
-        result = executeImpl(script, binding);
-      }
+      // groovy scripting is threadsafe (we pass the binding as new to the constructor)
+      result = (T) script.getScriptClass().getConstructor(Binding.class).newInstance(binding).run();
     }
-    catch (RuntimeException ex) {
+    catch (RuntimeException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException ex) {
       throw new ScriptRuntimeException(ex);
     }
-
     LOGGER.finer("returned: {0}", result);
-
-    executed = true;
-  }
-
-  @Override
-  public Object getResult() {
-    if (!executed) {
-      throw new ScriptRuntimeException("script not executed");
-    }
     return result;
   }
 
-  private Object executeImpl(CompiledScript script, Binding binding) {
-    script.getGroovyScript().setBinding(binding);
-    return script.getGroovyScript().run();
+  @Override
+  public <T> T execute(ScriptVariable... variables) {
+    return execute(Set.of(variables));
+  }
+
+
+  /**
+   * Gets the compiled script.<br>
+   * Will be parsed if not done yet.
+   *
+   * @return the compiled script, never null
+   */
+  protected CompiledGroovyScript getCompiledScript() {
+    CompiledGroovyScript localScript = compiledScript;
+    if (localScript == null) {
+      synchronized (this) {
+        localScript = compiledScript;
+        if (localScript == null) {
+          localScript = compiledScript = isCached() ?
+                                         SCRIPT_CACHE.computeIfAbsent(getCode(), this::compileScript) :
+                                         compileScript(getCode());
+        }
+      }
+    }
+    return localScript;
+  }
+
+  /**
+   * Compiles script code.
+   *
+   * @param code the scripting source code
+   * @return the compiled script
+   */
+  @SuppressWarnings("unchecked")
+  protected CompiledGroovyScript compileScript(String code) {
+    LOGGER.fine("compiling script:\n{0}", code);
+    try {
+      Class<groovy.lang.Script> scriptClass = groovyClassLoader.parseClass(code);
+      return new CompiledGroovyScript(code, scriptClass);
+    }
+    catch (RuntimeException rx) {
+      throw new ScriptRuntimeException("compiling script failed", rx);
+    }
   }
 
 }

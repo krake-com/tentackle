@@ -23,7 +23,6 @@ import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
 import org.tentackle.misc.CompoundValue;
 import org.tentackle.reflect.EffectiveClassProvider;
-import org.tentackle.script.Script;
 import org.tentackle.script.ScriptConverter;
 import org.tentackle.script.ScriptVariable;
 import org.tentackle.validate.DefaultScope;
@@ -39,8 +38,11 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
 
 
 /**
@@ -51,22 +53,12 @@ import java.util.Map;
  */
 public abstract class AbstractValidator<T extends Annotation> implements Validator {
 
-  /** script variable for effective scope. */
-  public static final String VAR_SCOPE = "scope";
+  /** maps language-name to message-script-converter. */
+  protected static final Map<String, ScriptConverter> MESSAGE_CONVERTER_MAP = new HashMap<>();
 
-  /** script variable for validation path. */
-  public static final String VAR_PATH = "path";
+  /** maps language-name to validation-script-converter. */
+  protected static final Map<String, ScriptConverter> VALIDATION_CONVERTER_MAP = new HashMap<>();
 
-  /** script variable for the value. */
-  public static final String VAR_VALUE = "value";
-
-  /** script variable for the parent class. */
-  public static final String VAR_CLASS = "clazz";
-
-
-  /** <language-name> : <converter> */
-  private static final Map<String, ScriptConverter> MESSAGE_CONVERTER_MAP = new HashMap<>();
-  private static final Map<String, ScriptConverter> VALIDATION_CONVERTER_MAP = new HashMap<>();
 
   static {
     // load message converters
@@ -104,9 +96,9 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
   protected String validatedElementName;        // the validated element name
   protected int validationIndex = -1;           // the index if part of a ValidationList, -1 if single validator
 
-  protected CompoundValue valueParameter;       // the value given by the annotation
-  protected CompoundValue conditionParameter;   // the condition
-  protected CompoundValue messageParameter;     // the message
+  protected volatile CompoundValue valueParameter;       // the value given by the annotation
+  protected volatile CompoundValue conditionParameter;   // the condition
+  protected volatile CompoundValue messageParameter;     // the message
 
 
   @Override
@@ -185,11 +177,16 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
   public boolean isConditionValid(ValidationContext validationContext) {
     String condition = getCondition();
     if (condition != null && !condition.isEmpty()) {
-      if (conditionParameter == null) {
-        conditionParameter = createConditionParameter(condition);
+      CompoundValue localPar = conditionParameter;
+      if (localPar == null) {
+        synchronized (this) {
+          localPar = conditionParameter;
+          if (localPar == null) {
+            localPar = conditionParameter = createConditionParameter(condition);
+          }
+        }
       }
-      ScriptVariable[] variables = createScriptVariables(validationContext);
-      Object value = conditionParameter.getValue(validationContext.getParentObject(), variables);
+      Object value = localPar.getValue(validationContext.getParentObject(), createScriptVariables(validationContext));
       if (value instanceof Boolean) {
         return ((Boolean) value);
       }
@@ -204,19 +201,17 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
 
 
   /**
-   * Creates a compound value.
+   * Creates a compound value.<br>
+   * The created compound value is always created as cached and threadsafe execution required.
    *
    * @param value the string value
    * @param clazz the class of the value
+   * @param scriptConverterProvider the optional script converter provider
    * @return the compound value
    */
-  protected CompoundValue createCompoundValue(String value, Class<?> clazz) {
-    CompoundValue cv = new CompoundValue(value, clazz);
-    cv.setScriptCached(true);
-    cv.setScriptExecutedThreadSafe(true);
-    return cv;
+  protected CompoundValue createCompoundValue(String value, Class<?> clazz, Function<String, ScriptConverter> scriptConverterProvider) {
+    return new CompoundValue(value, clazz, true, true, scriptConverterProvider);
   }
-
 
   /**
    * Creates the compound value for the value parameter.
@@ -226,14 +221,8 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
    * @return the created compound value
    */
   protected CompoundValue createValueParameter(String value, Class<?> clazz) {
-    CompoundValue compVal = createCompoundValue(value, clazz);
-    Script script = compVal.getScript();
-    if (script != null) {
-      script.setConverter(VALIDATION_CONVERTER_MAP.get(script.getLanguage().getName()));  // null is ok
-    }
-    return compVal;
+    return createCompoundValue(value, clazz, VALIDATION_CONVERTER_MAP::get);
   }
-
 
   /**
    * Creates the compound value for the confition parameter.
@@ -242,14 +231,8 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
    * @return the created compound value
    */
   protected CompoundValue createConditionParameter(String condition) {
-    CompoundValue compVal = createCompoundValue(condition, Boolean.class);
-    Script script = compVal.getScript();
-    if (script != null) {
-      script.setConverter(VALIDATION_CONVERTER_MAP.get(script.getLanguage().getName()));  // null is ok
-    }
-    return compVal;
+    return createCompoundValue(condition, Boolean.class, VALIDATION_CONVERTER_MAP::get);
   }
-
 
   /**
    * Creates the compound value for the message parameter.
@@ -258,20 +241,9 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
    * @return the created compound value
    */
   protected CompoundValue createMessageParameter(String message) {
-    CompoundValue compVal = createCompoundValue(message, String.class);
-    Script script = compVal.getScript();
-    if (script != null) {
-      // set the message script converter
-      ScriptConverter converter = MESSAGE_CONVERTER_MAP.get(script.getLanguage().getName());
-      if (converter == null) {
-        throw new ValidationRuntimeException("missing message script converter for " + script.getLanguage());
-      }
-      script.setConverter(converter);
-    }
-    return compVal;
+    // missing converter is detected by the tentackle-check-maven-plugin, if compoundvalue is a script
+    return createCompoundValue(message, String.class, MESSAGE_CONVERTER_MAP::get);
   }
-
-
 
   /**
    * Gets the value for given type.
@@ -294,15 +266,18 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
         clazz = (Class<V>) object.getClass();
       }
     }
-    if (valueParameter == null) {
+    CompoundValue localPar = valueParameter;
+    if (localPar == null) {
       // determine the parameter once
-      valueParameter = createValueParameter(value, clazz);
+      synchronized (this) {
+        localPar = valueParameter;
+        if (localPar == null) {
+          localPar = valueParameter = createValueParameter(value, clazz);
+        }
+      }
     }
-    Object parentObject = validationContext.getParentObject();
-    ScriptVariable[] variables = createScriptVariables(validationContext);
-    return (V) valueParameter.getValue(parentObject, variables);
+    return (V) localPar.getValue(validationContext.getParentObject(), createScriptVariables(validationContext));
   }
-
 
   /**
    * Gets the value according to its type
@@ -315,8 +290,6 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
     return getValue(value, null, validationContext);
   }
 
-
-
   /**
    * Creates the message.
    *
@@ -327,13 +300,17 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
   protected String createMessage(String message, ValidationContext validationContext) {
     String annoMessage = getMessage();
     if (!annoMessage.isEmpty()) {
-      if (messageParameter == null) {
+      CompoundValue localPar = messageParameter;
+      if (localPar == null) {
         // determine the parameter once
-        messageParameter = createMessageParameter(annoMessage);
+        synchronized (this) {
+          localPar = messageParameter;
+          if (localPar == null) {
+            localPar = messageParameter = createMessageParameter(annoMessage);
+          }
+        }
       }
-      Object parentObject = validationContext.getParentObject();
-      ScriptVariable[] variables = createScriptVariables(validationContext);
-      Object value = messageParameter.getValue(parentObject, variables);
+      Object value = localPar.getValue(validationContext.getParentObject(), createScriptVariables(validationContext));
       if (value != null) {
         return value.toString();
       }
@@ -355,7 +332,6 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
     return List.of(result);
   }
 
-
   /**
    * Casts given object to a comparable.
    *
@@ -364,27 +340,27 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
    * @return the object as a Comparable or null if obj is null
    */
   @SuppressWarnings("unchecked")
-  public <C> Comparable<C> assertComparable(C obj) {
+  protected <C> Comparable<C> assertComparable(C obj) {
     if (obj != null && !(obj instanceof Comparable)) {
       throw new ValidationRuntimeException(obj.getClass() + " is not a Comparable");
     }
     return (Comparable<C>) obj;
   }
 
-
   /**
    * Creates the script variables from the validation context.
    *
    * @param validationContext the validation context
-   * @return the script variables
+   * @return the modifiable set of script variables
    */
-  protected ScriptVariable[] createScriptVariables(ValidationContext validationContext) {
-    return new ScriptVariable[] {
-      new ScriptVariable(VAR_SCOPE, validationContext.getEffectiveScope()),
-      new ScriptVariable(VAR_PATH, validationContext.getValidationPath()),
-      new ScriptVariable(VAR_VALUE, validationContext.getObject()),
-      new ScriptVariable(VAR_CLASS, EffectiveClassProvider.getEffectiveClass(validationContext.getParentObject()))
-    };
+  protected Set<ScriptVariable> createScriptVariables(ValidationContext validationContext) {
+    Set<ScriptVariable> variables = new HashSet<>();
+    variables.add(new ScriptVariable(ScriptVariable.VAR_SCOPE, validationContext.getEffectiveScope()));
+    variables.add(new ScriptVariable(ScriptVariable.VAR_PATH, validationContext.getValidationPath()));
+    variables.add(new ScriptVariable(ScriptVariable.VAR_OBJECT, validationContext.getParentObject()));
+    variables.add(new ScriptVariable(ScriptVariable.VAR_VALUE, validationContext.getObject()));
+    variables.add(new ScriptVariable(ScriptVariable.VAR_CLASS, EffectiveClassProvider.getEffectiveClass(validationContext.getParentObject())));
+    return variables;
   }
 
 }
