@@ -99,7 +99,7 @@ public abstract class AbstractScript implements Script {
 
   @Override
   public <T> T execute(ScriptVariable... variables) {
-    return execute(Set.of(variables));
+    return execute(variables != null && variables.length > 0 ? Set.of(variables) : null);
   }
 
 }
