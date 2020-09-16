@@ -104,7 +104,9 @@ public abstract class AbstractScript implements Script {
     if (variables != null && variables.length > 0) {
       variableSet = new HashSet<>();
       for (ScriptVariable variable: variables) {
-        variableSet.add(variable);
+        if (!variableSet.add(variable)) {
+          throw new IllegalArgumentException("duplicate variable: " + variable);
+        }
       }
     }
     else {
