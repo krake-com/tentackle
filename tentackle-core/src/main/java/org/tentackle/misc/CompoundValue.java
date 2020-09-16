@@ -158,9 +158,6 @@ public class CompoundValue {
       if ((ndx == 0 || ndx >= 2 && str.startsWith("#!")) && str.endsWith("}")) {
         type = Type.SCRIPT;
         try {
-          // scripts are created threadsafe. This is a small overhead but is necessary
-          // because compoundvalues are heavily used during validation which is by several threads
-          // in parallel in servers.
           String language = str.substring(ndx == 0 ? 0 : 2, ndx);
           String code = str.substring(ndx + 1, length - 1);
           script = ScriptFactory.getInstance().createScript(language, code, isScriptCached(), isScriptThreadSafe(), getScriptConverterProvider());
