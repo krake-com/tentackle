@@ -100,9 +100,15 @@ public abstract class AbstractScript implements Script {
 
   @Override
   public <T> T execute(ScriptVariable... variables) {
-    Set<ScriptVariable> variableSet = new HashSet<>();
-    for (ScriptVariable variable: variables) {
-      variableSet.add(variable);
+    Set<ScriptVariable> variableSet;
+    if (variables != null && variables.length > 0) {
+      variableSet = new HashSet<>();
+      for (ScriptVariable variable: variables) {
+        variableSet.add(variable);
+      }
+    }
+    else {
+      variableSet = null;
     }
     return execute(variableSet);
   }
