@@ -84,10 +84,11 @@ public interface Script {
   /**
    * Executes a script.
    * <p>
-   * Throws {@link ScriptRuntimeException} if execution failed.
+   * Throws {@link ScriptRuntimeException} if execution failed.<br>
+   * Throws {@link IllegalArgumentException} if there are any duplicate variable names.
    *
    * @param <T> the result type
-   * @param variables the script variables, null if none
+   * @param variables the optional script variables
    * @return the evaluated value, null if none
    */
   <T> T execute(ScriptVariable... variables);

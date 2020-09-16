@@ -343,8 +343,8 @@ public class CompoundValue {
    * <p>
    * Throws {@link IllegalArgumentException} if evaluating the value failed.
    *
-   * @param parentObject the parent object
-   * @param variables the script variables (only for scripts), null if none
+   * @param parentObject the parent object, null if none
+   * @param variables the script variables (only for scripts), null or empty if none
    * @return some value
    */
   public Object getValue(Object parentObject, Set<ScriptVariable> variables) {
@@ -386,10 +386,19 @@ public class CompoundValue {
       case SCRIPT:
         try {
           if (parentObject != null) {
+            ScriptVariable parentVariable = new ScriptVariable(ScriptVariable.VAR_OBJECT, parentObject);
             if (variables == null) {
-              variables = new HashSet<>();
+              variables = Set.of(parentVariable);
             }
-            variables.add(new ScriptVariable(ScriptVariable.VAR_OBJECT, parentObject));   // replace if already present
+            else {
+              try {
+                variables.add(parentVariable);    // add or replace if already present
+              }
+              catch (RuntimeException rx) {       // immutable set?
+                variables = new HashSet<>(variables);
+                variables.add(parentVariable);
+              }
+            }
           }
           Object result = script.execute(variables);
           if (clazz != null) {
@@ -407,42 +416,65 @@ public class CompoundValue {
     throw new IllegalArgumentException("unsupported validation value type");
   }
 
+  /**
+   * Gets the value according to the type.<br>
+   * <p>
+   * The <code>parentObject</code> is required for {@link Type#REFERENCE} and denotes the
+   * object the reference refers to.<br>
+   * For {@link Type#SCRIPT} it is optional and if given will set the script's variable
+   * {@link ScriptVariable#VAR_OBJECT}.
+   * <p>
+   * Throws {@link IllegalArgumentException} if evaluating the value failed
+   * or if there are any duplicate variable names.
+   *
+   * @param parentObject the parent object
+   * @param variables the optional script variables (only for scripts)
+   * @return some value
+   */
+  public Object getValue(Object parentObject, ScriptVariable... variables) {
+    Set<ScriptVariable> variableSet;
+    if (variables != null && variables.length > 0) {
+      if (parentObject != null) {   // need mutable set if parentObject != null (see above)
+        variableSet = new HashSet<>();
+        for (ScriptVariable variable: variables) {
+          if (!variableSet.add(variable)) {
+            throw new IllegalArgumentException("duplicate variable: " + variable);
+          }
+        }
+      }
+      else {
+        variableSet = Set.of(variables);
+      }
+    }
+    else {
+      variableSet = null;
+    }
+    return getValue(parentObject, variableSet);
+  }
 
   /**
    * Gets the value according to the type.
    * <p>
-   * Throws {@link IllegalArgumentException} if evaluating the value failed.<br>
+   * Throws {@link IllegalArgumentException} if evaluating the value failed.
    *
-   * @param variables the script variables (only for scripts), null if none
+   * @param variables the script variables (only for scripts), null or empty if none
    * @return some value
    */
   public Object getValue(Set<ScriptVariable> variables) {
     return getValue(null, variables);
   }
 
-
   /**
    * Gets the value according to the type.
    * <p>
-   * Throws {@link IllegalArgumentException} if evaluating the value failed.<br>
+   * Throws {@link IllegalArgumentException} if evaluating the value failed
+   * or if there are any duplicate variable names.
    *
-   * @param parentObject the parent object
+   * @param variables the optional script variables (only for scripts)
    * @return some value
    */
-  public Object getValue(Object parentObject) {
-    return getValue(parentObject, null);
-  }
-
-
-  /**
-   * Gets the value according to the type.
-   * <p>
-   * Throws {@link IllegalArgumentException} if evaluating the value failed.<br>
-   *
-   * @return some value
-   */
-  public Object getValue() {
-    return getValue(null, null);
+  public Object getValue(ScriptVariable... variables) {
+    return getValue(null, variables);
   }
 
 
