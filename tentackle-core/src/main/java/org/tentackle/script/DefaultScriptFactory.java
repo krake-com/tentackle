@@ -25,6 +25,7 @@ import org.tentackle.log.Logger;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -90,7 +91,7 @@ public class DefaultScriptFactory implements ScriptFactory {
   @Override
   public Script createScript(String abbreviation, String code, boolean cached, boolean threadSafe, Function<String, ScriptConverter> converterProvider) {
     ScriptingLanguage language = getLanguage(abbreviation);
-    Script script = language.createScript(code, cached, threadSafe, converterProvider);
+    Script script = language.createScript(Objects.requireNonNull(code, "code"), cached, threadSafe, converterProvider);
     LOGGER.fine("created scripting object {0}", script);
     return script;
   }

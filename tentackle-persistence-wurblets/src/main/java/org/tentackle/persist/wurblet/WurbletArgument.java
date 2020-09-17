@@ -18,9 +18,8 @@
 
 package org.tentackle.persist.wurblet;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import org.wurbelizer.wurbel.WurbelException;
+
 import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
 import org.tentackle.model.Model;
@@ -28,7 +27,10 @@ import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
 import org.tentackle.model.SortType;
 import org.tentackle.sql.Backend;
-import org.wurbelizer.wurbel.WurbelException;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * A wurblet argument.
@@ -44,7 +46,7 @@ import org.wurbelizer.wurbel.WurbelException;
  * <p>
  * An argument is of the form:
  * <p>
- * <tt>[<b>*</b>|<b>+</b>|<b>-</b>][<b>{@link Relation}</b>|<b>.{@link Entity}</b>[<b>.{@link Relation}</b>...]][<b>{@link Attribute}</b>[<b>[name]</b>]][<b>:relop</b>[<b>:value</b>|<b>#value</b>]]</tt>
+ * <code>[<b>*</b>|<b>+</b>|<b>-</b>][<b>{@link Relation}</b>|<b>.{@link Entity}</b>[<b>.{@link Relation}</b>...]][<b>{@link Attribute}</b>[<b>[name]</b>]][<b>:relop</b>[<b>:value</b>|<b>#value</b>]]</code>
  * <ul>
  * <li>argument type:
  *  <ul>
@@ -68,12 +70,12 @@ import org.wurbelizer.wurbel.WurbelException;
  * </li>
  * <li>relop-expression: optional relop.<br>
  * Only allowed for conditions.<br>
- * Defaults to <tt>'='</tt>.<br>
- * The special relop <tt>':null'</tt> will be translated to <tt>" IS NULL"</tt> and <tt>':notnull'</tt>
- * translated to <tt>" IS NOT NULL"</tt>.<br>
- * <tt>'like'</tt> will translated to <tt>" LIKE "</tt>. <tt>'notlike'</tt> will be translated to <tt>" NOT LIKE "</tt>.<br>
- * The optional <tt>':value'</tt> will be set as a '?'-parameter of the generated prepared statement.
- * As an alternative, the value may be given as <tt>'#value'</tt> which will include the value
+ * Defaults to <code>'='</code>.<br>
+ * The special relop <code>':null'</code> will be translated to <code>" IS NULL"</code> and <code>':notnull'</code>
+ * translated to <code>" IS NOT NULL"</code>.<br>
+ * <code>'like'</code> will translated to <code>" LIKE "</code>. <code>'notlike'</code> will be translated to <code>" NOT LIKE "</code>.<br>
+ * The optional <code>':value'</code> will be set as a '?'-parameter of the generated prepared statement.
+ * As an alternative, the value may be given as <code>'#value'</code> which will include the value
  * literally in the SQL-string.
  * </li>
  * </ul>

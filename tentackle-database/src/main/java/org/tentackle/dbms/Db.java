@@ -128,7 +128,7 @@ import java.util.function.Supplier;
  * <p>
  * <br>
  * Local sessions via JNDI need only the url. The url starts with
- * "<tt>jndi:</tt>" and is followed by the JNDI-name. The optional database backend type is
+ * "<code>jndi:</code>" and is followed by the JNDI-name. The optional database backend type is
  * only necessary if it cannot be determined from the connection's metadata.
  *
  * <pre>

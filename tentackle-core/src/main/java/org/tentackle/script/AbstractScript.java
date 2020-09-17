@@ -52,8 +52,8 @@ public abstract class AbstractScript implements Script {
    * @param threadSafe true if threadsafety is required
    */
   public AbstractScript(ScriptingLanguage language, String code, boolean cached, boolean threadSafe) {
-    this.language = Objects.requireNonNull(language);
-    this.code = Objects.requireNonNull(code);
+    this.language = Objects.requireNonNull(language, "language");
+    this.code = Objects.requireNonNull(code, "code");
     this.cached = cached;
     this.threadSafe = threadSafe;
   }

@@ -30,7 +30,7 @@ import java.util.HashMap;
 import java.util.function.Supplier;
 
 /**
- * Pluggable logger using <tt>org.apache.log4j</tt>.
+ * Pluggable logger using <code>org.apache.log4j</code>.
  * <p>
  * Logger wrapper for Log4J version 1.
  *

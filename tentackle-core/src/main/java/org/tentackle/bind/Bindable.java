@@ -44,7 +44,7 @@ public @interface Bindable {
   /**
    * GUI Binding options.
    * <p>
-   * Example: <tt>@Bindable(options="UC,MAXCOLS=5)</tt>
+   * Example: <code>@Bindable(options="UC,MAXCOLS=5)</code>
    *
    * @return the options, the empty string if none
    */

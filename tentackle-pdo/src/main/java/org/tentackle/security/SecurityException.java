@@ -71,10 +71,9 @@ public class SecurityException extends PersistenceException implements Loggable 
    * @param  message the detail message (which is saved for later retrieval
    *         by the {@link #getMessage()} method).
    * @param  cause the cause (which is saved for later retrieval by the
-   *         {@link #getCause()} method).  (A <tt>null</tt> value is
+   *         {@link #getCause()} method).  (A <code>null</code> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public SecurityException(Session session, String message, Throwable cause) {
     super(session, message, cause);
@@ -82,17 +81,16 @@ public class SecurityException extends PersistenceException implements Loggable 
 
   /**
    * Constructs a new security violation exception for a given session with the specified cause and a
-   * detail message of <tt>(cause==null ? null : cause.toString())</tt>
+   * detail message of <code>(cause==null ? null : cause.toString())</code>
    * (which typically contains the class and detail message of
-   * <tt>cause</tt>).  This constructor is useful for runtime exceptions
+   * <code>cause</code>).  This constructor is useful for runtime exceptions
    * that are little more than wrappers for other throwables.
    *
    * @param  session the session
    * @param  cause the cause (which is saved for later retrieval by the
-   *         {@link #getCause()} method).  (A <tt>null</tt> value is
+   *         {@link #getCause()} method).  (A <code>null</code> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public SecurityException(Session session, Throwable cause) {
     super(session, cause);
@@ -136,10 +134,9 @@ public class SecurityException extends PersistenceException implements Loggable 
    * @param  message the detail message (which is saved for later retrieval
    *         by the {@link #getMessage()} method).
    * @param  cause the cause (which is saved for later retrieval by the
-   *         {@link #getCause()} method).  (A <tt>null</tt> value is
+   *         {@link #getCause()} method).  (A <code>null</code> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public SecurityException(Identifiable object, String message, Throwable cause) {
     super(object, message, cause);
@@ -147,17 +144,16 @@ public class SecurityException extends PersistenceException implements Loggable 
 
   /**
    * Constructs a new security violation exception for a given session with the specified cause and a
-   * detail message of <tt>(cause==null ? null : cause.toString())</tt>
+   * detail message of <code>(cause==null ? null : cause.toString())</code>
    * (which typically contains the class and detail message of
-   * <tt>cause</tt>).  This constructor is useful for runtime exceptions
+   * <code>cause</code>).  This constructor is useful for runtime exceptions
    * that are little more than wrappers for other throwables.
    *
    * @param  object the persistent object
    * @param  cause the cause (which is saved for later retrieval by the
-   *         {@link #getCause()} method).  (A <tt>null</tt> value is
+   *         {@link #getCause()} method).  (A <code>null</code> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public SecurityException(Identifiable object, Throwable cause) {
     super(object, cause);
@@ -196,7 +192,7 @@ public class SecurityException extends PersistenceException implements Loggable 
    * @param  message the detail message (which is saved for later retrieval
    *         by the {@link #getMessage()} method).
    * @param  cause the cause (which is saved for later retrieval by the
-   *         {@link #getCause()} method).  (A <tt>null</tt> value is
+   *         {@link #getCause()} method).  (A <code>null</code> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
    */

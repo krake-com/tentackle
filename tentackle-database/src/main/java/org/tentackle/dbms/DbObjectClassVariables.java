@@ -442,8 +442,8 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
   /**
    * Adds a PDO class that is referencing the class of this class variable holder.
    * <p>
-   * The referencing class must provide a static method <tt>isReferencing&lt;ClassBasename&gt;</tt>,
-   * while <tt>ClassBaseName</tt> is the {@link #classBaseName} of the referenced class.
+   * The referencing class must provide a static method <code>isReferencing&lt;ClassBasename&gt;</code>,
+   * while <code>ClassBaseName</code> is the {@link #classBaseName} of the referenced class.
    * The method must provide the parameters {@link Db} and objectId as generated
    * by the *IsReferencing-wurblets.
    *
