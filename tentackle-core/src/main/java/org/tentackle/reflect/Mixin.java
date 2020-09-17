@@ -75,7 +75,7 @@ public class Mixin<T, M extends Serializable> implements Serializable {
 
   /**
    * Cache to speed up the decision whether a given class (name) implements the declClass.
-   * The map is <given-class> => <declClass> => Boolean and thus can be used for all instances
+   * The map is &lt;given-class&gt; =&gt; &lt;declClass&gt; =&gt; Boolean and thus can be used for all instances
    * of PdoMixin.
    */
   private static final Map<Class<?>,Map<Class<?>,Boolean>> MATCH_CACHE = new ConcurrentHashMap<>();

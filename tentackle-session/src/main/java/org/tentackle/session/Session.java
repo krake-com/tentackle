@@ -111,7 +111,7 @@ public interface Session extends Comparable<Session>, AutoCloseable {
 
   /**
    * Applies this session to a session dependable object.<br>
-   * The method must invoke <tt>obj.setSession()</tt> only if the session really differs.
+   * The method must invoke <code>obj.setSession()</code> only if the session really differs.
    * This prevents infinite loops in object circular references.
    *
    * @param obj the database object, null if ignore

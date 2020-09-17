@@ -18,6 +18,8 @@
 
 package org.tentackle.log;
 
+import org.tentackle.common.StringHelper;
+
 import java.io.PrintStream;
 import java.lang.StackWalker.Option;
 import java.lang.StackWalker.StackFrame;
@@ -28,10 +30,9 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.logging.LogRecord;
-import org.tentackle.common.StringHelper;
 
 /**
- * Pluggable logger using the standard java logging using <tt>java.util.logging</tt>.
+ * Pluggable logger using the standard java logging using <code>java.util.logging</code>.
  * <p>
  * No Service annotation! See UtilLogger.
  *

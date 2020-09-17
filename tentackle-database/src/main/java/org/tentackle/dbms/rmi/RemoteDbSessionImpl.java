@@ -936,7 +936,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * Creates the classname of the remote delegate interface from the
    * serviced classname.<br>
    * The default implementation returns:
-   * <tt>packagename + ".rmi." + classbasename + "RemoteDelegate"</tt>
+   * <code>packagename + ".rmi." + classbasename + "RemoteDelegate"</code>
    *
    * @param className the name of the class to look for a delegate
    * @return the classname of the remote delegate for given class

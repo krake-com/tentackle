@@ -160,7 +160,7 @@ public interface FxComponent extends FxControl, ErrorPopupSupported, InfoPopupSu
    * Usually the binding path will be determined from the components declared name.
    * However, it can be set programatically as well.
    *
-   * @param bindingPath the binding path, for ex. <tt>"invoiceNumber"</tt>, null if autobinding
+   * @param bindingPath the binding path, for ex. <code>"invoiceNumber"</code>, null if autobinding
    * @see org.tentackle.bind.Binder
    */
   void setBindingPath(String bindingPath);
@@ -175,8 +175,8 @@ public interface FxComponent extends FxControl, ErrorPopupSupported, InfoPopupSu
   /**
    * Sets the component path.
    * <p>
-   * The path is <tt>&lt;declaring-class-name&gt;.&lt;field-name&gt;</tt>.
-   * Example <tt>"de.krake.invoicer.InvoicePanel.customerNumberField"</tt>.
+   * The path is <code>&lt;declaring-class-name&gt;.&lt;field-name&gt;</code>.
+   * Example <code>"de.krake.invoicer.InvoicePanel.customerNumberField"</code>.
    * <p>
    * Notice: the component path is set during binding.
    *

@@ -19,21 +19,22 @@
 
 package org.tentackle.log.log4j2v;
 
-import java.io.PrintStream;
-import java.text.MessageFormat;
-import java.util.HashMap;
-import java.util.function.Supplier;
-
 import org.apache.logging.log4j.message.SimpleMessage;
 import org.apache.logging.log4j.spi.ExtendedLogger;
 import org.apache.logging.log4j.spi.ExtendedLoggerWrapper;
+
 import org.tentackle.common.Service;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerOutputStream;
 import org.tentackle.log.MappedDiagnosticContext;
 
+import java.io.PrintStream;
+import java.text.MessageFormat;
+import java.util.HashMap;
+import java.util.function.Supplier;
+
 /**
- * Pluggable logger using <tt>org.apache.log4j</tt>.
+ * Pluggable logger using <code>org.apache.log4j</code>.
  * <p>
  * Logger wrapper for Log4J version 2.
  *

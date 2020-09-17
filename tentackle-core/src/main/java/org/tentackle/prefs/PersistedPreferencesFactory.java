@@ -19,9 +19,10 @@
 
 package org.tentackle.prefs;
 
+import org.tentackle.common.ServiceFactory;
+
 import java.util.prefs.Preferences;
 import java.util.prefs.PreferencesFactory;
-import org.tentackle.common.ServiceFactory;
 
 
 
@@ -129,7 +130,7 @@ public interface PersistedPreferencesFactory extends PreferencesFactory {
    * @param c the class for whose package a user preference node is desired.
    * <p>
    * @return the user preference node associated with the package of which
-   * <tt>c</tt> is a member.
+   * <code>c</code> is a member.
    *
    * @see Preferences#userNodeForPackage(java.lang.Class)
    */
@@ -142,7 +143,7 @@ public interface PersistedPreferencesFactory extends PreferencesFactory {
    * @param c the class for whose package a system preference node is desired.
    * <p>
    * @return the system preference node associated with the package of which
-   * <tt>c</tt> is a member.
+   * <code>c</code> is a member.
    *
    * @see Preferences#systemNodeForPackage(java.lang.Class)
    */

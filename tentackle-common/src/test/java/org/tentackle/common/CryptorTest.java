@@ -26,7 +26,7 @@ import org.testng.annotations.Test;
  */
 public class CryptorTest {
 
-  public static final String MSG = "a hollow voice says plugh";
+  private static final String MSG = "a hollow voice says plugh";
 
 
   @Test

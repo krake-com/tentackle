@@ -65,10 +65,9 @@ public class IdSourceEmptyException extends IdSourceException {
    * @param  message the detail message (which is saved for later retrieval
    *         by the {@link #getMessage()} method).
    * @param  cause the cause (which is saved for later retrieval by the
-   *         {@link #getCause()} method).  (A <tt>null</tt> value is
+   *         {@link #getCause()} method).  (A <code>null</code> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public IdSourceEmptyException(Db db, String message, Throwable cause) {
     super(db, message, cause);
@@ -76,17 +75,16 @@ public class IdSourceEmptyException extends IdSourceException {
 
   /**
    * Constructs a new idsource empty exception for a given db connection with the specified cause and a
-   * detail message of <tt>(cause==null ? null : cause.toString())</tt>
+   * detail message of <code>(cause==null ? null : cause.toString())</code>
    * (which typically contains the class and detail message of
-   * <tt>cause</tt>).  This constructor is useful for runtime exceptions
+   * <code>cause</code>).  This constructor is useful for runtime exceptions
    * that are little more than wrappers for other throwables.
    *
    * @param  db the db connection
    * @param  cause the cause (which is saved for later retrieval by the
-   *         {@link #getCause()} method).  (A <tt>null</tt> value is
+   *         {@link #getCause()} method).  (A <code>null</code> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public IdSourceEmptyException(Db db, Throwable cause) {
     super(db, cause);
@@ -125,7 +123,7 @@ public class IdSourceEmptyException extends IdSourceException {
    * @param  message the detail message (which is saved for later retrieval
    *         by the {@link #getMessage()} method).
    * @param  cause the cause (which is saved for later retrieval by the
-   *         {@link #getCause()} method).  (A <tt>null</tt> value is
+   *         {@link #getCause()} method).  (A <code>null</code> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
    */

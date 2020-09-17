@@ -80,8 +80,6 @@ public class FxFlowPane extends FlowPane implements FxContainer {
    * Creates a horizontal FlowPane layout with hgap/vgap = 0.
    * <p>
    * @param children The initial set of children for this pane.
-   * <p>
-   * @since JavaFX 8.0
    */
   public FxFlowPane(Node... children) {
     super(children);

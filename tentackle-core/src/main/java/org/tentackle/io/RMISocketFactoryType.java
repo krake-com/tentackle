@@ -66,16 +66,16 @@ public enum RMISocketFactoryType {
   /**
    * Parses the socket factory type according from a string.
    * <p>
-   * <tt>socketfactory=[system|default|plain|ssl|compressed]</tt>: the socket factory type:
+   * <code>socketfactory=[system|default|plain|ssl|compressed]</code>: the socket factory type:
    * <ul>
-   * <li><tt>system</tt>: use system factories (this is the default)</li>
-   * <li><tt>default</tt>: same factories as some provided default</li>
-   * <li><tt>plain</tt>: plain sockets (see {@link ClientSocketFactory}, {@link ServerSocketFactory}</li>
-   * <li><tt>ssl</tt>: use SSL (see {@link SslClientSocketFactory}, {@link SslServerSocketFactory}</li>
-   * <li><tt>compressed</tt>: use compression (see
+   * <li><code>system</code>: use system factories (this is the default)</li>
+   * <li><code>default</code>: same factories as some provided default</li>
+   * <li><code>plain</code>: plain sockets (see {@link ClientSocketFactory}, {@link ServerSocketFactory}</li>
+   * <li><code>ssl</code>: use SSL (see {@link SslClientSocketFactory}, {@link SslServerSocketFactory}</li>
+   * <li><code>compressed</code>: use compression (see
    * {@link CompressedClientSocketFactory}, {@link CompressedServerSocketFactory}</li>
    * </ul>
-   * If both <tt>ssl</tt> and <tt>compressed</tt> is given, the factories used are
+   * If both <code>ssl</code> and <code>compressed</code> is given, the factories used are
    * {@link CompressedSslClientSocketFactory} and {@link CompressedSslServerSocketFactory}.
    * <p>
    *

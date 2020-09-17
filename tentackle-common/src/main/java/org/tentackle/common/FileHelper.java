@@ -151,7 +151,7 @@ public class FileHelper {
    * @param filter optional file filter, null if none
    *
    * @return number of files copied
-   * @throws MojoExecutionException if copy failed
+   * @throws IOException if copy failed
    */
   public static int copyDirectory(File srcDir, File dstDir, boolean recursive, FileFilter filter) throws IOException {
     int count = 0;

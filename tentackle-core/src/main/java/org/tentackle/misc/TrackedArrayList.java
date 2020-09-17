@@ -551,7 +551,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    * Appends the specified element to the end of this list.
    *
    * @param element the element to be appended to this list
-   * @return <tt>true</tt> (as specified by {@link Collection#add})
+   * @return <code>true</code> (as specified by {@link Collection#add})
    */
   @Override
   public boolean add(E element) {
@@ -596,8 +596,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    * list is nonempty.)
    *
    * @param collection the collection containing elements to be added to this list
-   * @return <tt>true</tt> if this list changed as a result of the call
-   * @throws NullPointerException if the specified collection is null
+   * @return <code>true</code> if this list changed as a result of the call
    */
   @Override
   public boolean addAll(Collection<? extends E> collection) {
@@ -627,7 +626,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    * @param index index at which to insert the first element from the
    *              specified collection
    * @param collection the collection containing elements to be added to this list
-   * @return <tt>true</tt> if this list changed as a result of the call
+   * @return <code>true</code> if this list changed as a result of the call
    */
   @Override
   public boolean addAll(int index, Collection<? extends E> collection) {
@@ -678,15 +677,15 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    * if it is present.<br>
    * If the list does not contain the element, it is
    * unchanged.  More formally, removes the element with the lowest index
-   * <tt>i</tt> such that
-   * <tt>(o==null&nbsp;?&nbsp;get(i)==null&nbsp;:&nbsp;o.equals(get(i)))</tt>
-   * (if such an element exists).  Returns <tt>true</tt> if this list
+   * <code>i</code> such that
+   * <code>(o==null&nbsp;?&nbsp;get(i)==null&nbsp;:&nbsp;o.equals(get(i)))</code>
+   * (if such an element exists).  Returns <code>true</code> if this list
    * contained the specified element (or equivalently, if this list
    * changed as a result of the call).
    * The removed object will be added to the list of removed objects.
    *
    * @param obj element to be removed from this list, if present
-   * @return <tt>true</tt> if this list contained the specified element
+   * @return <code>true</code> if this list contained the specified element
    */
   @Override
   public boolean remove(Object obj) {
@@ -759,10 +758,10 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
   /**
    * Removes from this list all of the elements whose index is between
-   * <tt>fromIndex</tt>, inclusive, and <tt>toIndex</tt>, exclusive.<br>
+   * <code>fromIndex</code>, inclusive, and <code>toIndex</code>, exclusive.<br>
    * Shifts any succeeding elements to the left (reduces their index).
-   * This call shortens the list by <tt>(toIndex - fromIndex)</tt> elements.
-   * (If <tt>toIndex==fromIndex</tt>, this operation has no effect.)
+   * This call shortens the list by <code>(toIndex - fromIndex)</code> elements.
+   * (If <code>toIndex==fromIndex</code>, this operation has no effect.)
    * All removed object will be added to the list of removed objects.
    *
    * @param fromIndex index of first element to be removed

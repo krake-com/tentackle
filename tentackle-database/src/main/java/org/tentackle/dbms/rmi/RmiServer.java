@@ -52,13 +52,13 @@ import java.util.StringTokenizer;
  * The backend properties file is parsed for the following keywords:
  * <ul>
  * <li>
- * <tt>service=service-URL</tt>:
+ * <code>service=service-URL</code>:
  *  defaults to the basename of the RMI-server class instance at the default registry port on localhost,
  *  i.e. {@code rmi://localhost:1099/RmiServer}.
  * </li>
  *
  * <li>
- * <tt>createregistry[=default|plain|ssl|compressed]</tt>:
+ * <code>createregistry[=default|plain|ssl|compressed]</code>:
  *  creates a local registry (on the port according to the service URL, default is 1099).
  *  By default, the created registry uses the system-default socket factories.
  *  However, it may be forced to use another one, for example ssl.
@@ -67,51 +67,52 @@ import java.util.StringTokenizer;
  * </li>
  *
  * <li>
- * <tt>connectionclass=connection-class</tt>: the connection class is usually provided programmatically, but
+ * <code>connectionclass=connection-class</code>: the connection class is usually provided programmatically, but
  *  can be configured as a property as well. Defaults to org.tentackle.persist.rmi.RemoteDbConnectionImpl.
  * </li>
  *
  * <li>
- * <tt>timeoutinterval=timeout-polling-interval-in-milliseconds</tt>:
+ * <code>timeoutinterval=timeout-polling-interval-in-milliseconds</code>:
  *  The polling interval for dead sessions in milliseconds. Defaults to 1000ms.
  *  0 turns off the cleanup thread completely (risky!).
  * </li>
  *
  * <li>
- * <tt>timeout=session-timeout</tt>:
+ * <code>timeout=session-timeout</code>:
  *  The default session timeout (in polling-intervals) for dead client connections (see Db -&gt; keepAlive).
  *  Defaults to 0, i.e. no timeout (sessions may request an individual timeout).
  * </li>
  *
  * <li>
- * <tt>port=port</tt>: for the connection object.
+ * <code>port=port</code>: for the connection object.
  *  Default is from service URL.
  * </li>
  *
  * <li>
  * Configure factories at fixed ports:<br>
- * <tt>ports=28000</tt>: plain=28000, compressed=28001, ssl=28002, compressed+ssl=28003<br>
+ * <code>ports=28000</code>: plain=28000, compressed=28001, ssl=28002, compressed+ssl=28003<br>
  *  is the same as:<br>
- * <tt>ports=28000,28001,28002,28003</tt><br>
- * Default is: <tt>ports=serviceport+0,serviceport+1,serviceport+2,serviceport+3</tt> if the service port is not
- * the default registry port, else <tt>ports=0,0,0,0</tt>.<br>
+ * <code>ports=28000,28001,28002,28003</code><br>
+ * Default is: <code>ports=serviceport+0,serviceport+1,serviceport+2,serviceport+3</code> if the service port is not
+ * the default registry port, else <code>ports=0,0,0,0</code>.<br>
  * Use -1 to disable service at this port and 0 to use a system default port, i.e.
  * "ports=-1,-1,28002,28003" means: ssl only, with or without compression.
  * </li>
  *
  * <li>
- * <tt>socketfactory=[system|default|plain|ssl|compressed]</tt>: the socket factory type:
+ * <code>socketfactory=[system|default|plain|ssl|compressed]</code>: the socket factory type:
  *  <ul>
- *    <li><tt>system</tt>: use system default factories (this is the default)</li>
- *    <li><tt>default</tt>: same as system</li>
- *    <li><tt>plain</tt>: plain sockets (see {@link org.tentackle.io.ClientSocketFactory},
+ *    <li><code>system</code>: use system default factories (this is the default)</li>
+ *    <li><code>default</code>: same as system</li>
+ *    <li><code>plain</code>: plain sockets (see {@link org.tentackle.io.ClientSocketFactory},
  *              {@link org.tentackle.io.ServerSocketFactory}</li>
- *    <li><tt>ssl</tt>: use SSL (see {@link org.tentackle.io.SslClientSocketFactory},
+ *    <li><code>ssl</code>: use SSL (see {@link org.tentackle.io.SslClientSocketFactory},
  *              {@link org.tentackle.io.SslServerSocketFactory}</li>
- *    <li><tt>compressed</tt>: use compression (see {@link org.tentackle.io.CompressedClientSocketFactory},
+ *    <li><code>compressed</code>: use compression (see {@link org.tentackle.io.CompressedClientSocketFactory},
  *              {@link org.tentackle.io.CompressedServerSocketFactory}</li>
  *  </ul>
- *  If both <tt>ssl</tt> and <tt>compressed</tt> is given, the factories used are
+ *
+ *  If both <code>ssl</code> and <code>compressed</code> is given, the factories used are
  *              {@link org.tentackle.io.CompressedSslClientSocketFactory} and
  *              {@link org.tentackle.io.CompressedSslServerSocketFactory}.
  *
@@ -121,18 +122,22 @@ import java.util.StringTokenizer;
  *  different factory for the remaining delegates gets a port number increased by 1.
  * </li>
  *
+ * <li>
  * For SSL only:
+ * <ul>
  * <li>
- * <tt>ciphersuites=...</tt>: comma separated list of enabled cipher suites
+ * <code>ciphersuites=...</code>: comma separated list of enabled cipher suites
  * </li>
  *
  * <li>
- * <tt>protocols=...</tt>: comma separated list of enabled protocols
+ * <code>protocols=...</code>: comma separated list of enabled protocols
  * </li>
  *
  * <li>
- * <tt>clientauth</tt>: set if server requires client authentication
+ * <code>clientauth</code>: set if server requires client authentication
  * </li>
+ * </ul>
+ * <li>
  *
  * </ul>
  *

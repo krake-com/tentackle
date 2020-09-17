@@ -30,7 +30,7 @@ import java.util.HashMap;
 import java.util.function.Supplier;
 
 /**
- * Pluggable logger using <tt>org.slf4j</tt>.
+ * Pluggable logger using <code>org.slf4j</code>.
  *
  * @author harald
  */

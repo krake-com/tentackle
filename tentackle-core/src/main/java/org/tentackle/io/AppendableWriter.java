@@ -116,9 +116,9 @@ public class AppendableWriter extends Writer {
   }
 
   /**
-   * Flushing an <tt>AppendableWriter</tt> has no effect. The methods in this class
+   * Flushing an <code>AppendableWriter</code> has no effect. The methods in this class
    * can be called after the stream has been closed without generating an
-   * <tt>IOException</tt>.
+   * <code>IOException</code>.
    */
   @Override
   public void flush() {
@@ -126,9 +126,9 @@ public class AppendableWriter extends Writer {
   }
 
   /**
-   * Closing an <tt>AppendableWriter</tt> has no effect. The methods in this class
+   * Closing an <code>AppendableWriter</code> has no effect. The methods in this class
    * can be called after the stream has been closed without generating an
-   * <tt>IOException</tt>.
+   * <code>IOException</code>.
    */
   @Override
   public void close() {

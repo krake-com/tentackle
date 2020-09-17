@@ -20,10 +20,11 @@
 
 package org.tentackle.dbms.rmi;
 
-import java.rmi.Remote;
-import java.rmi.RemoteException;
 import org.tentackle.log.Logger.Level;
 import org.tentackle.session.SessionInfo;
+
+import java.rmi.Remote;
+import java.rmi.RemoteException;
 
 
 
@@ -89,8 +90,8 @@ public interface RemoteDbSession extends Remote {
    * Per class the rmi-clients request a remote access there must be
    * a RemoteDelegate. The delegate is determined from the classname of the
    * client class as follows:<br>
-   * <tt>&lt;package&gt;.rmi.&lt;last-element-of-classname&gt;.class</tt> on the client-side and<br>
-   * <tt>&lt;package&gt;.rmi.&lt;last-element-of-classname&gt;Impl.class</tt> on the server-side.<br>
+   * <code>&lt;package&gt;.rmi.&lt;last-element-of-classname&gt;.class</code> on the client-side and<br>
+   * <code>&lt;package&gt;.rmi.&lt;last-element-of-classname&gt;Impl.class</code> on the server-side.<br>
    *
    * @param <T> the delegate type
    * @param classname is the name of class

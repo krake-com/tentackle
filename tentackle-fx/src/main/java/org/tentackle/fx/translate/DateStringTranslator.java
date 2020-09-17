@@ -61,29 +61,29 @@ import static java.util.Calendar.YEAR;
  * The date can be entered in the specified format or as a shortcut.
  * The following shortcuts are defined:
  * <ul>
- * <li><tt>5/29/</tt>: expands to May 29 of the current year (midnight).</li>
- * <li><tt>0529</tt>: dto.</li>
- * <li><tt>05290"</tt>: if the year is 4-digits in length the century will be added
+ * <li><code>5/29/</code>: expands to May 29 of the current year (midnight).</li>
+ * <li><code>0529</code>: dto.</li>
+ * <li><code>05290"</code>: if the year is 4-digits in length the century will be added
  *  which is closest to the current date, i.e.:</li>
- * <li><tt>5/29/99</tt>: will be expanded to "05/29/1999" and _not_ "05/29/2099".</li>
- * <li><tt>7:00</tt>: today at 7:00am</li>
+ * <li><code>5/29/99</code>: will be expanded to "05/29/1999" and _not_ "05/29/2099".</li>
+ * <li><code>7:00</code>: today at 7:00am</li>
  * </ul>
  *
  * Furthermore, the date can determined in relation to the current time:
  *
  * <ul>
- * <li><tt>/.,-=* or the date-delimiter of the current locale</tt>: current date</li>
- * <li><tt>:;'"</tt>: current time</li>
- * <li><tt>+3d</tt>: today 0:00:00 plus 3 days</li>
- * <li><tt>-2y</tt>: today 2 years ago.</li>
- * <li><tt>17</tt>: the unit is determined according to the model's type. If {@link Time} the unit
+ * <li><code>/.,-=* or the date-delimiter of the current locale</code>: current date</li>
+ * <li><code>:;'"</code>: current time</li>
+ * <li><code>+3d</code>: today 0:00:00 plus 3 days</li>
+ * <li><code>-2y</code>: today 2 years ago.</li>
+ * <li><code>17</code>: the unit is determined according to the model's type. If {@link Time} the unit
  *  defaults to the most significant format-pattern (usually hours). Else if {@link Date} or {@link Timestamp},
  *  the unit defaults to 'd'.
  *  For dates this means the 17th of the current month.
  *  If the type is a {@link Time}, it means 5pm.</li>
- * <li><tt>+14</tt>: same as above but the value will be added (or subtracted if negative)
+ * <li><code>+14</code>: same as above but the value will be added (or subtracted if negative)
  *    to (from) the current time. For date fields, for example, this is again shorter than "+14d".</li>
- * <li><tt>4m</tt>: the unit according to the letter following the number will be set _and_
+ * <li><code>4m</code>: the unit according to the letter following the number will be set _and_
  *  the next "smaller" unit set to its minimum.
  *  In this example, the time (if it is a time field) will be set to 4 minutes and 0 seconds.
  *  Likewise, "6y" would mean "January 1st, 2006". Consequently, "8h" is an even shorter
@@ -93,26 +93,26 @@ import static java.util.Calendar.YEAR;
  * The units are the same as described in {@link SimpleDateFormat} with some
  * minor differences:
  * <ul>
- * <li><tt>"y" or "Y"</tt>: year(s)
- * <li><tt>"M"</tt>: month(s). In date fields without minutes a lowercase "m" works as well.
- * <li><tt>"w or W"</tt>: week(s) or calendar week. For example: "-2w" means "two weeks ago"
+ * <li><code>"y" or "Y"</code>: year(s)
+ * <li><code>"M"</code>: month(s). In date fields without minutes a lowercase "m" works as well.
+ * <li><code>"w or W"</code>: week(s) or calendar week. For example: "-2w" means "two weeks ago"
  *   but "30w" means the first day of week 30.
- * <li><tt>"d oder D"</tt>: day(s)
- * <li><tt>"h oder H"</tt>: hour(s). Notice that "-24h" means "24 hours ago" and is not
+ * <li><code>"d oder D"</code>: day(s)
+ * <li><code>"h oder H"</code>: hour(s). Notice that "-24h" means "24 hours ago" and is not
  *   the dame as "-1d" which means "yesterday 0am".
- * <li><tt>"m"</tt>: minute(s)
- * <li><tt>"s oder S"</tt>: second(s)
+ * <li><code>"m"</code>: minute(s)
+ * <li><code>"s oder S"</code>: second(s)
  * </ul>
  *
  *
  * The shortcuts (except the units) are locale dependent. In German, for example, the
  * shortcuts are as follows:
  * <ul>
- * <li><tt>"29.5."</tt>: adds the current year</li>
- * <li><tt>"2905"</tt>: dto.</li>
- * <li><tt>"290506"</tt>: the closest year if the year is 4-digit, i.e.:</li>
- * <li><tt>"29.5.99"</tt>: becomes "29.05.1999" and not "29.05.2099".</li>
- * <li><tt>"7:00"</tt>: today 7 am</li>
+ * <li><code>"29.5."</code>: adds the current year</li>
+ * <li><code>"2905"</code>: dto.</li>
+ * <li><code>"290506"</code>: the closest year if the year is 4-digit, i.e.:</li>
+ * <li><code>"29.5.99"</code>: becomes "29.05.1999" and not "29.05.2099".</li>
+ * <li><code>"7:00"</code>: today 7 am</li>
  * </ul>
  *
  * @author harald

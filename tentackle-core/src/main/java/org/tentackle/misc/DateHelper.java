@@ -20,13 +20,18 @@
 
 package org.tentackle.misc;
 
-import java.util.Calendar;
-import java.util.GregorianCalendar;
 import org.tentackle.common.Date;
 import org.tentackle.common.Time;
 import org.tentackle.common.Timestamp;
 
-import static java.util.Calendar.*;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+
+import static java.util.Calendar.HOUR_OF_DAY;
+import static java.util.Calendar.MILLISECOND;
+import static java.util.Calendar.MINUTE;
+import static java.util.Calendar.SECOND;
+import static java.util.Calendar.YEAR;
 
 
 
@@ -54,7 +59,7 @@ public final class DateHelper {
   }
 
   /**
-   * Converts a <tt>java.util.Date</tt> into an <tt>org.tentackle.misc.Date</tt>.
+   * Converts a <code>java.util.Date</code> into an <code>org.tentackle.misc.Date</code>.
    *
    * @param date the util date
    * @return the sql date, null if date was null
