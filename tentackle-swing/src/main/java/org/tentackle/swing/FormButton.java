@@ -21,17 +21,18 @@
 
 package org.tentackle.swing;
 
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerFactory;
+
+import javax.swing.Action;
+import javax.swing.Icon;
+import javax.swing.JButton;
 import java.awt.Component;
 import java.awt.EventQueue;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.KeyEvent;
-import javax.swing.Action;
-import javax.swing.Icon;
-import javax.swing.JButton;
-import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 
 
 
@@ -92,8 +93,6 @@ public class FormButton extends JButton implements FormChangeableComponent {
    * <code>Action</code> supplied.
    *
    * @param a the <code>Action</code> used to specify the new button
-   *
-   * @since 1.3
    */
   public FormButton(Action a) {
     super(a);

@@ -68,7 +68,6 @@ public class IdSourceEmptyException extends IdSourceException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public IdSourceEmptyException(Db db, String message, Throwable cause) {
     super(db, message, cause);
@@ -86,7 +85,6 @@ public class IdSourceEmptyException extends IdSourceException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public IdSourceEmptyException(Db db, Throwable cause) {
     super(db, cause);

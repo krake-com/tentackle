@@ -71,7 +71,6 @@ public class PdoCacheException extends PdoRuntimeException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public PdoCacheException(Session session, String message, Throwable cause) {
     super(session, message, cause);
@@ -89,7 +88,6 @@ public class PdoCacheException extends PdoRuntimeException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public PdoCacheException(Session session, Throwable cause) {
     super(session, cause);
@@ -136,7 +134,6 @@ public class PdoCacheException extends PdoRuntimeException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public PdoCacheException(PersistentDomainObject<?> pdo, String message, Throwable cause) {
     super(pdo, message, cause);
@@ -154,7 +151,6 @@ public class PdoCacheException extends PdoRuntimeException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public PdoCacheException(PersistentDomainObject<?> pdo, Throwable cause) {
     super(pdo, cause);
@@ -197,7 +193,6 @@ public class PdoCacheException extends PdoRuntimeException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public PdoCacheException(String message, Throwable cause) {
     super(message, cause);
@@ -214,7 +209,6 @@ public class PdoCacheException extends PdoRuntimeException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public PdoCacheException(Throwable cause) {
     super(cause);

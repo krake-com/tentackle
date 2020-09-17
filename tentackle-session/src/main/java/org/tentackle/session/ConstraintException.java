@@ -70,7 +70,6 @@ public class ConstraintException extends PersistenceException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public ConstraintException(Session session, String message, Throwable cause) {
     super(session, message, cause);
@@ -88,7 +87,6 @@ public class ConstraintException extends PersistenceException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public ConstraintException(Session session, Throwable cause) {
     super(session, cause);
@@ -135,7 +133,6 @@ public class ConstraintException extends PersistenceException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public ConstraintException(Identifiable object, String message, Throwable cause) {
     super(object, message, cause);
@@ -153,7 +150,6 @@ public class ConstraintException extends PersistenceException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public ConstraintException(Identifiable object, Throwable cause) {
     super(object, cause);

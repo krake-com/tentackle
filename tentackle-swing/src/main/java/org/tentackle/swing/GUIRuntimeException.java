@@ -63,7 +63,6 @@ public class GUIRuntimeException extends RuntimeException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public GUIRuntimeException(String message, Throwable cause) {
     super(message, cause);
@@ -80,7 +79,6 @@ public class GUIRuntimeException extends RuntimeException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public GUIRuntimeException(Throwable cause) {
     super(cause);

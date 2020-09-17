@@ -25,6 +25,7 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.layout.FlowPane;
+
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxController;
 import org.tentackle.fx.ModelToViewListener;
@@ -79,8 +80,6 @@ public class FxFlowPane extends FlowPane implements FxContainer {
    * Creates a horizontal FlowPane layout with hgap/vgap = 0.
    * <p>
    * @param children The initial set of children for this pane.
-   * <p>
-   * @since JavaFX 8.0
    */
   public FxFlowPane(Node... children) {
     super(children);

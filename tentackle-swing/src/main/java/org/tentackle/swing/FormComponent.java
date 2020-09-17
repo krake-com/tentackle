@@ -19,9 +19,10 @@
 
 package org.tentackle.swing;
 
-import java.awt.*;
-
 import org.tentackle.swing.bind.FormComponentBinding;
+
+import java.awt.Component;
+import java.awt.Window;
 
 /**
  * Interface all Tentackle form components must implement.
@@ -510,7 +511,6 @@ public interface FormComponent extends FormChangeableComponent {
    * @param width the width to get the baseline for
    * @param height the height to get the baseline for
    * @return the baseline
-   * @since 1.6
    */
   int getBaseline(int width, int height);
 

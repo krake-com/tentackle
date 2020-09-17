@@ -71,7 +71,6 @@ public class IdSourceException extends PersistenceException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public IdSourceException(Db db, String message, Throwable cause) {
     super(db, message, cause);
@@ -89,7 +88,6 @@ public class IdSourceException extends PersistenceException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public IdSourceException(Db db, Throwable cause) {
     super(db, cause);

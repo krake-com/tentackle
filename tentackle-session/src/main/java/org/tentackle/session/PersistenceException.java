@@ -178,7 +178,6 @@ public class PersistenceException extends TentackleRuntimeException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public PersistenceException(Session session, String message, Throwable cause) {
     super(message, translateSQLException(cause));
@@ -197,7 +196,6 @@ public class PersistenceException extends TentackleRuntimeException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public PersistenceException(Session session, Throwable cause) {
     super(translateSQLException(cause));
@@ -247,7 +245,6 @@ public class PersistenceException extends TentackleRuntimeException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public PersistenceException(Identifiable object, String message, Throwable cause) {
     super(message, translateSQLException(cause));
@@ -266,7 +263,6 @@ public class PersistenceException extends TentackleRuntimeException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public PersistenceException(Identifiable object, Throwable cause) {
     super(translateSQLException(cause));
@@ -310,7 +306,6 @@ public class PersistenceException extends TentackleRuntimeException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public PersistenceException(String message, Throwable cause) {
     super(message, translateSQLException(cause));

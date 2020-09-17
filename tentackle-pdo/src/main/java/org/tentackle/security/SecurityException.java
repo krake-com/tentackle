@@ -74,7 +74,6 @@ public class SecurityException extends PersistenceException implements Loggable 
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public SecurityException(Session session, String message, Throwable cause) {
     super(session, message, cause);
@@ -92,7 +91,6 @@ public class SecurityException extends PersistenceException implements Loggable 
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public SecurityException(Session session, Throwable cause) {
     super(session, cause);
@@ -139,7 +137,6 @@ public class SecurityException extends PersistenceException implements Loggable 
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public SecurityException(Identifiable object, String message, Throwable cause) {
     super(object, message, cause);
@@ -157,7 +154,6 @@ public class SecurityException extends PersistenceException implements Loggable 
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public SecurityException(Identifiable object, Throwable cause) {
     super(object, cause);

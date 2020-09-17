@@ -73,7 +73,6 @@ public class PdoRuntimeException extends PersistenceException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public PdoRuntimeException(Session session, String message, Throwable cause) {
     super(session, message, cause);
@@ -91,7 +90,6 @@ public class PdoRuntimeException extends PersistenceException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public PdoRuntimeException(Session session, Throwable cause) {
     super(session, cause);
@@ -138,7 +136,6 @@ public class PdoRuntimeException extends PersistenceException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public PdoRuntimeException(PersistentDomainObject<?> pdo, String message, Throwable cause) {
     super(pdo, message, cause);
@@ -156,7 +153,6 @@ public class PdoRuntimeException extends PersistenceException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public PdoRuntimeException(PersistentDomainObject<?> pdo, Throwable cause) {
     super(pdo, cause);
@@ -199,7 +195,6 @@ public class PdoRuntimeException extends PersistenceException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public PdoRuntimeException(String message, Throwable cause) {
     super(message, cause);
@@ -216,7 +211,6 @@ public class PdoRuntimeException extends PersistenceException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public PdoRuntimeException(Throwable cause) {
     super(cause);

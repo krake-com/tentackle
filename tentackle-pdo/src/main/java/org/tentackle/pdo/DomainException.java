@@ -98,7 +98,6 @@ public class DomainException extends TentackleRuntimeException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public DomainException(Session session, String message, Throwable cause) {
     super(message, cause);
@@ -167,7 +166,6 @@ public class DomainException extends TentackleRuntimeException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public DomainException(Identifiable object, String message, Throwable cause) {
     super(message, cause);
@@ -186,7 +184,6 @@ public class DomainException extends TentackleRuntimeException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public DomainException(Identifiable object, Throwable cause) {
     super(cause);
@@ -230,7 +227,6 @@ public class DomainException extends TentackleRuntimeException {
    *         {@link #getCause()} method).  (A <tt>null</tt> value is
    *         permitted, and indicates that the cause is nonexistent or
    *         unknown.)
-   * @since  1.4
    */
   public DomainException(String message, Throwable cause) {
     super(message, cause);
