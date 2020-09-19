@@ -60,6 +60,7 @@ public class JPackageGenerator extends AbstractGenerator {
     try {
       Configuration cfg = createFreemarkerConfiguration();
       TemplateModel model = TemplateModelFactory.getInstance().create(mojo, result);
+      model.putValue("runtimeDir", mojo.getImagePathPrefix());
       File optionsFile = new File(mojo.getMavenProject().getBuild().getDirectory(), JPackageMojo.OPTIONS_IMAGE);
       GeneratedFile generatedFile = new GeneratedFile(cfg, model, mojo.getPackageImageTemplate(), optionsFile);
       generatedFile.generate();
