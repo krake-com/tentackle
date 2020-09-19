@@ -85,6 +85,8 @@ import java.util.Map;
  * The freemarker templates are copied to the project's template folder, if missing.
  * They become part of the project and can be changed easily according to project specific needs (for example by adding runtime arguments).
  * To install and edit the templates before running jpackage (or jlink, see {@link JLinkMojo}), use {@link InitMojo} first.
+ * In addition to the template variables defined by the {@link JLinkMojo}, the variable <code>runtimeDir</code> is provided
+ * pointing the to runtime image directory (which is platform specific).
  * <p>
  * If the application is built with Tentackle's update feature, please keep in mind that
  * applications deployed by an installer are maintained by a platform specific

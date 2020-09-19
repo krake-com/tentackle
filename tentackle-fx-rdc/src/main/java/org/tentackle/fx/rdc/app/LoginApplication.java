@@ -19,6 +19,7 @@
 
 package org.tentackle.fx.rdc.app;
 
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -33,6 +34,8 @@ import org.tentackle.log.Logger;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.SessionInfo;
 
+import java.awt.Rectangle;
+import java.awt.SplashScreen;
 import java.util.Properties;
 
 /**
@@ -72,9 +75,24 @@ public class LoginApplication extends FxApplication {
       Scene scene = new Scene(controller.getView());
       stage.setScene(scene);
       stage.initStyle(StageStyle.TRANSPARENT);
-      if (isAutoLogin(sessionInfo)) {
-        stage.setOnShown(e -> controller.autoLogin());
+      SplashScreen splashScreen = SplashScreen.getSplashScreen();
+      if (splashScreen != null) {
+        // move center of login window to center of splash screen
+        Rectangle bounds = splashScreen.getBounds();
+        int splashX = bounds.x + bounds.width / 2;
+        int splashY = bounds.y + bounds.height / 2;
+        // this does the trick to avoid flickering on the screen due to the window first displayed and then moved
+        stage.widthProperty().addListener((observable, oldValue, newValue) -> stage.setX(splashX - newValue.doubleValue() / 2.0 ));
+        stage.heightProperty().addListener((observable, oldValue, newValue) -> stage.setY(splashY - newValue.doubleValue() / 2.0));
       }
+      stage.setOnShown(event -> {
+        if (splashScreen != null) {
+          Platform.runLater(splashScreen::close);
+        }
+        if (isAutoLogin(sessionInfo)) {
+          controller.autoLogin();
+        }
+      });
       stage.show();
       stage.setResizable(false);
       controller.requestInitialFocus();
@@ -103,6 +121,7 @@ public class LoginApplication extends FxApplication {
    * @return the session info
    */
   public SessionInfo createSessionInfo() {
+    @SuppressWarnings("rawtypes")
     DesktopApplication<?> application = (DesktopApplication) AbstractApplication.getRunningApplication();
     String username = application.getCommandLine().getOptionValue(Constants.BACKEND_USER);
     char[] password = StringHelper.toCharArray(application.getCommandLine().getOptionValue(Constants.BACKEND_PASSWORD));

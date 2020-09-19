@@ -152,7 +152,7 @@
           <mainModule>${package}.server</mainModule>
           <mainClass>${package}.server.${application}Server</mainClass>
           <addModules>
-            <addModule>java.desktop</addModule> <!-- necessary for groovy -->
+            <addModule>java.desktop</addModule> <!-- necessary for groovy (NoClassDefFoundError: java/beans/BeanInfo) -->
             <addModule>jdk.jcmd</addModule>
           </addModules>
           <excludeModules>
