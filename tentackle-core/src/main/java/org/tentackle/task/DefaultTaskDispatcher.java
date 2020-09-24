@@ -412,7 +412,6 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   }
 
   @Override
-  @SuppressWarnings("deprecation")
   public void terminate() {
 
     requestTermination();

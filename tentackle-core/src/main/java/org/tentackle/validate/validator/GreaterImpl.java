@@ -19,13 +19,15 @@
 
 package org.tentackle.validate.validator;
 
-import java.util.Collections;
-import java.util.List;
 import org.tentackle.validate.ValidationContext;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationRuntimeException;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationSeverity;
+
+import java.lang.annotation.Annotation;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Implementation of the {@link Greater}-validator.
@@ -33,6 +35,23 @@ import org.tentackle.validate.ValidationSeverity;
  * @author harald
  */
 public class GreaterImpl extends AbstractValidator<Greater> {
+
+  private Greater annotation;
+
+  @Override
+  public void setAnnotation(Annotation annotation) {
+    this.annotation = (Greater) annotation;
+  }
+
+  @Override
+  public Greater getAnnotation() {
+    return annotation;
+  }
+
+  @Override
+  public String getValue() {
+    return annotation.value();
+  }
 
   @Override
   public String getMessage() {
@@ -70,9 +89,8 @@ public class GreaterImpl extends AbstractValidator<Greater> {
 
     final boolean failed;
 
-    String valueStr = annotation.value();
     Comparable<Object> object = assertComparable(validationContext.getObject());
-    Comparable<Object> value = assertComparable(getValue(valueStr, validationContext));
+    Comparable<Object> value = assertComparable(getValue(validationContext));
 
     if (value == null) {
       // both null isn't greater, except if nulls should be ignored
@@ -93,7 +111,7 @@ public class GreaterImpl extends AbstractValidator<Greater> {
       }
     }
 
-    return failed ? createFailedValidationResult(object + " <= " + valueStr, validationContext) : Collections.emptyList();
+    return failed ? createFailedValidationResult(object + " <= " + getValue(), validationContext) : Collections.emptyList();
   }
 
 }

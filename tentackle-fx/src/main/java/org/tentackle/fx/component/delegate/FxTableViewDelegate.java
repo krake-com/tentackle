@@ -70,7 +70,6 @@ public class FxTableViewDelegate extends FxComponentDelegate {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public ObservableList getViewObject() {
     return component.getItems();
   }

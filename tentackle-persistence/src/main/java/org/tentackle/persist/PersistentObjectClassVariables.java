@@ -75,7 +75,6 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
       List<Join<T,?>> eagerJoins)  {
 
     return PersistentClassVariablesFactory.getInstance().pdoCv(pdoClass, poClass, tableAlias,
-                                                               // cast below avoids compile(r?) error
                                                                (PersistentObjectClassVariables) superClassVariables,
                                                                eagerJoins);
   }

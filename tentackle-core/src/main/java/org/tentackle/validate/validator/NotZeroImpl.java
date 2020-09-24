@@ -19,16 +19,16 @@
 
 package org.tentackle.validate.validator;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.Collections;
-import java.util.List;
-import org.tentackle.common.BMoney;
+import org.tentackle.misc.ObjectUtilities;
 import org.tentackle.validate.MandatoryBindingEvaluator;
 import org.tentackle.validate.ValidationContext;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationSeverity;
+
+import java.lang.annotation.Annotation;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Implementation of the {@link NotZero}-validator.
@@ -37,6 +37,22 @@ import org.tentackle.validate.ValidationSeverity;
  */
 public class NotZeroImpl extends AbstractValidator<NotZero> implements MandatoryBindingEvaluator {
 
+  private NotZero annotation;
+
+  @Override
+  public void setAnnotation(Annotation annotation) {
+    this.annotation = (NotZero) annotation;
+  }
+
+  @Override
+  public NotZero getAnnotation() {
+    return annotation;
+  }
+
+  @Override
+  public String getValue() {
+    return annotation.value();
+  }
 
   @Override
   public String getMessage() {
@@ -85,11 +101,11 @@ public class NotZeroImpl extends AbstractValidator<NotZero> implements Mandatory
 
   @Override
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {
-    Object value = annotation.value().isEmpty() ?
-                        // use object's value
-                        validationContext.getObject() :
-                        // replace with compound value which should be a script
-                        getValue(annotation.value(), validationContext);
+    Object value = getValue().isEmpty() ?
+                   // use object's value
+                   validationContext.getObject() :
+                   // replace with compound value which should be a script
+                   getValue(validationContext);
 
     if (value == null) {
       return annotation.ignoreNulls() ? Collections.emptyList() :
@@ -97,32 +113,12 @@ public class NotZeroImpl extends AbstractValidator<NotZero> implements Mandatory
     }
 
     if (value instanceof Number) {
-
-      final boolean failed;
-
-      if (value instanceof BMoney) {
-        failed = ((BMoney) value).isZero();
-      }
-      else if (value instanceof BigInteger) {
-        failed = value.equals(BigInteger.ZERO);
-      }
-      else if (value instanceof BigDecimal) {
-        failed = value.equals(BigDecimal.ZERO);
-      }
-      else if (value instanceof Double) {
-        failed = ((Double) value) == 0.0d;
-      }
-      else if (value instanceof Float) {
-        failed = ((Float) value) == 0.0f;
-      }
-      else {
-        failed = ((Number) value).longValue() == 0;
-      }
-
-      return failed ? createFailedValidationResult("value is zero", validationContext) : Collections.emptyList();
+      return ObjectUtilities.getInstance().isZero((Number) value) ?
+             createFailedValidationResult("value is zero", validationContext) :
+             Collections.emptyList();
     }
     else  {
-      return createFailedValidationResult("not a number", validationContext);
+      return createFailedValidationResult("value is not a number", validationContext);
     }
   }
 

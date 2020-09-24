@@ -674,7 +674,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
 
 
   /**
-   * Starts the application server.
+   * Starts the application.
    *
    * @param args the arguments (usually from commandline)
    */

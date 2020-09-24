@@ -19,13 +19,15 @@
 
 package org.tentackle.validate.validator;
 
-import java.util.Collections;
-import java.util.List;
 import org.tentackle.validate.MandatoryBindingEvaluator;
 import org.tentackle.validate.ValidationContext;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationSeverity;
+
+import java.lang.annotation.Annotation;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Implementation of the {@link NotNull}-validator.
@@ -34,6 +36,22 @@ import org.tentackle.validate.ValidationSeverity;
  */
 public class NotNullImpl extends AbstractValidator<NotNull> implements MandatoryBindingEvaluator {
 
+  private NotNull annotation;
+
+  @Override
+  public void setAnnotation(Annotation annotation) {
+    this.annotation = (NotNull) annotation;
+  }
+
+  @Override
+  public NotNull getAnnotation() {
+    return annotation;
+  }
+
+  @Override
+  public String getValue() {
+    return annotation.value();
+  }
 
   @Override
   public String getMessage() {
@@ -82,11 +100,11 @@ public class NotNullImpl extends AbstractValidator<NotNull> implements Mandatory
 
   @Override
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {
-    Object value = annotation.value().isEmpty() ?
-                        // use object's value
-                        validationContext.getObject() :
-                        // replace with compound value which should be a script
-                        getValue(annotation.value(), validationContext);
+    Object value = getValue().isEmpty() ?
+                   // use object's value
+                   validationContext.getObject() :
+                   // replace with compound value which should be a script
+                   getValue(validationContext);
 
     return value == null ? createFailedValidationResult("value is null", validationContext) : Collections.emptyList();
   }

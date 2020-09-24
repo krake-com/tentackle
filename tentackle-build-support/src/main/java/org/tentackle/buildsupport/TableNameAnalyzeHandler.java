@@ -55,7 +55,6 @@ public class TableNameAnalyzeHandler extends AbstractAnalyzeHandler {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public void processAnnotation(TypeElement annotationType, RoundEnvironment roundEnv) {
 
     String annoName = annotationType.toString();

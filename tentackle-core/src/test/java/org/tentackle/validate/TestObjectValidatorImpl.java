@@ -19,9 +19,11 @@
 
 package org.tentackle.validate;
 
+import org.tentackle.validate.validator.AbstractObjectValidator;
+
+import java.lang.annotation.Annotation;
 import java.util.Collections;
 import java.util.List;
-import org.tentackle.validate.validator.AbstractObjectValidator;
 
 /**
  * Validator implementation.
@@ -29,6 +31,24 @@ import org.tentackle.validate.validator.AbstractObjectValidator;
  * @author harald
  */
 public class TestObjectValidatorImpl extends AbstractObjectValidator<TestObjectValidator> {
+
+  private TestObjectValidator annotation;
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public void setAnnotation(Annotation annotation) {
+    this.annotation = (TestObjectValidator) annotation;
+  }
+
+  @Override
+  public TestObjectValidator getAnnotation() {
+    return annotation;
+  }
+
+  @Override
+  public String getValue() {
+    return "";
+  }
 
   @Override
   public String getMessage() {

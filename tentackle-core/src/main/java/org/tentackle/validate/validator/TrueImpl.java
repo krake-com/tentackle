@@ -24,6 +24,7 @@ import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationSeverity;
 
+import java.lang.annotation.Annotation;
 import java.util.Collections;
 import java.util.List;
 
@@ -33,6 +34,23 @@ import java.util.List;
  * @author harald
  */
 public class TrueImpl extends AbstractValidator<True> {
+
+  private True annotation;
+
+  @Override
+  public void setAnnotation(Annotation annotation) {
+    this.annotation = (True) annotation;
+  }
+
+  @Override
+  public True getAnnotation() {
+    return annotation;
+  }
+
+  @Override
+  public String getValue() {
+    return annotation.value();
+  }
 
   @Override
   public String getMessage() {
@@ -66,11 +84,11 @@ public class TrueImpl extends AbstractValidator<True> {
 
   @Override
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {
-    Object value = annotation.value().isEmpty() ?
-                        // use object's value
-                        validationContext.getObject() :
-                        // replace with compound value which should be a script
-                        getValue(annotation.value(), Boolean.class, validationContext);
+    Object value = getValue().isEmpty() ?
+                   // use object's value
+                   validationContext.getObject() :
+                   // replace with compound value which should be a script
+                   getValue(Boolean.class, validationContext);
 
     return value == null && annotation.ignoreNulls() || Boolean.TRUE.equals(value) ? Collections.emptyList() :
         createFailedValidationResult("object is not true", validationContext);

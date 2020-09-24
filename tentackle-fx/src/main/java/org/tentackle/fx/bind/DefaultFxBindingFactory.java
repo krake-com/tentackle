@@ -129,7 +129,6 @@ public class DefaultFxBindingFactory extends AbstractBindingFactory implements F
 
 
   @Override
-  @SuppressWarnings("unchecked")
   public <S,T> FxTableBinding<S,T> createTableBinding(FxTableBinder<S> binder,
                                                       BindingMember[] parents,
                                                       BindingMember member,

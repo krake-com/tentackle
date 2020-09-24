@@ -18,12 +18,14 @@
 
 package org.tentackle.log.log4j2v;
 
-import java.util.HashMap;
-import java.util.Map;
 import org.apache.logging.log4j.ThreadContext;
+
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.log.AbstractMappedDiagnosticContext;
+
+import java.util.HashMap;
+import java.util.Map;
 
 
 interface Log4J2MappedDiagnosticContextHolder {
@@ -72,7 +74,6 @@ public class Log4J2MappedDiagnosticContext extends AbstractMappedDiagnosticConte
 
   @Override
   public Map<String, String> getContext() {
-    @SuppressWarnings("unchecked")
     Map<String, String> map = ThreadContext.getContext();
     if (map == null) {
       map = new HashMap<>();

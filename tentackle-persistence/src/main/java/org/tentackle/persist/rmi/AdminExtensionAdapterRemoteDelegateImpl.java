@@ -18,13 +18,6 @@
 
 package org.tentackle.persist.rmi;
 
-import java.io.Serializable;
-import java.rmi.RemoteException;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 import org.tentackle.common.Compare;
 import org.tentackle.common.Timestamp;
 import org.tentackle.dbms.Db;
@@ -37,6 +30,14 @@ import org.tentackle.persist.AdminExtensionAdapter;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.SecurityResult;
 import org.tentackle.session.SessionInfo;
+
+import java.io.Serializable;
+import java.rmi.RemoteException;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * Admin extension implementation.
@@ -160,7 +161,7 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDelegateImpl<
       since = new Timestamp(info.getSince());
       applicationName = info.getApplicationName();
       applicationId = info.getApplicationId();
-      clientVersion = info.getClientVersion() == null ? "?" : info.getClientVersion().toString();
+      clientVersion = info.getClientVersion() == null ? "?" : info.getClientVersion();
       locale = info.getLocale() == null ? "?" : info.getLocale().toString();
       vmInfo = info.getVmInfo();
       osInfo = info.getOsInfo();

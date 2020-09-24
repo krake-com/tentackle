@@ -78,7 +78,6 @@ public class SessionsView extends AbstractFxController {
 
 
   @FXML
-  @SuppressWarnings("unchecked")
   private void initialize() {
     securityButton.setGraphic(Fx.createImageView("security"));
     securityButton.setOnAction(e -> security());

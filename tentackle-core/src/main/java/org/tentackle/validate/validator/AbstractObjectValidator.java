@@ -26,11 +26,16 @@ import java.lang.annotation.Annotation;
  * @author harald
  * @param <T> the annotation type
  */
-public abstract class AbstractObjectValidator<T extends Annotation> extends AbstractValidator<T>{
+public abstract class AbstractObjectValidator<T extends Annotation> extends AbstractValidator<T> {
+
+  @Override
+  public String getValue() {
+    return "";    // does not apply to object validators
+  }
 
   @Override
   public String getCondition() {
-    return "";    // does not apply to object validators!
+    return "";    // does not apply to object validators
   }
 
 }

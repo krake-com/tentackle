@@ -20,12 +20,14 @@
 
 package org.tentackle.log.slf4j;
 
-import java.util.HashMap;
-import java.util.Map;
 import org.slf4j.MDC;
+
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.log.AbstractMappedDiagnosticContext;
+
+import java.util.HashMap;
+import java.util.Map;
 
 
 interface SLF4JMappedDiagnosticContextHolder {
@@ -74,7 +76,6 @@ public class SLF4JMappedDiagnosticContext extends AbstractMappedDiagnosticContex
 
   @Override
   public Map<String, String> getContext() {
-    @SuppressWarnings("unchecked")
     Map<String, String> map = MDC.getCopyOfContextMap();
     if (map == null) {
       map = new HashMap<>();

@@ -67,7 +67,6 @@ public class ServiceAnalyzeHandler extends AbstractAnalyzeHandler {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public void processAnnotation(TypeElement annotationType, RoundEnvironment roundEnv) {
 
     String annotationName = annotationType.toString();

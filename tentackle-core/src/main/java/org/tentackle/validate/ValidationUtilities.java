@@ -159,7 +159,7 @@ public class ValidationUtilities {
     List<Validator> validators = ValidatorCache.getInstance().getFieldValidators(clazz);
     List<ValidationResult> results = validateFields(validators, scope, validationPath, object);
     validators = ValidatorCache.getInstance().getObjectValidators(clazz);
-    results.addAll(validateObject(validators, scope, validationPath, object, object, object.getClass()));
+    results.addAll(validateObject(validators, scope, validationPath, object, object, clazz));
     return results;
   }
 
@@ -741,6 +741,22 @@ public class ValidationUtilities {
     return format(clazz, pattern, args);
   }
 
+
+  /**
+   * Validates the field validators of given classes.<br>
+   * Precompiles the scripts, if any. Since the scripts are cached,
+   * they are compiled only once.<br>
+   * Speeds up UX if run in a background thread during application startup.
+   *
+   * @param classes the list of classes to validate
+   */
+  public void validateFieldValidators(Collection<Class<?>> classes) {
+    for (Class<?> clazz : classes) {
+      for (Validator validator : getFieldValidators(clazz, null)) {
+        validator.validate();
+      }
+    }
+  }
 
 
   /**

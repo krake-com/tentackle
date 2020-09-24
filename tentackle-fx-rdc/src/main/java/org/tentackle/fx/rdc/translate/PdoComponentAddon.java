@@ -306,7 +306,7 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
    * @return the domain context, null if not defined in properties
    */
   public DomainContext getDomainContext() {
-    DomainContext context = null;
+    DomainContext context;
     if (component.getParentContainer() != null) {
       context = component.getBinding().getBinder().getBindingProperty(DomainContext.class);
     }

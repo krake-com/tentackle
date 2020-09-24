@@ -109,7 +109,6 @@ public class TotalsTableView<S> extends FxTableView<S> {
   /**
    * Binds the current table.
    */
-  @SuppressWarnings("unchecked")
   protected void bind() {
     if (boundTable != null) {
       for (TableColumn<S,?> boundColumn: boundTable.getColumns()) {

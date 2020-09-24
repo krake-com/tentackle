@@ -19,20 +19,21 @@
 
 package org.tentackle.persist.rmi;
 
-import java.lang.reflect.InvocationTargetException;
-import java.rmi.RemoteException;
-import java.util.List;
 import org.tentackle.common.Timestamp;
 import org.tentackle.dbms.rmi.AbstractDbObjectRemoteDelegateImpl;
 import org.tentackle.dbms.rmi.DbObjectResult;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
 import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.misc.ScrollableResource;
-import org.tentackle.pdo.TokenLockInfo;
-import org.tentackle.persist.AbstractPersistentObject;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.pdo.TokenLockInfo;
+import org.tentackle.persist.AbstractPersistentObject;
+
+import java.lang.reflect.InvocationTargetException;
+import java.rmi.RemoteException;
+import java.util.List;
 
 
 /**
@@ -324,7 +325,6 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public T selectForCache(DomainContext cb, long id) throws RemoteException {
     try {
       // load via cache, if there is a cache at all

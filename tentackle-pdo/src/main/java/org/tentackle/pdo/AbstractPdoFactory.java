@@ -19,7 +19,6 @@
 
 package org.tentackle.pdo;
 
-import org.tentackle.reflect.ClassMapper;
 import org.tentackle.session.Session;
 
 import java.lang.reflect.InvocationTargetException;
@@ -33,27 +32,6 @@ import java.lang.reflect.Proxy;
 public abstract class AbstractPdoFactory implements PdoFactory {
 
   private static final String CANNOT_CREATE_PDO_FOR = "cannot create PDO for ";
-
-
-  /**
-   * Gets the persistence class mapper associated to this factory.<br>
-   * The classmapper usually maps interfaces (domain + persistence) to
-   * the persistence implementation.
-   *
-   * @return the mapper for the persistence classes
-   */
-  public abstract ClassMapper getPersistenceMapper();
-
-
-  /**
-   * Gets the domain class mapper associated to this factory.<br>
-   * The classmapper usually maps interfaces (domain + persistence) to
-   * the domain implementation.
-   *
-   * @return the mapper for the domain classes
-   */
-  public abstract ClassMapper getDomainMapper();
-
 
 
   /**

@@ -68,7 +68,6 @@ public class FxCheckBoxDelegate extends FxComponentDelegate {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public Boolean getViewObject() {
     if (component.isIndeterminate()) {
       return null;

@@ -69,7 +69,6 @@ public class FxColorPickerDelegate extends FxComponentDelegate {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public void setViewObject(Object value) {
     if (!Objects.equals(getViewObject(), value)) {
       component.setValue((Color) value);
@@ -77,7 +76,6 @@ public class FxColorPickerDelegate extends FxComponentDelegate {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public Color getViewObject() {
     return component.getValue();
   }

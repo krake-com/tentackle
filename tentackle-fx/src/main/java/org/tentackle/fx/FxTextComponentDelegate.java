@@ -381,7 +381,6 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public void setType(Class<?> type) {
     // important to set the type before creating the translator,
     // since the translator may need to know the type

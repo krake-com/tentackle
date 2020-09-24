@@ -19,11 +19,12 @@
 
 package org.tentackle.bind;
 
+import org.tentackle.log.Logger;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.tentackle.log.Logger;
 
 
 /**
@@ -72,7 +73,6 @@ public class AbstractBindingFactory implements BindingFactory {
   }
 
 
-  @SuppressWarnings("unchecked")
   @Override
   public Class<? extends BindableElement> getBindableElementClass(final Class<?> modelClass) {
     Class<? extends BindableElement> elementClass = allElementClassMap.get(modelClass);

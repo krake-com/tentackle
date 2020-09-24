@@ -75,7 +75,7 @@ public class JSR223Script extends AbstractScript {
   @Override
   @SuppressWarnings("unchecked")
   public <T> T execute(Set<ScriptVariable> variables) {
-    T result = null;
+    T result;
     CompiledJSR223Script script = getCompiledScript();
     LOGGER.finer(() -> "execute: \n" + script.getCode() + "\nwith args: " + ScriptVariable.variablesToString(variables));
     try {

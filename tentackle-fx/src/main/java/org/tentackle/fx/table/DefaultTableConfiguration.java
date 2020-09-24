@@ -135,7 +135,6 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
    * @param objectClass the object class
    * @param name the table's name, null if basename from effective class of template
    */
-  @SuppressWarnings("unchecked")
   public DefaultTableConfiguration(Class<S> objectClass, String name) {
     this.template = null;
     this.objectClass = objectClass;

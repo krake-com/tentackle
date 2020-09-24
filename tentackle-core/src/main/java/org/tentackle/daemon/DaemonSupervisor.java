@@ -652,7 +652,6 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
 
 
   @Override
-  @SuppressWarnings("deprecation")
   public void run() {
 
     LOGGER.info("daemon supervisor {0} started", getClass().getName());

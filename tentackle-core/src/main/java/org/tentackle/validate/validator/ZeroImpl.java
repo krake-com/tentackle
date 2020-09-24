@@ -19,15 +19,15 @@
 
 package org.tentackle.validate.validator;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.Collections;
-import java.util.List;
-import org.tentackle.common.BMoney;
+import org.tentackle.misc.ObjectUtilities;
 import org.tentackle.validate.ValidationContext;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationSeverity;
+
+import java.lang.annotation.Annotation;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Implementation of the {@link Zero}-validator.
@@ -36,6 +36,22 @@ import org.tentackle.validate.ValidationSeverity;
  */
 public class ZeroImpl extends AbstractValidator<Zero> {
 
+  private Zero annotation;
+
+  @Override
+  public void setAnnotation(Annotation annotation) {
+    this.annotation = (Zero) annotation;
+  }
+
+  @Override
+  public Zero getAnnotation() {
+    return annotation;
+  }
+
+  @Override
+  public String getValue() {
+    return annotation.value();
+  }
 
   @Override
   public String getMessage() {
@@ -69,11 +85,11 @@ public class ZeroImpl extends AbstractValidator<Zero> {
 
   @Override
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {
-    Object value = annotation.value().isEmpty() ?
-                        // use object's value
-                        validationContext.getObject() :
-                        // replace with compound value which should be a script
-                        getValue(annotation.value(), validationContext);
+    Object value = getValue().isEmpty() ?
+                   // use object's value
+                   validationContext.getObject() :
+                   // replace with compound value which should be a script
+                   getValue(validationContext);
 
     if (value == null) {
       return annotation.ignoreNulls() ? Collections.emptyList() :
@@ -81,32 +97,12 @@ public class ZeroImpl extends AbstractValidator<Zero> {
     }
 
     if (value instanceof Number) {
-
-      final boolean zero;
-
-      if (value instanceof BMoney) {
-        zero = ((BMoney) value).isZero();
-      }
-      else if (value instanceof BigInteger) {
-        zero = value.equals(BigInteger.ZERO);
-      }
-      else if (value instanceof BigDecimal) {
-        zero = value.equals(BigDecimal.ZERO);
-      }
-      else if (value instanceof Double) {
-        zero = ((Double) value) == 0.0d;
-      }
-      else if (value instanceof Float) {
-        zero = ((Float) value) == 0.0f;
-      }
-      else {
-        zero = ((Number) value).longValue() == 0;
-      }
-
-      return zero ? Collections.emptyList() : createFailedValidationResult("value is not zero", validationContext);
+      return ObjectUtilities.getInstance().isZero((Number) value) ?
+             Collections.emptyList() :
+             createFailedValidationResult("value is not zero", validationContext);
     }
     else  {
-      return createFailedValidationResult("not a number", validationContext);
+      return createFailedValidationResult("value is not a number", validationContext);
     }
   }
 

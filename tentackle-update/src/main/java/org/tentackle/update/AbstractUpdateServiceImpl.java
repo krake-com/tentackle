@@ -82,7 +82,7 @@ public abstract class AbstractUpdateServiceImpl extends UnicastRemoteObject impl
    * Example:
    * <pre>admin-jlink-client</pre>
    *
-   * @return
+   * @return the artifact name
    */
   public abstract String getArtifactName();
 

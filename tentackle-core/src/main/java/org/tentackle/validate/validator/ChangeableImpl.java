@@ -19,13 +19,15 @@
 
 package org.tentackle.validate.validator;
 
-import java.util.Collections;
-import java.util.List;
 import org.tentackle.validate.ChangeableBindingEvaluator;
 import org.tentackle.validate.ValidationContext;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationSeverity;
+
+import java.lang.annotation.Annotation;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Implementation of the {@link Changeable}-validator.
@@ -34,6 +36,22 @@ import org.tentackle.validate.ValidationSeverity;
  */
 public class ChangeableImpl extends AbstractValidator<Changeable> implements ChangeableBindingEvaluator {
 
+  private Changeable annotation;
+
+  @Override
+  public void setAnnotation(Annotation annotation) {
+    this.annotation = (Changeable) annotation;
+  }
+
+  @Override
+  public Changeable getAnnotation() {
+    return annotation;
+  }
+
+  @Override
+  public String getValue() {
+    return annotation.value();
+  }
 
   @Override
   public String getMessage() {
@@ -82,11 +100,9 @@ public class ChangeableImpl extends AbstractValidator<Changeable> implements Cha
    */
   @Override
   public boolean isChangeable(ValidationContext validationContext) {
-    return (annotation.value().isEmpty() || getValue(annotation.value(), Boolean.class, validationContext)) &&
+    return (getValue().isEmpty() || getValue(Boolean.class, validationContext)) &&
            isConditionValid(validationContext);
   }
-
-
 
   @Override
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {

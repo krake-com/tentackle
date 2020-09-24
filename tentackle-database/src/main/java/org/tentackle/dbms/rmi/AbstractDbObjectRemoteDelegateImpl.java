@@ -19,11 +19,12 @@
 
 package org.tentackle.dbms.rmi;
 
-import java.rmi.RemoteException;
-import java.util.List;
 import org.tentackle.dbms.AbstractDbObject;
 import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.session.PersistenceException;
+
+import java.rmi.RemoteException;
+import java.util.List;
 
 
 /**
@@ -74,7 +75,6 @@ public class AbstractDbObjectRemoteDelegateImpl<P extends AbstractDbObject<P>>
    *
    * @return the new object
    */
-  @SuppressWarnings("unchecked")
   protected P newInstance() {
     try {
       return AbstractDbObject.newInstance(getSession(), getServicedClass());
@@ -106,7 +106,6 @@ public class AbstractDbObjectRemoteDelegateImpl<P extends AbstractDbObject<P>>
     }
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public P selectObject(long id) throws RemoteException {
     try {
@@ -117,7 +116,6 @@ public class AbstractDbObjectRemoteDelegateImpl<P extends AbstractDbObject<P>>
     }
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public P selectObjectForUpdate(long id) throws RemoteException {
     try {
@@ -129,7 +127,6 @@ public class AbstractDbObjectRemoteDelegateImpl<P extends AbstractDbObject<P>>
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public List<P> selectAllObjects() throws RemoteException {
     try {
       return dbObject.selectAllObjects();

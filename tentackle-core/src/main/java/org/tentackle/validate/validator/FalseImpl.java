@@ -24,6 +24,7 @@ import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationSeverity;
 
+import java.lang.annotation.Annotation;
 import java.util.Collections;
 import java.util.List;
 
@@ -33,6 +34,23 @@ import java.util.List;
  * @author harald
  */
 public class FalseImpl extends AbstractValidator<False> {
+
+  private False annotation;
+
+  @Override
+  public void setAnnotation(Annotation annotation) {
+    this.annotation = (False) annotation;
+  }
+
+  @Override
+  public False getAnnotation() {
+    return annotation;
+  }
+
+  @Override
+  public String getValue() {
+    return annotation.value();
+  }
 
   @Override
   public String getMessage() {
@@ -67,11 +85,11 @@ public class FalseImpl extends AbstractValidator<False> {
   @Override
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {
     Object object = validationContext.getObject();
-    Object value = annotation.value().isEmpty() ?
-                        // use object's value
-                        object :
-                        // replace with compound value which should be a script
-                        getValue(annotation.value(), Boolean.class, validationContext);
+    Object value = getValue().isEmpty() ?
+                   // use object's value
+                   object :
+                   // replace with compound value which should be a script
+                   getValue(Boolean.class, validationContext);
 
     return value == null && annotation.ignoreNulls() || Boolean.FALSE.equals(value) ? Collections.emptyList() :
            createFailedValidationResult("object is not false", validationContext);

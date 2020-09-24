@@ -433,7 +433,6 @@ public class RmiServer {
    *
    * @param serverInfo the servers db-connection user info
    */
-  @SuppressWarnings("unchecked")
   public RmiServer(SessionInfo serverInfo) {
     this(serverInfo, null);
   }

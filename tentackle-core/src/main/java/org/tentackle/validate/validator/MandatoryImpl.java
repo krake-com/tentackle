@@ -19,13 +19,15 @@
 
 package org.tentackle.validate.validator;
 
-import java.util.Collections;
-import java.util.List;
 import org.tentackle.validate.MandatoryBindingEvaluator;
 import org.tentackle.validate.ValidationContext;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationSeverity;
+
+import java.lang.annotation.Annotation;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Implementation of the {@link Mandatory}-validator.
@@ -34,6 +36,22 @@ import org.tentackle.validate.ValidationSeverity;
  */
 public class MandatoryImpl extends AbstractValidator<Mandatory> implements MandatoryBindingEvaluator {
 
+  private Mandatory annotation;
+
+  @Override
+  public void setAnnotation(Annotation annotation) {
+    this.annotation = (Mandatory) annotation;
+  }
+
+  @Override
+  public Mandatory getAnnotation() {
+    return annotation;
+  }
+
+  @Override
+  public String getValue() {
+    return annotation.value();
+  }
 
   @Override
   public String getMessage() {
@@ -82,7 +100,7 @@ public class MandatoryImpl extends AbstractValidator<Mandatory> implements Manda
    */
   @Override
   public boolean isMandatory(ValidationContext validationContext) {
-    return (annotation.value().isEmpty() || getValue(annotation.value(), Boolean.class, validationContext)) &&
+    return (getValue().isEmpty() || getValue(Boolean.class, validationContext)) &&
            isConditionValid(validationContext);
   }
 

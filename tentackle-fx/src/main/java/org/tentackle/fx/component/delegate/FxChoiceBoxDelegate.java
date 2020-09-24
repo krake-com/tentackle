@@ -92,13 +92,11 @@ public class FxChoiceBoxDelegate extends FxComponentDelegate {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public Object getViewObject() {
     return component.getSelectionModel().getSelectedItem();
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public void setViewValue(Object value) {
     // no value translator needed because items are of model's type already
     setViewObject(value);

@@ -125,7 +125,6 @@ public class PdoUtilities {
    * @param clazz the class
    * @return the singular, null if not annotated with @Singular
    */
-  @SuppressWarnings("unchecked")
   public String getSingular(Class<?> clazz) {
     return singularMap.get(clazz.getName());
     // don't refer to Pdo because default implementation uses PdoUtilities in return (-> would loop)
@@ -138,7 +137,6 @@ public class PdoUtilities {
    * @param clazz the class
    * @return the plural, null if not annotated with @Plural
    */
-  @SuppressWarnings("unchecked")
   public String getPlural(Class<?> clazz) {
     return pluralMap.get(clazz.getName());
     // don't refer to Pdo because default implementation uses PdoUtilities in return (-> would loop)
