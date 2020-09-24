@@ -2880,6 +2880,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   public void configureRemoteObject(DomainContext context, T obj) {
     if (obj != null) {
       // do that without invocation handling (faster)
+      @SuppressWarnings("unchecked")
       AbstractPersistentObject<T,P> po = (AbstractPersistentObject<T,P>) obj.getPersistenceDelegate();
       if (po.isRootEntity()) {
         // root entities get their own root-context
@@ -3891,6 +3892,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Overridden due to covariance.
    */
   @Override
+  @SuppressWarnings("unchecked")
   public AbstractPersistentObjectRemoteDelegate<T,P> getRemoteDelegate()  {
     return (AbstractPersistentObjectRemoteDelegate<T,P>) super.getRemoteDelegate();
   }
