@@ -28,30 +28,23 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.tentackle.buildsupport.AbstractTentackleProcessor;
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.common.LocaleProvider;
-import org.tentackle.common.ServiceFactory;
-import org.tentackle.common.StringHelper;
 import org.tentackle.maven.plugin.check.CheckValidationsProcessor.ValidatorEntry;
 import org.tentackle.misc.CompoundValue;
 import org.tentackle.script.Script;
-import org.tentackle.script.ScriptConverter;
 import org.tentackle.validate.ValidationRuntimeException;
 import org.tentackle.validate.ValidationUtilities;
 import org.tentackle.validate.Validator;
-import org.tentackle.validate.validator.MessageScriptConverter;
-import org.tentackle.validate.validator.ValidationScriptConverter;
+import org.tentackle.validate.ValidatorCompoundValueFactory;
 
 import java.io.File;
-import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.MissingResourceException;
 
 
 /**
  * Verifies all annotation-based validations.<br>
  * Scans for validator annotations (annotated with &#64;Validation), creates the validators and
- * their compound values for message and condition. If the compound values are scripts,
+ * their compound values for the annotation's value, message and condition. If the compound values are scripts,
  * the scripts will be compiled. If a message-script is an i18n-script (see &#64;MessageScriptConverter),
  * the script will be evaluated for each configured locale.
  *
@@ -63,8 +56,6 @@ import java.util.MissingResourceException;
 public class CheckValidationsMojo extends AbstractCheckMojo {
 
   private final CheckValidationsProcessor processor;
-  private final Map<String, ScriptConverter> messageConverterMap;
-  private final Map<String, ScriptConverter> validationConverterMap;
   private int errors;
   private int scriptCount;
 
@@ -75,8 +66,6 @@ public class CheckValidationsMojo extends AbstractCheckMojo {
   public CheckValidationsMojo() {
     processor = new CheckValidationsProcessor();
     addProcessor(processor);
-    messageConverterMap = new HashMap<>();
-    validationConverterMap = new HashMap<>();
   }
 
 
@@ -95,37 +84,12 @@ public class CheckValidationsMojo extends AbstractCheckMojo {
     int count = processor.getValidators().size();
     errors = processor.getErrors();
 
-    // load converters
-    for (Map.Entry<String,String> entry:
-         ServiceFactory.getServiceFinder().createNameMap(MessageScriptConverter.class.getName()).entrySet()) {
-      try {
-        String language = StringHelper.stripEnclosingDoubleQuotes(entry.getKey());
-        ScriptConverter converter = (ScriptConverter) Class.forName(entry.getValue()).getDeclaredConstructor().newInstance();
-        messageConverterMap.put(language, converter);
-      }
-      catch (ClassNotFoundException | IllegalAccessException | InstantiationException |
-             InvocationTargetException | NoSuchMethodException ex) {
-        throw new MojoFailureException("message script converter configuration failed", ex);
-      }
-    }
-    for (Map.Entry<String,String> entry:
-         ServiceFactory.getServiceFinder().createNameMap(ValidationScriptConverter.class.getName()).entrySet()) {
-      try {
-        String language = StringHelper.stripEnclosingDoubleQuotes(entry.getKey());
-        ScriptConverter converter = (ScriptConverter) Class.forName(entry.getValue()).getDeclaredConstructor().newInstance();
-        validationConverterMap.put(language, converter);
-      }
-      catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
-             NoSuchMethodException | SecurityException | InvocationTargetException ex) {
-        throw new MojoFailureException("validation script converter configuration failed", ex);
-      }
-    }
-
     // check validation messages for all locales
     for (Locale bundleLocale : bundleLocales) {
       LocaleProvider.getInstance().setCurrentLocale(bundleLocale);
 
       for (ValidatorEntry validatorEntry: processor.getValidators()) {
+        checkValue(validatorEntry);
         checkMessage(validatorEntry);
         checkCondition(validatorEntry);
       }
@@ -166,23 +130,11 @@ public class CheckValidationsMojo extends AbstractCheckMojo {
       Class<?> enclosingClass = getProcessingClassloader().loadClass(validatorEntry.getClassName());
       String message = validator.getMessage();
       if (message != null && !message.isEmpty()) {
-        CompoundValue cv = new CompoundValue(message, String.class, false, false,
-                                             messageConverterMap::get);
-        if (cv.getType() == CompoundValue.Type.SCRIPT) {
-          Script script = cv.getScript();
-          if (script != null) {
-            scriptCount++;
-            if (message.contains("@(")) {   // i18n script
-              if (messageConverterMap.get(script.getLanguage().getName()) == null) {
-                throw new MojoFailureException("missing message script converter for " + script.getLanguage());
-              }
-              cv.getValue(enclosingClass);
-            }
-            else {
-              // some other script: just compile
-              script.validate();
-            }
-          }
+        CompoundValue cv = ValidatorCompoundValueFactory.getInstance().createMessageParameter(message);
+        Script script = cv.getScript();
+        if (script != null) {
+          scriptCount++;
+          cv.getValue(enclosingClass);
         }
       }
     }
@@ -212,19 +164,40 @@ public class CheckValidationsMojo extends AbstractCheckMojo {
       Validator validator = validatorEntry.getValidator();
       String condition = validator.getCondition();
       if (condition != null && !condition.isEmpty()) {
-        CompoundValue cv = new CompoundValue(condition, Boolean.class, false, false,
-                                             validationConverterMap::get);
-        if (cv.getType() == CompoundValue.Type.SCRIPT) {
-          Script script = cv.getScript();
-          if (script != null) {
-            scriptCount++;
-            script.validate();
-          }
+        CompoundValue cv = ValidatorCompoundValueFactory.getInstance().createConditionParameter(condition);
+        Script script = cv.getScript();
+        if (script != null) {
+          scriptCount++;
+          script.validate();
         }
       }
     }
     catch (RuntimeException ex) {
       getLog().error("validation condition check failed for validator " + validatorEntry, ex);
+      errors++;
+    }
+  }
+
+  /**
+   * Checks the condition script.
+   *
+   * @param validatorEntry the validator
+   */
+  private void checkValue(ValidatorEntry validatorEntry) {
+    try {
+      Validator validator = validatorEntry.getValidator();
+      String value = validator.getValue();
+      if (value != null && !value.isEmpty()) {
+        CompoundValue cv = ValidatorCompoundValueFactory.getInstance().createValueParameter(value, Object.class);
+        Script script = cv.getScript();
+        if (script != null) {
+          scriptCount++;
+          script.validate();
+        }
+      }
+    }
+    catch (RuntimeException ex) {
+      getLog().error("validation value check failed for validator " + validatorEntry, ex);
       errors++;
     }
   }

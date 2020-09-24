@@ -19,12 +19,13 @@
 
 package org.tentackle.dbms;
 
-import java.io.Serializable;
 import org.tentackle.dbms.rmi.AbstractDbOperationRemoteDelegate;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionDependable;
 import org.tentackle.session.SessionHolder;
+
+import java.io.Serializable;
 
 /**
  * A {@code AbstractDbOperation} provides methods that are not part of {@link AbstractDbObject}s
@@ -163,7 +164,6 @@ public abstract class AbstractDbOperation<P extends AbstractDbOperation<P>>
    *
    * @return the delegate for this object
    */
-  @SuppressWarnings("unchecked")
   public AbstractDbOperationRemoteDelegate<P> getRemoteDelegate()  {
     return getClassVariables().getRemoteDelegate(getSession());
   }

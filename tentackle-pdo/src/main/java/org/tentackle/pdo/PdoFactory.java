@@ -20,6 +20,7 @@
 package org.tentackle.pdo;
 
 import org.tentackle.common.ServiceFactory;
+import org.tentackle.reflect.ClassMapper;
 import org.tentackle.session.Session;
 
 
@@ -42,6 +43,22 @@ public interface PdoFactory {
   static PdoFactory getInstance() {
     return PdoFactoryHolder.INSTANCE;
   }
+
+  /**
+   * Gets the persistence class mapper associated to this factory.<br>
+   * The classmapper maps PDO interfaces to their persistence implementation.
+   *
+   * @return the mapper for the persistence implementations
+   */
+  ClassMapper getPersistenceMapper();
+
+  /**
+   * Gets the domain class mapper associated to this factory.<br>
+   * The classmapper maps PDO interfaces to their domain implementation.
+   *
+   * @return the mapper for the domain implementations
+   */
+  ClassMapper getDomainMapper();
 
   /**
    * Creates a PDO.

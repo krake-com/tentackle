@@ -68,7 +68,6 @@ public class FxHTMLEditorDelegate extends FxTextComponentDelegate {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public String getViewObject() {
     String text = component.getHtmlText();
     return StringHelper.isAllWhitespace(text) ? null : text;

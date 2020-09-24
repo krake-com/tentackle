@@ -76,7 +76,6 @@ public class FxDatePickerDelegate extends FxTextComponentDelegate {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public String getViewObject() {
     text = component.getEditor().getText();
     return StringHelper.isAllWhitespace(text) ? null : text;

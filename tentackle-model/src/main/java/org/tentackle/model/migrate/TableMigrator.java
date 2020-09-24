@@ -324,9 +324,8 @@ public class TableMigrator {
         }
       }
       if (matchingColumns.isEmpty()) {
-        String oldColumnName = null;
         if (renameColumns != null) {
-          oldColumnName = renameColumns.get(attribute.getColumnName());
+          String oldColumnName = renameColumns.get(attribute.getColumnName());
           if (oldColumnName != null) {
             // matching rename hint!
             ColumnMetaData oldColumn = columnsToDrop.get(oldColumnName);

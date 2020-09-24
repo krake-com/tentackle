@@ -1324,7 +1324,6 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    *
    * @return object if loaded, null if no such object
    */
-  @SuppressWarnings("unchecked")
   public P selectObject (long id) {
     P obj = null;
     if (id > 0) {
@@ -1363,7 +1362,6 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    *
    * @return object if loaded, null if no such object
    */
-  @SuppressWarnings("unchecked")
   public P selectObjectForUpdate(long id) {
     P obj = null;
     if (id > 0) {
@@ -1499,7 +1497,6 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * @param rs the result set
    * @return the next object, null if end of set
    */
-  @SuppressWarnings("unchecked")
   public P selectNextObject(ResultSetWrapper rs)  {
     getSession().assertNotRemote();
     if (rs.next()) {
@@ -1515,7 +1512,6 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    *
    * @return the list of objects, never null
    */
-  @SuppressWarnings("unchecked")
   public List<P> selectAllObjects() {
     Db db = getSession();
     if (db.isRemote())  {

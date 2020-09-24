@@ -140,6 +140,38 @@ public class ObjectUtilities {
     return (T) object;
   }
 
+
+  /**
+   * Checks whether a given number is zero.
+   *
+   * @param number the number
+   * @return true if number is zero
+   */
+  public boolean isZero(Number number) {
+    boolean zero;
+    if (number instanceof BMoney) {
+      zero = ((BMoney) number).isZero();
+    }
+    else if (number instanceof BigInteger) {
+      zero = number.equals(BigInteger.ZERO);
+    }
+    else if (number instanceof BigDecimal) {
+      zero = number.equals(BigDecimal.ZERO);
+    }
+    else if (number instanceof Double) {
+      zero = ((Double) number) == 0.0d;
+    }
+    else if (number instanceof Float) {
+      zero = ((Float) number) == 0.0f;
+    }
+    else {
+      zero = number.longValue() == 0;
+    }
+    return zero;
+  }
+
+
+
   /**
    * Sets a converter for a given class.
    *

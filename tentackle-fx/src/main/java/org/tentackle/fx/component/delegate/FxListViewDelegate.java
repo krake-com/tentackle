@@ -68,7 +68,6 @@ public class FxListViewDelegate extends FxComponentDelegate {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public ObservableList getViewObject() {
     return component.getItems();
   }

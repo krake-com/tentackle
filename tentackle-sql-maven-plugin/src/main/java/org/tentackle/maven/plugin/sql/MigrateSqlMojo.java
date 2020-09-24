@@ -538,7 +538,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
               String plainTableName = entity.getTableNameWithoutSchema();
               String plainOldTableName = renamedTables.get(plainTableName);
               String oldTableName = entity.getSchemaName() != null && plainOldTableName != null ?
-                oldTableName = entity.getSchemaName() + "." + plainOldTableName : plainOldTableName;
+                                    entity.getSchemaName() + "." + plainOldTableName : plainOldTableName;
 
               if (checkReservedTables && MetaDataUtilities.getInstance().isReservedTable(plainTableName)) {
                 getLog().warn("table name '" + plainTableName + "' of entity " + entity + " is reserved by framework -> consider renaming");

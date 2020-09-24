@@ -72,7 +72,7 @@ public class GroovyScript extends AbstractScript {
   @Override
   @SuppressWarnings("unchecked")
   public <T> T execute(Set<ScriptVariable> variables) {
-    T result = null;
+    T result;
     CompiledGroovyScript script = getCompiledScript();
     LOGGER.finer(() -> "execute: \n" + script.getCode() + "\nwith args: " + ScriptVariable.variablesToString(variables));
     try {

@@ -246,7 +246,6 @@ public final class ReflectionHelper {
    * @param all true if all must match (logically and), false if at least one (logically or)
    * @return true if match
    */
-  @SuppressWarnings("unchecked")
   public static boolean isAssignableFrom(Class<?> clazz, Class<?>[] superClasses, boolean all) {
     if (clazz != null && superClasses != null) {
       for (Class<?> superClass: superClasses) {
@@ -277,7 +276,6 @@ public final class ReflectionHelper {
    * @param all true if all must match (logically and), false if at least one (logically or)
    * @return true if match
    */
-  @SuppressWarnings("unchecked")
   public static boolean isAnnotationPresent(Class<?> clazz, Class<Annotation>[] annotations, boolean all) {
     if (clazz != null && annotations != null) {
       for (Class<? extends Annotation> annotation: annotations) {
@@ -739,7 +737,6 @@ public final class ReflectionHelper {
 
 
 
-  @SuppressWarnings("unchecked")
   private static Method getMethodForElement(Class<?> clazz, String element) {
     Method method = null;
     String camelName = StringHelper.firstToUpper(element);   // camelcase name part
@@ -764,7 +761,6 @@ public final class ReflectionHelper {
     return method;
   }
 
-  @SuppressWarnings("unchecked")
   private static Field getFieldForElement(Class<?> clazz, String element) {
     Field field = null;
     try {

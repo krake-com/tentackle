@@ -287,7 +287,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
         if (str.charAt(0) == '@') {
           str = str.substring(1, slen);
           slen--;
-          @SuppressWarnings({ "unchecked", "rawtypes" })
+          @SuppressWarnings("rawtypes")
           Supplier dateSupplier = (Supplier) ((Node) getComponent()).getProperties().get(REFERENCE_DATE_SUPPLIER);
           if (dateSupplier != null) {
             Object refDate = dateSupplier.get();

@@ -298,7 +298,7 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
 
 
 
-  @SuppressWarnings({"unchecked", "unchecked"})
+  @SuppressWarnings("unchecked")
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 

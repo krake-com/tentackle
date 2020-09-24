@@ -87,7 +87,7 @@ public class CompoundValue {
 
 
 
-  private final String str;                                                   // the original string
+  private final String text;                                                  // the value source text
   private final Class<?> clazz;                                               // the value's type
   private final Function<String, ScriptConverter> scriptConverterProvider;    // the optional script converter provider
   private final boolean scriptCached;                                         // use caching for script, if possible
@@ -113,14 +113,14 @@ public class CompoundValue {
    * The parameters <code>scriptConverterProviderscriptCached</code>, <code>scriptCached</code> and <code>scriptThreadSafe</code>
    * are for {@link Type#SCRIPT} only.
    *
-   * @param str the string value
+   * @param text the string value
    * @param clazz the class of the value
    * @param scriptCached true if use caching if possible because script code may used more than once
    * @param scriptThreadSafe true if the script may be invoked in parallel from different threads
    * @param scriptConverterProvider the optional provider for the script converter
    */
-  public CompoundValue(String str, Class<?> clazz, boolean scriptCached, boolean scriptThreadSafe, Function<String, ScriptConverter> scriptConverterProvider) {
-    this.str = str;
+  public CompoundValue(String text, Class<?> clazz, boolean scriptCached, boolean scriptThreadSafe, Function<String, ScriptConverter> scriptConverterProvider) {
+    this.text = text;
     this.clazz = clazz;
     this.scriptConverterProvider = scriptConverterProvider;
     this.scriptCached = scriptCached;
@@ -135,35 +135,35 @@ public class CompoundValue {
     negate            = false;
     script            = null;
 
-    int length = str == null ? 0 : str.length();
+    int length = text == null ? 0 : text.length();
 
     if (length == 0) {
       throw new IllegalArgumentException("string value must not be null or empty");
     }
 
-    char c = str.charAt(0);
+    char c = text.charAt(0);
 
     if (c == '\\') {
       if (length < 2) {
         throw new IllegalArgumentException("constant value must not be empty");
       }
       type = Type.CONSTANT;
-      constant = str.substring(1);
+      constant = text.substring(1);
       if (clazz == null) {
         throw new IllegalArgumentException("clazz must be set for type " + type);
       }
     }
     else {
-      int ndx = str.indexOf('{');
-      if ((ndx == 0 || ndx >= 2 && str.startsWith("#!")) && str.endsWith("}")) {
+      int ndx = text.indexOf('{');
+      if ((ndx == 0 || ndx >= 2 && text.startsWith("#!")) && text.endsWith("}")) {
         type = Type.SCRIPT;
         try {
-          String language = str.substring(ndx == 0 ? 0 : 2, ndx);
-          String code = str.substring(ndx + 1, length - 1);
+          String language = text.substring(ndx == 0 ? 0 : 2, ndx);
+          String code = text.substring(ndx + 1, length - 1);
           script = ScriptFactory.getInstance().createScript(language, code, isScriptCached(), isScriptThreadSafe(), getScriptConverterProvider());
         }
         catch (ScriptRuntimeException ex) {
-          throw new IllegalArgumentException("creating script '" + str + "' failed", ex);
+          throw new IllegalArgumentException("creating script '" + text + "' failed", ex);
         }
       }
       else  {
@@ -172,16 +172,16 @@ public class CompoundValue {
             if (length < 2) {
               throw new IllegalArgumentException("reference must not be empty");
             }
-            reference = str.substring(1);
+            reference = text.substring(1);
           }
           else {  // == '!'
             if (length < 3) {
               throw new IllegalArgumentException("negated boolean reference must not be empty");
             }
-            if (str.charAt(1) != '$') {
+            if (text.charAt(1) != '$') {
               throw new IllegalArgumentException("negated boolean reference must start with !$");
             }
-            reference = str.substring(2);
+            reference = text.substring(2);
             negate = true;
           }
 
@@ -207,7 +207,7 @@ public class CompoundValue {
         }
         else  {
           type = Type.CONSTANT;
-          constant = str;
+          constant = text;
         }
       }
     }
@@ -220,28 +220,45 @@ public class CompoundValue {
    * For {@link Type#SCRIPT} it is optional and if given, the returned value is
    * converted to the given type, if possible.
    *
-   * @param str the string value
+   * @param text the string value
    * @param clazz the class of the value
    */
-  public CompoundValue(String str, Class<?> clazz) {
-    this(str, clazz, false, false, null);
+  public CompoundValue(String text, Class<?> clazz) {
+    this(text, clazz, false, false, null);
   }
 
   /**
    * Creates and configures a compound value.<br>
    *
-   * @param str the string value
+   * @param text the string value
    */
-  public CompoundValue(String str) {
-    this(str, null, false, false, null);
+  public CompoundValue(String text) {
+    this(text, null, false, false, null);
   }
 
 
   @Override
   public String toString() {
-    return "[" + type + "] " + str;
+    return "[" + type + "] " + text;
   }
 
+  /**
+   * Gets the source text.
+   *
+   * @return the string value
+   */
+  public String getText() {
+    return text;
+  }
+
+  /**
+   * Gets the class of the value.
+   *
+   * @return the value's class, null if determined by SCRIPT or not necessary for this {@link Type}
+   */
+  public Class<?> getClazz() {
+    return clazz;
+  }
 
   /**
    * Gets the provider for the script converter that will translate the script before being parsed.
@@ -477,6 +494,15 @@ public class CompoundValue {
     return getValue(null, variables);
   }
 
+  /**
+   * Validates the configuration of this compoundvalue.<br>
+   * Validates the script, if any.
+   */
+  public void validate() {
+    if (script != null) {
+      script.validate();
+    }
+  }
 
   /**
    * Negates a boolean value.

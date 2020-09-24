@@ -1077,7 +1077,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @param onlyLoaded true if return only already loaded components (lazy composite relations)
    * @return the number of components added
    */
-  @SuppressWarnings("unchecked")
   public int addComponents(IdentifiableMap<PersistentDomainObject<?>> components, Collection<? extends PersistentDomainObject<?>> objects, boolean onlyLoaded)  {
     int count = 0;
     for (PersistentDomainObject<?> object: objects) {
@@ -1151,7 +1150,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Inserts this object and all its components without any further processing.<br>
    * Same as {@link #insertPlain()} but with components.
    */
-  @SuppressWarnings("unchecked")
   public void insertPlainWithComponents() {
     assertNotRemote();
     if (isComposite()) {
@@ -2147,7 +2145,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @see #resultByNormText
    */
   @Override
-  @SuppressWarnings("unchecked")
   public List<T> selectByNormText(String text) {
     if (getSession().isRemote())  {
       try {
@@ -2883,7 +2880,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   public void configureRemoteObject(DomainContext context, T obj) {
     if (obj != null) {
       // do that without invocation handling (faster)
-      @SuppressWarnings("unchecked")
       AbstractPersistentObject<T,P> po = (AbstractPersistentObject<T,P>) obj.getPersistenceDelegate();
       if (po.isRootEntity()) {
         // root entities get their own root-context
@@ -3148,7 +3144,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @param pdos the list to save
    * @param modifiedOnly true if only modified objects are saved
    */
-  @SuppressWarnings({ "unchecked", "rawtypes" })
+  @SuppressWarnings({"rawtypes" })
   public static <X extends PersistentDomainObject<X>> void save(Collection<X> pdos, boolean modifiedOnly) {
     if (pdos != null) {
       Session session = null;
@@ -3895,7 +3891,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Overridden due to covariance.
    */
   @Override
-  @SuppressWarnings("unchecked")
   public AbstractPersistentObjectRemoteDelegate<T,P> getRemoteDelegate()  {
     return (AbstractPersistentObjectRemoteDelegate<T,P>) super.getRemoteDelegate();
   }
@@ -3907,7 +3902,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * The default scopes are: {@link PersistenceScope}, {@link MandatoryScope} and {@link ChangeableScope}.
    */
   @Override
-  @SuppressWarnings({ "unchecked", "rawtypes" })
+  @SuppressWarnings("unchecked")
   public Class<? extends ValidationScope>[] getDefaultScopes() {
     return new Class[] { PersistenceScope.class, MandatoryScope.class, ChangeableScope.class };
   }

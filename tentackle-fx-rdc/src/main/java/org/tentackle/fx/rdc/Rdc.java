@@ -134,7 +134,6 @@ public class Rdc {
    * @param owner the owner, null if none
    * @return the CRUD, null if there is already a CRUD editing this PDO.
    */
-  @SuppressWarnings("unchecked")
   public static <T extends PersistentDomainObject<T>> PdoCrud<T> getCrud(
           T pdo, ObservableList<T> pdoList, boolean editable, Modality modality, Window owner) {
     return RdcUtilities.getInstance().getCrud(pdo, pdoList, editable, modality, owner);
@@ -196,7 +195,6 @@ public class Rdc {
    * @param owner the owner, null if none
    * @return the search controller, never null
    */
-  @SuppressWarnings("unchecked")
   public static <T extends PersistentDomainObject<T>> PdoSearch<T> getSearch(T pdo, Modality modality, Window owner) {
     return RdcUtilities.getInstance().getSearch(pdo, modality, owner);
   }

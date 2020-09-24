@@ -504,7 +504,6 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public Object getSavedViewObject() {
     if (!savedViewObjectValid) {
       throw new FxRuntimeException("saved value is invalid in " + getComponent());

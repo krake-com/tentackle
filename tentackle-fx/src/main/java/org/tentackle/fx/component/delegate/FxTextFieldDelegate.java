@@ -42,7 +42,6 @@ public class FxTextFieldDelegate extends AbstractTextFieldDelegate<FxTextField> 
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public String getViewObject() {
     String text = getComponent().getText();
     return StringHelper.isAllWhitespace(text) ? null : text;
@@ -73,7 +72,6 @@ public class FxTextFieldDelegate extends AbstractTextFieldDelegate<FxTextField> 
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public void setViewValue(Object value) {
     super.setViewValue(value);
     Pos alignment = getTextAlignment();

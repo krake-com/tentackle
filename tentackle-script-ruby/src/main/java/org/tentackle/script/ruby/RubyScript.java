@@ -75,7 +75,7 @@ public class RubyScript extends AbstractScript {
 
   @Override
   public <T> T execute(Set<ScriptVariable> variables) {
-    T result = null;
+    T result;
     CompiledRubyScript script = getCompiledScript();
     LOGGER.finer(() -> "execute: \n" + script.getCode() + "\nwith args: " + ScriptVariable.variablesToString(variables));
     try {
@@ -123,7 +123,6 @@ public class RubyScript extends AbstractScript {
    * @param code the scripting source code
    * @return the compiled script
    */
-  @SuppressWarnings("unchecked")
   protected CompiledRubyScript compileScript(String code) {
     try {
       LOGGER.fine("compiling script:\n{0}", code);

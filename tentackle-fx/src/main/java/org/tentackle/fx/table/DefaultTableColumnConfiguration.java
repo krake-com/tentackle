@@ -464,7 +464,6 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
    *
    * @return the value factory
    */
-  @SuppressWarnings("unchecked")
   protected Callback<TableColumn.CellDataFeatures<S, T>, ObservableValue<T>> createCellValueFactory() {
     return this::createCellValue;
   }

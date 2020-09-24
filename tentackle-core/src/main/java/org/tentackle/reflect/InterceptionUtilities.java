@@ -64,7 +64,6 @@ public class InterceptionUtilities {
    * @param implMethod the implementing class method
    * @return the head of interceptors, null if not intercepted
    */
-  @SuppressWarnings("unchecked")
   public Interceptor findInterceptors(Class<?> clazz, Method method, Method implMethod) {
 
     List<Interceptor> interceptors = new ArrayList<>();

@@ -138,7 +138,6 @@ public class Mixin<T, M extends Serializable> implements Serializable {
    *        null if use the clazz as the declaring class
    * @throws ClassNotFoundException if no implementation found
    */
-  @SuppressWarnings("unchecked")
   public Mixin(Class<T> clazz, Class<?> superInterface) throws ClassNotFoundException {
     this(null, clazz, superInterface);
   }

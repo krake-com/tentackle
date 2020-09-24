@@ -68,7 +68,6 @@ public class FxTreeViewDelegate extends FxComponentDelegate {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public TreeItem getViewObject() {
     return component.getRoot();
   }

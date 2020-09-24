@@ -38,7 +38,6 @@ public class FxTextAreaDelegate extends AbstractTextFieldDelegate<FxTextArea> {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public String getViewObject() {
     String text = getComponent().getText();
     return StringHelper.isAllWhitespace(text) ? null : text;

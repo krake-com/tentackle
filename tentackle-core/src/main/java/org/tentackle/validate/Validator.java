@@ -37,16 +37,24 @@ public interface Validator {
   // ----------------------- annotation parameters -------------------------
 
   /**
+   * Gets the annotation's value.
+   *
+   * @return the value, never null
+   */
+  String getValue();
+
+  /**
    * Gets the message text set by the annotation's message()-parameter.
    *
-   * @return the message, null if use message from validator
+   * @return the message text, never null, empty if message provided by the validate method
+   * @see #validate(ValidationContext)
    */
   String getMessage();
 
   /**
    * Gets the condition.
    *
-   * @return the condition
+   * @return the condition, never null, empty if none
    */
   String getCondition();
 
@@ -145,6 +153,15 @@ public interface Validator {
   int getValidationIndex();
 
 
+  /**
+   * Validates the validator's configuration.<br>
+   * Checks references and parses the scripts, if any.
+   * <p>
+   * Throws a {@link ValidationRuntimeException} if failed.
+   */
+  void validate();
+
+
   // ----------------------- runtime validation -------------------------
 
   /**
@@ -164,7 +181,7 @@ public interface Validator {
    * Checks whether the validator applies at all.
    *
    * @param validationContext the validation context
-   * @return true if it applies
+   * @return true if it applies or no condition (empty)
    */
   boolean isConditionValid(ValidationContext validationContext);
 

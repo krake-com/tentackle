@@ -66,7 +66,6 @@ public class FxRadioButtonDelegate extends FxComponentDelegate {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public Boolean getViewObject() {
     return component.isSelected();
   }

@@ -19,11 +19,8 @@
 
 package org.tentackle.validate.validator;
 
-import org.tentackle.common.ServiceFactory;
-import org.tentackle.common.StringHelper;
 import org.tentackle.misc.CompoundValue;
 import org.tentackle.reflect.EffectiveClassProvider;
-import org.tentackle.script.ScriptConverter;
 import org.tentackle.script.ScriptVariable;
 import org.tentackle.validate.DefaultScope;
 import org.tentackle.validate.ScopeConfigurator;
@@ -33,16 +30,15 @@ import org.tentackle.validate.ValidationRuntimeException;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationUtilities;
 import org.tentackle.validate.Validator;
+import org.tentackle.validate.ValidatorCompoundValueFactory;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -53,52 +49,14 @@ import java.util.function.Function;
  */
 public abstract class AbstractValidator<T extends Annotation> implements Validator {
 
-  /** maps language-name to message-script-converter. */
-  protected static final Map<String, ScriptConverter> MESSAGE_CONVERTER_MAP = new HashMap<>();
+  private AnnotatedElement element;           // the annotated element, if this is a fixed(annotated) validator
+  private String validatedElementName;        // the validated element name
+  private int validationIndex = -1;           // the index if part of a ValidationList, -1 if single validator
 
-  /** maps language-name to validation-script-converter. */
-  protected static final Map<String, ScriptConverter> VALIDATION_CONVERTER_MAP = new HashMap<>();
-
-
-  static {
-    // load message converters
-    for (Map.Entry<String,String> entry:
-         ServiceFactory.getServiceFinder().createNameMap(MessageScriptConverter.class.getName()).entrySet()) {
-      try {
-        String language = StringHelper.stripEnclosingDoubleQuotes(entry.getKey());
-        ScriptConverter converter = (ScriptConverter) Class.forName(entry.getValue()).getDeclaredConstructor().newInstance();
-        MESSAGE_CONVERTER_MAP.put(language, converter);
-      }
-      catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
-             NoSuchMethodException | SecurityException | InvocationTargetException ex) {
-        throw new ValidationRuntimeException("message script converter configuration failed", ex);
-      }
-    }
-
-    // load validation converters
-    for (Map.Entry<String,String> entry:
-         ServiceFactory.getServiceFinder().createNameMap(ValidationScriptConverter.class.getName()).entrySet()) {
-      try {
-        String language = StringHelper.stripEnclosingDoubleQuotes(entry.getKey());
-        ScriptConverter converter = (ScriptConverter) Class.forName(entry.getValue()).getDeclaredConstructor().newInstance();
-        VALIDATION_CONVERTER_MAP.put(language, converter);
-      }
-      catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
-             NoSuchMethodException | SecurityException | InvocationTargetException ex) {
-        throw new ValidationRuntimeException("validation script converter configuration failed", ex);
-      }
-    }
-  }
-
-
-  protected T annotation;                       // the annotation
-  protected AnnotatedElement element;           // the annotated element, if this is a fixed(annotated) validator
-  protected String validatedElementName;        // the validated element name
-  protected int validationIndex = -1;           // the index if part of a ValidationList, -1 if single validator
-
-  protected volatile CompoundValue valueParameter;       // the value given by the annotation
-  protected volatile CompoundValue conditionParameter;   // the condition
-  protected volatile CompoundValue messageParameter;     // the message
+  private volatile CompoundValue conditionParameter;                // the condition
+  private volatile CompoundValue messageParameter;                  // the message
+  private volatile CompoundValue valueParameter;                    // the value given by the annotation (fixed or last varying type)
+  private volatile Map<Class<?>, CompoundValue> valueParameterMap;  // value types (varying type only, null if fixed)
 
 
   @Override
@@ -108,19 +66,6 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
 
 
   @Override
-  @SuppressWarnings("unchecked")
-  public void setAnnotation(Annotation annotation) {
-    this.annotation = (T) annotation;
-  }
-
-  @Override
-  public T getAnnotation() {
-    return annotation;
-  }
-
-
-  @Override
-  @SuppressWarnings({ "unchecked", "rawtypes" })
   public Class<? extends ValidationScope>[] getConfiguredScopes(ValidationContext validationContext) {
     Class<? extends ValidationScope>[] scopes = getScope();
     if (scopes.length == 1 && DefaultScope.class.isAssignableFrom(scopes[0]) &&   // only the default scope applies ...
@@ -175,87 +120,68 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
    */
   @Override
   public boolean isConditionValid(ValidationContext validationContext) {
-    String condition = getCondition();
-    if (condition != null && !condition.isEmpty()) {
-      CompoundValue localPar = conditionParameter;
-      if (localPar == null) {
-        synchronized (this) {
-          localPar = conditionParameter;
-          if (localPar == null) {
-            localPar = conditionParameter = createConditionParameter(condition);
-          }
-        }
-      }
-      Object value = localPar.getValue(validationContext.getParentObject(), createScriptVariables(validationContext));
+    boolean applies = true;
+    CompoundValue condPar = getConditionParameter();
+    if (condPar != null) {
+      Object value = condPar.getValue(validationContext.getParentObject(), createScriptVariables(validationContext));
       if (value instanceof Boolean) {
-        return ((Boolean) value);
+        applies = ((Boolean) value);
       }
       else  {
-        throw new ValidationRuntimeException("result of condition '" + condition + "' is not a Boolean");
+        throw new ValidationRuntimeException("result of condition '" + condPar + "' is not a Boolean");
       }
     }
-    else  {
-      return true;
+    return applies;
+  }
+
+  @Override
+  public void validate() {
+    CompoundValue par = getConditionParameter();
+    if (par != null) {
+      par.validate();
+    }
+    par = getMessageParameter();
+    if (par != null) {
+      par.validate();
+    }
+    String value = getValue();
+    if (value != null && !value.isEmpty()) {
+      // just create the CV and compile the script, if any. We don't know the type yet. However, since
+      // the script is cached, it is still compiled only once.
+      ValidatorCompoundValueFactory.getInstance().createValueParameter(value, Object.class).validate();
     }
   }
 
 
   /**
-   * Creates a compound value.<br>
-   * The created compound value is always created as cached and threadsafe execution required.
+   * Gets the compound value of the condition parameter.
    *
-   * @param value the string value
-   * @param clazz the class of the value
-   * @param scriptConverterProvider the optional script converter provider
-   * @return the compound value
+   * @return the condition parameter, null if no condition
+   * @see #getCondition()
    */
-  protected CompoundValue createCompoundValue(String value, Class<?> clazz, Function<String, ScriptConverter> scriptConverterProvider) {
-    return new CompoundValue(value, clazz, true, true, scriptConverterProvider);
-  }
-
-  /**
-   * Creates the compound value for the value parameter.
-   *
-   * @param value the value from the annotation
-   * @param clazz the type of the value
-   * @return the created compound value
-   */
-  protected CompoundValue createValueParameter(String value, Class<?> clazz) {
-    return createCompoundValue(value, clazz, VALIDATION_CONVERTER_MAP::get);
-  }
-
-  /**
-   * Creates the compound value for the confition parameter.
-   *
-   * @param condition the condition text from the annotation
-   * @return the created compound value
-   */
-  protected CompoundValue createConditionParameter(String condition) {
-    return createCompoundValue(condition, Boolean.class, VALIDATION_CONVERTER_MAP::get);
-  }
-
-  /**
-   * Creates the compound value for the message parameter.
-   *
-   * @param message the message text from the annotation
-   * @return the created compound value
-   */
-  protected CompoundValue createMessageParameter(String message) {
-    // missing converter is detected by the tentackle-check-maven-plugin, if compoundvalue is a script
-    return createCompoundValue(message, String.class, MESSAGE_CONVERTER_MAP::get);
+  protected CompoundValue getConditionParameter() {
+    CompoundValue localPar = conditionParameter;
+    if (localPar == null && !getCondition().isEmpty()) {
+      synchronized (this) {
+        localPar = conditionParameter;
+        if (localPar == null) {
+          localPar = conditionParameter = ValidatorCompoundValueFactory.getInstance().createConditionParameter(getCondition());
+        }
+      }
+    }
+    return localPar;
   }
 
   /**
    * Gets the value for given type.
    *
    * @param <V> the value type
-   * @param value the value from the annotation
    * @param clazz the type of the value, null to get from validation context
    * @param validationContext the validation context
    * @return the evaluated value
    */
   @SuppressWarnings("unchecked")
-  protected <V> V getValue(String value, Class<V> clazz, ValidationContext validationContext) {
+  protected <V> V getValue(Class<V> clazz, ValidationContext validationContext) {
     if (clazz == null) {
       clazz = (Class<V>) validationContext.getType();
       if (clazz == null) {
@@ -263,59 +189,95 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
         if (object == null) {
           throw new ValidationRuntimeException("could not determine object's type for " + this);
         }
-        clazz = (Class<V>) object.getClass();
+        clazz = (Class<V>) EffectiveClassProvider.getEffectiveClass(object);
       }
     }
-    CompoundValue localPar = valueParameter;
-    if (localPar == null) {
-      // determine the parameter once
-      synchronized (this) {
-        localPar = valueParameter;
-        if (localPar == null) {
-          localPar = valueParameter = createValueParameter(value, clazz);
-        }
-      }
-    }
+    CompoundValue localPar = getValueParameter(clazz);
     return (V) localPar.getValue(validationContext.getParentObject(), createScriptVariables(validationContext));
   }
 
   /**
    * Gets the value according to its type
    *
-   * @param value the value from the annotation
    * @param validationContext the validation context
    * @return the evaluated value
    */
-  protected Object getValue(String value, ValidationContext validationContext) {
-    return getValue(value, null, validationContext);
+  protected Object getValue(ValidationContext validationContext) {
+    return getValue(null, validationContext);
   }
+
+  /**
+   * Gets the compound value of the value parameter.
+   *
+   * @param clazz the compound value's type (usually from the {@link ValidationContext})
+   * @return the value parameter, never null
+   * @see #getValue()
+   */
+  protected CompoundValue getValueParameter(Class<?> clazz) {
+    CompoundValue valPar = valueParameter;
+    if (valPar == null) {
+      synchronized (this) {
+        valPar = valueParameter;
+        if (valPar == null) {
+          valPar = valueParameter = ValidatorCompoundValueFactory.getInstance().createValueParameter(getValue(), clazz);
+        }
+      }
+    }
+    else if (valPar.getClazz() != clazz) {
+      // when using TT's validators via ValidationUtilities, the clazz is always the same, but applications could derive their
+      // own implementations or use them in other scenarios. If this is the case, we switch to mapped mode.
+      Map<Class<?>, CompoundValue> localMap = valueParameterMap;
+      if (localMap == null) {
+        synchronized (this) {
+          localMap = valueParameterMap;
+          if (localMap == null) {
+            localMap = valueParameterMap = new ConcurrentHashMap<>();
+            localMap.put(valPar.getClazz(), valPar);
+          }
+        }
+      }
+      valPar = valueParameter = localMap.computeIfAbsent(clazz, c -> ValidatorCompoundValueFactory.getInstance().createValueParameter(getValue(), c));
+    }
+    return valPar;
+  }
+
+
 
   /**
    * Creates the message.
    *
-   * @param message the default message from the validator
+   * @param message the default message if annotation's message parameter is empty
    * @param validationContext the validation context
    * @return the evaluated message
    */
   protected String createMessage(String message, ValidationContext validationContext) {
-    String annoMessage = getMessage();
-    if (!annoMessage.isEmpty()) {
-      CompoundValue localPar = messageParameter;
-      if (localPar == null) {
-        // determine the parameter once
-        synchronized (this) {
-          localPar = messageParameter;
-          if (localPar == null) {
-            localPar = messageParameter = createMessageParameter(annoMessage);
-          }
-        }
-      }
-      Object value = localPar.getValue(validationContext.getParentObject(), createScriptVariables(validationContext));
+    CompoundValue msgPar = getMessageParameter();
+    if (msgPar != null) {
+      Object value = msgPar.getValue(validationContext.getParentObject(), createScriptVariables(validationContext));
       if (value != null) {
-        return value.toString();
+        message = value.toString();
       }
     }
     return message;
+  }
+
+  /**
+   * Gets the message parameter.
+   *
+   * @return the message parameter, null if annotiation's message text is empty
+   * @see #getMessage()
+   */
+  protected CompoundValue getMessageParameter() {
+    CompoundValue localPar = messageParameter;
+    if (localPar == null && !getMessage().isEmpty()) {
+      synchronized (this) {
+        localPar = messageParameter;
+        if (localPar == null) {
+          localPar = messageParameter = ValidatorCompoundValueFactory.getInstance().createMessageParameter(getMessage());
+        }
+      }
+    }
+    return localPar;
   }
 
   /**

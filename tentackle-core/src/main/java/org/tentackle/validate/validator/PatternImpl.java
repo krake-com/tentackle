@@ -24,7 +24,9 @@ import org.tentackle.validate.ValidationContext;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationSeverity;
+import org.tentackle.validate.ValidatorCompoundValueFactory;
 
+import java.lang.annotation.Annotation;
 import java.util.Collections;
 import java.util.List;
 
@@ -35,11 +37,24 @@ import java.util.List;
  */
 public class PatternImpl extends AbstractValidator<Pattern> {
 
+  private Pattern annotation;                         // the annotation
+  private volatile CompoundValue patternParameter;    // the regular expression
+  private volatile java.util.regex.Pattern regex;     // the compiled pattern
 
-  protected volatile CompoundValue patternParameter;   // the regular expression
-  protected volatile java.util.regex.Pattern regex;    // the compiled pattern
+  @Override
+  public void setAnnotation(Annotation annotation) {
+    this.annotation = (Pattern) annotation;
+  }
 
+  @Override
+  public Pattern getAnnotation() {
+    return annotation;
+  }
 
+  @Override
+  public String getValue() {
+    return annotation.value();
+  }
 
   @Override
   public String getMessage() {
@@ -99,7 +114,7 @@ public class PatternImpl extends AbstractValidator<Pattern> {
         localPar = patternParameter;
         if (localPar == null) {
           // determine the parameter once
-          localPar = patternParameter = createCompoundValue(annotation.value(), String.class, VALIDATION_CONVERTER_MAP::get);
+          localPar = patternParameter = ValidatorCompoundValueFactory.getInstance().createValueParameter(getValue(), String.class);
         }
       }
     }

@@ -19,6 +19,8 @@
 
 package org.tentackle.reflect;
 
+import java.util.Map;
+
 /**
  * Maps classes to other classes.
  *
@@ -96,5 +98,12 @@ public interface ClassMapper {
    * @param defaultClass the default class
    */
   void setDefaultClass(Class<?> defaultClass);
+
+  /**
+   * Gets a copy of the classname map.
+   *
+   * @return the unmodifiable map of classnames
+   */
+  Map<String, String> getMap();
 
 }

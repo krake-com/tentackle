@@ -86,7 +86,6 @@ public class SecurityEditor extends PdoEditor<Security> {
 
 
   @FXML
-  @SuppressWarnings("unchecked")
   private void initialize() {
     secGranteeField.setChangeable(false);
     granteeButton.setOnAction(e -> selectGrantee());

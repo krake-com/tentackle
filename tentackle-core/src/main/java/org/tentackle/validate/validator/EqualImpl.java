@@ -19,13 +19,15 @@
 
 package org.tentackle.validate.validator;
 
-import java.util.Collections;
-import java.util.List;
 import org.tentackle.validate.ValidationContext;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationRuntimeException;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationSeverity;
+
+import java.lang.annotation.Annotation;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Implementation of the {@link Equal}-validator.
@@ -33,6 +35,23 @@ import org.tentackle.validate.ValidationSeverity;
  * @author harald
  */
 public class EqualImpl extends AbstractValidator<Equal> {
+
+  private Equal annotation;
+
+  @Override
+  public void setAnnotation(Annotation annotation) {
+    this.annotation = (Equal) annotation;
+  }
+
+  @Override
+  public Equal getAnnotation() {
+    return annotation;
+  }
+
+  @Override
+  public String getValue() {
+    return annotation.value();
+  }
 
   @Override
   public String getMessage() {
@@ -69,9 +88,8 @@ public class EqualImpl extends AbstractValidator<Equal> {
 
     final boolean failed;
 
-    String valueStr = annotation.value();
     Object object = validationContext.getObject();
-    Object value = getValue(valueStr, validationContext);
+    Object value = getValue(validationContext);
 
     if (value == null) {
       failed = !annotation.ignoreNulls() && object != null;
@@ -90,7 +108,7 @@ public class EqualImpl extends AbstractValidator<Equal> {
       }
     }
 
-    return failed ? createFailedValidationResult(object + " != " + valueStr, validationContext) : Collections.emptyList();
+    return failed ? createFailedValidationResult(object + " != " + getValue(), validationContext) : Collections.emptyList();
   }
 
 }

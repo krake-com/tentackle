@@ -109,7 +109,7 @@ public interface ArtifactCreator {
    *
    * @param mojo the jpackage mojo
    * @param appImageDir the application image directory
-   * @throws MojoExecutionException
+   * @throws MojoExecutionException if failed
    * @see AbstractJLinkMojo#withUpdater
    */
   void createAndAttachArtifact(JPackageMojo mojo, File appImageDir) throws MojoExecutionException;

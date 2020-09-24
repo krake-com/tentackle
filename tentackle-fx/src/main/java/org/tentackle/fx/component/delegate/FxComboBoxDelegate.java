@@ -89,7 +89,6 @@ public class FxComboBoxDelegate extends FxTextComponentDelegate {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public Object getViewObject() {
     if (component.isEditable()) {
       String text = component.getEditor().getText();

@@ -19,11 +19,6 @@
 
 package org.tentackle.validate.validator;
 
-import java.lang.reflect.Array;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 import org.tentackle.validate.MandatoryBindingEvaluator;
 import org.tentackle.validate.ValidationContext;
 import org.tentackle.validate.ValidationResult;
@@ -31,12 +26,36 @@ import org.tentackle.validate.ValidationRuntimeException;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationSeverity;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Array;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
 /**
  * Implementation of the {@link NotEmpty}-validator.
  *
  * @author harald
  */
-public class NotEmptyImpl extends AbstractValidator<Size> implements MandatoryBindingEvaluator {
+public class NotEmptyImpl extends AbstractValidator<NotEmpty> implements MandatoryBindingEvaluator {
+
+  private NotEmpty annotation;
+
+  @Override
+  public void setAnnotation(Annotation annotation) {
+    this.annotation = (NotEmpty) annotation;
+  }
+
+  @Override
+  public NotEmpty getAnnotation() {
+    return annotation;
+  }
+
+  @Override
+  public String getValue() {
+    return "";
+  }
 
   @Override
   public String getMessage() {

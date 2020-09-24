@@ -220,7 +220,6 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
     if (config.getBindingType() != TableConfiguration.BINDING.NO) {
       config.getBinder().assertAllBound();
     }
-    @SuppressWarnings("unchecked")
     FxTableView<T> tableView = Fx.createNode(TableView.class);
     config.configure(tableView);
     return tableView;

@@ -169,16 +169,19 @@ public class SocketImplWrapper extends SocketImpl {
   @Override
   public void setOption(int optID, Object value) throws SocketException {
 
-    Boolean bval;
-    Integer ival;
+    boolean bval;
+    int ival;
 
     if (value instanceof Boolean) {
       bval = (Boolean) value;
       ival = 0;
     }
-    else  {
-      ival = (Integer) value;
+    else if (value instanceof Number) {
+      ival = ((Number) value).intValue();
       bval = ival > 0;
+    }
+    else {
+      throw new IllegalArgumentException("value must be either Boolean or Number");
     }
 
 

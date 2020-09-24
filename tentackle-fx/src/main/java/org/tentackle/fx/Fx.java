@@ -73,7 +73,6 @@ public class Fx {
    * @param controllerClass the controller class
    * @return the controller
    */
-  @SuppressWarnings("unchecked")
   public static <T extends FxController> T load(Class<T> controllerClass) {
     return FxFactory.getInstance().createController(controllerClass, null, null, null);
   }

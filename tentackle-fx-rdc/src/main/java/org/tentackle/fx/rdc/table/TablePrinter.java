@@ -213,7 +213,6 @@ public class TablePrinter extends AbstractFxController {
 
 
   @FXML
-  @SuppressWarnings("unchecked")
   private void initialize() {
     titleLabel.getStyleClass().add(STYLE_TITLE);
     bottomLine.getStyleClass().add(STYLE_BOTTOMLINE);

@@ -61,7 +61,6 @@ public class FxPasswordFieldDelegate extends AbstractTextFieldDelegate<FxPasswor
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public Object getViewObject() {
     if (isCharArray()) {
       return getComponent().getPassword();
@@ -100,7 +99,6 @@ public class FxPasswordFieldDelegate extends AbstractTextFieldDelegate<FxPasswor
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public void setViewValue(Object value) {
     super.setViewValue(value);
     Pos alignment = getTextAlignment();

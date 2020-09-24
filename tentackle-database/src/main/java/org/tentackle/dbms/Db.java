@@ -72,6 +72,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Savepoint;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -2740,9 +2741,7 @@ public class Db implements Session, Cloneable {
     // enlarge if necessary
     if (delegates == null) {
       delegates = new RemoteDelegate[remoteClasses.length];
-      for (int i=0; i < delegates.length; i++)  {
-        delegates[i] = null;
-      }
+      Arrays.fill(delegates, null);
     }
     if (delegateId >= delegates.length) {
       RemoteDelegate[] old = delegates;

@@ -19,13 +19,14 @@
 
 package org.tentackle.reflect;
 
+import org.tentackle.common.Constants;
+import org.tentackle.common.ServiceFactory;
+import org.tentackle.log.Logger;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
-import org.tentackle.common.Constants;
-import org.tentackle.common.ServiceFactory;
-import org.tentackle.log.Logger;
 
 
 /**
@@ -123,6 +124,10 @@ public class DefaultClassMapper extends AbstractClassMapper<String> implements C
     this.defaultClass = defaultClass;
   }
 
+  @Override
+  public Map<String, String> getMap() {
+    return Map.copyOf(nameMap);
+  }
 
   /**
    * Maps to the class.
