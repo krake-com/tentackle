@@ -588,13 +588,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
 
     applyProperties(props);
 
-    // set the default scripting language, if not already set and exactly one provided
-    if (ScriptFactory.getInstance().getDefaultLanguage() == null) {
-      Set<ScriptingLanguage> languages = ScriptFactory.getInstance().getLanguages();
-      if (languages.size() == 1) {
-        ScriptFactory.getInstance().setDefaultLanguage(languages.iterator().next());
-      }
-    }
+    initializeScripting();
 
     // log module order
     List<ModuleInfo> infos = ModuleSorter.INSTANCE.getModuleInfos();
@@ -608,6 +602,20 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
         buf.append('\n').append(info);
       }
       LOGGER.info(buf.toString());
+    }
+  }
+
+
+  /**
+   * Initializes the scripting.
+   */
+  protected void initializeScripting() {
+    // set the default scripting language, if not already set and exactly one provided
+    if (ScriptFactory.getInstance().getDefaultLanguage() == null) {
+      Set<ScriptingLanguage> languages = ScriptFactory.getInstance().getLanguages();
+      if (languages.size() == 1) {
+        ScriptFactory.getInstance().setDefaultLanguage(languages.iterator().next());
+      }
     }
   }
 

@@ -29,6 +29,6 @@ public interface ClassMappedListener {
    * @param name the mapped name
    * @param clazz the class associated with that name
    */
-  void mapped(String name, Class<?> clazz);
+  void classMapped(String name, Class<?> clazz);
 
 }

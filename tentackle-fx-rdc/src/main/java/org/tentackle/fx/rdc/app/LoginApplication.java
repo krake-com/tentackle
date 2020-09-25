@@ -39,9 +39,9 @@ import java.awt.SplashScreen;
 import java.util.Properties;
 
 /**
- * The doLogin FX application.
+ * The login FX application.
  * <p>
- * Displays the doLogin view and spawns a doLogin handler.
+ * Displays the login view and spawns a login handler.
  *
  * @author harald
  */
@@ -121,8 +121,7 @@ public class LoginApplication extends FxApplication {
    * @return the session info
    */
   public SessionInfo createSessionInfo() {
-    @SuppressWarnings("rawtypes")
-    DesktopApplication<?> application = (DesktopApplication) AbstractApplication.getRunningApplication();
+    DesktopApplication<?> application = (DesktopApplication<?>) AbstractApplication.getRunningApplication();
     String username = application.getCommandLine().getOptionValue(Constants.BACKEND_USER);
     char[] password = StringHelper.toCharArray(application.getCommandLine().getOptionValue(Constants.BACKEND_PASSWORD));
     String sessionPropsName = application.getCommandLine().getOptionValue(Constants.BACKEND_PROPS);

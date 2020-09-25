@@ -166,7 +166,7 @@ public class DefaultClassMapper extends AbstractClassMapper<String> implements C
       // found: remember mapping
       classMap.put(name, clazz);
       for (ClassMappedListener listener: listeners) {
-        listener.mapped(name, clazz);
+        listener.classMapped(name, clazz);
       }
     }
     return clazz;
