@@ -38,7 +38,7 @@ public interface EffectiveClassProvider<T> {
    * @return the effective class, null if object is null
    */
   static Class<?> getEffectiveClass(Object object) {
-    Class<?> clazz = null;
+    Class<?> clazz;
     if (object != null) {
       if (object instanceof EffectiveClassProvider) {
         clazz = ((EffectiveClassProvider) object).getEffectiveClass();
@@ -46,6 +46,9 @@ public interface EffectiveClassProvider<T> {
       else {
         clazz = object.getClass();
       }
+    }
+    else {
+      clazz = null;
     }
     return clazz;
   }

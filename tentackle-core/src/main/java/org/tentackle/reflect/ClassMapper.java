@@ -22,7 +22,7 @@ package org.tentackle.reflect;
 import java.util.Map;
 
 /**
- * Maps classes to other classes.
+ * Maps names or classes to classes.
  *
  * @author harald
  */
@@ -44,9 +44,9 @@ public interface ClassMapper {
   /**
    * Maps a class or interface to another class or interface.
    *
-   * @param clazz the class to map.
-   * @return the mapped class, never null.
-   * @throws ClassNotFoundException if there is no mapping.
+   * @param clazz the class to map
+   * @return the mapped class, never null
+   * @throws ClassNotFoundException if there is no mapping
    */
   Class<?> map(Class<?> clazz) throws ClassNotFoundException;
 
@@ -54,11 +54,11 @@ public interface ClassMapper {
   /**
    * Maps a class or interface to another class or interface by its name.
    *
-   * @param className the name or basename of the class to map.
-   * @return the mapped class, never null.
-   * @throws ClassNotFoundException if there is no mapping.
+   * @param name the name or basename of the class to map
+   * @return the mapped class, never null
+   * @throws ClassNotFoundException if there is no mapping
    */
-  Class<?> map(String className) throws ClassNotFoundException;
+  Class<?> map(String name) throws ClassNotFoundException;
 
 
   /**
@@ -68,21 +68,21 @@ public interface ClassMapper {
    * <p>
    * Notice: for classes their interfaces will be ignored.
    *
-   * @param clazz the class to map.
-   * @return the mapped class, never null.
-   * @throws ClassNotFoundException if there is no mapping.
+   * @param clazz the class to map
+   * @return the mapped class, never null
+   * @throws ClassNotFoundException if there is no mapping
    */
   Class<?> mapLenient(Class<?> clazz) throws ClassNotFoundException;
 
 
   /**
-   * Maps a class or interface to another class or interface by its name.
+   * Maps a name to a class.
    *
-   * @param className the name or basename of the class to map.
-   * @return the mapped class, never null.
-   * @throws ClassNotFoundException if there is no mapping.
+   * @param name the name to map
+   * @return the mapped class, never null
+   * @throws ClassNotFoundException if there is no mapping
    */
-  Class<?> mapLenient(String className) throws ClassNotFoundException;
+  Class<?> mapLenient(String name) throws ClassNotFoundException;
 
   /**
    * Gets the default class.
@@ -100,10 +100,30 @@ public interface ClassMapper {
   void setDefaultClass(Class<?> defaultClass);
 
   /**
-   * Gets a copy of the classname map.
+   * Gets a copy of the names map.
    *
-   * @return the unmodifiable map of classnames
+   * @return the unmodifiable map of names
    */
   Map<String, String> getMap();
+
+  /**
+   * Adds a class mapped listener.
+   *
+   * @param listener invoked whenever a class is mapped the first time
+   */
+  void addListener(ClassMappedListener listener);
+
+  /**
+   * Removes a class mapped listener.
+   *
+   * @param listener the listener
+   * @return true if removed, false if no such listener
+   */
+  boolean removeListener(ClassMappedListener listener);
+
+  /**
+   * Removes all class mapped listeners.
+   */
+  void removeAllListeners();
 
 }
