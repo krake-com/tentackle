@@ -73,6 +73,99 @@ public class ValidationUtilities {
   }
 
 
+
+
+  /**
+   * Mapping result from {@link #mapValidationPath}.
+   */
+  public static class MapResult {
+
+    private final Binder binder;
+    private final String bindingPath;
+
+    /**
+     * Creates the result.
+     *
+     * @param binder the binder
+     * @param bindingPath the binding path
+     */
+    public MapResult(Binder binder, String bindingPath) {
+      this.binder = binder;
+      this.bindingPath = bindingPath;
+    }
+
+    /**
+     * Gets the binder.
+     *
+     * @return the binder
+     */
+    public Binder getBinder() {
+      return binder;
+    }
+
+    /**
+     * Gets the binding path.
+     *
+     * @return the binding path
+     */
+    public String getBindingPath() {
+      return bindingPath;
+    }
+  }
+
+
+  /**
+   * Key to override field annotations by method annotations.
+   */
+  private static class ValidatorKey {
+
+    private final String elementName;
+    private final Class<?> validatorClass;
+    private final int validationIndex;
+
+    /**
+     * Creates a validator key.
+     *
+     * @param validator the validator
+     */
+    ValidatorKey(Validator validator) {
+      this.elementName = validator.getValidatedElementName();
+      this.validatorClass = validator.getClass();
+      this.validationIndex = validator.getValidationIndex();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (obj == null) {
+        return false;
+      }
+      if (getClass() != obj.getClass()) {
+        return false;
+      }
+      final ValidatorKey other = (ValidatorKey) obj;
+      if ((this.elementName == null) ? (other.elementName != null) : !this.elementName.equals(other.elementName)) {
+        return false;
+      }
+      if (this.validatorClass != other.validatorClass && (this.validatorClass == null || !this.validatorClass.equals(other.validatorClass))) {
+        return false;
+      }
+      return this.validationIndex == other.validationIndex;
+    }
+
+    @Override
+    public int hashCode() {
+      int hash = 7;
+      hash = 53 * hash + (this.elementName != null ? this.elementName.hashCode() : 0);
+      hash = 53 * hash + (this.validatorClass != null ? this.validatorClass.hashCode() : 0);
+      hash = 53 * hash + this.validationIndex;
+      return hash;
+    }
+
+  }
+
+
+
+
   /**
    * special classloader if used in tools (for example tentackle-test maven plugin).
    */
@@ -97,7 +190,6 @@ public class ValidationUtilities {
   public void configureTestMode(Logger.Level testLogLevel) {
     this.testLogLevel = testLogLevel;
   }
-
 
   /**
    * Gets the classloader to load the validation bundle class.
@@ -130,7 +222,6 @@ public class ValidationUtilities {
     return clazz == null ? "null" : StringHelper.firstToLower(ReflectionHelper.getClassBaseName(clazz));
   }
 
-
   /**
    * Creates a failed validation result.
    *
@@ -142,7 +233,6 @@ public class ValidationUtilities {
   public ValidationResult createFailedValidationResult(Validator validator, ValidationContext validationContext, String message) {
     return new FailedValidationResult(validator, validationContext, message);
   }
-
 
   /**
    * Validates an object.<br>
@@ -162,7 +252,6 @@ public class ValidationUtilities {
     results.addAll(validateObject(validators, scope, validationPath, object, object, clazz));
     return results;
   }
-
 
   /**
    * Validates a collection of objects.<br>
@@ -186,8 +275,6 @@ public class ValidationUtilities {
     return results;
   }
 
-
-
   /**
    * Gets all validators for all annotated fields or methods of given class.<br>
    * If an attribute is annotated both at the field and the (getter-)method level,
@@ -205,38 +292,6 @@ public class ValidationUtilities {
     return validators;
   }
 
-
-
-  /**
-   * Gets all validators for all annotated fields or methods of given class.<br>
-   * If an attribute is annotated both at the field and the (getter-)method level,
-   * the method gets precedence.
-   *
-   * @param validatorMap the validator map (unique on attribute names)
-   * @param clazz the class to inspect
-   * @param scope optional validation scope, null = all
-   */
-  protected void addFieldValidatorsToMap(Map<ValidatorKey,Validator> validatorMap, Class<?> clazz, ValidationScope scope) {
-    for (Field field: ReflectionHelper.getAllFields(clazz, null, true, null, true)) {
-      for (Validator validator: getElementValidators(field, scope)) {
-        LOGGER.fine("field validator @{0} found for {1}:{2}",
-                    validator.getClass().getName(), clazz.getName(), field.getName());
-        validatorMap.put(new ValidatorKey(validator), validator);
-      }
-    }
-
-    for (Method method: ReflectionHelper.getAllMethods(clazz, null, true, null, true)) {
-      if (!method.isBridge() && ReflectionHelper.isGetter(method)) {
-        for (Validator validator: getElementValidators(method, scope)) {
-          LOGGER.fine("method validator @{0} found for {1}:{2}",
-                      validator.getClass().getName(), clazz.getName(), method.getName());
-          validatorMap.put(new ValidatorKey(validator), validator);
-        }
-      }
-    }
-  }
-
-
   /**
    * Get validators for an annotated fields and/or method.<br>
    *
@@ -253,39 +308,6 @@ public class ValidationUtilities {
     return validators;
   }
 
-
-  /**
-   * Get validators for an annotated fields and/or method.<br>
-   *
-   * @param validatorMap the validator map (unique on attribute names)
-   * @param field the field, null if none
-   * @param method the (getter-)method, null if none
-   * @param scope optional validation scope, null = all
-   */
-  protected void addFieldValidatorsToMap(Map<ValidatorKey,Validator> validatorMap, Field field, Method method, ValidationScope scope) {
-    boolean fineLoggable = LOGGER.isFineLoggable();  // faster than lambda because only one check if fine is not loggable
-    if (field != null) {
-      for (Validator validator: getElementValidators(field, scope)) {
-        if (fineLoggable) {
-          LOGGER.fine("field validator @{0} found for {1}:{2}",
-                      validator.getClass().getName(), field.getDeclaringClass().getName(), field.getName());
-        }
-        validatorMap.put(new ValidatorKey(validator), validator);
-      }
-    }
-    if (method != null && ReflectionHelper.isGetter(method)) {
-      for (Validator validator: getElementValidators(method, scope)) {
-        if (fineLoggable) {
-          LOGGER.fine("method validator @{0} found for {1}:{2}",
-                      validator.getClass().getName(), method.getDeclaringClass().getName(), method.getName());
-        }
-        validatorMap.put(new ValidatorKey(validator), validator);
-      }
-    }
-  }
-
-
-
   /**
    * Gets all validators for annotated class.
    *
@@ -301,9 +323,6 @@ public class ValidationUtilities {
     sortValidatorsByPriority(validators);
     return validators;
   }
-
-
-
 
   /**
    * Applies validators for fields of the given parent object.<br>
@@ -397,7 +416,6 @@ public class ValidationUtilities {
     return allResults;
   }
 
-
   /**
    * Applies validators to the given object.
    *
@@ -457,8 +475,6 @@ public class ValidationUtilities {
     return allResults;
   }
 
-
-
   /**
    * Checks whether a list of validation results contains a failed validation.
    *
@@ -474,7 +490,6 @@ public class ValidationUtilities {
     return false;
   }
 
-
   /**
    * Checks whether a list of validation results contains a message.
    *
@@ -489,7 +504,6 @@ public class ValidationUtilities {
     }
     return false;
   }
-
 
   /**
    * Concatenates the validation results toString() to a single string.
@@ -510,7 +524,6 @@ public class ValidationUtilities {
     return buf.toString();
   }
 
-
   /**
    * Concatenates the validation results getMessage() to a single string.
    *
@@ -528,45 +541,6 @@ public class ValidationUtilities {
       }
     }
     return buf.toString();
-  }
-
-
-  /**
-   * Mapping result from {@link #mapValidationPath}.
-   */
-  public static class MapResult {
-
-    private final Binder binder;
-    private final String bindingPath;
-
-    /**
-     * Creates the result.
-     *
-     * @param binder the binder
-     * @param bindingPath the binding path
-     */
-    public MapResult(Binder binder, String bindingPath) {
-      this.binder = binder;
-      this.bindingPath = bindingPath;
-    }
-
-    /**
-     * Gets the binder.
-     *
-     * @return the binder
-     */
-    public Binder getBinder() {
-      return binder;
-    }
-
-    /**
-     * Gets the binding path.
-     *
-     * @return the binding path
-     */
-    public String getBindingPath() {
-      return bindingPath;
-    }
   }
 
   /**
@@ -630,7 +604,6 @@ public class ValidationUtilities {
 
     return new MapResult(currentBinder, currentPath);
   }
-
 
   /**
    * Gets a formatted and localized string.
@@ -715,7 +688,6 @@ public class ValidationUtilities {
     return null;
   }
 
-
   /**
    * Gets a formatted and localized string.
    *
@@ -732,82 +704,71 @@ public class ValidationUtilities {
       // object itself is a class
       clazz = (Class<?>) object;
     }
-    else if (object instanceof EffectiveClassProvider) {
-      clazz = ((EffectiveClassProvider) object).getEffectiveClass();
-    }
     else {
-      clazz = object.getClass();
+      clazz = EffectiveClassProvider.getEffectiveClass(object);
     }
     return format(clazz, pattern, args);
   }
 
 
   /**
-   * Validates the field validators of given classes.<br>
-   * Precompiles the scripts, if any. Since the scripts are cached,
-   * they are compiled only once.<br>
-   * Speeds up UX if run in a background thread during application startup.
+   * Gets all validators for all annotated fields or methods of given class.<br>
+   * If an attribute is annotated both at the field and the (getter-)method level,
+   * the method gets precedence.
    *
-   * @param classes the list of classes to validate
+   * @param validatorMap the validator map (unique on attribute names)
+   * @param clazz the class to inspect
+   * @param scope optional validation scope, null = all
    */
-  public void validateFieldValidators(Collection<Class<?>> classes) {
-    for (Class<?> clazz : classes) {
-      for (Validator validator : getFieldValidators(clazz, null)) {
-        validator.validate();
+  protected void addFieldValidatorsToMap(Map<ValidatorKey,Validator> validatorMap, Class<?> clazz, ValidationScope scope) {
+    for (Field field: ReflectionHelper.getAllFields(clazz, null, true, null, true)) {
+      for (Validator validator: getElementValidators(field, scope)) {
+        LOGGER.fine("field validator @{0} found for {1}:{2}",
+                    validator.getClass().getName(), clazz.getName(), field.getName());
+        validatorMap.put(new ValidatorKey(validator), validator);
+      }
+    }
+
+    for (Method method: ReflectionHelper.getAllMethods(clazz, null, true, null, true)) {
+      if (!method.isBridge() && ReflectionHelper.isGetter(method)) {
+        for (Validator validator: getElementValidators(method, scope)) {
+          LOGGER.fine("method validator @{0} found for {1}:{2}",
+                      validator.getClass().getName(), clazz.getName(), method.getName());
+          validatorMap.put(new ValidatorKey(validator), validator);
+        }
       }
     }
   }
-
 
   /**
-   * Key to override field annotations by method annotations.
+   * Get validators for an annotated fields and/or method.<br>
+   *
+   * @param validatorMap the validator map (unique on attribute names)
+   * @param field the field, null if none
+   * @param method the (getter-)method, null if none
+   * @param scope optional validation scope, null = all
    */
-  public static class ValidatorKey {
-
-    private final String elementName;
-    private final Class<?> validatorClass;
-    private final int validationIndex;
-
-    /**
-     * Creates a validator key.
-     *
-     * @param validator the validator
-     */
-    public ValidatorKey(Validator validator) {
-      this.elementName = validator.getValidatedElementName();
-      this.validatorClass = validator.getClass();
-      this.validationIndex = validator.getValidationIndex();
+  protected void addFieldValidatorsToMap(Map<ValidatorKey,Validator> validatorMap, Field field, Method method, ValidationScope scope) {
+    boolean fineLoggable = LOGGER.isFineLoggable();  // faster than lambda because only one check if fine is not loggable
+    if (field != null) {
+      for (Validator validator: getElementValidators(field, scope)) {
+        if (fineLoggable) {
+          LOGGER.fine("field validator @{0} found for {1}:{2}",
+                      validator.getClass().getName(), field.getDeclaringClass().getName(), field.getName());
+        }
+        validatorMap.put(new ValidatorKey(validator), validator);
+      }
     }
-
-    @Override
-    public boolean equals(Object obj) {
-      if (obj == null) {
-        return false;
+    if (method != null && ReflectionHelper.isGetter(method)) {
+      for (Validator validator: getElementValidators(method, scope)) {
+        if (fineLoggable) {
+          LOGGER.fine("method validator @{0} found for {1}:{2}",
+                      validator.getClass().getName(), method.getDeclaringClass().getName(), method.getName());
+        }
+        validatorMap.put(new ValidatorKey(validator), validator);
       }
-      if (getClass() != obj.getClass()) {
-        return false;
-      }
-      final ValidatorKey other = (ValidatorKey) obj;
-      if ((this.elementName == null) ? (other.elementName != null) : !this.elementName.equals(other.elementName)) {
-        return false;
-      }
-      if (this.validatorClass != other.validatorClass && (this.validatorClass == null || !this.validatorClass.equals(other.validatorClass))) {
-        return false;
-      }
-      return this.validationIndex == other.validationIndex;
     }
-
-    @Override
-    public int hashCode() {
-      int hash = 7;
-      hash = 53 * hash + (this.elementName != null ? this.elementName.hashCode() : 0);
-      hash = 53 * hash + (this.validatorClass != null ? this.validatorClass.hashCode() : 0);
-      hash = 53 * hash + this.validationIndex;
-      return hash;
-    }
-
   }
-
 
   /**
    * Sorts validators by priority
@@ -825,8 +786,6 @@ public class ValidationUtilities {
       }
     });
   }
-
-
 
   /**
    * Gets the member-name of the annotated element.
@@ -848,7 +807,6 @@ public class ValidationUtilities {
       throw new ValidationRuntimeException("cannot determine element name");
     }
   }
-
 
   /**
    * Extract validators for an annotation.
@@ -890,7 +848,6 @@ public class ValidationUtilities {
     }
   }
 
-
   /**
    * Adds a validator to a list.
    *
@@ -919,7 +876,6 @@ public class ValidationUtilities {
       throw new ValidationRuntimeException("could not create validator", ex);
     }
   }
-
 
   /**
    * Gets all validators for annotated attributes

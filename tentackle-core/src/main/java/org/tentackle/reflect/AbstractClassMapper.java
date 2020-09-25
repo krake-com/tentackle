@@ -39,7 +39,7 @@ public abstract class AbstractClassMapper<S> {
   /**
    * already resolved mappings.
    */
-  private final ConcurrentHashMap<String,S> classMap = new ConcurrentHashMap<>();
+  private final Map<String,S> classMap = new ConcurrentHashMap<>();
 
   /**
    * the mapper name.
@@ -197,7 +197,7 @@ public abstract class AbstractClassMapper<S> {
    * @throws ClassNotFoundException if no mapping found for {@code className}
    */
   public S map(String className, boolean lenient) throws ClassNotFoundException {
-    S mappedClazz = classMap.get(className);
+    S mappedClazz = classMap.get(className);    // no computeIfAbsent cause of CNF ex below
     if (mappedClazz == null) {
       mappedClazz = mapNameWithPackages(className, lenient);
       if (mappedClazz == null) {

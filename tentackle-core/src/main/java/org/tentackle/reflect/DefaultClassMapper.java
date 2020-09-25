@@ -26,6 +26,7 @@ import org.tentackle.log.Logger;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -42,8 +43,9 @@ public class DefaultClassMapper extends AbstractClassMapper<String> implements C
 
   private Class<?> defaultClass;                      // the optional default class
   private final ClassLoader classLoader;              // the classloader
-  private final Map<String,Class<?>> classMap;        // the internal map to speed-up lookup
-  private final Map<String,String> nameMap;           // the service name map
+  private final Map<String, Class<?>> classMap;       // the internal map to speed-up lookup
+  private final Map<String, String> nameMap;          // the service name map
+  private final Set<ClassMappedListener> listeners;   // mapping listeners
   private final String[] packageNames;                // the optional package names
 
 
@@ -57,10 +59,13 @@ public class DefaultClassMapper extends AbstractClassMapper<String> implements C
    */
   public DefaultClassMapper(String name, ClassLoader classLoader, Map<String,String> nameMap, String[] packageNames) {
     super(name);
+
     this.classLoader = classLoader;
     this.packageNames = packageNames;
     this.nameMap = nameMap;
+
     classMap = new ConcurrentHashMap<>();
+    listeners = ConcurrentHashMap.newKeySet();
   }
 
   /**
@@ -130,26 +135,26 @@ public class DefaultClassMapper extends AbstractClassMapper<String> implements C
   }
 
   /**
-   * Maps to the class.
+   * Maps a name to a class.
    *
-   * @param className the class name
+   * @param name the class name
    * @param lenient true if try superclasses/interfaces
    * @return the mapped class, never null
    * @throws ClassNotFoundException if no mapping or mapped classname not found
    */
-  private Class<?> mapClass(String className, boolean lenient) throws ClassNotFoundException {
-    Class<?> clazz = classMap.get(className);
+  private Class<?> mapClass(String name, boolean lenient) throws ClassNotFoundException {
+    Class<?> clazz = classMap.get(name);
     if (clazz == null) {    // no mapping so far
       String mappedName;
       try {
-        mappedName = map(className, lenient);
+        mappedName = map(name, lenient);
       }
       catch (ClassNotFoundException cx) {
         // no mapping at all
         if (defaultClass != null) {
           LOGGER.fine("{0} -> using default {0}", cx.getMessage(), defaultClass);
           // map to default and remember
-          classMap.put(className, defaultClass);
+          classMap.put(name, defaultClass);
           return defaultClass;
         }
         else {
@@ -159,7 +164,10 @@ public class DefaultClassMapper extends AbstractClassMapper<String> implements C
       // mappedName resolved:
       clazz = Class.forName(mappedName, true, classLoader);    // may throw ClassNotFoundException!
       // found: remember mapping
-      classMap.put(className, clazz);
+      classMap.put(name, clazz);
+      for (ClassMappedListener listener: listeners) {
+        listener.mapped(name, clazz);
+      }
     }
     return clazz;
   }
@@ -174,8 +182,8 @@ public class DefaultClassMapper extends AbstractClassMapper<String> implements C
   }
 
   @Override
-  public Class<?> map(String className) throws ClassNotFoundException {
-    return mapClass(className, false);
+  public Class<?> map(String name) throws ClassNotFoundException {
+    return mapClass(name, false);
   }
 
   @Override
@@ -184,8 +192,22 @@ public class DefaultClassMapper extends AbstractClassMapper<String> implements C
   }
 
   @Override
-  public Class<?> mapLenient(String className) throws ClassNotFoundException {
-    return mapClass(className, true);
+  public Class<?> mapLenient(String name) throws ClassNotFoundException {
+    return mapClass(name, true);
   }
 
+  @Override
+  public void addListener(ClassMappedListener listener) {
+    listeners.add(listener);
+  }
+
+  @Override
+  public boolean removeListener(ClassMappedListener listener) {
+    return listeners.remove(listener);
+  }
+
+  @Override
+  public void removeAllListeners() {
+    listeners.clear();
+  }
 }
