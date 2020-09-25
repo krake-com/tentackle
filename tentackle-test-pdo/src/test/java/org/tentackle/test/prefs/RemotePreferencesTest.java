@@ -154,7 +154,7 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
       keyEvents.clear();
 
       // remove node and key in other jvm
-      Thread.sleep(3000);   // give time for modtracker to fire events
+      Thread.sleep(5000);   // give time for modtracker to fire events
 
       assertEquals(nodeEvents.size(), 1);
       nodeEvent = nodeEvents.get(0);
