@@ -39,10 +39,15 @@ import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.log.Logger;
 import org.tentackle.pdo.DomainContext;
+import org.tentackle.pdo.PdoFactory;
+import org.tentackle.reflect.ClassMappedListener;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
+import org.tentackle.task.AbstractTask;
+import org.tentackle.validate.Validator;
+import org.tentackle.validate.ValidatorCache;
 
 import java.text.MessageFormat;
 import java.util.Objects;
@@ -53,7 +58,9 @@ import java.util.Objects;
  * @author harald
  * @param <C> the main controller type
  */
-public abstract class DesktopApplication<C extends FxController> extends AbstractClientApplication {
+public abstract class DesktopApplication<C extends FxController>
+       extends AbstractClientApplication
+       implements ClassMappedListener {
 
   /** minimum milliseconds a status message should be visible to the user. */
   private static final long MESSAGE_MIN_MILLIS = 100;
@@ -65,7 +72,7 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
    * @return the application
    */
   public static DesktopApplication<?> getDesktopApplication() {
-    return (DesktopApplication) getRunningApplication();
+    return (DesktopApplication<?>) getRunningApplication();
   }
 
 
@@ -449,6 +456,34 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
     // tentackle styles and PDO textfields
     FxUtilities.getInstance().addStyleSheets();
     showApplicationStatus(AppFxRdcBundle.getString("SUCCESSFULLY LOGGED IN"), 1.0);
+  }
+
+  @Override
+  protected void initializeScripting() {
+    super.initializeScripting();
+    PdoFactory.getInstance().getPersistenceMapper().addListener(this);
+  }
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Whenever a PDO class is used the first time, pre-compile all validator scripts in background, if any.
+   * This usually improves UX snappiness.
+   * <p>
+   * The default implementation adds a {@link org.tentackle.task.Task} to the {@link ModificationTracker}.
+   */
+  @Override
+  public void classMapped(String name, Class<?> clazz) {
+    ModificationTracker.getInstance().addTask(new AbstractTask() {
+      @Override
+      public void run() {
+        Class<?> pdoClass = PdoFactory.getInstance().create(name).getEffectiveClass();
+        LOGGER.fine("validating validators of {0}", pdoClass);
+        for (Validator validator: ValidatorCache.getInstance().getFieldValidators(pdoClass)) {
+          validator.validate();
+        }
+      }
+    });
   }
 
 }

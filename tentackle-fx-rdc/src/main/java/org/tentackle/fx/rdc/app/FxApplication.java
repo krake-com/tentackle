@@ -43,7 +43,7 @@ public abstract class FxApplication extends Application {
   @Override
   public void start(Stage stage) throws Exception {
     try {
-      DesktopApplication<?> application = (DesktopApplication) AbstractApplication.getRunningApplication();
+      DesktopApplication<?> application = (DesktopApplication<?>) AbstractApplication.getRunningApplication();
       application.setFxApplication(this);
       application.registerUncaughtExceptionHandler();
       startApplication(stage);
@@ -61,7 +61,7 @@ public abstract class FxApplication extends Application {
 
   @Override
   public void stop() throws Exception {
-    DesktopApplication<?> application = (DesktopApplication) AbstractApplication.getRunningApplication();
+    DesktopApplication<?> application = (DesktopApplication<?>) AbstractApplication.getRunningApplication();
     application.stop();
   }
 
