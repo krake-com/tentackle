@@ -490,10 +490,8 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
                 pdoList.set(pdoListIndex, pdo);
               }
             }
-            if (closeIfModal()) {
-              editor.setPdo(pdo);     // make getPdo() deliver the updated reference
-            }
-            else {
+            editor.setPdo(pdo);     // make getPdo() deliver the updated reference (before closing the stage (onHidden))
+            if (!closeIfModal()) {
               setPdo(pdo);
               getEditor().requestInitialFocus();
             }
