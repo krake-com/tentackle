@@ -36,7 +36,7 @@ import java.util.MissingResourceException;
  */
 public class PdoUtilitiesTest {
 
-  @Test
+  @Test(groups = "local")
   public void testSingular() {
     for (String pdoName: SessionUtilities.getInstance().getClassNames()) {
       try {

@@ -51,9 +51,9 @@ public class ObjectUtilitiesTest {
 
     assertEquals(ObjectUtilities.getInstance().convert(String.class, this), MAGIC_WORD);
     assertEquals(ObjectUtilities.getInstance().convert(Character.TYPE, MAGIC_WORD), (Character) MAGIC_WORD.charAt(0));
-    assertEquals(ObjectUtilities.getInstance().convert(Double.class, 10L), 10.0d);
-    assertEquals(ObjectUtilities.getInstance().convert(Float.class, 10), 10.0f);
-    assertEquals(ObjectUtilities.getInstance().convert(Float.TYPE, 1.5), 1.5f);
+    assertEquals(ObjectUtilities.getInstance().convert(Double.class, 10L).doubleValue(), 10.0d);
+    assertEquals(ObjectUtilities.getInstance().convert(Float.class, 10).floatValue(), 10.0f);
+    assertEquals(ObjectUtilities.getInstance().convert(Float.TYPE, 1.5).floatValue(), 1.5f);
     assertEquals(ObjectUtilities.getInstance().convert(Integer.TYPE, (byte) 5), Integer.valueOf(5));
     assertEquals(ObjectUtilities.getInstance().convert(DMoney.class, 100), new DMoney(100.0d, moneyScale));
     assertEquals(ObjectUtilities.getInstance().convert(BMoney.class, 100), new BMoney(100.0d, moneyScale));

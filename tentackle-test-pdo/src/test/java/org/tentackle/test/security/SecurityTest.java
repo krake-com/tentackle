@@ -32,7 +32,7 @@ import org.testng.annotations.Test;
  */
 public class SecurityTest {
 
-  @Test
+  @Test(groups = "local")
   public void testPermissions() {
 
     // configured permissions
@@ -68,6 +68,5 @@ public class SecurityTest {
     Assert.assertTrue(readImpl.isDeniedBy(read));
     Assert.assertFalse(executeImpl.isDeniedBy(read, write));
   }
-
 
 }

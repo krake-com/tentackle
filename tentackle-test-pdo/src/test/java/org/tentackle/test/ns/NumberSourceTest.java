@@ -42,14 +42,14 @@ public class NumberSourceTest extends AbstractPdoTest {
   private static final String POOL_NAME = "test";
   private static final String POOL_REALM = "00_01";
 
-  @Test
+  @Test(groups = "local")
   public void printMembers() {
     for (PdoMember member: PdoUtilities.getInstance().getMembers(NumberPool.class)) {
       Reporter.log(member + "<br>");
     }
   }
 
-  @Test
+  @Test(groups = "local")
   public void createAndRetrieveNumbers() {
 
     // create pool
