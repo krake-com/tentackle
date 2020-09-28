@@ -112,7 +112,7 @@ public class RemoteTransactionTest implements DomainContextProvider {
   }
 
 
-  @Test
+  @Test(groups = "remote1", dependsOnGroups = "local")
   public void testTransactions() throws Exception {
     Process process = AbstractPdoTest.runClass(TestServer.class, "duration=5000");
     Thread.sleep(3500);

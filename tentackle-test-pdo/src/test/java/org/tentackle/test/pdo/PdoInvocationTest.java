@@ -36,7 +36,7 @@ public class PdoInvocationTest {
   private static final int LOOPS = 7;
   private static final int SIZE = 1000000;
 
-  @Test
+  @Test(groups = "local")
   public void invocations1() {
 
     Security security = Pdo.create(Security.class);
@@ -66,7 +66,7 @@ public class PdoInvocationTest {
 
   }
 
-  @Test
+  @Test(groups = "local")
   public void invocations2() {
 
     Duration duration = new Duration();

@@ -37,7 +37,7 @@ public class SnapshotTest extends AbstractPdoTest {
   private static final String SNAPSHOT_REALM = "test";
   private static final String COPY_POOL = "copy";
 
-  @Test
+  @Test(groups = "local")
   public void createSnapshots() {
     // pool is a composite, fine for testing
     NumberPool numberPool = on(NumberPool.class);
@@ -91,7 +91,7 @@ public class SnapshotTest extends AbstractPdoTest {
     }
   }
 
-  @Test
+  @Test(groups = "local")
   public void createCopies() {
     NumberPool numberPool = on(NumberPool.class);
     numberPool.setName(COPY_POOL);

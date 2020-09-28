@@ -85,7 +85,7 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
     LOGGER.info("key changed: " + evt);
   }
 
-  @Test(priority = 999)   // must be the last test!
+  @Test(groups = "remote2", dependsOnGroups = "remote1")  // must be the last test!
   public void writePreferences() throws Exception {
 
     Process process = AbstractPdoTest.runClass(AddAndRemovePrefsInServer.class);

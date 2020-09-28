@@ -88,6 +88,8 @@
     <groovy.version>3.0.5</groovy.version>
     <maven.version>3.6.3</maven.version>
     <postgresql.version>42.2.16</postgresql.version>
+    <testng.version>7.3.0</testng.version>
+    <reflections.version>0.9.12</reflections.version>
     <maven.resources.plugin.version>3.1.0</maven.resources.plugin.version>
     <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
     <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
@@ -231,7 +233,7 @@
       <dependency>
         <groupId>org.testng</groupId>
         <artifactId>testng</artifactId>
-        <version>6.14.3</version>  <!-- module test-pdo fails with 7.0.0 -->
+        <version>${testng.version}</version>
         <scope>test</scope>
         <exclusions>
           <exclusion>
@@ -244,7 +246,7 @@
       <dependency>
         <groupId>org.reflections</groupId>
         <artifactId>reflections</artifactId>
-        <version>0.9.12</version>
+        <version>${reflections.version}</version>
         <scope>test</scope>
       </dependency>
 

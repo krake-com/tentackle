@@ -48,7 +48,7 @@ public class GroovyTest {
     String code = "amount * (rate / 12) / (1 - (1 + rate / 12) ** -numberOfMonths)";
     Script script = ScriptFactory.getInstance().createScript("groovy", code, false, false, null);
     monthsVar.setValue(240);
-    Double result = script.execute(variables);
+    double result = script.execute(variables);
     Assert.assertEquals(result, 913.0480050387337);
 
     long startTime = System.currentTimeMillis();

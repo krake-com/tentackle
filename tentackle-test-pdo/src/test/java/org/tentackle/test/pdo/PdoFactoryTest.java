@@ -44,7 +44,7 @@ import org.testng.annotations.Test;
  */
 public class PdoFactoryTest {
 
-  @Test
+  @Test(groups = "local")
   public void testPdoFactory() {
 
     Map<String, String> domainObjectMap = new TreeMap<>();
