@@ -56,8 +56,7 @@ public class Mixin<T, M extends Serializable> implements Serializable {
       if (o == null || getClass() != o.getClass()) return false;
       ConstructorKey that = (ConstructorKey) o;
       if (implClass != null ? !implClass.equals(that.implClass) : that.implClass != null) return false;
-      if (!Arrays.equals(parameterTypes, that.parameterTypes)) return false;
-      return true;
+      return Arrays.equals(parameterTypes, that.parameterTypes);
     }
 
     @Override

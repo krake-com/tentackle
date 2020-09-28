@@ -42,8 +42,7 @@ public class OracleColumnMetaData extends ColumnMetaData {
   public void validate() {
     super.validate();
     String deflt = getDefaultValue();
-    if (deflt != null &&
-        ("NULL".equals(deflt) || "(NULL)".equals(deflt) || "null".equals(deflt) || "(null)".equals(deflt))) {
+    if ("NULL".equals(deflt) || "(NULL)".equals(deflt) || "null".equals(deflt) || "(null)".equals(deflt)) {
       setDefaultValue(null);
     }
   }

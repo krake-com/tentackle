@@ -317,7 +317,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
   /**
    * Creates an empty modlog.
-   * Constructor only provided for {@link Class#newInstance}.
    */
   public ModificationLog() {
     super();

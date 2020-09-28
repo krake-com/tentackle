@@ -78,7 +78,7 @@ public interface PersistenceDelegateLinker {
    *
    * @return the singleton
    */
-  public static PersistenceDelegateLinker getInstance() {
+  static PersistenceDelegateLinker getInstance() {
     return PersistenceDelegateLinkerHolder.INSTANCE;
   }
 

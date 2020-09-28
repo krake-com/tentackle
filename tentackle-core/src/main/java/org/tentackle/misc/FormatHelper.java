@@ -804,9 +804,7 @@ public class FormatHelper {
 
     if (scale > 0)  {
       StringBuilder buf = new StringBuilder(fmt).append('.');
-      for (int i=0; i < scale; i++) {
-        buf.append('0');
-      }
+      buf.append("0".repeat(scale));
       fmt = buf.toString();
     }
 

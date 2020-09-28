@@ -152,7 +152,6 @@ public class DbModification extends AbstractDbObject<DbModification> {
 
   /**
    * Creates an empty modification object.
-   * Constructor only provided for {@link Class#newInstance}.
    */
   public DbModification() {
     super();

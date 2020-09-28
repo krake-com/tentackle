@@ -20,9 +20,6 @@
 
 package org.tentackle.session;
 
-import java.io.Serializable;
-
-
 /**
  * Exception thrown if client's and server's versions don't match.
  *

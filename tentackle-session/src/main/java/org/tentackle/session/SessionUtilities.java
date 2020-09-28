@@ -196,18 +196,11 @@ public class SessionUtilities {
    * Determines the classid from the @ClassId annotation.
    *
    * @param clazz the class
-   * @return the tablename, null if no such annotation
+   * @return the class ID, 0 if no such annotation (may be an abstract class)
    */
   public int determineClassId(Class<?> clazz) {
-    // determine from @TableName annotation
-    ClassId idAnno = clazz.getAnnotation(ClassId.class);
-    if (idAnno != null) {
-      int classId = idAnno.value();
-      if (classId != 0) {
-        return classId;
-      }
-    }
-    return 0;   // may be an abstract class
+    ClassId anno = clazz.getAnnotation(ClassId.class);
+    return anno == null ? 0 : anno.value();
   }
 
 

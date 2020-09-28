@@ -190,7 +190,7 @@ public class FileHelper {
   public static byte[] download(URL url) throws IOException {
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     try (BufferedInputStream in = new BufferedInputStream(url.openStream())){
-      byte dataBuffer[] = new byte[1024];
+      byte[] dataBuffer = new byte[1024];
       int bytesRead;
       while ((bytesRead = in.read(dataBuffer, 0, 1024)) != -1) {
         outputStream.write(dataBuffer, 0, bytesRead);
@@ -208,7 +208,7 @@ public class FileHelper {
    */
   public static void removeDirectory(String name) throws IOException {
     java.nio.file.Path path = Paths.get(name);
-    Files.walkFileTree(path, new SimpleFileVisitor<java.nio.file.Path>() {
+    Files.walkFileTree(path, new SimpleFileVisitor<>() {
 
       @Override
       public FileVisitResult visitFile(java.nio.file.Path file, BasicFileAttributes attrs) throws IOException {

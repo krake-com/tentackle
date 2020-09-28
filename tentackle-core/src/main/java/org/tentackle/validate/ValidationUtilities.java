@@ -117,7 +117,7 @@ public class ValidationUtilities {
   /**
    * Key to override field annotations by method annotations.
    */
-  private static class ValidatorKey {
+  public static class ValidatorKey {
 
     private final String elementName;
     private final Class<?> validatorClass;
@@ -128,7 +128,7 @@ public class ValidationUtilities {
      *
      * @param validator the validator
      */
-    ValidatorKey(Validator validator) {
+    public ValidatorKey(Validator validator) {
       this.elementName = validator.getValidatedElementName();
       this.validatorClass = validator.getClass();
       this.validationIndex = validator.getValidationIndex();

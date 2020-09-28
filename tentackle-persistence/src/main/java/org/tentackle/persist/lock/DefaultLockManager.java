@@ -35,7 +35,6 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -505,12 +504,7 @@ public class DefaultLockManager implements LockManager {
    */
   private boolean isTxMapEmpty(Map<TransactionKey, Map<PdoKey, DbTokenLock>> txMap) {
     // remove unreferenced transactions
-    for (Iterator<TransactionKey> iter = txMap.keySet().iterator(); iter.hasNext(); ) {
-      TransactionKey txKey = iter.next();
-      if (txKey.sessionRef.get() == null) {
-        iter.remove();
-      }
-    }
+    txMap.keySet().removeIf(txKey -> txKey.sessionRef.get() == null);
     return txMap.isEmpty();
   }
 

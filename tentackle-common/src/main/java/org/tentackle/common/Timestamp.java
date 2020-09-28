@@ -242,12 +242,11 @@ public class Timestamp extends java.sql.Timestamp implements Freezable {
       s.writeByte(getCalendar().get(Calendar.HOUR_OF_DAY));
       s.writeByte(getCalendar().get(Calendar.MINUTE));
       s.writeByte(getCalendar().get(Calendar.SECOND));
-      s.writeInt(getNanos());
     }
     else  {
       s.writeLong(getTime());
-      s.writeInt(getNanos());
     }
+    s.writeInt(getNanos());
     s.writeBoolean(frozen);
   }
 

@@ -80,7 +80,7 @@ public enum SqlType {
   DECIMAL(true, true, new BigDecimal(0), t -> {
     t = removeSingleQuotes(t);
     try {
-      return BigDecimal.valueOf(Double.valueOf(t));
+      return BigDecimal.valueOf(Double.parseDouble(t));
     }
     catch (RuntimeException rex) {
       return new BigDecimal(0);   // parsing failed

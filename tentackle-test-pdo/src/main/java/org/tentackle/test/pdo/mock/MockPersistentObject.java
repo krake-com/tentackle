@@ -137,7 +137,7 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
   @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
   public PdoMethodCache<T> getPdoMethodCache() {
-    return METHOD_CACHE_MAP.computeIfAbsent(getClass(), clazz -> new PdoMethodCache(clazz));
+    return METHOD_CACHE_MAP.computeIfAbsent(getClass(), PdoMethodCache::new);
   }
 
   @Override

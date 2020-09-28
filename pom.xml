@@ -84,7 +84,7 @@
     <javac.version.src>15</javac.version.src>
     <javac.version.target>${javac.version.src}</javac.version.target>
     <javafx.version>15</javafx.version>
-    <ow2.asm.version>8.0.1</ow2.asm.version>
+    <ow2.asm.version>9.0</ow2.asm.version>
     <groovy.version>3.0.5</groovy.version>
     <maven.version>3.6.3</maven.version>
     <postgresql.version>42.2.16</postgresql.version>

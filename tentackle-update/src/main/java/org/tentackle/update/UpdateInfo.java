@@ -109,7 +109,7 @@ public class UpdateInfo implements Serializable {
    * @return the size
    */
   public long getSize() {
-    return Long.valueOf(encrypted ? Cryptor.getInstance().decrypt64(size) : size);
+    return Long.parseLong(encrypted ? Cryptor.getInstance().decrypt64(size) : size);
   }
 
   /**

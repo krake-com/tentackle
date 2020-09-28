@@ -117,7 +117,7 @@ public class FxPasswordFieldDelegate extends AbstractTextFieldDelegate<FxPasswor
   }
 
   private boolean isCharArray() {
-    return getType() == null ? false : (char[].class == getType());
+    return char[].class == getType();
   }
 
 }

@@ -136,7 +136,7 @@ public class FxComboBox<T> extends ComboBox<T> implements FxTextComponent {
 
   @Override
   protected Skin<?> createDefaultSkin() {
-    return new ComboBoxListViewSkin<T>(this) {
+    return new ComboBoxListViewSkin<>(this) {
       @Override
       @SuppressWarnings("unchecked")
       public Node getPopupContent() {
