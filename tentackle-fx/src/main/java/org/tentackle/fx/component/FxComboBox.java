@@ -22,7 +22,10 @@ package org.tentackle.fx.component;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Skin;
+import javafx.scene.control.skin.ComboBoxListViewSkin;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 
@@ -30,11 +33,13 @@ import org.tentackle.fx.CaseConversion;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxTextComponent;
 import org.tentackle.fx.ModelToViewListener;
+import org.tentackle.fx.ShortLongTextCellFactory;
 import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.ViewToModelListener;
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.component.delegate.FxComboBoxDelegate;
 import org.tentackle.fx.table.FxTableCell;
+import org.tentackle.misc.ShortLongText;
 
 import java.lang.reflect.Type;
 import java.util.function.Function;
@@ -47,8 +52,8 @@ import java.util.function.Function;
  */
 public class FxComboBox<T> extends ComboBox<T> implements FxTextComponent {
 
-
   private Boolean deselectAllowed;
+  private boolean shortLongTextEnabled = true;
 
 
   /**
@@ -57,6 +62,49 @@ public class FxComboBox<T> extends ComboBox<T> implements FxTextComponent {
    */
   public FxComboBox() {
     addEventFilter(KeyEvent.KEY_PRESSED, this::filterKeyPressed);
+  }
+
+
+  /**
+   * Returns whether deselect is allowed via delete or backspace key.<br>
+   * If null, it is determined according to type and/or mandatory property.
+   * If the type is a primitive or the component is mandatory, deselect is not allowed.
+   * Otherwise it is allowed by default.
+   *
+   * @return true if allowed, null if determined from type and/or mandatory property
+   */
+  public Boolean isDeselectAllowed() {
+    return deselectAllowed;
+  }
+
+  /**
+   * Sets whether deselect is allowed via delete or backspace key.
+   *
+   * @param deselectAllowed true if allowed, null if determined from type and/or mandatory property
+   */
+  public void setDeselectAllowed(Boolean deselectAllowed) {
+    this.deselectAllowed = deselectAllowed;
+  }
+
+
+  /**
+   * Returns whether two-column list view enabled for items implementing {@link org.tentackle.misc.ShortLongText}.
+   *
+   * @return true if enabled (default)
+   */
+  public boolean isShortLongTextEnabled() {
+    return shortLongTextEnabled;
+  }
+
+  /**
+   * Sets whether the listview popup should display items implementing {@link org.tentackle.misc.ShortLongText}
+   * as two columns.<br>
+   * This feature is enabled by default.
+   *
+   * @param shortLongTextEnabled true to enable, false to disable
+   */
+  public void setShortLongTextEnabled(boolean shortLongTextEnabled) {
+    this.shortLongTextEnabled = shortLongTextEnabled;
   }
 
 
@@ -86,26 +134,21 @@ public class FxComboBox<T> extends ComboBox<T> implements FxTextComponent {
     }
   }
 
-
-  /**
-   * Returns whether deselect is allowed via delete or backspace key.<br>
-   * If null, it is determined according to type and/or mandatory property.
-   * If the type is a primitive or the component is mandatory, deselect is not allowed.
-   * Otherwise it is allowed by default.
-   *
-   * @return true if allowed, null if determined from type and/or mandatory property
-   */
-  public Boolean isDeselectAllowed() {
-    return deselectAllowed;
-  }
-
-  /**
-   * Sets whether deselect is allowed via delete or backspace key.
-   *
-   * @param deselectAllowed true if allowed, null if determined from type and/or mandatory property
-   */
-  public void setDeselectAllowed(Boolean deselectAllowed) {
-    this.deselectAllowed = deselectAllowed;
+  @Override
+  protected Skin<?> createDefaultSkin() {
+    return new ComboBoxListViewSkin<T>(this) {
+      @Override
+      @SuppressWarnings("unchecked")
+      public Node getPopupContent() {
+        if (isShortLongTextEnabled() && getCellFactory() == null && getItems() != null && !getItems().isEmpty()) {
+          T item = getItems().get(0);
+          if (item instanceof ShortLongText) {
+            setCellFactory(new ShortLongTextCellFactory());
+          }
+        }
+        return super.getPopupContent();
+      }
+    };
   }
 
 

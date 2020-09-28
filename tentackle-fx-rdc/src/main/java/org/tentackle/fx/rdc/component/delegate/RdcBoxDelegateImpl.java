@@ -34,11 +34,13 @@ import java.util.function.Supplier;
  */
 public class RdcBoxDelegateImpl {
 
-  private final FxComponent component;
-  private final Supplier<ObservableList> itemSupplier;
-  private final Supplier<PdoComponentAddon> pdoAddonSupplier;
-  private long lastModificationCount;   // 0 if no pdo, -1 if load initial serial, else last serial at time of selectAll
-  private PersistentDomainObject proxy;
+  private final FxComponent component;                          // the combo- or choicebox
+  private final Supplier<ObservableList> itemSupplier;          // component::getItems
+  private final Supplier<PdoComponentAddon> pdoAddonSupplier;   // delegate::getPdoAddon
+  private long lastModificationCount;                           // 0 if no pdo, -1 if load initial serial, else last serial at time of selectAll
+  private long lastPdoId;                                       // the ID of the last current PDO
+  private long lastPdoSerial;                                   // the last current PDO serial
+  private PersistentDomainObject proxy;                         // proxy PDO of the component's PDO type
 
 
   /**
@@ -62,6 +64,8 @@ public class RdcBoxDelegateImpl {
    */
   public void prepareSetType(Class<?> type) {
     lastModificationCount = PersistentDomainObject.class.isAssignableFrom(type) ? -1 : 0;
+    lastPdoSerial = 0;
+    lastPdoId = 0;
     proxy = null;
   }
 
@@ -85,6 +89,29 @@ public class RdcBoxDelegateImpl {
         if (modificationCount != lastModificationCount) {
           lastModificationCount = modificationCount;
           loadItems = true;
+        }
+        else {
+          PersistentDomainObject pdo = pdoAddonSupplier.get().getPdo();
+          if (pdo != null) {
+            if (pdo.getId() == lastPdoId && pdo.getSerial() != lastPdoSerial) {
+              // current PDO was modified (F2 edit, see PdoComponentAddon) -> replace in items list
+              int ndx = 0;
+              ObservableList items = itemSupplier.get();
+              for (Object item : items) {
+                if (pdo.equals(item)) {
+                  items.set(ndx, pdo);
+                  break;
+                }
+                ndx++;
+              }
+            }
+            lastPdoId = pdo.getId();
+            lastPdoSerial = pdo.getSerial();
+          }
+          else {
+            lastPdoId = 0;
+            lastPdoSerial = 0;
+          }
         }
       }
 

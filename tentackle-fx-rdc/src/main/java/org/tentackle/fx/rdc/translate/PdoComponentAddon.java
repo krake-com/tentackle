@@ -229,22 +229,27 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
     if (!inSearchOrEdit) {
       pdo = pdoSupplier.get();
       if (pdo != null) {
-        inSearchOrEdit = true;
-        try {
-          ObservableList<T> pdoList = FXCollections.observableArrayList();    // pdo list will disable new,delete and find buttons!
-          pdoList.add(pdo);
+        pdo = pdo.reload();
+        if (pdo != null) {
+          inSearchOrEdit = true;
+          try {
+            ObservableList<T> pdoList = FXCollections.observableArrayList();    // pdo list will disable new,delete and find buttons!
+            pdoList.add(pdo);
 
-          RdcUtilities.getInstance().displayCrudStage(
-              pdo, pdoList, !pdo.isImmutable(), Modality.APPLICATION_MODAL, Fx.getStage((Node) component),
-              p -> {
-                pdo = p;
-                inSearchOrEdit = false;
-              },
-              null);
-        }
-        catch (RuntimeException rx) {
-          inSearchOrEdit = false;
-          throw rx;
+            RdcUtilities.getInstance().displayCrudStage(
+                pdo, pdoList, !pdo.isImmutable(), Modality.APPLICATION_MODAL, Fx.getStage((Node) component),
+                p -> {
+                  pdo = p;
+                  inSearchOrEdit = false;
+                  component.setViewValue(pdo);
+                  component.updateModel();
+                },
+                null);
+          }
+          catch (RuntimeException rx) {
+            inSearchOrEdit = false;
+            throw rx;
+          }
         }
       }
     }
