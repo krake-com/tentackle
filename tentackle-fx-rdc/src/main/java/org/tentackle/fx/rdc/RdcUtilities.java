@@ -133,13 +133,11 @@ public class RdcUtilities {
           s.setY(location.getY());
           crud.getEditor().requestInitialFocus();
         }));
-        stage.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e -> {
-          crud.releasePdo(released -> {
-            if (!released) {
-              e.consume();    // don't close
-            }
-          });
-        });
+        stage.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e -> crud.releasePdo(released -> {
+          if (!released) {
+            e.consume();    // don't close
+          }
+        }));
         stage.addEventFilter(WindowEvent.WINDOW_HIDDEN, e -> {
           // clear all references to avoid memleaks and side effects
           crud.setPdoList(null);

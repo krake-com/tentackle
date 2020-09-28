@@ -670,13 +670,10 @@ public final class ReflectionHelper {
       while (stok.hasMoreTokens() && clazz != null) {
 
         String element = stok.nextToken();
-        if (donePath.length() == 0) {
-          donePath.append(element);
-        }
-        else  {
+        if (donePath.length() != 0) {
           donePath.append('.');
-          donePath.append(element);
         }
+        donePath.append(element);
 
         Method method = getMethodForElement(clazz, element);
         if (method != null) {

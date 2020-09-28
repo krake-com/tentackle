@@ -20,11 +20,11 @@
 
 package org.tentackle.pdo;
 
-import java.util.Collection;
 import org.tentackle.misc.TrackedList;
 import org.tentackle.session.PersistenceException;
-import org.tentackle.session.Session;
 import org.tentackle.session.SessionHolder;
+
+import java.util.Collection;
 
 /**
  * The domain context.

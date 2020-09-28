@@ -78,7 +78,7 @@ public interface DomainDelegateLinker {
    *
    * @return the singleton
    */
-  public static DomainDelegateLinker getInstance() {
+  static DomainDelegateLinker getInstance() {
     return DomainDelegateLinkerHolder.INSTANCE;
   }
 

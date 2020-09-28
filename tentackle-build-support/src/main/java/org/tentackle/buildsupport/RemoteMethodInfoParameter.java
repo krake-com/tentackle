@@ -75,10 +75,10 @@ public class RemoteMethodInfoParameter {
     this.info = info;
     name = stok.nextToken();
     type = stok.nextToken();
-    instanceOfSession = Boolean.valueOf(stok.nextToken());
-    instanceOfContext = Boolean.valueOf(stok.nextToken());
-    instanceOfDbObject = Boolean.valueOf(stok.nextToken());
-    instanceOfPdo = Boolean.valueOf(stok.nextToken());
+    instanceOfSession = Boolean.parseBoolean(stok.nextToken());
+    instanceOfContext = Boolean.parseBoolean(stok.nextToken());
+    instanceOfDbObject = Boolean.parseBoolean(stok.nextToken());
+    instanceOfPdo = Boolean.parseBoolean(stok.nextToken());
     modifiers = AnnotationProcessingHelper.readModifiers(stok);
   }
 
@@ -184,13 +184,13 @@ public class RemoteMethodInfoParameter {
     buf.append(' ');
     buf.append(type);
     buf.append(' ');
-    buf.append(Boolean.toString(instanceOfSession));
+    buf.append(instanceOfSession);
     buf.append(' ');
-    buf.append(Boolean.toString(instanceOfContext));
+    buf.append(instanceOfContext);
     buf.append(' ');
-    buf.append(Boolean.toString(instanceOfDbObject));
+    buf.append(instanceOfDbObject);
     buf.append(' ');
-    buf.append(Boolean.toString(instanceOfPdo));
+    buf.append(instanceOfPdo);
     String modStr = getModifiersAsString();
     if (modStr.length() > 0) {
       buf.append(' ');

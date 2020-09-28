@@ -483,7 +483,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    */
   public int getMajorVersion(String version) {
     int ndx = version.indexOf('.');
-    return Integer.valueOf(ndx >= 0 ? version.substring(0, ndx) : version);
+    return Integer.parseInt(ndx >= 0 ? version.substring(0, ndx) : version);
   }
 
   /**

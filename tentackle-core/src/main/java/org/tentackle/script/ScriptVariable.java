@@ -69,8 +69,7 @@ public class ScriptVariable {
    * @param name the variable's name
    */
   public ScriptVariable(String name) {
-    this.name = Objects.requireNonNull(name);
-    this.value = value;
+    this(name, null);
   }
 
   /**
@@ -124,8 +123,7 @@ public class ScriptVariable {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     ScriptVariable that = (ScriptVariable) o;
-    if (!name.equals(that.name)) return false;
-    return true;
+    return name.equals(that.name);
   }
 
   @Override

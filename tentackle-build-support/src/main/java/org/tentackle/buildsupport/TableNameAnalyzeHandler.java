@@ -84,7 +84,7 @@ public class TableNameAnalyzeHandler extends AbstractAnalyzeHandler {
                   break;
 
                 case "mapSchema":
-                  mapSchema = Boolean.valueOf(entry.getValue().toString());
+                  mapSchema = Boolean.parseBoolean(entry.getValue().toString());
                   break;
 
                 case "prefix":

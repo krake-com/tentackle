@@ -402,7 +402,7 @@ public class RmiServer {
     val = props.getProperty(PORT);
     // notice: ssl and/or compressed requires another port than the original serverport
     if (val != null) {
-      port = Integer.valueOf(val);
+      port = Integer.parseInt(val);
       checkPort(port);
     }
 

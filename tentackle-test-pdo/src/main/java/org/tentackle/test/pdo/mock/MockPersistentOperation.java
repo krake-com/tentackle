@@ -96,7 +96,7 @@ public class MockPersistentOperation<T extends Operation<T>>
   @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
   public OperationMethodCache<T> getOperationMethodCache() {
-    return METHOD_CACHE_MAP.computeIfAbsent(getClass(), clazz -> new OperationMethodCache(clazz));
+    return METHOD_CACHE_MAP.computeIfAbsent(getClass(), OperationMethodCache::new);
   }
 
   @Override

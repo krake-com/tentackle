@@ -332,9 +332,8 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
    * @param selectedItem the consumer for the selected pdo, invoked with null if no pdo found
    */
   public void searchPdo(T proxy, Consumer<T> selectedItem) {
-    RdcUtilities.getInstance().displaySearchStage(proxy, Modality.APPLICATION_MODAL, Fx.getStage((Node) component), true, list -> {
-      selectedItem.accept(list.isEmpty() ? null : list.get(0));
-    });
+    RdcUtilities.getInstance().displaySearchStage(proxy, Modality.APPLICATION_MODAL, Fx.getStage((Node) component), true,
+                                                  list -> selectedItem.accept(list.isEmpty() ? null : list.get(0)));
   }
 
   /**

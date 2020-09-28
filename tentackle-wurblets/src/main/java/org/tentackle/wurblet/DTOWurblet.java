@@ -28,7 +28,6 @@ import org.tentackle.common.StringHelper;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
 
@@ -160,12 +159,7 @@ public class DTOWurblet extends AbstractJavaWurblet {
     }
 
     public void cleanupAnnotations() {
-      for (Iterator<String> iter = annotations.iterator(); iter.hasNext(); ) {
-        String anno = iter.next();
-        if (anno.startsWith("-@") || anno.startsWith("!@")) {
-          iter.remove();
-        }
-      }
+      annotations.removeIf(anno -> anno.startsWith("-@") || anno.startsWith("!@"));
     }
   }
 

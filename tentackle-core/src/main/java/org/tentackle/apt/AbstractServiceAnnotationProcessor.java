@@ -78,7 +78,7 @@ public abstract class AbstractServiceAnnotationProcessor extends AbstractProcess
       }
     }
     Boolean accept = m.accept(typeVisitor, v);
-    return accept == null ? false : accept;
+    return accept != null && accept;
   }
 
   /**

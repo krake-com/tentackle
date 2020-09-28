@@ -56,7 +56,7 @@ public interface CustomModelValidator {
    *
    * @return the validators, never null
    */
-  public static Collection<CustomModelValidator> loadValidators() {
+  static Collection<CustomModelValidator> loadValidators() {
     try {
       Collection<CustomModelValidator> validators = new ArrayList<>();
       for (Class<CustomModelValidator> clazz : ServiceFactory.getServiceFinder().findServiceProviders(CustomModelValidator.class)) {

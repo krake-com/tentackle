@@ -181,13 +181,10 @@ public class TableSerialExpirationBacklog {
 
             IdSerialTuple lastIdSer = null;
             for (IdSerialTuple idSer: setById) {
-              if (lastIdSer == null || lastIdSer.getId() == idSer.getId()) {
-                lastIdSer = idSer;
-              }
-              else  {
+              if (lastIdSer != null && lastIdSer.getId() != idSer.getId()) {
                 expireList.add(lastIdSer);
-                lastIdSer = idSer;
               }
+              lastIdSer = idSer;
             }
             if (lastIdSer != null) {
               expireList.add(lastIdSer);

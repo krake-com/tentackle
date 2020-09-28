@@ -52,28 +52,26 @@ public class EditItem<T extends PersistentDomainObject<T>> extends MenuItem impl
     T pdo = cell.getItem();
     if (cell.getPdoTreeItem().getGuiProvider().isEditAllowed()) {
       T pDo = pdo.reload();
-      setOnAction(e -> {
-        Rdc.displayCrudStage(pDo, true, Modality.APPLICATION_MODAL, Fx.getStage(cell), updatedPdo -> {
-          if (updatedPdo != null) {
-            TreeItem<T> root = cell.getTreeItem().getParent();
-            if (root != null) {
-              ObservableList<TreeItem<T>> items = root.getChildren();
-              int i = 0;
-              for (TreeItem<T> item : items) {
-                if (updatedPdo.equals(item.getValue())) {
-                  boolean expanded = item.isExpanded();
-                  TreeItem<T> reloadedItem = GuiProviderFactory.getInstance().createGuiProvider(updatedPdo).createTreeItem();
-                  items.set(i, reloadedItem);
-                  cell.getTreeView().refresh();
-                  reloadedItem.setExpanded(expanded);
-                  break;
-                }
-                i++;
+      setOnAction(e -> Rdc.displayCrudStage(pDo, true, Modality.APPLICATION_MODAL, Fx.getStage(cell), updatedPdo -> {
+        if (updatedPdo != null) {
+          TreeItem<T> root = cell.getTreeItem().getParent();
+          if (root != null) {
+            ObservableList<TreeItem<T>> items = root.getChildren();
+            int i = 0;
+            for (TreeItem<T> item : items) {
+              if (updatedPdo.equals(item.getValue())) {
+                boolean expanded = item.isExpanded();
+                TreeItem<T> reloadedItem = GuiProviderFactory.getInstance().createGuiProvider(updatedPdo).createTreeItem();
+                items.set(i, reloadedItem);
+                cell.getTreeView().refresh();
+                reloadedItem.setExpanded(expanded);
+                break;
               }
+              i++;
             }
           }
-        });
-      });
+        }
+      }));
     }
     else {
       setDisable(true);

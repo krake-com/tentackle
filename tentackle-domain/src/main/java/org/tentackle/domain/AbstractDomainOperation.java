@@ -20,7 +20,6 @@
 package org.tentackle.domain;
 
 import org.tentackle.pdo.DomainContext;
-import org.tentackle.pdo.DomainException;
 import org.tentackle.pdo.DomainOperation;
 import org.tentackle.pdo.Operation;
 import org.tentackle.pdo.PersistenceDelegate;

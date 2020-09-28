@@ -122,8 +122,7 @@ public abstract class AbstractUpdateServiceImpl extends UnicastRemoteObject impl
       String shaHash = determineShaHash(shaURL);
       long size = determineDownloadSize(zipURL);
       String updateExecutor = createUpdateExecutor(clientInfo);
-      UpdateInfo updateInfo = new UpdateInfo(getVersion(), zipURL, shaHash, size, updateExecutor);
-      return updateInfo;
+      return new UpdateInfo(getVersion(), zipURL, shaHash, size, updateExecutor);
     }
     catch (IOException ex) {
       throw new RemoteException("cannot create update info", ex);
@@ -227,9 +226,6 @@ public abstract class AbstractUpdateServiceImpl extends UnicastRemoteObject impl
         OptionalLong contentLength = response.headers().firstValueAsLong("content-length");
         size = contentLength.orElse(-1);
         downloadSizes.put(zipURL, size);
-      }
-      catch (IOException iox) {
-        throw iox;
       }
       catch (InterruptedException | URISyntaxException ex) {
         throw new IOException("cannot determine expected download size of " + zipURL, ex);

@@ -140,9 +140,7 @@ public class PoiTableUtilities extends TableUtilities {
               String fmt = "#,##0";
               if (money.scale() > 0) {
                 StringBuilder buf = new StringBuilder(fmt).append('.');
-                for (int j = 0; j < money.scale(); j++) {
-                  buf.append('0');
-                }
+                buf.append("0".repeat(money.scale()));
                 fmt = buf.toString();
               }
               // create format

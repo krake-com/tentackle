@@ -177,6 +177,7 @@ public class WebSessionKeyCache<T> {
         // not cleared so far: we can use it
         return userInfo;
       }
+      removeSession(sessionKey);
     }
     return null;
   }

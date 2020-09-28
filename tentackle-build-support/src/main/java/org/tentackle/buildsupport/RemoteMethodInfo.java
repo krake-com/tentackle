@@ -142,18 +142,18 @@ public class RemoteMethodInfo {
               info.setReturnType(stok.nextToken());
               String gType = stok.nextToken();
               info.setGenericReturnType(gType.equals(".") ? "" : gType);
-              info.setReturningDbObject(Boolean.valueOf(stok.nextToken()));
-              info.setReturningDbObjectCollection(Boolean.valueOf(stok.nextToken()));
-              info.setReturningPdo(Boolean.valueOf(stok.nextToken()));
-              info.setReturningPdoCollection(Boolean.valueOf(stok.nextToken()));
-              info.setReturningPdoCursor(Boolean.valueOf(stok.nextToken()));
-              info.setReturningCursor(Boolean.valueOf(stok.nextToken()));
+              info.setReturningDbObject(Boolean.parseBoolean(stok.nextToken()));
+              info.setReturningDbObjectCollection(Boolean.parseBoolean(stok.nextToken()));
+              info.setReturningPdo(Boolean.parseBoolean(stok.nextToken()));
+              info.setReturningPdoCollection(Boolean.parseBoolean(stok.nextToken()));
+              info.setReturningPdoCursor(Boolean.parseBoolean(stok.nextToken()));
+              info.setReturningCursor(Boolean.parseBoolean(stok.nextToken()));
             }
             else if (type.equals("modifiers")) {
               info.setModifiers(AnnotationProcessingHelper.readModifiers(stok));
             }
             else if (type.equals("varargs")) {
-              info.setVarArgsMethod(Boolean.valueOf(stok.nextToken()));
+              info.setVarArgsMethod(Boolean.parseBoolean(stok.nextToken()));
             }
             else if (type.startsWith("arg")) {
               info.addParameter(new RemoteMethodInfoParameter(info, stok));
@@ -639,12 +639,12 @@ public class RemoteMethodInfo {
       }
       writer.println("returns: " + returnType + " " +
                      (genericReturnType == null || genericReturnType.isEmpty() ? "." : genericReturnType) +
-                     " " + Boolean.toString(returningDbObject) +
-                     " " + Boolean.toString(returningDbObjectCollection) +
-                     " " + Boolean.toString(returningPdo) +
-                     " " + Boolean.toString(returningPdoCollection) +
-                     " " + Boolean.toString(returningPdoCursor) +
-                     " " + Boolean.toString(returningCursor));
+                     " " + returningDbObject +
+                     " " + returningDbObjectCollection +
+                     " " + returningPdo +
+                     " " + returningPdoCollection +
+                     " " + returningPdoCursor +
+                     " " + returningCursor);
       writer.println("modifiers: " + getModifiersAsString());
       writer.println("varargs: " + varArgsMethod);
       if (parameterList != null) {
