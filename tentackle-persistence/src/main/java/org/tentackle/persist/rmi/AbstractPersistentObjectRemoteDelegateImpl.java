@@ -239,11 +239,12 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
 
   @Override
   @SuppressWarnings("unchecked")
-  public void saveImpl(T obj) throws RemoteException {
+  public long saveImpl(T obj) throws RemoteException {
     try {
       obj.setSession(getSession());
       P po = (P) obj.getPersistenceDelegate();
       po.save();
+      return po.getTableSerial();
     }
     catch (RuntimeException e) {
       throw createException(e);
@@ -252,12 +253,13 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
 
   @Override
   @SuppressWarnings("unchecked")
-  public void deleteImpl(T obj) throws RemoteException {
+  public long deleteImpl(T obj) throws RemoteException {
     try {
       obj.setSession(getSession());
       P po = (P) obj.getPersistenceDelegate();
       po.delete();
       po.markDeleted();
+      return po.getTableSerial();
     }
     catch (RuntimeException e) {
       throw createException(e);

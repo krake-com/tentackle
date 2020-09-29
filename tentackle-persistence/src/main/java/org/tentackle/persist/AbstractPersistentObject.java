@@ -3084,8 +3084,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       assertPersistable();
       try {
         prepareDelete();
-        getRemoteDelegate().deleteImpl(pdo);    // this will do delete() in server, i.e. all checks
-        setPersistable(false);                  // pdo cannot be used anymore
+        long tableSerial = getRemoteDelegate().deleteImpl(pdo);     // this will do delete() in server, i.e. all checks
+        setPersistable(false);                                      // pdo cannot be used anymore
+        expireCache(tableSerial);
       }
       catch (RemoteException e) {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -3119,8 +3120,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       prepareSave();
 
       try {
-        getRemoteDelegate().saveImpl(pdo);
+        long tableSerial = getRemoteDelegate().saveImpl(pdo);
         setPersistable(false);    // pdo cannot be used anymore
+        expireCache(tableSerial);
       }
       catch (RemoteException e) {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -3203,8 +3205,11 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     if (getSession().isRemote()) {
       Object data = getTransientData();
       obj = persistImpl();
-      if (obj != null && data != null) {
-        ((AbstractPersistentObject) obj.getPersistenceDelegate()).setTransientData(data);
+      if (obj != null) {
+        if (data != null) {
+          ((AbstractPersistentObject) obj.getPersistenceDelegate()).setTransientData(data);
+        }
+        expireCache(obj.getTableSerial());
       }
     }
     else {

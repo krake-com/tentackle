@@ -21,15 +21,6 @@
 package org.tentackle.pdo;
 
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.CopyOnWriteList;
 import org.tentackle.misc.IdSerialTuple;
@@ -39,6 +30,16 @@ import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.permissions.ReadPermission;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.Session;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 
 
@@ -472,42 +473,44 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
    * This is done by obtaining the IDs of all objects in the db-table with a
    * tableSerial &gt; cache.tableSerial.
    *
-   * @param session the session to use, null = delay expiration check until next select
-   * @param maxSerial is the max. tableSerial to scan for updates, 0 = clazz provides no tableSerial
+   * @param session the session to use, null if delay expiration check until next select
+   * @param maxSerial is the max. tableSerial to scan for updates, 0 to invalidate all
    */
   public synchronized void expire(Session session, long maxSerial)  {
+    if (maxSerial == 0 || maxSerial > maxTableSerial) {
 
-    if (maxSerial > maxTableSerial) {
-      // remember upper bound of all requests
-      maxTableSerial = maxSerial;
-    }
+      if (maxSerial != 0) {
+        // remember upper bound of all requests
+        maxTableSerial = maxSerial;
+      }
 
-    if (tableSerial > 0 && !isPreloading())  {
-      // table provides a tableSerial
-      if (expiredTableSerial == 0) {   // if not already triggered
-        if (session != null) {
-          // run expire check immediately
-          expireObjects(session, tableSerial, maxTableSerial);
+      if (tableSerial > 0 && !isPreloading()) {
+        // table provides a tableSerial
+        if (expiredTableSerial == 0) {   // if not already triggered
+          if (session != null) {
+            // run expire check immediately
+            expireObjects(session, tableSerial, maxTableSerial);
+          }
+          else {
+            // delay expire check
+            expiredTableSerial = tableSerial; // set lower bound requested (once!)
+          }
+          LOGGER.fine(() -> "expire requested on " + this + ", tableSerial=" + tableSerial + "/" + maxSerial +
+                            (session == null ? ", delayed" : (", Db=" + session)));
         }
-        else  {
-          // delay expire check
-          expiredTableSerial = tableSerial; // set lower bound requested (once!)
+        else {
+          LOGGER.fine(() -> "expire requested on " + this + ", tableSerial=" + tableSerial + "/" + maxSerial +
+                            (session == null ? ", delayed" : (", Db=" + session)) +
+                            " -> ignored because already requested for tableSerial=" +
+                            expiredTableSerial + "/" + maxTableSerial);
         }
-        LOGGER.fine(() -> "expire requested on " + this + ", tableSerial=" + tableSerial + "/" + maxSerial +
-                              (session == null ? ", delayed" : (", Db=" + session)));
       }
-      else  {
-        LOGGER.fine(() -> "expire requested on " + this + ", tableSerial=" + tableSerial + "/" + maxSerial +
-                    (session == null ? ", delayed" : (", Db=" + session)) +
-                    " -> ignored because already requested for tableSerial=" +
-                    expiredTableSerial + "/" + maxTableSerial);
+      else {
+        LOGGER.fine(() -> "expire requested on " + this + ", tableSerial=" + tableSerial +
+                          (session == null ? ", delayed" : (", Db=" + session)) +
+                          " -> invalidate cache because objects don't provide a tableSerial or cache is preloading");
+        invalidateImpl();
       }
-    }
-    else  {
-      LOGGER.fine(() -> "expire requested on " + this + ", tableSerial=" + tableSerial +
-                    (session == null ? ", delayed" : (", Db=" + session)) +
-                    " -> invalidate cache because objects don't provide a tableSerial or cache is preloading");
-      invalidateImpl();
     }
   }
 

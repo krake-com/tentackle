@@ -19,14 +19,15 @@
 
 package org.tentackle.persist.rmi;
 
-import java.rmi.RemoteException;
-import java.util.List;
 import org.tentackle.common.Timestamp;
 import org.tentackle.dbms.rmi.AbstractDbObjectRemoteDelegate;
-import org.tentackle.persist.AbstractPersistentObject;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.TokenLockInfo;
+import org.tentackle.persist.AbstractPersistentObject;
+
+import java.rmi.RemoteException;
+import java.util.List;
 
 
 
@@ -42,9 +43,9 @@ public interface AbstractPersistentObjectRemoteDelegate<T extends PersistentDoma
 
   T persistImpl(T obj) throws RemoteException;
 
-  void saveImpl(T obj) throws RemoteException;
+  long saveImpl(T obj) throws RemoteException;
 
-  void deleteImpl(T obj) throws RemoteException;
+  long deleteImpl(T obj) throws RemoteException;
 
   T select(DomainContext cb, long id, boolean locked) throws RemoteException;
 
