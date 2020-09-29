@@ -195,17 +195,19 @@ public abstract class DesktopApplication<C extends FxController>
               try {
                 session = createSession(sessionInfo);
                 // success!
-                session.makeCurrent();
+                session.makeCurrent();        // thread from pool: TL session will be cleared below
                 setSessionInfo(sessionInfo);
                 DomainContext context = createDomainContext(session);
                 if (context == null)  {
                   // next round
                   session.getSessionInfo().clearPassword();
                   session.close();
+                  session.clearCurrent();
                   return null;
                 }
                 setDomainContext(context);
                 updateSessionInfoAfterLogin();
+                Platform.runLater(() -> session.makeCurrent());   // make it known to the FX thread as soon as possible
               }
               catch (Exception ex) {
                 if (lfh == null) {
@@ -215,6 +217,7 @@ public abstract class DesktopApplication<C extends FxController>
                 if (runnable != null) {
                   runnable.run();
                 }
+                Session.setCurrentSession(null);
                 return null;
               }
 
@@ -223,6 +226,7 @@ public abstract class DesktopApplication<C extends FxController>
                 configure();
               }
               catch (RuntimeException ex) {
+                Session.setCurrentSession(null);
                 throw new TentackleRuntimeException("configure application failed", ex);
               }
 
@@ -263,6 +267,7 @@ public abstract class DesktopApplication<C extends FxController>
               });
             }
             catch (Throwable t) {
+              Session.setCurrentSession(null);
               // if anything else fails: log that
               LOGGER.severe("login task failed", t);
               Platform.runLater(() -> {
@@ -270,7 +275,7 @@ public abstract class DesktopApplication<C extends FxController>
                 view.getScene().getWindow().hide();
               });
             }
-
+            Session.setCurrentSession(null);
             return null;
           }
         };
