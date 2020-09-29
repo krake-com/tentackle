@@ -125,7 +125,8 @@ public class FxComboBox<T> extends ComboBox<T> implements FxTextComponent {
       }
       else {
         // deselect by DELETE- or BACKSPACE-key (with or without shift) in non-editable comboboxes
-        if (isDeselectAllowed() && !event.isAltDown() && !event.isControlDown() && !event.isMetaDown() && !event.isShortcutDown() &&
+        if (getDelegate().isDeselectAllowed() &&
+            !event.isAltDown() && !event.isControlDown() && !event.isMetaDown() && !event.isShortcutDown() &&
             (event.getCode() == KeyCode.DELETE || event.getCode() == KeyCode.BACK_SPACE)) {
           event.consume();
           getSelectionModel().clearSelection();
