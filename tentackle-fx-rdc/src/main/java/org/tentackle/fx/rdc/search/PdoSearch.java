@@ -484,23 +484,32 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
 
 
   /**
+   * Filters the viewable PDOs from the list and converts to {@link ObservableList}.
+   *
+   * @param pdos the pdos, null is treated as empty
+   * @return the PDOs with view permission
+   */
+  protected ObservableList<T> filterViewablePdos(List<T> pdos) {
+    ObservableList<T> viewablePdos = FXCollections.observableArrayList();
+    if (pdos != null) {
+      for (T pdo : pdos) {
+        if (pdo != null && pdo.isViewAllowed()) {
+          viewablePdos.add(pdo);
+        }
+      }
+    }
+    return viewablePdos;
+  }
+
+
+  /**
    * Shows the search results.
    *
-   * @param items the found PDOs
+   * @param pdos the found PDO, null or empty to clear
    */
-  public void setItems(ObservableList<T> items) {
-    if (items == null) {
-      items = FXCollections.observableArrayList();
-    }
-    SortedList<T> sortedItems;
-    if (items instanceof SortedList) {
-      sortedItems = (SortedList<T>) items;
-    }
-    else {
-      sortedItems = new SortedList<>(items);
-      sortedItems.comparatorProperty().bind(tableView.comparatorProperty());
-    }
-    this.items = sortedItems;
+  public void setItems(List<T> pdos) {
+    items = new SortedList<>(filterViewablePdos(pdos));
+    items.comparatorProperty().bind(tableView.comparatorProperty());
     countLabel.setText(Integer.toString(items.size()));
 
     if (treeShown) {
@@ -516,8 +525,8 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
       tableViewInvalid = true;
     }
     else {
-      tableView.setItems(this.items);
-      if (this.items.isEmpty()) {
+      tableView.setItems(items);
+      if (items.isEmpty()) {
         Node placeHolder = createPlaceHolder();
         if (placeHolder != null) {
           tableView.setPlaceholder(placeHolder);
@@ -535,11 +544,11 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     }
 
     itemsListener = null;   // to GC -> will remove WeakInvalidationListener eventually
-    if (!this.items.isEmpty()) {
+    if (!items.isEmpty()) {
       // show totals only if result is not empty
-      itemsListener = o -> setTotals(finder.createTotals(this.items));
-      this.items.addListener(new WeakInvalidationListener(itemsListener));
-      itemsListener.invalidated(this.items);    // show totals first time, if any totals at all
+      itemsListener = o -> setTotals(finder.createTotals(items));
+      items.addListener(new WeakInvalidationListener(itemsListener));
+      itemsListener.invalidated(items);    // show totals first time, if any totals at all
     }
     else {
       setTotals(null);
