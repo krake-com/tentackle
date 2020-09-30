@@ -70,6 +70,20 @@ public class RdcBoxDelegateImpl {
   }
 
   /**
+   * Gets the domain context from the binding properties.
+   *
+   * @return the context, null if not bound or no such property
+   */
+  public DomainContext getDomainContext() {
+    DomainContext context = null;
+    FxComponentBinding binding = component.getBinding();
+    if (binding != null) {
+      context = binding.getBinder().getBindingProperty(DomainContext.class);
+    }
+    return context;
+  }
+
+  /**
    * Prepare the component's setViewValue method.
    */
   @SuppressWarnings("unchecked")
@@ -77,8 +91,7 @@ public class RdcBoxDelegateImpl {
     if (lastModificationCount != 0) {
       boolean loadItems = false;
       if (proxy == null) {
-        FxComponentBinding binding = component.getBinding();
-        DomainContext context = binding.getBinder().getBindingProperty(DomainContext.class);
+        DomainContext context = getDomainContext();
         if (context != null) {
           proxy = Pdo.create((Class<PersistentDomainObject>) component.getType(), context);
           loadItems = true;
