@@ -23,6 +23,7 @@ import org.tentackle.fx.component.delegate.FxComboBoxDelegate;
 import org.tentackle.fx.rdc.component.RdcComboBox;
 import org.tentackle.fx.rdc.translate.PdoComponentAddon;
 import org.tentackle.fx.rdc.translate.PdoStringTranslator;
+import org.tentackle.pdo.DomainContext;
 
 /**
  * Delegate for RdcComboBox.
@@ -54,6 +55,16 @@ public class RdcComboBoxDelegate extends FxComboBoxDelegate {
     boxImpl.prepareSetViewValue();
     super.setViewValue(value);
   }
+
+  /**
+   * Gets the domain context from the binding properties.
+   *
+   * @return the context, null if not bound or no such property
+   */
+  public DomainContext getDomainContext() {
+    return boxImpl.getDomainContext();
+  }
+
 
   private PdoComponentAddon getPdoAddon() {
     ValueTranslator translator = getValueTranslator();

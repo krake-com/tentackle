@@ -42,10 +42,11 @@ import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.misc.ShortLongText;
 
 import java.lang.reflect.Type;
+import java.util.List;
 import java.util.function.Function;
 
 /**
- * Extended ComboBox.
+ * Extended {@link ComboBox}.
  *
  * @author harald
  * @param <T> the type
@@ -141,15 +142,43 @@ public class FxComboBox<T> extends ComboBox<T> implements FxTextComponent {
       @Override
       @SuppressWarnings("unchecked")
       public Node getPopupContent() {
-        if (isShortLongTextEnabled() && getCellFactory() == null && getItems() != null && !getItems().isEmpty()) {
-          T item = getItems().get(0);
-          if (item instanceof ShortLongText) {
-            setCellFactory(new ShortLongTextCellFactory());
-          }
+        if (isShortLongTextEnabled() && getCellFactory() == null && isTypeOfShortLongText()) {
+          setCellFactory(createShortLongTextCellFactory());
         }
         return super.getPopupContent();
       }
     };
+  }
+
+  /**
+   * Creates a {@link ShortLongTextCellFactory}.
+   *
+   * @return the cell factory
+   */
+  protected ShortLongTextCellFactory<T> createShortLongTextCellFactory() {
+    return new ShortLongTextCellFactory<>();
+  }
+
+  /**
+   * Returns whether the combobox' type implements {@link ShortLongText}.
+   *
+   * @return true if implements {@link ShortLongText}
+   */
+  protected boolean isTypeOfShortLongText() {
+    boolean shortLong = false;
+    List<T> items = getItems();
+    if (items != null && !items.isEmpty()) {
+      // check item
+      shortLong = items.get(0) instanceof ShortLongText;
+    }
+    else {
+      Class<?> clazz = getType();
+      if (clazz != null) {
+        // no items, use the binding type
+        shortLong = ShortLongText.class.isAssignableFrom(clazz);
+      }
+    }
+    return shortLong;
   }
 
 

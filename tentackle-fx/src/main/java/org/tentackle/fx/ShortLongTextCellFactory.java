@@ -34,7 +34,7 @@ import java.util.List;
 /**
  * Cell factory to display items implementing {@link ShortLongText}.
  */
-public class ShortLongTextCellFactory <T extends ShortLongText> implements Callback<ListView<T>, ListCell<T>> {
+public class ShortLongTextCellFactory <T> implements Callback<ListView<T>, ListCell<T>> {
 
   private static final double GRID_GAP = 20.0;  // visual gap between short and long text columns
 
@@ -79,13 +79,21 @@ public class ShortLongTextCellFactory <T extends ShortLongText> implements Callb
           }
           if (gridPane == null) {
             gridPane = new GridPane();
-            gridPane.getColumnConstraints().addAll(
-                new ColumnConstraints(shortWidth, shortWidth, shortWidth),
-                new ColumnConstraints(longWidth, longWidth, longWidth)
-            );
-            gridPane.add(shortLabel, 0, 0);
-            gridPane.add(longLabel, 1, 0);
-            gridPane.setHgap(GRID_GAP);
+            if (longWidth > 0.0) {    // if any long text displayed at all
+              gridPane.getColumnConstraints().addAll(
+                  new ColumnConstraints(shortWidth, shortWidth, shortWidth),
+                  new ColumnConstraints(longWidth, longWidth, longWidth)
+              );
+              gridPane.add(shortLabel, 0, 0);
+              gridPane.add(longLabel, 1, 0);
+              gridPane.setHgap(GRID_GAP);
+            }
+            else {
+              gridPane.getColumnConstraints().addAll(
+                  new ColumnConstraints(shortWidth, shortWidth, shortWidth)
+              );
+              gridPane.add(shortLabel, 0, 0);
+            }
           }
           else {
             if (lastShortWidth != shortWidth) {
@@ -97,8 +105,7 @@ public class ShortLongTextCellFactory <T extends ShortLongText> implements Callb
               lastLongWidth = longWidth;
             }
           }
-          shortLabel.setText(item.getShortText());
-          longLabel.setText(item.getLongText());
+          updateLabels(item, shortLabel, longLabel);
           setGraphic(gridPane);
         }
       }
@@ -112,16 +119,54 @@ public class ShortLongTextCellFactory <T extends ShortLongText> implements Callb
     };
   }
 
+
+  /**
+   * Returns whether the long text should be shown for the given item.
+   *
+   * @param item the item
+   * @return the {@link ShortLongText} to be displayed, null if only short text as toString()
+   */
+  protected ShortLongText getShortLongText(T item) {
+    return item instanceof ShortLongText ? (ShortLongText) item : null;
+  }
+
+  /**
+   * Updates the labels of a cell.
+   *
+   * @param item the item to display
+   * @param shortLabel the label for the short text
+   * @param longLabel the label for the long text
+   */
+  protected void updateLabels(T item, Label shortLabel, Label longLabel) {
+    ShortLongText slItem = getShortLongText(item);
+    if (slItem != null) {
+      shortLabel.setText(slItem.getShortText());
+      longLabel.setText(slItem.getLongText());
+    }
+    else {
+      shortLabel.setText(item.toString());
+      longLabel.setText("");
+    }
+  }
+
+
   private void computeWidths(Font font, List<T> items) {
     Text text = new Text();
     text.setFont(font);
     shortWidth = 0.0;
     longWidth = 0.0;
     for (T item : items) {
-      text.setText(item.getShortText());
-      shortWidth = Double.max(shortWidth, text.getLayoutBounds().getWidth());
-      text.setText(item.getLongText());
-      longWidth = Double.max(longWidth, text.getLayoutBounds().getWidth());
+      ShortLongText slItem = getShortLongText(item);
+      if (slItem != null) {
+        text.setText(slItem.getShortText());
+        shortWidth = Double.max(shortWidth, text.getLayoutBounds().getWidth());
+        text.setText(slItem.getLongText());
+        longWidth = Double.max(longWidth, text.getLayoutBounds().getWidth());
+      }
+      else {
+        text.setText(item.toString());
+        shortWidth = Double.max(shortWidth, text.getLayoutBounds().getWidth());
+      }
     }
   }
 

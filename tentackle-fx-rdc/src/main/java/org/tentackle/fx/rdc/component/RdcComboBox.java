@@ -18,7 +18,9 @@
 
 package org.tentackle.fx.rdc.component;
 
+import org.tentackle.fx.ShortLongTextCellFactory;
 import org.tentackle.fx.component.FxComboBox;
+import org.tentackle.fx.rdc.RdcShortLongTextCellFactory;
 import org.tentackle.fx.rdc.component.delegate.RdcComboBoxDelegate;
 
 /**
@@ -30,8 +32,18 @@ import org.tentackle.fx.rdc.component.delegate.RdcComboBoxDelegate;
 public class RdcComboBox<T> extends FxComboBox<T> {
 
   @Override
+  protected ShortLongTextCellFactory<T> createShortLongTextCellFactory() {
+    return new RdcShortLongTextCellFactory<>();
+  }
+
+  @Override
   protected RdcComboBoxDelegate createDelegate() {
     return new RdcComboBoxDelegate(this);
+  }
+
+  @Override
+  public RdcComboBoxDelegate getDelegate() {
+    return (RdcComboBoxDelegate) super.getDelegate();
   }
 
 }
