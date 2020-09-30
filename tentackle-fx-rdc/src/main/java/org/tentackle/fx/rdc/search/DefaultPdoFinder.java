@@ -21,7 +21,6 @@ package org.tentackle.fx.rdc.search;
 
 import javafx.beans.property.ObjectProperty;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -31,6 +30,8 @@ import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.component.FxTextField;
 import org.tentackle.fx.rdc.PdoFinder;
 import org.tentackle.pdo.PersistentDomainObject;
+
+import java.util.List;
 
 /**
  * The simple default finder.<br>
@@ -50,11 +51,11 @@ public class DefaultPdoFinder<T extends PersistentDomainObject<T>> extends PdoFi
 
 
   @Override
-  public ObservableList<T> runSearch() {
+  public List<T> runSearch() {
     if (pdo != null && pdo.isNormTextProvided()) {
-      return FXCollections.observableArrayList(getPdo().selectByNormText(patternField.getText()));
+      return getPdo().selectByNormText(patternField.getText());
     }
-    return FXCollections.observableArrayList(getPdo().selectAllCached());
+    return getPdo().selectAllCached();
   }
 
 

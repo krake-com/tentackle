@@ -30,6 +30,8 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.PersistentDomainObject;
 
+import java.util.List;
+
 /**
  * FxController to search for PDOs.<br>
  * Holds the view of the selection criteria and runs the query.
@@ -49,9 +51,9 @@ public abstract class PdoFinder<T extends PersistentDomainObject<T>> extends Abs
   /**
    * Runs the search.
    *
-   * @return the search result
+   * @return the search result, null is allowed and treated as empty
    */
-  public abstract ObservableList<T> runSearch();
+  public abstract List<T> runSearch();
 
   /**
    * Requests the initial focus after stage is shown.
