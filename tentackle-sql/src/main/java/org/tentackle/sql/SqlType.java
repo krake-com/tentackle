@@ -26,7 +26,7 @@ import java.sql.Types;
 import java.util.function.Function;
 
 /**
- * The sql types used by tentackle.
+ * The sql types used when talking to the database backend.
  * <p>
  * Defines a typesafe subset of {@link Types}.
  *
@@ -35,10 +35,10 @@ import java.util.function.Function;
 public enum SqlType {
 
   /** String. */
-  VARCHAR(false, false, "", SqlType::removeSingleQuotes),
+  VARCHAR("", SqlType::removeSingleQuotes),
 
   /** Date. */
-  DATE(false, false, new Date(0), t -> {
+  DATE(new Date(0), t -> {
     t = removeSingleQuotes(t);
     try {
       return Date.valueOf(t);
@@ -49,7 +49,7 @@ public enum SqlType {
   }),
 
   /** Time. */
-  TIME(false, false, new Time(0), t -> {
+  TIME(new Time(0), t -> {
     t = removeSingleQuotes(t);
     try {
       return Time.valueOf(t);
@@ -60,7 +60,7 @@ public enum SqlType {
   }),
 
   /** Timestamp. */
-  TIMESTAMP(false, false, new Timestamp(0), t -> {
+  TIMESTAMP(new Timestamp(0), t -> {
     t = removeSingleQuotes(t);
     try {
       return Timestamp.valueOf(t);
@@ -71,13 +71,13 @@ public enum SqlType {
   }),
 
   /** Arbitrary data usually stored as BLOB. */
-  BLOB(false, false, null, t -> null),  // cannot be converted
+  BLOB(null, t -> null),  // cannot be converted
 
   /** Large Strings usually stored as CLOB. */
-  CLOB(false, false, "", SqlType::removeSingleQuotes),
+  CLOB("", SqlType::removeSingleQuotes),
 
   /** BigDecimal and DMoney. */
-  DECIMAL(true, true, new BigDecimal(0), t -> {
+  DECIMAL(new BigDecimal(0), t -> {
     t = removeSingleQuotes(t);
     try {
       return BigDecimal.valueOf(Double.parseDouble(t));
@@ -88,7 +88,7 @@ public enum SqlType {
   }),
 
   /** Character and char. */
-  CHAR(false, false, ' ', t -> {
+  CHAR(' ', t -> {
     t = removeSingleQuotes(t);
     try {
       return t.isEmpty() ? ' ' : t.charAt(0);
@@ -99,7 +99,7 @@ public enum SqlType {
   }),
 
   /** Boolean and boolean. */
-  BIT(false, false, false, t -> {
+  BIT(false, t -> {
     t = removeSingleQuotes(t);
     try {
       return Boolean.valueOf(t);
@@ -110,7 +110,7 @@ public enum SqlType {
   }),
 
   /** Byte and byte. */
-  TINYINT(true, false, (byte) 0, t -> {
+  TINYINT((byte) 0, t -> {
     t = removeSingleQuotes(t);
     try {
       return Byte.valueOf(t);
@@ -121,7 +121,7 @@ public enum SqlType {
   }),
 
   /** Short and short. */
-  SMALLINT(true, false, (short) 0, t -> {
+  SMALLINT((short) 0, t -> {
     t = removeSingleQuotes(t);
     try {
       return Short.valueOf(t);
@@ -132,7 +132,7 @@ public enum SqlType {
   }),
 
   /** Integer and int. */
-  INTEGER(true, false, 0, t -> {
+  INTEGER(0, t -> {
     t = removeSingleQuotes(t);
     try {
       return Integer.valueOf(t);
@@ -143,7 +143,7 @@ public enum SqlType {
   }),
 
   /** Long and long. */
-  BIGINT(true, false, 0L, t -> {
+  BIGINT(0L, t -> {
     t = removeSingleQuotes(t);
     try {
       return Long.valueOf(t);
@@ -154,7 +154,7 @@ public enum SqlType {
   }),
 
   /** Float and float. */
-  FLOAT(true, true, 0.0f, t -> {
+  FLOAT(0.0f, t -> {
     t = removeSingleQuotes(t);
     try {
       return Float.valueOf(t);
@@ -165,7 +165,7 @@ public enum SqlType {
   }),
 
   /** Double and double. */
-  DOUBLE(true, true, 0.0d, t -> {
+  DOUBLE(0.0d, t -> {
     t = removeSingleQuotes(t);
     try {
       return Double.valueOf(t);
@@ -176,7 +176,7 @@ public enum SqlType {
   }),
 
   /** Application specific. */
-  JAVA_OBJECT(false, false, null, t -> null);    // conversion not possible (never returned from meta data)
+  JAVA_OBJECT(null, t -> null);    // conversion not possible (never returned from meta data)
 
 
   /**
@@ -193,43 +193,18 @@ public enum SqlType {
   }
 
 
-  private final boolean numeric;                    // true if numeric type
-  private final boolean fractional;                 // true if fractional numeric type
   private final Object defaultValue;                // the default value
   private final Function<String,Object> parser;     // to parse JDBC metadata
 
   /**
    * Creates an SQL type.
    *
-   * @param numeric true if numeric
-   * @param fractional true if fractional
    * @param defaultValue the default value
    * @param parser the parser to parse JDBC metadata (e.g. DEFAULTs)
    */
-  SqlType(boolean numeric, boolean fractional, Object defaultValue, Function<String,Object> parser) {
-    this.numeric = numeric;
-    this.fractional = fractional;
+  SqlType(Object defaultValue, Function<String,Object> parser) {
     this.defaultValue = defaultValue;
     this.parser = parser;
-  }
-
-
-  /**
-   * Returns whether numeric type.
-   *
-   * @return true if numeric
-   */
-  public boolean isNumeric() {
-    return numeric;
-  }
-
-  /**
-   * Returns whether numeric fractional type.
-   *
-   * @return true if fractional
-   */
-  public boolean isFractional() {
-    return fractional;
   }
 
   /**

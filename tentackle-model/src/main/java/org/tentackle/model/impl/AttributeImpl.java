@@ -337,6 +337,11 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
   }
 
   @Override
+  public String getColumnName(int columnIndex) throws ModelException {
+    return getColumnName() + getEffectiveDataType().getColumnSuffix(columnIndex).orElse("");
+  }
+
+  @Override
   public DataType<?> getDataType() {
     return dataType;
   }

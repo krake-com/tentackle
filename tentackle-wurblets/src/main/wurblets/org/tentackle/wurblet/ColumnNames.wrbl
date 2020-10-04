@@ -8,17 +8,15 @@ usage:<br>
 For more options, see {\@link ModelWurblet}.
 }@
 @[
-  private void wurbel() {
+  private void wurbel() throws WurbelException {
     for (Attribute attr: getEntity().getAttributes())  {
       if (!attr.getOptions().isNoConstant() && !attr.getOptions().isFromSuper()) {
-        String name = attr.getName().toUpperCase();
         if (!attr.getOptions().isNoDeclare() || attr.getOptions().isFromSuper())    {
-          for (int columnIndex = 0; columnIndex < attr.getDataType().getColumnCount(); columnIndex++) {
-            String postfix = attr.getDataType().getColumnSuffix(columnIndex).orElse("");
+          for (int columnIndex = 0; columnIndex < getEffectiveDataType(attr).getColumnCount(); columnIndex++) {
 ]@
 
   /** database column name for '@(attr)@'. */
-  public static final String CN_@(name)@@(postfix)@ = @(StringHelper.toDoubleQuotes(attr.getColumnName() + postfix))@;
+  public static final String @(getColumnNameConstant(attr, columnIndex))@ = @(StringHelper.toDoubleQuotes(getColumnName(attr, columnIndex)))@;
 @[
           }
         }

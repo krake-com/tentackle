@@ -308,10 +308,9 @@ For more options, see {\@link DbModelWurblet}.
 @[
           for (Attribute attr: getEntity().getMappedAttributes())  {
             if (!attr.getOptions().isMute())  {
-              for (int columnIndex = 0; columnIndex < attr.getDataType().getColumnCount(); columnIndex++) {
-                String name = attr.getName().toUpperCase() + attr.getDataType().getColumnSuffix(columnIndex).orElse("");
+              for (int columnIndex = 0; columnIndex < getEffectiveDataType(attr).getColumnCount(); columnIndex++) {
 ]@
-      rs.configureColumn(CN_@(name)@);
+      rs.configureColumn(@(getColumnNameConstant(attr, columnIndex))@);
 @[
               }
             }
@@ -456,7 +455,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
 
               // for multi column types, such as BMoney or application specific types
-              int diff = attr.getDataType().getColumnCount() - 1;
+              int diff = getEffectiveDataType(attr).getColumnCount() - 1;
               if (diff == 1) {
 ]@
     ndx++;
@@ -486,14 +485,13 @@ For more options, see {\@link DbModelWurblet}.
 
         List<Attribute> attributes = multiInheritance ?
                                         getEntity().getTableAttributes() : getEntity().getAttributesIncludingInherited();
-        List<String> names = new ArrayList<>();
+        List<String> names = new ArrayList<>();   // column name constants CN_...
 
         if (!readOnly) {
           for (Attribute attr: attributes)  {
             if (!attr.getOptions().isMute() && !attr.getOptions().isReadOnly()) {
-              for (int columnIndex = 0; columnIndex < attr.getDataType().getColumnCount(); columnIndex++) {
-                String name = attr.getName().toUpperCase() + attr.getDataType().getColumnSuffix(columnIndex).orElse("");
-                names.add(name);
+              for (int columnIndex = 0; columnIndex < getEffectiveDataType(attr).getColumnCount(); columnIndex++) {
+                names.add(getColumnNameConstant(attr, columnIndex));
               }
             }
           }
@@ -524,7 +522,7 @@ For more options, see {\@link DbModelWurblet}.
           for (String name: names) {
             String lineSep = count == names.size() - 1 ? " +" : " + Backend.SQL_COMMA +";
 ]@
-           CN_@(name)@@(lineSep)@
+           @(name)@@(lineSep)@
 @[
             count++;
           }
@@ -544,9 +542,8 @@ For more options, see {\@link DbModelWurblet}.
           names.clear();
           for (Attribute attr: attributes)  {
             if (!attr.getOptions().isMute() && !attr.getOptions().isReadOnly() && !isIdOrSerialAttribute(attr)) {
-              for (int columnIndex = 0; columnIndex < attr.getDataType().getColumnCount(); columnIndex++) {
-                String name = attr.getName().toUpperCase() + attr.getDataType().getColumnSuffix(columnIndex).orElse("");
-                names.add(name);
+              for (int columnIndex = 0; columnIndex < getEffectiveDataType(attr).getColumnCount(); columnIndex++) {
+                names.add(getColumnNameConstant(attr, columnIndex));
               }
             }
           }
@@ -578,12 +575,12 @@ For more options, see {\@link DbModelWurblet}.
             ncnt++;
             if (!checkSerial && ncnt == names.size()) {
 ]@
-           CN_@(name)@ + Backend.SQL_EQUAL_PAR +
+           @(name)@ + Backend.SQL_EQUAL_PAR +
 @[
             }
             else {
 ]@
-           CN_@(name)@ + Backend.SQL_EQUAL_PAR_COMMA +
+           @(name)@ + Backend.SQL_EQUAL_PAR_COMMA +
 @[
             }
           }

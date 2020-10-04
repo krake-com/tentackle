@@ -192,7 +192,7 @@ public class CodeFactory {
       DataType<?> dataType = attribute.getEffectiveDataType();
       for (int columnIndex = 0; columnIndex < dataType.getColumnCount(); columnIndex++) {
         buf.append("    ");
-        String columnName = attribute.getColumnName() + dataType.getColumnSuffix(columnIndex).orElse("");
+        String columnName = attribute.getColumnName(columnIndex);
         int size = attribute.getSizeWithDefault();
         int scale = attribute.getScaleWithDefault();
         Object defaultValue = attribute.getOptions().getDefaultValue();

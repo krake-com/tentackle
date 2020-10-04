@@ -24,7 +24,9 @@ import java.sql.SQLException;
 import java.util.Optional;
 
 /**
- * The data type.
+ * The data type.<br>
+ * Describes a type from the model perspective and maps it to one or more {@link SqlType}s, each corresponding to
+ * a database column.
  * <p>
  * Implementations must be annotated with <code>@Service(DataType.class)</code>.
  * DataTypes are singletons and loaded by the {@link DataTypeFactory}. Hence, they must
@@ -32,20 +34,21 @@ import java.util.Optional;
  * <p>
  * A predefined set of commonly used Java- and Tentackle-types is already provided, but the application may define
  * their own types (that's why <code>DataType</code> is not an enum).<br>
- * The combination of <code>javaName</code> and <code>variant</code> is unique and
- * <code>javaName</code> is the plain classname without the package.
+ * The combination of <code>javaName</code> and <code>variant</code> is unique.
+ * The <code>javaName</code> is the plain classname without the package, since we don't want the model
+ * to refer to classes with the same name, but in different packages (usually a bad idea anyway).
  * <p>
  * The use of <code>DataType</code>s is threefold:
  * <ol>
  *   <li>for the model's attributes that refer to known types</li>
  *   <li>for the wurblets to generate type-specific code</li>
- *   <li>for application-specific types at runtime by the peristence layer</li>
+ *   <li>for application-specific types used at runtime by the peristence layer</li>
  * </ol>
  * Notes for implementors of application-specific data types:<br>
  * The method {@link #isPredefined()} must return false. Otherwise the wurblets assume that type-specific methods exist
  * and generate uncompilable code.<br>
  * Furthermore, as <code>DataType</code>s refer to the corresponding Java type,
- * they should reside in a separate module, the java type's module does not depend on. Otherwise
+ * they should reside in a separate module the java type's module does not depend on. Otherwise
  * all application modules would refer to the tentackle-sql module, which is not desired for the PDO module(s).
  * In order for the wurblets and the model-API to load an application-specific type, the <code>DataType</code>'s module must be
  * configured as a wurblet dependency (see the wurbelizer docs).
