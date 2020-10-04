@@ -14,7 +14,7 @@
         andPrepended = true;
 ]@
         sql.append(Backend.SQL_AND);
-        sql.append(CN_@(getContextAttribute().getName().toUpperCase())@);
+        sql.append(@(getColumnNameConstant(getContextAttribute(), 0))@);
         sql.append(Backend.SQL_EQUAL_PAR);
 @[
     }
@@ -117,12 +117,12 @@
                   String leftAttribute;
                   String rightAttribute;
                   if (rel.getRelationType() == RelationType.OBJECT) {
-                    leftAttribute = "CN_" + rel.getAttribute().getName().toUpperCase();
+                    leftAttribute = getColumnNameConstant(rel.getAttribute(), 0);
                     rightAttribute = "CN_ID";
                   }
                   else {
                     leftAttribute = "CN_ID";
-                    rightAttribute = "CN_" + rel.getForeignAttribute().getName().toUpperCase();
+                    rightAttribute = getColumnNameConstant(rel.getForeignAttribute(), 0);
                   }
                   String leftClass = rel.getEntity().equals(getEntity()) ? "" :
                                                 (deriveClassNameForEntity(rel.getEntity()) + ".");
@@ -139,23 +139,20 @@
                   for (MethodArgument methodArg: methodArgs.subList(1, methodArgs.size())) {
                     Attribute mattr = methodArg.getForeignAttribute();
                     buf.append("           .append(").append(rightClass).append("CLASSVARIABLES.getColumnName(")
-                       .append(rightClass).append("CN_").append(mattr.getName().toUpperCase()).append("))\n");
+                       .append(rightClass).append(getColumnNameConstant(mattr, 0)).append("))\n");
                     if (methodArg.isValue()) {
                       buf.append("           .append(Backend.SQL_EQUAL_PAR)\n");
-                      for (int columnIndex = 0; columnIndex < attr.getDataType().getColumnCount(); columnIndex++) {
-                        String name = attr.getName().toUpperCase() + attr.getDataType().getColumnSuffix(columnIndex).orElse("");
-                        if (columnIndex > 0) {
-                          buf.append("           .append(Backend.SQL_AND)\n")
-                             .append("           .append(").append(rightClass).append("CLASSVARIABLES.getColumnName(")
-                             .append(rightClass).append("CN_").append(name).append("))\n")
-                             .append("           .append(Backend.SQL_EQUAL_PAR)\n");
-                        }
+                      for (int columnIndex = 1; columnIndex < getEffectiveDataType(attr).getColumnCount(); columnIndex++) {
+                        buf.append("           .append(Backend.SQL_AND)\n")
+                           .append("           .append(").append(rightClass).append("CLASSVARIABLES.getColumnName(")
+                           .append(rightClass).append(getColumnNameConstant(attr, columnIndex)).append("))\n")
+                           .append("           .append(Backend.SQL_EQUAL_PAR)\n");
                       }
                     }
                     else {
                       buf.append("           .append(Backend.SQL_EQUAL).append(")
                          .append(leftClassVariables).append("getColumnName(").append(leftClassVariables)
-                         .append("CN_").append(methodArg.getAttribute().getName().toUpperCase()).append("))\n");
+                         .append(getColumnNameConstant(methodArg.getAttribute(), 0)).append("))\n");
                     }
                     buf.append("           .append(Backend.SQL_AND)\n");
                   }
@@ -165,14 +162,13 @@
               }
 
               String compKeyClass = deriveClassNameForEntity(attr.getEntity());
-              for (int columnIndex = 0; columnIndex < attr.getDataType().getColumnCount(); columnIndex++) {
-                String name = attr.getName().toUpperCase() + attr.getDataType().getColumnSuffix(columnIndex).orElse("");
+              for (int columnIndex = 0; columnIndex < getEffectiveDataType(attr).getColumnCount(); columnIndex++) {
                 if (columnIndex > 0) {
                   buf.append("        sql.append(Backend.SQL_AND);\n");
                 }
                 buf.append("        sql.append(").append(compKeyClass).
                     append(".CLASSVARIABLES.getColumnName(").
-                    append(compKeyClass).append(".CN_").append(name).append("))\n");
+                    append(compKeyClass).append('.').append(getColumnNameConstant(attr, columnIndex)).append("))\n");
                 if (columnIndex == 0) {
                   buf.append("           .append(").append(arg.getRelop()).append(");\n");
                 }
@@ -182,8 +178,7 @@
               }
             }
             else {
-              for (int columnIndex = 0; columnIndex < attr.getDataType().getColumnCount(); columnIndex++) {
-                String name = attr.getName().toUpperCase() + attr.getDataType().getColumnSuffix(columnIndex).orElse("");
+              for (int columnIndex = 0; columnIndex < getEffectiveDataType(attr).getColumnCount(); columnIndex++) {
                 if (columnIndex > 0) {
                   buf.append("        sql.append(Backend.SQL_AND);\n");
                 }
@@ -191,20 +186,20 @@
                   if (getEntity().getHierarchyInheritanceType() == InheritanceType.MULTI) {
                      buf.append("        sql.append(");
                      buf.append(deriveClassNameForEntity(attr.getEntity()));
-                     buf.append(".CLASSVARIABLES.getColumnName(CN_");
-                     buf.append(name).append("));\n");
+                     buf.append(".CLASSVARIABLES.getColumnName(");
+                     buf.append(getColumnNameConstant(attr, columnIndex)).append("));\n");
                   }
                   else  {
                     if (isPdo()) {
-                      buf.append("        sql.append(getColumnName(CN_").append(name).append("));\n");
+                      buf.append("        sql.append(getColumnName(").append(getColumnNameConstant(attr, columnIndex)).append("));\n");
                     }
                     else  {
-                      buf.append("        sql.append(CN_").append(name).append(");\n");
+                      buf.append("        sql.append(").append(getColumnNameConstant(attr, columnIndex)).append(");\n");
                     }
                   }
                 }
                 else  {
-                  buf.append("        sql.append(CN_").append(name).append(");\n");
+                  buf.append("        sql.append(").append(getColumnNameConstant(attr, columnIndex)).append(");\n");
                 }
                 if (columnIndex == 0) {
                   buf.append("        sql.append(").append(arg.getRelop()).append(");\n");

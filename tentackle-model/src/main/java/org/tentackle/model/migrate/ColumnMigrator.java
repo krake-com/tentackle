@@ -132,7 +132,7 @@ public class ColumnMigrator {
       for (int round=0; round < 2; round++) {
         for (int columnIndex = 0; columnIndex < dataType.getColumnCount(); columnIndex++) {
           if (!migrated[columnIndex]) {
-            columnName = attribute.getColumnName() + dataType.getColumnSuffix(columnIndex).orElse("");
+            columnName = attribute.getColumnName(columnIndex);
             sqlType = dataType.getSqlType(columnIndex);
             columnSize = attribute.getSizeWithDefault();
             columnScale = attribute.getScaleWithDefault();

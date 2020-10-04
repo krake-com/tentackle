@@ -405,11 +405,11 @@ public class DbModelWurblet extends ModelWurblet {
       boolean needComma = false;
       for (WurbletArgument key: sortKeys) {
         Attribute attr = key.getAttribute();
-        for (int columnIndex = 0; columnIndex < attr.getDataType().getColumnCount(); columnIndex++) {
+        for (int columnIndex = 0; columnIndex < getEffectiveDataType(attr).getColumnCount(); columnIndex++) {
           if (needComma) {
             buf.append("\n           .append(Backend.SQL_COMMA)");
           }
-          String name = "CN_" + attr.getName().toUpperCase() + attr.getDataType().getColumnSuffix(columnIndex).orElse("");
+          String name = getColumnNameConstant(attr, columnIndex);
           buf.append(".append(");
           if (getEntity().getHierarchyInheritanceType() == InheritanceType.MULTI) {
             buf.append(deriveClassNameForEntity(getEntity().getTopSuperEntity()))
@@ -566,7 +566,7 @@ public class DbModelWurblet extends ModelWurblet {
   }
 
 
-  private String createOptionalWhereForJoin(Relation relation, String parentName, String joinName) {
+  private String createOptionalWhereForJoin(Relation relation, String parentName, String joinName) throws WurbelException {
     StringBuilder buf = new StringBuilder();
     List<MethodArgument> methodArgs = relation.getMethodArgs();
     if (methodArgs.size() > 1) {
@@ -577,18 +577,15 @@ public class DbModelWurblet extends ModelWurblet {
            .append('=');
         if (methodArg.isValue()) {
           buf.append('?');
-          for (int columnIndex = 0; columnIndex < attr.getDataType().getColumnCount(); columnIndex++) {
-            String name = attr.getName().toUpperCase() + attr.getDataType().getColumnSuffix(columnIndex).orElse("");
-            if (columnIndex > 0) {   // more than one column
-              buf.append(" AND ").append(joinName).append('.').append(name).append("=?");
-            }
+          for (int columnIndex = 1; columnIndex < getEffectiveDataType(attr).getColumnCount(); columnIndex++) {   // for more than one column
+            buf.append(" AND ").append(joinName).append('.').append(getColumnName(attr, columnIndex)).append("=?");
           }
           buf.append('"');
         }
-        else {
+        else {    // join by ID
           attr = methodArg.getAttribute();
           if (parentName == null) {
-            buf.append("\" + getColumnName(CN_").append(attr.getName().toUpperCase()).append(")");
+            buf.append("\" + getColumnName(").append(getColumnNameConstant(attr, 0)).append(")");
           }
           else {
             buf.append('"').append(parentName).append('.').append(attr.getColumnName()).append("\"");
@@ -638,7 +635,7 @@ public class DbModelWurblet extends ModelWurblet {
               buf.append(");\n");
             }
             // for multi column types, such as BMoney or application specific types
-            int diff = attr.getDataType().getColumnCount() - 1;
+            int diff = getEffectiveDataType(attr).getColumnCount() - 1;
             if (diff == 1) {
               buf.append("    ndx++;\n");
             }

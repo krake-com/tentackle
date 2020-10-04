@@ -38,17 +38,35 @@ public interface Attribute extends ModelElement {
 
 
   /**
-   * Gets the database column name.
+   * Gets the column name.<br>
+   * This is the model's column name.<br>
+   * According to the {@link DataType}, an attribute may be mapped to
+   * more than one database column.
    *
    * @return the column name (always in lowercase)
+   * @see #getColumnName(int)
+   * @see #getDataType()
    */
   String getColumnName();
 
 
   /**
-   * Gets the data type.
+   * Gets the database column name.<br>
+   * For datatype with only one column, this is usually the same as the model's column name.
    *
-   * @return the java data type
+   * @param columnIndex the column index according to the {@link DataType}.
+   * @return the column name used by the database
+   * @see #getColumnName()
+   * @see #getDataType()
+   * @throws ModelException if the effective datatype could not be determined
+   */
+  String getColumnName(int columnIndex) throws ModelException;
+
+
+  /**
+   * Gets the model's data type.
+   *
+   * @return the data type
    */
   DataType<?> getDataType();
 

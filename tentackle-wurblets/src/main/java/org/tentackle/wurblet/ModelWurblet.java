@@ -39,6 +39,7 @@ import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendFactory;
+import org.tentackle.sql.DataType;
 
 import java.io.File;
 import java.io.IOException;
@@ -531,6 +532,53 @@ public class ModelWurblet extends AbstractJavaWurblet {
       text.append(attr.getJavaType()).append(' ').append(attr.getName());
     }
     return text.toString();
+  }
+
+
+  /**
+   * Gets the effective datatype.<br>
+   * The effective type may be different if type is a Convertible.
+   *
+   * @param attribute the attribute
+   * @return the data type
+   */
+  public DataType<?> getEffectiveDataType(Attribute attribute) throws WurbelException {
+    try {
+      return attribute.getEffectiveDataType();
+    }
+    catch (ModelException e) {
+      throw new WurbelException("cannot determine effective datatype for " + attribute, e);
+    }
+  }
+
+
+  /**
+   * Gets the columname.
+   *
+   * @param attribute the attribute
+   * @param columnIndex the column index
+   * @return the columnname
+   * @throws WurbelException if failed
+   */
+  public String getColumnName(Attribute attribute, int columnIndex) throws WurbelException {
+    try {
+      return attribute.getColumnName(columnIndex);
+    }
+    catch (ModelException e) {
+      throw new WurbelException("cannot determine columnname for " + attribute + ", index " + columnIndex, e);
+    }
+  }
+
+
+  /**
+   * Gets the name of the string constant for a database column name.
+   *
+   * @param attribute the attribute
+   * @param columnIndex the column index within the attribute
+   * @return the constant CN_...
+   */
+  public String getColumnNameConstant(Attribute attribute, int columnIndex) throws WurbelException {
+    return "CN_" + (attribute.getName() + getEffectiveDataType(attribute).getColumnSuffix(columnIndex).orElse("")).toUpperCase();
   }
 
 
