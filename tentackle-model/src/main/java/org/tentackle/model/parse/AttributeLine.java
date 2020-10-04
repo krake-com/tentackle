@@ -18,10 +18,11 @@
 
 package org.tentackle.model.parse;
 
+import org.tentackle.model.ModelException;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
-import org.tentackle.model.ModelException;
 
 /**
  * The attribute definition line.
@@ -29,7 +30,7 @@ import org.tentackle.model.ModelException;
  *
  * An attribute line is defined as follows:
  * <pre>
- * javaType[(size[,scale])] javaName columnName [comment] [\[options\]]
+ * javaType[&lt;innerType&gt;][(size[,scale])] javaName columnName [comment] [\[options\]]
  * </pre>
  *
  * Where:
@@ -40,8 +41,9 @@ import org.tentackle.model.ModelException;
  *     <li>classes: Boolean, Byte, Character, Short, Integer, Long, Float, Double, BigDecimal, BMoney, DMoney, Binary, Date, Time, Timestamp, String</li>
  *   </ul>
  * </li>
- * <li>size: the number of columns or width or digits w/o scale if numeric</li>
- * <li>scale: the scale (numeric only)</li>
+ * <li>innerType: optional inner/generic type</li>
+ * <li>size: optional number of columns or width or non-fractional digits if numeric</li>
+ * <li>scale: optional scale (numeric types only)</li>
  * <li>javaName: the name used in Java sources (must start lowercase)</li>
  * <li>columnName: the database column name</li>
  * <li>comment: the optional comment</li>
@@ -70,7 +72,7 @@ public class AttributeLine extends SingleLine {
   private String javaType;
 
   /** additional generic/application specific type. */
-  private String innerName;
+  private String innerType;
 
   /** limited size (e.g. for varchars). */
   private Integer size;
@@ -165,9 +167,9 @@ public class AttributeLine extends SingleLine {
 
 
   /**
-   * Gets the java type.
+   * Gets the java type name.
    *
-   * @return the javaType, never null
+   * @return the java name, never null
    * @throws ModelException if not parsed
    */
   public String getJavaType() throws ModelException {
@@ -176,14 +178,14 @@ public class AttributeLine extends SingleLine {
   }
 
   /**
-   * Gets the generic type.
+   * Gets the inner type name.
    *
-   * @return the genericType, never null
+   * @return the inner type, null if regular type
    * @throws ModelException if not parsed
    */
-  public String getInnerName() throws ModelException {
+  public String getInnerType() throws ModelException {
     assertParsed();
-    return innerName;
+    return innerType;
   }
 
   /**
@@ -273,7 +275,7 @@ public class AttributeLine extends SingleLine {
 
 
   /**
-   * Extracts the java type and generic type.
+   * Extracts the java type, optional inner type and optional size/scale.
    *
    * @param token the token
    * @throws ModelException if parsing failed
@@ -286,7 +288,7 @@ public class AttributeLine extends SingleLine {
         int genEnd = token.lastIndexOf('>');    // may be nested types e.g. for Binary
         if (genEnd > genBegin) {
           javaType = token.substring(0, genBegin);
-          innerName = token.substring(genBegin + 1, genEnd);
+          innerType = token.substring(genBegin + 1, genEnd);
           int sizeBegin = token.indexOf('(');
           if (sizeBegin > 0) {
             // size and/or scale for inner type

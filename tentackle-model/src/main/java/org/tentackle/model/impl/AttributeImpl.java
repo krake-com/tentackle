@@ -24,7 +24,6 @@ import org.tentackle.common.StringHelper;
 import org.tentackle.model.AccessScope;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.CodeFactory;
-import org.tentackle.model.DataType;
 import org.tentackle.model.Entity;
 import org.tentackle.model.ModelElement;
 import org.tentackle.model.ModelException;
@@ -33,6 +32,8 @@ import org.tentackle.model.Relation;
 import org.tentackle.model.SourceInfo;
 import org.tentackle.model.parse.AttributeLine;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.DataType;
+import org.tentackle.sql.DataTypeFactory;
 import org.tentackle.sql.SqlNameType;
 
 import java.util.Objects;
@@ -54,12 +55,13 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
   private int ordinal;
   private String javaName;
   private String columnName;
-  private DataType dataType;
-  private String applicationType;   // the application specific type
-  private String innerName;
+  private DataType<?> dataType;
+  private String applicationTypeName;
+  private String innerTypeName;
+  private DataType<?> innerType;
   private Integer size;
   private Integer scale;
-  private Boolean nullable;   // overrides nullable
+  private Boolean nullable;
   private Relation relation;
 
 
@@ -164,20 +166,35 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
     setName(line.getJavaName());
     setScale(line.getScale());
     setSize(line.getSize());
-    DataType type = DataType.createFromJavaType(line.getJavaType());
-    // special handling for LARGESTRING: String with explicit size of 0
-    if (Integer.valueOf(0).equals(line.getSize())) {
-      type = DataType.LARGESTRING;
+
+    DataType<?> dataType = DataTypeFactory.getInstance().get(line.getJavaType());
+    if (dataType == null) {
+      // may be the special Convertible type (see org.tentackle.misc.Convertible)
+      if (line.getInnerType() != null) {
+        setDataType(DataTypeFactory.getInstance().getConvertibleType());
+        setInnerTypeName(line.getInnerType());
+        setApplicationTypeName(line.getJavaType());
+      }
+      else {
+        throw line.createModelException("unknown type " + line.getJavaType());
+      }
     }
-    setDataType(type);
-    if (getDataType() == null) {
-      setDataType(DataType.APPLICATION);
+    else {
+      setDataType(dataType);
+      if (line.getInnerType() != null) {
+        setInnerTypeName(line.getInnerType());
+      }
     }
-    setInnerName(line.getInnerName());
-    if (getDataType() == DataType.APPLICATION) {
+
+    if ("String".equals(line.getJavaType()) && Integer.valueOf(0).equals(line.getSize())) {
+      // special handling for LARGESTRING: String with explicit size of 0
+      setDataType(DataTypeFactory.getInstance().get(line.getJavaType(), DataTypeFactory.LARGE_VARIANT));
+    }
+
+    if (getDataType() == DataTypeFactory.getInstance().getConvertibleType()) {
       // verify the valid inner type
-      setApplicationType(line.getJavaType());
-      getInnerType();
+      setApplicationTypeName(line.getJavaType());
+      getInnerTypeName();
     }
 
     getOptions().applyEntityOptions(entity.getOptions(), getDataType());
@@ -218,119 +235,82 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
 
 
   /**
-   * Sets the application specific type.<br>
-   * Only allowed {@link DataType#APPLICATION}.
+   * Sets the application specific type if Convertible.
    *
-   * @param applicationType the application specific type
-   * @throws ModelException if this is not {@link DataType#APPLICATION}
+   * @param applicationTypeName the name of the application specific type
    */
-  public void setApplicationType(String applicationType) throws ModelException {
-    if (applicationType != null && dataType != DataType.APPLICATION) {
-      throw createModelException("setting the application specific type is not allowed for " + this);
-    }
-    this.applicationType = applicationType;
+  public void setApplicationTypeName(String applicationTypeName) {
+    this.applicationTypeName = applicationTypeName;
   }
 
-  /**
-   * Gets the application specific type.
-   *
-   * @return the application specific type, never null or empty
-   * @throws ModelException if application specific type not set or this is not {@link DataType#APPLICATION}
-   */
   @Override
-  public String getApplicationType() throws ModelException {
-    if (dataType == DataType.APPLICATION) {
-      if (applicationType == null || applicationType.trim().length() == 0) {
+  public String getApplicationTypeName() throws ModelException {
+    if (dataType == DataTypeFactory.getInstance().getConvertibleType()) {
+      if (StringHelper.isAllWhitespace(applicationTypeName)) {
         throw createModelException("application specific type not set");
       }
     }
     else  {
-      throw createModelException("application specific type not supported for " + this);
+      throw createModelException("application specific type not supported for " + dataType);
     }
-    return applicationType;
+    return applicationTypeName;
   }
 
 
   /**
-   * Sets the inner type.
+   * Sets the inner type name.
    *
-   * @param innerType the inner type
-   * @throws ModelException if this is neither {@link DataType#APPLICATION} nor {@link DataType#BINARY}
+   * @param innerTypeName the name of the inner type
+   * @throws ModelException if datatype is Convertible and the inner type is not supported or inner type not applicable to datatype
    */
-  public void setInnerName(String innerType) throws ModelException {
-    if (innerType != null && dataType != DataType.APPLICATION && dataType != DataType.BINARY) {
-      throw createModelException("setting the inner type is not allowed for " + this);
+  public void setInnerTypeName(String innerTypeName) throws ModelException {
+    if (!dataType.isModelProvidingInnerType()) {
+      throw createModelException("type " + dataType + " does not support inner types");
     }
-    this.innerName = innerType;
+    if (dataType == DataTypeFactory.getInstance().getConvertibleType()) {
+      innerType = DataTypeFactory.getInstance().get(innerTypeName);
+      if (innerType == null) {
+        throw createModelException("inner type " + innerTypeName + " not supported for type " + dataType);
+      }
+    }
+    this.innerTypeName = innerTypeName;
+    // else: just a generic type name
   }
 
-  /**
-   * Returns the inner type.
-   *
-   * @return the inner type, null if none (only if {@link DataType#BINARY})
-   * @throws ModelException this is {@link DataType#APPLICATION} and inner type not set
-   */
   @Override
-  public String getInnerName() throws ModelException {
-    if (dataType == DataType.APPLICATION && innerName == null) {
-      throw createModelException("inner type not set for application-specific type '" + getApplicationType() + "'");
+  public String getInnerTypeName() throws ModelException {
+    if (!dataType.isModelProvidingInnerType()) {
+      throw createModelException("inner type not supported for type " + dataType);
     }
-    else if (dataType != DataType.APPLICATION && dataType != DataType.BINARY) {
-      throw createModelException("inner type not supported for " + this);
+    if (StringHelper.isAllWhitespace(innerTypeName)) {
+      throw createModelException("inner type not set for type " + dataType);
     }
-    return innerName;
+    return innerTypeName;
   }
 
-
-  /**
-   * Gets the innertype for application specific types.
-   *
-   * @return the inner type to convert to agains the SQL backend
-   * @throws ModelException if not {@link DataType#APPLICATION} or innertype not a legal DataType.
-   */
   @Override
-  public DataType getInnerType() throws ModelException {
-    DataType innerType = DataType.createFromJavaType(getInnerName());
+  public DataType<?> getInnerDataType() throws ModelException {
     if (innerType == null) {
-      throw createModelException("illegal inner type: " + getInnerName());
+      throw createModelException("not a Convertible type");
     }
     return innerType;
   }
 
-
   @Override
-  public DataType getEffectiveType() throws ModelException {
-    if (dataType == DataType.APPLICATION) {
-      return getInnerType();
-    }
-    return dataType;
+  public DataType<?> getEffectiveDataType() throws ModelException {
+    return dataType == DataTypeFactory.getInstance().getConvertibleType() ? getInnerDataType() : dataType;
   }
 
-
-  /**
-   * Gets the java type.<br>
-   * Returns the java type with optional generic info.
-   * <p>
-   * Examples:
-   * <pre>
-   *  Date
-   *  Binary&lt;Invoice&gt;
-   *  MyType&lt;int&gt;
-   * </pre>
-   *
-   * @return the type string
-   * @throws ModelException if type is misconfigured
-   */
   @Override
   public String getJavaType() throws ModelException {
     StringBuilder buf = new StringBuilder();
-    if (dataType == DataType.APPLICATION) {
-      buf.append(getApplicationType());
+    if (dataType == DataTypeFactory.getInstance().getConvertibleType()) {
+      buf.append(getApplicationTypeName());
     }
     else  {
-      buf.append(dataType.toString());
-      if (dataType == DataType.BINARY) {
-        String genType = getInnerName();
+      buf.append(dataType.getJavaType());
+      if (dataType.isJavaTypeGenerified()) {
+        String genType = getInnerTypeName();
         if (genType != null) {
           buf.append('<');
           buf.append(genType);
@@ -357,7 +337,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
   }
 
   @Override
-  public DataType getDataType() {
+  public DataType<?> getDataType() {
     return dataType;
   }
 
@@ -392,7 +372,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
     this.columnName = columnName;
   }
 
-  public void setDataType(DataType dataType) {
+  public void setDataType(DataType<?> dataType) {
     this.dataType = dataType;
   }
 
@@ -417,7 +397,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
     if (nullable != null) {
       return nullable;
     }
-    DataType type = getEffectiveType();
+    DataType<?> type = getEffectiveDataType();
     return !type.isPrimitive() && !getOptions().isMapNull();
   }
 
@@ -470,8 +450,8 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
     if (dataType == null) {
       throw createModelException("missing data type");
     }
-    if (dataType == DataType.APPLICATION) {
-      getInnerType();
+    if (dataType.isModelProvidingInnerType() && StringHelper.isAllWhitespace(getInnerTypeName())) {
+      throw createModelException("missing inner type");
     }
     if (getScale() != null && !dataType.isNumeric()) {
       throw createModelException("non-numeric type does not support scale");
@@ -479,7 +459,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
 
     getOptions().validate();
 
-    if (getOptions().isUTC() && dataType != DataType.TIMESTAMP) {
+    if (getOptions().isUTC() && !dataType.isUTCSupported()) {
       throw createModelException("UTC option not applicable to " + dataType);
     }
 
@@ -487,20 +467,8 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
       throw createModelException("TZ option not applicable to " + dataType);
     }
 
-    if (getOptions().isMapNull()) {
-      switch(dataType) {
-        case CHARACTER:
-        case STRING:
-        case LARGESTRING:
-        case DATE:
-        case TIMESTAMP:
-        case LOCALDATE:
-        case LOCALDATETIME:
-          break;    // ok
-
-        default:
-          throw createModelException("MAPNULL option not applicable to " + dataType);
-      }
+    if (getOptions().isMapNull() && !dataType.isMapNullSupported()) {
+      throw createModelException("MAPNULL option not applicable to " + dataType);
     }
 
     if (getOptions().isMute() && dataType.isPrimitive() && getOptions().getDefaultValue() == null) {

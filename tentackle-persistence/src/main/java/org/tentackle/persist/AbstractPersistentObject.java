@@ -29,7 +29,7 @@ import org.tentackle.dbms.ModificationLog;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.dbms.StatementId;
-import org.tentackle.misc.DateHelper;
+import org.tentackle.common.DateHelper;
 import org.tentackle.misc.IdentifiableMap;
 import org.tentackle.misc.ImmutableException;
 import org.tentackle.misc.PropertySupport;

@@ -16,7 +16,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.sql;
+package org.tentackle.sql.backends;
+
+import org.tentackle.sql.BackendException;
+import org.tentackle.sql.BackendPreparedStatement;
 
 import java.util.Arrays;
 import java.util.HashSet;

@@ -27,8 +27,9 @@ import org.tentackle.common.Date;
 import org.tentackle.common.Time;
 import org.tentackle.common.Timestamp;
 import org.tentackle.log.Logger;
-import org.tentackle.misc.DateHelper;
+import org.tentackle.common.DateHelper;
 import org.tentackle.session.PersistenceException;
+import org.tentackle.sql.DataType;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -1780,7 +1781,38 @@ public class ResultSetWrapper implements AutoCloseable {
 
 
 
-  // ------------------- getter with positions -----------------------------
+  // ------------------- getter via positions -----------------------------
+
+  /**
+   * Gets the object for given {@link DataType}.<br>
+   * This method is provided for application-specific types.
+   *
+   * @param dataType the datatype
+   * @param pos the column positions
+   * @param mapNull true if unmap null-values
+   * @param size the optional size from the model
+   * @param <T> the type
+   * @return the object, may be null
+   */
+  public <T> T get(DataType<T> dataType, int[] pos, boolean mapNull, Integer size) {
+    if (pos.length != dataType.getColumnCount()) {
+      throw new PersistenceException("position array length does not match column count for " + dataType +
+                                     ", expected " + dataType.getColumnCount() + ", actual " + pos.length);
+    }
+    if (columnOffset != 0) {
+      int[] oPos = new int[pos.length];
+      for (int i=0; i < pos.length; i++) {
+        oPos[i] = pos[i] + columnOffset;
+      }
+      pos = oPos;
+    }
+    try {
+      return dataType.get(resources.db.getBackend(), resources.rs, pos, mapNull, size);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
 
 
   /**
@@ -2598,6 +2630,24 @@ public class ResultSetWrapper implements AutoCloseable {
 
   // ------------------- getter with automatic column index -----------------------------
 
+  /**
+   * Gets the object for given {@link DataType}.<br>
+   * This method is provided for application-specific types.
+   *
+   * @param dataType the datatype
+   * @param mapNull true if unmap null-values
+   * @param size the optional size from the model
+   * @param <T> the type
+   * @return the object, may be null
+   */
+  public <T> T get(DataType<T> dataType, boolean mapNull, Integer size) {
+    int[] pos = new int[dataType.getColumnCount()];
+    for (int i=0; i < pos.length; i++) {
+      pos[i] = nextConfiguredIndex();
+    }
+    return get(dataType, pos, mapNull, size);
+  }
+
 
   /**
    * Retrieves the value of the configured column in the current row
@@ -2808,9 +2858,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * Retrieves the value of the designated column in the current row
    * of this <code>ResultSet</code> object as a
    * <code>BMoney</code> with full precision.<br>
-   * Notice that BMoney fields use two fields:
-   * one for the value and
-   * one for the scale (= name + "P")
+   * Notice that BMoney fields use two columns!
    *
    * @return the column value (full precision);
    * if the value is SQL <code>NULL</code>, the value returned is
@@ -2826,9 +2874,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * Retrieves the value of the designated column in the current row
    * of this <code>ResultSet</code> object as a
    * <code>DMoney</code> with full precision.<br>
-   * Notice that DMoney fields use two fields:
-   * one for the value and
-   * one for the scale (= name + "P")
+   * Notice that DMoney fields use two columns!
    *
    * @return the column value (full precision);
    * if the value is SQL <code>NULL</code>, the value returned is

@@ -35,6 +35,19 @@ import java.util.Calendar;
 public interface BackendPreparedStatement {
 
   /**
+   * Sets the object into the statement via its {@link DataType}.<br>
+   * This method is provided for application-specific types.
+   *
+   * @param dataType the datatype
+   * @param p the positional index, starting at 1
+   * @param object the object of given datatype
+   * @param mapNull true if map null values
+   * @param size the optional size from the model
+   * @param <T> the type
+   */
+  <T> void set(DataType<T> dataType, int p, T object, boolean mapNull, Integer size);
+
+  /**
    * Sets the designated parameter to the given Java <code>Boolean</code> value.
    * The driver converts this
    * to an SQL <code>BIT</code> or <code>BOOLEAN</code> value when it sends it to the database.

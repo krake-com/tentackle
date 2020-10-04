@@ -10,8 +10,8 @@
         sql.append(Backend.SQL_COMMA);
 @[
       }
-      for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
-        String name = attr.getName().toUpperCase() + sp.getPostfix();
+      for (int columnIndex = 0; columnIndex < attr.getDataType().getColumnCount(); columnIndex++) {
+        String name = attr.getName().toUpperCase() + attr.getDataType().getColumnSuffix(columnIndex).orElse("");
 ]@
         sql.append(CN_@(name)@);
         sql.append(Backend.SQL_EQUAL_PAR);

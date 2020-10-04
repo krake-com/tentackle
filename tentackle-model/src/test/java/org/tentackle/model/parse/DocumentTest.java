@@ -18,12 +18,15 @@
 
 package org.tentackle.model.parse;
 
-import java.util.Iterator;
-import java.util.List;
-import org.tentackle.model.ModelException;
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.*;
+import org.tentackle.model.ModelException;
+
+import java.util.Iterator;
+import java.util.List;
+
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.fail;
 
 /**
  * Document model parser test.
@@ -205,7 +208,7 @@ public class DocumentTest {
       assertEquals(line.getLineType(), LineType.ATTRIBUTE);
       al = (AttributeLine) line;
       assertEquals(al.getJavaType(), "MyType");
-      assertEquals(al.getInnerName(), "int");
+      assertEquals(al.getInnerType(), "int");
 
       //  "\n" +
       line = iter.next();

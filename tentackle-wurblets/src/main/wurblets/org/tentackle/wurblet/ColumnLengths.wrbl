@@ -15,9 +15,8 @@ For more options, see {\@link ModelWurblet}.
   private void wurbel() throws ModelException {
     String lead = getOption("noif") == null ? "" : "public static final ";
     for (Attribute attr: getEntity().getAttributes())  {
-      if ((attr.getDataType() == DataType.STRING ||
-           attr.getDataType() == DataType.APPLICATION && attr.getInnerType() == DataType.STRING) &&
-          attr.getSize() != null && !attr.getOptions().isNoConstant() && !attr.getOptions().isFromSuper())  {
+      if ("String".equals(attr.getEffectiveDataType().getJavaType()) &&
+          attr.getSize() != null && attr.getSize() != 0 && !attr.getOptions().isNoConstant() && !attr.getOptions().isFromSuper())  {
 ]@
 
   /** maximum number of characters for '@(attr)@'. */

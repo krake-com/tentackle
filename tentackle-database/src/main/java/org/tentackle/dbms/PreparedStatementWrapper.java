@@ -23,9 +23,10 @@ package org.tentackle.dbms;
 import org.tentackle.common.BMoney;
 import org.tentackle.common.Binary;
 import org.tentackle.common.DMoney;
-import org.tentackle.misc.DateHelper;
+import org.tentackle.common.DateHelper;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.BackendPreparedStatement;
+import org.tentackle.sql.DataType;
 
 import java.math.BigDecimal;
 import java.sql.Clob;
@@ -298,6 +299,18 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
     }
   }
 
+  @Override
+  public <T> void set(DataType<T> dataType, int p, T object, boolean mapNull, Integer size) {
+    try {
+      Object[] values = dataType.set(con.getBackend(), getStatement(), p, object, mapNull, size);
+      for (int i=0; i < values.length; i++) {
+        rememberParameter(p + i, values[i]);
+      }
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(getSession(), this.toString(), e);
+    }
+  }
 
   @Override
   public void setString (int p, String s, boolean mapNull) {
@@ -305,7 +318,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
       int ep = effectivePosition(p);
       if (s == null) {
         if (mapNull)  {
-          s = getAttachedSession().getBackend().getEmptyString();
+          s = con.getBackend().getEmptyString();
           getStatement().setString(ep, s);
         }
         else  {
@@ -332,18 +345,17 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
     if (con.getBackend().isClobSupported()) {
       try {
         int ep = effectivePosition(p);
-        if (s == null) {
-          if (mapNull) {
-            s = getAttachedSession().getBackend().getEmptyString();
-          }
-          else {
-            getStatement().setNull(ep, Types.CLOB);
-            return;
-          }
+        if (s == null && mapNull) {
+          s = con.getBackend().getEmptyString();
         }
-        Clob clob = con.getConnection().createClob();
-        clob.setString(1, s);
-        getStatement().setClob(p, clob);
+        if (s != null) {
+          Clob clob = con.getConnection().createClob();
+          clob.setString(1, s);
+          getStatement().setClob(p, clob);
+        }
+        else {
+          getStatement().setNull(ep, Types.CLOB);
+        }
         rememberParameter(ep, s);
       }
       catch (SQLException e)  {
@@ -539,7 +551,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
 
   @Override
   public void setLong (int p, long l) {
-    if (getAttachedSession().getBackend().needSetLongWorkaround()) {
+    if (con.getBackend().needSetLongWorkaround()) {
       /*
        * long is translated to varchar in update statements by the Ingres JDBC-driver for some obscure reason.
        * Insert statements, however, work with long.

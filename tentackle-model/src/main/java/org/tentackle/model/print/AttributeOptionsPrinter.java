@@ -25,6 +25,7 @@ import org.tentackle.model.EntityOptions;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.impl.AttributeOptionsImpl;
 import org.tentackle.model.impl.CommonOptionsImpl;
+import org.tentackle.sql.DataType;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -60,6 +61,7 @@ public class AttributeOptionsPrinter {
    *
    * @return the option string
    */
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public String print() {
     StringBuilder buf = new StringBuilder();
     EntityOptions entityOptions = attribute.getEntity().getOptions();
@@ -103,7 +105,7 @@ public class AttributeOptionsPrinter {
     if (options.getDefaultValue() != null) {
       buf.append(AttributeOptionsImpl.OPTION_DEFAULT).append(' ');
       try {
-        buf.append(attribute.getEffectiveType().print(options.getDefaultValue()));
+        buf.append(((DataType) attribute.getEffectiveDataType()).toString(options.getDefaultValue()));
       }
       catch (ModelException mx) {
         buf.append("?").append(mx.getMessage()).append("?");

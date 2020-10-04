@@ -1,0 +1,72 @@
+/*
+ * Tentackle - https://tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+package org.tentackle.sql.datatypes;
+
+import org.tentackle.common.Service;
+import org.tentackle.sql.Backend;
+import org.tentackle.sql.DataType;
+import org.tentackle.sql.DataTypeFactory;
+import org.tentackle.sql.SqlType;
+
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+
+/**
+ * Virtual type for application-specific wrapper classes implementing <code>org.tentackle.misc.Convertible</code>.
+ * This is not real type as it does not describe a concrete Java type.
+ */
+@Service(DataType.class)
+public class ConvertibleType extends AbstractDataType<Object> {
+
+  @Override
+  public String getJavaType() {
+    return DataTypeFactory.CONVERTIBLE_TYPE;
+  }
+
+  @Override
+  public boolean isModelProvidingInnerType() {
+    return true;
+  }
+
+  @Override
+  public SqlType getSqlType(int index) {
+    if (index != 0) {
+      throw new IndexOutOfBoundsException();
+    }
+    return SqlType.JAVA_OBJECT;
+  }
+
+  @Override
+  public Object valueOf(String str) {
+    throw new UnsupportedOperationException();    // never called from TT (instead invoked on the wraooed type)
+  }
+
+  @Override
+  public Object[] set(Backend backend, PreparedStatement statement, int pos, Object object, boolean mapNull, Integer size) throws SQLException {
+    throw new UnsupportedOperationException();    // never called from TT (instead invoked on the wraooed type)
+  }
+
+  @Override
+  public Object get(Backend backend, ResultSet resultSet, int[] pos, boolean mapNull, Integer size) throws SQLException {
+    throw new UnsupportedOperationException();    // never called from TT (instead invoked on the wraooed type)
+  }
+
+}

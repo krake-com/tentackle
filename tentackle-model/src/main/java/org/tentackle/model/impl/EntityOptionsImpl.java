@@ -19,13 +19,14 @@
 package org.tentackle.model.impl;
 
 import org.tentackle.common.Constants;
-import org.tentackle.model.DataType;
+import org.tentackle.common.Timestamp;
 import org.tentackle.model.Entity;
 import org.tentackle.model.EntityFactory;
 import org.tentackle.model.EntityOptions;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.SourceInfo;
 import org.tentackle.model.TrackType;
+import org.tentackle.sql.DataTypeFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -304,7 +305,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
     if (tokenLockProvided) {
       if (editedExpiryAttribute == null) {
         editedExpiryAttribute = (AttributeImpl) factory.createAttribute(entity, getSourceInfo(), true);
-        editedExpiryAttribute.setDataType(DataType.TIMESTAMP);
+        editedExpiryAttribute.setDataType(DataTypeFactory.getInstance().get(Timestamp.class));
         editedExpiryAttribute.setColumnName(Constants.CN_EDITEDEXPIRY);
         editedExpiryAttribute.setName(Constants.AN_EDITEDEXPIRY);
         editedExpiryAttribute.getOptions().setComment("editing lock expiration");
@@ -313,7 +314,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
       }
       if (editedSinceAttribute == null) {
         editedSinceAttribute = (AttributeImpl) factory.createAttribute(entity, getSourceInfo(), true);
-        editedSinceAttribute.setDataType(DataType.TIMESTAMP);
+        editedSinceAttribute.setDataType(DataTypeFactory.getInstance().get(Timestamp.class));
         editedSinceAttribute.setColumnName(Constants.CN_EDITEDSINCE);
         editedSinceAttribute.setName(Constants.AN_EDITEDSINCE);
         editedSinceAttribute.getOptions().setComment("being edited since");
@@ -322,7 +323,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
       }
       if (editedByAttribute == null) {
         editedByAttribute = (AttributeImpl) factory.createAttribute(entity, getSourceInfo(), true);
-        editedByAttribute.setDataType(DataType.LONG_PRIMITIVE);
+        editedByAttribute.setDataType(DataTypeFactory.getInstance().get(Long.TYPE));
         editedByAttribute.setColumnName(Constants.CN_EDITEDBY);
         editedByAttribute.setName(Constants.AN_EDITEDBY);
         editedByAttribute.getOptions().setComment("being edited by user id");
@@ -350,7 +351,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
     if (normText) {
       if (normTextAttribute == null) {
         normTextAttribute = (AttributeImpl) factory.createAttribute(entity, getSourceInfo(), true);
-        normTextAttribute.setDataType(DataType.STRING);
+        normTextAttribute.setDataType(DataTypeFactory.getInstance().get(String.class));
         normTextAttribute.setColumnName(Constants.CN_NORMTEXT);
         normTextAttribute.setName(Constants.AN_NORMTEXT);
         normTextAttribute.getOptions().setComment("normalized text");
@@ -373,7 +374,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
     if (tableSerial) {
       if (tableSerialAttribute == null) {
         tableSerialAttribute = (AttributeImpl) factory.createAttribute(entity, getSourceInfo(), true);
-        tableSerialAttribute.setDataType(DataType.LONG_PRIMITIVE);
+        tableSerialAttribute.setDataType(DataTypeFactory.getInstance().get(Long.TYPE));
         tableSerialAttribute.setColumnName(Constants.CN_TABLESERIAL);
         tableSerialAttribute.setName(Constants.AN_TABLESERIAL);
         tableSerialAttribute.getOptions().setComment("table serial");
@@ -396,7 +397,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
     if (rootId) {
       if (rootIdAttribute == null) {
         rootIdAttribute = (AttributeImpl) factory.createAttribute(entity, getSourceInfo(), true);
-        rootIdAttribute.setDataType(DataType.LONG_PRIMITIVE);
+        rootIdAttribute.setDataType(DataTypeFactory.getInstance().get(Long.TYPE));
         rootIdAttribute.setColumnName(Constants.CN_ROOTID);
         rootIdAttribute.setName(Constants.AN_ROOTID);
         rootIdAttribute.getOptions().setComment("root entity id");
@@ -415,7 +416,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
     if (rootClassId) {
       if (rootClassIdAttribute == null) {
         rootClassIdAttribute = (AttributeImpl) factory.createAttribute(entity, getSourceInfo(), true);
-        rootClassIdAttribute.setDataType(DataType.INTEGER_PRIMITIVE);
+        rootClassIdAttribute.setDataType(DataTypeFactory.getInstance().get(Integer.TYPE));
         rootClassIdAttribute.setColumnName(Constants.CN_ROOTCLASSID);
         rootClassIdAttribute.setName(Constants.AN_ROOTCLASSID);
         rootClassIdAttribute.getOptions().setComment("root entity class id");

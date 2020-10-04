@@ -26,7 +26,7 @@ import org.tentackle.common.Timestamp;
 import org.tentackle.dbms.rmi.ModificationLogRemoteDelegate;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.Canonicalizer;
-import org.tentackle.misc.DateHelper;
+import org.tentackle.common.DateHelper;
 import org.tentackle.misc.ParameterString;
 import org.tentackle.session.ClassId;
 import org.tentackle.session.PersistenceException;

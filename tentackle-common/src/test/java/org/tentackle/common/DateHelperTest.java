@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.misc;
+package org.tentackle.common;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;

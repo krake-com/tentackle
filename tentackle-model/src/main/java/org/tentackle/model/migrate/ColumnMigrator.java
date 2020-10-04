@@ -19,10 +19,10 @@
 package org.tentackle.model.migrate;
 
 import org.tentackle.model.Attribute;
-import org.tentackle.model.DataType;
 import org.tentackle.model.Entity;
 import org.tentackle.model.ModelException;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.DataType;
 import org.tentackle.sql.MigrationStrategy;
 import org.tentackle.sql.SqlType;
 import org.tentackle.sql.metadata.ColumnMetaData;
@@ -120,31 +120,30 @@ public class ColumnMigrator {
   public String migrate() throws ModelException {
     StringBuilder buf = new StringBuilder();
     if (attribute != null) {
-      DataType dataType = attribute.getEffectiveType();
+      DataType<?> dataType = attribute.getEffectiveDataType();
 
       /*
        * round 1: only add missing columns and migrate only those with exact name match
        * round 2: migrate the rest
        */
       int migratedColumnIndex = 0;
-      boolean[] migrated = new boolean[dataType.getSqlTypes().length];
+      boolean[] migrated = new boolean[dataType.getColumnCount()];
 
       for (int round=0; round < 2; round++) {
-        int multiColumnIndex = 0;
-        for (DataType.SqlTypeWithPostfix sp: dataType.getSqlTypesWithPostfix()) {
-          if (!migrated[multiColumnIndex]) {
-            columnName = attribute.getColumnName() + sp.getPostfix();
-            sqlType = sp.getSqlType();
+        for (int columnIndex = 0; columnIndex < dataType.getColumnCount(); columnIndex++) {
+          if (!migrated[columnIndex]) {
+            columnName = attribute.getColumnName() + dataType.getColumnSuffix(columnIndex).orElse("");
+            sqlType = dataType.getSqlType(columnIndex);
             columnSize = attribute.getSizeWithDefault();
             columnScale = attribute.getScaleWithDefault();
-            comment = multiColumnIndex == 0 ? attribute.getOptions().getComment() : null;
+            comment = columnIndex == 0 ? attribute.getOptions().getComment() : null;
             defaultValue = attribute.getOptions().getDefaultValue();
-            if (multiColumnIndex > 0 && defaultValue != null) {
+            if (columnIndex > 0 && defaultValue != null) {
               // default applies only to first column for multicolumn types
               defaultValue = sqlType.getDefaultValue();
             }
             if (dataType.isScaleInSecondColumn()) {
-              if (multiColumnIndex == 1) {
+              if (columnIndex == 1) {
                 columnSize = 0;
               }
               columnScale = 0;
@@ -152,17 +151,16 @@ public class ColumnMigrator {
             column = columns == null || migratedColumnIndex >= columns.length ? null : columns[migratedColumnIndex];
             if (column == null) {
               buf.append(addColumn());
-              migrated[multiColumnIndex] = true;
+              migrated[columnIndex] = true;
             }
             else  {
               if (round == 1 || column.getColumnName().equals(columnName)) {
                 buf.append(migrateColumn());
                 migratedColumnIndex++;
-                migrated[multiColumnIndex] = true;
+                migrated[columnIndex] = true;
               }
             }
           }
-          multiColumnIndex++;
         }
       }
     }

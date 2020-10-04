@@ -17,10 +17,17 @@
  */
 
 
-package org.tentackle.sql;
+package org.tentackle.sql.backends;
 
 import org.tentackle.common.Cryptor;
 import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.sql.Backend;
+import org.tentackle.sql.BackendException;
+import org.tentackle.sql.BackendInfo;
+import org.tentackle.sql.JoinType;
+import org.tentackle.sql.MigrationStrategy;
+import org.tentackle.sql.SqlNameType;
+import org.tentackle.sql.SqlType;
 import org.tentackle.sql.metadata.ColumnMetaData;
 import org.tentackle.sql.metadata.DatabaseMetaDataTableHeader;
 import org.tentackle.sql.metadata.IndexColumnMetaData;
@@ -566,7 +573,7 @@ public abstract class AbstractBackend implements Backend {
 
   @Override
   public MigrationStrategy[] getMigrationStrategy(ColumnMetaData column, String columnName, String comment,
-          SqlType sqlType, int size, int scale, boolean nullable, Object defaultValue) {
+                                                  SqlType sqlType, int size, int scale, boolean nullable, Object defaultValue) {
 
     List<MigrationStrategy> strategies = new ArrayList<>();
     int maxSize = getMaxSize(sqlType);
