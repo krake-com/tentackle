@@ -17,71 +17,70 @@
  */
 
 
-package org.tentackle.sql;
+package org.tentackle.sql.backends;
 
 import org.tentackle.common.Service;
-import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.sql.Backend;
+import org.tentackle.sql.BackendException;
+import org.tentackle.sql.BackendPreparedStatement;
+import org.tentackle.sql.NonStandardCommons;
+import org.tentackle.sql.SqlType;
 
 import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Types;
 
 
 /**
- * Backend for MicrosoftSQL.
+ * Backend for Ingres.
  *
  * @author harald
  */
 @Service(Backend.class)
-public class MsSql extends AbstractSql2003Backend {
+public class Ingres extends AbstractSql2003Backend {
 
-  /** TOP string. */
-  public static final String SQL_TOP = "TOP ";
+  /** FIRST string. */
+  public static final String SQL_FIRST = "FIRST ";
 
-  /** TOP string. */
-  public static final String SQL_TOP_PAR = SQL_TOP + "? ";
+  /** FIRST string. */
+  public static final String SQL_FIRST_PAR = SQL_FIRST + "? ";
 
-  @Override
-  public boolean isFilteredIndexSupported() {
-    return true;
-  }
 
   @Override
   public boolean isMatchingUrl(String url) {
-    return url.contains(":sqlserver");
+    return url.contains(":ingres");
   }
 
   @Override
   public String getName() {
-    return "MsSQL";
+    return "Ingres";
   }
 
   @Override
   public String getDriverClassName() {
-    return "com.microsoft.sqlserver.jdbc.SQLServerDriver";
+    return "com.ingres.jdbc.IngresDriver";
   }
 
   @Override
   public String getBackendId(Connection connection) {
-    try (Statement stmt = connection.createStatement()) {
-      ResultSet rs = stmt.executeQuery("SELECT @@SPID");
-      if (rs.next()) {
-        return "ID-" + rs.getString(1);
-      }
-      return null;
-    }
-    catch (SQLException ex) {
-      throw new TentackleRuntimeException("cannot determine backend id", ex);
-    }
+    // @todo
+    return null;
+  }
+
+  @Override
+  public boolean sqlRequiresExtraCommit() {
+    return true;
+  }
+
+  @Override
+  public boolean needSetLongWorkaround() {
+    return true;
   }
 
   @Override
   public void buildSelectSql(StringBuilder sqlBuilder, boolean writeLock, int limit, int offset) {
     if (limit > 0 && offset <= 0) {
-      // MSSQL supports TOP
-      sqlBuilder.insert(0, SQL_TOP_PAR);
+      // Ingres supports only FIRST
+      sqlBuilder.insert(0, SQL_FIRST_PAR);
       sqlBuilder.insert(0, SQL_SELECT);
     }
     else  {
@@ -115,18 +114,20 @@ public class MsSql extends AbstractSql2003Backend {
       case DECIMAL:
         return 38;
 
+      case VARCHAR:
+        return 1024;
+
       default:
         return super.getMaxSize(sqlType);
     }
   }
-
 
   @Override
   public String sqlTypeToString(SqlType sqlType, int size) {
     switch(sqlType) {
 
       case BIT:
-        return TYPE_BIT;
+        return TYPE_TINYINT;
 
       case TINYINT:
         return TYPE_TINYINT;
@@ -135,37 +136,37 @@ public class MsSql extends AbstractSql2003Backend {
         return TYPE_SMALLINT;
 
       case INTEGER:
-        return TYPE_INT;
+        return TYPE_INTEGER;
 
       case BIGINT:
         return TYPE_BIGINT;
 
       case FLOAT:
-        return TYPE_REAL;
+        return TYPE_FLOAT4;
 
       case DOUBLE:
         return TYPE_FLOAT;
 
       case DECIMAL:
-        return TYPE_DECIMAL;
+        return TYPE_NUMBER;
 
       case CHAR:
-        return TYPE_NCHAR_1;
+        return TYPE_CHAR_1;
 
       case VARCHAR:
-        return size == 0 ? TYPE_NVARCHAR_MAX : TYPE_NVARCHAR;
+        return TYPE_VARCHAR;
 
       case DATE:
-        return TYPE_DATETIME;
+        return TYPE_DATE;
 
       case TIME:
-        return TYPE_DATETIME;
+        return TYPE_DATE;
 
       case TIMESTAMP:
-        return TYPE_DATETIME;
+        return TYPE_TIMESTAMP;
 
       case BLOB:
-        return TYPE_VARBINARY_MAX;
+        return TYPE_BLOB;
 
       case CLOB:
         return TYPE_CLOB;
@@ -181,13 +182,11 @@ public class MsSql extends AbstractSql2003Backend {
       case Types.BIT:
       case Types.BOOLEAN:
       case Types.TINYINT:
-      case Types.SMALLINT:
-        return new SqlType[] { SqlType.BIT, SqlType.TINYINT, SqlType.SMALLINT };
+        return new SqlType[] { SqlType.BIT, SqlType.TINYINT };
 
       case Types.DATE:
-      case Types.TIMESTAMP:
       case Types.TIME:
-        return new SqlType[] { SqlType.DATE, SqlType.TIME, SqlType.TIMESTAMP };
+        return new SqlType[] { SqlType.DATE, SqlType.TIME };
 
       default:
         return super.jdbcTypeToSqlType(jdbcType, size, scale);
@@ -195,15 +194,20 @@ public class MsSql extends AbstractSql2003Backend {
   }
 
   @Override
-  public String sqlRenameIndex(String tableName, String oldIndexName, String newIndexName) {
-    return null;    // not supported via SQL -> drop and create
+  public String sqlCreateTableComment(String tableName, String comment) {
+    return NonStandardCommons.sqlCreateCommentOnTable(this, tableName, comment);
+  }
+
+  @Override
+  public String sqlCreateColumnComment(String tableName, String columnName, String comment) {
+    return NonStandardCommons.sqlCreateCommentOnColumn(this, tableName, columnName, comment);
   }
 
   @Override
   protected String extractWhereClause(String sql, int whereOffset) {
-    int ndx = sql.indexOf(SQL_TOP);
+    int ndx = sql.indexOf(SQL_FIRST);
     if (ndx >= 0) {
-      throw new BackendException("backend does not support merging selects with TOP");
+      throw new BackendException("backend does not support merging selects with FIRST");
     }
     return super.extractWhereClause(sql, whereOffset);
   }

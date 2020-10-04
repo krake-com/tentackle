@@ -18,14 +18,11 @@
 
 package org.tentackle.persist.wurblet;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import org.wurbelizer.wurbel.WurbelException;
+
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.AttributeSorting;
-import org.tentackle.model.DataType;
 import org.tentackle.model.Entity;
 import org.tentackle.model.InheritanceType;
 import org.tentackle.model.MethodArgument;
@@ -35,8 +32,14 @@ import org.tentackle.model.RelationType;
 import org.tentackle.model.SelectionType;
 import org.tentackle.model.SortType;
 import org.tentackle.model.TrackType;
+import org.tentackle.sql.DataType;
+import org.tentackle.sql.DataTypeFactory;
 import org.tentackle.wurblet.ModelWurblet;
-import org.wurbelizer.wurbel.WurbelException;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 
 /**
@@ -402,11 +405,11 @@ public class DbModelWurblet extends ModelWurblet {
       boolean needComma = false;
       for (WurbletArgument key: sortKeys) {
         Attribute attr = key.getAttribute();
-        for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
+        for (int columnIndex = 0; columnIndex < attr.getDataType().getColumnCount(); columnIndex++) {
           if (needComma) {
             buf.append("\n           .append(Backend.SQL_COMMA)");
           }
-          String name = "CN_" + attr.getName().toUpperCase() + sp.getPostfix();
+          String name = "CN_" + attr.getName().toUpperCase() + attr.getDataType().getColumnSuffix(columnIndex).orElse("");
           buf.append(".append(");
           if (getEntity().getHierarchyInheritanceType() == InheritanceType.MULTI) {
             buf.append(deriveClassNameForEntity(getEntity().getTopSuperEntity()))
@@ -574,10 +577,9 @@ public class DbModelWurblet extends ModelWurblet {
            .append('=');
         if (methodArg.isValue()) {
           buf.append('?');
-          for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
-            String name = attr.getName().toUpperCase() + sp.getPostfix();
-            boolean mainColumn = sp.getPostfix().isEmpty();
-            if (!mainColumn) {
+          for (int columnIndex = 0; columnIndex < attr.getDataType().getColumnCount(); columnIndex++) {
+            String name = attr.getName().toUpperCase() + attr.getDataType().getColumnSuffix(columnIndex).orElse("");
+            if (columnIndex > 0) {   // more than one column
               buf.append(" AND ").append(joinName).append('.').append(name).append("=?");
             }
           }
@@ -635,9 +637,13 @@ public class DbModelWurblet extends ModelWurblet {
             else {
               buf.append(");\n");
             }
-            // for multi column types, such as BMoney/DMoney
-            for (int p = 1; p < attr.getDataType().getSqlTypes().length; p++) {
+            // for multi column types, such as BMoney or application specific types
+            int diff = attr.getDataType().getColumnCount() - 1;
+            if (diff == 1) {
               buf.append("    ndx++;\n");
+            }
+            else if (diff > 1) {
+              buf.append("    ndx += ").append(diff).append(";\n");
             }
           }
         }
@@ -848,9 +854,9 @@ public class DbModelWurblet extends ModelWurblet {
    * @return the data type
    * @throws WurbelException if type is misconfigured
    */
-  public DataType getJdbcDataType(Attribute attribute) throws WurbelException {
+  public DataType<?> getJdbcDataType(Attribute attribute) throws WurbelException {
     try {
-      return attribute.getEffectiveType();
+      return attribute.getEffectiveDataType();
     }
     catch (ModelException me) {
       throw new WurbelException("cannot determine effective JDBC datatype for " + attribute, me);
@@ -866,12 +872,12 @@ public class DbModelWurblet extends ModelWurblet {
    */
   public String createJdbcSetterName(Attribute attribute) throws WurbelException {
     StringBuilder buf = new StringBuilder("set");
-    DataType type = getJdbcDataType(attribute);
+    DataType<?> type = getJdbcDataType(attribute);
     if (type.isPrimitive()) {
       buf.append(StringHelper.firstToUpper(type.toString()));
     }
     else  {
-      if (type == DataType.LARGESTRING) {
+      if ("String".equals(type.getJavaType()) && DataTypeFactory.LARGE_VARIANT.equals(type.getVariant())) {
         buf.append("LargeString");
       }
       else {
@@ -890,33 +896,28 @@ public class DbModelWurblet extends ModelWurblet {
    */
   public String createJdbcGetterName(Attribute attribute) throws WurbelException {
     StringBuilder buf = new StringBuilder("get");
-    DataType type = getJdbcDataType(attribute);
+    DataType<?> type = getJdbcDataType(attribute);
     if (type.isPrimitive()) {
-      buf.append(StringHelper.firstToUpper(type.toString()));
+      buf.append(StringHelper.firstToUpper(type.getJavaType()));
     }
-    else if (type == DataType.BOOLEAN) {
-      buf.append("ABoolean");
-    }
-    else if (type == DataType.BYTE) {
-      buf.append("AByte");
-    }
-    else if (type == DataType.SHORT) {
-      buf.append("AShort");
-    }
-    else if (type == DataType.LONG) {
-      buf.append("ALong");
-    }
-    else if (type == DataType.FLOAT) {
-      buf.append("AFloat");
-    }
-    else if (type == DataType.DOUBLE) {
-      buf.append("ADouble");
-    }
-    else if (type == DataType.LARGESTRING) {
-      buf.append("LargeString");
-    }
-    else  {
-      buf.append(type.toString());
+    else {
+      switch (type.getJavaType()) {
+        case "Boolean":
+        case "Byte":
+        case "Short":
+        case "Long":
+        case "Float":
+        case "Double":
+          buf.append('A');   // ABoolean, AByte, etc...
+          break;
+
+        case "String":
+          if (DataTypeFactory.LARGE_VARIANT.equals(type.getVariant())) {
+            buf.append("Large");    // LargeString
+          }
+          break;
+      }
+      buf.append(type.getJavaType());
     }
     return buf.toString();
   }
@@ -933,7 +934,7 @@ public class DbModelWurblet extends ModelWurblet {
    * @throws WurbelException if some model error
    */
   public String getModelCode(Attribute attribute, String jdbcCode) throws WurbelException {
-    if (attribute.getDataType() == DataType.APPLICATION) {
+    if (attribute.getDataType() == DataTypeFactory.getInstance().getConvertibleType()) {
       try {
         return attribute.getJavaType() + ".toInternal(" + jdbcCode + ")";
       }
@@ -958,15 +959,15 @@ public class DbModelWurblet extends ModelWurblet {
    */
   public String getJdbcCode(Attribute attribute, String modelCode) throws WurbelException {
     String jdbcCode = modelCode;
-    if (attribute.getDataType() == DataType.APPLICATION) {
+    if (attribute.getDataType() == DataTypeFactory.getInstance().getConvertibleType()) {
       try {
-        String applicationType = attribute.getApplicationType();
+        String applicationType = attribute.getApplicationTypeName();
         if (modelCode.startsWith(applicationType + ".")) {
           // (Enum) constant
           jdbcCode = modelCode + ".toExternal()";
         }
         else {
-          if (attribute.getInnerType().isPrimitive()) {
+          if (attribute.getInnerDataType().isPrimitive()) {
             jdbcCode = modelCode + " == null ? " + applicationType + ".getDefault().toExternal() : " +
                        modelCode + ".toExternal()";
           }

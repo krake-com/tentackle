@@ -20,11 +20,11 @@ package org.tentackle.model.impl;
 
 import org.testng.annotations.Test;
 
+import org.tentackle.common.Binary;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.AccessScope;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.AttributeSorting;
-import org.tentackle.model.DataType;
 import org.tentackle.model.Entity;
 import org.tentackle.model.Index;
 import org.tentackle.model.Integrity;
@@ -35,6 +35,7 @@ import org.tentackle.model.RelationType;
 import org.tentackle.model.SelectionType;
 import org.tentackle.model.SortType;
 import org.tentackle.model.TrackType;
+import org.tentackle.sql.DataTypeFactory;
 
 import java.io.IOException;
 import java.sql.Timestamp;
@@ -112,14 +113,14 @@ public class ModelTest {
       assertEquals(18, entity.getAttributes().size());
       Attribute attribute;
       attribute = entity.getAttributes().get(4);
-      assertEquals(attribute.getDataType(), DataType.LONG_PRIMITIVE);
+      assertEquals(attribute.getDataType(), DataTypeFactory.getInstance().get(Long.TYPE));
       assertEquals(attribute.getName(), "subsidiaryId");
       assertEquals(attribute.getColumnName(), "subsidiary_id");
       assertEquals(attribute.getOptions().getComment(), "subsidiary ID");
       assertTrue(attribute.getOptions().isContextId());
 
       attribute = entity.getAttributes().get(5);
-      assertEquals(attribute.getDataType(), DataType.STRING);
+      assertEquals(attribute.getDataType(), DataTypeFactory.getInstance().get(String.class));
       assertEquals(attribute.getName(), "invoiceNo");
       assertEquals(attribute.getColumnName(), "invoice_no");
       assertEquals(attribute.getOptions().getComment(), "the unique invoice number");
@@ -131,7 +132,7 @@ public class ModelTest {
                    "@NotNull(message=\"{ @('please_enter_the_invoice-number') }\")");
 
       attribute = entity.getAttributes().get(7);
-      assertEquals(attribute.getDataType(), DataType.LONG);
+      assertEquals(attribute.getDataType(), DataTypeFactory.getInstance().get(Long.class));
       assertEquals(attribute.getColumnName(), "customer_id");
       assertNull(attribute.getSize());
       assertTrue(attribute.getOptions().isUpperCase());
@@ -142,7 +143,7 @@ public class ModelTest {
       assertEquals(attribute.getOptions().getStereotypes().get(0),"blah=\"wow!\"");
 
       attribute = entity.getAttributes().get(8);
-      assertEquals(attribute.getDataType(), DataType.STRING);
+      assertEquals(attribute.getDataType(), DataTypeFactory.getInstance().get(String.class));
       assertEquals(attribute.getOptions().getBindOptions(), "UC,MAXCOLS=200");
       assertEquals(attribute.getOptions().getDefaultValue(), "blah\nx ");
 
@@ -154,17 +155,17 @@ public class ModelTest {
       assertTrue(attribute.getOptions().isUTC());
 
       attribute = entity.getAttributes().get(12);
-      assertEquals(attribute.getDataType(), DataType.DOUBLE);
+      assertEquals(attribute.getDataType(), DataTypeFactory.getInstance().get(Double.class));
       assertEquals(attribute.getSize(), Integer.valueOf(10));
       assertEquals(attribute.getScale(), Integer.valueOf(2));
       assertEquals(attribute.getOptions().getBindOptions(), "AUTOSELECT,MAXCOLS=10,SCALE=2");
 
       attribute = entity.getAttributes().get(13);
-      assertEquals(attribute.getDataType(), DataType.APPLICATION);
+      assertEquals(attribute.getDataType(), DataTypeFactory.getInstance().getConvertibleType());
       assertEquals(attribute.getJavaType(), "MyType");
 
       attribute = entity.getAttributes().get(14);
-      assertEquals(attribute.getDataType(), DataType.BINARY);
+      assertEquals(attribute.getDataType(), DataTypeFactory.getInstance().get(Binary.class));
       assertEquals(attribute.getJavaType(), "Binary<Blah>");
       assertEquals(attribute.getOptions().getComment(), "some binary object");
 

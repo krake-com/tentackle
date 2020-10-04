@@ -18,6 +18,8 @@
 
 package org.tentackle.model;
 
+import org.tentackle.sql.DataType;
+
 /**
  * An attribute.
  * <p>
@@ -48,19 +50,17 @@ public interface Attribute extends ModelElement {
    *
    * @return the java data type
    */
-  DataType getDataType();
+  DataType<?> getDataType();
 
 
   /**
-   * Gets the inner name.<br>
-   * This is either the generic inner type or the wrapped type
-   * used by application specific types,
-   * for example enums.
+   * Gets the inner type name.<br>
+   * This is either the generic inner type or the wrapped type of Convertible types.
    *
-   * @return the wrapping type, null if not wrapped
+   * @return the inner type name
    * @throws ModelException if not an application type or innername not set
    */
-  String getInnerName() throws ModelException;
+  String getInnerTypeName() throws ModelException;
 
 
   /**
@@ -118,20 +118,20 @@ public interface Attribute extends ModelElement {
   boolean isHidden();
 
   /**
-   * Gets the application specific type.
+   * Gets the name of the application specific type, if a Convertible type.
    *
    * @return the application specific type, never null or empty
-   * @throws ModelException if application specific type not set or this is not {@link DataType#APPLICATION}
+   * @throws ModelException if this is not a Convertible type
    */
-  String getApplicationType() throws ModelException;
+  String getApplicationTypeName() throws ModelException;
 
   /**
-   * Gets the innertype for application specific types.
+   * Gets the inner datatype exposed to the backend if Convertible.
    *
-   * @return the inner type to convert to agains the backend
-   * @throws ModelException if not application specific type or innertype not a legal DataType.
+   * @return the inner type for the backend
+   * @throws ModelException if not a Convertible
    */
-  DataType getInnerType() throws ModelException;
+  DataType<?> getInnerDataType() throws ModelException;
 
   /**
    * Gets the effective type exposed to the backend.<br>
@@ -140,7 +140,7 @@ public interface Attribute extends ModelElement {
    * @return the effective data type
    * @throws ModelException if model garbeled
    */
-  DataType getEffectiveType() throws ModelException;
+  DataType<?> getEffectiveDataType() throws ModelException;
 
   /**
    * Gets the java type.<br>

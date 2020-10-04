@@ -34,10 +34,16 @@
     st.@(createJdbcSetterName(attr))@(ndx++, @(getJdbcCode(attr, attr.toMethodArgument(methodArg.getValue())))@);
 @[
                 }
-                // for multi column types, such as BMoney/DMoney
-                for (int p = 1; p < attr.getDataType().getSqlTypes().length; p++) {
+                // for multi column types, such as BMoney or application specific types
+                int diff = attr.getDataType().getColumnCount() - 1;
+                if (diff == 1) {
 ]@
     ndx++;
+@[
+                }
+                else if (diff > 1) {
+]@
+    ndx += @(diff)@;
 @[
                 }
               }
@@ -59,10 +65,16 @@
     st.@(createJdbcSetterName(attr))@(ndx++, @(getJdbcCode(attr, par.getJdbcValue()))@);
 @[
         }
-        // for multi column types, such as BMoney/DMoney
-        for (int p = 1; p < attr.getDataType().getSqlTypes().length; p++) {
+        // for multi column types, such as BMoney or application specific types
+        int diff = attr.getDataType().getColumnCount() - 1;
+        if (diff == 1) {
 ]@
     ndx++;
+@[
+        }
+        else if (diff > 1) {
+]@
+    ndx += @(diff)@;
 @[
         }
       }

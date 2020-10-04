@@ -1,5 +1,5 @@
 /*
- * Tentackle - https://tentackle.org
+ * Tentackle - https://tentackle.org.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,35 +16,36 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.sql;
-
-import org.tentackle.common.Service;
+package org.tentackle.sql.backends;
 
 /**
- * Backend for MariaDB.
+ * Common to all SQL2008 backends.
  *
  * @author harald
  */
-@Service(Backend.class)
-public class MariaDb extends MySql {
+public abstract class AbstractSql2008Backend extends AbstractSql2003Backend {
+
+  /** OFFSET string. */
+  public static final String SQL_OFFSET = " OFFSET ? ROWS";
+
+  /** FETCH FIRST string. */
+  public static final String SQL_FETCH_FIRST = " FETCH FIRST ? ROWS ONLY";
+
+
 
   @Override
-  public boolean isMatchingUrl(String url) {
-    return url.contains(":mariadb");
+  public void buildSelectSql(StringBuilder sqlBuilder, boolean writeLock, int limit, int offset) {
+    sqlBuilder.insert(0, SQL_SELECT);
+    if (writeLock) {
+      sqlBuilder.append(SQL_FOR_UPDATE);
+    }
+    if (offset > 0) {
+      sqlBuilder.append(SQL_OFFSET);
+    }
+    if (limit > 0) {
+      sqlBuilder.append(SQL_FETCH_FIRST);
+    }
   }
 
-  @Override
-  public String getName() {
-    return "MariaDB";
-  }
 
-  @Override
-  public String getDriverClassName() {
-    return "org.mariadb.jdbc.Driver";
-  }
-
-  @Override
-  protected boolean isDropIfExistsSupported() {
-    return true;
-  }
 }

@@ -20,7 +20,6 @@ package org.tentackle.model.migrate;
 
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
-import org.tentackle.model.DataType;
 import org.tentackle.model.Entity;
 import org.tentackle.model.ForeignKey;
 import org.tentackle.model.Index;
@@ -317,8 +316,9 @@ public class TableMigrator {
     // first guess by column name.
     for (Attribute attribute: entity.getTableAttributes()) {
       Collection<ColumnMetaData> matchingColumns = new ArrayList<>();
-      for (DataType.SqlTypeWithPostfix sp: attribute.getDataType().getSqlTypesWithPostfix()) {
-        ColumnMetaData column = table.getColumnByName(attribute.getColumnName() + sp.getPostfix());
+      for (int columnIndex = 0; columnIndex < attribute.getDataType().getColumnCount(); columnIndex++) {
+        ColumnMetaData column = table.getColumnByName(attribute.getColumnName() +
+                                                      attribute.getDataType().getColumnSuffix(columnIndex).orElse(""));
         if (column != null) {
           matchingColumns.add(column);
         }
@@ -331,8 +331,9 @@ public class TableMigrator {
             ColumnMetaData oldColumn = columnsToDrop.get(oldColumnName);
             if (oldColumn != null) {
               columnsToDrop.remove(oldColumnName);
-              for (DataType.SqlTypeWithPostfix sp: attribute.getDataType().getSqlTypesWithPostfix()) {
-                ColumnMetaData column = table.getColumnByName(oldColumnName + sp.getPostfix());
+              for (int columnIndex = 0; columnIndex < attribute.getDataType().getColumnCount(); columnIndex++) {
+                ColumnMetaData column = table.getColumnByName(oldColumnName +
+                                                              attribute.getDataType().getColumnSuffix(columnIndex).orElse(""));
                 if (column != null) {
                   matchingColumns.add(column);
                 }
@@ -369,7 +370,7 @@ public class TableMigrator {
 
       ColumnMetaData typeMatchingColumn = null;
       for (ColumnMetaData dropColumn: columnsToDrop.values()) {
-        if (dropColumn.matchesSqlType(addAttribute.getDataType().getSqlTypes()[0])) {
+        if (dropColumn.matchesSqlType(addAttribute.getDataType().getSqlType(0))) {
           if (typeMatchingColumn == null) {
             typeMatchingColumn = dropColumn;
           }
@@ -384,8 +385,9 @@ public class TableMigrator {
 
       if (typeMatchingColumn != null) {
         // check multicolumn exists with same name
-        for (DataType.SqlTypeWithPostfix sp: addAttribute.getDataType().getSqlTypesWithPostfix()) {
-          String columnName = typeMatchingColumn.getColumnName() + sp.getPostfix();
+        for (int columnIndex = 0; columnIndex < addAttribute.getDataType().getColumnCount(); columnIndex++) {
+          String columnName = typeMatchingColumn.getColumnName() +
+                              addAttribute.getDataType().getColumnSuffix(columnIndex).orElse("");
           ColumnMetaData dropColumn = columnsToDrop.get(columnName);
           if (dropColumn != null) {
             matchingColumns.add(dropColumn);
@@ -393,7 +395,7 @@ public class TableMigrator {
         }
       }
 
-      if (matchingColumns.size() == addAttribute.getDataType().getSqlTypes().length) {
+      if (matchingColumns.size() == addAttribute.getDataType().getColumnCount()) {
         // generate alternate statements and check against hints
         String renameSql = new ColumnMigrator(entity, addAttribute, backend, matchingColumns).migrate();
         Pattern renameHint = sqlMatchesHint(renameSql, hints);
@@ -459,14 +461,14 @@ public class TableMigrator {
         for (ColumnMetaData dropColumn: new ArrayList<>(columnsToDrop.values())) {
           Collection<ColumnMetaData> columns = new ArrayList<>();
           // check multicolumn exists with same name
-          for (DataType.SqlTypeWithPostfix sp: addAttribute.getDataType().getSqlTypesWithPostfix()) {
-            String columnName = dropColumn.getColumnName() + sp.getPostfix();
+          for (int columnIndex = 0; columnIndex < addAttribute.getDataType().getColumnCount(); columnIndex++) {
+            String columnName = dropColumn.getColumnName() + addAttribute.getDataType().getColumnSuffix(columnIndex).orElse("");
             ColumnMetaData column = columnsToDrop.get(columnName);
             if (column != null) {
               columns.add(column);
             }
           }
-          if (columns.size() == addAttribute.getDataType().getSqlTypes().length) {
+          if (columns.size() == addAttribute.getDataType().getColumnCount()) {
             // generate alternate statements and check against hints
             String renameSql = new ColumnMigrator(entity, addAttribute, backend, columns).migrate();
             Pattern renameHint = sqlMatchesHint(renameSql, hints);

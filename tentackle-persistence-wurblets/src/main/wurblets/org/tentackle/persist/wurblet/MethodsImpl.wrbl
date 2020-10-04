@@ -295,23 +295,21 @@ For more options, see {\@link DbModelWurblet}.
   public void getFields(ResultSetWrapper rs) {
     super.getFields(rs);
 @[
-        boolean needIfClause = false;
+        boolean needConfig = false;
         for (Attribute attr: getEntity().getMappedAttributes())  {
           if (!attr.getOptions().isMute())  {
-            for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
-              needIfClause = true;
-              break;
-            }
+            needConfig = true;
+            break;
           }
         }
-        if (needIfClause) {
+        if (needConfig) {
 ]@
     if (rs.configureSection(CLASSVARIABLES)) {
 @[
           for (Attribute attr: getEntity().getMappedAttributes())  {
             if (!attr.getOptions().isMute())  {
-              for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
-                String name = attr.getName().toUpperCase() + sp.getPostfix();
+              for (int columnIndex = 0; columnIndex < attr.getDataType().getColumnCount(); columnIndex++) {
+                String name = attr.getName().toUpperCase() + attr.getDataType().getColumnSuffix(columnIndex).orElse("");
 ]@
       rs.configureColumn(CN_@(name)@);
 @[
@@ -338,7 +336,7 @@ For more options, see {\@link DbModelWurblet}.
             String name = attr.getName().toUpperCase();
             boolean useSetter = isAttributeDerived(attr);
 
-            if (attr.getDataType() == DataType.BINARY) {
+            if ("Binary".equals(attr.getDataType().getJavaType())) {
               // Binary getter takes additional buffer size argument
               if (useSetter)  {
 ]@
@@ -457,10 +455,16 @@ For more options, see {\@link DbModelWurblet}.
     @(jdbcCode)@;
 @[
 
-              // for multi column types, such as BMoney/DMoney
-              for (int p = 1; p < attr.getDataType().getSqlTypes().length; p++) {
+              // for multi column types, such as BMoney or application specific types
+              int diff = attr.getDataType().getColumnCount() - 1;
+              if (diff == 1) {
 ]@
-    ++ndx;
+    ndx++;
+@[
+              }
+              else if (diff > 1) {
+]@
+    ndx += @(diff)@;
 @[
               }
             }
@@ -487,8 +491,8 @@ For more options, see {\@link DbModelWurblet}.
         if (!readOnly) {
           for (Attribute attr: attributes)  {
             if (!attr.getOptions().isMute() && !attr.getOptions().isReadOnly()) {
-              for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
-                String name = attr.getName().toUpperCase() + sp.getPostfix();
+              for (int columnIndex = 0; columnIndex < attr.getDataType().getColumnCount(); columnIndex++) {
+                String name = attr.getName().toUpperCase() + attr.getDataType().getColumnSuffix(columnIndex).orElse("");
                 names.add(name);
               }
             }
@@ -540,8 +544,8 @@ For more options, see {\@link DbModelWurblet}.
           names.clear();
           for (Attribute attr: attributes)  {
             if (!attr.getOptions().isMute() && !attr.getOptions().isReadOnly() && !isIdOrSerialAttribute(attr)) {
-              for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
-                String name = attr.getName().toUpperCase() + sp.getPostfix();
+              for (int columnIndex = 0; columnIndex < attr.getDataType().getColumnCount(); columnIndex++) {
+                String name = attr.getName().toUpperCase() + attr.getDataType().getColumnSuffix(columnIndex).orElse("");
                 names.add(name);
               }
             }

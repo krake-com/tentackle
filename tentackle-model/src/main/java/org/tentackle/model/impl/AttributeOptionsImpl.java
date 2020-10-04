@@ -21,10 +21,10 @@ package org.tentackle.model.impl;
 import org.tentackle.common.Constants;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.AttributeOptions;
-import org.tentackle.model.DataType;
 import org.tentackle.model.EntityOptions;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.SourceInfo;
+import org.tentackle.sql.DataType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -102,7 +102,7 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
    * @param options the entity options
    * @param dataType the datatype of the attribute
    */
-  public void applyEntityOptions(EntityOptions options, DataType dataType) {
+  public void applyEntityOptions(EntityOptions options, DataType<?> dataType) {
     setNoDeclare(options.isNoDeclare());
     setNoMethod(options.isNoMethod());
     setNoConstant(options.isNoConstant());
@@ -113,7 +113,9 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
     setAccessScope(options.getAccessScope());
     setTrimRead(options.isTrimRead());
     setTrimWrite(options.isTrimWrite());
-    setMapNull(options.isMapNull());
+    if (dataType.isMapNullSupported()) {
+      setMapNull(options.isMapNull());
+    }
     setBindable(options.isBindable());
     setUpperCase(options.isUpperCase());
     setLowerCase(options.isLowerCase());
@@ -141,7 +143,7 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
       if (uco.startsWith(OPTION_DEFAULT)) {
         if (on) {
           String str = option.substring(OPTION_DEFAULT.length()).trim();
-          Object value = getAttribute().getEffectiveType().parse(str);
+          Object value = getAttribute().getEffectiveDataType().valueOf(str);
           setDefaultValue(value);
         }
         else  {

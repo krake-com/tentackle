@@ -22,7 +22,6 @@ import org.tentackle.common.Constants;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.AttributeSorting;
-import org.tentackle.model.DataType;
 import org.tentackle.model.Entity;
 import org.tentackle.model.EntityFactory;
 import org.tentackle.model.Index;
@@ -42,6 +41,7 @@ import org.tentackle.model.parse.Line;
 import org.tentackle.model.parse.OptionLine;
 import org.tentackle.model.parse.RelationLine;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.DataTypeFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -135,7 +135,7 @@ public class EntityFactoryImpl implements EntityFactory {
 
     // add id, serial for processing (may be removed or moved later)
     AttributeImpl idAttribute = createAttribute(entity, document.getSourceInfo(), true);
-    idAttribute.setDataType(DataType.LONG_PRIMITIVE);
+    idAttribute.setDataType(DataTypeFactory.getInstance().get(Long.TYPE));
     idAttribute.setColumnName(Constants.CN_ID);
     idAttribute.setName(Constants.AN_ID);
     idAttribute.getOptions().setComment("object id");
@@ -143,7 +143,7 @@ public class EntityFactoryImpl implements EntityFactory {
     entity.getAttributes().add(idAttribute);
 
     AttributeImpl serialAttribute = createAttribute(entity, document.getSourceInfo(), true);
-    serialAttribute.setDataType(DataType.LONG_PRIMITIVE);
+    serialAttribute.setDataType(DataTypeFactory.getInstance().get(Long.TYPE));
     serialAttribute.setColumnName(Constants.CN_SERIAL);
     serialAttribute.setName(Constants.AN_SERIAL);
     serialAttribute.getOptions().setComment("object serial");
@@ -261,7 +261,7 @@ public class EntityFactoryImpl implements EntityFactory {
 
     if (entity.isRootOfInheritanceHierarchy() && !entity.getInheritanceType().isMappingToNoTable()) {
       AttributeImpl classIdAttribute = createAttribute(entity, document.getSourceInfo(), true);
-      classIdAttribute.setDataType(DataType.INTEGER_PRIMITIVE);
+      classIdAttribute.setDataType(DataTypeFactory.getInstance().get(Integer.TYPE));
       classIdAttribute.setColumnName(Constants.CN_CLASSID);
       classIdAttribute.setName(Constants.AN_CLASSID);
       classIdAttribute.getOptions().setComment("class id");

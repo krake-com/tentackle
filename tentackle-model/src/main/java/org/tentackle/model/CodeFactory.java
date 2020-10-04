@@ -24,10 +24,11 @@ import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.DataType;
 
 import java.util.List;
 
-interface CodeFactory$Singleton {
+interface CodeFactoryHolder {
   CodeFactory INSTANCE = ServiceFactory.createService(CodeFactory.class, CodeFactory.class);
 }
 
@@ -44,29 +45,7 @@ public class CodeFactory {
    * @return the singleton
    */
   public static CodeFactory getInstance() {
-    return CodeFactory$Singleton.INSTANCE;
-  }
-
-
-  /**
-   * Creates the column postfix for a given index.<br>
-   * For datatypes mapping to more than one column, the column names get a postfix.
-   *
-   * @param javaType the java type
-   * @param index the index starting at 0
-   * @return the postfix, never null
-   */
-  public String createColumnPostfix(String javaType, int index) {
-    /*
-     * The first index 0 gets no postfix. The others start at "_2" (for second column),
-     * "_3" and so forth.<br>
-     * The postfix currently does not depend on the javatype
-     */
-    StringBuilder postfix = new StringBuilder();
-    if (index > 0) {
-      postfix.append('_').append(index + 1);
-    }
-    return postfix.toString();
+    return CodeFactoryHolder.INSTANCE;
   }
 
 
@@ -97,22 +76,8 @@ public class CodeFactory {
    * @return the java code
    */
   public String createMethodArgument(Attribute attribute, String value) {
-    if (attribute.getDataType().isNumeric()) {
-      // check to downcast for (short) or (byte)
-      switch (attribute.getDataType()) {
-        case BYTE:
-          value = "(Byte) " + value;
-          break;
-        case BYTE_PRIMITIVE:
-          value = "(byte) " + value;
-          break;
-        case SHORT:
-          value = "(Short) " + value;
-          break;
-        case SHORT_PRIMITIVE:
-          value = "(short) " + value;
-          break;
-      }
+    if (attribute.getDataType().isDowncastNecessary()) {
+      value = "(" + attribute.getDataType().getJavaType() + ") " + value;
     }
     return value;
   }
@@ -224,34 +189,31 @@ public class CodeFactory {
     int attributeCount = 1;
 
     for (Attribute attribute: tableAttributes) {
-      DataType dataType = attribute.getEffectiveType();
-      int multiColumnIndex = 1;
-      int multiColumnSize = dataType.getSqlTypes().length;
-      for (DataType.SqlTypeWithPostfix sp: dataType.getSqlTypesWithPostfix()) {
+      DataType<?> dataType = attribute.getEffectiveDataType();
+      for (int columnIndex = 0; columnIndex < dataType.getColumnCount(); columnIndex++) {
         buf.append("    ");
-        String columnName = attribute.getColumnName() + sp.getPostfix();
+        String columnName = attribute.getColumnName() + dataType.getColumnSuffix(columnIndex).orElse("");
         int size = attribute.getSizeWithDefault();
         int scale = attribute.getScaleWithDefault();
         Object defaultValue = attribute.getOptions().getDefaultValue();
         String comment = attribute.getOptions().getComment();
-        if (multiColumnIndex > 1) {
+        if (columnIndex > 0) {
           comment = null;
           if (defaultValue != null) {
-            defaultValue = sp.getSqlType().getDefaultValue();
+            defaultValue = dataType.getSqlType(columnIndex).getDefaultValue();
           }
         }
         if (dataType.isScaleInSecondColumn()) {
-          if (multiColumnIndex == 2) {
+          if (columnIndex == 1) {
             size = 0;
           }
           scale = 0;
         }
         buf.append(backend.sqlCreateColumn(
-            columnName, comment, sp.getSqlType(), size, scale,
+            columnName, comment, dataType.getSqlType(columnIndex), size, scale,
             attribute.isNullable(), defaultValue,
             attribute.getName().equals(Constants.AN_ID) && !entity.getOptions().isNoPrimaryKey(),
-            attributeCount < attributeNum || multiColumnIndex < multiColumnSize));
-        multiColumnIndex++;
+            attributeCount < attributeNum || columnIndex < dataType.getColumnCount() - 1));
       }
       attributeCount++;
     }

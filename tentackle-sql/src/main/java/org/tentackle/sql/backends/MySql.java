@@ -17,10 +17,16 @@
  */
 
 
-package org.tentackle.sql;
+package org.tentackle.sql.backends;
 
 import org.tentackle.common.Service;
 import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.sql.Backend;
+import org.tentackle.sql.BackendException;
+import org.tentackle.sql.BackendInfo;
+import org.tentackle.sql.BackendPreparedStatement;
+import org.tentackle.sql.MigrationStrategy;
+import org.tentackle.sql.SqlType;
 import org.tentackle.sql.metadata.ColumnMetaData;
 import org.tentackle.sql.metadata.MySqlColumnMetaData;
 import org.tentackle.sql.metadata.TableMetaData;
@@ -399,7 +405,7 @@ public class MySql extends AbstractSql92Backend {
 
   @Override
   public MigrationStrategy[] getMigrationStrategy(ColumnMetaData column, String columnName, String comment,
-          SqlType sqlType, int size, int scale, boolean nullable, Object defaultValue) {
+                                                  SqlType sqlType, int size, int scale, boolean nullable, Object defaultValue) {
 
     List<MigrationStrategy> strategies = new ArrayList<>();
     int maxSize = getMaxSize(sqlType);

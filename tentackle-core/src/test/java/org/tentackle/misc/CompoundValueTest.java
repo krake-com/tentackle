@@ -63,7 +63,7 @@ public class CompoundValueTest {
     Assert.assertTrue(result instanceof Boolean);
     Assert.assertEquals(result, !thisIsFalse());
 
-    result = new CompoundValue("$org.tentackle.misc.DateHelper.now").getValue();
+    result = new CompoundValue("$org.tentackle.common.DateHelper.now").getValue();
     Assert.assertTrue(result instanceof Timestamp);
     Reporter.log(result.toString() + "<br/>");
 

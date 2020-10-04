@@ -19,6 +19,8 @@
 module org.tentackle.sql {
   exports org.tentackle.sql;
   exports org.tentackle.sql.metadata;
+  exports org.tentackle.sql.backends;
+  exports org.tentackle.sql.datatypes;
 
   requires transitive org.tentackle.common;
 

@@ -20,7 +20,7 @@
 package org.tentackle.reflect;
 
 import org.tentackle.common.TentackleRuntimeException;
-import org.tentackle.misc.DateHelper;
+import org.tentackle.common.DateHelper;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
