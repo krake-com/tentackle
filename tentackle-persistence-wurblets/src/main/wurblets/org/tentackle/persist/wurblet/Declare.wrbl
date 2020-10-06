@@ -14,7 +14,7 @@ arguments:
 For more options, see {\@link DbModelWurblet}.
 }@
 @[
-  private void wurbel() throws ModelException {
+  private void wurbel() throws ModelException, WurbelException {
 
     String[] args = getContainer().getArgs();   // cmd line args
 
@@ -34,12 +34,26 @@ For more options, see {\@link DbModelWurblet}.
       }
     }
 
+    Map<DataType<?>, String> nonPredefinedDataTypes = new HashMap<>();    // types : attributes
+
     for (Attribute attr: getEntity().getAttributes()) {
-      if (!attr.getOptions().isNoDeclare() && !attr.getOptions().isMute())    {
+      if (!attr.getOptions().isNoDeclare() && !attr.getOptions().isMute()) {
 ]@
 
   /** @(attr.getOptions().getComment())@. */
 @[
+        DataType<?> dataType = getEffectiveDataType(attr);
+        if (!dataType.isPredefined()) {
+          String attribNames = nonPredefinedDataTypes.get(dataType);
+          if (attribNames == null) {
+            attribNames = attr.getName();
+          }
+          else {
+            attribNames += ", " + attr.getName();
+          }
+          nonPredefinedDataTypes.put(dataType, attribNames);
+        }
+
         if (generateAnnotations) {
           for (String annotation: attr.getOptions().getAnnotations()) {
 ]@
@@ -75,5 +89,16 @@ For more options, see {\@link DbModelWurblet}.
         }
       }
     }
+
+    for (Map.Entry<DataType<?>, String> entry : nonPredefinedDataTypes.entrySet()) {
+      DataType<?> dataType = entry.getKey();
+      String attribNames = entry.getValue();
+]@
+
+  /** application specific datatype for @(attribNames)@. */
+  @(protection)@ static final DataType<@(dataType.getJavaType())@> @(getDataTypeConstant(dataType))@ = DataTypeFactory.getInstance().get(@(dataType.getJavaType())@.class);
+@[
+    }
+
   }
 ]@

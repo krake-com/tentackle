@@ -38,6 +38,10 @@
   <build>
     <plugins>
       <plugin>
+        <groupId>org.wurbelizer</groupId>
+        <artifactId>wurbelizer-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-sql-maven-plugin</artifactId>
       </plugin>

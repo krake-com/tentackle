@@ -28,6 +28,7 @@ import org.tentackle.sql.SqlType;
 import org.tentackle.sql.metadata.ColumnMetaData;
 
 import java.util.Collection;
+import java.util.Optional;
 
 /**
  * Handles the migration of columns.
@@ -136,10 +137,14 @@ public class ColumnMigrator {
             sqlType = dataType.getSqlType(columnIndex);
             columnSize = attribute.getSizeWithDefault();
             columnScale = attribute.getScaleWithDefault();
-            comment = columnIndex == 0 ? attribute.getOptions().getComment() : null;
+            comment = attribute.getOptions().getComment();
+            if (comment != null && !comment.isEmpty()) {
+              comment += dataType.getCommentSuffix(columnIndex).orElse("");
+            }
             defaultValue = attribute.getOptions().getDefaultValue();
             if (columnIndex > 0 && defaultValue != null) {
               // default applies only to first column for multicolumn types
+              // the other columns get the SQL type's default value
               defaultValue = sqlType.getDefaultValue();
             }
             if (dataType.isScaleInSecondColumn()) {

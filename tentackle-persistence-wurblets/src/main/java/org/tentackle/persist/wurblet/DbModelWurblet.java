@@ -843,22 +843,21 @@ public class DbModelWurblet extends ModelWurblet {
   }
 
 
-
   /**
-   * Gets the effective DataType used agains Tentackle's JDBC wrapper layer.
+   * Gets the name of the datatype constant.
    *
-   * @param attribute the model attribute
-   * @return the data type
-   * @throws WurbelException if type is misconfigured
+   * @param dataType the datatype
+   * @return the DT_...
    */
-  public DataType<?> getJdbcDataType(Attribute attribute) throws WurbelException {
-    try {
-      return attribute.getEffectiveDataType();
+  public String getDataTypeConstant(DataType<?> dataType) {
+    StringBuilder buf = new StringBuilder();
+    buf.append("DT_").append(dataType.getJavaType().toUpperCase());
+    if (!dataType.getVariant().isEmpty()) {
+      buf.append('_').append(dataType.getVariant().toUpperCase());
     }
-    catch (ModelException me) {
-      throw new WurbelException("cannot determine effective JDBC datatype for " + attribute, me);
-    }
+    return buf.toString();
   }
+
 
   /**
    * Creates the "setXXXX" method name for PreparedStatementWrapper.
@@ -869,16 +868,16 @@ public class DbModelWurblet extends ModelWurblet {
    */
   public String createJdbcSetterName(Attribute attribute) throws WurbelException {
     StringBuilder buf = new StringBuilder("set");
-    DataType<?> type = getJdbcDataType(attribute);
-    if (type.isPrimitive()) {
-      buf.append(StringHelper.firstToUpper(type.toString()));
+    DataType<?> dataType = getEffectiveDataType(attribute);
+    if (dataType.isPrimitive()) {
+      buf.append(StringHelper.firstToUpper(dataType.getJavaType()));
     }
     else  {
-      if ("String".equals(type.getJavaType()) && DataTypeFactory.LARGE_VARIANT.equals(type.getVariant())) {
+      if ("String".equals(dataType.getJavaType()) && DataTypeFactory.LARGE_VARIANT.equals(dataType.getVariant())) {
         buf.append("LargeString");
       }
       else {
-        buf.append(type.toString());
+        buf.append(dataType.getJavaType());
       }
     }
     return buf.toString();
@@ -893,12 +892,12 @@ public class DbModelWurblet extends ModelWurblet {
    */
   public String createJdbcGetterName(Attribute attribute) throws WurbelException {
     StringBuilder buf = new StringBuilder("get");
-    DataType<?> type = getJdbcDataType(attribute);
-    if (type.isPrimitive()) {
-      buf.append(StringHelper.firstToUpper(type.getJavaType()));
+    DataType<?> dataType = getEffectiveDataType(attribute);
+    if (dataType.isPrimitive()) {
+      buf.append(StringHelper.firstToUpper(dataType.getJavaType()));
     }
     else {
-      switch (type.getJavaType()) {
+      switch (dataType.getJavaType()) {
         case "Boolean":
         case "Byte":
         case "Short":
@@ -909,12 +908,12 @@ public class DbModelWurblet extends ModelWurblet {
           break;
 
         case "String":
-          if (DataTypeFactory.LARGE_VARIANT.equals(type.getVariant())) {
+          if (DataTypeFactory.LARGE_VARIANT.equals(dataType.getVariant())) {
             buf.append("Large");    // LargeString
           }
           break;
       }
-      buf.append(type.getJavaType());
+      buf.append(dataType.getJavaType());
     }
     return buf.toString();
   }

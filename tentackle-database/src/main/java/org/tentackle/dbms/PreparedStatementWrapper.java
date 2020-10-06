@@ -300,12 +300,13 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
   }
 
   @Override
-  public <T> void set(DataType<T> dataType, int p, T object, boolean mapNull, Integer size) {
+  public <T> int set(DataType<T> dataType, int p, T object, boolean mapNull, Integer size) {
     try {
       Object[] values = dataType.set(con.getBackend(), getStatement(), p, object, mapNull, size);
       for (int i=0; i < values.length; i++) {
         rememberParameter(p + i, values[i]);
       }
+      return values.length;
     }
     catch (SQLException e)  {
       throw new PersistenceException(getSession(), this.toString(), e);

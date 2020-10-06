@@ -44,8 +44,9 @@ public interface BackendPreparedStatement {
    * @param mapNull true if map null values
    * @param size the optional size from the model
    * @param <T> the type
+   * @return the number of columns set
    */
-  <T> void set(DataType<T> dataType, int p, T object, boolean mapNull, Integer size);
+  <T> int set(DataType<T> dataType, int p, T object, boolean mapNull, Integer size);
 
   /**
    * Sets the designated parameter to the given Java <code>Boolean</code> value.

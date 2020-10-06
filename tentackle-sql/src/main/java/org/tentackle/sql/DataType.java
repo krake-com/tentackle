@@ -47,11 +47,15 @@ import java.util.Optional;
  * Notes for implementors of application-specific data types:<br>
  * The method {@link #isPredefined()} must return false. Otherwise the wurblets assume that type-specific methods exist
  * and generate uncompilable code.<br>
- * Furthermore, as <code>DataType</code>s refer to the corresponding Java type,
+ * Furthermore, since <code>DataType</code>s refer to the corresponding Java type,
  * they should reside in a separate module the java type's module does not depend on. Otherwise
  * all application modules would refer to the tentackle-sql module, which is not desired for the PDO module(s).
- * In order for the wurblets and the model-API to load an application-specific type, the <code>DataType</code>'s module must be
- * configured as a wurblet dependency (see the wurbelizer docs).
+ * <p>
+ * Finally, the <code>DataType</code>'s module must be made known to the following maven plugins:
+ * <ul>
+ *   <li>wurbelizer plugin: add as <code>wurbletDependency</code> (see the wurbelizer docs)</li>
+ *   <li>tentackle sql plugin: add as plugin dependency</cpde></li>
+ * </ul>
  *
  * @param <T> the java type described by this data type
  */
@@ -158,12 +162,23 @@ public interface DataType<T> {
 
 
   /**
-   * Gets the optional suffix.
+   * Gets the optional suffix.<br>
+   * Suffixes usually begin with an underscore.
    *
    * @param index the column index
-   * @return the suffix, if any
+   * @return the optional suffix
    */
   Optional<String> getColumnSuffix(int index);
+
+
+  /**
+   * Gets the optional comment suffix.<br>
+   * If present, it will be appended to the comment.
+   *
+   * @param index the column index
+   * @return the optional suffix
+   */
+  Optional<String> getCommentSuffix(int index);
 
 
   /**

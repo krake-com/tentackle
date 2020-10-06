@@ -3,6 +3,7 @@
 @{import java.util.*}@
 @{import org.tentackle.buildsupport.*}@
 @{import org.tentackle.common.*}@
+@{import org.tentackle.sql.*}@
 @{import org.tentackle.model.*}@
 @{import org.tentackle.wurblet.*}@
 @{import org.wurbelizer.wurbel.*}@

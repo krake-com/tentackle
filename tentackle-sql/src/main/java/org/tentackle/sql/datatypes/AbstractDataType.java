@@ -52,6 +52,19 @@ public abstract class AbstractDataType<T> implements DataType<T> {
   }
 
   @Override
+  public Optional<String> getCommentSuffix(int index) {
+    Optional<String> columnSuffix = getColumnSuffix(index);
+    if (columnSuffix.isPresent()) {
+      String suffix = columnSuffix.get();
+      if (suffix.length() > 1 && suffix.startsWith("_")) {
+        suffix = suffix.substring(1);
+      }
+      return Optional.of(" (" + suffix + ")");
+    }
+    return Optional.empty();
+  }
+
+  @Override
   public boolean isPrimitive() {
     return false;
   }
@@ -123,7 +136,12 @@ public abstract class AbstractDataType<T> implements DataType<T> {
 
   @Override
   public String toString() {
-    return getJavaType();
+    StringBuilder buf = new StringBuilder();
+    buf.append(getJavaType());
+    if (isJavaTypeGenerified()) {
+      buf.append("<?>");
+    }
+    return buf.toString();
   }
 
 
