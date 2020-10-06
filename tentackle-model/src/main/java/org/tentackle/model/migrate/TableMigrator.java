@@ -326,24 +326,25 @@ public class TableMigrator {
       }
       if (matchingColumns.isEmpty()) {
         if (renameColumns != null) {
-          String oldColumnName = renameColumns.get(attribute.getColumnName());
-          if (oldColumnName != null) {
-            // matching rename hint!
-            ColumnMetaData oldColumn = columnsToDrop.get(oldColumnName);
-            if (oldColumn != null) {
-              columnsToDrop.remove(oldColumnName);
-              for (int columnIndex = 0; columnIndex < dataType.getColumnCount(); columnIndex++) {
-                ColumnMetaData column = table.getColumnByName(oldColumnName +
-                                                              dataType.getColumnSuffix(columnIndex).orElse(""));
+          for (int columnIndex = 0; columnIndex < dataType.getColumnCount(); columnIndex++) {
+            String oldColumnName = renameColumns.get(attribute.getColumnName(columnIndex));
+            if (oldColumnName != null) {
+              // matching rename hint!
+              ColumnMetaData oldColumn = columnsToDrop.get(oldColumnName);
+              if (oldColumn != null) {
+                ColumnMetaData column = table.getColumnByName(oldColumnName);
                 if (column != null) {
                   matchingColumns.add(column);
                 }
               }
-              if (!matchingColumns.isEmpty()) {
-                attributesToMigrate.put(attribute, matchingColumns);
-                continue;
-              }
             }
+          }
+          if (matchingColumns.size() == dataType.getColumnCount()) {    // all hints must match for multi column types
+            attributesToMigrate.put(attribute, matchingColumns);
+            for (ColumnMetaData column : matchingColumns) {
+              columnsToDrop.remove(column.getColumnName());
+            }
+            continue;
           }
         }
         attributesToAdd.add(attribute);

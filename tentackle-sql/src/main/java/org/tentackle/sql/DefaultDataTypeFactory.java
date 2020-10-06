@@ -94,7 +94,7 @@ public class DefaultDataTypeFactory implements DataTypeFactory {
     }
     catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
         InvocationTargetException | NoSuchMethodException nfe) {
-      throw new BackendException("supported backends could not be determined", nfe);
+      throw new BackendException("supported datatypes could not be determined", nfe);
     }
   }
 

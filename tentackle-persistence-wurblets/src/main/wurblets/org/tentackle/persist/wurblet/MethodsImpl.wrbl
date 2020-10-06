@@ -331,46 +331,73 @@ For more options, see {\@link DbModelWurblet}.
 @[
         for (Attribute attr: getEntity().getMappedAttributes())  {
           if (!attr.getOptions().isMute())  {
-            String getterMethod = createJdbcGetterName(attr);
             String name = attr.getName().toUpperCase();
             boolean useSetter = isAttributeDerived(attr);
-
-            if ("Binary".equals(attr.getDataType().getJavaType())) {
-              // Binary getter takes additional buffer size argument
-              if (useSetter)  {
+            DataType<?> dataType = getEffectiveDataType(attr);
+            if (dataType.isPredefined()) {
+              String getterMethod = createJdbcGetterName(attr);
+              if ("Binary".equals(attr.getDataType().getJavaType())) {
+                // Binary getter takes additional buffer size argument
+                if (useSetter)  {
 ]@
     @(attr.getSetterName())@(rs.@(getterMethod)@(@(attr.getSizeWithDefault())@));
 @[
-              }
-              else  {
+                }
+                else  {
 ]@
     @(attr.getName())@ = rs.@(getterMethod)@(@(attr.getSizeWithDefault())@);
 @[
+                }
+              }
+              else  {
+                String rsGetter = "rs." + getterMethod + "(";
+                boolean needComma = false;
+                if (attr.getOptions().isWithTimezone()) {
+                  rsGetter += "get" + attr.getMethodNameSuffix() + "TimezoneConfig()";
+                  needComma = true;
+                }
+                if (attr.getOptions().isMapNull()) {
+                  if (needComma) {
+                    rsGetter += ", ";
+                  }
+                  rsGetter += "true";
+                  needComma = true;
+                }
+                rsGetter += ")";
+
+                String modelCode = getModelCode(attr, rsGetter);
+
+                if (attr.getOptions().isTrimRead()) {
+                  modelCode = "StringHelper.trim(" + modelCode + ", " + attr.getSizeWithDefault() + ")";
+                }
+
+                if (useSetter) {
+                  modelCode = attr.getSetterName() + "(" + modelCode + ")";
+                }
+                else  {
+                  modelCode = attr.getName() + " = " + modelCode;
+                }
+]@
+    @(modelCode)@;
+@[
+                if (attr.getOptions().isUTC()) {
+                  if (useSetter) {
+                    modelCode = attr.getGetterName() + "()";
+                  }
+                  else  {
+                    modelCode = attr.getName();
+                  }
+]@
+    if (@(modelCode)@ != null) {
+      @(modelCode)@.setUTC(true);
+    }
+@[
+                }
               }
             }
-
-            else  {
-              String rsGetter = "rs." + getterMethod + "(";
-              boolean needComma = false;
-              if (attr.getOptions().isWithTimezone()) {
-                rsGetter += "get" + attr.getMethodNameSuffix() + "TimezoneConfig()";
-                needComma = true;
-              }
-              if (attr.getOptions().isMapNull()) {
-                if (needComma) {
-                  rsGetter += ", ";
-                }
-                rsGetter += "true";
-                needComma = true;
-              }
-              rsGetter += ")";
-
+            else {    // application specific type
+              String rsGetter = "rs.get(" + getDataTypeConstant(dataType) + ", " + attr.getOptions().isMapNull() + ", " + attr.getSize() + ")";
               String modelCode = getModelCode(attr, rsGetter);
-
-              if (attr.getOptions().isTrimRead()) {
-                modelCode = "StringHelper.trim(" + modelCode + ", " + attr.getSizeWithDefault() + ")";
-              }
-
               if (useSetter) {
                 modelCode = attr.getSetterName() + "(" + modelCode + ")";
               }
@@ -380,19 +407,6 @@ For more options, see {\@link DbModelWurblet}.
 ]@
     @(modelCode)@;
 @[
-              if (attr.getOptions().isUTC()) {
-                if (useSetter) {
-                  modelCode = attr.getGetterName() + "()";
-                }
-                else  {
-                  modelCode = attr.getName();
-                }
-]@
-    if (@(modelCode)@ != null) {
-      @(modelCode)@.setUTC(true);
-    }
-@[
-              }
             }
           }
         }
@@ -424,46 +438,65 @@ For more options, see {\@link DbModelWurblet}.
 
           for (Attribute attr: getEntity().getMappedAttributes()) {
             if (!attr.getOptions().isMute() && !attr.getOptions().isReadOnly())  {
-              String setterName = createJdbcSetterName(attr);
+              boolean useGetter = isAttributeDerived(attr);
+              DataType<?> dataType = getEffectiveDataType(attr);
+              if (dataType.isPredefined()) {
+                String setterName = createJdbcSetterName(attr);
 
-              String modelCode;
-              if (isAttributeDerived(attr)) {
-                modelCode = attr.getGetterName() + "()";
-              }
-              else {
-                modelCode = attr.getName();
-              }
+                String modelCode;
+                if (useGetter) {
+                  modelCode = attr.getGetterName() + "()";
+                }
+                else {
+                  modelCode = attr.getName();
+                }
 
-              String jdbcCode = getJdbcCode(attr, modelCode);
+                String jdbcCode = getJdbcCode(attr, modelCode);
 
-              if (attr.getOptions().isTrimWrite()) {
-                jdbcCode = "StringHelper.trim(" + jdbcCode + ", " + attr.getSizeWithDefault() + ")";
-              }
+                if (attr.getOptions().isTrimWrite()) {
+                  jdbcCode = "StringHelper.trim(" + jdbcCode + ", " + attr.getSizeWithDefault() + ")";
+                }
 
-              jdbcCode = "st." + setterName + "(++ndx, " + jdbcCode;
-              if (attr.getOptions().isWithTimezone()) {
-                jdbcCode += ", get" + attr.getMethodNameSuffix() + "TimezoneConfig()";
-              }
-              if (attr.getOptions().isMapNull()) {
-                jdbcCode += ", true)";
-              }
-              else  {
-                jdbcCode += ")";
-              }
+                jdbcCode = "st." + setterName + "(++ndx, " + jdbcCode;
+                if (attr.getOptions().isWithTimezone()) {
+                  jdbcCode += ", get" + attr.getMethodNameSuffix() + "TimezoneConfig()";
+                }
+                if (attr.getOptions().isMapNull()) {
+                  jdbcCode += ", true)";
+                }
+                else  {
+                  jdbcCode += ")";
+                }
 ]@
     @(jdbcCode)@;
 @[
 
-              // for multi column types, such as BMoney or application specific types
-              int diff = getEffectiveDataType(attr).getColumnCount() - 1;
-              if (diff == 1) {
+                // for multi column types, such as BMoney or application specific types
+                int diff = getEffectiveDataType(attr).getColumnCount() - 1;
+                if (diff == 1) {
 ]@
     ndx++;
 @[
-              }
-              else if (diff > 1) {
+                }
+                else if (diff > 1) {
 ]@
     ndx += @(diff)@;
+@[
+                }
+              }
+              else {    // application specific type
+                String modelCode;
+                if (useGetter) {
+                  modelCode = attr.getGetterName() + "()";
+                }
+                else {
+                  modelCode = attr.getName();
+                }
+                String jdbcCode = "ndx += st.set(" + getDataTypeConstant(dataType) + ", ndx + 1, " +
+                                  getJdbcCode(attr, modelCode) + ", " +
+                                  attr.getOptions().isMapNull() + ", " + attr.getSize() + ")";
+]@
+    @(jdbcCode)@;
 @[
               }
             }
