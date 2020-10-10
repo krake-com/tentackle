@@ -16,12 +16,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.persist.wurblet;
+package org.tentackle.wurblet;
+
+import org.tentackle.common.Path;
+import org.tentackle.model.Relation;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.tentackle.common.Path;
-import org.tentackle.model.Relation;
 
 /**
  * Path of {@link Join}s.

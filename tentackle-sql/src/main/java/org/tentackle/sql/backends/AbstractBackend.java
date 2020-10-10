@@ -512,6 +512,7 @@ public abstract class AbstractBackend implements Backend {
     switch(sqlType) {
       case CHAR:
       case VARCHAR:
+      case CLOB:
       case TIME:
       case DATE:
       case TIMESTAMP:

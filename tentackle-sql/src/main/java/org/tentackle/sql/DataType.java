@@ -162,6 +162,45 @@ public interface DataType<T> {
 
 
   /**
+   * Gets the column size.
+   *
+   * @param index the column index
+   * @param size the size from the model
+   * @return the column size
+   */
+  int getSize(int index, Integer size);
+
+
+  /**
+   * Gets the column scale.
+   *
+   * @param index the column index
+   * @param scale the scale from the model
+   * @return the column scale
+   */
+  int getScale(int index, Integer scale);
+
+
+  /**
+   * Gets the value of a column.
+   *
+   * @param index the column index
+   * @param value the datatype's value according to the model
+   * @return the column's value
+   */
+  Object getColumnValue(int index, T value);
+
+
+  /**
+   * Gets the java getter name of a column.
+   *
+   * @param index the datatype's value according to the model
+   * @return the column's getter name, empty string if this is a single column type
+   */
+  String getColumnGetter(int index);
+
+
+  /**
    * Gets the optional suffix.<br>
    * Suffixes usually begin with an underscore.
    *
@@ -174,21 +213,14 @@ public interface DataType<T> {
   /**
    * Gets the optional comment suffix.<br>
    * If present, it will be appended to the comment.
+   * <p>
+   * Important: for datatypes with more than one column, none or exactly
+   * one should be without suffix. See WurbletArgument in tentackle-wurblets.
    *
    * @param index the column index
    * @return the optional suffix
    */
   Optional<String> getCommentSuffix(int index);
-
-
-  /**
-   * Returns whether this is a numeric type with the scale stored in a second column.
-   * <p>
-   * {@link org.tentackle.common.BMoney} and {@link org.tentackle.common.DMoney}, for example.
-   *
-   * @return true if scale in second column
-   */
-  boolean isScaleInSecondColumn();
 
 
   /**
@@ -233,6 +265,24 @@ public interface DataType<T> {
 
 
   /**
+   * Returns whether this type can be used literally in a query String.
+   *
+   * @return true if literal String supported, else false
+   */
+  boolean isLiteralSupported();
+
+
+  /**
+   * Takes the string representation of a value and converts it to an SQL literal.<br>
+   * Some types need single quotes, for example.
+   *
+   * @param str the value string
+   * @return the SQL literal
+   */
+  String toLiteral(String str);
+
+
+  /**
    * Parses a string and converts to the value of this type.<br>
    * The method is used to parse a literal (for example the default value defined in the model).
    * <p>
@@ -246,6 +296,15 @@ public interface DataType<T> {
 
 
   /**
+   * Creates the java code to apply the valueOf method to a String.
+   *
+   * @param str the literal to be parsed
+   * @return the java code
+   */
+  String valueOfLiteralToCode(String str);
+
+
+  /**
    * Takes an object and converts it to a string that can in turn be parsed with {@link #valueOf(String)}.<br>
    * The method is used to print a literal (for example the default value of a dumped attribute).
    * <p>
@@ -256,6 +315,14 @@ public interface DataType<T> {
    * @return the printable string
    */
   String toString(T object);
+
+
+  /**
+   * Gets the name of the datatype constant.
+   *
+   * @return the DT_...
+   */
+  String getDataTypeConstant();
 
 
   /**
@@ -273,6 +340,24 @@ public interface DataType<T> {
    * @throws SQLException if failed
    */
   Object[] set(Backend backend, PreparedStatement statement, int pos, T object, boolean mapNull, Integer size) throws SQLException;
+
+
+  /**
+   * Sets a column of an object into a prepared statement.<br>
+   * Must be implemented if {@link #isPredefined()} returns false.
+   * Not invoked by framework otherwise.
+   *
+   * @param backend the database backend
+   * @param statement the prepared statement
+   * @param pos the position of the first SQL value
+   * @param object the object, may be null
+   * @param index the column index
+   * @param mapNull true if map null-values to non-null values
+   * @param size the optional size specified in the model
+   * @return the object stored in the prepared statement
+   * @throws SQLException if failed
+   */
+  Object set(Backend backend, PreparedStatement statement, int pos, T object, int index, boolean mapNull, Integer size) throws SQLException;
 
 
   /**

@@ -131,130 +131,136 @@ public class IndexImpl implements Index {
 
     parsed = true;
 
-    // parse the index
-    StringTokenizer stok = new StringTokenizer(sourceLine.getKey());
-    boolean indexFound = false;
-    boolean uniqueFound = false;
-    while (stok.hasMoreTokens()) {
-      String token = stok.nextToken();
-      switch (token.toLowerCase()) {
+    try {
 
-        case "index":
-          setUnique(uniqueFound);
-          indexFound = true;
-          uniqueFound = false;
-          break;
+      // parse the index
+      StringTokenizer stok = new StringTokenizer(sourceLine.getKey());
+      boolean indexFound = false;
+      boolean uniqueFound = false;
+      while (stok.hasMoreTokens()) {
+        String token = stok.nextToken();
+        switch (token.toLowerCase()) {
 
-        case "unique":
-          if (indexFound) {
-            throw sourceLine.createModelException("keyword 'unique' not allowed after 'index'");
-          }
-          uniqueFound = true;
-          break;
+          case "index":
+            setUnique(uniqueFound);
+            indexFound = true;
+            uniqueFound = false;
+            break;
 
-        default:
-          if (!indexFound) {
-            throw sourceLine.createModelException("unknown configuration keyword: " + token);
-          }
-          int ndx = token.indexOf('.');
-          if (ndx > 0) {
-            // cut leading schema name
-            token = token.substring(ndx + 1);
-          }
-          setName(token);
+          case "unique":
+            if (indexFound) {
+              throw sourceLine.createModelException("keyword 'unique' not allowed after 'index'");
+            }
+            uniqueFound = true;
+            break;
+
+          default:
+            if (!indexFound) {
+              throw sourceLine.createModelException("unknown configuration keyword: " + token);
+            }
+            int ndx = token.indexOf('.');
+            if (ndx > 0) {
+              // cut leading schema name
+              token = token.substring(ndx + 1);
+            }
+            setName(token);
+        }
       }
-    }
-    if (!indexFound) {
-      throw sourceLine.createModelException("illegal configuration: " + sourceLine.getKey());
-    }
+      if (!indexFound) {
+        throw sourceLine.createModelException("illegal configuration: " + sourceLine.getKey());
+      }
 
-    // parse the attributes
-    if (entity.getAttributes().isEmpty()) {
-      throw sourceLine.createModelException("index configuration line not allowed before attribute section");
-    }
+      // parse the attributes
+      if (entity.getAttributes().isEmpty()) {
+        throw sourceLine.createModelException("index configuration line not allowed before attribute section");
+      }
 
-    String text = sourceLine.getValue();
-    int ndx = text.indexOf('|');
-    if (ndx > 0) {
-      setFilterCondition(text.substring(ndx + 1));
-      text = text.substring(0, ndx);
-    }
-    else {
-      ndx = text.toUpperCase().indexOf("WHERE");
+      String text = sourceLine.getValue();
+      int ndx = text.indexOf('|');
       if (ndx > 0) {
-        setFilterCondition(text.substring(ndx + 5));
+        setFilterCondition(text.substring(ndx + 1));
         text = text.substring(0, ndx);
       }
-    }
-
-    stok = new StringTokenizer(text, " \t,");
-    IndexAttributeImpl indexAttribute = null;
-
-    while (stok.hasMoreTokens()) {
-      String token = stok.nextToken();
-      if (token.equalsIgnoreCase("desc")) {
-        if (indexAttribute == null) {
-          throw sourceLine.createModelException("keyword 'desc' must follow column name");
+      else {
+        ndx = text.toUpperCase().indexOf("WHERE");
+        if (ndx > 0) {
+          setFilterCondition(text.substring(ndx + 5));
+          text = text.substring(0, ndx);
         }
-        indexAttribute.setDescending(true);
       }
-      else if (token.equalsIgnoreCase("asc")) {
-        if (indexAttribute == null) {
-          throw sourceLine.createModelException("keyword 'asc' must follow column name");
-        }
-        indexAttribute.setDescending(false);
-      }
-      else  {
-        if (indexAttribute != null) {
-          getAttributes().add(indexAttribute);
-          indexAttribute = null;
-        }
-        // short form for desc or asc is + or - prepended to the column name
-        Boolean descending = null;
-        if (token.startsWith("+")) {
-          descending = Boolean.FALSE;
-          token = token.substring(1);
-        }
-        if (token.startsWith("-")) {
-          descending = Boolean.TRUE;
-          token = token.substring(1);
-        }
 
-        // check if functional index
-        String function = null;
-        String column = token;
-        int ndx1 = token.indexOf('(');
-        if (ndx1 >= 0) {
-          int ndx2 = token.indexOf(')', ndx1);
-          if (ndx2 >= 0) {
-            function = token.substring(0, ndx1).trim().toUpperCase();
-            column = token.substring(ndx1 + 1, ndx2).trim().toLowerCase();
+      stok = new StringTokenizer(text, " \t,");
+      IndexAttributeImpl indexAttribute = null;
+
+      while (stok.hasMoreTokens()) {
+        String token = stok.nextToken();
+        if (token.equalsIgnoreCase("desc")) {
+          if (indexAttribute == null) {
+            throw sourceLine.createModelException("keyword 'desc' must follow column name");
           }
+          indexAttribute.setDescending(true);
         }
+        else if (token.equalsIgnoreCase("asc")) {
+          if (indexAttribute == null) {
+            throw sourceLine.createModelException("keyword 'asc' must follow column name");
+          }
+          indexAttribute.setDescending(false);
+        }
+        else {
+          if (indexAttribute != null) {
+            getAttributes().add(indexAttribute);
+            indexAttribute = null;
+          }
+          // short form for desc or asc is + or - prepended to the column name
+          Boolean descending = null;
+          if (token.startsWith("+")) {
+            descending = Boolean.FALSE;
+            token = token.substring(1);
+          }
+          if (token.startsWith("-")) {
+            descending = Boolean.TRUE;
+            token = token.substring(1);
+          }
 
-        // check if column name exists
-        for (Attribute attribute: entity.getAttributes()) {
-          if (attribute.getColumnName().equals(column) ||
-              attribute.getName().equals(column)) {
-            // found
-            indexAttribute = factory.createIndexAttribute(this);
-            indexAttribute.setAttribute(attribute);
-            indexAttribute.setFunctionName(function);
-            if (descending != null) {
-              indexAttribute.setDescending(descending);
+          // check if functional index
+          String function = null;
+          String column = token;
+          int ndx1 = token.indexOf('(');
+          if (ndx1 >= 0) {
+            int ndx2 = token.indexOf(')', ndx1);
+            if (ndx2 >= 0) {
+              function = token.substring(0, ndx1).trim().toUpperCase();
+              column = token.substring(ndx1 + 1, ndx2).trim().toLowerCase();
             }
-            break;
+          }
+
+          // check if column name exists
+          for (Attribute attribute : entity.getAttributes()) {
+            if (attribute.getColumnName().equals(column) ||
+                attribute.getName().equals(column)) {
+              // found
+              indexAttribute = factory.createIndexAttribute(this);
+              indexAttribute.setAttribute(attribute);
+              indexAttribute.setFunctionName(function);
+              if (descending != null) {
+                indexAttribute.setDescending(descending);
+              }
+              break;
+            }
+          }
+
+          if (indexAttribute == null) {
+            // not found
+            throw sourceLine.createModelException("undefined column name: " + token);
           }
         }
-
-        if (indexAttribute == null) {
-          // not found
-          throw sourceLine.createModelException("undefined column name: " + token);
-        }
+      }
+      if (indexAttribute != null) {
+        getAttributes().add(indexAttribute);
       }
     }
-    if (indexAttribute != null) {
-      getAttributes().add(indexAttribute);
+    catch (RuntimeException rx) {
+      throw sourceLine.createModelException("syntax error", rx);
     }
   }
 

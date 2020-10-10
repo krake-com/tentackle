@@ -311,6 +311,22 @@ public class Oracle extends AbstractSql2003Backend {
   }
 
   @Override
+  public String columnTypeNullDefaultToString(String columnName, SqlType sqlType, int size, int scale,
+                                              boolean nullable, Object defaultValue) {
+    StringBuilder buf = new StringBuilder();
+    buf.append(columnTypeToString(sqlType, size, scale));
+    // oracle wants default first and then not null
+    if (defaultValue != null) {
+      buf.append(" DEFAULT ");
+      buf.append(valueToLiteral(sqlType, defaultValue));
+    }
+    if (!nullable) {
+      buf.append(" NOT NULL");
+    }
+    return buf.toString();
+  }
+
+  @Override
   public String valueToLiteral(SqlType sqlType, Object value) {
     if (value instanceof String && ((String) value).isEmpty()) {
       value = ORACLE_EMPTY_STRING;

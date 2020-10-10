@@ -16,19 +16,23 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.persist.wurblet;
+package org.tentackle.wurblet;
 
-import java.util.Arrays;
-import java.util.List;
-import org.tentackle.model.Entity;
-import org.tentackle.model.Model;
-import org.tentackle.model.ModelException;
-import org.tentackle.model.SortType;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import org.wurbelizer.wurbel.WurbelException;
 
-import static org.testng.Assert.*;
+import org.tentackle.model.Entity;
+import org.tentackle.model.Model;
+import org.tentackle.model.ModelException;
+import org.tentackle.model.SortType;
+
+import java.util.Arrays;
+import java.util.List;
+
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 
 /**
@@ -60,23 +64,28 @@ public class WurbletArgumentParserTest {
 
   @Test
   public void testParser() {
-    List<String> args1 = Arrays.asList("processed:=:null", "AND", "(", "user", "OR", "modType", ")");
+    List<String> args1 = Arrays.asList("user:=#\"hinz kunz\"", "AND", "(", "user", "OR", "modType", ")");
     List<String> args2 = Arrays.asList("(", "processed:=:null", "AND", "(", "user", "OR", "modType", ")", ")");
     List<String> args3 = Arrays.asList("processed:=:null", "(", "user", "OR", "modType", ")");
     List<String> args4 = Arrays.asList("NOT(", "processed:=:null", "OR", "user)AND", "NOT(processed:=:null",
-                                       "OR", "modType", ") | +id txId");
+                                       "OR", "modType", ")",  "|",  "+id", "txId");
     List<String> args5 = Arrays.asList("processed:=:null", "user", "modType");
-    List<String> args6 = Arrays.asList("NOT", "processed:<=:\"1980-01-01\"", "|", "processed", "modType");
+    List<String> args6 = Arrays.asList("NOT", "processed:<=:\"1980-01-01 00:00:00\"", "|", "processed", "modType");
 
     try {
       WurbletArgumentParser parser = new WurbletArgumentParser(entity, false, args1);
       WurbletArgumentExpression expr = parser.getExpression();
       assertEquals(expr.getOperands().size(), 2);
+      assertTrue(expr.getOperands().get(0) instanceof WurbletArgument);
+      WurbletArgument argument = (WurbletArgument) expr.getOperands().get(0);
+      assertEquals(argument.getText(), "user:=#\"hinz kunz\"");
+      assertEquals(argument.getValue(), "\"hinz kunz\"");
+      assertEquals(argument.getRelop(), "=");
       WurbletArgumentOperand operand = expr.getOperands().get(1);
       assertTrue(operand instanceof WurbletArgumentExpression);
       expr = (WurbletArgumentExpression) operand;
       assertEquals(expr.getOperators().size(), 1);
-      assertEquals(parser.getExpression().toString(), "processed:=:null AND (user OR modType)");
+      assertEquals(parser.getExpression().toString(), "user:=#\"hinz kunz\" AND (user OR modType)");
     }
     catch(WurbelException wx) {
       fail(wx.getMessage(), wx);
@@ -148,7 +157,7 @@ public class WurbletArgumentParserTest {
 
     try {
       WurbletArgumentParser parser = new WurbletArgumentParser(entity, true, args6);
-      assertEquals(parser.getExpression().toString(), "NOT processed:<=:\"1980-01-01\"");
+      assertEquals(parser.getExpression().toString(), "NOT processed:<=:\"1980-01-01 00:00:00\"");
       assertEquals(parser.getExtraArguments().size(), 2);
     }
     catch(WurbelException wx) {

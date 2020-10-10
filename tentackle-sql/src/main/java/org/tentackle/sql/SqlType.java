@@ -18,6 +18,8 @@
 
 package org.tentackle.sql;
 
+import org.tentackle.common.Binary;
+
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Time;
@@ -35,10 +37,10 @@ import java.util.function.Function;
 public enum SqlType {
 
   /** String. */
-  VARCHAR("", SqlType::removeSingleQuotes),
+  VARCHAR(String.class, "", SqlType::removeSingleQuotes),
 
   /** Date. */
-  DATE(new Date(0), t -> {
+  DATE(Date.class, new Date(0), t -> {
     t = removeSingleQuotes(t);
     try {
       return Date.valueOf(t);
@@ -49,7 +51,7 @@ public enum SqlType {
   }),
 
   /** Time. */
-  TIME(new Time(0), t -> {
+  TIME(Time.class, new Time(0), t -> {
     t = removeSingleQuotes(t);
     try {
       return Time.valueOf(t);
@@ -60,7 +62,7 @@ public enum SqlType {
   }),
 
   /** Timestamp. */
-  TIMESTAMP(new Timestamp(0), t -> {
+  TIMESTAMP(Timestamp.class, new Timestamp(0), t -> {
     t = removeSingleQuotes(t);
     try {
       return Timestamp.valueOf(t);
@@ -71,13 +73,13 @@ public enum SqlType {
   }),
 
   /** Arbitrary data usually stored as BLOB. */
-  BLOB(null, t -> null),  // cannot be converted
+  BLOB(Binary.class, null, t -> null),  // cannot be converted
 
   /** Large Strings usually stored as CLOB. */
-  CLOB("", SqlType::removeSingleQuotes),
+  CLOB(String.class, "", SqlType::removeSingleQuotes),
 
   /** BigDecimal and DMoney. */
-  DECIMAL(new BigDecimal(0), t -> {
+  DECIMAL(BigDecimal.class, new BigDecimal(0), t -> {
     t = removeSingleQuotes(t);
     try {
       return BigDecimal.valueOf(Double.parseDouble(t));
@@ -88,7 +90,7 @@ public enum SqlType {
   }),
 
   /** Character and char. */
-  CHAR(' ', t -> {
+  CHAR(Character.class, ' ', t -> {
     t = removeSingleQuotes(t);
     try {
       return t.isEmpty() ? ' ' : t.charAt(0);
@@ -99,7 +101,7 @@ public enum SqlType {
   }),
 
   /** Boolean and boolean. */
-  BIT(false, t -> {
+  BIT(Boolean.class, false, t -> {
     t = removeSingleQuotes(t);
     try {
       return Boolean.valueOf(t);
@@ -110,7 +112,7 @@ public enum SqlType {
   }),
 
   /** Byte and byte. */
-  TINYINT((byte) 0, t -> {
+  TINYINT(Byte.class, (byte) 0, t -> {
     t = removeSingleQuotes(t);
     try {
       return Byte.valueOf(t);
@@ -121,7 +123,7 @@ public enum SqlType {
   }),
 
   /** Short and short. */
-  SMALLINT((short) 0, t -> {
+  SMALLINT(Short.class, (short) 0, t -> {
     t = removeSingleQuotes(t);
     try {
       return Short.valueOf(t);
@@ -132,7 +134,7 @@ public enum SqlType {
   }),
 
   /** Integer and int. */
-  INTEGER(0, t -> {
+  INTEGER(Integer.class, 0, t -> {
     t = removeSingleQuotes(t);
     try {
       return Integer.valueOf(t);
@@ -143,7 +145,7 @@ public enum SqlType {
   }),
 
   /** Long and long. */
-  BIGINT(0L, t -> {
+  BIGINT(Long.class, 0L, t -> {
     t = removeSingleQuotes(t);
     try {
       return Long.valueOf(t);
@@ -154,7 +156,7 @@ public enum SqlType {
   }),
 
   /** Float and float. */
-  FLOAT(0.0f, t -> {
+  FLOAT(Float.class, 0.0f, t -> {
     t = removeSingleQuotes(t);
     try {
       return Float.valueOf(t);
@@ -165,7 +167,7 @@ public enum SqlType {
   }),
 
   /** Double and double. */
-  DOUBLE(0.0d, t -> {
+  DOUBLE(Double.class, 0.0d, t -> {
     t = removeSingleQuotes(t);
     try {
       return Double.valueOf(t);
@@ -176,7 +178,7 @@ public enum SqlType {
   }),
 
   /** Application specific. */
-  JAVA_OBJECT(null, t -> null);    // conversion not possible (never returned from meta data)
+  JAVA_OBJECT(Object.class, null, t -> null);    // conversion not possible (never returned from meta data)
 
 
   /**
@@ -193,6 +195,7 @@ public enum SqlType {
   }
 
 
+  private final Class<?> clazz;                     // the corresponding java class
   private final Object defaultValue;                // the default value
   private final Function<String,Object> parser;     // to parse JDBC metadata
 
@@ -202,9 +205,19 @@ public enum SqlType {
    * @param defaultValue the default value
    * @param parser the parser to parse JDBC metadata (e.g. DEFAULTs)
    */
-  SqlType(Object defaultValue, Function<String,Object> parser) {
+  SqlType(Class<?> clazz, Object defaultValue, Function<String,Object> parser) {
+    this.clazz = clazz;
     this.defaultValue = defaultValue;
     this.parser = parser;
+  }
+
+  /**
+   * Gets the corresponding class.
+   *
+   * @return the class
+   */
+  public Class<?> getClazz() {
+    return clazz;
   }
 
   /**

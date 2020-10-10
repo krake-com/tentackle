@@ -167,69 +167,74 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
     setScale(line.getScale());
     setSize(line.getSize());
 
-    DataType<?> dataType = DataTypeFactory.getInstance().get(line.getJavaType());
-    if (dataType == null) {
-      // may be the special Convertible type (see org.tentackle.misc.Convertible)
-      if (line.getInnerType() != null) {
-        setDataType(DataTypeFactory.getInstance().getConvertibleType());
-        setInnerTypeName(line.getInnerType());
-        setApplicationTypeName(line.getJavaType());
-      }
-      else {
-        throw line.createModelException("unknown type " + line.getJavaType());
-      }
-    }
-    else {
-      setDataType(dataType);
-      if (line.getInnerType() != null) {
-        setInnerTypeName(line.getInnerType());
-      }
-    }
-
-    if ("String".equals(line.getJavaType()) && Integer.valueOf(0).equals(line.getSize())) {
-      // special handling for LARGESTRING: String with explicit size of 0
-      setDataType(DataTypeFactory.getInstance().get(line.getJavaType(), DataTypeFactory.LARGE_VARIANT));
-    }
-
-    if (getDataType() == DataTypeFactory.getInstance().getConvertibleType()) {
-      // verify the valid inner type
-      setApplicationTypeName(line.getJavaType());
-      getInnerTypeName();
-    }
-
-    getOptions().applyEntityOptions(entity.getOptions(), getDataType());
-    getOptions().setComment(line.getComment());
-
-    for (String option: line.getOptions()) {
-      if (!getOptions().processOption(option)) {
-        if (option.startsWith("@")) {
-          if (!StringHelper.isAllWhitespace(option.substring(1))) {
-            // treat as annotation
-            getOptions().getAnnotations().add(option);
-          }
-        }
-        else if (option.startsWith("#")) {
-          String stereotype = option.substring(1);
-          if (!StringHelper.isAllWhitespace(stereotype)) {
-            getOptions().getStereotypes().add(stereotype);
-          }
+    try {
+      DataType<?> dataType = DataTypeFactory.getInstance().get(line.getJavaType());
+      if (dataType == null) {
+        // may be the special Convertible type (see org.tentackle.misc.Convertible)
+        if (line.getInnerType() != null) {
+          setDataType(DataTypeFactory.getInstance().getConvertibleType());
+          setInnerTypeName(line.getInnerType());
+          setApplicationTypeName(line.getJavaType());
         }
         else {
-          throw line.createModelException("illegal attribute option: " + option);
+          throw line.createModelException("unknown type " + line.getJavaType());
+        }
+      }
+      else {
+        setDataType(dataType);
+        if (line.getInnerType() != null) {
+          setInnerTypeName(line.getInnerType());
+        }
+      }
+
+      if ("String".equals(line.getJavaType()) && Integer.valueOf(0).equals(line.getSize())) {
+        // special handling for LARGESTRING: String with explicit size of 0
+        setDataType(DataTypeFactory.getInstance().get(line.getJavaType(), DataTypeFactory.LARGE_VARIANT));
+      }
+
+      if (getDataType() == DataTypeFactory.getInstance().getConvertibleType()) {
+        // verify the valid inner type
+        setApplicationTypeName(line.getJavaType());
+        getInnerTypeName();
+      }
+
+      getOptions().applyEntityOptions(entity.getOptions(), getDataType());
+      getOptions().setComment(line.getComment());
+
+      for (String option : line.getOptions()) {
+        if (!getOptions().processOption(option)) {
+          if (option.startsWith("@")) {
+            if (!StringHelper.isAllWhitespace(option.substring(1))) {
+              // treat as annotation
+              getOptions().getAnnotations().add(option);
+            }
+          }
+          else if (option.startsWith("#")) {
+            String stereotype = option.substring(1);
+            if (!StringHelper.isAllWhitespace(stereotype)) {
+              getOptions().getStereotypes().add(stereotype);
+            }
+          }
+          else {
+            throw line.createModelException("illegal attribute option: " + option);
+          }
+        }
+      }
+
+      // replace SIZE by MAXCOLS=size and/or SCALE=scale, if set
+      if (getOptions().getBindOptions().contains(CommonOptionsImpl.BIND_SIZE)) {
+        getOptions().removeBindOption(CommonOptionsImpl.BIND_SIZE);
+        // size option set: replace by [MAXCOLS=<size>][,SCALE=<scale] if not already defined in model
+        if (getSize() != null && !getOptions().getBindOptions().contains(Constants.BIND_MAXCOLS)) {
+          getOptions().addBindOption(Constants.BIND_MAXCOLS + "=" + getSize());
+        }
+        if (getScale() != null && !getOptions().getBindOptions().contains(Constants.BIND_SCALE)) {
+          getOptions().addBindOption(Constants.BIND_SCALE + "=" + getScale());
         }
       }
     }
-
-    // replace SIZE by MAXCOLS=size and/or SCALE=scale, if set
-    if (getOptions().getBindOptions().contains(CommonOptionsImpl.BIND_SIZE)) {
-      getOptions().removeBindOption(CommonOptionsImpl.BIND_SIZE);
-      // size option set: replace by [MAXCOLS=<size>][,SCALE=<scale] if not already defined in model
-      if (getSize() != null && !getOptions().getBindOptions().contains(Constants.BIND_MAXCOLS)) {
-        getOptions().addBindOption(Constants.BIND_MAXCOLS + "=" + getSize());
-      }
-      if (getScale() != null && !getOptions().getBindOptions().contains(Constants.BIND_SCALE)) {
-        getOptions().addBindOption(Constants.BIND_SCALE + "=" + getScale());
-      }
+    catch (RuntimeException rx) {
+      throw line.createModelException("syntax error", rx);
     }
   }
 
@@ -352,20 +357,9 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
   }
 
   @Override
-  public int getSizeWithDefault() {
-    return size == null ? 0 : size;
-  }
-
-  @Override
   public Integer getScale() {
     return scale;
   }
-
-  @Override
-  public int getScaleWithDefault() {
-    return scale == null ? 0 : scale;
-  }
-
 
   @Override
   public AttributeOptionsImpl getOptions() {
@@ -541,7 +535,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
   }
 
   @Override
-  public String toMethodArgument(String value) {
+  public String toMethodArgument(String value) throws ModelException {
     return CodeFactory.getInstance().createMethodArgument(this, value);
   }
 

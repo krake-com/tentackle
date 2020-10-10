@@ -162,50 +162,44 @@
               }
 
               String compKeyClass = deriveClassNameForEntity(attr.getEntity());
-              for (int columnIndex = 0; columnIndex < getEffectiveDataType(attr).getColumnCount(); columnIndex++) {
-                if (columnIndex > 0) {
+              for (int columnIndex = 0; columnIndex < arg.getDataType().getColumnCount(); columnIndex++) {
+                if (columnIndex > 0 && arg.getColumnIndex() == null) {
                   buf.append("        sql.append(Backend.SQL_AND);\n");
                 }
-                buf.append("        sql.append(").append(compKeyClass).
-                    append(".CLASSVARIABLES.getColumnName(").
-                    append(compKeyClass).append('.').append(getColumnNameConstant(attr, columnIndex)).append("))\n");
-                if (columnIndex == 0) {
-                  buf.append("           .append(").append(arg.getRelop()).append(");\n");
-                }
-                else {
-                  buf.append("           .append(Backend.SQL_EQUAL_PAR);\n");
+                if (arg.getColumnIndex() == null || columnIndex == arg.getColumnIndex()) {
+                  buf.append("        sql.append(").append(compKeyClass).
+                      append(".CLASSVARIABLES.getColumnName(").
+                      append(compKeyClass).append('.').append(getColumnNameConstant(attr, columnIndex)).append("))\n").
+                      append("           ").append(createRelopCode(arg)).append(";\n");
                 }
               }
             }
             else {
-              for (int columnIndex = 0; columnIndex < getEffectiveDataType(attr).getColumnCount(); columnIndex++) {
-                if (columnIndex > 0) {
+              for (int columnIndex = 0; columnIndex < arg.getDataType().getColumnCount(); columnIndex++) {
+                if (columnIndex > 0 && arg.getColumnIndex() == null) {
                   buf.append("        sql.append(Backend.SQL_AND);\n");
                 }
-                if (isPathAllowed()) {
-                  if (getEntity().getHierarchyInheritanceType() == InheritanceType.MULTI) {
-                     buf.append("        sql.append(");
-                     buf.append(deriveClassNameForEntity(attr.getEntity()));
-                     buf.append(".CLASSVARIABLES.getColumnName(");
-                     buf.append(getColumnNameConstant(attr, columnIndex)).append("));\n");
-                  }
-                  else  {
-                    if (isPdo()) {
-                      buf.append("        sql.append(getColumnName(").append(getColumnNameConstant(attr, columnIndex)).append("));\n");
+                if (arg.getColumnIndex() == null || columnIndex == arg.getColumnIndex()) {
+                  if (isPathAllowed()) {
+                    if (getEntity().getHierarchyInheritanceType() == InheritanceType.MULTI) {
+                       buf.append("        sql.append(");
+                       buf.append(deriveClassNameForEntity(attr.getEntity()));
+                       buf.append(".CLASSVARIABLES.getColumnName(");
+                       buf.append(getColumnNameConstant(attr, columnIndex)).append("));\n");
                     }
                     else  {
-                      buf.append("        sql.append(").append(getColumnNameConstant(attr, columnIndex)).append(");\n");
+                      if (isPdo()) {
+                        buf.append("        sql.append(getColumnName(").append(getColumnNameConstant(attr, columnIndex)).append("));\n");
+                      }
+                      else  {
+                        buf.append("        sql.append(").append(getColumnNameConstant(attr, columnIndex)).append(");\n");
+                      }
                     }
                   }
-                }
-                else  {
-                  buf.append("        sql.append(").append(getColumnNameConstant(attr, columnIndex)).append(");\n");
-                }
-                if (columnIndex == 0) {
-                  buf.append("        sql.append(").append(arg.getRelop()).append(");\n");
-                }
-                else  {
-                  buf.append("        sql.append(Backend.SQL_EQUAL_PAR);\n");
+                  else  {
+                    buf.append("        sql.append(").append(getColumnNameConstant(attr, columnIndex)).append(");\n");
+                  }
+                  buf.append("        sql").append(createRelopCode(arg)).append(";\n");
                 }
               }
             }

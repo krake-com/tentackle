@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.persist.wurblet;
+package org.tentackle.wurblet;
 
 import org.wurbelizer.wurbel.WurbelException;
 
@@ -27,6 +27,7 @@ import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
 import org.tentackle.model.SortType;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.DataType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +47,7 @@ import java.util.Set;
  * <p>
  * An argument is of the form:
  * <p>
- * <code>[<b>*</b>|<b>+</b>|<b>-</b>][<b>{@link Relation}</b>|<b>.{@link Entity}</b>[<b>.{@link Relation}</b>...]][<b>{@link Attribute}</b>[<b>[name]</b>]][<b>:relop</b>[<b>:value</b>|<b>#value</b>]]</code>
+ * <code>[<b>*</b>|<b>+</b>|<b>-</b>][<b>{@link Relation}</b>|<b>.{@link Entity}</b>[<b>.{@link Relation}</b>...]][<b>{@link Attribute}[#column]</b>[<b>[name]</b>]][<b>:relop</b>[<b>:value</b>|<b>#value</b>]]</code>
  * <ul>
  * <li>argument type:
  *  <ul>
@@ -60,20 +61,21 @@ import java.util.Set;
  If the current entity is a root-entity, the path starts with a dot and is followed by the name of
  a pointsToComponent, the pointsToComponent is replaced by its relation path, if there is only one path.<br>
  * For joins, the dots between the relations can be replaced by asterisks.
- * <p>
  * </li>
  * <li>attribute: a property of an entity.<br>
- * Required for conditions, updates, sorting. Illegal for joins.<p>
+ * Required for conditions, updates, sorting. Illegal for joins.
  * </li>
+ * <li>column: the optional column suffix or getter name for multi-column types. If missing and the multi-column type
+ * defines a default column, this column is taken. A <code>*</code> will explicitly select all columns.</li>
  * <li>name: optional name of the method argument.<br>
- * Only allowed for conditions and updates.<p>
+ * Only allowed for conditions and updates.
  * </li>
  * <li>relop-expression: optional relop.<br>
  * Only allowed for conditions.<br>
  * Defaults to <code>'='</code>.<br>
  * The special relop <code>':null'</code> will be translated to <code>" IS NULL"</code> and <code>':notnull'</code>
  * translated to <code>" IS NOT NULL"</code>.<br>
- * <code>'like'</code> will translated to <code>" LIKE "</code>. <code>'notlike'</code> will be translated to <code>" NOT LIKE "</code>.<br>
+ * <code>':like'</code> will translated to <code>" LIKE "</code>. <code>':notlike'</code> will be translated to <code>" NOT LIKE "</code>.<br>
  * The optional <code>':value'</code> will be set as a '?'-parameter of the generated prepared statement.
  * As an alternative, the value may be given as <code>'#value'</code> which will include the value
  * literally in the SQL-string.
@@ -110,7 +112,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
   private final String text;
 
   /** the argument type. */
-  private WurbletArgumentType argumentType;
+  private final WurbletArgumentType argumentType;
 
   /** name of the method argument. */
   private String name;
@@ -129,6 +131,12 @@ public class WurbletArgument implements WurbletArgumentOperand {
 
   /** the model attribute. */
   private Attribute attribute;
+
+  /** the attribute's effective datatype. */
+  private DataType<?> dataType;
+
+  /** the column index within the datatype. */
+  private Integer columnIndex;
 
   /** the relation path to the attribute. */
   private List<Relation> relations;
@@ -221,17 +229,15 @@ public class WurbletArgument implements WurbletArgumentOperand {
       relop = text.substring(ndx + 1);
 
       ndx = relop.indexOf(':');
-      if (ndx > 0) {
+      int ndx2 = relop.indexOf('#');
+      if (ndx > 0 && (ndx2 == -1 || ndx2 > ndx)) {    // whatever comes first
         value = relop.substring(ndx + 1);
         relop = relop.substring(0, ndx);
       }
-      else {
-        ndx = relop.indexOf('#');
-        if (ndx > 0) {
-          value = relop.substring(ndx + 1);
-          relop = relop.substring(0, ndx);
-          literally = true;
-        }
+      else if (ndx2 > 0) {
+        value = relop.substring(ndx2 + 1);
+        relop = relop.substring(0, ndx2);
+        literally = true;
       }
 
       switch (relop.toUpperCase()) {
@@ -342,10 +348,66 @@ public class WurbletArgument implements WurbletArgumentOperand {
         if (!argumentType.isAttributeAllowed()) {
           throw new WurbelException("attribute not allowed for " + argumentType + "-argument '" + this.text + "'");
         }
-        attribute = currentEntity.getAttributeByJavaName(str, true);
+        String attrName = str;
+        String colName = null;
+        int ndx3 = str.indexOf('#');
+        if (ndx3 > 0) {
+          attrName = str.substring(0, ndx3);
+          colName = str.substring(ndx3 + 1);
+        }
+        attribute = currentEntity.getAttributeByJavaName(attrName, true);
         if (attribute == null) {
-          throw new WurbelException("no such attribute '" + str + "' defined for entity " + currentEntity +
+          throw new WurbelException("no such attribute '" + attrName + "' defined for entity " + currentEntity +
                                     " in argument '" + this.text + "'");
+        }
+        try {
+          dataType = attribute.getEffectiveDataType();
+        }
+        catch (ModelException mx) {
+          throw new WurbelException("cannot determine datatype of " + attribute, mx);
+        }
+        if (!"*".equals(colName)) {
+          if (colName != null) {
+            // find the column index within the datatype
+            for (int i = 0; i < dataType.getColumnCount(); i++) {
+              String columnSuffix = dataType.getColumnSuffix(i).orElse("");
+              String columnGetter = dataType.getColumnGetter(i);
+              if (colName.equalsIgnoreCase(columnSuffix) || colName.equals(columnGetter)) {
+                columnIndex = i;
+                break;
+              }
+              if (columnSuffix.startsWith("_")) {
+                columnSuffix = columnSuffix.substring(1);
+                if (colName.equalsIgnoreCase(columnSuffix)) {
+                  columnIndex = i;
+                  break;
+                }
+              }
+            }
+            if (columnIndex == null) {
+              throw new WurbelException("datatype " + dataType + " does not map to column suffix '" + colName + "'");
+            }
+          }
+          else if (dataType.getColumnCount() > 1) {
+            // no column specified for a multicolumn type: take the one without suffix
+            for (int i = 0; i < dataType.getColumnCount(); i++) {
+              if (dataType.getColumnSuffix(i).isEmpty()) {
+                columnIndex = i;
+                break;
+              }
+            }
+            // if no such column: take all
+          }
+        }
+
+        if (literally) {
+          if (!dataType.isLiteralSupported()) {
+            throw new WurbelException("datatype " + dataType + " does not support literals");
+          }
+          value = dataType.toLiteral(value);
+        }
+        else if (value != null) {
+          value = dataType.valueOfLiteralToCode(value);
         }
       }
     }
@@ -395,6 +457,24 @@ public class WurbletArgument implements WurbletArgumentOperand {
    */
   public Attribute getAttribute() {
     return attribute;
+  }
+
+  /**
+   * Gets the effective datatype of the attribute.
+   *
+   * @return the datatype
+   */
+  public DataType<?> getDataType() {
+    return dataType;
+  }
+
+  /**
+   * Gets the datatype column index.
+   *
+   * @return the index if column specified, else null
+   */
+  public Integer getColumnIndex() {
+    return columnIndex;
   }
 
   /**
@@ -562,7 +642,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
    * @return the JDBC value
    * @throws WurbelException if failed
    */
-  public String getJdbcValue() throws WurbelException {
+  public String getJdbcValue() throws WurbelException, ModelException {
     String str;
     if (value != null) {
       str = value;
@@ -578,102 +658,12 @@ public class WurbletArgument implements WurbletArgumentOperand {
 
 
   /**
-   * Gets the relop string.
+   * Gets the relational operator.
    *
-   * @return the relop string
+   * @return the relop
    */
   public String getRelop() {
-
-    String str;
-
-    // translate to predefined strings, if possible
-    switch(relop) {
-      case Backend.SQL_EQUAL:
-        if (literally) {
-          str = "Backend.SQL_EQUAL + " + value;
-        }
-        else  {
-          str = "Backend.SQL_EQUAL_PAR";
-        }
-        break;
-
-      case Backend.SQL_NOTEQUAL:
-      case "!=":
-        if (literally) {
-          str = "Backend.SQL_NOTEQUAL + " + value;
-        }
-        else  {
-          str = "Backend.SQL_NOTEQUAL_PAR";
-        }
-        break;
-
-      case Backend.SQL_LESS:
-        if (literally) {
-          str = "Backend.SQL_LESS + " + value;
-        }
-        else  {
-          str = "Backend.SQL_LESS_PAR";
-        }
-        break;
-
-      case Backend.SQL_GREATER:
-        if (literally) {
-          str = "Backend.SQL_GREATER + " + value;
-        }
-        else  {
-          str = "Backend.SQL_GREATER_PAR";
-        }
-        break;
-
-      case Backend.SQL_LESSOREQUAL:
-        if (literally) {
-          str = "Backend.SQL_LESSOREQUAL + " + value;
-        }
-        else  {
-          str = "Backend.SQL_LESSOREQUAL_PAR";
-        }
-        break;
-
-      case Backend.SQL_GREATEROREQUAL:
-        if (literally) {
-          str = "Backend.SQL_GREATEROREQUAL + " + value;
-        }
-        else  {
-          str = "Backend.SQL_GREATEROREQUAL_PAR";
-        }
-        break;
-
-      case Backend.SQL_LIKE:
-        if (literally) {
-          str = "Backend.SQL_LIKE + " + value;
-        }
-        else  {
-          str = "Backend.SQL_LIKE_PAR";
-        }
-        break;
-
-      case Backend.SQL_NOTLIKE:
-        if (literally) {
-          str = "Backend.SQL_NOTLIKE + " + value;
-        }
-        else  {
-          str = "Backend.SQL_NOTLIKE_PAR";
-        }
-        break;
-
-      case Backend.SQL_ISNULL:
-        str = "Backend.SQL_ISNULL";
-        break;
-
-      case Backend.SQL_ISNOTNULL:
-        str = "Backend.SQL_ISNOTNULL";
-        break;
-
-      default:
-        str = relop + (literally ? value : "?");
-    }
-
-    return str;
+    return relop;
   }
 
 

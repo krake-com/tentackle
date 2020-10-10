@@ -103,6 +103,15 @@ public class DMoney extends BMoney {
   }
 
 
+  /**
+   * Gets the decimal value.
+   *
+   * @return the decimal value
+   */
+  public BigDecimal bigDecimalValue() {
+    return movePointRight(scale());
+  }
+
   @Override
   public DMoney add(BMoney val)  {
     return new DMoney(unscaledValue().add(alignScale(val).unscaledValue()), scale());

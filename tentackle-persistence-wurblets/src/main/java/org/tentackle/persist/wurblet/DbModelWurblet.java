@@ -32,9 +32,15 @@ import org.tentackle.model.RelationType;
 import org.tentackle.model.SelectionType;
 import org.tentackle.model.SortType;
 import org.tentackle.model.TrackType;
+import org.tentackle.sql.Backend;
 import org.tentackle.sql.DataType;
 import org.tentackle.sql.DataTypeFactory;
+import org.tentackle.wurblet.Join;
+import org.tentackle.wurblet.JoinPath;
 import org.tentackle.wurblet.ModelWurblet;
+import org.tentackle.wurblet.WurbletArgument;
+import org.tentackle.wurblet.WurbletArgumentExpression;
+import org.tentackle.wurblet.WurbletArgumentParser;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -393,6 +399,113 @@ public class DbModelWurblet extends ModelWurblet {
 
 
   /**
+   * Creates the relop code for prepared statements.<br>
+   * The code assumes a StringBuilder and begins with <code>".append("</code>.
+   *
+   * @param arg the wurblet argument
+   * @return the java code
+   */
+  public String createRelopCode(WurbletArgument arg) {
+
+    String value = arg.getValue();
+    if (arg.isValueLiterally() && !value.startsWith("\"")) {
+      value = "\"" + value + "\"";
+    }
+
+    String str;
+
+    // translate to predefined strings, if possible
+    switch(arg.getRelop()) {
+      case Backend.SQL_EQUAL:
+        if (arg.isValueLiterally()) {
+          str = "Backend.SQL_EQUAL).append(" + value;
+        }
+        else  {
+          str = "Backend.SQL_EQUAL_PAR";
+        }
+        break;
+
+      case Backend.SQL_NOTEQUAL:
+      case "!=":
+        if (arg.isValueLiterally()) {
+          str = "Backend.SQL_NOTEQUAL).append(" + value;
+        }
+        else  {
+          str = "Backend.SQL_NOTEQUAL_PAR";
+        }
+        break;
+
+      case Backend.SQL_LESS:
+        if (arg.isValueLiterally()) {
+          str = "Backend.SQL_LESS).append(" + value;
+        }
+        else  {
+          str = "Backend.SQL_LESS_PAR";
+        }
+        break;
+
+      case Backend.SQL_GREATER:
+        if (arg.isValueLiterally()) {
+          str = "Backend.SQL_GREATER).append(" + value;
+        }
+        else  {
+          str = "Backend.SQL_GREATER_PAR";
+        }
+        break;
+
+      case Backend.SQL_LESSOREQUAL:
+        if (arg.isValueLiterally()) {
+          str = "Backend.SQL_LESSOREQUAL).append(" + value;
+        }
+        else  {
+          str = "Backend.SQL_LESSOREQUAL_PAR";
+        }
+        break;
+
+      case Backend.SQL_GREATEROREQUAL:
+        if (arg.isValueLiterally()) {
+          str = "Backend.SQL_GREATEROREQUAL).append(" + value;
+        }
+        else  {
+          str = "Backend.SQL_GREATEROREQUAL_PAR";
+        }
+        break;
+
+      case Backend.SQL_LIKE:
+        if (arg.isValueLiterally()) {
+          str = "Backend.SQL_LIKE).append(" + value;
+        }
+        else  {
+          str = "Backend.SQL_LIKE_PAR";
+        }
+        break;
+
+      case Backend.SQL_NOTLIKE:
+        if (arg.isValueLiterally()) {
+          str = "Backend.SQL_NOTLIKE).append(" + value;
+        }
+        else  {
+          str = "Backend.SQL_NOTLIKE_PAR";
+        }
+        break;
+
+      case Backend.SQL_ISNULL:
+        str = "Backend.SQL_ISNULL";
+        break;
+
+      case Backend.SQL_ISNOTNULL:
+        str = "Backend.SQL_ISNOTNULL";
+        break;
+
+      default:
+        str = arg.getRelop() + (arg.isValueLiterally() ? value : "?");
+    }
+
+    return ".append(" + str + ")";
+  }
+
+
+  /**
    * Creates the order by clause.
    *
    * @param sortKeys the sorting keys
@@ -597,6 +710,86 @@ public class DbModelWurblet extends ModelWurblet {
   }
 
 
+  /**
+   * Creates the java code to set a parameter in a PreparedStatementWrapper.
+   *
+   * @param attr the model attribute
+   * @param argument the argument string
+   * @return the created java code
+   * @throws WurbelException if failed
+   */
+  public String createWhereSetPars(Attribute attr, String argument) throws WurbelException {
+    StringBuilder buf = new StringBuilder();
+    DataType<?> dataType = getEffectiveDataType(attr);
+    if (dataType.isPredefined()) {
+      buf.append("st.")
+         .append(createJdbcSetterName(dataType))
+         .append("(ndx++, ")
+         .append(getJdbcCode(attr, argument));
+      if (attr.getOptions().isMapNull()) {
+        buf.append(", true)");
+      }
+      else {
+        buf.append(")");
+      }
+      // for multi column types, such as BMoney (not application specific types)
+      int diff = dataType.getColumnCount() - 1;
+      if (diff == 1) {
+        buf.append(";\n    ndx++");
+      }
+      else if (diff > 1) {
+        buf.append(";\n    ndx += ").append(diff);
+      }
+    }
+    else {
+      buf.append("ndx += st.set(");
+      if (!attr.getEntity().equals(getEntity())) {
+        buf.append(deriveClassNameForEntity(attr.getEntity())).append('.');
+      }
+      buf.append(dataType.getDataTypeConstant())
+         .append(", ndx, ")
+         .append(getJdbcCode(attr, argument))
+         .append(", ").append(attr.getOptions().isMapNull())
+         .append(", ").append(attr.getSize()).append(")");
+    }
+    return buf.toString();
+  }
+
+
+  /**
+   * Creates the java code to set a parameter in a PreparedStatementWrapper for a column in a multi-column type.
+   *
+   * @param arg the wurblet argument
+   * @return the java code
+   * @throws WurbelException if the wurblet argument does not select a column suffix
+   * @throws ModelException if getting the jdbc java code failed
+   */
+  public String createWhereSetPars(WurbletArgument arg) throws WurbelException, ModelException {
+    if (arg.getColumnIndex() == null) {
+      throw new WurbelException("wurblet argument does not select a column suffix" );
+    }
+    int columnIndex = arg.getColumnIndex();
+    StringBuilder buf = new StringBuilder();
+    if (arg.getDataType().isPredefined()) {   // currently only BMoney and DMoney
+      buf.append("st.set(SqlType.").append(arg.getDataType().getSqlType(columnIndex))
+         .append(", ndx++, ").append(arg.getJdbcValue()).append(".").append(arg.getDataType().getColumnGetter(columnIndex))
+         .append("())");
+    }
+    else {
+      Attribute attr = arg.getAttribute();
+      buf.append("ndx += st.set(");
+      if (!attr.getEntity().equals(getEntity())) {
+        buf.append(deriveClassNameForEntity(attr.getEntity())).append('.');
+      }
+      buf.append(arg.getDataType().getDataTypeConstant())
+         .append(", ndx, ")
+         .append(arg.getJdbcValue())
+         .append(", ").append(columnIndex)
+         .append(", ").append(attr.getOptions().isMapNull())
+         .append(", ").append(attr.getSize()).append(")");
+    }
+    return buf.toString();
+  }
 
   /**
    * Creates optional JDBC-set paramaters code for joins with extra arguments.
@@ -604,7 +797,7 @@ public class DbModelWurblet extends ModelWurblet {
    * @return the optional code, empty if none
    * @throws WurbelException if failed
    */
-  public String createJoinSetPars() throws WurbelException {
+  public String createJoinSetPars() throws WurbelException, ModelException {
     StringBuilder buf = new StringBuilder();
     for (JoinPath path: getJoinPaths()) {
       createJoinSetPars(buf, path);
@@ -612,7 +805,7 @@ public class DbModelWurblet extends ModelWurblet {
     return buf.toString();
   }
 
-  private void createJoinSetPars(StringBuilder buf, JoinPath path) throws WurbelException {
+  private void createJoinSetPars(StringBuilder buf, JoinPath path) throws WurbelException, ModelException {
     if (!path.getElements().isEmpty()) {
       Join join = path.getElements().get(0);    // normalized, i.e. only one (see above)
       Relation relation = join.getRelation();
@@ -624,24 +817,7 @@ public class DbModelWurblet extends ModelWurblet {
         for (MethodArgument methodArg: methodArgs.subList(1, methodArgs.size())) {
           if (methodArg.isValue()) {
             Attribute attr = methodArg.getForeignAttribute();
-            buf.append("    st.")
-               .append(createJdbcSetterName(attr))
-               .append("(ndx++, ")
-               .append(getJdbcCode(attr, attr.toMethodArgument(methodArg.getValue())));
-            if (attr.getOptions().isMapNull())  {
-              buf.append(", true);\n");
-            }
-            else {
-              buf.append(");\n");
-            }
-            // for multi column types, such as BMoney or application specific types
-            int diff = getEffectiveDataType(attr).getColumnCount() - 1;
-            if (diff == 1) {
-              buf.append("    ndx++;\n");
-            }
-            else if (diff > 1) {
-              buf.append("    ndx += ").append(diff).append(";\n");
-            }
+            buf.append("    ").append(createWhereSetPars(attr, attr.toMethodArgument(methodArg.getValue()))).append(";\n");
           }
         }
       }
@@ -844,31 +1020,13 @@ public class DbModelWurblet extends ModelWurblet {
 
 
   /**
-   * Gets the name of the datatype constant.
-   *
-   * @param dataType the datatype
-   * @return the DT_...
-   */
-  public String getDataTypeConstant(DataType<?> dataType) {
-    StringBuilder buf = new StringBuilder();
-    buf.append("DT_").append(dataType.getJavaType().toUpperCase());
-    if (!dataType.getVariant().isEmpty()) {
-      buf.append('_').append(dataType.getVariant().toUpperCase());
-    }
-    return buf.toString();
-  }
-
-
-  /**
    * Creates the "setXXXX" method name for PreparedStatementWrapper.
    *
-   * @param attribute the model attribute
+   * @param dataType the datatype
    * @return the method name
-   * @throws WurbelException if type is misconfigured
    */
-  public String createJdbcSetterName(Attribute attribute) throws WurbelException {
+  public String createJdbcSetterName(DataType<?> dataType) {
     StringBuilder buf = new StringBuilder("set");
-    DataType<?> dataType = getEffectiveDataType(attribute);
     if (dataType.isPrimitive()) {
       buf.append(StringHelper.firstToUpper(dataType.getJavaType()));
     }
@@ -1190,18 +1348,6 @@ public class DbModelWurblet extends ModelWurblet {
       }
     }
     return eagerRelations.isEmpty() ? null : eagerRelations;
-  }
-
-
-  /**
-   * Creates the component info for a given component.
-   *
-   * @param component the component of the wurblet's entity
-   * @return the info
-   * @throws WurbelException if failed
-   */
-  public ComponentInfo createComponentInfo(Entity component) throws WurbelException {
-    return new ComponentInfo(this, component);
   }
 
 }

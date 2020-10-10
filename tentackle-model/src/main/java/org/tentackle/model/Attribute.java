@@ -92,27 +92,11 @@ public interface Attribute extends ModelElement {
   Integer getSize();
 
   /**
-   * Gets the column width with default 0.
-   *
-   * @return the column width or 0 if not set
-   */
-  int getSizeWithDefault();
-
-
-  /**
    * Gets the scale for numbers with a fraction part.
    *
    * @return the scale, null if not set
    */
   Integer getScale();
-
-  /**
-   * Gets the scale width with default 0.
-   *
-   * @return the scale or 0 if not set
-   */
-  int getScaleWithDefault();
-
 
   /**
    * Gets the options.
@@ -237,7 +221,7 @@ public interface Attribute extends ModelElement {
    * @param value the value string
    * @return the method argument string
    */
-  String toMethodArgument(String value);
+  String toMethodArgument(String value) throws ModelException;
 
 }
 

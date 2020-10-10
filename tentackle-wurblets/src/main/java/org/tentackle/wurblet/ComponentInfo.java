@@ -17,12 +17,13 @@
  *
  */
 
-package org.tentackle.persist.wurblet;
+package org.tentackle.wurblet;
+
+import org.wurbelizer.wurbel.WurbelException;
 
 import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
 import org.tentackle.model.InheritanceType;
-import org.wurbelizer.wurbel.WurbelException;
 
 /**
  * Describes the join to a component's attribute.
@@ -44,7 +45,7 @@ public class ComponentInfo {
    * @param joinedEntity the entity to join (right side of the join)
    * @throws WurbelException if failed
    */
-  public ComponentInfo(DbModelWurblet wurblet, Entity joinedEntity) throws WurbelException {
+  public ComponentInfo(ModelWurblet wurblet, Entity joinedEntity) throws WurbelException {
 
     this.joinedEntity = joinedEntity;
 

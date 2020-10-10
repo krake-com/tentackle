@@ -65,8 +65,36 @@ public class DMoneyType extends AbstractDataType<DMoney> {
   }
 
   @Override
-  public boolean isScaleInSecondColumn() {
-    return true;
+  public int getSize(int index, Integer size) {
+    return index == 1 ? 0 : super.getSize(index, size);
+  }
+
+  @Override
+  public int getScale(int index, Integer scale) {
+    return 0;
+  }
+
+  @Override
+  public Object getColumnValue(int index, DMoney value) {
+    if (value != null) {
+      switch (index) {
+        case 0:
+          return value.bigDecimalValue();
+        case 1:
+          return value.scale();
+      }
+      throw new IndexOutOfBoundsException();
+    }
+    return null;
+  }
+
+  @Override
+  public String getColumnGetter(int index) {
+    switch (index) {
+      case 0: return "bigDecimalValue";
+      case 1: return "scale";
+    }
+    throw new IndexOutOfBoundsException();
   }
 
   @Override
@@ -82,10 +110,37 @@ public class DMoneyType extends AbstractDataType<DMoney> {
       return new Object[] { null, null };
     }
     short s = (short) object.scale();
-    BigDecimal d = object.movePointRight(s);
+    BigDecimal d = object.bigDecimalValue();
     statement.setBigDecimal(pos, d);
     statement.setShort(pos + 1, s);
     return new Object[] { d, s };
+  }
+
+  @Override
+  public Object set(Backend backend, PreparedStatement statement, int pos, DMoney object, int index, boolean mapNull, Integer size) throws SQLException {
+    if (object == null) {
+      switch (index) {
+        case 0:
+          statement.setNull(pos, Types.DECIMAL);
+          return null;
+        case 1:
+          statement.setNull(pos, Types.SMALLINT);
+          return null;
+      }
+    }
+    else {
+      switch (index) {
+        case 0:
+          BigDecimal d = object.bigDecimalValue();
+          statement.setBigDecimal(pos, d);
+          return d;
+        case 1:
+          short s = (short) object.scale();
+          statement.setShort(pos, s);
+          return s;
+      }
+    }
+    throw new IndexOutOfBoundsException();
   }
 
   @Override
