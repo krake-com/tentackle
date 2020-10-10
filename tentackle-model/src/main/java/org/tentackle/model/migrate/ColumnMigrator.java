@@ -28,7 +28,6 @@ import org.tentackle.sql.SqlType;
 import org.tentackle.sql.metadata.ColumnMetaData;
 
 import java.util.Collection;
-import java.util.Optional;
 
 /**
  * Handles the migration of columns.
@@ -118,10 +117,11 @@ public class ColumnMigrator {
    * @return the SQL code, empty string if nothing to migrate
    * @throws ModelException if migration failed
    */
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public String migrate() throws ModelException {
     StringBuilder buf = new StringBuilder();
     if (attribute != null) {
-      DataType<?> dataType = attribute.getEffectiveDataType();
+      DataType dataType = attribute.getEffectiveDataType();
 
       /*
        * round 1: only add missing columns and migrate only those with exact name match
@@ -135,24 +135,13 @@ public class ColumnMigrator {
           if (!migrated[columnIndex]) {
             columnName = attribute.getColumnName(columnIndex);
             sqlType = dataType.getSqlType(columnIndex);
-            columnSize = attribute.getSizeWithDefault();
-            columnScale = attribute.getScaleWithDefault();
+            columnSize = dataType.getSize(columnIndex, attribute.getSize());
+            columnScale = dataType.getScale(columnIndex, attribute.getScale());
             comment = attribute.getOptions().getComment();
             if (comment != null && !comment.isEmpty()) {
               comment += dataType.getCommentSuffix(columnIndex).orElse("");
             }
-            defaultValue = attribute.getOptions().getDefaultValue();
-            if (columnIndex > 0 && defaultValue != null) {
-              // default applies only to first column for multicolumn types
-              // the other columns get the SQL type's default value
-              defaultValue = sqlType.getDefaultValue();
-            }
-            if (dataType.isScaleInSecondColumn()) {
-              if (columnIndex == 1) {
-                columnSize = 0;
-              }
-              columnScale = 0;
-            }
+            defaultValue = dataType.getColumnValue(columnIndex, attribute.getOptions().getDefaultValue());
             column = columns == null || migratedColumnIndex >= columns.length ? null : columns[migratedColumnIndex];
             if (column == null) {
               buf.append(addColumn());

@@ -19,7 +19,7 @@ arguments:
 For more options, see {\@link DbModelWurblet}.
 }@
 @[
-  private void wurbel() throws WurbelException {
+  private void wurbel() throws WurbelException, ModelException {
 
     assertEntityIsPersistable();
 

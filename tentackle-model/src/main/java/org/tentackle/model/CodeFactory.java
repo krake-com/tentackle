@@ -25,6 +25,7 @@ import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.DataType;
+import org.tentackle.sql.SqlType;
 
 import java.util.List;
 
@@ -75,9 +76,13 @@ public class CodeFactory {
    * @param value the argument name
    * @return the java code
    */
-  public String createMethodArgument(Attribute attribute, String value) {
-    if (attribute.getDataType().isDowncastNecessary()) {
-      value = "(" + attribute.getDataType().getJavaType() + ") " + value;
+  public String createMethodArgument(Attribute attribute, String value) throws ModelException {
+    DataType<?> dataType = attribute.getEffectiveDataType();
+    if (dataType.isDowncastNecessary()) {
+      String downCast = "(" + dataType.getJavaType() + ")";
+      if (!value.startsWith(downCast)) {
+        value = downCast + " " + value;
+      }
     }
     return value;
   }
@@ -180,6 +185,7 @@ public class CodeFactory {
    * @return the SQL code
    * @throws ModelException if model inconsistent
    */
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public String createSqlTable(Entity entity, Backend backend) throws ModelException {
     StringBuilder buf = new StringBuilder();
     buf.append(backend.sqlCreateTableIntro(entity.getTableName(), entity.getOptions().getComment()));
@@ -189,26 +195,18 @@ public class CodeFactory {
     int attributeCount = 1;
 
     for (Attribute attribute: tableAttributes) {
-      DataType<?> dataType = attribute.getEffectiveDataType();
+      DataType dataType = attribute.getEffectiveDataType();
       for (int columnIndex = 0; columnIndex < dataType.getColumnCount(); columnIndex++) {
         buf.append("    ");
         String columnName = attribute.getColumnName(columnIndex);
-        int size = attribute.getSizeWithDefault();
-        int scale = attribute.getScaleWithDefault();
-        Object defaultValue = attribute.getOptions().getDefaultValue();
+        int size = dataType.getSize(columnIndex, attribute.getSize());
+        int scale = dataType.getScale(columnIndex, attribute.getScale());
+        SqlType sqlType = dataType.getSqlType(columnIndex);
         String comment = attribute.getOptions().getComment();
-        if (columnIndex > 0) {
-          comment = null;
-          if (defaultValue != null) {
-            defaultValue = dataType.getSqlType(columnIndex).getDefaultValue();
-          }
+        if (comment != null && !comment.isEmpty()) {
+          comment += dataType.getCommentSuffix(columnIndex).orElse("");
         }
-        if (dataType.isScaleInSecondColumn()) {
-          if (columnIndex == 1) {
-            size = 0;
-          }
-          scale = 0;
-        }
+        Object defaultValue = dataType.getColumnValue(columnIndex, attribute.getOptions().getDefaultValue());
         buf.append(backend.sqlCreateColumn(
             columnName, comment, dataType.getSqlType(columnIndex), size, scale,
             attribute.isNullable(), defaultValue,
@@ -220,7 +218,15 @@ public class CodeFactory {
     buf.append(backend.sqlCreateTableClosing(entity.getTableName(), entity.getOptions().getComment()));
     buf.append(backend.sqlCreateTableComment(entity.getTableName(), entity.getOptions().getComment()));
     for (Attribute attribute: tableAttributes) {
-      buf.append(backend.sqlCreateColumnComment(entity.getTableName(), attribute.getColumnName(), attribute.getOptions().getComment()));
+      DataType dataType = attribute.getEffectiveDataType();
+      for (int columnIndex = 0; columnIndex < dataType.getColumnCount(); columnIndex++) {
+        String columnName = attribute.getColumnName(columnIndex);
+        String comment = attribute.getOptions().getComment();
+        if (comment != null && !comment.isEmpty()) {
+          comment += dataType.getCommentSuffix(columnIndex).orElse("");
+        }
+        buf.append(backend.sqlCreateColumnComment(entity.getTableName(), columnName, comment));
+      }
     }
     return buf.toString();
   }

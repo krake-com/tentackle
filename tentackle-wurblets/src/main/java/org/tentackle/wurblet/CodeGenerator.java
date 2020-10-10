@@ -16,13 +16,26 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.persist.wurblet;
+package org.tentackle.wurblet;
+
+import org.wurbelizer.wurbel.WurbelException;
 
 /**
- * An operand within a {@link WurbletArgumentExpression}.
+ * Code generator for nested structures.
  *
  * @author harald
+ * @param <T> the type of object to generate code for
  */
-public interface WurbletArgumentOperand {
+@FunctionalInterface
+public interface CodeGenerator<T> {
+
+  /**
+   * Generates code.
+   *
+   * @param t the object to generate code for
+   * @return the generated code
+   * @throws WurbelException if code generation failed
+   */
+  String generate(T t) throws WurbelException;
 
 }

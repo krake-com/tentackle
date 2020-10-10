@@ -830,4 +830,16 @@ public class ModelWurblet extends AbstractJavaWurblet {
     builder.insert(0, prependStr);
   }
 
+
+  /**
+   * Creates the component info for a given component.
+   *
+   * @param component the component of the wurblet's entity
+   * @return the info
+   * @throws WurbelException if failed
+   */
+  public ComponentInfo createComponentInfo(Entity component) throws WurbelException {
+    return new ComponentInfo(this, component);
+  }
+
 }

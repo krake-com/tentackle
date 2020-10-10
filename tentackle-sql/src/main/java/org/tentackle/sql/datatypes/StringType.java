@@ -64,6 +64,14 @@ public class StringType extends AbstractDataType<String> {
   }
 
   @Override
+  public String valueOfLiteralToCode(String str) {
+    if (str.length() > 0 && str.charAt(0) != '"') {
+      str = "\"" + str + "\"";
+    }
+    return str;
+  }
+
+  @Override
   public Object[] set(Backend backend, PreparedStatement statement, int pos, String object, boolean mapNull, Integer size) throws SQLException {
     if (object == null && mapNull) {
       object = backend.getEmptyString();

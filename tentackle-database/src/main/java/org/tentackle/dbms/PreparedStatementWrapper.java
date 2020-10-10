@@ -27,6 +27,7 @@ import org.tentackle.common.DateHelper;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.BackendPreparedStatement;
 import org.tentackle.sql.DataType;
+import org.tentackle.sql.SqlType;
 
 import java.math.BigDecimal;
 import java.sql.Clob;
@@ -302,14 +303,95 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
   @Override
   public <T> int set(DataType<T> dataType, int p, T object, boolean mapNull, Integer size) {
     try {
-      Object[] values = dataType.set(con.getBackend(), getStatement(), p, object, mapNull, size);
-      for (int i=0; i < values.length; i++) {
-        rememberParameter(p + i, values[i]);
+      int ep = effectivePosition(p);
+      Object[] values = dataType.set(con.getBackend(), getStatement(), ep, object, mapNull, size);
+      for (int i = 0; i < values.length; i++) {
+        rememberParameter(ep + i, values[i]);
       }
       return values.length;
     }
-    catch (SQLException e)  {
+    catch (SQLException e) {
       throw new PersistenceException(getSession(), this.toString(), e);
+    }
+  }
+
+  @Override
+  public <T> void set(DataType<T> dataType, int p, T object, int index, boolean mapNull, Integer size) {
+    try {
+      int ep = effectivePosition(p);
+      Object value = dataType.set(con.getBackend(), getStatement(), ep, object, index, mapNull, size);
+      rememberParameter(ep, value);
+    }
+    catch (SQLException e) {
+      throw new PersistenceException(getSession(), this.toString(), e);
+    }
+  }
+
+  @Override
+  public void set(SqlType sqlType, int p, Object object) {
+    switch (sqlType) {
+      case VARCHAR:
+        setString(p, object == null ? null : object.toString());
+        break;
+
+      case DATE:
+        setDate(p, (Date) object);
+        break;
+
+      case TIME:
+        setTime(p, (Time) object);
+        break;
+
+      case TIMESTAMP:
+        setTimestamp(p, (Timestamp) object);
+        break;
+
+      case BLOB:
+        setBinary(p, (Binary<?>) object);
+        break;
+
+      case CLOB:
+        setLargeString(p, object == null ? null : object.toString());
+        break;
+
+      case DECIMAL:
+        setBigDecimal(p, (BigDecimal) object);
+        break;
+
+      case CHAR:
+        setCharacter(p, (Character) object);
+        break;
+
+      case BIT:
+        setBoolean(p, (Boolean) object);
+        break;
+
+      case TINYINT:
+        setByte(p, object == null ? null : ((Number) object).byteValue());
+        break;
+
+      case SMALLINT:
+        setShort(p, object == null ? null : ((Number) object).shortValue());
+        break;
+
+      case INTEGER:
+        setInteger(p, object == null ? null : ((Number) object).intValue());
+        break;
+
+      case BIGINT:
+        setLong(p, object == null ? null : ((Number) object).longValue());
+        break;
+
+      case FLOAT:
+        setFloat(p, object == null ? null : ((Number) object).floatValue());
+        break;
+
+      case DOUBLE:
+        setDouble(p, object == null ? null : ((Number) object).doubleValue());
+        break;
+
+      default:
+        throw new PersistenceException("cannot set applition specific types");
     }
   }
 

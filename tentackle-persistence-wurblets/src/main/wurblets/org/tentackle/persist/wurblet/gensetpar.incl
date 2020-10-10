@@ -11,7 +11,7 @@
     }
     if (getContextAttribute() != null) {
 ]@
-    st.@(createJdbcSetterName(getContextAttribute()))@(ndx++, @(getContextAttribute().getName())@);
+    st.@(createJdbcSetterName(getContextAttribute().getDataType()))@(ndx++, @(getContextAttribute().getName())@);
 @[
     }
     for (WurbletArgument par: getMethodArguments())  {
@@ -24,57 +24,25 @@
             for (MethodArgument methodArg: methodArgs.subList(1, methodArgs.size())) {
               if (methodArg.isValue()) {
                 Attribute attr = methodArg.getForeignAttribute();
-                if (attr.getOptions().isMapNull())  {
 ]@
-    st.@(createJdbcSetterName(attr))@(ndx++, @(getJdbcCode(attr, attr.toMethodArgument(methodArg.getValue())))@, true);
+    @(createWhereSetPars(attr, attr.toMethodArgument(methodArg.getValue())))@;
 @[
-                }
-                else  {
-]@
-    st.@(createJdbcSetterName(attr))@(ndx++, @(getJdbcCode(attr, attr.toMethodArgument(methodArg.getValue())))@);
-@[
-                }
-                // for multi column types, such as BMoney or application specific types
-                int diff = getEffectiveDataType(attr).getColumnCount() - 1;
-                if (diff == 1) {
-]@
-    ndx++;
-@[
-                }
-                else if (diff > 1) {
-]@
-    ndx += @(diff)@;
-@[
-                }
               }
             }
           }
         }
       }
 
-
       if (!par.isValueLiterally()) {
         Attribute attr = par.getAttribute();
-        if (attr.getOptions().isMapNull())  {
+        if (par.getColumnIndex() == null) {
 ]@
-    st.@(createJdbcSetterName(attr))@(ndx++, @(getJdbcCode(attr, par.getJdbcValue()))@, true);
+    @(createWhereSetPars(attr, attr.toMethodArgument(par.getJdbcValue())))@;
 @[
         }
-        else  {
+        else {
 ]@
-    st.@(createJdbcSetterName(attr))@(ndx++, @(getJdbcCode(attr, par.getJdbcValue()))@);
-@[
-        }
-        // for multi column types, such as BMoney or application specific types
-        int diff = getEffectiveDataType(attr).getColumnCount() - 1;
-        if (diff == 1) {
-]@
-    ndx++;
-@[
-        }
-        else if (diff > 1) {
-]@
-    ndx += @(diff)@;
+    @(createWhereSetPars(par))@;
 @[
         }
       }
@@ -88,7 +56,20 @@
     int pos = code.lastIndexOf("(ndx++,");
     if (pos >= 0 && ref == pos + 1) {
       // remove unnecessary last ++
-      return code.substring(0, pos + 4) + code.substring(pos + 6);
+      code = code.substring(0, pos + 4) + code.substring(pos + 6);
+    }
+    else {
+      // remove unnecessary last ndx +=
+      pos = code.lastIndexOf("ndx += st.set(");   // ndx += st.set(DT_POSITION3D, ndx, dropPosition, false, null);
+      if (pos >= 0 && ref > pos) {
+        code = code.substring(0, pos) + code.substring(pos + 7);
+      }
+      else {
+        pos = code.lastIndexOf(", ndx++, ");   // st.set(SqlType....., ndx++, value.get...)
+        if (pos >= 0 && ref > pos) {
+          code = code.substring(0, pos + 5) + code.substring(pos + 7);
+        }
+      }
     }
     return code;
   }

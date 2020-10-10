@@ -49,6 +49,28 @@ public interface BackendPreparedStatement {
   <T> int set(DataType<T> dataType, int p, T object, boolean mapNull, Integer size);
 
   /**
+   * Sets a column of an object into a prepared statement via its {@link DataType}.<br>
+   * This method is provided for application-specific types.
+   *
+   * @param dataType the datatype
+   * @param p the positional index, starting at 1
+   * @param object the object of given datatype
+   * @param index the column index
+   * @param mapNull true if map null values
+   * @param size the optional size from the model
+   * @param <T> the type
+   */
+  <T> void set(DataType<T> dataType, int p, T object, int index, boolean mapNull, Integer size);
+
+  /**
+   * Generic setter for objects via known {@link SqlType}.
+   * @param sqlType the sql type
+   * @param p the positional index, starting at 1
+   * @param object the object of given sql type
+   */
+  void set(SqlType sqlType, int p, Object object);
+
+  /**
    * Sets the designated parameter to the given Java <code>Boolean</code> value.
    * The driver converts this
    * to an SQL <code>BIT</code> or <code>BOOLEAN</code> value when it sends it to the database.

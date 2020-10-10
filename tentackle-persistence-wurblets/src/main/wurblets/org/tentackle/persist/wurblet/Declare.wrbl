@@ -96,7 +96,7 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
   /** application specific datatype for @(attribNames)@. */
-  @(protection)@ static final DataType<@(dataType.getJavaType())@> @(getDataTypeConstant(dataType))@ = DataTypeFactory.getInstance().get(@(dataType.getJavaType())@.class);
+  public static final DataType<@(dataType.getJavaType())@> @(dataType.getDataTypeConstant())@ = DataTypeFactory.getInstance().get(@(dataType.getJavaType())@.class);
 @[
     }
 

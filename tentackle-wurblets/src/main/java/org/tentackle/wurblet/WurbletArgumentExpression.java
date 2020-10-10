@@ -16,12 +16,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.persist.wurblet;
+package org.tentackle.wurblet;
+
+import org.wurbelizer.wurbel.WurbelException;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import org.wurbelizer.wurbel.WurbelException;
 
 /**
  * An expression of wurblet arguments or other expressions.

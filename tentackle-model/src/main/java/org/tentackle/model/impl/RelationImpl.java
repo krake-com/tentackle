@@ -294,276 +294,279 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
     setSourceLine(line);
     setClassName(line.getClassName());
 
-    for (Map.Entry<String,String> entry: line.getProperties().entrySet()) {
+    try {
 
-      String prop = entry.getKey();
-      if (prop.startsWith("@") && !StringHelper.isAllWhitespace(prop.substring(1))) {
-        getAnnotations().add(prop);
-        continue;
-      }
-      if (prop.startsWith("#")) {
-        String stereotype = prop.substring(1);
-        if (!StringHelper.isAllWhitespace(stereotype)) {
-          getStereotypes().add(stereotype);
+      for (Map.Entry<String, String> entry : line.getProperties().entrySet()) {
+
+        String prop = entry.getKey();
+        if (prop.startsWith("@") && !StringHelper.isAllWhitespace(prop.substring(1))) {
+          getAnnotations().add(prop);
+          continue;
         }
-        continue;
-      }
-
-      StringTokenizer stok = new StringTokenizer(entry.getValue());
-
-      switch(prop.toLowerCase()) {
-
-        case DEFAULT:
-          break;    // do nothing, just white noise (looks better ;))
-
-        // property relation = ...
-        case RELATION:
-          while (stok.hasMoreTokens()) {
-            String token = stok.nextToken();
-            switch(token.toLowerCase()) {
-              case COMPOSITE:
-                setComposite(true);
-                break;
-
-              case TRACKED:
-                setTracked(true);
-                break;
-
-              case REFERENCED:
-                setReferenced(true);
-                break;
-
-              case PROCESSED:
-                setProcessed(true);
-                break;
-
-              case READONLY:
-                setReadOnly(true);
-                break;
-
-              case WRITEONLY:
-                setWriteOnly(true);
-                break;
-
-              case NOMETHOD:
-                setReadOnly(true);
-                setWriteOnly(true);
-                break;
-
-              case SERIALIZED:
-                setSerialized(true);
-                break;
-
-              case REMOTECLEAR:
-                setClearOnRemoteSave(true);
-                break;
-
-              case REVERSED:
-                setReversed(true);
-                break;
-
-              case SHALLOW:
-                setShallow(true);
-                break;
-
-              case IMMUTABLE:
-                setImmutable(true);
-                break;
-
-              case PART_OF_NORMTEXT:
-                setPartOfNormText(true);
-                break;
-
-              case BLUNT_DECLARED:
-                setBluntDeclared(true);
-                break;
-
-              default:
-                try {
-                  setRelationType(RelationType.valueOf(token.toUpperCase()));
-                }
-                catch (IllegalArgumentException ex) {
-                  throw createModelException("illegal keyword in relation property: " + token);
-                }
-            }
+        if (prop.startsWith("#")) {
+          String stereotype = prop.substring(1);
+          if (!StringHelper.isAllWhitespace(stereotype)) {
+            getStereotypes().add(stereotype);
           }
-          break;
+          continue;
+        }
 
-        // property select = ...
-        case SELECT:
-          boolean pipeFound = false;
-          while (stok.hasMoreTokens()) {
-            String token = stok.nextToken();
-            if (token.startsWith("|")) {
-              // lead for extra selection wurblet arguments
-              if (token.length() > 1) {
-                token = token.substring(1);   // remove leading |
-              }
-              pipeFound = true;
-            }
-            if (pipeFound) {
-              // add to wurblet args
-              if (selectionWurbletArguments == null) {
-                selectionWurbletArguments = token;
-              }
-              else {
-                selectionWurbletArguments += " " + token;
-              }
-            }
-            else {
-              switch(token.toLowerCase()) {
-                case CACHED:
-                  setSelectionCached(true);
+        StringTokenizer stok = new StringTokenizer(entry.getValue());
+
+        switch (prop.toLowerCase()) {
+
+          case DEFAULT:
+            break;    // do nothing, just white noise (looks better ;))
+
+          // property relation = ...
+          case RELATION:
+            while (stok.hasMoreTokens()) {
+              String token = stok.nextToken();
+              switch (token.toLowerCase()) {
+                case COMPOSITE:
+                  setComposite(true);
+                  break;
+
+                case TRACKED:
+                  setTracked(true);
+                  break;
+
+                case REFERENCED:
+                  setReferenced(true);
+                  break;
+
+                case PROCESSED:
+                  setProcessed(true);
+                  break;
+
+                case READONLY:
+                  setReadOnly(true);
+                  break;
+
+                case WRITEONLY:
+                  setWriteOnly(true);
+                  break;
+
+                case NOMETHOD:
+                  setReadOnly(true);
+                  setWriteOnly(true);
+                  break;
+
+                case SERIALIZED:
+                  setSerialized(true);
+                  break;
+
+                case REMOTECLEAR:
+                  setClearOnRemoteSave(true);
+                  break;
+
+                case REVERSED:
+                  setReversed(true);
+                  break;
+
+                case SHALLOW:
+                  setShallow(true);
+                  break;
+
+                case IMMUTABLE:
+                  setImmutable(true);
+                  break;
+
+                case PART_OF_NORMTEXT:
+                  setPartOfNormText(true);
+                  break;
+
+                case BLUNT_DECLARED:
+                  setBluntDeclared(true);
                   break;
 
                 default:
+                  try {
+                    setRelationType(RelationType.valueOf(token.toUpperCase()));
+                  }
+                  catch (IllegalArgumentException ex) {
+                    throw createModelException("illegal keyword in relation property: " + token);
+                  }
+              }
+            }
+            break;
+
+          // property select = ...
+          case SELECT:
+            boolean pipeFound = false;
+            while (stok.hasMoreTokens()) {
+              String token = stok.nextToken();
+              if (token.startsWith("|")) {
+                // lead for extra selection wurblet arguments
+                if (token.length() > 1) {
+                  token = token.substring(1);   // remove leading |
+                }
+                pipeFound = true;
+              }
+              if (pipeFound) {
+                // add to wurblet args
+                if (selectionWurbletArguments == null) {
+                  selectionWurbletArguments = token;
+                }
+                else {
+                  selectionWurbletArguments += " " + token;
+                }
+              }
+              else {
+                if (CACHED.equals(token.toLowerCase())) {
+                  setSelectionCached(true);
+                }
+                else {
                   try {
                     setSelectionType(SelectionType.valueOf(token.toUpperCase()));
                   }
                   catch (IllegalArgumentException ex) {
                     throw createModelException("illegal keyword in select property: " + token);
                   }
+                }
               }
             }
-          }
-          break;
+            break;
 
-        // property delete = ...
-        case DELETE:
-          while (stok.hasMoreTokens()) {
-            String token = stok.nextToken();
-            switch(token.toLowerCase()) {
-              case CASCADE:
-                setDeletionCascaded(true);
-                break;
+          // property delete = ...
+          case DELETE:
+            while (stok.hasMoreTokens()) {
+              String token = stok.nextToken();
+              switch (token.toLowerCase()) {
+                case CASCADE:
+                  setDeletionCascaded(true);
+                  break;
 
-              default:
-                throw createModelException("illegal keyword in delete property: " + token);
+                default:
+                  throw createModelException("illegal keyword in delete property: " + token);
+              }
             }
-          }
-          break;
+            break;
 
-        // property link = ...
-        case LINK:
-          while (stok.hasMoreTokens()) {
-            String token = stok.nextToken();
-            if (linkMethodName == null) {
-              setLinkMethodName(token);
+          // property link = ...
+          case LINK:
+            while (stok.hasMoreTokens()) {
+              String token = stok.nextToken();
+              if (linkMethodName == null) {
+                setLinkMethodName(token);
+              }
+              else if (linkMethodIndex == null) {
+                setLinkMethodIndex(token);
+              }
+              else {
+                throw createModelException("illegal keyword in link property: " + token);
+              }
             }
-            else if (linkMethodIndex == null) {
-              setLinkMethodIndex(token);
+            break;
+
+          // property args = ...
+          case ARGS:
+            OptionParser op = new OptionParser(entry.getValue(), false);
+            String nextArg;
+            while ((nextArg = op.nextOption(1)) != null) {
+              if (args == null) {
+                args = new ArrayList<>();
+              }
+              args.add(nextArg);
+            }
+            break;
+
+          // property method = ...
+          case METHOD:
+            setMethodName(entry.getValue());
+            break;
+
+          // property nm = ...
+          case NM:
+            setNmName(stok.nextToken());
+            if (stok.hasMoreTokens()) {
+              setNmMethodName(stok.nextToken());
+            }
+            break;
+
+          // property name = ...
+          case NAME:
+            setName(entry.getValue());
+            break;
+
+          // property scope = ... *
+          case SCOPE:
+            try {
+              setAccessScope(AccessScope.valueOf(entry.getValue().toUpperCase()));
+            }
+            catch (IllegalArgumentException ex) {
+              throw createModelException("illegal keyword in scope property: " + entry.getValue());
+            }
+            break;
+
+          // property count = ...
+          case COUNT:
+            Attribute ca = entity.getAttributeByJavaName(entry.getValue(), false);
+            if (ca == null) {
+              throw createModelException("unknown counter attribute: " + entry.getValue());
+            }
+            if (!ca.getDataType().isNumeric()) {
+              throw createModelException("counter attribute " + ca + " must be numeric");
+            }
+            if (ca.isNullable()) {
+              throw createModelException("counter attribute " + ca + " must not be nullable");
+            }
+            ((AttributeOptionsImpl) ca.getOptions()).setHidden(true);
+            setCountAttribute(ca);
+            break;
+
+          // property comment = ...
+          case COMMENT:
+            setComment(entry.getValue());
+            break;
+
+          default:
+            throw createModelException("unknown property: " + prop);
+        }
+      }
+
+      // setup default args
+      if (getRelationType() == RelationType.LIST) {
+        methodArgs.add(new MethodArgument(this, entity.getAttributeByJavaName(Constants.AN_ID, true)));
+      }
+      else {
+        methodArgs.add(new MethodArgument(this, entity.getAttributeByJavaName(getVariableName() + "Id", true)));
+      }
+      if (args != null) {
+        for (String arg : args) {
+          int ndx = arg.indexOf('[');
+          if (ndx < 0) {
+            throw createModelException("invalid syntax: " + arg);
+          }
+          String foreignName = arg.substring(0, ndx).trim();
+          String attribName = arg.substring(ndx + 1);
+          if (attribName.endsWith("]")) {
+            attribName = attribName.substring(0, attribName.length() - 1);
+          }
+          if (attribName.endsWith("()")) {
+            // method name: determine attribute name
+            attribName = attribName.substring(0, attribName.length() - 2);
+            if (attribName.startsWith("is")) {
+              attribName = attribName.substring(2);
+            }
+            else if (attribName.startsWith("get")) {
+              attribName = attribName.substring(3);
             }
             else {
-              throw createModelException("illegal keyword in link property: " + token);
+              throw createModelException("invalid method name: " + arg);
             }
-          }
-          break;
-
-        // property args = ...
-        case ARGS:
-          OptionParser op = new OptionParser(entry.getValue(), false);
-          String nextArg;
-          while ((nextArg = op.nextOption(1)) != null) {
-            if (args == null) {
-              args = new ArrayList<>();
-            }
-            args.add(nextArg);
-          }
-          break;
-
-        // property method = ...
-        case METHOD:
-          setMethodName(entry.getValue());
-          break;
-
-        // property nm = ...
-        case NM:
-          setNmName(stok.nextToken());
-          if (stok.hasMoreTokens()) {
-            setNmMethodName(stok.nextToken());
-          }
-          break;
-
-        // property name = ...
-        case NAME:
-          setName(entry.getValue());
-          break;
-
-        // property scope = ... *
-        case SCOPE:
-          try {
-            setAccessScope(AccessScope.valueOf(entry.getValue().toUpperCase()));
-          }
-          catch (IllegalArgumentException ex) {
-            throw createModelException("illegal keyword in scope property: " + entry.getValue());
-          }
-          break;
-
-        // property count = ...
-        case COUNT:
-          Attribute ca = entity.getAttributeByJavaName(entry.getValue(), false);
-          if (ca == null) {
-            throw createModelException("unknown counter attribute: " + entry.getValue());
-          }
-          if (!ca.getDataType().isNumeric()) {
-            throw createModelException("counter attribute " + ca + " must be numeric");
-          }
-          if (ca.isNullable()) {
-            throw createModelException("counter attribute " + ca + " must not be nullable");
-          }
-          ((AttributeOptionsImpl) ca.getOptions()).setHidden(true);
-          setCountAttribute(ca);
-          break;
-
-        // property comment = ...
-        case COMMENT:
-          setComment(entry.getValue());
-          break;
-
-        default:
-          throw createModelException("unknown property: " + prop);
-      }
-    }
-
-    // setup default args
-    if (getRelationType() == RelationType.LIST) {
-      methodArgs.add(new MethodArgument(this, entity.getAttributeByJavaName(Constants.AN_ID, true)));
-    }
-    else {
-      methodArgs.add(new MethodArgument(this, entity.getAttributeByJavaName(getVariableName() + "Id", true)));
-    }
-    if (args != null) {
-      for (String arg: args) {
-        int ndx = arg.indexOf('[');
-        if (ndx < 0) {
-          throw createModelException("invalid syntax: " + arg);
-        }
-        String foreignName = arg.substring(0, ndx).trim();
-        String attribName = arg.substring(ndx + 1);
-        if (attribName.endsWith("]")) {
-          attribName = attribName.substring(0, attribName.length() - 1);
-        }
-        if (attribName.endsWith("()")) {
-          // method name: determine attribute name
-          attribName = attribName.substring(0, attribName.length() - 2);
-          if (attribName.startsWith("is")) {
-            attribName = attribName.substring(2);
-          }
-          else if (attribName.startsWith("get")) {
-            attribName = attribName.substring(3);
+            methodArgs.add(new MethodArgument(this, foreignName, entity.getAttributeByJavaName(attribName, true)));
           }
           else {
-            throw createModelException("invalid method name: " + arg);
+            // fixed value
+            methodArgs.add(new MethodArgument(this, foreignName, attribName));
           }
-          methodArgs.add(new MethodArgument(this, foreignName, entity.getAttributeByJavaName(attribName, true)));
-        }
-        else {
-          // fixed value
-          methodArgs.add(new MethodArgument(this, foreignName, attribName));
         }
       }
     }
-
+    catch (RuntimeException rx) {
+      throw createModelException("syntax error", rx);
+    }
   }
 
 
@@ -812,6 +815,26 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
     }
     else  {
       ex = new ModelException(message, entity);
+    }
+    return ex;
+  }
+
+  /**
+   * Creates a model exception.
+   * <p>
+   * Refers to the source line if set, otherwise just the message.
+   *
+   * @param message the message
+   * @param cause the cause
+   * @return the exception
+   */
+  public ModelException createModelException(String message, Throwable cause) {
+    ModelException ex;
+    if (sourceLine != null) {
+      ex = sourceLine.createModelException(message, cause);
+    }
+    else  {
+      ex = new ModelException(message, entity, cause);
     }
     return ex;
   }

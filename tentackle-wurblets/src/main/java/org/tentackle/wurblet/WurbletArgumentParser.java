@@ -16,18 +16,19 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.persist.wurblet;
+package org.tentackle.wurblet;
+
+import org.wurbelizer.wurbel.WurbelException;
+
+import org.tentackle.common.StringHelper;
+import org.tentackle.model.Entity;
+import org.tentackle.model.Relation;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.StringTokenizer;
-import org.tentackle.common.StringHelper;
-import org.tentackle.model.Entity;
-import org.tentackle.model.Relation;
-import org.wurbelizer.wurbel.WurbelException;
 
 /**
  * Parses the wurblet arguments.<br>
@@ -350,68 +351,64 @@ public class WurbletArgumentParser {
               lastOperator = operator;
             }
             else {
-              StringTokenizer stok = new StringTokenizer(subArg);
-              while (stok.hasMoreTokens()) {
-                String operArg = stok.nextToken();
-                WurbletArgument operand = createArgument(operArg, expressionFinished, argumentGroupingEnabled);
-                switch(operand.getArgumentType()) {
-                  case SORT:
-                    if (expressionLevel == 0) {
-                      sortingArguments.add(operand);
-                      expressionFinished = true;
+              WurbletArgument operand = createArgument(subArg, expressionFinished, argumentGroupingEnabled);
+              switch(operand.getArgumentType()) {
+                case SORT:
+                  if (expressionLevel == 0) {
+                    sortingArguments.add(operand);
+                    expressionFinished = true;
+                  }
+                  else {
+                    throw new WurbelException("sorting key " + operand + " not allowed in nested expressions");
+                  }
+                  break;
+
+                case JOIN:
+                  if (expressionLevel == 0) {
+                    joinArguments.add(operand);
+                    expressionFinished = true;
+                  }
+                  else {
+                    throw new WurbelException("join " + operand + " not allowed in nested expressions");
+                  }
+                  break;
+
+                default:
+                  // expression argument
+                  lastOperator = expr.addOperand(lastOperator, operand);
+                  expressionArguments.add(operand);
+                  if (lastOperator != WurbletArgumentOperator.AND) {
+                    existsRelations = null;
+                    existsComponents = null;
+                    if (lastExistsArg != null) {
+                      lastExistsArg.setEndOfExistsClause(true);
+                      lastExistsArg = null;
+                    }
+                  }
+
+                  if (operand.getExpressionRelations() != null) {
+                    if (existsRelations == null) {
+                      // first operand found: will get all relations up the first non-AND operator
+                      // first relation may be a component join
+                      existsRelations = new LinkedHashSet<>(operand.getExpressionRelations());
+                      existsComponents = new LinkedHashSet<>();
+                      if (operand.getComponent() != null) {
+                        existsComponents.add(operand.getComponent());
+                      }
+                      // this argument takes all relations up to the first non-ANDed argument
+                      operand.setExistsRelations(existsRelations);
+                      operand.setExistsComponents(existsComponents);
                     }
                     else {
-                      throw new WurbelException("sorting key " + operand + " not allowed in nested expressions");
-                    }
-                    break;
-
-                  case JOIN:
-                    if (expressionLevel == 0) {
-                      joinArguments.add(operand);
-                      expressionFinished = true;
-                    }
-                    else {
-                      throw new WurbelException("join " + operand + " not allowed in nested expressions");
-                    }
-                    break;
-
-                  default:
-                    // expression argument
-                    lastOperator = expr.addOperand(lastOperator, operand);
-                    expressionArguments.add(operand);
-                    if (lastOperator != WurbletArgumentOperator.AND) {
-                      existsRelations = null;
-                      existsComponents = null;
-                      if (lastExistsArg != null) {
-                        lastExistsArg.setEndOfExistsClause(true);
-                        lastExistsArg = null;
+                      // ANDed operator: add relations to exists relations
+                      existsRelations.addAll(operand.getExpressionRelations());
+                      if (operand.getComponent() != null) {
+                        existsComponents.add(operand.getComponent());
                       }
                     }
-
-                    if (operand.getExpressionRelations() != null) {
-                      if (existsRelations == null) {
-                        // first operand found: will get all relations up the first non-AND operator
-                        // first relation may be a component join
-                        existsRelations = new LinkedHashSet<>(operand.getExpressionRelations());
-                        existsComponents = new LinkedHashSet<>();
-                        if (operand.getComponent() != null) {
-                          existsComponents.add(operand.getComponent());
-                        }
-                        // this argument takes all relations up to the first non-ANDed argument
-                        operand.setExistsRelations(existsRelations);
-                        operand.setExistsComponents(existsComponents);
-                      }
-                      else {
-                        // ANDed operator: add relations to exists relations
-                        existsRelations.addAll(operand.getExpressionRelations());
-                        if (operand.getComponent() != null) {
-                          existsComponents.add(operand.getComponent());
-                        }
-                      }
-                      lastExistsArg = operand;
-                    }
-                    break;
-                }
+                    lastExistsArg = operand;
+                  }
+                  break;
               }
             }
           }

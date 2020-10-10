@@ -19,8 +19,11 @@
 package org.tentackle.sql.datatypes;
 
 import org.tentackle.common.StringHelper;
+import org.tentackle.sql.Backend;
 import org.tentackle.sql.DataType;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Optional;
 
 /**
@@ -65,6 +68,29 @@ public abstract class AbstractDataType<T> implements DataType<T> {
   }
 
   @Override
+  public int getSize(int index, Integer size) {
+    return size == null ? 0 : size;
+  }
+
+  @Override
+  public int getScale(int index, Integer scale) {
+    return scale == null ? 0 : scale;
+  }
+
+  @Override
+  public Object getColumnValue(int index, T value) {
+    return value;
+  }
+
+  @Override
+  public String getColumnGetter(int index) {
+    if (getColumnCount() == 1) {
+      return "";
+    }
+    throw new UnsupportedOperationException("getColumnGetter not yet implemented for datatype " + this);
+  }
+
+  @Override
   public boolean isPrimitive() {
     return false;
   }
@@ -100,11 +126,6 @@ public abstract class AbstractDataType<T> implements DataType<T> {
   }
 
   @Override
-  public boolean isScaleInSecondColumn() {
-    return false;
-  }
-
-  @Override
   public boolean isMapNullSupported() {
     return false;
   }
@@ -130,6 +151,30 @@ public abstract class AbstractDataType<T> implements DataType<T> {
   }
 
   @Override
+  public boolean isLiteralSupported() {
+    return getColumnCount() == 1;
+  }
+
+  @Override
+  public String toLiteral(String str) {
+    if (!isNumeric() && !str.isEmpty() && str.charAt(0) != '\'') {
+      str = "'" + str + "'";
+    }
+    return str;
+  }
+
+  @Override
+  public String valueOfLiteralToCode(String str) {
+    if (isLiteralSupported()) {
+      return str;
+    }
+    if (str.length() > 0 && str.charAt(0) != '"') {
+      str = "\"" + str + "\"";
+    }
+    return isPredefined() ? getJavaType() : getDataTypeConstant() + ".valueOf(" + str + ")";
+  }
+
+  @Override
   public String toString(T object) {
     return StringHelper.toParsableString(object.toString());
   }
@@ -144,6 +189,23 @@ public abstract class AbstractDataType<T> implements DataType<T> {
     return buf.toString();
   }
 
+  @Override
+  public String getDataTypeConstant() {
+    StringBuilder buf = new StringBuilder();
+    buf.append("DT_").append(getJavaType().toUpperCase());
+    if (!getVariant().isEmpty()) {
+      buf.append('_').append(getVariant().toUpperCase());
+    }
+    return buf.toString();
+  }
+
+  @Override
+  public Object set(Backend backend, PreparedStatement statement, int pos, T object, int index, boolean mapNull, Integer size) throws SQLException {
+    if (getColumnCount() == 1) {
+      return set(backend, statement, pos, object, mapNull, size);
+    }
+    throw new UnsupportedOperationException("not yet implemented for datatype " + this);
+  }
 
 
   // in case someone uses equals or hashCode.
