@@ -772,8 +772,11 @@ public class DbModelWurblet extends ModelWurblet {
     StringBuilder buf = new StringBuilder();
     if (arg.getDataType().isPredefined()) {   // currently only BMoney and DMoney
       buf.append("st.set(SqlType.").append(arg.getDataType().getSqlType(columnIndex))
-         .append(", ndx++, ").append(arg.getJdbcValue()).append(".").append(arg.getDataType().getColumnGetter(columnIndex))
-         .append("())");
+         .append(", ndx++, ").append(arg.getJdbcValue());
+      if (arg.isMethodArgument()) {
+        buf.append(".").append(arg.getDataType().getColumnGetter(columnIndex)).append("()");
+      }
+      buf.append(")");
     }
     else {
       Attribute attr = arg.getAttribute();

@@ -400,14 +400,16 @@ public class WurbletArgument implements WurbletArgumentOperand {
           }
         }
 
-        if (literally) {
-          if (!dataType.isLiteralSupported()) {
-            throw new WurbelException("datatype " + dataType + " does not support literals");
+        if (columnIndex == null) {
+          if (literally) {
+            if (!dataType.isLiteralSupported()) {
+              throw new WurbelException("datatype " + dataType + " does not support literals");
+            }
+            value = dataType.toLiteral(value);
           }
-          value = dataType.toLiteral(value);
-        }
-        else if (value != null) {
-          value = dataType.valueOfLiteralToCode(value);
+          else if (value != null) {
+            value = dataType.valueOfLiteralToCode(value);
+          }
         }
       }
     }
