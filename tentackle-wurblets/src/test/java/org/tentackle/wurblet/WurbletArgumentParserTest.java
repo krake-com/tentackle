@@ -79,7 +79,7 @@ public class WurbletArgumentParserTest {
       assertTrue(expr.getOperands().get(0) instanceof WurbletArgument);
       WurbletArgument argument = (WurbletArgument) expr.getOperands().get(0);
       assertEquals(argument.getText(), "user:=#\"hinz kunz\"");
-      assertEquals(argument.getValue(), "\"hinz kunz\"");
+      assertEquals(argument.getValue(), "'\"hinz kunz\"'");
       assertEquals(argument.getRelop(), "=");
       WurbletArgumentOperand operand = expr.getOperands().get(1);
       assertTrue(operand instanceof WurbletArgumentExpression);
