@@ -93,11 +93,10 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   private List<ClasspathDependency> classpathDependencies;
 
   /**
-   * Extra directories to copy to the image.<br>
-   * Relative to the <code>src</code> directory.
+   * Extra directories to copy to the image.
    */
   @Parameter
-  private List<String> extraDirectories;
+  private List<File> extraDirectories;
 
   /**
    * Extra classpath elements.<br>
@@ -464,9 +463,9 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   /**
    * Extra directories to copy to the image.
    *
-   * @return pathnames relative to the <code>src</code> directory, null if none
+   * @return the directories, null if none
    */
-  public List<String> getExtraDirectories() {
+  public List<File> getExtraDirectories() {
     return extraDirectories;
   }
 
@@ -732,19 +731,9 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
     // extra directories, if any
     try {
       if (getExtraDirectories() != null) {
-        String src = getMavenProject().getBuild().getSourceDirectory();
-        if (src != null) {
-          File srcDir = new File(src);
-          while (srcDir != null && !"src".equals(srcDir.getName())) {   // step up to "src"
-            srcDir = srcDir.getParentFile();
-          }
-          if (srcDir != null) {
-            for (String name : getExtraDirectories()) {
-              File fromDir = new File(srcDir, name);
-              File toDir = new File(getImageDirectory(), fromDir.getName());
-              FileHelper.copyDirectory(fromDir, toDir, true, null);
-            }
-          }
+        for (File fromDir : getExtraDirectories()) {
+          File toDir = new File(getImageDirectory(), fromDir.getName());
+          FileHelper.copyDirectory(fromDir, toDir, true, null);
         }
       }
     }
