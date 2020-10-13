@@ -1,6 +1,6 @@
 <#-- template to update the application -->
 <#-- assumed to be unzipped into a folder named "update", where this script is located in subfolder "bin" -->
-<#-- invoked with the PID of the running client as the only argument (necessary for windows to wait for termination) -->
+<#-- invoked with the PID of the running client as the only argument (necessary to wait for termination) -->
 <#if osName?upper_case?contains("WIN")>
 @echo off
 set script_file=%~nx0
@@ -25,7 +25,7 @@ if exist update\bin (if exist update\conf (if exist update\include (if exist upd
     )
     copy /y update\release .
     rmdir update /s /q
-    REM bin\${runScript}
+    REM bin\${runScript}<#-- uncomment if restart desired -->
   ) else (
     echo this is not the correct update script
     exit /b 2
@@ -44,13 +44,20 @@ cd "$(dirname "$(dirname "$(dirname "$(abs_path "$0")")")")"
   <#else>
 cd "$(dirname "$(dirname "$(dirname "$(readlink -f "$0")")")")"
   </#if>
+<#-- wait for termination (necessary only if running on NFS) -->
+if [ "$1" != "" ]; then
+  while kill -0 $1 2>/dev/null
+  do
+	  sleep 1
+  done
+fi
 if [ -d update/bin ] && [ -d update/conf ] && [ -d update/include ] && [ -d update/legal ] && [ -d update/lib ]; then
   if [ -f update/bin/$(basename "$0") ]; then
     rm -fr bin conf include legal lib mp cp
     mv -f update/* .
     rm -fr update
     chmod +x bin/* lib/jexec lib/jspawnhelper
-    # bin/${runScript}
+    # bin/${runScript}<#-- uncomment if restart desired -->
   else
     echo this is not the correct update script
     exit 2

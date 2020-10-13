@@ -202,6 +202,17 @@ public class ClientUpdateUtilities {
 
 
   /**
+   * Gets the message digest to create the checksum of the downloaded zip file.
+   *
+   * @return the message digest
+   * @throws NoSuchAlgorithmException if no such digest
+   */
+  public MessageDigest getMessageDigest() throws NoSuchAlgorithmException {
+    return MessageDigest.getInstance("SHA-256");
+  }
+
+
+  /**
    * Downloads the zipfile.
    *
    * @param updateInfo the update info
@@ -239,16 +250,16 @@ public class ClientUpdateUtilities {
       // check the sha256 hash
       byte[] buffer = new byte[8192];
       int count;
-      MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      MessageDigest digest = getMessageDigest();
       try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(zipFile))) {
         while ((count = bis.read(buffer)) > 0) {
           digest.update(buffer, 0, count);
         }
       }
-      String shaHash = StringHelper.fillLeft(new BigInteger(1, digest.digest()).toString(16), 32, '0');
-      if (!shaHash.equals(updateInfo.getShaHash())) {
-        throw new TentackleRuntimeException("checksum failed, expected " + updateInfo.getShaHash() +
-                                            ", found " + shaHash);
+      String expectedHash = updateInfo.getShaHash();
+      String foundHash = StringHelper.fillLeft(new BigInteger(1, digest.digest()).toString(16), expectedHash.length(), '0');
+      if (!foundHash.equals(expectedHash)) {
+        throw new TentackleRuntimeException("checksum failed! (" + digest + ")\nexpected: " + expectedHash + "\nfound:    " + foundHash);
       }
 
       return zipFile;
