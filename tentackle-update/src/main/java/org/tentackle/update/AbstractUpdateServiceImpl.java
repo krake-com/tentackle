@@ -45,8 +45,8 @@ public abstract class AbstractUpdateServiceImpl extends UnicastRemoteObject impl
 
   private static final long serialVersionUID = 1L;
 
-  private final Map<URL, Long> downloadSizes = new ConcurrentHashMap<>();
-  private final Map<URL, String> shaHashes = new ConcurrentHashMap<>();
+  private final Map<URL, Long> downloadSizes = new ConcurrentHashMap<>();       // size in bytes of the download ZIPs
+  private final Map<URL, String> checksumHashes = new ConcurrentHashMap<>();    // checksum hashes of the download ZIPs
 
   private String updateURL;
 
@@ -118,8 +118,8 @@ public abstract class AbstractUpdateServiceImpl extends UnicastRemoteObject impl
   public UpdateInfo getInfo(ClientInfo clientInfo) throws RemoteException {
     try {
       URL zipURL = createZipURL(clientInfo);
-      URL shaURL = createShaURL(clientInfo);
-      String shaHash = determineShaHash(shaURL);
+      URL shaURL = createChecksumURL(clientInfo);
+      String shaHash = determineChecksumHash(shaURL);
       long size = determineDownloadSize(zipURL);
       String updateExecutor = createUpdateExecutor(clientInfo);
       return new UpdateInfo(getVersion(), zipURL, shaHash, size, updateExecutor);
@@ -157,12 +157,12 @@ public abstract class AbstractUpdateServiceImpl extends UnicastRemoteObject impl
   }
 
   /**
-   * Creates the URL for the SHA256 file.
+   * Creates the URL for the checksum hash file.
    *
    * @param clientInfo the client info
    * @return the URL
    */
-  protected URL createShaURL(ClientInfo clientInfo) {
+  protected URL createChecksumURL(ClientInfo clientInfo) {
     try {
       return new URL(createBaseUrlName(clientInfo) + ".sha256");
     }
@@ -191,17 +191,17 @@ public abstract class AbstractUpdateServiceImpl extends UnicastRemoteObject impl
   }
 
   /**
-   * Determines the SHA hash.
+   * Determines the checksum hash.
    *
-   * @param shaURL the SHA file URL
+   * @param checksumURL the URL of the checksum hash file
    * @return the hash value
    * @throws IOException if failed
    */
-  protected String determineShaHash(URL shaURL) throws IOException {
-    String shaHash = shaHashes.get(shaURL);
+  protected String determineChecksumHash(URL checksumURL) throws IOException {
+    String shaHash = checksumHashes.get(checksumURL);
     if (shaHash == null) {
-      shaHash = new StringTokenizer(new String(FileHelper.download(shaURL))).nextToken();
-      shaHashes.put(shaURL, shaHash);
+      shaHash = new StringTokenizer(new String(FileHelper.download(checksumURL))).nextToken();
+      checksumHashes.put(checksumURL, shaHash);
     }
     return shaHash;
   }

@@ -37,6 +37,13 @@ if exist update\bin (if exist update\app (if exist update\runtime (
 abs_path() {
   echo "$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
 }
+<#-- necessary only if running on NFS -->
+if [ "$1" != "" ]; then
+  while kill -0 $1 2>/dev/null
+  do
+	  sleep 1
+  done
+fi
 cd "$(dirname "$(dirname "$(dirname "$(abs_path "$0")")")")"
 if [ -d update/bin ] && [ -d update/Contents ]; then
   if [ -f update/bin/$(basename "$0") ]; then
@@ -54,6 +61,13 @@ else
   exit 1
 fi
 <#else>
+<#-- necessary only if running on NFS -->
+if [ "$1" != "" ]; then
+  while kill -0 $1 2>/dev/null
+  do
+	  sleep 1
+  done
+fi
 cd "$(dirname "$(dirname "$(dirname "$(readlink -f "$0")")")")"
 if [ -d update/bin ] && [ -d update/lib ]; then
   if [ -f update/bin/$(basename "$0") ]; then

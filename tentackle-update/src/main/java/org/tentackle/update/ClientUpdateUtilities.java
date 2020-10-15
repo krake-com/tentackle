@@ -247,7 +247,7 @@ public class ClientUpdateUtilities {
         fileOutputStream.getChannel().transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
       }
 
-      // check the sha256 hash
+      // check the hash
       byte[] buffer = new byte[8192];
       int count;
       MessageDigest digest = getMessageDigest();
@@ -256,10 +256,10 @@ public class ClientUpdateUtilities {
           digest.update(buffer, 0, count);
         }
       }
-      String expectedHash = updateInfo.getShaHash();
-      String foundHash = StringHelper.fillLeft(new BigInteger(1, digest.digest()).toString(16), expectedHash.length(), '0');
-      if (!foundHash.equals(expectedHash)) {
-        throw new TentackleRuntimeException("checksum failed! (" + digest + ")\nexpected: " + expectedHash + "\nfound:    " + foundHash);
+      String expectedChecksum = updateInfo.getChecksum();
+      String foundChecksum = StringHelper.fillLeft(new BigInteger(1, digest.digest()).toString(16), expectedChecksum.length(), '0');
+      if (!foundChecksum.equals(expectedChecksum)) {
+        throw new TentackleRuntimeException("checksum failed! (" + digest + ")\nexpected: " + expectedChecksum + "\nfound:    " + foundChecksum);
       }
 
       return zipFile;

@@ -35,7 +35,7 @@ public class UpdateInfo implements Serializable {
   // transfer as strings because it may be encrypted
   private final String version;
   private final String url;
-  private final String shaHash;
+  private final String checksum;
   private final String size;
   private final String updateExecutor;
   private final boolean encrypted;
@@ -46,16 +46,16 @@ public class UpdateInfo implements Serializable {
    *
    * @param version the new application version
    * @param url the URL of the ZIP file the client must download
-   * @param shaHash the saltless SHA256 hash to verify the downloaded file
+   * @param checksum the checksum hash to verify the downloaded file
    * @param size the size of the ZIP file
    * @param updateExecutor the filename to execute to perform the update
    */
-  public UpdateInfo(String version, URL url, String shaHash, long size, String updateExecutor) {
+  public UpdateInfo(String version, URL url, String checksum, long size, String updateExecutor) {
     Cryptor cryptor = Cryptor.getInstance();
     if (cryptor != null) {
       this.version = cryptor.encrypt64(version);
       this.url = cryptor.encrypt64(url.toExternalForm());
-      this.shaHash = cryptor.encrypt64(shaHash);
+      this.checksum = cryptor.encrypt64(checksum);
       this.size = cryptor.encrypt64(Long.toString(size));
       this.updateExecutor = cryptor.encrypt64(updateExecutor);
       encrypted = true;
@@ -63,7 +63,7 @@ public class UpdateInfo implements Serializable {
     else {
       this.version = version;
       this.url = url.toExternalForm();
-      this.shaHash = shaHash;
+      this.checksum = checksum;
       this.size = Long.toString(size);
       this.updateExecutor = updateExecutor;
       encrypted = false;
@@ -95,12 +95,12 @@ public class UpdateInfo implements Serializable {
   }
 
   /**
-   * Gets the SHA hash to verify the download.
+   * Gets the checksum hash to verify the download.
    *
-   * @return the hash
+   * @return the checksum hash
    */
-  public String getShaHash() {
-    return encrypted ? Cryptor.getInstance().decrypt64(shaHash) : shaHash;
+  public String getChecksum() {
+    return encrypted ? Cryptor.getInstance().decrypt64(checksum) : checksum;
   }
 
   /**
@@ -126,7 +126,7 @@ public class UpdateInfo implements Serializable {
     return "UpdateInfo{" +
            "version='" + getVersion() + '\'' +
            ", url=" + getUrl() +
-           ", shaHash='" + getShaHash() + '\'' +
+           ", checksum='" + getChecksum() + '\'' +
            ", size=" + getSize() +
            ", updateExecutor='" + getUpdateExecutor() + '\'' +
            '}';
