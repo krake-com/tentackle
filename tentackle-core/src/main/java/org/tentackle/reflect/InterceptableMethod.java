@@ -28,9 +28,13 @@ import java.lang.reflect.Method;
  */
 public class InterceptableMethod {
 
+  // see note below...
+  // private static final MethodHandles.Lookup lookup = MethodHandles.lookup();
+
   private final Method method;                // the orginal method of the interface
   private final Method delegateMethod;        // the delegate method
   private final Interceptor interceptor;      // the head of interceptors, null if none
+  // private final MethodHandle delegateHandle;  // the delegate method handle
 
   /**
    * Creates a interceptable method.
@@ -43,6 +47,13 @@ public class InterceptableMethod {
     this.method = method;
     this.delegateMethod = delegateMethod;
     this.interceptor = interceptor;
+
+//    try {
+//      delegateHandle = lookup.unreflect(delegateMethod);
+//    }
+//    catch (IllegalAccessException e) {
+//      throw new TentackleRuntimeException("unreflect failed for " + delegateMethod, e);
+//    }
   }
 
   /**
@@ -87,6 +98,12 @@ public class InterceptableMethod {
         return interceptor.invoke(delegate, delegateMethod, args);
       }
       else {
+        // we stick to old reflection because the new MethodHandles are a lot slower, at least when using invokeWithArguments.
+        // The opposite should be true, since the security is checked only once when creating the methodhandle,
+        // but in realily it shows a significant performance degration -- for whatever reason.
+        //
+        //        return delegateHandle.bindTo(delegate).invokeWithArguments(args);
+        //
         return delegateMethod.invoke(delegate, args);
       }
     }

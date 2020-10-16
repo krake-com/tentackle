@@ -103,7 +103,7 @@ public class PdoInvocationTest {
     duration = new Duration();
     sum = 0;
     for (int i = 0; i < SIZE; i++) {
-      sum += securities[i].getRootClassId();
+      sum += securities[i].getClassId();
     }
     duration.end();
     msg = SIZE + " 1st proxy invocations: " + duration.millisToString() + "ms " + sum;
