@@ -49,6 +49,22 @@ public interface ModificationTracker extends SessionTaskDispatcher, ExclusiveSes
 
 
   /**
+   * Submit a session task invoking given runnable.<br>
+   * This is just a convenience method to reduce the amount of code.
+   *
+   * @param runnable the runnable to be executed once
+   */
+  static void submit(Runnable runnable) {
+    getInstance().addTask(new AbstractSessionTask() {
+      @Override
+      public void run() {
+        runnable.run();
+      }
+    });
+  }
+
+
+  /**
    * Adds a modification listener.
    *
    * @param listener the listener to add
