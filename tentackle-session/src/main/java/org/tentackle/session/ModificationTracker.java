@@ -20,6 +20,7 @@
 package org.tentackle.session;
 
 import org.tentackle.common.ServiceFactory;
+import org.tentackle.task.AbstractTask;
 
 
 interface ModificationTrackerHolder {
@@ -48,20 +49,49 @@ public interface ModificationTracker extends SessionTaskDispatcher, ExclusiveSes
   }
 
 
+  // some convenience methods to reduce the amount of code for common use cases
+
   /**
-   * Submit a session task invoking given runnable.<br>
-   * This is just a convenience method to reduce the amount of code.
+   * Submits a task invoking given runnable.
    *
    * @param runnable the runnable to be executed once
    */
   static void submit(Runnable runnable) {
-    getInstance().addTask(new AbstractSessionTask() {
+    getInstance().addTask(new AbstractTask() {
       @Override
       public void run() {
         runnable.run();
       }
     });
   }
+
+  /**
+   * Submits a session task invoking the given runnable within a transaction of the tracker's session.
+   *
+   * @param txName the transaction name, null if default <code>"&lt;ModificationTracker&gt;"</code>
+   * @param runnable the runnable to be executed once
+   */
+  static void transaction(String txName, Runnable runnable) {
+    getInstance().addTask(new AbstractSessionTask() {
+      @Override
+      public void run() {
+        getSession().transaction(txName == null ? "<ModificationTracker>" : txName, () -> {
+          runnable.run();
+          return null;
+        });
+      }
+    });
+  }
+
+  /**
+   * Submits a session task invoking the given runnable within a transaction of the tracker's session.
+   *
+   * @param runnable the runnable to be executed once
+   */
+  static void transaction(Runnable runnable) {
+    transaction(null, runnable);
+  }
+
 
 
   /**
