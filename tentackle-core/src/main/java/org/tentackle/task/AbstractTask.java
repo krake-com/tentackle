@@ -43,12 +43,6 @@ public abstract class AbstractTask implements Task {
 
 
   /**
-   * Creates a task.
-   */
-  public AbstractTask() {
-  }
-
-  /**
    * {@inheritDoc}
    * <p>
    * Tasks are sorted by scheduled time + id.
