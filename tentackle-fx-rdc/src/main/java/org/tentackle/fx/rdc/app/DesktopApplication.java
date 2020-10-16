@@ -45,7 +45,6 @@ import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
-import org.tentackle.task.AbstractTask;
 import org.tentackle.validate.Validator;
 import org.tentackle.validate.ValidatorCache;
 
@@ -479,14 +478,11 @@ public abstract class DesktopApplication<C extends FxController>
    */
   @Override
   public void classMapped(String name, Class<?> clazz) {
-    ModificationTracker.getInstance().addTask(new AbstractTask() {
-      @Override
-      public void run() {
-        Class<?> pdoClass = PdoFactory.getInstance().create(name).getEffectiveClass();
-        LOGGER.fine("validating validators of {0}", pdoClass);
-        for (Validator validator: ValidatorCache.getInstance().getFieldValidators(pdoClass)) {
-          validator.validate();
-        }
+    ModificationTracker.submit(() -> {
+      Class<?> pdoClass = PdoFactory.getInstance().create(name).getEffectiveClass();
+      LOGGER.fine("validating validators of {0}", pdoClass);
+      for (Validator validator : ValidatorCache.getInstance().getFieldValidators(pdoClass)) {
+        validator.validate();
       }
     });
   }
