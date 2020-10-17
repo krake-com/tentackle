@@ -306,8 +306,8 @@ public class ManagedConnection {
   private final Backend backend;                          // the backend
   private final String backendId;                         // a unique ID to identify the connection at the backend
   private final long instanceNumber;                      // unique instance number (for logging only)
+  private final long establishedSince;                    // connection established establishedSince... (epochal [ms])
   private Db db;                                          // currently attached Db, null = free connection
-  private long establishedSince;                          // connection established establishedSince... (epochal [ms])
   private long expireAt;                                  // connection shutdown at (epochal [ms]), 0 = forever
   private long attachedSince;                             // attached since when...
   private long detachedSince;                             // detached since when...

@@ -55,20 +55,20 @@ public class CompressedOutputStream extends FilterOutputStream {
 
   static final int COMPRESSED = MAX_BUFFER_SIZE + 1;    // 0x8000 MSBit: 1 = compressed, 0 = uncompressed
 
-  private int minCompressSize;          // minimum packet size for compression
-  private int bufSize;                  // buffer size
+  private final int minCompressSize;          // minimum packet size for compression
+  private final int bufSize;                  // buffer size
 
   private final byte[] byteBuf = new byte[1]; // single byte buffer for write(b)
-  private byte[] orgBuf;                // original uncompressed data buffer
-  private int orgLen;                   // number of bytes in orgBuf
-  private Deflater deflater;            // the zip deflater
-  private byte[] defBuf;                // deflated/compressed output data buffer
-  private boolean closed;               // true if closed
+  private final byte[] orgBuf;                // original uncompressed data buffer
+  private int orgLen;                         // number of bytes in orgBuf
+  private final Deflater deflater;            // the zip deflater
+  private final byte[] defBuf;                // deflated/compressed output data buffer
+  private boolean closed;                     // true if closed
 
   // for statistic only (Level.FINE must be enabled)
-  private long totalWritten;            // total number of bytes written by application
-  private long totalCompressed;         // number of compressed bytes written to stream
-  private long totalUncompressed;       // number of uncompressed bytes written to stream
+  private long totalWritten;                  // total number of bytes written by application
+  private long totalCompressed;               // number of compressed bytes written to stream
+  private long totalUncompressed;             // number of uncompressed bytes written to stream
 
   /**
    * Creates a compressed output stream.

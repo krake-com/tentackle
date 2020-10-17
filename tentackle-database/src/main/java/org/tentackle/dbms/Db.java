@@ -484,10 +484,10 @@ public class Db implements Session, Cloneable {
   }
 
 
+  private final BackendInfo backendInfo;                  // the backend information
   private Resources resources;                            // resources to be cleaned up (not final due to reopen)
   private Cleanable cleanable;                            // to cleanup the connection (not final due to reopen)
   private int instanceNumber;                             // each session gets a unique instance number
-  private BackendInfo backendInfo;                        // the backend information
   private String idConfig;                                // configuration of IdSource
   private int sessionGroupId;                             // ID of the session group, 0 = none
   private SessionPool dbPool;                             // != null if this Db is managed by a SessionPool

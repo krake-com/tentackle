@@ -114,14 +114,10 @@ public class MsSql extends AbstractSql2003Backend {
 
   @Override
   public int getMaxSize(SqlType sqlType) {
-    switch(sqlType) {
-
-      case DECIMAL:
-        return 38;
-
-      default:
-        return super.getMaxSize(sqlType);
+    if (sqlType == SqlType.DECIMAL) {
+      return 38;
     }
+    return super.getMaxSize(sqlType);
   }
 
 

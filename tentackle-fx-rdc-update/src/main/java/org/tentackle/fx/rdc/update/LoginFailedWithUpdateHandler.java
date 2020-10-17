@@ -81,13 +81,12 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
             LOGGER.info("application update {0} -> {1}", clientInfo, updateInfo);
             if (!updateInfo.getVersion().equals(clientInfo.getVersion())) {
               return () -> {
-                BlockingHolder<Boolean> holder = new BlockingHolder<>();
+                BlockingHolder<Boolean> answer = new BlockingHolder<>();
                 Platform.runLater(() -> Fx.question(MessageFormat.format(UpdateFxRdcBundle.getString("{0}_{1}_OUTDATED_INSTALL_{2}"),
                                                                          clientInfo.getApplication(), clientInfo.getVersion(), updateInfo.getVersion()),
                                                     false,
-                                                    holder::accept));
-                Boolean answer = holder.get();
-                if (answer) {
+                                                    answer));
+                if (answer.get()) {
                   update(updateInfo, installationType);
                 }
                 else {

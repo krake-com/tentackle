@@ -214,14 +214,10 @@ public class Postgres extends AbstractSql92Backend {
 
   @Override
   public int getMaxSize(SqlType sqlType) {
-    switch(sqlType) {
-
-      case DECIMAL:
-        return 999;
-
-      default:
-        return super.getMaxSize(sqlType);
+    if (sqlType == SqlType.DECIMAL) {
+      return 999;
     }
+    return super.getMaxSize(sqlType);
   }
 
   @Override

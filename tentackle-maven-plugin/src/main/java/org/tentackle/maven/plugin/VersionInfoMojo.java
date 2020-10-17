@@ -109,7 +109,7 @@ public class VersionInfoMojo extends AbstractVersionInfoMojo {
   /**
    * Collected artifacts.
    */
-  private Set<Artifact> artifacts = new HashSet<>();
+  private final Set<Artifact> artifacts = new HashSet<>();
 
 
   @Override
@@ -124,7 +124,7 @@ public class VersionInfoMojo extends AbstractVersionInfoMojo {
         allProjects.add(getMavenProject());
       }
 
-      modules = allProjects.stream().map(p -> p.getArtifact()).collect(Collectors.toSet());
+      modules = allProjects.stream().map(MavenProject::getArtifact).collect(Collectors.toSet());
 
       for (MavenProject subProject : allProjects) {
         buildingRequest.setProject(subProject);

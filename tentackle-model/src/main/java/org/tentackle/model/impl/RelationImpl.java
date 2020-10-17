@@ -432,13 +432,11 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
           case DELETE:
             while (stok.hasMoreTokens()) {
               String token = stok.nextToken();
-              switch (token.toLowerCase()) {
-                case CASCADE:
-                  setDeletionCascaded(true);
-                  break;
-
-                default:
-                  throw createModelException("illegal keyword in delete property: " + token);
+              if (CASCADE.equals(token.toLowerCase())) {
+                setDeletionCascaded(true);
+              }
+              else {
+                throw createModelException("illegal keyword in delete property: " + token);
               }
             }
             break;

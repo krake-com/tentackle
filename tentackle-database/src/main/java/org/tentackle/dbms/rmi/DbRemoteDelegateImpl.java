@@ -45,7 +45,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
                                   implements DbRemoteDelegate {
 
 
-  private Method beginMethod;             // begin method for db
+  private final Method beginMethod;             // begin method for db
 
 
   public DbRemoteDelegateImpl(RemoteDbSessionImpl session, Class<Db> dbClass) {

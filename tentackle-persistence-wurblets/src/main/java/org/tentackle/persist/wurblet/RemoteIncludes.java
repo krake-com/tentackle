@@ -41,20 +41,20 @@ import org.wurbelizer.wurbel.Wurbler;
 public class RemoteIncludes {
 
   private final Wurbler container;            // the executing container
-  private Entity entity;                      // the wurblet's entity
-  private String className;                   // classname of persistence object
-  private String pdoClassName;                // classname of the pdo interface
-  private String packageName;                 // package of the class
-  private String pdoPackageName;              // package name of the pdo interface
-  private String superClassName;              // name of the superclass
-  private String rmiDirName;                  // directory of rmi-classes
-  private String remotePrefix;                // prefix of the remote parent class (usually from ant script)
-  private String type;                        // type name (pdo or operation)
-  private boolean isOperation;                // true if not a PDO but an Operation
+  private final Entity entity;                // the wurblet's entity
+  private final String className;             // classname of persistence object
+  private final String packageName;           // package of the class
+  private final String superClassName;        // name of the superclass
+  private final String type;                  // type name (pdo or operation)
+  private final boolean isOperation;          // true if not a PDO but an Operation
   private final String remotePrefixBasename;  // basename of remotePrefix
-  private boolean importSuperDelegate;        // create import for supercass/interface of remote delegate
   private final HeapStream remoteStream;      // stream for remote file
   private final HeapStream implStream;        // stream for impl file
+  private String pdoClassName;                // classname of the pdo interface
+  private String pdoPackageName;              // package name of the pdo interface
+  private String rmiDirName;                  // directory of rmi-classes
+  private String remotePrefix;                // prefix of the remote parent class (usually from ant script)
+  private boolean importSuperDelegate;        // create import for supercass/interface of remote delegate
 
 
 
