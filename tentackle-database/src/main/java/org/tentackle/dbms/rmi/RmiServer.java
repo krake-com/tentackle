@@ -234,28 +234,26 @@ public class RmiServer {
   private static final Logger LOGGER = Logger.get(RmiServer.class);
   private static final String SYSTEM_DEFAULT = "<system default>";
 
-  private final SessionInfo sessionInfo;                  // server session info
-  private String service;                                 // name of the RMI service
-  private boolean createRegistry;                         // true to create a local registry
+  private final SessionInfo sessionInfo;                            // server session info
+  private final String service;                                     // name of the RMI service
+  private final RMIClientSocketFactory csf;                         // client socket factory for the delegates
+  private final RMIServerSocketFactory ssf;                         // server socket factory for the delegates
+  private boolean createRegistry;                                   // true to create a local registry
   private Class<? extends RemoteDbConnectionImpl> connectionClass;  // class for connection object
-  private RemoteDbConnectionImpl connectionObject;        // the connection object (and to keep the object referenced!)
-  private int sessionTimeout;                             // default session timeout in seconds
-  private long sessionTimeoutCheckInterval;               // check interval for session timeout in milliseconds, 0 = none
-  private int port;                                       // port for the delegates
-  private int loginPort;                                  // port for the registry and login phase
-  private Registry registry;                              // local registry, if createRegistry = true
-  private RMIClientSocketFactory loginCsf;                // client socket factory for the registry and login phase
-  private RMIServerSocketFactory loginSsf;                // server socket factory for the registry and login phase
-  private RMIClientSocketFactory csf;                     // client socket factory for the delegates
-  private RMIServerSocketFactory ssf;                     // server socket factory for the delegates
-
+  private RemoteDbConnectionImpl connectionObject;                  // the connection object (and to keep the object referenced!)
+  private int sessionTimeout;                                       // default session timeout in seconds
+  private long sessionTimeoutCheckInterval;                         // check interval for session timeout in milliseconds, 0 = none
+  private int port;                                                 // port for the delegates
+  private int loginPort;                                            // port for the registry and login phase
+  private Registry registry;                                        // local registry, if createRegistry = true
+  private RMIClientSocketFactory loginCsf;                          // client socket factory for the registry and login phase
+  private RMIServerSocketFactory loginSsf;                          // server socket factory for the registry and login phase
 
   // fixed ports. 0 = no limitation
   private int plainPort;          // port for plain sockets, i.e. no ssl, no compression
   private int compressedPort;     // port for compressed sockets
   private int sslPort;            // port for ssl sockets
   private int compressedSslPort;  // port for compressed ssl sockets
-
 
 
   /**

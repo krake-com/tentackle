@@ -130,12 +130,12 @@ public class TablePrinter extends AbstractFxController {
   private FxLabel pageLabel;
 
 
-  private int pageCount;                                    // number of pages
-  private Duration jobDuration;                             // for logging only
-  private int rowCount;                                     // number of rows to print (incl. totals)
-  private int totalsRowCount;                               // number of total rows, 0 = none
-  private AtomicInteger rowOffset = new AtomicInteger();    // offset in model
-  private volatile boolean terminationRequested;            // true if user closed the printing dialog
+  private int pageCount;                                          // number of pages
+  private Duration jobDuration;                                   // for logging only
+  private int rowCount;                                           // number of rows to print (incl. totals)
+  private int totalsRowCount;                                     // number of total rows, 0 = none
+  private volatile boolean terminationRequested;                  // true if user closed the printing dialog
+  private final AtomicInteger rowOffset = new AtomicInteger();    // offset in model
 
 
   /**

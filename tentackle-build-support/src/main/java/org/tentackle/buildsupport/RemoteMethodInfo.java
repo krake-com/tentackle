@@ -182,7 +182,7 @@ public class RemoteMethodInfo {
 
 
   // information gathered from apt run
-  private String type;                            // one of TYPE_...
+  private final String type;                      // one of TYPE_...
   private String className;                       // name of the class
   private String superClassName;                  // name of super class
   private String methodName;                      // name of the method

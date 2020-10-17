@@ -68,7 +68,7 @@ public class PropertiesMojo extends AbstractTentackleMojo {
   @Parameter
   private List<PropertyDescriptor> propertyDescriptors;
 
-  private Map<String, Function<String,String>> converterMap = new ConcurrentHashMap<>();
+  private final Map<String, Function<String,String>> converterMap = new ConcurrentHashMap<>();
 
 
   @Override

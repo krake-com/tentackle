@@ -22,6 +22,7 @@ import org.testng.annotations.Test;
 
 import org.tentackle.common.Binary;
 import org.tentackle.common.StringHelper;
+import org.tentackle.common.Timestamp;
 import org.tentackle.model.AccessScope;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.AttributeSorting;
@@ -38,7 +39,6 @@ import org.tentackle.model.TrackType;
 import org.tentackle.sql.DataTypeFactory;
 
 import java.io.IOException;
-import java.sql.Timestamp;
 import java.util.TimeZone;
 
 import static org.testng.Assert.assertEquals;

@@ -206,7 +206,7 @@ public abstract class DesktopApplication<C extends FxController>
                 }
                 setDomainContext(context);
                 updateSessionInfoAfterLogin();
-                Platform.runLater(() -> session.makeCurrent());   // make it known to the FX thread as soon as possible
+                Platform.runLater(session::makeCurrent);   // make it known to the FX thread as soon as possible
               }
               catch (Exception ex) {
                 if (lfh == null) {

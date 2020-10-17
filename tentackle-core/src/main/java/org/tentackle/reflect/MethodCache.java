@@ -109,7 +109,7 @@ public class MethodCache {
   }
 
   private final ConcurrentMap<Key, Method> methodMap;   // the method map
-  private String name;                                  // the cache's name (for logging only)
+  private final String name;                            // the cache's name (for logging only)
 
 
   /**

@@ -112,7 +112,7 @@ public class TableNameAnalyzeHandler extends AbstractAnalyzeHandler {
             tableName = tableName.replace('.', '_');
           }
           if (prefix != null) {
-            tableName = tableName.substring(0, 1) + prefix + tableName.substring(1);
+            tableName = tableName.charAt(0) + prefix + tableName.substring(1);
           }
 
           String configuration = servicingClassName + " = " + tableName;

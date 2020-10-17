@@ -48,9 +48,9 @@ public class DefaultFxComponentBinding extends AbstractBinding implements FxComp
 
   private static final Logger LOGGER = Logger.get(DefaultFxComponentBinding.class);
 
+  private final FxComponent component;                  // the bound GUI component (unique constraint)
   private List<Validator> fixedMandatoryValidators;     // fixed mandatory validators, null if none
   private List<Validator> fixedChangeableValidators;    // fixed changeable validators, null if none
-  private FxComponent component;                        // the bound GUI component (unique constraint)
 
 
   /**

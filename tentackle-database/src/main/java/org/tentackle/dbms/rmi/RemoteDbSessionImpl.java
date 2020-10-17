@@ -283,16 +283,13 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
 
   private final Resources resources;                  // resources to be cleaned up
   private final Cleanable cleanable;                  // to cleanup the connection
-
   private final SessionInfo clientInfo;               // saved client info
   private final long sessionNumber;                   // unique session number
-
-  private String clientHost;                          // the client host string
+  private final String clientHost;                    // the client host string
   private int timeout;                                // timeout in polling intervals of the cleanupthread
   private int port;                                   // port for all delegates
   private RMIClientSocketFactory csf;                 // client socket factory for all delegates
   private RMIServerSocketFactory ssf;                 // server socket factory for all delegates
-
   private int timeoutCount;                           // consecutive timeouts
   private long closedSince;                           // session closed since, 0 if still open
 

@@ -21,9 +21,9 @@ module org.tentackle.core {
   requires transitive org.tentackle.common;
 
   requires java.prefs;
+  requires java.logging;
   requires java.management;
   requires java.rmi;
-  requires java.scripting;
   requires java.compiler;
   requires java.sql;
 
