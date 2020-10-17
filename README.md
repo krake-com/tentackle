@@ -6,8 +6,8 @@ It contains a middle-tier server, a desktop FX client and a daemon client.
 The numerous modules are the bare minimum to separate the different
 abstraction layers like domain logic, persistence model, UI and so on.
 Tentackle applications are full-fledged modular JPMS ([Jigsaw](https://openjdk.java.net/projects/jigsaw/quick-start)) projects,
-including [Jlink](https://docs.oracle.com/en/java/javase/14/docs/specs/man/jlink.html) or 
-[JPackage](https://docs.oracle.com/en/java/javase/14/docs/specs/man/jpackage.html) images and 
+including [Jlink](https://docs.oracle.com/en/java/javase/15/docs/specs/man/jlink.html) or 
+[JPackage](https://docs.oracle.com/en/java/javase/15/docs/specs/man/jpackage.html) images and 
 an auto-update feature for the clients.
 By default, the server connects to a PostgreSQL database, but in principle
 you can use any relational database (see the [Tentackle docs](https://tentackle.org) for more info).
@@ -30,7 +30,7 @@ Generate your project via the Tentackle Maven archetype:
 mvn archetype:generate 
     -DarchetypeGroupId=org.tentackle 
     -DarchetypeArtifactId=tentackle-project-archetype 
-    -DarchetypeVersion=11.6.2.0
+    -DarchetypeVersion=11.7.0.0
 ```
 When all dependencies have been pulled from [Maven Central](https://search.maven.org/),
 you will be prompted for:
