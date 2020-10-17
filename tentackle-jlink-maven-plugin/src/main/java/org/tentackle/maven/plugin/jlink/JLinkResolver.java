@@ -486,7 +486,7 @@ public class JLinkResolver {
         }
       }
 
-      if (unresolvedModules.isEmpty()) {
+      if (unresolvedModules.isEmpty() && !mojo.isModulePathOnly()) {
         mojo.getLog().debug("YEAH! can build a full-blown modular application!");
         result.addJlinkModules(modules.values());
         result.setPlainModular(true);

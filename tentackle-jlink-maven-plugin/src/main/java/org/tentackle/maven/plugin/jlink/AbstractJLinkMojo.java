@@ -157,6 +157,15 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   private boolean withUpdater;
 
   /**
+   * Forces the modules to be put onto the module path explicitly.<br>
+   * The application's jars will be moved to the <code>mp</code> folder
+   * and the jimage file will only contain java modules from the runtime or jdk.
+   * Use this option if the module path order is important and must match the maven's project model.
+   */
+  @Parameter
+  private boolean modulePathOnly;
+
+  /**
    * The directory where to store the ZIP files.
    */
   @Parameter(defaultValue = "${project.build.directory}")
@@ -332,6 +341,16 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    */
   public boolean isWithUpdater() {
     return withUpdater;
+  }
+
+  /**
+   * Returns whether all application modules should go to the module path and
+   * not the jimage file.
+   *
+   * @return true if forced
+   */
+  public boolean isModulePathOnly() {
+    return modulePathOnly;
   }
 
   /**
