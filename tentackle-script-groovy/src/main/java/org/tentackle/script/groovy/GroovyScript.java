@@ -26,7 +26,6 @@ import org.tentackle.script.AbstractScript;
 import org.tentackle.script.ScriptRuntimeException;
 import org.tentackle.script.ScriptVariable;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -75,19 +74,14 @@ public class GroovyScript extends AbstractScript {
     T result;
     CompiledGroovyScript script = getCompiledScript();
     LOGGER.finer(() -> "execute: \n" + script.getCode() + "\nwith args: " + ScriptVariable.variablesToString(variables));
-    try {
-      Binding binding = new Binding();
-      if (variables != null) {
-        for (ScriptVariable variable: variables) {
-          binding.setVariable(variable.getName(), variable.getValue());
-        }
+    Binding binding = new Binding();
+    if (variables != null) {
+      for (ScriptVariable variable: variables) {
+        binding.setVariable(variable.getName(), variable.getValue());
       }
-      // groovy scripting is threadsafe (we pass the binding as new to the constructor)
-      result = (T) script.getScriptClass().getConstructor(Binding.class).newInstance(binding).run();
     }
-    catch (RuntimeException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException ex) {
-      throw new ScriptRuntimeException(ex);
-    }
+    // groovy scripting is threadsafe (each execution gets its own instance and binding)
+    result = (T) script.createInstance(binding).run();
     LOGGER.finer("returned: {0}", result);
     return result;
   }

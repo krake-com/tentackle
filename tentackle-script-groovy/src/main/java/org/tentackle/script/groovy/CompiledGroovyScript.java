@@ -18,23 +18,53 @@
 
 package org.tentackle.script.groovy;
 
+import groovy.lang.Binding;
+import groovy.lang.Script;
+
+import org.tentackle.script.ScriptRuntimeException;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+
 /**
  * The compiled groovy script.
  */
 public class CompiledGroovyScript {
 
   private final String code;                            // the effective source code
-  private final Class<groovy.lang.Script> scriptClass;  // the compiled script
+  private final Class<Script> scriptClass;              // the compiled script
+
+  private Constructor<Script> bindingConstructor;       // != null if use new Script(Binding)
+  private Constructor<Script> defaultConstructor;       // else use new Script() + setBinding(Binding)
+
 
   /**
    * Creates a compiled script.
    *
    * @param code the source code
-   * @param scriptClass   the groovy script class
+   * @param scriptClass the groovy script class
    */
-  public CompiledGroovyScript(String code, Class<groovy.lang.Script> scriptClass) {
+  @SuppressWarnings("unchecked")
+  public CompiledGroovyScript(String code, Class<Script> scriptClass) {
     this.code = code;
     this.scriptClass = scriptClass;
+
+    // we scan the constructors fist
+    // in case the script class is an extension of groovy.lang.Script and the developer
+    // did not provide a constructor with a Binding parameter
+    for (Constructor<?> constructor : scriptClass.getConstructors()) {
+      Class<?>[] parameterTypes = constructor.getParameterTypes();
+      if (parameterTypes.length == 0) {
+        defaultConstructor = (Constructor<Script>) constructor;
+      }
+      else if (parameterTypes.length == 1 && parameterTypes[0] == Binding.class) {
+        bindingConstructor = (Constructor<Script>) constructor;
+        break;    // takes precedence
+      }
+    }
+    if (bindingConstructor == null && defaultConstructor == null) {
+      throw new ScriptRuntimeException("neither default- nor binding-constructor found for " + scriptClass);
+    }
   }
 
   /**
@@ -51,7 +81,29 @@ public class CompiledGroovyScript {
    *
    * @return the groovy script class
    */
-  public Class<groovy.lang.Script> getScriptClass() {
+  public Class<Script> getScriptClass() {
     return scriptClass;
   }
+
+  /**
+   * Creates a groovy script instance.
+   *
+   * @param binding the groovy binding
+   * @return the script instance
+   */
+  public Script createInstance(Binding binding) {
+    try {
+      if (bindingConstructor != null) {
+        return bindingConstructor.newInstance(binding);
+      }
+      // fallback to default constructor + setBinding (must exist, see above)
+      Script instance = defaultConstructor.newInstance();
+      instance.setBinding(binding);
+      return instance;
+    }
+    catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
+      throw new ScriptRuntimeException("creating groovy script instance failed for " + scriptClass, e);
+    }
+  }
+
 }
