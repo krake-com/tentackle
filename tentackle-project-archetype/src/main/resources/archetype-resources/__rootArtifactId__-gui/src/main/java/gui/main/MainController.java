@@ -128,7 +128,7 @@ public class MainController extends AbstractFxController implements DomainContex
     preferencesItem.setOnAction(e -> PreferencesDialog.show());
 
     passwordItem.setGraphic(Fx.createImageView("password"));
-    passwordItem.setOnAction(e -> ChangePasswordView.showDialog(DesktopApplication.getDesktopApplication().getUser(getDomainContext())));
+    passwordItem.setOnAction(e -> ChangePasswordView.showDialog(DesktopApplication.getDesktopApplication().getUser(getDomainContext()), false));
 
     exitItem.setGraphic(Fx.createImageView("exit"));
     exitItem.setOnAction(e -> exit());

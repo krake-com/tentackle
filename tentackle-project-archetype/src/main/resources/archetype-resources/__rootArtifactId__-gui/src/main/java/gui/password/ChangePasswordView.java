@@ -42,15 +42,16 @@ public class ChangePasswordView extends AbstractFxController implements DomainCo
    * Shows the dialog and prompts the user to change his password.
    *
    * @param user the user
+   * @param admin invoked by admin user
    */
-  public static void showDialog(User user) {
-    if (user.isWriteAllowed() && user.isPasswordChangeable()) {
+  public static void showDialog(User user, boolean admin) {
+    if (admin || user.isWriteAllowed() && user.isPasswordChangeable()) {
       ChangePasswordView controller = Fx.load(ChangePasswordView.class);
       Stage stage = Fx.createStage(Modality.NONE);
       Scene scene = new Scene(controller.getView());
       stage.setScene(scene);
       stage.setTitle(MessageFormat.format(GuiBundle.getString("password {0}"), user));
-      controller.setUser(user);
+      controller.setUser(user, admin);
       stage.show();
     }
     else {
@@ -81,6 +82,7 @@ public class ChangePasswordView extends AbstractFxController implements DomainCo
   private ResourceBundle resources;
 
   private User user;
+  private boolean admin;
   private String oldPasswordHash;
 
   @FXML
@@ -92,9 +94,11 @@ public class ChangePasswordView extends AbstractFxController implements DomainCo
     cancelButton.setOnAction(e -> close());
   }
 
-  private void setUser(User user) {
+  private void setUser(User user, boolean admin) {
     this.user = user;
+    this.admin = admin;
     this.oldPasswordHash = user.selectPasswordHash();
+    oldPasswordField.setChangeable(!admin);
     getContainer().updateView();
   }
 
@@ -104,19 +108,17 @@ public class ChangePasswordView extends AbstractFxController implements DomainCo
   }
 
   private void save() {
-    if (Objects.equals(${application}Helper.hash(oldPassword), oldPasswordHash)) {
+    if (admin || Objects.equals(${application}Helper.hash(oldPassword), oldPasswordHash)) {
       if (!Arrays.equals(newPassword, confirmedNewPassword)) {
         Fx.error(resources.getString("new passwords do not match"));
       }
       else {
         user = user.reload();
         if (newPassword == null) {
-          user.updatePasswordHash(null);
-          Fx.yes(resources.getString("are you sure to disable the password check?"), false, this::saveAndClose);
+          Fx.yes(resources.getString("are you sure to disable the password check?"), false, () -> saveAndClose(null));
         }
         else {
-          user.updatePasswordHash(${application}Helper.hash(newPassword));
-          Fx.yes(resources.getString("save new password?"), false, this::saveAndClose);
+          Fx.yes(resources.getString("save new password?"), false, () -> saveAndClose(${application}Helper.hash(newPassword)));
         }
       }
     }
@@ -125,8 +127,8 @@ public class ChangePasswordView extends AbstractFxController implements DomainCo
     }
   }
 
-  private void saveAndClose() {
-    user.save();
+  private void saveAndClose(String hash) {
+    user.updatePasswordHash(hash);
     close();
   }
 
