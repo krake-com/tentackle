@@ -115,7 +115,7 @@ public class UserEditor extends PdoEditor<User> {
   @Override
   public void configure() {
     popup.loadPreferences();
-    passwordButton.setOnAction(event -> ChangePasswordView.showDialog(user));
+    passwordButton.setOnAction(event -> ChangePasswordView.showDialog(user, true));
   }
 
 
