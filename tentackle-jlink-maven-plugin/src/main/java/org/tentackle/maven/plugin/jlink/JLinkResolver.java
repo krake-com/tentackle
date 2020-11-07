@@ -555,7 +555,11 @@ public class JLinkResolver {
     try {
       for (Map.Entry<File, JavaModuleDescriptor> entry: mojo.getLocationManager().resolvePaths(request).getPathElements().entrySet()) {
         JavaModuleDescriptor descriptor = entry.getValue();
-        if (descriptor.name().length() > maxNameLength) {
+        if (descriptor == null) {
+          // there are cases that the descriptor is null for old artifacts with Java > 11.0.2
+          throw new MojoExecutionException("cannot determine module descriptor for " + entry.getKey());
+        }
+        if (descriptor.name() != null && descriptor.name().length() > maxNameLength) {
           maxNameLength = descriptor.name().length();
         }
         artifactJavaModuleDescriptorMap.put(artifactMap.get(entry.getKey()), descriptor);
