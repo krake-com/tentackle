@@ -557,7 +557,17 @@ public class JLinkResolver {
         JavaModuleDescriptor descriptor = entry.getValue();
         if (descriptor == null) {
           // there are cases that the descriptor is null for old artifacts with Java > 11.0.2
-          throw new MojoExecutionException("cannot determine module descriptor for " + entry.getKey());
+          String name = entry.getKey().getName();
+          int ndx = name.lastIndexOf('.');
+          if (ndx > 0) {
+            name = name.substring(0, ndx); // cut extension .jar
+          }
+          ndx = name.lastIndexOf('-');
+          if (ndx > 0 && name.length() > ndx && Character.isDigit(name.charAt(ndx + 1))) {
+            name = name.substring(0, ndx);    // cut version
+          }
+          mojo.getLog().warn("missing descriptor for " + entry.getKey() + " -> creating default descriptor '" + name + "'");
+          descriptor = JavaModuleDescriptor.newAutomaticModule(name).build();
         }
         if (descriptor.name() != null && descriptor.name().length() > maxNameLength) {
           maxNameLength = descriptor.name().length();
