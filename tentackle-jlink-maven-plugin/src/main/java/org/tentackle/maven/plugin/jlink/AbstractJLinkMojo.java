@@ -218,10 +218,13 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
 
   /**
    * Extra jre or jdk modules to add to the image.<br>
-   * Useful to add tools in bin. Example:
+   * Useful to add the runtime localization module or extra tools in bin.
+   * <p>
+   * Example:
    *
    * <pre>
    * &lt;addModules&gt;
+   *   &lt;addModule&gt;jdk.localedata&lt;/addModule&gt;
    *   &lt;addModule&gt;jdk.jcmd&lt;/addModule&gt;
    * &lt;/addModules&gt;
    * </pre>
