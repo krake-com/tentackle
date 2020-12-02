@@ -154,6 +154,7 @@
           <addModules>
             <addModule>java.desktop</addModule> <!-- necessary for groovy (NoClassDefFoundError: java/beans/BeanInfo) -->
             <addModule>jdk.jcmd</addModule>
+            <addModule>jdk.localedata</addModule>
           </addModules>
           <excludeModules>
             <!-- slf4j: unsupported reference since java 12 -->
