@@ -533,7 +533,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
           // check for user entered 1.1. and meant 1.1.<current year>
           if (errorChar > 0 && dateDelimiters.indexOf(errorChar) >= 0) {
             // last char was a date-delimiter: try appending current year
-            str += new GregorianCalendar().get(YEAR);
+            str += getCurrentYear();
           }
           else if (errorChar == ':') {
             // last char was a time-delimiter: try appending 00
@@ -568,7 +568,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
                 nBuf.append(dateDelimiters.charAt(dpos));
               }
               if (nBuf.length() == 6) { // day + month. and year missing?
-                nBuf.append(new GregorianCalendar().get(YEAR));
+                nBuf.append(getCurrentYear());
               }
               str = nBuf.toString();
             }
@@ -738,7 +738,17 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
    * @return the 4-digit year
    */
   protected int convert2DigitYearTo4DigitYear(int year2) {
-    return DateHelper.convert2DigitYearTo4DigitYear(year2, new GregorianCalendar().get(YEAR));
+    return DateHelper.convert2DigitYearTo4DigitYear(year2, getCurrentYear());
+  }
+
+  /**
+   * Gets the current year.<br>
+   * Used to extend the date if no year is given.
+   *
+   * @return the current year
+   */
+  protected int getCurrentYear() {
+    return new GregorianCalendar().get(YEAR);
   }
 
 }
