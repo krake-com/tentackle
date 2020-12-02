@@ -59,6 +59,7 @@
           <mainClass>${package}.daemon.${application}Daemon</mainClass>
           <addModules>
             <addModule>jdk.jcmd</addModule>
+            <addModule>jdk.localedata</addModule>
           </addModules>
           <excludeModules>
             <!-- slf4j: unsupported reference since java 12 -->
