@@ -107,6 +107,10 @@ public class DTOWurblet extends AbstractJavaWurblet {
       this.comment = buf.toString().trim();
     }
 
+    public boolean isPrimitive() {
+      return Character.isLowerCase(type.charAt(0));
+    }
+
     public boolean isInherited() {
       return inherited;
     }
@@ -189,7 +193,9 @@ public class DTOWurblet extends AbstractJavaWurblet {
   protected boolean needConstructor;    // true if constructor necessary
   protected boolean withBuilder;        // use the builder pattern
   protected boolean withFrom;           // true if at least one property has the from option set (or --from forced)
-  protected String extendsWithBuilder;  // only if builder pattern: super classname (must be with builder as well)
+  protected boolean withEquals;         // true if generate equals method
+  protected boolean withHashCode;       // true if generate hashCode method
+  protected String superClass;          // != null if subclass: super classname
 
 
   public DTOWurblet() {
@@ -204,8 +210,14 @@ public class DTOWurblet extends AbstractJavaWurblet {
       if ("--builder".equals(arg)) {
         withBuilder = true;
       }
-      else if ("--from".equals("arg")) {
+      else if ("--from".equals(arg)) {
         withFrom = true;
+      }
+      else if ("--equals".equals(arg)) {
+        withEquals = true;
+      }
+      else if ("--hashCode".equals(arg)) {
+        withHashCode = true;
       }
       else if (filename == null && !arg.startsWith("--")) {
         filename = arg;
@@ -216,13 +228,11 @@ public class DTOWurblet extends AbstractJavaWurblet {
       throw new WurbelException("usage: @wurblet <guardname> DTO [--builder] <filename>");
     }
 
-    if (withBuilder) {
-      try {
-        extendsWithBuilder = getSuperClassName();
-      }
-      catch (WurbelException wx) {
-        // ok: no superclass
-      }
+    try {
+      superClass = getSuperClassName();
+    }
+    catch (WurbelException wx) {
+      // ok: no superclass
     }
 
     properties = new ArrayList<>();
