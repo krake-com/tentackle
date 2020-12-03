@@ -15,6 +15,8 @@ usage:<br>
 arguments:
 <ul>
 <li><em>--builder:</em> option to generate code according to the builder pattern.</li>
+<li><em>--equals:</em> option to generate the equals method.</li>
+<li><em>--hashCode:</em> option to generate the hashCode method.</li>
 <li><em>--from:</em> only if --builder set: generate method to create a builder from instance. This will automatically
 happen if the '+' option at set for at least one property.</li>
 <li><em>filename:</em> the file holding the DTO model.</li>
@@ -70,6 +72,9 @@ String blue   the blue not bindable [-&#64;Bindable]
 <p>
 If the builder pattern is used and the class extends a superclass, the builder is created as an extension
 of the superclass'es builder.
+<p>
+Important: if <code>--equals</code> or <code>--hashCode</code> is given in a subclass, all superclasses must
+get those options as well!
 }@
 @[
   private void wurbel() throws WurbelException {
@@ -138,7 +143,7 @@ of the superclass'es builder.
 ]@
   protected @(getClassName())@(Builder builder) {
 @[
-        if (extendsWithBuilder != null) {
+        if (superClass != null) {
 ]@
     super(builder);
 @[
@@ -293,11 +298,92 @@ of the superclass'es builder.
       }
     }
 
+    if (withEquals) {
+]@
+
+  \@Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null) {
+      return false;
+    }
+    if (getClass() != obj.getClass()) {
+      return false;
+    }
+@[
+      if (superClass != null) {
+]@
+    if (!super.equals(obj)) {
+      return false;
+    }
+@[
+      }
+]@
+    @(getClassName())@ other = (@(getClassName())@) obj;
+@[
+      for (Property property: properties) {
+        if (property.isPrimitive()) {
+]@
+    if (@(property.getName())@ != other.@(property.getName())@) {
+      return false;
+    }
+@[
+        }
+        else  {
+]@
+    if (!Objects.equals(@(property.getName())@, other.@(property.getName())@)) {
+      return false;
+    }
+@[
+        }
+      }
+]@
+    return true;
+  }
+@[
+    }
+
+
+    if (withHashCode) {
+]@
+
+  \@Override
+  public int hashCode() {
+@[
+      if (superClass != null) {
+]@
+    int hash = super.hashCode();
+@[
+      }
+      else {
+]@
+    int hash = 7;
+@[
+      }
+      for (Property property: properties) {
+        if (property.isPrimitive()) {
+]@
+    hash = 79 * hash + @(property.getName())@;
+@[
+        }
+        else  {
+]@
+    hash = 79 * hash + Objects.hashCode(@(property.getName())@);
+@[
+        }
+      }
+]@
+    return hash;
+  }
+@[
+    }
 
     if (withBuilder) {
       String extendsStr = "";
-      if (extendsWithBuilder != null) {
-        extendsStr = "extends " + extendsWithBuilder + ".Builder ";
+      if (superClass != null) {
+        extendsStr = "extends " + superClass + ".Builder ";
       }
 ]@
 
@@ -320,7 +406,7 @@ of the superclass'es builder.
    * \@return the builder
    */
 @[
-      if (extendsWithBuilder != null) {
+      if (superClass != null) {
 ]@
   \@Override
 @[
@@ -360,7 +446,7 @@ of the superclass'es builder.
 
     protected Builder(@(getClassName())@ template) {
 @[
-        if (extendsWithBuilder != null) {
+        if (superClass != null) {
 ]@
       super(template);
 @[
@@ -385,7 +471,7 @@ of the superclass'es builder.
      * \@return the @(getClassName())@
      */
 @[
-      if (extendsWithBuilder != null) {
+      if (superClass != null) {
 ]@
     \@Override
 @[
