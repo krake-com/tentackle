@@ -10,11 +10,13 @@
 <strong>({\@code \@wurblet})</strong> DTO creates code for a data transfer object.
 <p>
 usage:<br>
-&#064;wurblet &lt;tag&gt; DTO [--builder] &lt;filename&gt;
+&#064;wurblet &lt;tag&gt; DTO [--builder [--from]] &lt;filename&gt;
 <p>
 arguments:
 <ul>
 <li><em>--builder:</em> option to generate code according to the builder pattern.</li>
+<li><em>--from:</em> only if --builder set: generate method to create a builder from instance. This will automatically
+happen if the '+' option at set for at least one property.</li>
 <li><em>filename:</em> the file holding the DTO model.</li>
 </ul>
 For more options, see {\@link AbstractWurblet}.
@@ -46,6 +48,12 @@ is always immutable.
 <pre>
 !String name   the name
 </pre>
+For lines prefixed with "+" a from-Method is generated that creates a new DTO from the current one by replacing the given property.
+<pre>
++String name   the name
+</pre>
+This would create an instance method "fromName(String name)" that returns a new DTO instance.
+<p>
 The comment may contain optional annotations enclosed in square brackets.
 <pre>
 String name   the name [&#64;Bindable(MAXCOL=20)] [&#64;MyAnno]
@@ -223,6 +231,69 @@ of the superclass'es builder.
       }
     }
 
+    // create "from" methods
+    for (Property property: properties) {
+      if (property.isWithFrom()) {
+]@
+
+  /**
+   * Create copy with @(property.getComment())@ from given @(property.getName())@.
+   *
+   * \@param @(property.getName())@ @(property.getComment())@
+   * \@return the copied @(getClassName())@
+   */
+@[
+        for (String anno: property.getAnnotations()) {
+]@
+  @(anno)@
+@[
+        }
+]@
+  public @(getClassName())@ @(property.getFromName())@(@(property.getType())@ @(property.getName())@) {
+@[
+        if (withBuilder) {
+          if (property.isMutable()) {
+]@
+    @(getClassName())@ object = createBuilder().build();
+    object.@(property.getSetterName())@(@(property.getName())@);
+    return object;
+@[
+          }
+          else {
+]@
+    return createBuilder().@(property.getName())@(@(property.getName())@).build();
+@[
+          }
+        }
+        else {
+          StringBuilder argBuf = new StringBuilder();
+          for (Property prop: properties) {
+            if (argBuf.length() > 0) {
+              argBuf.append(", ");
+            }
+            if (prop == property) {
+              argBuf.append(prop.getName());
+            }
+            else {
+              if (prop.isInherited()) {
+                argBuf.append(prop.getGetterName() + "()");
+              }
+              else {
+                argBuf.append("this." + prop.getName());
+              }
+            }
+          }
+]@
+    return new @(getClassName())@(@(argBuf)@);
+@[
+        }
+]@
+  }
+@[
+      }
+    }
+
+
     if (withBuilder) {
       String extendsStr = "";
       if (extendsWithBuilder != null) {
@@ -239,6 +310,28 @@ of the superclass'es builder.
   public static Builder builder() {
     return new Builder();
   }
+@[
+      if (withFrom) {
+]@
+
+  /**
+   * Creates a @(getClassName())@ builder from current object.
+   *
+   * \@return the builder
+   */
+@[
+      if (extendsWithBuilder != null) {
+]@
+  \@Override
+@[
+      }
+]@
+  public Builder createBuilder() {
+    return new Builder(this);
+  }
+@[
+      }
+]@
 
   /**
    * The @(getClassName())@ builder.
@@ -261,9 +354,29 @@ of the superclass'es builder.
 ]@
 
     protected Builder() {}
-
 @[
-      if (!isAbstract()) {
+      if (withFrom) {
+]@
+
+    protected Builder(@(getClassName())@ template) {
+@[
+        if (extendsWithBuilder != null) {
+]@
+      super(template);
+@[
+        }
+        for (Property property: properties) {
+          if (!property.isMutable()) {
+]@
+      @(property.getName())@(template.@(property.getGetterName())@());
+@[
+          }
+        }
+]@
+    }
+@[
+      }
+
 ]@
 
     /**
@@ -271,12 +384,28 @@ of the superclass'es builder.
      *
      * \@return the @(getClassName())@
      */
-    public @(getClassName())@ build() {
-      return new @(getClassName())@(this);
-    }
-
+@[
+      if (extendsWithBuilder != null) {
+]@
+    \@Override
 @[
       }
+]@
+    public @(getClassName())@ build() {
+@[
+      if (isAbstract()) {
+]@
+      throw new TentackleRuntimeException("cannot build abstract @(getClassName())@");
+@[
+      }
+      else {
+]@
+      return new @(getClassName())@(this);
+@[
+      }
+]@
+    }
+@[
 
       for (Property property: properties) {
         if (!property.isMutable()) {

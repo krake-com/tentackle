@@ -53,46 +53,56 @@ public class DTOWurblet extends AbstractJavaWurblet {
     private final boolean mutable;            // true if with setter instead of final
     private final boolean unserialized;       // true if transient
     private final boolean required;           // true if attribute is required (builder mode only)
+    private final boolean withFrom;           // true if generate fromX method as well
     private final List<String> annotations;   // optional annotations for getters and setters
 
     public Property(String type, String name, String comment) {
-      if (type.startsWith("^")) {
+      StringBuilder buf = new StringBuilder();
+      int i = 0;
+      while (i < type.length()) {
+        char c = type.charAt(i);
+        if (Character.isJavaIdentifierStart(c)) {
+          break;
+        }
+        buf.append(c);
+        i++;
+      }
+      this.type = type.substring(i);
+      String options = buf.toString();
+
+      if (options.contains("^")) {
         inherited = true;
         mutable = false;
         required = false;
         unserialized = false;
-        this.type = type.substring(1);
       }
-      else if (type.startsWith("=")) {
+      else if (options.contains("=")) {
         mutable = true;
         inherited = false;
         required = false;
         unserialized = false;
-        this.type = type.substring(1);
       }
-      else if (type.startsWith("~")) {
+      else if (options.contains("~")) {
         mutable = true;
         inherited = false;
         required = false;
         unserialized = true;
-        this.type = type.substring(1);
       }
-      else if (type.startsWith("!")) {
+      else if (options.contains("!")) {
+        required = true;
         mutable = false;
         inherited = false;
-        required = true;
         unserialized = false;
-        this.type = type.substring(1);
       }
       else {
-        this.type = type;
         inherited = false;
         mutable = false;
         unserialized = false;
         required = false;
       }
+      this.withFrom = options.contains("+");
       this.name = name;
-      StringBuilder buf = new StringBuilder(comment == null || comment.isEmpty() ? "the " + name + " property" : comment);
+      buf = new StringBuilder(comment == null || comment.isEmpty() ? "the " + name + " property" : comment);
       this.annotations = parseAnnotations(buf);
       this.comment = buf.toString().trim();
     }
@@ -113,6 +123,10 @@ public class DTOWurblet extends AbstractJavaWurblet {
       return unserialized;
     }
 
+    public boolean isWithFrom() {
+      return withFrom;
+    }
+
     public String getType() {
       return type;
     }
@@ -127,6 +141,10 @@ public class DTOWurblet extends AbstractJavaWurblet {
 
     public String getGetterName() {
       return ("boolean".equals(type) ? "is" : "get") + StringHelper.firstToUpper(name);
+    }
+
+    public String getFromName() {
+      return "from" + StringHelper.firstToUpper(name);
     }
 
     public String getSetterName() {
@@ -170,6 +188,7 @@ public class DTOWurblet extends AbstractJavaWurblet {
   protected List<Property> properties;  // the DTO properties
   protected boolean needConstructor;    // true if constructor necessary
   protected boolean withBuilder;        // use the builder pattern
+  protected boolean withFrom;           // true if at least one property has the from option set (or --from forced)
   protected String extendsWithBuilder;  // only if builder pattern: super classname (must be with builder as well)
 
 
@@ -184,6 +203,9 @@ public class DTOWurblet extends AbstractJavaWurblet {
     for (String arg: getContainer().getArgs()) {
       if ("--builder".equals(arg)) {
         withBuilder = true;
+      }
+      else if ("--from".equals("arg")) {
+        withFrom = true;
       }
       else if (filename == null && !arg.startsWith("--")) {
         filename = arg;
@@ -240,6 +262,9 @@ public class DTOWurblet extends AbstractJavaWurblet {
           Property property = new Property(type, name, comment.toString());
           if (!property.isMutable()) {
             needConstructor = true;
+          }
+          if (property.isWithFrom()) {
+            withFrom = true;
           }
           properties.add(property);
         }
