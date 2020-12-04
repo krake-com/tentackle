@@ -121,8 +121,8 @@ public class DefaultBindingMember implements BindingMember {
    * The default implementation just delegates to the {@link BindableElement}.
    */
   @Override
-  public boolean isReadOnly() {
-    return element.isReadOnly();
+  public Method getFrom() {
+    return element.getFrom();
   }
 
 
@@ -132,8 +132,8 @@ public class DefaultBindingMember implements BindingMember {
    * The default implementation just delegates to the {@link BindableElement}.
    */
   @Override
-  public boolean isWriteOnly() {
-    return element.isWriteOnly();
+  public boolean isReadOnly() {
+    return element.isReadOnly();
   }
 
 
@@ -154,8 +154,8 @@ public class DefaultBindingMember implements BindingMember {
    * The default implementation just delegates to the {@link BindableElement}.
    */
   @Override
-  public void setObject(Object parent, Object value) {
-    element.setObject(parent, value);
+  public Object setObject(Object parent, Object value) {
+    return element.setObject(parent, value);
   }
 
   /**

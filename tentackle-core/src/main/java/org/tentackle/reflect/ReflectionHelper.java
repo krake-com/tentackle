@@ -382,12 +382,48 @@ public final class ReflectionHelper {
 
 
   /**
-   * Gets the method name reduced to the part used in paths.
+   * Checks whether a method is a function that accepts one argument and produces a result.
+   *
+   * @param method the method
+   * @return true if method is a function
+   */
+  public static boolean isFunction(Method method) {
+    return method.getReturnType() != Void.TYPE &&
+           !Modifier.isStatic(method.getModifiers()) &&
+           method.getParameterTypes().length == 1;
+  }
+
+
+  /**
+   * Skips the prefix of a method name.<br>
+   * The first letter after the prefix must be in uppercase.<br>
+   * Used to skip well-known prefixes like "set", "get", "is", etc...
+   * <p>
+   * Example:
+   * <pre>
+   *   skipMethodNamePrefix("getBlah", "get") -&gt; "blah"
+   * </pre>
+   *
+   * @param methodName the method name
+   * @param prefix the prefix to skip
+   * @return the method name without the prefix, null if method does not start with prefix or letter after
+   * prefix is not in uppercase
+   */
+  public static String skipMethodNamePrefix(String methodName, String prefix) {
+    int prefixLength = prefix.length();
+    if (methodName.length() > prefixLength && Character.isUpperCase(methodName.charAt(prefixLength))) {
+      return StringHelper.firstToLower(methodName.substring(prefixLength));
+    }
+    return null;
+  }
+
+
+  /**
+   * Gets the method name reduced to the part used in paths if method is an attribute getter.
    * <p>
    * Examples:<br>
    * <pre>
    * getBlah -&gt; blah
-   * setBlah -&gt; blah
    * isValid -&gt; valid (if boolean)
    * computeThisAndThat -&gt; computeThisAndThat
    * gettingWorse -&gt; gettingWorse
@@ -395,60 +431,71 @@ public final class ReflectionHelper {
    * </pre>
    *
    * @param method the method
-   * @return the path
-   */
-  public static String getPathMethodName(Method method) {
-    String name = method.getName();
-    int length = name.length();
-    if (name.startsWith("get") && length > 3 && Character.isUpperCase(name.charAt(3))) {
-      name = name.substring(3);
-    }
-    if (name.startsWith("set") && length > 3 && Character.isUpperCase(name.charAt(3))) {
-      name = name.substring(3);
-    }
-    else if (name.startsWith("is") && length > 2 && Character.isUpperCase(name.charAt(2)) &&
-             (method.getReturnType().equals(Boolean.class) || method.getReturnType().equals(Boolean.TYPE))) {
-      name = name.substring(2);
-    }
-    return StringHelper.firstToLower(name);
-  }
-
-
-  /**
-   * Gets the method name reduced to the part used in paths if method is an attribute getter.<br>
-   * It is also verified that the methodname conforms to the rules for attribute getters.
-   *
-   * @param method the method
    * @return the method's reduced name, null if this is not an attribute getter
    */
-  public static String getPathGetterName(Method method) {
+  public static String getGetterPathName(Method method) {
     if (isGetter(method)) {
-      return getPathMethodName(method);
-    }
-    else  {
-      return null;
-    }
-  }
-
-
-  /**
-   * Gets the method name reduced to the part used in paths if method is an attribute setter.<br>
-   * It is also verified that the methodname conforms to the rules for attribute getters,
-   *
-   * @param method the method
-   * @return the method's reduced name, null if this is not an attribute getter
-   */
-  public static String getPathSetterName(Method method) {
-    if (isSetter(method)) {
-      String name = getPathMethodName(method);
-      if (!name.startsWith("set")) {
-        return name;
+      String methodName = method.getName();
+      String elementName = skipMethodNamePrefix(methodName, "get");
+      if (elementName == null) {
+        elementName = skipMethodNamePrefix(methodName, "is");
+        if (elementName == null) {
+          elementName = methodName;
+        }
       }
+      return elementName;
     }
     return null;
   }
 
 
+  /**
+   * Gets the method name reduced to the part used in paths if method is an attribute setter.
+   * <p>
+   * Examples:<br>
+   * <pre>
+   * setBlah -&gt; blah
+   * runIt -&gt; runIt
+   * </pre>
+   *
+   * @param method the method
+   * @return the method's reduced name, null if this is not an attribute getter
+   */
+  public static String getSetterPathName(Method method) {
+    if (isSetter(method)) {
+      String methodName = method.getName();
+      String elementName = skipMethodNamePrefix(methodName, "set");
+      if (elementName == null) {
+        elementName = methodName;
+      }
+      return elementName;
+    }
+    return null;
+  }
+
+
+  /**
+   * Gets the method name reduced to the part used in paths if method is an attribute "from" method.
+   * <p>
+   * Examples:<br>
+   * <pre>
+   * fromBlah -&gt; blah
+   * </pre>
+   *
+   * @param method the method
+   * @return the method's reduced name, null if this is not a from method
+   */
+  public static String getFromPathName(Method method) {
+    if (isFunction(method) && !method.getReturnType().isPrimitive()) {    // must return an (immutable) object
+      String methodName = method.getName();
+      String elementName = skipMethodNamePrefix(methodName, "from");
+      if (elementName == null) {
+        elementName = methodName;
+      }
+      return elementName;
+    }
+    return null;
+  }
 
 
   /**

@@ -101,6 +101,23 @@ public interface BindableElement {
   void setSetter(Method setter);
 
   /**
+   * Gets the from method.<br>
+   * Members of immutable objects may provide a from method that
+   * takes the new member value as its argument and returns a
+   * new immutable object that will be set as the parent member's value.
+   *
+   * @return the from method, null if none
+   */
+  Method getFrom();
+
+  /**
+   * Sets the from method.
+   *
+   * @param from the from method, null to clear
+   */
+  void setFrom(Method from);
+
+  /**
    * Adds binding options.
    *
    * @param options the options to add
@@ -117,12 +134,14 @@ public interface BindableElement {
   Object getObject(Object parent);
 
   /**
-   * Sets the object of this member.
+   * Sets the object of this member.<br>
+   * The method does nothing if the element is readonly.
    *
    * @param parent the parent containing this member
    * @param value the object to set
+   * @return the new parent if value was updated via "from"-method
    */
-  void setObject(Object parent, Object value);
+  Object setObject(Object parent, Object value);
 
   /**
    * Gets the type of the member.
@@ -141,15 +160,8 @@ public interface BindableElement {
   /**
    * Returns whether element is read only.
    *
-   * @return true if not a field and no setter
+   * @return true if not a field and no setter or from method
    */
   boolean isReadOnly();
-
-  /**
-   * Returns whether element is write only.
-   *
-   * @return true if not a field and no getter
-   */
-  boolean isWriteOnly();
 
 }

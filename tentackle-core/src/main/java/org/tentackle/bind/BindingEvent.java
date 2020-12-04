@@ -48,6 +48,11 @@ public class BindingEvent extends EventObject {
     TO_MODEL_VIA_SETTER,
 
     /**
+     * from view to model via from-method.
+     */
+    TO_MODEL_VIA_FROM_METHOD,
+
+    /**
      * from view to model via field.
      */
     TO_MODEL_VIA_FIELD

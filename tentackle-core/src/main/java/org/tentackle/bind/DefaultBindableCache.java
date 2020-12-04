@@ -102,18 +102,27 @@ public class DefaultBindableCache implements BindableCache {
           if (annotation != null) {
             BindableElement element = null;
             String bindingOptions = annotation.options();
-            String camelName = ReflectionHelper.getPathGetterName(method);
+
+            String camelName = ReflectionHelper.getGetterPathName(method);
             if (camelName != null) {
               element = bindingFactory.createBindableElement(method.getReturnType(), camelName);
               element.setGetter(method);
             }
             else {
-              camelName = ReflectionHelper.getPathSetterName(method);
+              camelName = ReflectionHelper.getSetterPathName(method);
               if (camelName != null) {
                 element = bindingFactory.createBindableElement(method.getParameterTypes()[0], camelName);
                 element.setSetter(method);
               }
+              else {
+                camelName = ReflectionHelper.getFromPathName(method);
+                if (camelName != null) {
+                  element = bindingFactory.createBindableElement(method.getParameterTypes()[0], camelName);
+                  element.setFrom(method);
+                }
+              }
             }
+
             if (element != null) {
               camelName = StringHelper.firstToUpper(camelName);
               LOGGER.finer("bindable method {0} found", method);
@@ -130,9 +139,18 @@ public class DefaultBindableCache implements BindableCache {
                 else if (element.getSetter() != null) {
                   if (oldInfo.getSetter() != null) {
                     throw new BindingException("more than one setters annotated with @Bindable in "
-                                               + clazz.getName() + " for " + camelName);
+                                               + clazz.getName() + " for " + camelName + ": " +
+                                               element.getSetter().getName() + " <> " + oldInfo.getSetter().getName());
                   }
                   oldInfo.setSetter(element.getSetter());
+                }
+                else if (element.getFrom() != null) {
+                  if (oldInfo.getFrom() != null) {
+                    throw new BindingException("more than one 'from' methods annotated with @Bindable in "
+                                               + clazz.getName() + " for " + camelName + ": " +
+                                               element.getFrom().getName() + " <> " + oldInfo.getFrom().getName());
+                  }
+                  oldInfo.setFrom(element.getFrom());
                 }
               }
               else {
