@@ -37,6 +37,7 @@ public class DefaultBindableElement implements BindableElement {
   private Field field;              // the field, null if none
   private Method getter;            // the getter, null if none
   private Method setter;            // the setter, null if none
+  private Method from;              // the from method, null if none
   private String bindingOptions;    // the binding options
   private Class<?> type;            // the class type of the bound member
   private Type genericType;         // the generic type of the bound member
@@ -102,6 +103,16 @@ public class DefaultBindableElement implements BindableElement {
   }
 
   @Override
+  public Method getFrom() {
+    return from;
+  }
+
+  @Override
+  public void setFrom(Method from) {
+    this.from = from;
+  }
+
+  @Override
   public void addBindingOptions(String options) {
     if (options != null && options.length() > 0) {
       if (bindingOptions == null || bindingOptions.isEmpty()) {
@@ -142,12 +153,13 @@ public class DefaultBindableElement implements BindableElement {
   }
 
   @Override
-  public void setObject(Object parent, Object value) {
+  public Object setObject(Object parent, Object value) {
     getType();
+    Object updatedParent = null;
     try {
       // handle null values if type is a primitive
       if (value == null && type.isPrimitive()) {
-        if (type.equals(Boolean.TYPE)) {
+        if (type == Boolean.TYPE) {
           value = Boolean.FALSE;
         }
         else if (type == Character.TYPE) {
@@ -157,7 +169,8 @@ public class DefaultBindableElement implements BindableElement {
           value = (byte) 0;   // will be upcasted
         }
       }
-      // setter takes precedence over field
+
+      // precedence: setter -> from-method -> field
       if (setter != null) {
         try {
           setter.invoke(parent, value);
@@ -166,6 +179,9 @@ public class DefaultBindableElement implements BindableElement {
           setter.setAccessible(true);
           setter.invoke(parent, value);
         }
+      }
+      else if (from != null) {
+        updatedParent = from.invoke(parent, value);
       }
       else if (field != null) {
         try {
@@ -176,7 +192,8 @@ public class DefaultBindableElement implements BindableElement {
           field.set(parent, value);
         }
       }
-      // it is okay that there's no setter and no field (for example read-only methods)
+      // it is okay that there's no setter, no from-method and no field (for example read-only methods)
+      return updatedParent;
     }
     catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
       throw new BindingException("cannot set " + camelName, ex);
@@ -185,12 +202,7 @@ public class DefaultBindableElement implements BindableElement {
 
   @Override
   public boolean isReadOnly() {
-    return field == null && setter == null;
-  }
-
-  @Override
-  public boolean isWriteOnly() {
-    return field == null && getter == null;
+    return field == null && setter == null && from == null;
   }
 
   @Override

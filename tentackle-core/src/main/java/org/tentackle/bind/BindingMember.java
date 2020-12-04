@@ -80,18 +80,21 @@ public interface BindingMember {
   Method getSetter();
 
   /**
+   * Gets the from method.<br>
+   * Members of immutable objects may provide a from method that
+   * takes the new member value as its argument and returns a
+   * new immutable object that will be set as the parent member's value.
+   *
+   * @return the from method, null if none
+   */
+  Method getFrom();
+
+  /**
    * Returns whether member is read only.
    *
    * @return true if readonly
    */
   boolean isReadOnly();
-
-  /**
-   * Returns whether member is write only.
-   *
-   * @return true if writeonly
-   */
-  boolean isWriteOnly();
 
   /**
    * Gets the object of this element.
@@ -106,8 +109,9 @@ public interface BindingMember {
    *
    * @param parent the parent containing this member
    * @param value the object to set
+   * @return the new parent if value was updated via "from"-method
    */
-  void setObject(Object parent, Object value);
+  Object setObject(Object parent, Object value);
 
   /**
    * Gets the type of the field.

@@ -138,10 +138,12 @@ public abstract class AbstractBinding implements Binding {
   public BindingEvent createBindingEvent(boolean toView, Object parent, Object value) {
     return new BindingEvent(this,
                             (toView ?
-                              (member.getGetter() != null ?
-                                 BindingEvent.Type.TO_VIEW_VIA_GETTER  : BindingEvent.Type.TO_VIEW_VIA_FIELD) :
-                              (member.getSetter() != null ?
-                                 BindingEvent.Type.TO_MODEL_VIA_SETTER : BindingEvent.Type.TO_MODEL_VIA_FIELD)
+                             (member.getGetter() != null ?
+                              BindingEvent.Type.TO_VIEW_VIA_GETTER : BindingEvent.Type.TO_VIEW_VIA_FIELD) :
+                             (member.getSetter() != null ?
+                              BindingEvent.Type.TO_MODEL_VIA_SETTER :
+                              (member.getFrom() != null ?
+                               BindingEvent.Type.TO_MODEL_VIA_FROM_METHOD : BindingEvent.Type.TO_MODEL_VIA_FIELD))
                             ),
                             parent, value);
   }
@@ -246,21 +248,7 @@ public abstract class AbstractBinding implements Binding {
 
   @Override
   public Object getParentObject () {
-    Object object = getBoundRootObject();
-    if (parents != null) {
-      for (BindingMember parentMember: getParents()) {
-        if (object == null) {
-          break;    // some binding reference is null
-        }
-        try {
-          object = parentMember.getObject(object);
-        }
-        catch (RuntimeException ex) {
-          throw new BindingException("can't walk down to " + parentMember, ex);
-        }
-      }
-    }
-    return object;
+    return getParentObject(null);
   }
 
   @Override
@@ -325,7 +313,28 @@ public abstract class AbstractBinding implements Binding {
         fireToModel(parent, value);
         binder.fireToModel(this, parent, value);
         // if all references are valid
-        member.setObject(parent, value);
+        Object updatedParent = member.setObject(parent, value);
+        if (updatedParent != null) {
+          // value was updated via from-method creating a new parent object: we must walk up parent objects until we find a setter
+          boolean updated = false;
+          int parentIndex = parents.length - 1;
+          while (parentIndex >= 0) {
+            BindingMember parentMember = parents[parentIndex];
+            if (parentMember.isReadOnly()) {
+              // check that in order not to ignore missing setters/fields since the from-method worked initially
+              break;
+            }
+            updatedParent = parentMember.setObject(getParentObject(parentMember), updatedParent);
+            if (updatedParent == null) {
+              updated = true;
+              break;
+            }
+            parentIndex--;
+          }
+          if (!updated) {
+            throw new BindingException(member + ": could not update parent object created by from-method");
+          }
+        }
       }
       else  {
         LOGGER.fine("(some) object reference was null, {0} not changed", member);
@@ -476,6 +485,34 @@ public abstract class AbstractBinding implements Binding {
     if (validators.isEmpty()) {
       validators = null;  // free to GC
     }
+  }
+
+
+  /**
+   * Retrieves the parent object by walking along the member path starting at the root object.
+   *
+   * @param stopMember the optional member where to stop (necessary if from-methods are used)
+   * @return the parent object
+   */
+  protected Object getParentObject (BindingMember stopMember) {
+    Object parentObject = getBoundRootObject();
+    if (parents != null) {
+      for (BindingMember parentMember: getParents()) {
+        if (parentMember == stopMember) {
+          break;
+        }
+        if (parentObject == null) {
+          break;    // some binding reference is null
+        }
+        try {
+          parentObject = parentMember.getObject(parentObject);
+        }
+        catch (RuntimeException ex) {
+          throw new BindingException("can't walk down to " + parentMember, ex);
+        }
+      }
+    }
+    return parentObject;
   }
 
 }

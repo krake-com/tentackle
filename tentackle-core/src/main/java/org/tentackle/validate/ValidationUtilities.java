@@ -798,7 +798,7 @@ public class ValidationUtilities {
       return ((Field) element).getName();
     }
     else if (element instanceof Method) {
-      return StringHelper.firstToLower(ReflectionHelper.getPathMethodName((Method) element));
+      return ReflectionHelper.getGetterPathName((Method) element);
     }
     else if (element instanceof Class<?>) {
       return ((Class<?>) element).getName();

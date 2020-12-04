@@ -324,19 +324,21 @@ get those options as well!
     @(getClassName())@ other = (@(getClassName())@) obj;
 @[
       for (Property property: properties) {
-        if (property.isPrimitive()) {
+        if (!property.isInherited()) {
+          if (property.isPrimitive()) {
 ]@
     if (@(property.getName())@ != other.@(property.getName())@) {
       return false;
     }
 @[
-        }
-        else  {
+          }
+          else  {
 ]@
     if (!Objects.equals(@(property.getName())@, other.@(property.getName())@)) {
       return false;
     }
 @[
+          }
         }
       }
 ]@
@@ -363,15 +365,17 @@ get those options as well!
 @[
       }
       for (Property property: properties) {
-        if (property.isPrimitive()) {
+        if (!property.isInherited()) {
+          if (property.isPrimitive()) {
 ]@
     hash = 79 * hash + @(property.getName())@;
 @[
-        }
-        else  {
+          }
+          else  {
 ]@
     hash = 79 * hash + Objects.hashCode(@(property.getName())@);
 @[
+          }
         }
       }
 ]@
