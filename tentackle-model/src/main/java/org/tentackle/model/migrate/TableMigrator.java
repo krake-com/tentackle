@@ -489,6 +489,35 @@ public class TableMigrator {
       }
     }
 
+    // last round: find the best match among same types with string distance calculations.
+    // rename goes before drop/add to avoid data loss!
+    for (Iterator<Attribute> addAttributeIterator = attributesToAdd.iterator(); addAttributeIterator.hasNext(); ) {
+      Attribute addAttribute = addAttributeIterator.next();
+      DataType<?> addDataType = addAttribute.getEffectiveDataType();
+      List<ColumnMetaData> matchingColumns = new ArrayList<>();
+      for (int columnIndex = 0; columnIndex < addDataType.getColumnCount(); columnIndex++) {
+        String columnName = addAttribute.getColumnName() + addDataType.getColumnSuffix(columnIndex).orElse("");
+        List<String> possibleNames = new ArrayList<>();
+        for (ColumnMetaData dropColumn: columnsToDrop.values()) {
+          if (dropColumn.matchesSqlType(addDataType.getSqlType(columnIndex))) {
+            possibleNames.add(dropColumn.getColumnName());
+          }
+        }
+        String matchingName = MigrationUtilities.getInstance().bestMatch(columnName, possibleNames);
+        if (matchingName != null) {
+          matchingColumns.add(columnsToDrop.get(matchingName));   // must exist!
+        }
+      }
+      if (matchingColumns.size() == addDataType.getColumnCount()) {
+        // found a match for all columns of the added attribute
+        addAttributeIterator.remove();
+        attributesToMigrate.put(addAttribute, matchingColumns);
+        for (ColumnMetaData matchingColumn: matchingColumns) {
+          columnsToDrop.remove(matchingColumn.getColumnName());
+        }
+      }
+    }
+
     // create migration code
     for (ColumnMetaData dropColumn: columnsToDrop.values()) {
       if (getColumnMigrationForColumn(dropColumn.getColumnName(), columnMigrations) == null) {

@@ -18,6 +18,7 @@
 
 package org.tentackle.common;
 
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.util.List;
@@ -162,6 +163,14 @@ public class StringHelperTest {
 
     // suppress nested evaluation
     assertEquals(StringHelper.evaluate("@{lambda}ZZ", variables), "XX${omega}ZZ");
+  }
+
+
+  @Test
+  public void levenshteinTest() {
+    Assert.assertEquals(StringHelper.levenshteinDistance("shot", "spot"), 1);
+    Assert.assertEquals(StringHelper.levenshteinDistance("weight", "light"), 2);
+    Assert.assertEquals(StringHelper.levenshteinDistance("release_pos_x", "x_release_loc"), 6);
   }
 
 }
