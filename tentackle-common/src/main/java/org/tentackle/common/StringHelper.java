@@ -1514,6 +1514,41 @@ public final class StringHelper {
   }
 
 
+  /**
+   * Determines the Levenshtein distance of two strings.<br>
+   * Notice that for s1 and s2 null values are treated as empty strings.
+   *
+   * @param s1 the first string
+   * @param s2 the second string
+   * @return the distance
+   */
+  public static int levenshteinDistance(String s1, String s2) {
+    if (s1 == null) {
+      s1 = "";
+    }
+    if (s2 == null) {
+      s2 = "";
+    }
+    int[][] d = new int[s1.length() + 1][s2.length() + 1];
+
+    for (int i1 = 0; i1 <= s1.length(); i1++) {
+      for (int i2 = 0; i2 <= s2.length(); i2++) {
+        if (i1 == 0) {
+          d[i1][i2] = i2;
+        }
+        else if (i2 == 0) {
+          d[i1][i2] = i1;
+        }
+        else {
+          d[i1][i2] = Math.min(d[i1 - 1][i2 - 1] + (s1.charAt(i1 - 1) == s2.charAt(i2 - 1) ? 0 : 1),
+                               Math.min(d[i1 - 1][i2] + 1, d[i1][i2 - 1] + 1));
+        }
+      }
+    }
+
+    return d[s1.length()][s2.length()];
+  }
+
 
   /**
    * prevent instantiation.

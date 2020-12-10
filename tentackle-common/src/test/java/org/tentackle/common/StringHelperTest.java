@@ -18,10 +18,14 @@
 
 package org.tentackle.common;
 
-import java.util.List;
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.*;
+import java.util.List;
+
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
 
 
 /**
@@ -99,5 +103,13 @@ public class StringHelperTest {
     assertEquals(StringHelper.fillRight("yxxxyy", 10, 'y'), "yxxxyyyyyy");
     assertEquals(StringHelper.fillRight("xxxxxxxxxxxx", 10, 'y'), "xxxxxxxxxxxx");
     assertEquals(StringHelper.fillRight(null, 0, 'y'), "");
+  }
+
+
+  @Test
+  public void levenshteinTest() {
+    assertEquals(StringHelper.levenshteinDistance("shot", "spot"), 1);
+    assertEquals(StringHelper.levenshteinDistance("weight", "light"), 2);
+    assertEquals(StringHelper.levenshteinDistance("release_pos_x", "x_release_loc"), 6);
   }
 }

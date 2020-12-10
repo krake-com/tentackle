@@ -485,6 +485,44 @@ public class TableMigrator {
       }
     }
 
+    // last round: find the best match among same types with string distance calculations.
+    // rename goes before drop/add to avoid data loss!
+    for (Iterator<Attribute> addAttributeIterator = attributesToAdd.iterator(); addAttributeIterator.hasNext(); ) {
+      Attribute addAttribute = addAttributeIterator.next();
+      String addSql = new ColumnMigrator(entity, addAttribute, backend).migrate();
+      Pattern addHint = sqlMatchesHint(addSql, hints);
+      if (addHint == null) {
+        List<ColumnMetaData> matchingColumns = new ArrayList<>();
+        for (DataType.SqlTypeWithPostfix sp: addAttribute.getDataType().getSqlTypesWithPostfix()) {
+          String columnName = addAttribute.getColumnName() + sp.getPostfix();
+          List<String> possibleNames = new ArrayList<>();
+          for (ColumnMetaData dropColumn : columnsToDrop.values()) {
+            if (dropColumn.matchesSqlType(sp.getSqlType())) {
+              possibleNames.add(dropColumn.getColumnName());
+            }
+          }
+          String matchingName = MigrationUtilities.getInstance().bestMatch(columnName, possibleNames);
+          if (matchingName != null) {
+            matchingColumns.add(columnsToDrop.get(matchingName));   // must exist!
+          }
+        }
+        if (matchingColumns.size() == addAttribute.getDataType().getSqlTypes().length) {
+          String dropSql = new ColumnMigrator(entity, null, backend, matchingColumns).migrate();
+          Pattern dropHint = sqlMatchesHint(dropSql, hints);
+          if (dropHint == null) {
+            // found a match for all columns of the added attribute
+            addAttributeIterator.remove();
+            attributesToMigrate.put(addAttribute, matchingColumns);
+            for (ColumnMetaData matchingColumn : matchingColumns) {
+              columnsToDrop.remove(matchingColumn.getColumnName());
+            }
+            sqlBuf.append(backend.sqlComment(addSql));
+            sqlBuf.append(backend.sqlComment(dropSql));
+          }
+        }
+      }
+    }
+
     // create migration code
     for (ColumnMetaData dropColumn: columnsToDrop.values()) {
       if (getColumnMigrationForColumn(dropColumn.getColumnName(), columnMigrations) == null) {
