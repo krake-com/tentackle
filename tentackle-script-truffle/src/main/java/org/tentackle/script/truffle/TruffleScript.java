@@ -121,6 +121,7 @@ public class TruffleScript extends AbstractScript {
   /**
    * Executes the given script.
    *
+   * @param <T> the result type
    * @param source the source code unit
    * @return the script result
    */

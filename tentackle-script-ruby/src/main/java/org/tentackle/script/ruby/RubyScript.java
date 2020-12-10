@@ -64,6 +64,7 @@ public class RubyScript extends AbstractScript {
    * Creates a ruby script.
    *
    * @param language the language
+   * @param container the scripting container
    * @param code the scripting code
    * @param cached true if cached
    * @param threadSafe true if threadsafety required
