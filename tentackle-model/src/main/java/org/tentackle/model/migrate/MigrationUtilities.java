@@ -182,15 +182,15 @@ public class MigrationUtilities {
     private final String newName;
     private final int[] distances;
 
-    private MatchResult(String oldName, String newName) {
-      this.newName = newName;
-      List<String> oldSyllables = extractSyllables(oldName);
-      List<String> newSyllables = extractSyllables(newName);
-      distances = new int[oldSyllables.size() * newSyllables.size()];
+    private MatchResult(String modelName, String existingName) {
+      this.newName = existingName;
+      List<String> modelSyllables = extractSyllables(modelName);
+      List<String> existingSyllables = extractSyllables(existingName);
+      distances = new int[existingSyllables.size() * modelSyllables.size()];
       int ndx = 0;
-      for (String oldSyllable: oldSyllables) {
-        for (String newSyllable: newSyllables) {
-          distances[ndx++] = StringHelper.levenshteinDistance(oldSyllable, newSyllable);
+      for (String existingSyllable: existingSyllables) {
+        for (String modelSyllable: modelSyllables) {
+          distances[ndx++] = StringHelper.levenshteinDistance(existingSyllable, modelSyllable);
         }
       }
       Arrays.sort(distances);

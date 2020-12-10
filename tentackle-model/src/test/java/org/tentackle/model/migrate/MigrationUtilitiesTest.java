@@ -84,5 +84,7 @@ public class MigrationUtilitiesTest {
     Assert.assertEquals(mu.bestMatch("xpick",
                                      List.of("release_pos_x", "release_pos_y", "release_pos_z",
                                              "pickup_pos_x", "pickup_pos_y", "pickup_pos_z")), "pickup_pos_x");
+
+    Assert.assertEquals(mu.bestMatch("date_trans", List.of("transmit_date", "delay_estimated_date")), "transmit_date");
   }
 }
