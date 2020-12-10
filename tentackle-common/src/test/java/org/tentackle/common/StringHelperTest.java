@@ -18,7 +18,6 @@
 
 package org.tentackle.common;
 
-import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.util.List;
@@ -168,9 +167,9 @@ public class StringHelperTest {
 
   @Test
   public void levenshteinTest() {
-    Assert.assertEquals(StringHelper.levenshteinDistance("shot", "spot"), 1);
-    Assert.assertEquals(StringHelper.levenshteinDistance("weight", "light"), 2);
-    Assert.assertEquals(StringHelper.levenshteinDistance("release_pos_x", "x_release_loc"), 6);
+    assertEquals(StringHelper.levenshteinDistance("shot", "spot"), 1);
+    assertEquals(StringHelper.levenshteinDistance("weight", "light"), 2);
+    assertEquals(StringHelper.levenshteinDistance("release_pos_x", "x_release_loc"), 6);
   }
 
 }
