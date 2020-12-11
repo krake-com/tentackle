@@ -169,7 +169,7 @@ public class MigrationUtilities {
     }
     Iterator<MatchResult> iterator = results.iterator();
     if (iterator.hasNext()) {
-      return iterator.next().newName;
+      return iterator.next().existingName;
     }
     return null;
   }
@@ -179,11 +179,11 @@ public class MigrationUtilities {
    * Holds the distances between all syllables sorted by distance.
    */
   private class MatchResult implements Comparable<MatchResult> {
-    private final String newName;
+    private final String existingName;
     private final int[] distances;
 
     private MatchResult(String modelName, String existingName) {
-      this.newName = existingName;
+      this.existingName = existingName;
       List<String> modelSyllables = extractSyllables(modelName);
       List<String> existingSyllables = extractSyllables(existingName);
       distances = new int[existingSyllables.size() * modelSyllables.size()];
@@ -201,31 +201,31 @@ public class MigrationUtilities {
       if (this == o) return true;
       if (o == null || getClass() != o.getClass()) return false;
       MatchResult that = (MatchResult) o;
-      if (!newName.equals(that.newName)) return false;
+      if (!existingName.equals(that.existingName)) return false;
       return true;
     }
 
     @Override
     public int hashCode() {
-      return newName.hashCode();
+      return existingName.hashCode();
     }
 
     @Override
     public int compareTo(MatchResult o) {
       int max = Math.max(distances.length, o.distances.length);
-      for (int ndx=0; ndx < max; ndx++) {
+      int rv = 0;
+      for (int ndx=0; rv == 0 && ndx < max; ndx++) {
         if (ndx >= distances.length) {
-          return -1;
+          rv = Integer.MIN_VALUE;
         }
-        if (ndx >= o.distances.length) {
-          return  1;
+        else if (ndx >= o.distances.length) {
+          rv = Integer.MAX_VALUE;
         }
-        int rv = distances[ndx] - o.distances[ndx];
-        if (rv != 0) {
-          return rv;
+        else {
+          rv = distances[ndx] - o.distances[ndx];
         }
       }
-      return 0;
+      return rv;
     }
   }
 

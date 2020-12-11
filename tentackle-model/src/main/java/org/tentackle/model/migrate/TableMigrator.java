@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Handles the migration of tables.
@@ -491,8 +492,9 @@ public class TableMigrator {
 
     // last round: find the best match among same types with string distance calculations.
     // rename goes before drop/add to avoid data loss!
-    for (Iterator<Attribute> addAttributeIterator = attributesToAdd.iterator(); addAttributeIterator.hasNext(); ) {
-      Attribute addAttribute = addAttributeIterator.next();
+    for (Attribute addAttribute :
+      // start with the longest names: they have the highest number of distance combinations and thus compare best when first
+        attributesToAdd.stream().sorted((o1, o2) -> o2.getColumnName().length() - o1.getColumnName().length()).collect(Collectors.toList())) {
       String addSql = new ColumnMigrator(entity, addAttribute, backend).migrate();
       Pattern addHint = sqlMatchesHint(addSql, hints);
       if (addHint == null) {
@@ -516,7 +518,7 @@ public class TableMigrator {
           Pattern dropHint = sqlMatchesHint(dropSql, hints);
           if (dropHint == null) {
             // found a match for all columns of the added attribute
-            addAttributeIterator.remove();
+            attributesToAdd.remove(addAttribute);
             attributesToMigrate.put(addAttribute, matchingColumns);
             for (ColumnMetaData matchingColumn : matchingColumns) {
               columnsToDrop.remove(matchingColumn.getColumnName());
