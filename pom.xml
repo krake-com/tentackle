@@ -7,7 +7,7 @@
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-parent</artifactId>
-  <version>8.3.0.0-SNAPSHOT</version>
+  <version>8.3.0.0</version>
   <packaging>pom</packaging>
 
   <name>Tentackle Parent</name>
@@ -87,8 +87,8 @@
     <javac.version.require>1.8.0-45</javac.version.require>
     <javac.lint>unchecked,deprecation</javac.lint>
     <maven.version>3.6.0</maven.version>
-    <groovy.version>2.5.13</groovy.version>
-    <postgresql.version>42.2.14</postgresql.version>
+    <groovy.version>2.5.14</groovy.version>
+    <postgresql.version>42.2.17</postgresql.version>
     <graalvm.version>20.1.0</graalvm.version>
 
     <!-- for tentackle-fx+rdc: java 9 multi-release jars via antrun because not supported by maven yet -->
@@ -201,7 +201,7 @@
       <dependency>
         <groupId>org.jruby</groupId>
         <artifactId>jruby</artifactId>
-        <version>9.2.12.0</version>
+        <version>9.2.14.0</version>
       </dependency>
 
       <dependency>
