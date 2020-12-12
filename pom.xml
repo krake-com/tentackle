@@ -448,7 +448,10 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <version>3.2.0</version>
+          <!-- need to stick with 3.0.1 since 3.1.0, 3.1.1 and 3.2.0 cannot doc a non-module referencing a module
+               (such as buildsupport which deps on common)
+               see https://bugs.openjdk.java.net/browse/JDK-8240169 -->
+          <version>3.0.1</version>
           <dependencies>
             <dependency>
               <groupId>org.ow2.asm</groupId>
