@@ -27,6 +27,7 @@ import org.tentackle.validate.ValidationSeverity;
 import org.tentackle.validate.ValidatorCompoundValueFactory;
 
 import java.lang.annotation.Annotation;
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.List;
 
@@ -96,7 +97,7 @@ public class PatternImpl extends AbstractValidator<Pattern> {
     }
     java.util.regex.Pattern pattern = getPattern(validationContext);
     return pattern.matcher(object.toString()).matches() ? Collections.emptyList() :
-        createFailedValidationResult("'" + object + "' does not match '" + pattern.pattern() + "'", validationContext);
+        createFailedValidationResult(MessageFormat.format(ValidatorBundle.getString("{0} does not match {1}"), validationContext, pattern.pattern()), validationContext);
   }
 
 

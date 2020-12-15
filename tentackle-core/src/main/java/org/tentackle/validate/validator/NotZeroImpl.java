@@ -27,6 +27,7 @@ import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationSeverity;
 
 import java.lang.annotation.Annotation;
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.List;
 
@@ -114,7 +115,7 @@ public class NotZeroImpl extends AbstractValidator<NotZero> implements Mandatory
 
     if (value instanceof Number) {
       return ObjectUtilities.getInstance().isZero((Number) value) ?
-             createFailedValidationResult("value is zero", validationContext) :
+             createFailedValidationResult(MessageFormat.format(ValidatorBundle.getString("{0} is zero"), validationContext), validationContext) :
              Collections.emptyList();
     }
     else  {

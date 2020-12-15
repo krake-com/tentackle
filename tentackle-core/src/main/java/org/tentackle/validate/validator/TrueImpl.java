@@ -25,6 +25,7 @@ import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationSeverity;
 
 import java.lang.annotation.Annotation;
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.List;
 
@@ -91,7 +92,7 @@ public class TrueImpl extends AbstractValidator<True> {
                    getValue(Boolean.class, validationContext);
 
     return value == null && annotation.ignoreNulls() || Boolean.TRUE.equals(value) ? Collections.emptyList() :
-        createFailedValidationResult("object is not true", validationContext);
+        createFailedValidationResult(MessageFormat.format(ValidatorBundle.getString("{0} must be true"), validationContext), validationContext);
   }
 
 }

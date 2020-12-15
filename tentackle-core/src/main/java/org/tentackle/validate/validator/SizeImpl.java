@@ -27,6 +27,7 @@ import org.tentackle.validate.ValidationSeverity;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
+import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -114,7 +115,9 @@ public class SizeImpl extends AbstractValidator<Size> {
       }
 
       return size < annotation.min() || size > annotation.max() ?
-          createFailedValidationResult("size = " + size + " (expected " + annotation.min() + " <= size <= " + annotation.max() + ")", validationContext) :
+          createFailedValidationResult(
+              MessageFormat.format(ValidatorBundle.getString("size of {0} = {1}, expected {2} <= {0} <= {3}"),
+                                   validationContext, size, annotation.min(), annotation.max()), validationContext) :
           Collections.emptyList();
     }
   }
