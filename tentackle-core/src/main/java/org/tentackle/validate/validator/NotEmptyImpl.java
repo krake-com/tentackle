@@ -28,6 +28,7 @@ import org.tentackle.validate.ValidationSeverity;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
+import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -128,7 +129,9 @@ public class NotEmptyImpl extends AbstractValidator<NotEmpty> implements Mandato
       throw new ValidationRuntimeException("unsupported type: " + object.getClass().getName());
     }
 
-    return empty ? createFailedValidationResult("object is empty", validationContext) : Collections.emptyList();
+    return empty ? createFailedValidationResult(
+        MessageFormat.format(ValidatorBundle.getString("{0} is empty"), validationContext), validationContext) :
+           Collections.emptyList();
   }
 
 }

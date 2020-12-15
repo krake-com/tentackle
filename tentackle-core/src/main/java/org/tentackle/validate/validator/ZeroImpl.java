@@ -26,6 +26,7 @@ import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationSeverity;
 
 import java.lang.annotation.Annotation;
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.List;
 
@@ -99,7 +100,7 @@ public class ZeroImpl extends AbstractValidator<Zero> {
     if (value instanceof Number) {
       return ObjectUtilities.getInstance().isZero((Number) value) ?
              Collections.emptyList() :
-             createFailedValidationResult("value is not zero", validationContext);
+             createFailedValidationResult(MessageFormat.format(ValidatorBundle.getString("{0} must be zero"), validationContext), validationContext);
     }
     else  {
       return createFailedValidationResult("value is not a number", validationContext);

@@ -25,6 +25,7 @@ import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationSeverity;
 
 import java.lang.annotation.Annotation;
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.List;
 
@@ -92,7 +93,7 @@ public class FalseImpl extends AbstractValidator<False> {
                    getValue(Boolean.class, validationContext);
 
     return value == null && annotation.ignoreNulls() || Boolean.FALSE.equals(value) ? Collections.emptyList() :
-           createFailedValidationResult("object is not false", validationContext);
+           createFailedValidationResult(MessageFormat.format(ValidatorBundle.getString("{0} must be false"), validationContext), validationContext);
   }
 
 }

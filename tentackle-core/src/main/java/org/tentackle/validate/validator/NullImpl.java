@@ -25,6 +25,7 @@ import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationSeverity;
 
 import java.lang.annotation.Annotation;
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.List;
 
@@ -90,7 +91,9 @@ public class NullImpl extends AbstractValidator<Null> {
                    // replace with compound value which should be a script
                    getValue(validationContext);
 
-    return value != null ? createFailedValidationResult("value is not null", validationContext) : Collections.emptyList();
+    return value != null ? createFailedValidationResult(
+        MessageFormat.format(ValidatorBundle.getString("{0} must be missing"), validationContext), validationContext) :
+           Collections.emptyList();
   }
 
 }
