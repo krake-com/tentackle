@@ -23,10 +23,20 @@ import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
 import org.tentackle.io.ReconnectionPolicy;
+import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.BackendConfiguration;
+import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionPool;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -263,6 +273,157 @@ public class DbUtilities {
    */
   public void notifyCommit(Db session, long txNumber) {
     // nothing to do
+  }
+
+
+  /**
+   * Converts a resultset to a list of DTOs.<br>
+   * Works for builder- and setter pattern.
+   * Not for constructor pattern since in Java the parameters are unnamed.
+   * <p>
+   * For the builder pattern see the DTO wurblet.<br>
+   * For the setter pattern the DTO class needs a public no-arg constructor.
+   * <p>
+   * For primitive members of the DTO class null values returned from the result set are silently ignored.
+   * <p>
+   * Notice: the Tentackle-specific types {@link org.tentackle.common.Binary}, {@link org.tentackle.common.BMoney}
+   * and {@link org.tentackle.common.DMoney}, all {@link org.tentackle.misc.Convertible}s and application specific
+   * multi-column {@link org.tentackle.sql.DataType}s are not supported.
+   *
+   * @param rs the resultset
+   * @param clazz the DTO class
+   * @param <T> the DTO type
+   * @return the list of objects
+   */
+  @SuppressWarnings("unchecked")
+  public <T> List<T> resultSetToDTOs(ResultSetWrapper rs, Class<T> clazz) {
+
+    if (rs.isInSkipMode()) {
+      throw new PersistenceException("result set must not be in skipmode");
+    }
+    if (rs.getColumnOffset() != 0) {
+      throw new PersistenceException("column offset must be zero");
+    }
+
+    int columnCount = rs.getColumnCount();                        // number of result columns
+    List<T> dtos = new ArrayList<>();                             // returned list of DTOs
+    Method builderMethod = null;                                  // static method to create a builder, if builder pattern is used
+    Method buildMethod = null;                                    // the build-method of the builder
+    Class<?> builderClass = null;                                 // the class of the builder
+    Constructor<T> noArgConstructor = null;                       // != null for the setter pattern
+    Map<String, Method> builderMethods = new HashMap<>();         // map of builder methods
+    Map<String, Method> setterMethods = new HashMap<>();          // map of setter methods
+    Map<Integer, Method> builderMapping = new HashMap<>();        // mappers for the builder pattern
+    Map<Integer, Method> setterMapping = new HashMap<>();         // mapping for the setters
+
+    // check for setters
+    for (Method method : clazz.getMethods()) {
+      if (method.getReturnType() == Void.TYPE && method.getParameterCount() == 1 &&
+          method.getName().startsWith("set")) {
+        String name = method.getName().substring(3);
+        if (!name.isEmpty() && Character.isUpperCase(name.charAt(0))) {
+          setterMethods.put(name.toLowerCase(), method);
+        }
+      }
+    }
+
+    // check for builder pattern (see DTO.wrbl)
+    try {
+      builderMethod = clazz.getDeclaredMethod("builder");
+      if (!Modifier.isStatic(builderMethod.getModifiers()) || !Modifier.isPublic(builderMethod.getModifiers())) {
+        builderMethod = null;
+      }
+      else {
+        builderClass = builderMethod.invoke(null).getClass();
+        buildMethod = builderClass.getDeclaredMethod("build");
+        if (buildMethod.getReturnType() != clazz) {
+          builderMethod = null;
+        }
+        else {
+          for (Method method : builderClass.getMethods()) {
+            if (method.getReturnType() == Void.TYPE && method.getParameterCount() == 1) {
+              builderMethods.put(method.getName().toLowerCase(), method);
+            }
+          }
+        }
+      }
+      // if builder is still null, could be setter pattern
+    }
+    catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | NullPointerException ex) {
+      // that's ok...
+      builderMethod = null;
+    }
+
+    if (builderMethod == null) {
+      try {
+        noArgConstructor = clazz.getConstructor();
+      }
+      catch (NoSuchMethodException ex) {
+        throw new PersistenceException("missing no-arg constructor in " + clazz);
+      }
+    }
+
+    // map result set column indexes to setter methods
+    for (int i=1; i <= columnCount; i++) {
+      String name = rs.getColumnName(i).toLowerCase();
+      Method setter = builderMethods.get(name);
+      if (setter != null) {
+        builderMapping.put(i, setter);
+      }
+      else {
+        setter = setterMethods.get(name);
+        if (setter != null) {
+          setterMapping.put(i, setter);
+        }
+      }
+    }
+
+    if (builderMapping.isEmpty() && setterMapping.isEmpty()) {
+      throw new PersistenceException("no matching columns found");
+    }
+
+    try {
+      while (rs.next()) {
+        Object builder = null;
+        T dto = null;
+        if (builderMethod != null) {
+          builder = builderMethod.invoke(null);
+          invokeDTOSetters(builderMapping, builder, rs);
+          dto = (T) buildMethod.invoke(builder);
+        }
+        else {
+          dto = noArgConstructor.newInstance();
+        }
+        invokeDTOSetters(setterMapping, dto, rs);
+        dtos.add(dto);
+      }
+    }
+    catch (IllegalAccessException | InvocationTargetException | InstantiationException ex) {
+      throw new PersistenceException("creating DTO failed", ex);
+    }
+
+    return dtos;
+  }
+
+
+  private void invokeDTOSetters(Map<Integer, Method> methodMap, Object object, ResultSetWrapper rs)
+      throws InvocationTargetException, IllegalAccessException {
+
+    for (Map.Entry<Integer, Method> entry : methodMap.entrySet()) {
+      int i = entry.getKey();
+      Method setter = entry.getValue();
+      Class<?> type = setter.getParameterTypes()[0];
+      if (type.isPrimitive()) {
+        Class<?> nullableType = ReflectionHelper.primitiveToWrapperClass(type);
+        Object value = rs.getObject(i, nullableType);
+        if (value != null) {
+          setter.invoke(object, value);
+        }
+      }
+      else {
+        setter.invoke(object, rs.getObject(i, type));
+      }
+    }
   }
 
 }

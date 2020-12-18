@@ -24,10 +24,10 @@ import org.tentackle.common.BMoney;
 import org.tentackle.common.Binary;
 import org.tentackle.common.DMoney;
 import org.tentackle.common.Date;
+import org.tentackle.common.DateHelper;
 import org.tentackle.common.Time;
 import org.tentackle.common.Timestamp;
 import org.tentackle.log.Logger;
-import org.tentackle.common.DateHelper;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.DataType;
 
@@ -322,6 +322,22 @@ public class ResultSetWrapper implements AutoCloseable {
       }
     }
     return columnCount;
+  }
+
+
+  /**
+   * Gets the column name.
+   *
+   * @param column the first column is 1, the second is 2, ...
+   * @return the column name
+   */
+  public String getColumnName(int column) {
+    try {
+      return getMetaData().getColumnName(column);
+    }
+    catch (SQLException sqx) {
+      throw new PersistenceException(resources.db, sqx);
+    }
   }
 
 
@@ -931,6 +947,19 @@ public class ResultSetWrapper implements AutoCloseable {
     catch (SQLException e)  {
       throw new PersistenceException(resources.db, e);
     }
+  }
+
+
+  /**
+   * Retrieves a list of DTOs from this resultset.
+   *
+   * @param clazz the DTO class
+   * @param <T> the DTO type
+   * @return the list of objects
+   * @see DbUtilities#resultSetToDTOs(ResultSetWrapper, Class)
+   */
+  public <T> List<T> toDTOs(Class<T> clazz) {
+    return DbUtilities.getInstance().resultSetToDTOs(this, clazz);
   }
 
 
