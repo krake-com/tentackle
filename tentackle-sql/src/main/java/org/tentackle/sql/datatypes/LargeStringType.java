@@ -34,9 +34,6 @@ import java.sql.Types;
  * Datatype for {@link String}.
  * <p>
  * Notice that there are two types of strings. This one is for the SQL type <code>CLOB</code>.
- * <p>
- * Since this is a predefined type, the methods {@link #set} and {@link #get} are not used by the framework
- * and only provided for completeness.
  */
 @Service(DataType.class)
 public class LargeStringType extends StringType {

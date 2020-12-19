@@ -34,9 +34,6 @@ import java.util.Optional;
 
 /**
  * Datatype for {@link Character}.
- * <p>
- * Since this is a predefined type, the methods {@link #set} and {@link #get} are not used by the framework
- * and only provided for completeness.
  */
 @Service(DataType.class)
 public class CharacterType extends AbstractDataType<Character> {
