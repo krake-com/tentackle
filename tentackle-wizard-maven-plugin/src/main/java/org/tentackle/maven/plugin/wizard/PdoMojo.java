@@ -67,7 +67,7 @@ public class PdoMojo extends AbstractWizardMojo {
         PdoWizard wizard = Fx.load(PdoWizard.class);
         wizard.applyMojo(this);
         Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
-        Scene scene = new Scene(wizard.getView());
+        Scene scene = Fx.createScene(wizard.getView());
         stage.setScene(scene);
         stage.setTitle("PDO Wizard");
         wizard.getContainer().updateView();

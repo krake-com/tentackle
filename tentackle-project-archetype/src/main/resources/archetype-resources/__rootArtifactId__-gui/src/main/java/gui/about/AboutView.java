@@ -31,7 +31,7 @@ public class AboutView extends AbstractFxController {
   public static void showDialog() {
     AboutView controller = Fx.load(AboutView.class);
     Stage stage = Fx.createStage(Modality.NONE);
-    Scene scene = new Scene(controller.getView());
+    Scene scene = Fx.createScene(controller.getView());
     stage.setScene(scene);
     stage.setTitle(GuiBundle.getString("about"));
     stage.show();

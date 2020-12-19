@@ -69,7 +69,7 @@ public class Backends extends AbstractFxController {
    */
   public static void editBackends(String application, boolean system, Runnable updatedRunnable) {
     Backends controller = Fx.load(Backends.class);
-    Scene scene = new Scene(controller.getView());
+    Scene scene = Fx.createScene(controller.getView());
     Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
     stage.setScene(scene);
     stage.setTitle(RdcFxRdcBundle.getString("Backends"));

@@ -240,7 +240,7 @@ public abstract class DesktopApplication<C extends FxController>
                   setMainController(mainCtrlr);
                   Stage stage = Fx.createStage(Modality.NONE);
                   configureMainStage(stage);
-                  Scene scene = new Scene(mainCtrlr.getView());
+                  Scene scene = Fx.createScene(mainCtrlr.getView());
                   stage.setScene(scene);
                   stage.addEventHandler(WindowEvent.WINDOW_SHOWN, e -> {
                     // all is fine, close the login scene, application keeps running since main window is shown

@@ -72,7 +72,7 @@ public class LoginApplication extends FxApplication {
       controller = loadLoginController();
       SessionInfo sessionInfo = createSessionInfo();
       controller.setSessionInfo(sessionInfo);
-      Scene scene = new Scene(controller.getView());
+      Scene scene = Fx.createScene(controller.getView());
       stage.setScene(scene);
       stage.initStyle(StageStyle.TRANSPARENT);
       SplashScreen splashScreen = SplashScreen.getSplashScreen();

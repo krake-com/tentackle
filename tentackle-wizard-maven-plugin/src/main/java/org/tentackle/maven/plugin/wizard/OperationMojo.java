@@ -57,7 +57,7 @@ public class OperationMojo extends AbstractWizardMojo {
         OperationWizard wizard = Fx.load(OperationWizard.class);
         wizard.applyMojo(this);
         Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
-        Scene scene = new Scene(wizard.getView());
+        Scene scene = Fx.createScene(wizard.getView());
         stage.setScene(scene);
         stage.setTitle("Operation Wizard");
         wizard.getContainer().updateView();

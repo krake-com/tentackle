@@ -19,6 +19,8 @@
 
 package org.tentackle.fx;
 
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -107,6 +109,15 @@ public interface FxFactory {
    * @return the stage
    */
   Stage createStage(StageStyle stageStyle, Modality modality);
+
+
+  /**
+   * Creates a scene.
+   *
+   * @param root the parent node
+   * @return the scene
+   */
+  Scene createScene(Parent root);
 
 
   /**

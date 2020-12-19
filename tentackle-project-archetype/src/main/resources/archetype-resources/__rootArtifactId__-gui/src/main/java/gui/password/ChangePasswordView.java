@@ -48,7 +48,7 @@ public class ChangePasswordView extends AbstractFxController implements DomainCo
     if (admin || user.isWriteAllowed() && user.isPasswordChangeable()) {
       ChangePasswordView controller = Fx.load(ChangePasswordView.class);
       Stage stage = Fx.createStage(Modality.NONE);
-      Scene scene = new Scene(controller.getView());
+      Scene scene = Fx.createScene(controller.getView());
       stage.setScene(scene);
       stage.setTitle(MessageFormat.format(GuiBundle.getString("password {0}"), user));
       controller.setUser(user, admin);
