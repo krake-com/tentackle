@@ -33,9 +33,6 @@ import java.time.LocalTime;
 
 /**
  * Datatype for {@link LocalTime}.
- * <p>
- * Since this is a predefined type, the methods {@link #set} and {@link #get} are not used by the framework
- * and only provided for completeness.
  */
 @Service(DataType.class)
 public class LocalTimeType extends AbstractDateTimeType<LocalTime> {

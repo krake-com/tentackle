@@ -24,9 +24,6 @@ import org.tentackle.sql.DataTypeFactory;
 
 /**
  * Datatype for the primitive type <code>float</code>.
- * <p>
- * Since this is a predefined type, the methods {@link #set} and {@link #get} are not used by the framework
- * and only provided for completeness.
  */
 @Service(DataType.class)
 public class FloatPrimitiveType extends FloatType {

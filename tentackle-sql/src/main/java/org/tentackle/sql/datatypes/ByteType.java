@@ -33,9 +33,6 @@ import java.util.Optional;
 
 /**
  * Datatype for {@link Byte}.
- * <p>
- * Since this is a predefined type, the methods {@link #set} and {@link #get} are not used by the framework
- * and only provided for completeness.
  */
 @Service(DataType.class)
 public class ByteType extends AbstractNumberType<Byte> {
