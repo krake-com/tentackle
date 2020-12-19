@@ -134,7 +134,7 @@ public class ResultSetTest extends AbstractPdoTest {
 
     Db session = (Db) getSession();   // is a local session
     try (ResultSetWrapper rs = session.createStatement().executeQuery("select * from " + numberPool.getTableName())) {
-      List<SetterDTO> dtos = rs.toDTOs(SetterDTO.class);
+      List<SetterDTO> dtos = rs.toList(SetterDTO.class);
       Assert.assertEquals(dtos.size(), 2);
       SetterDTO dto = dtos.get(0);
       Assert.assertEquals(dto.getName(), "pool1");
@@ -148,7 +148,7 @@ public class ResultSetTest extends AbstractPdoTest {
 
     // same with builder
     try (ResultSetWrapper rs = session.createStatement().executeQuery("select * from " + numberPool.getTableName())) {
-      List<BuilderDTO> dtos = rs.toDTOs(BuilderDTO.class);
+      List<BuilderDTO> dtos = rs.toList(BuilderDTO.class);
       Assert.assertEquals(dtos.size(), 2);
       BuilderDTO dto = dtos.get(0);
       Assert.assertEquals(dto.getName(), "pool1");

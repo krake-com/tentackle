@@ -556,13 +556,13 @@ public class ModelWurblet extends AbstractJavaWurblet {
    * Gets the columname.
    *
    * @param attribute the attribute
-   * @param columnIndex the column index
+   * @param columnIndex the column index, -1 if without suffix
    * @return the columnname
    * @throws WurbelException if failed
    */
   public String getColumnName(Attribute attribute, int columnIndex) throws WurbelException {
     try {
-      return attribute.getColumnName(columnIndex);
+      return columnIndex < 0 ? attribute.getColumnName() : attribute.getColumnName(columnIndex);
     }
     catch (ModelException e) {
       throw new WurbelException("cannot determine columnname for " + attribute + ", index " + columnIndex, e);
@@ -574,11 +574,12 @@ public class ModelWurblet extends AbstractJavaWurblet {
    * Gets the name of the string constant for a database column name.
    *
    * @param attribute the attribute
-   * @param columnIndex the column index within the attribute
+   * @param columnIndex the column index within the attribute, -1 if without suffix
    * @return the constant CN_...
    */
   public String getColumnNameConstant(Attribute attribute, int columnIndex) throws WurbelException {
-    return "CN_" + (attribute.getName() + getEffectiveDataType(attribute).getColumnSuffix(columnIndex).orElse("")).toUpperCase();
+    return "CN_" + (attribute.getName() + (columnIndex < 0 ? "" :
+                                           getEffectiveDataType(attribute).getColumnSuffix(columnIndex).orElse(""))).toUpperCase();
   }
 
 

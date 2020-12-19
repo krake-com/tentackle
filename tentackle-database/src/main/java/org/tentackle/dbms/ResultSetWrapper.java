@@ -956,10 +956,10 @@ public class ResultSetWrapper implements AutoCloseable {
    * @param clazz the DTO class
    * @param <T> the DTO type
    * @return the list of objects
-   * @see DbUtilities#resultSetToDTOs(ResultSetWrapper, Class)
+   * @see DbUtilities#resultSetToList(ResultSetWrapper, Class)
    */
-  public <T> List<T> toDTOs(Class<T> clazz) {
-    return DbUtilities.getInstance().resultSetToDTOs(this, clazz);
+  public <T> List<T> toList(Class<T> clazz) {
+    return DbUtilities.getInstance().resultSetToList(this, clazz);
   }
 
 
