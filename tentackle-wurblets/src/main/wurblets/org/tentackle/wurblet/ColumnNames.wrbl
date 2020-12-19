@@ -12,10 +12,18 @@ For more options, see {\@link ModelWurblet}.
     for (Attribute attr: getEntity().getAttributes())  {
       if (!attr.getOptions().isNoConstant() && !attr.getOptions().isFromSuper()) {
         if (!attr.getOptions().isNoDeclare() || attr.getOptions().isFromSuper())    {
-          for (int columnIndex = 0; columnIndex < getEffectiveDataType(attr).getColumnCount(); columnIndex++) {
+          int columnCount = getEffectiveDataType(attr).getColumnCount();
+          if (columnCount > 1) {
 ]@
 
-  /** database column name for '@(attr)@'. */
+  /** database column basename for '@(attr)@'. */
+  public static final String @(getColumnNameConstant(attr, -1))@ = @(StringHelper.toDoubleQuotes(getColumnName(attr, -1)))@;
+@[
+          }
+          for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
+]@
+
+  /** database column name for '@(attr)@'@(columnCount > 1 ? (", column " + (columnIndex+1) + " of " + columnCount) : "")@. */
   public static final String @(getColumnNameConstant(attr, columnIndex))@ = @(StringHelper.toDoubleQuotes(getColumnName(attr, columnIndex)))@;
 @[
           }

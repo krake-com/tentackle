@@ -23,20 +23,19 @@ import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
 import org.tentackle.io.ReconnectionPolicy;
-import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.BackendConfiguration;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionPool;
+import org.tentackle.sql.DataType;
+import org.tentackle.sql.DataTypeFactory;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -277,26 +276,43 @@ public class DbUtilities {
 
 
   /**
+   * Holds the mapping of a datatype to a setter or builder method.
+   */
+  private static class ColumnMapping {
+    private final Method method;            // the method to set the data
+    private final DataType<?> dataType;     // the datatype corresponding to the methods argument
+    private final int[] positions;          // the result set positions for the datatype's columns
+
+    ColumnMapping(Method method, DataType<?> dataType, int[] positions) {
+      this.method = method;
+      this.dataType = dataType;
+      this.positions = positions;
+    }
+
+    private void invoke(Object object, ResultSetWrapper rs) throws InvocationTargetException, IllegalAccessException {
+      method.invoke(object, rs.get(dataType, positions, false, 0));
+    }
+  }
+
+  /**
    * Converts a resultset to a list of DTOs.<br>
-   * Works for builder- and setter pattern.
+   * Works for builder- and setter pattern and all registered {@link DataType}s.<br>
    * Not for constructor pattern since in Java the parameters are unnamed.
    * <p>
    * For the builder pattern see the DTO wurblet.<br>
    * For the setter pattern the DTO class needs a public no-arg constructor.
    * <p>
-   * For primitive members of the DTO class null values returned from the result set are silently ignored.
-   * <p>
-   * Notice: the Tentackle-specific types {@link org.tentackle.common.Binary}, {@link org.tentackle.common.BMoney}
-   * and {@link org.tentackle.common.DMoney}, all {@link org.tentackle.misc.Convertible}s and application specific
-   * multi-column {@link org.tentackle.sql.DataType}s are not supported.
+   * The method- and columnnames are matched case-insensitive with all underscores removed.<br>
+   * For primitive members of the DTO class the result set must not contain null values, of course.
    *
    * @param rs the resultset
    * @param clazz the DTO class
    * @param <T> the DTO type
    * @return the list of objects
+   * @see DataType
    */
   @SuppressWarnings("unchecked")
-  public <T> List<T> resultSetToDTOs(ResultSetWrapper rs, Class<T> clazz) {
+  public <T> List<T> resultSetToList(ResultSetWrapper rs, Class<T> clazz) {
 
     if (rs.isInSkipMode()) {
       throw new PersistenceException("result set must not be in skipmode");
@@ -306,23 +322,32 @@ public class DbUtilities {
     }
 
     int columnCount = rs.getColumnCount();                        // number of result columns
+    String[] columnNames;                                         // converted column names
     List<T> dtos = new ArrayList<>();                             // returned list of DTOs
     Method builderMethod = null;                                  // static method to create a builder, if builder pattern is used
     Method buildMethod = null;                                    // the build-method of the builder
     Class<?> builderClass = null;                                 // the class of the builder
     Constructor<T> noArgConstructor = null;                       // != null for the setter pattern
-    Map<String, Method> builderMethods = new HashMap<>();         // map of builder methods
-    Map<String, Method> setterMethods = new HashMap<>();          // map of setter methods
-    Map<Integer, Method> builderMapping = new HashMap<>();        // mappers for the builder pattern
-    Map<Integer, Method> setterMapping = new HashMap<>();         // mapping for the setters
+    List<ColumnMapping> builderMapping = new ArrayList<>();       // mappings for the builder pattern
+    List<ColumnMapping> setterMapping = new ArrayList<>();        // mappings for the setters
 
-    // check for setters
+    // build converted column names
+    columnNames = new String[columnCount];
+    for (int i=0; i < columnCount; i++) {
+      columnNames[i] = normalizeColumnName(rs.getColumnName(i + 1));
+    }
+
+    // find all setters
     for (Method method : clazz.getMethods()) {
-      if (method.getReturnType() == Void.TYPE && method.getParameterCount() == 1 &&
+      if (method.getDeclaringClass() != Object.class &&
+          method.getReturnType() == Void.TYPE && method.getParameterCount() == 1 &&
           method.getName().startsWith("set")) {
         String name = method.getName().substring(3);
         if (!name.isEmpty() && Character.isUpperCase(name.charAt(0))) {
-          setterMethods.put(name.toLowerCase(), method);
+          ColumnMapping mapping = createColumnMapping(name, columnNames, method);
+          if (mapping != null) {
+            setterMapping.add(mapping);
+          }
         }
       }
     }
@@ -341,8 +366,12 @@ public class DbUtilities {
         }
         else {
           for (Method method : builderClass.getMethods()) {
-            if (method.getReturnType() == Void.TYPE && method.getParameterCount() == 1) {
-              builderMethods.put(method.getName().toLowerCase(), method);
+            if (method.getDeclaringClass() != Object.class &&
+                method.getReturnType() == Void.TYPE && method.getParameterCount() == 1) {
+              ColumnMapping mapping = createColumnMapping(method.getName(), columnNames, method);
+              if (mapping != null) {
+                builderMapping.add(mapping);
+              }
             }
           }
         }
@@ -363,21 +392,6 @@ public class DbUtilities {
       }
     }
 
-    // map result set column indexes to setter methods
-    for (int i=1; i <= columnCount; i++) {
-      String name = rs.getColumnName(i).toLowerCase();
-      Method setter = builderMethods.get(name);
-      if (setter != null) {
-        builderMapping.put(i, setter);
-      }
-      else {
-        setter = setterMethods.get(name);
-        if (setter != null) {
-          setterMapping.put(i, setter);
-        }
-      }
-    }
-
     if (builderMapping.isEmpty() && setterMapping.isEmpty()) {
       throw new PersistenceException("no matching columns found");
     }
@@ -388,13 +402,13 @@ public class DbUtilities {
         T dto = null;
         if (builderMethod != null) {
           builder = builderMethod.invoke(null);
-          invokeDTOSetters(builderMapping, builder, rs);
+          retrieveColumnMappings(builderMapping, builder, rs);
           dto = (T) buildMethod.invoke(builder);
         }
         else {
           dto = noArgConstructor.newInstance();
         }
-        invokeDTOSetters(setterMapping, dto, rs);
+        retrieveColumnMappings(setterMapping, dto, rs);
         dtos.add(dto);
       }
     }
@@ -405,24 +419,43 @@ public class DbUtilities {
     return dtos;
   }
 
+  private String normalizeColumnName(String name) {
+    return name.replace("_", "").toLowerCase(); // remove underscores and convert to lowercase
+  }
 
-  private void invokeDTOSetters(Map<Integer, Method> methodMap, Object object, ResultSetWrapper rs)
-      throws InvocationTargetException, IllegalAccessException {
-
-    for (Map.Entry<Integer, Method> entry : methodMap.entrySet()) {
-      int i = entry.getKey();
-      Method setter = entry.getValue();
-      Class<?> type = setter.getParameterTypes()[0];
-      if (type.isPrimitive()) {
-        Class<?> nullableType = ReflectionHelper.primitiveToWrapperClass(type);
-        Object value = rs.getObject(i, nullableType);
-        if (value != null) {
-          setter.invoke(object, value);
+  private ColumnMapping createColumnMapping(String memberName, String[] columnNames, Method method) {
+    ColumnMapping mapping = null;
+    DataType<?> dataType = DataTypeFactory.getInstance().get(method.getParameterTypes()[0]);
+    if (dataType != null) {
+      int[] positions = new int[dataType.getColumnCount()];
+      for (int p=0; p < positions.length; p++) {
+        String colName = normalizeColumnName(memberName + dataType.getColumnSuffix(p).orElse(""));
+        boolean found = false;
+        for (int c=0; c < columnNames.length; c++) {
+          if (colName.equals(columnNames[c])) {
+            positions[p] = c + 1;
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          positions = null;
+          break;
         }
       }
-      else {
-        setter.invoke(object, rs.getObject(i, type));
+      // all columns found in resultset!
+      if (positions != null) {
+        mapping = new ColumnMapping(method, dataType, positions);
       }
+    }
+    return mapping;
+  }
+
+  private void retrieveColumnMappings(List<ColumnMapping> columnMappings, Object object, ResultSetWrapper rs)
+      throws InvocationTargetException, IllegalAccessException {
+
+    for (ColumnMapping columnMapping : columnMappings) {
+      columnMapping.invoke(object, rs);
     }
   }
 
