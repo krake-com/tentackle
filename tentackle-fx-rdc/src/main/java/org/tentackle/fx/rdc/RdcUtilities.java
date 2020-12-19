@@ -123,7 +123,7 @@ public class RdcUtilities {
         if (owner != null) {
           stage.initOwner(owner);
         }
-        Scene scene = new Scene(crud.getView());
+        Scene scene = Fx.createScene(crud.getView());
         stage.setScene(scene);
         crud.updateTitle();
         final Stage s = stage;
@@ -258,7 +258,7 @@ public class RdcUtilities {
       if (owner != null) {
         stage.initOwner(owner);
       }
-      Scene scene = new Scene(search.getView());
+      Scene scene = Fx.createScene(search.getView());
       stage.setScene(scene);
       search.updateTitle();
       search.setSingleSelectMode(Fx.isModal(stage));

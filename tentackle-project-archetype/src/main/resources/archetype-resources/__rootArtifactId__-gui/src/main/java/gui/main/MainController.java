@@ -218,7 +218,7 @@ public class MainController extends AbstractFxController implements DomainContex
     closeButton.setGraphic(Fx.createImageView("close"));
     closeButton.setOnAction(e -> stage.close());
     controller.getButtonBox().getChildren().add(closeButton);
-    Scene scene = new Scene(controller.getView());
+    Scene scene = Fx.createScene(controller.getView());
     stage.setScene(scene);
     stage.setTitle(resources.getString("Sessions"));
     stage.show();

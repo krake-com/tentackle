@@ -21,6 +21,8 @@ package org.tentackle.fx;
 
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.image.ImageView;
 import javafx.stage.Modality;
@@ -100,6 +102,16 @@ public class Fx {
    */
   public static Stage createStage(Modality modality) {
     return createStage(StageStyle.DECORATED, modality);
+  }
+
+  /**
+   * Creates a scene.
+   *
+   * @param root the parent node
+   * @return the scene
+   */
+  public static Scene createScene(Parent root) {
+    return FxFactory.getInstance().createScene(root);
   }
 
   /**

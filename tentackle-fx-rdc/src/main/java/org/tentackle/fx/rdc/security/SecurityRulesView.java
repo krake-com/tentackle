@@ -85,7 +85,7 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
       stage.setTitle(MessageFormat.format(RdcFxRdcBundle.getString(
               "Security Rules for {0}"), ReflectionHelper.getClassBaseName(clazz)));
     }
-    Scene scene = new Scene(controller.getView());
+    Scene scene = Fx.createScene(controller.getView());
     stage.setScene(scene);
     stage.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, controller::cancel);
     stage.show();

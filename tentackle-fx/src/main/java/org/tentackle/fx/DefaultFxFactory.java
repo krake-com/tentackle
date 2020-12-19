@@ -22,6 +22,7 @@ package org.tentackle.fx;
 import javafx.concurrent.Task;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -235,13 +236,17 @@ public class DefaultFxFactory implements FxFactory {
     }
   }
 
-
   @Override
   public Stage createStage(StageStyle stageStyle, Modality modality) {
     Stage stage = new Stage(stageStyle);
     stage.initModality(modality);
     getConfigurator(Window.class).configure(stage);
     return stage;
+  }
+
+  @Override
+  public Scene createScene(Parent root) {
+    return new Scene(root);
   }
 
   @Override

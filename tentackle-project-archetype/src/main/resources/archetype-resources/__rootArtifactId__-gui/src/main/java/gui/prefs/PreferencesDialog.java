@@ -104,7 +104,7 @@ public class PreferencesDialog extends AbstractFxController {
   public static void show() {
     Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
     PreferencesDialog pp = Fx.load(PreferencesDialog.class);
-    Scene scene = new Scene(pp.getView());
+    Scene scene = Fx.createScene(pp.getView());
     stage.setScene(scene);
     stage.setTitle(pp.resources.getString("preferences"));
     pp.getContainer().updateView();

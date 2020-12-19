@@ -399,7 +399,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
     tree.setRoot(item);
     // apply PdoCrud.css
     tree.getStylesheets().addAll(getView().getStylesheets());
-    Scene scene = new Scene(tree);
+    Scene scene = Fx.createScene(tree);
     stage.setScene(scene);
     stage.setTitle(MessageFormat.format(resources.getString("{0} {1} (modal)"),
                    getPdo().getSingular(), getPdo().toString()));
