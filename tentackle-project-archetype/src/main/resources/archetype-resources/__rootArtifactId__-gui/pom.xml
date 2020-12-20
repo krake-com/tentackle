@@ -91,8 +91,6 @@
         <configuration>
           <argLine>-Duser.language=en -Duser.region=US
             --add-exports
-            javafx.graphics/com.sun.javafx.css=org.tentackle.fx
-            --add-exports
             javafx.graphics/com.sun.javafx.scene=org.tentackle.fx
             --add-exports
             javafx.graphics/com.sun.javafx.scene.traversal=org.tentackle.fx

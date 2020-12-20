@@ -16,6 +16,7 @@ import javafx.stage.Modality;
 import javafx.stage.Window;
 
 import org.tentackle.common.Service;
+import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxFxBundle;
 import org.tentackle.fx.rdc.Rdc;
 import org.tentackle.fx.rdc.security.DefaultSecurityDialogFactory;
@@ -51,7 +52,7 @@ public class ${application}SecurityDialogFactory extends DefaultSecurityDialogFa
    * @param runIt a consumer invoked with true if user, false if group, never null
    */
   public void showUserOrGroupDialog(Consumer<Boolean> runIt) {
-    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+    Alert alert = Fx.createAlert(Alert.AlertType.CONFIRMATION);
     alert.setTitle(FxFxBundle.getString("QUESTION"));
     alert.setHeaderText(null);
     alert.setContentText(GuiBundle.getString("User or Group?"));

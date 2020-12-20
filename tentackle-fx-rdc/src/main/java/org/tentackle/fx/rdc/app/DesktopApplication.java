@@ -36,7 +36,6 @@ import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxController;
 import org.tentackle.fx.FxFactory;
-import org.tentackle.fx.FxUtilities;
 import org.tentackle.log.Logger;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PdoFactory;
@@ -457,8 +456,6 @@ public abstract class DesktopApplication<C extends FxController>
   @Override
   protected void finishStartup() {
     super.finishStartup();
-    // tentackle styles and PDO textfields
-    FxUtilities.getInstance().addStyleSheets();
     showApplicationStatus(AppFxRdcBundle.getString("SUCCESSFULLY LOGGED IN"), 1.0);
   }
 

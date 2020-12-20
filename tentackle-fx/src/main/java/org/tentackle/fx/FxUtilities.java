@@ -19,7 +19,6 @@
 
 package org.tentackle.fx;
 
-import com.sun.javafx.css.StyleManager;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -121,6 +120,17 @@ public class FxUtilities {
    * Prefix for online help, e.g.: http://localhost/manual/index.html
    */
   private String helpURL;
+
+
+  /**
+   * Applies the default stylesheets to a scene.<br>
+   * Invoked for all newly created scenes.
+   *
+   * @param scene the scene
+   */
+  public void applyStylesheets(Scene scene) {
+    scene.getStylesheets().add("/org/tentackle/fx/tentackle.css");
+  }
 
 
   /**
@@ -332,7 +342,7 @@ public class FxUtilities {
    * @return the alert dialog
    */
   public Alert showInfoDialog(String message, String title) {
-    Alert alert = new Alert(Alert.AlertType.INFORMATION);   // Alert is APPLICATION_MODAL
+    Alert alert = Fx.createAlert(Alert.AlertType.INFORMATION);   // Alert is APPLICATION_MODAL
     alert.setTitle(title == null ? FxFxBundle.getString("INFORMATION") : title);
     setAlertMessage(alert, message);
     alert.show();
@@ -347,7 +357,7 @@ public class FxUtilities {
    * @return the alert dialog
    */
   public Alert showWarningDialog(String message, String title) {
-    Alert alert = new Alert(Alert.AlertType.WARNING);   // Alert is APPLICATION_MODAL
+    Alert alert = Fx.createAlert(Alert.AlertType.WARNING);   // Alert is APPLICATION_MODAL
     alert.setTitle(title == null ? FxFxBundle.getString("WARNING") : title);
     setAlertMessage(alert, message);
     alert.show();
@@ -367,7 +377,7 @@ public class FxUtilities {
    * @see org.tentackle.misc.Holder
    */
   public Alert showQuestionDialog(String message, boolean defaultYes, String title, Consumer<Boolean> answer) {
-    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+    Alert alert = Fx.createAlert(Alert.AlertType.CONFIRMATION);
     alert.setTitle(title == null ? FxFxBundle.getString("QUESTION") : title);
     setAlertMessage(alert, message);
     alert.getButtonTypes().clear();
@@ -390,7 +400,7 @@ public class FxUtilities {
    * @return the alert dialog
    */
   public Alert showErrorDialog(String message, Throwable t, String title) {
-    Alert alert = new Alert(Alert.AlertType.ERROR);   // Alert is APPLICATION_MODAL
+    Alert alert = Fx.createAlert(Alert.AlertType.ERROR);   // Alert is APPLICATION_MODAL
     alert.setTitle(title == null ? FxFxBundle.getString("ERROR") : title);
     setAlertMessage(alert, message);
 
@@ -655,26 +665,6 @@ public class FxUtilities {
 
 
   /**
-   * Adds a stylesheet for the whole application
-   *
-   * @param url The file URL, either relative or absolute, as a String
-   */
-  public void addStyleSheet(String url) {
-    // @todo StyleManager may become public in future releases
-    StyleManager.getInstance().addUserAgentStylesheet(url);
-  }
-
-
-  /**
-   * Configures the application-wide CSS.
-   */
-  public void addStyleSheets() {
-    // tentackle styles
-   addStyleSheet("/org/tentackle/fx/tentackle.css");
-  }
-
-
-  /**
    * Gets a binding option from an options string.
    *
    * @param options the binding options string
@@ -693,7 +683,6 @@ public class FxUtilities {
     }
     return option;
   }
-
 
 
   /**

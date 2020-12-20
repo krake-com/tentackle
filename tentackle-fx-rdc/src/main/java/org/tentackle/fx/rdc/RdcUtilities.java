@@ -336,7 +336,7 @@ public class RdcUtilities {
    * @param doIt consumer invoked with true to save, false to discard changes, null to cancel and do nothing
    */
   public void showSaveDiscardCancelDialog(Consumer<Boolean> doIt) {
-    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+    Alert alert = Fx.createAlert(Alert.AlertType.CONFIRMATION);
     alert.setTitle(RdcFxRdcBundle.getString("QUESTION"));
     alert.setHeaderText(null);
     alert.setContentText(RdcFxRdcBundle.getString("DATA_HAS_BEEN_MODIFIED!_DISCARD,_SAVE_OR_CANCEL?"));

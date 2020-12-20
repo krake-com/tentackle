@@ -115,6 +115,16 @@ public class Fx {
   }
 
   /**
+   * Creates an alert dialog.
+   *
+   * @param alertType the alert type
+   * @return the dialog
+   */
+  public static Alert createAlert(Alert.AlertType alertType) {
+    return FxFactory.getInstance().createAlert(alertType);
+  }
+
+  /**
    * Creates a node.<br>
    * Nodes should not be created via the builder factory and not
    * the tradional way by invoking a constructor.
