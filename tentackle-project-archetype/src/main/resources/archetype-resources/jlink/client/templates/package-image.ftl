@@ -6,7 +6,6 @@
 <#else>
 
 </#if>
---java-options "--add-exports javafx.graphics/com.sun.javafx.css=org.tentackle.fx"
 --java-options "--add-exports javafx.graphics/com.sun.javafx.scene=org.tentackle.fx"
 --java-options "--add-exports javafx.graphics/com.sun.javafx.scene.traversal=org.tentackle.fx"
 --java-options "--add-exports javafx.fxml/com.sun.javafx.fxml=org.tentackle.fx"

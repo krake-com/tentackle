@@ -9,7 +9,6 @@ cd ..
   <#if mainModule != "">
     <#-- modular application -->
 start bin\javaw${(modulePath!="")?then(" -p " + modulePath, "")}${(classPath!="")?then(" -cp " + classPath, "")} ^
-  --add-exports javafx.graphics/com.sun.javafx.css=org.tentackle.fx ^
   --add-exports javafx.graphics/com.sun.javafx.scene=org.tentackle.fx ^
   --add-exports javafx.graphics/com.sun.javafx.scene.traversal=org.tentackle.fx ^
   --add-exports javafx.fxml/com.sun.javafx.fxml=org.tentackle.fx ^
@@ -33,7 +32,6 @@ cd "$(dirname "$(dirname "$(readlink -f "$0")")")"
   <#if mainModule != "">
     <#-- modular application -->
 bin/java ${(modulePath!="")?then(" -p " + modulePath, "")}${(classPath!="")?then(" -cp " + classPath, "")} \
-  --add-exports javafx.graphics/com.sun.javafx.css=org.tentackle.fx \
   --add-exports javafx.graphics/com.sun.javafx.scene=org.tentackle.fx \
   --add-exports javafx.graphics/com.sun.javafx.scene.traversal=org.tentackle.fx \
   --add-exports javafx.fxml/com.sun.javafx.fxml=org.tentackle.fx \

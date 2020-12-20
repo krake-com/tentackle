@@ -18,6 +18,8 @@
 
 package org.tentackle.fx.rdc;
 
+import javafx.scene.Scene;
+
 import org.tentackle.common.Service;
 import org.tentackle.fx.FxUtilities;
 
@@ -28,9 +30,9 @@ import org.tentackle.fx.FxUtilities;
 public class RdcFxUtilities extends FxUtilities {
 
   @Override
-  public void addStyleSheets() {
-    super.addStyleSheets();
-    addStyleSheet("/org/tentackle/fx/rdc/translate/pdo-style.css");
+  public void applyStylesheets(Scene scene) {
+    super.applyStylesheets(scene);
+    scene.getStylesheets().add("/org/tentackle/fx/rdc/translate/pdo-style.css");
   }
 
 }

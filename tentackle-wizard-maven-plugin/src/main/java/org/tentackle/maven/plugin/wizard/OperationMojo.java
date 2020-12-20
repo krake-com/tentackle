@@ -27,7 +27,6 @@ import org.apache.maven.plugins.annotations.Mojo;
 
 import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.fx.Fx;
-import org.tentackle.fx.FxUtilities;
 import org.tentackle.maven.plugin.wizard.fx.OperationWizard;
 
 import java.util.List;
@@ -63,7 +62,6 @@ public class OperationMojo extends AbstractWizardMojo {
         wizard.getContainer().updateView();
         stage.setOnHidden(event -> latch.countDown());
         stage.show();
-        FxUtilities.getInstance().addStyleSheets();
       }
       catch (Throwable t) {
         getLog().error(t);

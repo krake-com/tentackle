@@ -54,7 +54,6 @@
           <showCompileOutput>true</showCompileOutput>
           <index>META-INF/RESOURCE-INDEX.LIST</index>
           <compilerArgs>
-            <arg>--add-exports=javafx.graphics/com.sun.javafx.css=org.tentackle.fx</arg>
             <arg>--add-exports=javafx.graphics/com.sun.javafx.scene=org.tentackle.fx</arg>
             <arg>--add-exports=javafx.graphics/com.sun.javafx.scene.traversal=org.tentackle.fx</arg>
             <arg>--add-exports=javafx.fxml/com.sun.javafx.fxml=org.tentackle.fx</arg>
@@ -120,7 +119,6 @@
             <arg>-Xlint:${javac.lint}</arg>
             <!-- proc:none because of chicken-egg problem with annotation processors in same module -->
             <arg>-proc:none</arg>
-            <arg>--add-exports=javafx.graphics/com.sun.javafx.css=org.tentackle.fx</arg>
             <arg>--add-exports=javafx.graphics/com.sun.javafx.scene=org.tentackle.fx</arg>
             <arg>--add-exports=javafx.graphics/com.sun.javafx.scene.traversal=org.tentackle.fx</arg>
             <arg>--add-exports=javafx.fxml/com.sun.javafx.fxml=org.tentackle.fx</arg>
@@ -133,7 +131,6 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <configuration>
           <additionalJOptions>
-            <additionalJOption>--add-exports=javafx.graphics/com.sun.javafx.css=org.tentackle.fx</additionalJOption>
             <additionalJOption>--add-exports=javafx.graphics/com.sun.javafx.scene=org.tentackle.fx</additionalJOption>
             <additionalJOption>--add-exports=javafx.graphics/com.sun.javafx.scene.traversal=org.tentackle.fx</additionalJOption>
             <additionalJOption>--add-exports=javafx.fxml/com.sun.javafx.fxml=org.tentackle.fx</additionalJOption>
@@ -151,7 +148,6 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <configuration>
           <additionalJOptions>
-            <additionalJOption>--add-exports=javafx.graphics/com.sun.javafx.css=org.tentackle.fx</additionalJOption>
             <additionalJOption>--add-exports=javafx.graphics/com.sun.javafx.scene=org.tentackle.fx</additionalJOption>
             <additionalJOption>--add-exports=javafx.graphics/com.sun.javafx.scene.traversal=org.tentackle.fx</additionalJOption>
             <additionalJOption>--add-exports=javafx.fxml/com.sun.javafx.fxml=org.tentackle.fx</additionalJOption>

@@ -23,6 +23,7 @@ import javafx.concurrent.Task;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.image.Image;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -246,7 +247,16 @@ public class DefaultFxFactory implements FxFactory {
 
   @Override
   public Scene createScene(Parent root) {
-    return new Scene(root);
+    Scene scene = new Scene(root);
+    FxUtilities.getInstance().applyStylesheets(scene);
+    return scene;
+  }
+
+  @Override
+  public Alert createAlert(Alert.AlertType alertType) {
+    Alert alert = new Alert(alertType);
+    FxUtilities.getInstance().applyStylesheets(alert.getDialogPane().getScene());
+    return alert;
   }
 
   @Override

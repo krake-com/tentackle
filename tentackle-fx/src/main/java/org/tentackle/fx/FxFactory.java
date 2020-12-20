@@ -21,6 +21,7 @@ package org.tentackle.fx;
 
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.image.Image;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -118,6 +119,15 @@ public interface FxFactory {
    * @return the scene
    */
   Scene createScene(Parent root);
+
+
+  /**
+   * Creates an alert dialog.
+   *
+   * @param alertType the alert type
+   * @return the dialog
+   */
+  Alert createAlert(Alert.AlertType alertType);
 
 
   /**
