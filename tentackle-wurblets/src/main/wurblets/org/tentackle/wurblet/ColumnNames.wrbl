@@ -13,18 +13,23 @@ For more options, see {\@link ModelWurblet}.
       if (!attr.getOptions().isNoConstant() && !attr.getOptions().isFromSuper()) {
         if (!attr.getOptions().isNoDeclare() || attr.getOptions().isFromSuper())    {
           int columnCount = getEffectiveDataType(attr).getColumnCount();
-          if (columnCount > 1) {
-]@
-
-  /** database column basename for '@(attr)@'. */
-  public static final String @(getColumnNameConstant(attr, -1))@ = @(StringHelper.toDoubleQuotes(getColumnName(attr, -1)))@;
-@[
-          }
+          String baseColConst = getColumnNameConstant(attr, -1);
           for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
+            String colConst = getColumnNameConstant(attr, columnIndex);
+            if (colConst.equals(baseColConst)) {
+              baseColConst = null;
+            }
 ]@
 
   /** database column name for '@(attr)@'@(columnCount > 1 ? (", column " + (columnIndex+1) + " of " + columnCount) : "")@. */
-  public static final String @(getColumnNameConstant(attr, columnIndex))@ = @(StringHelper.toDoubleQuotes(getColumnName(attr, columnIndex)))@;
+  public static final String @(colConst)@ = @(StringHelper.toDoubleQuotes(getColumnName(attr, columnIndex)))@;
+@[
+          }
+          if (baseColConst != null) {
+]@
+
+  /** database column basename for '@(attr)@'. */
+  public static final String @(baseColConst)@ = @(StringHelper.toDoubleQuotes(getColumnName(attr, -1)))@;
 @[
           }
         }
