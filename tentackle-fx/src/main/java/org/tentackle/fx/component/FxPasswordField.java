@@ -35,17 +35,20 @@ import org.tentackle.fx.ViewToModelListener;
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.component.delegate.FxPasswordFieldDelegate;
 import org.tentackle.fx.table.FxTableCell;
+import org.tentackle.log.Logger;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.Type;
 import java.util.function.Function;
 
 
 /**
- * Extended PasswordField.<br>
+ * Extended PasswordField with enhanced security.<br>
  * The StringBuilder holding the text input is replaced with blanks when getPassword() is invoked.
  * The application is responsible to clear the returned char-array as well.<br>
- * Needs "--add-opens javafx.controls/javafx.scene.control=org.tentackle.fx" if application is modular.
+ * Needs "--add-opens javafx.controls/javafx.scene.control=org.tentackle.fx", if application runs in modular mode.
+ * Falls back to a less secure mode and logs a warning, if javafx.controls is not open.
  * <p>
  * Important: if you use the password character array methods, you must not use standard FX bindings,
  * listeners, etc... as they all work with regular strings. Furthermore, all text processing like
@@ -56,7 +59,10 @@ import java.util.function.Function;
  */
 public class FxPasswordField extends PasswordField implements FxTextComponent {
 
+  private static final Logger LOGGER = Logger.get(FxPasswordField.class);
+
   private StringBuilder characterBuffer;
+  private boolean fallbackMode;
 
   /**
    * Gets the password as a character array and clears the contents in memory.
@@ -65,13 +71,22 @@ public class FxPasswordField extends PasswordField implements FxTextComponent {
    */
   public char[] getPassword() {
     StringBuilder buf = getCharacterBuffer();
-    char[] result = new char[buf.length()];
-    buf.getChars(0, buf.length(), result, 0);
-    // scratch in memory
-    for (int i=0; i < buf.length(); i++) {
-      buf.setCharAt(i, ' ');
+    char[] result;
+    if (fallbackMode) {
+      Content passwordContent = getContent();
+      int length = passwordContent.length();
+      result = getContent().get(0, length).toCharArray();   // creates interim String :(
+      getContent().delete(0, length, false);
     }
-    buf.setLength(0);
+    else {
+      result = new char[buf.length()];
+      buf.getChars(0, buf.length(), result, 0);
+      // scratch in memory
+      for (int i = 0; i < buf.length(); i++) {
+        buf.setCharAt(i, ' ');
+      }
+      buf.setLength(0);
+    }
     return result.length == 0 ? null : result;
   }
 
@@ -83,9 +98,14 @@ public class FxPasswordField extends PasswordField implements FxTextComponent {
   public void setPassword(char[] password) {
     StringBuilder buf = getCharacterBuffer();
     if (password != null) {
-      setText(StringHelper.fillRight("", password.length, ' '));    // fake length
-      buf.setLength(0);
-      buf.append(password);
+      if (fallbackMode) {
+        setText(String.copyValueOf(password));    // creates a String :(
+      }
+      else {
+        setText(StringHelper.fillRight("", password.length, ' '));    // fake length
+        buf.setLength(0);
+        buf.append(password);
+      }
     }
     else {
       setText(null);
@@ -105,6 +125,11 @@ public class FxPasswordField extends PasswordField implements FxTextComponent {
         if (getType() == null) {
           setType(char[].class);
         }
+      }
+      catch (InaccessibleObjectException ex) {
+        LOGGER.warning("consider '--add-opens javafx.controls/javafx.scene.control=org.tentackle.fx' to enable secure password input mode");
+        fallbackMode = true;
+        characterBuffer = new StringBuilder();
       }
       catch (IllegalAccessException | NoSuchFieldException e) {
         throw new TentackleRuntimeException("cannot access character buffer", e);
