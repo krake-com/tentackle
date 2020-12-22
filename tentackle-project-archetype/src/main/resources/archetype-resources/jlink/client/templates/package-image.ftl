@@ -8,4 +8,3 @@
 </#if>
 --java-options "--add-exports javafx.graphics/com.sun.javafx.scene=org.tentackle.fx"
 --java-options "--add-exports javafx.graphics/com.sun.javafx.scene.traversal=org.tentackle.fx"
---java-options "--add-opens javafx.controls/javafx.scene.control=org.tentackle.fx"
