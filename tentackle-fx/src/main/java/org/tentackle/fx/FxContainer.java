@@ -29,7 +29,7 @@ import javafx.collections.ObservableList;
 public interface FxContainer extends FxControl {
 
   /**
-   * Gets the fx components maintained by this container.
+   * Gets the component nodes maintained by this container.
    *
    * @return list of components
    */
