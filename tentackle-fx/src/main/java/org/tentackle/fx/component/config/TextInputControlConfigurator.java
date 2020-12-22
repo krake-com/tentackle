@@ -19,8 +19,6 @@
 
 package org.tentackle.fx.component.config;
 
-import com.sun.javafx.scene.NodeHelper;
-import com.sun.javafx.scene.traversal.Direction;
 import javafx.scene.control.TextInputControl;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -85,7 +83,10 @@ public class TextInputControlConfigurator<T extends TextInputControl> extends Co
    */
   protected void focusNext(T control) {
     if (!(control instanceof FxComponent) || ((FxComponent) control).getTableCell() == null) {
-      NodeHelper.traverse(control, Direction.NEXT);
+      //      NodeHelper.traverse(control, Direction.NEXT);   is non-public API :(
+      KeyEvent event = new KeyEvent(KeyEvent.KEY_PRESSED, KeyEvent.CHAR_UNDEFINED, "", KeyCode.TAB,
+                                    false, false, false, false);
+      control.fireEvent(event);
     }
   }
 
@@ -96,7 +97,10 @@ public class TextInputControlConfigurator<T extends TextInputControl> extends Co
    */
   protected void focusPrevious(T control) {
     if (!(control instanceof FxComponent) || ((FxComponent) control).getTableCell() == null) {
-      NodeHelper.traverse(control, Direction.PREVIOUS);
+      //      NodeHelper.traverse(control, Direction.PREVIOUS);   is non public API :(
+      KeyEvent event = new KeyEvent(KeyEvent.KEY_PRESSED, KeyEvent.CHAR_UNDEFINED, "", KeyCode.TAB,
+                                    true, false, false, false);
+      control.fireEvent(event);
     }
   }
 
