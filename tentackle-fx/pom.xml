@@ -56,7 +56,6 @@
           <compilerArgs>
             <arg>--add-exports=javafx.graphics/com.sun.javafx.scene=org.tentackle.fx</arg>
             <arg>--add-exports=javafx.graphics/com.sun.javafx.scene.traversal=org.tentackle.fx</arg>
-            <arg>--add-exports=javafx.fxml/com.sun.javafx.fxml=org.tentackle.fx</arg>
           </compilerArgs>
         </configuration>
       </plugin>
@@ -121,7 +120,6 @@
             <arg>-proc:none</arg>
             <arg>--add-exports=javafx.graphics/com.sun.javafx.scene=org.tentackle.fx</arg>
             <arg>--add-exports=javafx.graphics/com.sun.javafx.scene.traversal=org.tentackle.fx</arg>
-            <arg>--add-exports=javafx.fxml/com.sun.javafx.fxml=org.tentackle.fx</arg>
           </compilerArgs>
         </configuration>
       </plugin>
@@ -133,7 +131,6 @@
           <additionalJOptions>
             <additionalJOption>--add-exports=javafx.graphics/com.sun.javafx.scene=org.tentackle.fx</additionalJOption>
             <additionalJOption>--add-exports=javafx.graphics/com.sun.javafx.scene.traversal=org.tentackle.fx</additionalJOption>
-            <additionalJOption>--add-exports=javafx.fxml/com.sun.javafx.fxml=org.tentackle.fx</additionalJOption>
           </additionalJOptions>
         </configuration>
       </plugin>
@@ -150,7 +147,6 @@
           <additionalJOptions>
             <additionalJOption>--add-exports=javafx.graphics/com.sun.javafx.scene=org.tentackle.fx</additionalJOption>
             <additionalJOption>--add-exports=javafx.graphics/com.sun.javafx.scene.traversal=org.tentackle.fx</additionalJOption>
-            <additionalJOption>--add-exports=javafx.fxml/com.sun.javafx.fxml=org.tentackle.fx</additionalJOption>
           </additionalJOptions>
         </configuration>
       </plugin>

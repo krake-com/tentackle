@@ -19,28 +19,28 @@
 
 package org.tentackle.fx;
 
-import com.sun.javafx.fxml.BeanAdapter;
 import javafx.scene.control.Label;
 import javafx.util.Builder;
+
+import org.tentackle.reflect.PropertyMap;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Base implementation for a builder.
+ * Base implementation of a builder usable by the {@link javafx.fxml.FXMLLoader}.
  *
  * @author harald
  * @param <T> the bean type
  */
-public abstract class AbstractBuilder<T> extends BeanAdapter implements Builder<T> {
+public class AbstractBuilder<T> extends PropertyMap<T> implements Builder<T> {
 
   /** some non-null value. */
   private static final Label DUMMY_LABEL = new Label();
 
   /** inner elements with initial null-values. */
   private final Set<String> innerElements;
-
 
 
   /**
@@ -53,7 +53,6 @@ public abstract class AbstractBuilder<T> extends BeanAdapter implements Builder<
     innerElements = null;
   }
 
-
   /**
    * Creates a builder with inner elements.
    *
@@ -65,19 +64,6 @@ public abstract class AbstractBuilder<T> extends BeanAdapter implements Builder<
     this.innerElements = innerElements == null ? null : new HashSet<>(Arrays.asList(innerElements));
   }
 
-
-  /**
-   * Gets the bean.
-   *
-   * @return the bean
-   */
-  @Override
-  @SuppressWarnings("unchecked")
-  public T getBean() {
-    return (T) super.getBean();
-  }
-
-
   @Override
   public Object get(Object key) {
     /*
@@ -87,13 +73,10 @@ public abstract class AbstractBuilder<T> extends BeanAdapter implements Builder<
     return innerElements != null && innerElements.contains(key) ? DUMMY_LABEL : super.get(key);
   }
 
-
   @Override
-  @SuppressWarnings("unchecked")
   public T build() {
     T bean = getBean();
-    Class<T> clazz = (Class<T>) bean.getClass();
-    Configurator<T> configurator = FxFactory.getInstance().getConfigurator(clazz);
+    Configurator<T> configurator = FxFactory.getInstance().getConfigurator(getBeanType());
     if (configurator != null) {
       configurator.configure(bean);
     }

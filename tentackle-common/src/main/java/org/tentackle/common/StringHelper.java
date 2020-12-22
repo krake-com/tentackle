@@ -1046,6 +1046,32 @@ public final class StringHelper {
 
 
   /**
+   * Converts a camelCase string to strings with delimiters.
+   * <p>
+   * Example:<br>
+   * {@code "alphaBetaGamma"} is converted to {@code "alpha.beta.gamma"}, with delimiter {@code "."}.
+   *
+   * @param str the camelcase string
+   * @param delimiter the delimter to insert between parts, null or empty if none
+   * @return the converted string
+   */
+  public static String camelCaseToDelimited(String str, String delimiter) {
+    StringBuilder buf = new StringBuilder();
+    for (int i=0; i < str.length(); i++) {
+      char c = str.charAt(i);
+      if (Character.isUpperCase(c)) {
+        if (delimiter != null) {
+          buf.append(delimiter);
+        }
+        c = Character.toLowerCase(c);
+      }
+      buf.append(c);
+    }
+    return buf.toString();
+  }
+
+
+  /**
    * Checks if a string contains only digits or whitespaces, i.e.
    * no illegal char in a number string.
    *
