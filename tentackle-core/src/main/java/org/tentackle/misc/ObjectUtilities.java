@@ -23,7 +23,12 @@ import org.tentackle.common.DMoney;
 import org.tentackle.common.LocaleProvider;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
+import org.tentackle.common.StringHelper;
+import org.tentackle.common.TentackleRuntimeException;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.ParseException;
@@ -130,14 +135,77 @@ public class ObjectUtilities {
         object = converter.apply(value);
       }
       else if (clazz.isEnum()) {
-        object = Enum.valueOf((Class<Enum>) clazz, value.toString());
+        String name = value.toString();
+        if (!name.isEmpty() && Character.isLowerCase(name.charAt(0))) {
+          // lowercase camelcase -> convert oneTwo to ONE_TWO
+          name = StringHelper.camelCaseToDelimited(name, "_").toUpperCase();
+        }
+        object = Enum.valueOf((Class<Enum>) clazz, name);
+      }
+      else if (clazz == Class.class) {
+        try {
+          String className = value.toString();
+          object = Class.forName(className, false, Thread.currentThread().getContextClassLoader());
+        }
+        catch (ClassNotFoundException exception) {
+          throw new IllegalArgumentException(exception);
+        }
       }
       else {
-        throw new IllegalArgumentException("unsupported conversion: " + value.getClass().getName() + " -> " + clazz.getName());
+        try {
+          object = valueOf(clazz, value);
+        }
+        catch (IllegalArgumentException e) {
+          // ignore and throw generic exception instead
+          throw new IllegalArgumentException("unsupported conversion: " + value.getClass().getName() + " -> " + clazz.getName());
+        }
       }
     }
 
     return (T) object;
+  }
+
+
+  /**
+   * Invokes a matching valueOf method on the given class for a given value.
+   * <p>
+   * Throws {@link IllegalArgumentException} if no matching method found.<br>
+   * Throws {@link TentackleRuntimeException} if invocation failed.
+   *
+   * @param clazz the class providing the valueOf method
+   * @param value the value to pass to the valueOf method, usually a string
+   * @param <T> the returned type
+   * @return the created value
+   */
+  @SuppressWarnings("unchecked")
+  public <T> T valueOf(Class<T> clazz, Object value) {
+    Class<?> valueType = value.getClass();
+    Method valueOfMethod = null;
+    while (valueType != null) {
+      try {
+        valueOfMethod = clazz.getDeclaredMethod("valueOf", valueType);
+        if (Modifier.isStatic(valueOfMethod.getModifiers()) && Modifier.isPublic(valueOfMethod.getModifiers())) {
+          break;
+        }
+        else {
+          valueOfMethod = null;
+        }
+      }
+      catch (NoSuchMethodException exception) {
+        // try superclass
+        valueType = valueType.getSuperclass();
+      }
+    }
+    if (valueOfMethod == null) {
+      throw new IllegalArgumentException("no matching public static " + clazz.getName() + "#valueOf method for " + value.getClass());
+    }
+
+    try {
+      return (T) valueOfMethod.invoke(null, value);
+    }
+    catch (IllegalAccessException | InvocationTargetException e) {
+      throw new TentackleRuntimeException(clazz.getName() + "#valueOf failed for " + value.getClass(), e);
+    }
   }
 
 
@@ -316,7 +384,7 @@ public class ObjectUtilities {
       return new java.sql.Time(((java.util.Date) value).getTime());
     }
     if (value instanceof LocalTime) {
-      return new java.sql.Time(((LocalTime) value).toSecondOfDay() * 1000 - TimeZone.getDefault().getRawOffset());
+      return new java.sql.Time(((LocalTime) value).toSecondOfDay() * 1000L - TimeZone.getDefault().getRawOffset());
     }
     try {
       return FormatHelper.parseTime(value.toString());   // tentackle Time extends sql Time
@@ -331,7 +399,7 @@ public class ObjectUtilities {
       return new org.tentackle.common.Time(((java.util.Date) value).getTime());
     }
     if (value instanceof LocalTime) {
-      return new org.tentackle.common.Time(((LocalTime) value).toSecondOfDay() * 1000 - TimeZone.getDefault().getRawOffset());
+      return new org.tentackle.common.Time(((LocalTime) value).toSecondOfDay() * 1000L - TimeZone.getDefault().getRawOffset());
     }
     try {
       return FormatHelper.parseTime(value.toString());
