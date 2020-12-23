@@ -569,7 +569,7 @@ public class DefaultConnectionManager implements ConnectionManager {
     con.setMaxCountForClearWarnings(maxCountForClearWarnings);
     if (minMinutes > 0) {
       con.setExpireAt(con.getEstablishedSince() +
-                      (minMinutes * 60 + random.nextInt((maxMinutes - minMinutes) * 60)) * 1000L);
+                      (minMinutes * 60L + random.nextInt((maxMinutes - minMinutes) * 60)) * 1000L);
     }
     LOGGER.info("{0}: open connection {1}, valid until {2}",
                 this, con, FormatHelper.formatTimestamp(new Date(con.getExpireAt())));
