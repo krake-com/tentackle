@@ -928,7 +928,9 @@ public class ModelImpl implements Model {
             // just take the first letter and count. This will always work
             String aliasPrefix = entity.getName().substring(0, 1).toLowerCase();
             int count = 1;
-            while (!applyTableAlias(aliasMap, entity, aliasPrefix + count++)) ;
+            while (!applyTableAlias(aliasMap, entity, aliasPrefix + count)) {
+              count++;
+            }
           }
         }
       }

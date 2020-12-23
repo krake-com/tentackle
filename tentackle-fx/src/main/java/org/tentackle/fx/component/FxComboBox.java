@@ -140,7 +140,6 @@ public class FxComboBox<T> extends ComboBox<T> implements FxTextComponent {
   protected Skin<?> createDefaultSkin() {
     return new ComboBoxListViewSkin<>(this) {
       @Override
-      @SuppressWarnings("unchecked")
       public Node getPopupContent() {
         if (isShortLongTextEnabled() && getCellFactory() == null && isTypeOfShortLongText()) {
           setCellFactory(createShortLongTextCellFactory());

@@ -803,9 +803,7 @@ public class FormatHelper {
     }
 
     if (scale > 0)  {
-      StringBuilder buf = new StringBuilder(fmt).append('.');
-      buf.append("0".repeat(scale));
-      fmt = buf.toString();
+      fmt += '.' + "0".repeat(scale);
     }
 
     // apply new format
