@@ -30,45 +30,45 @@
             <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
             <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
         </rowConstraints>
-         <children>
-            <TextField fx:id="userNameField" GridPane.columnIndex="1" />
-            <CheckBox fx:id="userPasswordChangeableField" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="3">
-               <GridPane.margin>
-                  <Insets bottom="4.0" top="4.0" />
-               </GridPane.margin>
-            </CheckBox>
-            <CheckBox fx:id="userChangingPreferencesAllowedField" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="4">
-               <GridPane.margin>
-                  <Insets bottom="4.0" top="4.0" />
-               </GridPane.margin>
-            </CheckBox>
-            <CheckBox fx:id="userSystemPreferencesOnlyField" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="5">
-               <GridPane.margin>
-                  <Insets bottom="4.0" top="4.0" />
-               </GridPane.margin>
-            </CheckBox>
-            <TextArea fx:id="userCommentField" prefRowCount="3" GridPane.columnIndex="1" GridPane.columnSpan="2147483647" GridPane.rowIndex="6">
-               <GridPane.margin>
-                  <Insets bottom="5.0" />
-               </GridPane.margin>
-            </TextArea>
-            <Label text="%password" GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
-            <Label text="%changingPreferencesAllowed" GridPane.halignment="RIGHT" GridPane.rowIndex="4" />
-            <Label text="%name" GridPane.halignment="RIGHT" />
-            <Label text="%description" GridPane.halignment="RIGHT" GridPane.rowIndex="6">
-               <GridPane.margin>
-                  <Insets bottom="5.0" />
-               </GridPane.margin></Label>
-            <Label text="%passwordChangeable" GridPane.halignment="RIGHT" GridPane.rowIndex="3" />
-            <Label text="%systemPreferencesOnly" GridPane.halignment="RIGHT" GridPane.rowIndex="5" />
-            <Button fx:id="passwordButton" mnemonicParsing="false" text="%edit" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-            <Label text="%loginAllowed" GridPane.halignment="RIGHT" GridPane.rowIndex="2" />
-            <CheckBox fx:id="userLoginAllowedField" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="2">
-               <GridPane.margin>
-                  <Insets bottom="4.0" top="4.0" />
-               </GridPane.margin>
-            </CheckBox>
-         </children>
+        <children>
+          <TextField fx:id="userNameField" GridPane.columnIndex="1" />
+          <CheckBox fx:id="userLoginAllowedField" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="2">
+            <GridPane.margin>
+              <Insets bottom="4.0" top="4.0" />
+            </GridPane.margin>
+          </CheckBox>
+          <CheckBox fx:id="userPasswordChangeableField" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="3">
+            <GridPane.margin>
+              <Insets bottom="4.0" top="4.0" />
+            </GridPane.margin>
+          </CheckBox>
+          <CheckBox fx:id="userChangingPreferencesAllowedField" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="4">
+            <GridPane.margin>
+              <Insets bottom="4.0" top="4.0" />
+            </GridPane.margin>
+          </CheckBox>
+          <CheckBox fx:id="userSystemPreferencesOnlyField" mnemonicParsing="false" GridPane.columnIndex="1" GridPane.rowIndex="5">
+            <GridPane.margin>
+              <Insets bottom="4.0" top="4.0" />
+            </GridPane.margin>
+          </CheckBox>
+          <TextArea fx:id="userCommentField" prefRowCount="3" GridPane.columnIndex="1" GridPane.columnSpan="2147483647" GridPane.rowIndex="6">
+            <GridPane.margin>
+              <Insets bottom="5.0" />
+            </GridPane.margin>
+          </TextArea>
+          <Label text="%password" GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
+          <Label text="%changingPreferencesAllowed" GridPane.halignment="RIGHT" GridPane.rowIndex="4" />
+          <Label text="%name" GridPane.halignment="RIGHT" />
+          <Label text="%description" GridPane.halignment="RIGHT" GridPane.rowIndex="6">
+            <GridPane.margin>
+              <Insets bottom="5.0" />
+            </GridPane.margin></Label>
+          <Label text="%passwordChangeable" GridPane.halignment="RIGHT" GridPane.rowIndex="3" />
+          <Label text="%systemPreferencesOnly" GridPane.halignment="RIGHT" GridPane.rowIndex="5" />
+          <Button fx:id="passwordButton" mnemonicParsing="false" text="%edit" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+          <Label text="%loginAllowed" GridPane.halignment="RIGHT" GridPane.rowIndex="2" />
+        </children>
       </GridPane>
    </top>
    <center>
