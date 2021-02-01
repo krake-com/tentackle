@@ -68,6 +68,7 @@ import org.tentackle.fx.rdc.RdcRuntimeException;
 import org.tentackle.fx.rdc.crud.PdoCrud;
 import org.tentackle.fx.rdc.table.TablePopup;
 import org.tentackle.fx.table.TotalsTableView;
+import org.tentackle.misc.Holder;
 import org.tentackle.pdo.PersistentDomainObject;
 
 import java.text.MessageFormat;
@@ -133,6 +134,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   private TotalsTableView<T> totalsView;        // the (optional) table showing the totals
   private FxTreeView<T> treeView;               // the tree showing the results
   private boolean treeShown;                    // true if tree shown, else table
+  private TreeItem<T> rootItem;                 // root item to detect top level nodes
   private boolean tableViewInvalid;             // true if tableview is invalid
   private boolean treeViewInvalid;              // true if treeview is invalid
   private boolean singleSelectMode;             // true if in (modal) single selection mode
@@ -273,11 +275,11 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
                   }
                   else if (e.getEventType() == PdoEvent.READ) { // up/down button pressed
                     // do fast checks first (assumed the user did not change the selection)
-                    int ndx = tableView.getSelectionModel().getSelectedIndex();
+                    int ndx = treeViewInvalid ? tableView.getSelectionModel().getSelectedIndex() : -1;  // treeview needs full search (may contain expanded items)
                     if (ndx > 0 && e.getPdo().equals(items.get(ndx - 1))) {
                       ndx--;
                     }
-                    else if (ndx < items.size() - 1 && e.getPdo().equals(items.get(ndx + 1))) {
+                    else if (ndx < items.size() - 1 && ndx >= 0 && e.getPdo().equals(items.get(ndx + 1))) {
                       ndx++;
                     }
                     else {
@@ -285,9 +287,20 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
                       ndx = items.indexOf(e.getPdo());
                     }
                     if (ndx >= 0) {
-                      tableView.getSelectionModel().clearSelection();
-                      tableView.getSelectionModel().select(ndx);
-                      tableView.scrollTo(ndx);
+                      if (treeViewInvalid) {
+                        tableView.getSelectionModel().clearSelection();
+                        tableView.getSelectionModel().select(ndx);
+                        tableView.scrollTo(ndx);
+                      }
+                      else {
+                        treeView.getSelectionModel().clearSelection();
+                        TreeItem<T> selectedItem = rootItem.getChildren().get(ndx);
+                        treeView.getSelectionModel().select(selectedItem);
+                        ndx = treeView.getSelectionModel().getSelectedIndex();    // index in tree lines (including expanded childs!)
+                        if (ndx >= 0) {
+                          treeView.scrollTo(ndx);
+                        }
+                      }
                     }
                   }
                   e.consume();
@@ -374,13 +387,12 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    */
   public void setSingleSelectMode(boolean singleSelectMode) {
     this.singleSelectMode = singleSelectMode;
-    SelectionMode selectionMode = singleSelectMode ? SelectionMode.SINGLE : SelectionMode.MULTIPLE;
-    tableView.getSelectionModel().setSelectionMode(selectionMode);
-    treeView.getSelectionModel().setSelectionMode(selectionMode);
+    updateSelectMode();
     okButton.setVisible(singleSelectMode);
     okButton.setManaged(singleSelectMode);
     bindOkButton();
   }
+
 
   /**
    * Returns single selection mode.
@@ -513,14 +525,20 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     countLabel.setText(Integer.toString(items.size()));
 
     if (treeShown) {
-      TreeItem<T> root = new TreeItem<>();
+      rootItem = new TreeItem<>();
       for (T item: items) {
-        root.getChildren().add(GuiProviderFactory.getInstance().createGuiProvider(item).createTreeItem());
+        rootItem.getChildren().add(GuiProviderFactory.getInstance().createGuiProvider(item).createTreeItem());
       }
-      root.setExpanded(true);
-      treeView.setRoot(root);
+      rootItem.setExpanded(true);
+      treeView.setRoot(rootItem);
       treeView.setShowRoot(false);
       treeView.getSelectionModel().clearSelection();
+      // index from table works since we initialized the tree and nothing is expanded
+      int firstIndex = tableView.getSelectionModel().getSelectedIndex();
+      if (firstIndex >= 0) {
+        tableView.getSelectionModel().getSelectedIndices().forEach(treeView.getSelectionModel()::select);
+        treeView.scrollTo(firstIndex);
+      }
       treeViewInvalid = false;
       tableViewInvalid = true;
     }
@@ -533,7 +551,19 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
         }
       }
       tableView.getSelectionModel().clearSelection();
-      tableView.refresh();
+      Holder<T> firstItemHolder = new Holder<>();
+      treeView.getSelectionModel().getSelectedItems().forEach(item -> {
+        if (item.getParent() == rootItem) {
+          tableView.getSelectionModel().select(item.getValue());
+          if (firstItemHolder.get() == null) {
+            firstItemHolder.accept(item.getValue());
+          }
+        }
+      });
+      T firstItem = firstItemHolder.get();
+      if (firstItem != null) {
+        tableView.scrollTo(firstItem);
+      }
       treeViewInvalid = true;
       tableViewInvalid = false;
     }
@@ -553,6 +583,10 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     else {
       setTotals(null);
     }
+
+    // TODO: check if still buggy in newer FX releases.
+    // may be lost after dispose and when dialog is reused
+    updateSelectMode();
   }
 
 
@@ -596,8 +630,11 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     else {
       if (treeShown) {
         selectedItems = FXCollections.observableArrayList();
-        treeView.getSelectionModel().getSelectedItems().forEach(p -> selectedItems.add(p.getValue()));
-
+        treeView.getSelectionModel().getSelectedItems().forEach(p -> {
+          if (p.getParent() == rootItem) {
+            selectedItems.add(p.getValue());
+          }
+        });
       }
       else {
         selectedItems = tableView.getSelectionModel().getSelectedItems();
@@ -819,6 +856,13 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     }
     placeHolder.setText(text);
     return placeHolder;
+  }
+
+
+  private void updateSelectMode() {
+    SelectionMode selectionMode = singleSelectMode ? SelectionMode.SINGLE : SelectionMode.MULTIPLE;
+    tableView.getSelectionModel().setSelectionMode(selectionMode);
+    treeView.getSelectionModel().setSelectionMode(selectionMode);
   }
 
 }
