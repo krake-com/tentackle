@@ -25,6 +25,7 @@ import javafx.scene.control.TreeItem;
 import org.tentackle.pdo.PersistentDomainObject;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -70,28 +71,34 @@ public class PdoTreeItem<T extends PersistentDomainObject<T>> extends TreeItem<T
     setValue(pdo);
     this.pdo = pdo;
     provider = null;    // force reload
+    childrenLoaded = false;
+    super.getChildren().clear();
   }
 
   @Override
   public boolean isLeaf() {
-    return !getGuiProvider().providesTreeChildObjects();
+    return !getGuiProvider().providesTreeChildObjects() || childrenLoaded && super.getChildren().isEmpty();
   }
 
   @Override
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public ObservableList<TreeItem<T>> getChildren() {
+    ObservableList<TreeItem<T>> children = super.getChildren();
     if (!childrenLoaded) {
       childrenLoaded = true;
-      List<TreeItem<T>> childList = new ArrayList<>();
-      PdoTreeItem<T> parentItem = getParentPdoItem();
-      for (PersistentDomainObject child:
-              getGuiProvider().getTreeChildObjects(parentItem == null ? null : parentItem.getPdo())) {
-        @SuppressWarnings("unchecked")
-        TreeItem<T> treeItem = GuiProviderFactory.getInstance().createGuiProvider(child).createTreeItem();
-        childList.add(treeItem);
+      if (getGuiProvider().providesTreeChildObjects()) {
+        List<TreeItem<T>> childItems = new ArrayList<>();
+        PersistentDomainObject parentPdo = getParentPdo();
+        Collection<PersistentDomainObject> childs = getGuiProvider().getTreeChildObjects(parentPdo);
+        for (PersistentDomainObject child : childs) {
+          childItems.add(GuiProviderFactory.getInstance().createGuiProvider(child).createTreeItem());
+        }
+        // TODO: find a workaround for the selection bug!
+        // if an item is selected _below_ this one and we expand this item, the selection is moved down too much
+        children.addAll(childItems);
       }
-      super.getChildren().setAll(childList);
     }
-    return super.getChildren();
+    return children;
   }
 
 
@@ -109,6 +116,18 @@ public class PdoTreeItem<T extends PersistentDomainObject<T>> extends TreeItem<T
 
 
   /**
+   * Gets the parent PDO.
+   *
+   * @param <P> the parent PDO type
+   * @return the patent PDO, null if no parent or parent item is no PdoTreeItem
+   */
+  public <P extends PersistentDomainObject<P>> P getParentPdo() {
+    PdoTreeItem<P> parentItem = getParentPdoItem();
+    return parentItem == null ? null : parentItem.getPdo();
+  }
+
+
+  /**
    * Gets the parent item's pdo.
    *
    * @param <P> the parent PDO type
@@ -117,14 +136,8 @@ public class PdoTreeItem<T extends PersistentDomainObject<T>> extends TreeItem<T
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
   public <P extends PersistentDomainObject<P>> P getParentPdo(Class<P> parentPdoClass) {
-    TreeItem<?> parent = getParent();
-    if (parent instanceof PdoTreeItem) {
-      PersistentDomainObject parentPdo = ((PdoTreeItem) parent).getPdo();
-      if (parentPdo != null && parentPdoClass.isAssignableFrom(parentPdo.getClass())) {
-        return (P) parentPdo;
-      }
-    }
-    return null;
+    PersistentDomainObject parentPdo = getParentPdo();
+    return parentPdo != null && parentPdoClass.isAssignableFrom(parentPdo.getClass()) ? (P) parentPdo : null;
   }
 
 
