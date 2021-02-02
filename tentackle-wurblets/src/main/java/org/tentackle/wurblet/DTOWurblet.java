@@ -19,6 +19,7 @@
 
 package org.tentackle.wurblet;
 
+import org.wurbelizer.misc.Constants;
 import org.wurbelizer.wurbel.WurbelException;
 import org.wurbelizer.wurbel.WurbelHelper;
 import org.wurbelizer.wurblet.AbstractJavaWurblet;
@@ -28,7 +29,9 @@ import org.tentackle.common.StringHelper;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.StringTokenizer;
 
 
@@ -49,6 +52,7 @@ public class DTOWurblet extends AbstractJavaWurblet {
     private final String type;                // the java type
     private final String name;                // the property name
     private final String comment;             // the comment
+    private final int lineNo;                 // line number in source file
     private final boolean inherited;          // true if inherited
     private final boolean mutable;            // true if with setter instead of final
     private final boolean unserialized;       // true if transient
@@ -56,7 +60,7 @@ public class DTOWurblet extends AbstractJavaWurblet {
     private final boolean withFrom;           // true if generate fromX method as well
     private final List<String> annotations;   // optional annotations for getters and setters
 
-    public Property(String type, String name, String comment) {
+    public Property(String type, String name, String comment, int lineNo) {
       StringBuilder buf = new StringBuilder();
       int i = 0;
       while (i < type.length()) {
@@ -68,6 +72,7 @@ public class DTOWurblet extends AbstractJavaWurblet {
         i++;
       }
       this.type = type.substring(i);
+      this.lineNo = lineNo;
       String options = buf.toString();
 
       if (options.contains("^")) {
@@ -139,6 +144,14 @@ public class DTOWurblet extends AbstractJavaWurblet {
       return name;
     }
 
+    public int getLineNo() {
+      return lineNo;
+    }
+
+    public String getConstant() {
+      return "PN_" + name.toUpperCase();
+    }
+
     public String getComment() {
       return comment;
     }
@@ -195,7 +208,10 @@ public class DTOWurblet extends AbstractJavaWurblet {
   protected boolean withFrom;           // true if at least one property has the from option set (or --from forced)
   protected boolean withEquals;         // true if generate equals method
   protected boolean withHashCode;       // true if generate hashCode method
+  protected boolean withNames;          // true if generate name constants
   protected String superClass;          // != null if subclass: super classname
+  protected String modelSourceName;     // the name of the file containing the model
+  protected int modelSourceLine;        // the first line number of the model
 
 
   public DTOWurblet() {
@@ -219,6 +235,9 @@ public class DTOWurblet extends AbstractJavaWurblet {
       else if ("--hashCode".equals(arg)) {
         withHashCode = true;
       }
+      else if ("--names".equals(arg)) {
+        withNames = true;
+      }
       else if (filename == null && !arg.startsWith("--")) {
         filename = arg;
       }
@@ -238,11 +257,22 @@ public class DTOWurblet extends AbstractJavaWurblet {
     properties = new ArrayList<>();
     annotations = new ArrayList<>();
 
+    int lineNo = 0;
     try (BufferedReader reader = new BufferedReader(WurbelHelper.openReader(filename))) {
       String line;
       while ((line = reader.readLine()) != null) {
         line = line.trim();
-        if (line.startsWith("[")) {
+        if (line.startsWith(Constants.ORIGIN_INFO_LEAD)) {
+          int lineNdx = line.lastIndexOf(':');
+          if (lineNdx >= Constants.ORIGIN_INFO_LEAD.length()) {
+            modelSourceName = line.substring(Constants.ORIGIN_INFO_LEAD.length(), lineNdx);
+            modelSourceLine = Integer.valueOf(line.substring(lineNdx + 1));
+          }
+          else {
+            modelSourceName = line.substring(Constants.ORIGIN_INFO_LEAD.length());
+          }
+        }
+        else if (line.startsWith("[")) {
           // global annotations
           annotations.addAll(parseAnnotations(new StringBuilder(line)));
         }
@@ -269,7 +299,7 @@ public class DTOWurblet extends AbstractJavaWurblet {
           if (type == null || name == null) {
             throw new WurbelException("property line too short: '" + line + "'");
           }
-          Property property = new Property(type, name, comment.toString());
+          Property property = new Property(type, name, comment.toString(), modelSourceLine + lineNo);
           if (!property.isMutable()) {
             needConstructor = true;
           }
@@ -278,6 +308,7 @@ public class DTOWurblet extends AbstractJavaWurblet {
           }
           properties.add(property);
         }
+        lineNo++;
       }
 
       // apply global annotations but only if not already used in properties
@@ -290,6 +321,7 @@ public class DTOWurblet extends AbstractJavaWurblet {
       }
 
       // validate
+      Map<String, Property> nameMap = new HashMap<>();
       for (Property property : properties) {
         if (property.getType().isEmpty()) {
           throw new WurbelException("missing property type");
@@ -307,6 +339,11 @@ public class DTOWurblet extends AbstractJavaWurblet {
         }
         else if (property.isRequired()) {
           throw new WurbelException("property '" + property.getName() + "': required-option only applicable in builder mode");
+        }
+        Property existingProperty = nameMap.put(property.getName(), property);
+        if (existingProperty != null) {
+          throw new WurbelException("property '" + property.getName() + "' defined more than once in " + modelSourceName +
+                                    ":" + property.lineNo);
         }
       }
     }
