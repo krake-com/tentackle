@@ -14,9 +14,10 @@ usage:<br>
 <p>
 arguments:
 <ul>
-<li><em>--builder:</em> option to generate code according to the builder pattern.</li>
-<li><em>--equals:</em> option to generate the equals method.</li>
-<li><em>--hashCode:</em> option to generate the hashCode method.</li>
+<li><em>--builder:</em> generate code according to the builder pattern.</li>
+<li><em>--equals:</em> generate the equals method.</li>
+<li><em>--hashCode:</em> generate the hashCode method.</li>
+<li><em>--names:</em> generate the name constants for all properties.</li>
 <li><em>--from:</em> only if --builder set: generate method to create a builder from instance. This will automatically
 happen if the '+' option at set for at least one property.</li>
 <li><em>filename:</em> the file holding the DTO model.</li>
@@ -78,6 +79,19 @@ get those options as well!
 }@
 @[
   private void wurbel() throws WurbelException {
+
+    if (withNames) {
+      // create name constants
+      for (Property property: properties) {
+        if (!property.isInherited()) {
+]@
+  /** property name for @(property.getComment())@. */
+  public static final String @(property.getConstant())@ = "@(property.getName())@";
+
+@[
+        }
+      }
+    }
 
     // create declarations
     for (Property property: properties) {
