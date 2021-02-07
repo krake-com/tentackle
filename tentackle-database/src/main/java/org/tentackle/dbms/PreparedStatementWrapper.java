@@ -27,6 +27,7 @@ import org.tentackle.common.DateHelper;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.BackendPreparedStatement;
 import org.tentackle.sql.DataType;
+import org.tentackle.sql.DataTypeFactory;
 import org.tentackle.sql.SqlType;
 
 import java.math.BigDecimal;
@@ -42,6 +43,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -394,6 +396,28 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
         throw new PersistenceException("cannot set applition specific types");
     }
   }
+
+
+  @Override
+  public <T> void setArray(int p, Class<T> type, Collection<T> elements) {
+    DataType<?> dataType = DataTypeFactory.getInstance().get(type);
+    if (dataType == null) {
+      throw new PersistenceException("unsupported array type " + type.getName());
+    }
+    if (dataType.getColumnCount() != 1) {
+      throw new PersistenceException("arrays are not supported for multi-column datatype " + dataType);
+    }
+    SqlType sqlType = dataType.getSqlType(0);
+    int ep = effectivePosition(p);
+    try {
+      getConnection().getBackend().setArray(getStatement(), ep, sqlType, elements);
+      rememberParameter(ep, elements);
+    }
+    catch (SQLException e) {
+      throw new PersistenceException(getSession(), this.toString(), e);
+    }
+  }
+
 
   @Override
   public void setString (int p, String s, boolean mapNull) {

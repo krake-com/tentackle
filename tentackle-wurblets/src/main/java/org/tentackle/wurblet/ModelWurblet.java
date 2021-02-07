@@ -47,8 +47,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -120,6 +124,9 @@ public class ModelWurblet extends AbstractJavaWurblet {
 
   /** true if missing model file is ok. */
   private boolean missingModelOk;
+
+  /** the backends that are going to be used. */
+  private Collection<Backend> backends;
 
 
 
@@ -638,18 +645,18 @@ public class ModelWurblet extends AbstractJavaWurblet {
 
     // set the backends to validate the model, if any.
     // this is a comma separated list of backends, null if none, all for all backends in classpath
-    String backends = getContainer().getProperty(Wurbler.PROPSPACE_EXTRA, "backends");
-    if (backends != null) {
-      Collection<Backend> backendList = new ArrayList<>();
-      if ("all".equalsIgnoreCase(backends)) {
-        backendList.addAll(BackendFactory.getInstance().getAllBackends());
+    String backendsProperty = getContainer().getProperty(Wurbler.PROPSPACE_EXTRA, "backends");
+    backends = new ArrayList<>();
+    if (backendsProperty != null) {
+      if ("all".equalsIgnoreCase(backendsProperty)) {
+        backends.addAll(BackendFactory.getInstance().getAllBackends());
       }
-      else if (!"none".equalsIgnoreCase(backends)) {
-        for (String backend: backends.split(",")) {
-          backendList.add(BackendFactory.getInstance().getBackendByName(backend.trim()));
+      else if (!"none".equalsIgnoreCase(backendsProperty)) {
+        for (String backend: backendsProperty.split(",")) {
+          backends.add(BackendFactory.getInstance().getBackendByName(backend.trim()));
         }
       }
-      Model.getInstance().getEntityFactory().setBackends(backendList);
+      Model.getInstance().getEntityFactory().setBackends(backends);
     }
 
     // scan optional model defaults
@@ -763,6 +770,59 @@ public class ModelWurblet extends AbstractJavaWurblet {
 
 
   // ----------------- utility methods to simplify writing wurblets ----------------------------------
+
+
+  /**
+   * Gets the backends that will be used.<br>
+   * Useful if a feature is used that may not be supported by all backends.
+   *
+   * @return the backends, never null but may be empty
+   */
+  public Collection<Backend> getBackends() {
+    return backends;
+  }
+
+  /**
+   * Checks that all backends support a given feature.<br>
+   * The feature validator is a {@link Consumer} that must return false or throw a {@link RuntimeException}
+   * if unsupported.
+   *
+   * @param feature a string describing the feature
+   * @param backendValidator the feature validator
+   * @throws WurbelException if some validator failed
+   */
+  public void assertSupportedByBackends(String feature, Function<Backend, Boolean> backendValidator) throws WurbelException {
+    Map<Backend, String> result = new HashMap<>();
+    for (Backend backend : getBackends()) {
+      try {
+        if (Boolean.FALSE.equals(backendValidator.apply(backend))) {
+          result.put(backend, "");
+        }
+      }
+      catch (RuntimeException rx) {
+        String msg = rx.getMessage();
+        result.put(backend, msg == null ? "" : msg);
+      }
+    }
+    if (result.isEmpty()) {
+      return;
+    }
+    StringBuilder msg = new StringBuilder();
+    StringBuilder detailMsg = new StringBuilder();
+    msg.append(feature).append(" not supported by ");
+    boolean needComma = false;
+    for (Map.Entry<Backend, String> entry : result.entrySet()) {
+      if (needComma) {
+        msg.append(", ");
+      }
+      msg.append(entry.getKey());
+      if (!entry.getValue().isBlank()) {
+        detailMsg.append('\n').append(entry.getKey()).append(": ").append(entry.getValue());
+      }
+    }
+    msg.append(detailMsg);
+    throw new WurbelException(msg.toString());
+  }
 
 
   /**

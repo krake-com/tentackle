@@ -76,6 +76,9 @@ import java.util.Set;
  * The special relop <code>':null'</code> will be translated to <code>" IS NULL"</code> and <code>':notnull'</code>
  * translated to <code>" IS NOT NULL"</code>.<br>
  * <code>':like'</code> will translated to <code>" LIKE "</code>. <code>':notlike'</code> will be translated to <code>" NOT LIKE "</code>.<br>
+ * <code>':in'</code>, <code>':notin'</code> or if the relop ends with <code>'any'</code> or <code>'all'</code>, it will be translated to
+ * IN(?), NOT IN(?), ANY(?) or ALL(?) operators with its argument being an array instead of a simple value.
+ * Notice that backends may not support array operators at all or only a subset. This is verified by the wurblets.<br>
  * The optional <code>':value'</code> will be set as a '?'-parameter of the generated prepared statement.
  * As an alternative, the value may be given as <code>'#value'</code> which will include the value
  * literally in the SQL-string.
@@ -94,7 +97,9 @@ import java.util.Set;
  *          .InvoiceLine.currencyId     -&gt; equivalent to the above
  *
  *          *invoice.lines              -&gt; joins the invoice pointsToComponent together with its lines
-          *invoice*lines              -&gt; equivalent to the above
+ *          *invoice*lines              -&gt; equivalent to the above
+ *
+ *          blahId:=ANY                 -&gt; attribute blahId as an array, SQL relop is =ANY(?)
  *
  * </pre>
  *
@@ -119,6 +124,9 @@ public class WurbletArgument implements WurbletArgumentOperand {
 
   /** relational operator. */
   private String relop;
+
+  /** array operator (IN, ANY, ALL relops). */
+  private String arrayOperator;
 
   /** predefined value replacing the ? in prepared statements. */
   private String value;
@@ -240,23 +248,58 @@ public class WurbletArgument implements WurbletArgumentOperand {
         literally = true;
       }
 
-      switch (relop.toUpperCase()) {
-        case "NULL":
-          relop = Backend.SQL_ISNULL;
-          value = "";
-          literally = true;
-          break;
-        case "NOTNULL":
-          relop = Backend.SQL_ISNOTNULL;
-          value = "";
-          literally = true;
-          break;
-        case "LIKE":
-          relop = Backend.SQL_LIKE;
-          break;
-        case "NOTLIKE":
-          relop = Backend.SQL_NOTLIKE;
-          break;
+      String ucRelop = relop.toUpperCase();
+      if (ucRelop.endsWith("ANY")) {
+        if (relop.length() > 3) {
+          relop = relop.substring(0, relop.length() - 3);
+        }
+        else {
+          relop = "=";
+        }
+        arrayOperator = Backend.SQL_ARRAY_ANY;
+      }
+      else if (ucRelop.endsWith("ALL")) {
+        if (relop.length() > 3) {
+          relop = relop.substring(0, relop.length() - 3);
+        }
+        else {
+          relop = "=";
+        }
+        arrayOperator = Backend.SQL_ARRAY_ALL;
+      }
+      else if (ucRelop.endsWith("NOTIN")) {
+        if (relop.length() > 5) {
+          throw new WurbelException("operator not allowed for WHERE ... NOT IN '" + this.text + "'");
+        }
+        relop = "";
+        arrayOperator = Backend.SQL_ARRAY_NOT_IN;
+      }
+      else if (ucRelop.endsWith("IN")) {
+        if (relop.length() > 2) {
+          throw new WurbelException("operator not allowed for WHERE ... IN '" + this.text + "'");
+        }
+        relop = "";
+        arrayOperator = Backend.SQL_ARRAY_IN;
+      }
+      else {
+        switch (ucRelop) {
+          case "NULL":
+            relop = Backend.SQL_ISNULL;
+            value = "";
+            literally = true;
+            break;
+          case "NOTNULL":
+            relop = Backend.SQL_ISNOTNULL;
+            value = "";
+            literally = true;
+            break;
+          case "LIKE":
+            relop = Backend.SQL_LIKE;
+            break;
+          case "NOTLIKE":
+            relop = Backend.SQL_NOTLIKE;
+            break;
+        }
       }
     }
     else {
@@ -400,6 +443,17 @@ public class WurbletArgument implements WurbletArgumentOperand {
           }
         }
 
+        if (isArray()) {
+          if (literally) {
+            throw new WurbelException("arrays cannot be passed as a literal");
+          }
+          if (value != null) {
+            throw new WurbelException("arrays cannot be passed as a simple value");
+          }
+          if (dataType.getColumnCount() > 1) {
+            throw new WurbelException("arrays not supported for multi-column datatype " + dataType);
+          }
+        }
         if (columnIndex == null) {
           if (literally) {
             if (!dataType.isLiteralSupported()) {
@@ -685,6 +739,25 @@ public class WurbletArgument implements WurbletArgumentOperand {
    */
   public boolean isValueLiterally() {
     return literally;
+  }
+
+
+  /**
+   * Returns whether argument must be treated as an array.
+   *
+   * @return true if IN, ANY or ALL operators used
+   */
+  public boolean isArray() {
+    return arrayOperator != null;
+  }
+
+  /**
+   * Returns the array operator.
+   *
+   * @return IN, ANY or ALL, null if no array relop
+   */
+  public String getArrayOperator() {
+    return arrayOperator;
   }
 
 

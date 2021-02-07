@@ -360,6 +360,15 @@ public class Postgres extends AbstractSql92Backend {
     return buf.toString();
   }
 
+  @Override
+  public String toInternalType(String sqlTypeName) {
+    return sqlTypeName.toLowerCase();   // postgres is case-sensitive internally and needs lowercase
+  }
+
+  @Override
+  public boolean isArrayOperatorSupported(String operator) {
+    return SQL_ARRAY_ALL.equals(operator) || SQL_ARRAY_ANY.equals(operator);
+  }
 
   @Override
   public MigrationStrategy[] getMigrationStrategy(ColumnMetaData column, String columnName, String comment,

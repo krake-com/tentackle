@@ -26,6 +26,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Calendar;
+import java.util.Collection;
 
 /**
  * Just an interface to decouple dependency from PreparedStatementWrapper.
@@ -69,6 +70,17 @@ public interface BackendPreparedStatement {
    * @param object the object of given sql type
    */
   void set(SqlType sqlType, int p, Object object);
+
+  /**
+   * Sets an array parameter.<br>
+   * Used for array operators such as IN, ANY or ALL.
+   *
+   * @param p the first parameter is 1, the second is 2, ...
+   * @param type the type of the array's elements
+   * @param elements the array elements
+   * @param <T> the element type
+   */
+  <T> void setArray (int p, Class<T> type, Collection<T> elements);
 
   /**
    * Sets the designated parameter to the given Java <code>Boolean</code> value.
