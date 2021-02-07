@@ -38,7 +38,7 @@
         if (par.getColumnIndex() == null) {
           if (par.isArray()) {
 ]@
-    st.setArray(ndx++, @(attr.getDataType().toNonPrimitive().getJavaType())@.class, @(attr.toMethodArgument(par.getJdbcValue()))@);
+    st.setArray(ndx++, @(attr.getDataType().toNonPrimitive().getJavaType())@.class, @(attr.toMethodArgument(par.getJdbcValue()))@, Backend.SQL_ARRAY_@(par.getArrayOperator().replace(' ', '_'))@);
 @[
           }
           else {

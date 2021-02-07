@@ -1140,7 +1140,7 @@ public abstract class AbstractBackend implements Backend {
   }
 
   @Override
-  public void setArray(PreparedStatement statement, int pos, SqlType type, Collection<?> elements) throws SQLException {
+  public void setArray(PreparedStatement statement, int pos, SqlType type, Collection<?> elements, String operator) throws SQLException {
     String dbType = toInternalType(sqlTypeToString(type, 0));
     Object[] array = elements.toArray();
     Array jdbcArray = statement.getConnection().createArrayOf(dbType, array);
