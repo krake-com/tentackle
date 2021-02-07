@@ -27,10 +27,8 @@ import org.tentackle.sql.JoinType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.BiConsumer;
 
 /**
@@ -99,9 +97,9 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
   private final boolean explicitIdAliasRequired;
 
   /**
-   * Holds the joined pdos per pdo that gets the join
+   * Holds the joined pdos per pdo that gets the join.
    */
-  private final Map<T,Set<J>> lastJoinedPdoMap;
+  private final Map<T, Map<Long, J>> lastJoinedPdoMap;
 
   /**
    * Optional SQL code.
@@ -263,6 +261,9 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
    */
   public void initialize() {
     lastJoinedPdoMap.clear();
+    for (Join<J,?> join : joins) {
+      join.initialize();    // recursively initialize all subjoins
+    }
   }
 
   /**
@@ -280,12 +281,17 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
    *
    * @param pdo the pdo that gets the join
    * @param pdoToJoin the pdo to join, null to finish the joining process
+   * @return the new or already joined pdo
    */
-  public void join(T pdo, J pdoToJoin) {
-    Set<J> lastJoined = lastJoinedPdoMap.computeIfAbsent(pdo, k -> new HashSet<>());
-    if (lastJoined.add(pdoToJoin)) {
+  public J join(T pdo, J pdoToJoin) {
+    Map<Long, J> lastJoined = lastJoinedPdoMap.computeIfAbsent(pdo, k -> new HashMap<>());
+    J joinedPdo = lastJoined.putIfAbsent(pdoToJoin.getId(), pdoToJoin);
+    if (joinedPdo == null) {
+      // if not already added
       joiner.accept(pdo, pdoToJoin);
+      joinedPdo = pdoToJoin;
     }
+    return joinedPdo;
   }
 
 }

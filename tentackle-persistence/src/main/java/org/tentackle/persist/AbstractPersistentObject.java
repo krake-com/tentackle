@@ -21,6 +21,7 @@ package org.tentackle.persist;
 
 import org.tentackle.app.AbstractApplication;
 import org.tentackle.common.Constants;
+import org.tentackle.common.DateHelper;
 import org.tentackle.common.StringHelper;
 import org.tentackle.common.Timestamp;
 import org.tentackle.dbms.AbstractDbObject;
@@ -29,7 +30,6 @@ import org.tentackle.dbms.ModificationLog;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.dbms.StatementId;
-import org.tentackle.common.DateHelper;
 import org.tentackle.misc.IdentifiableMap;
 import org.tentackle.misc.ImmutableException;
 import org.tentackle.misc.PropertySupport;
@@ -1539,7 +1539,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       joinedPo = joinedPo.readFromResultSetWrapper(rs);
       joinedPdo = joinedPo.derivePdoFromPo(joinedPdo, joinedPo);
       if (joinedPdo != null) {
-        ((Join) join).join(nextPdo, joinedPdo);
+        joinedPdo = ((Join) join).join(nextPdo, joinedPdo);
       }
     }
 
