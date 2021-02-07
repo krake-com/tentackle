@@ -36,9 +36,16 @@
       if (!par.isValueLiterally()) {
         Attribute attr = par.getAttribute();
         if (par.getColumnIndex() == null) {
+          if (par.isArray()) {
+]@
+    st.setArray(ndx++, @(attr.getDataType().toNonPrimitive().getJavaType())@.class, @(attr.toMethodArgument(par.getJdbcValue()))@);
+@[
+          }
+          else {
 ]@
     @(createWhereSetPars(attr, attr.toMethodArgument(par.getJdbcValue())))@;
 @[
+          }
         }
         else {
 ]@

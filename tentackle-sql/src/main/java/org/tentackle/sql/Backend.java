@@ -28,7 +28,9 @@ import org.tentackle.sql.metadata.TableMetaData;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -97,6 +99,9 @@ public interface Backend {
   /** ? string. */
   String SQL_PAR = "?";
 
+  /** Array parameter (?). */
+  String SQL_ARRAY_PAR = "(?)";
+
   /** = operator string. */
   String SQL_EQUAL = "=";
 
@@ -120,6 +125,18 @@ public interface Backend {
 
   /** NOT LIKE operator string. */
   String SQL_NOTLIKE = " NOT LIKE ";
+
+  /** IN array operator string. */
+  String SQL_ARRAY_IN = "IN";
+
+  /** NOT IN array operator string. */
+  String SQL_ARRAY_NOT_IN = "NOT IN";
+
+  /** ANY array operator string. */
+  String SQL_ARRAY_ANY = "ANY";
+
+  /** ALL array operator string. */
+  String SQL_ARRAY_ALL = "ALL";
 
   /** =0 string. */
   String SQL_EQUAL_ZERO = SQL_EQUAL + "0";
@@ -159,6 +176,18 @@ public interface Backend {
 
   /** Parameter NOT LIKE ? string. */
   String SQL_NOTLIKE_PAR = SQL_NOTLIKE + SQL_PAR;
+
+  /** Parameter IN array operator string. */
+  String SQL_ARRAY_IN_PAR = " " + SQL_ARRAY_IN + SQL_ARRAY_PAR;
+
+  /** Parameter NOT IN array operator string. */
+  String SQL_ARRAY_NOT_IN_PAR = " " + SQL_ARRAY_NOT_IN + SQL_ARRAY_PAR;
+
+  /** Parameter ANY array operator string. */
+  String SQL_ARRAY_ANY_PAR = SQL_ARRAY_ANY + SQL_ARRAY_PAR;
+
+  /** Parameter ALL array operator string. */
+  String SQL_ARRAY_ALL_PAR = SQL_ARRAY_ALL + SQL_ARRAY_PAR;
 
   /** '*' all string. */
   String SQL_ALLSTAR = "*";
@@ -1042,4 +1071,31 @@ public interface Backend {
    * @return true if IF EXISTS is turned on and supported, false if not supported or turned off
    */
   boolean isDropIfExistsEnabled();
+
+  /**
+   * Converts a backend specific type name to an internal name used by driver specific methods.
+   *
+   * @param sqlTypeName the original type used in SQL scripts
+   * @return the JDBC internal name
+   */
+  String toInternalType(String sqlTypeName);
+
+  /**
+   * Returns whether the backend supports given array operator.
+   *
+   * @param operator the operator (such as IN, ANY, ALL)
+   * @return true if supported
+   */
+  boolean isArrayOperatorSupported(String operator);
+
+  /**
+   * Sets an array parameter in a prepared statement.
+   *
+   * @param statement the prepared statement
+   * @param pos the parameter position (starting at 1)
+   * @param type the element's SQL type
+   * @param elements the elements to be converted to an array parameter
+   */
+  void setArray(PreparedStatement statement, int pos, SqlType type, Collection<?> elements) throws SQLException;
+
 }

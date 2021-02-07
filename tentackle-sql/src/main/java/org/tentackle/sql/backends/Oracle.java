@@ -289,6 +289,13 @@ public class Oracle extends AbstractSql2003Backend {
     return false;
   }
 
+  // Oracle supports only named arrays created by an oracle specific createARRAY method.
+//  @Override
+//  public boolean isArrayOperatorSupported() {
+//    return false;
+//  }
+
+
   // Oracle supports function-based indexes, but does not return a usable JDBC metadata.
   // -> migration would always fail.
 //  @Override

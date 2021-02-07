@@ -405,7 +405,13 @@ public class DbModelWurblet extends ModelWurblet {
    * @param arg the wurblet argument
    * @return the java code
    */
-  public String createRelopCode(WurbletArgument arg) {
+  public String createRelopCode(WurbletArgument arg) throws WurbelException {
+
+    if (arg.isArray()) {
+      // this feature may not be supported by all backends
+      String op = arg.getArrayOperator();
+      assertSupportedByBackends("array operator '" + op + "'", b -> b.isArrayOperatorSupported(op));
+    }
 
     String value = arg.getValue();
     if (arg.isValueLiterally() && !value.startsWith("\"")) {
@@ -421,7 +427,7 @@ public class DbModelWurblet extends ModelWurblet {
           str = "Backend.SQL_EQUAL).append(" + value;
         }
         else  {
-          str = "Backend.SQL_EQUAL_PAR";
+          str = arg.isArray() ? "Backend.SQL_EQUAL" : "Backend.SQL_EQUAL_PAR";
         }
         break;
 
@@ -431,7 +437,7 @@ public class DbModelWurblet extends ModelWurblet {
           str = "Backend.SQL_NOTEQUAL).append(" + value;
         }
         else  {
-          str = "Backend.SQL_NOTEQUAL_PAR";
+          str = arg.isArray() ? "Backend.SQL_NOTEQUAL" : "Backend.SQL_NOTEQUAL_PAR";
         }
         break;
 
@@ -440,7 +446,7 @@ public class DbModelWurblet extends ModelWurblet {
           str = "Backend.SQL_LESS).append(" + value;
         }
         else  {
-          str = "Backend.SQL_LESS_PAR";
+          str = arg.isArray() ? "Backend.SQL_LESS" : "Backend.SQL_LESS_PAR";
         }
         break;
 
@@ -449,7 +455,7 @@ public class DbModelWurblet extends ModelWurblet {
           str = "Backend.SQL_GREATER).append(" + value;
         }
         else  {
-          str = "Backend.SQL_GREATER_PAR";
+          str = arg.isArray() ? "Backend.SQL_GREATER" : "Backend.SQL_GREATER_PAR";
         }
         break;
 
@@ -458,7 +464,7 @@ public class DbModelWurblet extends ModelWurblet {
           str = "Backend.SQL_LESSOREQUAL).append(" + value;
         }
         else  {
-          str = "Backend.SQL_LESSOREQUAL_PAR";
+          str = arg.isArray() ? "Backend.SQL_LESSOREQUAL" : "Backend.SQL_LESSOREQUAL_PAR";
         }
         break;
 
@@ -467,7 +473,7 @@ public class DbModelWurblet extends ModelWurblet {
           str = "Backend.SQL_GREATEROREQUAL).append(" + value;
         }
         else  {
-          str = "Backend.SQL_GREATEROREQUAL_PAR";
+          str = arg.isArray() ? "Backend.SQL_GREATEROREQUAL" : "Backend.SQL_GREATEROREQUAL_PAR";
         }
         break;
 
@@ -498,10 +504,35 @@ public class DbModelWurblet extends ModelWurblet {
         break;
 
       default:
-        str = arg.getRelop() + (arg.isValueLiterally() ? value : "?");
+        if (arg.isArray()) {
+          str = "";
+        }
+        else {
+          str = "\"" + arg.getRelop() + (arg.isValueLiterally() ? value : "?") + "\"";
+        }
     }
 
-    return ".append(" + str + ")";
+    if (!str.isEmpty()) {
+      str = ".append(" + str + ")";
+    }
+
+    if (arg.isArray()) {
+      switch (arg.getArrayOperator()) {
+        case Backend.SQL_ARRAY_ANY:
+          str += ".append(Backend.SQL_ARRAY_ANY_PAR)";
+          break;
+        case Backend.SQL_ARRAY_ALL:
+          str += ".append(Backend.SQL_ARRAY_ALL_PAR)";
+          break;
+        case Backend.SQL_ARRAY_NOT_IN:
+          str = ".append(Backend.SQL_ARRAY_NOT_IN_PAR)";  // includes leading space
+          break;
+        default:
+          str = ".append(Backend.SQL_ARRAY_IN_PAR)";    // includes leading space
+      }
+    }
+
+    return str;
   }
 
 
@@ -879,7 +910,11 @@ public class DbModelWurblet extends ModelWurblet {
         if (argSet.add(arg)) {
           Attribute attr = key.getAttribute();
           try {
-            appendCommaSeparated(params, attr.getJavaType());
+            String javaType = attr.getJavaType();
+            if (key.isArray()) {
+              javaType = "Collection<" + attr.getDataType().toNonPrimitive().getJavaType() + ">";
+            }
+            appendCommaSeparated(params, javaType);
           }
           catch (ModelException me) {
             throw new WurbelException("cannot determine java type for key " + key, me);

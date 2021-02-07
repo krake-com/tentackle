@@ -35,13 +35,16 @@ import org.tentackle.sql.metadata.IndexMetaData;
 import org.tentackle.sql.metadata.ModelMetaData;
 import org.tentackle.sql.metadata.TableMetaData;
 
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.StringTokenizer;
@@ -1123,6 +1126,25 @@ public abstract class AbstractBackend implements Backend {
    */
   protected boolean isDropIfExistsSupported() {
     return false;
+  }
+
+
+  @Override
+  public String toInternalType(String sqlTypeName) {
+    return sqlTypeName;
+  }
+
+  @Override
+  public boolean isArrayOperatorSupported(String operator) {
+    return false;
+  }
+
+  @Override
+  public void setArray(PreparedStatement statement, int pos, SqlType type, Collection<?> elements) throws SQLException {
+    String dbType = toInternalType(sqlTypeToString(type, 0));
+    Object[] array = elements.toArray();
+    Array jdbcArray = statement.getConnection().createArrayOf(dbType, array);
+    statement.setArray(pos, jdbcArray);
   }
 
   /**
