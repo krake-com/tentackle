@@ -18,16 +18,14 @@
 
 package org.tentackle.misc;
 
-
 /**
- * Similar to {@link java.util.function.Supplier} but with a checked exception.
+ * Similar to {@link java.util.function.Supplier} but allows checked exceptions.
  * <p>
- * Allows lambdas to throw a checked exception.<br>
- * For an example, see Session#transaction.
+ * Allows lambdas to throw a checked exception.
  *
  * @param <T> the result type
  * @param <E> the exception type
- * @author harald
+ * @see Acceptor
  */
 @FunctionalInterface
 public interface Provider<T, E extends Exception> {
