@@ -1083,7 +1083,7 @@ public interface Backend {
   /**
    * Returns whether the backend supports given array operator.
    *
-   * @param operator the operator (such as IN, ANY, ALL)
+   * @param operator the array operator
    * @return true if supported
    */
   boolean isArrayOperatorSupported(String operator);
@@ -1095,7 +1095,8 @@ public interface Backend {
    * @param pos the parameter position (starting at 1)
    * @param type the element's SQL type
    * @param elements the elements to be converted to an array parameter
+   * @param operator the array operator
    */
-  void setArray(PreparedStatement statement, int pos, SqlType type, Collection<?> elements) throws SQLException;
+  void setArray(PreparedStatement statement, int pos, SqlType type, Collection<?> elements, String operator) throws SQLException;
 
 }

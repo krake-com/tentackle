@@ -78,9 +78,10 @@ public interface BackendPreparedStatement {
    * @param p the first parameter is 1, the second is 2, ...
    * @param type the type of the array's elements
    * @param elements the array elements
+   * @param operator the array operator
    * @param <T> the element type
    */
-  <T> void setArray (int p, Class<T> type, Collection<T> elements);
+  <T> void setArray (int p, Class<T> type, Collection<T> elements, String operator);
 
   /**
    * Sets the designated parameter to the given Java <code>Boolean</code> value.

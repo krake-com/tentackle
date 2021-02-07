@@ -399,7 +399,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
 
 
   @Override
-  public <T> void setArray(int p, Class<T> type, Collection<T> elements) {
+  public <T> void setArray(int p, Class<T> type, Collection<T> elements, String operator) {
     DataType<?> dataType = DataTypeFactory.getInstance().get(type);
     if (dataType == null) {
       throw new PersistenceException("unsupported array type " + type.getName());
@@ -410,7 +410,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
     SqlType sqlType = dataType.getSqlType(0);
     int ep = effectivePosition(p);
     try {
-      getConnection().getBackend().setArray(getStatement(), ep, sqlType, elements);
+      getConnection().getBackend().setArray(getStatement(), ep, sqlType, elements, operator);
       rememberParameter(ep, elements);
     }
     catch (SQLException e) {
