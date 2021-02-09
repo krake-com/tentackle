@@ -120,6 +120,13 @@ public interface Attribute extends ModelElement {
   boolean isHidden();
 
   /**
+   * Returns whether the attribute's type implements a Convertible.
+   *
+   * @return true if Convertible
+   */
+  boolean isConvertible();
+
+  /**
    * Gets the name of the application specific type, if a Convertible type.
    *
    * @return the application specific type, never null or empty

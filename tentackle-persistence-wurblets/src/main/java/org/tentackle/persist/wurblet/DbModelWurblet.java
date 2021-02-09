@@ -742,7 +742,64 @@ public class DbModelWurblet extends ModelWurblet {
 
 
   /**
-   * Creates the java code to set a parameter in a PreparedStatementWrapper.
+   * Creates the java code to set a parameter in a PreparedStatementWrapper.<br>
+   * Works for single- and multicolumn datatypes.
+   *
+   * @param arg the wurblet argument
+   * @return the java code
+   * @throws WurbelException if malformed or illegal wurblet argument
+   * @throws ModelException if getting the jdbc java code failed
+   */
+  public String createWhereSetPars(WurbletArgument arg) throws WurbelException, ModelException {
+    Attribute attr = arg.getAttribute();
+    int columnIndex = 0;
+    if (arg.isArray()) {
+      String javaType;
+      if (attr.isConvertible()) {
+        javaType = attr.getInnerTypeName();
+        columnIndex = -1;
+      }
+      else {
+        javaType = attr.getDataType().toNonPrimitive().getJavaType();
+        if (arg.getColumnIndex() != null) {
+          columnIndex = arg.getColumnIndex();
+        }
+      }
+      return "st.setArray(ndx++, " + javaType + ".class, " + columnIndex + ", " +
+             attr.toMethodArgument(arg.getJdbcValue()) + ", Backend.SQL_ARRAY_" +
+             arg.getArrayOperator().replace(' ', '_') + ")";
+    }
+    if (arg.getColumnIndex() == null) {
+      return createWhereSetPars(attr,attr.toMethodArgument(arg.getJdbcValue()));
+    }
+    columnIndex = arg.getColumnIndex();
+    StringBuilder buf = new StringBuilder();
+    if (arg.getDataType().isPredefined()) {   // currently only BMoney and DMoney
+      buf.append("st.set(SqlType.").append(arg.getDataType().getSqlType(columnIndex))
+         .append(", ndx++, ").append(arg.getJdbcValue());
+      if (arg.isMethodArgument()) {
+        buf.append(".").append(arg.getDataType().getColumnGetter(columnIndex)).append("()");
+      }
+      buf.append(")");
+    }
+    else {
+      buf.append("ndx += st.set(");
+      if (!attr.getEntity().equals(getEntity())) {
+        buf.append(deriveClassNameForEntity(attr.getEntity())).append('.');
+      }
+      buf.append(arg.getDataType().getDataTypeConstant())
+         .append(", ndx, ")
+         .append(arg.getJdbcValue())
+         .append(", ").append(columnIndex)
+         .append(", ").append(attr.getOptions().isMapNull())
+         .append(", ").append(attr.getSize()).append(")");
+    }
+    return buf.toString();
+  }
+
+
+  /**
+   * Creates the java code to set a single-column parameter in a PreparedStatementWrapper.
    *
    * @param attr the model attribute
    * @param argument the argument string
@@ -786,44 +843,6 @@ public class DbModelWurblet extends ModelWurblet {
     return buf.toString();
   }
 
-
-  /**
-   * Creates the java code to set a parameter in a PreparedStatementWrapper for a column in a multi-column type.
-   *
-   * @param arg the wurblet argument
-   * @return the java code
-   * @throws WurbelException if the wurblet argument does not select a column suffix
-   * @throws ModelException if getting the jdbc java code failed
-   */
-  public String createWhereSetPars(WurbletArgument arg) throws WurbelException, ModelException {
-    if (arg.getColumnIndex() == null) {
-      throw new WurbelException("wurblet argument does not select a column suffix" );
-    }
-    int columnIndex = arg.getColumnIndex();
-    StringBuilder buf = new StringBuilder();
-    if (arg.getDataType().isPredefined()) {   // currently only BMoney and DMoney
-      buf.append("st.set(SqlType.").append(arg.getDataType().getSqlType(columnIndex))
-         .append(", ndx++, ").append(arg.getJdbcValue());
-      if (arg.isMethodArgument()) {
-        buf.append(".").append(arg.getDataType().getColumnGetter(columnIndex)).append("()");
-      }
-      buf.append(")");
-    }
-    else {
-      Attribute attr = arg.getAttribute();
-      buf.append("ndx += st.set(");
-      if (!attr.getEntity().equals(getEntity())) {
-        buf.append(deriveClassNameForEntity(attr.getEntity())).append('.');
-      }
-      buf.append(arg.getDataType().getDataTypeConstant())
-         .append(", ndx, ")
-         .append(arg.getJdbcValue())
-         .append(", ").append(columnIndex)
-         .append(", ").append(attr.getOptions().isMapNull())
-         .append(", ").append(attr.getSize()).append(")");
-    }
-    return buf.toString();
-  }
 
   /**
    * Creates optional JDBC-set paramaters code for joins with extra arguments.
@@ -910,9 +929,19 @@ public class DbModelWurblet extends ModelWurblet {
         if (argSet.add(arg)) {
           Attribute attr = key.getAttribute();
           try {
-            String javaType = attr.getJavaType();
+            String javaType;
             if (key.isArray()) {
-              javaType = "Collection<" + attr.getDataType().toNonPrimitive().getJavaType() + ">";
+              String elementType;
+              if (attr.isConvertible()) {
+                elementType = attr.getApplicationTypeName();
+              }
+              else {
+                elementType = attr.getDataType().toNonPrimitive().getJavaType();
+              }
+              javaType = "Collection<" + elementType + ">";
+            }
+            else {
+              javaType = attr.getJavaType();
             }
             appendCommaSeparated(params, javaType);
           }
@@ -1126,7 +1155,7 @@ public class DbModelWurblet extends ModelWurblet {
    * @throws WurbelException if some model error
    */
   public String getModelCode(Attribute attribute, String jdbcCode) throws WurbelException {
-    if (attribute.getDataType() == DataTypeFactory.getInstance().getConvertibleType()) {
+    if (attribute.isConvertible()) {
       try {
         return attribute.getJavaType() + ".toInternal(" + jdbcCode + ")";
       }
@@ -1151,7 +1180,7 @@ public class DbModelWurblet extends ModelWurblet {
    */
   public String getJdbcCode(Attribute attribute, String modelCode) throws WurbelException {
     String jdbcCode = modelCode;
-    if (attribute.getDataType() == DataTypeFactory.getInstance().getConvertibleType()) {
+    if (attribute.isConvertible()) {
       try {
         String applicationType = attribute.getApplicationTypeName();
         if (modelCode.startsWith(applicationType + ".")) {

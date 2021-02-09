@@ -192,7 +192,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
         setDataType(DataTypeFactory.getInstance().get(line.getJavaType(), DataTypeFactory.LARGE_VARIANT));
       }
 
-      if (getDataType() == DataTypeFactory.getInstance().getConvertibleType()) {
+      if (isConvertible()) {
         // verify the valid inner type
         setApplicationTypeName(line.getJavaType());
         getInnerTypeName();
@@ -239,6 +239,12 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
   }
 
 
+  @Override
+  public boolean isConvertible() {
+     return getDataType() == DataTypeFactory.getInstance().getConvertibleType();
+  }
+
+
   /**
    * Sets the application specific type if Convertible.
    *
@@ -250,7 +256,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
 
   @Override
   public String getApplicationTypeName() throws ModelException {
-    if (dataType == DataTypeFactory.getInstance().getConvertibleType()) {
+    if (isConvertible()) {
       if (StringHelper.isAllWhitespace(applicationTypeName)) {
         throw createModelException("application specific type not set");
       }
@@ -272,7 +278,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
     if (!dataType.isModelProvidingInnerType()) {
       throw createModelException("type " + dataType + " does not support inner types");
     }
-    if (dataType == DataTypeFactory.getInstance().getConvertibleType()) {
+    if (isConvertible()) {
       innerType = DataTypeFactory.getInstance().get(innerTypeName);
       if (innerType == null) {
         throw createModelException("inner type " + innerTypeName + " not supported for type " + dataType);
@@ -303,13 +309,13 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
 
   @Override
   public DataType<?> getEffectiveDataType() throws ModelException {
-    return dataType == DataTypeFactory.getInstance().getConvertibleType() ? getInnerDataType() : dataType;
+    return isConvertible() ? getInnerDataType() : getDataType();
   }
 
   @Override
   public String getJavaType() throws ModelException {
     StringBuilder buf = new StringBuilder();
-    if (dataType == DataTypeFactory.getInstance().getConvertibleType()) {
+    if (isConvertible()) {
       buf.append(getApplicationTypeName());
     }
     else  {

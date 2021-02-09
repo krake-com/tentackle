@@ -76,12 +76,12 @@ public interface BackendPreparedStatement {
    * Used for array operators such as IN, ANY or ALL.
    *
    * @param p the first parameter is 1, the second is 2, ...
-   * @param type the type of the array's elements
+   * @param type the type of the array's elements, or the inner type if elements implement Convertible
+   * @param columnIndex the column index for multi column {@link DataType}s, -1 if type is a Convertible, ignored otherwise
    * @param elements the array elements
    * @param operator the array operator
-   * @param <T> the element type
    */
-  <T> void setArray (int p, Class<T> type, Collection<T> elements, String operator);
+  void setArray(int p, Class<?> type, int columnIndex, Collection<?> elements, String operator);    // no <T> because illegal if Convertible
 
   /**
    * Sets the designated parameter to the given Java <code>Boolean</code> value.

@@ -24,6 +24,7 @@ import org.tentackle.common.BMoney;
 import org.tentackle.common.Binary;
 import org.tentackle.common.DMoney;
 import org.tentackle.common.DateHelper;
+import org.tentackle.misc.Convertible;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.BackendPreparedStatement;
 import org.tentackle.sql.DataType;
@@ -42,6 +43,7 @@ import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashMap;
@@ -399,19 +401,41 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
 
 
   @Override
-  public <T> void setArray(int p, Class<T> type, Collection<T> elements, String operator) {
-    DataType<?> dataType = DataTypeFactory.getInstance().get(type);
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  public void setArray(int p, Class<?> type, int columnIndex, Collection<?> elements, String operator) {
+    Collection arrayElements;
+    DataType dataType = DataTypeFactory.getInstance().get(type);
     if (dataType == null) {
       throw new PersistenceException("unsupported array type " + type.getName());
     }
-    if (dataType.getColumnCount() != 1) {
-      throw new PersistenceException("arrays are not supported for multi-column datatype " + dataType);
+    if (dataType.getColumnCount() == 1) {
+      if (columnIndex < 0) {
+        // convertible type
+        arrayElements = new ArrayList<>();
+        for (Object element : elements) {
+          if (element instanceof Convertible) {
+            arrayElements.add(((Convertible) element).toExternal());
+          }
+        }
+      }
+      else {
+        arrayElements = elements;
+      }
+      columnIndex = 0;
     }
-    SqlType sqlType = dataType.getSqlType(0);
+    else {
+      arrayElements = new ArrayList<>();
+      for (Object element : elements) {
+        if (element != null) {
+          arrayElements.add(dataType.getColumnValue(columnIndex, element));
+        }
+      }
+    }
+    SqlType sqlType = dataType.getSqlType(columnIndex);
     int ep = effectivePosition(p);
     try {
-      getConnection().getBackend().setArray(getStatement(), ep, sqlType, elements, operator);
-      rememberParameter(ep, elements);
+      getConnection().getBackend().setArray(getStatement(), ep, sqlType, arrayElements, operator);
+      rememberParameter(ep, arrayElements);
     }
     catch (SQLException e) {
       throw new PersistenceException(getSession(), this.toString(), e);
