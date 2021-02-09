@@ -47,37 +47,6 @@ import java.util.Properties;
 /**
  * Backend for Oracle.
  *
- * Contains some Oracle-specific utility methods as well:<p>
- *
- * Date-conversion: Oracle does not use an index on a DATE-column if passed as a Timestamp-variable
- * via a prepared statement, even if used in conjunction with an SQL-hint /*+ INDEX(...)
- * In such cases the TO_DATE-function must be explicitly used.
- *
- <pre>
- Example:
-
-      if (getDb().isOracle()) {
-        query.add(" AND m." + CN_ZEITPUNKT + "&gt;=" + OracleHelper.timestampString(par.vonZeitpunkt));
-      }
-      else  {
-        query.add(" AND m." + CN_ZEITPUNKT + "&gt;=?", par.vonZeitpunkt);
-      }
-
-
- or:
-      if (getDb().isOracle()) {
-        query.add(" AND m." + CN_ZEITPUNKT + "&gt;=TO_DATE(?,'" + OracleHelper.ORA_TIMESTAMP_FORMAT + "')",
-                  OracleHelper.TIMESTAMP_FORMAT.format(par.vonZeitpunkt));
-      }
-      else  {
-        query.add(" AND m." + CN_ZEITPUNKT + "&gt;=?", par.vonZeitpunkt);
-      }
- </pre>
- *
- *
- * Rule: if possible use TIMESTAMP column type for a Timestamp-java attribute. In such a case
- * at least Oracle 10 uses the correct index and you don't need this workaround.
- *
  * @author harald
  */
 @Service(Backend.class)
