@@ -20,7 +20,6 @@ package org.tentackle.model.print;
 
 import org.tentackle.model.Attribute;
 import org.tentackle.model.ModelException;
-import org.tentackle.sql.DataTypeFactory;
 
 /**
  * Pretty printer for attribute lines.
@@ -55,7 +54,7 @@ public class AttributePrinter {
       StringBuilder buf = new StringBuilder();
       try {
         buf.append(attribute.getJavaType());
-        if (attribute.getDataType() == DataTypeFactory.getInstance().getConvertibleType()) {
+        if (attribute.isConvertible()) {
           buf.append('<').append(attribute.getInnerTypeName()).append('>');
         }
         if (attribute.getSize() != null || attribute.getScale() != null) {

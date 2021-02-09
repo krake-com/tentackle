@@ -362,7 +362,13 @@ public class Postgres extends AbstractSql92Backend {
 
   @Override
   public String toInternalType(String sqlTypeName) {
-    return sqlTypeName.toLowerCase();   // postgres is case-sensitive internally and needs lowercase
+    String typeName = sqlTypeName.toLowerCase();   // postgres is case-sensitive internally and needs lowercase
+    // char(1) is okay for SQL scripts, but not a valid postgres type
+    int ndx = typeName.indexOf('(');
+    if (ndx >= 0) {
+      typeName = typeName.substring(0, ndx);  // cut (xxx)
+    }
+    return typeName;
   }
 
   @Override
