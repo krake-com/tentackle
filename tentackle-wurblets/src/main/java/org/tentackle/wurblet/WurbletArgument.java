@@ -450,6 +450,11 @@ public class WurbletArgument implements WurbletArgumentOperand {
           if (value != null) {
             throw new WurbelException("arrays cannot be passed as a simple value");
           }
+          if (dataType.getColumnCount() > 1 && columnIndex == null) {
+            throw new WurbelException(dataType +
+                                      " is a multi column datatype: please specify the column to be used for the array operator '" +
+                                      arrayOperator + "'");
+          }
         }
         if (columnIndex == null) {
           if (literally) {
