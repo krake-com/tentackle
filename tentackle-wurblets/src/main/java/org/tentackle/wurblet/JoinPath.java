@@ -89,8 +89,11 @@ public class JoinPath implements Path<JoinPath, Join> {
     List<Join> joins = path.getElements();
     int joinCount = joins.size();
     for (Relation relation: relations) {
+      if (depth >= joinCount) {
+        break;
+      }
       join = joins.get(depth);    // last join
-      if (depth >= joinCount || !relation.equals(join.getRelation())) {
+      if (!relation.equals(join.getRelation())) {
         return null;    // not in this join path
       }
       depth++;
