@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.StringTokenizer;
 
 
@@ -114,6 +115,29 @@ public class DTOWurblet extends AbstractJavaWurblet {
 
     public boolean isPrimitive() {
       return Character.isLowerCase(type.charAt(0));
+    }
+
+    public String getHashCodeInvocation() {
+      String code;
+      if (isPrimitive()) {
+        switch(type) {
+          case "double":
+            code = "Double.hashCode(" + name + ")";
+            break;
+          case "float":
+            code = "Float.hashCode(" + name + ")";
+            break;
+          case "long":
+            code = "Long.hashCode(" + name + ")";
+            break;
+          default:
+            code = name;
+        }
+      }
+      else {
+        code = "Objects.hashCode(" + name + ")";
+      }
+      return code;
     }
 
     public boolean isInherited() {

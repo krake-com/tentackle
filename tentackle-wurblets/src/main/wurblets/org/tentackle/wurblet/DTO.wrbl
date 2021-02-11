@@ -380,16 +380,9 @@ get those options as well!
       }
       for (Property property: properties) {
         if (!property.isInherited()) {
-          if (property.isPrimitive()) {
 ]@
-    hash = 79 * hash + @(property.getName())@;
+    hash = 79 * hash + @(property.getHashCodeInvocation())@;
 @[
-          }
-          else  {
-]@
-    hash = 79 * hash + Objects.hashCode(@(property.getName())@);
-@[
-          }
         }
       }
 ]@
