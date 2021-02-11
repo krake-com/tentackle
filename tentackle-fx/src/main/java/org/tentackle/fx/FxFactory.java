@@ -166,7 +166,7 @@ public interface FxFactory {
   <S> TableConfiguration<S> createTableConfiguration(S template, String name);
 
   /**
-   * Creates an empty configuration for a PDO class.
+   * Creates an empty configuration for a class.
    *
    * @param <S> the type of the objects contained within the table's items list
    * @param objectClass the object class
