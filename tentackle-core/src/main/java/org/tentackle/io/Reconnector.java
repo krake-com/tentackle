@@ -18,13 +18,14 @@
 
 package org.tentackle.io;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 interface ReconnectorHolder {
@@ -120,8 +121,10 @@ public class Reconnector {
    * @return the executor service
    */
   protected ExecutorService createExecutorService() {
-    return Executors.newCachedThreadPool(runnable ->
-      new Thread(runnable, "reconnector " + threadNumber.incrementAndGet())
-    );
+    return Executors.newCachedThreadPool(runnable -> {
+      Thread thread = new Thread(runnable, "reconnector " + threadNumber.incrementAndGet());
+      thread.setDaemon(true);
+      return thread;
+    });
   }
 }
