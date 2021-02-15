@@ -494,7 +494,7 @@ public class ManagedConnection {
       stmt.executeQuery("SELECT 1");
       return true;
     }
-    catch (SQLException ex) {
+    catch (RuntimeException | SQLException ex) {
       setDead(true);
       return false;
     }
