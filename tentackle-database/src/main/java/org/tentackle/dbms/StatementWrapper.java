@@ -388,8 +388,8 @@ public class StatementWrapper implements AutoCloseable {
     }
     catch (SQLException e)  {
       Db db = getAttachedSession();
-      con.checkForDeadLink(e);
-      if (withinTx) {
+      boolean dead = con.checkForDeadLink(e);
+      if (withinTx && !dead) {
         try {
           db.rollback(txVoucher);
         }
