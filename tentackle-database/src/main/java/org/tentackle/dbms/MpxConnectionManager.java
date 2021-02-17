@@ -258,7 +258,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   /**
    * Frees a connection and adds it to the unattached list.
    *
-   * @param con the connection, null if no more attached
+   * @param con the connection, may be null if no more attached
    */
   protected void freeConnection(ManagedConnection con) {
     // check that connection is not attached, if so, detach it!
@@ -268,7 +268,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
         // remove connection if dead and check to reopen
         cleanupDeadConnection(con);
         /*
-         * Client crashed due to a dead server connection. This is a strong indicator that the database is facing some
+         * Crashed due to a dead server connection. This is a strong indicator that the database is facing some
          * severe problems. Because we don't know how many unattached connections are down we will probe them here. This
          * is a little time consuming but better than waiting for other clients to crash.
          */
@@ -493,11 +493,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   @Override
   public synchronized void forceDetach(Db session) {
     assertSessionBelongsToMe(session);
-    ManagedConnection con = session.getConnection();
-    if (con != null) {
-      con.forceDetached();
-      pushUnattached(con.getIndex());
-    }
+    freeConnection(session.getConnection());
   }
 
 
@@ -645,6 +641,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
     private final Object requestMtx;                            // connections requested mutex
     private final WeakReference<MpxConnectionManager> cmRef;    // weak ref to check for GC'd conn manager
+    private boolean lastAttemptFailed;                          // true if the last connection attempt failed
 
     ConnectionThread(MpxConnectionManager mgr) {
       super(mgr.getName() + " Connection Management Thread");
@@ -682,9 +679,24 @@ public class MpxConnectionManager extends DefaultConnectionManager {
               // create missing connections
               int count = mgr.createConnections(mgr.conRequestCount);
               mgr.conRequestCount = count == 0 ? -1 : 0; // -1 = max. connections exhausted
+              if (lastAttemptFailed) {
+                lastAttemptFailed = false;
+                LOGGER.warning("database connection problems resolved");
+              }
             }
             catch (RuntimeException e) {
-              LOGGER.warning(mgr + ": creating connections failed", e);
+              if (lastAttemptFailed) {  // don't pollute the logfile if connection errors persist
+                try {
+                  sleep(REQ_MUTEX_MS);  // limit CPU usage
+                }
+                catch (InterruptedException ix) {
+                  // next round checks whether mgr == null (see above)
+                }
+              }
+              else {
+                lastAttemptFailed = true;
+                LOGGER.severe(mgr + ": creating connections failed", e);
+              }
             }
 
             synchronized (mgr.doneMtx) {   // syncs conRequestCount as well
