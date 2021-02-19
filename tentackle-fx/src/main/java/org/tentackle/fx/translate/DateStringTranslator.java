@@ -20,14 +20,16 @@ package org.tentackle.fx.translate;
 
 import javafx.scene.Node;
 
+import org.tentackle.bind.BindingException;
+import org.tentackle.common.DateHelper;
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.FxFxBundle;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.FxTextComponent;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.ValueTranslatorService;
+import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.log.Logger;
-import org.tentackle.common.DateHelper;
 import org.tentackle.misc.FormatHelper;
 
 import java.sql.Time;
@@ -148,6 +150,36 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
    * cover the given check level.
    */
   public static Logger.Level informationLossLogLevel = Logger.Level.INFO;
+
+
+  /**
+   * Connects two fields as reference date suppliers.<br>
+   * Each field provides the reference date for the other one.<br>
+   * Replaces code like:
+   * <pre>
+   *   fromField.getProperties().put(DateStringTranslator.REFERENCE_DATE_SUPPLIER, (Supplier<Date>) () -> until);
+   *   untilField.getProperties().put(DateStringTranslator.REFERENCE_DATE_SUPPLIER, (Supplier<Date>) () -> from);
+   * </pre>
+   * by
+   * <pre>
+   *   DateStringTranslator.connectAsReferenceDateSuppliers(fromField, untilField);
+   * </pre>
+   * Throws {@link BindingException} if one of the fields is not bound.
+   *
+   * @param a the first component
+   * @param b the second component
+   */
+  @SuppressWarnings("rawtypes")
+  public static void connectAsReferenceDateSuppliers(FxTextComponent a, FxTextComponent b) {
+    FxComponentBinding bindingA = a.getBinding();
+    FxComponentBinding bindingB = b.getBinding();
+    if (bindingA == null || bindingB == null) {
+      throw new BindingException("both components must be bound to the model");
+    }
+    ((Node) a).getProperties().put(REFERENCE_DATE_SUPPLIER, (Supplier) bindingB::getModelValue);
+    ((Node) b).getProperties().put(REFERENCE_DATE_SUPPLIER, (Supplier) bindingA::getModelValue);
+  }
+
 
 
   private static final String LEGACY_DATE_DELIMITERS = ".,/*=-";
