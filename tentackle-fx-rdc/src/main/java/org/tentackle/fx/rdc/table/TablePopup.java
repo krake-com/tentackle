@@ -24,8 +24,11 @@ package org.tentackle.fx.rdc.table;
 import javafx.collections.ObservableList;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.control.CustomMenuItem;
+import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TableColumn;
 
 import org.tentackle.fx.Fx;
@@ -37,7 +40,7 @@ import org.tentackle.log.Logger;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 
 import java.io.File;
-
+import java.text.MessageFormat;
 
 
 /**
@@ -56,6 +59,7 @@ public class TablePopup<S> {
   private final String preferencesSuffix;       // suffix for the preferences
   private String title;                         // the title of the printed table
   private boolean columnMenuEnabled = true;     // true if user is allowed to hide/show columns (default)
+  private final Label countLabel = new Label(); // shows the current row number and the number of rows
 
 
 
@@ -220,9 +224,16 @@ public class TablePopup<S> {
       restoreSysItem.setOnAction(e -> loadPreferences(true));
       menu.getItems().add(restoreSysItem);
     }
-
+    menu.getItems().add(new SeparatorMenuItem());
+    MenuItem labelItem = new CustomMenuItem(countLabel);
+    labelItem.setDisable(true);
+    menu.getItems().add(labelItem);
 
     menu.setOnShowing(event -> {
+
+      countLabel.setText(MessageFormat.format(RdcFxRdcBundle.getString("ROW {0} OF {1}"),
+                                              table.getSelectionModel().getSelectedIndex() + 1,
+                                              table.getItems() == null ? 0 : table.getItems().size()));
 
       if (columnMenu != null) {
         columnMenu.getItems().clear();
