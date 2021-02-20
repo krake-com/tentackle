@@ -25,6 +25,7 @@ import javafx.scene.control.TreeView;
 
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxContainer;
+import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.ModelToViewListener;
 import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.ViewToModelListener;
@@ -51,6 +52,14 @@ public class FxTreeView<T> extends TreeView<T> implements FxComponent {
     super();
   }
 
+  /**
+   * Scrolls the view in such a way that the given row is positioned in the center of the visible rows.
+   *
+   * @param row the model row index
+   */
+  public void scrollToCentered(int row) {
+    scrollTo(FxUtilities.getInstance().computeScrollToCentered(this, row));
+  }
 
   // @wurblet delegate Include $currentDir/fxcomponent.include
 

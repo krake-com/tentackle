@@ -34,6 +34,7 @@ import javafx.scene.input.KeyEvent;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxRuntimeException;
+import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.ModelToViewListener;
 import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.ViewToModelListener;
@@ -114,6 +115,30 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
       throw new FxRuntimeException("missing table configuration");
     }
     configuration.configure(this);
+  }
+
+
+  /**
+   * Scrolls the view in such a way that the given row is positioned in the center of the visible rows.
+   *
+   * @param row the model row index
+   */
+  public void scrollToCentered(int row) {
+    scrollTo(FxUtilities.getInstance().computeScrollToCentered(this, row));
+  }
+
+  /**
+   * Scrolls the view in such a way that the given object's row is positioned in the center of the visible rows.
+   *
+   * @param object the object to scroll to
+   */
+  public void scrollToCentered(S object) {
+    if (getItems() != null) {
+      int row = getItems().indexOf(object);
+      if (row >= 0) {
+        scrollToCentered(row);
+      }
+    }
   }
 
 
