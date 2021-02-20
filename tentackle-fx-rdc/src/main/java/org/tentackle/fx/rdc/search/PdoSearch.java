@@ -245,67 +245,76 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
             if (doubleClickHandler != null) {
               doubleClickHandler.accept(firstPdo);
             }
-            else if (GuiProviderFactory.getInstance().createGuiProvider(firstPdo).editorExists() && !isCrudShown()) {
-              Rdc.displayCrudStage(firstPdo.reload(), items, true, Modality.NONE, getStage(), null, crud -> {
-                pdoCrud = crud;
-                // event filter will removed when stage is hidden (see RdcUtilities)
-                crud.addPdoEventFilter(PdoEvent.ANY, e -> {
-                  if (e.getEventType() == PdoEvent.UPDATE) {    // INSERT or DELETE doesn't happen in this config
-                    T updatedPdo = firstPdo.reload();
-                    if (!treeViewInvalid) {
-                      ObservableList<TreeItem<T>> treeItems = treeView.getRoot().getChildren();
-                      int i = 0;
-                      for (TreeItem<T> item : treeItems) {
-                        if (updatedPdo.equals(item.getValue())) {
-                          // need new TreeItem in case childs have changed as well
-                          TreeItem<T> updatedItem =
-                                  GuiProviderFactory.getInstance().createGuiProvider(updatedPdo).createTreeItem();
-                          treeItems.set(i, updatedItem);
-                          updatedItem.setExpanded(item.isExpanded());
-                          break;
+            else if (GuiProviderFactory.getInstance().createGuiProvider(firstPdo).editorExists()) {
+              if (isCrudShown()) {
+                pdoCrud.releasePdo(released -> {
+                  if (released) {
+                    pdoCrud.setPdo(firstPdo.reload());
+                  }
+                });
+              }
+              else {
+                Rdc.displayCrudStage(firstPdo.reload(), items, true, Modality.NONE, getStage(), null, crud -> {
+                  pdoCrud = crud;
+                  // event filter will removed when stage is hidden (see RdcUtilities)
+                  crud.addPdoEventFilter(PdoEvent.ANY, e -> {
+                    if (e.getEventType() == PdoEvent.UPDATE) {    // INSERT or DELETE doesn't happen in this config
+                      T updatedPdo = firstPdo.reload();
+                      if (!treeViewInvalid) {
+                        ObservableList<TreeItem<T>> treeItems = treeView.getRoot().getChildren();
+                        int i = 0;
+                        for (TreeItem<T> item : treeItems) {
+                          if (updatedPdo.equals(item.getValue())) {
+                            // need new TreeItem in case childs have changed as well
+                            TreeItem<T> updatedItem =
+                                GuiProviderFactory.getInstance().createGuiProvider(updatedPdo).createTreeItem();
+                            treeItems.set(i, updatedItem);
+                            updatedItem.setExpanded(item.isExpanded());
+                            break;
+                          }
+                          i++;
                         }
-                        i++;
+                      }
+                      // items where updated in PdoCrud.save()!
+                      int ndx = items.indexOf(updatedPdo);
+                      if (ndx >= 0) {
+                        ((List) items.getSource()).set(items.getSourceIndex(ndx), updatedPdo);
                       }
                     }
-                    // items where updated in PdoCrud.save()!
-                    int ndx = items.indexOf(updatedPdo);
-                    if (ndx >= 0) {
-                      ((List) items.getSource()).set(items.getSourceIndex(ndx), updatedPdo);
-                    }
-                  }
-                  else if (e.getEventType() == PdoEvent.READ) { // up/down button pressed
-                    // do fast checks first (assumed the user did not change the selection)
-                    int ndx = treeViewInvalid ? tableView.getSelectionModel().getSelectedIndex() : -1;  // treeview needs full search (may contain expanded items)
-                    if (ndx > 0 && e.getPdo().equals(items.get(ndx - 1))) {
-                      ndx--;
-                    }
-                    else if (ndx < items.size() - 1 && ndx >= 0 && e.getPdo().equals(items.get(ndx + 1))) {
-                      ndx++;
-                    }
-                    else {
-                      // full scan
-                      ndx = items.indexOf(e.getPdo());
-                    }
-                    if (ndx >= 0) {
-                      if (treeViewInvalid) {
-                        tableView.getSelectionModel().clearSelection();
-                        tableView.getSelectionModel().select(ndx);
-                        tableView.scrollTo(ndx);
+                    else if (e.getEventType() == PdoEvent.READ) { // up/down button pressed
+                      // do fast checks first (assumed the user did not change the selection)
+                      int ndx = treeViewInvalid ? tableView.getSelectionModel().getSelectedIndex() : -1;  // treeview needs full search (may contain expanded items)
+                      if (ndx > 0 && e.getPdo().equals(items.get(ndx - 1))) {
+                        ndx--;
+                      }
+                      else if (ndx < items.size() - 1 && ndx >= 0 && e.getPdo().equals(items.get(ndx + 1))) {
+                        ndx++;
                       }
                       else {
-                        treeView.getSelectionModel().clearSelection();
-                        TreeItem<T> selectedItem = rootItem.getChildren().get(ndx);
-                        treeView.getSelectionModel().select(selectedItem);
-                        ndx = treeView.getSelectionModel().getSelectedIndex();    // index in tree lines (including expanded childs!)
-                        if (ndx >= 0) {
-                          treeView.scrollTo(ndx);
+                        // full scan
+                        ndx = items.indexOf(e.getPdo());
+                      }
+                      if (ndx >= 0) {
+                        if (treeViewInvalid) {
+                          tableView.getSelectionModel().clearSelection();
+                          tableView.getSelectionModel().select(ndx);
+                          tableView.scrollToCentered(ndx);
+                        }
+                        else {
+                          treeView.getSelectionModel().clearSelection();
+                          TreeItem<T> selectedItem = rootItem.getChildren().get(ndx);
+                          treeView.getSelectionModel().select(selectedItem);
+                          ndx = treeView.getSelectionModel().getSelectedIndex();    // index in tree lines (including expanded childs!)
+                          if (ndx >= 0) {
+                            treeView.scrollToCentered(ndx);
+                          }
                         }
                       }
                     }
-                  }
-                  e.consume();
+                    e.consume();
+                  });
                 });
-              });
+              }
             }
           }
         }
@@ -537,7 +546,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
       int firstIndex = tableView.getSelectionModel().getSelectedIndex();
       if (firstIndex >= 0) {
         tableView.getSelectionModel().getSelectedIndices().forEach(treeView.getSelectionModel()::select);
-        treeView.scrollTo(firstIndex);
+        treeView.scrollToCentered(firstIndex);
       }
       treeViewInvalid = false;
       tableViewInvalid = true;
@@ -562,7 +571,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
       });
       T firstItem = firstItemHolder.get();
       if (firstItem != null) {
-        tableView.scrollTo(firstItem);
+        tableView.scrollToCentered(firstItem);
       }
       treeViewInvalid = true;
       tableViewInvalid = false;

@@ -36,6 +36,9 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.Control;
 import javafx.scene.control.IndexedCell;
 import javafx.scene.control.Label;
+import javafx.scene.control.Skin;
+import javafx.scene.control.SkinBase;
+import javafx.scene.control.Skinnable;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -1060,7 +1063,53 @@ public class FxUtilities {
   }
 
 
+  /**
+   * Gets the virtual flow for a given control.
+   *
+   * @param control the control
+   * @return the virtual flow, null if no virtual flow associated to the control
+   */
+  public VirtualFlow getVirtualFlow(Skinnable control) {
+    VirtualFlow flow = null;
+    Skin skin = control.getSkin();
+    if (skin instanceof SkinBase) {
+      ObservableList children = ((SkinBase) skin).getChildren();
+      if (children != null) {
+        for (Object child : children) {
+          if (child instanceof VirtualFlow) {
+            flow = (VirtualFlow) child;
+            break;
+          }
+        }
+      }
+    }
+    return flow;
+  }
 
+
+  /**
+   * Computes the row number to scrollTo in order to position the given row in the middle of the viewport.
+   *
+   * @param control the control, usually a table- or treeview
+   * @param row the row to position in the middle of the viewport, if possible
+   * @return the row number to pass to the scrollTo method
+   */
+  public int computeScrollToCentered(Skinnable control, int row) {
+    VirtualFlow flow = getVirtualFlow(control);
+    if (flow != null) {
+      IndexedCell firstVisibleCell = flow.getFirstVisibleCell();
+      IndexedCell lastVisibleCell = flow.getLastVisibleCell();
+      if (firstVisibleCell != null && lastVisibleCell != null) {
+        int firstRow = firstVisibleCell.getIndex();
+        int lastRow = lastVisibleCell.getIndex();
+        row -= (lastRow - firstRow) / 2;
+        if (row < 0) {
+          row = 0;
+        }
+      }
+    }
+    return row;
+  }
 
 
   /**
