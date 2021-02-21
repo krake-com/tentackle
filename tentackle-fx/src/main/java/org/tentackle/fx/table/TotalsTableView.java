@@ -37,6 +37,26 @@ import org.tentackle.fx.component.FxTableView;
  */
 public class TotalsTableView<S> extends FxTableView<S> {
 
+  /**
+   * Property to store the link to the TotalsTableView in an {@link FxTableView}.<br>
+   * Avoids public accessor methods in {@link FxTableView} because this is an implementation detail.
+   */
+  private static final String TOTALS_TABLE_VIEW_PROPERTY = "totals-table-view";
+
+
+  /**
+   * Retrieves the TotalsTableView for a table.
+   *
+   * @param table the table view
+   * @param <T> the element type of the table
+   * @return the totals table, null if no totals table associated
+   */
+  @SuppressWarnings("unchecked")
+  public static <T> TotalsTableView<T> getTotalsTableView(FxTableView<T> table) {
+    return (TotalsTableView<T>) table.getProperties().get(TOTALS_TABLE_VIEW_PROPERTY);
+  }
+
+
   private FxTableView<S> boundTable;
 
 
@@ -115,7 +135,7 @@ public class TotalsTableView<S> extends FxTableView<S> {
         getColumns().add(createTotalsColumn(boundColumn));
       }
       boundTable.getColumns().addListener(columnListener);
-      boundTable.setTotalsTableView(this);
+      boundTable.getProperties().put(TOTALS_TABLE_VIEW_PROPERTY, this);
     }
   }
 
@@ -124,7 +144,7 @@ public class TotalsTableView<S> extends FxTableView<S> {
    */
   protected void unbind() {
     if (boundTable != null) {
-      boundTable.setTotalsTableView(null);
+      boundTable.getProperties().remove(TOTALS_TABLE_VIEW_PROPERTY);
       boundTable.getColumns().removeListener(columnListener);
     }
     getColumns().clear();

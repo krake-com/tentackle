@@ -260,9 +260,10 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
 
       // store also the dimensions of the table
       double height = table.getHeight();
-      if (table.getTotalsTableView() != null) {
+      TotalsTableView<S> totalsTable = TotalsTableView.getTotalsTableView(table);
+      if (totalsTable != null) {
         // add the height of the totals table
-        height += table.getTotalsTableView().getHeight();
+        height += totalsTable.getHeight();
       }
       prefs.putDouble(PREF_TABLE_HEIGHT, height);
       prefs.putDouble(PREF_WIDTH, table.getWidth());

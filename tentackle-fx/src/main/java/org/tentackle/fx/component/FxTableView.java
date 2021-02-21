@@ -42,7 +42,6 @@ import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.component.delegate.FxTableViewDelegate;
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.TableConfiguration;
-import org.tentackle.fx.table.TotalsTableView;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -61,11 +60,6 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
    * Optional but recommended.
    */
   private TableConfiguration<S> configuration;
-
-  /**
-   * The optional totals table.
-   */
-  private TotalsTableView<S> totalsTableView;
 
   /**
    * Currently displayed info notes.
@@ -139,25 +133,6 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
         scrollToCentered(row);
       }
     }
-  }
-
-
-  /**
-   * Gets the totals table.
-   *
-   * @return null if no totals (default)
-   */
-  public TotalsTableView<S> getTotalsTableView() {
-    return totalsTableView;
-  }
-
-  /**
-   * Sets the totals table.
-   *
-   * @param totalsTableView null to clear
-   */
-  public void setTotalsTableView(TotalsTableView<S> totalsTableView) {
-    this.totalsTableView = totalsTableView;
   }
 
 
