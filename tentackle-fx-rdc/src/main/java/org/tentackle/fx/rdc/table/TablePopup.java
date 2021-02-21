@@ -59,8 +59,6 @@ public class TablePopup<S> {
   private final String preferencesSuffix;       // suffix for the preferences
   private String title;                         // the title of the printed table
   private boolean columnMenuEnabled = true;     // true if user is allowed to hide/show columns (default)
-  private final Label countLabel = new Label(); // shows the current row number and the number of rows
-
 
 
   /**
@@ -225,7 +223,8 @@ public class TablePopup<S> {
       menu.getItems().add(restoreSysItem);
     }
     menu.getItems().add(new SeparatorMenuItem());
-    MenuItem labelItem = new CustomMenuItem(countLabel);
+    final Label countLabel = new Label();
+    MenuItem labelItem = new CustomMenuItem(countLabel, false);
     labelItem.setDisable(true);
     menu.getItems().add(labelItem);
 

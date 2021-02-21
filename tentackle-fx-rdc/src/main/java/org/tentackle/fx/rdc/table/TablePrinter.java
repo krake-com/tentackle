@@ -49,6 +49,7 @@ import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.FxTableColumn;
 import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
+import org.tentackle.fx.table.TotalsTableView;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.Duration;
 import org.tentackle.misc.FormatHelper;
@@ -277,7 +278,7 @@ public class TablePrinter extends AbstractFxController {
     getView().getTransforms().add(new Scale(scaleXY, scaleXY));
 
     ObservableList items;
-    FxTableView<?> totalsTable = table.getTotalsTableView();
+    TotalsTableView<?> totalsTable = TotalsTableView.getTotalsTableView(table);
     if (totalsTable != null) {
       // add totals
       items = FXCollections.observableArrayList(table.getItems());
