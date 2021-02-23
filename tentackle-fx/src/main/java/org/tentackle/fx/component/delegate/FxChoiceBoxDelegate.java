@@ -32,12 +32,18 @@ import java.util.Arrays;
 
 /**
  * Delegate for FxChoiceBox.
+ * <p>
+ * As a convenience for boolean model types the choicebox can fake
+ * the boolean with 2 items: first for TRUE and the second for FALSE.
+ * If the application already specified 2 items, they will be kept,
+ * otherwise overridden from the name of the model member.
  *
  * @author harald
  */
 public class FxChoiceBoxDelegate extends FxComponentDelegate {
 
   private final FxChoiceBox<?> component;   // the component
+  private boolean fakeBool;                 // true if boolean type and 2 choices fake TRUE and FALSE
 
   /**
    * Creates the delegate.
@@ -78,10 +84,24 @@ public class FxChoiceBoxDelegate extends FxComponentDelegate {
       }
     });
 
+    fakeBool = false;
+
     if (type.isEnum()) {
       ObservableList items = component.getItems();
       items.clear();
       items.addAll(Arrays.asList(type.getEnumConstants()));
+    }
+    else if (type == Boolean.TYPE || type == Boolean.class) {
+      ObservableList items = component.getItems();
+      if (items.isEmpty()) {
+        fakeBool = true;
+        items.add(getBinding().getMember().getMemberName() + " = " + Boolean.TRUE);
+        items.add(getBinding().getMember().getMemberName() + " = " + Boolean.FALSE);
+      }
+      else if (items.size() == 2) {
+        fakeBool = true;    // first = true, second = false, unselected = null
+      }
+      // else application did some other stuff: leave it unchanged
     }
   }
 
@@ -93,13 +113,33 @@ public class FxChoiceBoxDelegate extends FxComponentDelegate {
 
   @Override
   public Object getViewObject() {
+    if (fakeBool) {
+      switch (component.getSelectionModel().getSelectedIndex()) {
+        case 0:   return Boolean.TRUE;
+        case 1:   return Boolean.FALSE;
+        default:  return null;
+      }
+    }
     return component.getSelectionModel().getSelectedItem();
   }
 
   @Override
   public void setViewValue(Object value) {
-    // no value translator needed because items are of model's type already
-    setViewObject(value);
+    if (fakeBool) {
+      if (Boolean.TRUE.equals(value)) {
+        component.getSelectionModel().select(0);
+      }
+      else if (Boolean.FALSE.equals(value)) {
+        component.getSelectionModel().select(1);
+      }
+      else {
+        component.getSelectionModel().clearSelection();
+      }
+    }
+    else {
+      // no value translator needed because items are of model's type already
+      setViewObject(value);
+    }
   }
 
   @Override
