@@ -725,8 +725,12 @@ For more options, see {\@link DbModelWurblet}.
 @[
           }
           else {
+            String linkMethodName = rel.getSetterName();
+            if (rel.getForeignRelation() != null && rel.getForeignRelation().getLinkMethodName() != null) {
+              linkMethodName = rel.getForeignRelation().getLinkMethodName();
+            }
 ]@
-  @(scope)@ void @(rel.getSetterName())@(@(type)@ @(var)@)  {
+  @(scope)@ void @(linkMethodName)@(@(type)@ @(var)@)  {
 @[
           }
           if (!rel.isReversed()) {
