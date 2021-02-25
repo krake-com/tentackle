@@ -21,35 +21,35 @@ package org.tentackle.fx.translate;
 import org.tentackle.fx.FxTextComponent;
 import org.tentackle.fx.ValueTranslatorService;
 
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.function.Function;
 
 /**
- * LocalTime translator.
+ * LocalDateTime translator.
  *
  * @author harald
  */
-@ValueTranslatorService(modelClass = LocalTime.class, viewClass = String.class)
-public class LocalTimeStringConverter extends ValueStringTranslator<LocalTime> {
+@ValueTranslatorService(modelClass = LocalDateTime.class, viewClass = String.class)
+public class LocalDateTimeStringTranslator extends ValueStringTranslator<LocalDateTime> {
 
   private final DateStringTranslator translator;
 
-  public LocalTimeStringConverter(FxTextComponent component) {
+  public LocalDateTimeStringTranslator(FxTextComponent component) {
     super(component);
     translator = new DateStringTranslator(component);
   }
 
   @Override
-  public Function<LocalTime, String> toViewFunction() {
-    return v -> translator.format(v == null ? null : java.sql.Time.valueOf(v));
+  public Function<LocalDateTime, String> toViewFunction() {
+    return v -> translator.format(v == null ? null : java.sql.Timestamp.valueOf(v));
   }
 
   @Override
-  public Function<String, LocalTime> toModelFunction() {
+  public Function<String, LocalDateTime> toModelFunction() {
     return s -> {
       Date date = translator.parse(s);
-      return date == null ? null : new java.sql.Time(date.getTime()).toLocalTime();
+      return date == null ? null : new java.sql.Timestamp(date.getTime()).toLocalDateTime();
     };
   }
 
