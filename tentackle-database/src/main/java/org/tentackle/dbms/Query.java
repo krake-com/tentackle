@@ -25,6 +25,8 @@ import org.tentackle.common.DMoney;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.Convertible;
 import org.tentackle.session.PersistenceException;
+import org.tentackle.sql.DataType;
+import org.tentackle.sql.DataTypeFactory;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -146,7 +148,7 @@ public class Query {
    *          add(" AND CN_MONEY=?", object.getAmount());
    * </pre>
    *
-   * @param sql is the SQL-string
+   * @param sql is the SQL-string, null or empty if just data
    * @param data is an array of parameters
    */
   public void add(String sql, Object... data) {
@@ -427,13 +429,18 @@ public class Query {
             st.setBinary(ndx++, (Binary<?>) data);
           }
           else {
-            // unsupported type
             if (data == null) {
               throw new PersistenceException("null value in '" + item + "' arg[" + dataIndex + "]");
             }
             else {
-              throw new PersistenceException(
-                      "unsupported type " + data.getClass() + " in '" + item + "' arg[" + dataIndex + "]");
+              DataType dataType = DataTypeFactory.getInstance().get(data.getClass());
+              if (dataType == null) {
+                throw new PersistenceException(
+                    "unsupported type " + data.getClass() + " in '" + item + "' arg[" + dataIndex + "]");
+              }
+              // the application must provide the correct number of questionmarks!
+              st.set(dataType, ndx, data, false, null);
+              ndx += dataType.getColumnCount();
             }
           }
         }
@@ -493,7 +500,7 @@ public class Query {
     private final Object[] data;      // data items
 
     private QueryItem(String sql, Object... data) {
-      this.sql = sql;
+      this.sql = sql == null ? "" : sql;
       this.data = data;
     }
 
