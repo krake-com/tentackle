@@ -33,6 +33,6 @@ public interface UpdateService extends Remote {
    * @return the update info
    * @throws RemoteException if download info cannot be determined
    */
-  UpdateInfo getInfo(ClientInfo info) throws RemoteException;
+  UpdateInfo getUpdateInfo(ClientInfo info) throws RemoteException;
 
 }

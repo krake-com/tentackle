@@ -77,7 +77,7 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
         if (service != null) {
           try {
             ClientInfo clientInfo = new ClientInfo(getApplication().getName(), getApplication().getVersion(), installationType);
-            UpdateInfo updateInfo = service.getInfo(clientInfo);
+            UpdateInfo updateInfo = service.getUpdateInfo(clientInfo);
             LOGGER.info("application update {0} -> {1}", clientInfo, updateInfo);
             if (!updateInfo.getVersion().equals(clientInfo.getVersion())) {
               return () -> {
