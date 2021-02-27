@@ -115,14 +115,14 @@ public abstract class AbstractUpdateServiceImpl extends UnicastRemoteObject impl
 
 
   @Override
-  public UpdateInfo getInfo(ClientInfo clientInfo) throws RemoteException {
+  public UpdateInfo getUpdateInfo(ClientInfo clientInfo) throws RemoteException {
     try {
       URL zipURL = createZipURL(clientInfo);
-      URL shaURL = createChecksumURL(clientInfo);
-      String shaHash = determineChecksumHash(shaURL);
+      URL checksumURL = createChecksumURL(clientInfo);
+      String checksumHash = determineChecksumHash(checksumURL);
       long size = determineDownloadSize(zipURL);
       String updateExecutor = createUpdateExecutor(clientInfo);
-      return new UpdateInfo(getVersion(), zipURL, shaHash, size, updateExecutor);
+      return createUpdateInfo(getVersion(), zipURL, checksumHash, size, updateExecutor);
     }
     catch (IOException ex) {
       throw new RemoteException("cannot create update info", ex);
@@ -130,6 +130,19 @@ public abstract class AbstractUpdateServiceImpl extends UnicastRemoteObject impl
   }
 
 
+  /**
+   * Creates the update info to be returned to the client.
+   *
+   * @param version the new application version
+   * @param zipURL the URL to download the zip file
+   * @param checksumHash the checksum hash
+   * @param size the download size
+   * @param updateExecutor the filename to execute to perform the update
+   * @return the update info
+   */
+  protected UpdateInfo createUpdateInfo(String version, URL zipURL, String checksumHash, long size, String updateExecutor) {
+    return new UpdateInfo(version, zipURL, checksumHash, size, updateExecutor);
+  }
 
   /**
    * Creates the name of the update executor.
