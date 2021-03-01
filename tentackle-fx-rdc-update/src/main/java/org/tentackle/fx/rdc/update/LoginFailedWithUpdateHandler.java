@@ -80,21 +80,9 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
             UpdateInfo updateInfo = service.getUpdateInfo(clientInfo);
             LOGGER.info("application update {0} -> {1}", clientInfo, updateInfo);
             if (!updateInfo.getVersion().equals(clientInfo.getVersion())) {
-              return () -> {
-                BlockingHolder<Boolean> answer = new BlockingHolder<>();
-                Platform.runLater(() -> Fx.question(MessageFormat.format(UpdateFxRdcBundle.getString("{0}_{1}_OUTDATED_INSTALL_{2}"),
-                                                                         clientInfo.getApplication(), clientInfo.getVersion(), updateInfo.getVersion()),
-                                                    false,
-                                                    answer));
-                if (answer.get()) {
-                  update(updateInfo, installationType);
-                }
-                else {
-                  terminate(null, null);
-                }
-              };
+              return createUpdateRunnable(clientInfo, updateInfo, installationType);
             }
-            // else: version is okay, but TLS handshake didn't work
+            // else: version is okay, but TLS handshake didn't work -> proceed with standard impl below
           }
           catch (Exception rx) {
             LOGGER.warning("getting update info failed", rx);
@@ -113,6 +101,35 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
     }
 
     return super.handle(ex);
+  }
+
+
+  /**
+   * Creates a runnable that will be invoked if a newer version exists.<br>
+   * The default implementation asks the user whether to update or not and invokes
+   * {@link #update(UpdateInfo, InstallationType)} or {@link #terminate(String, Throwable)}, respectively.<br>
+   * Applications running in unattended mode (presentation mode, dashboards, etc...)
+   * may override this method and update without asking the user.
+   *
+   * @param clientInfo the client info of the currently running application
+   * @param updateInfo the update info of the new application
+   * @param installationType the installation type
+   * @return the runnable, never null
+   */
+  protected Runnable createUpdateRunnable(ClientInfo clientInfo, UpdateInfo updateInfo, InstallationType installationType) {
+    return () -> {
+      BlockingHolder<Boolean> answer = new BlockingHolder<>();
+      Platform.runLater(() -> Fx.question(MessageFormat.format(UpdateFxRdcBundle.getString("{0}_{1}_OUTDATED_INSTALL_{2}"),
+                                                               clientInfo.getApplication(), clientInfo.getVersion(), updateInfo.getVersion()),
+                                          false,
+                                          answer));
+      if (answer.get()) {
+        update(updateInfo, installationType);
+      }
+      else {
+        terminate(null, null);
+      }
+    };
   }
 
   /**
@@ -213,7 +230,13 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
   }
 
 
-  private void terminate(String msg, Throwable t) {
+  /**
+   * Terminates the application.
+   *
+   * @param msg the message shown to the user
+   * @param t the throwable
+   */
+  protected void terminate(String msg, Throwable t) {
     Platform.runLater(() -> {
       if (msg != null) {
         if (t != null) {
