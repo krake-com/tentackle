@@ -105,7 +105,8 @@ public abstract class UpdatableDesktopApplication<C extends FxController> extend
             channel.close();
             channel = FileChannel.open(lockPath, StandardOpenOption.READ);
             ByteBuffer buff = ByteBuffer.allocate(64);
-            channel.read(buff);
+            int count = channel.read(buff);
+            buff.limit(count);
             String pid = new String(buff.array(), Settings.getEncodingCharset());
             throw new TentackleRuntimeException("another " + getName() + " with PID " + pid + " is still running");
           }
