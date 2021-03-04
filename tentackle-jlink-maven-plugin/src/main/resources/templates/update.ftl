@@ -44,7 +44,7 @@ cd "$(dirname "$(dirname "$(dirname "$(abs_path "$0")")")")"
   <#else>
 cd "$(dirname "$(dirname "$(dirname "$(readlink -f "$0")")")")"
   </#if>
-<#-- wait for termination (necessary only if running on NFS) -->
+<#-- wait for termination (lockfile must be unlocked first) -->
 if [ "$1" != "" ]; then
   while kill -0 $1 2>/dev/null
   do
