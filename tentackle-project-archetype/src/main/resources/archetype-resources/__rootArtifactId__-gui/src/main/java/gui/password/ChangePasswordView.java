@@ -45,7 +45,7 @@ public class ChangePasswordView extends AbstractFxController implements DomainCo
    * @param admin invoked by admin user
    */
   public static void showDialog(User user, boolean admin) {
-    if (admin || user.isWriteAllowed() || user.isPasswordChangeable()) {
+    if (admin || user.isEditAllowed() || user.isPasswordChangeable()) {
       ChangePasswordView controller = Fx.load(ChangePasswordView.class);
       Stage stage = Fx.createStage(Modality.NONE);
       Scene scene = Fx.createScene(controller.getView());
