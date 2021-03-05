@@ -59,7 +59,7 @@ import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
 /**
- * CRUD controller for PDOs.
+ * Security editor controller.
  *
  * @author harald
  */
