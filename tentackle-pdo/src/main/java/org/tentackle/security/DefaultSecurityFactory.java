@@ -19,14 +19,6 @@
 
 package org.tentackle.security;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.StringTokenizer;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
@@ -36,6 +28,15 @@ import org.tentackle.security.permissions.ExecutePermission;
 import org.tentackle.security.permissions.ReadPermission;
 import org.tentackle.security.permissions.ViewPermission;
 import org.tentackle.security.permissions.WritePermission;
+
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
 
 
 /**
@@ -83,10 +84,6 @@ public class DefaultSecurityFactory implements SecurityFactory {
                                       " does not implement " + permissionInterface.getName());
         }
         Permission permission = permissionImplementation.getDeclaredConstructor().newInstance();
-        if (!permissionInterface.isAssignableFrom(permission.getClass())) {
-          throw new SecurityException("permission interface of " + permissionImplementation.getName() +
-                                      " is not a " + permissionInterface.getName());
-        }
         String name = permission.getName();
         if (!StringHelper.isValidJavaIdentifier(name)) {
           throw new SecurityException("invalid name '" + name + "' in " + permissionImplementation.getName());

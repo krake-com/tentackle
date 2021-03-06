@@ -19,10 +19,6 @@
 
 package org.tentackle.validate;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
@@ -31,6 +27,11 @@ import org.tentackle.validate.scope.ChangeableScope;
 import org.tentackle.validate.scope.InteractiveScope;
 import org.tentackle.validate.scope.MandatoryScope;
 import org.tentackle.validate.scope.PersistenceScope;
+
+import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 
 /**
@@ -72,10 +73,6 @@ public class DefaultValidationScopeFactory implements ValidationScopeFactory {
                                                " does not implement " + scopeInterface.getName());
         }
         ValidationScope scope = scopeImplementation.getDeclaredConstructor().newInstance();
-        if (scope.getClass().getInterfaces()[0] != scopeInterface) {
-          throw new ValidationRuntimeException("scope interface of " + scopeImplementation.getName() +
-                                               " is not a " + scopeInterface.getName());
-        }
         String name = scope.getName();
         if (!StringHelper.isValidJavaIdentifier(name)) {
           throw new ValidationRuntimeException("invalid name '" + name + "' in " + scopeImplementation.getName());

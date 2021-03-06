@@ -780,6 +780,30 @@ public final class ReflectionHelper {
   }
 
 
+  /**
+   * Finds the declared interface for a given class.<br>
+   * Checks the interfaces of the class and its superclasses
+   * until it finds a declared interface that is of the given interface type
+   * or a subtype of.
+   *
+   * @param clazz the class
+   * @param superIface the declared interface
+   * @param <I> the type of the declared interface
+   * @return the declared interface, null if not found
+   */
+  public static <I> Class<? extends I> findInterface(Class<?> clazz, Class<I> superIface) {
+    while (clazz != null) {
+      Class<?>[] ifaces = clazz.getInterfaces();
+      for (Class<?> iface : ifaces) {
+        if (superIface.isAssignableFrom(iface)) {
+          return (Class<? extends I>) iface;
+        }
+      }
+      clazz = clazz.getSuperclass();
+    }
+    return null;
+  }
+
 
   private static Method getMethodForElement(Class<?> clazz, String element) {
     Method method = null;

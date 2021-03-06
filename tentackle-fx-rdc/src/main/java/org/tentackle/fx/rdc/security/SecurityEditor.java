@@ -37,8 +37,10 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.security.Permission;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.pdo.Security;
+import org.tentackle.security.permissions.AllPermission;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -47,7 +49,7 @@ import java.util.TreeMap;
 
 
 /**
- * Editor for Security.
+ * Security permissions editor.
  *
  * @author harald
  */
@@ -82,6 +84,7 @@ public class SecurityEditor extends PdoEditor<Security> {
   private Class<?> clazz;
   private Map<Permission, FxCheckBox> permissionCheckBoxes;
   private Map<Permission, FxRadioButton> permissionRadioButtons;
+  private Set<Permission> inheritedPermissions;
 
 
 
@@ -105,28 +108,24 @@ public class SecurityEditor extends PdoEditor<Security> {
       }
       updateEffectivePermissions();
     });
+    allowButton.addViewToModelListener(this::handleSelectionEvent);
+    denyButton.addViewToModelListener(this::handleSelectionEvent);
+
     permissionCheckBoxes = new TreeMap<>();   // sort by name
     permissionRadioButtons = new HashMap<>();
+    inheritedPermissions = new HashSet<>();
+
     for (Class<? extends Permission> permissionIf: SecurityFactory.getInstance().getPermissionInterfaces()) {
       Permission permission = SecurityFactory.getInstance().getPermission(permissionIf);
       FxCheckBox checkBox = Fx.createNode(CheckBox.class);
       checkBox.setText(permission.getName());
       checkBox.setBindable(false);
-      checkBox.addViewToModelListener(() -> {
-        permissionsToModel();
-        updateEffectivePermissions();
-      });
+      checkBox.addViewToModelListener(this::handleSelectionEvent);
       permissionCheckBoxes.put(permission, checkBox);
       FxRadioButton effectiveRadioButton = Fx.createNode(RadioButton.class);
       effectiveRadioButton.setBindable(false);
       effectiveRadioButton.setChangeable(false);
       permissionRadioButtons.put(permission, effectiveRadioButton);
-    }
-    int row = 1;
-    for (Map.Entry<Permission,FxCheckBox> entry: permissionCheckBoxes.entrySet()) {
-      permissionPane.add(entry.getValue(), 0, row);
-      permissionPane.add(permissionRadioButtons.get(entry.getKey()), 1, row);
-      row++;
     }
 
     if (!SecurityDialogFactory.getInstance().isDomainContextUsed()) {
@@ -175,16 +174,15 @@ public class SecurityEditor extends PdoEditor<Security> {
    */
   public void setSecurableClass(Class<?> clazz) {
     this.clazz = clazz;
-    for (Map.Entry<Permission,FxCheckBox> entry: permissionCheckBoxes.entrySet()) {
+
+    permissionPane.getChildren().remove(2, permissionPane.getChildren().size());
+    int row = 1;
+    for (Map.Entry<Permission, FxCheckBox> entry : permissionCheckBoxes.entrySet()) {
       Permission permission = entry.getKey();
-      FxCheckBox box = entry.getValue();
-      boolean changeable = permission.appliesTo(clazz);
-      box.setChangeable(changeable);
-      if (changeable) {
-        box.getStyleClass().remove(NA_STYLE);
-      }
-      else if (!box.getStyleClass().contains(NA_STYLE)) {
-        box.getStyleClass().add(NA_STYLE);
+      if (permission.appliesTo(clazz)) {
+        permissionPane.add(entry.getValue(), 0, row);
+        permissionPane.add(permissionRadioButtons.get(permission), 1, row);
+        row++;
       }
     }
   }
@@ -223,41 +221,89 @@ public class SecurityEditor extends PdoEditor<Security> {
     });
   }
 
+  private void handleSelectionEvent() {
+    updateEffectivePermissions();
+    permissionsToModel();
+  }
 
   private void updateEffectivePermissions() {
     // map to effective permissions
-    Class<?>[] permissions = SecurityFactory.getInstance().stringToPermissionInterfaces(sec.getPermissions());
+    inheritedPermissions.clear();
+    Set<Class<?>> selectedPermissions = new HashSet<>();
+    for (Map.Entry<Permission, FxCheckBox> entry: permissionCheckBoxes.entrySet()) {
+      if (entry.getValue().isSelected()) {
+        selectedPermissions.add(entry.getKey().getPermissionInterface());
+      }
+    }
+    Class<?>[] permissions = selectedPermissions.toArray(new Class<?>[0]);
+
     for (Map.Entry<Permission, FxRadioButton> entry: permissionRadioButtons.entrySet()) {
       Permission permission = entry.getKey();
+      Class<?> permissionIf = permission.getPermissionInterface();
       FxRadioButton effectiveRadioButton = entry.getValue();
+      FxCheckBox box = permissionCheckBoxes.get(permission);
+      boolean appliesEffectively;
+      boolean inherited = false;
+      boolean isAllPermission = permission instanceof AllPermission;
       if (sec.isAllowed()) {
         if (!effectiveRadioButton.getStyleClass().contains(ALLOW_STYLE)) {
           effectiveRadioButton.getStyleClass().add(ALLOW_STYLE);
         }
         effectiveRadioButton.getStyleClass().remove(DENY_STYLE);
-        effectiveRadioButton.setSelected(
-                permissions != null &&
-                permission.appliesTo(clazz) &&
-                permission.isAllowedBy(permissions));
+        appliesEffectively = permission.appliesTo(clazz) && permission.isAllowedBy(permissions) &&
+                             (!isAllPermission || box.isSelected());
+        if (appliesEffectively && !isAllPermission) {
+          for (Class<?> iFace : permissions) {
+            if (AllPermission.class.isAssignableFrom(iFace) ||
+                permissionIf != iFace && permissionIf.isAssignableFrom(iFace)) {
+              inherited = true;
+              break;
+            }
+          }
+        }
       }
       else {
         if (!effectiveRadioButton.getStyleClass().contains(DENY_STYLE)) {
           effectiveRadioButton.getStyleClass().add(DENY_STYLE);
         }
         effectiveRadioButton.getStyleClass().remove(ALLOW_STYLE);
-        effectiveRadioButton.setSelected(
-                permissions != null &&
-                permission.appliesTo(clazz) &&
-                permission.isDeniedBy(permissions));
+        appliesEffectively = permission.appliesTo(clazz) && permission.isDeniedBy(permissions) &&
+                             (!isAllPermission || box.isSelected());
+        if (appliesEffectively && !isAllPermission) {
+          for (Class<?> iFace : permissions) {
+            if (AllPermission.class.isAssignableFrom(iFace) ||
+                permissionIf != iFace && iFace.isAssignableFrom(permissionIf)) {
+              inherited = true;
+              break;
+            }
+          }
+        }
+      }
+      effectiveRadioButton.setSelected(appliesEffectively);
+
+      if (inherited) {
+        if (!isAllPermission) {
+          inheritedPermissions.add(permission);
+        }
+        if (!box.getStyleClass().contains(NA_STYLE)) {
+          box.getStyleClass().add(NA_STYLE);
+        }
+      }
+      else {
+        box.getStyleClass().remove(NA_STYLE);
       }
     }
   }
 
   private void permissionsToModel() {
     Set<Permission> permissions = new LinkedHashSet<>();
+    boolean someSelected = false;
     for (Map.Entry<Permission,FxCheckBox> entry: permissionCheckBoxes.entrySet()) {
       if (entry.getValue().isSelected()) {
-        permissions.add(entry.getKey());
+        someSelected = true;
+        if (!inheritedPermissions.contains(entry.getKey())) {
+          permissions.add(entry.getKey());
+        }
       }
     }
     sec.setPermissions(permissions.isEmpty() ? null : SecurityFactory.getInstance().permissionsToString(permissions));
