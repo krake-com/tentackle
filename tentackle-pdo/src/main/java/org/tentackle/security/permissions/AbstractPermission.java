@@ -35,6 +35,11 @@ public abstract class AbstractPermission implements Permission, Comparable<Permi
   private Class<? extends Permission> iFace;
 
   @Override
+  public String getDecription() {
+    return null;
+  }
+
+  @Override
   @SuppressWarnings("unchecked")
   public Class<? extends Permission> getPermissionInterface() {
     if (iFace == null) {

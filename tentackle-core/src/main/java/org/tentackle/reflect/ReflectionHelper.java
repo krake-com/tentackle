@@ -791,6 +791,7 @@ public final class ReflectionHelper {
    * @param <I> the type of the declared interface
    * @return the declared interface, null if not found
    */
+  @SuppressWarnings("unchecked")
   public static <I> Class<? extends I> findInterface(Class<?> clazz, Class<I> superIface) {
     while (clazz != null) {
       Class<?>[] ifaces = clazz.getInterfaces();

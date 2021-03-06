@@ -31,11 +31,22 @@ public interface Permission {
 
   /**
    * Gets the unique name of the permission.<br>
-   * The name must conform to the rules of a java identifier.
+   * The name must conform to the rules of a java identifier,
+   * must be unique among all permissions and should be reasonably short.
    *
    * @return the name
    */
   String getName();
+
+  /**
+   * Gets the optional internationalized description.<br>
+   * May consist of more than one line.<br>
+   * Will be displayed in tooltips, for example.
+   * Makes sense for application-specific permissions with a non-obvious purpose.
+   *
+   * @return the description, null or empty if none
+   */
+  String getDecription();
 
   /**
    * Gets the permission interface of this implementation.

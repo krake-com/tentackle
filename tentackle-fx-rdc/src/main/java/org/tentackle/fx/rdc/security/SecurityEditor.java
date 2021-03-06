@@ -22,6 +22,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.control.Tooltip;
 
 import org.tentackle.bind.Bindable;
 import org.tentackle.fx.Fx;
@@ -118,6 +119,10 @@ public class SecurityEditor extends PdoEditor<Security> {
     for (Class<? extends Permission> permissionIf: SecurityFactory.getInstance().getPermissionInterfaces()) {
       Permission permission = SecurityFactory.getInstance().getPermission(permissionIf);
       FxCheckBox checkBox = Fx.createNode(CheckBox.class);
+      String description = permission.getDecription();
+      if (description != null) {
+        checkBox.setTooltip(new Tooltip(description));
+      }
       checkBox.setText(permission.getName());
       checkBox.setBindable(false);
       checkBox.addViewToModelListener(this::handleSelectionEvent);
