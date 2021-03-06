@@ -236,7 +236,7 @@ public class SecurityEditor extends PdoEditor<Security> {
     inheritedPermissions.clear();
     Set<Class<?>> selectedPermissions = new HashSet<>();
     for (Map.Entry<Permission, FxCheckBox> entry: permissionCheckBoxes.entrySet()) {
-      if (entry.getValue().isSelected()) {
+      if (entry.getValue().isSelected() && entry.getKey().appliesTo(clazz)) {
         selectedPermissions.add(entry.getKey().getPermissionInterface());
       }
     }
