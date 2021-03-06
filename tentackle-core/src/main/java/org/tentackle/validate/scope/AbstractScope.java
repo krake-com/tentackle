@@ -19,6 +19,7 @@
 
 package org.tentackle.validate.scope;
 
+import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.validate.ValidationRuntimeException;
 import org.tentackle.validate.ValidationScope;
 
@@ -39,7 +40,10 @@ public abstract class AbstractScope implements ValidationScope {
    */
   protected Class<?> getIFace() {
     if (iFace == null) {
-      iFace = getClass().getInterfaces()[0];
+      iFace = ReflectionHelper.findInterface(getClass(), ValidationScope.class);
+      if (iFace == null) {
+        throw new ValidationRuntimeException(getClass() + " does not implement some ValidationScope interface");
+      }
     }
     return iFace;
   }

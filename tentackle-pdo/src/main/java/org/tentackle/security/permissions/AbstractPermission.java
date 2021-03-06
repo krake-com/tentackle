@@ -19,8 +19,10 @@
 
 package org.tentackle.security.permissions;
 
-import java.util.Objects;
+import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.security.Permission;
+
+import java.util.Objects;
 
 /**
  * Abstract permission.
@@ -30,18 +32,18 @@ import org.tentackle.security.Permission;
 public abstract class AbstractPermission implements Permission, Comparable<Permission> {
 
   // the extracted permission interface
-  private Class<?> iFace;
+  private Class<? extends Permission> iFace;
 
   @Override
   @SuppressWarnings("unchecked")
   public Class<? extends Permission> getPermissionInterface() {
     if (iFace == null) {
-      iFace = getClass().getInterfaces()[0];
+      iFace = ReflectionHelper.findInterface(getClass(), Permission.class);
+      if (iFace == null) {
+        throw new SecurityException(getClass() + " does not implement some Permission interface");
+      }
     }
-    if (!Permission.class.isAssignableFrom(iFace)) {
-      throw new SecurityException(iFace + " is not a permission interface");
-    }
-    return (Class<? extends Permission>) iFace;
+    return iFace;
   }
 
   @Override
