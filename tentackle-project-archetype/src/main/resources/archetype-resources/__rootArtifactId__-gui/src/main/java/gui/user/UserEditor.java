@@ -121,11 +121,11 @@ public class UserEditor extends PdoEditor<User> {
 
   @SuppressWarnings("unchecked")
   private ContextMenu createContextMenu(TableRow<UserGroup> row) {
-    ContextMenu contextMenu = new ContextMenu();
-
-    MenuItem addMenuItem = new MenuItem(resources.getString("add group to user"));
-    addMenuItem.setOnAction(e -> {
-      Rdc.displaySearchStage(
+    ContextMenu contextMenu = null;
+    if (user != null && user.isEditAllowed()) {
+      contextMenu = new ContextMenu();
+      MenuItem addMenuItem = new MenuItem(resources.getString("add group to user"));
+      addMenuItem.setOnAction(e -> Rdc.displaySearchStage(
           Pdo.create(UserGroup.class, getBinder().getBindingProperty(DomainContext.class)),
           Modality.APPLICATION_MODAL, getStage(), true, groups -> {
             if (!groups.isEmpty()) {
@@ -135,20 +135,19 @@ public class UserEditor extends PdoEditor<User> {
                 userUserGroupsNode.triggerViewModified();
               }
             }
-          });
-    });
-    contextMenu.getItems().add(addMenuItem);
+          }));
+      contextMenu.getItems().add(addMenuItem);
 
-    if (row != null) {
-      MenuItem removeMenuItem = new MenuItem(resources.getString("remove group from user"));
-      removeMenuItem.disableProperty().bind(row.emptyProperty());
-      removeMenuItem.setOnAction(e -> {
-        ((SortedList<UserGroup>) userUserGroupsNode.getItems()).getSource().remove(row.getItem());
-        userUserGroupsNode.triggerViewModified();
-      });
-      contextMenu.getItems().add(removeMenuItem);
+      if (row != null) {
+        MenuItem removeMenuItem = new MenuItem(resources.getString("remove group from user"));
+        removeMenuItem.disableProperty().bind(row.emptyProperty());
+        removeMenuItem.setOnAction(e -> {
+          ((SortedList<UserGroup>) userUserGroupsNode.getItems()).getSource().remove(row.getItem());
+          userUserGroupsNode.triggerViewModified();
+        });
+        contextMenu.getItems().add(removeMenuItem);
+      }
     }
-
     return contextMenu;
   }
 

@@ -94,11 +94,11 @@ public class UserGroupEditor extends PdoEditor<UserGroup> {
 
   @SuppressWarnings("unchecked")
   private ContextMenu createContextMenu(TableRow<User> row) {
-    ContextMenu contextMenu = new ContextMenu();
-
-    MenuItem addMenuItem = new MenuItem(resources.getString("add user to group"));
-    addMenuItem.setOnAction(e -> {
-      Rdc.displaySearchStage(
+    ContextMenu contextMenu = null;
+    if (group != null && group.isEditAllowed()) {
+      contextMenu = new ContextMenu();
+      MenuItem addMenuItem = new MenuItem(resources.getString("add user to group"));
+      addMenuItem.setOnAction(e -> Rdc.displaySearchStage(
           Pdo.create(User.class, getBinder().getBindingProperty(DomainContext.class)),
           Modality.APPLICATION_MODAL, getStage(), true, users -> {
             if (!users.isEmpty()) {
@@ -108,20 +108,19 @@ public class UserGroupEditor extends PdoEditor<UserGroup> {
                 groupUsersNode.triggerViewModified();
               }
             }
-          });
-    });
-    contextMenu.getItems().add(addMenuItem);
+          }));
+      contextMenu.getItems().add(addMenuItem);
 
-    if (row != null) {
-      MenuItem removeMenuItem = new MenuItem(resources.getString("remove user from group"));
-      removeMenuItem.disableProperty().bind(row.emptyProperty());
-      removeMenuItem.setOnAction(e -> {
-        ((SortedList<User>) groupUsersNode.getItems()).getSource().remove(row.getItem());
-        groupUsersNode.triggerViewModified();
-      });
-      contextMenu.getItems().add(removeMenuItem);
+      if (row != null) {
+        MenuItem removeMenuItem = new MenuItem(resources.getString("remove user from group"));
+        removeMenuItem.disableProperty().bind(row.emptyProperty());
+        removeMenuItem.setOnAction(e -> {
+          ((SortedList<User>) groupUsersNode.getItems()).getSource().remove(row.getItem());
+          groupUsersNode.triggerViewModified();
+        });
+        contextMenu.getItems().add(removeMenuItem);
+      }
     }
-
     return contextMenu;
   }
 
