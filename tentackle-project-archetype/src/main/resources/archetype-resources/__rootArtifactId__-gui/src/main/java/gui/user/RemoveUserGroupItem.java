@@ -36,8 +36,9 @@ public class RemoveUserGroupItem extends MenuItem implements PdoTreeContextMenuI
     UserGroup group = cell.getItem();
     boolean disabled = true;
     if (group.isEditAllowed()) {
-      User user = cell.getPdoTreeItem().getParentPdo(User.class);
-      if (user != null) {
+      User usr = cell.getPdoTreeItem().getParentPdo(User.class);
+      if (usr != null) {
+        User user = usr.reload();
         disabled = false;
         setOnAction(e -> {
           user.getUserGroups().remove(group);

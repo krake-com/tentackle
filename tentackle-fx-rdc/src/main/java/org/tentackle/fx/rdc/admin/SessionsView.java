@@ -18,10 +18,11 @@
 
 package org.tentackle.fx.rdc.admin;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.fxml.FXML;
 import javafx.scene.control.SelectionMode;
 
-import org.tentackle.bind.Bindable;
 import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxControllerService;
@@ -52,10 +53,9 @@ import java.util.Set;
  *
  * @author harald
  */
-@FxControllerService
+@FxControllerService(binding = FxControllerService.BINDING.NO)
 public class SessionsView extends AbstractFxController {
 
-  @Bindable
   private List<SessionData> sessions;
 
   @FXML
@@ -74,20 +74,19 @@ public class SessionsView extends AbstractFxController {
 
   private AdminExtension adminExt;
   private TablePopup<SessionData> popup;
-
-
+  private BooleanProperty killNotAllowed = new SimpleBooleanProperty();
 
   @FXML
   private void initialize() {
     securityButton.setGraphic(Fx.createImageView("security"));
-    securityButton.setOnAction(e -> security());
+    securityButton.setOnAction(e -> showSecurityDialog());
 
     refreshButton.setGraphic(Fx.createImageView("reload"));
     refreshButton.setOnAction(e -> refresh());
 
     killButton.setGraphic(Fx.createImageView("cancel"));
-    killButton.setOnAction(e -> kill());
-    killButton.disableProperty().bind(sessionsNode.getSelectionModel().selectedItemProperty().isNull());
+    killButton.setOnAction(e -> killSessions());
+    killButton.disableProperty().bind(killNotAllowed.or(sessionsNode.getSelectionModel().selectedItemProperty().isNull()));
 
     sessionsNode.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
   }
@@ -97,11 +96,12 @@ public class SessionsView extends AbstractFxController {
   public void configure() {
     popup = RdcFactory.getInstance().createTablePopup(sessionsNode, "Sessions", resources.getString("Sessions"));
     DomainContext context = Pdo.createDomainContext();
-    if (context.getSession().isRemote()) {    // needs check to run tests
+    if (context.getSession().isRemote()) {    // needs check in order not to fail when running GUI tests
       PdoRemoteSession remoteSession = (PdoRemoteSession) context.getSession().getRemoteSession();
       adminExt = remoteSession.getExtension(context, AdminExtension.class);
       popup.loadPreferences();
       securityButton.setDisable(!SecurityDialogFactory.getInstance().isDialogAllowed(context));
+      killNotAllowed.set(!isKillSessionAllowed());
       refresh();
     }
 
@@ -109,7 +109,6 @@ public class SessionsView extends AbstractFxController {
     config.getBinder().bind();
     config.configure(sessionsNode);
   }
-
 
   /**
    * Gets the button box.<br>
@@ -121,56 +120,29 @@ public class SessionsView extends AbstractFxController {
     return buttonBox;
   }
 
-  /**
-   * Retrieves all sessions and refreshes the table view.
-   */
-  private void refresh() {
-    sessions = adminExt.getSessions();
-    sessionsNode.updateView();
-  }
 
   /**
-   * Kills all marked user sessions.
+   * Returns whether killing a session is allowed.
+   *
+   * @return true if allowed
    */
-  private void kill() {
-    Set<SessionData> toKill = new LinkedHashSet<>();
-    // include all sessions of a group, even if not all are selected
-    for (SessionData session : sessionsNode.getSelectionModel().getSelectedItems()) {
-      toKill.add(session);
-      if (session.getSessionGroup() != 0) {
-        int row = 0;
-        for (SessionData otherSession: sessions) {
-          if (otherSession.getSessionGroup() == session.getSessionGroup()) {
-            toKill.add(otherSession);
-            sessionsNode.getSelectionModel().select(row, null);
-          }
-          row++;
-        }
-      }
-    }
-    if (!toKill.isEmpty()) {
-      String msg = toKill.size() > 1 ?
-          MessageFormat.format(resources.getString("really kill {0} sessions?"), toKill.size()) :
-          MessageFormat.format(resources.getString("really kill session {0}?"), toKill.iterator().next().getSessionNumber());
-      Fx.yes(msg, false, () -> {
-        for (SessionData session : toKill) {
-          adminExt.kill(session.getUserId(), session.getSessionGroup(),
-                        session.getApplicationName(), session.getApplicationId());
-        }
-        refresh();
-      });
-    }
+  protected boolean isKillSessionAllowed() {
+    return true;
   }
 
   /**
    * Shows the security dialog.
    */
-  private void security() {
+  protected void showSecurityDialog() {
     SecurityDialogFactory.getInstance().showDialog(AdminExtension.class);
   }
 
-
-  private TableConfiguration<SessionData> createTableConfiguration() {
+  /**
+   * Creates the table configuration.
+   *
+   * @return the table config
+   */
+  protected TableConfiguration<SessionData> createTableConfiguration() {
     TableConfiguration<SessionData> config = FxFactory.getInstance().createTableConfiguration(SessionData.class, null);
     config.addColumn("userId", resources.getString("user-ID"));
     config.addColumn("userName", resources.getString("user"));
@@ -188,6 +160,49 @@ public class SessionsView extends AbstractFxController {
     config.addColumn("sessionGroup", resources.getString("group-no."));
     config.addColumn("options", resources.getString("options"));
     return config;
+  }
+
+
+  /**
+   * Retrieves all sessions and refreshes the table view.
+   */
+  private void refresh() {
+    sessions = adminExt.getSessions();
+    sessionsNode.getItems().setAll(sessions);
+    sessionsNode.getSelectionModel().clearSelection();
+  }
+
+  /**
+   * Kills all marked user sessions.
+   */
+  private void killSessions() {
+    Set<SessionData> toKill = new LinkedHashSet<>();
+    // include all sessions of a group, even if not all are selected
+    for (SessionData session : sessionsNode.getSelectionModel().getSelectedItems()) {
+      toKill.add(session);
+      if (session.getSessionGroup() != 0) {
+        int row = 0;
+        for (SessionData otherSession: sessions) {
+          if (otherSession.getSessionGroup() == session.getSessionGroup()) {
+            toKill.add(otherSession);
+            sessionsNode.getSelectionModel().select(row, null);
+          }
+          row++;
+        }
+      }
+    }
+    if (!toKill.isEmpty()) {
+      String msg = toKill.size() > 1 ?
+                   MessageFormat.format(resources.getString("really kill {0} sessions?"), toKill.size()) :
+                   MessageFormat.format(resources.getString("really kill session {0}?"), toKill.iterator().next().getSessionNumber());
+      Fx.yes(msg, false, () -> {
+        for (SessionData session : toKill) {
+          adminExt.kill(session.getUserId(), session.getSessionGroup(),
+                        session.getApplicationName(), session.getApplicationId());
+        }
+        refresh();
+      });
+    }
   }
 
 }

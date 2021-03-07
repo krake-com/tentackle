@@ -272,7 +272,16 @@ public class DefaultFxFactory implements FxFactory {
       return controller;
     }
 
-    FxControllerService service = controllerClass.getAnnotation(FxControllerService.class);
+    FxControllerService service = null;
+    Class<? super T> annotatedClass = controllerClass;
+    while (annotatedClass != null) {
+      service = annotatedClass.getDeclaredAnnotation(FxControllerService.class);
+      if (service != null) {
+        break;
+      }
+      annotatedClass = annotatedClass.getSuperclass();
+    }
+
     if (service == null) {
       throw new FxRuntimeException("missing annotation @FxControllerService for controller " + controllerClass.getName());
     }
@@ -283,15 +292,15 @@ public class DefaultFxFactory implements FxFactory {
       String urlStr = service.url();
       if (!FxControllerService.FXML_NONE.equals(urlStr)) {
         if (!urlStr.isEmpty()) {
-          fxmlUrl = controllerClass.getResource(urlStr);
+          fxmlUrl = annotatedClass.getResource(urlStr);
           if (fxmlUrl == null) {
             throw new FxRuntimeException("no such URL '" + urlStr +
-                                         "' -> check @FxControllerService of " + controllerClass.getName());
+                                         "' -> check @FxControllerService of " + annotatedClass.getName());
           }
         }
         else {
-          urlStr = ReflectionHelper.getClassBaseName(controllerClass) + ".fxml";
-          fxmlUrl = controllerClass.getResource(urlStr);
+          urlStr = ReflectionHelper.getClassBaseName(annotatedClass) + ".fxml";
+          fxmlUrl = annotatedClass.getResource(urlStr);
           if (fxmlUrl == null) {
             throw new FxRuntimeException("no such default URL '" + urlStr + "'");
           }
@@ -302,7 +311,7 @@ public class DefaultFxFactory implements FxFactory {
     if (resources == null) {
       String resourcesStr = service.resources();
       if (resourcesStr.isEmpty()) {
-        resourcesStr = controllerClass.getName();
+        resourcesStr = annotatedClass.getName();
       }
 
       if (!FxControllerService.RESOURCES_NONE.equals(resourcesStr)) {
@@ -320,6 +329,16 @@ public class DefaultFxFactory implements FxFactory {
       }
       else {
         FXMLLoader loader = new FXMLLoader(fxmlUrl, resources, getBuilderFactory());
+        if (annotatedClass != controllerClass) {
+          loader.setControllerFactory(cls -> {
+            try {
+              return controllerClass.getConstructor().newInstance();
+            }
+            catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException cx) {
+              throw new FxRuntimeException("cannot create controller for " + controllerClass, cx);
+            }
+          });
+        }
         view = loader.load();
         controller = loader.getController();
         controller.setView(view);

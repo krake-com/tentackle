@@ -34,7 +34,6 @@ import java.lang.annotation.Target;
  * Annotation for Tentackle FX-controllers.
  */
 @Documented
-@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @Service(FxController.class)
