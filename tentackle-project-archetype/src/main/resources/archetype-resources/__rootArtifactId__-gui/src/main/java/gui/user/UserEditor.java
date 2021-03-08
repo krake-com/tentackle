@@ -74,6 +74,7 @@ public class UserEditor extends PdoEditor<User> {
   private ResourceBundle resources;
 
   private TablePopup<UserGroup> popup;
+  private Label emptyLabel;
 
 
   @FXML
@@ -83,10 +84,8 @@ public class UserEditor extends PdoEditor<User> {
       row.setContextMenu(createContextMenu(row));
       return row;
     });
-    Label emptyLabel = new Label(resources.getString("no groups"));
-    emptyLabel.setContextMenu(createContextMenu(null));
+    emptyLabel = new Label(resources.getString("no groups"));
     userUserGroupsNode.setPlaceholder(emptyLabel);
-
     popup = RdcFactory.getInstance().createTablePopup(userUserGroupsNode, "UserEditor", resources.getString("Groups"));
   }
 
@@ -99,6 +98,7 @@ public class UserEditor extends PdoEditor<User> {
   public void setPdo(User pdo) {
     user = pdo;
     getBinder().putBindingProperty(DomainContext.class, pdo.getDomainContext());
+    emptyLabel.setContextMenu(createContextMenu(null));
   }
 
   @Override
