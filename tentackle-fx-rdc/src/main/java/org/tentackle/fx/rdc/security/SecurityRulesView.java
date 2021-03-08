@@ -37,9 +37,9 @@ import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.component.FxButton;
 import org.tentackle.fx.component.FxTableView;
+import org.tentackle.fx.container.FxSplitPane;
 import org.tentackle.fx.container.FxTab;
 import org.tentackle.fx.container.FxTabPane;
-import org.tentackle.fx.container.FxVBox;
 import org.tentackle.fx.rdc.RdcFactory;
 import org.tentackle.fx.rdc.RdcFxRdcBundle;
 import org.tentackle.fx.rdc.RdcRuntimeException;
@@ -92,7 +92,7 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
   }
 
   @FXML
-  private FxVBox vBox;
+  private FxSplitPane splitPane;
   @FXML
   private FxTabPane tabPane;
   @FXML
@@ -150,7 +150,7 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
         pdoRulesNode.refresh();
       })
     );
-    vBox.getChildren().add(editor.getView());
+    splitPane.getItems().add(editor.getView());
 
     classRulesNode.getSelectionModel().selectedItemProperty().addListener((obs, ov, nv) -> setRule(nv));
     pdoRulesNode.getSelectionModel().selectedItemProperty().addListener((obs, ov, nv) -> setRule(nv));
@@ -186,6 +186,8 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
 
     cancelButton.setGraphic(Fx.createImageView("cancel"));
     cancelButton.setOnAction(e -> cancel(null));
+
+    splitPane.setDividerPositions(0.3);   // works in most cases
   }
 
 
