@@ -117,7 +117,7 @@ public abstract class UpdatableDesktopApplication<C extends FxController> extend
         // keep it open and referenced!
       }
       catch (IOException iox) {
-        throw new TentackleRuntimeException("could access lockfile " + lockPath, iox);
+        throw new TentackleRuntimeException("could not access lockfile " + lockPath, iox);
       }
     }
   }
