@@ -66,11 +66,15 @@ public class AbstractBuilder<T> extends PropertyMap<T> implements Builder<T> {
 
   @Override
   public Object get(Object key) {
+    Object object = super.get(key);
     /*
      * FXML-Loader treats inner elements as readonly and does not allow null-values.
      * This hack allows a builder to be used in such cases.
      */
-    return innerElements != null && innerElements.contains(key) ? DUMMY_LABEL : super.get(key);
+    if (object == null && innerElements != null && innerElements.contains(key)) {
+      object = DUMMY_LABEL;
+    }
+    return object;
   }
 
   @Override
