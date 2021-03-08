@@ -2,14 +2,15 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
-<?import javafx.scene.control.TabPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.VBox?>
-<BorderPane fx:id="borderPane" xmlns="http://javafx.com/javafx/8.0.40" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.tentackle.fx.rdc.security.SecurityRulesView">
+
+<BorderPane fx:id="borderPane" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.tentackle.fx.rdc.security.SecurityRulesView">
    <bottom>
       <HBox fx:id="buttonBox" alignment="CENTER_RIGHT" spacing="5.0">
          <children>
@@ -27,8 +28,8 @@
       </HBox>
    </bottom>
    <center>
-      <VBox fx:id="vBox" BorderPane.alignment="CENTER">
-         <children>
+      <SplitPane fx:id="splitPane" orientation="VERTICAL" BorderPane.alignment="CENTER">
+         <items>
             <TabPane fx:id="tabPane">
                <tabs>
                   <Tab fx:id="classTab" closable="false">
@@ -53,7 +54,7 @@
                   </Tab>
                </tabs>
             </TabPane>
-         </children>
-      </VBox>
+         </items>
+      </SplitPane>
    </center>
 </BorderPane>
