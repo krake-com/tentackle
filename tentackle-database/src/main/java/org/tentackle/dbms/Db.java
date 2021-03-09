@@ -754,7 +754,7 @@ public class Db implements Session, Cloneable {
     if (mc != null) {
       buf.append('|').append(mc.getName());
     }
-    if (isTxRunning()) {
+    if (isTxRunning() && transaction != null) {   // during open autoCommit is still false
       buf.append('|').append(transaction);
     }
     return buf.toString();
