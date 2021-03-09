@@ -18,8 +18,6 @@
 
 package org.tentackle.fx.rdc.admin;
 
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
 import javafx.fxml.FXML;
 import javafx.scene.control.SelectionMode;
 
@@ -74,7 +72,6 @@ public class SessionsView extends AbstractFxController {
 
   private AdminExtension adminExt;
   private TablePopup<SessionData> popup;
-  private BooleanProperty killNotAllowed = new SimpleBooleanProperty();
 
   @FXML
   private void initialize() {
@@ -86,7 +83,7 @@ public class SessionsView extends AbstractFxController {
 
     killButton.setGraphic(Fx.createImageView("cancel"));
     killButton.setOnAction(e -> killSessions());
-    killButton.disableProperty().bind(killNotAllowed.or(sessionsNode.getSelectionModel().selectedItemProperty().isNull()));
+    killButton.disableProperty().bind(sessionsNode.getSelectionModel().selectedItemProperty().isNull());
 
     sessionsNode.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
   }
@@ -101,7 +98,7 @@ public class SessionsView extends AbstractFxController {
       adminExt = remoteSession.getExtension(context, AdminExtension.class);
       popup.loadPreferences();
       securityButton.setDisable(!SecurityDialogFactory.getInstance().isDialogAllowed(context));
-      killNotAllowed.set(!isKillSessionAllowed());
+      killButton.setVisible(isKillSessionAllowed());
       refresh();
     }
 
