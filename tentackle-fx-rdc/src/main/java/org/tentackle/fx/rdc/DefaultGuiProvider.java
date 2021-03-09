@@ -75,6 +75,7 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
    *
    * @return true if provided, false if no bundle
    */
+  @Override
   public boolean isBundleProvided() {
     if (bundleProvided == null) {
       try {
@@ -95,6 +96,7 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
    *
    * @return the resource bundle
    */
+  @Override
   public ResourceBundle getBundle() {
     if (bundle == null) {
       bundle = BundleFactory.getBundle(getClass().getName());
