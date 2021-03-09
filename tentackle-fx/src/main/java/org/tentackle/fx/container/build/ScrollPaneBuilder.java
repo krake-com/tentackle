@@ -19,7 +19,6 @@
 
 package org.tentackle.fx.container.build;
 
-import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 
 import org.tentackle.fx.AbstractBuilder;
@@ -38,7 +37,7 @@ public class ScrollPaneBuilder extends AbstractBuilder<ScrollPane> {
    * Creates the builder.
    */
   public ScrollPaneBuilder() {
-    super(new FxScrollPane(new Label()));   // needs an initial non-null content to be used by a builder
+    super(new FxScrollPane(), "content");
   }
 
 }
