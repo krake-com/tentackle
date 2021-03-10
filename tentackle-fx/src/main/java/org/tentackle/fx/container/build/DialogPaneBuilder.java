@@ -37,7 +37,7 @@ public class DialogPaneBuilder extends AbstractBuilder<DialogPane> {
    * Creates the builder.
    */
   public DialogPaneBuilder() {
-    super(new FxDialogPane());
+    super(new FxDialogPane(), "content");
   }
 
 }

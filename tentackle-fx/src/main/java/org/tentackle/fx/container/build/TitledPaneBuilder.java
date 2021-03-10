@@ -37,7 +37,7 @@ public class TitledPaneBuilder extends AbstractBuilder<TitledPane> {
    * Creates the builder.
    */
   public TitledPaneBuilder() {
-    super(new FxTitledPane());
+    super(new FxTitledPane(), "content");
   }
 
 }
