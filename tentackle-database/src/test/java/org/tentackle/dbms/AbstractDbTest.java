@@ -58,8 +58,9 @@ public abstract class AbstractDbTest {
     NONE
   }
 
-  private TransactionType txType;           // transaction handling
   private static Session session;           // session for all methods in all test classes
+
+  private TransactionType txType;           // transaction handling
   private long txVoucher;                   // transaction voucher for current test class
 
   public AbstractDbTest(TransactionType txType) {
@@ -72,7 +73,7 @@ public abstract class AbstractDbTest {
 
 
   @BeforeSuite
-  public static void openSessionsAndStartPdoTracker() throws Exception {
+  public void openSessionsAndStartPdoTracker() throws Exception {
     session = SessionFactory.getInstance().create(SessionInfoFactory.getInstance().create());
     session.makeCurrent();
 
@@ -83,7 +84,7 @@ public abstract class AbstractDbTest {
   }
 
   @AfterSuite
-  public static void closeSessionsAndTerminatePdoTracker() throws Exception {
+  public void closeSessionsAndTerminatePdoTracker() throws Exception {
     ModificationTracker.getInstance().terminate();
     session.close();
   }
