@@ -226,12 +226,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
           processFileSet(fs);
         }
         else {
-          if (sourceDir.exists()) {
-            getLog().warn("empty sourceDir " + sourceDir.getAbsolutePath());
-          }
-          else {
-            getLog().info("no sourceDir " + sourceDir.getAbsolutePath());
-          }
+          getLog().info((sourceDir.exists() ? "empty" : "missing") + " source directory " + sourceDir.getAbsolutePath());
         }
       }
     }
