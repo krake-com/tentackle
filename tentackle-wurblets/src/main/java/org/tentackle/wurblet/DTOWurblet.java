@@ -32,7 +32,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.StringTokenizer;
 
 
@@ -233,6 +232,7 @@ public class DTOWurblet extends AbstractJavaWurblet {
   protected boolean withEquals;         // true if generate equals method
   protected boolean withHashCode;       // true if generate hashCode method
   protected boolean withNames;          // true if generate name constants
+  protected boolean nott;               // true if don't use any Tentackle-specific dependencies
   protected String superClass;          // != null if subclass: super classname
   protected String modelSourceName;     // the name of the file containing the model
   protected int modelSourceLine;        // the first line number of the model
@@ -261,6 +261,9 @@ public class DTOWurblet extends AbstractJavaWurblet {
       }
       else if ("--names".equals(arg)) {
         withNames = true;
+      }
+      else if ("--nott".equals(arg)) {
+        nott = true;
       }
       else if (filename == null && !arg.startsWith("--")) {
         filename = arg;

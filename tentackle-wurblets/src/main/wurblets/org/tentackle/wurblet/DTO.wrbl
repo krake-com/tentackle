@@ -20,6 +20,7 @@ arguments:
 <li><em>--names:</em> generate the name constants for all properties.</li>
 <li><em>--from:</em> only if --builder set: generate method to create a builder from instance. This will automatically
 happen if the '+' option at set for at least one property.</li>
+<li><em>--nott:</em> generate generic code that does not need any Tentackle dependency (such as TentackleRuntimeException)</li>
 <li><em>filename:</em> the file holding the DTO model.</li>
 </ul>
 For more options, see {\@link AbstractWurblet}.
@@ -45,7 +46,7 @@ Examples:
 <pre>
 =String name   the name
 </pre>
-Only for builder mode: lines prefixed with "!" are considered as required and a TentackleRuntimeException is
+Only for builder mode: lines prefixed with "!" are considered as required and a (Tentackle)RuntimeException is
 thrown by the build-method, if a required attribute was not configured. Notice that a required attribute
 is always immutable.
 <pre>
@@ -79,6 +80,8 @@ get those options as well!
 }@
 @[
   private void wurbel() throws WurbelException {
+
+    String exceptionName = nott ? "RuntimeException" : "TentackleRuntimeException";
 
     if (withNames) {
       // create name constants
@@ -167,7 +170,7 @@ get those options as well!
             if (property.isRequired()) {
 ]@
     if (!builder.@(property.getName())@Provided) {
-      throw new TentackleRuntimeException("@(property.getName())@ is required");
+      throw new @(exceptionName)@("@(property.getName())@ is required");
     }
 @[
             }
@@ -492,7 +495,7 @@ get those options as well!
 @[
       if (isAbstract()) {
 ]@
-      throw new TentackleRuntimeException("cannot build abstract @(getClassName())@");
+      throw new @(exceptionName)@("cannot build abstract @(getClassName())@");
 @[
       }
       else {
