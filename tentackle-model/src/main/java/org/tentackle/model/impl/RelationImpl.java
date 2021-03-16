@@ -694,9 +694,6 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
         throw createModelException("composite relations must be eager or lazy");
       }
     }
-    else if (immutable) {
-      throw createModelException("immutable relations must be composite");
-    }
 
     if (reversed && (composite || relationType != RelationType.LIST)) {
       throw createModelException("reversed 1:1 mapping only allowed for non-composite list relations");
