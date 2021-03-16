@@ -689,10 +689,8 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
       }
     }
 
-    if (composite) {
-      if (selectionType != SelectionType.LAZY && selectionType != SelectionType.EAGER) {
-        throw createModelException("composite relations must be eager or lazy");
-      }
+    if (composite && selectionType != SelectionType.LAZY && selectionType != SelectionType.EAGER) {
+      throw createModelException("composite relations must be eager or lazy");
     }
 
     if (reversed && (composite || relationType != RelationType.LIST)) {
