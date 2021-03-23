@@ -36,7 +36,6 @@ import org.tentackle.security.Permission;
 import org.tentackle.security.SecurityResult;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
-import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScope;
 
 import java.util.Collections;
@@ -462,11 +461,6 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
   }
 
   public <U extends PersistentDomainObject<U>> void setTokenLockObject(U obj) {
-    throw new UnsupportedOperationException(UNSUPPORTED);
-  }
-
-  @Override
-  public List<ValidationResult> validate(String validationPath, ValidationScope scope) {
     throw new UnsupportedOperationException(UNSUPPORTED);
   }
 

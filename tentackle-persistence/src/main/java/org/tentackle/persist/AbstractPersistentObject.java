@@ -3916,7 +3916,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
   @Override
   public List<ValidationResult> validate(String validationPath, ValidationScope scope) {
-    return ValidationUtilities.getInstance().validate(getPdo(), validationPath, scope);
+    return ValidationUtilities.getInstance().validate(getPdo(), validationPath, scope);   // not this but getPdo()!
   }
 
 

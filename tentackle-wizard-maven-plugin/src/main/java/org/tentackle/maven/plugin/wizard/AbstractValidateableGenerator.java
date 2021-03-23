@@ -20,13 +20,9 @@ package org.tentackle.maven.plugin.wizard;
 import org.tentackle.maven.AbstractGenerator;
 import org.tentackle.validate.ScopeConfigurator;
 import org.tentackle.validate.Validateable;
-import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScope;
-import org.tentackle.validate.ValidationUtilities;
 import org.tentackle.validate.scope.ChangeableScope;
 import org.tentackle.validate.scope.MandatoryScope;
-
-import java.util.List;
 
 /**
  * Base class for generators.<br>
@@ -40,8 +36,4 @@ public class AbstractValidateableGenerator extends AbstractGenerator implements 
     return new Class[] { MandatoryScope.class, ChangeableScope.class};
   }
 
-  @Override
-  public List<ValidationResult> validate(String validationPath, ValidationScope scope) {
-    return ValidationUtilities.getInstance().validate(this, validationPath, scope);
-  }
 }

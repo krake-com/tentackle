@@ -231,6 +231,7 @@ public class DTOWurblet extends AbstractJavaWurblet {
   protected boolean withFrom;           // true if at least one property has the from option set (or --from forced)
   protected boolean withEquals;         // true if generate equals method
   protected boolean withHashCode;       // true if generate hashCode method
+  protected boolean validate;           // true if invoke validate() after construction
   protected boolean withNames;          // true if generate name constants
   protected boolean nott;               // true if don't use any Tentackle-specific dependencies
   protected String superClass;          // != null if subclass: super classname
@@ -264,6 +265,9 @@ public class DTOWurblet extends AbstractJavaWurblet {
       }
       else if ("--nott".equals(arg)) {
         nott = true;
+      }
+      else if ("--validate".equals(arg)) {
+        validate = true;
       }
       else if (filename == null && !arg.startsWith("--")) {
         filename = arg;

@@ -235,6 +235,20 @@ public class ValidationUtilities {
   }
 
   /**
+   * Convenience method for simple objects such as DTOs.<br>
+   * Validates for path <code>"object"</code> and {@link org.tentackle.validate.scope.AllScope}.<br>
+   * Throws {@link ValidationFailedException} if failed.
+   *
+   * @param object the validateable object
+   */
+  public void validate(Validateable object) {
+    List<ValidationResult> results = validate(object, "object", ValidationScopeFactory.getInstance().getAllScope());
+    if (hasFailed(results)) {
+      throw new ValidationFailedException(resultsToString(results), results);
+    }
+  }
+
+  /**
    * Validates an object.<br>
    * The method first applies the field validators followed by the object validators.
    * Objects simply refer to this method in order to implement {@link Validateable}.

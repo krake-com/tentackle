@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.validate;
 
 import java.util.List;
@@ -30,12 +29,14 @@ public interface Validateable {
 
   /**
    * Validates the object.<br>
-   * Applies to all field- and object-validators.
+   * Applies all field- and object-validators.
    *
    * @param validationPath the validation path
    * @param scope the validation scope
    * @return a list of validation results, empty if okay, never null
    */
-  List<ValidationResult> validate(String validationPath, ValidationScope scope);
+  default List<ValidationResult> validate(String validationPath, ValidationScope scope) {
+    return ValidationUtilities.getInstance().validate(this, validationPath, scope);
+  }
 
 }

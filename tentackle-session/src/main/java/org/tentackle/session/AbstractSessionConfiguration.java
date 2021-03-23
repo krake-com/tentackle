@@ -20,13 +20,10 @@ package org.tentackle.session;
 import org.tentackle.bind.Bindable;
 import org.tentackle.validate.ScopeConfigurator;
 import org.tentackle.validate.Validateable;
-import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScope;
-import org.tentackle.validate.ValidationUtilities;
 import org.tentackle.validate.scope.MandatoryScope;
 import org.tentackle.validate.validator.NotNull;
 
-import java.util.List;
 import java.util.prefs.Preferences;
 
 /**
@@ -79,11 +76,6 @@ public abstract class AbstractSessionConfiguration implements Validateable, Scop
   @Override
   public String toString() {
     return name;
-  }
-
-  @Override
-  public List<ValidationResult> validate(String validationPath, ValidationScope scope) {
-    return ValidationUtilities.getInstance().validate(this, validationPath, scope);
   }
 
   @Override
