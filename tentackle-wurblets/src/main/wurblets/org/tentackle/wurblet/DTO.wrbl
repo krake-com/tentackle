@@ -17,7 +17,10 @@ arguments:
 <li><em>--builder:</em> generate code according to the builder pattern.</li>
 <li><em>--equals:</em> generate the equals method.</li>
 <li><em>--hashCode:</em> generate the hashCode method.</li>
-<li><em>--validate:</em> invoke validate() after construction. Requires <code>implements Validateable</code>.</li>
+<li><em>--validate[=&lt;code&gt;]:</em> perform validation after construction.
+Requires that the DTO implements {\@link org.tentackle.validate.Validateable}.
+If the optional &lt;code&gt; is missing, the default <code>"ValidationUtilities.getInstance().validate(this)"</code> will be used.
+</li>
 <li><em>--names:</em> generate the name constants for all properties.</li>
 <li><em>--from:</em> only if --builder set: generate method to create a builder from instance. This will automatically
 happen if the '+' option at set for at least one property.</li>
@@ -180,9 +183,9 @@ get those options as well!
 @[
           }
         }
-        if (validate) {
+        if (validate != null) {
 ]@
-    ValidationUtilities.getInstance().validate(this);
+    @(validate)@;
 @[
         }
 ]@
@@ -205,9 +208,9 @@ get those options as well!
 @[
           }
         }
-        if (validate) {
+        if (validate != null) {
 ]@
-    ValidationUtilities.getInstance().validate(this);
+    @(validate)@;
 @[
         }
 ]@
