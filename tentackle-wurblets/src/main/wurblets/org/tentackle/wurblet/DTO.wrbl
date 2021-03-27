@@ -66,9 +66,13 @@ The comment may contain optional annotations enclosed in square brackets.
 <pre>
 String name   the name [&#64;Bindable(MAXCOL=20)] [&#64;MyAnno]
 </pre>
+Can also be written as:
+<pre>
+String name   the name [&#64;Bindable(MAXCOL=20), &#64;MyAnno]
+</pre>
 <p>
 Annotations not belonging to a property are applied to all properties, if not already defined in the comment.
-Global annotations can be rmoved from a property with a leading dash or exclamation mark.
+Global annotations can be removed from a property with a leading dash or exclamation mark.
 <pre>
 [&#64;Bindable]
 String blah   the blah

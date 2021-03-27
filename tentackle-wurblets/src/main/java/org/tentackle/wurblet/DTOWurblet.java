@@ -25,6 +25,7 @@ import org.wurbelizer.wurbel.WurbelHelper;
 import org.wurbelizer.wurblet.AbstractJavaWurblet;
 
 import org.tentackle.common.StringHelper;
+import org.tentackle.model.parse.OptionParser;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -412,9 +413,12 @@ public class DTOWurblet extends AbstractJavaWurblet {
       }
       else {
         if (c == ']') {
-          String an = anno.toString().trim();
-          if (an.startsWith("@") || an.startsWith("-@") || an.startsWith("!@")) {
-            annos.add(an);
+          OptionParser parser = new OptionParser(anno.toString(), false);
+          String option;
+          while ((option = parser.nextOption()) != null) {
+            if (option.startsWith("@") || option.startsWith("-@") || option.startsWith("!@")) {
+              annos.add(option);
+            }
           }
           anno = null;
         }
