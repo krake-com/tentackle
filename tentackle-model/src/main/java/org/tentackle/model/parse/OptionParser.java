@@ -28,6 +28,7 @@ public class OptionParser {
   private final String text;    // text to parse
   private final int max;        // length of text
   private int pos;              // current offset in text
+  private StringBuilder other;  // buffer gets remaining comment
   private int optionLevel;      // nesting level of [...]
   private int braceLevel;       // number of () within [...], i.e. braces within option, for example @Annotation(blah=jksf, hsdf=...)
 
@@ -35,13 +36,14 @@ public class OptionParser {
   /**
    * Creates a parser for the given text.
    *
-   * @param text the text to parse
-   * @param checkBrackets true if ignore text outside [...]
+   * @param text the text to parse, usually a comment
+   * @param other buffer that gets ignored text outside [...], null if text is not enclosed in square brackets
    */
-  public OptionParser(String text, boolean checkBrackets) {
+  public OptionParser(String text, StringBuilder other) {
     this.text = text;
     this.max  = text.length();
-    this.optionLevel = checkBrackets ? 0 : 1;
+    this.other = other;
+    this.optionLevel = other != null ? 0 : 1;
   }
 
 
@@ -74,7 +76,9 @@ public class OptionParser {
           }
           option.append(c);
         }
-        // else discard
+        else if (other != null) {
+          other.append(c);
+        }
         continue;
       }
       if (optionLevel > 0) {
@@ -115,7 +119,9 @@ public class OptionParser {
         if (c == '[' && braceLevel == 0) {
           optionLevel++;
         }
-        // else discard
+        else if (other != null) {
+          other.append(c);
+        }
       }
     }
 

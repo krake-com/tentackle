@@ -20,11 +20,11 @@ package org.tentackle.model.parse;
 
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 
 /**
- *
- * @author harald
+ * Option parser test.
  */
 public class OptionParserTest {
 
@@ -32,7 +32,7 @@ public class OptionParserTest {
   public void parseOptions() {
 
     String args = "productSuffix[\"PRE A\"] productId[getHeight()]";
-    OptionParser parser = new OptionParser(args, false);
+    OptionParser parser = new OptionParser(args, null);
     String next = parser.nextOption(1);
     assertEquals(next, "productSuffix[\"PRE A\"]");
     next = parser.nextOption(1);
@@ -40,14 +40,16 @@ public class OptionParserTest {
     next = parser.nextOption(1);
     assertNull(next);
 
-    args = "blah ... [cached , +name ] and some other stuff";
-    parser = new OptionParser(args, true);
+    args = "blah ...\\[\\][cached , +name ] and some other stuff";
+    StringBuilder comment = new StringBuilder();
+    parser = new OptionParser(args, comment);
     next = parser.nextOption();
     assertEquals(next, "cached");
     next = parser.nextOption();
     assertEquals(next, "+name");
     next = parser.nextOption();
     assertNull(next);
+    assertEquals(comment.toString(),"blah ...[] and some other stuff");
   }
 
 }

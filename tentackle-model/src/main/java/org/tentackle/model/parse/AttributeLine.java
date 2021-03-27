@@ -143,24 +143,16 @@ public class AttributeLine extends SingleLine {
         columnName = token;
       }
       else {
-        obuf.append(" ");
-        if (token.charAt(0) == '[') {
-          // begin of options section
-          break;
-        }
-        else {
-          // still comment
-          obuf.append(token);
-        }
+        // still comment
+        obuf.append(' ').append(token);
       }
     }
-    comment = obuf.toString().trim();
+
     if (javaType == null || javaName == null || columnName == null) {
       throw createModelException("syntax error");
     }
 
-    // parse options in comment
-    parseOptions(text);
+    parseCommentAndOptions(obuf.toString());
   }
 
 
@@ -256,21 +248,20 @@ public class AttributeLine extends SingleLine {
 
 
 
-
-
-
   /**
-   * Parse options.
+   * Parse comment and options.
    *
-   * @param text the options string
+   * @param text the comment string
    */
-  private void parseOptions(String text) {
-    OptionParser parser = new OptionParser(text, true);
+  private void parseCommentAndOptions(String text) {
+    StringBuilder commentBuf = new StringBuilder();
+    OptionParser parser = new OptionParser(text, commentBuf);
     options = new ArrayList<>();
     String option;
     while ((option = parser.nextOption()) != null) {
       options.add(option);
     }
+    comment = commentBuf.toString().trim();
   }
 
 

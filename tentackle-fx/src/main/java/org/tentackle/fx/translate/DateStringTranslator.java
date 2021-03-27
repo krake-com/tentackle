@@ -157,8 +157,8 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
    * Each field provides the reference date for the other one.<br>
    * Replaces code like:
    * <pre>
-   *   fromField.getProperties().put(DateStringTranslator.REFERENCE_DATE_SUPPLIER, (Supplier<Date>) () -> until);
-   *   untilField.getProperties().put(DateStringTranslator.REFERENCE_DATE_SUPPLIER, (Supplier<Date>) () -> from);
+   *   fromField.getProperties().put(DateStringTranslator.REFERENCE_DATE_SUPPLIER, (Supplier<Date>) () -&gt; until);
+   *   untilField.getProperties().put(DateStringTranslator.REFERENCE_DATE_SUPPLIER, (Supplier<Date>) () -&gt; from);
    * </pre>
    * by
    * <pre>
