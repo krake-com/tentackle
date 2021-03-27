@@ -324,7 +324,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     tablePopup.loadPreferences();
 
     treeView = Fx.createNode(TreeView.class);
-    treeView.setCellFactory(p -> Rdc.createTreeCell());
+    treeView.setCellFactory(Rdc::createTreeCell);
     wrongTypeSelected = new SimpleBooleanProperty();
     treeView.getSelectionModel().selectedItemProperty().addListener((obs, ov, nv) ->
             wrongTypeSelected.set(nv == null || nv.getValue() == null ||

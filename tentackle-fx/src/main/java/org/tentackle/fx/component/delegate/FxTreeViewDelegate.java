@@ -26,6 +26,7 @@ import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.component.FxTreeView;
+import org.tentackle.misc.TrackedList;
 
 /**
  * Delegate for FxTreeView.
@@ -34,7 +35,8 @@ import org.tentackle.fx.component.FxTreeView;
  */
 public class FxTreeViewDelegate extends FxComponentDelegate {
 
-  private final FxTreeView<?> component;   // the component
+  private final FxTreeView<?> component;    // the component
+  private TrackedList<?> modelList;         // tracked list from model
 
   /**
    * Creates the delegate.
@@ -81,6 +83,12 @@ public class FxTreeViewDelegate extends FxComponentDelegate {
   @Override
   @SuppressWarnings("unchecked")
   public void setViewValue(Object value) {
+    if (value instanceof TrackedList) {
+      modelList = (TrackedList) value;
+    }
+    else {
+      modelList = null;
+    }
     ValueTranslator translator = getValueTranslator();
     setViewObject(translator.toView(value));
   }
@@ -90,6 +98,37 @@ public class FxTreeViewDelegate extends FxComponentDelegate {
   public <V> V getViewValue() {
     ValueTranslator translator = getValueTranslator();
     return (V) translator.toModel(getViewObject());
+  }
+
+  @Override
+  public boolean isViewModified() {
+    if (modelList != null) {
+      return modelList.isModified();
+    }
+    return super.isViewModified();
+  }
+
+  @Override
+  public void triggerViewModified() {
+    if (getParentContainer() != null) {
+      getParentContainer().triggerViewModified();
+    }
+  }
+
+  @Override
+  public void updateModel() {
+    // no conversion back to model because the object is/are updated in the treeitem,
+    // which holds only the references.
+  }
+
+  @Override
+  protected void updateChangeable(boolean changeable) {
+    // doesn't make sense.
+  }
+
+  @Override
+  public void setContainerChangeable(boolean containerChangeable) {
+    // dto.
   }
 
 }

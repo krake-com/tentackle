@@ -20,7 +20,6 @@ package org.tentackle.fx.rdc;
 
 import javafx.scene.Node;
 import javafx.scene.control.TableView;
-import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.DragEvent;
@@ -282,12 +281,7 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
 
   @Override
   public TreeItem<T> createTreeItem() {
-    return new PdoTreeItem<>(pdo);
-  }
-
-  @Override
-  public TreeCell<T> createTreeCell() {
-    return Rdc.createTreeCell();
+    return Rdc.createTreeItem(pdo);
   }
 
 }
