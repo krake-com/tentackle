@@ -73,7 +73,6 @@ public abstract class GuiProviderTest extends FxRdcTestApplication {
         }
         provider.createIcon();
         provider.createTableView();
-        provider.createTreeCell();
         provider.createTreeItem();
       }
       catch (PdoRuntimeException nx) {

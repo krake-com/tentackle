@@ -19,6 +19,9 @@
 
 package org.tentackle.fx.rdc;
 
+import javafx.scene.control.TreeTableColumn;
+import javafx.scene.control.TreeView;
+
 import org.tentackle.common.Service;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.component.FxTableView;
@@ -60,8 +63,18 @@ public class DefaultRdcFactory implements RdcFactory {
   }
 
   @Override
-  public <T extends PersistentDomainObject<T>> PdoTreeCell<T> createTreeCell() {
-    return new PdoTreeCell<>();
+  public <T extends PersistentDomainObject<T>> PdoTreeItem<T> createTreeItem(T pdo) {
+    return new PdoTreeItem<>(pdo);
+  }
+
+  @Override
+  public <T extends PersistentDomainObject<T>> PdoTreeCell<T> createTreeCell(TreeView<T> treeView) {
+    return new PdoTreeCell<>();   // treeview is ignored by default but application may override this
+  }
+
+  @Override
+  public <S, T extends PersistentDomainObject<T>> PdoTreeTableCell<S, T> createTreeTableCell(TreeTableColumn<S,T> column) {
+    return new PdoTreeTableCell<>();     // column is ignored by default but application may override this
   }
 
   @Override

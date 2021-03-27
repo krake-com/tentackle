@@ -38,7 +38,7 @@ import java.util.List;
  * configuration via GuiProvider for tables.
  *
  * @author harald
- * @param <T> the element type
+ * @param <T> the PDO type
  * @param <C> the collection type
  */
 @ValueTranslatorService(modelClass = List.class, viewClass = ObservableList.class)
@@ -57,17 +57,11 @@ public class PdoObservableListTranslator<T extends PersistentDomainObject<T>, C 
   @Override
   protected void configureTableView(FxTableView<T> tableView, Class<T> elemClass) {
     if (PersistentDomainObject.class.isAssignableFrom(elemClass)) {
-      // is a PDO: get table configurator
+      // is a PDO: get table configuration from gui provider
       T pdo = Pdo.create(elemClass);
       GuiProvider<T> provider = GuiProviderFactory.getInstance().createGuiProvider(pdo);
-      TableConfiguration<T> config = provider.createTableConfiguration();
-      if (config.getBindingType() == TableConfiguration.BINDING.YES) {
-        config.getBinder().bind();
-      }
-      else if (config.getBindingType() == TableConfiguration.BINDING.INHERITED) {
-        config.getBinder().bindAllInherited();
-      }
-      config.configure(tableView);
+      TableConfiguration<T> configuration = createTableConfiguration(provider);
+      configuration.configure(tableView);
     }
     else {
       super.configureTableView(tableView, elemClass);

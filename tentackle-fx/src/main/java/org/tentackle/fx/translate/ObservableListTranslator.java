@@ -46,7 +46,7 @@ import java.util.function.Function;
  * @param <C> the collection type
  */
 @ValueTranslatorService(modelClass = List.class, viewClass = ObservableList.class)
-public class ObservableListTranslator<T, C extends List<T>> extends AbstractValueTranslator<C,ObservableList<T>> {
+public class ObservableListTranslator<T, C extends List<T>> extends AbstractValueTranslator<C, ObservableList<T>> {
 
   /**
    * Creates a translator for components maintaining a list of objects.
@@ -109,17 +109,29 @@ public class ObservableListTranslator<T, C extends List<T>> extends AbstractValu
     // determine optional table configuration provider for elemClass
     TableConfigurationProvider<T> provider = TableConfigurationProviderFactory.getInstance().createTableConfigurationProvider(elemClass);
     if (provider != null) {
-      TableConfiguration<T> configuration = provider.createTableConfiguration();
-      if (configuration.getBindingType() == TableConfiguration.BINDING.YES) {
-        configuration.getBinder().bind();
-      }
-      else if (configuration.getBindingType() == TableConfiguration.BINDING.INHERITED) {
-        configuration.getBinder().bindAllInherited();
-      }
+      TableConfiguration<T> configuration = createTableConfiguration(provider);
       configuration.configure(tableView);
     }
 
     // else: no configuration available -> must be done in application explicitly
+  }
+
+
+  /**
+   * Creates the table configuration and performs the binding.
+   *
+   * @param provider the configuration provider
+   * @return the table configuration
+   */
+  protected TableConfiguration<T> createTableConfiguration(TableConfigurationProvider<T> provider) {
+    TableConfiguration<T> configuration = provider.createTableConfiguration();
+    if (configuration.getBindingType() == TableConfiguration.BINDING.YES) {
+      configuration.getBinder().bind();
+    }
+    else if (configuration.getBindingType() == TableConfiguration.BINDING.INHERITED) {
+      configuration.getBinder().bindAllInherited();
+    }
+    return configuration;
   }
 
 }

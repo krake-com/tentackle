@@ -22,6 +22,9 @@ package org.tentackle.fx.rdc;
 import javafx.collections.ObservableList;
 import javafx.scene.Node;
 import javafx.scene.control.TreeCell;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeTableColumn;
+import javafx.scene.control.TreeView;
 import javafx.stage.Modality;
 import javafx.stage.Window;
 
@@ -68,15 +71,46 @@ public class Rdc {
   }
 
   /**
-   * Creates a tree cell for a pdo type.
+   * Creates a tree item for a pdo.
    *
+   * @param pdo the pdo
+   * @param <T> the pdo type
+   * @return the tree item
+   */
+  public static <T extends PersistentDomainObject<T>> TreeItem<T> createTreeItem(T pdo) {
+    return RdcFactory.getInstance().createTreeItem(pdo);
+  }
+
+  /**
+   * Creates a tree cell for a pdo type.<br>
+   * Usage:
+   * <pre>
+   *   treeView.setCellFactory(Rdc::createTreeCell);
+   * </pre>
+   *
+   * @param treeView the treeview
    * @param <T> the pdo type
    * @return the tree cell
    */
-  public static <T extends PersistentDomainObject<T>> TreeCell<T> createTreeCell() {
-    return RdcFactory.getInstance().createTreeCell();
+  public static <T extends PersistentDomainObject<T>> TreeCell<T> createTreeCell(TreeView<T> treeView) {
+    return RdcFactory.getInstance().createTreeCell(treeView);
   }
 
+  /**
+   * Creates a tree table cell for a pdo type.
+   * Usage:
+   * <pre>
+   *   treeTableColumn.setCellFactory(Rdc::createTreeTableCell);
+   * </pre>
+   *
+   * @param column the treetable column
+   * @param <S> the table row's type
+   * @param <T> the table cell's pdo type
+   * @return the tree table cell
+   */
+  public static <S, T extends PersistentDomainObject<T>> PdoTreeTableCell<S, T> createTreeTableCell(TreeTableColumn<S,T> column) {
+    return RdcFactory.getInstance().createTreeTableCell(column);
+  }
 
   /**
    * CRUD of a PDO in a non-modal separate window.

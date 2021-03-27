@@ -19,6 +19,9 @@
 
 package org.tentackle.fx.rdc;
 
+import javafx.scene.control.TreeTableColumn;
+import javafx.scene.control.TreeView;
+
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.rdc.crud.PdoCrud;
@@ -68,14 +71,33 @@ public interface RdcFactory {
    */
   <T extends PersistentDomainObject<T>> PdoSearch<T> createPdoSearch(T pdo);
 
+  /**
+   * Creates a tree item for a pdo.
+   *
+   * @param pdo the pdo
+   * @param <T> the pdo type
+   * @return the tree item
+   */
+  <T extends PersistentDomainObject<T>> PdoTreeItem<T> createTreeItem(T pdo);
 
   /**
    * Creates a tree cell for a pdo type.
    *
+   * @param treeView the tree view
    * @param <T> the pdo type
    * @return the tree cell
    */
-  <T extends PersistentDomainObject<T>> PdoTreeCell<T> createTreeCell();
+  <T extends PersistentDomainObject<T>> PdoTreeCell<T> createTreeCell(TreeView<T> treeView);
+
+  /**
+   * Creates a tree table cell for a pdo type.
+   *
+   * @param column the treetable column
+   * @param <S> the table row's type
+   * @param <T> the table cell's pdo type
+   * @return the tree table cell
+   */
+  <S, T extends PersistentDomainObject<T>> PdoTreeTableCell<S, T> createTreeTableCell(TreeTableColumn<S,T> column);
 
   /**
    * Creates a table cell for a pdo type.

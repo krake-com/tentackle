@@ -20,7 +20,6 @@
 package org.tentackle.fx.rdc;
 
 import javafx.scene.Node;
-import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.DragEvent;
@@ -171,13 +170,6 @@ public interface GuiProvider<T extends PersistentDomainObject<T>>
    * @return the tree item
    */
   TreeItem<T> createTreeItem();
-
-  /**
-   * Creates a tree cell for this type of pdo.
-   *
-   * @return the tree cell
-   */
-  TreeCell<T> createTreeCell();
 
   /**
    * Determines whether tree explansion should stop at this object.<br>

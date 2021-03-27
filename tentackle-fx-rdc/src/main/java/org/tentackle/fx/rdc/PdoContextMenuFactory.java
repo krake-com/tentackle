@@ -65,4 +65,14 @@ public interface PdoContextMenuFactory {
    */
   <S, T extends PersistentDomainObject<T>> ContextMenu create(PdoTableCell<S, T> cell);
 
+  /**
+   * Creates a context menu for a tree table cell.
+   *
+   * @param <S> the table row's type
+   * @param <T> the table cell's pdo type
+   * @param cell the table cell
+   * @return the context menu, null if no menu items
+   */
+  <S, T extends PersistentDomainObject<T>> ContextMenu create(PdoTreeTableCell<S, T> cell);
+
 }
