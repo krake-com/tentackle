@@ -18,9 +18,10 @@
 
 package org.tentackle.model.parse;
 
+import org.tentackle.model.ModelException;
+
 import java.util.ArrayList;
 import java.util.List;
-import org.tentackle.model.ModelException;
 
 /**
  * The option line.
@@ -68,7 +69,7 @@ public class OptionLine extends MultiLine {
 
     // scan options
     options = new ArrayList<>();
-    OptionParser parser = new OptionParser(optionText, false);
+    OptionParser parser = new OptionParser(optionText, null);
     String option;
     while ((option = parser.nextOption()) != null) {
       options.add(option.trim());

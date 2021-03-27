@@ -400,31 +400,11 @@ public class DTOWurblet extends AbstractJavaWurblet {
     List<String> annos = new ArrayList<>();
     String cmt = commentBuf.toString();
     commentBuf.setLength(0);
-    StringBuilder anno = null;
-    for (int i=0; i < cmt.length(); i++) {
-      char c = cmt.charAt(i);
-      if (anno == null) {
-        if (c == '[') {
-          anno = new StringBuilder();
-        }
-        else {
-          commentBuf.append(c);
-        }
-      }
-      else {
-        if (c == ']') {
-          OptionParser parser = new OptionParser(anno.toString(), false);
-          String option;
-          while ((option = parser.nextOption()) != null) {
-            if (option.startsWith("@") || option.startsWith("-@") || option.startsWith("!@")) {
-              annos.add(option);
-            }
-          }
-          anno = null;
-        }
-        else {
-          anno.append(c);
-        }
+    OptionParser parser = new OptionParser(cmt, commentBuf);
+    String option;
+    while ((option = parser.nextOption()) != null) {
+      if (option.startsWith("@") || option.startsWith("-@") || option.startsWith("!@")) {
+        annos.add(option);
       }
     }
     return annos;

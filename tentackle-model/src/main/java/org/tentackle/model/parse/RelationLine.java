@@ -174,7 +174,7 @@ public class RelationLine extends MultiLine {
 
     // scan properties , ....
     properties = new LinkedHashMap<>();   // preserver order
-    OptionParser parser = new OptionParser(configText, false);
+    OptionParser parser = new OptionParser(configText, null);
     String prop;
     while ((prop = parser.nextOption()) != null) {
       if (prop.length() > 0) {

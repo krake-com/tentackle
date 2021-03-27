@@ -69,7 +69,7 @@ public class GlobalOptionLine extends SingleLine {
         sortingText = sortingText.substring(0, sortingText.length()-1);
       }
     }
-    OptionParser parser = new OptionParser(optionsText, true);
+    OptionParser parser = new OptionParser(optionsText, new StringBuilder());   // text outside [] is ignored
     options = new ArrayList<>();
     stereotypes = new ArrayList<>();
     String option;

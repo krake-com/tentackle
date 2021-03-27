@@ -459,7 +459,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
           // property args = ...
           case ARGS:
-            OptionParser op = new OptionParser(entry.getValue(), false);
+            OptionParser op = new OptionParser(entry.getValue(), null);
             String nextArg;
             while ((nextArg = op.nextOption(1)) != null) {
               if (args == null) {
