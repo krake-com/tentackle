@@ -22,6 +22,10 @@ package org.tentackle.fx.rdc.contextmenu;
 import javafx.scene.control.MenuItem;
 
 import org.tentackle.fx.Fx;
+import org.tentackle.fx.rdc.GuiProviderFactory;
+import org.tentackle.fx.rdc.PdoTableCell;
+import org.tentackle.fx.rdc.PdoTableContextMenuItem;
+import org.tentackle.fx.rdc.PdoTableContextMenuItemService;
 import org.tentackle.fx.rdc.PdoTreeCell;
 import org.tentackle.fx.rdc.PdoTreeContextMenuItem;
 import org.tentackle.fx.rdc.PdoTreeContextMenuItemService;
@@ -36,7 +40,9 @@ import org.tentackle.pdo.PersistentDomainObject;
  * @param <T> the PDO type
  */
 @PdoTreeContextMenuItemService(value = PersistentDomainObject.class, ordinal = 140)
-public class ViewItem<T extends PersistentDomainObject<T>> extends MenuItem implements PdoTreeContextMenuItem<T> {
+@PdoTableContextMenuItemService(value = PersistentDomainObject.class, ordinal = 140)
+public class ViewItem<T extends PersistentDomainObject<T>> extends MenuItem
+    implements PdoTreeContextMenuItem<T>, PdoTableContextMenuItem<T> {
 
   /**
    * Creates a menu item.
@@ -55,4 +61,15 @@ public class ViewItem<T extends PersistentDomainObject<T>> extends MenuItem impl
     }
   }
 
+  public ViewItem(PdoTableCell<?,T> cell) {
+    super(RdcFxRdcBundle.getString("VIEW"), Fx.createImageView("view"));
+    T pdo = cell.getItem();
+    if (pdo != null && GuiProviderFactory.getInstance().createGuiProvider(pdo).isViewAllowed()) {
+      T pDo = pdo.isImmutable() ? pdo.reload() : pdo;   // from cache?
+      setOnAction(e -> Rdc.displayCrudStage(pDo, false, Fx.getStage(cell)));
+    }
+    else {
+      setDisable(true);
+    }
+  }
 }

@@ -19,8 +19,8 @@
 
 package org.tentackle.fx.table.type;
 
-import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
+import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.misc.FormatHelper;
 
 import java.sql.Time;
@@ -36,7 +36,7 @@ import java.text.SimpleDateFormat;
 public class TimeTableCellType extends UtilDateTableCellType<Time> {
 
   @Override
-  public DateFormat getFormat(FxTableCell<?, Time> tableCell) {
+  public DateFormat getFormat(TableColumnConfiguration<?, Time> tableCell) {
     DateFormat fmt = super.getFormat(tableCell);
     if (fmt == null) {
       fmt = new SimpleDateFormat(FormatHelper.getTimePattern());

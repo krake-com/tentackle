@@ -82,7 +82,7 @@ public class TextInputControlConfigurator<T extends TextInputControl> extends Co
    * @param control the control
    */
   protected void focusNext(T control) {
-    if (!(control instanceof FxComponent) || ((FxComponent) control).getTableCell() == null) {
+    if (!(control instanceof FxComponent) || !((FxComponent) control).isCellEditor()) {
       //      NodeHelper.traverse(control, Direction.NEXT);   is non-public API :(
       KeyEvent event = new KeyEvent(KeyEvent.KEY_PRESSED, KeyEvent.CHAR_UNDEFINED, "", KeyCode.TAB,
                                     false, false, false, false);
@@ -96,7 +96,7 @@ public class TextInputControlConfigurator<T extends TextInputControl> extends Co
    * @param control the control
    */
   protected void focusPrevious(T control) {
-    if (!(control instanceof FxComponent) || ((FxComponent) control).getTableCell() == null) {
+    if (!(control instanceof FxComponent) || !((FxComponent) control).isCellEditor()) {
       //      NodeHelper.traverse(control, Direction.PREVIOUS);   is non public API :(
       KeyEvent event = new KeyEvent(KeyEvent.KEY_PRESSED, KeyEvent.CHAR_UNDEFINED, "", KeyCode.TAB,
                                     true, false, false, false);

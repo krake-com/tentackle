@@ -50,6 +50,7 @@ import org.tentackle.fx.component.FxLabel;
 import org.tentackle.fx.container.FxBorderPane;
 import org.tentackle.fx.container.FxHBox;
 import org.tentackle.fx.rdc.EventListenerProxy;
+import org.tentackle.fx.rdc.GuiProvider;
 import org.tentackle.fx.rdc.GuiProviderFactory;
 import org.tentackle.fx.rdc.InteractiveError;
 import org.tentackle.fx.rdc.InteractiveErrorFactory;
@@ -393,8 +394,9 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
     Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
     stage.initOwner(getStage());
     TreeView<T> tree = Fx.createNode(TreeView.class);
-    tree.setCellFactory(Rdc::createTreeCell);
-    TreeItem<T> item = GuiProviderFactory.getInstance().createGuiProvider(getPdo()).createTreeItem();
+    GuiProvider<T> guiProvider = GuiProviderFactory.getInstance().createGuiProvider(getPdo());
+    tree.setCellFactory(guiProvider.getTreeCellFactory());
+    TreeItem<T> item = guiProvider.createTreeItem();
     item.setExpanded(true);
     tree.setRoot(item);
     // apply PdoCrud.css

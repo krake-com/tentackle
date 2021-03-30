@@ -24,9 +24,16 @@ import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.ValueTranslatorService;
 import org.tentackle.fx.component.FxTreeTableView;
 import org.tentackle.fx.component.FxTreeView;
+import org.tentackle.fx.rdc.GuiProvider;
+import org.tentackle.fx.rdc.GuiProviderFactory;
 import org.tentackle.fx.rdc.Rdc;
+import org.tentackle.fx.table.TableConfiguration;
+import org.tentackle.fx.table.TableConfigurationProvider;
+import org.tentackle.fx.table.TableConfigurationProviderFactory;
 import org.tentackle.fx.translate.AbstractValueTranslator;
+import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.reflect.ReflectionHelper;
 
 import java.util.Collection;
 import java.util.List;
@@ -54,10 +61,28 @@ public class PdoCollectionTreeItemTranslator<T extends PersistentDomainObject<T>
   @SuppressWarnings("unchecked")
   public PdoCollectionTreeItemTranslator(FxComponent component) {
     super(component);
-    if (component instanceof FxTreeView) {
-      FxTreeView<T> treeView = (FxTreeView<T>) component;
-      treeView.setShowRoot(false);
-      treeView.setCellFactory(Rdc::createTreeCell);
+
+    Class<T> elemClass = ReflectionHelper.extractGenericInnerTypeClass(component.getGenericType());
+    if (elemClass != null) {
+      if (component instanceof FxTreeView) {
+        FxTreeView<T> treeView = (FxTreeView<T>) component;
+        treeView.setShowRoot(false);
+        GuiProvider<T> provider = null;
+        if (PersistentDomainObject.class.isAssignableFrom(elemClass)) {
+          provider = GuiProviderFactory.getInstance().createGuiProvider(Pdo.create(elemClass));
+        }
+        if (provider != null) {
+          treeView.setCellFactory(provider.getTreeCellFactory());
+        }
+        else {
+          treeView.setCellFactory(Rdc::createTreeCell);
+        }
+      }
+      else if (component instanceof FxTreeTableView) {
+        FxTreeTableView<T> treeTableView = (FxTreeTableView<T>) component;
+        treeTableView.setShowRoot(false);
+        configureTreeTableView((FxTreeTableView<T>) component, elemClass);
+      }
     }
   }
 
@@ -99,6 +124,50 @@ public class PdoCollectionTreeItemTranslator<T extends PersistentDomainObject<T>
       }
       return pdoCollection;
     };
+  }
+
+
+  /**
+   * Configures the treetableview.
+   *
+   * @param treeTableView the treetableview
+   * @param elemClass the list's elememt class
+   */
+  protected void configureTreeTableView(FxTreeTableView<T> treeTableView, Class<T> elemClass) {
+    if (PersistentDomainObject.class.isAssignableFrom(elemClass)) {
+      // is a PDO: get table configuration from gui provider
+      T pdo = Pdo.create(elemClass);
+      GuiProvider<T> provider = GuiProviderFactory.getInstance().createGuiProvider(pdo);
+      TableConfiguration<T> configuration = createTableConfiguration(provider);
+      configuration.configure(treeTableView);
+    }
+    else {
+      // determine optional table configuration provider for elemClass
+      TableConfigurationProvider<T> provider = TableConfigurationProviderFactory.getInstance().createTableConfigurationProvider(elemClass);
+      if (provider != null) {
+        TableConfiguration<T> configuration = createTableConfiguration(provider);
+        configuration.configure(treeTableView);
+      }
+    }
+
+    // else: no configuration available -> must be done in application explicitly
+  }
+
+  /**
+   * Creates the table configuration and performs the binding.
+   *
+   * @param provider the configuration provider
+   * @return the table configuration
+   */
+  protected TableConfiguration<T> createTableConfiguration(TableConfigurationProvider<T> provider) {
+    TableConfiguration<T> configuration = provider.createTableConfiguration();
+    if (configuration.getBindingType() == TableConfiguration.BINDING.YES) {
+      configuration.getBinder().bind();
+    }
+    else if (configuration.getBindingType() == TableConfiguration.BINDING.INHERITED) {
+      configuration.getBinder().bindAllInherited();
+    }
+    return configuration;
   }
 
 }

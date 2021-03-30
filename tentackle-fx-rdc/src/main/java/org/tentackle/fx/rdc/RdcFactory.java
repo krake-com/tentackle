@@ -19,14 +19,15 @@
 
 package org.tentackle.fx.rdc;
 
-import javafx.scene.control.TreeTableColumn;
 import javafx.scene.control.TreeView;
 
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.fx.component.FxTableView;
+import org.tentackle.fx.component.FxTreeTableView;
 import org.tentackle.fx.rdc.crud.PdoCrud;
 import org.tentackle.fx.rdc.search.PdoSearch;
 import org.tentackle.fx.rdc.table.TablePopup;
+import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.pdo.PersistentDomainObject;
 
 
@@ -92,21 +93,22 @@ public interface RdcFactory {
   /**
    * Creates a tree table cell for a pdo type.
    *
-   * @param column the treetable column
+   * @param columnConfig the table column configuration
    * @param <S> the table row's type
    * @param <T> the table cell's pdo type
    * @return the tree table cell
    */
-  <S, T extends PersistentDomainObject<T>> PdoTreeTableCell<S, T> createTreeTableCell(TreeTableColumn<S,T> column);
+  <S, T extends PersistentDomainObject<T>> PdoTreeTableCell<S, T> createTreeTableCell(TableColumnConfiguration<S, T> columnConfig);
 
   /**
    * Creates a table cell for a pdo type.
    *
+   * @param columnConfig the table column configuration
    * @param <S> the table row's type
    * @param <T> the table cell's pdo type
    * @return the table cell
    */
-  <S, T extends PersistentDomainObject<T>> PdoTableCell<S, T> createTableCell();
+  <S, T extends PersistentDomainObject<T>> PdoTableCell<S, T> createTableCell(TableColumnConfiguration<S, T> columnConfig);
 
   /**
    * Creates a table popup.
@@ -118,5 +120,16 @@ public interface RdcFactory {
    * @return the popup
    */
   <S> TablePopup<S> createTablePopup(FxTableView<S> table, String preferencesSuffix, String title);
+
+  /**
+   * Creates a table popup.
+   *
+   * @param <S> the row type
+   * @param treeTable the treetable
+   * @param preferencesSuffix the optional preferences suffix to load/save table preferences
+   * @param title the optional title of the printed table
+   * @return the popup
+   */
+  <S> TablePopup<S> createTablePopup(FxTreeTableView<S> treeTable, String preferencesSuffix, String title);
 
 }

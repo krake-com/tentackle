@@ -25,10 +25,11 @@ import javafx.scene.control.TextField;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.table.FxTableCell;
+import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.fx.table.TableCellType;
 
 /**
- * Base class of a table cell type.
+ * Base class of a table and treetable cell type.
  *
  * @param <T> type of the content in a cell
  * @author harald
@@ -49,6 +50,20 @@ public abstract class AbstractTableCellType<T> implements TableCellType<T> {
       alignment = configAlignment;
     }
     tableCell.setAlignment(alignment);
+  }
+
+  /**
+   * Updates the alignment of the treetable cell's contents.
+   *
+   * @param treeTableCell the cell, never null
+   * @param alignment the alignment suggested by the cell type, never null
+   */
+  public void updateAlignment(FxTreeTableCell<?, T> treeTableCell, Pos alignment) {
+    Pos configAlignment = treeTableCell.getColumnConfiguration().getAlignment();
+    if (configAlignment != null) {
+      alignment = configAlignment;
+    }
+    treeTableCell.setAlignment(alignment);
   }
 
   @Override

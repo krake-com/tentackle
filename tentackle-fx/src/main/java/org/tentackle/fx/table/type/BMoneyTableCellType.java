@@ -20,8 +20,8 @@
 package org.tentackle.fx.table.type;
 
 import org.tentackle.common.BMoney;
-import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
+import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.misc.FormatHelper;
 
 import java.text.DecimalFormat;
@@ -36,8 +36,8 @@ import java.text.DecimalFormat;
 public class BMoneyTableCellType extends NumberTableCellType<BMoney> {
 
   @Override
-  protected DecimalFormat getFormat(FxTableCell<?, BMoney> tableCell, BMoney item) {
-    DecimalFormat fmt = tableCell.getColumnConfiguration().getNumberFormat();
+  protected DecimalFormat getFormat(TableColumnConfiguration<?, BMoney> config, BMoney item) {
+    DecimalFormat fmt = config.getNumberFormat();
     if (fmt == null) {
       // no format: use default format and set scale from money value
       fmt = new DecimalFormat(FormatHelper.getMoneyPattern());

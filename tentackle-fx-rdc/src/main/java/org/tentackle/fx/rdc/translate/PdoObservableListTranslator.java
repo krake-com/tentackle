@@ -23,6 +23,7 @@ import javafx.collections.ObservableList;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.ValueTranslatorService;
 import org.tentackle.fx.component.FxTableView;
+import org.tentackle.fx.component.FxTreeTableView;
 import org.tentackle.fx.rdc.GuiProvider;
 import org.tentackle.fx.rdc.GuiProviderFactory;
 import org.tentackle.fx.table.TableConfiguration;
@@ -65,6 +66,20 @@ public class PdoObservableListTranslator<T extends PersistentDomainObject<T>, C 
     }
     else {
       super.configureTableView(tableView, elemClass);
+    }
+  }
+
+  @Override
+  protected void configureTreeTableView(FxTreeTableView<T> treeTableView, Class<T> elemClass) {
+    if (PersistentDomainObject.class.isAssignableFrom(elemClass)) {
+      // is a PDO: get table configuration from gui provider
+      T pdo = Pdo.create(elemClass);
+      GuiProvider<T> provider = GuiProviderFactory.getInstance().createGuiProvider(pdo);
+      TableConfiguration<T> configuration = createTableConfiguration(provider);
+      configuration.configure(treeTableView);
+    }
+    else {
+      super.configureTreeTableView(treeTableView, elemClass);
     }
   }
 

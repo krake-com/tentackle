@@ -33,6 +33,7 @@ import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.bind.FxTableBinding;
 import org.tentackle.fx.component.FxTableView;
+import org.tentackle.fx.component.FxTreeTableView;
 import org.tentackle.fx.rdc.FileUtilities;
 import org.tentackle.fx.rdc.RdcFxRdcBundle;
 import org.tentackle.fx.table.TableColumnConfiguration;
@@ -54,6 +55,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Collection;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -68,6 +70,14 @@ interface TableUtilitiesHolder {
  */
 @Service(TableUtilities.class)    // defaults to self
 public class TableUtilities {
+
+  /*
+   * TableView and TreeTableView don't inherit from each other and thus
+   * each spawn their own related types such as TableColum, TreeTableColumn, etc...
+   * As a result, since TableUtilities apply to both tables and treetables,
+   * a lot of semantically identical code is necessary.
+   * However, it is not really duplicate code. There's not much we can do to reduce it.
+   */
 
   /**
    * The singleton.
@@ -160,10 +170,29 @@ public class TableUtilities {
    * @param onlySelected true if export only selected rows
    */
   public <S> void toSpreadsheet(FxTableView<S> table, File file, boolean onlySelected) {
+    List<S> items = onlySelected ? table.getSelectionModel().getSelectedItems() : table.getItems();
+    toSpreadsheet(table.getConfiguration().getColumnConfigurations(),file,items);
+  }
+
+  /**
+   * Converts the treetable to a spreadsheet file.
+   *
+   * @param <S> the row type
+   * @param treeTable the table view
+   * @param file the output file
+   * @param onlySelected true if export only selected rows
+   */
+  public <S> void toSpreadsheet(FxTreeTableView<S> treeTable, File file, boolean onlySelected) {
+    List<S> items = onlySelected ? treeTable.getSelectedItems() : treeTable.getItems();
+    toSpreadsheet(treeTable.getConfiguration().getColumnConfigurations(), file, items);
+  }
+
+
+  private <S> void toSpreadsheet(Collection<TableColumnConfiguration<S,?>> columnConfigurations, File file, List<S> items) {
     try (PrintStream out = new PrintStream(new BufferedOutputStream(new FileOutputStream(file)))) {
       // write header
       int ndx = 0;
-      for (TableColumnConfiguration<S, ?> tc : table.getConfiguration().getColumnConfigurations()) {
+      for (TableColumnConfiguration<S, ?> tc : columnConfigurations) {
         if (ndx > 0) {
           out.append(',');
         }
@@ -173,10 +202,9 @@ public class TableUtilities {
       out.append('\n');
 
       // write rows
-      List<S> items = onlySelected ? table.getSelectionModel().getSelectedItems() : table.getItems();
       for (S item : items) {
         ndx = 0;
-        for (TableColumnConfiguration<S, ?> tc : table.getConfiguration().getColumnConfigurations()) {
+        for (TableColumnConfiguration<S, ?> tc : columnConfigurations) {
           if (ndx > 0) {
             out.append(',');
           }
@@ -208,6 +236,25 @@ public class TableUtilities {
    * @param onlySelected true if export only selected rows
    */
   public <S> void toXml(FxTableView<S> table, File file, boolean onlySelected) {
+    List<S> items = onlySelected ? table.getSelectionModel().getSelectedItems() : table.getItems();
+    toXml(table.getConfiguration().getColumnConfigurations(), table.getConfiguration().getName(), file, items);
+  }
+
+  /**
+   * Exports a treetable to an XML file.
+   *
+   * @param <S> the row type
+   * @param treeTable the treetable view
+   * @param file the output file
+   * @param onlySelected true if export only selected rows
+   */
+  public <S> void toXml(FxTreeTableView<S> treeTable, File file, boolean onlySelected) {
+    treeTable.getExpandedItemCount();
+    List<S> items = onlySelected ? treeTable.getSelectedItems() : treeTable.getItems();
+    toXml(treeTable.getConfiguration().getColumnConfigurations(), treeTable.getConfiguration().getName(), file, items);
+  }
+
+  private <S> void toXml(Collection<TableColumnConfiguration<S,?>> columnConfigurations, String name, File file, List<S> items) {
 
     try (PrintStream out = new PrintStream(new BufferedOutputStream(new FileOutputStream(file)))) {
 
@@ -223,13 +270,12 @@ public class TableUtilities {
       hd.startDocument();
       AttributesImpl atts = new AttributesImpl();
       hd.startElement("", "", "Table", atts);
-      List<S> items = onlySelected ? table.getSelectionModel().getSelectedItems() : table.getItems();
 
       for (S item : items) {
 
-        hd.startElement("", "", table.getConfiguration().getName(), atts);
+        hd.startElement("", "", name, atts);
 
-        for (TableColumnConfiguration<S, ?> tc : table.getConfiguration().getColumnConfigurations()) {
+        for (TableColumnConfiguration<S, ?> tc : columnConfigurations) {
           String tag = tc.getName();
           FxTableBinding<S, ?> binding = tc.getBinding();
           if (binding != null) {
@@ -242,7 +288,7 @@ public class TableUtilities {
           }
         }
 
-        hd.endElement("", "", table.getConfiguration().getName());
+        hd.endElement("", "", name);
       }
 
       hd.endElement("", "", "Table");
@@ -272,6 +318,27 @@ public class TableUtilities {
       Fx.error(RdcFxRdcBundle.getString("NO PRINTERS FOUND"));
     }
   }
+
+
+  /**
+   * Prints a tree table view.<br>
+   * Tables need a special handling for multiple pages.
+   *
+   * @param treeTable the treetable to print
+   * @param title the optional title, null if take from treetable's configuration
+   */
+  public void print(FxTreeTableView<?> treeTable, String title) {
+    PrinterJob job = PrinterJob.createPrinterJob();
+    if (job != null) {
+      if (job.showPrintDialog(Fx.getStage(treeTable))) {
+        TablePrinter.print(treeTable, title, job);    //
+      }
+    }
+    else {
+      Fx.error(RdcFxRdcBundle.getString("NO PRINTERS FOUND"));
+    }
+  }
+
 
 
   /**

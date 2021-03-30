@@ -20,17 +20,19 @@
 package org.tentackle.fx.table;
 
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TreeTableColumn;
 
 import org.tentackle.fx.bind.FxTableBinder;
 import org.tentackle.fx.component.FxTableView;
+import org.tentackle.fx.component.FxTreeTableView;
 
 import java.util.Collection;
 
 /**
- * Configuration for a table view.<br>
- * The main purpose is to provide a single object to configure the table view.
+ * Configuration for table and treetable views.<br>
+ * The main purpose is to provide a single object to configure the component.
  *
- * @param <S> the type of the objects contained within the table's items list
+ * @param <S> the type of the objects contained within the table's or treetable's items list
  * @author harald
  */
 public interface TableConfiguration<S> {
@@ -101,6 +103,14 @@ public interface TableConfiguration<S> {
   TableColumnConfiguration<S,?> getColumnConfiguration(TableColumn<S,?> column);
 
   /**
+   * Gets a column configuration by its treetable column.
+   *
+   * @param column the treetable column
+   * @return the config, null if no such column
+   */
+  TableColumnConfiguration<S,?> getColumnConfiguration(TreeTableColumn<S,?> column);
+
+  /**
    * Gets the name of the table.<br>
    * The name is also used as a key to the table preferences.
    *
@@ -149,6 +159,24 @@ public interface TableConfiguration<S> {
    * @param system true if load from system prefs only, else user prefs first
    */
   void loadPreferences(FxTableView<S> table, String suffix, boolean system);
+
+  /**
+   * Saves the column sizes, visability, view size and sorting to the preferences.
+   *
+   * @param treeTable the treetable
+   * @param suffix the configuration suffix, null if none
+   * @param system true if save to system prefs, else user prefs
+   */
+  void savePreferences(FxTreeTableView<S> treeTable, String suffix, boolean system);
+
+  /**
+   * Loads the column sizes, visability, view size and sorting from the preferences.
+   *
+   * @param treeTable the table
+   * @param suffix the configuration suffix, null if none
+   * @param system true if load from system prefs only, else user prefs first
+   */
+  void loadPreferences(FxTreeTableView<S> treeTable, String suffix, boolean system);
 
   /**
    * Returns whether the preferences include the column sorting.
@@ -226,12 +254,19 @@ public interface TableConfiguration<S> {
   void configure(FxTableView<S> table);
 
   /**
+   * Configures the treetable.
+   *
+   * @param treeTable the treetable view
+   */
+  void configure(FxTreeTableView<S> treeTable);
+
+  /**
    * Gets the cell type according to the item type.
    *
    * @param <T> the item type
    * @param type the item class
    * @return the cell type, never null
    */
-  <T> TableCellType<T> getCellType(Class<T> type);
+  <T> TableCellType<T> getTableCellType(Class<T> type);
 
 }

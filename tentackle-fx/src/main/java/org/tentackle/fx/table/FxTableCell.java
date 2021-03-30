@@ -55,7 +55,6 @@ public class FxTableCell<S,T> extends TableCell<S,T> {
     setEditable(columnConfiguration.isEditable());
   }
 
-
   /**
    * Gets the column configuration.
    *
@@ -93,7 +92,7 @@ public class FxTableCell<S,T> extends TableCell<S,T> {
    * @return the cell type, never null
    */
   protected TableCellType<T> getCellType() {
-    return columnConfiguration.getTableConfiguration().getCellType(columnConfiguration.getType());
+    return columnConfiguration.getTableConfiguration().getTableCellType(columnConfiguration.getType());
   }
 
 

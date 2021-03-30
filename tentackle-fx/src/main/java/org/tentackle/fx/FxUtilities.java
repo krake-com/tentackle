@@ -43,7 +43,11 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TreeTableCell;
+import javafx.scene.control.TreeTableColumn;
+import javafx.scene.control.TreeTableView;
 import javafx.scene.control.skin.TableViewSkin;
+import javafx.scene.control.skin.TreeTableViewSkin;
 import javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -932,7 +936,7 @@ public class FxUtilities {
                 Font cellFont = cell.getFont();
                 // BOLD may not work if header is styled with CSS, but that's ok for default configs
                 Font headerFont = Font.font(cellFont.getFamily(), FontWeight.BOLD, cellFont.getSize());
-                cell.getProperties().put("deferToParentPrefWidth", Boolean.TRUE); // see TableCellSkin
+                cell.getProperties().put("deferToParentPrefWidth", Boolean.TRUE); // see TableCellSkinBase
                 double maxWidth = 20;   // don't go below this so that column remains visible
                 // apply header text first
                 cell.updateTableColumn(column);
@@ -945,6 +949,61 @@ public class FxUtilities {
                 for (int row=first; row <= last; row++) {
                   cell.updateIndex(row);
                   maxWidth = maxColumnWidth(maxWidth, cell, tableSkin);
+                }
+                table.resizeColumn(column, maxWidth - column.getWidth());
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Resizes the width of all columns of a tree table to fit the displayed content.<br>
+   * Unlike the "double-click on column separator"-feature this method computes
+   * the column widths according to the content currently displayed. For tables
+   * with a large number of rows this is much more efficient than scanning the whole table.
+   *
+   * @param table the tree table view
+   */
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  public void resizeColumnsToFitContent(TreeTableView<?> table) {
+    TreeTableViewSkin<?> tableSkin = (TreeTableViewSkin<?>) table.getSkin();
+    VirtualFlow<?> virtualFlow = (VirtualFlow<?>) tableSkin.getChildren().get(1);
+    IndexedCell<?> iCell = virtualFlow.getFirstVisibleCell();
+    if (iCell != null) {
+      int first = iCell.getIndex();
+      iCell = virtualFlow.getLastVisibleCell();
+      if (iCell != null) {
+        int last = iCell.getIndex();
+        boolean firstVisibleColumn = true;
+        for (TreeTableColumn column: table.getColumns()) {
+          if (column.isVisible()) {
+            Callback cellFactory = column.getCellFactory();
+            if (cellFactory != null) {
+              TreeTableCell cell = (TreeTableCell) cellFactory.call(column);
+              if (cell != null) {
+                Font cellFont = cell.getFont();
+                // BOLD may not work if header is styled with CSS, but that's ok for default configs
+                Font headerFont = Font.font(cellFont.getFamily(), FontWeight.BOLD, cellFont.getSize());
+                cell.getProperties().put("deferToParentPrefWidth", Boolean.TRUE); // see TableCellSkinBase
+                double maxWidth = 20;   // don't go below this so that column remains visible
+                // apply header text first
+                cell.updateTreeTableColumn(column);
+                cell.updateTreeTableView(table);
+                cell.setText(column.getText());
+                cell.setGraphic(column.getGraphic());
+                cell.setFont(headerFont);
+                maxWidth = maxColumnWidth(maxWidth, cell, tableSkin);
+                cell.setFont(cellFont);
+                for (int row=first; row <= last; row++) {
+                  cell.updateIndex(row);
+                  maxWidth = maxColumnWidth(maxWidth, cell, tableSkin);
+                }
+                if (firstVisibleColumn) {
+                  maxWidth += 50;   // extra space for navigation icon
+                  firstVisibleColumn = false;
                 }
                 table.resizeColumn(column, maxWidth - column.getWidth());
               }
@@ -1127,6 +1186,25 @@ public class FxUtilities {
       cell.applyCss();
       maxWidth = Math.max(maxWidth, cell.prefWidth(-1));
       tableSkin.getChildren().remove(cell);
+    }
+    return maxWidth;
+  }
+
+  /**
+   * Update the maximum column width.
+   *
+   * @param maxWidth the current max witdh
+   * @param cell the cell
+   * @param treeTableSkin the skin
+   * @return the updates width
+   */
+  @SuppressWarnings("rawtypes")
+  private double maxColumnWidth(double maxWidth, TreeTableCell cell, TreeTableViewSkin<?> treeTableSkin) {
+    if ((cell.getText() != null && !cell.getText().isEmpty()) || cell.getGraphic() != null) {
+      treeTableSkin.getChildren().add(cell);
+      cell.applyCss();
+      maxWidth = Math.max(maxWidth, cell.prefWidth(-1));
+      treeTableSkin.getChildren().remove(cell);
     }
     return maxWidth;
   }

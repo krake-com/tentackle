@@ -22,9 +22,9 @@ package org.tentackle.fx.table;
 import org.tentackle.fx.FxComponent;
 
 /**
- * A table cell type.<p>
+ * A table and treetable cell type.<p>
  * Table cell types are singletons per java class.
- * They are created by a factory on demand when a new type is used in a table view.
+ * They are created by a factory on demand when a new type is used in a table or treetable view.
  *
  * @param <T> type of the content in a cell
  * @author harald
@@ -32,12 +32,20 @@ import org.tentackle.fx.FxComponent;
 public interface TableCellType<T> {
 
   /**
-   * Updates the cells view.
+   * Updates the table cells view.
    *
    * @param tableCell the table cell, never null
    * @param item the item for the cell, never null
    */
   void updateItem(FxTableCell<?,T> tableCell, T item);
+
+  /**
+   * Updates the treetable cells view.
+   *
+   * @param treeTableCell the table cell, never null
+   * @param item the item for the cell, never null
+   */
+  void updateItem(FxTreeTableCell<?,T> treeTableCell, T item);
 
   /**
    * Gets the editor component.

@@ -35,9 +35,8 @@ import org.tentackle.pdo.PersistentDomainObject;
  * Items with isVisible() == false will not be added to the contextmenu.
  *
  * @author harald
- * @param <S> the table row's type
  * @param <T> the PDO type
  */
-public interface PdoTableContextMenuItem<S, T extends PersistentDomainObject<T>> {
+public interface PdoTableContextMenuItem<T extends PersistentDomainObject<T>> {
 
 }

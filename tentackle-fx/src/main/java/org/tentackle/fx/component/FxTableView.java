@@ -41,6 +41,7 @@ import org.tentackle.fx.ViewToModelListener;
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.component.delegate.FxTableViewDelegate;
 import org.tentackle.fx.table.FxTableCell;
+import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.fx.table.TableConfiguration;
 
 import java.lang.reflect.Type;
@@ -599,6 +600,15 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
     return getDelegate().getTableCell();
   }
 
+  @Override
+  public void setTreeTableCell(FxTreeTableCell<?,?> treeTableCell) {
+    getDelegate().setTreeTableCell(treeTableCell);
+  }
+
+  @Override
+  public FxTreeTableCell<?,?> getTreeTableCell() {
+    return getDelegate().getTreeTableCell();
+  }
   //</editor-fold>//GEN-END:component
 
 }

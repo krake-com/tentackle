@@ -23,6 +23,7 @@ import javafx.beans.property.BooleanProperty;
 
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.table.FxTableCell;
+import org.tentackle.fx.table.FxTreeTableCell;
 
 import java.lang.reflect.Type;
 
@@ -228,5 +229,28 @@ public interface FxComponent extends FxControl, ErrorPopupSupported, InfoPopupSu
    * @return the cell, null if not a cell editor
    */
   FxTableCell<?,?> getTableCell();
+
+  /**
+   * Sets the treetable cell if the component is used as a treetable cell editor.
+   *
+   * @param treeTableCell the cell, null to disconnect from treetable cell
+   */
+  void setTreeTableCell(FxTreeTableCell<?,?> treeTableCell);
+
+  /**
+   * Gets the treetable cell if the component is used as a treetable cell editor.
+   *
+   * @return the cell, null if not a cell editor
+   */
+  FxTreeTableCell<?,?> getTreeTableCell();
+
+  /**
+   * Returns whether this component is a table- or treetable cell editor.
+   *
+   * @return true if cell editor
+   */
+  default boolean isCellEditor() {
+    return getTableCell() != null || getTreeTableCell() != null;
+  }
 
 }

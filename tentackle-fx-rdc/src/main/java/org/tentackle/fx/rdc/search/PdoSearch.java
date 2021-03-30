@@ -58,6 +58,7 @@ import org.tentackle.fx.component.FxTextField;
 import org.tentackle.fx.component.FxTreeView;
 import org.tentackle.fx.container.FxBorderPane;
 import org.tentackle.fx.container.FxHBox;
+import org.tentackle.fx.rdc.GuiProvider;
 import org.tentackle.fx.rdc.GuiProviderFactory;
 import org.tentackle.fx.rdc.PdoController;
 import org.tentackle.fx.rdc.PdoEvent;
@@ -232,7 +233,8 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     finder.setPdo(pdo);
     finder.getContainer().updateView();
     setFinderVisible(finder.isVisible());
-    tableView = GuiProviderFactory.getInstance().createGuiProvider(pdo).createTableView();
+    GuiProvider<T> guiProvider = GuiProviderFactory.getInstance().createGuiProvider(pdo);
+    tableView = guiProvider.createTableView();
     tablePane.setCenter(tableView);
     tableView.setOnMousePressed(event -> {
       if (event.isPrimaryButtonDown() && event.getClickCount() == 2) {
@@ -324,7 +326,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     tablePopup.loadPreferences();
 
     treeView = Fx.createNode(TreeView.class);
-    treeView.setCellFactory(Rdc::createTreeCell);
+    treeView.setCellFactory(guiProvider.getTreeCellFactory());
     wrongTypeSelected = new SimpleBooleanProperty();
     treeView.getSelectionModel().selectedItemProperty().addListener((obs, ov, nv) ->
             wrongTypeSelected.set(nv == null || nv.getValue() == null ||

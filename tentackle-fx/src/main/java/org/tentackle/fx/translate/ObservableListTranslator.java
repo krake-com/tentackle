@@ -28,12 +28,12 @@ import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.ValueTranslatorService;
 import org.tentackle.fx.component.FxTableView;
+import org.tentackle.fx.component.FxTreeTableView;
 import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.fx.table.TableConfigurationProvider;
 import org.tentackle.fx.table.TableConfigurationProviderFactory;
+import org.tentackle.reflect.ReflectionHelper;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.List;
 import java.util.function.Function;
 
@@ -57,12 +57,16 @@ public class ObservableListTranslator<T, C extends List<T>> extends AbstractValu
   public ObservableListTranslator(FxComponent component) {
     super(component);
 
-    if (component instanceof FxTableView) {
-      Type genType = component.getGenericType();
-      if (genType instanceof ParameterizedType) {
-        Type[] typeArguments = ((ParameterizedType) genType).getActualTypeArguments();
-        if (typeArguments != null && typeArguments.length == 1) {
-          configureTableView((FxTableView<T>) component, (Class<T>) typeArguments[0]);
+    boolean isTableView = component instanceof FxTableView;
+    boolean isTreeTableView = component instanceof FxTreeTableView;
+    if (isTableView || isTreeTableView) {
+      Class<T> elemClass = ReflectionHelper.extractGenericInnerTypeClass(component.getGenericType());
+      if (elemClass != null) {
+        if (isTableView) {
+          configureTableView((FxTableView<T>) component, elemClass);
+        }
+        else {
+          configureTreeTableView((FxTreeTableView<T>) component, elemClass);
         }
       }
     }
@@ -111,6 +115,23 @@ public class ObservableListTranslator<T, C extends List<T>> extends AbstractValu
     if (provider != null) {
       TableConfiguration<T> configuration = createTableConfiguration(provider);
       configuration.configure(tableView);
+    }
+
+    // else: no configuration available -> must be done in application explicitly
+  }
+
+  /**
+   * Configures the treetableview.
+   *
+   * @param treeTableView the treetableview
+   * @param elemClass the list's elememt class
+   */
+  protected void configureTreeTableView(FxTreeTableView<T> treeTableView, Class<T> elemClass) {
+    // determine optional table configuration provider for elemClass
+    TableConfigurationProvider<T> provider = TableConfigurationProviderFactory.getInstance().createTableConfigurationProvider(elemClass);
+    if (provider != null) {
+      TableConfiguration<T> configuration = createTableConfiguration(provider);
+      configuration.configure(treeTableView);
     }
 
     // else: no configuration available -> must be done in application explicitly

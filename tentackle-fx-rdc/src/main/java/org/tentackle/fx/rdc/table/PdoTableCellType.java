@@ -22,6 +22,7 @@ package org.tentackle.fx.rdc.table;
 import javafx.geometry.Pos;
 
 import org.tentackle.fx.table.FxTableCell;
+import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
 import org.tentackle.fx.table.type.AbstractTableCellType;
 import org.tentackle.pdo.PersistentDomainObject;
@@ -40,6 +41,13 @@ public class PdoTableCellType<T extends PersistentDomainObject<T>> extends Abstr
     tableCell.setText(pdo.toString());
     tableCell.setGraphic(null);
     updateAlignment(tableCell, Pos.CENTER_LEFT);
+  }
+
+  @Override
+  public void updateItem(FxTreeTableCell<?, T> treeTableCell, T pdo) {
+    treeTableCell.setText(pdo.toString());
+    treeTableCell.setGraphic(null);
+    updateAlignment(treeTableCell, Pos.CENTER_LEFT);
   }
 
 }

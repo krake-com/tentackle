@@ -58,7 +58,7 @@ public class ComboBoxBaseConfigurator<T extends ComboBoxBase<?>> extends Compone
 
     if (control instanceof FxComponent) {
       control.addEventFilter(KeyEvent.ANY, event -> {
-        if (!control.isEditable() && ((FxComponent) control).getTableCell() != null) {
+        if (!control.isEditable() && ((FxComponent) control).isCellEditor()) {
           // don't allow to navigate within the cells of a table if combobox is used as an editor
           // @todo: verify if still necessary in newer versions than java 9
           switch (event.getCode()) {

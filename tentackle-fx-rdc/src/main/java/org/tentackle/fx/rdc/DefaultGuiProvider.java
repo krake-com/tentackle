@@ -20,10 +20,13 @@ package org.tentackle.fx.rdc;
 
 import javafx.scene.Node;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
+import javafx.util.Callback;
 
 import org.tentackle.common.BundleFactory;
 import org.tentackle.fx.Fx;
@@ -282,6 +285,11 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
   @Override
   public TreeItem<T> createTreeItem() {
     return Rdc.createTreeItem(pdo);
+  }
+
+  @Override
+  public Callback<TreeView<T>, TreeCell<T>> getTreeCellFactory() {
+    return Rdc::createTreeCell;
   }
 
 }

@@ -58,7 +58,6 @@ public class ReflectionHelperTest {
 
   @Test
   public void testGetValueByPath() {
-    Assert.assertTrue(ReflectionHelper.verifyPath(DateHelper.class, "now"));
     Assert.assertEquals(ReflectionHelper.getValueByPath(this, "myClass.myField"), 10);
     Assert.assertNull(ReflectionHelper.getValueByPath(this, "otherClass.myField"));
 

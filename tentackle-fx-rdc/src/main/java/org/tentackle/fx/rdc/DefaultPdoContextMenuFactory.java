@@ -28,6 +28,7 @@ import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.reflect.ClassToServicesMapper;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -45,10 +46,10 @@ public class DefaultPdoContextMenuFactory implements PdoContextMenuFactory {
   private final ClassToServicesMapper<PdoTreeContextMenuItem<?>> treeItemClassMapper;
 
   /** maps PDO-classes to table cell items classes. */
-  private final ClassToServicesMapper<PdoTableContextMenuItem<?,?>> tableItemClassMapper;
+  private final ClassToServicesMapper<PdoTableContextMenuItem<?>> tableItemClassMapper;
 
   /** maps PDO-classes to treetable cell items classes. */
-  private final ClassToServicesMapper<PdoTreeTableContextMenuItem<?,?>> treeTableItemClassMapper;
+  private final ClassToServicesMapper<PdoTreeTableContextMenuItem<?>> treeTableItemClassMapper;
 
 
   /**
@@ -66,82 +67,101 @@ public class DefaultPdoContextMenuFactory implements PdoContextMenuFactory {
 
   @Override
   public <T extends PersistentDomainObject<T>> ContextMenu create(PdoTreeCell<T> cell) {
-    Set<ItemConfig> items = new TreeSet<>();
-    List<Class<? super T>> classes = cell.getItem().getEffectiveSuperClasses();
-    classes.add(0, cell.getItem().getEffectiveClass());
-    try {
-      for (Class<?> cls: classes) {
-        Set<Class<PdoTreeContextMenuItem<?>>> itemClasses = treeItemClassMapper.mapClass(cls.getName(), true);
-        for (Class<PdoTreeContextMenuItem<?>> clazz: itemClasses) {
-          PdoTreeContextMenuItemService anno = clazz.getAnnotation(PdoTreeContextMenuItemService.class);
-          if (anno != null) {
-            MenuItem item = (MenuItem) clazz.getConstructor(PdoTreeCell.class).newInstance(cell);
-            // add if not already added
-            items.add(new ItemConfig(anno.ordinal(), anno.group(), item));
+    ContextMenu contextMenu = null;
+    T pdo = cell.getItem();
+    if (pdo != null) {
+      List<Class<? super T>> classes = new ArrayList<>();
+      classes.add(pdo.getEffectiveClass());
+      classes.addAll(pdo.getEffectiveSuperClasses());
+      Set<ItemConfig> items = new TreeSet<>();
+      try {
+        for (Class<?> cls : classes) {
+          Set<Class<PdoTreeContextMenuItem<?>>> itemClasses = treeItemClassMapper.mapClass(cls.getName(), true);
+          for (Class<PdoTreeContextMenuItem<?>> clazz : itemClasses) {
+            PdoTreeContextMenuItemService anno = clazz.getAnnotation(PdoTreeContextMenuItemService.class);
+            if (anno != null) {
+              MenuItem item = (MenuItem) clazz.getConstructor(PdoTreeCell.class).newInstance(cell);
+              // add if not already added
+              items.add(new ItemConfig(anno.ordinal(), anno.group(), item));
+            }
           }
         }
+        contextMenu = createMenu(items);
+      }
+      catch (ClassNotFoundException nf) {
+        // this is ok -> no mappings found
+      }
+      catch (IllegalAccessException | InstantiationException | InvocationTargetException | NoSuchMethodException cx) {
+        throw new RdcRuntimeException("cannot create tree context menu item", cx);
       }
     }
-    catch (ClassNotFoundException |
-           IllegalAccessException | InstantiationException | InvocationTargetException |
-           NoSuchMethodException cx) {
-      throw new RdcRuntimeException("cannot create tree context menu item", cx);
-    }
-    return createMenu(items);
+    return contextMenu;
   }
 
   @Override
   public <S, T extends PersistentDomainObject<T>> ContextMenu create(PdoTableCell<S, T> cell) {
-    Set<ItemConfig> items = new TreeSet<>();
-    List<Class<? super T>> classes = cell.getItem().getEffectiveSuperClasses();
-    classes.add(0, cell.getItem().getEffectiveClass());
-    try {
-      for (Class<?> cls: classes) {
-        Set<Class<PdoTableContextMenuItem<?,?>>> itemClasses = tableItemClassMapper.mapClass(cls.getName(), true);
-        for (Class<PdoTableContextMenuItem<?,?>> clazz: itemClasses) {
-          PdoTableContextMenuItemService anno = clazz.getAnnotation(PdoTableContextMenuItemService.class);
-          if (anno != null) {
-            // create item
-            MenuItem item = (MenuItem) clazz.getConstructor(PdoTableCell.class).newInstance(cell);
-            // add if not already added
-            items.add(new ItemConfig(anno.ordinal(), anno.group(), item));
+    ContextMenu contextMenu = null;
+    T pdo = cell.getItem();
+    if (pdo != null) {
+      List<Class<? super T>> classes = new ArrayList<>();
+      classes.add(pdo.getEffectiveClass());
+      classes.addAll(pdo.getEffectiveSuperClasses());
+      Set<ItemConfig> items = new TreeSet<>();
+      try {
+        for (Class<?> cls : classes) {
+          Set<Class<PdoTableContextMenuItem<?>>> itemClasses = tableItemClassMapper.mapClass(cls.getName(), true);
+          for (Class<PdoTableContextMenuItem<?>> clazz : itemClasses) {
+            PdoTableContextMenuItemService anno = clazz.getAnnotation(PdoTableContextMenuItemService.class);
+            if (anno != null) {
+              MenuItem item = (MenuItem) clazz.getConstructor(PdoTableCell.class).newInstance(cell);
+              // add if not already added
+              items.add(new ItemConfig(anno.ordinal(), anno.group(), item));
+            }
           }
         }
+        contextMenu = createMenu(items);
+      }
+      catch (ClassNotFoundException nf) {
+        // this is ok -> no mappings found
+      }
+      catch (IllegalAccessException | InstantiationException | InvocationTargetException | NoSuchMethodException cx) {
+        throw new RdcRuntimeException("cannot create table cell context menu item", cx);
       }
     }
-    catch (ClassNotFoundException |
-           IllegalAccessException | InstantiationException | InvocationTargetException |
-           NoSuchMethodException cx) {
-      throw new RdcRuntimeException("cannot create table context menu item", cx);
-    }
-    return createMenu(items);
+    return contextMenu;
   }
 
   @Override
   public <S, T extends PersistentDomainObject<T>> ContextMenu create(PdoTreeTableCell<S, T> cell) {
-    Set<ItemConfig> items = new TreeSet<>();
-    List<Class<? super T>> classes = cell.getItem().getEffectiveSuperClasses();
-    classes.add(0, cell.getItem().getEffectiveClass());
-    try {
-      for (Class<?> cls: classes) {
-        Set<Class<PdoTreeTableContextMenuItem<?,?>>> itemClasses = treeTableItemClassMapper.mapClass(cls.getName(), true);
-        for (Class<PdoTreeTableContextMenuItem<?,?>> clazz: itemClasses) {
-          PdoTreeTableContextMenuItemService anno = clazz.getAnnotation(PdoTreeTableContextMenuItemService.class);
-          if (anno != null) {
-            // create item
-            MenuItem item = (MenuItem) clazz.getConstructor(PdoTreeTableCell.class).newInstance(cell);
-            // add if not already added
-            items.add(new ItemConfig(anno.ordinal(), anno.group(), item));
+    ContextMenu contextMenu = null;
+    T pdo = cell.getItem();
+    if (pdo != null) {
+      List<Class<? super T>> classes = new ArrayList<>();
+      classes.add(pdo.getEffectiveClass());
+      classes.addAll(pdo.getEffectiveSuperClasses());
+      Set<ItemConfig> items = new TreeSet<>();
+      try {
+        for (Class<?> cls : classes) {
+          Set<Class<PdoTreeTableContextMenuItem<?>>> itemClasses = treeTableItemClassMapper.mapClass(cls.getName(), true);
+          for (Class<PdoTreeTableContextMenuItem<?>> clazz : itemClasses) {
+            PdoTreeTableContextMenuItemService anno = clazz.getAnnotation(PdoTreeTableContextMenuItemService.class);
+            if (anno != null) {
+              MenuItem item = (MenuItem) clazz.getConstructor(PdoTreeTableCell.class).newInstance(cell);
+              // add if not already added
+              items.add(new ItemConfig(anno.ordinal(), anno.group(), item));
+            }
           }
         }
+        contextMenu = createMenu(items);
+      }
+      catch (ClassNotFoundException nf) {
+        // this is ok -> no mappings found
+      }
+      catch (IllegalAccessException | InstantiationException | InvocationTargetException | NoSuchMethodException cx) {
+        throw new RdcRuntimeException("cannot create tree table cell context menu item", cx);
       }
     }
-    catch (ClassNotFoundException |
-        IllegalAccessException | InstantiationException | InvocationTargetException |
-        NoSuchMethodException cx) {
-      throw new RdcRuntimeException("cannot create table context menu item", cx);
-    }
-    return createMenu(items);
+    return contextMenu;
   }
 
 
