@@ -130,11 +130,13 @@ public class PdoTreeCell<T extends PersistentDomainObject<T>> extends TreeCell<T
     if (contextMenu != null) {
       contextMenu.hide();
     }
-    contextMenu = PdoContextMenuFactory.getInstance().create(this);
-    if (contextMenu != null) {
-      event.consume();
-      contextMenu.setOnHidden(e -> contextMenu = null);   // -> GC
-      contextMenu.show(this, event.getScreenX(), event.getScreenY());
+    if (getTreeView().getContextMenu() == null) {
+      contextMenu = PdoContextMenuFactory.getInstance().create(this);
+      if (contextMenu != null) {
+        event.consume();
+        contextMenu.setOnHidden(e -> contextMenu = null);   // -> GC
+        contextMenu.show(this, event.getScreenX(), event.getScreenY());
+      }
     }
   }
 

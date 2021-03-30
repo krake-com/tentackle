@@ -21,12 +21,14 @@ package org.tentackle.fx.table;
 
 import javafx.collections.ObservableList;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TreeTableColumn;
 
 import org.tentackle.common.LocaleProvider;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.bind.FxBindingFactory;
 import org.tentackle.fx.bind.FxTableBinder;
 import org.tentackle.fx.component.FxTableView;
+import org.tentackle.fx.component.FxTreeTableView;
 import org.tentackle.prefs.PersistedPreferences;
 import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.reflect.ReflectionHelper;
@@ -39,12 +41,20 @@ import java.util.TreeMap;
 import java.util.prefs.BackingStoreException;
 
 /**
- * Default implementation of a table configuration.<br>
+ * Default implementation of a table configuration.
  *
  * @param <S> type of the objects contained within the table's items list
  * @author harald
  */
 public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
+
+  /*
+   * TableView and TreeTableView don't inherit from each other and thus
+   * each spawn their own related types such as TableColum, TreeTableColumn, etc...
+   * As a result, since {@link TableConfiguration} and {@link TableColumnConfiguration} apply
+   * to both tables and treetables, a lot of semantically identical code is necessary.
+   * However, it is not really duplicate code. There's not much we can do to reduce it.
+   */
 
   /** preferences key for table and column width. */
   private static final String PREF_WIDTH = "width";
@@ -89,7 +99,12 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   /**
    * The column configs mapped by table column.
    */
-  private final Map<TableColumn<S, ?>, TableColumnConfiguration<S, ?>> columnColumnConfigMap = new LinkedHashMap<>();
+  private final Map<TableColumn<S, ?>, TableColumnConfiguration<S, ?>> tableColumnConfigMap = new LinkedHashMap<>();
+
+  /**
+   * The column configs mapped by treetable column.
+   */
+  private final Map<TreeTableColumn<S, ?>, TableColumnConfiguration<S, ?>> treeTableColumnConfigMap = new LinkedHashMap<>();
 
   /**
    * The binder.
@@ -159,7 +174,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
 
   @Override
   public TableColumnConfiguration<S, ?> addColumn(String name, String displayedName) {
-    TableColumnConfiguration<S, ?> columnConfiguration = new DefaultTableColumnConfiguration<>(this, name, displayedName);
+    TableColumnConfiguration<S, ?> columnConfiguration = createTableColumnConfiguration(name, displayedName);
     addColumnConfiguration(columnConfiguration);
     return columnConfiguration;
   }
@@ -168,7 +183,8 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   public TableColumnConfiguration<S, ?> removeColumn(String name) {
     TableColumnConfiguration<S, ?> columnConfiguration = nameColumnConfigMap.remove(name);
     if (columnConfiguration != null) {
-      columnColumnConfigMap.remove(columnConfiguration.getTableColumn());
+      tableColumnConfigMap.remove(columnConfiguration.getTableColumn());
+      treeTableColumnConfigMap.remove(columnConfiguration.getTableColumn());
     }
     return columnConfiguration;
   }
@@ -176,7 +192,8 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   @Override
   public void addColumnConfiguration(TableColumnConfiguration<S, ?> columnConfiguration) {
     nameColumnConfigMap.put(columnConfiguration.getName(), columnConfiguration);
-    columnColumnConfigMap.put(columnConfiguration.getTableColumn(), columnConfiguration);
+    tableColumnConfigMap.put(columnConfiguration.getTableColumn(), columnConfiguration);
+    treeTableColumnConfigMap.put(columnConfiguration.getTreeTableColumn(), columnConfiguration);
   }
 
   @Override
@@ -191,7 +208,12 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
 
   @Override
   public TableColumnConfiguration<S, ?> getColumnConfiguration(TableColumn<S, ?> column) {
-    return column == null ? null : columnColumnConfigMap.get(column);
+    return column == null ? null : tableColumnConfigMap.get(column);
+  }
+
+  @Override
+  public TableColumnConfiguration<S, ?> getColumnConfiguration(TreeTableColumn<S, ?> column) {
+    return column == null ? null : treeTableColumnConfigMap.get(column);
   }
 
   @Override
@@ -374,6 +396,156 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   }
 
   @Override
+  public void savePreferences(FxTreeTableView<S> treeTable, String suffix, boolean system) {
+
+    StringBuilder prefName = new StringBuilder();
+    prefName.append(name);
+    if (suffix != null) {
+      prefName.append('_').append(suffix);
+    }
+    // always add the locale since header sizes etc... may vary
+    prefName.append('_').append(LocaleProvider.getInstance().getEffectiveLocale());
+
+    ObservableList<TreeTableColumn<S,?>> sortOrder = treeTable.getSortOrder();
+
+    try {
+      PersistedPreferences prefs = system ?
+                                   PersistedPreferences.systemRoot().node(prefName.toString()) :
+                                   PersistedPreferences.userRoot().node(prefName.toString());
+
+      int viewIndex = 0;
+      for (TreeTableColumn<S, ?> column : treeTable.getColumns()) {
+        TableColumnConfiguration<S, ?> columnConfig = getColumnConfiguration(column);
+        if (columnConfig != null) {
+          PersistedPreferences columnPrefs = prefs.node(columnConfig.getName());
+          columnPrefs.putInt(PREF_COLUMN_VISIBILITY, column.isVisible() ? 1 : 0);
+          columnPrefs.putDouble(PREF_WIDTH, column.getWidth());
+          columnPrefs.putInt(PREF_COLUMN_INDEX, viewIndex);
+          int sortIndex = sortOrder.indexOf(column);
+          if (isSortingIncluded() && sortIndex >= 0) {
+            columnPrefs.putInt(PREF_COLUMN_SORT_TYPE, column.getSortType().ordinal());
+            columnPrefs.putInt(PREF_COLUMN_SORT_INDEX, sortIndex);
+          }
+          else {
+            columnPrefs.remove(PREF_COLUMN_SORT_TYPE);
+            columnPrefs.remove(PREF_COLUMN_SORT_INDEX);
+          }
+        }
+        viewIndex++;
+      }
+
+      // store also the dimensions of the table
+      double height = treeTable.getHeight();
+      prefs.putDouble(PREF_TABLE_HEIGHT, height);
+      prefs.putDouble(PREF_WIDTH, treeTable.getWidth());
+      prefs.flush();
+    }
+    catch (BackingStoreException | RuntimeException ex) {
+      throw new FxRuntimeException("saving table preferences failed for '" + prefName + "'", ex);
+    }
+  }
+
+  @Override
+  public void loadPreferences(FxTreeTableView<S> treeTable, String suffix, boolean system) {
+
+    StringBuilder prefName = new StringBuilder();
+    prefName.append(name);
+    if (suffix != null) {
+      prefName.append('_').append(suffix);
+    }
+    // always add the locale since header sizes etc... may vary
+    prefName.append('_').append(LocaleProvider.getInstance().getEffectiveLocale());
+
+    Map<Integer, TreeTableColumn<S,?>> sortOrder = new TreeMap<>();   // sorted by sort index
+
+    try {
+      // get the preferences
+      PersistedPreferences systemPref = PersistedPreferences.systemRoot().node(prefName.toString());
+      PersistedPreferences userPref = system ? null : PersistedPreferences.userRoot().node(prefName.toString());
+
+      // map of column name to settings
+      Map<String, PersistedPreferences> columnMapByName = new HashMap<>();
+      for (String columnName : systemPref.childrenNames()) {
+        columnMapByName.put(columnName, systemPref.node(columnName));
+      }
+      if (userPref != null) {
+        // replace by user settings, if present
+        for (String columnName : userPref.childrenNames()) {
+          columnMapByName.put(columnName, userPref.node(columnName));
+        }
+      }
+
+      Map<Integer, TreeTableColumn<S, ?>> columnMapByIndex = new TreeMap<>();
+      for (Map.Entry<String, PersistedPreferences> entry : columnMapByName.entrySet()) {
+        TableColumnConfiguration<S, ?> columnConfig = getColumnConfiguration(entry.getKey());
+        if (columnConfig != null) {
+          TreeTableColumn<S, ?> column = columnConfig.getTreeTableColumn();
+          if (column != null) {
+            PersistedPreferences columnPref = entry.getValue();
+            int visibility = columnPref.getInt(PREF_COLUMN_VISIBILITY, -1);
+            column.setVisible(visibility != 0);
+            double width = columnPref.getDouble(PREF_WIDTH, -1.0);
+            if (width >= 0.0) {
+              treeTable.resizeColumn(column, width - column.getWidth());
+            }
+            int index = columnPref.getInt(PREF_COLUMN_INDEX, -1);
+            if (index >= 0) {
+              columnMapByIndex.put(index, column);
+              if (isSortingIncluded()) {
+                int sorting = columnPref.getInt(PREF_COLUMN_SORT_TYPE, -1);
+                if (sorting >= 0) {
+                  column.setSortType(TreeTableColumn.SortType.values()[sorting]);
+                  int sortIndex = columnPref.getInt(PREF_COLUMN_SORT_INDEX, -1);
+                  if (sortIndex == -1) {
+                    sortIndex = Integer.MAX_VALUE - sortOrder.size();
+                  }
+                  sortOrder.put(sortIndex, column);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      treeTable.getColumns().removeAll(columnMapByIndex.values());
+      treeTable.getColumns().addAll(columnMapByIndex.values());
+      treeTable.getSortOrder().addAll(sortOrder.values());
+
+      // read table dimensions
+      if (isViewSizeIncluded()) {
+        double width = -1.0;
+        String key = PREF_WIDTH;
+        if (!system) {
+          width = userPref.getDouble(key, width);
+        }
+        if (width < 0.0) {
+          width = systemPref.getDouble(key, width);
+        }
+        if (width > 0.0) {
+          treeTable.setPrefWidth(width);
+        }
+
+        double height = -1.0;
+        key = PREF_TABLE_HEIGHT;
+        if (!system) {
+          height = userPref.getDouble(key, height);
+        }
+        if (height < 0.0) {
+          height = systemPref.getDouble(key, height);
+        }
+        if (height > 0.0) {
+          treeTable.setPrefHeight(height);
+        }
+      }
+
+    }
+    catch (BackingStoreException | RuntimeException ex) {
+      throw new FxRuntimeException("loading table preferences failed for '" + prefName + "'", ex);
+    }
+  }
+
+
+  @Override
   public EDITMODE getEditMode() {
     return editMode;
   }
@@ -400,6 +572,22 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   }
 
   @Override
+  public void configure(FxTreeTableView<S> treeTable) {
+    treeTable.getColumns().clear();
+    boolean tableEditable = false;
+    for (TableColumnConfiguration<S,?> config: nameColumnConfigMap.values()) {
+      boolean columnEditable = config.isEditable();
+      tableEditable |= columnEditable;
+      TreeTableColumn<S,?> column = config.getTreeTableColumn();
+      column.setEditable(columnEditable);
+      treeTable.getColumns().add(column);
+    }
+    treeTable.setEditable(tableEditable);
+    treeTable.getSelectionModel().cellSelectionEnabledProperty().set(tableEditable);
+    treeTable.setConfiguration(this);
+  }
+
+  @Override
   public Class<S> getObjectClass() {
     return objectClass;
   }
@@ -423,8 +611,19 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   }
 
   @Override
-  public <T> TableCellType<T> getCellType(Class<T> type) {
+  public <T> TableCellType<T> getTableCellType(Class<T> type) {
     return TableCellTypeFactory.getInstance().getTableCellType(type);
+  }
+
+  /**
+   * Creates a column configuration.
+   *
+   * @param name the column's binding path
+   * @param displayedName the displayed column name
+   * @return the created column configuration
+   */
+  protected TableColumnConfiguration<S, ?> createTableColumnConfiguration(String name, String displayedName) {
+    return new DefaultTableColumnConfiguration<>(this, name, displayedName);
   }
 
 }

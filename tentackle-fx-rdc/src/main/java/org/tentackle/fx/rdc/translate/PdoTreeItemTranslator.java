@@ -23,9 +23,13 @@ import javafx.scene.control.TreeItem;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.ValueTranslatorService;
 import org.tentackle.fx.component.FxTreeView;
+import org.tentackle.fx.rdc.GuiProvider;
+import org.tentackle.fx.rdc.GuiProviderFactory;
 import org.tentackle.fx.rdc.Rdc;
 import org.tentackle.fx.translate.AbstractValueTranslator;
+import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.reflect.ReflectionHelper;
 
 import java.util.function.Function;
 
@@ -48,10 +52,23 @@ public class PdoTreeItemTranslator<T extends PersistentDomainObject<T>> extends 
   @SuppressWarnings("unchecked")
   public PdoTreeItemTranslator(FxComponent component) {
     super(component);
+
     if (component instanceof FxTreeView) {
-      FxTreeView<T> treeView = (FxTreeView<T>) component;
-      treeView.setShowRoot(true);
-      treeView.setCellFactory(Rdc::createTreeCell);
+      Class<T> elemClass = ReflectionHelper.extractGenericInnerTypeClass(component.getGenericType());
+      if (elemClass != null) {
+        FxTreeView<T> treeView = (FxTreeView<T>) component;
+        treeView.setShowRoot(true);
+        GuiProvider<T> provider = null;
+        if (PersistentDomainObject.class.isAssignableFrom(elemClass)) {
+          provider = GuiProviderFactory.getInstance().createGuiProvider(Pdo.create(elemClass));
+        }
+        if (provider != null) {
+          treeView.setCellFactory(provider.getTreeCellFactory());
+        }
+        else {
+          treeView.setCellFactory(Rdc::createTreeCell);
+        }
+      }
     }
   }
 

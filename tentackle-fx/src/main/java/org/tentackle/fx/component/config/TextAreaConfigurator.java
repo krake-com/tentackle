@@ -68,7 +68,7 @@ public class TextAreaConfigurator<T extends TextArea> extends TextInputControlCo
 
   @Override
   protected void focusNext(T control) {
-    if (!(control instanceof FxComponent) || ((FxComponent) control).getTableCell() == null) {
+    if (!(control instanceof FxComponent) || !((FxComponent) control).isCellEditor()) {
       //      NodeHelper.traverse(control, Direction.NEXT);   is non-public API :(
       KeyEvent event = new KeyEvent(KeyEvent.KEY_PRESSED, KeyEvent.CHAR_UNDEFINED, NEXT, KeyCode.TAB,
                                     // ctrl tab gets out of the textarea
@@ -78,7 +78,7 @@ public class TextAreaConfigurator<T extends TextArea> extends TextInputControlCo
   }
 
   protected void focusPrevious(T control) {
-    if (!(control instanceof FxComponent) || ((FxComponent) control).getTableCell() == null) {
+    if (!(control instanceof FxComponent) || !((FxComponent) control).isCellEditor()) {
       //      NodeHelper.traverse(control, Direction.PREVIOUS);   is non public API :(
       KeyEvent event = new KeyEvent(KeyEvent.KEY_PRESSED, KeyEvent.CHAR_UNDEFINED, PREVIOUS, KeyCode.TAB,
                                     true, false, false, false);

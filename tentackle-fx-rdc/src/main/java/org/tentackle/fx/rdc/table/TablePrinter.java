@@ -20,7 +20,6 @@ package org.tentackle.fx.rdc.table;
 
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.print.PageLayout;
 import javafx.print.PrinterJob;
@@ -28,6 +27,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.IndexedCell;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TreeTableColumn;
 import javafx.scene.control.skin.TableViewSkin;
 import javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.transform.Scale;
@@ -42,11 +42,13 @@ import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.component.FxLabel;
 import org.tentackle.fx.component.FxTableView;
+import org.tentackle.fx.component.FxTreeTableView;
 import org.tentackle.fx.container.FxHBox;
 import org.tentackle.fx.rdc.Rdc;
 import org.tentackle.fx.rdc.RdcFxRdcBundle;
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.FxTableColumn;
+import org.tentackle.fx.table.FxTreeTableColumn;
 import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.fx.table.TotalsTableView;
@@ -70,6 +72,14 @@ import java.util.function.Supplier;
 @FxControllerService(binding = FxControllerService.BINDING.NO)
 public class TablePrinter extends AbstractFxController {
 
+  /*
+   * TableView and TreeTableView don't inherit from each other and thus
+   * each spawn their own related types such as TableColum, TreeTableColumn, etc...
+   * As a result, since TablePrinter applies to both tables and treetables,
+   * a lot of semantically identical code is necessary.
+   * However, it is not really duplicate code. There's not much we can do to reduce it.
+   */
+
   /**
    * Prints a table.
    *
@@ -78,6 +88,21 @@ public class TablePrinter extends AbstractFxController {
    * @param job the printer job
    */
   public static void print(FxTableView<?> table, String title, PrinterJob job) {
+    print(table, null, title, job);
+  }
+
+  /**
+   * Prints a treetable.
+   *
+   * @param treeTable the table to be printed
+   * @param title the job title
+   * @param job the printer job
+   */
+  public static void print(FxTreeTableView<?> treeTable, String title, PrinterJob job) {
+    print(null, treeTable, title, job);
+  }
+
+  private static void print(FxTableView<?> table, FxTreeTableView treeTable, String title, PrinterJob job) {
     Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
     TablePrinter printer = Fx.load(TablePrinter.class);
     Scene scene = Fx.createScene(printer.getView());
@@ -85,7 +110,12 @@ public class TablePrinter extends AbstractFxController {
     stage.setTitle(RdcFxRdcBundle.getString("Printing..."));
     String jobTitle;
     if (title == null) {
-      jobTitle = table.getConfiguration().getName();
+      if (table != null) {
+        jobTitle = table.getConfiguration().getName();
+      }
+      else {
+        jobTitle = treeTable.getConfiguration().getName();
+      }
     }
     else {
       jobTitle = title;
@@ -93,8 +123,12 @@ public class TablePrinter extends AbstractFxController {
     if (jobTitle != null) {
       job.getJobSettings().setJobName(jobTitle);
     }
-    stage.setOnShown(e -> Platform.runLater(() ->
-            printer.print(table, jobTitle, job, job.getJobSettings().getPageLayout(), stage)));
+    if (table != null) {
+      stage.setOnShown(e -> Platform.runLater(() -> printer.print(table, null, jobTitle, job, job.getJobSettings().getPageLayout(), stage)));
+    }
+    else {
+      stage.setOnShown(e -> Platform.runLater(() -> printer.print(null, treeTable, jobTitle, job, job.getJobSettings().getPageLayout(), stage)));
+    }
     stage.setOnCloseRequest(e -> Fx.question(RdcFxRdcBundle.getString("cancel print job?"), false, answer -> {
       if (answer) {
         printer.terminationRequested = true;
@@ -167,15 +201,15 @@ public class TablePrinter extends AbstractFxController {
    */
   private class PrintCellFactory<S, T> implements Callback<TableColumn<S, T>, TableCell<S, T>> {
 
-    private final Callback<TableColumn<S, T>, TableCell<S, T>> orgCellFactory;
+    private final Callback<TableColumn<S, T>, TableCell<S, T>> orgTableCellFactory;
 
-    public PrintCellFactory(Callback<TableColumn<S, T>, TableCell<S, T>> orgCellFactory) {
-      this.orgCellFactory = orgCellFactory;
+    public PrintCellFactory(Callback<TableColumn<S, T>, TableCell<S, T>> orgTableCellFactory) {
+      this.orgTableCellFactory = orgTableCellFactory;
     }
 
     @Override
     public TableCell<S, T> call(TableColumn<S, T> column) {
-      TableCell<S, T> cell = orgCellFactory.call(column);
+      TableCell<S, T> cell = orgTableCellFactory.call(column);
       FxTableColumn<S, T> fxColumn = (FxTableColumn<S, T>) column;
       TableColumnConfiguration<S, T> columnConfig = fxColumn.getConfiguration();
       if (totalsRowCount > 0 && columnConfig != null) {
@@ -222,15 +256,16 @@ public class TablePrinter extends AbstractFxController {
 
 
   /**
-   * Prints the table.
+   * Prints a table or a treetable.
    *
-   * @param table the table to be printed
+   * @param table the table to be printed (treeTable == null)
+   * @param treeTable the treetable (table == null)
    * @param title the job title
    * @param job the printer job
    * @param pageLayout the printing layout
    */
   @SuppressWarnings({ "unchecked", "rawtypes" })
-  private void print(FxTableView<?> table, String title, PrinterJob job, PageLayout pageLayout, Stage stage) {
+  private void print(FxTableView<?> table, FxTreeTableView<?> treeTable, String title, PrinterJob job, PageLayout pageLayout, Stage stage) {
 
     LOGGER.fine("table print job {0}", job);
 
@@ -239,18 +274,37 @@ public class TablePrinter extends AbstractFxController {
     // copy the columns to the printing table
     double tableWidth = 0.0;
     tableView.getColumns().clear();
-    tableView.setConfiguration((TableConfiguration) table.getConfiguration());
-    for (TableColumn<?,?> column: table.getColumns()) {
-      if (column.isVisible()) {
-        TableColumnConfiguration<?,?> columnConfig = column instanceof FxTableColumn ?
-                ((FxTableColumn) column).getConfiguration() : null;
-        FxTableColumn printColumn = new FxTableColumn(columnConfig, column.getText());
-        printColumn.setCellValueFactory(column.getCellValueFactory());
-        printColumn.setCellFactory(new PrintCellFactory(column.getCellFactory()));
-        printColumn.setMinWidth(column.getWidth());
-        printColumn.setMaxWidth(column.getWidth());
-        tableView.getColumns().add(printColumn);
-        tableWidth += column.getWidth();
+
+    if (table != null) {
+      tableView.setConfiguration((TableConfiguration) table.getConfiguration());
+      for (TableColumn<?, ?> column : table.getColumns()) {
+        if (column.isVisible()) {
+          TableColumnConfiguration<?, ?> columnConfig = column instanceof FxTableColumn ?
+                                                        ((FxTableColumn) column).getConfiguration() : null;
+          FxTableColumn printColumn = new FxTableColumn(columnConfig, column.getText());
+          printColumn.setCellValueFactory(column.getCellValueFactory());
+          printColumn.setCellFactory(new PrintCellFactory(column.getCellFactory()));
+          printColumn.setMinWidth(column.getWidth());
+          printColumn.setMaxWidth(column.getWidth());
+          tableView.getColumns().add(printColumn);
+          tableWidth += column.getWidth();
+        }
+      }
+    }
+    else {
+      tableView.setConfiguration((TableConfiguration) treeTable.getConfiguration());
+      for (TreeTableColumn<?, ?> column : treeTable.getColumns()) {
+        if (column.isVisible()) {
+          TableColumnConfiguration<?, ?> columnConfig = column instanceof FxTreeTableColumn ?
+                                                        ((FxTreeTableColumn) column).getConfiguration() : null;
+          FxTableColumn printColumn = new FxTableColumn(columnConfig, column.getText());
+          printColumn.setCellValueFactory(columnConfig.getTableColumn().getCellValueFactory()); // use fake column!
+          printColumn.setCellFactory(columnConfig.getTableColumn().getCellFactory());   // no totals -> no PrintCell necessary
+          printColumn.setMinWidth(column.getWidth());
+          printColumn.setMaxWidth(column.getWidth());
+          tableView.getColumns().add(printColumn);
+          tableWidth += column.getWidth();
+        }
       }
     }
 
@@ -277,16 +331,22 @@ public class TablePrinter extends AbstractFxController {
     // scale to page width
     getView().getTransforms().add(new Scale(scaleXY, scaleXY));
 
-    ObservableList items;
-    TotalsTableView<?> totalsTable = TotalsTableView.getTotalsTableView(table);
-    if (totalsTable != null) {
-      // add totals
-      items = FXCollections.observableArrayList(table.getItems());
-      items.addAll(totalsTable.getItems());
-      totalsRowCount = totalsTable.getItems().size();
+    List items;
+    if (table != null) {
+      TotalsTableView<?> totalsTable = TotalsTableView.getTotalsTableView(table);
+      if (totalsTable != null) {
+        // add totals
+        items = new ArrayList(table.getItems());
+        items.addAll(totalsTable.getItems());
+        totalsRowCount = totalsTable.getItems().size();
+      }
+      else {
+        items = table.getItems();
+        totalsRowCount = 0;
+      }
     }
     else {
-      items = table.getItems();
+      items = treeTable.getItems();
       totalsRowCount = 0;
     }
 
@@ -315,14 +375,14 @@ public class TablePrinter extends AbstractFxController {
   @SuppressWarnings({"serial", "rawtypes" })
   private class PrinterTask extends AbstractSessionTask implements Supplier<Void> {
 
-    private final ObservableList items;
+    private final List items;
     private final PrinterJob job;
     private final PageLayout pageLayout;
     private final Stage stage;
 
     private volatile int printableRows;
 
-    private PrinterTask(ObservableList items, PrinterJob job, PageLayout pageLayout, Stage stage) {
+    private PrinterTask(List items, PrinterJob job, PageLayout pageLayout, Stage stage) {
       this.items = items;
       this.job = job;
       this.pageLayout = pageLayout;

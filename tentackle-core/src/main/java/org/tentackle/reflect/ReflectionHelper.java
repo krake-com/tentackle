@@ -27,6 +27,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -293,6 +295,35 @@ public final class ReflectionHelper {
       return all;
     }
     return true;
+  }
+
+
+  /**
+   * Extracts the inner class from a generic type.<br>
+   * The type must be a parameterized generic type (usually determined by the binding)
+   * for a single type argument.<br>
+   * For example:
+   * <pre>
+   *   FxTextField&lt;String&gt;
+   * </pre>
+   *
+   * @param type the type
+   * @param <T> the inner type
+   * @return the class, null if type is not describing a class or is not parameterized
+   */
+  @SuppressWarnings("unchecked")
+  public static <T> Class<T> extractGenericInnerTypeClass(Type type) {
+    Class<T> clazz = null;
+    if (type instanceof ParameterizedType) {
+      Type[] typeArguments = ((ParameterizedType) type).getActualTypeArguments();
+      if (typeArguments != null && typeArguments.length == 1) {
+        Type typeArgument = typeArguments[0];
+        if (typeArgument instanceof Class) {
+          clazz = (Class<T>) typeArgument;
+        }
+      }
+    }
+    return clazz;
   }
 
 
@@ -685,72 +716,6 @@ public final class ReflectionHelper {
     }
 
     throw new TentackleRuntimeException("path is null");
-  }
-
-
-
-  /**
-   * Checks whether a given path in dot-notation is valid.
-   * <p>
-   * Same as {@link #getValueByPath(java.lang.Object, java.lang.String)}
-   * <p>
-   * Note: because the verification is only done according to the declared types
-   * the method may return false for a path that properly evaluates via
-   * {@link #getValueByPath(java.lang.Object, java.lang.String)}.
-   * <p>
-   * Furthermore, methods may be static and are not required to be getters.
-   * <p>
-   * Throws TentackleRuntimeException if value cannot be retrieved.
-   *
-   * @param clazz the clazz the path refers to
-   * @param path the member path in dot-notation relative to given class
-   * @return true if path exists
-   */
-  public static boolean verifyPath(Class<?> clazz, String path) {
-
-    StringBuilder donePath = new StringBuilder();
-
-    if (path != null && path.length() > 0) {
-
-      StringTokenizer stok = new StringTokenizer(path, ".");
-
-      while (stok.hasMoreTokens() && clazz != null) {
-
-        String element = stok.nextToken();
-        if (donePath.length() != 0) {
-          donePath.append('.');
-        }
-        donePath.append(element);
-
-        Method method = getMethodForElement(clazz, element);
-        if (method != null) {
-          clazz = method.getReturnType();
-        }
-        else  {
-          Field field = getFieldForElement(clazz, element);
-          if (field != null) {
-            clazz = field.getType();
-          }
-          else  {
-            throw new TentackleRuntimeException("cannot find '" + element + "' in " + clazz.getName());
-          }
-        }
-
-        if (stok.hasMoreTokens()) {
-          if (clazz == null) {
-            throw new TentackleRuntimeException("path '" + donePath + "' is null");
-          }
-        }
-        else  {
-          return true;
-        }
-      }
-    }
-    else  {
-      return true;
-    }
-
-    throw new TentackleRuntimeException("no such path '" + donePath + "'");
   }
 
 

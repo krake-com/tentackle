@@ -21,6 +21,7 @@ package org.tentackle.fx.table;
 
 import javafx.geometry.Pos;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TreeTableColumn;
 
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.bind.FxTableBinding;
@@ -31,9 +32,9 @@ import java.text.DecimalFormat;
 import java.time.format.DateTimeFormatter;
 
 /**
- * Configuration for a table column.<br>
+ * Configuration for a table or treetable column.
  *
- * @param <S> type of the objects contained within the table's items list
+ * @param <S> type of the objects contained within the table's or treetable's items list
  * @param <T> type of the content in all cells in this column
  *
  * @author harald
@@ -331,10 +332,19 @@ public interface TableColumnConfiguration<S,T> {
   void setBinding(FxTableBinding<S, T> binding);
 
   /**
-   * Gets the table column.
+   * Gets or creates the table column.<br>
+   * Used if configuration applies to a {@link javafx.scene.control.TableView}.
    *
    * @return the table column, never null
    */
   TableColumn<S,T> getTableColumn();
+
+  /**
+   * Gets or creates the tree table column.<br>
+   * Used if configuration applies to a {@link javafx.scene.control.TreeTableView}.
+   *
+   * @return the tree table column, never null
+   */
+  TreeTableColumn<S,T> getTreeTableColumn();
 
 }

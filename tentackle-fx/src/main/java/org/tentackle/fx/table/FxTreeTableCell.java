@@ -1,0 +1,239 @@
+/*
+ * Tentackle - https://tentackle.org.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ */
+
+package org.tentackle.fx.table;
+
+import javafx.application.Platform;
+import javafx.collections.ObservableList;
+import javafx.event.EventHandler;
+import javafx.scene.Node;
+import javafx.scene.control.TreeTableCell;
+import javafx.scene.control.TreeTablePosition;
+import javafx.scene.input.KeyEvent;
+
+import org.tentackle.fx.FxComponent;
+import org.tentackle.fx.FxFactory;
+import org.tentackle.fx.ValueTranslator;
+
+/**
+ * Extended tree table cell.
+ *
+ * @param <S> type of the objects contained within the tree table's items list
+ * @param <T> type of the content in all cells in this column
+ * @author harald
+ */
+public class FxTreeTableCell<S,T> extends TreeTableCell<S,T> {
+
+  private final TableColumnConfiguration<S,T> columnConfiguration;      // column configuration
+
+  private boolean toNext;                           // true if editor was committed with ENTER or TAB
+  private boolean toPrevious;                       // true if editor was committed with Shift ENTER/TAB
+
+  /**
+   * Creates a table cell.
+   *
+   * @param columnConfiguration the column configuration
+   */
+  public FxTreeTableCell(TableColumnConfiguration<S,T> columnConfiguration) {
+    this.columnConfiguration = columnConfiguration;
+    setEditable(columnConfiguration.isEditable());
+  }
+
+
+  /**
+   * Gets the column configuration.
+   *
+   * @return the configuration
+   */
+  public TableColumnConfiguration<S, T> getColumnConfiguration() {
+    return columnConfiguration;
+  }
+
+
+  @Override
+  protected void updateItem(T item, boolean empty) {
+    if (item == getItem()) {
+      return;
+    }
+    super.updateItem(item, empty);
+
+    if (item == null) {
+      setText(null);
+      setGraphic(null);
+    }
+    else if (item instanceof Node) {
+      setText(null);
+      setGraphic((Node) item);
+    }
+    else {
+      getCellType().updateItem(this, item);
+    }
+  }
+
+
+  /**
+   * Gets the table cell type.
+   *
+   * @return the cell type, never null
+   */
+  protected TableCellType<T> getCellType() {
+    return columnConfiguration.getTableConfiguration().getTableCellType(columnConfiguration.getType());
+  }
+
+
+  @Override
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  public void startEdit() {
+    if (isEditable() && getTreeTableView().isEditable() && getTableColumn().isEditable()) {
+      super.startEdit();
+      if (isEditing()) {
+        toNext = false;
+        toPrevious = false;
+        TableCellType<T> cellType = getCellType();
+        FxComponent editor = getEditor(cellType);
+        editor.setTreeTableCell(this);
+        editor.setType(columnConfiguration.getType());
+        ValueTranslator translator = FxFactory.getInstance().createValueTranslator(
+                editor.getType(), cellType.getEditorType(), editor);
+        editor.setViewObject(translator.toView(getItem()));
+
+        setText(null);
+        setGraphic((Node) editor);
+
+        Node node = editor.getDelegate().getNode();   // effective node getting the keyboard events
+
+        EventHandler<KeyEvent> handler = event -> {
+          switch (event.getCode()) {
+            case ESCAPE:
+              cancelEdit();
+              getTreeTableView().refresh();
+              event.consume();
+              break;
+
+            case TAB:
+            case ENTER:
+              if (event.isShiftDown()) {
+                toPrevious = true;
+              }
+              else {
+                toNext = true;
+              }
+              T value = (T) translator.toModel(editor.getViewObject());
+              columnConfiguration.getBinding().setModelValue(value);
+              commitEdit(value);
+              getTreeTableView().refresh();
+              event.consume();
+              break;
+          }
+        };
+
+        node.setOnKeyPressed(handler);
+
+        if (editor != node) {
+          // for whatever reason, ESC is sometimes not forwarded to the inner component.
+          // In such a case, catch the keystroke on the outer one (for ex. DatePicker).
+          // @todo: check if still necessary in newer releases then Java 9
+          ((Node) editor).setOnKeyPressed(handler);
+        }
+
+        // same sh*t as in Swing... hoping 3 loops in eventQ is sufficient, one isnt always :(
+        Platform.runLater(() -> Platform.runLater(() -> Platform.runLater(node::requestFocus)));
+      }
+    }
+  }
+
+
+  /**
+   * Gets the editor for this table cell.
+   *
+   * @param cellType the table cell type
+   * @return the editor
+   */
+  protected FxComponent getEditor(TableCellType<T> cellType) {
+    FxComponent editor = columnConfiguration.getEditor();
+    if (editor == null) {
+      editor = cellType.getEditor();
+    }
+    return editor;
+  }
+
+
+  @Override
+  public void commitEdit(T newValue) {
+    super.commitEdit(newValue);
+    Platform.runLater(() -> {
+      switch(columnConfiguration.getTableConfiguration().getEditMode()) {
+        case ROW:
+          if (toNext) {
+            TreeTablePosition<S, ?> pos;
+            do {
+              getTreeTableView().getSelectionModel().selectNext();
+              pos = getPosition();
+            }
+            while (pos != null && !pos.getTableColumn().isEditable());
+            editCell();
+          }
+          else if (toPrevious) {
+            TreeTablePosition<S, ?> pos;
+            do {
+              getTreeTableView().getSelectionModel().selectPrevious();
+              pos = getPosition();
+            }
+            while (pos != null && !pos.getTableColumn().isEditable());
+            editCell();
+          }
+          break;
+
+        case COLUMN:
+          if (toNext) {
+            getTreeTableView().getSelectionModel().selectBelowCell();
+            editCell();
+          }
+          else if (toPrevious) {
+            getTreeTableView().getSelectionModel().selectAboveCell();
+            editCell();
+          }
+          break;
+      }
+      getTreeTableView().requestFocus();
+    });
+  }
+
+
+  /**
+   * Gets the table position of the currently selected cell.
+   *
+   * @return the position, null if none selected
+   */
+  protected TreeTablePosition<S, ?> getPosition() {
+    ObservableList<TreeTablePosition<S, ?>> cells = getTreeTableView().getSelectionModel().getSelectedCells();
+    return cells.isEmpty() ? null : cells.get(0);
+  }
+
+  /**
+   * Edits the currently selected cell.
+   */
+  protected void editCell() {
+    TreeTablePosition<S, ?> pos = getPosition();
+    if (pos != null) {
+      Platform.runLater(() -> getTreeTableView().edit(pos.getRow(), pos.getTableColumn()));
+    }
+  }
+
+}

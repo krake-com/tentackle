@@ -23,7 +23,6 @@ import javafx.collections.ObservableList;
 import javafx.scene.Node;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
-import javafx.scene.control.TreeTableColumn;
 import javafx.scene.control.TreeView;
 import javafx.stage.Modality;
 import javafx.stage.Window;
@@ -33,6 +32,7 @@ import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.rdc.app.DesktopApplication;
 import org.tentackle.fx.rdc.crud.PdoCrud;
 import org.tentackle.fx.rdc.search.PdoSearch;
+import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.pdo.PersistentDomainObject;
 
 import java.util.function.Consumer;
@@ -97,19 +97,35 @@ public class Rdc {
   }
 
   /**
+   * Creates a table cell for a pdo type.
+   * Usage:
+   * <pre>
+   *   tableColumn.setCellFactory(Rdc::createTableCell);
+   * </pre>
+   *
+   * @param columnConfig the table column configuration
+   * @param <S> the table row's type
+   * @param <T> the table cell's pdo type
+   * @return the tree table cell
+   */
+  public static <S, T extends PersistentDomainObject<T>> PdoTableCell<S, T> createTableCell(TableColumnConfiguration<S, T> columnConfig) {
+    return RdcFactory.getInstance().createTableCell(columnConfig);
+  }
+
+  /**
    * Creates a tree table cell for a pdo type.
    * Usage:
    * <pre>
    *   treeTableColumn.setCellFactory(Rdc::createTreeTableCell);
    * </pre>
    *
-   * @param column the treetable column
+   * @param columnConfig the table column configuration
    * @param <S> the table row's type
    * @param <T> the table cell's pdo type
    * @return the tree table cell
    */
-  public static <S, T extends PersistentDomainObject<T>> PdoTreeTableCell<S, T> createTreeTableCell(TreeTableColumn<S,T> column) {
-    return RdcFactory.getInstance().createTreeTableCell(column);
+  public static <S, T extends PersistentDomainObject<T>> PdoTreeTableCell<S, T> createTreeTableCell(TableColumnConfiguration<S, T> columnConfig) {
+    return RdcFactory.getInstance().createTreeTableCell(columnConfig);
   }
 
   /**
@@ -231,6 +247,16 @@ public class Rdc {
    */
   public static <T extends PersistentDomainObject<T>> PdoSearch<T> getSearch(T pdo, Modality modality, Window owner) {
     return RdcUtilities.getInstance().getSearch(pdo, modality, owner);
+  }
+
+  /**
+   * Shows the tree of a PDO in a modal scene.
+   *
+   * @param pdo the PDO
+   * @param <T> the PDO type
+   */
+  public static <T extends PersistentDomainObject<T>> void showTree(T pdo) {
+    RdcUtilities.getInstance().showTree(pdo);
   }
 
   /**

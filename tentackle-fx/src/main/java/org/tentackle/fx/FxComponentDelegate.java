@@ -32,6 +32,7 @@ import org.tentackle.bind.BindingVetoException;
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.table.FxTableCell;
+import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.log.Logger;
 import org.tentackle.validate.ValidationFailedException;
 import org.tentackle.validate.ValidationResult;
@@ -158,9 +159,14 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
   private boolean updatingView;
 
   /**
-   * The table cell, if this is used as a cell editor.
+   * The table cell, if this is used as a cell editor in table.
    */
   private FxTableCell<?,?> tableCell;
+
+  /**
+   * The treetable cell, if this is used as a cell editor in a treetable.
+   */
+  private FxTreeTableCell<?,?> treeTableCell;
 
 
   @Override
@@ -620,5 +626,15 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
   @Override
   public void setTableCell(FxTableCell<?, ?> tableCell) {
     this.tableCell = tableCell;
+  }
+
+  @Override
+  public FxTreeTableCell<?, ?> getTreeTableCell() {
+    return treeTableCell;
+  }
+
+  @Override
+  public void setTreeTableCell(FxTreeTableCell<?, ?> treeTableCell) {
+    this.treeTableCell = treeTableCell;
   }
 }

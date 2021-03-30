@@ -20,10 +20,13 @@
 package org.tentackle.fx.rdc;
 
 import javafx.scene.Node;
+import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
+import javafx.util.Callback;
 
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.component.FxTableView;
@@ -170,6 +173,13 @@ public interface GuiProvider<T extends PersistentDomainObject<T>>
    * @return the tree item
    */
   TreeItem<T> createTreeItem();
+
+  /**
+   * Creates a tree cell factory for a treeview.
+   *
+   * @return the tree cell factory, never null
+   */
+  Callback<TreeView<T>, TreeCell<T>> getTreeCellFactory();
 
   /**
    * Determines whether tree explansion should stop at this object.<br>

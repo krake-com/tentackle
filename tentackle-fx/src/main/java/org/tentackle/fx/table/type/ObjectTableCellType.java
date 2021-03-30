@@ -22,6 +22,7 @@ package org.tentackle.fx.table.type;
 import javafx.geometry.Pos;
 
 import org.tentackle.fx.table.FxTableCell;
+import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
 
 /**
@@ -38,6 +39,13 @@ public class ObjectTableCellType extends AbstractTableCellType<Object> {
     tableCell.setText(item.toString());
     tableCell.setGraphic(null);
     updateAlignment(tableCell, Pos.CENTER);
+  }
+
+  @Override
+  public void updateItem(FxTreeTableCell<?, Object> treeTableCell, Object item) {
+    treeTableCell.setText(item.toString());
+    treeTableCell.setGraphic(null);
+    updateAlignment(treeTableCell, Pos.CENTER);
   }
 
 }

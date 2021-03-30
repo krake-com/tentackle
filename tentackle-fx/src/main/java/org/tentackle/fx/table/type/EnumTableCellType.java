@@ -25,6 +25,7 @@ import javafx.scene.control.ComboBox;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.table.FxTableCell;
+import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
 
 /**
@@ -40,6 +41,13 @@ public class EnumTableCellType extends AbstractTableCellType<Enum> {
     tableCell.setText(item.toString());
     tableCell.setGraphic(null);
     updateAlignment(tableCell, Pos.CENTER);
+  }
+
+  @Override
+  public void updateItem(FxTreeTableCell<?, Enum> treeTableCell, Enum item) {
+    treeTableCell.setText(item.toString());
+    treeTableCell.setGraphic(null);
+    updateAlignment(treeTableCell, Pos.CENTER);
   }
 
   @Override

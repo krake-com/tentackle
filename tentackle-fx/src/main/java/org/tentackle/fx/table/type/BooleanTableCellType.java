@@ -25,6 +25,7 @@ import javafx.scene.control.CheckBox;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.table.FxTableCell;
+import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
 
 /**
@@ -37,6 +38,18 @@ public class BooleanTableCellType extends AbstractTableCellType<Boolean> {
 
   @Override
   public void updateItem(FxTableCell<?, Boolean> tableCell, Boolean item) {
+    tableCell.setText(null);
+    if (item) {
+      tableCell.setGraphic(Fx.createImageView("ok_mini"));
+    }
+    else {
+      tableCell.setGraphic(Fx.createImageView("cancel_mini"));
+    }
+    updateAlignment(tableCell, Pos.CENTER);
+  }
+
+  @Override
+  public void updateItem(FxTreeTableCell<?, Boolean> tableCell, Boolean item) {
     tableCell.setText(null);
     if (item) {
       tableCell.setGraphic(Fx.createImageView("ok_mini"));

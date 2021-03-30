@@ -24,8 +24,8 @@ import javafx.scene.control.TableColumn;
  * An extended table column.<br>
  * Holds the column configuration.
  *
- * @param <S> The type of the TableView generic type (i.e. S == TableView&lt;S&gt;)
- * @param <T> The type of the content in all cells in this TableColumn.
+ * @param <S> the TableView's generic type (i.e. S == TableView&lt;S&gt;)
+ * @param <T> The type of the content in all cells in this column.
  * @author harald
  */
 public class FxTableColumn<S, T> extends TableColumn<S, T> {

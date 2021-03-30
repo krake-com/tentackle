@@ -22,7 +22,9 @@ package org.tentackle.fx.table.type;
 import javafx.geometry.Pos;
 
 import org.tentackle.fx.table.FxTableCell;
+import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
+import org.tentackle.fx.table.TableColumnConfiguration;
 
 import java.text.DecimalFormat;
 
@@ -39,7 +41,7 @@ public class NumberTableCellType<T extends Number> extends AbstractTableCellType
   @Override
   public void updateItem(FxTableCell<?, T> tableCell, T item) {
     tableCell.setGraphic(null);
-    DecimalFormat fmt = getFormat(tableCell, item);
+    DecimalFormat fmt = getFormat(tableCell.getColumnConfiguration(), item);
     String text;
     if (fmt != null) {
       text = fmt.format(item);
@@ -51,14 +53,29 @@ public class NumberTableCellType<T extends Number> extends AbstractTableCellType
     updateAlignment(tableCell, Pos.CENTER_RIGHT);
   }
 
+  @Override
+  public void updateItem(FxTreeTableCell<?, T> treeTableCell, T item) {
+    treeTableCell.setGraphic(null);
+    DecimalFormat fmt = getFormat(treeTableCell.getColumnConfiguration(), item);
+    String text;
+    if (fmt != null) {
+      text = fmt.format(item);
+    }
+    else {
+      text = item.toString();
+    }
+    treeTableCell.setText(text);
+    updateAlignment(treeTableCell, Pos.CENTER_RIGHT);
+  }
+
   /**
    * Gets the number format.
    *
-   * @param tableCell the cell
+   * @param config the column configuration
    * @param item the number
    * @return the format, null if default toString()
    */
-  protected DecimalFormat getFormat(FxTableCell<?, T> tableCell, T item) {
-    return tableCell.getColumnConfiguration().getNumberFormat();
+  protected DecimalFormat getFormat(TableColumnConfiguration<?, T> config, T item) {
+    return config.getNumberFormat();
   }
 }

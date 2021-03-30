@@ -19,15 +19,16 @@
 
 package org.tentackle.fx.rdc;
 
-import javafx.scene.control.TreeTableColumn;
 import javafx.scene.control.TreeView;
 
 import org.tentackle.common.Service;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.component.FxTableView;
+import org.tentackle.fx.component.FxTreeTableView;
 import org.tentackle.fx.rdc.crud.PdoCrud;
 import org.tentackle.fx.rdc.search.PdoSearch;
 import org.tentackle.fx.rdc.table.TablePopup;
+import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.pdo.PersistentDomainObject;
 
 /**
@@ -73,18 +74,23 @@ public class DefaultRdcFactory implements RdcFactory {
   }
 
   @Override
-  public <S, T extends PersistentDomainObject<T>> PdoTreeTableCell<S, T> createTreeTableCell(TreeTableColumn<S,T> column) {
-    return new PdoTreeTableCell<>();     // column is ignored by default but application may override this
+  public <S, T extends PersistentDomainObject<T>> PdoTreeTableCell<S, T> createTreeTableCell(TableColumnConfiguration<S, T> columnConfig) {
+    return new PdoTreeTableCell<>(columnConfig);
   }
 
   @Override
-  public <S, T extends PersistentDomainObject<T>> PdoTableCell<S, T> createTableCell() {
-    return new PdoTableCell<>();
+  public <S, T extends PersistentDomainObject<T>> PdoTableCell<S, T> createTableCell(TableColumnConfiguration<S, T> columnConfig) {
+    return new PdoTableCell<>(columnConfig);
   }
 
   @Override
   public <S> TablePopup<S> createTablePopup(FxTableView<S> table, String preferencesSuffix, String title) {
     return new TablePopup<>(table, preferencesSuffix, title);
+  }
+
+  @Override
+  public <S> TablePopup<S> createTablePopup(FxTreeTableView<S> treeTable, String preferencesSuffix, String title) {
+    return new TablePopup<>(treeTable, preferencesSuffix, title);
   }
 
 }

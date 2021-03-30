@@ -30,10 +30,12 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TreeTableColumn;
 
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.component.FxTableView;
+import org.tentackle.fx.component.FxTreeTableView;
 import org.tentackle.fx.rdc.FileUtilities;
 import org.tentackle.fx.rdc.RdcFxRdcBundle;
 import org.tentackle.log.Logger;
@@ -41,21 +43,33 @@ import org.tentackle.prefs.PersistedPreferencesFactory;
 
 import java.io.File;
 import java.text.MessageFormat;
+import java.util.List;
+import java.util.Objects;
 
 
 /**
  * Table popup.<br>
  * Provides a context menu with several handy features such as export to excel,
- * save and load table settings, etc...
+ * save and load table settings, etc...<br>
+ * The popup can be used for tables and treetables.
  *
  * @author harald
  * @param <S> the table element type
  */
 public class TablePopup<S> {
 
+  /*
+   * TableView and TreeTableView don't inherit from each other and thus
+   * each spawn their own related types such as TableColum, TreeTableColumn, etc...
+   * As a result, since TablePopup applies to both tables and treetables,
+   * a lot of semantically identical code is necessary.
+   * However, it is not really duplicate code. There's not much we can do to reduce it.
+   */
+
   private static final Logger LOGGER = Logger.get(TablePopup.class);
 
   private final FxTableView<S> table;           // the table
+  private final FxTreeTableView<S> treeTable;   // tree table
   private final String preferencesSuffix;       // suffix for the preferences
   private String title;                         // the title of the printed table
   private boolean columnMenuEnabled = true;     // true if user is allowed to hide/show columns (default)
@@ -69,10 +83,7 @@ public class TablePopup<S> {
    * @param title the title of the printed table, null if from table config
    */
   public TablePopup(FxTableView<S> table, String preferencesSuffix, String title) {
-    this.table = table;
-    this.preferencesSuffix = preferencesSuffix;
-    this.title = title;
-
+    this(Objects.requireNonNull(table), null, preferencesSuffix, title);
     ContextMenu menu = createContextMenu();
     table.setContextMenu(menu);
     for (TableColumn<S,?> column: table.getColumns())  {
@@ -80,15 +91,48 @@ public class TablePopup<S> {
     }
   }
 
+  /**
+   * Creates a table popup.
+   *
+   * @param treeTable the treetable
+   * @param preferencesSuffix the preferences suffix to load/save table preferences, null if from table config
+   * @param title the title of the printed table, null if from table config
+   */
+  public TablePopup(FxTreeTableView<S> treeTable, String preferencesSuffix, String title) {
+    this(null, Objects.requireNonNull(treeTable), preferencesSuffix, title);
+    ContextMenu menu = createContextMenu();
+    treeTable.setContextMenu(menu);
+    for (TreeTableColumn<S,?> column: treeTable.getColumns())  {
+      column.setContextMenu(menu);
+    }
+  }
+
+  private TablePopup(FxTableView<S> table, FxTreeTableView<S> treeTable, String preferencesSuffix, String title) {
+    this.table = table;
+    this.treeTable = treeTable;
+    this.preferencesSuffix = preferencesSuffix;
+    this.title = title;
+  }
+
 
   /**
    * Gets the table.
    *
-   * @return the table
+   * @return the table, null if treetable popup
    */
   public FxTableView<S> getTable() {
     return table;
   }
+
+  /**
+   * Gets the tree table.
+   *
+   * @return the treetable, null if table popup
+   */
+  public FxTreeTableView<S> getTreeTable() {
+    return treeTable;
+  }
+
 
   /**
    * Gets the printed title.
@@ -147,7 +191,8 @@ public class TablePopup<S> {
 
     ContextMenu menu = new ContextMenu();
 
-    ObservableList<TableColumn<S,?>> columns = table.getColumns();
+    ObservableList<TableColumn<S,?>> tableColumns = table == null ? null : table.getColumns();
+    ObservableList<TreeTableColumn<S,?>> treeTableColumns = treeTable == null ? null : treeTable.getColumns();
 
     final Menu columnMenu;
 
@@ -230,43 +275,80 @@ public class TablePopup<S> {
 
     menu.setOnShowing(event -> {
 
+      List<S> items = table == null ? treeTable.getItems() : table.getItems();
+      int selectedIndex = table == null ?
+                          treeTable.getSelectionModel().getSelectedIndex() :
+                          table.getSelectionModel().getSelectedIndex();
       countLabel.setText(MessageFormat.format(RdcFxRdcBundle.getString("ROW {0} OF {1}"),
-                                              table.getSelectionModel().getSelectedIndex() + 1,
-                                              table.getItems() == null ? 0 : table.getItems().size()));
+                                              selectedIndex + 1, items == null ? 0 : items.size()));
 
       if (columnMenu != null) {
         columnMenu.getItems().clear();
         boolean allVisible = true;
         boolean allInvisible = true;
-        for (TableColumn<S,?> column: columns)  {
-          CheckMenuItem item = new CheckMenuItem(column.getText());
-          item.setSelected(column.isVisible());
-          if (column.isVisible()) {
-            allInvisible = false;
-          }
-          else {
-            allVisible = false;
-          }
-          item.setOnAction(e -> column.setVisible(item.isSelected()));
-          columnMenu.getItems().add(item);
-        }
-        if (!allVisible) {
-          MenuItem showAllItem = new MenuItem(RdcFxRdcBundle.getString("SHOW ALL"));
-          showAllItem.setOnAction(e -> {
-            for (TableColumn<S,?> column: columns)  {
-              column.setVisible(true);
+        if (tableColumns != null) {
+          for (TableColumn<S, ?> column : tableColumns) {
+            CheckMenuItem item = new CheckMenuItem(column.getText());
+            item.setSelected(column.isVisible());
+            if (column.isVisible()) {
+              allInvisible = false;
             }
-          });
-          columnMenu.getItems().add(showAllItem);
-        }
-        if (!allInvisible) {
-          MenuItem hideAllItem = new MenuItem(RdcFxRdcBundle.getString("HIDE ALL"));
-          hideAllItem.setOnAction(e -> {
-            for (TableColumn<S,?> column: columns)  {
-              column.setVisible(false);
+            else {
+              allVisible = false;
             }
-          });
-          columnMenu.getItems().add(hideAllItem);
+            item.setOnAction(e -> column.setVisible(item.isSelected()));
+            columnMenu.getItems().add(item);
+          }
+          if (!allVisible) {
+            MenuItem showAllItem = new MenuItem(RdcFxRdcBundle.getString("SHOW ALL"));
+            showAllItem.setOnAction(e -> {
+              for (TableColumn<S, ?> column : tableColumns) {
+                column.setVisible(true);
+              }
+            });
+            columnMenu.getItems().add(showAllItem);
+          }
+          if (!allInvisible) {
+            MenuItem hideAllItem = new MenuItem(RdcFxRdcBundle.getString("HIDE ALL"));
+            hideAllItem.setOnAction(e -> {
+              for (TableColumn<S, ?> column : tableColumns) {
+                column.setVisible(false);
+              }
+            });
+            columnMenu.getItems().add(hideAllItem);
+          }
+        }
+        else if (treeTableColumns != null) {
+          for (TreeTableColumn<S, ?> column : treeTableColumns) {
+            CheckMenuItem item = new CheckMenuItem(column.getText());
+            item.setSelected(column.isVisible());
+            if (column.isVisible()) {
+              allInvisible = false;
+            }
+            else {
+              allVisible = false;
+            }
+            item.setOnAction(e -> column.setVisible(item.isSelected()));
+            columnMenu.getItems().add(item);
+          }
+          if (!allVisible) {
+            MenuItem showAllItem = new MenuItem(RdcFxRdcBundle.getString("SHOW ALL"));
+            showAllItem.setOnAction(e -> {
+              for (TreeTableColumn<S, ?> column : treeTableColumns) {
+                column.setVisible(true);
+              }
+            });
+            columnMenu.getItems().add(showAllItem);
+          }
+          if (!allInvisible) {
+            MenuItem hideAllItem = new MenuItem(RdcFxRdcBundle.getString("HIDE ALL"));
+            hideAllItem.setOnAction(e -> {
+              for (TreeTableColumn<S, ?> column : treeTableColumns) {
+                column.setVisible(false);
+              }
+            });
+            columnMenu.getItems().add(hideAllItem);
+          }
         }
       }
     });
@@ -279,7 +361,12 @@ public class TablePopup<S> {
    * Resizes all columns to fit their content.
    */
   public void autoWidth() {
-    FxUtilities.getInstance().resizeColumnsToFitContent(table);
+    if (table != null) {
+      FxUtilities.getInstance().resizeColumnsToFitContent(table);
+    }
+    else {
+      FxUtilities.getInstance().resizeColumnsToFitContent(treeTable);
+    }
   }
 
 
@@ -287,7 +374,12 @@ public class TablePopup<S> {
    * Prints the table.
    */
   public void print() {
-    TableUtilities.getInstance().print(table, title);
+    if (table != null) {
+      TableUtilities.getInstance().print(table, title);
+    }
+    else {
+      TableUtilities.getInstance().print(treeTable, title);
+    }
   }
 
 
@@ -298,10 +390,19 @@ public class TablePopup<S> {
    */
   public void toSpreadsheet(boolean onlySelected) {
     try {
-      File file = TableUtilities.getInstance().selectSpreadsheetFile(table.getConfiguration().getName(), Fx.getStage(table));
-      if (file != null) {
-        TableUtilities.getInstance().toSpreadsheet(table, file, onlySelected);
-        FileUtilities.getInstance().editFile(file);
+      if (table != null) {
+        File file = TableUtilities.getInstance().selectSpreadsheetFile(table.getConfiguration().getName(), Fx.getStage(table));
+        if (file != null) {
+          TableUtilities.getInstance().toSpreadsheet(table, file, onlySelected);
+          FileUtilities.getInstance().editFile(file);
+        }
+      }
+      else {
+        File file = TableUtilities.getInstance().selectSpreadsheetFile(treeTable.getConfiguration().getName(), Fx.getStage(treeTable));
+        if (file != null) {
+          TableUtilities.getInstance().toSpreadsheet(treeTable, file, onlySelected);
+          FileUtilities.getInstance().editFile(file);
+        }
       }
     }
     catch (RuntimeException ex)  {
@@ -319,10 +420,19 @@ public class TablePopup<S> {
    */
   public void toXml(boolean onlySelected) {
     try {
-      File file = TableUtilities.getInstance().selectXmlFile(table.getConfiguration().getName(), Fx.getStage(table));
-      if (file != null) {
-        TableUtilities.getInstance().toXml(table, file, onlySelected);
-        FileUtilities.getInstance().editFile(file);
+      if (table != null) {
+        File file = TableUtilities.getInstance().selectXmlFile(table.getConfiguration().getName(), Fx.getStage(table));
+        if (file != null) {
+          TableUtilities.getInstance().toXml(table, file, onlySelected);
+          FileUtilities.getInstance().editFile(file);
+        }
+      }
+      else {
+        File file = TableUtilities.getInstance().selectXmlFile(treeTable.getConfiguration().getName(), Fx.getStage(treeTable));
+        if (file != null) {
+          TableUtilities.getInstance().toXml(treeTable, file, onlySelected);
+          FileUtilities.getInstance().editFile(file);
+        }
       }
     }
     catch (RuntimeException ex)  {
@@ -339,7 +449,12 @@ public class TablePopup<S> {
    */
   public void savePreferences(boolean system) {
     try {
-      table.savePreferences(preferencesSuffix, system);
+      if (table != null) {
+        table.savePreferences(preferencesSuffix, system);
+      }
+      else {
+        treeTable.savePreferences(preferencesSuffix, system);
+      }
     }
     catch (RuntimeException ex) {
       LOGGER.severe("saving table preferences failed", ex);
@@ -363,7 +478,12 @@ public class TablePopup<S> {
    */
   public void loadPreferences(boolean system) {
     try {
-      table.loadPreferences(preferencesSuffix, system);
+      if (table != null) {
+        table.loadPreferences(preferencesSuffix, system);
+      }
+      else {
+        treeTable.loadPreferences(preferencesSuffix,system);
+      }
     }
     catch (RuntimeException ex) {
       LOGGER.severe("loading table preferences failed", ex);

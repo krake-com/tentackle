@@ -22,7 +22,9 @@ package org.tentackle.fx.table.type;
 import javafx.geometry.Pos;
 
 import org.tentackle.fx.table.FxTableCell;
+import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
+import org.tentackle.fx.table.TableColumnConfiguration;
 
 import java.text.DateFormat;
 import java.util.Date;
@@ -38,7 +40,7 @@ public class UtilDateTableCellType<T extends Date> extends AbstractTableCellType
   @Override
   public void updateItem(FxTableCell<?, T> tableCell, T item) {
     tableCell.setGraphic(null);
-    DateFormat fmt = getFormat(tableCell);
+    DateFormat fmt = getFormat(tableCell.getColumnConfiguration());
     String text;
     if (fmt != null) {
       text = fmt.format(item);
@@ -50,14 +52,29 @@ public class UtilDateTableCellType<T extends Date> extends AbstractTableCellType
     updateAlignment(tableCell, Pos.CENTER);
   }
 
+  @Override
+  public void updateItem(FxTreeTableCell<?, T> treeTableCell, T item) {
+    treeTableCell.setGraphic(null);
+    DateFormat fmt = getFormat(treeTableCell.getColumnConfiguration());
+    String text;
+    if (fmt != null) {
+      text = fmt.format(item);
+    }
+    else {
+      text = item.toString();
+    }
+    treeTableCell.setText(text);
+    updateAlignment(treeTableCell, Pos.CENTER);
+  }
+
   /**
    * Gets the date format.
    *
-   * @param tableCell the cell
+   * @param config the table column configuration
    * @return the format, null if default toString()
    */
-  protected DateFormat getFormat(FxTableCell<?, T> tableCell) {
-    return tableCell.getColumnConfiguration().getDateFormat();
+  protected DateFormat getFormat(TableColumnConfiguration<?, T> config) {
+    return config.getDateFormat();
   }
 
 }

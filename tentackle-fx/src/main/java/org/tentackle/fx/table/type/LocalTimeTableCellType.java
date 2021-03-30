@@ -22,6 +22,7 @@ package org.tentackle.fx.table.type;
 import javafx.geometry.Pos;
 
 import org.tentackle.fx.table.FxTableCell;
+import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
 import org.tentackle.misc.FormatHelper;
 
@@ -46,6 +47,18 @@ public class LocalTimeTableCellType extends AbstractTableCellType<LocalTime> {
     String text = fmt.format(item);
     tableCell.setText(text);
     updateAlignment(tableCell, Pos.CENTER);
+  }
+
+  @Override
+  public void updateItem(FxTreeTableCell<?, LocalTime> treeTableCell, LocalTime item) {
+    treeTableCell.setGraphic(null);
+    DateTimeFormatter fmt = treeTableCell.getColumnConfiguration().getDateTimeFormatter();
+    if (fmt == null) {
+      fmt = FormatHelper.getLocalTimeFormatter();
+    }
+    String text = fmt.format(item);
+    treeTableCell.setText(text);
+    updateAlignment(treeTableCell, Pos.CENTER);
   }
 
 }

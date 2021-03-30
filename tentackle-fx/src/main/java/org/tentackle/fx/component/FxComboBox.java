@@ -39,6 +39,7 @@ import org.tentackle.fx.ViewToModelListener;
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.component.delegate.FxComboBoxDelegate;
 import org.tentackle.fx.table.FxTableCell;
+import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.misc.ShortLongText;
 
 import java.lang.reflect.Type;
@@ -680,6 +681,15 @@ public class FxComboBox<T> extends ComboBox<T> implements FxTextComponent {
     return getDelegate().getTableCell();
   }
 
+  @Override
+  public void setTreeTableCell(FxTreeTableCell<?,?> treeTableCell) {
+    getDelegate().setTreeTableCell(treeTableCell);
+  }
+
+  @Override
+  public FxTreeTableCell<?,?> getTreeTableCell() {
+    return getDelegate().getTreeTableCell();
+  }
   //</editor-fold>//GEN-END:component
 
 }

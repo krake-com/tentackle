@@ -21,10 +21,20 @@ package org.tentackle.fx.component;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.scene.Node;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeTableColumn;
+import javafx.scene.control.TreeTablePosition;
 import javafx.scene.control.TreeTableView;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxContainer;
+import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.ModelToViewListener;
 import org.tentackle.fx.ValueTranslator;
@@ -32,8 +42,12 @@ import org.tentackle.fx.ViewToModelListener;
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.component.delegate.FxTreeTableViewDelegate;
 import org.tentackle.fx.table.FxTableCell;
+import org.tentackle.fx.table.FxTreeTableCell;
+import org.tentackle.fx.table.TableConfiguration;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Extended TreeTableView.
@@ -44,6 +58,22 @@ import java.lang.reflect.Type;
 public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent {
 
   /**
+   * The configuration.<br>
+   * Optional but recommended.
+   */
+  private TableConfiguration<S> configuration;
+
+  /**
+   * Currently displayed info notes.
+   */
+  private List<Note> infoNotes;
+
+  /**
+   * Copy to clipboard feature toggle.
+   */
+  private boolean copyToClipboardEnabled;
+
+  /**
    * Creates an empty TreeTableView.
    * <p>
    * Refer to the {@link TreeTableView} class documentation for details on the default state of other properties.
@@ -52,6 +82,78 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
     super();
   }
 
+
+  /**
+   * Gets the table configuration.
+   *
+   * @return the configuration, null if not configured
+   */
+  public TableConfiguration<S> getConfiguration() {
+    return configuration;
+  }
+
+  /**
+   * Sets the table configuration.
+   *
+   * @param configuration the configuration
+   */
+  public void setConfiguration(TableConfiguration<S> configuration) {
+    this.configuration = configuration;
+  }
+
+  /**
+   * Configures or re-configures the table.<br>
+   * Requires a valid table configuration.
+   */
+  public void configure() {
+    if (configuration == null) {
+      throw new FxRuntimeException("missing table configuration");
+    }
+    configuration.configure(this);
+  }
+
+
+  /**
+   * Gets the displayed items.
+   *
+   * @return the items
+   */
+  public List<S> getItems() {
+    List<S> items = new ArrayList<>();
+    if (isShowRoot()) {
+      getItems(items, getRoot());
+    }
+    else {
+      for (TreeItem<S> treeItem : getRoot().getChildren()) {
+        getItems(items, treeItem);
+      }
+    }
+    return items;
+  }
+
+  private void getItems(List<S> items, TreeItem<S> treeItem) {
+    items.add(treeItem.getValue());
+    if (treeItem.isExpanded()) {
+      for (TreeItem<S> child : treeItem.getChildren()) {
+        getItems(items, child);
+      }
+    }
+  }
+
+  /**
+   * Gets the selected items.
+   *
+   * @return the selected items
+   */
+  public List<S> getSelectedItems() {
+    List<S> items = new ArrayList<>();
+    for (TreeItem<S> treeItem : getSelectionModel().getSelectedItems()) {
+      items.add(treeItem.getValue());
+    }
+    return items;
+  }
+
+
   /**
    * Scrolls the view in such a way that the given row is positioned in the center of the visible rows.
    *
@@ -59,6 +161,134 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
    */
   public void scrollToCentered(int row) {
     scrollTo(FxUtilities.getInstance().computeScrollToCentered(this, row));
+  }
+
+
+  /**
+   * Saves the column sizes, visability, view size and sorting to the preferences.
+   *
+   * @param suffix the configuration suffix, null if none
+   * @param system true if save to system prefs, else user prefs
+   */
+  public void savePreferences(String suffix, boolean system) {
+    if (configuration != null) {
+      configuration.savePreferences(this, suffix, system);
+    }
+  }
+
+  /**
+   * Loads the column sizes, visability, view size and sorting from the preferences.
+   *
+   * @param suffix the configuration suffix, null if none
+   * @param system true if load from system prefs only, else user prefs first
+   */
+  public void loadPreferences(String suffix, boolean system) {
+    if (configuration != null) {
+      configuration.loadPreferences(this, suffix, system);
+    }
+  }
+
+
+  /**
+   * Sets the sortable property of all columns.
+   *
+   * @param sortable true if sortable
+   */
+  public void setSortable(boolean sortable) {
+    for (TreeTableColumn<S,?> col: getColumns()) {
+      col.setSortable(sortable);
+    }
+  }
+
+
+  /**
+   * Configures the table to copy a cell via Crtl-C to the clipboard.
+   *
+   * @param copyToClipboardEnabled true to enable
+   */
+  public void setCopyToClipboardEnabled(boolean copyToClipboardEnabled) {
+    this.copyToClipboardEnabled = copyToClipboardEnabled;
+  }
+
+  /**
+   * Returns whether the copy to clipboard feature is enabled.
+   *
+   * @return true if enabled
+   */
+  public boolean isCopyToClipboardEnabled() {
+    return copyToClipboardEnabled;
+  }
+
+  /**
+   * Handles all key events.
+   *
+   * @param event the key event
+   */
+  protected void handleKeyEvent(KeyEvent event) {
+    if (isCopyToClipboardEnabled()) {
+      if (event.getEventType() == KeyEvent.KEY_PRESSED && event.isControlDown() && event.getCode() == KeyCode.C) {
+        String text = copyToClipboard();
+        if (text != null) {
+          // display copied text for as long as the control button is held down (see setOnKeyReleased below)
+          Note infoNote = new Note(Note.Position.CENTER, Note.Type.INFO);
+          infoNote.setText(text);
+          infoNote.show(this);
+          if (infoNotes == null) {
+            infoNotes = new ArrayList<>();
+          }
+          infoNotes.add(infoNote);
+        }
+      }
+      else if (event.getEventType() == KeyEvent.KEY_RELEASED && event.getCode() == KeyCode.CONTROL) {
+        if (infoNotes != null) {
+          // hide all info notes with the release of the control button
+          for (Note infoNote : infoNotes) {
+            infoNote.hide();
+          }
+          infoNotes = null;
+        }
+      }
+    }
+  }
+
+
+  /**
+   * Copies the selected cells to the clipboard.<br>
+   * Multiple cells are separated by tabs.
+   *
+   * @return the copied text, null if nothing copied
+   */
+  public String copyToClipboard() {
+    StringBuilder buf = new StringBuilder();
+    for (TreeTablePosition<S,?> pos: getSelectionModel().getSelectedCells()) {
+      Object item = getColumns().get(pos.getColumn()).getCellData(pos.getRow());
+      if (item != null) {
+        String text = null;
+        // try to lookup the rendered text
+        for (Node c: lookupAll(".table-cell")) {    // all visible cells only
+          TableCell<?, ?> tc=(TableCell<?, ?>) c;
+          if (tc.getItem() == item) {   // == is ok here, must be the same instance!
+            text = tc.getText();
+            break;
+          }
+        }
+        if (buf.length() > 0) {
+          buf.append('\t');
+        }
+        if (text == null) {
+          text = item.toString();   // fallback if no rendered text found
+        }
+        buf.append(text);
+      }
+    }
+    if (buf.length() > 0) {
+      ClipboardContent cbc = new ClipboardContent();
+      String text = buf.toString();
+      cbc.putString(text);
+      Clipboard.getSystemClipboard().setContent(cbc);
+      return text;
+    }
+    return null;
   }
 
 
@@ -396,6 +626,15 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
     return getDelegate().getTableCell();
   }
 
+  @Override
+  public void setTreeTableCell(FxTreeTableCell<?,?> treeTableCell) {
+    getDelegate().setTreeTableCell(treeTableCell);
+  }
+
+  @Override
+  public FxTreeTableCell<?,?> getTreeTableCell() {
+    return getDelegate().getTreeTableCell();
+  }
   //</editor-fold>//GEN-END:component
 
 }

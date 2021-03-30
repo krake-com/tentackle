@@ -24,7 +24,9 @@ import javafx.beans.value.ObservableValue;
 import javafx.geometry.Pos;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableColumn.CellDataFeatures;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeTableCell;
+import javafx.scene.control.TreeTableColumn;
 import javafx.util.Callback;
 
 import org.tentackle.fx.FxComponent;
@@ -68,6 +70,11 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
    * The table column.
    */
   private FxTableColumn<S,T> tableColumn;
+
+  /**
+   * The tree table column.
+   */
+  private FxTreeTableColumn<S,T> treeTableColumn;
 
   /**
    * The binding.
@@ -443,6 +450,16 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
     return tableColumn;
   }
 
+  @Override
+  public FxTreeTableColumn<S, T> getTreeTableColumn() {
+    if (treeTableColumn == null) {
+      treeTableColumn = createTreeTableColumn();
+    }
+    return treeTableColumn;
+  }
+
+
+  // ------------- for TableView ------------------
 
   /**
    * Creates the cell value for a given row object.
@@ -450,7 +467,7 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
    * @param cdf the cell data features
    * @return the cell value to display
    */
-  protected ObservableValue<T> createCellValue(CellDataFeatures<S, T> cdf) {
+  protected ObservableValue<T> createTableCellValue(TableColumn.CellDataFeatures<S, T> cdf) {
     if (binding == null) {
       throw new FxRuntimeException("missing binding for " + this);
     }
@@ -464,13 +481,14 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
    *
    * @return the value factory
    */
-  protected Callback<TableColumn.CellDataFeatures<S, T>, ObservableValue<T>> createCellValueFactory() {
-    return this::createCellValue;
+  protected Callback<TableColumn.CellDataFeatures<S, T>, ObservableValue<T>> createTableCellValueFactory() {
+    return this::createTableCellValue;
   }
 
 
   /**
-   * Creates a table cell.
+   * Creates a table cell.<br>
+   * The method reference can directly be used as a cell factory.
    *
    * @param column the table column
    * @return the table cell
@@ -481,11 +499,11 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
 
 
   /**
-   * Creates the cell factory.
+   * Gets the cell factory.
    *
    * @return the cell factory
    */
-  protected Callback<TableColumn<S,T>, TableCell<S,T>> createCellFactory() {
+  protected Callback<TableColumn<S,T>, TableCell<S,T>> getTableCellFactory() {
     return this::createTableCell;
   }
 
@@ -496,9 +514,73 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
    */
   protected FxTableColumn<S, T> createTableColumn() {
     FxTableColumn<S, T> tc = new FxTableColumn<>(this, displayedName);
-    tc.setCellValueFactory(createCellValueFactory());
-    tc.setCellFactory(createCellFactory());
+    tc.setCellValueFactory(createTableCellValueFactory());
+    tc.setCellFactory(getTableCellFactory());
     return tc;
   }
+
+
+
+  // ------------- for TreeTableView ------------------
+
+  /**
+   * Creates the treetable cell value for a given row object.
+   *
+   * @param cdf the cell data features
+   * @return the cell value to display
+   */
+  protected ObservableValue<T> createTreeTableCellValue(TreeTableColumn.CellDataFeatures<S, T> cdf) {
+    if (binding == null) {
+      throw new FxRuntimeException("missing binding for " + this);
+    }
+    TreeItem<S> treeItem = cdf.getValue();
+    binding.setBoundRootObject(treeItem == null ? null : treeItem.getValue());
+    return new ReadOnlyObjectWrapper<>(binding.getModelValue());
+  }
+
+
+  /**
+   * Creates the tree table cell value factory.
+   *
+   * @return the value factory
+   */
+  protected Callback<TreeTableColumn.CellDataFeatures<S, T>, ObservableValue<T>> createTreeTableCellValueFactory() {
+    return this::createTreeTableCellValue;
+  }
+
+
+  /**
+   * Creates a treetable cell.<br>
+   * The method reference can directly be used as a cell factory.
+   *
+   * @param column the table column
+   * @return the table cell
+   */
+  protected TreeTableCell<S,T> createTreeTableCell(TreeTableColumn<S, T> column) {
+    return new FxTreeTableCell<>(this);
+  }
+
+
+  /**
+   * Creates the treetable cell factory.
+   *
+   * @return the cell factory
+   */
+  protected Callback<TreeTableColumn<S,T>, TreeTableCell<S,T>> createTreeTableCellFactory() {
+    return this::createTreeTableCell;
+  }
+
+  /**
+   * Creates the tree table column.
+   *
+   * @return the tree table column
+   */
+  protected FxTreeTableColumn<S, T> createTreeTableColumn() {
+    FxTreeTableColumn<S, T> tc = new FxTreeTableColumn<>(this, displayedName);
+    tc.setCellValueFactory(createTreeTableCellValueFactory());
+    tc.setCellFactory(createTreeTableCellFactory());
+    return tc;
+  }
+
 
 }

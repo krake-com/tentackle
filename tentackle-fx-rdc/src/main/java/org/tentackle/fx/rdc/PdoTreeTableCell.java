@@ -20,26 +20,32 @@
 package org.tentackle.fx.rdc;
 
 import javafx.scene.control.ContextMenu;
-import javafx.scene.control.TreeTableCell;
 import javafx.scene.input.MouseEvent;
 
+import org.tentackle.fx.table.FxTreeTableCell;
+import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.pdo.PersistentDomainObject;
 
 /**
- * A PDO tree table cell.
+ * A PDO tree table cell.<br>
+ * Used for cells <em>containing</em> a PDO.<br>
+ * For cells of a treetable
  *
  * @author harald
  * @param <S> the table row's type
  * @param <T> the table cell's pdo type
  */
-public class PdoTreeTableCell<S,T extends PersistentDomainObject<T>> extends TreeTableCell<S,T> {
+public class PdoTreeTableCell<S,T extends PersistentDomainObject<T>> extends FxTreeTableCell<S,T> {
 
   private ContextMenu contextMenu;    // != null if menu shown
 
   /**
-   * Creates a pdo tree cell.
+   * Creates a tree table cell.
+   *
+   * @param columnConfiguration the column configuration
    */
-  public PdoTreeTableCell() {
+  public PdoTreeTableCell(TableColumnConfiguration<S,T> columnConfiguration) {
+    super(columnConfiguration);
     addEventHandler(MouseEvent.ANY, (MouseEvent event) -> {
       if (event.isPopupTrigger()) {
         showContextMenu(event);
@@ -51,7 +57,7 @@ public class PdoTreeTableCell<S,T extends PersistentDomainObject<T>> extends Tre
   public void updateItem(T pdo, boolean empty) {
     super.updateItem(pdo, empty);
 
-    if (empty) {
+    if (empty || pdo == null) {
       setText(null);
       setGraphic(null);
     }
@@ -69,11 +75,13 @@ public class PdoTreeTableCell<S,T extends PersistentDomainObject<T>> extends Tre
     if (contextMenu != null) {
       contextMenu.hide();
     }
-    contextMenu = PdoContextMenuFactory.getInstance().create(this);
-    if (contextMenu != null) {
-      event.consume();
-      contextMenu.setOnHidden(e -> contextMenu = null);   // -> GC
-      contextMenu.show(this, event.getScreenX(), event.getScreenY());
+    if (getTreeTableView().getContextMenu() == null) {
+      contextMenu = PdoContextMenuFactory.getInstance().create(this);
+      if (contextMenu != null) {
+        event.consume();
+        contextMenu.setOnHidden(e -> contextMenu = null);   // -> GC
+        contextMenu.show(this, event.getScreenX(), event.getScreenY());
+      }
     }
   }
 

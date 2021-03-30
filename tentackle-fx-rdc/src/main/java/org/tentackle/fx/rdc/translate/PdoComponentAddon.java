@@ -318,6 +318,9 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
     else if (component.getTableCell() != null) {
       context = component.getTableCell().getColumnConfiguration().getTableConfiguration().getBinder().getBindingProperty(DomainContext.class);
     }
+    else if (component.getTreeTableCell() != null) {
+      context = component.getTreeTableCell().getColumnConfiguration().getTableConfiguration().getBinder().getBindingProperty(DomainContext.class);
+    }
     else {
       context = (DomainContext) ((Node) component).getProperties().get(DomainContext.class);
     }

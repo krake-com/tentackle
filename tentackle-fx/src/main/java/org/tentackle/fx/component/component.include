@@ -292,3 +292,13 @@
   public FxTableCell<?,?> getTableCell() {
     return getDelegate().getTableCell();
   }
+
+  @Override
+  public void setTreeTableCell(FxTreeTableCell<?,?> treeTableCell) {
+    getDelegate().setTreeTableCell(treeTableCell);
+  }
+
+  @Override
+  public FxTreeTableCell<?,?> getTreeTableCell() {
+    return getDelegate().getTreeTableCell();
+  }

@@ -28,6 +28,8 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
@@ -53,6 +55,7 @@ import org.tentackle.session.AbstractSessionTask;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.SessionDependable;
 
+import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -359,6 +362,28 @@ public class RdcUtilities {
       }
     });
     alert.show();
+  }
+
+
+  /**
+   * Shows the tree of a PDO in a modal scene.
+   *
+   * @param pdo the PDO
+   * @param <T> the PDO type
+   */
+  public <T extends PersistentDomainObject<T>> void showTree(T pdo) {
+    Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
+    TreeView<T> tree = Fx.createNode(TreeView.class);
+    GuiProvider<T> guiProvider = GuiProviderFactory.getInstance().createGuiProvider(pdo);
+    tree.setCellFactory(guiProvider.getTreeCellFactory());
+    TreeItem<T> item = guiProvider.createTreeItem();
+    item.setExpanded(true);
+    tree.setRoot(item);
+    Scene scene = Fx.createScene(tree);
+    stage.setScene(scene);
+    stage.setTitle(MessageFormat.format(RdcFxRdcBundle.getString("{0} {1} (modal)"),
+                   pdo.getSingular(), pdo.toString()));
+    stage.show();
   }
 
 

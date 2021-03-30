@@ -20,9 +20,10 @@
 package org.tentackle.fx.rdc;
 
 import javafx.scene.control.ContextMenu;
-import javafx.scene.control.TableCell;
 import javafx.scene.input.MouseEvent;
 
+import org.tentackle.fx.table.FxTableCell;
+import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.pdo.PersistentDomainObject;
 
 /**
@@ -32,14 +33,18 @@ import org.tentackle.pdo.PersistentDomainObject;
  * @param <S> the table row's type
  * @param <T> the table cell's pdo type
  */
-public class PdoTableCell<S,T extends PersistentDomainObject<T>> extends TableCell<S,T> {
+public class PdoTableCell<S,T extends PersistentDomainObject<T>> extends FxTableCell<S,T> {
 
   private ContextMenu contextMenu;    // != null if menu shown
 
   /**
-   * Creates a pdo tree cell.
+   * Creates a table cell.
+   *
+   * @param columnConfiguration the column configuration
    */
-  public PdoTableCell() {
+  public PdoTableCell(TableColumnConfiguration<S,T> columnConfiguration) {
+    super(columnConfiguration);
+
     addEventHandler(MouseEvent.ANY, (MouseEvent event) -> {
       if (event.isPopupTrigger()) {
         showContextMenu(event);
@@ -51,7 +56,7 @@ public class PdoTableCell<S,T extends PersistentDomainObject<T>> extends TableCe
   public void updateItem(T pdo, boolean empty) {
     super.updateItem(pdo, empty);
 
-    if (empty) {
+    if (empty || pdo == null) {
       setText(null);
       setGraphic(null);
     }
@@ -69,11 +74,13 @@ public class PdoTableCell<S,T extends PersistentDomainObject<T>> extends TableCe
     if (contextMenu != null) {
       contextMenu.hide();
     }
-    contextMenu = PdoContextMenuFactory.getInstance().create(this);
-    if (contextMenu != null) {
-      event.consume();
-      contextMenu.setOnHidden(e -> contextMenu = null);   // -> GC
-      contextMenu.show(this, event.getScreenX(), event.getScreenY());
+    if (getTableView().getContextMenu() == null) {
+      contextMenu = PdoContextMenuFactory.getInstance().create(this);
+      if (contextMenu != null) {
+        event.consume();
+        contextMenu.setOnHidden(e -> contextMenu = null);   // -> GC
+        contextMenu.show(this, event.getScreenX(), event.getScreenY());
+      }
     }
   }
 
