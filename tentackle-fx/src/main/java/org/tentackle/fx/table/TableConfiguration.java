@@ -20,6 +20,7 @@
 package org.tentackle.fx.table;
 
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeTableColumn;
 
 import org.tentackle.fx.bind.FxTableBinder;
@@ -268,5 +269,13 @@ public interface TableConfiguration<S> {
    * @return the cell type, never null
    */
   <T> TableCellType<T> getTableCellType(Class<T> type);
+
+  /**
+   * Creates a tree item for a treetable.
+   *
+   * @param object the object to wrap
+   * @return the tree item
+   */
+  TreeItem<S> createTreeItem(S object);
 
 }

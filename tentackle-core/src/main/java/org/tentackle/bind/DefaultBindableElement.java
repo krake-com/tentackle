@@ -34,6 +34,7 @@ import java.lang.reflect.Type;
 public class DefaultBindableElement implements BindableElement {
 
   private String camelName;         // the member name in camelCase
+  private int ordinal;              // the ordinal for sorting
   private Field field;              // the field, null if none
   private Method getter;            // the getter, null if none
   private Method setter;            // the setter, null if none
@@ -60,6 +61,16 @@ public class DefaultBindableElement implements BindableElement {
   @Override
   public void setCamelName(String camelName) {
     this.camelName = camelName;
+  }
+
+  @Override
+  public int getOrdinal() {
+    return ordinal;
+  }
+
+  @Override
+  public void setOrdinal(int ordinal) {
+    this.ordinal = ordinal;
   }
 
   @Override

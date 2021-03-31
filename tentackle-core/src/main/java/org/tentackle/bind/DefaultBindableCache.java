@@ -25,6 +25,7 @@ import org.tentackle.reflect.ReflectionHelper;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Collection;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -50,7 +51,7 @@ public class DefaultBindableCache implements BindableCache {
    * <p>
    * The map is sorted by the camelcase name of the bindable element.
    */
-  private final Map<Key,SortedMap<String,BindableElement>> clazzMap = new ConcurrentHashMap<>();
+  private final Map<ClassKey, SortedMap<ElementKey, BindableElement>> clazzMap = new ConcurrentHashMap<>();
 
 
   /**
@@ -68,13 +69,13 @@ public class DefaultBindableCache implements BindableCache {
    *
    * @param clazz the class to retrieve the bindables for
    * @param declaredOnly true if only declared elements, else inherited as well
-   * @return the tree map (camelName -&gt; bindable element).
+   * @return the elements
    */
   @Override
-  public SortedMap<String,BindableElement> getBindableMap(Class<?> clazz, boolean declaredOnly) {
+  public Collection<BindableElement> getBindableMap(Class<?> clazz, boolean declaredOnly) {
 
-    Key key = createKey(clazz, declaredOnly);
-    SortedMap<String,BindableElement> bindableMap = clazzMap.get(key);
+    ClassKey key = new ClassKey(clazz, declaredOnly);
+    SortedMap<ElementKey, BindableElement> bindableMap = clazzMap.get(key);
 
     if (bindableMap == null) {
 
@@ -125,8 +126,9 @@ public class DefaultBindableCache implements BindableCache {
 
             if (element != null) {
               camelName = StringHelper.firstToUpper(camelName);
+              ElementKey elementKey = new ElementKey(camelName, annotation.ordinal());
               LOGGER.finer("bindable method {0} found", method);
-              BindableElement oldInfo = bindableMap.get(camelName);
+              BindableElement oldInfo = bindableMap.get(elementKey);
               if (oldInfo != null) {
                 // merge with existing info
                 oldInfo.addBindingOptions(bindingOptions);
@@ -156,7 +158,8 @@ public class DefaultBindableCache implements BindableCache {
               else {
                 // new binding
                 element.setBindingOptions(bindingOptions);
-                bindableMap.put(camelName, element);
+                element.setOrdinal(annotation.ordinal());
+                bindableMap.put(elementKey, element);
               }
             }
           }
@@ -173,7 +176,8 @@ public class DefaultBindableCache implements BindableCache {
           LOGGER.finer("bindable field {0} found", field);
           String bindingOptions = annotation.options();
           String camelName = StringHelper.firstToUpper(field.getName());
-          BindableElement element = bindableMap.get(camelName);
+          ElementKey elementKey = new ElementKey(camelName, annotation.ordinal());
+          BindableElement element = bindableMap.get(elementKey);
           if (element != null) {
             // merge
             element.setField(field);
@@ -184,7 +188,7 @@ public class DefaultBindableCache implements BindableCache {
             element = bindingFactory.createBindableElement(field.getType(), camelName);
             element.setField(field);
             element.setBindingOptions(bindingOptions);
-            bindableMap.put(camelName, element);
+            bindableMap.put(elementKey, element);
           }
         }
       }
@@ -193,19 +197,19 @@ public class DefaultBindableCache implements BindableCache {
       clazzMap.put(key, bindableMap);
     }
 
-    return bindableMap;
+    return bindableMap.values();
   }
 
 
   /**
-   * The key for the cache map.
+   * The key for the class cache map.
    */
-  private static class Key {
+  private static class ClassKey {
 
     private final Class<?> clazz;
     private final boolean declaredOnly;
 
-    private Key(Class<?> clazz, boolean declaredOnly) {
+    private ClassKey(Class<?> clazz, boolean declaredOnly) {
       this.clazz = clazz;
       this.declaredOnly = declaredOnly;
     }
@@ -218,8 +222,8 @@ public class DefaultBindableCache implements BindableCache {
       if (getClass() != obj.getClass()) {
         return false;
       }
-      final Key other = (Key) obj;
-      if (this.clazz != other.clazz && (this.clazz == null || !this.clazz.equals(other.clazz))) {
+      final ClassKey other = (ClassKey) obj;
+      if (this.clazz != other.clazz) {
         return false;
       }
       return this.declaredOnly == other.declaredOnly;
@@ -237,14 +241,48 @@ public class DefaultBindableCache implements BindableCache {
 
 
   /**
-   * Create a cache key.
-   *
-   * @param clazz the class to inspect
-   * @param declaredOnly true if only declared elements, else inherited as well
-   * @return the created key
+   * Element key to sort by ordinal + camelName.
    */
-  private Key createKey(Class<?> clazz, boolean declaredOnly) {
-    return new Key(clazz, declaredOnly);
+  private static class ElementKey implements Comparable<ElementKey> {
+
+    private final String camelName;
+    private final int ordinal;
+
+    public ElementKey(String camelName, int ordinal) {
+      this.camelName = camelName;
+      this.ordinal = ordinal;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      ElementKey that = (ElementKey) o;
+      if (ordinal != that.ordinal) {
+        return false;
+      }
+      return camelName.equals(that.camelName);
+    }
+
+    @Override
+    public int hashCode() {
+      int result = camelName.hashCode();
+      result = 31 * result + ordinal;
+      return result;
+    }
+
+    @Override
+    public int compareTo(ElementKey o) {
+      int rv = ordinal - o.ordinal;
+      if (rv == 0) {
+        rv = camelName.compareTo(o.camelName);
+      }
+      return rv;
+    }
   }
 
 }

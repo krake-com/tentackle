@@ -45,7 +45,7 @@ public class StringTableCellType extends AbstractTableCellType<String> {
     }
     tableCell.setText(text);
     tableCell.setGraphic(null);
-    updateAlignment(tableCell, Pos.CENTER_LEFT);
+    updateAlignment(tableCell, Pos.BASELINE_LEFT);
   }
 
   @Override
@@ -59,7 +59,7 @@ public class StringTableCellType extends AbstractTableCellType<String> {
     }
     treeTableCell.setText(text);
     treeTableCell.setGraphic(null);
-    updateAlignment(treeTableCell, Pos.CENTER_LEFT);
+    updateAlignment(treeTableCell, Pos.BASELINE_LEFT);
   }
 
 }

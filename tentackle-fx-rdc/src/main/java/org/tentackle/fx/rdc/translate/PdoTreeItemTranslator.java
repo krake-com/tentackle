@@ -22,64 +22,52 @@ import javafx.scene.control.TreeItem;
 
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.ValueTranslatorService;
+import org.tentackle.fx.component.FxTreeTableView;
 import org.tentackle.fx.component.FxTreeView;
 import org.tentackle.fx.rdc.GuiProvider;
-import org.tentackle.fx.rdc.GuiProviderFactory;
 import org.tentackle.fx.rdc.Rdc;
-import org.tentackle.fx.translate.AbstractValueTranslator;
+import org.tentackle.fx.translate.TreeItemTranslator;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.reflect.ReflectionHelper;
-
-import java.util.function.Function;
 
 /**
- * PDO to TreeItem translator for {@link org.tentackle.fx.component.FxTreeView} and
- * {@link org.tentackle.fx.component.FxTreeTableView}.<br>
- * Used if the model provides a single PDO object.
+ * PDO-awqre TreeItem translator for {@link org.tentackle.fx.component.FxTreeView} and
+ * {@link org.tentackle.fx.component.FxTreeTableView}.
  *
  * @author harald
  * @param <T> the PDO type
  */
 @ValueTranslatorService(modelClass = PersistentDomainObject.class, viewClass = TreeItem.class)
-public class PdoTreeItemTranslator<T extends PersistentDomainObject<T>> extends AbstractValueTranslator<T, TreeItem<T>> {
+public class PdoTreeItemTranslator<T extends PersistentDomainObject<T>> extends TreeItemTranslator<T> {
 
   /**
    * Creates a translator.
    *
    * @param component the component
    */
-  @SuppressWarnings("unchecked")
   public PdoTreeItemTranslator(FxComponent component) {
     super(component);
+  }
 
-    if (component instanceof FxTreeView) {
-      Class<T> elemClass = ReflectionHelper.extractGenericInnerTypeClass(component.getGenericType());
-      if (elemClass != null) {
+  @Override
+  @SuppressWarnings("unchecked")
+  protected void configureComponent() {
+    FxComponent component = getComponent();
+    Class<?> elemClass = component.getType();
+    if (elemClass != null && PersistentDomainObject.class.isAssignableFrom(elemClass)) {
+      GuiProvider<T> provider = Rdc.createGuiProvider(Pdo.create((Class<T>) elemClass));
+      if (component instanceof FxTreeView) {
         FxTreeView<T> treeView = (FxTreeView<T>) component;
-        treeView.setShowRoot(true);
-        GuiProvider<T> provider = null;
-        if (PersistentDomainObject.class.isAssignableFrom(elemClass)) {
-          provider = GuiProviderFactory.getInstance().createGuiProvider(Pdo.create(elemClass));
-        }
-        if (provider != null) {
-          treeView.setCellFactory(provider.getTreeCellFactory());
-        }
-        else {
-          treeView.setCellFactory(Rdc::createTreeCell);
-        }
+        treeView.setCellFactory(provider.getTreeCellFactory());
+      }
+      else if (component instanceof FxTreeTableView) {
+        FxTreeTableView<T> treeTableView = (FxTreeTableView<T>) component;
+        configureTreeTableView(treeTableView, provider.createTableConfiguration());
       }
     }
-  }
-
-  @Override
-  public Function<T, TreeItem<T>> toViewFunction() {
-    return Rdc::createTreeItem;
-  }
-
-  @Override
-  public Function<TreeItem<T>, T> toModelFunction() {
-    return TreeItem::getValue;
+    else {
+      super.configureComponent();
+    }
   }
 
 }

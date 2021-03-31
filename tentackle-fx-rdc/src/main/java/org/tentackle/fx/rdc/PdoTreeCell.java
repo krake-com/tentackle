@@ -75,7 +75,7 @@ public class PdoTreeCell<T extends PersistentDomainObject<T>> extends TreeCell<T
           int i=0;
           for (TreeItem<T> item: items) {
             if (reloadedPdo.equals(item.getValue())) {
-              TreeItem<T> reloadedItem = GuiProviderFactory.getInstance().createGuiProvider(reloadedPdo).createTreeItem();
+              TreeItem<T> reloadedItem = Rdc.createGuiProvider(reloadedPdo).createTreeItem();
               items.set(i, reloadedItem);
               getTreeView().refresh();
               reloadedItem.setExpanded(true);
@@ -101,7 +101,7 @@ public class PdoTreeCell<T extends PersistentDomainObject<T>> extends TreeCell<T
       provider = null;
     }
     else {
-      provider = pdo == null ? null : GuiProviderFactory.getInstance().createGuiProvider(pdo);
+      provider = pdo == null ? null : Rdc.createGuiProvider(pdo);
       if (provider == null) {
         setText(null);
         setTooltip(null);

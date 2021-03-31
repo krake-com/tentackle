@@ -178,8 +178,7 @@ public class DefaultFxTableBinder<S> extends AbstractBinder implements FxTableBi
     int count = 0;
 
     // all fields and/or setter/getters annotated with the @Bindable annotation
-    for (BindableElement element:
-         FxBindingFactory.getInstance().getBindableCache().getBindableMap(parentClass, declaredOnly).values()) {
+    for (BindableElement element: FxBindingFactory.getInstance().getBindableCache().getBindableMap(parentClass, declaredOnly)) {
 
       String fieldMemberName = StringHelper.firstToLower(element.getCamelName());
       String fieldMemberPath = (parentMemberPath == null ? "" : (parentMemberPath + ".")) + fieldMemberName;

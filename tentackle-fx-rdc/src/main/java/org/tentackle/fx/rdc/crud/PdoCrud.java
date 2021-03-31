@@ -51,7 +51,6 @@ import org.tentackle.fx.container.FxBorderPane;
 import org.tentackle.fx.container.FxHBox;
 import org.tentackle.fx.rdc.EventListenerProxy;
 import org.tentackle.fx.rdc.GuiProvider;
-import org.tentackle.fx.rdc.GuiProviderFactory;
 import org.tentackle.fx.rdc.InteractiveError;
 import org.tentackle.fx.rdc.InteractiveErrorFactory;
 import org.tentackle.fx.rdc.PdoController;
@@ -394,7 +393,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
     Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
     stage.initOwner(getStage());
     TreeView<T> tree = Fx.createNode(TreeView.class);
-    GuiProvider<T> guiProvider = GuiProviderFactory.getInstance().createGuiProvider(getPdo());
+    GuiProvider<T> guiProvider = Rdc.createGuiProvider(getPdo());
     tree.setCellFactory(guiProvider.getTreeCellFactory());
     TreeItem<T> item = guiProvider.createTreeItem();
     item.setExpanded(true);
@@ -470,7 +469,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   /**
    * Saves the current PDO.
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public void save() {
     try {
       getPdo().getSession().transaction(() -> {   // validate and save within transaction!
@@ -686,7 +685,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   protected void updateButtons() {
     T pdo = getPdo();
     treeButton.setDisable(pdo == null || pdo.isNew() ||
-                          !GuiProviderFactory.getInstance().createGuiProvider(pdo).providesTreeChildObjects());
+                          !Rdc.createGuiProvider(pdo).providesTreeChildObjects());
     deleteButton.setDisable(!isEditing() || !editor.isRemoveAllowed());
     newButton.setDisable(!isEditing() || !editor.isNewAllowed());
     findButton.setDisable(!isEditable());

@@ -19,7 +19,7 @@
 
 package org.tentackle.bind;
 
-import java.util.SortedMap;
+import java.util.Collection;
 
 /**
  * Cache for bindable elements per class.<br>
@@ -29,12 +29,13 @@ import java.util.SortedMap;
 public interface BindableCache {
 
   /**
-   * Gets the map of bindables for given class.
+   * Gets the bindable elements for given class.<br>
+   * The elements are sorted by ordinal + camelName.
    *
    * @param clazz the class to retrieve the bindables for
    * @param declaredOnly true if only declared elements, else inherited as well
-   * @return the tree map (camelName -&gt; bindable element).
+   * @return the bindable elements
    */
-  SortedMap<String,BindableElement> getBindableMap(Class<?> clazz, boolean declaredOnly);
+  Collection<BindableElement> getBindableMap(Class<?> clazz, boolean declaredOnly);
 
 }

@@ -70,6 +70,21 @@ public class Rdc {
     return RdcFactory.getInstance().createPdoSearch(pdo);
   }
 
+
+  /**
+   * Creates a service object that provides methods related to the rdc gui.
+   * <p>
+   * Throws a {@link org.tentackle.pdo.PdoRuntimeException} if provider could not be created.
+   *
+   * @param <T> the PDO's class
+   * @param pdo the PDO
+   * @return the GUI provider, never null
+   */
+  public static <T extends PersistentDomainObject<T>> GuiProvider<T> createGuiProvider(T pdo) {
+    return GuiProviderFactory.getInstance().createGuiProvider(pdo);
+  }
+
+
   /**
    * Creates a tree item for a pdo.
    *

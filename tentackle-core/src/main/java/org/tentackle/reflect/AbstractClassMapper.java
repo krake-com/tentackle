@@ -125,33 +125,26 @@ public abstract class AbstractClassMapper<S> {
    */
   private S mapName(String className, boolean lenient) throws ClassNotFoundException {
     if (lenient) {
-      Class<?> clazz = null;          // class corresponding to initial className, null if not loaded yet
-      boolean isInterface = false;    // true if className corresponds to an interface
+      Class<?> initialClass = null;   // class corresponding to initial className, null if not loaded yet
+      Class<?> superClass = null;     // current superclass
+
       while (className != null) {
         S value = getNameMap().get(className);
         if (value != null) {
-          return value;
+          return value;   // explicit mapping found!
         }
         // no explicit mapping: try superclass/interfaces
-        if (clazz == null) {
-          // determine clazz once and check if interface
-          clazz = Class.forName(className);
-          isInterface = clazz.isInterface();
+        if (initialClass == null) {
+          initialClass = superClass = Class.forName(className);
         }
-        if (isInterface) {
-          // check all super interfaces (recursively)
-          return mapInterfaces(clazz);
+        superClass = superClass.getSuperclass();
+        if (superClass == null) {
+          break;    // is an interface or we reached Object.class
         }
-        else {
-          clazz = clazz.getSuperclass();
-          if (clazz == null) {
-            break;
-          }
-          className = clazz.getName();
-          // continue with name of superclass
-        }
+        className = superClass.getName();  // continue with name of superclass
       }
-      return null;    // no mapping
+      // no mapping found for an object-class so far or interface: try interfaces
+      return initialClass == null ? null : mapInterfaces(initialClass);
     }
     else  {
       // exact match required

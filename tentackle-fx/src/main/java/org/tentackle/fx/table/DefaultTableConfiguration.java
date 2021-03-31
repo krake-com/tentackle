@@ -21,6 +21,7 @@ package org.tentackle.fx.table;
 
 import javafx.collections.ObservableList;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeTableColumn;
 
 import org.tentackle.common.LocaleProvider;
@@ -184,7 +185,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
     TableColumnConfiguration<S, ?> columnConfiguration = nameColumnConfigMap.remove(name);
     if (columnConfiguration != null) {
       tableColumnConfigMap.remove(columnConfiguration.getTableColumn());
-      treeTableColumnConfigMap.remove(columnConfiguration.getTableColumn());
+      treeTableColumnConfigMap.remove(columnConfiguration.getTreeTableColumn());
     }
     return columnConfiguration;
   }
@@ -614,6 +615,12 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   public <T> TableCellType<T> getTableCellType(Class<T> type) {
     return TableCellTypeFactory.getInstance().getTableCellType(type);
   }
+
+  @Override
+  public TreeItem<S> createTreeItem(S object) {
+    return new TreeItem<>(object);
+  }
+
 
   /**
    * Creates a column configuration.
