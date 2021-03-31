@@ -29,7 +29,8 @@ import org.tentackle.pdo.PersistentDomainObject;
 
 /**
  * PDO cell type.<br>
- * Not covered by the default ObjectTableCellType because PersistentDomainObject is an interface.
+ * Not covered by the default ObjectTableCellType because PersistentDomainObject is an interface.<br>
+ * This cell type does <em>not</em> set the graphics icon. If you need that, create an application-specific cell type.
  *
  * @author harald
  */
@@ -40,14 +41,14 @@ public class PdoTableCellType<T extends PersistentDomainObject<T>> extends Abstr
   public void updateItem(FxTableCell<?, T> tableCell, T pdo) {
     tableCell.setText(pdo.toString());
     tableCell.setGraphic(null);
-    updateAlignment(tableCell, Pos.CENTER_LEFT);
+    updateAlignment(tableCell, Pos.BASELINE_LEFT);
   }
 
   @Override
   public void updateItem(FxTreeTableCell<?, T> treeTableCell, T pdo) {
     treeTableCell.setText(pdo.toString());
     treeTableCell.setGraphic(null);
-    updateAlignment(treeTableCell, Pos.CENTER_LEFT);
+    updateAlignment(treeTableCell, Pos.BASELINE_LEFT);
   }
 
 }

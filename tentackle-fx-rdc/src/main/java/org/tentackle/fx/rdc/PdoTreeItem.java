@@ -91,7 +91,7 @@ public class PdoTreeItem<T extends PersistentDomainObject<T>> extends TreeItem<T
         PersistentDomainObject parentPdo = getParentPdo();
         Collection<PersistentDomainObject> childs = getGuiProvider().getTreeChildObjects(parentPdo);
         for (PersistentDomainObject child : childs) {
-          childItems.add(GuiProviderFactory.getInstance().createGuiProvider(child).createTreeItem());
+          childItems.add(Rdc.createGuiProvider(child).createTreeItem());
         }
         // TODO: find a workaround for the selection bug!
         // if an item is selected _below_ this one and we expand this item, the selection is moved down too much
@@ -108,7 +108,7 @@ public class PdoTreeItem<T extends PersistentDomainObject<T>> extends TreeItem<T
    * @param <P> the parent PDO type
    * @return the parent, null if no parent or parent is no PdoTreeItem
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public <P extends PersistentDomainObject<P>> PdoTreeItem<P> getParentPdoItem() {
     TreeItem<?> parent = getParent();
     return parent instanceof PdoTreeItem ? (PdoTreeItem) parent : null;
@@ -148,7 +148,7 @@ public class PdoTreeItem<T extends PersistentDomainObject<T>> extends TreeItem<T
    */
   public GuiProvider<T> getGuiProvider() {
     if (provider == null) {
-      provider = GuiProviderFactory.getInstance().createGuiProvider(pdo);
+      provider = Rdc.createGuiProvider(pdo);
     }
     return provider;
   }

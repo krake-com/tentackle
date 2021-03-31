@@ -304,8 +304,10 @@ public final class ReflectionHelper {
    * for a single type argument.<br>
    * For example:
    * <pre>
-   *   FxTextField&lt;String&gt;
+   *   &#64;Bindable
+   *   List&lt;String&gt;
    * </pre>
+   * Will return <code>String.class</code>.
    *
    * @param type the type
    * @param <T> the inner type

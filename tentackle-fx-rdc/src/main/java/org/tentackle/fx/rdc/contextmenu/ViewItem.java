@@ -22,7 +22,6 @@ package org.tentackle.fx.rdc.contextmenu;
 import javafx.scene.control.MenuItem;
 
 import org.tentackle.fx.Fx;
-import org.tentackle.fx.rdc.GuiProviderFactory;
 import org.tentackle.fx.rdc.PdoTableCell;
 import org.tentackle.fx.rdc.PdoTableContextMenuItem;
 import org.tentackle.fx.rdc.PdoTableContextMenuItemService;
@@ -64,7 +63,7 @@ public class ViewItem<T extends PersistentDomainObject<T>> extends MenuItem
   public ViewItem(PdoTableCell<?,T> cell) {
     super(RdcFxRdcBundle.getString("VIEW"), Fx.createImageView("view"));
     T pdo = cell.getItem();
-    if (pdo != null && GuiProviderFactory.getInstance().createGuiProvider(pdo).isViewAllowed()) {
+    if (pdo != null && Rdc.createGuiProvider(pdo).isViewAllowed()) {
       T pDo = pdo.isImmutable() ? pdo.reload() : pdo;   // from cache?
       setOnAction(e -> Rdc.displayCrudStage(pDo, false, Fx.getStage(cell)));
     }

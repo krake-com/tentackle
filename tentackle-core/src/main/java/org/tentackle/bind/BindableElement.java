@@ -47,6 +47,20 @@ public interface BindableElement {
   void setCamelName(String camelName);
 
   /**
+   * Gets the ordinal for sorting.
+   *
+   * @return the ordinal, defaults to 0
+   */
+  int getOrdinal();
+
+  /**
+   * Sets the ordinal for sorting.
+   *
+   * @param ordinal the ordinal
+   */
+  void setOrdinal(int ordinal);
+
+  /**
    * Gets the binding options.
    *
    * @return the binding options

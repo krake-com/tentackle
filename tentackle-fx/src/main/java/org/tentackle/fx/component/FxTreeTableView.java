@@ -79,7 +79,7 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
    * Refer to the {@link TreeTableView} class documentation for details on the default state of other properties.
    */
   public FxTreeTableView() {
-    super();
+    addEventHandler(KeyEvent.ANY, this::handleKeyEvent);
   }
 
 
@@ -197,6 +197,18 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
   public void setSortable(boolean sortable) {
     for (TreeTableColumn<S,?> col: getColumns()) {
       col.setSortable(sortable);
+    }
+  }
+
+
+  /**
+   * Sets the reorderable property of all columns.
+   *
+   * @param reorderable true if reorderable
+   */
+  public void setReorderable(boolean reorderable) {
+    for (TreeTableColumn<S,?> col: getColumns()) {
+      col.setReorderable(reorderable);
     }
   }
 

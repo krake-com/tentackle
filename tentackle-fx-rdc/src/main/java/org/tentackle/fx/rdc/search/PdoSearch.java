@@ -59,7 +59,6 @@ import org.tentackle.fx.component.FxTreeView;
 import org.tentackle.fx.container.FxBorderPane;
 import org.tentackle.fx.container.FxHBox;
 import org.tentackle.fx.rdc.GuiProvider;
-import org.tentackle.fx.rdc.GuiProviderFactory;
 import org.tentackle.fx.rdc.PdoController;
 import org.tentackle.fx.rdc.PdoEvent;
 import org.tentackle.fx.rdc.PdoFinder;
@@ -225,7 +224,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    * @param pdo the pdo
    */
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public void setPdo(T pdo) {
     Objects.requireNonNull(pdo, "pdo");
 
@@ -233,7 +232,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     finder.setPdo(pdo);
     finder.getContainer().updateView();
     setFinderVisible(finder.isVisible());
-    GuiProvider<T> guiProvider = GuiProviderFactory.getInstance().createGuiProvider(pdo);
+    GuiProvider<T> guiProvider = Rdc.createGuiProvider(pdo);
     tableView = guiProvider.createTableView();
     tablePane.setCenter(tableView);
     tableView.setOnMousePressed(event -> {
@@ -247,7 +246,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
             if (doubleClickHandler != null) {
               doubleClickHandler.accept(firstPdo);
             }
-            else if (GuiProviderFactory.getInstance().createGuiProvider(firstPdo).editorExists()) {
+            else if (Rdc.createGuiProvider(firstPdo).editorExists()) {
               if (isCrudShown()) {
                 pdoCrud.releasePdo(released -> {
                   if (released) {
@@ -269,7 +268,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
                           if (updatedPdo.equals(item.getValue())) {
                             // need new TreeItem in case childs have changed as well
                             TreeItem<T> updatedItem =
-                                GuiProviderFactory.getInstance().createGuiProvider(updatedPdo).createTreeItem();
+                                Rdc.createGuiProvider(updatedPdo).createTreeItem();
                             treeItems.set(i, updatedItem);
                             updatedItem.setExpanded(item.isExpanded());
                             break;
@@ -538,7 +537,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     if (treeShown) {
       rootItem = new TreeItem<>();
       for (T item: items) {
-        rootItem.getChildren().add(GuiProviderFactory.getInstance().createGuiProvider(item).createTreeItem());
+        rootItem.getChildren().add(Rdc.createGuiProvider(item).createTreeItem());
       }
       rootItem.setExpanded(true);
       treeView.setRoot(rootItem);
@@ -702,7 +701,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   /**
    * Switches to the table view.
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public void showTable() {
     if (treeShown) {
       tablePane.toFront();

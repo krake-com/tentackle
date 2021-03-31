@@ -50,5 +50,15 @@ public @interface Bindable {
    */
   String options() default "";
 
+  /**
+   * An optional number to sort the bindings.<br>
+   * The binder processes the bindings sorted by ordinal + name of the binding member.
+   * Useful when configurations are automatically created according to the binding,
+   * for example to control the column-order in table configurations.
+   *
+   * @return the ordinal
+   */
+  int ordinal() default 0;
+
 }
 

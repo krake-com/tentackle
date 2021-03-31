@@ -27,7 +27,6 @@ import org.tentackle.fx.bind.FxBindingFactory;
 import org.tentackle.reflect.ReflectionHelper;
 
 import java.util.Collection;
-import java.util.Map;
 import java.util.ResourceBundle;
 
 /**
@@ -114,12 +113,25 @@ public class DefaultTableConfigurationProvider<T> implements TableConfigurationP
    */
   @Override
   public TableConfiguration<T> createTableConfiguration() {
-    TableConfiguration<T> configuration = FxFactory.getInstance().createTableConfiguration(clazz, null);
+    TableConfiguration<T> configuration = createTableConfiguration(clazz, null);
     addBindableColumns(configuration);
     if (bindingType != null) {
       configuration.setBindingType(bindingType);
     }
     return configuration;
+  }
+
+
+  /**
+   * Creates only the instance of a table configuration.<br>
+   * Override this method to create application-specific configurations.
+   *
+   * @param clazz the table's element class
+   * @param name the table's name, null if basename of element class
+   * @return the table configuration
+   */
+  protected TableConfiguration<T> createTableConfiguration(Class<T> clazz, String name) {
+    return FxFactory.getInstance().createTableConfiguration(clazz, name);
   }
 
   /**
@@ -129,6 +141,7 @@ public class DefaultTableConfigurationProvider<T> implements TableConfigurationP
    * @param configuration the table configuration
    * @param components the binding path of components that should in turn be analyzed for bindables
    */
+  @SuppressWarnings("rawtypes")
   protected void addBindableColumns(TableConfiguration<T> configuration, String... components) {
     addBindableColumns(configuration, "", "", clazz, components);
 
@@ -173,14 +186,12 @@ public class DefaultTableConfigurationProvider<T> implements TableConfigurationP
                                     Class<?> clazz, String... components) {
 
     if (bindingType != null && bindingType != TableConfiguration.BINDING.NO) {
-      for (Map.Entry<String, BindableElement> entry :
-           FxBindingFactory.getInstance().getBindableCache().getBindableMap(clazz, bindingType == TableConfiguration.BINDING.YES).entrySet()) {
+      for (BindableElement element :
+           FxBindingFactory.getInstance().getBindableCache().getBindableMap(clazz, bindingType == TableConfiguration.BINDING.YES)) {
 
-        String bindName = entry.getKey();
-        BindableElement element = entry.getValue();
-
-        String columnName = columnPrefix + StringHelper.firstToLower(bindName);
-        String displayName = displayPrefix + (isBundleProvided() ? getBundle().getString(bindName) : bindName);
+        String bundleKeyName = StringHelper.firstToUpper(element.getCamelName());
+        String columnName = columnPrefix + element.getCamelName();
+        String displayName = displayPrefix + (isBundleProvided() ? getBundle().getString(bundleKeyName) : bundleKeyName);
         boolean isComponent = false;
         if (components != null) {
           for (String component: components) {

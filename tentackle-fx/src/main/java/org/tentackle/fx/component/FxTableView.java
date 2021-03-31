@@ -175,6 +175,18 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
 
 
   /**
+   * Sets the reorderable property of all columns.
+   *
+   * @param reorderable true if reorderable
+   */
+  public void setReorderable(boolean reorderable) {
+    for (TableColumn<S,?> col: getColumns()) {
+      col.setReorderable(reorderable);
+    }
+  }
+
+
+  /**
    * Configures the table to copy a cell via Crtl-C to the clipboard.
    *
    * @param copyToClipboardEnabled true to enable

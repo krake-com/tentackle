@@ -50,7 +50,7 @@ public class NumberTableCellType<T extends Number> extends AbstractTableCellType
       text = item.toString();
     }
     tableCell.setText(text);
-    updateAlignment(tableCell, Pos.CENTER_RIGHT);
+    updateAlignment(tableCell, Pos.BASELINE_RIGHT);
   }
 
   @Override
@@ -65,7 +65,7 @@ public class NumberTableCellType<T extends Number> extends AbstractTableCellType
       text = item.toString();
     }
     treeTableCell.setText(text);
-    updateAlignment(treeTableCell, Pos.CENTER_RIGHT);
+    updateAlignment(treeTableCell, Pos.BASELINE_RIGHT);
   }
 
   /**

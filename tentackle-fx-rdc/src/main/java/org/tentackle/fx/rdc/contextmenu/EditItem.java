@@ -25,7 +25,6 @@ import javafx.scene.control.TreeItem;
 import javafx.stage.Modality;
 
 import org.tentackle.fx.Fx;
-import org.tentackle.fx.rdc.GuiProviderFactory;
 import org.tentackle.fx.rdc.PdoTreeCell;
 import org.tentackle.fx.rdc.PdoTreeContextMenuItem;
 import org.tentackle.fx.rdc.PdoTreeContextMenuItemService;
@@ -61,7 +60,7 @@ public class EditItem<T extends PersistentDomainObject<T>> extends MenuItem impl
             for (TreeItem<T> item : items) {
               if (updatedPdo.equals(item.getValue())) {
                 boolean expanded = item.isExpanded();
-                TreeItem<T> reloadedItem = GuiProviderFactory.getInstance().createGuiProvider(updatedPdo).createTreeItem();
+                TreeItem<T> reloadedItem = Rdc.createGuiProvider(updatedPdo).createTreeItem();
                 items.set(i, reloadedItem);
                 cell.getTreeView().refresh();
                 reloadedItem.setExpanded(expanded);

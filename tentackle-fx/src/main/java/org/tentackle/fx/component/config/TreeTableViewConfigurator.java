@@ -22,6 +22,7 @@ package org.tentackle.fx.component.config;
 import javafx.scene.control.TreeTableView;
 
 import org.tentackle.fx.ConfiguratorService;
+import org.tentackle.fx.component.FxTreeTableView;
 
 /**
  * Configures a TreeTableView.
@@ -33,8 +34,13 @@ import org.tentackle.fx.ConfiguratorService;
 public class TreeTableViewConfigurator<T extends TreeTableView<?>> extends ComponentConfigurator<T> {
 
   @Override
+  @SuppressWarnings("rawtypes")
   public void configure(T control) {
-    // do nothing, no key remapping
+    // no super.configure()... -> no key remapping!
+
+    if (control instanceof FxTreeTableView) {
+      ((FxTreeTableView) control).setCopyToClipboardEnabled(true);
+    }
   }
 
 }
