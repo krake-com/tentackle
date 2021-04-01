@@ -29,7 +29,7 @@ import java.util.Objects;
  *
  * @author harald
  */
-public abstract class AbstractPermission implements Permission, Comparable<Permission> {
+public abstract class AbstractPermission implements Permission {
 
   // the extracted permission interface
   private Class<? extends Permission> iFace;
