@@ -82,7 +82,7 @@ public class DefaultFxFactory implements FxFactory {
   /**
    * Map of FX control class to evaluated configurator.
    */
-  private final Map<Class<?>, Optional<Configurator<?>>> fxToConfiguratorMap;
+  private final Map<Class<?>, Optional<Configurator<?>>> fxToConfiguratorMap;   // Optional to denote: not present, null if not determined yet
 
   /**
    * all FX controller classes.
