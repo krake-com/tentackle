@@ -346,7 +346,7 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
   private void moveUp() {
     Security rule = editor.getPdo();
     int index = trackedClassRules.indexOf(rule);
-    if (index >= 0) {   // cannot be 0, only to select the correct list
+    if (index > 0) {
       trackedClassRules.remove(index);
       trackedClassRules.add(index - 1, rule);
       classRules.remove(index);
@@ -354,18 +354,21 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
       classRulesNode.getSelectionModel().select(index - 1);
     }
     else {
-      trackedPdoRules.remove(index);
-      trackedPdoRules.add(index - 1, rule);
-      pdoRules.remove(index);
-      pdoRules.add(index - 1, rule);
-      pdoRulesNode.getSelectionModel().select(index - 1);
+      index = trackedPdoRules.indexOf(rule);
+      if (index > 0) {
+        trackedPdoRules.remove(index);
+        trackedPdoRules.add(index - 1, rule);
+        pdoRules.remove(index);
+        pdoRules.add(index - 1, rule);
+        pdoRulesNode.getSelectionModel().select(index - 1);
+      }
     }
   }
 
   private void moveDown() {
     Security rule = editor.getPdo();
     int index = trackedClassRules.indexOf(rule);
-    if (index >= 0) {
+    if (index >= 0 && index < trackedClassRules.size() - 1) {
       trackedClassRules.remove(index);
       trackedClassRules.add(index + 1, rule);
       classRules.remove(index);
@@ -373,11 +376,14 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
       classRulesNode.getSelectionModel().select(index + 1);
     }
     else {
-      trackedPdoRules.remove(index);
-      trackedPdoRules.add(index + 1, rule);
-      pdoRules.remove(index);
-      pdoRules.add(index + 1, rule);
-      pdoRulesNode.getSelectionModel().select(index + 1);
+      index = trackedPdoRules.indexOf(rule);
+      if (index >= 0 && index < trackedPdoRules.size() - 1) {
+        trackedPdoRules.remove(index);
+        trackedPdoRules.add(index + 1, rule);
+        pdoRules.remove(index);
+        pdoRules.add(index + 1, rule);
+        pdoRulesNode.getSelectionModel().select(index + 1);
+      }
     }
   }
 
