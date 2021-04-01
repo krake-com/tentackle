@@ -27,7 +27,7 @@ package org.tentackle.security;
  *
  * @author harald
  */
-public interface Permission {
+public interface Permission extends Comparable<Permission> {
 
   /**
    * Gets the unique name of the permission.<br>
