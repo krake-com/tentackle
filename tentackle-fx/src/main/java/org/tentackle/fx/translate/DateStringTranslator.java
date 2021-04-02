@@ -149,11 +149,12 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
   public static final String YEAR_WINDOW = "yearWindow";
 
   /**
-   * Same as YEAR_WINDOW, but for months. The default value is 6.<br>
+   * Same as YEAR_WINDOW, but for months.<br>
+   * Valid values are 0 - 11.<br>
    * Example: If we're in April and enter 1225, it will be expanded to 12/25/&lt;previous year&gt;<br>
    * Again, for special date fields, for example the booking part of a financial accounting system, values of 1 or 2 may be
    * appropriate.<br>
-   * A negative value disables this feature.
+   * A negative value disables this feature, which is the default.
    * <p>
    * Example:
    * <pre>
@@ -164,6 +165,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
 
   /**
    * Same as YEAR_WINDOW, but for days.<br>
+   * Valid values are 0 - 30.<br>
    * A negative value disables this feature, which is the default.
    * <p>
    * Example:
@@ -497,7 +499,16 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
                 case 'd':
                 case 'D':
                   setGregorianValue(cal, DAY_OF_MONTH, value);
-                  setGregorianValue(cal,MONTH, deriveMonthFromDay(value));
+                  int month = deriveMonthFromDay(value);
+                  if (month == -1) {
+                    setGregorianValue(cal, YEAR, getCurrentYear() - 1);
+                    month = 11;
+                  }
+                  else if (month == 12) {
+                    setGregorianValue(cal, YEAR, getCurrentYear() + 1);
+                    month = 0;
+                  }
+                  setGregorianValue(cal,MONTH, month);
                   DateHelper.setMidnight(cal);
                   break;
                 case 'w':
@@ -862,11 +873,11 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
   /**
    * Gets the month window.
    *
-   * @return the month, defaults to 6.
+   * @return the month, defaults to -1
    */
   protected int getMonthWindow() {
     Integer val = (Integer) ((Node) getComponent()).getProperties().get(MONTH_WINDOW);
-    return val == null ? 6 : val;
+    return val == null ? -1 : val;
   }
 
   /**
@@ -912,7 +923,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
    * Derives the the month from a day input.
    *
    * @param day the day (1-31)
-   * @return the month (0-11)
+   * @return the closest month (0-11 for current year, -1 for december of last year, 12 for january of next year)
    */
   protected int deriveMonthFromDay(int day) {
     return DateHelper.deriveMonthFromDay(day, getCurrentDay(), getCurrentMonth(), getDayWindow());

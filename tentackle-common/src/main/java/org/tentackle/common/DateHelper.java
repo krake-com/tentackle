@@ -313,8 +313,8 @@ public final class DateHelper {
    * @param day the day (1-31)
    * @param currentDay the current day of the month (1-31)
    * @param currentMonth the current month (0-11)
-   * @param dayWindow the day window (0-31)
-   * @return the closest month (0-11)
+   * @param dayWindow the day window (0-30)
+   * @return the closest month (0-11 for current year, -1 for december of last year, 12 for january of next year)
    */
   public static int deriveMonthFromDay(int day, int currentDay, int currentMonth, int dayWindow) {
     if (dayWindow >= 0 && dayWindow < 31) {
@@ -338,7 +338,7 @@ public final class DateHelper {
    * Derives the month from a day referring to the current date and a dayWindow of 15.
    *
    * @param day the day (1-31)
-   * @return the closest month (0-11)
+   * @return the closest month (0-11 for current year, -1 for december of last year, 12 for january of next year)
    */
   public static int deriveMonthFromDay(int day) {
     GregorianCalendar calendar = new GregorianCalendar();
