@@ -223,58 +223,126 @@ public final class DateHelper {
 
 
   /**
-   * Converts a 2-digit year to a 4-digit year.
+   * Derives a 4-digit from a 2-digit year.
    * <p>
    * Finds the closest distance to the current, past or next century according
    * to a given current year.
    *
-   * @param year2 the 2-digit year
-   * @param currentYear4 the current 4 digit year
+   * @param year the year, will be cut to 2 digits via modulo 100
+   * @param currentYear the current 4 digit year
+   * @param yearWindow the year window in number of years in the future (0-100, any other value always returns the year in the current century)
    * @return the closest 4-digit year
    */
-  public static int convert2DigitYearTo4DigitYear(int year2, int currentYear4) {
-    int year = year2 % 100;
-    int current2Year   = currentYear4 % 100;            // e.g. 02
-    int currentCentury = currentYear4 - current2Year;   // e.g. 2000
-    int pastCentury    = currentCentury - 100;          // e.g. 1900
-    int nextCentury    = currentCentury + 100;          // e.g. 2100
+  public static int derive4DigitYearFrom2DigitYear(int year, int currentYear, int yearWindow) {
+    int current2Year = currentYear % 100;              // e.g. 02
+    int currentCentury = currentYear - current2Year;   // e.g. 2000
+    year %= 100;
 
-    // find the closest century
-    int currentDistance = Math.abs(currentCentury + year - currentYear4);
-    int pastDistance = Math.abs(pastCentury + year - currentYear4);
-    int nextDistance = Math.abs(nextCentury + year - currentYear4);
-
-    if (currentDistance <= pastDistance) {
-      if (currentDistance <= nextDistance) {
-        year += currentCentury;
+    if (yearWindow >= 0 && yearWindow < 100) {
+      int diff = year - current2Year;
+      if (diff > 0) {
+        if (diff > yearWindow) {    // current 2010, input 50, window 30 -> 1950
+          return currentCentury - 100 + year;
+        }
       }
-      else  {
-        year += nextCentury;
-      }
-    }
-    else  {
-      if (pastDistance <= nextDistance) {
-        year += pastCentury;
-      }
-      else  {
-        year += nextCentury;
+      else if (diff < 0) {
+        if (diff < yearWindow - 100) {    // current 1990, input 10, window 30 -> 2010
+          return currentCentury + 100 + year;
+        }
       }
     }
 
-    return year;
+    return currentCentury + year;
   }
 
   /**
-   * Converts a 2-digit year to a 4-digit year.
+   * Derives a 4-digit from a 2-digit year referring to the current year and using a year window of 50.
    * <p>
    * Finds the closest distance to the current, past or next century according
    * to the current year.
    *
-   * @param year2 the 2-digit year
+   * @param year the year, will be cut to 2 digits via modulo 100
    * @return the closest 4-digit year
    */
-  public static int convert2DigitYearTo4DigitYear(int year2) {
-    return convert2DigitYearTo4DigitYear(year2, new GregorianCalendar().get(YEAR));
+  public static int derive4DigitYearFrom2DigitYear(int year) {
+    return derive4DigitYearFrom2DigitYear(year, new GregorianCalendar().get(YEAR), 50);
+  }
+
+
+  /**
+   * Derives the year from a month.
+   *
+   * @param month the month (0-11)
+   * @param currentMonth the current month (0-11)
+   * @param currentYear the current year (4 digits)
+   * @param monthWindow the monthwindow, (0-11, any other value returns the current year)
+   * @return the closest year (4 digits)
+   */
+  public static int deriveYearFromMonth(int month, int currentMonth, int currentYear, int monthWindow) {
+    if (monthWindow >= 0 && monthWindow < 12) {
+      month %= 12;
+      int diff = month - currentMonth;
+      if (diff > 0) {
+        if (diff > monthWindow) {
+          return currentYear - 1;
+        }
+      }
+      else if (diff < 0) {
+        if (diff < monthWindow - 12) {
+          return currentYear + 1;
+        }
+      }
+    }
+    return currentYear;
+  }
+
+  /**
+   * Derives the year from a month referring to the current date and a monthWindow of 6.
+   *
+   * @param month the month (0-11)
+   * @return the closest year (4 digits)
+   */
+  public static int deriveYearFromMonth(int month) {
+    GregorianCalendar calendar = new GregorianCalendar();
+    return deriveYearFromMonth(month,calendar.get(Calendar.MONTH), calendar.get(YEAR), 6);
+  }
+
+  /**
+   * Derives the month from a day.
+   *
+   * @param day the day (1-31)
+   * @param currentDay the current day of the month (1-31)
+   * @param currentMonth the current month (0-11)
+   * @param dayWindow the day window (0-31)
+   * @return the closest month (0-11)
+   */
+  public static int deriveMonthFromDay(int day, int currentDay, int currentMonth, int dayWindow) {
+    if (dayWindow >= 0 && dayWindow < 31) {
+      day %= 31;
+      int diff = day - currentDay;
+      if (diff > 0) {
+        if (diff > dayWindow) {
+          return currentMonth - 1;
+        }
+      }
+      else if (diff < 0) {
+        if (diff < dayWindow - 31) {
+          return currentMonth + 1;
+        }
+      }
+    }
+    return currentMonth;
+  }
+
+  /**
+   * Derives the month from a day referring to the current date and a dayWindow of 15.
+   *
+   * @param day the day (1-31)
+   * @return the closest month (0-11)
+   */
+  public static int deriveMonthFromDay(int day) {
+    GregorianCalendar calendar = new GregorianCalendar();
+    return deriveMonthFromDay(day, calendar.get(Calendar.DATE), calendar.get(Calendar.MONTH), 15);
   }
 
 

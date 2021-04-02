@@ -18,8 +18,9 @@
 
 package org.tentackle.common;
 
-import org.testng.Assert;
 import org.testng.annotations.Test;
+
+import static org.testng.Assert.assertEquals;
 
 /**
  * Test for DateHelper.
@@ -29,15 +30,25 @@ import org.testng.annotations.Test;
 public class DateHelperTest {
 
   @Test
-  public void testconvert2DigitYearTo4DigitYear() {
-    Assert.assertEquals(DateHelper.convert2DigitYearTo4DigitYear(13, 2013), 2013);
-    Assert.assertEquals(DateHelper.convert2DigitYearTo4DigitYear(1, 2013), 2001);
-    Assert.assertEquals(DateHelper.convert2DigitYearTo4DigitYear(13, 1980), 2013);
-    Assert.assertEquals(DateHelper.convert2DigitYearTo4DigitYear(13, 2080), 2113);
-    Assert.assertEquals(DateHelper.convert2DigitYearTo4DigitYear(50, 2013), 2050);
-    Assert.assertEquals(DateHelper.convert2DigitYearTo4DigitYear(70, 2013), 1970);
-    Assert.assertEquals(DateHelper.convert2DigitYearTo4DigitYear(2010, 2013), 2010);
-    Assert.assertEquals(DateHelper.convert2DigitYearTo4DigitYear(-10, 2013), 1990);
+  public void testDeriveCentury() {
+    assertEquals(DateHelper.derive4DigitYearFrom2DigitYear(13, 2013, 50), 2013);
+    assertEquals(DateHelper.derive4DigitYearFrom2DigitYear(1, 2013, 50), 2001);
+    assertEquals(DateHelper.derive4DigitYearFrom2DigitYear(13, 1980, 50), 2013);
+    assertEquals(DateHelper.derive4DigitYearFrom2DigitYear(13, 2080, 50), 2113);
+    assertEquals(DateHelper.derive4DigitYearFrom2DigitYear(13, 2080, 30), 2013);
+    assertEquals(DateHelper.derive4DigitYearFrom2DigitYear(50, 2013, 50), 2050);
+    assertEquals(DateHelper.derive4DigitYearFrom2DigitYear(50, 2013, 30), 1950);
+    assertEquals(DateHelper.derive4DigitYearFrom2DigitYear(70, 2013, 50), 1970);
+    assertEquals(DateHelper.derive4DigitYearFrom2DigitYear(2010, 2013, 50), 2010);
+    assertEquals(DateHelper.derive4DigitYearFrom2DigitYear(-10, 2013, 50), 1990);
+  }
+
+  @Test
+  public void testDeriveYear() {
+    assertEquals(DateHelper.deriveYearFromMonth(11, 10, 2020,3),2020);
+    assertEquals(DateHelper.deriveYearFromMonth(11, 1, 2020,3),2019);
+    assertEquals(DateHelper.deriveYearFromMonth(1, 11, 2020,3),2021);
+    assertEquals(DateHelper.deriveYearFromMonth(1, 10, 2020,3),2020);
   }
 
 }
