@@ -123,10 +123,57 @@ import static java.util.Calendar.YEAR;
 public class DateStringTranslator extends ValueStringTranslator<Date> {
 
   /**
-   * Property for a reference date supplier of type Supplier&lt;Date&gt;.<br>
-   * '@' as input will be replaced by that date.
+   * Component property for a reference date supplier of type Supplier&lt;Date&gt;.<br>
+   * '@' as input will be replaced by the supplier's date.<br>
+   * Example:
+   * <pre>
+   *   blahField.getProperties.put(REFERENCE_DATE_SUPPLIER, (Supplier&lt;Date&gt;) () -&gt; otherDate);
+   * </pre>
+   * @see #connectAsReferenceDateSuppliers(FxTextComponent, FxTextComponent)
    */
   public static final String REFERENCE_DATE_SUPPLIER = "referenceDateSupplier";
+
+  /**
+   * Number of years after the current year to automatically determine the century.<br>
+   * If missing, the value 50 is used. Supposed we're in 2020 and the user enters 99,
+   * then the year would be expanded to 1999 and 30 would be expanded to 2030, accordingly.<br>
+   * For special date fields, for example birthdates, the value should be 0,
+   * since it's rather unlikely to mean a birthdate in the future.<br>
+   * A negative value disables this feature.
+   * <p>
+   * Example:
+   * <pre>
+   *   bkahField.getProperties().put(DateStringTranslator.YEAR_WINDOW, 30);
+   * </pre>
+   */
+  public static final String YEAR_WINDOW = "yearWindow";
+
+  /**
+   * Same as YEAR_WINDOW, but for months. The default value is 6.<br>
+   * Example: If we're in April and enter 1225, it will be expanded to 12/25/&lt;previous year&gt;<br>
+   * Again, for special date fields, for example the booking part of a financial accounting system, values of 1 or 2 may be
+   * appropriate.<br>
+   * A negative value disables this feature.
+   * <p>
+   * Example:
+   * <pre>
+   *   bkahField.getProperties().put(DateStringTranslator.MONTH_WINDOW, 2);
+   * </pre>
+   */
+  public static final String MONTH_WINDOW = "monthWindow";
+
+  /**
+   * Same as YEAR_WINDOW, but for days.<br>
+   * A negative value disables this feature, which is the default.
+   * <p>
+   * Example:
+   * <pre>
+   *   bkahField.getProperties().put(DateStringTranslator.DAY_WINDOW, 1);
+   * </pre>
+   */
+  public static final String DAY_WINDOW = "dayWindow";
+
+
 
   private static final Logger LOGGER = Logger.get(DateStringTranslator.class);
 
@@ -187,7 +234,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
 
 
   private String pattern;           // the cached pattern
-  private String dateDelimiters;    // usually . or /
+  private String dateDelimiters;    // delimiters used in the format string, in the order of appearance
   private SimpleDateFormat format;  // the cached format
   private Date lastDate;            // last processed date
 
@@ -320,7 +367,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
           str = str.substring(1, slen);
           slen--;
           @SuppressWarnings("rawtypes")
-          Supplier dateSupplier = (Supplier) ((Node) getComponent()).getProperties().get(REFERENCE_DATE_SUPPLIER);
+          Supplier dateSupplier = getReferenceDateSupplier();
           if (dateSupplier != null) {
             Object refDate = dateSupplier.get();
             if (refDate instanceof Date) {
@@ -450,6 +497,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
                 case 'd':
                 case 'D':
                   setGregorianValue(cal, DAY_OF_MONTH, value);
+                  setGregorianValue(cal,MONTH, deriveMonthFromDay(value));
                   DateHelper.setMidnight(cal);
                   break;
                 case 'w':
@@ -466,7 +514,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
                 case 'y':
                 case 'Y':
                   if (value < 100)  {
-                    value = convert2DigitYearTo4DigitYear(value);
+                    value = derive4DigitYearFrom2DigitYear(value);
                   }
                   setGregorianValue(cal, YEAR, value);
                   cal.set(DAY_OF_YEAR, 1);
@@ -545,7 +593,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
           int year = cal.get(YEAR);
           if (year < 100)  {
             // user entered 66 instead of 1966
-            year = convert2DigitYearTo4DigitYear(year);
+            year = derive4DigitYearFrom2DigitYear(year);
             cal.set(YEAR, year);
             date = cal.getTime();
           } // else user entered a 4-digit year
@@ -579,10 +627,10 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
             str += ":00";
           }
           else { // check for user omitted the delimiters at all, e.g. 0105
-            StringBuilder nBuf = new StringBuilder();    // new generated input
+            StringBuilder nBuf = new StringBuilder();   // new generated input
             int dlen = dateDelimiters.length();         // length of delimiters
             int spos = 0;                               // index in user input
-            int dpos = 0;                               // index in format
+            int dpos = 0;                               // index in delimiters of format
             while (spos < slen) {
               char c = str.charAt(spos);
               if (dateDelimiters.indexOf(c) >= 0 || LEGACY_DATE_DELIMITERS.indexOf(c) >= 0)  {
@@ -600,7 +648,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
                 nBuf.append(dateDelimiters.charAt(dpos));
               }
               if (nBuf.length() == 6) { // day + month. and year missing?
-                nBuf.append(getCurrentYear());
+                nBuf.append(getDefaultYear(nBuf.toString()));
               }
               str = nBuf.toString();
             }
@@ -764,23 +812,110 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
 
 
   /**
-   * Converts a short 2-digit year to a 4-digit year.
+   * Gets the reference date supplier.
    *
-   * @param year2 the 2-digit year
-   * @return the 4-digit year
+   * @return the date supplier, null if none
    */
-  protected int convert2DigitYearTo4DigitYear(int year2) {
-    return DateHelper.convert2DigitYearTo4DigitYear(year2, getCurrentYear());
+  @SuppressWarnings("rawtypes")
+  protected Supplier getReferenceDateSupplier() {
+    return (Supplier) ((Node) getComponent()).getProperties().get(REFERENCE_DATE_SUPPLIER);
   }
 
   /**
-   * Gets the current year.<br>
-   * Used to extend the date if no year is given.
+   * Gets the current year.
    *
    * @return the current year
    */
   protected int getCurrentYear() {
     return new GregorianCalendar().get(YEAR);
+  }
+
+  /**
+   * Gets the current month.
+   *
+   * @return the month (0-11)
+   */
+  protected int getCurrentMonth() {
+    return new GregorianCalendar().get(MONTH);
+  }
+
+  /**
+   * Gets the year window.
+   *
+   * @return the window, defaults to 50.
+   */
+  protected int getYearWindow() {
+    Integer val = (Integer) ((Node) getComponent()).getProperties().get(YEAR_WINDOW);
+    return val == null ? 50 : val;
+  }
+
+  /**
+   * Converts a short 2-digit year to a 4-digit year.
+   *
+   * @param year2 the 2-digit year
+   * @return the 4-digit year
+   */
+  protected int derive4DigitYearFrom2DigitYear(int year2) {
+    return DateHelper.derive4DigitYearFrom2DigitYear(year2, getCurrentYear(), getYearWindow());
+  }
+
+  /**
+   * Gets the month window.
+   *
+   * @return the month, defaults to 6.
+   */
+  protected int getMonthWindow() {
+    Integer val = (Integer) ((Node) getComponent()).getProperties().get(MONTH_WINDOW);
+    return val == null ? 6 : val;
+  }
+
+  /**
+   * Gets the default year, if year is omitted in user's input.
+   *
+   * @param input in the format NN.NN. where NN is a number and . is a date delimiter
+   * @return the default year according to the month window
+   */
+  protected int getDefaultYear(String input) {
+    try {
+      String fmt = format.toPattern();
+      int dayNdx = fmt.indexOf('d');
+      int monthNdx = fmt.indexOf('M');
+      int month = monthNdx < dayNdx ? Integer.parseInt(input.substring(0, 2)) : Integer.parseInt(input.substring(3, 5));  // 1 - 12
+      return DateHelper.deriveYearFromMonth((month - 1) % 12, getCurrentMonth(), getCurrentYear(), getMonthWindow());
+    }
+    catch (RuntimeException rx) {
+      // is okay, take current year
+    }
+    return getCurrentYear();
+  }
+
+  /**
+   * Gets the day window.
+   *
+   * @return the day window, defaults to -1
+   */
+  protected int getDayWindow() {
+    Integer val = (Integer) ((Node) getComponent()).getProperties().get(DAY_WINDOW);
+    return val == null ? -1 : val;
+  }
+
+  /**
+   * Gets the current day of month.
+   *
+   * @return the day (1-31)
+   */
+  protected int getCurrentDay() {
+    return new GregorianCalendar().get(DAY_OF_MONTH);
+  }
+
+  /**
+   * Derives the the month from a day input.
+   *
+   * @param day the day (1-31)
+   * @return the month (0-11)
+   */
+  protected int deriveMonthFromDay(int day) {
+    return DateHelper.deriveMonthFromDay(day, getCurrentDay(), getCurrentMonth(), getDayWindow());
   }
 
 }
