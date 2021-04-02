@@ -387,8 +387,7 @@ public class FxUtilities {
     Alert alert = Fx.createAlert(Alert.AlertType.CONFIRMATION);
     alert.setTitle(title == null ? FxFxBundle.getString("QUESTION") : title);
     setAlertMessage(alert, message);
-    alert.getButtonTypes().clear();
-    alert.getButtonTypes().addAll(ButtonType.YES, ButtonType.NO);
+    alert.getButtonTypes().setAll(ButtonType.YES, ButtonType.NO);
     Button noButton = (Button) alert.getDialogPane().lookupButton(ButtonType.NO);
     Button yesButton = (Button) alert.getDialogPane().lookupButton(ButtonType.YES);
     noButton.setDefaultButton(!defaultYes);

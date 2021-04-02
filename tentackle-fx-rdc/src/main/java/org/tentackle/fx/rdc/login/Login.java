@@ -369,8 +369,7 @@ public class Login extends AbstractFxController {
    * Loads the backend configurations.
    */
   private void loadBackendConfigurations() {
-    backendField.getItems().clear();
-    backendField.getItems().addAll(BackendConfiguration.getBackendConfigurations(sessionInfo.getApplicationName(), backendFromSystemPrefs).values());
+    backendField.getItems().setAll(BackendConfiguration.getBackendConfigurations(sessionInfo.getApplicationName(), backendFromSystemPrefs).values());
     BackendConfiguration defaultBackend = BackendConfiguration.getDefault(sessionInfo.getApplicationName(), backendFromSystemPrefs);
     if (defaultBackend != null) {
       backendField.setValue(defaultBackend);
