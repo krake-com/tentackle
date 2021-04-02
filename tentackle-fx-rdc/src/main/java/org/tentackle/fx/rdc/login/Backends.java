@@ -372,7 +372,6 @@ public class Backends extends AbstractFxController {
   }
 
   private void loadDriverConfigurations() {
-    backendDriver.getItems().clear();
-    backendDriver.getItems().addAll(drivers.getItems());
+    backendDriver.getItems().setAll(drivers.getItems());
   }
 }

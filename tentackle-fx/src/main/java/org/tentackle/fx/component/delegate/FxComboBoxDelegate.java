@@ -83,8 +83,7 @@ public class FxComboBoxDelegate extends FxTextComponentDelegate {
 
     if (type.isEnum()) {
       ObservableList items = component.getItems();
-      items.clear();
-      items.addAll(Arrays.asList(type.getEnumConstants()));
+      items.setAll(Arrays.asList(type.getEnumConstants()));
     }
   }
 
