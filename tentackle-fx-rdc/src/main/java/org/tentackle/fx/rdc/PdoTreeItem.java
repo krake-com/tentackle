@@ -83,7 +83,6 @@ public class PdoTreeItem<T extends PersistentDomainObject<T>> extends TreeItem<T
   @Override
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public ObservableList<TreeItem<T>> getChildren() {
-    ObservableList<TreeItem<T>> children = super.getChildren();
     if (!childrenLoaded) {
       childrenLoaded = true;
       if (getGuiProvider().providesTreeChildObjects()) {
@@ -93,12 +92,11 @@ public class PdoTreeItem<T extends PersistentDomainObject<T>> extends TreeItem<T
         for (PersistentDomainObject child : childs) {
           childItems.add(Rdc.createGuiProvider(child).createTreeItem());
         }
-        // TODO: find a workaround for the selection bug!
-        // if an item is selected _below_ this one and we expand this item, the selection is moved down too much
-        children.addAll(childItems);
+        super.getChildren().setAll(childItems);
+        // it is important to return super.getChildren() below after setAll to make sure that checkSortState is invoked!
       }
     }
-    return children;
+    return super.getChildren();
   }
 
 
