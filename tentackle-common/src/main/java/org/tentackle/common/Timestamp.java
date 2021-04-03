@@ -23,6 +23,14 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Calendar;
 
+import static java.util.Calendar.DAY_OF_MONTH;
+import static java.util.Calendar.HOUR_OF_DAY;
+import static java.util.Calendar.MINUTE;
+import static java.util.Calendar.MONTH;
+import static java.util.Calendar.SECOND;
+import static java.util.Calendar.YEAR;
+
+
 /**
  * Timestamp with UTC option.
  * <p>
@@ -75,7 +83,6 @@ public class Timestamp extends java.sql.Timestamp implements Freezable {
 
   private boolean utc;                  // true if timestamp is always UTC
   private boolean frozen;               // true if timestamp cannot be modified anymore
-  private transient Calendar cal;       // lazy calendar
 
   /**
    * Constructs a
@@ -133,20 +140,6 @@ public class Timestamp extends java.sql.Timestamp implements Freezable {
   }
 
 
-  /**
-   * Gets the calendar for this date.
-   *
-   * @return the calendar
-   */
-  public Calendar getCalendar() {
-    if (cal == null) {
-      cal = Calendar.getInstance();
-      cal.setTime(this);
-    }
-    return cal;
-  }
-
-
   @Override
   public void freeze() {
     frozen = true;
@@ -162,7 +155,6 @@ public class Timestamp extends java.sql.Timestamp implements Freezable {
   public void setTime(long timestamp) {
     assertNotFrozen();
     super.setTime(timestamp);
-    cal = null;
   }
 
   @Override
@@ -236,12 +228,14 @@ public class Timestamp extends java.sql.Timestamp implements Freezable {
           throws IOException {
     s.writeBoolean(utc);
     if (utc) {
-      s.writeShort(getCalendar().get(Calendar.YEAR));
-      s.writeByte(getCalendar().get(Calendar.MONTH));
-      s.writeByte(getCalendar().get(Calendar.DAY_OF_MONTH));
-      s.writeByte(getCalendar().get(Calendar.HOUR_OF_DAY));
-      s.writeByte(getCalendar().get(Calendar.MINUTE));
-      s.writeByte(getCalendar().get(Calendar.SECOND));
+      Calendar calendar = DateHelper.today();
+      calendar.setTime(this);
+      s.writeShort(calendar.get(YEAR));
+      s.writeByte(calendar.get(MONTH));
+      s.writeByte(calendar.get(DAY_OF_MONTH));
+      s.writeByte(calendar.get(HOUR_OF_DAY));
+      s.writeByte(calendar.get(MINUTE));
+      s.writeByte(calendar.get(SECOND));
     }
     else  {
       s.writeLong(getTime());
@@ -269,7 +263,7 @@ public class Timestamp extends java.sql.Timestamp implements Freezable {
       int minutes = s.readByte();
       int seconds = s.readByte();
       int nanos = s.readInt();
-      cal = Calendar.getInstance();
+      Calendar cal = DateHelper.today();
       cal.set(year, month, day, hours, minutes, seconds);
       super.setTime(cal.getTimeInMillis());
       setNanos(nanos);

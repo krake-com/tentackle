@@ -23,6 +23,12 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Calendar;
 
+import static java.util.Calendar.HOUR_OF_DAY;
+import static java.util.Calendar.MILLISECOND;
+import static java.util.Calendar.MINUTE;
+import static java.util.Calendar.SECOND;
+
+
 /**
  * Time with database semantics.
  * <p>
@@ -45,8 +51,6 @@ public class Time extends java.sql.Time implements Freezable {
   private static final long serialVersionUID = 8397324403548013688L;
 
   private boolean frozen;               // true if time cannot be modified anymore
-  private transient Calendar cal;       // lazy calendar
-
 
   /**
    * Creates a frozen time.
@@ -94,19 +98,6 @@ public class Time extends java.sql.Time implements Freezable {
     return time;
   }
 
-  /**
-   * Gets the calendar for this date.
-   *
-   * @return the calendar
-   */
-  public Calendar getCalendar() {
-    if (cal == null) {
-      cal = Calendar.getInstance();
-      cal.setTime(this);
-    }
-    return cal;
-  }
-
 
   @Override
   public void freeze() {
@@ -123,7 +114,6 @@ public class Time extends java.sql.Time implements Freezable {
   public void setTime(long time) {
     assertNotFrozen();
     super.setTime(time);
-    cal = null;
   }
 
   // others overridden to check for frozen.
@@ -187,10 +177,12 @@ public class Time extends java.sql.Time implements Freezable {
    */
   private void writeObject(ObjectOutputStream s)
           throws IOException {
-    s.writeByte(getCalendar().get(Calendar.HOUR_OF_DAY));
-    s.writeByte(getCalendar().get(Calendar.MINUTE));
-    s.writeByte(getCalendar().get(Calendar.SECOND));
-    s.writeShort(getCalendar().get(Calendar.MILLISECOND));
+    Calendar calendar = DateHelper.today();
+    calendar.setTime(this);
+    s.writeByte(calendar.get(HOUR_OF_DAY));
+    s.writeByte(calendar.get(MINUTE));
+    s.writeByte(calendar.get(SECOND));
+    s.writeShort(calendar.get(MILLISECOND));
     s.writeBoolean(frozen);
   }
 
@@ -208,9 +200,9 @@ public class Time extends java.sql.Time implements Freezable {
     int minutes = s.readByte();
     int seconds = s.readByte();
     int millis = s.readShort();
-    cal = Calendar.getInstance();
+    Calendar cal = DateHelper.today();
     cal.set(1970, 0, 1, hours, minutes, seconds);
-    cal.set(Calendar.MILLISECOND, millis);
+    cal.set(MILLISECOND, millis);
     super.setTime(cal.getTimeInMillis());
     frozen = s.readBoolean();
   }

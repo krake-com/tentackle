@@ -45,8 +45,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
 
@@ -170,8 +170,8 @@ public class PoiTableUtilities extends TableUtilities {
               cell.setCellValue((Date) value);
               cell.setCellStyle(dateStyle);
             }
-            else if (value instanceof GregorianCalendar) {
-              cell.setCellValue((GregorianCalendar) value);
+            else if (value instanceof Calendar) {
+              cell.setCellValue((Calendar) value);
               cell.setCellStyle(dateStyle);
             }
             else if (value != null) {

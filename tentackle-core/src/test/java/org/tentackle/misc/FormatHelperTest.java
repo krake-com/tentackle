@@ -18,18 +18,21 @@
 
 package org.tentackle.misc;
 
-import java.text.ParseException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.GregorianCalendar;
+import org.testng.annotations.Test;
+
 import org.tentackle.common.Date;
 import org.tentackle.common.DateHelper;
 import org.tentackle.common.Time;
 import org.tentackle.common.Timestamp;
-import org.testng.annotations.Test;
 
-import static org.testng.Assert.*;
+import java.text.ParseException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.Calendar;
+
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.fail;
 
 /**
  * Tests the FormatHelper.
@@ -60,7 +63,7 @@ public class FormatHelperTest {
       sdt = FormatHelper.formatShortLocalDateTime(lts);
       assertEquals(sdt, sts);
 
-      GregorianCalendar cal = new GregorianCalendar();
+      Calendar cal = DateHelper.today();
       DateHelper.setMidnight(cal);
       Date d = new Date(cal.getTime().getTime());
       String sd = FormatHelper.formatDate(d);

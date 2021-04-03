@@ -23,11 +23,13 @@ package org.tentackle.common;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Calendar;
-import java.util.GregorianCalendar;
 
+import static java.util.Calendar.DATE;
+import static java.util.Calendar.HOUR;
 import static java.util.Calendar.HOUR_OF_DAY;
 import static java.util.Calendar.MILLISECOND;
 import static java.util.Calendar.MINUTE;
+import static java.util.Calendar.MONTH;
 import static java.util.Calendar.SECOND;
 import static java.util.Calendar.YEAR;
 
@@ -136,16 +138,18 @@ public final class DateHelper {
 
 
   /**
-   * Gets the current date.
+   * Gets the calendar of the current date and time.<br>
+   * The calendar is created using the thread-local locale, if set, else the default locale.
    *
-   * @return current Date
+   * @return the current calendar instance
    */
-  public static Date today()  {
-    return new Date(System.currentTimeMillis());
+  public static Calendar today()  {
+    return Calendar.getInstance(LocaleProvider.getInstance().getLocale());
   }
 
+
   /**
-   * Gets the current date with an offset.
+   * Gets {@link #today} with an offset.
    *
    * @param dayOffset the offset in days
    * @param monthOffset the offset in months
@@ -153,10 +157,10 @@ public final class DateHelper {
    * @return the date
    */
   public static Date today(int dayOffset, int monthOffset, int yearOffset)  {
-    GregorianCalendar cal = new GregorianCalendar();
-    cal.add(GregorianCalendar.DATE, dayOffset);
-    cal.add(GregorianCalendar.MONTH, monthOffset);
-    cal.add(GregorianCalendar.YEAR, yearOffset);
+    Calendar cal = today();
+    cal.add(DATE, dayOffset);
+    cal.add(MONTH, monthOffset);
+    cal.add(YEAR, yearOffset);
     return new Date(cal.getTimeInMillis());
   }
 
@@ -180,10 +184,10 @@ public final class DateHelper {
    * @return the time
    */
   public static Time daytime(int secondOffset, int minuteOffset, int hourOffset)  {
-    GregorianCalendar cal = new GregorianCalendar();
-    cal.add(GregorianCalendar.SECOND, secondOffset);
-    cal.add(GregorianCalendar.MINUTE, minuteOffset);
-    cal.add(GregorianCalendar.HOUR, hourOffset);
+    Calendar cal = today();
+    cal.add(SECOND, secondOffset);
+    cal.add(MINUTE, minuteOffset);
+    cal.add(HOUR, hourOffset);
     return new Time(cal.getTimeInMillis());
   }
 
@@ -212,15 +216,41 @@ public final class DateHelper {
   /**
    * Sets the given calendar to midnight.
    *
-   * @param greg the calendar
+   * @param calendar the calendar
    */
-  public static void setMidnight(GregorianCalendar greg)  {
-    greg.set(HOUR_OF_DAY, 0);
-    greg.set(MINUTE, 0);
-    greg.set(SECOND, 0);
-    greg.set(MILLISECOND, 0);
+  public static void setMidnight(Calendar calendar)  {
+    calendar.set(HOUR_OF_DAY, 0);
+    calendar.set(MINUTE, 0);
+    calendar.set(SECOND, 0);
+    calendar.set(MILLISECOND, 0);
   }
 
+  /**
+   * Gets the current year.
+   *
+   * @return the current 4-digit year
+   */
+  public static int getCurrentYear() {
+    return today().get(YEAR);
+  }
+
+  /**
+   * Gets the current month.
+   *
+   * @return the current month (0 - 11)
+   */
+  public static int getCurrentMonth() {
+    return today().get(MONTH);
+  }
+
+  /**
+   * Gets the current day.
+   *
+   * @return the current day (1 - 31)
+   */
+  public static int getCurrentDay() {
+    return today().get(DATE);
+  }
 
   /**
    * Derives a 4-digit from a 2-digit year.
@@ -265,7 +295,7 @@ public final class DateHelper {
    * @return the closest 4-digit year
    */
   public static int derive4DigitYearFrom2DigitYear(int year) {
-    return derive4DigitYearFrom2DigitYear(year, new GregorianCalendar().get(YEAR), 50);
+    return derive4DigitYearFrom2DigitYear(year, today().get(YEAR), 50);
   }
 
 
@@ -303,8 +333,8 @@ public final class DateHelper {
    * @return the closest year (4 digits)
    */
   public static int deriveYearFromMonth(int month) {
-    GregorianCalendar calendar = new GregorianCalendar();
-    return deriveYearFromMonth(month,calendar.get(Calendar.MONTH), calendar.get(YEAR), 6);
+    Calendar calendar = today();
+    return deriveYearFromMonth(month, calendar.get(MONTH), calendar.get(YEAR), 6);
   }
 
   /**
@@ -341,8 +371,8 @@ public final class DateHelper {
    * @return the closest month (0-11 for current year, -1 for december of last year, 12 for january of next year)
    */
   public static int deriveMonthFromDay(int day) {
-    GregorianCalendar calendar = new GregorianCalendar();
-    return deriveMonthFromDay(day, calendar.get(Calendar.DATE), calendar.get(Calendar.MONTH), 15);
+    Calendar calendar = today();
+    return deriveMonthFromDay(day, calendar.get(DATE), calendar.get(MONTH), 15);
   }
 
 
