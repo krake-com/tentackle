@@ -659,7 +659,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
                 nBuf.append(dateDelimiters.charAt(dpos));
               }
               if (nBuf.length() == 6) { // day + month. and year missing?
-                nBuf.append(getDefaultYear(nBuf.toString()));
+                nBuf.append(deriveYearFromInput(nBuf.toString()));
               }
               str = nBuf.toString();
             }
@@ -853,11 +853,20 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
   /**
    * Gets the year window.
    *
-   * @return the window, defaults to 50.
+   * @return the year window (0-99, all other values disable this feature)
    */
   protected int getYearWindow() {
     Integer val = (Integer) ((Node) getComponent()).getProperties().get(YEAR_WINDOW);
-    return val == null ? 50 : val;
+    return val == null ? getDefaultYearWindow() : val;
+  }
+
+  /**
+   * Gets the default value for {@link #getYearWindow()}.
+   *
+   * @return the default (50 years)
+   */
+  protected int getDefaultYearWindow() {
+    return 50;
   }
 
   /**
@@ -865,6 +874,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
    *
    * @param year2 the 2-digit year
    * @return the 4-digit year
+   * @see #getYearWindow()
    */
   protected int derive4DigitYearFrom2DigitYear(int year2) {
     return DateHelper.derive4DigitYearFrom2DigitYear(year2, getCurrentYear(), getYearWindow());
@@ -873,20 +883,30 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
   /**
    * Gets the month window.
    *
-   * @return the month, defaults to -1
+   * @return the month window (0-11, all other values disable this feature)
    */
   protected int getMonthWindow() {
     Integer val = (Integer) ((Node) getComponent()).getProperties().get(MONTH_WINDOW);
-    return val == null ? -1 : val;
+    return val == null ? getDefaultMonthWindow() : val;
   }
 
   /**
-   * Gets the default year, if year is omitted in user's input.
+   * Gets the default month window for {@link #getMonthWindow()}.
+   *
+   * @return the default (-1 == disabled)
+   */
+  protected int getDefaultMonthWindow() {
+    return -1;
+  }
+
+  /**
+   * Derives the year from the user's input, if only month and day are given.
    *
    * @param input in the format NN.NN. where NN is a number and . is a date delimiter
    * @return the default year according to the month window
+   * @see #getMonthWindow()
    */
-  protected int getDefaultYear(String input) {
+  protected int deriveYearFromInput(String input) {
     try {
       String fmt = format.toPattern();
       int dayNdx = fmt.indexOf('d');
@@ -903,11 +923,20 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
   /**
    * Gets the day window.
    *
-   * @return the day window, defaults to -1
+   * @return the day window, (0-30, all other values disable this feature)
    */
   protected int getDayWindow() {
     Integer val = (Integer) ((Node) getComponent()).getProperties().get(DAY_WINDOW);
-    return val == null ? -1 : val;
+    return val == null ? getDefaultDayWindow() : val;
+  }
+
+  /**
+   * Gets the default day window for {@link #getDayWindow()}.
+   *
+   * @return the default (-1 == disabled)
+   */
+  protected int getDefaultDayWindow() {
+    return -1;
   }
 
   /**
@@ -924,6 +953,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
    *
    * @param day the day (1-31)
    * @return the closest month (0-11 for current year, -1 for december of last year, 12 for january of next year)
+   * @see #getDayWindow()
    */
   protected int deriveMonthFromDay(int day) {
     return DateHelper.deriveMonthFromDay(day, getCurrentDay(), getCurrentMonth(), getDayWindow());
