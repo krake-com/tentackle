@@ -498,7 +498,6 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
                   break;
                 case 'd':
                 case 'D':
-                  setCalendarValue(cal, DAY_OF_MONTH, value);
                   int month = deriveMonthFromDay(value);
                   if (month == -1) {
                     setCalendarValue(cal, YEAR, DateHelper.getCurrentYear() - 1);
@@ -509,6 +508,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
                     month = 0;
                   }
                   setCalendarValue(cal, MONTH, month);
+                  setCalendarValue(cal, DAY_OF_MONTH, value);
                   DateHelper.setMidnight(cal);
                   break;
                 case 'w':
