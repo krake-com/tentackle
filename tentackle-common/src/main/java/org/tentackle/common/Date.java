@@ -23,6 +23,11 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Calendar;
 
+import static java.util.Calendar.DAY_OF_MONTH;
+import static java.util.Calendar.MILLISECOND;
+import static java.util.Calendar.MONTH;
+import static java.util.Calendar.YEAR;
+
 /**
  * Date with database semantics.
  * <p>
@@ -58,7 +63,6 @@ public class Date extends java.sql.Date implements Freezable {
 
 
   private boolean frozen;               // true if date cannot be modified anymore
-  private transient Calendar cal;       // lazy calendar
 
 
   /**
@@ -98,20 +102,6 @@ public class Date extends java.sql.Date implements Freezable {
   }
 
 
-  /**
-   * Gets the calendar for this date.
-   *
-   * @return the calendar
-   */
-  public Calendar getCalendar() {
-    if (cal == null) {
-      cal = Calendar.getInstance();
-      cal.setTime(this);
-    }
-    return cal;
-  }
-
-
   @Override
   public void freeze() {
     frozen = true;
@@ -127,7 +117,6 @@ public class Date extends java.sql.Date implements Freezable {
   public void setTime(long date) {
     assertNotFrozen();
     super.setTime(date);
-    cal = null;
   }
 
   // others overridden to check for frozen.
@@ -191,9 +180,11 @@ public class Date extends java.sql.Date implements Freezable {
    * @throws IOException if writing to stream failed
    */
   private void writeObject(ObjectOutputStream s) throws IOException {
-    s.writeShort(getCalendar().get(Calendar.YEAR));
-    s.writeByte(getCalendar().get(Calendar.MONTH));
-    s.writeByte(getCalendar().get(Calendar.DAY_OF_MONTH));
+    Calendar calendar = DateHelper.today();
+    calendar.setTime(this);
+    s.writeShort(calendar.get(YEAR));
+    s.writeByte(calendar.get(MONTH));
+    s.writeByte(calendar.get(DAY_OF_MONTH));
     s.writeBoolean(frozen);
   }
 
@@ -209,9 +200,9 @@ public class Date extends java.sql.Date implements Freezable {
     int year = s.readShort();
     int month = s.readByte();
     int day = s.readByte();
-    cal = Calendar.getInstance();
+    Calendar cal = DateHelper.today();
     cal.set(year, month, day, 0, 0, 0);
-    cal.set(Calendar.MILLISECOND, 0);
+    cal.set(MILLISECOND, 0);
     super.setTime(cal.getTimeInMillis());
     frozen = s.readBoolean();
   }

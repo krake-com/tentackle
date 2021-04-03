@@ -24,6 +24,7 @@ import javafx.scene.Node;
 import javafx.scene.control.TextFormatter;
 import javafx.util.StringConverter;
 
+import org.tentackle.common.DateHelper;
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.FxTextComponentDelegate;
@@ -36,8 +37,14 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
+
+import static java.util.Calendar.HOUR_OF_DAY;
+import static java.util.Calendar.MILLISECOND;
+import static java.util.Calendar.MINUTE;
+import static java.util.Calendar.SECOND;
+
 
 /**
  * Delegate for FxDatePicker.
@@ -88,7 +95,7 @@ public class FxDatePickerDelegate extends FxTextComponentDelegate {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public void setViewValue(Object value) {
     ValueTranslator translator = getValueTranslator();
     Pos alignment = component.getTextAlignment();
@@ -99,7 +106,7 @@ public class FxDatePickerDelegate extends FxTextComponentDelegate {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public <V> V getViewValue() {
     ValueTranslator translator = getValueTranslator();
     return (V) translator.toModel(getViewObject());
@@ -158,15 +165,15 @@ public class FxDatePickerDelegate extends FxTextComponentDelegate {
       if (component.isChangeable()) {
         if (object != null) {
           // merge localDate into lastDate
-          GregorianCalendar cal = new GregorianCalendar();
+          Calendar cal = DateHelper.today();
           if (lastDate != null) {
             cal.setTime(lastDate);
           }
           else {
-            cal.set(GregorianCalendar.HOUR_OF_DAY, 0);
-            cal.set(GregorianCalendar.MINUTE, 0);
-            cal.set(GregorianCalendar.SECOND, 0);
-            cal.set(GregorianCalendar.MILLISECOND, 0);
+            cal.set(HOUR_OF_DAY, 0);
+            cal.set(MINUTE, 0);
+            cal.set(SECOND, 0);
+            cal.set(MILLISECOND, 0);
           }
           cal.set(object.getYear(), object.getMonthValue() - 1, object.getDayOfMonth());
           ValueTranslator translator = getValueTranslator();

@@ -40,8 +40,8 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -409,7 +409,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
           char c = str.charAt(0);
           if (withDate && LEGACY_DATE_DELIMITERS.indexOf(c) >= 0) {
             // current date at 0:00:00
-            GregorianCalendar cal = new GregorianCalendar();
+            Calendar cal = DateHelper.today();
             DateHelper.setMidnight(cal);
             return parse(format(toType(cal.getTime())));  // start over
           }
@@ -441,7 +441,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
 
           try {
 
-            GregorianCalendar cal = new GregorianCalendar();
+            Calendar cal = DateHelper.today();
             if (referenceDate != null)  {
               cal.setTime(referenceDate);
             }
@@ -478,47 +478,47 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
               switch (type) {
                 case 's':
                 case 'S':
-                  setGregorianValue(cal, SECOND, value);
+                  setCalendarValue(cal, SECOND, value);
                   break;
                 case 'm':
                   if (pattern.indexOf('m') == -1) {
                     // meant month (m entered instead of M)
-                    setGregorianValue(cal, MONTH, value - 1);
+                    setCalendarValue(cal, MONTH, value - 1);
                   }
                   else  {
-                    setGregorianValue(cal, MINUTE, value);
+                    setCalendarValue(cal, MINUTE, value);
                     cal.set(SECOND, 0);
                   }
                   break;
                 case 'h':
                 case 'H':
-                  setGregorianValue(cal, HOUR_OF_DAY, value);
+                  setCalendarValue(cal, HOUR_OF_DAY, value);
                   cal.set(MINUTE, 0);
                   cal.set(SECOND, 0);
                   break;
                 case 'd':
                 case 'D':
-                  setGregorianValue(cal, DAY_OF_MONTH, value);
+                  setCalendarValue(cal, DAY_OF_MONTH, value);
                   int month = deriveMonthFromDay(value);
                   if (month == -1) {
-                    setGregorianValue(cal, YEAR, getCurrentYear() - 1);
+                    setCalendarValue(cal, YEAR, DateHelper.getCurrentYear() - 1);
                     month = 11;
                   }
                   else if (month == 12) {
-                    setGregorianValue(cal, YEAR, getCurrentYear() + 1);
+                    setCalendarValue(cal, YEAR, DateHelper.getCurrentYear() + 1);
                     month = 0;
                   }
-                  setGregorianValue(cal,MONTH, month);
+                  setCalendarValue(cal, MONTH, month);
                   DateHelper.setMidnight(cal);
                   break;
                 case 'w':
                 case 'W':
-                  setGregorianValue(cal, WEEK_OF_YEAR, value);
+                  setCalendarValue(cal, WEEK_OF_YEAR, value);
                   cal.set(DAY_OF_WEEK, cal.getFirstDayOfWeek());
                   DateHelper.setMidnight(cal);
                   break;
                 case 'M':
-                  setGregorianValue(cal, MONTH, value - 1);
+                  setCalendarValue(cal, MONTH, value - 1);
                   cal.set(DAY_OF_MONTH, 1);
                   DateHelper.setMidnight(cal);
                   break;
@@ -527,7 +527,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
                   if (value < 100)  {
                     value = derive4DigitYearFrom2DigitYear(value);
                   }
-                  setGregorianValue(cal, YEAR, value);
+                  setCalendarValue(cal, YEAR, value);
                   cal.set(DAY_OF_YEAR, 1);
                   DateHelper.setMidnight(cal);
                   break;
@@ -591,7 +591,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
         try {
           // parse input
           Date date = format.parse(str);
-          GregorianCalendar cal = new GregorianCalendar();
+          Calendar cal = DateHelper.today();
           cal.setTime(date);
 
           // cut time information if format does not contain time
@@ -624,7 +624,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
           // check for user entered 1.1. and meant 1.1.<current year>
           if (errorChar > 0 && dateDelimiters.indexOf(errorChar) >= 0) {
             // last char was a date-delimiter: try appending current year
-            str += getCurrentYear();
+            str += DateHelper.getCurrentYear();
           }
           else if (errorChar == ':') {
             // last char was a time-delimiter: try appending 00
@@ -680,7 +680,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
               }
               if (timeOnly) {
                 try {
-                  GregorianCalendar cal = new GregorianCalendar();
+                  Calendar cal = DateHelper.today();
                   cal.setTime(colonCount == 1 ? FormatHelper.parseShortTime(str) : FormatHelper.parseTime(str));
                   int hour = cal.get(HOUR_OF_DAY);
                   int minute = cal.get(MINUTE);
@@ -796,14 +796,14 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
 
 
   /**
-   * Sets the gregorian value and checks whether the value is valid if date format is not lenient.
+   * Sets the calendar value and checks whether the value is valid if date format is not lenient.
    *
    * @param cal the gregorian calendar object
    * @param field the field index
    * @param value the value
    * @throws ParseException if value out of bounds (if not lenient)
    */
-  protected void setGregorianValue(GregorianCalendar cal, int field, int value) throws ParseException {
+  protected void setCalendarValue(Calendar cal, int field, int value) throws ParseException {
     // check the bounds
     int min = cal.getActualMinimum(field);
     int max = cal.getActualMaximum(field);
@@ -832,23 +832,6 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
     return (Supplier) ((Node) getComponent()).getProperties().get(REFERENCE_DATE_SUPPLIER);
   }
 
-  /**
-   * Gets the current year.
-   *
-   * @return the current year
-   */
-  protected int getCurrentYear() {
-    return new GregorianCalendar().get(YEAR);
-  }
-
-  /**
-   * Gets the current month.
-   *
-   * @return the month (0-11)
-   */
-  protected int getCurrentMonth() {
-    return new GregorianCalendar().get(MONTH);
-  }
 
   /**
    * Gets the year window.
@@ -877,7 +860,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
    * @see #getYearWindow()
    */
   protected int derive4DigitYearFrom2DigitYear(int year2) {
-    return DateHelper.derive4DigitYearFrom2DigitYear(year2, getCurrentYear(), getYearWindow());
+    return DateHelper.derive4DigitYearFrom2DigitYear(year2, DateHelper.getCurrentYear(), getYearWindow());
   }
 
   /**
@@ -912,12 +895,12 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
       int dayNdx = fmt.indexOf('d');
       int monthNdx = fmt.indexOf('M');
       int month = monthNdx < dayNdx ? Integer.parseInt(input.substring(0, 2)) : Integer.parseInt(input.substring(3, 5));  // 1 - 12
-      return DateHelper.deriveYearFromMonth((month - 1) % 12, getCurrentMonth(), getCurrentYear(), getMonthWindow());
+      return DateHelper.deriveYearFromMonth((month - 1) % 12, DateHelper.getCurrentMonth(), DateHelper.getCurrentYear(), getMonthWindow());
     }
     catch (RuntimeException rx) {
       // is okay, take current year
     }
-    return getCurrentYear();
+    return DateHelper.getCurrentYear();
   }
 
   /**
@@ -940,15 +923,6 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
   }
 
   /**
-   * Gets the current day of month.
-   *
-   * @return the day (1-31)
-   */
-  protected int getCurrentDay() {
-    return new GregorianCalendar().get(DAY_OF_MONTH);
-  }
-
-  /**
    * Derives the the month from a day input.
    *
    * @param day the day (1-31)
@@ -956,7 +930,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
    * @see #getDayWindow()
    */
   protected int deriveMonthFromDay(int day) {
-    return DateHelper.deriveMonthFromDay(day, getCurrentDay(), getCurrentMonth(), getDayWindow());
+    return DateHelper.deriveMonthFromDay(day, DateHelper.getCurrentDay(), DateHelper.getCurrentMonth(), getDayWindow());
   }
 
 }

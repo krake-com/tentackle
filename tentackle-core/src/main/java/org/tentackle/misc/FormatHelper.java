@@ -19,6 +19,10 @@
 
 package org.tentackle.misc;
 
+import org.tentackle.common.BMoney;
+import org.tentackle.common.LocaleProvider;
+import org.tentackle.common.Timestamp;
+
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -30,9 +34,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import org.tentackle.common.BMoney;
-import org.tentackle.common.LocaleProvider;
-import org.tentackle.common.Timestamp;
 
 import static java.util.Calendar.DAY_OF_MONTH;
 import static java.util.Calendar.HOUR;
@@ -868,20 +869,20 @@ public class FormatHelper {
 
 
   /**
-   * Translates a field of {@link java.util.GregorianCalendar} to a localized string.
+   * Translates a field of {@link java.util.Calendar} to a localized string.
    * <p>
-   * Example: {@link java.util.GregorianCalendar#DAY_OF_MONTH} will be translated to "month".
+   * Example: {@link java.util.Calendar#DAY_OF_MONTH} will be translated to "month".
    * <p>
    * Notice that only the following field types are supported:
    * <ul>
-   * <li>{@link java.util.GregorianCalendar#YEAR}</li>
-   * <li>{@link java.util.GregorianCalendar#MONTH}</li>
-   * <li>{@link java.util.GregorianCalendar#WEEK_OF_YEAR}</li>
-   * <li>{@link java.util.GregorianCalendar#DAY_OF_MONTH} or {@link java.util.GregorianCalendar#DATE}</li>
-   * <li>{@link java.util.GregorianCalendar#HOUR} or {@link java.util.GregorianCalendar#HOUR_OF_DAY}</li>
-   * <li>{@link java.util.GregorianCalendar#MINUTE}</li>
-   * <li>{@link java.util.GregorianCalendar#SECOND}</li>
-   * <li>{@link java.util.GregorianCalendar#MILLISECOND}</li>
+   * <li>{@link java.util.Calendar#YEAR}</li>
+   * <li>{@link java.util.Calendar#MONTH}</li>
+   * <li>{@link java.util.Calendar#WEEK_OF_YEAR}</li>
+   * <li>{@link java.util.Calendar#DAY_OF_MONTH} or {@link java.util.Calendar#DATE}</li>
+   * <li>{@link java.util.Calendar#HOUR} or {@link java.util.Calendar#HOUR_OF_DAY}</li>
+   * <li>{@link java.util.Calendar#MINUTE}</li>
+   * <li>{@link java.util.Calendar#SECOND}</li>
+   * <li>{@link java.util.Calendar#MILLISECOND}</li>
    * </ul>
    *
    * @param field the field type
