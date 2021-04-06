@@ -70,7 +70,7 @@ public class TablePopup<S> {
 
   private final FxTableView<S> table;           // the table
   private final FxTreeTableView<S> treeTable;   // tree table
-  private final String preferencesSuffix;       // suffix for the preferences
+  private String preferencesSuffix;             // suffix for the preferences
   private String title;                         // the title of the printed table
   private boolean columnMenuEnabled = true;     // true if user is allowed to hide/show columns (default)
 
@@ -161,6 +161,14 @@ public class TablePopup<S> {
     return preferencesSuffix;
   }
 
+  /**
+   * Sets the table preferences suffix.
+   *
+   * @param preferencesSuffix the suffix
+   */
+  public void setPreferencesSuffix(String preferencesSuffix) {
+    this.preferencesSuffix = Objects.requireNonNull(preferencesSuffix);
+  }
 
   /**
    * Returns whether the column menu is enabled.
@@ -196,7 +204,7 @@ public class TablePopup<S> {
 
     final Menu columnMenu;
 
-    if (columnMenuEnabled)  {
+    if (isColumnMenuEnabled())  {
       // build columns-menu
       columnMenu = new Menu();
       columnMenu.setText(RdcFxRdcBundle.getString("COLUMNS..."));
@@ -375,10 +383,10 @@ public class TablePopup<S> {
    */
   public void print() {
     if (table != null) {
-      TableUtilities.getInstance().print(table, title);
+      TableUtilities.getInstance().print(table, getTitle());
     }
     else {
-      TableUtilities.getInstance().print(treeTable, title);
+      TableUtilities.getInstance().print(treeTable, getTitle());
     }
   }
 
@@ -450,10 +458,10 @@ public class TablePopup<S> {
   public void savePreferences(boolean system) {
     try {
       if (table != null) {
-        table.savePreferences(preferencesSuffix, system);
+        table.savePreferences(getPreferencesSuffix(), system);
       }
       else {
-        treeTable.savePreferences(preferencesSuffix, system);
+        treeTable.savePreferences(getPreferencesSuffix(), system);
       }
     }
     catch (RuntimeException ex) {
@@ -479,10 +487,10 @@ public class TablePopup<S> {
   public void loadPreferences(boolean system) {
     try {
       if (table != null) {
-        table.loadPreferences(preferencesSuffix, system);
+        table.loadPreferences(getPreferencesSuffix(), system);
       }
       else {
-        treeTable.loadPreferences(preferencesSuffix,system);
+        treeTable.loadPreferences(getPreferencesSuffix(),system);
       }
     }
     catch (RuntimeException ex) {
