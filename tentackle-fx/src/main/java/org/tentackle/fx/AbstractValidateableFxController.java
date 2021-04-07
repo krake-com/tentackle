@@ -36,21 +36,21 @@ public class AbstractValidateableFxController extends AbstractFxController imple
    *
    * @return true if ok, false if validation errors (not only warnings)
    */
-  public boolean validate() {
+  public boolean validateForm() {
     prepareValidation();
     boolean ok = true;
     try {
       ValidationUtilities.getInstance().validate(this);
     }
     catch (ValidationFailedException vx) {
-      ok = FxUtilities.getInstance().showValidationResults(vx, getValidationMappers(), getBinder());
+      ok = !FxUtilities.getInstance().showValidationResults(vx, getValidationMappers(), getBinder());
     }
     return ok;
   }
 
   /**
    * Prepares the validation.<br>
-   * Invoked from within {@link #validate()} before the validation is performed.
+   * Invoked from within {@link #validateForm()} before the validation is performed.
    */
   protected void prepareValidation() {
     getContainer().clearErrors();
