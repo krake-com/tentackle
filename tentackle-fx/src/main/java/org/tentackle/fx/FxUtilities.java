@@ -65,6 +65,7 @@ import javafx.stage.Window;
 import javafx.util.Callback;
 
 import org.tentackle.bind.Bindable;
+import org.tentackle.bind.Binder;
 import org.tentackle.bind.Binding;
 import org.tentackle.bind.BindingException;
 import org.tentackle.bind.BindingMember;
@@ -79,6 +80,9 @@ import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.ConcurrencyHelper;
+import org.tentackle.validate.ValidationFailedException;
+import org.tentackle.validate.ValidationMapper;
+import org.tentackle.validate.ValidationResult;
 
 import java.awt.Desktop;
 import java.io.IOException;
@@ -88,6 +92,7 @@ import java.net.URI;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NavigableSet;
 import java.util.StringTokenizer;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
@@ -475,6 +480,88 @@ public class FxUtilities {
       popup = note;
     }
     return popup;
+  }
+
+
+  /**
+   * Creates an interactive error from a validation result.
+   *
+   * @param validationResult the validation result
+   * @param validationMappers the validation mappers
+   * @param binder the binder
+   * @return the interactive error
+   */
+  public InteractiveError createInteractiveError(ValidationResult validationResult, NavigableSet<ValidationMapper> validationMappers, Binder binder) {
+    return InteractiveErrorFactory.getInstance().createInteractiveError(
+        validationMappers, binder, validationResult);
+  }
+
+  /**
+   * Creates interactive errors from validation results.
+   *
+   * @param validationResults the validation results
+   * @param validationMappers the validation mappers
+   * @param binder the binder
+   * @return the interactive errors
+   */
+  public List<InteractiveError> createInteractiveErrors(List<ValidationResult> validationResults, NavigableSet<ValidationMapper> validationMappers, Binder binder) {
+    List<InteractiveError> errors = new ArrayList<>();
+    for (ValidationResult validationResult: validationResults) {
+      errors.add(createInteractiveError(validationResult, validationMappers, binder));
+    }
+    return errors;
+  }
+
+  /**
+   * Shows the validation warnings and errors in a dialog and marks the {@link FxControl}s related to those errors.<br>
+   * Errors and warnings are shown in error or info dialogs.
+   *
+   * @param ex the validation exception
+   * @param validationMappers the validation mappers
+   * @param binder the binder
+   * @return true if there were errors, false if warnings only
+   */
+  public boolean showValidationResults(ValidationFailedException ex, NavigableSet<ValidationMapper> validationMappers, Binder binder) {
+    StringBuilder warnings = new StringBuilder();
+    StringBuilder errors = new StringBuilder();
+    List<InteractiveError> errorList = createInteractiveErrors(ex.getResults(), validationMappers, binder);
+    for (InteractiveError error : errorList) {
+      if (error.isWarning()) {
+        if (warnings.length() > 0) {
+          warnings.append('\n');
+        }
+        warnings.append(error.getText());
+      }
+      else {
+        if (errors.length() > 0) {
+          errors.append('\n');
+        }
+        errors.append(error.getText());
+      }
+    }
+
+    if (warnings.length() > 0 && errors.length() > 0) {
+      errors.append("\n\n").append(warnings);
+      warnings.setLength(0);
+    }
+
+    if (errors.length() > 0) {
+      Fx.error(errors.toString()).setOnHidden(event -> {
+        for (InteractiveError error : errorList) {
+          if (!error.isWarning()) {
+            FxControl control = error.getControl();
+            if (control instanceof FxComponent) {
+              ((FxComponent) control).setError(error.getText());
+            }
+          }
+        }
+      });
+    }
+    else if (warnings.length() > 0) {
+      Fx.info(warnings.toString());
+    }
+
+    return errors.length() > 0;
   }
 
 

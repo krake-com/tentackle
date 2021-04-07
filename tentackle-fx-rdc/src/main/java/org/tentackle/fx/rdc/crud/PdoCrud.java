@@ -42,17 +42,14 @@ import javafx.stage.Stage;
 import org.tentackle.app.AbstractApplication;
 import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.Fx;
-import org.tentackle.fx.FxComponent;
-import org.tentackle.fx.FxControl;
 import org.tentackle.fx.FxControllerService;
+import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.component.FxButton;
 import org.tentackle.fx.component.FxLabel;
 import org.tentackle.fx.container.FxBorderPane;
 import org.tentackle.fx.container.FxHBox;
 import org.tentackle.fx.rdc.EventListenerProxy;
 import org.tentackle.fx.rdc.GuiProvider;
-import org.tentackle.fx.rdc.InteractiveError;
-import org.tentackle.fx.rdc.InteractiveErrorFactory;
 import org.tentackle.fx.rdc.PdoController;
 import org.tentackle.fx.rdc.PdoEditor;
 import org.tentackle.fx.rdc.PdoEvent;
@@ -65,10 +62,8 @@ import org.tentackle.pdo.LockException;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.session.NotFoundException;
 import org.tentackle.validate.ValidationFailedException;
-import org.tentackle.validate.ValidationResult;
 
 import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.ResourceBundle;
@@ -748,75 +743,12 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   }
 
   /**
-   * Creates an interactive error from a validation result.
-   *
-   * @param validationResult the validation result
-   * @return the interactive error
-   */
-  protected InteractiveError createInteractiveError(ValidationResult validationResult) {
-    return InteractiveErrorFactory.getInstance().createInteractiveError(
-            editor.getValidationMappers(), editor.getBinder(), validationResult);
-  }
-
-  /**
-   * Creates interactive errors from validation results.
-   *
-   * @param validationResults the validation results
-   * @return the interactive errors
-   */
-  protected List<InteractiveError> createInteractiveErrors(List<ValidationResult> validationResults) {
-    List<InteractiveError> errors = new ArrayList<>();
-    for (ValidationResult validationResult: validationResults) {
-      errors.add(createInteractiveError(validationResult));
-    }
-    return errors;
-  }
-
-
-  /**
    * Shows the validation errors.
    *
    * @param ex the validation exception
    */
   protected void showValidationResults(ValidationFailedException ex) {
-    StringBuilder warnings = new StringBuilder();
-    StringBuilder errors = new StringBuilder();
-    List<InteractiveError> errorList = createInteractiveErrors(ex.getResults());
-    for (InteractiveError error : errorList) {
-      if (error.isWarning()) {
-        if (warnings.length() > 0) {
-          warnings.append('\n');
-        }
-        warnings.append(error.getText());
-      }
-      else {
-        if (errors.length() > 0) {
-          errors.append('\n');
-        }
-        errors.append(error.getText());
-      }
-    }
-
-    if (warnings.length() > 0 && errors.length() > 0) {
-      errors.append("\n\n").append(warnings);
-      warnings.setLength(0);
-    }
-
-    if (errors.length() > 0) {
-      Fx.error(errors.toString()).setOnHidden(event -> {
-        for (InteractiveError error : errorList) {
-          if (!error.isWarning()) {
-            FxControl control = error.getControl();
-            if (control instanceof FxComponent) {
-              ((FxComponent) control).setError(error.getText());
-            }
-          }
-        }
-      });
-    }
-    else if (warnings.length() > 0) {
-      Fx.info(warnings.toString());
-    }
+    FxUtilities.getInstance().showValidationResults(ex, editor.getValidationMappers(), editor.getBinder());
   }
 
 }

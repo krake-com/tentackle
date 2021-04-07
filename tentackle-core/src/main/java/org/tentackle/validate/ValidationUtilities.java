@@ -43,6 +43,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -90,8 +91,8 @@ public class ValidationUtilities {
      * @param bindingPath the binding path
      */
     public MapResult(Binder binder, String bindingPath) {
-      this.binder = binder;
-      this.bindingPath = bindingPath;
+      this.binder = Objects.requireNonNull(binder);
+      this.bindingPath = Objects.requireNonNull(bindingPath).startsWith(".") ? bindingPath.substring(1) : bindingPath;
     }
 
     /**
@@ -242,7 +243,8 @@ public class ValidationUtilities {
    * @param object the validateable object
    */
   public void validate(Validateable object) {
-    List<ValidationResult> results = validate(object, "object", ValidationScopeFactory.getInstance().getAllScope());
+    List<ValidationResult> results = validate(object, getDefaultValidationPath(object),
+                                              ValidationScopeFactory.getInstance().getAllScope());
     if (hasFailed(results)) {
       throw new ValidationFailedException(resultsToString(results), results);
     }
@@ -629,7 +631,7 @@ public class ValidationUtilities {
    * Or much shorter directly as a message parameter in the validator:
    * <pre>message={ @('{0}_is_wrong', value) }</pre>
    * <p>
-   * This method will lookup a class ValidationBundle in the package or super-packages of where the validator is used
+   * This method will lookup a class named <code>ValidationBundle</code> in the package or super-packages of where the validator is used
    * and invokes the static method getString().
    *
    * @param clazz the class to look for <code>ValidationBundle</code> in the same package

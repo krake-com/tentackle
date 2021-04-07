@@ -17,11 +17,10 @@
  *
  */
 
-package org.tentackle.fx.rdc;
+package org.tentackle.fx;
 
 import javafx.scene.Node;
 
-import org.tentackle.fx.FxControl;
 import org.tentackle.validate.ValidationResult;
 
 /**
