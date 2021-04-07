@@ -17,9 +17,8 @@
  *
  */
 
-package org.tentackle.fx.rdc;
+package org.tentackle.fx;
 
-import org.tentackle.fx.FxControl;
 import org.tentackle.validate.ValidationResult;
 
 /**

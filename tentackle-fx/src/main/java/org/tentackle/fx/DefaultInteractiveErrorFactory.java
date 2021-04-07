@@ -17,12 +17,11 @@
  *
  */
 
-package org.tentackle.fx.rdc;
+package org.tentackle.fx;
 
 import org.tentackle.bind.Binder;
 import org.tentackle.bind.Binding;
 import org.tentackle.common.Service;
-import org.tentackle.fx.FxControl;
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.validate.ValidationMapper;
 import org.tentackle.validate.ValidationResult;
