@@ -27,7 +27,8 @@ import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.pdo.PersistentDomainObject;
 
 /**
- * A PDO tree cell.
+ * A PDO table cell.<br>
+ * Used for cells <em>containing</em> a PDO.
  *
  * @author harald
  * @param <S> the table row's type
@@ -44,12 +45,7 @@ public class PdoTableCell<S,T extends PersistentDomainObject<T>> extends FxTable
    */
   public PdoTableCell(TableColumnConfiguration<S,T> columnConfiguration) {
     super(columnConfiguration);
-
-    addEventHandler(MouseEvent.ANY, (MouseEvent event) -> {
-      if (event.isPopupTrigger()) {
-        showContextMenu(event);
-      }
-    });
+    addEventHandler(MouseEvent.ANY, this::showContextMenu);
   }
 
   @Override
@@ -70,16 +66,18 @@ public class PdoTableCell<S,T extends PersistentDomainObject<T>> extends FxTable
    *
    * @param event the mouse event
    */
-  public void showContextMenu(MouseEvent event) {
-    if (contextMenu != null) {
-      contextMenu.hide();
-    }
-    if (getTableView().getContextMenu() == null) {
-      contextMenu = PdoContextMenuFactory.getInstance().create(this);
+  private void showContextMenu(MouseEvent event) {
+    if (event.isPopupTrigger()) {
       if (contextMenu != null) {
-        event.consume();
-        contextMenu.setOnHidden(e -> contextMenu = null);   // -> GC
-        contextMenu.show(this, event.getScreenX(), event.getScreenY());
+        contextMenu.hide();
+      }
+      if (getTableView().getContextMenu() == null) {
+        contextMenu = PdoContextMenuFactory.getInstance().create(this);
+        if (contextMenu != null) {
+          event.consume();
+          contextMenu.setOnHidden(e -> contextMenu = null);   // -> GC
+          contextMenu.show(this, event.getScreenX(), event.getScreenY());
+        }
       }
     }
   }

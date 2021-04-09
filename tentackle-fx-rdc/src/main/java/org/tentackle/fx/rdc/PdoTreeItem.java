@@ -22,13 +22,12 @@ package org.tentackle.fx.rdc;
 import javafx.collections.ObservableList;
 import javafx.scene.control.TreeItem;
 
+import org.tentackle.fx.FxUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Tree item for a PDO.
@@ -153,13 +152,14 @@ public class PdoTreeItem<T extends PersistentDomainObject<T>> extends TreeItem<T
 
 
   /**
-   * Expands this and all child tree items.
+   * Expands this and all child tree items.<br>
+   * If the item is already expanded, the item and all child items will be collapsed before all is expanded again.
    */
   public void expand() {
     if (isExpanded()) {
       collapse();
     }
-    expand(new HashSet<>());
+    FxUtilities.getInstance().expandAll(this);
   }
 
 
@@ -167,37 +167,7 @@ public class PdoTreeItem<T extends PersistentDomainObject<T>> extends TreeItem<T
    * Collapses this and all child tree items.
    */
   public void collapse() {
-    collapse(new HashSet<>());
-  }
-
-
-  /**
-   * Recursively expands given item and all child items.
-   *
-   * @param pdoSet holds already expanded PDOs to detect recursion loops
-   */
-  protected void expand(Set<T> pdoSet) {
-    if (getGuiProvider().providesTreeChildObjects() && pdoSet.add(getPdo())) {
-      setExpanded(true);
-      for (TreeItem<T> childItem : getChildren()) {
-        ((PdoTreeItem<T>) childItem).expand(pdoSet);
-      }
-    }
-  }
-
-
-  /**
-   * Recursively collapses given item and all child items.
-   *
-   * @param pdoSet holds already collapsed PDOs to detect recursion loops
-   */
-  protected void collapse(Set<T> pdoSet) {
-    if (pdoSet.add(getPdo())) {
-      setExpanded(false);
-      for (TreeItem<T> childItem : getChildren()) {
-        ((PdoTreeItem<T>) childItem).collapse(pdoSet);
-      }
-    }
+    FxUtilities.getInstance().collapseAll(this);
   }
 
 }

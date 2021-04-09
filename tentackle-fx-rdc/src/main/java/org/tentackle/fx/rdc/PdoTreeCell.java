@@ -24,6 +24,7 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
+import javafx.scene.input.DragEvent;
 import javafx.scene.input.MouseEvent;
 
 import org.tentackle.common.StringHelper;
@@ -46,49 +47,10 @@ public class PdoTreeCell<T extends PersistentDomainObject<T>> extends TreeCell<T
    * Creates a pdo tree cell.
    */
   public PdoTreeCell() {
-    addEventHandler(MouseEvent.ANY, (MouseEvent event) -> {
-      if (event.isPopupTrigger()) {
-        showContextMenu(event);
-      }
-    });
-
-    setOnDragDetected(e -> {
-      if (provider != null && provider.createDragboard(this) != null) {
-        e.consume();
-      }
-    });
-
-    setOnDragOver(e -> {
-      if (e.getGestureSource() != this && provider != null && provider.isDragAccepted(e)) {
-        e.consume();
-      }
-    });
-
-    setOnDragDropped(e -> {
-      if (provider != null) {
-        provider.dropDragboard(e.getDragboard());
-        e.setDropCompleted(true);
-        T reloadedPdo = provider.getPdo().reload();
-        TreeItem<T> root = getTreeItem().getParent();
-        if (root != null) {
-          ObservableList<TreeItem<T>> items = root.getChildren();
-          int i=0;
-          for (TreeItem<T> item: items) {
-            if (reloadedPdo.equals(item.getValue())) {
-              TreeItem<T> reloadedItem = Rdc.createGuiProvider(reloadedPdo).createTreeItem();
-              items.set(i, reloadedItem);
-              getTreeView().refresh();
-              reloadedItem.setExpanded(true);
-              break;
-            }
-            i++;
-          }
-        }
-      }
-      else {
-        e.consume();
-      }
-    });
+    addEventHandler(MouseEvent.ANY, this::showContextMenu);
+    setOnDragDetected(this::handleDragDetected);
+    setOnDragOver(this::handleDragOver);
+    setOnDragDropped(this::handleDragDropped);
   }
 
   @Override
@@ -105,7 +67,7 @@ public class PdoTreeCell<T extends PersistentDomainObject<T>> extends TreeCell<T
       if (provider == null) {
         setText(null);
         setTooltip(null);
-        setGraphic(getTreeItem().getGraphic());
+        setGraphic(null);
       }
       else {
         PdoTreeItem<T> parentItem = getPdoTreeItem().getParentPdoItem();
@@ -122,32 +84,97 @@ public class PdoTreeCell<T extends PersistentDomainObject<T>> extends TreeCell<T
   }
 
   /**
-   * Shows the popup context menu for the current PDO.
-   *
-   * @param event the mouse event
-   */
-  public void showContextMenu(MouseEvent event) {
-    if (contextMenu != null) {
-      contextMenu.hide();
-    }
-    if (getTreeView().getContextMenu() == null) {
-      contextMenu = PdoContextMenuFactory.getInstance().create(this);
-      if (contextMenu != null) {
-        event.consume();
-        contextMenu.setOnHidden(e -> contextMenu = null);   // -> GC
-        contextMenu.show(this, event.getScreenX(), event.getScreenY());
-      }
-    }
-  }
-
-
-  /**
    * Gets the PDO tree item.
    *
    * @return the PDO tree item
    */
   public PdoTreeItem<T> getPdoTreeItem() {
     return (PdoTreeItem<T>) getTreeItem();    // getTreeItem is final :(
+  }
+
+  /**
+   * Gets the GUI provider.
+   *
+   * @return the provider, null if the items value (the PDO) is null
+   */
+  protected GuiProvider<T> getGuiProvider() {
+    return provider;
+  }
+
+
+  /**
+   * Handles the drag detected mouse event.
+   *
+   * @param event the mouse event after drag has been detected
+   */
+  protected void handleDragDetected(MouseEvent event) {
+    if (provider != null && provider.createDragboard(this) != null) {
+      event.consume();
+    }
+  }
+
+  /**
+   * Handles the drag-over event.
+   *
+   * @param event the drag event
+   */
+  protected void handleDragOver(DragEvent event) {
+    if (event.getGestureSource() != this && provider != null && provider.isDragAccepted(event)) {
+      event.consume();
+    }
+  }
+
+  /**
+   * Handles the drag-dropped event.
+   *
+   * @param event the drag event
+   */
+  protected void handleDragDropped(DragEvent event) {
+    if (provider != null) {
+      provider.dropDragboard(event.getDragboard());
+      event.setDropCompleted(true);
+      T reloadedPdo = provider.getPdo().reload();
+      TreeItem<T> root = getTreeItem().getParent();
+      if (root != null) {
+        ObservableList<TreeItem<T>> items = root.getChildren();
+        int i=0;
+        for (TreeItem<T> item: items) {
+          if (reloadedPdo.equals(item.getValue())) {
+            TreeItem<T> reloadedItem = Rdc.createGuiProvider(reloadedPdo).createTreeItem();
+            items.set(i, reloadedItem);
+            getTreeView().refresh();
+            reloadedItem.setExpanded(true);
+            break;
+          }
+          i++;
+        }
+      }
+    }
+    else {
+      event.consume();
+    }
+  }
+
+
+  /**
+   * Shows the popup context menu for the current PDO.
+   *
+   * @param event the mouse event
+   */
+  private void showContextMenu(MouseEvent event) {
+    if (event.isPopupTrigger()) {
+      if (contextMenu != null) {
+        contextMenu.hide();
+      }
+      if (getTreeView().getContextMenu() == null) {
+        contextMenu = PdoContextMenuFactory.getInstance().create(this);
+        if (contextMenu != null) {
+          event.consume();
+          contextMenu.setOnHidden(e -> contextMenu = null);   // -> GC
+          contextMenu.show(this, event.getScreenX(), event.getScreenY());
+        }
+      }
+    }
   }
 
 }

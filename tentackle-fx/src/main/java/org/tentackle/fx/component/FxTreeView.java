@@ -21,7 +21,11 @@ package org.tentackle.fx.component;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.collections.ObservableList;
+import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxContainer;
@@ -51,6 +55,55 @@ public class FxTreeView<T> extends TreeView<T> implements FxComponent {
    */
   public FxTreeView() {
     super();
+    addEventFilter(KeyEvent.ANY, this::filterDangerousKeys);
+  }
+
+  /**
+   * Filters dangerous keys.<br>
+   * Since the TreeViewBehaviour is private, we cannot modify the input map and filter the keys before
+   * they reach the key event handler.
+   *
+   * @param event the key event
+   */
+  protected void filterDangerousKeys(KeyEvent event) {
+    if (event.getCode() == KeyCode.MULTIPLY) {
+      // The handler expands all nodes recursively.
+      // This is dangerous and may cause an out-of-memory in case of node loops!
+      event.consume();
+      // Use safe impl instead
+      if (event.getEventType() == KeyEvent.KEY_PRESSED) {
+        if (event.isShiftDown()) {
+          collapseAll();
+        }
+        else {
+          expandAll();
+        }
+      }
+    }
+  }
+
+  /**
+   * Expands all nodes.
+   */
+  public void expandAll() {
+    FxUtilities.getInstance().expandAll(getRoot());
+  }
+
+  /**
+   * Collapses all nodes.
+   */
+  public void collapseAll() {
+    if (isShowRoot()) {
+      scrollTo(0);
+      FxUtilities.getInstance().collapseAll(getRoot());
+    }
+    else {
+      ObservableList<TreeItem<T>> children = getRoot().getChildren();
+      if (children != null && !children.isEmpty()) {
+        scrollTo(0);
+        FxUtilities.getInstance().collapseAll(children);
+      }
+    }
   }
 
   /**

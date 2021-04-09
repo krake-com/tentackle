@@ -43,6 +43,7 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeTableCell;
 import javafx.scene.control.TreeTableColumn;
 import javafx.scene.control.TreeTableView;
@@ -91,6 +92,7 @@ import java.io.StringWriter;
 import java.net.URI;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.StringTokenizer;
@@ -724,6 +726,86 @@ public class FxUtilities {
         }
       }
     });
+  }
+
+  /**
+   * Recursively expands all tree items while checking for recursion loops.<br>
+   * The default implementation in TreeViewBehavior and TreeTableViewBehavior is not only in a private API,
+   * but cannot be accessed from the applications at all. The default implementation is dangerous since
+   * it does not check for recursion loops. We replace it by mapping the event to this utility method.
+   *
+   * @param treeItem the item to start expansion
+   * @param <T> the item's value type
+   */
+  public <T> void expandAll(TreeItem<T> treeItem) {
+    if (treeItem != null && !treeItem.isLeaf()) {
+      T value = treeItem.getValue();
+      if (!isValueInParentPath(treeItem)) {
+        treeItem.setExpanded(true);
+        ObservableList<TreeItem<T>> children = treeItem.getChildren();
+        if (children != null) {
+          for (TreeItem<T> childItem : children) {
+            expandAll(childItem);
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Checks whether one of the parents already contains the item's value.
+   *
+   * @param treeItem the tree item to check
+   * @param <T> the value's type
+   * @return true if value is in path
+   */
+  public <T> boolean isValueInParentPath(TreeItem<T> treeItem) {
+    boolean inPath = false;
+    T value = treeItem.getValue();
+    if (value != null) {
+      TreeItem<T> parentItem = treeItem.getParent();
+      while (parentItem != null) {
+        if (value.equals(parentItem.getValue())) {
+          inPath = true;
+          break;
+        }
+        parentItem = parentItem.getParent();
+      }
+    }
+    return inPath;
+  }
+
+  /**
+   * Recursively collapses all tree items.
+   *
+   * @param treeItem the item to start
+   * @param <T> the item's value type
+   */
+  public <T> void collapseAll(TreeItem<T> treeItem) {
+    if (treeItem != null && treeItem.isExpanded()) {
+      treeItem.setExpanded(false);
+      ObservableList<TreeItem<T>> children = treeItem.getChildren();
+      if (children != null) {
+        for (TreeItem<T> childItem : children) {
+          collapseAll(childItem);
+        }
+      }
+    }
+  }
+
+  /**
+   * Recursively collapses all tree items.
+   *
+   * @param treeItems the list of items to collapse
+   * @param <T> the item's value type
+   * @see #collapseAll(TreeItem)
+   */
+  public <T> void collapseAll(Collection<TreeItem<T>> treeItems) {
+    if (treeItems != null) {
+      for (TreeItem<T> treeItem : treeItems) {
+        collapseAll(treeItem);
+      }
+    }
   }
 
 
