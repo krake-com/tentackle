@@ -20,9 +20,10 @@
 package org.tentackle.fx.rdc.contextmenu;
 
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.TreeItem;
 
 import org.tentackle.fx.Fx;
-import org.tentackle.fx.rdc.GuiProvider;
+import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.rdc.PdoTreeCell;
 import org.tentackle.fx.rdc.PdoTreeContextMenuItem;
 import org.tentackle.fx.rdc.PdoTreeContextMenuItemService;
@@ -47,9 +48,9 @@ public class ExpandItem<T extends PersistentDomainObject<T>> extends MenuItem im
     super(RdcFxRdcBundle.getString(cell.getTreeItem().isExpanded() ? "EXPAND_AGAIN" : "EXPAND"),
           Fx.createImageView("expand"));
 
-    GuiProvider<T> provider = cell.getPdoTreeItem().getGuiProvider();
-    if (provider.providesTreeChildObjects()) {
-      setOnAction(e -> cell.getPdoTreeItem().expand());
+    TreeItem<T> treeItem = cell.getTreeItem();
+    if (treeItem != null && !treeItem.isLeaf()) {
+      setOnAction(e -> FxUtilities.getInstance().expandAll(treeItem));
     }
     else {
       setDisable(true);

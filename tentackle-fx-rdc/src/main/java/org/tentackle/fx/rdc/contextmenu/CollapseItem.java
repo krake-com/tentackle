@@ -20,8 +20,10 @@
 package org.tentackle.fx.rdc.contextmenu;
 
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.TreeItem;
 
 import org.tentackle.fx.Fx;
+import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.rdc.PdoTreeCell;
 import org.tentackle.fx.rdc.PdoTreeContextMenuItem;
 import org.tentackle.fx.rdc.PdoTreeContextMenuItemService;
@@ -44,8 +46,9 @@ public class CollapseItem<T extends PersistentDomainObject<T>> extends MenuItem 
    */
   public CollapseItem(PdoTreeCell<T> cell) {
     super(RdcFxRdcBundle.getString("COLLAPSE"), Fx.createImageView("collapse"));
-    if (cell.getTreeItem().isExpanded()) {
-      setOnAction(e -> cell.getPdoTreeItem().collapse());
+    TreeItem<T> treeItem = cell.getTreeItem();
+    if (treeItem != null && treeItem.isExpanded()) {
+      setOnAction(e -> FxUtilities.getInstance().collapseAll(treeItem));
     }
     else {
       setDisable(true);

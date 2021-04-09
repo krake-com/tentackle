@@ -30,6 +30,7 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeTableColumn;
 
 import org.tentackle.fx.Fx;
@@ -189,6 +190,37 @@ public class TablePopup<S> {
     this.columnMenuEnabled = columnMenuEnabled;
   }
 
+  /**
+   * Recursively expands the items of the treetable.
+   *
+   * @param selectedItem the selected item to start, null for whole treetable
+   */
+  public void expandTreeTable(TreeItem<S> selectedItem) {
+    if (treeTable != null) {
+      if (selectedItem != null) {
+        FxUtilities.getInstance().expandAll(selectedItem);
+      }
+      else {
+        treeTable.expandAll();
+      }
+    }
+  }
+
+  /**
+   * Recursively collapses the items of the treetable.
+   *
+   * @param selectedItem the selected item to start, null for whole treetable
+   */
+  public void collapseTreeTable(TreeItem<S> selectedItem) {
+    if (treeTable != null) {
+      if (selectedItem != null) {
+        FxUtilities.getInstance().collapseAll(selectedItem);
+      }
+      else {
+        treeTable.collapseAll();
+      }
+    }
+  }
 
   /**
    * Creates the context menu.
@@ -198,6 +230,19 @@ public class TablePopup<S> {
   public ContextMenu createContextMenu() {
 
     ContextMenu menu = new ContextMenu();
+
+    MenuItem expandItem;
+    MenuItem collapseItem;
+    if (treeTable != null) {
+      expandItem = new MenuItem();
+      menu.getItems().add(expandItem);
+      collapseItem = new MenuItem();
+      menu.getItems().add(collapseItem);
+    }
+    else {
+      expandItem = null;
+      collapseItem = null;
+    }
 
     ObservableList<TableColumn<S,?>> tableColumns = table == null ? null : table.getColumns();
     ObservableList<TreeTableColumn<S,?>> treeTableColumns = treeTable == null ? null : treeTable.getColumns();
@@ -289,6 +334,16 @@ public class TablePopup<S> {
                           table.getSelectionModel().getSelectedIndex();
       countLabel.setText(MessageFormat.format(RdcFxRdcBundle.getString("ROW {0} OF {1}"),
                                               selectedIndex + 1, items == null ? 0 : items.size()));
+
+      if (treeTable != null) {
+        TreeItem<S> selectedItem = treeTable.getSelectionModel().getSelectedItem();
+        expandItem.setOnAction(e -> expandTreeTable(selectedItem));
+        expandItem.setText(RdcFxRdcBundle.getString(selectedItem != null && selectedItem.isExpanded() ? "EXPAND_AGAIN" : "EXPAND"));
+        expandItem.setDisable(selectedItem != null && selectedItem.isLeaf());
+        collapseItem.setOnAction(e -> collapseTreeTable(selectedItem));
+        collapseItem.setText(RdcFxRdcBundle.getString("COLLAPSE"));
+        collapseItem.setDisable(selectedItem != null && !selectedItem.isExpanded());
+      }
 
       if (columnMenu != null) {
         columnMenu.getItems().clear();
