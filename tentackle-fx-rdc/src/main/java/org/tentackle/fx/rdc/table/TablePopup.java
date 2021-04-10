@@ -238,6 +238,7 @@ public class TablePopup<S> {
       menu.getItems().add(expandItem);
       collapseItem = new MenuItem();
       menu.getItems().add(collapseItem);
+      menu.getItems().add(new SeparatorMenuItem());
     }
     else {
       expandItem = null;
