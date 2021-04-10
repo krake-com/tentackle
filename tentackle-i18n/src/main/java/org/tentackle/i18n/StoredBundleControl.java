@@ -157,8 +157,7 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
             @Override
             public void dataChanged(ModificationEvent ev) {
               BundleFactory.getInstance().clearCache();
-              // the PdoCache in StoredBundlePersistenceImpl is a non-preloading cache, i.e.
-              // only the changed or added bundles are effectively reloaded from the database.
+              // the PdoCache in StoredBundlePersistenceImpl is a preloading cache
             }
           });
           listenerRegistered = true;
