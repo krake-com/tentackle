@@ -31,7 +31,6 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.session.ModificationTracker;
-import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
 
@@ -197,7 +196,7 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
     catch (MalformedURLException mx) {
       getLog().error("cannot create project classloader", mx);
     }
-    catch (PersistenceException rex) {
+    catch (RuntimeException rex) {
       throw new MojoExecutionException("processing the bundles failed", rex);
     }
 
