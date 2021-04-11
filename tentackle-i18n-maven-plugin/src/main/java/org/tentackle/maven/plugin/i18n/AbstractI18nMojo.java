@@ -167,29 +167,32 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
 
       ClassLoader classLoader = new ProjectClassLoader((URLClassLoader) getClass().getClassLoader(), classpathElements);
 
-      // for all annotations like @Bundle or @FxControllerService (need a META-INF/services file!)
-      for (BundleSupport bundleSupport : BundleSupport.getBundles(classLoader)) {
-        String bundleName = bundleSupport.getBundleName();
-        String suffix = null;
-        String resourceName = bundleName;
-        Iterator<String> iter = localeSuffixes.iterator();
-        for (; ; ) {
-          if (suffix != null) {
-            resourceName = bundleName + "_" + suffix;
-          }
-          resourceName = resourceName.replace('.','/' ) + Constants.PROPS_EXTENSION;
-          if (verbosityLevel.isDebug()) {
-            getLog().debug("processing " + resourceName);
-          }
-          processBundle(classLoader, bundleName, suffix, resourceName);
-          if (iter.hasNext()) {
-            suffix = iter.next();
-          }
-          else {
-            break;
+      session.transaction(() -> {   // within tx to minimize cache reloads in running application servers
+        // for all annotations like @Bundle or @FxControllerService (need a META-INF/services file!)
+        for (BundleSupport bundleSupport : BundleSupport.getBundles(classLoader)) {
+          String bundleName = bundleSupport.getBundleName();
+          String suffix = null;
+          String resourceName = bundleName;
+          Iterator<String> iter = localeSuffixes.iterator();
+          for (;;) {
+            if (suffix != null) {
+              resourceName = bundleName + "_" + suffix;
+            }
+            resourceName = resourceName.replace('.', '/') + Constants.PROPS_EXTENSION;
+            if (verbosityLevel.isDebug()) {
+              getLog().debug("processing " + resourceName);
+            }
+            processBundle(classLoader, bundleName, suffix, resourceName);
+            if (iter.hasNext()) {
+              suffix = iter.next();
+            }
+            else {
+              break;
+            }
           }
         }
-      }
+        return null;
+      });
     }
     catch (MalformedURLException mx) {
       getLog().error("cannot create project classloader", mx);
