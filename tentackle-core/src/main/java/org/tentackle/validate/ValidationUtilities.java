@@ -649,12 +649,9 @@ public class ValidationUtilities {
       }
       // find package of given object
       String packageName = ReflectionHelper.getPackageName(clazz);
-      if (packageName == null) {
-        throw new IllegalArgumentException(clazz + " is not within a package");
-      }
 
       // go up the package hierarchy until a class ValidationBundle is found
-      for(;;) {
+      for (;;) {
         Class<?> bundleClass = null;
         try {
           String bundleName = packageName + (packageName.isEmpty() ? "" : ".") + "ValidationBundle";
@@ -662,8 +659,7 @@ public class ValidationUtilities {
           // class must contain a public static method getString(String.class)
           Method bundleMethod = bundleClass.getDeclaredMethod("getString", String.class);
           if (!bundleMethod.getReturnType().equals(String.class)) {
-            throw new ValidationRuntimeException(
-                    bundleClass.getName() + "." + bundleMethod.getName() + " does not return a String");
+            throw new ValidationRuntimeException(bundleClass.getName() + "." + bundleMethod.getName() + " does not return a String");
           }
           if (!Modifier.isStatic(bundleMethod.getModifiers())) {
             throw new ValidationRuntimeException(bundleClass.getName() + "." + bundleMethod.getName() + " is not static");

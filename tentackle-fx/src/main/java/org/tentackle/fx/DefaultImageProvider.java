@@ -62,7 +62,8 @@ public class DefaultImageProvider implements ImageProvider {
    */
   public DefaultImageProvider() {
     imageMap = new ConcurrentHashMap<>();
-    imagePath = "/" + ReflectionHelper.getPackageName(getClass()).replace('.', '/') + "/images/";
+    String pkgPath = ReflectionHelper.getPackagePathName(getClass());
+    imagePath = ("/".equals(pkgPath) ? "" : pkgPath) + "/images/";
   }
 
 
