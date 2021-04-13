@@ -66,16 +66,31 @@ public final class ReflectionHelper {
   }
 
 
+  /**
+   * Returns the absolute path name of the package of a class.<br>
+   * Example:
+   * <pre>
+   *   com.example.myapp.Blah -&gt; "/com/example/myapp"
+   * </pre>
+   *
+   * @param clazz the class
+   * @return the package path name, "/" if class is in the root package
+   */
+  public static String getPackagePathName(Class<?> clazz) {
+    String pkgName = getPackageName(clazz);
+    return "/" + pkgName.replace('.', '/');
+  }
+
 
   /**
    * Gets the package name.
    *
    * @param str the classname
-   * @return the package name, null if no package
+   * @return the package name, "" if no package
    */
   public static String getPackageName(String str) {
     int ndx = str.lastIndexOf('.');
-    return ndx > 0 ? str.substring(0, ndx) : null;
+    return ndx > 0 ? str.substring(0, ndx) : "";
   }
 
 
@@ -83,7 +98,7 @@ public final class ReflectionHelper {
    * Gets the package name.
    *
    * @param clazz the class
-   * @return the package name, null if no package
+   * @return the package name, "" if no package
    */
   public static String getPackageName(Class<?> clazz) {
     return getPackageName(clazz.getName());

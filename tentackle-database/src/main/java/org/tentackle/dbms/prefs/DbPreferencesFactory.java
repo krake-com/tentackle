@@ -24,6 +24,7 @@ import org.tentackle.dbms.prefs.DbPreferencesOperation.RefreshInfo;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.prefs.PersistedPreferencesFactory;
+import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.ModificationEvent;
 import org.tentackle.session.ModificationEventDetail;
 import org.tentackle.session.ModificationListenerAdapter;
@@ -410,7 +411,6 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     }
   }
 
-
   /**
    * Flushes a node and all of its subnodes to the backing store.
    *
@@ -444,6 +444,80 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     }
   }
 
+  /**
+   * Gets the root node for given user and all of its subnodes and keys at once.
+   *
+   * @param db the oprional db, null if request a db temporarily
+   * @param user the username, null or empty if system user
+   * @return the root node, never null
+   */
+  public synchronized DbPreferences getRootTree(Db db, String user) {
+    String key = user == null ? "" : user;
+    Root root = roots.get(key);
+    if (root == null) {
+      boolean needRelease = false;
+      if (db == null) {
+        db = requestDb(true, false);
+        needRelease = true;
+      }
+      try {
+        root = new Root(new DbPreferencesOperation(db).loadRootTree(user, !db.isRemote()));
+        roots.put(key, root);
+      }
+      finally {
+        if (needRelease) {
+          releaseDb(db);
+        }
+      }
+    }
+    return root.node;
+  }
+
+  /**
+   * Checks all preferences and tries to fix if possible.<br>
+   * The method is provided since {@link DbPreferencesNode} and {@link DbPreferencesKey} provide no referential integrity
+   * via database-enforced foreign keys, but only at application level.<br>
+   * Invoke this method, whenever the database has been modified manually via SQL.
+   *
+   * @param db the session (must be local)
+   */
+  public void checkAllPreferences(Db db) {
+    db.assertNotRemote();   // must be a direct JDBC link
+    db.transaction(() -> {
+      Map<Long, DbPreferencesNode> nodeMap = new HashMap<>();   // map ID:Node
+      Set<DbPreferencesNode> processedNodes = new HashSet<>();  // already processed nodes
+      Collection<DbPreferencesNode> allNodes = new DbPreferencesNode(db).selectAllObjects();
+      Collection<DbPreferencesKey> allKeys = new DbPreferencesKey(db).selectAllObjects();
+      LOGGER.info("processing {0} nodes and {1} keys", allNodes.size(), allKeys.size());
+      for (DbPreferencesNode node : allNodes) {
+        nodeMap.put(node.getId(), node);
+      }
+      processPreferences(processedNodes, nodeMap, allKeys);
+      allNodes.removeAll(processedNodes);
+      for (DbPreferencesNode node: allNodes) {
+        LOGGER.severe("orphan node found: {0}", node);
+      }
+      for (DbPreferencesKey key: allKeys) {
+        LOGGER.severe("oprhan key found: {0}", key);
+      }
+      return null;
+    });
+  }
+
+
+  /**
+   * Returns the absolute path name of the node corresponding to the package of the specified object.
+   *
+   * @param clazz the class
+   * @return the path name
+   * @throws IllegalArgumentException if the package has no preferences node associated with it
+   */
+  protected String nodeName(Class<?> clazz) {
+    if (clazz.isArray()) {
+      throw new IllegalArgumentException("Arrays have no associated preferences node");
+    }
+    return ReflectionHelper.getPackagePathName(clazz);
+  }
 
   /**
    * Removes a root node of given node from the repository.
@@ -503,7 +577,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
           if (nodeExpireSet != null) {
             // figure out roots to update
             List<DbPreferencesNode> prefNodes =
-                    new DbPreferencesNode(db).selectObjectsWithExpiredTableSerials(nodeTableSerial);
+                new DbPreferencesNode(db).selectObjectsWithExpiredTableSerials(nodeTableSerial);
             if (prefNodes.size() == nodeExpireSet.size()) {
               for (DbPreferencesNode prefNode : prefNodes) {
                 changedNodes.add(prefNode);
@@ -521,7 +595,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
           if (!someRemoved && keyExpireSet != null) {
             // update keys
             List<DbPreferencesKey> prefKeys =
-                    new DbPreferencesKey(db).selectObjectsWithExpiredTableSerials(keyTableSerial);
+                new DbPreferencesKey(db).selectObjectsWithExpiredTableSerials(keyTableSerial);
             if (prefKeys.size() == keyExpireSet.size()) {
               for (DbPreferencesKey prefKey : prefKeys) {
                 changedKeys.add(prefKey);
@@ -568,6 +642,51 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
         ModificationTracker.getInstance().countModification(db, TRACKER_NAME);
       }
     }
+  }
+
+  /**
+   * Requests for a session to work with.<br>
+   * By default, the thread-local session is used.
+   * If there is no default session, the mod tracker's session is used.
+   * <p>
+   * In preparation for replication layers such as poolkeeper,
+   * a requested session must be released after use.
+   *
+   * @param forUser true if need a user session (no modtracker fallback)
+   * @param forWrite true if the session is used for writing (flush), else read
+   * @return the session
+   */
+  protected Db requestDb(boolean forUser, boolean forWrite) {
+    Db db = (Db) Session.getCurrentSession();
+    if (db == null) {
+      if (forUser) {
+        throw new PersistenceException("no thread local session for " + Thread.currentThread());
+      }
+      // no thread-local session: use the one from the mod tracker
+      db = (Db) ModificationTracker.getInstance().getSession();
+      if (db == null) {
+        throw new PersistenceException("no session for " + ModificationTracker.getInstance());
+      }
+    }
+    return db;
+  }
+
+  /**
+   * Releases the session after use.
+   *
+   * @param db the session
+   */
+  protected void releaseDb(Db db) {
+    // default does nothing
+  }
+
+  /**
+   * Gets the current user name.
+   *
+   * @return the username
+   */
+  protected String getUserName() {
+    return requestDb(true, false).getSessionInfo().getUserName();
   }
 
 
@@ -681,7 +800,6 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     }
   }
 
-
   /**
    * Updates a root node.
    *
@@ -755,104 +873,6 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     root.countUpdate();
   }
 
-
-  /**
-   * Requests for a session to work with.<br>
-   * By default, the thread-local session is used.
-   * If there is no default session, the mod tracker's session is used.
-   * <p>
-   * In preparation for replication layers such as poolkeeper,
-   * a requested session must be released after use.
-   *
-   * @param forUser true if need a user session (no modtracker fallback)
-   * @param forWrite true if the session is used for writing (flush), else read
-   * @return the session
-   */
-  protected Db requestDb(boolean forUser, boolean forWrite) {
-    Db db = (Db) Session.getCurrentSession();
-    if (db == null) {
-      if (forUser) {
-        throw new PersistenceException("no thread local session for " + Thread.currentThread());
-      }
-      // no thread-local session: use the one from the mod tracker
-      db = (Db) ModificationTracker.getInstance().getSession();
-      if (db == null) {
-        throw new PersistenceException("no session for " + ModificationTracker.getInstance());
-      }
-    }
-    return db;
-  }
-
-  /**
-   * Releases the session after use.
-   *
-   * @param db the session
-   */
-  protected void releaseDb(Db db) {
-    // default does nothing
-  }
-
-  /**
-   * Gets the current user name.
-   *
-   * @return the username
-   */
-  protected String getUserName() {
-    return requestDb(true, false).getSessionInfo().getUserName();
-  }
-
-
-  /**
-   * Gets the root node for given user and all of its subnodes and keys at once.
-   *
-   * @param db the oprional db, null if request a db temporarily
-   * @param user the username, null or empty if system user
-   * @return the root node, never null
-   */
-  public synchronized DbPreferences getRootTree(Db db, String user) {
-    String key = user == null ? "" : user;
-    Root root = roots.get(key);
-    if (root == null) {
-      boolean needRelease = false;
-      if (db == null) {
-        db = requestDb(true, false);
-        needRelease = true;
-      }
-      try {
-        root = new Root(new DbPreferencesOperation(db).loadRootTree(user, !db.isRemote()));
-        roots.put(key, root);
-      }
-      finally {
-        if (needRelease) {
-          releaseDb(db);
-        }
-      }
-    }
-    return root.node;
-  }
-
-
-
-  /**
-   * Returns the absolute path name of the node corresponding to the package of the specified object.
-   *
-   * @param clazz the class
-   * @return the path name
-   * @throws IllegalArgumentException if the package has node preferences node associated with it.
-   */
-  private String nodeName(Class<?> clazz) {
-    if (clazz.isArray()) {
-      throw new IllegalArgumentException("Arrays have no associated preferences node");
-    }
-    String className = clazz.getName();
-    int pkgEndIndex = className.lastIndexOf('.');
-    if (pkgEndIndex < 0) {
-      return "/<unnamed>";
-    }
-    String packageName = className.substring(0, pkgEndIndex);
-    return "/" + packageName.replace('.', '/');
-  }
-
   /**
    * Adds all subnodes and keys of a node to given maps.
    *
@@ -900,38 +920,6 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     for (DbPreferences child: node.getChilds()) {
       addNodeToMaps(child, idNodeMap, pathNodeMap);
     }
-  }
-
-
-  /**
-   * Checks all preferences and tries to fix if possible.<br>
-   * The method is provided since {@link DbPreferencesNode} and {@link DbPreferencesKey} provide no referential integrity
-   * via database-enforced foreign keys, but only at application level.<br>
-   * Invoke this method, whenever the database has been modified manually via SQL.
-   *
-   * @param db the session (must be local)
-   */
-  public void checkAllPreferences(Db db) {
-    db.assertNotRemote();   // must be a direct JDBC link
-    db.transaction(() -> {
-      Map<Long, DbPreferencesNode> nodeMap = new HashMap<>();   // map ID:Node
-      Set<DbPreferencesNode> processedNodes = new HashSet<>();  // already processed nodes
-      Collection<DbPreferencesNode> allNodes = new DbPreferencesNode(db).selectAllObjects();
-      Collection<DbPreferencesKey> allKeys = new DbPreferencesKey(db).selectAllObjects();
-      LOGGER.info("processing {0} nodes and {1} keys", allNodes.size(), allKeys.size());
-      for (DbPreferencesNode node : allNodes) {
-        nodeMap.put(node.getId(), node);
-      }
-      processPreferences(processedNodes, nodeMap, allKeys);
-      allNodes.removeAll(processedNodes);
-      for (DbPreferencesNode node: allNodes) {
-        LOGGER.severe("orphan node found: {0}", node);
-      }
-      for (DbPreferencesKey key: allKeys) {
-        LOGGER.severe("oprhan key found: {0}", key);
-      }
-      return null;
-    });
   }
 
   private void processPreferences(Set<DbPreferencesNode> processedNodes, Map<Long, DbPreferencesNode> nodeMap,
