@@ -51,10 +51,23 @@ public interface PersistedPreferences {
    * <p>
    * Redirected to the {@link PersistedPreferencesFactory}.
    *
-   * @return the root preference node for the user.
+   * @return the root preference node for the user (system root, if {@link PersistedPreferencesFactory#isSystemOnly()})
+   * @see #userRootOnly()
    */
   static PersistedPreferences userRoot() {
     return PersistedPreferencesFactory.getInstance().getUserRoot();
+  }
+
+  /**
+   * Returns the root preference node for the user.
+   * <p>
+   * Redirected to the {@link PersistedPreferencesFactory}.
+   *
+   * @return the root preference node for the user (always user space, even if {@link PersistedPreferencesFactory#isSystemOnly()})
+   * @see #userRoot()
+   */
+  static PersistedPreferences userRootOnly() {
+    return (PersistedPreferences) PersistedPreferencesFactory.getInstance().userRoot();
   }
 
   /**

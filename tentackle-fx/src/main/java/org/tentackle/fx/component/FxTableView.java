@@ -246,25 +246,50 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
   @SuppressWarnings("unchecked")
   public String copyToClipboard() {
     StringBuilder buf = new StringBuilder();
+    int lastRow = -1;
+    boolean cellInRowCopied = false;
     for (TablePosition<S,?> pos: getSelectionModel().getSelectedCells()) {
-      Object item = getColumns().get(pos.getColumn()).getCellData(pos.getRow());
-      if (item != null) {
-        String text = null;
-        // try to lookup the rendered text
-        for (Node c: lookupAll(".table-cell")) {    // all visible cells only
-          TableCell<?, ?> tc=(TableCell<?, ?>) c;
-          if (tc.getItem() == item) {   // == is ok here, must be the same instance!
-            text = tc.getText();
-            break;
+      int row = pos.getRow();
+      if (row >= 0) {
+        int colMin = pos.getColumn();
+        int colMax;
+        if (colMin >= 0) {
+          colMax = colMin + 1;
+        }
+        else {
+          colMin = 0;
+          colMax = getColumns().size();
+        }
+        if (buf.length() > 0 && lastRow >= 0 && lastRow != row) {
+          buf.append('\n');
+          cellInRowCopied = false;
+        }
+        for (int col = colMin; col < colMax; col++) {
+          TableColumn<S, ?> tableColumn = getColumns().get(col);
+          if (tableColumn.isVisible()) {
+            Object item = tableColumn.getCellData(row);
+            if (item != null) {
+              String text = null;
+              // try to lookup the rendered text
+              for (Node c : lookupAll(".table-cell")) {    // all visible cells only
+                TableCell<?, ?> tc = (TableCell<?, ?>) c;
+                if (tc.getItem() == item) {   // == is ok here, must be the same instance!
+                  text = tc.getText();
+                  break;
+                }
+              }
+              if (cellInRowCopied) {
+                buf.append('\t');
+              }
+              if (text == null) {
+                text = item.toString();   // fallback if no rendered text found
+              }
+              buf.append(text);
+              cellInRowCopied = true;
+            }
           }
         }
-        if (buf.length() > 0) {
-          buf.append('\t');
-        }
-        if (text == null) {
-          text = item.toString();   // fallback if no rendered text found
-        }
-        buf.append(text);
+        lastRow = row;
       }
     }
     if (buf.length() > 0) {

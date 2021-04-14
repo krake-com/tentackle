@@ -125,7 +125,7 @@ public class DefaultPreferencesFactory implements PersistedPreferencesFactory {
       synchronized (this) {
         root = userRoot;
         if (root == null) {
-          userRoot = systemRoot();
+          userRoot = isSystemOnly() ? systemRoot() : userRoot();
         }
       }
     }
