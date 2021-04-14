@@ -67,8 +67,8 @@ public class FileUtilities {
    * @return the selected file, null if aborted
    */
   public File selectFile(String prefName, String prefKey, String fileExtension, String fileType, Stage owner) {
-    // retrieve the last filename from userspace
-    PersistedPreferences prefs = PersistedPreferences.userRoot().node(prefName);
+    // retrieve the last filename from userspace (even if isSystemOnly!)
+    PersistedPreferences prefs = PersistedPreferences.userRootOnly().node(prefName);
     String lastName = prefs.get(prefKey, null);
 
     FileChooser fc = new FileChooser();

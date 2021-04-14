@@ -171,7 +171,7 @@ public class TableUtilities {
    */
   public <S> void toSpreadsheet(FxTableView<S> table, File file, boolean onlySelected) {
     List<S> items = onlySelected ? table.getSelectionModel().getSelectedItems() : table.getItems();
-    toSpreadsheet(table.getConfiguration().getColumnConfigurations(),file,items);
+    toSpreadsheet(table.getConfiguration().getColumnConfigurations(), file, items);
   }
 
   /**
@@ -188,16 +188,25 @@ public class TableUtilities {
   }
 
 
-  private <S> void toSpreadsheet(Collection<TableColumnConfiguration<S,?>> columnConfigurations, File file, List<S> items) {
+  /**
+   * Converts the column configurations to a spreadsheet file.
+   * @param columnConfigurations the column configurerations
+   * @param file the output file
+   * @param items the items to export
+   * @param <S> the row type
+   */
+  protected <S> void toSpreadsheet(Collection<TableColumnConfiguration<S,?>> columnConfigurations, File file, List<S> items) {
     try (PrintStream out = new PrintStream(new BufferedOutputStream(new FileOutputStream(file)))) {
       // write header
       int ndx = 0;
       for (TableColumnConfiguration<S, ?> tc : columnConfigurations) {
-        if (ndx > 0) {
-          out.append(',');
+        if (isColumnVisible(tc)) {
+          if (ndx > 0) {
+            out.append(',');
+          }
+          out.append(toCSV(tc.getDisplayedName()));
+          ndx++;
         }
-        out.append(toCSV(tc.getDisplayedName()));
-        ndx++;
       }
       out.append('\n');
 
@@ -205,18 +214,20 @@ public class TableUtilities {
       for (S item : items) {
         ndx = 0;
         for (TableColumnConfiguration<S, ?> tc : columnConfigurations) {
-          if (ndx > 0) {
-            out.append(',');
-          }
-          FxTableBinding<S, ?> binding = tc.getBinding();
-          if (binding != null) {
-            binding.setBoundRootObject(item);
-            Object value = binding.getModelValue();
-            if (value != null) {
-              out.append(toCSV(value.toString()));
+          if (isColumnVisible(tc)) {
+            if (ndx > 0) {
+              out.append(',');
             }
+            FxTableBinding<S, ?> binding = tc.getBinding();
+            if (binding != null) {
+              binding.setBoundRootObject(item);
+              Object value = binding.getModelValue();
+              if (value != null) {
+                out.append(toCSV(value.toString()));
+              }
+            }
+            ndx++;
           }
-          ndx++;
         }
         out.append('\n');
       }
@@ -226,6 +237,15 @@ public class TableUtilities {
     }
   }
 
+  /**
+   * Returns whether a column is visible.
+   *
+   * @param columnConfiguration the column configuration
+   * @return true if visible
+   */
+  public boolean isColumnVisible(TableColumnConfiguration<?, ?> columnConfiguration) {
+    return columnConfiguration.getTableColumn().isVisible() && columnConfiguration.getTreeTableColumn().isVisible();
+  }
 
   /**
    * Exports a table to an XML file.
@@ -276,15 +296,17 @@ public class TableUtilities {
         hd.startElement("", "", name, atts);
 
         for (TableColumnConfiguration<S, ?> tc : columnConfigurations) {
-          String tag = tc.getName();
-          FxTableBinding<S, ?> binding = tc.getBinding();
-          if (binding != null) {
-            binding.setBoundRootObject(item);
-            Object value = binding.getModelValue();
-            String text = value == null ? "" : value.toString();
-            hd.startElement("", "", tag, atts);
-            hd.characters(text.toCharArray(), 0, text.length());
-            hd.endElement("", "", tag);
+          if (isColumnVisible(tc)) {
+            String tag = tc.getName();
+            FxTableBinding<S, ?> binding = tc.getBinding();
+            if (binding != null) {
+              binding.setBoundRootObject(item);
+              Object value = binding.getModelValue();
+              String text = value == null ? "" : value.toString();
+              hd.startElement("", "", tag, atts);
+              hd.characters(text.toCharArray(), 0, text.length());
+              hd.endElement("", "", tag);
+            }
           }
         }
 

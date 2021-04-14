@@ -16,14 +16,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.prefs;
 
 import org.tentackle.common.ServiceFactory;
 
-import java.util.prefs.Preferences;
 import java.util.prefs.PreferencesFactory;
-
 
 
 interface PersistedPreferencesFactoryHolder {
@@ -32,13 +29,13 @@ interface PersistedPreferencesFactoryHolder {
 
 
 /**
- * Factory for PersistedPreferences.
+ * Factory for {@link PersistedPreferences}.
  * <p>
- * Tentackle does not use the java.util.Preferences due to several implementation issues,
- * especially in EE containers.
+ * Tentackle does not use the {@link java.util.prefs.Preferences}.
  * Instead it provides an implementation that stores the preferences in the databases.
- * However, this implementation can be used as a drop-in replacement for the java.util.Preferences
- * so that third-party software using the preferences-API may use the database backing store as well.
+ * By default, {@link PersistedPreferences} and {@link java.util.prefs.Preferences} co-exist independently.
+ * However, the {@link PersistedPreferences} can be used as a drop-in replacement for the {@link java.util.prefs.Preferences},
+ * so that 3rd-party software using the preferences-API may use the database backing store as well.
  */
 public interface PersistedPreferencesFactory extends PreferencesFactory {
 
@@ -109,17 +106,18 @@ public interface PersistedPreferencesFactory extends PreferencesFactory {
   void setSystemOnly(boolean systemOnly);
 
   /**
-   * Returns the system root preference node. (Multiple calls on this method will return the same object reference.)
-   * <p>
+   * Returns the system root preference node.<br>
+   * Multiple calls on this method will return the same object reference.
+   *
    * @return the system root preference node
    */
   PersistedPreferences getSystemRoot();
 
   /**
-   * Returns the user root preference node corresponding to the calling user. In a server, the returned value will
-   * typically depend on some implicit client-context.
-   * <p>
-   * @return the user root preference node corresponding to the calling user
+   * Returns the user root preference node corresponding to the calling user.
+   *
+   * @return the user root preference node corresponding to the calling user, system root if isSystemOnly
+   * @see #isSystemOnly()
    */
   PersistedPreferences getUserRoot();
 
@@ -132,7 +130,7 @@ public interface PersistedPreferencesFactory extends PreferencesFactory {
    * @return the user preference node associated with the package of which
    * <code>c</code> is a member.
    *
-   * @see Preferences#userNodeForPackage(java.lang.Class)
+   * @see java.util.prefs.Preferences#userNodeForPackage(java.lang.Class)
    */
   PersistedPreferences userNodeForPackage(Class<?> c);
 
@@ -145,7 +143,7 @@ public interface PersistedPreferencesFactory extends PreferencesFactory {
    * @return the system preference node associated with the package of which
    * <code>c</code> is a member.
    *
-   * @see Preferences#systemNodeForPackage(java.lang.Class)
+   * @see java.util.prefs.Preferences#systemNodeForPackage(java.lang.Class)
    */
   PersistedPreferences systemNodeForPackage(Class<?> c);
 

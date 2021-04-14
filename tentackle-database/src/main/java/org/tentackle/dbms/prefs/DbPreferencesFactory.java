@@ -48,7 +48,6 @@ import java.util.prefs.NodeChangeEvent;
 import java.util.prefs.NodeChangeListener;
 import java.util.prefs.PreferenceChangeEvent;
 import java.util.prefs.PreferenceChangeListener;
-import java.util.prefs.Preferences;
 
 
 /**
@@ -259,15 +258,12 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
 
   @Override
   public DbPreferences getSystemRoot() {
-    return getRootTree(null, null);
+    return systemRoot();
   }
 
   @Override
   public DbPreferences getUserRoot() {
-    if (isSystemOnly()) {
-      return getSystemRoot();
-    }
-    return getRootTree(null, getUserName());
+    return isSystemOnly() ? systemRoot() : userRoot();
   }
 
   @Override
@@ -281,13 +277,13 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   }
 
   @Override
-  public Preferences systemRoot() {
-    return getSystemRoot();
+  public DbPreferences systemRoot() {
+    return getRootTree(null, null);
   }
 
   @Override
-  public Preferences userRoot() {
-    return getUserRoot();
+  public DbPreferences userRoot() {
+    return getRootTree(null, getUserName());
   }
 
 
