@@ -248,17 +248,9 @@ public class TablePopup<S> {
     ObservableList<TableColumn<S,?>> tableColumns = table == null ? null : table.getColumns();
     ObservableList<TreeTableColumn<S,?>> treeTableColumns = treeTable == null ? null : treeTable.getColumns();
 
-    final Menu columnMenu;
-
-    if (isColumnMenuEnabled())  {
-      // build columns-menu
-      columnMenu = new Menu();
-      columnMenu.setText(RdcFxRdcBundle.getString("COLUMNS..."));
-      menu.getItems().add(columnMenu);
-    }
-    else {
-      columnMenu = null;
-    }
+    final Menu columnMenu = new Menu();
+    columnMenu.setText(RdcFxRdcBundle.getString("COLUMNS..."));
+    menu.getItems().add(columnMenu);
 
     MenuItem autoWidthItem = new MenuItem();
     autoWidthItem.setText(RdcFxRdcBundle.getString("AUTO ADJUST"));
@@ -346,7 +338,7 @@ public class TablePopup<S> {
         collapseItem.setDisable(selectedItem != null && !selectedItem.isExpanded());
       }
 
-      if (columnMenu != null) {
+      if (isColumnMenuEnabled()) {
         columnMenu.getItems().clear();
         boolean allVisible = true;
         boolean allInvisible = true;
@@ -414,6 +406,10 @@ public class TablePopup<S> {
             columnMenu.getItems().add(hideAllItem);
           }
         }
+        columnMenu.setVisible(true);
+      }
+      else {
+        columnMenu.setVisible(false);
       }
     });
 
