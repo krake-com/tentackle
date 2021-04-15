@@ -39,6 +39,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
@@ -72,9 +73,11 @@ import org.tentackle.misc.Holder;
 import org.tentackle.pdo.PersistentDomainObject;
 
 import java.text.MessageFormat;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -142,6 +145,10 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   private T createdPdo;                         // != null if new PDO has been created in modal mode
   private Consumer<T> doubleClickHandler;       // handler to be invoked on double-click in non-modal mode
   private String noDataMessage;                 // optional message to be displayed when there is no data in the table
+  private ImageView searchImage;                // replacing search
+  private ImageView searchPlusImage;            // adding search
+  private boolean shiftdown;                    // true if shift key is down
+  private boolean mouseOverFindButton;          // true if mouse over findButton
 
 
   /**
@@ -530,7 +537,21 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    * @param pdos the found PDO, null or empty to clear
    */
   public void setItems(List<T> pdos) {
-    items = new SortedList<>(filterViewablePdos(pdos));
+    ObservableList<T> viewablePdos = filterViewablePdos(pdos);
+    if (shiftdown && items != null && !items.isEmpty() && !viewablePdos.isEmpty()) {
+      // append to the item list if not already in the list
+      Set<T> itemSet = new HashSet<>(items);
+      ObservableList<T> unsortedItems = FXCollections.observableArrayList(items.getSource());
+      for (T pdo : viewablePdos) {
+        if (!itemSet.contains(pdo)) {
+          unsortedItems.add(pdo);
+        }
+      }
+      items = new SortedList<>(unsortedItems);
+    }
+    else {
+      items = new SortedList<>(viewablePdos);
+    }
     items.comparatorProperty().bind(tableView.comparatorProperty());
     countLabel.setText(Integer.toString(items.size()));
 
@@ -788,8 +809,24 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     filterButton.setOnAction(e -> filterResult());
     filterField.setOnAction(e -> filterButton.doClick());
 
-    findButton.setGraphic(Fx.createImageView("search"));
+    searchImage = Fx.createImageView("search");
+    searchPlusImage = Fx.createImageView("add");
+    findButton.setGraphic(searchImage);
+    findButton.setOnMouseEntered(event -> {
+      mouseOverFindButton = true;
+      updateFindButton();
+    });
+    findButton.setOnMouseExited(event -> {
+      mouseOverFindButton = false;
+      updateFindButton();
+    });
     findButton.setOnAction(e -> find());
+    findButton.setOnMousePressed(event -> {
+      // onAction will not be triggered if shift-key is down during mouse click
+      if (shiftdown) {
+        findButton.doClick();
+      }
+    });
 
     newButton.setGraphic(Fx.createImageView("new"));
     newButton.setOnAction(e -> createPdo());
@@ -813,6 +850,10 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
 
         cancel();
       }
+      toggleShiftKey(event.isShiftDown());
+    });
+    getView().addEventFilter(KeyEvent.KEY_RELEASED, (KeyEvent event) -> {
+      toggleShiftKey(event.isShiftDown());
     });
   }
 
@@ -873,6 +914,22 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     SelectionMode selectionMode = singleSelectMode ? SelectionMode.SINGLE : SelectionMode.MULTIPLE;
     tableView.getSelectionModel().setSelectionMode(selectionMode);
     treeView.getSelectionModel().setSelectionMode(selectionMode);
+  }
+
+  private void toggleShiftKey(boolean shiftdown) {
+    if (this.shiftdown != shiftdown) {
+      this.shiftdown = shiftdown;
+      if (mouseOverFindButton || !shiftdown) {
+        updateFindButton();
+      }
+    }
+  }
+
+  private void updateFindButton() {
+    ImageView image = shiftdown ? searchPlusImage : searchImage;
+    if (image != findButton.getGraphic()) {
+      findButton.setGraphic(image);
+    }
   }
 
 }
