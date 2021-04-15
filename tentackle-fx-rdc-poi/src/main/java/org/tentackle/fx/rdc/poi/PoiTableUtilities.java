@@ -61,16 +61,16 @@ import java.util.List;
 public class PoiTableUtilities extends TableUtilities {
 
   private static final String SPREADSHEET_EXTENSION = ".xls";
-  private static final String LAST_SPREADSHEET_PREFIX = "/_lastXlsNames_";
+  private static final String LAST_SPREADSHEET_PREFIX = "lastXlsNames/";
   private static final String SPREADSHEET_KEY = "path";
 
 
   @Override
   public File selectSpreadsheetFile(String tableName, Stage owner) {
     return FileUtilities.getInstance().selectFile(
-                  StringHelper.trimRight(LAST_SPREADSHEET_PREFIX + tableName, '/'),
-                  SPREADSHEET_KEY, SPREADSHEET_EXTENSION,
-                  RdcFxRdcBundle.getString("SPREADSHEET FILE"), owner);
+        StringHelper.trimRight(LAST_SPREADSHEET_PREFIX + tableName, '/'),
+        SPREADSHEET_KEY, SPREADSHEET_EXTENSION,
+        RdcFxRdcBundle.getString("SPREADSHEET FILE"), owner);
   }
 
   @Override
