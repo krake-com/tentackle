@@ -21,16 +21,17 @@ package org.tentackle.fx.rdc;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
+import org.tentackle.app.AbstractApplication;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
+import org.tentackle.common.StringHelper;
 import org.tentackle.log.Logger;
-import org.tentackle.prefs.PersistedPreferences;
-import org.tentackle.prefs.PersistedPreferencesFactory;
 
 import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
 import java.util.prefs.BackingStoreException;
+import java.util.prefs.Preferences;
 
 interface FileUtilitiesHolder {
   FileUtilities INSTANCE = ServiceFactory.createService(FileUtilities.class);
@@ -67,8 +68,14 @@ public class FileUtilities {
    * @return the selected file, null if aborted
    */
   public File selectFile(String prefName, String prefKey, String fileExtension, String fileType, Stage owner) {
-    // retrieve the last filename from userspace (even if isSystemOnly!)
-    PersistedPreferences prefs = PersistedPreferences.userRootOnly().node(prefName);
+    // prefs stored in the database don't make sense in this case.
+    // the filename applies to a machine + user only!
+    Preferences prefs = Preferences.userRoot();
+    String applicationName = AbstractApplication.getRunningApplication().getName();
+    if (!StringHelper.isAllWhitespace(applicationName)) {
+      prefs = prefs.node(applicationName);
+    }
+    prefs = prefs.node(prefName);
     String lastName = prefs.get(prefKey, null);
 
     FileChooser fc = new FileChooser();
@@ -82,15 +89,16 @@ public class FileUtilities {
         selectedFile = new File(selectedFile.getPath() + fileExtension);
       }
       // remember the last filename in userspace
-      if (!PersistedPreferencesFactory.getInstance().isReadOnly()) {
-        prefs.put(prefKey, selectedFile.getAbsolutePath());
-        try {
-          prefs.flush();
-        }
-        catch (BackingStoreException bx) {
-          // does no harm if not succesful... (log only intentionally if level is FINE)
-          LOGGER.fine("saving filename to preferences failed", bx);
-        }
+      String filePath = selectedFile.getAbsolutePath();
+      prefs.put(prefKey, filePath);
+      try {
+        prefs.flush();
+      }
+      catch (BackingStoreException bx) {
+        // does no harm if not successful
+        LOGGER.warning("cannot save user preferences {0}", prefs.absolutePath());
+        // log stacktrace only if level is FINE
+        LOGGER.fine(filePath, bx);
       }
     }
     return selectedFile;

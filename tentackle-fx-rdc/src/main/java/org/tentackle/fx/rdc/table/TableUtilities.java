@@ -90,11 +90,11 @@ public class TableUtilities {
 
 
   private static final String SPREADSHEET_EXTENSION = ".csv";
-  private static final String LAST_SPREADSHEET_PREFIX = "/_lastSpreadsheetNames_";
+  private static final String LAST_SPREADSHEET_PREFIX = "lastCsvNames/";
   private static final String SPREADSHEET_KEY = "path";
 
   private static final String XML_EXTENSION = ".xml";
-  private static final String LAST_XML_PREFIX = "/_lastXmlNames_";
+  private static final String LAST_XML_PREFIX = "lastXmlNames/";
   private static final String XML_KEY = "path";
 
 
