@@ -64,7 +64,6 @@ import org.tentackle.fx.rdc.PdoController;
 import org.tentackle.fx.rdc.PdoEvent;
 import org.tentackle.fx.rdc.PdoFinder;
 import org.tentackle.fx.rdc.Rdc;
-import org.tentackle.fx.rdc.RdcFactory;
 import org.tentackle.fx.rdc.RdcRuntimeException;
 import org.tentackle.fx.rdc.crud.PdoCrud;
 import org.tentackle.fx.rdc.table.TablePopup;
@@ -328,7 +327,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
         }
       }
     });
-    TablePopup<T> tablePopup = RdcFactory.getInstance().createTablePopup(tableView, null, pdo.getPlural());
+    TablePopup<T> tablePopup = Rdc.createTablePopup(tableView, null, pdo.getPlural());
     tablePopup.loadPreferences();
 
     treeView = Fx.createNode(TreeView.class);

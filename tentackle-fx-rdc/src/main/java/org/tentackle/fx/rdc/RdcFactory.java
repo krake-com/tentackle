@@ -111,7 +111,7 @@ public interface RdcFactory {
   <S, T extends PersistentDomainObject<T>> PdoTableCell<S, T> createTableCell(TableColumnConfiguration<S, T> columnConfig);
 
   /**
-   * Creates a table popup.
+   * Creates a table popup for a table view.
    *
    * @param <S> the row type
    * @param table the table
@@ -122,7 +122,7 @@ public interface RdcFactory {
   <S> TablePopup<S> createTablePopup(FxTableView<S> table, String preferencesSuffix, String title);
 
   /**
-   * Creates a table popup.
+   * Creates a table popup for a tree table view.
    *
    * @param <S> the row type
    * @param treeTable the treetable

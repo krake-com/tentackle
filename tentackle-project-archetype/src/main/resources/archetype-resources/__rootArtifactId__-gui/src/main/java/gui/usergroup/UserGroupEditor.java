@@ -24,7 +24,6 @@ import org.tentackle.fx.component.FxTextArea;
 import org.tentackle.fx.component.FxTextField;
 import org.tentackle.fx.rdc.PdoEditor;
 import org.tentackle.fx.rdc.Rdc;
-import org.tentackle.fx.rdc.RdcFactory;
 import org.tentackle.fx.rdc.table.TablePopup;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
@@ -67,7 +66,7 @@ public class UserGroupEditor extends PdoEditor<UserGroup> {
     });
     emptyLabel = new Label(resources.getString("no users"));
     groupUsersNode.setPlaceholder(emptyLabel);
-    popup = RdcFactory.getInstance().createTablePopup(groupUsersNode, "UserGroupEditor", resources.getString("Users"));
+    popup = Rdc.createTablePopup(groupUsersNode, "UserGroupEditor", resources.getString("Users"));
   }
 
   @Override

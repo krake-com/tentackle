@@ -28,7 +28,7 @@ import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.component.FxButton;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.container.FxHBox;
-import org.tentackle.fx.rdc.RdcFactory;
+import org.tentackle.fx.rdc.Rdc;
 import org.tentackle.fx.rdc.security.SecurityDialogFactory;
 import org.tentackle.fx.rdc.table.TablePopup;
 import org.tentackle.fx.table.TableConfiguration;
@@ -91,7 +91,7 @@ public class SessionsView extends AbstractFxController {
 
   @Override
   public void configure() {
-    popup = RdcFactory.getInstance().createTablePopup(sessionsNode, "Sessions", resources.getString("Sessions"));
+    popup = Rdc.createTablePopup(sessionsNode, "Sessions", resources.getString("Sessions"));
     DomainContext context = Pdo.createDomainContext();
     if (context.getSession().isRemote()) {    // needs check in order not to fail when running GUI tests
       PdoRemoteSession remoteSession = (PdoRemoteSession) context.getSession().getRemoteSession();

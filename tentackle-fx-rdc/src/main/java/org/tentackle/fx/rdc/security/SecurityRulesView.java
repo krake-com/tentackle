@@ -40,7 +40,7 @@ import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.container.FxSplitPane;
 import org.tentackle.fx.container.FxTab;
 import org.tentackle.fx.container.FxTabPane;
-import org.tentackle.fx.rdc.RdcFactory;
+import org.tentackle.fx.rdc.Rdc;
 import org.tentackle.fx.rdc.RdcFxRdcBundle;
 import org.tentackle.fx.rdc.RdcRuntimeException;
 import org.tentackle.fx.rdc.table.TablePopup;
@@ -193,11 +193,11 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
 
   @Override
   public void configure() {
-    TablePopup<Security> classRulesPopup = RdcFactory.getInstance().createTablePopup(
+    TablePopup<Security> classRulesPopup = Rdc.createTablePopup(
             classRulesNode, "classRules", resources.getString("Class Rules"));
     classRulesPopup.loadPreferences();
     classRulesNode.setSortable(false);
-    TablePopup<Security> pdoRulesPopup = RdcFactory.getInstance().createTablePopup(
+    TablePopup<Security> pdoRulesPopup = Rdc.createTablePopup(
             pdoRulesNode, "pdoRules", resources.getString("Object Rules"));
     pdoRulesPopup.loadPreferences();
     pdoRulesNode.setSortable(false);
