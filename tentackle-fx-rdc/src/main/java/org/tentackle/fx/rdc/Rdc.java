@@ -29,9 +29,12 @@ import javafx.stage.Window;
 
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxUtilities;
+import org.tentackle.fx.component.FxTableView;
+import org.tentackle.fx.component.FxTreeTableView;
 import org.tentackle.fx.rdc.app.DesktopApplication;
 import org.tentackle.fx.rdc.crud.PdoCrud;
 import org.tentackle.fx.rdc.search.PdoSearch;
+import org.tentackle.fx.rdc.table.TablePopup;
 import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.pdo.PersistentDomainObject;
 
@@ -82,6 +85,33 @@ public class Rdc {
    */
   public static <T extends PersistentDomainObject<T>> GuiProvider<T> createGuiProvider(T pdo) {
     return GuiProviderFactory.getInstance().createGuiProvider(pdo);
+  }
+
+
+  /**
+   * Creates a table popup for a table view.
+   *
+   * @param <S> the row type
+   * @param table the table
+   * @param preferencesSuffix the optional preferences suffix to load/save table preferences
+   * @param title the optional title of the printed table
+   * @return the popup
+   */
+  public static <S> TablePopup<S> createTablePopup(FxTableView<S> table, String preferencesSuffix, String title) {
+    return RdcFactory.getInstance().createTablePopup(table, preferencesSuffix, title);
+  }
+
+  /**
+   * Creates a table popup for a tree table view.
+   *
+   * @param <S> the row type
+   * @param treeTable the treetable
+   * @param preferencesSuffix the optional preferences suffix to load/save table preferences
+   * @param title the optional title of the printed table
+   * @return the popup
+   */
+  public static <S> TablePopup<S> createTablePopup(FxTreeTableView<S> treeTable, String preferencesSuffix, String title) {
+    return RdcFactory.getInstance().createTablePopup(treeTable, preferencesSuffix, title);
   }
 
 
