@@ -168,6 +168,23 @@ public class BackendInfo {
     }
   }
 
+
+  /**
+   * Creates a backend info from another one with a different user and password.
+   *
+   * @param backendInfo the orginal backend info
+   * @param user the username
+   * @param password the password
+   */
+  public BackendInfo(BackendInfo backendInfo, String user, char[] password) {
+    this.backend = backendInfo.backend;
+    this.url = backendInfo.url;
+    this.user = user;
+    this.password = password;
+    this.jndiDataSource = backendInfo.jndiDataSource;
+    this.schemas = backendInfo.schemas;
+  }
+
   /**
    * Gets the backend.
    *

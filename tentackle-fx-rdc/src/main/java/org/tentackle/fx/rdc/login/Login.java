@@ -115,23 +115,47 @@ public class Login extends AbstractFxController {
     passwordField.addModelToViewListener(() -> passwordField.setPassword(password));
     backendButton.setGraphic(Fx.createImageView("edit"));
     backendButton.setOnAction(e -> Backends.editBackends(sessionInfo.getApplicationName(), backendFromSystemPrefs, this::loadBackendConfigurations));
+    backendField.setOnAction(event -> presetUserAndPassword(backendField.getValue()));
+  }
 
-    backendField.setOnAction(event -> {
-      BackendConfiguration backendConfiguration = backendField.getValue();
-      if (backendConfiguration != null && backendConfiguration.getUrl() != null &&
-          backendConfiguration.getUrl().startsWith(Constants.BACKEND_RMI_URL_INTRO) &&
-          backendConfiguration.getUser() != null) {
-        // copy the user and password from the backend config
-        // (for jdbc/jndi the user/pw is used to connect to the database only)
-        usernameField.setText(backendConfiguration.getUser());
-        if (backendConfiguration.getPassword() != null) {
-          passwordField.setPassword(backendConfiguration.getPassword().toCharArray());
-        }
-        else {
-          passwordField.setPassword(null);
-        }
+
+  /**
+   * Presets the user- and password field from the backend configuration.
+   *
+   * @param backendConfiguration the backend config, null if none
+   */
+  public void presetUserAndPassword(BackendConfiguration backendConfiguration) {
+    if (backendConfiguration != null && backendConfiguration.getUrl() != null &&
+        backendConfiguration.getUrl().startsWith(Constants.BACKEND_RMI_URL_INTRO) &&
+        backendConfiguration.getUser() != null) {
+      // copy the user and password from the backend config
+      // (for jdbc/jndi the user/pw is used to connect to the database only)
+      setUsername(backendConfiguration.getUser());
+      if (backendConfiguration.getPassword() != null) {
+        setPassword(backendConfiguration.getPassword().toCharArray());
       }
-    });
+      else {
+        setPassword(null);
+      }
+    }
+  }
+
+  /**
+   * Sets the username in the username field.
+   *
+   * @param username the username
+   */
+  public void setUsername(String username) {
+    usernameField.setText(username);
+  }
+
+  /**
+   * Sets the password in the password field.
+   *
+   * @param password the password
+   */
+  public void setPassword(char[] password) {
+    passwordField.setPassword(password);
   }
 
 
