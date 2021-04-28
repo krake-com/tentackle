@@ -303,7 +303,7 @@ public class BackendConfiguration extends AbstractSessionConfiguration {
   @Bindable
   public String getPassword() {
     Cryptor cryptor = Cryptor.getInstance();
-    if (cryptor != null) {
+    if (cryptor != null && password != null) {
       return cryptor.decrypt64(password);
     }
     return password;
@@ -317,7 +317,7 @@ public class BackendConfiguration extends AbstractSessionConfiguration {
   @Bindable
   public void setPassword(String password) {
     Cryptor cryptor = Cryptor.getInstance();
-    if (cryptor != null) {
+    if (cryptor != null && password != null) {
       this.password = cryptor.encrypt64(password);
     }
     else {

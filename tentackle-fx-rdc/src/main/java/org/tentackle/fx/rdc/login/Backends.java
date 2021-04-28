@@ -372,6 +372,10 @@ public class Backends extends AbstractFxController {
   }
 
   private void loadDriverConfigurations() {
+    DriverConfiguration driverConfiguration = backendDriver.getSelectionModel().getSelectedItem();
     backendDriver.getItems().setAll(drivers.getItems());
+    if (driverConfiguration != null) {
+      backendDriver.getSelectionModel().select(driverConfiguration);
+    }
   }
 }

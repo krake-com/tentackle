@@ -22,6 +22,7 @@ package org.tentackle.dbms;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.FormatHelper;
 import org.tentackle.session.PersistenceException;
+import org.tentackle.session.SessionInfo;
 import org.tentackle.sql.BackendInfo;
 
 import java.lang.ref.WeakReference;
@@ -268,7 +269,14 @@ public class DefaultConnectionManager implements ConnectionManager {
   @Override
   public int login(Db session) {
 
-    ManagedConnection con = createConnection(session.getBackendInfo());
+    BackendInfo backendInfo = session.getBackendInfo();
+    if (!session.isRemote() && backendInfo.getUser() == null && backendInfo.getPassword() == null) {
+      // for direct jdbc connections via backend config:
+      // take user/passwd from session info if missing in backend info
+      SessionInfo sessionInfo = session.getSessionInfo();
+      backendInfo = new BackendInfo(backendInfo, sessionInfo.getUserName(), sessionInfo.getPassword());
+    }
+    ManagedConnection con = createConnection(backendInfo);
 
     synchronized(this) {
       int id = addDb(session);
