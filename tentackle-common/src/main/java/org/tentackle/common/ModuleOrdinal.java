@@ -1,0 +1,58 @@
+/*
+ * Tentackle - https://tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+package org.tentackle.common;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+/**
+ * Annotation to override the module order for the {@link ServiceFinder}.
+ * <p>
+ * By default, the {@link ModuleSorter} organizes resources within named modules according to their
+ * module ordinal. By default, the ordinal is taken from the module descriptor and multiplied by 1000
+ * for sorting. Higher number come first. Sometimes, however, an application module must override
+ * this default order to make sure that the correct implementation for a service is used. In such
+ * cases, the module can be annotated with <code>&#64;ModuleOrdinal</code>. Example:
+ * <pre>
+ *   &#64;ModuleOrdinal(1350)
+ *   module org.tentackle.bundlemonkey.common {
+ *   ...
+ *   }
+ * </pre>
+ *
+ * @author harald
+ */
+@Documented
+@Inherited
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.MODULE)
+@Service(value = ModuleOrdinal.class, meta = true)
+public @interface ModuleOrdinal {
+
+  /**
+   * Gets the fixed ordinal.<br>
+   *
+   * @return the ordinal
+   */
+  int value();
+
+}

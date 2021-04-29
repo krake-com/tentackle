@@ -179,7 +179,7 @@ public final class ModuleSorter {
 
   /**
    * Sorts an enumeration of urls according to the module hierarchy.<br>
-   * The top of the hierarchy comes first.
+   * The highest module ordinal comes first.
    *
    * @param urls the urls, usually from ClassLoader.getResources
    * @param serviceName the service name
@@ -240,7 +240,13 @@ public final class ModuleSorter {
           iter.remove();
         }
       }
-      info.setOrdinal(sortedList.size() + 1);
+      ModuleOrdinal moduleOrdinal = info.getModule().getAnnotation(ModuleOrdinal.class);
+      if (moduleOrdinal != null) {
+        info.setOrdinal(moduleOrdinal.value());
+      }
+      else {
+        info.setOrdinal((sortedList.size() + 1) * 100);   // give room for insertions viw @ModuleOrdinal
+      }
       sortedList.add(info);
     }
   }
