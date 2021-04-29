@@ -34,7 +34,7 @@ public final class ModuleInfo {
   private final Module module;                        // the module name
   private final Set<String> requiredModuleNames;      // the required module names
 
-  private int ordinal;                                // the ordinal, >0 if sorted
+  private int ordinal;                                // the ordinal, != 0 if sorted
   private boolean visited;                            // true if visited by sorter
 
   /**
@@ -134,7 +134,7 @@ public final class ModuleInfo {
   @Override
   public String toString() {
     StringBuilder buf = new StringBuilder();
-    buf.append(module.getName()).append(" [");
+    buf.append(module.getName()).append(" {");
     boolean needComma = false;
     for (String subName : requiredModuleNames) {
       if (needComma) {
@@ -145,7 +145,10 @@ public final class ModuleInfo {
       }
       buf.append(subName);
     }
-    buf.append(']');
+    buf.append('}');
+    if (ordinal != 0) {
+      buf.append(" [").append(ordinal).append(']');
+    }
     return buf.toString();
   }
 
