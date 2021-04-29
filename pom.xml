@@ -85,7 +85,7 @@
     <javac.version.target>${javac.version.src}</javac.version.target>
     <javafx.version>16</javafx.version>
     <ow2.asm.version>9.1</ow2.asm.version>
-    <groovy.version>3.0.7</groovy.version>
+    <groovy.version>3.0.8</groovy.version>
     <maven.version>3.6.3</maven.version>
     <postgresql.version>42.2.19</postgresql.version>
     <testng.version>7.4.0</testng.version>
@@ -208,7 +208,7 @@
       <dependency>
         <groupId>org.jruby</groupId>
         <artifactId>jruby</artifactId>
-        <version>9.2.16.0</version>
+        <version>9.2.17.0</version>
       </dependency>
 
       <dependency>
