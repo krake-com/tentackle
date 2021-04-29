@@ -240,13 +240,7 @@ public final class ModuleSorter {
           iter.remove();
         }
       }
-      ModuleOrdinal moduleOrdinal = info.getModule().getAnnotation(ModuleOrdinal.class);
-      if (moduleOrdinal != null) {
-        info.setOrdinal(moduleOrdinal.value());
-      }
-      else {
-        info.setOrdinal((sortedList.size() + 1) * 100);   // give room for insertions viw @ModuleOrdinal
-      }
+      info.setOrdinal(sortedList.size() + 1);
       sortedList.add(info);
     }
   }
