@@ -19,7 +19,6 @@ package org.tentackle.common;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -29,7 +28,7 @@ import java.lang.annotation.Target;
  * <p>
  * By default, the {@link ModuleSorter} organizes resources within named modules according to their
  * module ordinal. By default, the ordinal is taken from the module descriptor and multiplied by 100
- * for sorting. Higher number come first. Sometimes, however, an application module must override
+ * for sorting. Higher numbers come first. Sometimes, however, an application module must override
  * this default order to make sure that the correct implementation for a service is used. In such
  * cases, the module can be annotated with <code>&#64;ModuleOrdinal</code>. Example:
  * <pre>
@@ -42,10 +41,8 @@ import java.lang.annotation.Target;
  * @author harald
  */
 @Documented
-@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.MODULE)
-@Service(value = ModuleOrdinal.class, meta = true)
 public @interface ModuleOrdinal {
 
   /**
