@@ -600,10 +600,20 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
             // not set: generate binding path
             bindingPath = field.getName();
             // cut some common trailing text which does not belong to the binding path
+            String componentClassName = component.getClass().getName();
+            if (componentClassName.startsWith("Fx")) {    // TT component
+              componentClassName = componentClassName.substring(2);
+            }
+            bindingPath = StringHelper.removeTrailingText(bindingPath, componentClassName);   // blahTextField
+            if (componentClassName.endsWith("View")) {    // TableView, TreeView, TreeTableView -> Table, Tree, TreeTable
+              componentClassName = componentClassName.substring(0, componentClassName.length() - 4);
+              bindingPath = StringHelper.removeTrailingText(bindingPath, componentClassName);   // blahTable, blahTree, blahTreeTable
+            }
             bindingPath = StringHelper.removeTrailingText(bindingPath, "Field");
             bindingPath = StringHelper.removeTrailingText(bindingPath, "Node");
             bindingPath = StringHelper.removeTrailingText(bindingPath, "Comp");
             bindingPath = StringHelper.removeTrailingText(bindingPath, "Component");
+            bindingPath = StringHelper.removeTrailingText(bindingPath, "Control");
           }
           // else: binding path already set by the application
 

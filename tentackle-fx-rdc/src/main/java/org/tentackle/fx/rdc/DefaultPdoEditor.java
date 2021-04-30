@@ -239,7 +239,7 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
     getBinder().addBinding(binding);
 
     node.setBindingPath(member.getMemberPath());
-    node.setComponentPath(getClass().getName() + "." + attribute.getName() + "Node");
+    node.setComponentPath(getClass().getName() + "." + attribute.getName());
 
     if (FxUtilities.getInstance().getBindingOption(bindingOptions, Constants.BIND_COLS) == null) {
       // if not already set via COLS= in model options
