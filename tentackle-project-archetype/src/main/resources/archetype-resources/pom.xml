@@ -414,6 +414,7 @@
           <version>${maven.resources.plugin.version}</version>
           <configuration>
             <encoding>UTF-8</encoding>
+            <propertiesEncoding>UTF-8</propertiesEncoding>
             <escapeString>\</escapeString>
           </configuration>
         </plugin>
