@@ -550,14 +550,21 @@ public class Db implements Session, Cloneable {
           if (ndx >= 0 && ndx < technicalBackendInfoName.length()) {
             String configName = technicalBackendInfoName.substring(ndx + 1);
             boolean systemPrefs = technicalBackendInfoName.startsWith(Constants.BACKEND_INFO_SYSTEM);
-            BackendConfiguration backendConfiguration = BackendConfiguration.getBackendConfigurations(
-                sessionInfo.getApplicationName(), systemPrefs).get(configName);
-            if (backendConfiguration != null) {
-              backendProperties = new Properties();
-              DbUtilities.getInstance().applyBackendConfiguration(backendConfiguration, backendProperties);
+            if (sessionInfo.getApplicationName() != null) {
+              BackendConfiguration backendConfiguration = BackendConfiguration.getBackendConfigurations(
+                  sessionInfo.getApplicationName(), systemPrefs).get(configName);
+              if (backendConfiguration != null) {
+                backendProperties = new Properties();
+                DbUtilities.getInstance().applyBackendConfiguration(backendConfiguration, backendProperties);
+              }
+              else {
+                LOGGER.warning("no such backend configuration: @{0}:{1} for {2} -> fallback to session properties",
+                               systemPrefs ? "system" : "user", configName, sessionInfo.getApplicationName());
+              }
             }
             else {
-              LOGGER.warning("no such backend configuration: " + configName + " -> fallback to session properties");
+              LOGGER.warning("cannot load backend configuration @{0}:{1} due to missing application name -> fallback to session properties",
+                             systemPrefs ? "system" : "user", configName);
             }
           }
           // else: user didn't select a backendConfiguration -> continue with default settings from properties

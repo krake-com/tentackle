@@ -107,6 +107,14 @@ public class Constants {
    */
   public static final String BACKEND_INFO_SYSTEM = "@system";
 
+  /**
+   * Application name.<br>
+   * By default, the application name is determined from the main class.
+   * For testing, however, the application name needs to be set explicitly if
+   * backend infos are to be loaded via {@link #BACKEND_INFO_USER} or {@link #BACKEND_INFO_SYSTEM}.
+   */
+  public static final String BACKEND_APPLICATION_NAME = "application";
+
 
 
   /** name of ID column. */
