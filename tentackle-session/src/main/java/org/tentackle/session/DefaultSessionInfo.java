@@ -449,6 +449,10 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
     if (pwd != null) {
       setPassword(pwd);
     }
+    name = getProperties().getProperty(Constants.BACKEND_APPLICATION_NAME);
+    if (name != null) {
+      setApplicationName(name);
+    }
   }
 
   @Override

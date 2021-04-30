@@ -54,12 +54,13 @@ public abstract class TestApplication extends AbstractApplication {
   @BeforeClass(alwaysRun = true)
   public void setUpClass() throws Exception {
     SessionInfo sessionInfo = Pdo.createSessionInfo();
+    sessionInfo.applyProperties();
     try {
       session = Pdo.createSession(sessionInfo);
     }
     catch (PersistenceException ex) {
       // no database? wrong database? whatever: testing environment incomplete
-      throw new SkipException("no backend found -> no tests");
+      throw new SkipException("no backend found -> no tests", ex);
     }
     Session.setCurrentSession(session);
     ModificationTracker.getInstance().setSession(session);

@@ -212,7 +212,7 @@ public interface SessionInfo extends Immutable, Serializable {
 
   /**
    * Applies the properties to this session info.<br>
-   * Sets user and password from properties, if given.
+   * Sets user, password and applicationname from properties, if given.
    */
   void applyProperties();
 
