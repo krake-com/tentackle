@@ -600,7 +600,7 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
             // not set: generate binding path
             bindingPath = field.getName();
             // cut some common trailing text which does not belong to the binding path
-            String componentClassName = component.getClass().getName();
+            String componentClassName = ReflectionHelper.getClassBaseName(component.getClass());
             if (componentClassName.startsWith("Fx")) {    // TT component
               componentClassName = componentClassName.substring(2);
             }

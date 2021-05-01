@@ -67,8 +67,8 @@ public class CollectionTreeItemTranslator<T, C extends List<T>> extends Abstract
       collection = m;
       TreeItem<T> root = new TreeItem<>();    // invisible root (disabled in FxTreeViewDelegate and FxTreeTableViewDelegate)
       if (m != null) {
-        for (T pdo : m) {
-          root.getChildren().add(createTreeItem(pdo));
+        for (T elem : m) {
+          root.getChildren().add(createTreeItem(elem));
         }
       }
       return root;
@@ -164,9 +164,13 @@ public class CollectionTreeItemTranslator<T, C extends List<T>> extends Abstract
    * @param object the object
    * @return the treeitem
    */
-  protected TreeItem<T> createTreeItem(T object) {
+  @SuppressWarnings("unchecked")
+  protected TreeItem<T> createTreeItem(Object object) {     // we cannot write T object, because method is overridden...
+    // ... in PdoCollectionTreeItemTranslator. The overridden method will type-erase T to PersistentDomainObject
+    // and assert this with a cast. This cast would fail if T is not a PDO. The two casts below are just for
+    // the compiler since they type-erase to Object.
     TableConfiguration<T> configuration = getTableConfiguration();  // if available, this will also work for FxTreeView
-    return configuration != null ? configuration.createTreeItem(object) : new TreeItem<>(object);
+    return configuration != null ? configuration.createTreeItem((T) object) : new TreeItem<>((T) object);
   }
 
   /**
