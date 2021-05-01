@@ -29,6 +29,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.WildcardType;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -317,12 +318,13 @@ public final class ReflectionHelper {
    * Extracts the inner class from a generic type.<br>
    * The type must be a parameterized generic type (usually determined by the binding)
    * for a single type argument.<br>
+   * Works for wildcard types as well.<br>
    * For example:
    * <pre>
    *   &#64;Bindable
-   *   List&lt;String&gt;
+   *   List&lt;? extends Bundle&gt;
    * </pre>
-   * Will return <code>String.class</code>.
+   * Will return <code>Bundle.class</code>.
    *
    * @param type the type
    * @param <T> the inner type
@@ -337,6 +339,19 @@ public final class ReflectionHelper {
         Type typeArgument = typeArguments[0];
         if (typeArgument instanceof Class) {
           clazz = (Class<T>) typeArgument;
+        }
+        else if (typeArgument instanceof WildcardType) {
+          WildcardType wildcardType = (WildcardType) typeArgument;
+          typeArguments = wildcardType.getLowerBounds();
+          if (typeArguments == null || typeArguments.length != 1) {
+            typeArguments = wildcardType.getUpperBounds();
+          }
+          if (typeArguments != null && typeArguments.length == 1) {
+            typeArgument = typeArguments[0];
+            if (typeArgument instanceof Class) {
+              clazz = (Class<T>) typeArgument;
+            }
+          }
         }
       }
     }
