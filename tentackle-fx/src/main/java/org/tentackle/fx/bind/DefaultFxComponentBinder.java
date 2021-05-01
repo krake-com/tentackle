@@ -595,45 +595,52 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
           // if component is bindable and not bound in advance
           String componentPath = controllerPath + "." + field.getName();
           component.setComponentPath(componentPath);
-          String bindingPath = component.getBindingPath();
+          String bindingPath = component.getBindingPath();    // original binding path
+          String bindingPathTypeCut = null;
+          String bindingPathTrailCut = null;
           if (bindingPath == null) {
-            // not set: generate binding path
+            // not set: generate binding path(s)
             bindingPath = field.getName();
             // cut some common trailing text which does not belong to the binding path
             String componentClassName = ReflectionHelper.getClassBaseName(component.getClass());
             if (componentClassName.startsWith("Fx")) {    // TT component
               componentClassName = componentClassName.substring(2);
             }
-            bindingPath = StringHelper.removeTrailingText(bindingPath, componentClassName);   // blahTextField
+            bindingPathTypeCut = StringHelper.removeTrailingText(bindingPath, componentClassName);   // blahTextField
             if (componentClassName.endsWith("View")) {    // TableView, TreeView, TreeTableView -> Table, Tree, TreeTable
               componentClassName = componentClassName.substring(0, componentClassName.length() - 4);
-              bindingPath = StringHelper.removeTrailingText(bindingPath, componentClassName);   // blahTable, blahTree, blahTreeTable
+              bindingPathTypeCut = StringHelper.removeTrailingText(bindingPathTypeCut, componentClassName);   // blahTable, blahTree, blahTreeTable
             }
-            bindingPath = StringHelper.removeTrailingText(bindingPath, "Field");
-            bindingPath = StringHelper.removeTrailingText(bindingPath, "Node");
-            bindingPath = StringHelper.removeTrailingText(bindingPath, "Comp");
-            bindingPath = StringHelper.removeTrailingText(bindingPath, "Component");
-            bindingPath = StringHelper.removeTrailingText(bindingPath, "Control");
+            bindingPathTrailCut = StringHelper.removeTrailingText(bindingPath, "Field", "Node", "Comp", "Component", "Control");
           }
           // else: binding path already set by the application
 
           // add to component map
-          FxComponent oldComponent = eligibleComponents.put(bindingPath, component);
-          if (oldComponent != null) {
-            if (oldComponent != component) {
-              throw new BindingException("binding path '" + bindingPath +
-                                         "' already provided by " + oldComponent.getComponentPath());
-            }
+          addToEligibleComponents(bindingPath, component);
+          if (!bindingPath.equals(bindingPathTypeCut)) {
+            addToEligibleComponents(bindingPathTypeCut, component);
           }
-          else {
-            LOGGER.finer("added {0}:{1} to eligible components", componentPath, bindingPath);
-            unboundComponents.add(component);
+          if (!bindingPath.equals(bindingPathTrailCut)) {
+            addToEligibleComponents(bindingPathTrailCut, component);
           }
         }
       }
     }
   }
 
+  private void addToEligibleComponents(String bindingPath, FxComponent component) {
+    FxComponent oldComponent = eligibleComponents.put(bindingPath, component);
+    if (oldComponent != null) {
+      if (oldComponent != component) {
+        throw new BindingException("binding path '" + bindingPath +
+                                   "' already provided by " + oldComponent.getComponentPath());
+      }
+    }
+    else {
+      LOGGER.finer("added {0}:{1} to eligible components", component.getComponentPath(), bindingPath);
+      unboundComponents.add(component);
+    }
+  }
 
 
   /**
