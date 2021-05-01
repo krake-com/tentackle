@@ -59,6 +59,14 @@ import java.util.TreeMap;
  */
 public class DefaultFxComponentBinder extends AbstractBinder implements FxComponentBinder {
 
+  /**
+   * Suffixes of component names to provide binding path alternatives.<br>
+   * Applications may change this list.
+   */
+  public static String[] bindingPathSuffixes = {
+      "Field", "Node", "Comp", "Component", "Control"
+  };
+
   private static final Logger LOGGER = Logger.get(DefaultFxComponentBinder.class);
 
   private final FxController controller;                                // the controller to bind
@@ -596,33 +604,32 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
           String componentPath = controllerPath + "." + field.getName();
           component.setComponentPath(componentPath);
           String bindingPath = component.getBindingPath();    // original binding path
-          String bindingPathTypeCut = null;
-          String bindingPathTrailCut = null;
           if (bindingPath == null) {
-            // not set: generate binding path(s)
+            // if not explicitly set by application: generate default binding path(s)
             bindingPath = field.getName();
-            // cut some common trailing text which does not belong to the binding path
+            // alternative 1: remove trailing component type name (blahTextField -> blah)
             String componentClassName = ReflectionHelper.getClassBaseName(component.getClass());
             if (componentClassName.startsWith("Fx")) {    // TT component
               componentClassName = componentClassName.substring(2);
             }
-            bindingPathTypeCut = StringHelper.removeTrailingText(bindingPath, componentClassName);   // blahTextField
+            String anotherBindingPath = StringHelper.removeTrailingText(bindingPath, componentClassName);
+            if (!bindingPath.equals(anotherBindingPath)) {
+              addToEligibleComponents(anotherBindingPath, component);
+            }
             if (componentClassName.endsWith("View")) {    // TableView, TreeView, TreeTableView -> Table, Tree, TreeTable
               componentClassName = componentClassName.substring(0, componentClassName.length() - 4);
-              bindingPathTypeCut = StringHelper.removeTrailingText(bindingPathTypeCut, componentClassName);   // blahTable, blahTree, blahTreeTable
+              anotherBindingPath = StringHelper.removeTrailingText(bindingPath, componentClassName);   // blahTable, blahTree, blahTreeTable
+              if (!bindingPath.equals(anotherBindingPath)) {
+                addToEligibleComponents(anotherBindingPath, component);
+              }
             }
-            bindingPathTrailCut = StringHelper.removeTrailingText(bindingPath, "Field", "Node", "Comp", "Component", "Control");
+            // alternative 2: remove some well known suffixes
+            anotherBindingPath = StringHelper.removeTrailingText(bindingPath, bindingPathSuffixes);
+            if (!bindingPath.equals(anotherBindingPath)) {
+              addToEligibleComponents(anotherBindingPath, component);
+            }
           }
-          // else: binding path already set by the application
-
-          // add to component map
           addToEligibleComponents(bindingPath, component);
-          if (!bindingPath.equals(bindingPathTypeCut)) {
-            addToEligibleComponents(bindingPathTypeCut, component);
-          }
-          if (!bindingPath.equals(bindingPathTrailCut)) {
-            addToEligibleComponents(bindingPathTrailCut, component);
-          }
         }
       }
     }
