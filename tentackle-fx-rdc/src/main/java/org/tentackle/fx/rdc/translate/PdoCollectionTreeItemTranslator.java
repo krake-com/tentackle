@@ -82,9 +82,10 @@ public class PdoCollectionTreeItemTranslator<T extends PersistentDomainObject<T>
   }
 
   @Override
-  protected TreeItem<T> createTreeItem(T object) {
+  @SuppressWarnings("unchecked")
+  protected TreeItem<T> createTreeItem(Object object) {
     return guiProviderExists ?
-           Rdc.createGuiProvider(object).createTreeItem() :
+           Rdc.createGuiProvider((T) object).createTreeItem() :   // real cast to PersistentDomainObject, see comment in super method
            super.createTreeItem(object);
   }
 
