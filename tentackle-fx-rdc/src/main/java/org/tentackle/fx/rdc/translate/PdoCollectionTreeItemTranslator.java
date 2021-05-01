@@ -32,7 +32,6 @@ import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.reflect.ReflectionHelper;
 
 import java.util.Collection;
-import java.util.List;
 
 /**
  * PDO-aware collection to TreeItem translator for {@link FxTreeView} and {@link FxTreeTableView}.<br>
@@ -43,7 +42,7 @@ import java.util.List;
  * @param <C> the collection type
  */
 @ValueTranslatorService(modelClass = Collection.class, viewClass = TreeItem.class)
-public class PdoCollectionTreeItemTranslator<T extends PersistentDomainObject<T>, C extends List<T>>
+public class PdoCollectionTreeItemTranslator<T extends PersistentDomainObject<T>, C extends Collection<T>>
     extends CollectionTreeItemTranslator<T, C> {
 
   private boolean guiProviderExists;

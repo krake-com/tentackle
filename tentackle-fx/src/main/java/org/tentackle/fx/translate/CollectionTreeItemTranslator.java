@@ -30,7 +30,6 @@ import org.tentackle.fx.table.TableConfigurationProviderFactory;
 import org.tentackle.reflect.ReflectionHelper;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.function.Function;
 
 /**
@@ -42,7 +41,7 @@ import java.util.function.Function;
  * @param <C> the collection type
  */
 @ValueTranslatorService(modelClass = Collection.class, viewClass = TreeItem.class)
-public class CollectionTreeItemTranslator<T, C extends List<T>> extends AbstractValueTranslator<C, TreeItem<T>> {
+public class CollectionTreeItemTranslator<T, C extends Collection<T>> extends AbstractValueTranslator<C, TreeItem<T>> {
 
 
   private boolean providerLoaded;
