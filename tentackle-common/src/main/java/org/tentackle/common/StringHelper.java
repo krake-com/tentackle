@@ -1527,15 +1527,21 @@ public final class StringHelper {
 
 
   /**
-   * Removes a trailing text from a string.
+   * Removes a trailing text from a string.<br>
+   * Stops when the first trailing string is found.
    *
    * @param str the original string
-   * @param trail the trailing string to remove, if found
-   * @return the shortened text
+   * @param trail the trailing string(s) to remove
+   * @return the shortened text, str if nothing removed
    */
-  public static String removeTrailingText(String str, String trail) {
-    if (str.endsWith(trail)) {
-      str = str.substring(0, str.length() - trail.length());
+  public static String removeTrailingText(String str, String... trail) {
+    if (str != null && trail != null) {
+      for (String t : trail) {
+        if (str.endsWith(t)) {
+          str = str.substring(0, str.length() - t.length());
+          break;
+        }
+      }
     }
     return str;
   }
