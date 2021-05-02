@@ -55,7 +55,7 @@ public class LoginApplication extends FxApplication {
    * @return true if autologin
    */
   public static boolean isAutoLogin(SessionInfo sessionInfo) {
-    return sessionInfo.getProperties().containsKey("autologin");
+    return sessionInfo.getProperties().containsKey(Constants.BACKEND_AUTOLOGIN);
   }
 
 

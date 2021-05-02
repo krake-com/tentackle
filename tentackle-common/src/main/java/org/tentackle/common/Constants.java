@@ -68,6 +68,9 @@ public class Constants {
   /** property key for the password. */
   public static final String BACKEND_PASSWORD = "password";
 
+  /** property key to enable autologin. */
+  public static final String BACKEND_AUTOLOGIN = "autologin";
+
   /** intro in URL to denote a JDBC connection. */
   public static final String BACKEND_JDBC_URL_INTRO = "jdbc:";
 

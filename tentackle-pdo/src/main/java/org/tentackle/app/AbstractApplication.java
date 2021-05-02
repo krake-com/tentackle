@@ -42,7 +42,6 @@ import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionProvider;
 
-import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.MessageFormat;
@@ -61,6 +60,34 @@ import java.util.function.Function;
  * @author harald
  */
 public abstract class AbstractApplication implements SessionProvider, DomainContextProvider {
+
+  /**
+   * Property to disable the modification tracker.
+   */
+  public static final String DISABLE_MODIFICATION_TRACKER = "notracker";
+
+  /**
+   * Property to disable the tentackle security manager.
+   */
+  public static final String DISABLE_SECURITY_MANAGER = "nosecurity";
+
+  /**
+   * Property to enable statistics.
+   */
+  public static final String ENABLE_STATISTICS = "statistics";
+
+  /**
+   * Property to set the default scripting language.
+   */
+  public static final String SCRIPTING = "scripting";
+
+  /**
+   * Property to set the default locale.
+   */
+  public static final String LOCALE = "locale";
+
+
+
 
   private static final Logger LOGGER = Logger.get(AbstractApplication.class);
 
@@ -473,7 +500,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    * <p>
    * {@code scripting=...} sets the default scripting language
    * <p>
-   * {@code secman=...} installs the Java security manager given by its FQCN.
+   * {@code nosecurity} disables the tentackle security manager
    * <p>
    * {@code locale=...} sets the default locale.
    *
@@ -518,26 +545,17 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
         }
       }
 
-      String scripting = getProperty("scripting");
+      String scripting = getProperty(SCRIPTING);
       if (scripting != null) {
         ScriptFactory.getInstance().setDefaultLanguage(scripting);
       }
 
-      // install optional security manager
-      String secman = getProperty("secman");   // NOI18N
-      if (secman != null && !secman.isEmpty()) {
-        try {
-          System.setSecurityManager((java.lang.SecurityManager) (Class.forName(secman).getDeclaredConstructor().newInstance()));
-          LOGGER.info("security manager {0} installed", secman);
-        }
-        catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
-                   NoSuchMethodException | SecurityException | InvocationTargetException ex) {
-          throw new TentackleRuntimeException(AppCoreBundle.getString("CAN'T INSTALL JAVA RUNTIME SECURITY MANAGER"), ex);
-        }
+      if (getProperty(DISABLE_SECURITY_MANAGER) != null) {
+        SecurityFactory.getInstance().getSecurityManager().setEnabled(false);
       }
 
       // set default locale
-      String localeStr = getProperty("locale");
+      String localeStr = getProperty(LOCALE);
       if (localeStr != null && !localeStr.isEmpty()) {
         String language = null;
         String country = null;
@@ -634,13 +652,13 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
 
   /**
    * Finishes the startup.<br>
-   * The default implementation starts the modification thread, unless
-   * the property {@literal "nomodthread"} is given.
+   * The default implementation starts the modification tracker, unless the property {@literal "notracker"} is given.<br>
+   * The property {@literal "statistics"} activates the statistics.
    */
   protected void finishStartup() {
 
     // start the modification thread
-    if (getProperty("nomodthread") == null) {
+    if (!getProperties().containsKey(DISABLE_MODIFICATION_TRACKER)) {
       ModificationTracker.getInstance().start();
       // add a shutdown handler in case the modthread terminates unexpectedly
       ModificationTracker.getInstance().addShutdownRunnable(() -> {
@@ -654,7 +672,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
       PdoCache.setAllEnabled(false);    // disable caching globally
     }
 
-    if (getProperties().containsKey("statistics")) {
+    if (getProperties().containsKey(ENABLE_STATISTICS)) {
       activateStatistics();
     }
   }

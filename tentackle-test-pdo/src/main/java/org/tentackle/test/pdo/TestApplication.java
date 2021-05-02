@@ -31,6 +31,8 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
 
+import java.util.Properties;
+
 /**
  * Base class for tests that must run as an application.
  *
@@ -63,7 +65,15 @@ public abstract class TestApplication extends AbstractApplication {
       throw new SkipException("no backend found -> no tests", ex);
     }
     Session.setCurrentSession(session);
-    ModificationTracker.getInstance().setSession(session);
+
+    if (getProperties() == null) {
+      setProperties(new Properties());
+    }
+    applyProperties(sessionInfo.getProperties());
+    if (!getProperties().containsKey(DISABLE_MODIFICATION_TRACKER)) {
+      ModificationTracker.getInstance().setSession(session);
+    }
+
     context = Pdo.createDomainContext(session);
     register();
   }
@@ -84,6 +94,7 @@ public abstract class TestApplication extends AbstractApplication {
 
   @Override
   protected void startup() {
+    // not invoked
   }
 
   @Override
