@@ -278,6 +278,15 @@ public class Login extends AbstractFxController {
   }
 
   /**
+   * Gets the session info.
+   *
+   * @return the session info
+   */
+  public SessionInfo getSessionInfo() {
+    return sessionInfo;
+  }
+
+  /**
    * Logs in automatically.
    *
    * @see LoginApplication#isAutoLogin(org.tentackle.session.SessionInfo)
@@ -294,11 +303,10 @@ public class Login extends AbstractFxController {
   /**
    * Sets the progress.
    *
-   * @param value &le; 0 to hide progress bar, else up to 1 for 100%
+   * @param progress &le; 0 login not begun yet, &ge; 1 for completed
    */
-  public void setProgress(double value) {
-    if (value <= 0.0 && !autoLogin) {
-      progressBar.setVisible(false);
+  public void setProgress(double progress) {
+    if (progress <= 0.0 && !autoLogin) {
       progressBar.setProgress(0.0);
       loginButton.setDisable(false);
       cancelButton.setDisable(false);
@@ -306,16 +314,34 @@ public class Login extends AbstractFxController {
       passwordField.setChangeable(true);
     }
     else {
-      progressBar.setVisible(true);
-      progressBar.setProgress(value);
+      progressBar.setProgress(progress);
       loginButton.setDisable(true);
       cancelButton.setDisable(true);
       usernameField.setChangeable(false);
       passwordField.setChangeable(false);
     }
-    boolean visible = value < 1.0;
-    loginPane.setVisible(visible);
-    progressBar.setVisible(visible);
+    loginPane.setVisible(determineLoginPaneVisibility(progress));
+    progressBar.setVisible(determineProgressBarVisibility(progress));
+  }
+
+  /**
+   * Determines whether the login pane should be visible according to the progress.
+   *
+   * @param progress &le; 0 login not begun yet, &ge; 1 for completed
+   * @return true if login pane should be visible
+   */
+  protected boolean determineLoginPaneVisibility(double progress) {
+    return progress < 1.0;
+  }
+
+  /**
+   * Determines whether the progress bar should be visible according to the progress.
+   *
+   * @param progress &le; 0 login not begun yet, &ge; 1 for completed
+   * @return true if progress bar should be visible
+   */
+  protected boolean determineProgressBarVisibility(double progress) {
+    return progress > 0.0 && progress < 1.0;
   }
 
   /**
