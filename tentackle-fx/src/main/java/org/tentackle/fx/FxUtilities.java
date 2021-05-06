@@ -694,22 +694,26 @@ public class FxUtilities {
         if (event.isControlDown() && !event.isAltDown() && !event.isMetaDown() && !event.isShiftDown()) {
           FxComponent comp = (FxComponent) control;
           if (event.getCode() == KeyCode.Z) {
-            if (event.getEventType() == KeyEvent.KEY_PRESSED && comp.isViewModified()) {
-              // Ctrl-Z restores the saved view value (usually the persisted values in the database)
-              Object viewObject = comp.getViewObject();
-              comp.setViewObject(comp.getSavedViewObject());
-              // With Ctrl-Z and Ctrl-Y the user can switch between the old persisted value and the new input value
-              comp.getDelegate().setLastViewObject(viewObject);
+            if (comp.isViewModified() && comp.isSavedViewObjectValid()) {
+              if (event.getEventType() == KeyEvent.KEY_PRESSED) {
+                // Ctrl-Z restores the saved view value (usually the persisted values in the database)
+                Object viewObject = comp.getViewObject();
+                comp.setViewObject(comp.getSavedViewObject());
+                // With Ctrl-Z and Ctrl-Y the user can switch between the old persisted value and the new input value
+                comp.getDelegate().setLastViewObject(viewObject);
+              }
+              event.consume();
             }
-            event.consume();
           }
           if (event.getCode() == KeyCode.Y) {
             Object viewObject = comp.getDelegate().getLastViewObject();
-            if (event.getEventType() == KeyEvent.KEY_PRESSED && viewObject != null) {
-              // Ctrl-Y brings back the last set view value (the value when the user entered the field)
-              comp.setViewObject(viewObject);
+            if (viewObject != null) {
+              if (event.getEventType() == KeyEvent.KEY_PRESSED) {
+                // Ctrl-Y brings back the last set view value (the value when the user entered the field)
+                comp.setViewObject(viewObject);
+              }
+              event.consume();
             }
-            event.consume();
           }
         }
       });
