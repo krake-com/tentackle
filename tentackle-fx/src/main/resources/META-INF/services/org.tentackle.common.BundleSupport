@@ -1,2 +1,3 @@
 # for bundles with jigsaw, tentackle-i18n and tentackle-test maven plugins
 org.tentackle.fx.FxControllerService
+org.tentackle.fx.table.TableConfigurationProviderService
