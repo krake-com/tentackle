@@ -97,10 +97,12 @@ public class StoredBundleDomainImpl extends AbstractDomainObject<StoredBundle, S
       }
     }
     // not found: add
-    StoredBundleKey bundleKey = on(StoredBundleKey.class);
-    bundleKey.setKey(key);
-    bundleKey.setValue(value);
-    me().getKeys().add(bundleKey);
+    if (value != null) {
+      StoredBundleKey bundleKey = on(StoredBundleKey.class);
+      bundleKey.setKey(key);
+      bundleKey.setValue(value);
+      me().getKeys().add(bundleKey);
+    }
   }
 
 }
