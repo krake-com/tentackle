@@ -24,7 +24,6 @@ import javafx.scene.control.TextInputControl;
 
 import org.tentackle.fx.FxTextComponent;
 import org.tentackle.fx.FxTextComponentDelegate;
-import org.tentackle.fx.ValueTranslator;
 
 /**
  * Delegate for text input fields.
@@ -49,20 +48,6 @@ public abstract class AbstractTextFieldDelegate<T extends TextInputControl & FxT
   @Override
   public T getComponent() {
     return component;
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public void setViewValue(Object value) {
-    ValueTranslator translator = getValueTranslator();
-    setViewObject(translator.toView(value));
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public <V> V getViewValue() {
-    ValueTranslator translator = getValueTranslator();
-    return (V) translator.toModel(getViewObject());
   }
 
   @Override

@@ -24,7 +24,6 @@ import javafx.scene.paint.Color;
 import org.tentackle.fx.FxComponentDelegate;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxFactory;
-import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.component.FxColorPicker;
 
 import java.util.Objects;
@@ -78,20 +77,6 @@ public class FxColorPickerDelegate extends FxComponentDelegate {
   @Override
   public Color getViewObject() {
     return component.getValue();
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public void setViewValue(Object value) {
-    ValueTranslator translator = getValueTranslator();
-    setViewObject(translator.toView(value));
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public <V> V getViewValue() {
-    ValueTranslator translator = getValueTranslator();
-    return (V) translator.toModel(getViewObject());
   }
 
 }

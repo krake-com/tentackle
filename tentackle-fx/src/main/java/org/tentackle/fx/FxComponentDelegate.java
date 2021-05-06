@@ -114,6 +114,11 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
   private boolean savedViewObjectValid;
 
   /**
+   * The last set view value.
+   */
+  private Object lastViewObject;
+
+  /**
    * The error message if conversion failed.<br>
    * This message is shown to the user in a tooltip.
    */
@@ -493,6 +498,22 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
   }
 
   @Override
+  @SuppressWarnings("unchecked")
+  public void setViewValue(Object value) {
+    ValueTranslator translator = getValueTranslator();
+    Object viewObject = translator.toView(value);
+    setViewObject(viewObject);
+    setLastViewObject(viewObject);
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public <V> V getViewValue() {
+    ValueTranslator translator = getValueTranslator();
+    return (V) translator.toModel(getViewObject());
+  }
+
+  @Override
   public void saveView() {
     savedViewObject = getViewObject();
     savedViewObjectValid = true;
@@ -515,6 +536,29 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
       throw new FxRuntimeException("saved value is invalid in " + getComponent());
     }
     return savedViewObject;
+  }
+
+  /**
+   * Gets the last view object.
+   * <p>
+   * This is a hidden feature not exposed to the public API.
+   *
+   * @return the last view object converted from the model
+   */
+  public Object getLastViewObject() {
+    return lastViewObject;
+  }
+
+  /**
+   * Sets the last view object.<br>
+   * The method is invoked from {@link #setViewValue(Object)} when updating from the model.
+   * <p>
+   * This is a hidden feature not exposed to the public API.
+   *
+   * @param lastViewObject the last view object
+   */
+  public void setLastViewObject(Object lastViewObject) {
+    this.lastViewObject = lastViewObject;
   }
 
   @Override

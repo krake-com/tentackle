@@ -111,7 +111,9 @@ public class FxTreeTableCell<S,T> extends TreeTableCell<S,T> {
         editor.setType(columnConfiguration.getType());
         ValueTranslator translator = FxFactory.getInstance().createValueTranslator(
                 editor.getType(), cellType.getEditorType(), editor);
-        editor.setViewObject(translator.toView(getItem()));
+        Object viewObject = translator.toView(getItem());
+        editor.setViewObject(viewObject);
+        editor.getDelegate().setLastViewObject(viewObject);
 
         setText(null);
         setGraphic((Node) editor);

@@ -23,7 +23,6 @@ import javafx.scene.Parent;
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxTextComponentDelegate;
-import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.component.FxHTMLEditor;
 
 /**
@@ -76,20 +75,6 @@ public class FxHTMLEditorDelegate extends FxTextComponentDelegate {
   @Override
   public void setViewObject(Object viewObject) {
     component.setHtmlText((String) viewObject);
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public void setViewValue(Object value) {
-    ValueTranslator translator = getValueTranslator();
-    setViewObject(translator.toView(value));
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public <V> V getViewValue() {
-    ValueTranslator translator = getValueTranslator();
-    return (V) translator.toModel(getViewObject());
   }
 
   @Override

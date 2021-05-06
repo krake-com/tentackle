@@ -97,19 +97,11 @@ public class FxDatePickerDelegate extends FxTextComponentDelegate {
   @Override
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public void setViewValue(Object value) {
-    ValueTranslator translator = getValueTranslator();
     Pos alignment = component.getTextAlignment();
     if (alignment != null) {
       component.getEditor().setAlignment(alignment);
     }
-    setViewObject(translator.toView(value));
-  }
-
-  @Override
-  @SuppressWarnings({ "unchecked", "rawtypes" })
-  public <V> V getViewValue() {
-    ValueTranslator translator = getValueTranslator();
-    return (V) translator.toModel(getViewObject());
+    super.setViewValue(value);
   }
 
   @Override

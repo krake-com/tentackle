@@ -139,6 +139,7 @@ public class FxChoiceBoxDelegate extends FxComponentDelegate {
       // no value translator needed because items are of model's type already
       setViewObject(value);
     }
+    setLastViewObject(getViewObject());
   }
 
   @Override
