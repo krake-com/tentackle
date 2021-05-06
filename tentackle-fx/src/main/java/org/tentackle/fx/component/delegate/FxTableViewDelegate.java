@@ -24,7 +24,6 @@ import javafx.scene.Parent;
 import org.tentackle.fx.FxComponentDelegate;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxFactory;
-import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.misc.TrackedList;
 
@@ -93,15 +92,7 @@ public class FxTableViewDelegate extends FxComponentDelegate {
     else {
       modelList = null;
     }
-    ValueTranslator translator = getValueTranslator();
-    setViewObject(translator.toView(value));
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public <V> V getViewValue() {
-    ValueTranslator translator = getValueTranslator();
-    return (V) translator.toModel(getViewObject());
+    super.setViewValue(value);
   }
 
   @Override

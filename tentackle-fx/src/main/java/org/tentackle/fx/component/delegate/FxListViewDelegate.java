@@ -24,7 +24,6 @@ import javafx.scene.Parent;
 import org.tentackle.fx.FxComponentDelegate;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxFactory;
-import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.component.FxListView;
 
 /**
@@ -76,20 +75,6 @@ public class FxListViewDelegate extends FxComponentDelegate {
   @SuppressWarnings("unchecked")
   public void setViewObject(Object viewObject) {
     component.setItems((ObservableList) viewObject);
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public void setViewValue(Object value) {
-    ValueTranslator translator = getValueTranslator();
-    setViewObject(translator.toView(value));
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public <V> V getViewValue() {
-    ValueTranslator translator = getValueTranslator();
-    return (V) translator.toModel(getViewObject());
   }
 
 }

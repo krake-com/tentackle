@@ -691,13 +691,23 @@ public class FxUtilities {
   public void filterKeys(Control control) {
     if (control instanceof FxComponent) {
       control.addEventFilter(KeyEvent.ANY, event -> {
-        if (event.getCode() == KeyCode.Z && event.isControlDown() &&
-            !event.isAltDown() && !event.isMetaDown() && !event.isShiftDown()) {
+        if (event.isControlDown() && !event.isAltDown() && !event.isMetaDown() && !event.isShiftDown()) {
           FxComponent comp = (FxComponent) control;
-          if (comp.isViewModified()) {
-            if (event.getEventType() == KeyEvent.KEY_PRESSED) {
-              // Ctrl-Z pressed and old view value saved: restore it!
+          if (event.getCode() == KeyCode.Z) {
+            if (event.getEventType() == KeyEvent.KEY_PRESSED && comp.isViewModified()) {
+              // Ctrl-Z restores the saved view value (usually the persisted values in the database)
+              Object viewObject = comp.getViewObject();
               comp.setViewObject(comp.getSavedViewObject());
+              // With Ctrl-Z and Ctrl-Y the user can switch between the old persisted value and the new input value
+              comp.getDelegate().setLastViewObject(viewObject);
+            }
+            event.consume();
+          }
+          if (event.getCode() == KeyCode.Y) {
+            Object viewObject = comp.getDelegate().getLastViewObject();
+            if (event.getEventType() == KeyEvent.KEY_PRESSED && viewObject != null) {
+              // Ctrl-Y brings back the last set view value (the value when the user entered the field)
+              comp.setViewObject(viewObject);
             }
             event.consume();
           }

@@ -121,6 +121,7 @@ public class FxComboBoxDelegate extends FxTextComponentDelegate {
       value = translator.toView(value);    // to string
     }
     setViewObject(value);
+    setLastViewObject(value);
   }
 
   @Override
