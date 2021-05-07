@@ -39,6 +39,8 @@ import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.FxTreeTableCell;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Extended TreeView.
@@ -114,6 +116,73 @@ public class FxTreeView<T> extends TreeView<T> implements FxComponent {
   public void scrollToCentered(int row) {
     scrollTo(FxUtilities.getInstance().computeScrollToCentered(this, row));
   }
+
+
+  /**
+   * Gets the displayed items.
+   *
+   * @return the items
+   */
+  public List<T> getItems() {
+    List<T> items = new ArrayList<>();
+    if (isShowRoot()) {
+      getItems(items, getRoot());
+    }
+    else {
+      for (TreeItem<T> treeItem : getRoot().getChildren()) {
+        getItems(items, treeItem);
+      }
+    }
+    return items;
+  }
+
+  private void getItems(List<T> items, TreeItem<T> treeItem) {
+    items.add(treeItem.getValue());
+    if (treeItem.isExpanded()) {
+      for (TreeItem<T> child : treeItem.getChildren()) {
+        getItems(items, child);
+      }
+    }
+  }
+
+  /**
+   * Gets all tree items.
+   *
+   * @return all tree items, whether shown or not
+   */
+  public List<TreeItem<T>> getTreeItems() {
+    List<TreeItem<T>> items = new ArrayList<>();
+    if (isShowRoot()) {
+      getTreeItems(items, getRoot());
+    }
+    else {
+      for (TreeItem<T> treeItem : getRoot().getChildren()) {
+        getTreeItems(items, treeItem);
+      }
+    }
+    return items;
+  }
+
+  private void getTreeItems(List<TreeItem<T>> items, TreeItem<T> treeItem) {
+    items.add(treeItem);
+    for (TreeItem<T> child : treeItem.getChildren()) {
+      getTreeItems(items, child);
+    }
+  }
+
+  /**
+   * Gets the selected items.
+   *
+   * @return the selected items
+   */
+  public List<T> getSelectedItems() {
+    List<T> items = new ArrayList<>();
+    for (TreeItem<T> treeItem : getSelectionModel().getSelectedItems()) {
+      items.add(treeItem.getValue());
+    }
+    return items;
+  }
+
 
   // @wurblet delegate Include $currentDir/fxcomponent.include
 
