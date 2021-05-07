@@ -190,6 +190,31 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
   }
 
   /**
+   * Gets all tree items.
+   *
+   * @return all tree items, whether shown or not
+   */
+  public List<TreeItem<S>> getTreeItems() {
+    List<TreeItem<S>> items = new ArrayList<>();
+    if (isShowRoot()) {
+      getTreeItems(items, getRoot());
+    }
+    else {
+      for (TreeItem<S> treeItem : getRoot().getChildren()) {
+        getTreeItems(items, treeItem);
+      }
+    }
+    return items;
+  }
+
+  private void getTreeItems(List<TreeItem<S>> items, TreeItem<S> treeItem) {
+    items.add(treeItem);
+    for (TreeItem<S> child : treeItem.getChildren()) {
+      getTreeItems(items, child);
+    }
+  }
+
+  /**
    * Gets the selected items.
    *
    * @return the selected items
