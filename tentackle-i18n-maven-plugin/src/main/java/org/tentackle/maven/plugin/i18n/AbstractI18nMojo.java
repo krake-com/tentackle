@@ -24,6 +24,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 
 import org.tentackle.common.BundleSupport;
 import org.tentackle.common.Constants;
+import org.tentackle.common.Settings;
 import org.tentackle.i18n.StoredBundleFactory;
 import org.tentackle.maven.AbstractTentackleMojo;
 import org.tentackle.maven.ProjectClassLoader;
@@ -34,6 +35,12 @@ import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -224,4 +231,41 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
    */
   public abstract void processBundle(ClassLoader classLoader, String bundleName, String locale, String resourceName) throws MojoExecutionException;
 
+  /**
+   * Loads resource properties via classloader.
+   *
+   * @param classLoader the classloader to use
+   * @param resourceName the resource name (with locale)
+   * @return the properties, null if not found
+   * @throws IOException if IO error
+   */
+  protected Properties loadProperties(ClassLoader classLoader, String resourceName) throws IOException {
+    try (InputStream is = classLoader.getResourceAsStream(resourceName)) {
+      if (is != null) {
+        Reader reader = new InputStreamReader(is, Settings.getEncodingCharset());
+        Properties props = new Properties();
+        props.load(reader);
+        return props;
+      }
+      return null;
+    }
+  }
+
+  /**
+   * Loads resource properties from the filesystem.
+   *
+   * @param file the file
+   * @return the properties, null if not found
+   * @throws IOException if IO error
+   */
+  protected Properties loadProperties(File file) throws IOException {
+    if (file.exists()) {
+      try (Reader reader = new FileReader(file, Settings.getEncodingCharset())) {
+        Properties properties = new Properties();
+        properties.load(reader);
+        return properties;
+      }
+    }
+    return null;
+  }
 }
