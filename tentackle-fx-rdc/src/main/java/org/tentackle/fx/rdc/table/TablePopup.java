@@ -331,7 +331,8 @@ public class TablePopup<S> {
       if (treeTable != null) {
         TreeItem<S> selectedItem = treeTable.getSelectionModel().getSelectedItem();
         expandItem.setOnAction(e -> expandTreeTable(selectedItem));
-        expandItem.setText(RdcFxRdcBundle.getString(selectedItem != null && selectedItem.isExpanded() ? "EXPAND_AGAIN" : "EXPAND"));
+        expandItem.setText(selectedItem != null && selectedItem.isExpanded() ?
+                           RdcFxRdcBundle.getString("EXPAND_AGAIN") : RdcFxRdcBundle.getString("EXPAND"));
         expandItem.setDisable(selectedItem != null && selectedItem.isLeaf());
         collapseItem.setOnAction(e -> collapseTreeTable(selectedItem));
         collapseItem.setText(RdcFxRdcBundle.getString("COLLAPSE"));

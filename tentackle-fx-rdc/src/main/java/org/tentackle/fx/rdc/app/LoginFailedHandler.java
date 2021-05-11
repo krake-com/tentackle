@@ -102,8 +102,7 @@ public class LoginFailedHandler {
     else if (ex instanceof VersionIncompatibleException) {
       VersionIncompatibleException vx = (VersionIncompatibleException) ex;
       Platform.runLater(() -> {
-        Fx.info(MessageFormat.format(AppFxRdcBundle.getString(
-                "client version {0} does not match server version {1}"),
+        Fx.info(MessageFormat.format(AppFxRdcBundle.getString("client version {0} does not match server version {1}"),
                 vx.getClientVersion(), vx.getServerVersion()));
         view.getScene().getWindow().hide();
       });

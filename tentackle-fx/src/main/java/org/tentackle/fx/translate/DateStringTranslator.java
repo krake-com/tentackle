@@ -614,8 +614,10 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
 
         catch (ParseException e) {
           getComponent().setErrorOffset(e.getErrorOffset());
-          getComponent().setError(MessageFormat.format(FxFxBundle.getString(
-                  withDate ? "INVALID DATE: {0}" : "INVALID TIME: {0}"), str));
+          getComponent().setError(MessageFormat.format(withDate ?
+                                                       FxFxBundle.getString("INVALID DATE: {0}") :
+                                                       FxFxBundle.getString("INVALID TIME: {0}"),
+                                                       str));
           getComponent().setErrorTemporary(true);
           char errorChar = 0;
           if (e.getErrorOffset() > 0 && e.getErrorOffset() == slen) {
