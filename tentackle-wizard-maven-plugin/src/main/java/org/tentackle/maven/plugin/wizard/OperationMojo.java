@@ -27,6 +27,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 
 import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.fx.Fx;
+import org.tentackle.maven.PackageInfo;
 import org.tentackle.maven.plugin.wizard.fx.OperationWizard;
 
 import java.util.List;
@@ -46,8 +47,8 @@ public class OperationMojo extends AbstractWizardMojo {
   }
 
   @Override
-  public void execute() throws MojoExecutionException, MojoFailureException {
-    super.execute();
+  public void executeImpl() throws MojoExecutionException, MojoFailureException {
+    super.executeImpl();
 
     CountDownLatch latch = new CountDownLatch(1);
 
@@ -78,15 +79,18 @@ public class OperationMojo extends AbstractWizardMojo {
   }
 
   @Override
-  protected void validate() throws MojoExecutionException {
-    super.validate();
-    operationProfiles = getProfiles(OperationProfile.class);
-    if (operationProfiles.isEmpty()) {
-      throw new MojoExecutionException("at least one OperationProfile must be configured");
+  protected boolean validate() throws MojoExecutionException {
+    if (super.validate()) {
+      operationProfiles = getProfiles(OperationProfile.class);
+      if (operationProfiles.isEmpty()) {
+        throw new MojoExecutionException("at least one OperationProfile must be configured");
+      }
+      Map<String, PackageInfo> packageInfoMap = createPackageMap(false);
+      for (OperationProfile profile : operationProfiles) {
+        profile.validate(packageInfoMap);
+      }
+      return true;
     }
-    Map<String, PackageInfo> packageInfoMap = createPackageMap();
-    for (OperationProfile profile: operationProfiles) {
-      profile.validate(packageInfoMap);
-    }
+    return false;
   }
 }

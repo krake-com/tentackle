@@ -45,6 +45,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -394,9 +395,9 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    */
   public void findResourceDirs() {
     resourceDirs = new ArrayList<>();
-    for (Object resource : mavenProject.getBuild().getResources()) {
-      if (resource instanceof Resource) {
-        String name = ((Resource) resource).getDirectory();
+    for (Resource resource : mavenProject.getBuild().getResources()) {
+      if (resource != null) {
+        String name = resource.getDirectory();
         if (name != null) {
           getLog().debug("found resource directory " + name);
           resourceDirs.add(name);
@@ -541,5 +542,95 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
       return false;
     }
     return true;
+  }
+
+  /**
+   * Creates a map of package names to package infos.
+   *
+   * @param resourceRoots true if collect all resource roots, else all source roots
+   * @return the packages
+   * @throws MojoExecutionException if split package detected
+   */
+  protected Map<String, PackageInfo> createPackageMap(boolean resourceRoots) throws MojoExecutionException {
+    Map<String, PackageInfo> map = new HashMap<>();
+    StringBuilder buf = new StringBuilder();
+    for (MavenProject project : mavenProject.getCollectedProjects()) {
+      List<String> paths;
+      if (resourceRoots) {
+        paths = mavenProject.getResources().stream().map(resource -> resource.getDirectory()).toList();
+      }
+      else {
+        paths = project.getCompileSourceRoots();
+      }
+      for (String path : paths) {
+        for (PackageInfo info : getPackages(project, path)) {
+          boolean infoContaingFiles = info.isContainingFiles();
+          PackageInfo splitPkg = map.get(info.getName());
+          if (splitPkg != null) {
+            if (splitPkg.isContainingFiles()) {
+              if (infoContaingFiles) {
+                buf.append("\nsplit package detected: ").append(info.getName()).
+                    append(" in ").append(project.getName()).
+                       append(" and ").append(splitPkg.getProject().getName());
+              }
+              // other package is empty: keep existing with java files
+              continue;
+            }
+            else if (!infoContaingFiles) {
+              // more than one empty package found: add it to the suspects until we know whether a non-empty exists
+              List<PackageInfo> dups = splitPkg.getEmptyDuplicates();
+              if (dups == null) {
+                dups = new ArrayList<>();
+                splitPkg.setEmptyDuplicates(dups);
+              }
+              dups.add(info);
+              continue;
+            }
+            // else: split is empty and info contains java files -> replace empty
+          }
+          // add new or replace empty package
+          map.put(info.getName(), info);
+        }
+      }
+    }
+
+    if (buf.length() > 0) {
+      // at least one split package found
+      // this isnt okay whether used in profiles or not
+      buf.deleteCharAt(0);    // remove leading newline
+      throw new MojoExecutionException(buf.toString());
+    }
+
+    return map;
+  }
+
+  private List<PackageInfo> getPackages(MavenProject project, String dirName) {
+    List<PackageInfo> packages = new ArrayList<>();
+    checkDir(project, new File(dirName), packages, "");
+    return packages;
+  }
+
+  private void checkDir(MavenProject project, File dir, List<PackageInfo> packages, String packageName) {
+    if (dir.isDirectory()) {
+      boolean containsFiles = false;
+      boolean empty = true;
+      File[] files = dir.listFiles();
+      if (files != null) {
+        for (File file : files) {
+          if (!file.isHidden()) {
+            empty = false;
+            if (file.isDirectory()) {
+              checkDir(project, file, packages, packageName.isEmpty() ? file.getName() : packageName + "." + file.getName());
+            }
+            else if (file.isFile()) {
+              containsFiles = true;
+            }
+          }
+        }
+      }
+      if ((empty || containsFiles) && !packageName.isEmpty()) {
+        packages.add(new PackageInfo(packageName, project, dir));
+      }
+    }
   }
 }
