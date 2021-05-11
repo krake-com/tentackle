@@ -29,10 +29,8 @@ import org.tentackle.maven.PackageInfo;
 import org.tentackle.reflect.ReflectionHelper;
 
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.Reader;
 import java.io.Writer;
 import java.util.Map;
 import java.util.Properties;
@@ -70,17 +68,24 @@ public class PullMojo extends AbstractI18nMojo {
       String fileName = ndx >= 0 ? resourceName.substring(ndx + 1) : resourceName;
       File file = new File(info.getPath(), fileName);
       boolean differs = false;
-      Properties properties = new Properties();
-      try (Reader reader = new FileReader(file, Settings.getEncodingCharset())) {
-        properties.load(reader);
-        for (StoredBundleKey bundleKey : bundle.getKeys()) {
-          String propValue = properties.getProperty(bundleKey.getKey());
-          if (!bundleKey.getValue().equals(propValue)) {
-            properties.setProperty(bundleKey.getKey(), bundleKey.getValue());
-            getLog().info(resourceName + " [" + bundleKey.getKey() + "] updated");
-            updates++;
-            differs = true;
+      Properties properties;
+      try {
+        properties = loadProperties(file);
+        if (properties != null) {
+          for (StoredBundleKey bundleKey : bundle.getKeys()) {
+            String propValue = properties.getProperty(bundleKey.getKey());
+            if (!bundleKey.getValue().equals(propValue)) {
+              properties.setProperty(bundleKey.getKey(), bundleKey.getValue());
+              getLog().info(resourceName + " [" + bundleKey.getKey() + "] updated");
+              updates++;
+              differs = true;
+            }
           }
+        }
+        else {
+          getLog().warn("no such resource: " + resourceName);
+          warnings++;
+          return;
         }
       }
       catch (IOException iox) {

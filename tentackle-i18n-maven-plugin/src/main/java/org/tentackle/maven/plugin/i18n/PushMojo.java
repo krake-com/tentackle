@@ -22,13 +22,9 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 
-import org.tentackle.common.Settings;
 import org.tentackle.i18n.pdo.StoredBundle;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -53,13 +49,9 @@ public class PushMojo extends AbstractI18nMojo {
   @Override
   public void processBundle(ClassLoader classLoader, String bundleName, String locale, String resourceName) {
     bundleCount++;
-    Properties props = new Properties();
-    InputStream is = null;
     try {
-      is = classLoader.getResourceAsStream(resourceName);
-      if (is != null) {
-        Reader reader = new InputStreamReader(is, Settings.getEncodingCharset());
-        props.load(reader);
+      Properties props = loadProperties(classLoader, resourceName);
+      if (props != null) {
         push(bundleName, locale, props);
       }
       else {
@@ -70,17 +62,6 @@ public class PushMojo extends AbstractI18nMojo {
     catch (IOException ex) {
       getLog().error("could not load " + resourceName, ex);
       errors++;
-    }
-    finally {
-      if (is != null) {
-        try {
-          is.close();
-        }
-        catch (IOException ex) {
-          getLog().error("closing " + resourceName + " failed", ex);
-          errors++;
-        }
-      }
     }
   }
 
