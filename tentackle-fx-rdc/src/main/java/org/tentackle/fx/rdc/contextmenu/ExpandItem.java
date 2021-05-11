@@ -45,7 +45,7 @@ public class ExpandItem<T extends PersistentDomainObject<T>> extends MenuItem im
    * @param cell the tree cell
    */
   public ExpandItem(PdoTreeCell<T> cell) {
-    super(RdcFxRdcBundle.getString(cell.getTreeItem().isExpanded() ? "EXPAND_AGAIN" : "EXPAND"),
+    super(cell.getTreeItem().isExpanded() ? RdcFxRdcBundle.getString("EXPAND_AGAIN") : RdcFxRdcBundle.getString("EXPAND"),
           Fx.createImageView("expand"));
 
     TreeItem<T> treeItem = cell.getTreeItem();

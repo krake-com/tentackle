@@ -77,13 +77,11 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
     SecurityRulesView controller = Fx.load(SecurityRulesView.class);
     if (pdo != null) {
       controller.setSecuredObject(pdo);
-      stage.setTitle(MessageFormat.format(RdcFxRdcBundle.getString(
-              "Security Rules for {0}"), pdo.getPlural()));
+      stage.setTitle(MessageFormat.format(RdcFxRdcBundle.getString("Security Rules for {0}"), pdo.getPlural()));
     }
     else {
       controller.setSecuredObject(clazz);
-      stage.setTitle(MessageFormat.format(RdcFxRdcBundle.getString(
-              "Security Rules for {0}"), ReflectionHelper.getClassBaseName(clazz)));
+      stage.setTitle(MessageFormat.format(RdcFxRdcBundle.getString("Security Rules for {0}"), ReflectionHelper.getClassBaseName(clazz)));
     }
     Scene scene = Fx.createScene(controller.getView());
     stage.setScene(scene);
@@ -260,8 +258,7 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
       context = pdo.getDomainContext();
       trackedClassRules = on(Security.class).selectByObject(classId, 0);
       classRules.setAll(trackedClassRules);
-      classTab.setText(MessageFormat.format(RdcFxRdcBundle.getString(
-              "Rules for all {0}"), pdo.getPlural()));
+      classTab.setText(MessageFormat.format(RdcFxRdcBundle.getString("Rules for all {0}"), pdo.getPlural()));
       if (pdo.isNew()) {
         trackedPdoRules = null;
         pdoRules.clear();
@@ -272,8 +269,7 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
         trackedPdoRules = on(Security.class).selectByObject(classId, pdo.getId());
         pdoRules.setAll(trackedPdoRules);
         tabPane.getSelectionModel().select(pdoTab);
-        pdoTab.setText(MessageFormat.format(RdcFxRdcBundle.getString(
-                "Rules for {0} {1}"), pdo.getSingular(), pdo.toString()));
+        pdoTab.setText(MessageFormat.format(RdcFxRdcBundle.getString("Rules for {0} {1}"), pdo.getSingular(), pdo.toString()));
         if (!tabPane.getTabs().contains(pdoTab)) {
           tabPane.getTabs().add(pdoTab);
         }
@@ -285,8 +281,7 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
       if (clazz != null) {
         trackedClassRules = on(Security.class).selectByObjectClass(clazz.getName());
         classRules.setAll(trackedClassRules);
-        classTab.setText(MessageFormat.format(RdcFxRdcBundle.getString(
-                  "Rules for {0}"), ReflectionHelper.getClassBaseName(clazz)));
+        classTab.setText(MessageFormat.format(RdcFxRdcBundle.getString("Rules for {0}"), ReflectionHelper.getClassBaseName(clazz)));
       }
       else {
         classRules.clear();
