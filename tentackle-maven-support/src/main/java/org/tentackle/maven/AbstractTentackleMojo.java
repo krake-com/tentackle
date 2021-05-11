@@ -585,7 +585,8 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
     for (MavenProject project : projects) {
       List<String> paths;
       if (resourceRoots) {
-        paths = project.getResources().stream().filter(resource -> !resource.isFiltering()).map(resource -> resource.getDirectory()).toList();
+        paths = project.getResources().stream().filter(resource -> !resource.isFiltering()).map(resource -> resource.getDirectory())
+                       .collect(Collectors.toList());
       }
       else {
         paths = project.getCompileSourceRoots();
