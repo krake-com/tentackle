@@ -43,6 +43,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -285,6 +287,24 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
     }
 
     return toolchain;
+  }
+
+  /**
+   * Gets the hostname.
+   *
+   * @return the hostname
+   */
+  public String getHostName() {
+    String hostName;
+    try {
+      // may fail if host is misconfigured
+      hostName = InetAddress.getLocalHost().getHostName();
+    }
+    catch (UnknownHostException ex) {
+      // return localhost
+      hostName = InetAddress.getLoopbackAddress().getHostAddress();
+    }
+    return hostName;
   }
 
   @Override
@@ -554,10 +574,18 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   protected Map<String, PackageInfo> createPackageMap(boolean resourceRoots) throws MojoExecutionException {
     Map<String, PackageInfo> map = new HashMap<>();
     StringBuilder buf = new StringBuilder();
-    for (MavenProject project : mavenProject.getCollectedProjects()) {
+    List<MavenProject> projects;
+    if (isExecutionRecursive()) {
+      projects = new ArrayList<>();
+      projects.add(mavenProject);
+    }
+    else {
+      projects = mavenProject.getCollectedProjects();
+    }
+    for (MavenProject project : projects) {
       List<String> paths;
       if (resourceRoots) {
-        paths = mavenProject.getResources().stream().map(resource -> resource.getDirectory()).toList();
+        paths = project.getResources().stream().filter(resource -> !resource.isFiltering()).map(resource -> resource.getDirectory()).toList();
       }
       else {
         paths = project.getCompileSourceRoots();

@@ -220,7 +220,8 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
    * @param resourceName the bundle resource name without leading slash
    * @param bundleName the original bundle class name
    * @param locale the locale, null if default
+   * @throws MojoExecutionException if execution failed
    */
-  public abstract void processBundle(ClassLoader classLoader, String bundleName, String locale, String resourceName);
+  public abstract void processBundle(ClassLoader classLoader, String bundleName, String locale, String resourceName) throws MojoExecutionException;
 
 }

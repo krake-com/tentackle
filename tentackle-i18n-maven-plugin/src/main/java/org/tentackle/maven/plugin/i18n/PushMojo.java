@@ -22,14 +22,15 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 
+import org.tentackle.common.Settings;
 import org.tentackle.i18n.pdo.StoredBundle;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.Objects;
 import java.util.Properties;
-
 
 
 /**
@@ -57,8 +58,8 @@ public class PushMojo extends AbstractI18nMojo {
     try {
       is = classLoader.getResourceAsStream(resourceName);
       if (is != null) {
-        is = new BufferedInputStream(is);
-        props.load(is);
+        Reader reader = new InputStreamReader(is, Settings.getEncodingCharset());
+        props.load(reader);
         push(bundleName, locale, props);
       }
       else {
