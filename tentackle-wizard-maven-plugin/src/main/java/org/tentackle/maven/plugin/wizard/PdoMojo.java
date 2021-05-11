@@ -27,6 +27,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 
 import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.fx.Fx;
+import org.tentackle.maven.PackageInfo;
 import org.tentackle.maven.plugin.wizard.fx.PdoWizard;
 import org.tentackle.model.Entity;
 import org.tentackle.model.Model;
@@ -55,8 +56,8 @@ public class PdoMojo extends AbstractWizardMojo {
   }
 
   @Override
-  public void execute() throws MojoExecutionException, MojoFailureException {
-    super.execute();
+  public void executeImpl() throws MojoExecutionException, MojoFailureException {
+    super.executeImpl();
     updateClassIDs();
 
     CountDownLatch latch = new CountDownLatch(1);
@@ -88,16 +89,19 @@ public class PdoMojo extends AbstractWizardMojo {
   }
 
   @Override
-  protected void validate() throws MojoExecutionException {
-    super.validate();
-    pdoProfiles = getProfiles(PdoProfile.class);
-    if (pdoProfiles.isEmpty()) {
-      throw new MojoExecutionException("at least one PdoProfile must be configured");
+  protected boolean validate() throws MojoExecutionException {
+    if (super.validate()) {
+      pdoProfiles = getProfiles(PdoProfile.class);
+      if (pdoProfiles.isEmpty()) {
+        throw new MojoExecutionException("at least one PdoProfile must be configured");
+      }
+      Map<String, PackageInfo> packageInfoMap = createPackageMap(false);
+      for (PdoProfile profile : pdoProfiles) {
+        profile.validate(packageInfoMap);
+      }
+      return true;
     }
-    Map<String, PackageInfo> packageInfoMap = createPackageMap();
-    for (PdoProfile profile: pdoProfiles) {
-      profile.validate(packageInfoMap);
-    }
+    return false;
   }
 
   /**

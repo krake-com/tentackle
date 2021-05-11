@@ -19,30 +19,23 @@
 
 package org.tentackle.maven.plugin.wizard;
 
-import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.model.fileset.FileSet;
 
+import org.tentackle.maven.AbstractTentackleMojo;
 import org.tentackle.model.EntityAliases;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 
 /**
@@ -50,13 +43,7 @@ import java.util.stream.Collectors;
  *
  * @author harald
  */
-public abstract class AbstractWizardMojo extends AbstractMojo {
-
-  /**
-   * The Maven Project.
-   */
-  @Parameter(defaultValue = "${project}", readonly = true, required = true)
-  private MavenProject mavenProject;
+public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
 
   /**
    * Directory holding the model files to be processed.<br>
@@ -149,8 +136,7 @@ public abstract class AbstractWizardMojo extends AbstractMojo {
   }
 
   @Override
-  public void execute() throws MojoExecutionException, MojoFailureException {
-    validate();
+  public void executeImpl() throws MojoExecutionException, MojoFailureException {
     loadModel();
   }
 
@@ -265,28 +251,22 @@ public abstract class AbstractWizardMojo extends AbstractMojo {
   }
 
 
-  /**
-   * Validates the configuration.
-   *
-   * @throws MojoExecutionException if project not set or misconfigured
-   */
-  protected void validate() throws MojoExecutionException {
-    if (mavenProject == null) {
-      throw new MojoExecutionException("missing project");
-    }
-    if (mavenProject.getBasedir() == null) {
-      throw new MojoExecutionException("missing project.baseDir");
-    }
-    if (templateDir.exists()) {
-      if (!templateDir.isDirectory()) {
-        throw new MojoExecutionException(templateDir.getPath() + " is not a directory");
+  @Override
+  protected boolean validate() throws MojoExecutionException {
+    if (super.validate()) {
+      if (templateDir.exists()) {
+        if (!templateDir.isDirectory()) {
+          throw new MojoExecutionException(templateDir.getPath() + " is not a directory");
+        }
       }
+      else {
+        templateDir.mkdirs();
+        getLog().info("template directory created: " + templateDir.getPath());
+        installTemplates();
+      }
+      return true;
     }
-    else {
-      templateDir.mkdirs();
-      getLog().info("template directory created: " + templateDir.getPath());
-      installTemplates();
-    }
+    return false;
   }
 
 
@@ -324,96 +304,4 @@ public abstract class AbstractWizardMojo extends AbstractMojo {
       throw new MojoExecutionException("cannot install template " + path, e);
     }
   }
-
-  private String loadResourceFileIntoString(String path) throws MojoExecutionException {
-    InputStream inputStream = getClass().getResourceAsStream(path);
-    if (inputStream == null) {
-      throw new MojoExecutionException("no such resource: " + path);
-    }
-    BufferedReader buffer = new BufferedReader(new InputStreamReader(inputStream));
-    return buffer.lines().collect(Collectors.joining(System.getProperty("line.separator")));
-  }
-
-  /**
-   * Creates a map of package names to package infos.
-   *
-   * @return the packages
-   * @throws MojoExecutionException if split package detected
-   */
-  protected Map<String, PackageInfo> createPackageMap() throws MojoExecutionException {
-    Map<String, PackageInfo> map = new HashMap<>();
-    StringBuilder buf = new StringBuilder();
-    for (MavenProject project : mavenProject.getCollectedProjects()) {
-      for (String path : project.getCompileSourceRoots()) {
-        for (PackageInfo info : getPackages(project, path)) {
-          boolean infoContaingFiles = info.isContainingJavaFiles();
-          PackageInfo splitPkg = map.get(info.getName());
-          if (splitPkg != null) {
-            if (splitPkg.isContainingJavaFiles()) {
-              if (infoContaingFiles) {
-                buf.append("\nsplit package detected: ").append(info.getName()).
-                    append(" in ").append(project.getName()).
-                    append(" and ").append(splitPkg.getProject().getName());
-              }
-              // other package is empty: keep existing with java files
-              continue;
-            }
-            else if (!infoContaingFiles) {
-              // more than one empty package found: add it to the suspects until we know whether a non-empty exists
-              List<PackageInfo> dups = splitPkg.getEmptyDuplicates();
-              if (dups == null) {
-                dups = new ArrayList<>();
-                splitPkg.setEmptyDuplicates(dups);
-              }
-              dups.add(info);
-              continue;
-            }
-            // else: split is empty and info contains java files -> replace empty
-          }
-          // add new or replace empty package
-          map.put(info.getName(), info);
-        }
-      }
-    }
-
-    if (buf.length() > 0) {
-      // at least one split package found
-      // this isnt okay whether used in profiles or not
-      buf.deleteCharAt(0);    // remove leading newline
-      throw new MojoExecutionException(buf.toString());
-    }
-
-    return map;
-  }
-
-  private List<PackageInfo> getPackages(MavenProject project, String compileSourceRoot) {
-    List<PackageInfo> packages = new ArrayList<>();
-    checkDir(project, new File(compileSourceRoot), packages, "");
-    return packages;
-  }
-
-  private void checkDir(MavenProject project, File dir, List<PackageInfo> packages, String packageName) {
-    if (dir.isDirectory()) {
-      boolean containsJavaFiles = false;
-      boolean empty = true;
-      File[] files = dir.listFiles();
-      if (files != null) {
-        for (File file : files) {
-          if (!file.isHidden()) {
-            empty = false;
-            if (file.isDirectory()) {
-              checkDir(project, file, packages, packageName.isEmpty() ? file.getName() : packageName + "." + file.getName());
-            }
-            else if (file.getName().endsWith(".java")) {
-              containsJavaFiles = true;
-            }
-          }
-        }
-      }
-      if ((empty || containsJavaFiles) && !packageName.isEmpty()) {
-        packages.add(new PackageInfo(packageName, project, dir));
-      }
-    }
-  }
-
 }

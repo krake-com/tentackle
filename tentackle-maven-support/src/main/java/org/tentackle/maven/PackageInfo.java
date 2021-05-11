@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.maven.plugin.wizard;
+package org.tentackle.maven;
 
 import org.apache.maven.project.MavenProject;
 
@@ -75,15 +75,16 @@ public class PackageInfo {
   }
 
   /**
-   * Determines whether this package contains any java files.<br>
+   * Determines whether this package contains any files.<br>
    * The method is used to detect split packages which are forbidden in JPMS.
    *
-   * @return true if not empty, false if no java files found
+   * @return true if not empty, false if no files found
    */
-  public boolean isContainingJavaFiles() {
-    String[] files = path.list((dir, nam) -> nam.endsWith(Constants.JAVA_EXT));
+  public boolean isContainingFiles() {
+    String[] files = path.list((dir, nam) -> dir.isFile());
     return files != null && files.length > 0;
   }
+
 
   /**
    * Gets the empty duplicates for this package info.<br>

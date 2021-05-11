@@ -24,7 +24,8 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 
 
 /**
- * Pulls resource bundles from the database backend.
+ * Pulls resource bundles from the database backend.<br>
+ * If the database differs from the resource bundle files, they will be updated.
  *
  * @author harald
  */

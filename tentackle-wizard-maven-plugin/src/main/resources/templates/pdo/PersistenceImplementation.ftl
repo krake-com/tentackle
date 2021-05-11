@@ -38,6 +38,7 @@ import org.tentackle.persist.PersistentObjectClassVariables;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentObjectService;
 import org.tentackle.pdo.Pdo;
+import org.tentackle.pdo.PdoCache;
 import org.tentackle.session.Persistent;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;

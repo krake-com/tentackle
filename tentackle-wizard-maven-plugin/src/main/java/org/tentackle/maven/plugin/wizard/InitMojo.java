@@ -30,8 +30,8 @@ import org.apache.maven.plugins.annotations.Mojo;
 public class InitMojo extends AbstractWizardMojo {
 
   @Override
-  public void execute() throws MojoExecutionException, MojoFailureException {
-    super.execute();
+  public void executeImpl() throws MojoExecutionException, MojoFailureException {
+    super.executeImpl();
     installTemplates();
   }
 
