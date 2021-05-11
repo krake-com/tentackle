@@ -18,14 +18,29 @@
 
 package org.tentackle.maven.plugin.i18n;
 
+import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 
+import org.tentackle.common.Settings;
+import org.tentackle.i18n.pdo.StoredBundle;
+import org.tentackle.i18n.pdo.StoredBundleKey;
+import org.tentackle.maven.PackageInfo;
+import org.tentackle.reflect.ReflectionHelper;
+
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
+import java.util.Map;
+import java.util.Properties;
 
 
 /**
  * Pulls resource bundles from the database backend.<br>
- * If the database differs from the resource bundle files, they will be updated.
+ * If the database contents differ from the resource bundle property files, the property files will be updated.
  *
  * @author harald
  */
@@ -33,8 +48,58 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
       requiresDependencyResolution = ResolutionScope.COMPILE)
 public class PullMojo extends AbstractI18nMojo {
 
+  private Map<String, PackageInfo> packageMap;
+
   @Override
-  public void processBundle(ClassLoader classLoader, String bundleName, String locale, String resourceName) {
+  protected boolean validate() throws MojoExecutionException {
+    if (super.validate()) {
+      packageMap = createPackageMap(true);
+      return true;
+    }
+    return false;
+  }
+
+  @Override
+  public void processBundle(ClassLoader classLoader, String bundleName, String locale, String resourceName) throws MojoExecutionException {
+    StoredBundle bundle = on(StoredBundle.class).findByNameAndLocale(bundleName, locale);
+    String packageName = ReflectionHelper.getPackageName(bundleName);
+    PackageInfo info = packageMap.get(packageName);
+    if (info != null) {   // if part of the project
+      bundleCount++;
+      int ndx = resourceName.lastIndexOf('/');
+      String fileName = ndx >= 0 ? resourceName.substring(ndx + 1) : resourceName;
+      File file = new File(info.getPath(), fileName);
+      boolean differs = false;
+      Properties properties = new Properties();
+      try (Reader reader = new FileReader(file, Settings.getEncodingCharset())) {
+        properties.load(reader);
+        for (StoredBundleKey bundleKey : bundle.getKeys()) {
+          String propValue = properties.getProperty(bundleKey.getKey());
+          if (!bundleKey.getValue().equals(propValue)) {
+            properties.setProperty(bundleKey.getKey(), bundleKey.getValue());
+            getLog().info(resourceName + " [" + bundleKey.getKey() + "] updated");
+            updates++;
+            differs = true;
+          }
+        }
+      }
+      catch (IOException iox) {
+        getLog().error("cannot load resource bundle properties file " + file.getAbsolutePath(), iox);
+        errors++;
+        return;
+      }
+
+      if (differs) {
+        try (Writer writer = new FileWriter(file, Settings.getEncodingCharset())) {
+          String comment = "pulled from " + url + " by " + user + "@" + getHostName();
+          properties.store(writer, comment);
+        }
+        catch (IOException iox) {
+          getLog().error("cannot update resource bundle properties file " + file.getAbsolutePath(), iox);
+          errors++;
+        }
+      }
+    }
   }
 
 }

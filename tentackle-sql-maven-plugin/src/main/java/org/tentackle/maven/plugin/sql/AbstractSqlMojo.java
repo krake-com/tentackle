@@ -50,8 +50,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.sql.Connection;
@@ -731,24 +729,6 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
       }
     }
     return isOther;
-  }
-
-  /**
-   * Gets the hostname.
-   *
-   * @return the hostname
-   */
-  private String getHostName() {
-    String hostName;
-    try {
-      // may fail if host is misconfigured
-      hostName = InetAddress.getLocalHost().getHostName();
-    }
-    catch (UnknownHostException ex) {
-      // return localhost
-      hostName = InetAddress.getLoopbackAddress().getHostAddress();
-    }
-    return hostName;
   }
 
 }
