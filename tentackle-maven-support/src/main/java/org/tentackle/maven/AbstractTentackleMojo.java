@@ -51,6 +51,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
 import java.util.stream.Collectors;
 
 
@@ -149,6 +151,12 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
 
 
   /**
+   * The minimum logging {@link Level} to redirect java.util logging to the maven logger.
+   */
+  @Parameter(defaultValue = "WARNING")
+  protected String minLogLevel;
+
+  /**
    * mapped verbosity level.
    */
   protected Verbosity verbosityLevel;
@@ -163,6 +171,14 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    */
   private JavaToolFinder toolFinder;
 
+
+  /**
+   * Installs a java.util log handler that redirects to the maven logger.
+   */
+  public void installJavaLoggingHandler() {
+    LogManager.getLogManager().reset();
+    LogManager.getLogManager().getLogger("").addHandler(new MavenLogHandler(getLog(), Level.parse(minLogLevel)));
+  }
 
   /**
    * Gets the maven project.
@@ -309,6 +325,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
 
   @Override
   public final void execute() throws MojoExecutionException, MojoFailureException {
+    installJavaLoggingHandler();
     prepareExecute();
     if (validate()) {
       executeImpl();

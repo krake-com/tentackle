@@ -71,21 +71,19 @@ public class PullMojo extends AbstractI18nMojo {
       Properties properties;
       try {
         properties = loadProperties(file);
-        if (properties != null) {
-          for (StoredBundleKey bundleKey : bundle.getKeys()) {
-            String propValue = properties.getProperty(bundleKey.getKey());
-            if (!bundleKey.getValue().equals(propValue)) {
-              properties.setProperty(bundleKey.getKey(), bundleKey.getValue());
-              getLog().info(resourceName + " [" + bundleKey.getKey() + "] updated");
-              updates++;
-              differs = true;
-            }
-          }
-        }
-        else {
-          getLog().warn("no such resource: " + resourceName);
+        if (properties == null) {
+          getLog().warn("created resource: " + resourceName);
           warnings++;
-          return;
+          properties = new OrderedProperties();
+        }
+        for (StoredBundleKey bundleKey : bundle.getKeys()) {
+          String propValue = properties.getProperty(bundleKey.getKey());
+          if (!bundleKey.getValue().equals(propValue)) {
+            properties.setProperty(bundleKey.getKey(), bundleKey.getValue());
+            getLog().info(resourceName + ": '" + bundleKey.getKey() + "' " + (propValue == null ? "added" : "updated"));
+            updates++;
+            differs = true;
+          }
         }
       }
       catch (IOException iox) {
