@@ -243,7 +243,7 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
     try (InputStream is = classLoader.getResourceAsStream(resourceName)) {
       if (is != null) {
         Reader reader = new InputStreamReader(is, Settings.getEncodingCharset());
-        Properties props = new Properties();
+        Properties props = new OrderedProperties();
         props.load(reader);
         return props;
       }
@@ -261,7 +261,7 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
   protected Properties loadProperties(File file) throws IOException {
     if (file.exists()) {
       try (Reader reader = new FileReader(file, Settings.getEncodingCharset())) {
-        Properties properties = new Properties();
+        Properties properties = new OrderedProperties();
         properties.load(reader);
         return properties;
       }
