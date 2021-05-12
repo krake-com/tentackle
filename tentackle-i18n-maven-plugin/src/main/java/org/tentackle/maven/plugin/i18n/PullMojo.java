@@ -96,7 +96,7 @@ public class PullMojo extends AbstractI18nMojo {
 
       if (differs) {
         try (Writer writer = new FileWriter(file, Settings.getEncodingCharset())) {
-          String comment = "pulled from " + url + " by " + user + "@" + getHostName();
+          String comment = "pulled from " + url + " by " + System.getProperty("user.name") + "@" + getHostName();
           properties.store(writer, comment);
         }
         catch (IOException iox) {
