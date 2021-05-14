@@ -18,9 +18,11 @@
 
 package org.tentackle.maven.plugin.i18n;
 
+import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProject;
 
 import org.tentackle.common.BundleSupport;
 import org.tentackle.common.Constants;
@@ -56,14 +58,6 @@ import java.util.StringTokenizer;
  * @author harald
  */
 public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements DomainContextProvider {
-
-  /**
-   * Project classpath.
-   */
-  @Parameter(defaultValue = "${project.compileClasspathElements}",
-             readonly = true,
-             required = true)
-  protected List<String> classpathElements;
 
   /**
    * The backend URL.
@@ -171,40 +165,16 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
       ModificationTracker pdoTracker = ModificationTracker.getInstance();   // create tracker but don't start the thread
       pdoTracker.setSession(session);
 
-      ClassLoader classLoader = new ProjectClassLoader((URLClassLoader) getClass().getClassLoader(), classpathElements);
+      List<MavenProject> projects = new ArrayList<>();
+      if (isExecutionRecursive()) {
+        projects = new ArrayList<>();
+        projects.add(getMavenProject());
+      }
+      else {
+        projects = getMavenProject().getCollectedProjects();
+      }
 
-      session.transaction(() -> {   // within tx to minimize cache reloads in running application servers
-        // for all annotations like @Bundle or @FxControllerService (need a META-INF/services file!)
-        for (BundleSupport bundleSupport : BundleSupport.getBundles(classLoader)) {
-          String bundleName = bundleSupport.getBundleName();
-          String suffix = null;
-          String resourceName = bundleName;
-          Iterator<String> iter = localeSuffixes.iterator();
-          for (;;) {
-            if (suffix != null) {
-              resourceName = bundleName + "_" + suffix;
-            }
-            resourceName = resourceName.replace('.', '/') + Constants.PROPS_EXTENSION;
-            if (verbosityLevel.isDebug()) {
-              getLog().debug("processing " + resourceName);
-            }
-            processBundle(classLoader, bundleName, suffix, resourceName);
-            if (iter.hasNext()) {
-              suffix = iter.next();
-            }
-            else {
-              break;
-            }
-          }
-        }
-        return null;
-      });
-    }
-    catch (MalformedURLException mx) {
-      getLog().error("cannot create project classloader", mx);
-    }
-    catch (RuntimeException rex) {
-      throw new MojoExecutionException("processing the bundles failed", rex);
+      processBundles(session, projects);
     }
 
     getLog().info(bundleCount + " bundle" + (bundleCount == 1 ? "" : "s") + " processed, " +
@@ -217,6 +187,57 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
     }
   }
 
+  /**
+   * Process the bundles.
+   *
+   * @param session the open database session
+   * @param projects the maven projects
+   * @throws MojoExecutionException if failed
+   */
+  protected void processBundles(Session session, List<MavenProject> projects) throws MojoExecutionException {
+    try {
+      for (MavenProject project : projects) {
+        List<String> classpathElements = project.getCompileClasspathElements();
+        ClassLoader classLoader = new ProjectClassLoader((URLClassLoader) getClass().getClassLoader(), classpathElements);
+
+        session.transaction(() -> {   // within tx to minimize cache reloads in running application servers
+          // for all annotations like @Bundle or @FxControllerService (need a META-INF/services file!)
+          for (BundleSupport bundleSupport : BundleSupport.getBundles(classLoader)) {
+            String bundleName = bundleSupport.getBundleName();
+            String suffix = null;
+            String resourceName = bundleName;
+            Iterator<String> iter = localeSuffixes.iterator();
+            for (; ; ) {
+              if (suffix != null) {
+                resourceName = bundleName + "_" + suffix;
+              }
+              resourceName = resourceName.replace('.', '/') + Constants.PROPS_EXTENSION;
+              if (verbosityLevel.isDebug()) {
+                getLog().debug("processing " + resourceName);
+              }
+              processBundle(classLoader, bundleName, suffix, resourceName);
+              if (iter.hasNext()) {
+                suffix = iter.next();
+              }
+              else {
+                break;
+              }
+            }
+          }
+          return null;
+        });
+      }
+    }
+    catch (DependencyResolutionRequiredException dx) {
+      throw new MojoExecutionException("cannot determine classpath elements", dx);
+    }
+    catch (MalformedURLException mx) {
+      getLog().error("cannot create project classloader", mx);
+    }
+    catch (RuntimeException rex) {
+      throw new MojoExecutionException("processing the bundles failed", rex);
+    }
+  }
 
   /**
    * Process the given bundle resource name.<br>

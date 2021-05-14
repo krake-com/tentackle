@@ -395,7 +395,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
     info.setTimeZone(TimeZone.getDefault());
 
     Properties sysProps = System.getProperties();
-    info.setVmInfo(sysProps.getProperty("java.version") + " (" +
+    info.setVmInfo(Runtime.version() + " (" +
                    sysProps.getProperty("java.vm.name") + ")");
 
     info.setOsInfo(sysProps.getProperty("os.name") +  " (" +
