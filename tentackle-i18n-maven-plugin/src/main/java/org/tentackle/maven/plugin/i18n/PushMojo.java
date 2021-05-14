@@ -32,8 +32,6 @@ import java.util.Properties;
 /**
  * Pushes resource bundles to the database backend.<br>
  * Existing translations are left unchanged.
- *
- * @author harald
  */
 @Mojo(name = "push",
       requiresDependencyResolution = ResolutionScope.COMPILE)

@@ -39,8 +39,6 @@ import java.util.Properties;
 /**
  * Pulls resource bundles from the database backend.<br>
  * If the database contents differ from the resource bundle property files, the property files will be updated.
- *
- * @author harald
  */
 @Mojo(name = "pull",
       requiresDependencyResolution = ResolutionScope.COMPILE)
