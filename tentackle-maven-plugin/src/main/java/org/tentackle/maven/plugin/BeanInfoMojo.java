@@ -101,7 +101,7 @@ public class BeanInfoMojo extends AbstractTentackleMojo {
         ps.println("Archiver-Version: Plexus Archiver");
         ps.println("Created-By: Apache Maven");
         ps.println("Built-By: " + System.getProperty("user.name"));
-        ps.println("Build-Jdk: " + System.getProperty("java.version"));
+        ps.println("Build-Jdk: " + Runtime.version());
 
         // process files
         if (filesets != null && !filesets.isEmpty()) {
