@@ -222,6 +222,7 @@ public class VerifyMojo extends AbstractI18nMojo {
 
     missingTranslations = this.missingTranslations.stream().filter(
         translation -> translation.bundle.getLocale() == null).collect(Collectors.toList());
+
     if (!missingTranslations.isEmpty()) {
       StringBuilder buf = new StringBuilder();
       appendCount(buf, missingTranslations.size(), " missing default translation");
