@@ -41,6 +41,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /**
  * Verifies the bundles stored in the backend against the property resource bundles of the application.<br>
@@ -173,7 +174,8 @@ public class VerifyMojo extends AbstractI18nMojo {
       getLog().warn(buf);
     }
 
-    List<String> resourceNames = resourceBundleMap.entrySet().stream().filter(entry -> entry.getValue().isNew()).map(entry -> entry.getKey()).toList();
+    List<String> resourceNames = resourceBundleMap.entrySet().stream().filter(
+        entry -> entry.getValue().isNew()).map(entry -> entry.getKey()).collect(Collectors.toList());
     if (!resourceNames.isEmpty()) {
       StringBuilder buf = new StringBuilder();
       appendCount(buf, resourceNames.size(), " missing stored bundle");
@@ -200,7 +202,8 @@ public class VerifyMojo extends AbstractI18nMojo {
       getLog().warn(buf);
     }
 
-    List<Translation> missingTranslations = this.missingTranslations.stream().filter(translation -> translation.bundle.getLocale() != null).toList();
+    List<Translation> missingTranslations = this.missingTranslations.stream().filter(
+        translation -> translation.bundle.getLocale() != null).collect(Collectors.toList());
     if (!missingTranslations.isEmpty()) {
       StringBuilder buf = new StringBuilder();
       appendCount(buf, missingTranslations.size(), " missing translation");
@@ -217,7 +220,8 @@ public class VerifyMojo extends AbstractI18nMojo {
       getLog().warn(buf);
     }
 
-    missingTranslations = this.missingTranslations.stream().filter(translation -> translation.bundle.getLocale() == null).toList();
+    missingTranslations = this.missingTranslations.stream().filter(
+        translation -> translation.bundle.getLocale() == null).collect(Collectors.toList());
     if (!missingTranslations.isEmpty()) {
       StringBuilder buf = new StringBuilder();
       appendCount(buf, missingTranslations.size(), " missing default translation");
