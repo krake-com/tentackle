@@ -30,6 +30,7 @@ import org.tentackle.session.Session;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Removes obsolete bundles and keys.<br>
@@ -45,9 +46,12 @@ public class CleanupMojo extends AbstractVerifyMojo {
   protected void processBundles(Session session, List<MavenProject> projects) throws MojoExecutionException {
     super.processBundles(session, projects);
 
-    warnings += resourceBundleMap.entrySet().stream().filter(entry -> entry.getValue().isNew()).map(entry -> entry.getKey()).toList().size();
-    warnings += missingTranslations.stream().filter(translation -> translation.bundle.getLocale() != null).toList().size();
-    errors += missingTranslations.stream().filter(translation -> translation.bundle.getLocale() == null).toList().size();
+    warnings += resourceBundleMap.entrySet().stream().filter(entry -> entry.getValue().isNew()).map(entry -> entry.getKey())
+                                 .collect(Collectors.toList()).size();
+    warnings += missingTranslations.stream().filter(translation -> translation.bundle.getLocale() != null)
+                                   .collect(Collectors.toList()).size();
+    errors += missingTranslations.stream().filter(translation -> translation.bundle.getLocale() == null)
+                                 .collect(Collectors.toList()).size();
 
     if (errors > 0) {
       getLog().error(errors + " error" + (errors > 1 ? "s" : "") + " found -> please run tentackle-i18n:verify and fix the errors");
