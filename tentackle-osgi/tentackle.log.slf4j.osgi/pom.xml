@@ -5,12 +5,12 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent-osgi</artifactId>
-    <version>7.1.0</version>
+    <version>7.2.0</version>
   </parent>
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle.log.slf4j.osgi</artifactId>
-  <version>7.1.0</version>
+  <version>7.2.0</version>
   <packaging>bundle</packaging>
 
   <name>Tentackle Logging SLF4J OSGi Bundle</name>
