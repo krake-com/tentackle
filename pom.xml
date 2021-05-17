@@ -345,7 +345,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-plugin-plugin</artifactId>
-          <version>3.6.0</version>
+          <version>3.6.1</version>
           <dependencies>
             <dependency>
               <groupId>org.ow2.asm</groupId>
@@ -481,12 +481,12 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jxr-plugin</artifactId>
-          <version>3.0.0</version>
+          <version>3.1.1</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-project-info-reports-plugin</artifactId>
-          <version>3.1.1</version>
+          <version>3.1.2</version>
         </plugin>
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
@@ -496,7 +496,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-gpg-plugin</artifactId>
-          <version>1.6</version>
+          <version>3.0.1</version>
         </plugin>
         <plugin>
           <groupId>org.owasp</groupId>
@@ -604,7 +604,6 @@
             <!-- don't complain about wurblet args -->
             <additionalOption>-Xdoclint:none</additionalOption>
           </additionalOptions>
-          <stylesheetfile>${rootBasedir}/src/site/resources/css/apidocs.css</stylesheetfile>
           <bottom><![CDATA[<a href="${project.url}">Tentackle</a> - distributed, domain- and model-driven]]></bottom>
         </configuration>
       </plugin>
@@ -674,7 +673,6 @@
                   <goal>jar</goal>
                 </goals>
                 <configuration>
-                  <stylesheetfile>${rootBasedir}/src/site/resources/css/apidocs.css</stylesheetfile>
                   <bottom><![CDATA[<a href="${project.url}">Tentackle</a> - distributed, domain- and model-driven]]></bottom>
                   <quiet>true</quiet>
                   <archive>
