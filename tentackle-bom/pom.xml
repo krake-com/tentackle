@@ -48,11 +48,6 @@
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
-        <artifactId>tentackle-log-log4j</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.tentackle</groupId>
         <artifactId>tentackle-log-log4j2v</artifactId>
         <version>${project.version}</version>
       </dependency>
