@@ -21,17 +21,10 @@
   </properties>
 
   <dependencies>
-
     <dependency>
       <groupId>${groupId}</groupId>
       <artifactId>${rootArtifactId}-common</artifactId>
       <version>${symbol_dollar}{project.version}</version>
-    </dependency>
-
-    <!-- tests only -->
-    <dependency>
-      <groupId>org.reflections</groupId>
-      <artifactId>reflections</artifactId>
     </dependency>
   </dependencies>
 

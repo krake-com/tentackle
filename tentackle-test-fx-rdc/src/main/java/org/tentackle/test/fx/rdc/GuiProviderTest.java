@@ -18,7 +18,6 @@
 
 package org.tentackle.test.fx.rdc;
 
-import org.reflections.Reflections;
 import org.testng.Assert;
 import org.testng.Reporter;
 import org.testng.annotations.Test;
@@ -26,13 +25,15 @@ import org.testng.annotations.Test;
 import org.tentackle.common.Version;
 import org.tentackle.fx.rdc.GuiProvider;
 import org.tentackle.fx.rdc.GuiProviderFactory;
+import org.tentackle.fx.rdc.GuiProviderService;
 import org.tentackle.pdo.PdoFactory;
 import org.tentackle.pdo.PdoRuntimeException;
 import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.reflect.ClassMapper;
 
 /**
  * Tests whether GUI-providers could be loaded and bound.<br>
- * Needs a db-connection to initialize all providers properly.<br>
+ * Opens a session in case some providers need it.<br>
  * Simply extend this class and put that in a test source folder.
  * <p>
  * Example:
@@ -49,45 +50,61 @@ import org.tentackle.pdo.PersistentDomainObject;
 public abstract class GuiProviderTest extends FxRdcTestApplication {
 
   private final String packagePrefix;
+  private final ClassMapper classMapper;
 
+  /**
+   * Creates the GUI provider test.
+   *
+   * @param packagePrefix optional package prefix, null or empty if all
+   */
   public GuiProviderTest(String packagePrefix) {
     super("fx-rdc-provider-test", Version.RELEASE);
     this.packagePrefix = packagePrefix;
+    classMapper = ClassMapper.create(getName(), GuiProvider.class);
+  }
+
+  public GuiProviderTest() {
+    this(null);
   }
 
   @Test(alwaysRun = true)
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public void testGuiProviders() {
-
-    Reflections reflections = new Reflections(packagePrefix);
-    reflections.getSubTypesOf(PersistentDomainObject.class).forEach(c -> {
+    for (String pdoClassName : classMapper.getMap().keySet()) {
+      PersistentDomainObject pdo = PdoFactory.getInstance().create(pdoClassName, getDomainContext());
       try {
-        PersistentDomainObject pdo = PdoFactory.getInstance().create(c, getDomainContext());
         GuiProvider provider = GuiProviderFactory.getInstance().createGuiProvider(pdo);
-        Reporter.log("testing GuiProvider for PDO " + c.getName() + "<br>");
-        if (provider.editorExists()) {
-          provider.createEditor();
+        if (packagePrefix == null || provider.getClass().getName().startsWith(packagePrefix)) {
+          GuiProviderService anno = provider.getClass().getAnnotation(GuiProviderService.class);
+          if (anno == null || anno.test()) {
+            Reporter.log("testing gui provider " + provider.getClass().getName() + "<br>", true);
+            if (provider.editorExists()) {
+              provider.createEditor();
+            }
+            if (provider.finderExists()) {
+              provider.createFinder();
+            }
+            provider.createIcon();
+            provider.createTableView();
+            provider.createTreeItem();
+          }
+          else {
+            Reporter.log("gui provider " + provider.getClass().getName() + " not tested!<br>", true);
+          }
         }
-        if (provider.finderExists()) {
-          provider.createFinder();
-        }
-        provider.createIcon();
-        provider.createTableView();
-        provider.createTreeItem();
       }
       catch (PdoRuntimeException nx) {
         if (!(nx.getCause() instanceof ClassNotFoundException)) {
-          Assert.fail("creating GuiProvider for " + c.getName() + " failed", nx);
+          Assert.fail("creating GuiProvider for " + pdo.getClassBaseName() + " failed", nx);
         }
         else {
-          Reporter.log("no GuiProvider for " + c.getName() + "<br>");
+          Reporter.log("no GuiProvider for " + pdo.getClassBaseName() + "<br>", true);
         }
       }
       catch (RuntimeException ex) {
-        Assert.fail("Testing GuiProvider for " + c.getName() + " failed", ex);
+        Assert.fail("testing GuiProvider for " + pdo.getClassBaseName() + " failed", ex);
       }
-    });
-
+    }
   }
 
 }
