@@ -61,5 +61,12 @@ public @interface TableConfigurationProviderService {
    */
   TableConfiguration.BINDING binding() default TableConfiguration.BINDING.YES;
 
+  /**
+   * Returns whether provider should be unit tested.
+   *
+   * @return true if test (default), false if no test
+   */
+  boolean test() default true;
+
 }
 

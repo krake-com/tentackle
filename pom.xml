@@ -89,7 +89,6 @@
     <maven.version>3.6.3</maven.version>
     <postgresql.version>42.2.20</postgresql.version>
     <testng.version>7.4.0</testng.version>
-    <reflections.version>0.9.12</reflections.version>
     <maven.resources.plugin.version>3.2.0</maven.resources.plugin.version>
     <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
     <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
@@ -241,13 +240,6 @@
             <artifactId>junit</artifactId>
           </exclusion>
         </exclusions>
-      </dependency>
-
-      <dependency>
-        <groupId>org.reflections</groupId>
-        <artifactId>reflections</artifactId>
-        <version>${reflections.version}</version>
-        <scope>test</scope>
       </dependency>
 
       <dependency>

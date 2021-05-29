@@ -30,7 +30,7 @@ import org.tentackle.fx.FxFactory;
 
 /**
  * Tests whether controllers could be loaded and bound.<br>
- * Needs a db-connection to initialize all controllers properly.<br>
+ * Opens a session in case some controllers need it.<br>
  * Simply extend this class and put that in a test source folder.
  * <p>
  * Example:
@@ -42,26 +42,43 @@ import org.tentackle.fx.FxFactory;
  */
 public abstract class ControllerTest extends FxRdcTestApplication {
 
-  public ControllerTest() {
+  private final String packagePrefix;
+
+  /**
+   * Creates the controller test.
+   *
+   * @param packagePrefix optional package prefix, null or empty if all
+   */
+  public ControllerTest(String packagePrefix) {
     super("fx-rdc-conroller-test", Version.RELEASE);
+    this.packagePrefix = packagePrefix;
+  }
+
+  public ControllerTest() {
+    this(null);
   }
 
   @Test(alwaysRun = true)
   public void testControllers() {
 
     for (Class<FxController> clazz : FxFactory.getInstance().getControllerClasses()) {
-      FxControllerService anno = clazz.getAnnotation(FxControllerService.class);
-      if (anno.test()) {
-        Reporter.log("testing controller " + clazz.getName() + "<br>", true);
-        try {
-          FxController controller = Fx.load(clazz);
-          controller.validateInjections();
-          if (anno.binding() != FxControllerService.BINDING.NO) {
-            controller.getBinder().assertAllBound();
+      if (packagePrefix == null || clazz.getName().startsWith(packagePrefix)) {
+        FxControllerService anno = clazz.getAnnotation(FxControllerService.class);
+        if (anno == null || anno.test()) {
+          Reporter.log("testing controller " + clazz.getName() + "<br>", true);
+          try {
+            FxController controller = Fx.load(clazz);
+            controller.validateInjections();
+            if (anno.binding() != FxControllerService.BINDING.NO) {
+              controller.getBinder().assertAllBound();
+            }
+          }
+          catch (RuntimeException rex) {
+            Assert.fail("loading " + clazz + " failed: " + rex.getMessage(), rex);
           }
         }
-        catch (RuntimeException rex) {
-          Assert.fail("loading " + clazz + " failed: " + rex.getMessage(), rex);
+        else {
+          Reporter.log("controller " + clazz.getName() + " not tested!<br>", true);
         }
       }
     }

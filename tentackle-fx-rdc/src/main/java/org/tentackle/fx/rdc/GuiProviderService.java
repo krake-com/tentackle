@@ -61,5 +61,12 @@ public @interface GuiProviderService {
    */
   boolean noBundle() default false;
 
+  /**
+   * Returns whether provider should be unit tested.
+   *
+   * @return true if test (default), false if no test
+   */
+  boolean test() default true;
+
 }
 

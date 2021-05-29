@@ -23,10 +23,4 @@ package org.tentackle.test.fx.rdc;
  *
  * @author harald
  */
-public class TestGuiProviders extends GuiProviderTest {
-
-  public TestGuiProviders() {
-    super("org.tentackle");
-  }
-
-}
+public class TestGuiProviders extends GuiProviderTest {}
