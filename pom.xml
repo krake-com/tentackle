@@ -260,7 +260,7 @@
       <dependency>
         <groupId>org.apache.maven</groupId>
         <artifactId>maven-plugin-api</artifactId>
-        <version>3.6.3</version>
+        <version>3.8.1</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven.shared</groupId>
@@ -391,7 +391,7 @@
           <artifactId>maven-compiler-plugin</artifactId>
           <version>${maven.compiler.plugin.version}</version>
           <configuration>
-            <encoding>UTF-8</encoding>
+            <encoding>${project.build.sourceEncoding}</encoding>
             <source>${javac.version.src}</source>
             <target>${javac.version.target}</target>
             <showWarnings>true</showWarnings>
@@ -413,8 +413,8 @@
           <artifactId>maven-resources-plugin</artifactId>
           <version>${maven.resources.plugin.version}</version>
           <configuration>
-            <encoding>UTF-8</encoding>
-            <propertiesEncoding>UTF-8</propertiesEncoding>
+            <encoding>${project.build.resourceEncoding}</encoding>
+            <propertiesEncoding>${project.build.resourceEncoding}</propertiesEncoding>
             <escapeString>\</escapeString>
           </configuration>
         </plugin>
@@ -441,7 +441,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <!-- need to stick with 3.0.1 since 3.1.0, 3.1.1 and 3.2.0 cannot doc a non-module referencing a module
+          <!-- need to stick with 3.0.1 since newer plugins cannot doc a non-module referencing a module
                (such as buildsupport which deps on common)
                see https://bugs.openjdk.java.net/browse/JDK-8240169 -->
           <version>3.0.1</version>
@@ -496,7 +496,7 @@
         <plugin>
           <groupId>org.owasp</groupId>
           <artifactId>dependency-check-maven</artifactId>
-          <version>6.1.2</version>
+          <version>6.2.0</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
