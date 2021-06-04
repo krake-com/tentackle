@@ -56,7 +56,7 @@ For more options, see {\@link AbstractWurblet}.
     catch (WurbelException ex)  {
       if (missingOk && ex.getCause() instanceof FileNotFoundException) {
 ]@
-        // no such file '" + filename + "' (ok)"
+        // no such file '@(filename)@' (ok)
 @[
       }
       else {
