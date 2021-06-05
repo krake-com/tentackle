@@ -27,9 +27,9 @@ psql --version
 Generate your project via the Tentackle Maven archetype:
 
 ```
-mvn archetype:generate 
-    -DarchetypeGroupId=org.tentackle 
-    -DarchetypeArtifactId=tentackle-project-archetype 
+mvn archetype:generate \
+    -DarchetypeGroupId=org.tentackle \
+    -DarchetypeArtifactId=tentackle-project-archetype \
     -DarchetypeVersion=16.0-SNAPSHOT
 ```
 When all dependencies have been pulled from [Maven Central](https://search.maven.org/),
