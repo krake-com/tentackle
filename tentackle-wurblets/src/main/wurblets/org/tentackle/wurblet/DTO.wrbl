@@ -294,14 +294,14 @@ get those options as well!
         if (withBuilder) {
           if (property.isMutable()) {
 ]@
-    @(getClassName())@ object = createBuilder().build();
+    @(getClassName())@ object = toBuilder().build();
     object.@(property.getSetterName())@(@(property.getName())@);
     return object;
 @[
           }
           else {
 ]@
-    return createBuilder().@(property.getName())@(@(property.getName())@).build();
+    return toBuilder().@(property.getName())@(@(property.getName())@).build();
 @[
           }
         }
@@ -444,7 +444,7 @@ get those options as well!
 @[
       }
 ]@
-  public Builder createBuilder() {
+  public Builder toBuilder() {
     return new Builder(this);
   }
 @[
