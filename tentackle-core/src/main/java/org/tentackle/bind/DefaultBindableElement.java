@@ -23,6 +23,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.StringTokenizer;
 
 /**
  * A bindable element.
@@ -33,15 +36,15 @@ import java.lang.reflect.Type;
  */
 public class DefaultBindableElement implements BindableElement {
 
-  private String camelName;         // the member name in camelCase
-  private int ordinal;              // the ordinal for sorting
-  private Field field;              // the field, null if none
-  private Method getter;            // the getter, null if none
-  private Method setter;            // the setter, null if none
-  private Method from;              // the from method, null if none
-  private String bindingOptions;    // the binding options
-  private Class<?> type;            // the class type of the bound member
-  private Type genericType;         // the generic type of the bound member
+  private String camelName;             // the member name in camelCase
+  private int ordinal;                  // the ordinal for sorting
+  private Field field;                  // the field, null if none
+  private Method getter;                // the getter, null if none
+  private Method setter;                // the setter, null if none
+  private Method from;                  // the from method, null if none
+  private Set<String> bindingOptions;   // the binding options
+  private Class<?> type;                // the class type of the bound member
+  private Type genericType;             // the generic type of the bound member
 
   /**
    * Creates a bindable element.
@@ -75,12 +78,47 @@ public class DefaultBindableElement implements BindableElement {
 
   @Override
   public String getBindingOptions() {
-    return bindingOptions;
+    if (bindingOptions != null && !bindingOptions.isEmpty()) {
+      StringBuilder buf = new StringBuilder();
+      boolean needComma = false;
+      for (String option : bindingOptions) {
+        if (needComma) {
+          buf.append(',');
+        }
+        else {
+          needComma = true;
+        }
+        buf.append(option);
+      }
+      return buf.toString();
+    }
+    return null;
   }
 
   @Override
-  public void setBindingOptions(String bindingOptions) {
-    this.bindingOptions = bindingOptions;
+  public void setBindingOptions(String options) {
+    if (options == null || options.isBlank()) {
+      bindingOptions = null;
+    }
+    else {
+      if (bindingOptions != null) {
+        bindingOptions.clear();
+      }
+      addBindingOptions(options);
+    }
+  }
+
+  @Override
+  public void addBindingOptions(String options) {
+    if (options != null && !options.isBlank()) {
+      if (bindingOptions == null) {
+        bindingOptions = new LinkedHashSet<>();
+      }
+      StringTokenizer stok = new StringTokenizer(options, ",");
+      while (stok.hasMoreTokens()) {
+        bindingOptions.add(stok.nextToken());
+      }
+    }
   }
 
   @Override
@@ -121,18 +159,6 @@ public class DefaultBindableElement implements BindableElement {
   @Override
   public void setFrom(Method from) {
     this.from = from;
-  }
-
-  @Override
-  public void addBindingOptions(String options) {
-    if (options != null && options.length() > 0) {
-      if (bindingOptions == null || bindingOptions.isEmpty()) {
-        bindingOptions = options;
-      }
-      else {
-        bindingOptions += "," + options;
-      }
-    }
   }
 
   @Override

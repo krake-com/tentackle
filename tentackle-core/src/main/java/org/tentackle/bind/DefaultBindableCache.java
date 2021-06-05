@@ -166,29 +166,31 @@ public class DefaultBindableCache implements BindableCache {
         }
       }
 
-      // get all fields with the bindable annotation
-      for (Field field :
-              (declaredOnly
-              ? clazz.getDeclaredFields()
-              : ReflectionHelper.getAllFields(clazz, null, true, null, true))) {
-        Bindable annotation = field.getAnnotation(Bindable.class);
-        if (annotation != null) {
-          LOGGER.finer("bindable field {0} found", field);
-          String bindingOptions = annotation.options();
-          String camelName = StringHelper.firstToUpper(field.getName());
-          ElementKey elementKey = new ElementKey(camelName, annotation.ordinal());
-          BindableElement element = bindableMap.get(elementKey);
-          if (element != null) {
-            // merge
-            element.setField(field);
-            element.addBindingOptions(bindingOptions);
-          }
-          else {
-            // new
-            element = bindingFactory.createBindableElement(field.getType(), camelName);
-            element.setField(field);
-            element.setBindingOptions(bindingOptions);
-            bindableMap.put(elementKey, element);
+      if (!clazz.isRecord()) {
+        // get all fields with the bindable annotation
+        for (Field field :
+            (declaredOnly
+             ? clazz.getDeclaredFields()
+             : ReflectionHelper.getAllFields(clazz, null, true, null, true))) {
+          Bindable annotation = field.getAnnotation(Bindable.class);
+          if (annotation != null) {
+            LOGGER.finer("bindable field {0} found", field);
+            String bindingOptions = annotation.options();
+            String camelName = StringHelper.firstToUpper(field.getName());
+            ElementKey elementKey = new ElementKey(camelName, annotation.ordinal());
+            BindableElement element = bindableMap.get(elementKey);
+            if (element != null) {
+              // merge
+              element.setField(field);
+              element.addBindingOptions(bindingOptions);
+            }
+            else {
+              // new
+              element = bindingFactory.createBindableElement(field.getType(), camelName);
+              element.setField(field);
+              element.setBindingOptions(bindingOptions);
+              bindableMap.put(elementKey, element);
+            }
           }
         }
       }

@@ -25,6 +25,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 
 import org.tentackle.common.BundleSupport;
+import org.tentackle.reflect.ReflectionHelper;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -84,7 +85,7 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
     // find referenced bundle names (avoids unnecessary loading of all bundles in the classpath)
     Set<String> usedBundleNames = new HashSet<>();   // bundles used by the application
     for (BundleKey key: bundleScanner.getBundleKeys()) {
-      String bundleName = key.getBundleName();
+      String bundleName = ReflectionHelper.getOutermostClassName(key.getBundleName());
       if (usedBundleNames.add(bundleName) && verbosityLevel.isDebug()) {
         getLog().info("bundle " + bundleName + " is referenced");
       }
@@ -119,7 +120,7 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
     // check that each key finds a resource
     for (BundleKey key: bundleScanner.getBundleKeys()) {
       keyCount++;
-      String bundleName = key.getBundleName();
+      String bundleName = ReflectionHelper.getOutermostClassName(key.getBundleName());
       for (Locale bundleLocale: bundleLocales) {
         ResourceBundle bundle = bundleMap.get(new NameKey(bundleLocale, bundleName));
         if (bundle == null) {
