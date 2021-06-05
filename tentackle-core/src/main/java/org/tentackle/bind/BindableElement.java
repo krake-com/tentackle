@@ -63,7 +63,7 @@ public interface BindableElement {
   /**
    * Gets the binding options.
    *
-   * @return the binding options
+   * @return the binding options, null or empty if none
    */
   String getBindingOptions();
 

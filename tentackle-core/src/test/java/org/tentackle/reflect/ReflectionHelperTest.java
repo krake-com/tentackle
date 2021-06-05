@@ -19,10 +19,10 @@
 
 package org.tentackle.reflect;
 
-import org.tentackle.common.TentackleRuntimeException;
-import org.tentackle.common.DateHelper;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+
+import org.tentackle.common.TentackleRuntimeException;
 
 
 /**
@@ -54,6 +54,27 @@ public class ReflectionHelperTest {
   @Test
   public void testClassBaseName() {
     Assert.assertEquals(ReflectionHelper.getClassBaseName(getClass()), "ReflectionHelperTest");
+  }
+
+  @Test
+  public void testPackageName() {
+    Assert.assertEquals(ReflectionHelper.getPackageName("aa.bb.cc.Test"),"aa.bb.cc");
+    Assert.assertEquals(ReflectionHelper.getPackageName("aa.bb.cc.test"),"aa.bb.cc.test");
+    Assert.assertEquals(ReflectionHelper.getPackageName("aa.bb.cc.Outer.Inner"),"aa.bb.cc");
+    Assert.assertEquals(ReflectionHelper.getPackageName("Blah"),"");
+    Assert.assertEquals(ReflectionHelper.getPackageName(""),"");
+  }
+
+  @Test
+  public void testOutermostClassName() {
+    Assert.assertEquals(ReflectionHelper.getOutermostClassName("aa.bb.cc.Outer.Inner1.Inner2"),"aa.bb.cc.Outer");
+    Assert.assertEquals(ReflectionHelper.getOutermostClassName("aa.bb.cc.Blah"),"aa.bb.cc.Blah");
+    Assert.assertEquals(ReflectionHelper.getOutermostClassName("aa.bb.cc"),"aa.bb.cc");
+    Assert.assertEquals(ReflectionHelper.getOutermostClassName("aa.bb.cc."),"aa.bb.cc.");
+    Assert.assertEquals(ReflectionHelper.getOutermostClassName("Blah"),"Blah");
+    Assert.assertEquals(ReflectionHelper.getOutermostClassName("Blah."),"Blah");
+    Assert.assertEquals(ReflectionHelper.getOutermostClassName("Outer.Inner1.Inner2"),"Outer");
+    Assert.assertEquals(ReflectionHelper.getOutermostClassName(""),"");
   }
 
   @Test

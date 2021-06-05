@@ -168,9 +168,9 @@ public class DefaultBindableCache implements BindableCache {
 
       // get all fields with the bindable annotation
       for (Field field :
-              (declaredOnly
-              ? clazz.getDeclaredFields()
-              : ReflectionHelper.getAllFields(clazz, null, true, null, true))) {
+          (declaredOnly
+           ? clazz.getDeclaredFields()
+           : ReflectionHelper.getAllFields(clazz, null, true, null, true))) {
         Bindable annotation = field.getAnnotation(Bindable.class);
         if (annotation != null) {
           LOGGER.finer("bindable field {0} found", field);

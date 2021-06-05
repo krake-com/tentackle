@@ -84,16 +84,43 @@ public final class ReflectionHelper {
 
 
   /**
-   * Gets the package name.
+   * Gets the package name.<br>
+   * Works also for inner classes.
    *
    * @param str the classname
-   * @return the package name, "" if no package
+   * @return the package name, "" if no package, str if str already is a package name
    */
   public static String getPackageName(String str) {
-    int ndx = str.lastIndexOf('.');
-    return ndx > 0 ? str.substring(0, ndx) : "";
+    int ndx;
+    if (str.isEmpty() || Character.isUpperCase(str.charAt(0))) {
+      return "";
+    }
+    while ((ndx = str.lastIndexOf('.')) >= 0 && ndx < str.length() - 1 && Character.isUpperCase(str.charAt(ndx + 1))) {
+      str = str.substring(0, ndx);
+    }
+    return str;
   }
 
+  /**
+   * Get outer class name.
+   *
+   * @param name the probably inner classname
+   * @return the outermost classname
+   */
+  public static String getOutermostClassName(String name) {
+    String pkgName = ReflectionHelper.getPackageName(name);
+    if (pkgName.length() < name.length() - 1) {
+      String remainder = name.substring(pkgName.length() + (pkgName.isEmpty() ? 0 : 1));
+      if (Character.isUpperCase(remainder.charAt(0))) {
+        int ndx = remainder.indexOf('.');
+        if (ndx >= 0) {
+          remainder = remainder.substring(0, ndx);  // cut inner classes
+        }
+      }
+      name = pkgName + (pkgName.isEmpty() ? "" : ".") + remainder;
+    }
+    return name;
+  }
 
   /**
    * Gets the package name.
