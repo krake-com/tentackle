@@ -19,12 +19,12 @@
 
 package org.tentackle.security.pdo;
 
-import org.tentackle.session.ClassId;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.Plural;
 import org.tentackle.pdo.Singular;
-import org.tentackle.session.TableName;
 import org.tentackle.security.DefaultSecurityManager;
+import org.tentackle.session.ClassId;
+import org.tentackle.session.TableName;
 
 
 /*
@@ -58,11 +58,6 @@ import org.tentackle.security.DefaultSecurityManager;
  * index context := contextid, contextclassid
  * index grantee := granteeid, granteeclassid
  *
- * ## validations
- * objectClassName: @NotNull(condition="{object.objectClassId==0}", message="{ @('missing object classname') }")
- * objectClassId: @NotNull(condition="{object.objectClassName==null}", message="{ @('missing object class-ID') }")
- * permissions: @NotNull(message="{ @('missing permissions') }")
- *
  * @<
  */
 
@@ -90,6 +85,7 @@ import org.tentackle.security.DefaultSecurityManager;
 @ClassId(/**/5/**/) // @wurblet < Inject $classid
 @Singular("security rule")
 @Plural("security rules")
+@SecurityValidator
 public interface Security extends PersistentDomainObject<Security>, SecurityDomain, SecurityPersistence {
 
 }

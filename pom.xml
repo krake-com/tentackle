@@ -46,9 +46,9 @@
     <module>tentackle-maven-plugin</module>
     <module>tentackle-sql-maven-plugin</module>
     <module>tentackle-core</module>
+    <module>tentackle-check-maven-plugin</module>
     <module>tentackle-session</module>
     <module>tentackle-pdo</module>
-    <module>tentackle-check-maven-plugin</module>
     <module>tentackle-log-log4j2v</module>
     <module>tentackle-log-slf4j</module>
     <module>tentackle-script-jsr</module>

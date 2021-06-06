@@ -18,12 +18,8 @@
 
 package org.tentackle.test.prefs;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.prefs.NodeChangeEvent;
-import java.util.prefs.NodeChangeListener;
-import java.util.prefs.PreferenceChangeEvent;
-import java.util.prefs.PreferenceChangeListener;
+import org.testng.annotations.Test;
+
 import org.tentackle.dbms.prefs.DbPreferences;
 import org.tentackle.log.Logger;
 import org.tentackle.pdo.Pdo;
@@ -34,7 +30,13 @@ import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.test.pdo.AbstractPdoTest;
-import org.testng.annotations.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.prefs.NodeChangeEvent;
+import java.util.prefs.NodeChangeListener;
+import java.util.prefs.PreferenceChangeEvent;
+import java.util.prefs.PreferenceChangeListener;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -89,7 +91,7 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
   public void writePreferences() throws Exception {
 
     Process process = AbstractPdoTest.runClass(AddAndRemovePrefsInServer.class);
-    Thread.sleep(3500);
+    Thread.sleep(1500);
 
     SessionInfo sessionInfo = Pdo.createSessionInfo("client");
 
