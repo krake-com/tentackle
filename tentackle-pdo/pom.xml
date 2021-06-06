@@ -55,6 +55,25 @@
       </plugin>
 
       <plugin>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tentackle-check-maven-plugin</artifactId>
+        <version>${project.version}</version>
+        <executions>
+          <execution>
+            <id>bundles</id>
+            <goals>
+              <goal>bundles</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <verbosity>info</verbosity>
+          <locales>en_US, de_DE</locales>
+          <showCompileOutput>true</showCompileOutput>
+        </configuration>
+      </plugin>
+
+      <plugin>
         <groupId>org.wurbelizer</groupId>
         <artifactId>wurbelizer-maven-plugin</artifactId>
 

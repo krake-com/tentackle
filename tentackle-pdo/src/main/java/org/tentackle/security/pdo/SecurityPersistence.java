@@ -24,7 +24,6 @@ import org.tentackle.misc.TrackedList;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.PersistentObject;
 import org.tentackle.session.Persistent;
-import org.tentackle.validate.validator.NotNull;
 
 import java.util.List;
 
@@ -99,7 +98,6 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    * @return the protected classname, null if an entity
    */
   @Persistent(ordinal=0, comment="the protected classname, null if an entity")
-  @NotNull(condition="{object.objectClassId==0}", message="{ @('missing object classname') }")
   @Bindable
   String getObjectClassName();
 
@@ -117,7 +115,6 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    * @return the protected object's class id, 0 if not an entity
    */
   @Persistent(ordinal=1, comment="the protected object's class id, 0 if not an entity")
-  @NotNull(condition="{object.objectClassName==null}", message="{ @('missing object class-ID') }")
   @Bindable
   int getObjectClassId();
 
@@ -237,7 +234,6 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    * @return the permissions as a comma-separated list
    */
   @Persistent(ordinal=8, comment="the permissions as a comma-separated list")
-  @NotNull(message="{ @('missing permissions') }")
   @Bindable
   String getPermissions();
 

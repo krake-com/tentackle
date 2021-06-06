@@ -117,6 +117,10 @@ public final class ReflectionHelper {
           remainder = remainder.substring(0, ndx);  // cut inner classes
         }
       }
+      int ndx = remainder.indexOf('$');
+      if (ndx >= 0) {
+        remainder = remainder.substring(0, ndx);    // cut lambdas and anonymous classes
+      }
       name = pkgName + (pkgName.isEmpty() ? "" : ".") + remainder;
     }
     return name;

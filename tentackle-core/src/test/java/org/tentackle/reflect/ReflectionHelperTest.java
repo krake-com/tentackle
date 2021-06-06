@@ -59,6 +59,7 @@ public class ReflectionHelperTest {
   @Test
   public void testPackageName() {
     Assert.assertEquals(ReflectionHelper.getPackageName("aa.bb.cc.Test"),"aa.bb.cc");
+    Assert.assertEquals(ReflectionHelper.getPackageName("aa.bb.cc.Test$1"),"aa.bb.cc");
     Assert.assertEquals(ReflectionHelper.getPackageName("aa.bb.cc.test"),"aa.bb.cc.test");
     Assert.assertEquals(ReflectionHelper.getPackageName("aa.bb.cc.Outer.Inner"),"aa.bb.cc");
     Assert.assertEquals(ReflectionHelper.getPackageName("Blah"),"");
@@ -69,11 +70,14 @@ public class ReflectionHelperTest {
   public void testOutermostClassName() {
     Assert.assertEquals(ReflectionHelper.getOutermostClassName("aa.bb.cc.Outer.Inner1.Inner2"),"aa.bb.cc.Outer");
     Assert.assertEquals(ReflectionHelper.getOutermostClassName("aa.bb.cc.Blah"),"aa.bb.cc.Blah");
+    Assert.assertEquals(ReflectionHelper.getOutermostClassName("aa.bb.cc.Blah$1"),"aa.bb.cc.Blah");
+    Assert.assertEquals(ReflectionHelper.getOutermostClassName("aa.bb.cc.Blah$$Lambda$1/2147972"),"aa.bb.cc.Blah");
     Assert.assertEquals(ReflectionHelper.getOutermostClassName("aa.bb.cc"),"aa.bb.cc");
     Assert.assertEquals(ReflectionHelper.getOutermostClassName("aa.bb.cc."),"aa.bb.cc.");
     Assert.assertEquals(ReflectionHelper.getOutermostClassName("Blah"),"Blah");
     Assert.assertEquals(ReflectionHelper.getOutermostClassName("Blah."),"Blah");
     Assert.assertEquals(ReflectionHelper.getOutermostClassName("Outer.Inner1.Inner2"),"Outer");
+    Assert.assertEquals(ReflectionHelper.getOutermostClassName("Outer.Inner1$$Lambda$1/23231.Inner2"),"Outer");
     Assert.assertEquals(ReflectionHelper.getOutermostClassName(""),"");
   }
 
