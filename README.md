@@ -59,6 +59,7 @@ mvn -Pjlink clean install
 ```
 
 Notes:
+
 * The profile `jlink` instructs Maven to build the Jlink and/or JPackage images as well.
 * The database must not exist yet. It is created in the **next** step!
 
