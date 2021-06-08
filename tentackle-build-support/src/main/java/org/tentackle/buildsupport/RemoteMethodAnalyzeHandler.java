@@ -19,6 +19,7 @@
 
 package org.tentackle.buildsupport;
 
+import org.tentackle.common.RemoteMethod;
 import org.tentackle.common.Settings;
 import org.tentackle.common.StringHelper;
 
@@ -85,7 +86,7 @@ public class RemoteMethodAnalyzeHandler extends AbstractAnalyzeHandler {
           try {
             Method valueMethod = annotationClass.getDeclaredMethod("value");
             String value = (String) valueMethod.invoke(annotation);
-            if (!value.startsWith("[")) {
+            if (!RemoteMethod.DEFAULT_METHODNAME.equals(value)) {
               methodName = value;
             }
           }
