@@ -36,7 +36,7 @@ import java.util.Map;
 /**
  * Handler for the {@code @TableName} annotation.
  * <p>
- * Although a mapped service, we need an extra implementation because of mapSchema=true|false.
+ * Although a mapped service, we need an extra implementation because of <code>mapSchema=true|false</code>.
  *
  * @author harald
  */

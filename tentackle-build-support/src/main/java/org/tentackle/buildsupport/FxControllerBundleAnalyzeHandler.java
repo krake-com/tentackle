@@ -19,17 +19,18 @@
 
 package org.tentackle.buildsupport;
 
-import java.util.Map;
+import org.tentackle.common.Constants;
+
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
-import org.tentackle.common.Constants;
+import java.util.Map;
 
 
 /**
  * Handler to extract the name of the resource bundle from
- * the class annotated with &#64;FxControllerService.
+ * the class annotated with {@code @FxControllerService}.
  *
  * @author harald
  */

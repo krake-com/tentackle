@@ -36,7 +36,7 @@ import java.util.Map;
 
 
 /**
- * Handler for the @MappedService annotation.
+ * Handler for the {@code @MappedService} annotation.
  *
  * @author harald
  */
