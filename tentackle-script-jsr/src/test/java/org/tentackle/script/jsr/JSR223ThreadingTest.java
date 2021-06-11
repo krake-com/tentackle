@@ -80,7 +80,7 @@ public class JSR223ThreadingTest {
 
   public JSR223ThreadingTest(String language, int threadNum, int loopNum) {
     if (!ScriptFactory.getInstance().isLanguageAvailable(language)) {
-      throw new SkipException("language " + language + "not available");
+      throw new SkipException("language " + language + " not available");
     }
     this.threadNum = threadNum;
     this.loopNum = loopNum;
