@@ -62,6 +62,10 @@
       <resource>
         <directory>target/generated-resources</directory>
       </resource>
+      <!-- the model -->
+      <resource>
+        <directory>../target/wurbel</directory>
+      </resource>
     </resources>
 
     <!-- backend properties -->
