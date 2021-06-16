@@ -1404,6 +1404,16 @@ public class Db implements Session, Cloneable {
     return transaction(null, txe);
   }
 
+  /**
+   * Creates a transaction.
+   *
+   * @param txName the transaction name, null if &lt;unnamed&gt;
+   * @param fromRemote true if initiated from remote client
+   * @return the transaction
+   */
+  protected DbTransaction createTransaction(String txName, boolean fromRemote) {
+    return new DbTransaction(this, txName, fromRemote);
+  }
 
 
   /**
@@ -1471,7 +1481,7 @@ public class Db implements Session, Cloneable {
         // new transaction
         assertNoTxRunning();
         modificationLogList = null;
-        transaction = new DbTransaction(this, txName, fromRemote);
+        transaction = createTransaction(txName, fromRemote);
         txVoucher = transaction.getTxVoucher();
         LOGGER.fine("{0}: begin transaction, voucher {1}", this, txVoucher);
       }

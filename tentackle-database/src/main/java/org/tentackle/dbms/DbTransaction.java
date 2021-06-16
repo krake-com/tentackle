@@ -50,7 +50,7 @@ public class DbTransaction {
 
   private static final String DEFAULT_TXNAME = "<unnamed>";
 
-  private Db db;                        // the db connection
+  private Db db;                        // the session
   private final long creationTime;      // epochal time in ms when started/created
   private final long txNumber;          // the unique transaction number
   private final String txName;          // optional transaction name
@@ -61,15 +61,15 @@ public class DbTransaction {
 
   private Map<DbTransactionHandle,PersistenceVisitor> visitors;            // the visitors
   private Map<DbTransactionHandle,CommitTxRunnable> commitTxRunnables;     // the commit runnables
-  private Map<DbTransactionHandle,RollbackTxRunnable> rollbackTxRunnables; // the commit runnables
+  private Map<DbTransactionHandle,RollbackTxRunnable> rollbackTxRunnables; // the rollback runnables
   private Map<SavepointHandle,Savepoint> savepoints;                       // the savepoints
 
 
   /**
    * Creates a transaction.
    *
-   * @param db the db
-   * @param txName the transaction name
+   * @param db the session
+   * @param txName the transaction name, null if &lt;unnamed&gt;
    * @param fromRemote true if initiated from remote client
    */
   public DbTransaction(Db db, String txName, boolean fromRemote) {
