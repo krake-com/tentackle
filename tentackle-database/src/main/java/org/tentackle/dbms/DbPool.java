@@ -365,10 +365,10 @@ public class DbPool implements SessionPool {
     else {
       if (poolId > 0) { // if not returned to pool yet
         removeDbInstance(db, poolId - 1);           // remove from pool
-        LOGGER.warning("pool " + this + ": returned session " + db + " was closed and removed from pool");
+        LOGGER.warning("pool {0}: returned session {1} was closed and removed from pool", this, db);
       }
       else {
-        LOGGER.warning("pool " + this + ": returned session " + db + " was closed and already returned to pool");
+        LOGGER.warning("pool {0}: returned session {1} was closed and already returned to pool", this, db);
       }
     }
   }
