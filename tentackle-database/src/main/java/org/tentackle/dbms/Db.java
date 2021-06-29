@@ -617,7 +617,7 @@ public class Db implements Session, Cloneable {
   /**
    * Opens the session.
    *
-   * @param conMgr the connection manager
+   * @param conMgr the connection manager, null if remote
    */
   private void open(ConnectionManager conMgr) {
     try {

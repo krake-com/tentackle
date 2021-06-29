@@ -21,8 +21,10 @@ package org.tentackle.session;
 
 
 /**
- * A pool of sessions.
+ * A pool of sessions for a given session info.<br>
+ * Allows a single user to use multiple sessions in porallel.
  *
+ * @see SessionPoolFactory
  * @author harald
  */
 public interface SessionPool extends ReturnableSessionProvider {

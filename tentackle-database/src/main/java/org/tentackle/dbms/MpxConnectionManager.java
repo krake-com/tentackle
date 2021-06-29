@@ -372,7 +372,9 @@ public class MpxConnectionManager extends DefaultConnectionManager {
           loopCount++;
           if (loopCount > MAX_LOOP) {    // we tried hard, but it took too long, sorry :-(
             // this will probably close the client unfriendly, but what else can we do?
-            throw new PersistenceException(this + ": max. number of concurrent connections in use: " + maxConSize);
+            PersistenceException pex = new PersistenceException(this + ": max. number of concurrent connections in use: " + maxConSize);
+            pex.setTemporary(true);
+            throw pex;
           }
           runningOutOfConnections = true;
         }

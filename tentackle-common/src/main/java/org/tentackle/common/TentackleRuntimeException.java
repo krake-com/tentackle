@@ -30,6 +30,7 @@ public class TentackleRuntimeException extends RuntimeException {
   private static final long serialVersionUID = 807132614199245159L;
 
 
+  private boolean temporary;    // temporary exception
 
   /**
    * Constructs a new tentackle runtime exception
@@ -85,6 +86,27 @@ public class TentackleRuntimeException extends RuntimeException {
    */
   public TentackleRuntimeException(Throwable cause) {
     super(cause);
+  }
+
+
+  /**
+   * Returns whether the cause is temporary and may disappear after some time.
+   *
+   * @return true if temporary exception, default is false
+   */
+  public boolean isTemporary() {
+    return temporary;
+  }
+
+  /**
+   * Sets the temporary flag.<br>
+   * The cause for a temporary exception may disappear after some time.
+   * The application may retry later.
+   *
+   * @param temporary true if temporary exception
+   */
+  public void setTemporary(boolean temporary) {
+    this.temporary = temporary;
   }
 
 }

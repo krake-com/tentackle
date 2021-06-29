@@ -140,6 +140,7 @@ public abstract class AbstractServerApplication extends AbstractApplication
         sessionInfo.setUserId(0);
         sessionInfo.setUserClassId(0);
         sessionInfo.setUserName(null);
+        sessionInfo.clearPassword();
         return db;
       }
     };

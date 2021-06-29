@@ -317,9 +317,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
       synchronized (SESSIONS) {   // prevents race condition between verifySessionInfo and SESSIONS.add
         clientInfo.setSince(System.currentTimeMillis());
         verifySessionInfo(clientInfo);
-        // switch to client info for logging
-        db.setSessionInfo(clientInfo);
-        // add session to the set
+        db.setSessionInfo(clientInfo);  // switch to client info for the lifetime of this remote session
         SESSIONS.add(new WeakReference<>(this));
       }
     }
