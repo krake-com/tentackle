@@ -15,9 +15,11 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
 package org.tentackle.dbms;
 
 import org.tentackle.common.Service;
+import org.tentackle.session.MultiUserSessionPool;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionPool;
 import org.tentackle.session.SessionPoolFactory;
@@ -31,10 +33,15 @@ public class DbPoolFactory implements SessionPoolFactory {
   @Override
   public SessionPool create(String name, Session session,
                             int iniSize, int incSize, int minSize, int maxSize, long maxIdleMinutes, long maxUsageMinutes) {
-
     Db db = (Db) session;
     return new DbPool(name, db.getConnectionManager(), db.getSessionInfo(), db.getSessionGroupId(),
                       iniSize, incSize, minSize, maxSize, maxIdleMinutes, maxUsageMinutes);
+  }
+
+  @Override
+  public MultiUserSessionPool create(String name, Session session, int maxSize, long maxIdleMinutes, long maxUsageMinutes) {
+    Db db = (Db) session;
+    return new MultiUserDbPool(name, db.getConnectionManager(), db.getSessionGroupId(), maxSize, maxIdleMinutes, maxUsageMinutes);
   }
 
 }
