@@ -51,6 +51,7 @@ public class PooledDb {
    * Creates a pooled session.
    *
    * @param pool the session pool
+   * @param slotNumber the slot number within the pool
    */
   public PooledDb(DbPool pool, int slotNumber) {
     this.pool = pool;
