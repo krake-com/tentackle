@@ -18,14 +18,6 @@
 
 package org.tentackle.dbms;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import org.tentackle.session.ModificationTracker;
-import org.tentackle.session.Session;
-import org.tentackle.session.SessionFactory;
-import org.tentackle.session.SessionInfoFactory;
 import org.testng.Reporter;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
@@ -33,6 +25,16 @@ import org.testng.annotations.AfterSuite;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeSuite;
+
+import org.tentackle.session.ModificationTracker;
+import org.tentackle.session.Session;
+import org.tentackle.session.SessionFactory;
+import org.tentackle.session.SessionInfoFactory;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 
 import static org.testng.Assert.fail;
 
@@ -78,7 +80,7 @@ public abstract class AbstractDbTest {
     session.makeCurrent();
 
     ModificationTracker tracker = ModificationTracker.getInstance();
-    tracker.setSession(session.clone());
+    tracker.setSession(session.clone(null));
     tracker.setSleepInterval(500);   // fast polling for tests
     tracker.start();
   }

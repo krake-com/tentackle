@@ -55,6 +55,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
   private int userClassId;                      // the user class id
   private String applicationName;               // an optional application name
   private long applicationId;                   // application instance id
+  private String sessionName;                   // optional session name
   private String clientVersion;                 // the version of the client
   private long since;                           // logged in since
   private String propertiesName;                // filename of backend properties
@@ -321,6 +322,9 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
   @Override
   public String toString()  {
     StringBuilder buf = new StringBuilder();
+    if (sessionName != null) {
+      buf.append(sessionName).append(':');
+    }
     buf.append(userName);
     buf.append('[');
     buf.append(userId);
@@ -477,6 +481,15 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
     return applicationId;
   }
 
+  @Override
+  public void setSessionName(String sessionName) {
+    this.sessionName = sessionName;
+  }
+
+  @Override
+  public String getSessionName() {
+    return sessionName;
+  }
 
   @Override
   public void checkServerVersion(String serverVersion) {

@@ -45,6 +45,7 @@ public class DefaultDomainContext implements DomainContext {
    * the session.
    */
   private transient Session session;
+  private transient boolean sessionValid;     // false if not created by constructor, i.e. sent over wire
 
   /**
    * session immutable flag.
@@ -90,6 +91,7 @@ public class DefaultDomainContext implements DomainContext {
    */
   public DefaultDomainContext(Session session, boolean sessionImmutable) {
     this.session = session;     // don't use setSession() as this will also assertPermissions
+    this.sessionValid = true;
     this.sessionImmutable = sessionImmutable;
     if (session == null) {
       Session.assertCurrentSessionValid();
@@ -104,7 +106,6 @@ public class DefaultDomainContext implements DomainContext {
   public DefaultDomainContext(Session session) {
     this(session, false);
   }
-
 
 
   @Override
@@ -130,27 +131,37 @@ public class DefaultDomainContext implements DomainContext {
 
   @Override
   public void setSession(Session session) {
-    if (isSessionThreadLocal()) {
-      if (session != null && session != getSession()) {
-        // A thread-local session cannot be changed to another fixed session.
-        // To do so, a new context is necessary.
-        // Same session as thread-local is ok, however.
-        throw new PersistenceException("illegal attempt to change the thread-local session of " +
-                                       ReflectionHelper.getClassBaseName(getClass()) + " '" + this +
-                                       "' from " + getSession() + " to " + session);
-      }
-      // else no change: requested session is null or the same as the thread-local session
-    }
-    else  {
-      if (isSessionImmutable() && this.session != session) {
-          throw new PersistenceException(this.session, "illegal attempt to change the immutable session of " +
+    if (sessionValid) {
+      if (isSessionThreadLocal()) {
+        if (session != null && session != getSession()) {
+          // A thread-local session cannot be changed to another fixed session.
+          // To do so, a new context is necessary.
+          // Same session as thread-local is ok, however.
+          throw new PersistenceException("illegal attempt to change the thread-local session of " +
                                          ReflectionHelper.getClassBaseName(getClass()) + " '" + this +
-                                         "' from " + this.session + " to " + session);
+                                         "' from " + getSession() + " to " + session);
+        }
+        // else no change: requested session is null or the same as the thread-local session
       }
+      else {    // this.session != null
+        if (isSessionImmutable() && this.session != session) {
+          throw new PersistenceException(this.session, "illegal attempt to change the immutable session of " +
+                                                       ReflectionHelper.getClassBaseName(getClass()) + " '" + this +
+                                                       "' from " + this.session + " to " + session);
+        }
+        this.session = session;
+        if (nonRootContext != null) {
+          nonRootContext.session = session;
+        }
+      }
+    }
+    else {
+      // first setting after deserialization (DomainContext was not created by constructor!)
       this.session = session;
-      if (nonRootContext != null) {
-        nonRootContext.session = session;
+      if (session == null) {
+        Session.assertCurrentSessionValid();
       }
+      sessionValid = true;
       assertPermissions();
     }
   }

@@ -124,7 +124,9 @@ public abstract class ServerApplication extends AbstractServerApplication {
 
   @Override
   protected void finishStartup() {
-    LockManager.getInstance().initialize(getSession());
+    if (!getSession().isRemote()) {
+      LockManager.getInstance().initialize(getSession());
+    }
     super.finishStartup();
     rmiServer = createRmiServer(connectionClass);
   }

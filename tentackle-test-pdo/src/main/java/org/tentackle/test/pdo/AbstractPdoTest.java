@@ -111,7 +111,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
     context = createDomainContext();
 
     ModificationTracker tracker = ModificationTracker.getInstance();
-    tracker.setSession(session.clone());
+    tracker.setSession(session.clone(null));
     tracker.setSleepInterval(500);   // fast polling for tests
     tracker.start();
   }

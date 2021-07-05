@@ -19,14 +19,15 @@
 
 package org.tentackle.session;
 
+import org.tentackle.log.Logger;
+import org.tentackle.task.DefaultTaskDispatcher;
+import org.tentackle.task.Task;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.tentackle.log.Logger;
-import org.tentackle.task.DefaultTaskDispatcher;
-import org.tentackle.task.Task;
 
 /**
  * A task dispatcher to keep sessions alive.
@@ -131,7 +132,7 @@ public class SessionKeepAliveDaemon extends DefaultTaskDispatcher {
    * @return the executor service
    */
   protected ExecutorService createExecutorService() {
-    return Executors.newCachedThreadPool((Runnable runnable) -> {
+    return Executors.newCachedThreadPool(runnable -> {
       Thread t = new Thread(threadGroup, runnable, "Keep Alive Thread(" + threadNumber.getAndIncrement() + ")", 0);
       t.setDaemon(true);                    // don't inhibit termination of JVM
       t.setPriority(Thread.MAX_PRIORITY);   // keep alive is important!

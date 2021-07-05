@@ -128,49 +128,53 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
         iter.remove();    // was removed by GC: remove it from set too
       }
       else  {
-        if (session.isOpen()) {
-
-          Db db = session.getSession();
-          if (db == null || !db.isOpen()) {
-            if (db != null) {
-              LOGGER.warning("session Db " + db + " already closed in " + session +
-                             " -> cleanup forced and removed from session list");
-              // we came too late or not MT-visible.
-              // db is already closed (cleanup in parallel?)
-              session.forceCleanup();   // works in parallel
-            } // else: already closed
-            iter.remove();
-            continue;
-          }
-
-          int group = db.getSessionGroupId();
-
-          boolean timedOut = session.hasTimedOut();
-
-          if (timedOut) {
-            boolean inTransaction = db.isTxRunning();
-              // database has timed out
-            if (group == 0) {
-              // database without a group: close session immediately
-              LOGGER.info("disconnect dead " + session + ", ungrouped");
-              cleanupSession(session);
+        try {
+          if (session.isOpen()) {
+            Db db = session.getSession();
+            if (db == null || !db.isOpen()) {
+              if (db != null) {
+                LOGGER.warning("Db {0} already closed in {1} -> force cleanup", db, session);
+                // we came too late or not MT-visible.
+                // db is already closed (cleanup in parallel?)
+                session.forceCleanup();   // works in parallel
+              } // else: already closed
               iter.remove();
-              continue; // don't run into polled() below (would cause a nullp)
+              continue;
             }
-            else  {
-              if (inTransaction) {
-                // there is a dead session within a transaction for this group
-                deadTxGroups.add(group);
-              }
-              // grouped connections are handled below
-            }
-          }
 
-          if (!timedOut && group > 0) {
-            // belongs to a group and at least one connection still alive
-            aliveGroups.add(group);    // append group if not yet done
+            int group = db.getExportedSessionGroupId();
+            boolean timedOut = session.hasTimedOut();
+
+            if (timedOut) {
+              boolean inTransaction = db.isTxRunning();
+              // database has timed out
+              if (group == 0) {
+                // database without a group: close session immediately
+                LOGGER.info("disconnect dead " + session + ", ungrouped");
+                cleanupSession(session);
+                iter.remove();
+                continue; // don't run into polled() below (would cause a nullp)
+              }
+              else {
+                if (inTransaction) {
+                  // there is a dead session within a transaction for this group
+                  deadTxGroups.add(group);
+                }
+                // grouped connections are handled below
+              }
+            }
+
+            if (!timedOut && group > 0) {
+              // belongs to a group and at least one connection still alive
+              aliveGroups.add(group);    // append group if not yet done
+            }
+            session.polled();   // reset alive flag
           }
-          session.polled();   // reset alive flag
+        }
+        catch (RuntimeException rx) {
+          LOGGER.warning("verifying " + session + " failed -> force cleanup", rx);
+          session.forceCleanup();
+          iter.remove();
         }
       }
     }
@@ -183,7 +187,7 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
       }
       else  {
         if (session.isOpen()) {
-          int group = session.getSession().getSessionGroupId();
+          int group = session.getSession().getExportedSessionGroupId();
           if (group != 0) {
             boolean deadInTransaction = deadTxGroups.contains(group);
             boolean notAlive = !aliveGroups.contains(group);

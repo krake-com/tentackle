@@ -99,20 +99,11 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
 
   /**
    * Asserts that this context is allowed to be used by the current user.<br>
-   *
-   * If it is not allowed, a {@link PersistenceException} is thrown.
-   * The default implementation does nothing.
+   * Only invoked when session is updated after deserialization (objects traveling between jvms).
    * <p>
-   * Override the method in middle tier servers, for example in a hypothetical
-   * {@code TenantContext}:
-   * <pre>
-   *  void assertPermissions()  {
-   *    if (DbGlobal.serverDb != null &amp;&amp;    // if in RMI server
-   *        !getTenant().isUsageAllowed()) {
-   *       throw new DbSecurityException("malicious client tried to use context " + this);
-   *    }
-   *  }
-   * </pre>
+   * If it is not allowed, a {@link PersistenceException} must be thrown.<br>
+   * Override the method in middle tier servers, usually only necessary in multi-tentant applications.
+   * The default implementation does nothing.
    */
   void assertPermissions();
 

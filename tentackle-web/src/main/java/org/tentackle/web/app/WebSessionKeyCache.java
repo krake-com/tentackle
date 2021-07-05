@@ -38,7 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class WebSessionKeyCache<T> {
 
   // the session info map, key is the session-key
-  private final ConcurrentHashMap<T, SoftReference<SessionInfo>> userInfoMap;
+  private final ConcurrentHashMap<T, SoftReference<SessionInfo>> sessionInfoMap;
   private CleanupThread cleanupThread;
 
 
@@ -64,7 +64,7 @@ public class WebSessionKeyCache<T> {
       while (!interrupted() && !stop) {
         try {
           sleep(ms);
-          userInfoMap.values().removeIf(ref -> ref.get() == null);
+          sessionInfoMap.values().removeIf(ref -> ref.get() == null);
         }
         catch (InterruptedException ex) {
           if (stop) {
@@ -83,7 +83,7 @@ public class WebSessionKeyCache<T> {
    * Creates a session key cache.
    */
   public WebSessionKeyCache() {
-    userInfoMap = new ConcurrentHashMap<>();
+    sessionInfoMap = new ConcurrentHashMap<>();
   }
 
 
@@ -138,7 +138,7 @@ public class WebSessionKeyCache<T> {
 
 
   /**
-   * Adds a mapping between a session and a user info.<br>
+   * Adds a mapping between a session and a session info.<br>
    * This is usually done in the login controller.
    * If a session with that key already exists, the user info
    * will be replaced.
@@ -146,38 +146,38 @@ public class WebSessionKeyCache<T> {
    * @param sessionKey the (unique) session key
    * @param sessionInfo the user's session info
    */
-  public void addSession(T sessionKey, SessionInfo sessionInfo) {
-    userInfoMap.put(sessionKey, new SoftReference<>(sessionInfo));
+  public void addSessionInfo(T sessionKey, SessionInfo sessionInfo) {
+    sessionInfoMap.put(sessionKey, new SoftReference<>(sessionInfo));
   }
 
 
   /**
-   * Removes a mapping between a session and a user info.<br>
+   * Removes a mapping between a session and a session info.<br>
    * This is usually done in the logout controller.
    * If there is no such session, the method will do nothing.
    *
    * @param sessionKey the (unique) session key
    */
-  public void removeSession(T sessionKey) {
-    userInfoMap.remove(sessionKey);
+  public void removeSessionInfo(T sessionKey) {
+    sessionInfoMap.remove(sessionKey);
   }
 
 
   /**
-   * Gets the session.
+   * Gets the session info.
    *
    * @param sessionKey the session key
-   * @return the session, null if no such session
+   * @return the session info, null if no such session info
    */
-  public SessionInfo getSession(T sessionKey) {
-    SoftReference<SessionInfo> sessionInfoRef = userInfoMap.get(sessionKey);
+  public SessionInfo getSessionInfo(T sessionKey) {
+    SoftReference<SessionInfo> sessionInfoRef = sessionInfoMap.get(sessionKey);
     if (sessionInfoRef != null) {
       SessionInfo userInfo = sessionInfoRef.get();
       if (userInfo != null) {
         // not cleared so far: we can use it
         return userInfo;
       }
-      removeSession(sessionKey);
+      removeSessionInfo(sessionKey);
     }
     return null;
   }
@@ -191,7 +191,7 @@ public class WebSessionKeyCache<T> {
    */
   public Collection<T> getSessionKeys(SessionInfo sessionInfo) {
     Collection<T> sessionKeys = new ArrayList<>();
-    for (Iterator<Map.Entry<T, SoftReference<SessionInfo>>> iter = userInfoMap.entrySet().iterator(); iter.hasNext();) {
+    for (Iterator<Map.Entry<T, SoftReference<SessionInfo>>> iter = sessionInfoMap.entrySet().iterator(); iter.hasNext();) {
       Map.Entry<T,SoftReference<SessionInfo>> entry = iter.next();
       SessionInfo info = entry.getValue().get();
       if (info == null) {

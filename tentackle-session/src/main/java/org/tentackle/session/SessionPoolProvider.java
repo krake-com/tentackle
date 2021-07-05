@@ -19,17 +19,24 @@
 package org.tentackle.session;
 
 /**
- * An object maintaining a SessionPool.
+ * Provider for local or remote session pools.
  *
  * @author harald
  */
 public interface SessionPoolProvider {
 
   /**
-   * Gets the db session pool.
+   * Gets the session pool for local sessions.
    *
-   * @return the pool, never null
+   * @return the pool, null if none available
    */
   SessionPool getSessionPool();
+
+  /**
+   * Gets the session pool for remote sessions.
+   *
+   * @return the pool, null if none available
+   */
+  MultiUserSessionPool getRemoteSessionPool();
 
 }

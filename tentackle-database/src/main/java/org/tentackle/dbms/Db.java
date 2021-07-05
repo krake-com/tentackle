@@ -16,8 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-
 package org.tentackle.dbms;
 
 import org.tentackle.common.Constants;
@@ -79,9 +77,12 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
@@ -303,14 +304,16 @@ public class Db implements Session, Cloneable {
    * Gets an open session by its ID.
    *
    * @param sessionId the session ID
+   * @param url the session URL
    * @return the session, null if no such open session
+   * @see Session#getSessionId()
    */
-  public static Db getOpenSession(int sessionId) {
+  public static Db getOpenSession(int sessionId, String url) {
     for (Iterator<WeakReference<Db>> iter = SESSIONS.iterator(); iter.hasNext(); ) {
       WeakReference<Db> ref = iter.next();
       Db refDb = ref.get();
       if (refDb != null && refDb.isOpen()) {
-        if (refDb.getSessionId() == sessionId) {
+        if (refDb.getSessionId() == sessionId && Objects.equals(refDb.getUrl(), url)) {
           return refDb;
         }
       }
@@ -322,13 +325,21 @@ public class Db implements Session, Cloneable {
   }
 
 
-  private static final AtomicInteger INSTANCE_COUNTER = new AtomicInteger(); // global instance counter
+  private static final AtomicInteger INSTANCE_COUNTER = new AtomicInteger();  // global session instance counter
 
   // for RMI remote connections
   private static Class<?>[]         remoteClasses;        // the classes Objects for the delegates provide service for
   private static int                nextDelegateId;       // next handle per class
 
   private static final Cleaner CLEANER = Cleaner.create();        // instead of deprecated finalize()
+
+  // crashed remote sessions are closed from a separate thread to avoid blocking (TCP stack, whatever)
+  private static final AtomicInteger REMOTE_CLOSING_COUNTER = new AtomicInteger();
+  private static final ExecutorService REMOTE_CLOSING_EXECUTOR = Executors.newCachedThreadPool(runnable -> {
+    Thread t = new Thread(runnable, "Remote Session Closer(" + REMOTE_CLOSING_COUNTER.incrementAndGet() + ")");
+    t.setDaemon(true); // don't inhibit termination of JVM!
+    return t;
+  });
 
   /**
    * Holds the resources to be cleaned up.
@@ -339,7 +350,7 @@ public class Db implements Session, Cloneable {
     private DbRemoteDelegate rdel;                          // remote database delegate
     private RemoteDbConnection rcon;                        // != null if remote connection established to RMI-server
     private RemoteDbSession rses;                           // remote database session if logged in to RMI-server
-    private int sessionId;                                  // local session ID
+    private int sessionId;                                  // the session ID
     private volatile ManagedConnection con;                 // connection if attached, null = detached
     private boolean crashed;                                // true = session is closed because it is treated as crashed
     private final Set<SessionCloseHandler> closeHandlers;   // close handlers
@@ -381,9 +392,14 @@ public class Db implements Session, Cloneable {
             // this event, because nobody has a reference to it.
 
             if (rcon != null && rses != null) {
-              // don't rcon.logout if crashed, because connection may block.
-              // remote side must timeout anyway. (or has already timed out)
-              if (!crashed) {
+              if (crashed) {
+                // don't rses.close() if crashed, because connection may block!
+                // do it from a background thread instead.
+                // remote side must timeout anyway. (or has already timed out)
+                // this is especially useful if this is a server running against another server.
+                REMOTE_CLOSING_EXECUTOR.submit(() -> remoteClose(rses));
+              }
+              else {
                 rses.close();
               }
               if (me != null) {
@@ -460,6 +476,16 @@ public class Db implements Session, Cloneable {
       }
     }
 
+    private void remoteClose(RemoteDbSession remoteDbSession) {
+      LOGGER.warning("closing remote session " + remoteDbSession);
+      try {
+        remoteDbSession.close();
+      }
+      catch (RemoteException e) {
+        LOGGER.warning("remote closing failed", e);
+      }
+    }
+
     boolean isOpen() {
       return sessionId > 0 || rdel != null;
     }
@@ -490,6 +516,7 @@ public class Db implements Session, Cloneable {
   private int instanceNumber;                             // each session gets a unique instance number
   private String idConfig;                                // configuration of IdSource
   private int sessionGroupId;                             // ID of the session group, 0 = none
+  private int exportedSessionGroupId;                     // session group exported to the remote client, 0 = none
   private SessionPool dbPool;                             // != null if this Db is managed by a SessionPool
   private int poolId;                                     // the poolid if dbPool != null
   private SessionInfo sessionInfo;                        // user information
@@ -621,7 +648,7 @@ public class Db implements Session, Cloneable {
    */
   private void open(ConnectionManager conMgr) {
     try {
-      int sessionId;
+      int sessionId;                            // the local or remote session ID
       DbRemoteDelegate rdel = null;             // remote database delegate
       RemoteDbConnection rcon = null;           // != null if remote connection established to RMI-server
       RemoteDbSession rses = null;              // remote database session if logged in to RMI-server
@@ -1010,14 +1037,6 @@ public class Db implements Session, Cloneable {
   @Override
   public boolean isAlive() {
     assertOpen();
-    if (isRemote()) {
-      try {
-        return resources.rdel.isAlive();
-      }
-      catch (RemoteException e)  {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
-    }
     return alive;
   }
 
@@ -1029,16 +1048,14 @@ public class Db implements Session, Cloneable {
   @Override
   public void setAlive(boolean alive) {
     assertOpen();
-    if (isRemote()) {
+    this.alive = alive;
+    if (alive && isRemote()) {    // only for alive=true -> to remote side (remote times out on its own if false)
       try {
         resources.rdel.setAlive(alive);
       }
       catch (RemoteException e)  {
         throw PersistenceException.createFromRemoteException(this, e);
       }
-    }
-    else {
-      this.alive = alive;
     }
   }
 
@@ -1251,9 +1268,11 @@ public class Db implements Session, Cloneable {
 
   @Override
   public void close() {
-    LOGGER.fine("closing session {0}", this);
-    resources.me = this;    // programmatic close
-    cleanable.clean();
+    if (isOpen()) {
+      LOGGER.fine("closing session {0}", this);
+      resources.me = this;    // programmatic close
+      cleanable.clean();
+    }
   }
 
 
@@ -2214,20 +2233,22 @@ public class Db implements Session, Cloneable {
    * Groups are only meaningful for local db-connections, i.e.
    * for remote dbs the group instance refers to that of the rmi-server.
    *
-   * @param number is the group number, 0 = no group
+   * @param groupId is the group number, 0 = no group
    */
-  public void setSessionGroupId(int number) {
+  public void setSessionGroupId(int groupId) {
     assertOpen();
-    assertNotRemote();
 
-    if (number != sessionGroupId) {
-      if (number != 0) {
-        LOGGER.info("{0} joined group {1}", this, number);
+    if (groupId != sessionGroupId) {
+      if (groupId != 0) {
+        if (sessionGroupId != 0) {
+          throw new PersistenceException(this, "session already belongs to group " + sessionGroupId + ", cannot change to group " + groupId);
+        }
+        LOGGER.info("{0} joined group {1}", this, groupId);
       }
       else  {
         LOGGER.info("{0} removed from group {1}", this, sessionGroupId);
       }
-      sessionGroupId = number;
+      sessionGroupId = groupId;
     }
   }
 
@@ -2237,33 +2258,45 @@ public class Db implements Session, Cloneable {
     return sessionGroupId;
   }
 
+  /**
+   * Gets the session group exported to remote clients.
+   *
+   * @return the exported group, 0 if not a client group
+   */
+  public int getExportedSessionGroupId() {
+    return exportedSessionGroupId;
+  }
+
+  /**
+   * Sets the session group exported to remote clients.
+   *
+   * @param exportedSessionGroupId the exported group
+   */
+  public void setExportedSessionGroupId(int exportedSessionGroupId) {
+    this.exportedSessionGroupId = exportedSessionGroupId;
+  }
 
   @Override
-  public int groupWith(int sessionId) {
+  public void groupWith(int sessionId) {
     assertOpen();
 
     if (isRemote()) {
       try {
-        sessionGroupId = resources.rdel.groupWith(sessionId);
+        Db session2 = getOpenSession(sessionId, getUrl());
+        if (session2 == null) {
+          throw new PersistenceException(this, "no such local session with ID " + sessionId);
+        }
+        resources.rdel.groupWith(sessionId);
+        setSessionGroupId(sessionId);
+        session2.setSessionGroupId(sessionId);
       }
       catch (RemoteException e)  {
         throw PersistenceException.createFromRemoteException(this, e);
       }
     }
     else  {
-      Db db = getOpenSession(sessionId);
-      if (db == null) {
-        throw new PersistenceException(this, "no open session with ID " + sessionId);
-      }
-      if (sessionGroupId != 0 && sessionId != sessionGroupId) {
-        throw new PersistenceException(this, "session to join group " + db.getSessionGroupId() + " already belongs to group " + sessionGroupId);
-      }
-      if (db.getSessionGroupId() == 0) {
-        db.setSessionGroupId(sessionId);    // if not already set: this is now the root session of the group
-      } // else: use the group id which has already been set in the referenced session
-      setSessionGroupId(db.getSessionGroupId());
+      DbUtilities.getInstance().addToSessionGroup(this, sessionId, false);
     }
-    return sessionGroupId;
   }
 
 
@@ -2587,25 +2620,24 @@ public class Db implements Session, Cloneable {
     }
   }
 
-
-
-  /**
-   * Clones a logical session.
-   * <p>
-   * Connections may be cloned, which results in a new session using
-   * the cloned userinfo of the original session.
-   *
-   * @return the cloned Db
-   */
   @Override
   public Db clone() {
+    return clone(null);
+  }
+
+  @Override
+  public Db clone(String sessionName) {
     assertOpen();
     try {
 
       Db newDb = (Db) super.clone();
 
       if (sessionInfo != null) { // we need a new UserInfo cause some things may be stored here!
-        newDb.setSessionInfo(sessionInfo.clone());
+        SessionInfo clonedInfo = sessionInfo.clone();
+        if (sessionName != null) {
+          clonedInfo.setSessionName(sessionName);
+        }
+        newDb.setSessionInfo(clonedInfo);
       }
 
       newDb.resources = null;

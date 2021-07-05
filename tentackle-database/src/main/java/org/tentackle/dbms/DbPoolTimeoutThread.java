@@ -131,9 +131,11 @@ public class DbPoolTimeoutThread extends Thread implements Scavenger {
                     pool.removeDbInstance(pooledDb.getSession(), index);
                     i--; // start over at same slot
                   }
-                  else if (pooledDb.getSession().isRemote()) {
+                  else if (pooledDb.getSession().isRemote() && pooledDb.getSession().getSessionGroupId() == 0) {
+                    // remote connections must be kept alive in order not to be closed by remote server.
+                    // But only if they do not belong to session group! It is assumed that the root session
+                    // of the session group is kept alive by the application (modtracker, for example).
                     try {
-                      // remote connections must be kept alive in order not to be closed by remote server!
                       pooledDb.getSession().setAlive(true);
                     }
                     catch (RuntimeException ex) {

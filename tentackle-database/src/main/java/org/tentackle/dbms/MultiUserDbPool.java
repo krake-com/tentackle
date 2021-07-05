@@ -25,6 +25,7 @@ import org.tentackle.session.SessionInfo;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -40,14 +41,14 @@ public class MultiUserDbPool implements MultiUserSessionPool {
   private final long maxIdleMinutes;
   private final long maxUsageMinutes;
 
-  private Map<SessionInfo, DbPool> poolMap;                     // maintained pools per session info (user), null if shut down
+  private Map<SessionInfo, MultiPoolImpl> poolMap;              // maintained pools per session info (user), null if shut down
   private final AtomicInteger size = new AtomicInteger();       // total number of sessions
   private final AtomicInteger count = new AtomicInteger();      // session pool ID
 
   /**
    * Creates a multi user session pool.
    *
-   * @param name the name of the pool
+   * @param name the name of the pool, null if "default-multi"
    * @param conMgr the connection manager for local sessions, null if remote
    * @param sessionGroupId the session group ID to use for all sessions
    * @param maxSize the maximum number of sessions per session info, 0 = unlimited
@@ -55,7 +56,7 @@ public class MultiUserDbPool implements MultiUserSessionPool {
    * @param maxUsageMinutes the max. used time in minutes per session info, 0 = unlimited
    */
   public MultiUserDbPool(String name, ConnectionManager conMgr, int sessionGroupId, int maxSize, long maxIdleMinutes, long maxUsageMinutes) {
-    this.name = name;
+    this.name = Objects.requireNonNullElse(name, "default-multi");
     this.conMgr = conMgr;
     this.sessionGroupId = sessionGroupId;
     this.maxSize = maxSize;
@@ -125,12 +126,13 @@ public class MultiUserDbPool implements MultiUserSessionPool {
    */
   private DbPool getPool(SessionInfo sessionInfo) {
     assertNotShutdown();
-    DbPool pool = poolMap.get(sessionInfo);
+    MultiPoolImpl pool = poolMap.get(sessionInfo);
     if (pool == null) {
       pool = new MultiPoolImpl(name + "(" + count.incrementAndGet() + ")", conMgr, sessionInfo.clone(), sessionGroupId);
       poolMap.put(sessionInfo, pool);
       determineSize();
     }
+    pool.nextSessionInfo = sessionInfo;
     return pool;
   }
 
@@ -153,10 +155,18 @@ public class MultiUserDbPool implements MultiUserSessionPool {
    */
   private class MultiPoolImpl extends DbPool {
 
+    private SessionInfo nextSessionInfo;
+
     public MultiPoolImpl(String name, ConnectionManager conMgr, SessionInfo sessionInfo, int sessionGroupId) {
+      // iniSize 0  -> make sure that createDbInstances uses nextSessionInfo
       // minSize -1 -> shutdown sub-pool when all sessions closed
       // maxSize 0  -> unlimited per sessioninfo (but limited in total for all sub-pools)
-      super(name, conMgr, sessionInfo, sessionGroupId, 1, 1, -1, 0, maxIdleMinutes, maxUsageMinutes);
+      super(name, conMgr, sessionInfo, sessionGroupId, 0, 1, -1, 0, maxIdleMinutes, maxUsageMinutes);
+    }
+
+    @Override
+    protected SessionInfo createSessionInfo(int slotNumber) {
+      return nextSessionInfo;
     }
 
     @Override

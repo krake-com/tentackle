@@ -18,9 +18,10 @@
 
 package org.tentackle.pdo;
 
-import java.util.List;
 import org.tentackle.bind.Bindable;
 import org.tentackle.common.Timestamp;
+
+import java.util.List;
 
 /**
  * Remote session extension providing admin services for the middle tier.
@@ -73,6 +74,14 @@ public interface AdminExtension extends DomainContextDependable {
      */
     @Bindable
     long getApplicationId();
+
+    /**
+     * Gets the optional session name.
+     *
+     * @return the session name, null if none
+     */
+    @Bindable
+    String getSessionName();
 
     /**
      * Gets the client version.

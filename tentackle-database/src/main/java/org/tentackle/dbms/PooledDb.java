@@ -19,12 +19,10 @@
 package org.tentackle.dbms;
 
 import org.tentackle.common.Constants;
-import org.tentackle.common.StringHelper;
 import org.tentackle.common.Timestamp;
 import org.tentackle.log.Logger;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SessionFactory;
-import org.tentackle.session.SessionInfo;
 
 import java.lang.ref.WeakReference;
 
@@ -234,26 +232,6 @@ public class PooledDb {
 
 
   /**
-   * Creates the session info for a new db.
-   *
-   * @param slotNumber the slot number
-   * @return the session info
-   */
-  protected SessionInfo createSessionInfo(int slotNumber) {
-    SessionInfo sessionInfo = pool.getSessionInfo().clone();
-    StringBuilder buf = new StringBuilder();
-    if (!StringHelper.isAllWhitespace(sessionInfo.getApplicationName())) {
-      buf.append(sessionInfo.getApplicationName());
-    }
-    else {
-      buf.append("<unnamed>");
-    }
-    buf.append('|').append(pool.getName()).append('#').append(slotNumber);
-    sessionInfo.setApplicationName(buf.toString());
-    return sessionInfo;
-  }
-
-  /**
    * Creates a new session.
    *
    * @param slotNumber the slot number
@@ -262,7 +240,7 @@ public class PooledDb {
   protected Db createSession(int slotNumber) {
     LOGGER.fine("open pooled Db for {0}, connection manager {1}, slot {2}",
         pool.getSessionInfo(), pool.getConnectionManager(), slotNumber);
-    Db session = (Db) SessionFactory.getInstance().create(pool, createSessionInfo(slotNumber));
+    Db session = (Db) SessionFactory.getInstance().create(pool, pool.createSessionInfo(slotNumber));
     if (pool.getSessionGroupId() != 0) {
       session.groupWith(pool.getSessionGroupId());
     }

@@ -32,11 +32,13 @@ import org.tentackle.misc.DiagnosticUtilities;
 import org.tentackle.misc.Duration;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.LoginFailedException;
+import org.tentackle.session.MultiUserSessionPool;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionFactory;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionPool;
+import org.tentackle.session.SessionPoolProvider;
 
 import java.lang.ref.Cleaner;
 import java.lang.ref.Cleaner.Cleanable;
@@ -185,22 +187,20 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   /**
    * Holds the resources and state to be cleaned up.
    */
-  private static class Resources implements Runnable {
+  private class Resources implements Runnable {
 
     private RemoteDbSessionImpl me;                   // != null if programmatic close
     private String name;                              // the session name
     private Db db;                                    // the local session
     private String mdcInfo;                           // the cached MDC info
     private final RemoteDbConnectionImpl con;         // the connection object
-    private final SessionInfo serverInfo;             // the server info for creating a new Db connection
     private final Collection<WeakReference<RemoteDelegate>> exportedDelegates;  // delegates to unexport on close
     private final MethodStatistics methodStats;       // statistics for method invocations
                                                       // (managed by invocation handler, null if no stats)
 
-    Resources(Db db, RemoteDbConnectionImpl con, SessionInfo serverInfo) {
+    Resources(Db db, RemoteDbConnectionImpl con) {
       this.db = db;
       this.con = con;
-      this.serverInfo = serverInfo;
       exportedDelegates = new ArrayList<>();
       methodStats = new MethodStatistics();
     }
@@ -241,7 +241,9 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
       }
       if (db != null) {
         db.setCrashed(crashed);
-        db.rollbackImmediately(null);   // roll back if anything pending
+        if (!db.isRemote()) {
+          db.rollbackImmediately(null);   // roll back if anything pending
+        }
       }
       doLogStatistics(Level.INFO, true);
     }
@@ -249,7 +251,9 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
     void closeDb(boolean cleanup) {
       if (db != null) {
         if (db.isPooled()) {
-          db.rollbackImmediately(null); // roll back if anything pending
+          if (!db.isRemote()) {
+            db.rollbackImmediately(null); // roll back if anything pending
+          }
           if (cleanup) {
             db.close(); // closed db will be removed from the pool in putDb
             LOGGER.warning("pooled {0} closed due to session cleanup", db);
@@ -258,10 +262,17 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
             // only return the db to the pool, don't close it
             LOGGER.info("returning {0} to pool", db);
           }
-          // reset the user info for this db for sure (the application may have changed it to clientInfo)
-          db.setSessionInfo(serverInfo);
-          db.setSessionGroupId(0);    // remove from session group
-          db.getPool().putSession(db);
+          if (db.isRemote()) {
+            // remote sessions are closed and will be removed from the pool.
+            // this closes the remote session in the remote server as well
+            db.close();
+          }
+          else {
+            // reset the user info for this db for sure (the application may have changed it to clientInfo)
+            db.setSessionInfo(serverInfo);
+            db.setExportedSessionGroupId(0);      // remove from session group
+          }
+          db.getPool().putSession(db);    // this will work for MultiUserDbPool as well!
         }
         else {
           db.close();
@@ -284,6 +295,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   private final Resources resources;                  // resources to be cleaned up
   private final Cleanable cleanable;                  // to cleanup the connection
   private final SessionInfo clientInfo;               // saved client info
+  private final SessionInfo serverInfo;               // the server info for creating a new Db connection
   private final long sessionNumber;                   // unique session number
   private final String clientHost;                    // the client host string
   private int timeout;                                // timeout in polling intervals of the cleanupthread
@@ -305,7 +317,14 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    */
   public RemoteDbSessionImpl(RemoteDbConnectionImpl con, SessionInfo clientInfo, SessionInfo serverInfo) {
 
-    this.clientInfo = clientInfo;
+    this.clientInfo = clientInfo.clone();
+    if (!clientInfo.isCloned()) {
+      this.clientInfo.clearCloned();
+    }
+    this.serverInfo = serverInfo.clone();
+    if (!serverInfo.isCloned()) {
+      this.serverInfo.clearCloned();
+    }
 
     sessionNumber = LAST_SESSION_NUMBER.incrementAndGet();
 
@@ -313,11 +332,11 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
     try {
       clientHost = UnicastRemoteObject.getClientHost();
       db = openDb();
-      resources = new Resources(db, con, serverInfo);
+      resources = new Resources(db, con);
       synchronized (SESSIONS) {   // prevents race condition between verifySessionInfo and SESSIONS.add
-        clientInfo.setSince(System.currentTimeMillis());
-        verifySessionInfo(clientInfo);
-        db.setSessionInfo(clientInfo);  // switch to client info for the lifetime of this remote session
+        this.clientInfo.setSince(System.currentTimeMillis());
+        verifySessionInfo(this.clientInfo);
+        db.setSessionInfo(this.clientInfo);  // switch to client info for the lifetime of this remote session
         SESSIONS.add(new WeakReference<>(this));
       }
     }
@@ -475,7 +494,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * @return the server user info
    */
   public SessionInfo getServerSessionInfo() {
-    return resources.serverInfo;
+    return serverInfo;
   }
 
 
@@ -613,25 +632,40 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
 
 
   /**
-   * Gets an open db for this remote session.
+   * Gets an open db session for this remote client session.
    *
-   * @return the db connection
-   * @throws LoginFailedException if opening the db failed
+   * @return the db session
+   * @throws LoginFailedException if opening the session failed
    */
   protected Db openDb() {
-    SessionPool dbPool = DbUtilities.getInstance().getDefaultSessionPool();
-    if (dbPool != null) {
-      try {
-        Db pooledDb = (Db) dbPool.getSession();
-        LOGGER.info("using {0}", pooledDb);
-        return pooledDb;
+    try {
+      Db pooledDb = null;
+      SessionPoolProvider sessionPoolProvider = DbUtilities.getInstance().getSessionPoolProvider();
+      if (sessionPoolProvider != null) {
+        SessionPool sessionPool = sessionPoolProvider.getSessionPool();
+        if (sessionPool != null) {
+            pooledDb = (Db) sessionPool.getSession();
+        }
+        else {
+          MultiUserSessionPool remoteSessionPool = sessionPoolProvider.getRemoteSessionPool();
+          if (remoteSessionPool != null) {
+            SessionInfo sessionInfo = getClientSessionInfo();
+            sessionInfo.setProperties(serverInfo.getProperties());
+            pooledDb = (Db) remoteSessionPool.get(sessionInfo);
+          }
+        }
       }
-      catch (RuntimeException ex) {
-        throw new LoginFailedException("open Db failed", ex);
+      if (pooledDb == null) {
+        pooledDb = (Db) SessionFactory.getInstance().create(serverInfo);
       }
+      LOGGER.info("using {0}", pooledDb);
+      return pooledDb;
     }
-    else  {
-      return (Db) SessionFactory.getInstance().create(resources.serverInfo);
+    catch (LoginFailedException lx) {
+      throw lx;
+    }
+    catch (RuntimeException ex) {
+      throw new LoginFailedException("obtaining session failed", ex);
     }
   }
 

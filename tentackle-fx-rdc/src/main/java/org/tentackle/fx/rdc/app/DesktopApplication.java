@@ -448,8 +448,8 @@ public abstract class DesktopApplication<C extends FxController>
   protected void configureModificationTracker() {
     showApplicationStatus(AppFxRdcBundle.getString("CONFIGURE MONITORING..."), 0.2);
     super.configureModificationTracker();
-    Session trackerSession = getSession().clone();          // already open
-    trackerSession.groupWith(getSession().getSessionId());  // build group
+    Session trackerSession = getSession().clone("MT");          // already open
+    trackerSession.groupWith(getSession().getSessionId());      // build group
     ModificationTracker.getInstance().setSession(trackerSession);
   }
 

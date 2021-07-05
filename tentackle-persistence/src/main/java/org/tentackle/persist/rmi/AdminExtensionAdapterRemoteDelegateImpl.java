@@ -92,7 +92,7 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDelegateImpl<
       int count = 0;
       for (RemoteDbSessionImpl openSession : RemoteDbSessionImpl.getOpenSessions()) {
         if (openSession.getClientSessionInfo().getUserId() == userId &&
-            (sessionGroupId == 0 || openSession.getSession().getSessionGroupId() == sessionGroupId) &&
+            (sessionGroupId == 0 || openSession.getSession().getExportedSessionGroupId() == sessionGroupId) &&
             (applicationName == null ||
             Objects.equals(openSession.getClientSessionInfo().getApplicationName(), applicationName)) &&
             (applicationId == 0 || openSession.getClientSessionInfo().getApplicationId() == applicationId)) {
@@ -143,6 +143,7 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDelegateImpl<
     private final Timestamp since;
     private final String applicationName;
     private final long applicationId;
+    private final String sessionName;
     private final String clientVersion;
     private final String locale;
     private final String vmInfo;
@@ -161,6 +162,7 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDelegateImpl<
       since = new Timestamp(info.getSince());
       applicationName = info.getApplicationName();
       applicationId = info.getApplicationId();
+      sessionName = info.getSessionName();
       clientVersion = info.getClientVersion() == null ? "?" : info.getClientVersion();
       locale = info.getLocale() == null ? "?" : info.getLocale().toString();
       vmInfo = info.getVmInfo();
@@ -173,7 +175,7 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDelegateImpl<
       }
       clientHost = remoteSession.getClientHostString();
       sessionNumber = remoteSession.getSessionNumber();
-      sessionGroup = remoteSession.getSession().getSessionGroupId();
+      sessionGroup = remoteSession.getSession().getExportedSessionGroupId();
       options = remoteSession.getOptions();
     }
 
@@ -200,6 +202,11 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDelegateImpl<
     @Override
     public long getApplicationId() {
       return applicationId;
+    }
+
+    @Override
+    public String getSessionName() {
+      return sessionName;
     }
 
     @Override

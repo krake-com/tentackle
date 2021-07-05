@@ -37,7 +37,7 @@ public class AddPrefsInOtherJVM {
       session.makeCurrent();
 
       ModificationTracker tracker = ModificationTracker.getInstance();
-      tracker.setSession(session.clone());
+      tracker.setSession(session.clone(null));
       tracker.setSleepInterval(500);
       tracker.start();
 

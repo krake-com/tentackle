@@ -154,6 +154,7 @@ public class SessionsView extends AbstractFxController {
     config.addColumn("clientHost", resources.getString("client"));
     config.addColumn("since", resources.getString("since"));
     config.addColumn("sessionNumber", resources.getString("session-no."));
+    config.addColumn("sessionName", resources.getString("name"));
     config.addColumn("sessionGroup", resources.getString("group-no."));
     config.addColumn("options", resources.getString("options"));
     return config;
@@ -180,7 +181,7 @@ public class SessionsView extends AbstractFxController {
       if (session.getSessionGroup() != 0) {
         int row = 0;
         for (SessionData otherSession: sessions) {
-          if (otherSession.getSessionGroup() == session.getSessionGroup()) {
+          if (otherSession.getSessionGroup() == session.getSessionGroup() && otherSession.getUserId() == session.getUserId()) {
             toKill.add(otherSession);
             sessionsNode.getSelectionModel().select(row, null);
           }

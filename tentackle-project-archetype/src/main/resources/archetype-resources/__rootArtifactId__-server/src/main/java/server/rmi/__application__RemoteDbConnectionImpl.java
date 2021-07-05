@@ -47,7 +47,7 @@ public class ${application}RemoteDbConnectionImpl extends RemoteDbConnectionImpl
 
   @Override
   public RemoteDbSession createSession(SessionInfo clientInfo) throws RemoteException {
-    return new ${application}RemoteDbSessionImpl(this, clientInfo, getRmiServer().getSessionInfo().clone());
+    return new ${application}RemoteDbSessionImpl(this, clientInfo, getRmiServer().getSessionInfo());
   }
 
   @Override

@@ -127,6 +127,7 @@ public class LoginApplication extends FxApplication {
     String sessionPropsName = application.getCommandLine().getOptionValue(Constants.BACKEND_PROPS);
 
     SessionInfo sessionInfo = application.createSessionInfo(username, password, sessionPropsName);
+    sessionInfo.setSessionName("FX");
 
     // provide user and password from backend properties, if given
     Properties props = sessionInfo.getProperties();
