@@ -23,6 +23,7 @@ package org.tentackle.dbms.rmi;
 import org.tentackle.dbms.CommitTxRunnable;
 import org.tentackle.dbms.Db;
 import org.tentackle.dbms.DbTransactionHandle;
+import org.tentackle.dbms.DbUtilities;
 import org.tentackle.dbms.ModificationLog;
 import org.tentackle.dbms.PersistenceVisitor;
 import org.tentackle.dbms.RollbackTxRunnable;
@@ -75,9 +76,9 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
 
 
   @Override
-  public int groupWith(int number) throws RemoteException {
+  public void groupWith(int sessionGroupId) throws RemoteException {
     try {
-      return getSession().groupWith(number);
+      DbUtilities.getInstance().addToSessionGroup(getSession(), sessionGroupId, true);
     }
     catch (RuntimeException ex)  {
       throw createException(ex);

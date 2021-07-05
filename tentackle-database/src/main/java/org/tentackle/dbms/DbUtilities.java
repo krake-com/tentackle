@@ -26,7 +26,7 @@ import org.tentackle.io.ReconnectionPolicy;
 import org.tentackle.session.BackendConfiguration;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
-import org.tentackle.session.SessionPool;
+import org.tentackle.session.SessionPoolProvider;
 import org.tentackle.sql.DataType;
 import org.tentackle.sql.DataTypeFactory;
 
@@ -149,11 +149,11 @@ public class DbUtilities {
 
 
   /**
-   * Gets the default session pool.
+   * Gets the session pool provider.
    *
-   * @return the session pool, null if none (default)
+   * @return the session pool provider, null if none (default)
    */
-  public SessionPool getDefaultSessionPool() {
+  public SessionPoolProvider getSessionPoolProvider() {
     return null;
   }
 
@@ -216,6 +216,56 @@ public class DbUtilities {
   public void cleanupRemoteSession(RemoteDbSessionImpl remoteSession) {
     // the default does nothing
   }
+
+
+  /**
+   * Adds a session to a session group.<br>
+   * Creates a new group if the session with the given groupId does not belong to a group yet.
+   *
+   * @param session the session to add to a group
+   * @param sessionGroupId the session ID or session group ID to group with
+   * @param fromRemote true if initiated from remote client
+   */
+  public void addToSessionGroup(Db session, int sessionGroupId, boolean fromRemote) {
+    if (sessionGroupId <= 0) {
+      throw new PersistenceException(session, "invalid requested session group " + sessionGroupId);
+    }
+    String url = session.getUrl();
+    int oldGroup = fromRemote ? session.getExportedSessionGroupId() : session.getSessionGroupId();
+    if (oldGroup != 0) {
+      if (sessionGroupId != oldGroup) {
+        throw new PersistenceException(session, "session already belongs to group " + oldGroup +
+                                                " (requested was " + sessionGroupId);
+      }
+      return;   // nothing to do
+    }
+
+    Db session2 = Db.getOpenSession(sessionGroupId, url);
+    if (session2 == null) {
+      throw new PersistenceException(session, "no such session with ID " + sessionGroupId + " to group with");
+    }
+
+    int groupId = fromRemote ? session2.getExportedSessionGroupId() : session2.getSessionGroupId();
+    if (groupId != 0) {
+      if (groupId != sessionGroupId) {
+        throw new PersistenceException(session2, "session already belongs to exported group " + groupId);
+      }
+    }
+    else {
+      // not grouped so far: create it
+      groupId = sessionGroupId;
+    }
+
+    if (fromRemote) {
+      session2.setExportedSessionGroupId(groupId);
+      session.setExportedSessionGroupId(groupId);
+    }
+    else {
+      session2.setSessionGroupId(groupId);
+      session.setSessionGroupId(groupId);
+    }
+  }
+
 
   /**
    * Applies the given backend configuration to properties.

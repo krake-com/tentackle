@@ -35,9 +35,11 @@ import org.tentackle.pdo.PdoInvocationHandler;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.ModificationTracker;
+import org.tentackle.session.MultiUserSessionPool;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionPool;
+import org.tentackle.session.SessionPoolFactory;
 import org.tentackle.session.SessionPoolProvider;
 
 import javax.naming.InitialContext;
@@ -59,7 +61,8 @@ public abstract class AbstractServerApplication extends AbstractApplication
 
   private static final Logger LOGGER = Logger.get(AbstractServerApplication.class);
 
-  private SessionPool sessionPool;                    // the session pool
+  private SessionPool sessionPool;                    // the session pool for local sessions
+  private MultiUserSessionPool remoteSessionPool;     // the session pool for remote sessions
   private ConnectionManager connectionManager;        // the connection manager
   private boolean runsInContainer;                    // true if application is running within a container (tomcat, EE)
 
@@ -78,6 +81,11 @@ public abstract class AbstractServerApplication extends AbstractApplication
   @Override
   public SessionPool getSessionPool() {
     return sessionPool;
+  }
+
+  @Override
+  public MultiUserSessionPool getRemoteSessionPool() {
+    return remoteSessionPool;
   }
 
   @Override
@@ -115,8 +123,13 @@ public abstract class AbstractServerApplication extends AbstractApplication
   @Override
   protected void finishStartup() {
     super.finishStartup();
-    connectionManager = createConnectionManager();
-    sessionPool = createSessionPool();
+    if (getSession().isRemote()) {
+      remoteSessionPool = createRemoteSessionPool();
+    }
+    else {
+      connectionManager = createConnectionManager();
+      sessionPool = createSessionPool();
+    }
   }
 
 
@@ -144,6 +157,24 @@ public abstract class AbstractServerApplication extends AbstractApplication
         return db;
       }
     };
+  }
+
+  /**
+   * Creates the remote session pool to serve the client sessions.
+   *
+   * @return the session pool
+   */
+  public MultiUserSessionPool createRemoteSessionPool() {
+    // 100 remote sessions should be ok for most proxy rmi servers. Should be smaller than the local server's pool maxSize anyway.
+    // Timeouts make no sense at all for pooling of remote client sessions ("get" when logged in and "close with put" on logout,
+    // i.e. there are no idle sessions and the session must remain open untol logout).
+    if (getSession().getSessionGroupId() == 0) {
+      // if not grouped so far, build a new session group within the remote server with a single session at start
+      // so that all sessions of the session pool are grouped properly with the server's main session.
+      // this will close all those sessions if the main session died due to a modtracker crash or whatever.
+      getSession().groupWith(getSession().getSessionId());
+    }
+    return SessionPoolFactory.getInstance().create("remote-pool", getSession(), 100, 0L, 0L);
   }
 
   @Override
@@ -176,6 +207,8 @@ public abstract class AbstractServerApplication extends AbstractApplication
    * @param sessionInfo the session info
    */
   protected void configureSessionInfo(SessionInfo sessionInfo) {
+    sessionInfo.setSessionName("SRV");    // server's main session (will be used by the modtracker)
+
     // load properties
     Properties sessionProps = null;
     try {
@@ -229,7 +262,7 @@ public abstract class AbstractServerApplication extends AbstractApplication
 
 
   /**
-   * Connects the server to the database backend.
+   * Connects the server to the database backend or another remote server.
    */
   protected void login() {
     String username = getProperty(Constants.BACKEND_USER);
@@ -254,6 +287,11 @@ public abstract class AbstractServerApplication extends AbstractApplication
     if (sessionPool != null) {
       sessionPool.shutdown();
       sessionPool = null;
+    }
+
+    if (remoteSessionPool != null) {
+      remoteSessionPool.shutdown();
+      remoteSessionPool = null;
     }
 
     if (connectionManager != null) {

@@ -106,13 +106,13 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
             public void run() {
               // switch session from within running tracker's thread is allowed
               tracker.getSession().close();
-              tracker.setSession(session.clone());
+              tracker.setSession(session.clone(null));
               tracker.setSleepInterval(250);   // fast polling for tests
             }
           });
       }
       else {
-        tracker.setSession(session.clone());    // set or change session
+        tracker.setSession(session.clone(null));    // set or change session
         tracker.setSleepInterval(250);          // fast polling for tests
         tracker.start();
       }

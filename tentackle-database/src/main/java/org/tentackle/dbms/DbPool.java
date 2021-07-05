@@ -80,7 +80,7 @@ public class DbPool implements SessionPool {
 
     if (maxSize > 0 && (maxSize < iniSize || maxSize < minSize) ||
         incSize < 1 ||
-        iniSize < 1) {
+        iniSize < 0) {
       throw new IllegalArgumentException("illegal size parameters");
     }
 
@@ -312,63 +312,66 @@ public class DbPool implements SessionPool {
 
   @Override
   public synchronized void putSession(Session session) {
-    assertNotShutdown();
     final Db db = (Db) session;
     if (db.getPool() != this) {
       throw new PersistenceException(db, "session is not managed by pool " + this);
     }
-    int poolId = db.getPoolId();
-    // 0 = already returned to pool, -1 removed from pool, else not returned yet
-    if (poolId < -1 || poolId > pooledSessions.length) {
-      throw new PersistenceException(db, "pool " + this + ": session has invalid poolid " + poolId);
-    }
-    if (db.isOpen()) {
-      boolean txRunning = db.isTxRunning();
-      String exMsg = null;
-      if (txRunning) {
-        exMsg = "session " + db + " was still running a transaction -> ";
-        if (db.isRemote()) {
-          // rollbackImmediately not allowed for remote sessions.
-          // just close it, the rollback will be performed at the remote side.
-          exMsg = "remote " + exMsg + "closed and removed from pool";
-          removeDbInstance(db, poolId - 1);
-          poolId = 0;
-
-        }
-        else {
-          // rollback first and return to pool, log the exception later (see below)
-          exMsg += "rolled back";
-          db.rollbackImmediately(null);
-        }
-      }
-      if (poolId > 0) { // if not returned to pool yet
-        // check if there are no pending statements
-        ManagedConnection con = db.getConnection();
-        if (con != null) {
-          con.closePreparedStatements(true); // cleanup all pending statements
-          removeDbInstance(db, poolId - 1);  // remove from pool
-        }
-        else {
-          LOGGER.fine("{0}: session {1} returned to pool, id {2}", this, db, poolId);
-          poolId--;
-          pooledSessions[poolId].unUse(db);
-          unusedList[unusedCount++] = poolId;
-        }
-        db.setPoolId(0);            // returned to pool
-        db.setOwnerThread(null);    // unlink any owner thread
-      } // else: not an error to return a db more than once
-
-      if (exMsg != null) {
-        throw new PersistenceException(db, exMsg);
+    if (isShutdown()) {
+      if (db.isOpen()) {
+        LOGGER.warning("pool " + this + " already shut down -> closing session " + db);
+        db.close();
       }
     }
     else {
-      if (poolId > 0) { // if not returned to pool yet
-        removeDbInstance(db, poolId - 1);           // remove from pool
-        LOGGER.warning("pool {0}: returned session {1} was closed and removed from pool", this, db);
+      int poolId = db.getPoolId();
+      // 0 = already returned to pool, -1 removed from pool, else not returned yet
+      if (poolId < -1 || poolId > pooledSessions.length) {
+        throw new PersistenceException(db, "pool " + this + ": session has invalid poolid " + poolId);
+      }
+      if (db.isOpen()) {
+        boolean txRunning = db.isTxRunning();
+        String exMsg = null;
+        if (txRunning) {
+          exMsg = "session " + db + " was still running a transaction -> ";
+          if (db.isRemote()) {
+            // rollbackImmediately not allowed for remote sessions.
+            // just close it, the rollback will be performed at the remote side.
+            exMsg = "remote " + exMsg + "closed and removed from pool";
+            removeDbInstance(db, poolId - 1);
+            poolId = 0;
+          }
+          else {
+            // rollback first and return to pool, log the exception later (see below)
+            exMsg += "rolled back";
+            db.rollbackImmediately(null);
+          }
+        }
+        if (poolId > 0) { // if not returned to pool yet
+          // check if there are no pending statements
+          ManagedConnection con = db.getConnection();
+          if (con != null) {
+            con.closePreparedStatements(true); // cleanup all pending statements
+            removeDbInstance(db, poolId - 1);  // remove from pool
+          }
+          else {
+            LOGGER.fine("{0}: session {1} returned to pool, id {2}", this, db, poolId);
+            poolId--;
+            pooledSessions[poolId].unUse(db);
+            unusedList[unusedCount++] = poolId;
+          }
+          db.setPoolId(0);            // returned to pool
+          db.setOwnerThread(null);    // unlink any owner thread
+        } // else: not an error to return a db more than once
+
+        if (exMsg != null) {
+          throw new PersistenceException(db, exMsg);
+        }
       }
       else {
-        LOGGER.warning("pool {0}: returned session {1} was closed and already returned to pool", this, db);
+        if (poolId > 0) { // if not returned to pool yet
+          removeDbInstance(db, poolId - 1);           // remove from pool
+          LOGGER.info("pool {0}: returned closed session {1} removed from pool", this, db);
+        } // else: not an error to return a closed db more than once
       }
     }
   }
@@ -409,6 +412,18 @@ public class DbPool implements SessionPool {
    */
   protected PooledDb createPooledDb(int slotNumber) {
     return new PooledDb(this, slotNumber);
+  }
+
+  /**
+   * Creates the session info for a new pooled Db.
+   *
+   * @param slotNumber the slot number
+   * @return the session info
+   */
+  protected SessionInfo createSessionInfo(int slotNumber) {
+    SessionInfo sessionInfo = getSessionInfo().clone();
+    sessionInfo.setSessionName(getName() + "#" + slotNumber);
+    return sessionInfo;
   }
 
   /**

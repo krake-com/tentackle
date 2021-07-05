@@ -54,7 +54,6 @@ public class ${application}RemoteDbSessionImpl extends RemoteDbSessionImpl imple
   @Override
   public void verifySessionInfo(SessionInfo sessionInfo) {
     String passwordHash = ${application}Helper.hash(sessionInfo.getPassword());
-    StringHelper.blank(sessionInfo.getPassword());
     DomainContext context = Pdo.createDomainContext(getSession());
     String username = sessionInfo.getUserName();
     User user = Pdo.create(User.class, context).selectByUniqueDomainKey(username);

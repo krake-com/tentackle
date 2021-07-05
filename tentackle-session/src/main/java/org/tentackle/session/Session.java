@@ -152,14 +152,18 @@ public interface Session extends Comparable<Session>, AutoCloseable {
   String getName();
 
   /**
-   * Gets the session ID.
+   * Gets the session ID.<br>
+   * Session IDs are unique for sessions with the same URL.<br>
+   * For remote sessions, the ID is the same as the one used in remote server.
    *
    * @return the ID assigned to this session
+   * @see #getInstanceNumber() for a unique number within the JVM instance
    */
   int getSessionId();
 
   /**
    * Gets the session's group ID.<br>
+   * The session group is unique for sessions with the same URL.
    *
    * @return the ID of the session this session is grouped with, 0 if not member of a session group
    */
@@ -172,9 +176,8 @@ public interface Session extends Comparable<Session>, AutoCloseable {
    * and the group id will be the session id of the root session.
    *
    * @param sessionId the ID of the session to build a group with
-   * @return the group id
    */
-  int groupWith(int sessionId);
+  void groupWith(int sessionId);
 
   /**
    * Close a session.<br>
@@ -208,9 +211,10 @@ public interface Session extends Comparable<Session>, AutoCloseable {
    * If the session is closed, a PersistenceException is thrown.<br>
    * The cloned session will always be non-grouped.
    *
+   * @param sessionName the name of the cloned session, null if same as this session
    * @return the cloned session
    */
-  Session clone();
+  Session clone(String sessionName);
 
   /**
    * Re-opens a session.<br>
@@ -472,7 +476,7 @@ public interface Session extends Comparable<Session>, AutoCloseable {
   RemoteSession getRemoteSession();
 
   /**
-   * Gets the url.
+   * Gets the connection url.
    *
    * @return the url
    */

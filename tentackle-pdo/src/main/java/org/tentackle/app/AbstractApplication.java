@@ -446,8 +446,13 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
       SessionInfo remoteInfo = session.getRemoteSession().getClientSessionInfo();
       // set the user's object and class id determined by the remote server
       SessionInfo localInfo = session.getSessionInfo();
+      boolean immutable = localInfo.isImmutable();
+      if (immutable) {
+        localInfo.setImmutable(false);    // in case of a remote server application
+      }
       localInfo.setUserId(remoteInfo.getUserId());
       localInfo.setUserClassId(remoteInfo.getUserClassId());
+      localInfo.setImmutable(immutable);  // restore immutable flag if changed
     }
     return ctx;
   }

@@ -21,8 +21,10 @@ package org.tentackle.web.app;
 import org.tentackle.app.AbstractApplication;
 import org.tentackle.dbms.Db;
 import org.tentackle.persist.app.AbstractServerApplication;
+import org.tentackle.session.MultiUserSessionPool;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
+import org.tentackle.session.SessionPool;
 
 import java.util.Collection;
 
@@ -50,7 +52,7 @@ public abstract class WebApplication<T> extends AbstractServerApplication {
   }
 
 
-  private WebSessionKeyCache<T> sessionCache;   // the web session cache
+  private WebSessionKeyCache<T> sessionInfoCache;   // the web session info cache
 
 
   /**
@@ -65,16 +67,16 @@ public abstract class WebApplication<T> extends AbstractServerApplication {
 
 
   /**
-   * Adds a mapping between a web session key and a user session info.<br>
+   * Adds a mapping between a web session key and a user's session info.<br>
    * This is usually done in the login controller.
    * If a session with that key already exists, the user info
    * will be replaced.
    *
    * @param sessionKey the (unique) web session key
-   * @param userInfo the user info
+   * @param sessionInfo the session info
    */
-  public void addWebSession(T sessionKey, SessionInfo userInfo) {
-    sessionCache.addSession(sessionKey, userInfo);
+  public void addWebSession(T sessionKey, SessionInfo sessionInfo) {
+    sessionInfoCache.addSessionInfo(sessionKey, sessionInfo);
   }
 
 
@@ -86,7 +88,7 @@ public abstract class WebApplication<T> extends AbstractServerApplication {
    * @param sessionKey the (unique) web session key
    */
   public void removeWebSession(T sessionKey) {
-    sessionCache.removeSession(sessionKey);
+    sessionInfoCache.removeSessionInfo(sessionKey);
   }
 
 
@@ -97,7 +99,7 @@ public abstract class WebApplication<T> extends AbstractServerApplication {
    * @return the web session keys, never null
    */
   public Collection<T> getSessionKeys(SessionInfo sessionInfo) {
-    return sessionCache.getSessionKeys(sessionInfo);
+    return sessionInfoCache.getSessionKeys(sessionInfo);
   }
 
 
@@ -108,16 +110,26 @@ public abstract class WebApplication<T> extends AbstractServerApplication {
    * @return the attached session or null if no such session
    */
   public Session getSession(T sessionKey) {
-    SessionInfo sessionInfo = sessionCache.getSession(sessionKey);
+    SessionInfo sessionInfo = sessionInfoCache.getSessionInfo(sessionKey);
     if (sessionInfo != null) {
       // not cleared so far: we can use it
-      Db db = (Db) getSessionPool().getSession();
-      db.setSessionInfo(sessionInfo); // attach userinfo
-      return db;
+      SessionPool sessionPool = getSessionPool();
+      Db session = null;
+      if (sessionPool != null) {
+        session = (Db) sessionPool.getSession();
+      }
+      else {
+        MultiUserSessionPool remoteSessionPool = getRemoteSessionPool();
+        if (remoteSessionPool != null) {
+          session = (Db) remoteSessionPool.get(sessionInfo);
+        }
+      }
+      if (session != null) {
+        session.setSessionInfo(sessionInfo); // attach userinfo
+        return session;
+      }
     }
-    else  {
-      return null;
-    }
+    return null;
   }
 
 
@@ -134,13 +146,13 @@ public abstract class WebApplication<T> extends AbstractServerApplication {
      * collected the user must login again.
      */
     ((Db) session).setSessionInfo(null);
-    getSessionPool().putSession(session);
+    session.getPool().putSession(session);    // always pooled, works also for MultiUserDbPool
   }
 
 
   @Override
   protected void startup() {
-    sessionCache = new WebSessionKeyCache<>();
+    sessionInfoCache = new WebSessionKeyCache<>();
     super.startup();
   }
 
@@ -150,15 +162,15 @@ public abstract class WebApplication<T> extends AbstractServerApplication {
     super.finishStartup();
 
     // start the session cache
-    sessionCache.startup(300000);    // 5 minutes
+    sessionInfoCache.startup(300000);    // 5 minutes
   }
 
 
   @Override
   protected void cleanup() {
-    if (sessionCache != null) {
-      sessionCache.terminate();
-      sessionCache = null;
+    if (sessionInfoCache != null) {
+      sessionInfoCache.terminate();
+      sessionInfoCache = null;
     }
     super.cleanup();
   }

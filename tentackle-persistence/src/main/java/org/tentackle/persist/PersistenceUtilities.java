@@ -31,7 +31,6 @@ import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.session.Session;
-import org.tentackle.session.SessionPool;
 import org.tentackle.session.SessionPoolProvider;
 
 /**
@@ -119,12 +118,12 @@ public class PersistenceUtilities extends DbUtilities {
   }
 
   @Override
-  public SessionPool getDefaultSessionPool() {
+  public SessionPoolProvider getSessionPoolProvider() {
     AbstractApplication application = AbstractApplication.getRunningApplication();
     if (application instanceof SessionPoolProvider) {
-      return ((SessionPoolProvider) AbstractApplication.getRunningApplication()).getSessionPool();
+      return (SessionPoolProvider) application;
     }
-    return super.getDefaultSessionPool();
+    return super.getSessionPoolProvider();
   }
 
   @Override

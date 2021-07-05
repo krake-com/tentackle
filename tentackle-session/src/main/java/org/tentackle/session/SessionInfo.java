@@ -140,6 +140,21 @@ public interface SessionInfo extends Immutable, Serializable {
   long getApplicationId();
 
   /**
+   * Sets an optional session name.<br>
+   * May be used to describe the purpose of the session.
+   *
+   * @param sessionName the session name, null if none
+   */
+  void setSessionName(String sessionName);
+
+  /**
+   * Gets the optional session name.
+   *
+   * @return the name, null if none
+   */
+  String getSessionName();
+
+  /**
    * Clones a sessioninfo.<br>
    * The password will be copied if not null.
    *
