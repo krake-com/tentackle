@@ -268,6 +268,28 @@ public class DbUtilities {
 
 
   /**
+   * Close session groups if session is a root session of a group.
+   *
+   * @param session the closing session
+   */
+  public void closeGroupsOfSession(Db session) {
+    int sessionId = session.getSessionId();
+    boolean isGroupRoot = sessionId == session.getSessionGroupId();
+    boolean isExportedGroupRoot = sessionId == session.getExportedSessionGroupId();
+    if (isGroupRoot || isExportedGroupRoot) {
+      for (Db db: Db.getAllOpenSessions()) {
+        if (isGroupRoot && db.getSessionGroupId() == sessionId) {
+          db.setSessionGroupId(0);
+        }
+        if (isExportedGroupRoot && db.getExportedSessionGroupId() == sessionId) {
+          db.setExportedSessionGroupId(0);
+        }
+      }
+    }
+  }
+
+
+  /**
    * Applies the given backend configuration to properties.
    *
    * @param backendConfiguration the backend configuration

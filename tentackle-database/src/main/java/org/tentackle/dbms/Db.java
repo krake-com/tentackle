@@ -403,6 +403,7 @@ public class Db implements Session, Cloneable {
                 rses.close();
               }
               if (me != null) {
+                DbUtilities.getInstance().closeGroupsOfSession(me);
                 LOGGER.info("remote session {0} closed", name);
               }
               else {
@@ -420,14 +421,7 @@ public class Db implements Session, Cloneable {
                 }
               }
               if (me != null) {
-                if (sessionId == me.sessionGroupId) {
-                  // this was the root of a session group: clear session group
-                  for (Db db: getAllOpenSessions()) {
-                    if (!db.isRemote() && db.sessionGroupId == sessionId) {
-                      db.setSessionGroupId(0);
-                    }
-                  }
-                }
+                DbUtilities.getInstance().closeGroupsOfSession(me);
                 conMgr.logout(me);
                 LOGGER.info("session {0} closed", name);
               }
@@ -2241,7 +2235,8 @@ public class Db implements Session, Cloneable {
     if (groupId != sessionGroupId) {
       if (groupId != 0) {
         if (sessionGroupId != 0) {
-          throw new PersistenceException(this, "session already belongs to group " + sessionGroupId + ", cannot change to group " + groupId);
+          throw new PersistenceException(this, "session already belongs to group " + sessionGroupId +
+                                               ", cannot change to group " + groupId);
         }
         LOGGER.info("{0} joined group {1}", this, groupId);
       }
@@ -2252,11 +2247,11 @@ public class Db implements Session, Cloneable {
     }
   }
 
-
   @Override
   public int getSessionGroupId() {
     return sessionGroupId;
   }
+
 
   /**
    * Gets the session group exported to remote clients.
@@ -2270,11 +2265,25 @@ public class Db implements Session, Cloneable {
   /**
    * Sets the session group exported to remote clients.
    *
-   * @param exportedSessionGroupId the exported group
+   * @param groupId the exported group
    */
-  public void setExportedSessionGroupId(int exportedSessionGroupId) {
-    this.exportedSessionGroupId = exportedSessionGroupId;
+  public void setExportedSessionGroupId(int groupId) {
+    assertOpen();
+    if (groupId != exportedSessionGroupId) {
+      if (groupId != 0) {
+        if (exportedSessionGroupId != 0) {
+          throw new PersistenceException(this, "session already belongs to exported group " + exportedSessionGroupId +
+                                               ", cannot change to exported group " + groupId);
+        }
+        LOGGER.info("{0} joined exported group {1}", this, groupId);
+      }
+      else  {
+        LOGGER.info("{0} removed from exported group {1}", this, exportedSessionGroupId);
+      }
+      exportedSessionGroupId = groupId;
+    }
   }
+
 
   @Override
   public void groupWith(int sessionId) {
