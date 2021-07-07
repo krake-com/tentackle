@@ -43,13 +43,6 @@ public abstract class AbstractClientApplication extends AbstractApplication {
   }
 
 
-  @Override
-  public SessionInfo createSessionInfo(String username, char[] password, String sessionPropertiesBaseName) {
-    SessionInfo sessionInfo = super.createSessionInfo(username, password, sessionPropertiesBaseName);
-    sessionInfo.setClientVersion(getVersion());
-    return sessionInfo;
-  }
-
   /**
    * Updates the session info after sucessful login.
    */

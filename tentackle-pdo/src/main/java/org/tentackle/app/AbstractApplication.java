@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.app;
 
 import org.tentackle.common.ModuleInfo;
@@ -52,7 +51,6 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.function.Function;
-
 
 /**
  * Base class for all kinds of Tentackle applications.
@@ -389,6 +387,8 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    */
   public SessionInfo createSessionInfo(String username, char[] password, String sessionPropertiesBaseName) {
     SessionInfo info = Pdo.createSessionInfo(username, password, sessionPropertiesBaseName);
+
+    info.setClientVersion(getVersion());    // necessary for remote sessions, just info if local
 
     // sets some infos about locale, vm, etc...
     info.setLocale(Locale.getDefault());
