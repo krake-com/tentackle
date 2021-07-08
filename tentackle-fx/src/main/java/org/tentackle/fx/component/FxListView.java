@@ -21,11 +21,15 @@ package org.tentackle.fx.component;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
-import javafx.collections.ObservableList;
 import javafx.scene.control.ListView;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxContainer;
+import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.ModelToViewListener;
 import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.ViewToModelListener;
@@ -35,6 +39,8 @@ import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.FxTreeTableCell;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Extended ListView.
@@ -45,16 +51,129 @@ import java.lang.reflect.Type;
 public class FxListView<T> extends ListView<T> implements FxComponent {
 
   /**
-   * Creates a default ListView which will display contents stacked vertically.<br>
-   * As no {@link ObservableList} is provided
-   * in this constructor, an empty ObservableList is created, meaning that it is legal to directly call
-   * {@link #getItems()} if so desired. However, as noted elsewhere, this is not the recommended approach (instead call
-   * {@link #setItems(javafx.collections.ObservableList)}).
+   * Currently displayed info notes.
+   */
+  private List<Note> infoNotes;
+
+  /**
+   * Copy to clipboard feature toggle.
+   */
+  private boolean copyToClipboardEnabled;
+
+
+  /**
+   * Creates a default ListView with no content.
    * <p>
    * Refer to the {@link ListView} class documentation for details on the default state of other properties.
    */
   public FxListView() {
-    super();
+    addEventHandler(KeyEvent.ANY, this::handleKeyEvent);
+  }
+
+
+  /**
+   * Scrolls the view in such a way that the given row is positioned in the center of the visible rows.
+   *
+   * @param row the model row index
+   */
+  public void scrollToCentered(int row) {
+    scrollTo(FxUtilities.getInstance().computeScrollToCentered(this, row));
+  }
+
+  /**
+   * Scrolls the view in such a way that the given object's row is positioned in the center of the visible rows.
+   *
+   * @param object the object to scroll to
+   */
+  public void scrollToCentered(T object) {
+    if (getItems() != null) {
+      int row = getItems().indexOf(object);
+      if (row >= 0) {
+        scrollToCentered(row);
+      }
+    }
+  }
+
+
+  /**
+   * Configures the table to copy a cell via Crtl-C to the clipboard.
+   *
+   * @param copyToClipboardEnabled true to enable
+   */
+  public void setCopyToClipboardEnabled(boolean copyToClipboardEnabled) {
+    this.copyToClipboardEnabled = copyToClipboardEnabled;
+  }
+
+  /**
+   * Returns whether the copy to clipboard feature is enabled.
+   *
+   * @return true if enabled
+   */
+  public boolean isCopyToClipboardEnabled() {
+    return copyToClipboardEnabled;
+  }
+
+  /**
+   * Copies the selected items to the clipboard.
+   *
+   * @param commaSeparated true if separate multiple items via commas instead of newlines
+   * @return the copied text, null if nothing copied
+   */
+  @SuppressWarnings("unchecked")
+  public String copyToClipboard(boolean commaSeparated) {
+    StringBuilder buf = new StringBuilder();
+    for (T item : getSelectionModel().getSelectedItems()) {
+      if (buf.length() > 0) {
+        if (commaSeparated) {
+          buf.append(", ");
+        }
+        else {
+          buf.append('\n');
+        }
+      }
+      buf.append(item);
+    }
+    if (buf.length() > 0) {
+      ClipboardContent cbc = new ClipboardContent();
+      String text = buf.toString();
+      cbc.putString(text);
+      Clipboard.getSystemClipboard().setContent(cbc);
+      return text;
+    }
+    return null;
+  }
+
+
+  /**
+   * Handles all key events.
+   *
+   * @param event the key event
+   */
+  protected void handleKeyEvent(KeyEvent event) {
+    if (isCopyToClipboardEnabled()) {
+      if (event.getEventType() == KeyEvent.KEY_PRESSED && event.isControlDown() && event.getCode() == KeyCode.C) {
+        String text = copyToClipboard(event.isShiftDown());   // shift+ctrl -> comma separated
+        if (text != null) {
+          // display copied text for as long as the control button is held down (see setOnKeyReleased below)
+          Note infoNote = new Note(Note.Position.CENTER, Note.Type.INFO);
+          infoNote.setText(text);
+          infoNote.show(this);
+          if (infoNotes == null) {
+            infoNotes = new ArrayList<>();
+          }
+          infoNotes.add(infoNote);
+        }
+      }
+      else if (event.getEventType() == KeyEvent.KEY_RELEASED && event.getCode() == KeyCode.CONTROL) {
+        if (infoNotes != null) {
+          // hide all info notes with the release of the control button
+          for (Note infoNote : infoNotes) {
+            infoNote.hide();
+          }
+          infoNotes = null;
+        }
+      }
+    }
   }
 
 
