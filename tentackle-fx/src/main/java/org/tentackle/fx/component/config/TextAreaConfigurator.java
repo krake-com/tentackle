@@ -25,6 +25,7 @@ import javafx.scene.input.KeyEvent;
 
 import org.tentackle.fx.ConfiguratorService;
 import org.tentackle.fx.FxComponent;
+import org.tentackle.fx.component.FxTextArea;
 
 /**
  * Configures a TextArea.
@@ -42,26 +43,27 @@ public class TextAreaConfigurator<T extends TextArea> extends TextInputControlCo
   protected void remapKeys(T control) {
 
     control.addEventFilter(KeyEvent.ANY, (KeyEvent event) -> {
+      if (!(control instanceof FxTextArea) || ((FxTextArea) control).isNavigateViaEnterEnabled()) {
+        if ((event.getCode() == KeyCode.TAB || event.getCode() == KeyCode.ENTER) &&
+            !event.isAltDown() && !event.isMetaDown() &&
+            !NEXT.equals(event.getText()) && !PREVIOUS.equals(event.getText())) {
 
-      if ((event.getCode() == KeyCode.TAB || event.getCode() == KeyCode.ENTER) &&
-          !event.isAltDown() && !event.isMetaDown() &&
-          !NEXT.equals(event.getText()) && !PREVIOUS.equals(event.getText())) {
+          if (event.getEventType() == KeyEvent.KEY_PRESSED) {
+            if (event.isControlDown()) {
+              control.insertText(control.getCaretPosition(), event.getCode() == KeyCode.TAB ? "\t" : "\n");
+            }
+            else if (event.getCode() == KeyCode.ENTER) {
+              if (event.isShiftDown()) {
+                focusPrevious(control);
+              }
+              else {
+                focusNext(control);
+              }
+            }
+          }
 
-        if (event.getEventType() == KeyEvent.KEY_PRESSED) {
-          if (event.isControlDown()) {
-            control.insertText(control.getCaretPosition(), event.getCode() == KeyCode.TAB ? "\t" : "\n");
-          }
-          else if (event.getCode() == KeyCode.ENTER) {
-            if (event.isShiftDown()) {
-              focusPrevious(control);
-            }
-            else {
-              focusNext(control);
-            }
-          }
+          event.consume();
         }
-
-        event.consume();
       }
     });
   }
