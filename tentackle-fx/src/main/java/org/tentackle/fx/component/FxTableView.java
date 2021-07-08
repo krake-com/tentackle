@@ -229,8 +229,7 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
 
 
   /**
-   * Copies the selected cells to the clipboard.<br>
-   * Multiple cells are separated by tabs.
+   * Copies the selected cells to the clipboard.
    *
    * @param swap true to swap row/columns of copied cells (rows become columns and columns become rows)
    * @return the copied text, null if nothing copied
