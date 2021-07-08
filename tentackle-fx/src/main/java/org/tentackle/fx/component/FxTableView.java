@@ -72,6 +72,11 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
    */
   private boolean copyToClipboardEnabled;
 
+  /**
+   * The default separator string used by copyToClipboard.
+   */
+  private String copyToClipboardSeparator = ", ";
+
 
   /**
    * Creates a default TableView control with no content.
@@ -205,6 +210,145 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
   }
 
   /**
+   * Gets the separator string for {@link #copyToClipboard(boolean)} (true).
+   *
+   * @return the separator string, default is <code>", "</code>
+   */
+  public String getCopyToClipboardSeparator() {
+    return copyToClipboardSeparator;
+  }
+
+  /**
+   * Sets the the separator string for {@link #copyToClipboard(boolean)} (true).
+   *
+   * @param copyToClipboardSeparator the separator string
+   */
+  public void setCopyToClipboardSeparator(String copyToClipboardSeparator) {
+    this.copyToClipboardSeparator = copyToClipboardSeparator;
+  }
+
+
+  /**
+   * Copies the selected cells to the clipboard.<br>
+   * Multiple cells are separated by tabs.
+   *
+   * @param swap true to swap row/columns of copied cells (rows become columns and columns become rows)
+   * @return the copied text, null if nothing copied
+   */
+  @SuppressWarnings("unchecked")
+  public String copyToClipboard(boolean swap) {
+    List<TablePosition> selectedCells = getSelectionModel().getSelectedCells();
+
+    // determine array dimension
+    int rowMin = Integer.MAX_VALUE;
+    int rowMax = Integer.MIN_VALUE;
+    int colMin = Integer.MAX_VALUE;
+    int colMax = Integer.MIN_VALUE;
+    for (TablePosition<S,?> pos: selectedCells) {
+      int row = pos.getRow();
+      int col = pos.getColumn();
+      if (row >= 0 && col >= 0) {
+        rowMin = Math.min(rowMin, row);
+        rowMax = Math.max(rowMax, row);
+        colMin = Math.min(colMin, col);
+        colMax = Math.max(colMax, col);
+      }
+    }
+    if (rowMin != Integer.MAX_VALUE) {    // if anything worth it selected
+      int rowNum = rowMax + 1 - rowMin;
+      int colNum = colMax + 1 - colMin;
+      // build text array
+      String[][] cells = new String[rowNum][colNum];
+      for (TablePosition<S,?> pos: selectedCells) {
+        int row = pos.getRow();
+        int col = pos.getColumn();
+        if (row >= 0 && col >= 0) {
+          TableColumn<S, ?> tableColumn = getColumns().get(col);
+          if (tableColumn.isVisible()) {
+            Object item = tableColumn.getCellData(row);
+            if (item != null) {
+              String text = null;
+              // try to lookup the rendered text
+              for (Node c : lookupAll(".table-cell")) {    // all visible cells only
+                TableCell<?, ?> tc = (TableCell<?, ?>) c;
+                if (tc.getItem() == item) {   // == is ok here, must be the same instance!
+                  text = tc.getText();
+                  break;
+                }
+              }
+              if (text == null) {
+                text = item.toString();   // fallback if no rendered text found
+              }
+              cells[row - rowMin][col - colMin] = text;
+            }
+          }
+        }
+      }
+
+      // generate the text
+      StringBuilder buf = new StringBuilder();
+      boolean needLine = false;
+      if (swap) {
+        for (int col=0; col < colNum; col++) {
+          if (needLine) {
+            buf.append('\n');
+          }
+          else {
+            needLine = true;
+          }
+          boolean needSep = false;
+          for (int row=0; row < rowNum; row++) {
+            if (needSep) {
+              buf.append(copyToClipboardSeparator);
+            }
+            else {
+              needSep = true;
+            }
+            String text = cells[row][col];
+            if (text != null) {
+              buf.append(text);
+            }
+          }
+        }
+      }
+      else {
+        for (int row=0; row < rowNum; row++) {
+          if (needLine) {
+            buf.append('\n');
+          }
+          else {
+            needLine = true;
+          }
+          boolean needSep = false;
+          for (int col=0; col < colNum; col++) {
+            if (needSep) {
+              buf.append(copyToClipboardSeparator);
+            }
+            else {
+              needSep = true;
+            }
+            String text = cells[row][col];
+            if (text != null) {
+              buf.append(text);
+            }
+          }
+        }
+      }
+
+      if (buf.length() > 0) {
+        ClipboardContent cbc = new ClipboardContent();
+        String text = buf.toString();
+        cbc.putString(text);
+        Clipboard.getSystemClipboard().setContent(cbc);
+        return text;
+      }
+    }
+
+    return null;
+  }
+
+
+  /**
    * Handles all key events.
    *
    * @param event the key event
@@ -212,7 +356,7 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
   protected void handleKeyEvent(KeyEvent event) {
     if (isCopyToClipboardEnabled()) {
       if (event.getEventType() == KeyEvent.KEY_PRESSED && event.isControlDown() && event.getCode() == KeyCode.C) {
-        String text = copyToClipboard();
+        String text = copyToClipboard(event.isShiftDown());
         if (text != null) {
           // display copied text for as long as the control button is held down (see setOnKeyReleased below)
           Note infoNote = new Note(Note.Position.CENTER, Note.Type.INFO);
@@ -234,72 +378,6 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
         }
       }
     }
-  }
-
-
-  /**
-   * Copies the selected cells to the clipboard.<br>
-   * Multiple cells are separated by tabs.
-   *
-   * @return the copied text, null if nothing copied
-   */
-  @SuppressWarnings("unchecked")
-  public String copyToClipboard() {
-    StringBuilder buf = new StringBuilder();
-    int lastRow = -1;
-    boolean cellInRowCopied = false;
-    for (TablePosition<S,?> pos: getSelectionModel().getSelectedCells()) {
-      int row = pos.getRow();
-      if (row >= 0) {
-        int colMin = pos.getColumn();
-        int colMax;
-        if (colMin >= 0) {
-          colMax = colMin + 1;
-        }
-        else {
-          colMin = 0;
-          colMax = getColumns().size();
-        }
-        if (buf.length() > 0 && lastRow >= 0 && lastRow != row) {
-          buf.append('\n');
-          cellInRowCopied = false;
-        }
-        for (int col = colMin; col < colMax; col++) {
-          TableColumn<S, ?> tableColumn = getColumns().get(col);
-          if (tableColumn.isVisible()) {
-            Object item = tableColumn.getCellData(row);
-            if (item != null) {
-              String text = null;
-              // try to lookup the rendered text
-              for (Node c : lookupAll(".table-cell")) {    // all visible cells only
-                TableCell<?, ?> tc = (TableCell<?, ?>) c;
-                if (tc.getItem() == item) {   // == is ok here, must be the same instance!
-                  text = tc.getText();
-                  break;
-                }
-              }
-              if (cellInRowCopied) {
-                buf.append('\t');
-              }
-              if (text == null) {
-                text = item.toString();   // fallback if no rendered text found
-              }
-              buf.append(text);
-              cellInRowCopied = true;
-            }
-          }
-        }
-        lastRow = row;
-      }
-    }
-    if (buf.length() > 0) {
-      ClipboardContent cbc = new ClipboardContent();
-      String text = buf.toString();
-      cbc.putString(text);
-      Clipboard.getSystemClipboard().setContent(cbc);
-      return text;
-    }
-    return null;
   }
 
 
