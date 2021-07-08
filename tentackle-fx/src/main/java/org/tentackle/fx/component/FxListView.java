@@ -60,6 +60,11 @@ public class FxListView<T> extends ListView<T> implements FxComponent {
    */
   private boolean copyToClipboardEnabled;
 
+  /**
+   * The default separator string used by copyToClipboard.
+   */
+  private String copyToClipboardSeparator = ", ";
+
 
   /**
    * Creates a default ListView with no content.
@@ -114,6 +119,24 @@ public class FxListView<T> extends ListView<T> implements FxComponent {
   }
 
   /**
+   * Gets the separator string for {@link #copyToClipboard(boolean)} (true).
+   *
+   * @return the separator string, default is <code>", "</code>
+   */
+  public String getCopyToClipboardSeparator() {
+    return copyToClipboardSeparator;
+  }
+
+  /**
+   * Sets the the separator string for {@link #copyToClipboard(boolean)} (true).
+   *
+   * @param copyToClipboardSeparator the separator string
+   */
+  public void setCopyToClipboardSeparator(String copyToClipboardSeparator) {
+    this.copyToClipboardSeparator = copyToClipboardSeparator;
+  }
+
+  /**
    * Copies the selected items to the clipboard.
    *
    * @param commaSeparated true if separate multiple items via commas instead of newlines
@@ -125,7 +148,7 @@ public class FxListView<T> extends ListView<T> implements FxComponent {
     for (T item : getSelectionModel().getSelectedItems()) {
       if (buf.length() > 0) {
         if (commaSeparated) {
-          buf.append(", ");
+          buf.append(copyToClipboardSeparator);
         }
         else {
           buf.append('\n');
