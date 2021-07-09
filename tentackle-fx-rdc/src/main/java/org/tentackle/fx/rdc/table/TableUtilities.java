@@ -31,6 +31,7 @@ import org.tentackle.common.StringHelper;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxRuntimeException;
+import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.bind.FxTableBinding;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.component.FxTreeTableView;
@@ -196,13 +197,15 @@ public class TableUtilities {
    * @param <S> the row type
    */
   protected <S> void toSpreadsheet(Collection<TableColumnConfiguration<S,?>> columnConfigurations, File file, List<S> items) {
+    String separator = FxUtilities.getInstance().getCsvSeparator();
+
     try (PrintStream out = new PrintStream(new BufferedOutputStream(new FileOutputStream(file)))) {
       // write header
       int ndx = 0;
       for (TableColumnConfiguration<S, ?> tc : columnConfigurations) {
         if (isColumnVisible(tc)) {
           if (ndx > 0) {
-            out.append(',');
+            out.append(separator);
           }
           out.append(toCSV(tc.getDisplayedName()));
           ndx++;
@@ -216,7 +219,7 @@ public class TableUtilities {
         for (TableColumnConfiguration<S, ?> tc : columnConfigurations) {
           if (isColumnVisible(tc)) {
             if (ndx > 0) {
-              out.append(',');
+              out.append(separator);
             }
             FxTableBinding<S, ?> binding = tc.getBinding();
             if (binding != null) {
