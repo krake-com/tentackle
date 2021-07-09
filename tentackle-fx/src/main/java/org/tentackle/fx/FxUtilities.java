@@ -1354,6 +1354,17 @@ public class FxUtilities {
 
 
   /**
+   * Gets the separator string for CSV exports.
+   *
+   * @return the separator, default is <code>";"</code>
+   */
+  public String getCsvSeparator() {
+    return ";";
+  }
+
+
+
+  /**
    * Update the maximum column width.
    *
    * @param maxWidth the current max witdh

@@ -72,11 +72,6 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
    */
   private boolean copyToClipboardEnabled;
 
-  /**
-   * The default separator string used by copyToClipboard.
-   */
-  private String copyToClipboardSeparator = ", ";
-
 
   /**
    * Creates a default TableView control with no content.
@@ -209,24 +204,6 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
     return copyToClipboardEnabled;
   }
 
-  /**
-   * Gets the separator string for {@link #copyToClipboard(boolean)} (true).
-   *
-   * @return the separator string, default is <code>", "</code>
-   */
-  public String getCopyToClipboardSeparator() {
-    return copyToClipboardSeparator;
-  }
-
-  /**
-   * Sets the the separator string for {@link #copyToClipboard(boolean)} (true).
-   *
-   * @param copyToClipboardSeparator the separator string
-   */
-  public void setCopyToClipboardSeparator(String copyToClipboardSeparator) {
-    this.copyToClipboardSeparator = copyToClipboardSeparator;
-  }
-
 
   /**
    * Copies the selected cells to the clipboard.
@@ -287,6 +264,7 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
       // generate the text
       StringBuilder buf = new StringBuilder();
       boolean needLine = false;
+      String separator = FxUtilities.getInstance().getCsvSeparator();
       if (swap) {
         for (int col=0; col < colNum; col++) {
           if (needLine) {
@@ -298,7 +276,7 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
           boolean needSep = false;
           for (int row=0; row < rowNum; row++) {
             if (needSep) {
-              buf.append(copyToClipboardSeparator);
+              buf.append(separator);
             }
             else {
               needSep = true;
@@ -321,7 +299,7 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
           boolean needSep = false;
           for (int col=0; col < colNum; col++) {
             if (needSep) {
-              buf.append(copyToClipboardSeparator);
+              buf.append(separator);
             }
             else {
               needSep = true;

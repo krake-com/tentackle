@@ -339,8 +339,7 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
 
 
   /**
-   * Copies the selected cells to the clipboard.<br>
-   * Multiple cells are separated by tabs.
+   * Copies the selected cells to the clipboard.
    *
    * @return the copied text, null if nothing copied
    */
@@ -348,6 +347,7 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
     StringBuilder buf = new StringBuilder();
     int lastRow = -1;
     boolean cellInRowCopied = false;
+    String separator = FxUtilities.getInstance().getCsvSeparator();
     for (TreeTablePosition<S,?> pos: getSelectionModel().getSelectedCells()) {
       int row = pos.getRow();
       if (row >= 0) {
@@ -378,11 +378,11 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
                   break;
                 }
               }
-              if (cellInRowCopied) {
-                buf.append('\t');
-              }
               if (text == null) {
                 text = item.toString();   // fallback if no rendered text found
+              }
+              if (cellInRowCopied) {
+                buf.append(separator);
               }
               buf.append(text);
               cellInRowCopied = true;
