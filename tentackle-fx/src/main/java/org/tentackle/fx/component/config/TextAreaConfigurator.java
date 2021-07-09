@@ -41,29 +41,28 @@ public class TextAreaConfigurator<T extends TextArea> extends TextInputControlCo
 
   @Override
   protected void remapKeys(T control) {
-
     control.addEventFilter(KeyEvent.ANY, (KeyEvent event) -> {
-      if (!(control instanceof FxTextArea) || ((FxTextArea) control).isNavigateViaEnterEnabled()) {
-        if ((event.getCode() == KeyCode.TAB || event.getCode() == KeyCode.ENTER) &&
-            !event.isAltDown() && !event.isMetaDown() &&
-            !NEXT.equals(event.getText()) && !PREVIOUS.equals(event.getText())) {
 
-          if (event.getEventType() == KeyEvent.KEY_PRESSED) {
-            if (event.isControlDown()) {
-              control.insertText(control.getCaretPosition(), event.getCode() == KeyCode.TAB ? "\t" : "\n");
+      if ((event.getCode() == KeyCode.TAB || event.getCode() == KeyCode.ENTER) &&
+          !event.isAltDown() && !event.isMetaDown() &&
+          !NEXT.equals(event.getText()) && !PREVIOUS.equals(event.getText()) &&
+          (!(control instanceof FxTextArea) || ((FxTextArea) control).isNavigateViaEnterEnabled())) {
+
+        if (event.getEventType() == KeyEvent.KEY_PRESSED) {
+          if (event.isControlDown()) {
+            control.insertText(control.getCaretPosition(), event.getCode() == KeyCode.TAB ? "\t" : "\n");
+          }
+          else if (event.getCode() == KeyCode.ENTER) {
+            if (event.isShiftDown()) {
+              focusPrevious(control);
             }
-            else if (event.getCode() == KeyCode.ENTER) {
-              if (event.isShiftDown()) {
-                focusPrevious(control);
-              }
-              else {
-                focusNext(control);
-              }
+            else {
+              focusNext(control);
             }
           }
-
-          event.consume();
         }
+
+        event.consume();
       }
     });
   }
