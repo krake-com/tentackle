@@ -23,6 +23,7 @@ import org.tentackle.app.AbstractApplication;
 import org.tentackle.common.Constants;
 import org.tentackle.common.DateHelper;
 import org.tentackle.common.StringHelper;
+import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.common.Timestamp;
 import org.tentackle.dbms.AbstractDbObject;
 import org.tentackle.dbms.Db;
@@ -303,16 +304,15 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @return the cloned persistent object
    */
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "rawtypes"})
   protected final P clone() {
     try {
       P clonedPo = (P) super.clone();
       ((AbstractPersistentObject) clonedPo).pdo = null;
       return clonedPo;
     }
-    catch (CloneNotSupportedException cnx) {
-      // shouldn't happen, but one never knows...
-      throw new UnsupportedOperationException(cnx.getMessage(), cnx);
+    catch (CloneNotSupportedException ex) {
+      throw new TentackleRuntimeException(ex);    // this shouldn't happen, since we are Cloneable
     }
   }
 

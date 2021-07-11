@@ -18,18 +18,21 @@
 
 package org.tentackle.misc;
 
-import java.text.DecimalFormat;
 import org.tentackle.common.TentackleRuntimeException;
+
+import java.text.DecimalFormat;
 
 
 /**
  * A duration.
  * <p>
  * The implementation is based on {@link System#nanoTime()}.
+ * <p>
+ * Notice: dispite the fluent API, {@link Duration} is not immutable!
  *
  * @author harald
  */
-public class Duration {
+public class Duration implements Cloneable {
 
   /**
    * Format for xxxxToString().
@@ -74,6 +77,18 @@ public class Duration {
     end = start + nanos;
     durationValid = true;
   }
+
+
+  @Override
+  public Duration clone() {
+    try {
+      return (Duration) super.clone();
+    }
+    catch (CloneNotSupportedException ex) {
+      throw new TentackleRuntimeException(ex);    // this shouldn't happen, since we are Cloneable
+    }
+  }
+
 
   /**
    * Sets the duration to zero.
@@ -178,6 +193,36 @@ public class Duration {
   public Duration subtract(Duration duration) {
     assertDurationValid();
     end -= duration.nanos();
+    return this;
+  }
+
+  /**
+   * Multiplies this duration.
+   *
+   * @param multiplier the multiplier (must be &ge; 0)
+   * @return this duration
+   */
+  public Duration multiply(long multiplier) {
+    assertDurationValid();
+    if (multiplier < 0) {
+      throw new IllegalArgumentException("multiplier must be >= 0");
+    }
+    end = start + ((end - start) * multiplier);
+    return this;
+  }
+
+  /**
+   * Divides this duration.
+   *
+   * @param divisor the divisor (must be &gt; 0)
+   * @return this duration
+   */
+  public Duration divide(long divisor) {
+    assertDurationValid();
+    if (divisor <= 0) {
+      throw new IllegalArgumentException("divisor must be > 0");
+    }
+    end = start + ((end - start) / divisor);
     return this;
   }
 

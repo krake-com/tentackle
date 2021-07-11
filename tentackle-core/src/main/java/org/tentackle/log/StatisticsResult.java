@@ -34,20 +34,50 @@ public class StatisticsResult {
 
 
   /**
+   * Count invocations.
+   *
+   * @param count the number of invocations
+   * @param duration the duration
+   */
+  public void count(Duration duration, int count) {
+    if (count <= 1) {
+      count(duration);
+    }
+    else {
+      Duration singleDuration = duration.clone().divide(count);
+      long nanos = singleDuration.nanos() / count;
+      if (minDuration == null || minDuration.nanos() > nanos) {
+        minDuration = singleDuration;
+      }
+      if (maxDuration == null || maxDuration.nanos() < nanos) {
+        maxDuration = singleDuration;
+      }
+      this.count += count;
+      if (totalDuration == null) {
+        totalDuration = duration.clone();
+      }
+      else {
+        totalDuration.add(duration);
+      }
+    }
+  }
+
+  /**
    * Count an invocation.
    *
    * @param duration the duration
    */
   public void count(Duration duration) {
-    if (minDuration == null || minDuration.nanos() > duration.nanos()) {
-      minDuration = duration;
+    long nanos = duration.nanos();
+    if (minDuration == null || minDuration.nanos() > nanos) {
+      minDuration = duration.clone();
     }
-    if (maxDuration == null || maxDuration.nanos() < duration.nanos()) {
-      maxDuration = duration;
+    if (maxDuration == null || maxDuration.nanos() < nanos) {
+      maxDuration = duration.clone();
     }
     count++;
     if (totalDuration == null) {
-      totalDuration = new Duration(duration.nanos());
+      totalDuration = duration.clone();
     }
     else {
       totalDuration.add(duration);

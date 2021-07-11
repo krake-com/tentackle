@@ -98,8 +98,7 @@ public class Binary<T extends Serializable> implements Serializable, Cloneable, 
       binary = (Binary<T>) super.clone();
     }
     catch (CloneNotSupportedException ex) {
-      // this shouldn't happen, since we are Cloneable
-      throw new InternalError();
+      throw new TentackleRuntimeException(ex);    // this shouldn't happen, since we are Cloneable
     }
     if (binary.data != null) {
       binary.data = new byte[length];

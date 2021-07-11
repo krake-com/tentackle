@@ -18,16 +18,18 @@
 
 package org.tentackle.dbms;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.tentackle.common.Compare;
 import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;
 import org.tentackle.log.StatisticsResult;
 import org.tentackle.misc.Duration;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Statement statistics collector.
@@ -79,10 +81,34 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
    * @param history the history to collect
    */
   public static synchronized void collect(StatementHistory history) {
-    StatementStatistics key = new StatementStatistics(history.getSql(), history.getTxName(),
-                                                      withParameters ? history.getParameters() : null);
-    StatementStatistics value = STAT_MAP.computeIfAbsent(key, k -> k);
-    value.countInvocation(history.getDuration());
+    List<Map<Integer, Object>> batchParameters = history.getBatchParameters();
+    if (withParameters) {
+      if (batchParameters != null && !batchParameters.isEmpty()) {    // size must be > 0!
+        Duration duration = history.getDuration().clone().divide(batchParameters.size());
+        for (Map<Integer, Object> parameters : batchParameters) {
+          collect(new StatementStatistics(history.getSql(), history.getTxName(), parameters), duration);
+        }
+      }
+      else {
+        collect(new StatementStatistics(history.getSql(), history.getTxName(), history.getParameters()), history.getDuration());
+      }
+    }
+    else {
+      if (batchParameters != null && !batchParameters.isEmpty()) {
+        collect(new StatementStatistics(history.getSql(), history.getTxName(), null), history.getDuration(), batchParameters.size());
+      }
+      else {
+        collect(new StatementStatistics(history.getSql(), history.getTxName(), null), history.getDuration());
+      }
+    }
+  }
+
+  private static void collect(StatementStatistics key, Duration duration, int count) {
+    STAT_MAP.computeIfAbsent(key, k -> k).countInvocation(duration, count);
+  }
+
+  private static void collect(StatementStatistics key, Duration duration) {
+    STAT_MAP.computeIfAbsent(key, k -> k).countInvocation(duration);
   }
 
 
@@ -174,7 +200,19 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
 
 
   /**
-   * Count the invocation of a statement.
+   * Count invocations and duration of a statement.
+   *
+   * @param count the number of invocations
+   * @param duration the execution time in milliseconds
+   */
+  public void countInvocation(Duration duration, int count) {
+    if (duration != null && duration.isValid()) {
+      statResult.count(duration, count);
+    }
+  }
+
+  /**
+   * Count an invocation.
    *
    * @param duration the execution time in milliseconds
    */
@@ -297,7 +335,7 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
       }
 
       if (txName != null) {
-        buf.append(" in [").
+        buf.append(" [").
             append(txName).
             append(']');
       }

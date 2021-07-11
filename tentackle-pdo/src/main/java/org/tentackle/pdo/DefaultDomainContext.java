@@ -22,6 +22,7 @@
 
 package org.tentackle.pdo;
 
+import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
@@ -336,7 +337,7 @@ public class DefaultDomainContext implements DomainContext {
       return context;
     }
     catch (CloneNotSupportedException ex) {
-      throw new InternalError();    // should never happen
+      throw new TentackleRuntimeException(ex);    // this shouldn't happen, since we are Cloneable
     }
   }
 

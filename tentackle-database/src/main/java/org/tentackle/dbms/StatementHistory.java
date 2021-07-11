@@ -25,6 +25,7 @@ import org.tentackle.misc.Duration;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 
@@ -63,11 +64,12 @@ public class StatementHistory {
   private static final Logger LOGGER = Logger.get(StatementHistory.class);
 
 
-  private final String txName;                    // transaction name if tx was running, else null
-  private final long executionStart;              // start of execution in epochal milliseconds
-  private final Duration duration;                // duration in nanoseconds
-  private final String sql;                       // the SQL statement
-  private final Map<Integer,Object> parameters;   // execution parameters if prepared statement, else null
+  private final String txName;                                // transaction name if tx was running, else null
+  private final long executionStart;                          // start of execution in epochal milliseconds
+  private final Duration duration;                            // duration in nanoseconds
+  private final String sql;                                   // the SQL statement
+  private final Map<Integer,Object> parameters;               // execution parameters if prepared statement, else null
+  private final List<Map<Integer,Object>> batchParameters;    // batched execution parameters
 
   /**
     * Creates a statement execution history.
@@ -77,6 +79,7 @@ public class StatementHistory {
     */
   public StatementHistory(StatementWrapper statement, String sql) {
     this.parameters = statement instanceof PreparedStatementWrapper ? ((PreparedStatementWrapper) statement).getParameters() : null;
+    this.batchParameters = statement instanceof PreparedStatementWrapper ? ((PreparedStatementWrapper) statement).getBatchParameters() : null;
     this.txName = statement.getAttachedSession().getTxName();
     this.executionStart = System.currentTimeMillis();
     this.duration = new Duration();
@@ -139,6 +142,15 @@ public class StatementHistory {
   }
 
   /**
+   * Gets the batched paramater map.
+   *
+   * @return the batched parameter, null if not batched or not a prepared statement
+   */
+  public List<Map<Integer, Object>> getBatchParameters() {
+    return batchParameters;
+  }
+
+  /**
    * Gets the sql string.
    *
    * @return the sql string
@@ -162,20 +174,31 @@ public class StatementHistory {
       buf.append("running): ");
     }
     buf.append(sql);
-    if (parameters != null && !parameters.isEmpty()) {
-      for (Integer pos: new TreeSet<>(parameters.keySet())) {
-        buf.append(", ");
-        buf.append(pos);
-        buf.append("='");
-        Object value = parameters.get(pos);
-        buf.append(value == null ? "<null>" : value.toString());
-        buf.append("'");
+    if (batchParameters != null) {
+      int batchNo = 0;
+      for (Map<Integer,Object> parameters : batchParameters) {
+        parametersToString(buf, parameters);
+        buf.append(" [").append(batchNo++).append(']');
       }
     }
+    else if (parameters != null) {
+      parametersToString(buf, parameters);
+    }
     if (txName != null) {
-      buf.append(" in [").append(txName).append(']');
+      buf.append(" [").append(txName).append(']');
     }
     return buf.toString();
+  }
+
+  private void parametersToString(StringBuilder buf, Map<Integer,Object> parameters) {
+    for (Integer pos: new TreeSet<>(parameters.keySet())) {
+      buf.append(", ");
+      buf.append(pos);
+      buf.append("='");
+      Object value = parameters.get(pos);
+      buf.append(value == null ? "<null>" : value.toString());
+      buf.append("'");
+    }
   }
 
 }

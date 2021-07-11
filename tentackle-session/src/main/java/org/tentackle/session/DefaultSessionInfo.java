@@ -23,6 +23,7 @@ import org.tentackle.common.Constants;
 import org.tentackle.common.Cryptor;
 import org.tentackle.common.FileHelper;
 import org.tentackle.common.StringHelper;
+import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.ImmutableException;
 
@@ -374,7 +375,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
       sessionInfo = (DefaultSessionInfo) super.clone();
     }
     catch (CloneNotSupportedException ex) {
-      throw new InternalError();    // should never happen
+      throw new TentackleRuntimeException(ex);    // this shouldn't happen, since we are Cloneable
     }
 
     if (password != null) {
