@@ -61,7 +61,7 @@ public class TableSerialExpirationBacklog {
         return (ExpirationSet) super.clone();
       }
       catch (CloneNotSupportedException ex) {
-        throw new TentackleRuntimeException("clone failed", ex);
+        throw new TentackleRuntimeException(ex);    // this shouldn't happen, since we are Cloneable
       }
     }
   }

@@ -116,7 +116,7 @@ public class BMoney extends BigDecimal implements Cloneable {
       return (BMoney)super.clone();
     }
     catch (CloneNotSupportedException ex) {
-      throw new InternalError();    // should never happen
+      throw new TentackleRuntimeException(ex);    // this shouldn't happen, since we are Cloneable
     }
   }
 

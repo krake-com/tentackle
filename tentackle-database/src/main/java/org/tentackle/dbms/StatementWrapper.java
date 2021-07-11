@@ -284,10 +284,8 @@ public class StatementWrapper implements AutoCloseable {
    * @param sql an sql-statement
    * @return the row count
    */
-  public int executeUpdate (String sql) {
-
+  public int executeUpdate(String sql) {
     LOGGER.finer("execute update {0} = {1}", this, sql);
-
     try {
       con.countForClearWarnings();
       assertOpen();
@@ -298,6 +296,77 @@ public class StatementWrapper implements AutoCloseable {
       setRunning(true);
       StatementHistory history = con.logStatementHistory(this, sql);
       int count = executeUpdateImpl(sql);
+      history.end();
+      return count;
+    }
+    catch (SQLException e)  {
+      Db db = getAttachedSession();
+      boolean dead = con.checkForDeadLink(e);
+      if (!dead && db.getBackend().isConstraintException(e)) {
+        throw new ConstraintException(db, this.toString(), e);
+      }
+      throw con.createFromSqlException(this.toString(), e);
+    }
+    finally {
+      setRunning(false);
+      detachSession();
+    }
+  }
+
+  /**
+   * Adds the given SQL command to the current list of commands.
+   *
+   * @param sql the SQL statement
+   */
+  public void addBatch(String sql) {
+    LOGGER.finer("add batch {0} = {1}", this, sql);
+    try {
+      assertOpen();
+      if (this.sql == null) {
+        this.sql = sql;
+      }
+      else {
+        this.sql += "\n" + sql;
+      }
+      stmt.addBatch(sql);
+    }
+    catch (SQLException e)  {
+      throw con.createFromSqlException(this.toString(), e);
+    }
+  }
+
+  /**
+   * Empties this {@code Statement} object's current list of batched SQL commands.
+   */
+  public void clearBatch() {
+    LOGGER.finer("clear batch {0}", this);
+    try {
+      assertOpen();
+      sql = null;
+      stmt.clearBatch();
+    }
+    catch (SQLException e)  {
+      throw con.createFromSqlException(this.toString(), e);
+    }
+  }
+
+  /**
+   * Submits a batch of commands.
+   *
+   * @return an array of update counts containing one element for each command in the batch
+   */
+  public int[] executeBatch() {
+    LOGGER.finer("execute batch {0} = {1}", this, sql);
+    try {
+      con.countForClearWarnings();
+      assertOpen();
+      assertNotReadOnly();
+      unmarkReady(); // check for being marked ready and mark it consumed again
+      Db db = getAttachedSession();
+      db.setAlive(true);
+      setRunning(true);
+      StatementHistory history = con.logStatementHistory(this, sql);
+      int[] count = stmt.executeBatch();
       history.end();
       return count;
     }

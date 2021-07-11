@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -60,10 +61,13 @@ import java.util.Map;
  */
 public class PreparedStatementWrapper extends StatementWrapper implements BackendPreparedStatement {
 
+  private static final String INVOCATION_NOT_ALLOWED = "invocation not allowed for prepared statements";
 
-  private final StatementKey statementKey;  // the statement key, if not a one-shot statement
-  private int columnOffset;                 // offset to add to column index, default is 0
-  private Map<Integer,Object> parameters;   // execution parameters
+
+  private final StatementKey statementKey;              // the statement key, if not a one-shot statement
+  private int columnOffset;                             // offset to add to column index, default is 0
+  private Map<Integer,Object> parameters;               // execution parameters
+  private List<Map<Integer,Object>> batchParameters;    // batched execution parameters
 
 
   /**
@@ -180,6 +184,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
     super.detachSession();
     // new map because old reference is held in StatementHistory
     parameters = new HashMap<>();
+    batchParameters = null;
   }
 
 
@@ -191,21 +196,19 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
   public void clearParameters() {
     try {
       getStatement().clearParameters();
-      parameters.clear();
     }
     catch (SQLException e) {
       throw new PersistenceException(getSession(), this.toString(), e);
     }
+    finally {
+      clearParamatersImpl();
+    }
   }
 
-  /**
-   * Gets the parameter at position.
-   *
-   * @param p the sql position
-   * @return the object, null if no such position or object is null
-   */
-  public Object getParameter(int p) {
-    return parameters.get(effectivePosition(p));
+
+  private void clearParamatersImpl() {
+    parameters.clear();
+    batchParameters = null;
   }
 
   /**
@@ -217,6 +220,14 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
     return parameters;
   }
 
+  /**
+   * Gets the parameter map for a batched statement.
+   *
+   * @return the parameter batch list, null if not batched
+   */
+  public List<Map<Integer, Object>> getBatchParameters() {
+    return batchParameters;
+  }
 
   /**
    * {@inheritDoc}
@@ -247,11 +258,60 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
   @Override
   public int executeUpdate(String sql) {
     if (sql != null) {
-      throw new PersistenceException(getSession(), "invocation not allowed for prepared statements");
+      throw new PersistenceException(getSession(), INVOCATION_NOT_ALLOWED);
     }
     return super.executeUpdate(null);
   }
 
+
+  /**
+   * Method must not be invoked on a {@link PreparedStatementWrapper}.<br>
+   * Always throws {@link PersistenceException}.
+   *
+   * @param sql ignored
+   */
+  @Override
+  public void addBatch(String sql) {
+    throw new PersistenceException(getSession(), INVOCATION_NOT_ALLOWED);
+  }
+
+  /**
+   * Adds a set of parameters to this {@code PreparedStatement}'s batch of commands.
+   */
+  public void addBatch() {
+    try {
+      assertOpen();
+      if (batchParameters == null) {
+        batchParameters = new ArrayList<>();
+      }
+      batchParameters.add(parameters);
+      parameters = new HashMap<>();
+      getStatement().addBatch();
+    }
+    catch (SQLException e)  {
+      throw con.createFromSqlException(this.toString(), e);
+    }
+  }
+
+  @Override
+  public void clearBatch() {
+    try {
+      super.clearBatch();
+    }
+    finally {
+      clearParamatersImpl();
+    }
+  }
+
+  @Override
+  public int[] executeBatch() {
+    try {
+      return super.executeBatch();
+    }
+    finally {
+      clearParamatersImpl();
+    }
+  }
 
   /**
    * {@inheritDoc}
@@ -262,7 +322,6 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
   protected ResultSet executeQueryImpl(String sql) throws SQLException {
     return getStatement().executeQuery();
   }
-
 
 
   /**
