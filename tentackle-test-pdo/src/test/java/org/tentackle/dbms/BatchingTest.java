@@ -27,8 +27,8 @@ import org.tentackle.test.pdo.AbstractPdoTest;
 
 public class BatchingTest extends AbstractPdoTest {
 
-  private static final int COUNT = 1000;      // number of rows
-  private static final int BATCHSIZE = 100;   // rows per batch
+  private static final int BATCHSIZE = 100;             // rows per batch
+  private static final int COUNT = BATCHSIZE * 10;      // number of rows (must be a multiple of BATCHSIZE)
 
   public BatchingTest() {
     super(TransactionType.METHOD);
@@ -65,16 +65,13 @@ public class BatchingTest extends AbstractPdoTest {
       log.setFields(st);
       st.addBatch();
       if (i % BATCHSIZE == 0) {
-        int[] result = st.executeBatch();
+        int[] result = st.executeBatch(i >= COUNT);
         batchCount++;
         for (int r : result) {
           if (r != 1) {
             Assert.fail("insert failed");
             break;
           }
-        }
-        if (i < COUNT) {
-          st = log.getPreparedStatement(log.getClassVariables().insertStatementId, () -> log.createInsertSql());
         }
       }
     }
