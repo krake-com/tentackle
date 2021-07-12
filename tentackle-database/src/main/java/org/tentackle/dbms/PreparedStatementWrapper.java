@@ -304,13 +304,22 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
   }
 
   @Override
-  public int[] executeBatch() {
+  public int[] executeBatch(boolean finish) {
     try {
-      return super.executeBatch();
+      return super.executeBatch(finish);
     }
     finally {
       clearParamatersImpl();
     }
+  }
+
+  /**
+   * Gets the number of pending addBatch invocations.
+   *
+   * @return 0 if nothing pending
+   */
+  public int getBatchCount() {
+    return batchParameters != null ? batchParameters.size() : 0;
   }
 
   /**

@@ -353,9 +353,10 @@ public class StatementWrapper implements AutoCloseable {
   /**
    * Submits a batch of commands.
    *
+   * @param finish true if this is the last invocation
    * @return an array of update counts containing one element for each command in the batch
    */
-  public int[] executeBatch() {
+  public int[] executeBatch(boolean finish) {
     LOGGER.finer("execute batch {0} = {1}", this, sql);
     try {
       con.countForClearWarnings();
@@ -380,7 +381,12 @@ public class StatementWrapper implements AutoCloseable {
     }
     finally {
       setRunning(false);
-      detachSession();
+      if (finish) {
+        detachSession();
+      }
+      else {
+        markReady();
+      }
     }
   }
 
