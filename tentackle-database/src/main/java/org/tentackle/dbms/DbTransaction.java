@@ -50,7 +50,8 @@ public class DbTransaction {
 
   private static final String DEFAULT_TXNAME = "<unnamed>";
 
-  private Db db;                        // the session
+  private final Db db;                  // the session
+  private final DbBatch batch;          // statement batch, null if no batching (default)
   private final long creationTime;      // epochal time in ms when started/created
   private final long txNumber;          // the unique transaction number
   private final String txName;          // optional transaction name
@@ -77,6 +78,7 @@ public class DbTransaction {
     this.db = db;
     this.txName = txName == null ? DEFAULT_TXNAME : txName;
 
+    batch = createBatch();    // null if no batching
     txNumber = TX_COUNT.incrementAndGet();
     txLevel = 1;      // nesting level 1 = first begin
     creationTime = System.currentTimeMillis();
@@ -93,26 +95,23 @@ public class DbTransaction {
   }
 
 
-
   /**
-   * Sets the db.
-   * <p>
-   * Used after transferring from server to client.
+   * Gets the session.
    *
-   * @param db the new db
+   * @return the session
    */
-  public void setSession(Db db) {
-    this.db = db;
+  public Db getSession() {
+    return db;
   }
 
 
   /**
-   * Gets the db.
+   * Gets the statements batch.
    *
-   * @return the db
+   * @return the batch, null if no auto batching
    */
-  public Db getSession() {
-    return db;
+  public DbBatch getBatch() {
+    return batch;
   }
 
 
@@ -413,9 +412,14 @@ public class DbTransaction {
 
 
   /**
-   * Executes all commit runnables and removes them.
+   * Performs the commit.<br>
+   * Finishes any pending batched statements.<br>
+   * Executes all commit runnables and removes them.<br>
    */
-  public void invokeCommitTxRunnables() {
+  public void commit() {
+    if (batch != null) {
+      batch.execute(true);
+    }
     if (commitTxRunnables != null) {
       /*
        * execute pending commit runnables.
@@ -438,9 +442,10 @@ public class DbTransaction {
 
 
   /**
+   * Performs a rollback.<br>
    * Executes all rollback runnables and removes them.
    */
-  public void invokeRollbackTxRunnables() {
+  public void rollback() {
     if (rollbackTxRunnables != null) {
       /*
        * execute pending rollback runnables.
@@ -462,7 +467,6 @@ public class DbTransaction {
   }
 
 
-
   /**
    * Checks whether a persistence operation is allowed.<br>
    * This is determined by consulting the {@link PersistenceVisitor}s.<br>
@@ -482,6 +486,17 @@ public class DbTransaction {
       }
     }
     return true;
+  }
+
+
+  /**
+   * Creates the statement batch for this transaction.
+   *
+   * @return the batch, null if no batching
+   */
+  protected DbBatch createBatch() {
+    int batchSize = db.getBatchSize();
+    return batchSize > 1 ? new DbBatch(this, batchSize) : null;
   }
 
 }

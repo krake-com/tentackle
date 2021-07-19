@@ -180,6 +180,14 @@ import java.util.function.Supplier;
  *  backendinfo=property-file
  *  </pre>
  *  </li>
+ *  <li>
+ *  Automatic JDBC batching can be enabled via:
+ *  <pre>
+ *  batchsize=size
+ *  </pre>
+ *  if the size is &gt; 1. The pesistence layer collects matching statements and executes them within batches.
+ *  See {@link DbBatch}.
+ *  </li>
  * </ul>
  * <p>
  * For local sessions via JDBC or JNDI:
@@ -210,19 +218,24 @@ public class Db implements Session, Cloneable {
   public static final String IDSOURCE = "idsource";
 
   /**
-   * The property key for the socket factory.
+   * Property key for the socket factory.
    */
   public static final String SOCKET_FACTORY = "socketfactory";
 
   /**
-   * The property key for the SSL cipher suites.
+   * Property key for the SSL cipher suites.
    */
   public static final String CIPHER_SUITES = "ciphersuites";
 
   /**
-   * The property key for the SSL protocols.
+   * Property key for the SSL protocols.
    */
   public static final String PROTOCOLS = "protocols";
+
+  /**
+   * Property key to enable batching for this session.
+   */
+  public static final String BATCHSIZE = "batchsize";
 
 
   private static final Logger LOGGER = Logger.get(Db.class);
@@ -534,6 +547,7 @@ public class Db implements Session, Cloneable {
   private WeakReference<SessionTaskDispatcher> dispatcherRef;  // task dispatcher for asynchroneous tasks
   private Map<String,Serializable> applicationProperties; // application-specific properties
   private ReconnectionPolicy<Db> reconnectionPolicy;      // reconnection policy, null if none (default)
+  private int batchSize;                                  // >1 if JDBC batching should be used for certain prepared statements
 
   // for RMI remote connections
   private RMIClientSocketFactory csf;                     // client socket factory, null if system default
@@ -616,6 +630,10 @@ public class Db implements Session, Cloneable {
       else  {
         if (conMgr == null) {
           throw new PersistenceException("connection manager required for local connections");
+        }
+        String val = backendProperties.getProperty(BATCHSIZE);
+        if (val != null) {
+          batchSize = Integer.parseInt(val);
         }
       }
 
@@ -897,6 +915,27 @@ public class Db implements Session, Cloneable {
       }
     }
     this.readOnly = readOnly;
+  }
+
+
+  /**
+   * Gets the batch size if batching is enabled.
+   *
+   * @return the batch size, &le; 1 if disabled
+   * @see DbBatch
+   */
+  public int getBatchSize() {
+    return batchSize;
+  }
+
+  /**
+   * Sets the batch size for JDBC auto batching.
+   *
+   * @param batchSize the batch size, &le; 1 to disable
+   * @see DbBatch
+   */
+  public void setBatchSize(int batchSize) {
+    this.batchSize = batchSize;
   }
 
 
@@ -1527,6 +1566,7 @@ public class Db implements Session, Cloneable {
     }
     else {
       assertTxRunning();
+      executeBatch();
       ManagedConnection mc = connection();
       Savepoint savepoint = mc.setSavepoint();
       try {
@@ -1559,6 +1599,7 @@ public class Db implements Session, Cloneable {
     }
     else {
       assertTxRunning();
+      executeBatch();
       ManagedConnection mc = connection();
       Savepoint savepoint = mc.setSavepoint(name);
       try {
@@ -1935,7 +1976,7 @@ public class Db implements Session, Cloneable {
           if (transaction.isTxLevelValid() && transaction.getTxLevel() != 1) {
             LOGGER.warning(this + ": txLevel=" + transaction.getTxLevel() + ", should be 1");
           }
-          transaction.invokeCommitTxRunnables();
+          transaction.commit();
           logCommitTx();
           setAutoCommit(true);    // according to the specs: this will commit!
           logModificationDeferred = false;
@@ -2032,7 +2073,7 @@ public class Db implements Session, Cloneable {
             if (transaction.isTxLevelValid() && transaction.getTxLevel() != 1) {
               LOGGER.warning(this + ": txLevel=" + transaction.getTxLevel() + ", should be 1");
             }
-            transaction.invokeRollbackTxRunnables();
+            transaction.rollback();
             ManagedConnection c = resources.con;
             if (c != null) {
               c.rollback(withLog);  // avoid a commit ...
@@ -2339,6 +2380,18 @@ public class Db implements Session, Cloneable {
     // else: session is already closed (may happen during cleanup)
   }
 
+  /**
+   * Detaches the session after exception.
+   */
+  void detachSafely() {
+    try {
+      detach();
+    }
+    catch (RuntimeException rx) {
+      LOGGER.warning("ignored exception: " + rx.getMessage());    // just log the reason w/o stacktrace
+    }
+  }
+
 
   /**
    * Sets the exclusive owner thread.
@@ -2391,7 +2444,7 @@ public class Db implements Session, Cloneable {
       return stmt;
     }
     catch (RuntimeException rex) {
-      detach();
+      detachSafely();
       throw rex;
     }
   }
@@ -2451,7 +2504,7 @@ public class Db implements Session, Cloneable {
       return stmt;
     }
     catch (RuntimeException rex) {
-      detach();
+      detachSafely();
       throw rex;
     }
   }
@@ -2495,7 +2548,7 @@ public class Db implements Session, Cloneable {
       return stmt;
     }
     catch (RuntimeException rex) {
-      detach();
+      detachSafely();
       throw rex;
     }
   }
@@ -2510,6 +2563,46 @@ public class Db implements Session, Cloneable {
    */
   public PreparedStatementWrapper createPreparedStatement(String sql) {
     return Db.this.createPreparedStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+  }
+
+
+  /**
+   * Adds a statement with its related PDO to the current batch.<br>
+   * Does nothing if there is no batched transaction running.<br>
+   * <p>
+   * IMPORTANT: only insert, update or delete statements that refer to a <em>single</em> row
+   * are allowed for auto batching!
+   *
+   * @param type the statement type
+   * @param statement the statement to batch
+   * @param object the object to insert, update or delete
+   * @param rootClassId the root class ID
+   */
+  public void addToBatch(DbBatch.Type type, PreparedStatementWrapper statement, AbstractDbObject object, int rootClassId) {
+    DbBatch batch = getBatch();
+    if (batch != null) {
+      batch.add(type, statement, object, rootClassId);
+    }
+  }
+
+  /**
+   * Executes all pending batched statements.<br>
+   * Does nothing if there is no batched transaction running.
+   */
+  public void executeBatch() {
+    DbBatch batch = getBatch();
+    if (batch != null) {
+      batch.execute(false);
+    }
+  }
+
+  /**
+   * Gets the current batch.
+   *
+   * @return the batch, null if no batched transaction or no transaction at all
+   */
+  private DbBatch getBatch() {
+    return transaction != null ? transaction.getBatch() : null;
   }
 
 

@@ -285,6 +285,9 @@ public class StatementWrapper implements AutoCloseable {
    * @return the row count
    */
   public int executeUpdate(String sql) {
+    if (sql != null) {
+      getSession().executeBatch();    // not a batchable statement -> flush batch
+    }
     LOGGER.finer("execute update {0} = {1}", this, sql);
     try {
       con.countForClearWarnings();
@@ -439,8 +442,9 @@ public class StatementWrapper implements AutoCloseable {
    */
   public ResultSetWrapper executeQuery (String sql, boolean withinTx) {
 
-    LOGGER.finer("execute query {0} = {1}", this, sql);
+    getSession().executeBatch();    // not a batchable statement -> flush batch
 
+    LOGGER.finer("execute query {0} = {1}", this, sql);
     long txVoucher = 0;
 
     try {
