@@ -27,6 +27,8 @@ import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.common.Timestamp;
 import org.tentackle.dbms.AbstractDbObject;
 import org.tentackle.dbms.Db;
+import org.tentackle.dbms.DbBatch;
+import org.tentackle.dbms.DbObjectClassVariables;
 import org.tentackle.dbms.ModificationLog;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
@@ -79,6 +81,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import static org.tentackle.sql.Backend.SQL_ALLSTAR;
 import static org.tentackle.sql.Backend.SQL_AND;
@@ -1340,6 +1343,46 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   public JoinedSelect<T> getEagerJoinedSelect() {
     List<Join<? super T,?>> eagerJoins = getEagerJoins();
     return eagerJoins != null && !eagerJoins.isEmpty() ? new JoinedSelect<>(eagerJoins) : null;
+  }
+
+  /**
+   * Gets a prepared statement and marks it as batchable.<br>
+   * If there is a transaction running in batched mode, the statement will be executed via JDBC batching.
+   * Otherwise the method is equivalent to {@link #getPreparedStatement(StatementId, Supplier)}.
+   * <p>
+   * The method must only be used for inserts, updates and delete of a single row!
+   *
+   * @param type the statement type
+   * @param stmtId the statement ID
+   * @param sqlsupplier the SQL code supplier
+   * @return the statement
+   */
+  protected PreparedStatementWrapper getBatchablePreparedStatement(DbBatch.Type type, StatementId stmtId, Supplier<String> sqlsupplier) {
+    PreparedStatementWrapper st = getPreparedStatement(stmtId, sqlsupplier);
+    getSession().addToBatch(type, st, this, getDomainContext().getRootClassId());
+    return st;
+  }
+
+  @Override
+  protected void insertImpl(DbObjectClassVariables<P> classVariables, Supplier<String> sqlsupplier) {
+    PreparedStatementWrapper st = getBatchablePreparedStatement(DbBatch.Type.INSERT, classVariables.insertStatementId, sqlsupplier);
+    setFields(st);
+    assertThisRowAffected(st.executeUpdate());
+  }
+
+  @Override
+  protected void updateImpl(DbObjectClassVariables<P> classVariables, Supplier<String> sqlsupplier) {
+    PreparedStatementWrapper st = getBatchablePreparedStatement(DbBatch.Type.UPDATE, classVariables.updateStatementId, sqlsupplier);
+    setFields(st);
+    assertThisRowAffected(st.executeUpdate());
+  }
+
+  @Override
+  protected void deleteImpl(DbObjectClassVariables<P> classVariables, Supplier<String> sqlsupplier) {
+    PreparedStatementWrapper st = getBatchablePreparedStatement(DbBatch.Type.DELETE, classVariables.deleteStatementId, sqlsupplier);
+    st.setLong(1, getId());
+    st.setLong(2, getSerial());
+    assertThisRowAffected(st.executeUpdate());
   }
 
 

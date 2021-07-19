@@ -31,6 +31,7 @@ import org.tentackle.sql.DataType;
 import org.tentackle.sql.DataTypeFactory;
 import org.tentackle.sql.SqlType;
 
+import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
 import java.sql.Clob;
 import java.sql.Date;
@@ -67,7 +68,9 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
   private final StatementKey statementKey;              // the statement key, if not a one-shot statement
   private int columnOffset;                             // offset to add to column index, default is 0
   private Map<Integer,Object> parameters;               // execution parameters
+  private boolean executionPending;                     // true if next setXXX(1, ...) will invoke addBatch
   private List<Map<Integer,Object>> batchParameters;    // batched execution parameters
+  private WeakReference<DbBatch> batchRef;       // set if currently batched (weak since object just vanishes after tx)
 
 
   /**
@@ -159,13 +162,23 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
 
   /**
    * Gets the effective position.<br>
+   * The method is invoked immediately before setting the value into the statement, and only for that purpose!
    * This the p + columnOffset.
    *
    * @param p the sql position
    * @return the effective position
    */
-  protected int effectivePosition(int p) {
-    return columnOffset + p;
+  private int effectivePosition(int p) {
+    int ep = columnOffset + p;
+    if (ep == 1 && isBatched()) {
+      if (executionPending) {
+        addBatch();
+      }
+      else {
+        executionPending = true;
+      }
+    }
+    return ep;
   }
 
 
@@ -183,8 +196,49 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
   protected void detachSession() {
     super.detachSession();
     // new map because old reference is held in StatementHistory
-    parameters = new HashMap<>();
-    batchParameters = null;
+    clearParamatersImpl();
+  }
+
+
+  @Override
+  public synchronized void markReady() {
+    if (!isMarkedReady() || !isBatched()) {
+      super.markReady();
+    }
+  }
+
+  /**
+   * Sets the statement batch if batched within the current transaction.
+   *
+   * @param batch the batch
+   */
+  protected void setBatch(DbBatch batch) {
+    batchRef = new WeakReference<>(batch);
+  }
+
+  /**
+   * Gets the statement batch.
+   *
+   * @return null if not batched
+   */
+  protected DbBatch getBatch() {
+    DbBatch batch = null;
+    if (batchRef != null) {
+      batch = batchRef.get();
+      if (batch == null) {
+        batchRef = null;
+      }
+    }
+    return batch;
+  }
+
+  /**
+   * Returns whether statement is batched.
+   *
+   * @return true if used in a batched transaction
+   */
+  protected boolean isBatched() {
+    return getBatch() != null;
   }
 
 
@@ -207,8 +261,9 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
 
 
   private void clearParamatersImpl() {
-    parameters.clear();
+    parameters = new HashMap<>();
     batchParameters = null;
+    executionPending = false;
   }
 
   /**
@@ -246,6 +301,12 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
    * @return the row count
    */
   public int executeUpdate() {
+    DbBatch batch = getBatch();
+    if (batch != null) {
+      batch.batch(this);
+      return 1;                       // batched statements always affect a single row
+    }
+    getSession().executeBatch();      // not a batchable statement -> flush batch
     return super.executeUpdate(null);
   }
 
@@ -286,6 +347,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
       }
       batchParameters.add(parameters);
       parameters = new HashMap<>();
+      executionPending = true;
       getStatement().addBatch();
     }
     catch (SQLException e)  {
@@ -306,12 +368,29 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
   @Override
   public int[] executeBatch(boolean finish) {
     try {
-      return super.executeBatch(finish);
+      if (isExecutionPending()) {
+        return super.executeBatch(finish);
+      }
+      else if (finish) {
+        detachSession();
+      }
+      return new int[0];
     }
     finally {
       clearParamatersImpl();
     }
   }
+
+
+  /**
+   * Returns whether parameters have been set so that execution is pending.
+   *
+   * @return true if pending, false otherwise
+   */
+  public boolean isExecutionPending() {
+    return executionPending;
+  }
+
 
   /**
    * Gets the number of pending addBatch invocations.

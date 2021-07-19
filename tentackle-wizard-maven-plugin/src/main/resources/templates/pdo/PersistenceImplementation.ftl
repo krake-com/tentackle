@@ -26,6 +26,7 @@ import org.tentackle.common.Freezable;
 import org.tentackle.common.Time;
 import org.tentackle.common.Timestamp;
 import org.tentackle.common.RemoteMethod;
+import org.tentackle.dbms.DbBatch;
 import org.tentackle.dbms.DbObjectClassVariables;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;

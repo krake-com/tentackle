@@ -15,6 +15,7 @@ import ${package}.persist.PersistenceBundle;
 import ${package}.persist.md.rmi.UserRemoteDelegate;
 
 import org.tentackle.common.RemoteMethod;
+import org.tentackle.dbms.DbBatch;
 import org.tentackle.dbms.DbObjectClassVariables;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
