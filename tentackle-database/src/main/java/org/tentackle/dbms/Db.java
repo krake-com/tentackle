@@ -1690,7 +1690,7 @@ public class Db implements Session, Cloneable {
    */
   public void logBeginTx() {
     if (logModificationTxEnabled && logModificationTxId == 0 && isTxRunning()) {
-      ModificationLog log = ModificationLogFactory.getInstance().createModificationLog(this, ModificationLog.BEGIN);
+      ModificationLog log = ModificationLogFactory.getInstance().createModificationLog(this, DbModificationType.BEGIN);
       log.reserveId();
       log.setTxId(log.getId());
       log.saveObject();
@@ -1706,7 +1706,7 @@ public class Db implements Session, Cloneable {
     if (logModificationTxId != 0) {
       // only if BEGIN already created
       if (logModificationTxEnabled) {
-        ModificationLogFactory.getInstance().createModificationLog(this, ModificationLog.COMMIT).saveObject();
+        ModificationLogFactory.getInstance().createModificationLog(this, DbModificationType.COMMIT).saveObject();
       }
       logModificationTxId = 0;
     }
@@ -1722,7 +1722,7 @@ public class Db implements Session, Cloneable {
    *
    * @param visitor the visitor to register
    * @return a handle uniquely referring to the visitor
-   * @see #isPersistenceOperationAllowed(AbstractDbObject, char)
+   * @see #isPersistenceOperationAllowed(AbstractDbObject, ModificationType)
    */
   public DbTransactionHandle registerPersistenceVisitor(PersistenceVisitor visitor) {
     if (isRemote()) {
@@ -1790,7 +1790,7 @@ public class Db implements Session, Cloneable {
    * @return true if allowed
    * @see #registerPersistenceVisitor(PersistenceVisitor)
    */
-  public boolean isPersistenceOperationAllowed(AbstractDbObject<?> object, char modType) {
+  public boolean isPersistenceOperationAllowed(AbstractDbObject<?> object, ModificationType modType) {
     return transaction == null || transaction.isPersistenceOperationAllowed(object, modType);
   }
 
@@ -2573,15 +2573,16 @@ public class Db implements Session, Cloneable {
    * IMPORTANT: only insert, update or delete statements that refer to a <em>single</em> row
    * are allowed for auto batching!
    *
-   * @param type the statement type
+   * @param modType the statement type
    * @param statement the statement to batch
    * @param object the object to insert, update or delete
    * @param rootClassId the root class ID
    */
-  public void addToBatch(DbBatch.Type type, PreparedStatementWrapper statement, AbstractDbObject object, int rootClassId) {
+  @SuppressWarnings("rawtypes")
+  public void addToBatch(ModificationType modType, PreparedStatementWrapper statement, AbstractDbObject object, int rootClassId) {
     DbBatch batch = getBatch();
     if (batch != null) {
-      batch.add(type, statement, object, rootClassId);
+      batch.add(modType, statement, object, rootClassId);
     }
   }
 
@@ -2724,7 +2725,7 @@ public class Db implements Session, Cloneable {
 
   @Override
   public Db clone() {
-    return clone(null);
+    return clone(null);   // super.clone() is invoked in clone(String) below
   }
 
   @Override

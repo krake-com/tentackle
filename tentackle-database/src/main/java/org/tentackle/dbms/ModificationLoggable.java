@@ -32,10 +32,10 @@ public interface ModificationLoggable extends Identifiable, SerialNumbered, Sess
   /**
    * Creates a {@link ModificationLog}.
    *
-   * @param modType is the modification type
+   * @param modType the modification type
    * @return the created ModificationLog ready for saveObject()
    */
-  default ModificationLog createModificationLog(char modType) {
+  default ModificationLog createModificationLog(ModificationType modType) {
     return ModificationLogFactory.getInstance().createModificationLog(this, modType);
   }
 

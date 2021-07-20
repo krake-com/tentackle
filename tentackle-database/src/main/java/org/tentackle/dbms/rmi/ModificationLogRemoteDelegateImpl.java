@@ -22,6 +22,7 @@ package org.tentackle.dbms.rmi;
 
 import org.tentackle.common.Timestamp;
 import org.tentackle.dbms.ModificationLog;
+import org.tentackle.dbms.ModificationType;
 
 import java.rmi.RemoteException;
 import java.text.ParseException;
@@ -121,7 +122,7 @@ public class ModificationLogRemoteDelegateImpl
   }
 
   @Override
-  public List<ModificationLog> selectByUserAndType(long userId, char modType) throws RemoteException {
+  public List<ModificationLog> selectByUserAndType(long userId, ModificationType modType) throws RemoteException {
     try {
       return dbObject.selectByUserAndType(userId, modType);
     }
@@ -151,7 +152,7 @@ public class ModificationLogRemoteDelegateImpl
   }
 
   @Override
-  public int updateByObjectTypeSerial(Timestamp processed, int objectClassId, long objectId, char modType, long serial) throws RemoteException {
+  public int updateByObjectTypeSerial(Timestamp processed, int objectClassId, long objectId, ModificationType modType, long serial) throws RemoteException {
     try {
       return dbObject.updateByObjectTypeSerial(processed, objectClassId, objectId, modType, serial);
     }
@@ -161,7 +162,7 @@ public class ModificationLogRemoteDelegateImpl
   }
 
   @Override
-  public int deleteByObjectTypeSerial(int objectClassId, long objectId, char modType, long serial) throws RemoteException {
+  public int deleteByObjectTypeSerial(int objectClassId, long objectId, ModificationType modType, long serial) throws RemoteException {
     try {
       return dbObject.deleteByObjectTypeSerial(objectClassId, objectId, modType, serial);
     }

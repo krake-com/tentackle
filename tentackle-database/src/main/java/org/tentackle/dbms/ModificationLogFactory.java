@@ -69,7 +69,7 @@ public interface ModificationLogFactory {
    * @param modType is the modification type (BEGIN or COMMIT)
    * @return the created modlog
    */
-  ModificationLog createModificationLog(Db db, char modType);
+  ModificationLog createModificationLog(Db db, ModificationType modType);
 
 
   /**
@@ -79,7 +79,7 @@ public interface ModificationLogFactory {
    * @param modType is the modification type (INSERT, UPDATE...)
    * @return the created modlog
    */
-  ModificationLog createModificationLog(ModificationLoggable object, char modType);
+  ModificationLog createModificationLog(ModificationLoggable object, ModificationType modType);
 
 
   /**
@@ -89,6 +89,6 @@ public interface ModificationLogFactory {
    * @param modType is the modification type (INSERT, UPDATE...)
    * @return the created modlog
    */
-  ModificationLog createModificationLog(ModificationLog template, char modType);
+  ModificationLog createModificationLog(ModificationLog template, ModificationType modType);
 
 }

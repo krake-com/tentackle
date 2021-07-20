@@ -27,7 +27,7 @@ import org.tentackle.reflect.ReflectiveVisitor;
  * <p>
  * Visitors can be registered at a {@link Db} and are only valid within a single transaction.
  * If present, the visitors will be consulted before each persistence operation such as
- * {@link ModificationLog#INSERT}, {@link ModificationLog#UPDATE} or {@link ModificationLog#DELETE}, whether
+ * {@link DbModificationType#INSERT}, {@link DbModificationType#UPDATE} or {@link DbModificationType#DELETE}, whether
  * the operation is allowed or should be <em>silently</em> skipped.
  *
  * <p>
@@ -57,7 +57,7 @@ public abstract class PersistenceVisitor extends ReflectiveVisitor implements Se
    * @param modType the modification type
    * @return true if allowed
    */
-  public boolean isPersistenceOperationAllowed(AbstractDbObject<?> object, char modType) {
+  public boolean isPersistenceOperationAllowed(AbstractDbObject<?> object, ModificationType modType) {
     return true;
   }
 

@@ -23,7 +23,7 @@ package org.tentackle.misc;
  * A convertible object.
  * <p>
  * Convertibles provide a mapping to some other type. Enums, for example,
- * map to an integer or a string and optionally to some application specific types.
+ * could map to an integer or a string and optionally to some application specific types.
  * Any class implementing this interface must provide three methods:
  *
  * <ul>
@@ -32,15 +32,7 @@ package org.tentackle.misc;
  *   <li>getDefault: a class method to create the default value</li>
  * </ul>
  *
- * Because class methods cannot be inherited, the {@link ConvertibleHelper} resolves
- * the method by reflection.
- * <p>
  * If there is no default value the method must throw a RuntimeException, for example a PersistenceException.
- * <p>
- * Note: the static method by reflection approach has been chosen,
- * because enums are a good candidate for {@link Convertible}s but cannot
- * be instantiated by constructors.
- *
  *
  * <p>
  * Example:
@@ -78,10 +70,7 @@ package org.tentackle.misc;
  *   }
  * </pre>
  *
- *
- *
  * @param <T> the external type
- * @see ConvertibleHelper
  * @author harald
  */
 public interface Convertible<T> {

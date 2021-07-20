@@ -40,10 +40,10 @@ public class BatchingTest extends AbstractPdoTest {
   @Test(groups = "local", priority = 0)
   public void testInserts() {
     Db session = (Db) getSession();
-    ModificationLog log = new ModificationLog(session, ModificationLog.INSERT);
+    ModificationLog log = new ModificationLog(session, DbModificationType.INSERT);
     Duration duration = new Duration();
     for (int i=0; i < COUNT; i++) {
-      new ModificationLog(log, ModificationLog.INSERT).saveObject();
+      new ModificationLog(log, DbModificationType.INSERT).saveObject();
     }
     duration.end();
     Reporter.log("elapsed time for " + COUNT + " simple inserts: " + duration.millis() + " ms <br>", true);
@@ -55,7 +55,7 @@ public class BatchingTest extends AbstractPdoTest {
   @Test(groups = "local", priority = 1)
   public void testBatchInserts() {
     Db session = (Db) getSession();
-    ModificationLog log = new ModificationLog(session, ModificationLog.INSERT);
+    ModificationLog log = new ModificationLog(session, DbModificationType.INSERT);
     log.setSerial(1);
     PreparedStatementWrapper st = log.getPreparedStatement(log.getClassVariables().insertStatementId, () -> log.createInsertSql());
     Duration duration = new Duration();

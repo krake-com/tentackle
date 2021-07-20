@@ -38,6 +38,9 @@
         <directory>src/test/filtered-resources</directory>
         <filtering>true</filtering>
       </testResource>
+      <testResource>
+        <directory>${tentackle.testServiceDir}</directory>
+      </testResource>
     </testResources>
 
     <plugins>
@@ -48,8 +51,15 @@
         <version>${project.version}</version>
         <executions>
           <execution>
+            <id>analyze</id>
             <goals>
               <goal>analyze</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>test-analyze</id>
+            <goals>
+              <goal>test-analyze</goal>
             </goals>
           </execution>
         </executions>

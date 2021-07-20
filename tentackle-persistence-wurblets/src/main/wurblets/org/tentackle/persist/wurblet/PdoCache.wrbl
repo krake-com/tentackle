@@ -490,7 +490,7 @@ For more options, see {\@link DbModelWurblet}.
   }
 
   \@Override
-  public boolean isCountingModification(char modType) {
+  public boolean isCountingModification(ModificationType modType) {
     return true;
   }
 

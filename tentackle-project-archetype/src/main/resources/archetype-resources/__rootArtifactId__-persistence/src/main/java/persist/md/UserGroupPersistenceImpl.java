@@ -13,8 +13,9 @@ import ${package}.pdo.md.UserGroup;
 import ${package}.pdo.md.persist.UserGroupPersistence;
 import ${package}.persist.md.rmi.UserGroupRemoteDelegate;
 
-import org.tentackle.dbms.DbBatch;
+import org.tentackle.dbms.DbModificationType;
 import org.tentackle.dbms.DbObjectClassVariables;
+import org.tentackle.dbms.ModificationType;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.misc.IdentifiableMap;

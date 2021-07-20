@@ -55,7 +55,7 @@ public class IgnoreDuplicatesPersistenceVisitor extends PersistenceVisitor {
    * This is the dispatched method!
    *
    * @param object the object
-   * @param modType the modification type (ignored)
+   * @param modType the modification type
    */
   public void visit(AbstractDbObject<?> object, Character modType) {
     persistenceOperationAllowed = objectSet.add(object);
@@ -66,11 +66,11 @@ public class IgnoreDuplicatesPersistenceVisitor extends PersistenceVisitor {
    * Checks whether object has already been persisted.
    *
    * @param object the persistable object
-   * @param modType the modification type (ignored)
+   * @param modType the modification type
    * @return true if object has not been persisted already
    */
   @Override
-  public boolean isPersistenceOperationAllowed(AbstractDbObject<?> object, char modType) {
+  public boolean isPersistenceOperationAllowed(AbstractDbObject<?> object, ModificationType modType) {
     if (!persistenceOperationAllowed) {
       LOGGER.info(() -> object.toGenericString() + " already persisted -> '" + modType + "' ignored");
     }

@@ -357,7 +357,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * @param visitor the visitor
    * @param modType the modification type
    */
-  public void acceptPersistenceVisitor(PersistenceVisitor visitor, char modType) {
+  public void acceptPersistenceVisitor(PersistenceVisitor visitor, ModificationType modType) {
     try {
       visitor.visit(this, new Class[] {Character.TYPE}, modType);
     }
@@ -1163,10 +1163,10 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * Determines whether modifications of this object are counted in the modification table.<br>
    * Counting is also turned on if the PDO provides a tableserial.
    *
-   * @param modType is one of the modtypes INSERT, UPDATE, DELETE, ...
+   * @param modType the modification type
    * @return true if count modification, false if not.
    */
-  public boolean isCountingModification(char modType)  {
+  public boolean isCountingModification(ModificationType modType)  {
     return isTableSerialProvided();
   }
 
@@ -1187,11 +1187,11 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * Determines whether each modification of this object (with respect to the database)
    * should be logged.
    *
-   * @param modType is one of the modtypes INSERT, UPDATE, DELETE, ...
+   * @param modType the modification type
    * @return true if log modification, false if not.
    * @see ModificationLog
    */
-  public boolean isLoggingModification(char modType)  {
+  public boolean isLoggingModification(ModificationType modType)  {
     return false;
   }
 
@@ -1737,7 +1737,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     }
     else  {
       // local
-      if (db.isPersistenceOperationAllowed(this, ModificationLog.INSERT)) {
+      if (db.isPersistenceOperationAllowed(this, DbModificationType.INSERT)) {
         insertImpl(getClassVariables(), this::createInsertSql);
       }
     }
@@ -1774,7 +1774,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     }
     else  {
       // local
-      if (db.isPersistenceOperationAllowed(this, ModificationLog.DELETE)) {
+      if (db.isPersistenceOperationAllowed(this, DbModificationType.DELETE)) {
         deleteImpl(getClassVariables(), this::createDeleteSql);
       }
     }
@@ -1812,7 +1812,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       }
     }
     else  {
-      if (db.isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
+      if (db.isPersistenceOperationAllowed(this, DbModificationType.UPDATE)) {
         updateImpl(getClassVariables(), this::createUpdateSql);
         serial++;
       }
@@ -1882,7 +1882,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       }
     }
     else  {
-      if (db.isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
+      if (db.isPersistenceOperationAllowed(this, DbModificationType.UPDATE)) {
         PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateSerialStatementId,
                                                            this::createUpdateSerialSql);
         st.setLong(1, id);
@@ -1912,7 +1912,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       }
     }
     else  {
-      if (db.isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
+      if (db.isPersistenceOperationAllowed(this, DbModificationType.UPDATE)) {
         PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateAndSetSerialStatementId,
                                                            this::createUpdateAndSetSerialSql);
         st.setLong(1, serial);
@@ -1941,7 +1941,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       }
     }
     else  {
-      if (db.isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
+      if (db.isPersistenceOperationAllowed(this, DbModificationType.UPDATE)) {
         PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateSerialAndTableSerialStatementId,
                                                            this::createUpdateSerialAndTableSerialSql);
         st.setLong(1, tableSerial);
@@ -1974,9 +1974,9 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   /**
    * Does any preprocessing before delete, insert or update.
    *
-   * @param modType is the modification type: DELETE, INSERT or UPDATE
+   * @param modType the modification type
    */
-  protected void initModification(char modType) {
+  protected void initModification(ModificationType modType) {
     if (isCountingModification(modType))  {
       setTableSerial(countModification());
       // will never return on failure -> errorHandler
@@ -1987,9 +1987,9 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   /**
    * Does any postprocessing after delete, insert or update.
    *
-   * @param modType is the modification type: DELETE, INSERT or UPDATE
+   * @param modType the modification type
    */
-  protected void finishModification(char modType) {
+  protected void finishModification(ModificationType modType) {
     if (isLoggingModification(modType))  {
       logModification(modType);
     }
@@ -2001,9 +2001,9 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * Necessary, because not modified for some reason, e.g. only components modified.<br>
    * The default implementation does nothing.
    *
-   * @param modType is the modification type: DELETE, INSERT or UPDATE
+   * @param modType the modification type
    */
-  protected void finishNotUpdated(char modType) {
+  protected void finishNotUpdated(ModificationType modType) {
   }
 
 
@@ -2058,7 +2058,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       prepareSetFields();
       alignComponents();
 
-      if (db.isPersistenceOperationAllowed(this, ModificationLog.INSERT)) {
+      if (db.isPersistenceOperationAllowed(this, DbModificationType.INSERT)) {
 
         long oldId = id;            // remember old id and serial
         long oldSerial = serial;
@@ -2067,7 +2067,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
         try {
 
-          initModification(ModificationLog.INSERT);
+          initModification(DbModificationType.INSERT);
 
           if (id < 0) {
             id = -id;             // could have been "deleted" before
@@ -2077,7 +2077,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
           saveReferencedRelations(false);
           insertImpl(getClassVariables(), this::createInsertSql);
           saveReferencingRelations(false);
-          finishModification(ModificationLog.INSERT);
+          finishModification(DbModificationType.INSERT);
           db.commit(txVoucher);
           setModified(false);
         }
@@ -2130,7 +2130,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
       prepareSetFields();
 
-      if (db.isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
+      if (db.isPersistenceOperationAllowed(this, DbModificationType.UPDATE)) {
 
         long oldId = id;            // remember old id and serial
         long oldSerial = serial;
@@ -2143,7 +2143,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
           if (!isUpdateNecessary()) {   // DON'T USE isModified() here because its generated/overridden
             // the object itself is not modified, but some of its components
             if (isUpdatingSerialEvenIfNotModified()) {
-              initModification(ModificationLog.UPDATE);
+              initModification(DbModificationType.UPDATE);
               // DON'T USE updateSerial() here! We need the old serial unchanged
               PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateSerialStatementId,
                   () -> isTableSerialProvided() ? createUpdateSerialAndTableSerialSql() : createUpdateSerialSql());
@@ -2157,19 +2157,19 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
               st.setLong(++ndx, serial);
               assertThisRowAffected(st.executeUpdate());
               saveReferencingRelations(true);
-              finishModification(ModificationLog.UPDATE);
+              finishModification(DbModificationType.UPDATE);
             }
             else {
               // saveObject linked objects without updating the serial of this object
               saveReferencedRelations(true);
               saveReferencingRelations(true);
-              finishNotUpdated(ModificationLog.UPDATE);
+              finishNotUpdated(DbModificationType.UPDATE);
               updated = false;    // this object was not updated! -> no modlog as well, no serial++!
             }
           }
           else {
             // normal update
-            initModification(ModificationLog.UPDATE);
+            initModification(DbModificationType.UPDATE);
 
             if (id < 0) {
               id = -id; // was deleted: reuse ID
@@ -2178,7 +2178,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
             saveReferencedRelations(true);
             updateImpl(getClassVariables(), this::createUpdateSql);
             saveReferencingRelations(true);
-            finishModification(ModificationLog.UPDATE);
+            finishModification(DbModificationType.UPDATE);
           }
 
           db.commit(txVoucher);
@@ -2399,16 +2399,16 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
         // not from remote client
         prepareDelete();
       }
-      if (db.isPersistenceOperationAllowed(this, ModificationLog.DELETE)) {
+      if (db.isPersistenceOperationAllowed(this, DbModificationType.DELETE)) {
 
         long txVoucher = db.begin(TX_DELETE_OBJECT);
 
         try {
-          initModification(ModificationLog.DELETE);
+          initModification(DbModificationType.DELETE);
           deleteReferencingRelations();
           deleteImpl(getClassVariables(), this::createDeleteSql);
           deleteReferencedRelations();
-          finishModification(ModificationLog.DELETE);
+          finishModification(DbModificationType.DELETE);
           db.commit(txVoucher);
           id = -id;     // make ID reserved again, i.e. mark object as being deleted
           setModified(false);
@@ -2621,9 +2621,9 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * Logs a modification for this object to the modlog
    * (not to be mixed up with the modification-counter!)
    *
-   * @param modType is the modification type (INSERT, DELETE or UPDATE)
+   * @param modType the modification type
    */
-  public void logModification(char modType)  {
+  public void logModification(ModificationType modType)  {
     Db db = getSession();
     db.assertNotRemote();   // don't log locally if db is remote
     if (db.isLogModificationAllowed()) {
