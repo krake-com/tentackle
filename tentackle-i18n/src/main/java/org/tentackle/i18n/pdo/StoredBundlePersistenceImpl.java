@@ -19,6 +19,7 @@
 
 package org.tentackle.i18n.pdo;
 
+import org.tentackle.dbms.ModificationType;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.dbms.StatementId;
@@ -533,7 +534,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
   }
 
   @Override
-  public boolean isCountingModification(char modType) {
+  public boolean isCountingModification(ModificationType modType) {
     return true;
   }
 

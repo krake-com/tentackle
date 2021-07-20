@@ -19,6 +19,7 @@
 
 package org.tentackle.persist.security;
 
+import org.tentackle.dbms.ModificationType;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.dbms.StatementId;
@@ -363,7 +364,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   }
 
   @Override
-  public boolean isCountingModification(char modType) {
+  public boolean isCountingModification(ModificationType modType) {
     return true;
   }
 

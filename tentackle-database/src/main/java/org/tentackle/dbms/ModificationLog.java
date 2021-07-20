@@ -18,7 +18,6 @@
 
 package org.tentackle.dbms;
 
-
 import org.tentackle.common.Freezable;
 import org.tentackle.common.RemoteMethod;
 import org.tentackle.common.StringHelper;
@@ -43,7 +42,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-
 /*
  * @> $mapfile
  *
@@ -55,16 +53,16 @@ import java.util.List;
  * [remote]
  *
  * ## attributes
- * long           objectId         objectid         object id
- * int            objectClassId    classid          object class id
- * String(192)    objectClassName  classname        object classname (if classid == 0)
- * long           txId             txid             transaction id (optional)
- * String(64)     txName           txname           transaction name (optional) [TRIMWRITE]
- * char           modType          modtype          modification type
- * Timestamp      when             modtime          time of event
- * long           userId           userid           user id
- * String         message          message          optional informational or error message [NOMETHOD]
- * Timestamp      processed        processed        processing time [MAPNULL]
+ * long                     objectId         objectid         object id
+ * int                      objectClassId    classid          object class id
+ * String(192)              objectClassName  classname        object classname (if classid == 0)
+ * long                     txId             txid             transaction id (optional)
+ * String(64)               txName           txname           transaction name (optional) [TRIMWRITE]
+ * ModificationType<char>   modType          modtype          modification type
+ * Timestamp                when             modtime          time of event
+ * long                     userId           userid           user id
+ * String                   message          message          optional informational or error message [NOMETHOD]
+ * Timestamp                processed        processed        processing time [MAPNULL]
  *
  * ## indexes
  * index next := processed, id
@@ -76,16 +74,15 @@ import java.util.List;
  */
 
 
-
 /**
  * Logging for object modifications.<br>
  *
- * Modifications to {@link AbstractDbObject}s can be logged to a so-called modification log (aka: modlog).<br>
- * Most applications will use the modlog for asynchroneous database coupling.
+ * Modifications of PDOs can be logged to a so-called modification log.<br>
+ * Such modlogs can be used for asynchroneous database coupling, higher level replication, etc...
  * <p>
- * Note: the txId is only valid (&gt; 0) if the db-connection has {@link Db#isLogModificationTxEnabled},
- * i.e. begin and commit records are logged as well. If the {@link IdSource} of the modlog is
- * transaction-based, transactions will not overlap in the modlog because obtaining
+ * Note: the txId is only valid (&gt; 0) if the session has {@link Db#isLogModificationTxEnabled},
+ * i.e. begin and commit transaction events are logged as well. If the {@link IdSource} of the modlog is
+ * transaction-based, transactions will not overlap in the table because obtaining
  * the id for the modlog is part of the transaction. However, if the idsource is
  * remote (poolkeeper rmi-client, for example), transactions may overlap!
  * In such cases the txid is necessary to separate the modlog sequences into
@@ -102,23 +99,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   /** Variables common to all instances of {@link ModificationLog}. */
   public static final DbObjectClassVariables<ModificationLog> CLASSVARIABLES =
       DbObjectClassVariables.create(ModificationLog.class);
-
-
-
-  /** modification type: begin transaction **/
-  public static final char BEGIN = 'B';
-
-  /** modification type: commit transaction **/
-  public static final char COMMIT= 'C';
-
-  /** modification type: object inserted **/
-  public static final char INSERT= 'I';
-
-  /** modification type: object updated **/
-  public static final char UPDATE= 'U';
-
-  /** modification type: object deleted **/
-  public static final char DELETE= 'D';
 
 
   // @wurblet fieldlenghts ColumnNames --model=$mapfile
@@ -174,8 +154,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
 
 
-
-
   /**
    * The {@link AbstractDbObject} the log belongs to. null = unknown. Speeds up {@link #getObject}
    * in distributed applications (see the poolkeeper framework).
@@ -188,7 +166,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    * Message parameters (lazy)
    */
   protected ParameterString messageParameters;
-
 
 
   // @wurblet declare Declare --model=$mapfile
@@ -212,7 +189,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   private String txName;
 
   /** modification type. */
-  private char modType;
+  private ModificationType modType;
 
   /** time of event. */
   private Timestamp when;
@@ -227,7 +204,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   private Timestamp processed;
 
   //</editor-fold>//GEN-END:declare
-
 
 
   /**
@@ -246,7 +222,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    * @param db the database connection
    * @param modType is the modification type (BEGIN or COMMIT)
    */
-  public ModificationLog(Db db, char modType) {
+  public ModificationLog(Db db, ModificationType modType) {
     this(db);
     this.modType = modType;
 
@@ -263,10 +239,11 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    * @param object is the logged object
    * @param modType is the modification type (INSERT, UPDATE...)
    */
-  public ModificationLog(ModificationLoggable object, char modType)  {
+  @SuppressWarnings("rawtypes")
+  public ModificationLog(ModificationLoggable object, ModificationType modType)  {
     this((Db) object.getSession(), modType);
 
-    if (modType == BEGIN || modType == COMMIT) {
+    if (modType == DbModificationType.BEGIN || modType == DbModificationType.COMMIT) {
       throw new PersistenceException(this, "illegal BEGIN or COMMIT in object logging");
     }
 
@@ -280,7 +257,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
      * creating the modlog (see AbstractDbObject.updateObject()), so we need to subtract 1 only
      * for the other modlog types.
      */
-    setSerial(object.getSerial() - (modType == UPDATE ? 0 : 1));
+    setSerial(object.getSerial() - (modType == DbModificationType.UPDATE ? 0 : 1));
     if (object instanceof AbstractDbObject) {
       objectClassId = ((AbstractDbObject) object).getClassId();
     }
@@ -289,7 +266,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       objectClassName = object.getClass().getName();
     }
 
-    if (modType == INSERT || modType == UPDATE) {
+    if (modType == DbModificationType.INSERT || modType == DbModificationType.UPDATE) {
       // keep object for RMI transfers (not DELETE as this will be loaded on the servers side)
       lazyObject = object;
     }
@@ -302,7 +279,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    * @param template the modlog template
    * @param modType is the modification type (INSERT, UPDATE...)
    */
-  public ModificationLog(ModificationLog template, char modType) {
+  public ModificationLog(ModificationLog template, ModificationType modType) {
     super(template.getSession());
     objectId = template.objectId;
     objectClassId = template.objectClassId;
@@ -359,7 +336,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     objectClassName = rs.getString();
     txId = rs.getLong();
     txName = rs.getString();
-    modType = rs.getChar();
+    modType = ModificationType.toInternal(rs.getChar());
     when = rs.getTimestamp();
     userId = rs.getLong();
     message = rs.getString();
@@ -376,7 +353,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     st.setString(++ndx, objectClassName);
     st.setLong(++ndx, txId);
     st.setString(++ndx, StringHelper.trim(txName, 64));
-    st.setChar(++ndx, modType);
+    st.setChar(++ndx, modType == null ? ModificationType.getDefault().toExternal() : modType.toExternal());
     st.setTimestamp(++ndx, when);
     st.setLong(++ndx, userId);
     st.setString(++ndx, message);
@@ -534,7 +511,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    *
    * @return modification type
    */
-  public char getModType()    {
+  public ModificationType getModType()    {
     return modType;
   }
 
@@ -543,7 +520,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    *
    * @param modType modification type
    */
-  public void setModType(char modType) {
+  public void setModType(ModificationType modType) {
     assertMutable();
     this.modType = modType;
   }
@@ -671,29 +648,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
 
   /**
-   * Check whether this modlog is modifying data.<br>
-   *
-   * @return true if DELETE, DELETEALL, INSERT or UPDATE
-   */
-  public boolean isModifyingData() {
-    return modType == DELETE ||
-           modType == INSERT ||
-           modType == UPDATE;
-  }
-
-
-  /**
-   * Returns whether this modlog marks a transaction boundary.
-   *
-   * @return true if BEGIN or COMMIT
-   */
-  public boolean isTransactionBoundary() {
-    return modType == BEGIN || modType == COMMIT;
-  }
-
-
-  /**
-   * Returns whether this modlog belongs to a transaction.
+   * Returns whether this modlog belongs to the current transaction.
    *
    * @return true if part of current transaction
    */
@@ -708,7 +663,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    * @return true if refer to destination db
    */
   public boolean isDestinationReferringLog() {
-    return modType == DELETE;
+    return modType == DbModificationType.DELETE;
   }
 
 
@@ -1282,7 +1237,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    */
   //<editor-fold defaultstate="collapsed" desc="code 'selectByUserAndType' generated by wurblet DbSelectList">//GEN-BEGIN:selectByUserAndType
 
-  public List<ModificationLog> selectByUserAndType(long userId, char modType) {
+  public List<ModificationLog> selectByUserAndType(long userId, ModificationType modType) {
     Db db = getSession();
     if (db.isRemote())  {
       try {
@@ -1313,7 +1268,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     int ndx = 1;
     st.setTimestamp(ndx++, null, true);
     st.setLong(ndx++, userId);
-    st.setChar(ndx, modType);
+    st.setChar(ndx, modType == null ? ModificationType.getDefault().toExternal() : modType.toExternal());
     try (ResultSetWrapper rs = st.executeQuery()) {
       List<ModificationLog> list = new ArrayList<>();
       boolean derived = getClass() != ModificationLog.class;
@@ -1447,7 +1402,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
   //<editor-fold defaultstate="collapsed" desc="code 'updateByObjectTypeSerial' generated by wurblet DbUpdateBy">//GEN-BEGIN:updateByObjectTypeSerial
 
-  public int updateByObjectTypeSerial(Timestamp processed, int objectClassId, long objectId, char modType, long serial) {
+  public int updateByObjectTypeSerial(Timestamp processed, int objectClassId, long objectId, ModificationType modType, long serial) {
     if (getSession().isRemote())  {
       try {
         return getRemoteDelegate().updateByObjectTypeSerial(processed, objectClassId, objectId, modType, serial);
@@ -1486,7 +1441,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     st.setTimestamp(ndx++, null, true);
     st.setInt(ndx++, objectClassId);
     st.setLong(ndx++, objectId);
-    st.setChar(ndx++, modType);
+    st.setChar(ndx++, modType == null ? ModificationType.getDefault().toExternal() : modType.toExternal());
     st.setLong(ndx, serial);
     return st.executeUpdate();
   }
@@ -1513,7 +1468,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
   //<editor-fold defaultstate="collapsed" desc="code 'deleteByObjectTypeSerial' generated by wurblet DbDeleteBy">//GEN-BEGIN:deleteByObjectTypeSerial
 
-  public int deleteByObjectTypeSerial(int objectClassId, long objectId, char modType, long serial) {
+  public int deleteByObjectTypeSerial(int objectClassId, long objectId, ModificationType modType, long serial) {
     if (getSession().isRemote())  {
       try {
         return getRemoteDelegate().deleteByObjectTypeSerial(objectClassId, objectId, modType, serial);
@@ -1548,7 +1503,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     st.setTimestamp(ndx++, null, true);
     st.setInt(ndx++, objectClassId);
     st.setLong(ndx++, objectId);
-    st.setChar(ndx++, modType);
+    st.setChar(ndx++, modType == null ? ModificationType.getDefault().toExternal() : modType.toExternal());
     st.setLong(ndx, serial);
     return st.executeUpdate();
   }
@@ -1998,18 +1953,17 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       // perform any preprocessing
       replayInitModification(modlog, object);
 
-      switch (modlog.getModType()) {
-        case INSERT:
-          replayInsert(modlog, object);
-          break;
-        case UPDATE:
-          replayUpdate(modlog, object);
-          break;
-        case DELETE:
-          replayDelete(modlog, object);
-          break;
-        default:
-          throw new PersistenceException(modlog, "illegal modType " + modlog.getModType() + " for replay");
+      if (modlog.getModType() == DbModificationType.INSERT) {
+        replayInsert(modlog, object);
+      }
+      else if (modlog.getModType() == DbModificationType.UPDATE) {
+        replayUpdate(modlog, object);
+      }
+      else if (modlog.getModType() == DbModificationType.DELETE) {
+        replayDelete(modlog, object);
+      }
+      else {
+        throw new PersistenceException(modlog, "illegal modType " + modlog.getModType() + " for replay");
       }
 
       // perform any post processing
@@ -2195,7 +2149,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       for (ModificationLog log: modList) {
 
         // replay object's modification
-        if (log.getModType() != BEGIN && log.getModType() != COMMIT) {   // ignore BEGIN/COMMIT
+        if (log.getModType() != DbModificationType.BEGIN && log.getModType() != DbModificationType.COMMIT) {   // ignore BEGIN/COMMIT
           replay(log, toDb);   // replay next modlog
         }
 
@@ -2203,7 +2157,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
           LOGGER.fine("copying modlog {0} to {1}", log, toDb);
           log.clearLazyObject();    // no more needed, and don't change db in lazyObject and don't transfer to remote db
 
-          if (log.getModType() == BEGIN) {
+          if (log.getModType() == DbModificationType.BEGIN) {
             state.pendingTxId = log.getId();
           }
 
@@ -2216,7 +2170,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
           }
           log.insertPlain();
 
-          if (log.getModType() == COMMIT) {
+          if (log.getModType() == DbModificationType.COMMIT) {
             state.pendingTxId = 0;   // clear pending id
           }
 
@@ -2270,7 +2224,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    * @param toSession the destination db
    */
   protected void handleMissingObject(ModificationLog modlog, Session toSession) {
-    throw new PersistenceException(modlog.getModType() == DELETE ? modlog.getSession() : toSession,
+    throw new PersistenceException(modlog.getModType() == DbModificationType.DELETE ? modlog.getSession() : toSession,
                                  "object " + SessionUtilities.getInstance().getClassName(modlog.getObjectClassId()) +
                                  "[" + modlog.getObjectId() + "] does not exist");
   }

@@ -29,7 +29,7 @@ import java.util.Set;
  * Maintains batches of prepared statements.
  * <p>
  * If batching is enabled for a session, transactions will run in batched mode. In this mode, well-defined standard prepared
- * statements (see {@link Type}) are collected and executed later as a JDBC batch, which will gain some performance.
+ * statements are collected and executed later as a JDBC batch, which will gain some performance.
  * <p>
  * Batching is only performed within the same type of root entities, because the execution order is
  * important to ensure referential integrity. Furthermore, the batch is flushed on every savepoint,
@@ -49,18 +49,6 @@ import java.util.Set;
  */
 @SuppressWarnings("rawtypes")   // due to AbstractDbObject<P>
 public class DbBatch {
-
-  /**
-   * The statement type.
-   */
-  public enum Type {
-    /** single row standard insert. */
-    INSERT,
-    /** single row standard update. */
-    UPDATE,
-    /** single row standard delete. */
-    DELETE
-  }
 
   private static final Logger LOGGER = Logger.get(DbBatch.class);
 
@@ -107,18 +95,18 @@ public class DbBatch {
   /**
    * Adds a statement and its related PDO to this batch.
    *
-   * @param type the statement type
+   * @param modType the statement type
    * @param statement the insert, update or delete statement
    * @param object the PDO affected by the statement
    * @param rootClassId the root class ID
    */
-  public void add(Type type, PreparedStatementWrapper statement, AbstractDbObject object, int rootClassId) {
+  public void add(ModificationType modType, PreparedStatementWrapper statement, AbstractDbObject object, int rootClassId) {
     if (rootClassId != lastRootClassId || !objects.add(object)) {
       execute(true);    // order can change -> flush!
       lastRootClassId = rootClassId;
       objects.add(object);
     }
-    statements.computeIfAbsent(statement.getStatementKey(), statementKey -> createBatchStatement(statement, type)).add(object);
+    statements.computeIfAbsent(statement.getStatementKey(), statementKey -> createBatchStatement(statement, modType)).add(object);
   }
 
   /**
@@ -153,12 +141,12 @@ public class DbBatch {
    * Creates a batched statement.
    *
    * @param statement the prepared statement
-   * @param type the statement type
+   * @param modType the statement type
    * @return the batched statement
    */
-  protected DbBatchStatement createBatchStatement(PreparedStatementWrapper statement, Type type) {
+  protected DbBatchStatement createBatchStatement(PreparedStatementWrapper statement, ModificationType modType) {
     statement.setBatch(this);
-    return new DbBatchStatement(statement, type);
+    return new DbBatchStatement(statement, modType);
   }
 
   /**

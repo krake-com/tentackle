@@ -16,7 +16,7 @@ import ${package}.persist.AbstractPersistentMasterData;
 import ${package}.persist.md.rmi.OrgUnitRemoteDelegate;
 
 import org.tentackle.common.StringHelper;
-import org.tentackle.dbms.DbBatch;
+import org.tentackle.dbms.DbModificationType;
 import org.tentackle.dbms.DbObjectClassVariables;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;

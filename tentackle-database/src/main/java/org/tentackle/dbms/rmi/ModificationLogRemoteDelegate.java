@@ -22,6 +22,7 @@ package org.tentackle.dbms.rmi;
 
 import org.tentackle.common.Timestamp;
 import org.tentackle.dbms.ModificationLog;
+import org.tentackle.dbms.ModificationType;
 
 import java.rmi.RemoteException;
 import java.util.List;
@@ -48,11 +49,11 @@ public interface ModificationLogRemoteDelegate extends AbstractDbObjectRemoteDel
   ModificationLog selectGreaterId(long id) throws RemoteException;
   ModificationLog selectLastProcessed() throws RemoteException;
   List<ModificationLog> selectByObject(int objectClassId, long objectId) throws RemoteException;
-  List<ModificationLog> selectByUserAndType(long userId, char modType) throws RemoteException;
+  List<ModificationLog> selectByUserAndType(long userId, ModificationType modType) throws RemoteException;
   boolean isReferencingUser(long userId) throws RemoteException;
   boolean isReferencingObject(int objectClassId, long objectId) throws RemoteException;
-  int updateByObjectTypeSerial(Timestamp processed, int objectClassId, long objectId, char modType, long serial) throws RemoteException;
-  int deleteByObjectTypeSerial(int objectClassId, long objectId, char modType, long serial) throws RemoteException;
+  int updateByObjectTypeSerial(Timestamp processed, int objectClassId, long objectId, ModificationType modType, long serial) throws RemoteException;
+  int deleteByObjectTypeSerial(int objectClassId, long objectId, ModificationType modType, long serial) throws RemoteException;
   List<? extends ModificationLog> selectByTxId(long txId) throws RemoteException;
   int updateUnprocessedByTxId(Timestamp processed, long txId) throws RemoteException;
   int deleteByTxId(long txId) throws RemoteException;

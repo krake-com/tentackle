@@ -41,17 +41,17 @@ public class DefaultModificationLogFactory implements ModificationLogFactory {
   }
 
   @Override
-  public ModificationLog createModificationLog(Db db, char modType) {
+  public ModificationLog createModificationLog(Db db, ModificationType modType) {
     return new ModificationLog(db, modType);
   }
 
   @Override
-  public ModificationLog createModificationLog(ModificationLoggable object, char modType) {
+  public ModificationLog createModificationLog(ModificationLoggable object, ModificationType modType) {
     return new ModificationLog(object, modType);
   }
 
   @Override
-  public ModificationLog createModificationLog(ModificationLog template, char modType) {
+  public ModificationLog createModificationLog(ModificationLog template, ModificationType modType) {
     return new ModificationLog(template, modType);
   }
 

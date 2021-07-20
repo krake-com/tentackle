@@ -27,9 +27,9 @@ import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.common.Timestamp;
 import org.tentackle.dbms.AbstractDbObject;
 import org.tentackle.dbms.Db;
-import org.tentackle.dbms.DbBatch;
+import org.tentackle.dbms.DbModificationType;
 import org.tentackle.dbms.DbObjectClassVariables;
-import org.tentackle.dbms.ModificationLog;
+import org.tentackle.dbms.ModificationType;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.dbms.StatementId;
@@ -386,7 +386,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "rawtypes"})
   public T copy() {
     T copiedPdo = on();
     AbstractPersistentObject copiedPo = (P) copiedPdo.getPersistenceDelegate();
@@ -1352,34 +1352,34 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * <p>
    * The method must only be used for inserts, updates and delete of a single row!
    *
-   * @param type the statement type
+   * @param modType the modification type
    * @param stmtId the statement ID
    * @param sqlsupplier the SQL code supplier
    * @return the statement
    */
-  protected PreparedStatementWrapper getBatchablePreparedStatement(DbBatch.Type type, StatementId stmtId, Supplier<String> sqlsupplier) {
+  protected PreparedStatementWrapper getBatchablePreparedStatement(ModificationType modType, StatementId stmtId, Supplier<String> sqlsupplier) {
     PreparedStatementWrapper st = getPreparedStatement(stmtId, sqlsupplier);
-    getSession().addToBatch(type, st, this, getDomainContext().getRootClassId());
+    getSession().addToBatch(modType, st, this, getDomainContext().getRootClassId());
     return st;
   }
 
   @Override
   protected void insertImpl(DbObjectClassVariables<P> classVariables, Supplier<String> sqlsupplier) {
-    PreparedStatementWrapper st = getBatchablePreparedStatement(DbBatch.Type.INSERT, classVariables.insertStatementId, sqlsupplier);
+    PreparedStatementWrapper st = getBatchablePreparedStatement(DbModificationType.INSERT, classVariables.insertStatementId, sqlsupplier);
     setFields(st);
     assertThisRowAffected(st.executeUpdate());
   }
 
   @Override
   protected void updateImpl(DbObjectClassVariables<P> classVariables, Supplier<String> sqlsupplier) {
-    PreparedStatementWrapper st = getBatchablePreparedStatement(DbBatch.Type.UPDATE, classVariables.updateStatementId, sqlsupplier);
+    PreparedStatementWrapper st = getBatchablePreparedStatement(DbModificationType.UPDATE, classVariables.updateStatementId, sqlsupplier);
     setFields(st);
     assertThisRowAffected(st.executeUpdate());
   }
 
   @Override
   protected void deleteImpl(DbObjectClassVariables<P> classVariables, Supplier<String> sqlsupplier) {
-    PreparedStatementWrapper st = getBatchablePreparedStatement(DbBatch.Type.DELETE, classVariables.deleteStatementId, sqlsupplier);
+    PreparedStatementWrapper st = getBatchablePreparedStatement(DbModificationType.DELETE, classVariables.deleteStatementId, sqlsupplier);
     st.setLong(1, getId());
     st.setLong(2, getSerial());
     assertThisRowAffected(st.executeUpdate());
@@ -1744,6 +1744,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @return the object if reloaded, else null (never <em>this</em>)
    */
   @Override
+  @SuppressWarnings("rawtypes")
   public T reload() {
     Object data = getTransientData();
     T obj = Pdo.create(getPdo()).select(getId());
@@ -1761,6 +1762,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @return the object if reloaded, else null (never <em>this</em>)
    */
   @Override
+  @SuppressWarnings("rawtypes")
   public T reloadForUpdate() {
     Object data = getTransientData();
     T obj = Pdo.create(getPdo()).selectForUpdate(getId());
@@ -2729,7 +2731,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Overridden due to security check.
    */
   @Override
-  protected void initModification(char modType) {
+  protected void initModification(ModificationType modType) {
     super.initModification(modType);
     clearTokenLock();
   }
@@ -2741,7 +2743,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Overridden to clear the renewTokenLock flag.
    */
   @Override
-  protected void finishModification(char modType) {
+  protected void finishModification(ModificationType modType) {
     super.finishModification(modType);
     setRenewTokenLockRequested(false);
   }
@@ -2750,10 +2752,10 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * {@inheritDoc}
    * <p>
-   * Ovewritten to get the token lock removed, if any.
+   * Ovewridden to get the token lock removed, if any.
    */
   @Override
-  protected void finishNotUpdated(char modType) {
+  protected void finishNotUpdated(ModificationType modType) {
     if (isTokenLockProvided()) {
       if (clearTokenLock()) {
         updateTokenLock(DateHelper.now(getTokenLockTimeout()), getContextUserId(), getEditedSince());
@@ -3005,6 +3007,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    *
    * @param pdo the pdo to mark deleted
    */
+  @SuppressWarnings("rawtypes")
   protected void markDeleted(PersistentDomainObject<?> pdo) {
     if (pdo != null) {
       ((AbstractPersistentObject) pdo.getPersistenceDelegate()).markDeleted();
@@ -3055,6 +3058,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    *
    * @param pdo the pdo to mark deleted
    */
+  @SuppressWarnings("rawtypes")
   protected void delete(PersistentDomainObject<?> pdo) {
     if (pdo != null) {
       ((AbstractPersistentObject) pdo.getPersistenceDelegate()).deleteImpl();
@@ -3234,6 +3238,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    *
    * @param pdo the pdo to save
    */
+  @SuppressWarnings("rawtypes")
   public static void save(PersistentDomainObject<?> pdo) {
     if (pdo != null) {
       ((AbstractPersistentObject) pdo.getPersistenceDelegate()).saveImpl();
@@ -3242,6 +3247,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   @Override
+  @SuppressWarnings("rawtypes")
   public T persist() {
     assertRootEntity();
     T obj;
@@ -3704,7 +3710,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       assertRootEntity();
       assertWritePermission();
 
-      if (db.isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
+      if (db.isPersistenceOperationAllowed(this, DbModificationType.UPDATE)) {
         long txVoucher = db.begin(TX_UPDATE_TOKENLOCK);
         try {
           PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateTokenLockStatementId,
@@ -3815,7 +3821,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
       long txVoucher = db.begin(TX_UPDATE_TOKENLOCK);
       try {
-        if (db.isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
+        if (db.isPersistenceOperationAllowed(this, DbModificationType.UPDATE)) {
           PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateTokenLockOnlyStatementId,
               this::createUpdateTokenLockOnlySql);
           st.setLong(1, getEditedBy());
@@ -3861,7 +3867,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       assertRootEntity();
       assertWritePermission();
 
-      if (db.isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
+      if (db.isPersistenceOperationAllowed(this, DbModificationType.UPDATE)) {
         // within a TX cause of countModification to invalidateCache
         long txVoucher = db.begin(TX_TRANSFER_TOKENLOCK);
         try {

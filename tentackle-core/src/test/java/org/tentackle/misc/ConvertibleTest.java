@@ -38,9 +38,9 @@ public class ConvertibleTest {
     Integer oneInt = ONE.toExternal();
     Integer twoInt = TWO.toExternal();
     Integer threeInt = THREE.toExternal();
-    SomeConvertible oneEnum = ConvertibleHelper.toInternal(SomeConvertible.class, oneInt);
-    SomeConvertible twoEnum = ConvertibleHelper.toInternal(SomeConvertible.class, twoInt);
-    SomeConvertible threeEnum = ConvertibleHelper.toInternal(SomeConvertible.class, threeInt);
+    SomeConvertible oneEnum = SomeConvertible.toInternal(oneInt);
+    SomeConvertible twoEnum = SomeConvertible.toInternal(twoInt);
+    SomeConvertible threeEnum = SomeConvertible.toInternal(threeInt);
     Assert.assertEquals(oneInt, Integer.valueOf(100));
     Assert.assertEquals(twoInt, Integer.valueOf(200));
     Assert.assertEquals(threeInt, Integer.valueOf(300));
@@ -48,7 +48,7 @@ public class ConvertibleTest {
     Assert.assertEquals(twoEnum.toExternal(), twoInt);
     Assert.assertEquals(threeEnum.toExternal(), threeInt);
     try {
-      ConvertibleHelper.toInternal(SomeConvertible.class, 400);
+      SomeConvertible.toInternal(400);
       Assert.fail("creating internal value for external 400 should not be possible");
     }
     catch (RuntimeException e) {

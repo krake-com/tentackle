@@ -29,19 +29,25 @@ import java.util.List;
 @SuppressWarnings("rawtypes")   // due to AbstractDbObject<P>
 public class DbBatchStatement {
 
+  /** the prepared statement. */
   private final PreparedStatementWrapper statement;
-  private final DbBatch.Type type;
+
+  /** {@link DbModificationType#INSERT}, {@link DbModificationType#UPDATE} or {@link DbModificationType#DELETE}. */
+  private final ModificationType modType;
+
+  /** the persisted objects so far. */
   private final List<AbstractDbObject> objects;
+
 
   /**
    * Creates a batched statement.
    *
    * @param statement the prepared statement
-   * @param type the statement type
+   * @param modType the statement type
    */
-  public DbBatchStatement(PreparedStatementWrapper statement, DbBatch.Type type) {
+  public DbBatchStatement(PreparedStatementWrapper statement, ModificationType modType) {
     this.statement = statement;
-    this.type = type;
+    this.modType = modType;
     objects = new ArrayList<>();
   }
 
@@ -55,12 +61,13 @@ public class DbBatchStatement {
   }
 
   /**
-   * Gets the statement type.
+   * Gets the statement type.<br>
+   * One of {@link DbModificationType#INSERT}, {@link DbModificationType#UPDATE} or {@link DbModificationType#DELETE}.
    *
    * @return the type
    */
-  public DbBatch.Type getType() {
-    return type;
+  public ModificationType getModType() {
+    return modType;
   }
 
   /**
@@ -84,7 +91,7 @@ public class DbBatchStatement {
       }
       if (statement.getBatchCount() > 0 && statement.getBatchCount() == objects.size()) {
         int[] counts = statement.executeBatch(finish);
-        if (type != DbBatch.Type.INSERT) {  // inserts fail with an exception -> no need to check the count
+        if (modType != DbModificationType.INSERT) {  // inserts fail with an exception -> no need to check the count
           int ndx = 0;
           for (int count : counts) {
             if (count != 1) {
