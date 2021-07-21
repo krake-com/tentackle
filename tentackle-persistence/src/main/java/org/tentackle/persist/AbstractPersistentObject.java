@@ -2929,7 +2929,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       AbstractPersistentObject<T,P> po = (AbstractPersistentObject<T,P>) obj.getPersistenceDelegate();
       if (po.isRootEntity()) {
         // root entities get their own root-context
-        po.setSession(context.getSession());
+        if (!context.isSessionThreadLocal()) {
+          po.setSession(context.getSession());
+        }
         po.setSessionHolder(po.getDomainContext().getRootContext(obj));
       }
       else  {
