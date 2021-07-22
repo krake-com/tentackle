@@ -19,11 +19,23 @@
 package org.tentackle.maven.plugin;
 
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Parameter;
 
+import org.tentackle.common.Settings;
 import org.tentackle.common.StringHelper;
 import org.tentackle.maven.AbstractTentackleMojo;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -33,38 +45,170 @@ import java.util.TreeMap;
 public abstract class AbstractVersionInfoMojo extends AbstractTentackleMojo {
 
   /**
-   * Generates the version properties in XML format.
-   *
-   * @param artifacts the artifacts
-   * @return the version strings
+   * Optional output file.<br>
+   * If the filename ends with <code>.properties</code>, it will be created in properties file format
+   * instead of xml.
    */
-  protected String generateVersionProperties(Set<Artifact> artifacts) {
+  @Parameter(property = "outputFile")
+  private File outputFile;
 
-    Map<String, String> versionsMap = new TreeMap<>();    // property:version, sorted by property name
-    for (Artifact artifact : artifacts) {
-      versionsMap.put(createPropertyName(artifact), artifact.getVersion());
+
+  /**
+   * Controls creation of extra group version properties.<br>
+   * <ul>
+   *   <li>0: no group versions (default)</li>
+   *   <li>&gt;0: create a version property, if at least the given number of artifacts of the same groupId share the same version.</li>
+   *   <li>&lt;0: create a version property, if less than given number of artifacts of the same groupId don't share the same version,
+   *   i.e. -1 means all of the same groupId must refer to the same version.</li>
+   * </ul>
+   */
+  @Parameter(property = "groupVersions")
+  private int groupVersions;
+
+
+  private static class Group {
+    private final String groupId;
+    private final String version;
+
+    private Group(String groupId, String version) {
+      this.groupId = groupId;
+      this.version = version;
     }
 
-    StringBuilder buf = new StringBuilder();
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      Group group = (Group) o;
+      if (!groupId.equals(group.groupId)) {
+        return false;
+      }
+      return version.equals(group.version);
+    }
 
+    @Override
+    public int hashCode() {
+      int result = groupId.hashCode();
+      result = 31 * result + version.hashCode();
+      return result;
+    }
+  }
+
+
+  /**
+   * Generates the version properties.
+   *
+   * @param comment the comment/title
+   * @param artifacts the artifacts
+   */
+  protected void generateVersionProperties(String comment, Set<Artifact> artifacts) throws MojoExecutionException {
+
+    Map<String, String> versionsMap = new TreeMap<>();                    // property -> version: sorted by property name
+    Map<Group, List<Artifact>> groupMap = new HashMap<>();                // groupId+version -> list of artifacts: to build group versions
+
+    for (Artifact artifact : artifacts) {
+      versionsMap.put(createPropertyName(artifact), artifact.getVersion());
+      if (groupVersions != 0) {
+        groupMap.computeIfAbsent(new Group(artifact.getGroupId(), artifact.getVersion()), group -> new ArrayList<>()).add(artifact);
+      }
+    }
+
+    if (isPropertiesFile()) {   // properties files don't use group versions!
+      try (Writer writer = new FileWriter(outputFile, Settings.getEncodingCharset())) {
+          Properties properties = new Properties();
+          for (Map.Entry<String, String> entry : versionsMap.entrySet()) {
+            properties.setProperty(entry.getKey(), entry.getValue());
+          }
+          properties.store(writer, comment);
+      }
+      catch (IOException e) {
+        throw new MojoExecutionException("could not write properties file", e);
+      }
+    }
+
+    if (!groupMap.isEmpty()) {
+      // if more than group with the same groupId: keep only the one with the most artifacts
+      Map<String, Group> reducedGroupMap = new HashMap<>();      // groupId -> group
+      for (Map.Entry<Group, List<Artifact>> entry : groupMap.entrySet()) {
+        String groupId = entry.getKey().groupId;
+        Group group = reducedGroupMap.get(groupId);
+        if (group == null || entry.getValue().size() > groupMap.get(group).size()) {
+          reducedGroupMap.put(groupId, entry.getKey());
+        }
+      }
+
+      // remove groups that don't match the criteria
+      for (Iterator<Map.Entry<Group, List<Artifact>>> iterator=groupMap.entrySet().iterator(); iterator.hasNext(); ) {
+        Map.Entry<Group, List<Artifact>> entry = iterator.next();
+        int size = entry.getValue().size();
+        String groupId = entry.getKey().groupId;
+        if (!reducedGroupMap.containsValue(entry.getKey()) ||
+            groupVersions > 0 && size < groupVersions ||
+            groupVersions < 0 && (size == 1 || size - groupVersions < artifacts.stream().filter(a -> a.getGroupId().equals(groupId)).toList().size())) {
+          iterator.remove();
+        }
+      }
+
+      // add and replace group version properties
+      for (Group group : groupMap.keySet()) {
+        String groupProperty = createGroupPropertyName(group.groupId);
+        String groupLead = groupProperty + ".";
+        versionsMap.put(groupProperty, group.version);
+        for (Map.Entry<String, String> entry : versionsMap.entrySet()) {
+          if (entry.getKey().startsWith(groupLead) && entry.getValue().equals(group.version)) {
+            entry.setValue("${" + groupProperty + "}");
+          }
+        }
+      }
+    }
+
+    StringBuilder xmlBuf = new StringBuilder();
+    xmlBuf.append("<!-- ").append(comment).append(" -->");
     for (Map.Entry<String, String> entry : versionsMap.entrySet()) {
       String name = entry.getKey();
       String version = entry.getValue();
-      buf.append('\n').
+      xmlBuf.append('\n').
           append("<").append(name).append(">").
           append(version).
           append("</").append(name).append(">");
     }
+    String xml = xmlBuf.toString();
 
-    return buf.toString();
+    if (outputFile != null && !isPropertiesFile()) {
+      try (Writer writer = new FileWriter(outputFile, Settings.getEncodingCharset())) {
+        writer.append(xml);
+      }
+      catch (IOException e) {
+        throw new MojoExecutionException("could not write XML file", e);
+      }
+    }
+
+    if (versionsMap.isEmpty()) {
+      getLog().warn("no artifacts found");
+    }
+    else {
+      getLog().info("\n" + xml);
+    }
+  }
+
+  private String createGroupPropertyName(String groupId) {
+    return "version." + camelize(groupId);
   }
 
   private String createPropertyName(Artifact artifact) {
-    return "version." + camalize(artifact.getGroupId()) + "." + camalize(artifact.getArtifactId());
+    return createGroupPropertyName(artifact.getGroupId()) + "." + camelize(artifact.getArtifactId());
   }
 
-  private String camalize(String str) {
+  private String camelize(String str) {
     return StringHelper.toCamelCase(str.replace('-', '.').replace('_', '.'));
+  }
+
+  private boolean isPropertiesFile() {
+    return outputFile != null && outputFile.getName().endsWith(".properties");
   }
 
 }

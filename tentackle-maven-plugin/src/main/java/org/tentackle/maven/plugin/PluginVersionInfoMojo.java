@@ -100,14 +100,7 @@ public class PluginVersionInfoMojo extends AbstractVersionInfoMojo {
         }
       }
 
-      String versions = generateVersionProperties(pluginArtifacts);
-
-      if (versions.isEmpty()) {
-        getLog().warn("no plugins found");
-      }
-      else {
-        getLog().info("versions of plugins:" + versions);
-      }
+      generateVersionProperties("plugins of project '" + getMavenProject().getName() + "'", pluginArtifacts);
     }
     else {
       getLog().info("skipped");
