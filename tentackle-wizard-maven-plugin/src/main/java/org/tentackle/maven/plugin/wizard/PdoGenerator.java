@@ -20,6 +20,7 @@ package org.tentackle.maven.plugin.wizard;
 
 import freemarker.template.Configuration;
 import freemarker.template.TemplateException;
+import org.wurbelizer.misc.Settings;
 
 import org.tentackle.bind.Bindable;
 import org.tentackle.fx.Fx;
@@ -114,7 +115,7 @@ public class PdoGenerator extends AbstractValidateableGenerator {
       // save class ID status, if any classid created
       if (classId != null) {
         statusDir.mkdirs();
-        try (FileWriter statusWriter = new FileWriter(new File(statusDir, profile.getName() + Constants.CLASSID_EXT))) {
+        try (FileWriter statusWriter = new FileWriter(new File(statusDir, profile.getName() + Constants.CLASSID_EXT), Settings.getEncodingCharset())) {
           statusWriter.append(Integer.toString(classId + 1));
         }
       }

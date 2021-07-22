@@ -19,6 +19,7 @@ package org.tentackle.maven;
 
 import freemarker.template.Configuration;
 import freemarker.template.TemplateException;
+import org.wurbelizer.misc.Settings;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -58,7 +59,7 @@ public class GeneratedFile {
    * @throws TemplateException if some template error
    */
   public void generate() throws IOException, TemplateException {
-    try (Writer writer = new FileWriter(outputFile)) {
+    try (Writer writer = new FileWriter(outputFile, Settings.getEncodingCharset())) {
       cfg.getTemplate(templateName).process(model, writer);
     }
   }

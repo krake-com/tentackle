@@ -137,18 +137,12 @@ public class VersionInfoMojo extends AbstractVersionInfoMojo {
         }
       }
 
-      String versions = generateVersionProperties(artifacts);
-
-      String depStr = "dependencies";
+      String comment = "3rd-party dependencies of project '" + getMavenProject().getName() + "'";
       if (scope != null) {
-        depStr += " for scope '" + scope + "'";
+        comment += " for scope '" + scope + "'";
       }
-      if (versions.isEmpty()) {
-        getLog().warn("no 3rd-party " + depStr + " found");
-      }
-      else {
-        getLog().info("versions of 3rd-party " + depStr + ":" + versions);
-      }
+
+      generateVersionProperties(comment, artifacts);
     }
     else {
       getLog().info("skipped");
