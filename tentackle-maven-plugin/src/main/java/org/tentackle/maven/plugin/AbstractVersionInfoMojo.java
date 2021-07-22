@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 /**
  * Base class for the version info mojos.
@@ -148,7 +149,7 @@ public abstract class AbstractVersionInfoMojo extends AbstractTentackleMojo {
         String groupId = entry.getKey().groupId;
         if (!reducedGroupMap.containsValue(entry.getKey()) ||
             groupVersions > 0 && size < groupVersions ||
-            groupVersions < 0 && (size == 1 || size - groupVersions < artifacts.stream().filter(a -> a.getGroupId().equals(groupId)).toList().size())) {
+            groupVersions < 0 && (size == 1 || size - groupVersions < artifacts.stream().filter(a -> a.getGroupId().equals(groupId)).collect(Collectors.toList()).size())) {
           iterator.remove();
         }
       }
