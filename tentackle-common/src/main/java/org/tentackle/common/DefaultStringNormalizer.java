@@ -144,27 +144,29 @@ public class DefaultStringNormalizer implements Function<String,String> {
           case 'D':
             c = 'T';
             break;
-          case 'G':
-            c = 'K';
-            break;
+
           case 'C':
-            c = 'K';
-            break;
-          case 'Y':
-            c = 'I';
-            break;
-          case 'B':
-            c = 'P';
-            break;
+          case 'G':
           case 'Q':
             c = 'K';
             break;
+
+          case 'Y':
+            c = 'I';
+            break;
+
+          case 'B':
+            c = 'P';
+            break;
+
           case 'W':
             c = 'V';
             break;
+
           case 'Z':
             c = 'S';
             break;
+
           default:
             break;
         }

@@ -76,8 +76,8 @@ public class SecurityValidatorImpl extends AbstractObjectValidator<SecurityValid
     if (object instanceof Security) {
       Security security = (Security) object;
       results = new ArrayList<>();
-      /**
-       * // was via scripting formerly -> replaced by object validator to avoid requirement for scripting at all
+      /*
+       * was via scripting formerly -> replaced by object validator to avoid requirement for scripting at all.
        * objectClassName: @NotNull(condition="{object.objectClassId==0}", message="{ @('missing object classname') }")
        * objectClassId: @NotNull(condition="{object.objectClassName==null}", message="{ @('missing object class-ID') }")
        * permissions: @NotNull(message="{ @('missing permissions') }")

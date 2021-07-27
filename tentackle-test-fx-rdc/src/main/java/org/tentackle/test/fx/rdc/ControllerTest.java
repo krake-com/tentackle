@@ -69,7 +69,7 @@ public abstract class ControllerTest extends FxRdcTestApplication {
           try {
             FxController controller = Fx.load(clazz);
             controller.validateInjections();
-            if (anno.binding() != FxControllerService.BINDING.NO) {
+            if (anno == null || anno.binding() != FxControllerService.BINDING.NO) {
               controller.getBinder().assertAllBound();
             }
           }

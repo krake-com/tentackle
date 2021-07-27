@@ -203,7 +203,7 @@ public class FxUtilities {
           Desktop.getDesktop().browse(URI.create(url));
         }
         catch (IOException | RuntimeException ex) {
-          Fx.error(MessageFormat.format(FxFxBundle.getString("CAN'T OPEN HELP FOR <{0}>"), url), ex);
+          Fx.error(MessageFormat.format(FxFxBundle.getString("CANT OPEN HELP FOR {0}"), url), ex);
         }
       }
     }
@@ -284,6 +284,7 @@ public class FxUtilities {
    * @param node the node
    * @return the formatted string
    */
+  @SuppressWarnings("rawtypes")
   public String dumpComponentHierarchy(Node node) {
     StringBuilder buf = new StringBuilder();
     buf.append(">>> component hierarchy within ");
@@ -893,11 +894,12 @@ public class FxUtilities {
    * @param member the binding member
    * @param options the options from the @{@link Bindable} annotation
    */
+  @SuppressWarnings("rawtypes")
   public void applyBindingOptions(TableColumnConfiguration columnConfiguration, BindingMember member, String options) {
     applyBindingOptions(null, columnConfiguration, member, options);
   }
 
-
+  @SuppressWarnings("rawtypes")
   private void applyBindingOptions(FxTextComponent comp, TableColumnConfiguration columnConfiguration, BindingMember member, String options) {
     if (options != null) {
       StringTokenizer stok = new StringTokenizer(options.toUpperCase(), ",");
@@ -1028,6 +1030,7 @@ public class FxUtilities {
    * @param option the option
    * @return true if option known and processed, false if unknown option
    */
+  @SuppressWarnings("rawtypes")
   protected boolean applyBindingOption(TableColumnConfiguration columnConfiguration, BindingMember member, String option) {
 
     boolean processed = false;
@@ -1310,6 +1313,7 @@ public class FxUtilities {
    * @param control the control
    * @return the virtual flow, null if no virtual flow associated to the control
    */
+  @SuppressWarnings("rawtypes")
   public VirtualFlow getVirtualFlow(Skinnable control) {
     VirtualFlow flow = null;
     Skin skin = control.getSkin();
@@ -1335,6 +1339,7 @@ public class FxUtilities {
    * @param row the row to position in the middle of the viewport, if possible
    * @return the row number to pass to the scrollTo method
    */
+  @SuppressWarnings("rawtypes")
   public int computeScrollToCentered(Skinnable control, int row) {
     VirtualFlow flow = getVirtualFlow(control);
     if (flow != null) {

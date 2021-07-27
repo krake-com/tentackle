@@ -358,7 +358,7 @@ public class Query {
    * @param ndx the starting index
    * @return the next paramater index
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public int applyParameters(PreparedStatementWrapper st, int ndx) {
 
     for (QueryItem item : items) {

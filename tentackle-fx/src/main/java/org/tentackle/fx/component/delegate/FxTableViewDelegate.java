@@ -69,12 +69,13 @@ public class FxTableViewDelegate extends FxComponentDelegate {
   }
 
   @Override
+  @SuppressWarnings("rawtypes")
   public ObservableList getViewObject() {
     return component.getItems();
   }
 
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public void setViewObject(Object viewObject) {
     if (viewObject != component.getItems()) {   // equals makes sense here: means the same list
       component.setItems((ObservableList) viewObject);
@@ -84,10 +85,9 @@ public class FxTableViewDelegate extends FxComponentDelegate {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public void setViewValue(Object value) {
     if (value instanceof TrackedList) {
-      modelList = (TrackedList) value;
+      modelList = (TrackedList<?>) value;
     }
     else {
       modelList = null;

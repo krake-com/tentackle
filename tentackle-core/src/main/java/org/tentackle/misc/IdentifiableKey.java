@@ -20,6 +20,7 @@
 package org.tentackle.misc;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * Key for an Identifiable.<br>
@@ -100,7 +101,7 @@ public class IdentifiableKey<T extends Identifiable> implements Comparable<Ident
     }
     @SuppressWarnings("unchecked")
     final IdentifiableKey<T> other = (IdentifiableKey<T>) obj;
-    if (this.identifiableClass != other.identifiableClass && (this.identifiableClass == null || !this.identifiableClass.equals(other.identifiableClass))) {
+    if (!Objects.equals(this.identifiableClass, other.identifiableClass)) {
       return false;
     }
     return this.identifiableId == other.identifiableId;

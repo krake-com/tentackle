@@ -261,8 +261,6 @@ public class Postgres extends AbstractSql92Backend {
         return TYPE_BOOL;
 
       case TINYINT:
-        return TYPE_INT2;
-
       case SMALLINT:
         return TYPE_INT2;
 

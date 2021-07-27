@@ -102,10 +102,10 @@ public class SizeImpl extends AbstractValidator<Size> {
         size = ((String) object).length();
       }
       else if (object instanceof Collection) {
-        size = ((Collection) object).size();
+        size = ((Collection<?>) object).size();
       }
       else if (object instanceof Map) {
-        size = ((Map) object).size();
+        size = ((Map<?,?>) object).size();
       }
       else if (object instanceof Array) {
         size = Array.getLength(object);

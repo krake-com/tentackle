@@ -144,8 +144,6 @@ public class Informix extends AbstractSql92Backend {
         return TYPE_BOOLEAN;
 
       case TINYINT:
-        return TYPE_SMALLINT;
-
       case SMALLINT:
         return TYPE_SMALLINT;
 

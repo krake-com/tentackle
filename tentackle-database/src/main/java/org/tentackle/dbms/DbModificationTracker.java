@@ -570,8 +570,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     String name = SessionUtilities.getInstance().getTableName(clazz.getName());
     if (name == null) {
       // not annotated with @TableName: try to instantiate and get from AbstractDbObject
-      @SuppressWarnings("unchecked")
-      AbstractDbObject<?> obj = (AbstractDbObject) DbUtilities.getInstance().createObject((Class) clazz);
+      AbstractDbObject<?> obj = (AbstractDbObject<?>) DbUtilities.getInstance().createObject((Class<?>) clazz);
       if (obj != null) {
         name = obj.getTableName();
       }

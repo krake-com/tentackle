@@ -126,7 +126,6 @@ public class MigrationUtilities {
               if (syllable.length() == 0) {
                 syllable.append(c);
                 containsVowel |= isVwl;
-                lastChar = c;
               }
               else {
                 if (!isVwl && containsVowel && i < len - 2 && containsVowel(s.substring(i + 1))) {
@@ -141,8 +140,8 @@ public class MigrationUtilities {
                   syllable.append(c);
                   containsVowel |= isVwl;
                 }
-                lastChar = c;
               }
+              lastChar = c;
             }
           }
         }
@@ -198,11 +197,14 @@ public class MigrationUtilities {
 
     @Override
     public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
       MatchResult that = (MatchResult) o;
-      if (!existingName.equals(that.existingName)) return false;
-      return true;
+      return existingName.equals(that.existingName);
     }
 
     @Override

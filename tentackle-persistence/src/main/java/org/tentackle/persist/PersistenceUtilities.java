@@ -44,7 +44,7 @@ import org.tentackle.session.SessionPoolProvider;
 public class PersistenceUtilities extends DbUtilities {
 
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public <T> T createObject(Class<T> clazz) {
     T obj;
     if (PersistentDomainObject.class.isAssignableFrom(clazz)) {
@@ -58,7 +58,7 @@ public class PersistenceUtilities extends DbUtilities {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public <T> T selectObject(Session session, Class<T> clazz, long objectId, boolean loadLazyReferences) {
     T obj = null;
     if (PersistentDomainObject.class.isAssignableFrom(clazz)) {
@@ -87,7 +87,7 @@ public class PersistenceUtilities extends DbUtilities {
         tableSerialTableName = po.getTableName();
         if (clazzVar instanceof PersistentObjectClassVariables) {
           // check if the topmost superclass provides its own table: take that
-          PersistentObjectClassVariables<?, ?> cv = (PersistentObjectClassVariables) clazzVar;
+          PersistentObjectClassVariables<?, ?> cv = (PersistentObjectClassVariables<?, ?>) clazzVar;
           while (cv != null) {
             if (cv.tableName != null) {
               tableSerialTableName = cv.tableName;

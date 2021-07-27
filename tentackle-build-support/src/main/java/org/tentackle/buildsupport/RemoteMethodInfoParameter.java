@@ -196,7 +196,7 @@ public class RemoteMethodInfoParameter {
       buf.append(' ');
       buf.append(modStr);
     }
-    writer.print(buf.toString());
+    writer.print(buf);
   }
 
   @Override

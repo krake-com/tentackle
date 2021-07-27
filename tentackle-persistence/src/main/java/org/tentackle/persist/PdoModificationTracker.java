@@ -44,7 +44,7 @@ public class PdoModificationTracker extends DbModificationTracker {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public long getSerial(Class<?> clazz) {
     if (PersistentDomainObject.class.isAssignableFrom(clazz)) {
       return getSerial(PdoUtilities.getInstance().getTableName((Class) clazz));

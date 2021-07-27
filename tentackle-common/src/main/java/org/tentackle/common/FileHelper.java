@@ -171,7 +171,7 @@ public class FileHelper {
           else if (recursive && file.isDirectory()) {
             File subDir = new File(dstDir, file.getName());
             subDir.mkdir();
-            count += copyDirectory(file, subDir, recursive, filter);
+            count += copyDirectory(file, subDir, true, filter);
           }
         }
       }

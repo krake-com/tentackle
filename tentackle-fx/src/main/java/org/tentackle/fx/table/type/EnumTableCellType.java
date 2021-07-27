@@ -34,6 +34,7 @@ import org.tentackle.fx.table.TableCellTypeService;
  * @author harald
  */
 @TableCellTypeService(Enum.class)
+@SuppressWarnings("rawtypes")
 public class EnumTableCellType extends AbstractTableCellType<Enum> {
 
   @Override

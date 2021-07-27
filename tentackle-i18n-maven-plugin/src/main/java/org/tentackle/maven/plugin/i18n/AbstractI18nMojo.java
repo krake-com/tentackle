@@ -165,7 +165,7 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
       ModificationTracker pdoTracker = ModificationTracker.getInstance();   // create tracker but don't start the thread
       pdoTracker.setSession(session);
 
-      List<MavenProject> projects = new ArrayList<>();
+      List<MavenProject> projects;
       if (isExecutionRecursive()) {
         projects = new ArrayList<>();
         projects.add(getMavenProject());

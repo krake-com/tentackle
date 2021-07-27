@@ -95,7 +95,6 @@ public class FxDatePickerDelegate extends FxTextComponentDelegate {
   }
 
   @Override
-  @SuppressWarnings({ "unchecked", "rawtypes" })
   public void setViewValue(Object value) {
     Pos alignment = component.getTextAlignment();
     if (alignment != null) {

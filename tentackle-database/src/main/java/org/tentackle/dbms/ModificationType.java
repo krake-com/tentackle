@@ -21,8 +21,6 @@ package org.tentackle.dbms;
 import org.tentackle.misc.Convertible;
 import org.tentackle.session.PersistenceException;
 
-import java.util.Objects;
-
 /**
  * The modification type.<br>
  * The default types are defined in {@link DbModificationType}, which is an enum.

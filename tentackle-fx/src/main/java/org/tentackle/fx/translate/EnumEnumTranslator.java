@@ -27,6 +27,7 @@ import org.tentackle.fx.ValueTranslatorService;
  * @author harald
  */
 @ValueTranslatorService(modelClass = Enum.class, viewClass = Enum.class)
+@SuppressWarnings("rawtypes")
 public class EnumEnumTranslator extends IdentityTranslator<Enum> {
 
   /**

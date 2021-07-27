@@ -197,11 +197,6 @@ public class SocketImplWrapper extends SocketImpl {
         soc.setReuseAddress(bval);
         break;
 
-      // case SocketOptions.SO_BROADCAST:  ?? -> not supported
-      // case SocketOptions.IP_MULTICAST_IF:
-      // case SocketOptions.IP_MULTICAST_IF2:
-      // case SocketOptions.IP_MULTICAST_LOOP:
-
       case SocketOptions.IP_TOS:
         soc.setTrafficClass(ival);
         break;
@@ -247,11 +242,6 @@ public class SocketImplWrapper extends SocketImpl {
 
       case SocketOptions.SO_REUSEADDR:
         return soc.getReuseAddress();
-
-      // case SocketOptions.SO_BROADCAST:  ?? -> not supported
-      // case SocketOptions.IP_MULTICAST_IF:
-      // case SocketOptions.IP_MULTICAST_IF2:
-      // case SocketOptions.IP_MULTICAST_LOOP:
 
       case SocketOptions.IP_TOS:
         return soc.getTrafficClass();

@@ -50,6 +50,7 @@ public @interface PdoTreeContextMenuItemService {
    *
    * @return the PDO class
    */
+  @SuppressWarnings("rawtypes")
   Class<? extends PersistentDomainObject> value();
 
   /**

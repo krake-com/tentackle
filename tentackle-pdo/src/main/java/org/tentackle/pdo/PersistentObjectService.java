@@ -46,6 +46,7 @@ public @interface PersistentObjectService {
    *
    * @return the PDO interface
    */
+  @SuppressWarnings("rawtypes")
   Class<? extends PersistentDomainObject> value();  // no <?> because of abstract PDOs!
 
 }

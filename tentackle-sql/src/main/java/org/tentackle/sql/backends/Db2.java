@@ -108,11 +108,7 @@ public class Db2 extends AbstractSql2003Backend {
     switch(sqlType) {
 
       case BIT:
-        return TYPE_SMALLINT;
-
       case TINYINT:
-        return TYPE_SMALLINT;
-
       case SMALLINT:
         return TYPE_SMALLINT;
 
@@ -138,8 +134,6 @@ public class Db2 extends AbstractSql2003Backend {
         return TYPE_VARCHAR;
 
       case DATE:
-        return TYPE_DATE;
-
       case TIME:
         return TYPE_DATE;
 

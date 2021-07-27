@@ -118,6 +118,7 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
    * @param extraSql optional SQL code (usually a WHERE clause)
    * @param joiner the joiner
    */
+  @SuppressWarnings("rawtypes")
   public Join(JoinType type, String columnName, String joinedColumnName, Class<J> joinedClass,
               String joinAlias, String extraSql, BiConsumer<T, J> joiner) {
 

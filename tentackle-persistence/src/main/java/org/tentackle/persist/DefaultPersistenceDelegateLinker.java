@@ -32,13 +32,13 @@ import org.tentackle.pdo.PersistentOperation;
 public class DefaultPersistenceDelegateLinker implements PersistenceDelegateLinker {
 
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public <T extends PersistentDomainObject<T>> void linkPersistentObject(T pdo, PersistentObject<T> delegate) {
     ((AbstractPersistentObject) delegate).setPdo(pdo);
   }
 
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public <T extends Operation<T>> void linkPersistentOperation(T operation, PersistentOperation<T> delegate) {
     ((AbstractPersistentOperation) delegate).setOperation(operation);
   }

@@ -144,10 +144,10 @@ public class ValidationUtilities {
         return false;
       }
       final ValidatorKey other = (ValidatorKey) obj;
-      if ((this.elementName == null) ? (other.elementName != null) : !this.elementName.equals(other.elementName)) {
+      if (!Objects.equals(this.elementName, other.elementName)) {
         return false;
       }
-      if (this.validatorClass != other.validatorClass && (this.validatorClass == null || !this.validatorClass.equals(other.validatorClass))) {
+      if (this.validatorClass != other.validatorClass) {
         return false;
       }
       return this.validationIndex == other.validationIndex;

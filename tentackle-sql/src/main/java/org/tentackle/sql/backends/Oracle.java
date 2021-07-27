@@ -258,20 +258,6 @@ public class Oracle extends AbstractSql2003Backend {
     return false;
   }
 
-  // Oracle supports only named arrays created by an oracle specific createARRAY method.
-//  @Override
-//  public boolean isArrayOperatorSupported() {
-//    return false;
-//  }
-
-
-  // Oracle supports function-based indexes, but does not return a usable JDBC metadata.
-  // -> migration would always fail.
-//  @Override
-//  public boolean isFunctionBasedIndexSupported() {
-//    return true;
-//  }
-
   @Override
   public void assertValidName(SqlNameType nameType, String name) {
     super.assertValidName(nameType, name);
@@ -366,8 +352,6 @@ public class Oracle extends AbstractSql2003Backend {
     switch(sqlType) {
 
       case BIT:
-        return TYPE_NUMBER_1;
-
       case TINYINT:
         return TYPE_NUMBER_1;
 
@@ -396,8 +380,6 @@ public class Oracle extends AbstractSql2003Backend {
         return TYPE_VARCHAR;
 
       case DATE:
-        return TYPE_DATE;
-
       case TIME:
         return TYPE_DATE;
 

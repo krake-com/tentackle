@@ -498,7 +498,7 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
   }
 
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public void setViewValue(Object value) {
     ValueTranslator translator = getValueTranslator();
     Object viewObject = translator.toView(value);
@@ -507,7 +507,7 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
   }
 
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public <V> V getViewValue() {
     ValueTranslator translator = getValueTranslator();
     return (V) translator.toModel(getViewObject());

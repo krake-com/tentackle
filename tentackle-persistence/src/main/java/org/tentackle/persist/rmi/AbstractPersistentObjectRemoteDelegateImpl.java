@@ -20,6 +20,7 @@
 package org.tentackle.persist.rmi;
 
 import org.tentackle.common.Timestamp;
+import org.tentackle.dbms.AbstractDbObject;
 import org.tentackle.dbms.rmi.AbstractDbObjectRemoteDelegateImpl;
 import org.tentackle.dbms.rmi.DbObjectResult;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
@@ -112,7 +113,7 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
     }
     T newPdo = context == null ? Pdo.create(pdoClass, getSession()) : Pdo.create(pdoClass, context);
     // allow overloads for simple proxy objects
-    ((AbstractPersistentObject) newPdo.getPersistenceDelegate()).setOverloadable(true);
+    ((AbstractDbObject<?>) newPdo.getPersistenceDelegate()).setOverloadable(true);
     return newPdo;
   }
 

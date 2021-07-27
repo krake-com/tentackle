@@ -89,7 +89,7 @@ public final class StringHelper {
    * @return true if equal ignoring the case or both are null
    */
   public static boolean equalsIgnoreCase(String a, String b) {
-    return (a == b) || (a != null && a.equalsIgnoreCase(b));
+    return (a == b) || (a != null && a.equalsIgnoreCase(b));      // == is ok!
   }
 
 
@@ -1417,8 +1417,8 @@ public final class StringHelper {
         return buf.toString();
       }
       else if (maxLogCollectionSize > 0 && object instanceof Collection &&
-               ((Collection) object).size() > maxLogCollectionSize) {
-        return "[" + ((Collection) object).size() + " items]";
+               ((Collection<?>) object).size() > maxLogCollectionSize) {
+        return "[" + ((Collection<?>) object).size() + " items]";
       }
       else {
         return object.toString();

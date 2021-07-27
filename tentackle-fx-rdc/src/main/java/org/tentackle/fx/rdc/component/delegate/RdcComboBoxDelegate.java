@@ -66,6 +66,7 @@ public class RdcComboBoxDelegate extends FxComboBoxDelegate {
   }
 
 
+  @SuppressWarnings("rawtypes")
   private PdoComponentAddon getPdoAddon() {
     ValueTranslator translator = getValueTranslator();
     if (translator instanceof PdoStringTranslator) {

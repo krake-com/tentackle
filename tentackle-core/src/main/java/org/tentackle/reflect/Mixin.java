@@ -42,9 +42,12 @@ public class Mixin<T, M extends Serializable> implements Serializable {
    * Key to speed up lookup of constructors.
    */
   private static class ConstructorKey {
+    @SuppressWarnings("rawtypes")
     private final Class implClass;
+    @SuppressWarnings("rawtypes")
     private final Class[] parameterTypes;
 
+    @SuppressWarnings("rawtypes")
     public ConstructorKey(Class implClass, Class[] parameterTypes) {
       this.implClass = implClass;
       this.parameterTypes = parameterTypes;
@@ -52,10 +55,16 @@ public class Mixin<T, M extends Serializable> implements Serializable {
 
     @Override
     public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
       ConstructorKey that = (ConstructorKey) o;
-      if (implClass != null ? !implClass.equals(that.implClass) : that.implClass != null) return false;
+      if (implClass != that.implClass) {
+        return false;
+      }
       return Arrays.equals(parameterTypes, that.parameterTypes);
     }
 
@@ -70,6 +79,7 @@ public class Mixin<T, M extends Serializable> implements Serializable {
   /**
    * Cache to speed up constructor lookup.
    */
+  @SuppressWarnings("rawtypes")
   private static final Map<ConstructorKey, Constructor> CONSTRUCTOR_MAP = new ConcurrentHashMap<>();
 
   /**
@@ -165,7 +175,7 @@ public class Mixin<T, M extends Serializable> implements Serializable {
    * @throws IllegalAccessException if delegate could not be instantiated
    * @throws InvocationTargetException if delegate could not be instantiated
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public void createDelegate(Class<?>[] constructorArgumentClasses, Object[] constructorArguments)
          throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 

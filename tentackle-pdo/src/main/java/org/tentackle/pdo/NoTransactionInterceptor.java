@@ -36,6 +36,7 @@ public class NoTransactionInterceptor extends AbstractInterceptor {
 
 
   @Override
+  @SuppressWarnings("rawtypes")
   public Object proceed(Object proxy, Method method, Object[] args,
                         Object orgProxy, Method orgMethod, Object[] orgArgs) throws Throwable {
 

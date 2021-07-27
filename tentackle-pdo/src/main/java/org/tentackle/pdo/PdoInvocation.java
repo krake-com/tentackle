@@ -35,6 +35,7 @@ public interface PdoInvocation {
    * @return the method's return value
    * @throws Throwable if invocation fails
    */
+  @SuppressWarnings("rawtypes")
   Object invoke(PdoInvocationHandler invocationHandler, InterceptableMethod method, Object[] args) throws Throwable;
 
 }

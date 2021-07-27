@@ -1084,7 +1084,7 @@ public class Db implements Session, Cloneable {
     this.alive = alive;
     if (alive && isRemote()) {    // only for alive=true -> to remote side (remote times out on its own if false)
       try {
-        resources.rdel.setAlive(alive);
+        resources.rdel.setAlive(true);
       }
       catch (RemoteException e)  {
         throw PersistenceException.createFromRemoteException(this, e);

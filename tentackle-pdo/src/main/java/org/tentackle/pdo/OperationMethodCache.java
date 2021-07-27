@@ -38,6 +38,7 @@ public class OperationMethodCache<T extends Operation<T>> {
   /**
    * Maps operation classes to caches.
    */
+  @SuppressWarnings("rawtypes")
   private static final ConcurrentHashMap<Class<? extends Operation>, OperationMethodCache> CACHE_MAP = new ConcurrentHashMap<>();
 
 
@@ -48,7 +49,7 @@ public class OperationMethodCache<T extends Operation<T>> {
    * @return the method cache
    */
   @SuppressWarnings("unchecked")
-  public static <T extends Operation<T>> OperationMethodCache getCache(Class<T> effectiveClass) {
+  public static <T extends Operation<T>> OperationMethodCache<T> getCache(Class<T> effectiveClass) {
     return CACHE_MAP.computeIfAbsent(effectiveClass, OperationMethodCache::new);
   }
 

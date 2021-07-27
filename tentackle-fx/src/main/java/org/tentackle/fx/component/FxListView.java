@@ -120,7 +120,6 @@ public class FxListView<T> extends ListView<T> implements FxComponent {
    * @param commaSeparated true if separate multiple items via commas instead of newlines
    * @return the copied text, null if nothing copied
    */
-  @SuppressWarnings("unchecked")
   public String copyToClipboard(boolean commaSeparated) {
     String separator = FxUtilities.getInstance().getCsvSeparator();
     StringBuilder buf = new StringBuilder();

@@ -181,8 +181,6 @@ public class MySql extends AbstractSql92Backend {
     switch(sqlType) {
 
       case BIT:
-        return TYPE_TINYINT;
-
       case TINYINT:
         return TYPE_TINYINT;
 
@@ -214,8 +212,6 @@ public class MySql extends AbstractSql92Backend {
         return TYPE_DATE;
 
       case TIME:
-        return TYPE_DATETIME;
-
       case TIMESTAMP:
         return TYPE_DATETIME;
 

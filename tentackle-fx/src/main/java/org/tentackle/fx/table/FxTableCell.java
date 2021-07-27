@@ -222,7 +222,7 @@ public class FxTableCell<S,T> extends TableCell<S,T> {
    *
    * @return the position, null if none selected
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   protected TablePosition<S, T> getPosition() {
     ObservableList<TablePosition> cells = getTableView().getSelectionModel().getSelectedCells();
     return cells.isEmpty() ? null : cells.get(0);

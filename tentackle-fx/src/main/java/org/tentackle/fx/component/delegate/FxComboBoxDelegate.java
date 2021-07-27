@@ -75,7 +75,7 @@ public class FxComboBoxDelegate extends FxTextComponentDelegate {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public void setType(Class<?> type) {
     // important to set the type before creating the translator,
     // since the translator may need to know the type
@@ -97,7 +97,7 @@ public class FxComboBoxDelegate extends FxTextComponentDelegate {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public void setViewObject(Object viewObject) {
     if (component.isEditable()) {
       Pos alignment = component.getTextAlignment();
@@ -114,7 +114,7 @@ public class FxComboBoxDelegate extends FxTextComponentDelegate {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public void setViewValue(Object value) {
     if (component.isEditable()) {
       ValueTranslator translator = getValueTranslator();
@@ -125,7 +125,7 @@ public class FxComboBoxDelegate extends FxTextComponentDelegate {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public <V> V getViewValue() {
     Object value = getViewObject();
     if (component.isEditable()) {

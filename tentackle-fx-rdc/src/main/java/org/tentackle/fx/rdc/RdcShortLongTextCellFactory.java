@@ -32,7 +32,7 @@ public class RdcShortLongTextCellFactory<T> extends ShortLongTextCellFactory<T> 
   @Override
   protected ShortLongText getShortLongText(T item) {
     ShortLongText slItem = super.getShortLongText(item);
-    if (slItem instanceof PersistentDomainObject && !((PersistentDomainObject) slItem).isViewAllowed()) {
+    if (slItem instanceof PersistentDomainObject && !((PersistentDomainObject<?>) slItem).isViewAllowed()) {
       slItem = null;
     }
     return slItem;

@@ -413,7 +413,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
                 }
               }
               else {
-                if (CACHED.equals(token.toLowerCase())) {
+                if (CACHED.equalsIgnoreCase(token)) {
                   setSelectionCached(true);
                 }
                 else {
@@ -432,7 +432,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
           case DELETE:
             while (stok.hasMoreTokens()) {
               String token = stok.nextToken();
-              if (CASCADE.equals(token.toLowerCase())) {
+              if (CASCADE.equalsIgnoreCase(token)) {
                 setDeletionCascaded(true);
               }
               else {

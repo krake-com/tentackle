@@ -205,7 +205,7 @@ public class PropertyMapping<T> {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    PropertyMapping that = (PropertyMapping) o;
+    PropertyMapping<?> that = (PropertyMapping<?>) o;
     return name.equals(that.name);
   }
 

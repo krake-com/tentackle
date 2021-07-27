@@ -46,6 +46,7 @@ public @interface DomainOperationService {
    *
    * @return the operation interface
    */
+  @SuppressWarnings("rawtypes")
   Class<? extends Operation> value();    // no <?> because of abstract operations!
 
 }

@@ -27,6 +27,7 @@ import org.tentackle.misc.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -281,14 +282,13 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
       return false;
     }
     final StatementStatistics other = (StatementStatistics) obj;
-    if ((this.sql == null) ? (other.sql != null) : !this.sql.equals(other.sql)) {
+    if (!Objects.equals(this.sql, other.sql)) {
       return false;
     }
-    if ((this.txName == null) ? (other.txName != null) : !this.txName.equals(other.txName)) {
+    if (!Objects.equals(this.txName, other.txName)) {
       return false;
     }
-    return !(this.parameters != other.parameters &&
-             (this.parameters == null || !this.parameters.equals(other.parameters)));
+    return Objects.equals(this.parameters, other.parameters);
   }
 
 

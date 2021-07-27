@@ -79,7 +79,7 @@ public class DbUtilities {
    * @param clazz the object class
    * @return the initialized object, null if clazz is not a persistence class
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public <T> T createObject(Class<T> clazz) {
     T object = null;
     if (AbstractDbObject.class.isAssignableFrom(clazz)) {
@@ -99,7 +99,7 @@ public class DbUtilities {
    * @param loadLazyReferences true if load lazy references
    * @return the object, null if no such object
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public <T> T selectObject(Session session, Class<T> clazz, long objectId, boolean loadLazyReferences) {
     T object = null;
     if (AbstractDbObject.class.isAssignableFrom(clazz)) {
@@ -393,12 +393,12 @@ public class DbUtilities {
       throw new PersistenceException("column offset must be zero");
     }
 
-    int columnCount = rs.getColumnCount();                        // number of result columns
     String[] columnNames;                                         // converted column names
+    Method builderMethod;                                         // static method to create a builder, if builder pattern is used
+    Class<?> builderClass;                                        // the class of the builder
+    int columnCount = rs.getColumnCount();                        // number of result columns
     List<T> dtos = new ArrayList<>();                             // returned list of DTOs
-    Method builderMethod = null;                                  // static method to create a builder, if builder pattern is used
     Method buildMethod = null;                                    // the build-method of the builder
-    Class<?> builderClass = null;                                 // the class of the builder
     Constructor<T> noArgConstructor = null;                       // != null for the setter pattern
     List<ColumnMapping> builderMapping = new ArrayList<>();       // mappings for the builder pattern
     List<ColumnMapping> setterMapping = new ArrayList<>();        // mappings for the setters
@@ -470,8 +470,8 @@ public class DbUtilities {
 
     try {
       while (rs.next()) {
-        Object builder = null;
-        T dto = null;
+        Object builder;
+        T dto;
         if (builderMethod != null) {
           builder = builderMethod.invoke(null);
           retrieveColumnMappings(builderMapping, builder, rs);

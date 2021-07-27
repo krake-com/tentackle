@@ -23,6 +23,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
@@ -82,10 +83,10 @@ public class ValidatorCache {
         return false;
       }
       final FieldMethodKey other = (FieldMethodKey) obj;
-      if (this.field != other.field && (this.field == null || !this.field.equals(other.field))) {
+      if (!Objects.equals(this.field, other.field)) {
         return false;
       }
-      return this.method == other.method || (this.method != null && this.method.equals(other.method));
+      return Objects.equals(this.method, other.method);
     }
 
     @Override

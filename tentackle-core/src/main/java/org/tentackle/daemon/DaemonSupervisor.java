@@ -369,7 +369,7 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
             }
           }
         }
-        else if (daemonDiff > 0) {
+        else {    // daemonDiff > 0
           for (int i = 0; i < daemonNum; i++) {
             newDaemons[i] = i < oldDaemons.length ? oldDaemons[i] : new Daemon(i);
           }

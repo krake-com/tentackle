@@ -105,7 +105,7 @@ public class FxChoiceBoxDelegate extends FxComponentDelegate {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public void setViewObject(Object value) {
     ((FxChoiceBox) component).getSelectionModel().select(value);
   }

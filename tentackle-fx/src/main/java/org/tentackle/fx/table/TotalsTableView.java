@@ -156,7 +156,7 @@ public class TotalsTableView<S> extends FxTableView<S> {
    * @param boundColumn the original column
    * @return the totals column
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   protected TableColumn<S,?> createTotalsColumn(TableColumn<S,?> boundColumn) {
     TableColumn totalsColumn = new TableColumn<>();
     if (isSummable(boundColumn)) {
@@ -176,8 +176,9 @@ public class TotalsTableView<S> extends FxTableView<S> {
    * @param boundColumn the column
    * @return true if summable
    */
+  @SuppressWarnings("unchecked")
   protected boolean isSummable(TableColumn<S,?> boundColumn) {
-    return boundColumn instanceof FxTableColumn && ((FxTableColumn) boundColumn).getConfiguration().isSummable();
+    return boundColumn instanceof FxTableColumn && ((FxTableColumn<S,?>) boundColumn).getConfiguration().isSummable();
   }
 
 }

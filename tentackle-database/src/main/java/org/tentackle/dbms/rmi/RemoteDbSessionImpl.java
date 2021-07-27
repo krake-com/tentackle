@@ -1039,7 +1039,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
     T delegate = (T) (effectiveClass == null ? constructor.newInstance(this, clazz) :
                                                constructor.newInstance(this, effectiveClass, clazz));
 
-    ((RemoteDelegateImpl) delegate).initialize();
+    ((RemoteDelegateImpl<?>) delegate).initialize();
 
     // optionally configure the created delegate
     if (configArgs != null && configArgs.length > 0) {
@@ -1068,7 +1068,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * @throws IllegalArgumentException if wrong arguments
    * @throws InvocationTargetException if invocation failed
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public <T extends RemoteDelegate, I extends RemoteDelegateImpl<?>> T createRemoteDelegate(
 
           Class<T> delegateClass,

@@ -156,11 +156,7 @@ public class MsSql extends AbstractSql2003Backend {
         return size == 0 ? TYPE_NVARCHAR_MAX : TYPE_NVARCHAR;
 
       case DATE:
-        return TYPE_DATETIME;
-
       case TIME:
-        return TYPE_DATETIME;
-
       case TIMESTAMP:
         return TYPE_DATETIME;
 

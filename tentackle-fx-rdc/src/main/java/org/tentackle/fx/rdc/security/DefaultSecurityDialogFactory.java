@@ -64,7 +64,7 @@ public class DefaultSecurityDialogFactory implements SecurityDialogFactory {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public void showDialog(int classId, DomainContext context) {
     try {
       Class<PersistentDomainObject> cls = (Class<PersistentDomainObject>)

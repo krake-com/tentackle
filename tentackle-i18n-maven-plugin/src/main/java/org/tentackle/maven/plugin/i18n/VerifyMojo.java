@@ -49,7 +49,7 @@ public class VerifyMojo extends AbstractVerifyMojo {
       appendCount(buf, differingTranslations.size(), " differing translation");
       StoredBundle bundle = null;
       for (Translation translation : differingTranslations) {
-        if (!translation.equals(bundle)) {
+        if (!translation.bundle.equals(bundle)) {
           // next bundle
           bundle = translation.bundle;
           buf.append('\n').append(bundle).append(':');
@@ -104,7 +104,7 @@ public class VerifyMojo extends AbstractVerifyMojo {
       appendCount(buf, missingTrans.size(), " missing translation");
       StoredBundle bundle = null;
       for (Translation translation : missingTrans) {
-        if (!translation.equals(bundle)) {
+        if (!translation.bundle.equals(bundle)) {
           // next bundle
           bundle = translation.bundle;
           buf.append('\n').append(bundle).append(':');
@@ -121,7 +121,7 @@ public class VerifyMojo extends AbstractVerifyMojo {
       appendCount(buf, missingTrans.size(), " missing default translation");
       StoredBundle bundle = null;
       for (Translation translation : missingTrans) {
-        if (!translation.equals(bundle)) {
+        if (!translation.bundle.equals(bundle)) {
           // next bundle
           bundle = translation.bundle;
           buf.append('\n').append(bundle).append(':');

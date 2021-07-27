@@ -100,10 +100,6 @@ public class MappedServiceAnalyzeHandler extends AbstractAnalyzeHandler {
             break;
           }
         }
-        if (methodName == null) {
-          print(Kind.ERROR, "method name set to null in @" + StringHelper.lastAfter(ANNOTATION_NAME, '.'), element);
-          continue;
-        }
         if (serviceClassName == null) {
           print(Kind.ERROR, "no '" + methodName + "' method in @" + StringHelper.lastAfter(ANNOTATION_NAME, '.'), element);
           continue;

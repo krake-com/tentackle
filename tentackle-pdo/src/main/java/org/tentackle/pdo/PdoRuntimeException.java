@@ -224,7 +224,7 @@ public class PdoRuntimeException extends PersistenceException {
    * @return the object, null if exception is not related to an object
    */
   public PersistentDomainObject<?> getPdo() {
-    return (PersistentDomainObject) getIdentifiable();
+    return (PersistentDomainObject<?>) getIdentifiable();
   }
 
 }
