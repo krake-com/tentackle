@@ -115,7 +115,7 @@ public class ObjectUtilities {
    * @param value the value
    * @return the converted value, null if value is null
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public <T> T convert(Class<T> clazz, Object value) {
 
     if (value == null) {

@@ -34,6 +34,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
@@ -159,7 +160,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
         return false;
       }
       final ForeignReference other = (ForeignReference) obj;
-      if (this.method != other.method && (this.method == null || !this.method.equals(other.method))) {
+      if (!Objects.equals(this.method, other.method)) {
         return false;
       }
       return this.priority == other.priority;

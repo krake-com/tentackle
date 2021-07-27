@@ -437,7 +437,7 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
     }
 
     if (isMDCValid()) {
-      int collectionSize = retval instanceof Collection ? ((Collection) retval).size() : 0;
+      int collectionSize = retval instanceof Collection ? ((Collection<?>) retval).size() : 0;
       boolean collectionSizeExceeded = logMinReturnedCollectionSize > 0 && collectionSize > logMinReturnedCollectionSize;
 
       if (durationExceeded || collectionSizeExceeded) {

@@ -178,7 +178,7 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
    * @return the node, null if skip attribute
    * @see Bindable
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   protected FxComponent createNode(PdoMember attribute) {
     FxComponent node = null;
     Bindable bindable = attribute.getGetter().getAnnotation(Bindable.class);

@@ -49,11 +49,13 @@ public class DefaultTableConfigurationProviderFactory implements TableConfigurat
   /**
    * Value for no co provider found.
    */
+  @SuppressWarnings("rawtypes")
   private final TableConfigurationProvider noProvider;
 
   /**
    * Creates the factory.
    */
+  @SuppressWarnings("rawtypes")
   public DefaultTableConfigurationProviderFactory() {
     classMapper = ClassMapper.create("FX table-config-provider", TableConfigurationProvider.class);
     noProvider = new DefaultTableConfigurationProvider();

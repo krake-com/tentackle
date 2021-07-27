@@ -211,7 +211,7 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
    * @param swap true to swap row/columns of copied cells (rows become columns and columns become rows)
    * @return the copied text, null if nothing copied
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public String copyToClipboard(boolean swap) {
     List<TablePosition> selectedCells = getSelectionModel().getSelectedCells();
 

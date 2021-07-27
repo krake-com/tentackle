@@ -69,21 +69,21 @@ public class FxTreeViewDelegate extends FxComponentDelegate {
   }
 
   @Override
+  @SuppressWarnings("rawtypes")
   public TreeItem getViewObject() {
     return component.getRoot();
   }
 
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public void setViewObject(Object viewObject) {
     component.setRoot((TreeItem) viewObject);
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public void setViewValue(Object value) {
     if (value instanceof TrackedList) {
-      modelList = (TrackedList) value;
+      modelList = (TrackedList<?>) value;
     }
     else {
       modelList = null;

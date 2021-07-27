@@ -68,7 +68,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    * @param <T> the PDO class type
    * @param <P> the persistence class type
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public static <T extends PersistentDomainObject<T>, P extends AbstractPersistentObject<T,P>> PersistentObjectClassVariables<T,P> create(
       Class<T> pdoClass, Class<P> poClass, String tableAlias,
       PersistentObjectClassVariables<? super T, ? super P> superClassVariables,

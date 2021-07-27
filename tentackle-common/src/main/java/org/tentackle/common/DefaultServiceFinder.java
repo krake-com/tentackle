@@ -221,7 +221,7 @@ public class DefaultServiceFinder implements ServiceFinder {
    * @return the classes providing this service
    * @throws ClassNotFoundException if some provider could not be loaded
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   @Override
   public synchronized <T> Collection<Class<T>> findServiceProviders(Class<T> service) throws ClassNotFoundException {
     String serviceName = service.getName();

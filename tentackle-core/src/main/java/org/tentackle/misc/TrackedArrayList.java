@@ -956,7 +956,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   private void filterRemovedObjects() {
     if (!removedObjectsFiltered) {
       if (removedObjects != null && !removedObjects.isEmpty()) {
-        removedObjects.removeAll(this);
+        forEach(removedObjects::remove);
         removed = !removedObjects.isEmpty();
       }
       removedObjectsFiltered = true;

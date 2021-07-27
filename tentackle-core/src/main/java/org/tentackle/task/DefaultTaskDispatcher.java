@@ -28,7 +28,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -619,8 +618,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
     Task executableTask = null;
     long minScheduled = Long.MAX_VALUE;
     // the queue is sorted fifo, not the optional scheduled time
-    for (Iterator<Task> iterator = queue.iterator(); iterator.hasNext(); ) {
-      Task task = iterator.next();
+    for (Task task : queue) {
       long scheduled = task.getScheduledEpochalTime();    // 0 for most tasks, otherwise some calculated or fixed value
       if (scheduled <= lastMillis) {
         executableTask = task;

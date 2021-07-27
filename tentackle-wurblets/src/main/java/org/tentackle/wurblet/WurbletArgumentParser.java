@@ -275,7 +275,7 @@ public class WurbletArgumentParser {
     for (String arg : args) {
       if (arg != null) {
         if (expressionFinished) {
-          WurbletArgument par = createArgument(arg, expressionFinished, argumentGroupingEnabled);
+          WurbletArgument par = createArgument(arg, true, argumentGroupingEnabled);
           switch(par.getArgumentType()) {
             case SORT:
               sortingArguments.add(par);

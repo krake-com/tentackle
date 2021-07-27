@@ -32,6 +32,7 @@ import java.util.Map;
 public class GeneratedString {
 
   private final Configuration cfg;
+  @SuppressWarnings("rawtypes")
   private final Map model;
   private final String templateName;
 
@@ -42,6 +43,7 @@ public class GeneratedString {
    * @param model the freemarker model
    * @param templateName the name of the freemarker template
    */
+  @SuppressWarnings("rawtypes")
   public GeneratedString(Configuration cfg, Map model, String templateName) {
     this.cfg = cfg;
     this.model = model;

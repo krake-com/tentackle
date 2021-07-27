@@ -47,13 +47,6 @@ public class InterceptableMethod {
     this.method = method;
     this.delegateMethod = delegateMethod;
     this.interceptor = interceptor;
-
-//    try {
-//      delegateHandle = lookup.unreflect(delegateMethod);
-//    }
-//    catch (IllegalAccessException e) {
-//      throw new TentackleRuntimeException("unreflect failed for " + delegateMethod, e);
-//    }
   }
 
   /**

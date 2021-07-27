@@ -131,7 +131,7 @@ public final class ExceptionHelper {
    * @param handlers the exception handlers
    * @return true if handled, false if no matching exception found in chain
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public static boolean handleException(boolean first, Throwable headOfChain, Handler<? extends Throwable>... handlers) {
     Throwable ex = null;      // the chained exception found
     Handler found = null;     // corresponding handler

@@ -815,6 +815,9 @@ public class ModelWurblet extends AbstractJavaWurblet {
       if (needComma) {
         msg.append(", ");
       }
+      else {
+        needComma = true;
+      }
       msg.append(entry.getKey());
       if (!entry.getValue().isBlank()) {
         detailMsg.append('\n').append(entry.getKey()).append(": ").append(entry.getValue());

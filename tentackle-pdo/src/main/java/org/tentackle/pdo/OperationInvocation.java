@@ -35,6 +35,7 @@ public interface OperationInvocation {
    * @return the method's return value
    * @throws Throwable if invocation fails
    */
+  @SuppressWarnings("rawtypes")
   Object invoke(OperationInvocationHandler invocationHandler, InterceptableMethod method, Object[] args) throws Throwable;
 
 }

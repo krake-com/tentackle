@@ -54,6 +54,7 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
        implements PersistentObject<T>, PdoMethodCacheProvider<T> {
 
   private static final String UNSUPPORTED = "not implemented";
+  @SuppressWarnings("rawtypes")
   private static final Map<Class, PdoMethodCache> METHOD_CACHE_MAP = new ConcurrentHashMap<>();
 
 

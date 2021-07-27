@@ -40,7 +40,6 @@ public abstract class AbstractPermission implements Permission {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public Class<? extends Permission> getPermissionInterface() {
     if (iFace == null) {
       iFace = ReflectionHelper.findInterface(getClass(), Permission.class);

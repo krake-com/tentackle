@@ -248,6 +248,7 @@ public class InterceptableMethodInvoker extends MethodStatistics {
       countMethodInvocation(method, delegate.getClass(), duration);
     }
 
+    @SuppressWarnings("rawtypes")
     int collectionSize = retval instanceof Collection ? ((Collection) retval).size() : 0;
     boolean collectionSizeExceeded = logMinReturnedCollectionSize > 0 && collectionSize > logMinReturnedCollectionSize;
 

@@ -127,8 +127,6 @@ public class Ingres extends AbstractSql2003Backend {
     switch(sqlType) {
 
       case BIT:
-        return TYPE_TINYINT;
-
       case TINYINT:
         return TYPE_TINYINT;
 
@@ -157,8 +155,6 @@ public class Ingres extends AbstractSql2003Backend {
         return TYPE_VARCHAR;
 
       case DATE:
-        return TYPE_DATE;
-
       case TIME:
         return TYPE_DATE;
 

@@ -104,6 +104,7 @@ public class NotEmptyImpl extends AbstractValidator<NotEmpty> implements Mandato
   }
 
   @Override
+  @SuppressWarnings("rawtypes")
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {
     Object object = validationContext.getObject();
 

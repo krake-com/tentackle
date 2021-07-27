@@ -92,10 +92,12 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
 
   // the following methods are an OperationInvocation, mapped by OperationMethodCache
 
+  @SuppressWarnings("rawtypes")
   private static Object invokePersistence(OperationInvocationHandler invocationHandler, InterceptableMethod method, Object[] args) throws Throwable {
     return INVOKER.invoke(invocationHandler.persistenceMixin.getDelegate(), method, args);
   }
 
+  @SuppressWarnings("rawtypes")
   private static Object invokeDomain(OperationInvocationHandler invocationHandler, InterceptableMethod method, Object[] args) throws Throwable {
     return INVOKER.invoke(invocationHandler.domainMixin.getDelegate(), method, args);
   }
@@ -298,7 +300,7 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
 
 
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 

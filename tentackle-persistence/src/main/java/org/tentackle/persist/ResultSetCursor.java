@@ -121,7 +121,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
     resources = new Resources<>(rs, null);
 
     assertSessionIsLocal();
-    ((AbstractPersistentObject) pdo.getPersistenceDelegate()).assertRootContextIsAccepted();
+    ((AbstractPersistentObject<T,?>) pdo.getPersistenceDelegate()).assertRootContextIsAccepted();
     cleanable = CLEANER.register(this, resources);
   }
 
@@ -803,7 +803,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
   @SuppressWarnings("unchecked")
   protected void configureRemoteObject(T pdo) {
     if (context != null) {
-      AbstractPersistentObject<T,?> po = (AbstractPersistentObject) pdo.getPersistenceDelegate();
+      AbstractPersistentObject<T, ?> po = (AbstractPersistentObject<T, ?>) pdo.getPersistenceDelegate();
       po.configureRemoteObject(context, pdo);
     }
     else if (pdo != null) {

@@ -43,6 +43,7 @@ public class InvokeInBuddyDelegateInterceptor extends AbstractInterceptor {
   }
 
   @Override
+  @SuppressWarnings("rawtypes")
   public Object proceed(Object delegate, Method method, Object[] args,
                         Object orgDelegate, Method orgMethod, Object[] orgArgs) throws Throwable {
 

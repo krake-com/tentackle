@@ -256,7 +256,7 @@ public class PdoUtilities {
     if (col != null)  {
       for (Object obj: col)  {
         if (obj instanceof PersistentDomainObject) {
-          list.add((PersistentDomainObject)obj);
+          list.add((PersistentDomainObject<?>) obj);
         }
       }
     }

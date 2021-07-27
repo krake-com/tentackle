@@ -31,6 +31,7 @@ import org.tentackle.pdo.PersistentDomainObject;
 public class RdcChoiceBoxDelegate extends FxChoiceBoxDelegate {
 
   private final RdcBoxDelegateImpl boxImpl;
+  @SuppressWarnings("rawtypes")
   private PdoComponentAddon pdoAddon;
 
   /**
@@ -63,6 +64,7 @@ public class RdcChoiceBoxDelegate extends FxChoiceBoxDelegate {
    *
    * @return the addon
    */
+  @SuppressWarnings("rawtypes")
   public PdoComponentAddon getPdoAddon() {
     return pdoAddon;
   }
@@ -72,6 +74,7 @@ public class RdcChoiceBoxDelegate extends FxChoiceBoxDelegate {
    *
    * @param pdoAddon the addon
    */
+  @SuppressWarnings("rawtypes")
   public void setPdoAddon(PdoComponentAddon pdoAddon) {
     this.pdoAddon = pdoAddon;
   }
@@ -81,7 +84,7 @@ public class RdcChoiceBoxDelegate extends FxChoiceBoxDelegate {
    *
    * @return the implementation
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   protected PdoComponentAddon createPdoAddon() {
     return new PdoComponentAddon(getComponent(), this::getViewValue, this::setViewValue);
   }

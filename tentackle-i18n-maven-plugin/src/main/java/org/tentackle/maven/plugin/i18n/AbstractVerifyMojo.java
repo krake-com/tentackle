@@ -28,7 +28,6 @@ import org.tentackle.session.Session;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -68,10 +67,7 @@ public class AbstractVerifyMojo extends AbstractI18nMojo {
       if (!bundle.equals(that.bundle)) {
         return false;
       }
-      if (!key.equals(that.key)) {
-        return false;
-      }
-      return true;
+      return key.equals(that.key);
     }
 
     @Override
@@ -132,12 +128,7 @@ public class AbstractVerifyMojo extends AbstractI18nMojo {
       }
       else {
         // the whole bundle is obsolete: remove all obsolete keys for that bundle
-        for (Iterator<StoredBundleKey> keyIterator=obsoleteKeys.iterator(); keyIterator.hasNext(); ) {
-          StoredBundleKey bundleKey = keyIterator.next();
-          if (bundleKey.getBundleId() == bundle.getId()) {
-            keyIterator.remove();
-          }
-        }
+        obsoleteKeys.removeIf(bundleKey -> bundleKey.getBundleId() == bundle.getId());
       }
     }
   }
@@ -176,7 +167,7 @@ public class AbstractVerifyMojo extends AbstractI18nMojo {
    */
   Collection<StoredBundle> sortBundles(Collection<StoredBundle> bundles) {
     List<StoredBundle> list = new ArrayList<>(bundles);
-    Collections.sort(list, (o1, o2) -> {
+    list.sort((o1, o2) -> {
       int rv = o1.getName().compareTo(o2.getName());
       if (rv == 0) {
         rv = nullSafe(o1.getLocale()).compareTo(nullSafe(o2.getLocale()));
@@ -194,7 +185,7 @@ public class AbstractVerifyMojo extends AbstractI18nMojo {
    */
   Collection<StoredBundleKey> sortBundleKeys(Collection<StoredBundleKey> bundlesKeys) {
     List<StoredBundleKey> list = new ArrayList<>(bundlesKeys);
-    Collections.sort(list, (o1, o2) -> {
+    list.sort((o1, o2) -> {
       int rv = o1.getBundle().getName().compareTo(o2.getBundle().getName());
       if (rv == 0) {
         rv = nullSafe(o1.getBundle().getLocale()).compareTo(nullSafe(o2.getBundle().getLocale()));

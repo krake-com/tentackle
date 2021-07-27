@@ -1317,7 +1317,8 @@ public class DbModelWurblet extends ModelWurblet {
       if (foreignRel != null) {
         return foreignRel.getSetterName() + (blunt ? "Blunt" : "") + "(" + pdo + ")";
       }
-      return "set" + relation.getForeignEntity() + (blunt ? "Blunt" : "") + "(" + pdo + ")";
+      // foreignRel == null -> blunt = false (see above)
+      return "set" + relation.getForeignEntity() + "(" + pdo + ")";
     }
   }
 

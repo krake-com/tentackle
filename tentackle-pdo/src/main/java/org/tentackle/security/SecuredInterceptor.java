@@ -60,7 +60,7 @@ public class SecuredInterceptor extends AbstractInterceptor {
       Class<?> effectiveClass;    // != null if Operation, null if Identifiable PDO
       if (orgProxy instanceof PersistentObject) {
         // pdo
-        PersistentObject<?> po = (PersistentObject) orgProxy;
+        PersistentObject<?> po = (PersistentObject<?>) orgProxy;
         classId = po.getClassId();
         id = po.getId();
         effectiveClass = null;

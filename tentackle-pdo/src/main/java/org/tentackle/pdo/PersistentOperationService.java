@@ -46,6 +46,7 @@ public @interface PersistentOperationService {
    *
    * @return the PO interface
    */
+  @SuppressWarnings("rawtypes")
   Class<? extends PersistentOperation> value(); // no <?> because of abstract operations!
 
 }

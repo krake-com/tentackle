@@ -108,10 +108,6 @@ public class ServiceAnalyzeHandler extends AbstractAnalyzeHandler {
             break;
           }
         }
-        if (methodName == null) {
-          print(Kind.ERROR, "method name set to null in @" + StringHelper.lastAfter(annotationName, '.'), element);
-          continue;
-        }
 
         if (servicedClassName == null || meta) {
           // check if @Service or @ServiceName annotation used directly or get value from here if meta

@@ -207,7 +207,11 @@ public abstract class AbstractBinding implements Binding {
     if (validators == null) {
       validators = new ArrayList<>();
     }
-    return !validators.contains(validator) && validators.add(validator);
+    else if (validators.contains(validator)) {
+      return false;
+    }
+    validators.add(validator);
+    return true;
   }
 
   @Override

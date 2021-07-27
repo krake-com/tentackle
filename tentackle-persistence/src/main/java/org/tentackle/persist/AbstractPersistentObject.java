@@ -3997,6 +3997,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    *
    * @param modified is true if object is flagged modified, false if not.
    */
+  @Override
   public void setModified(boolean modified) {
     super.setModified(modified);
     validated = !modified;

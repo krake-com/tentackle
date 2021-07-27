@@ -106,7 +106,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
   }
 
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public Function<T, String> toViewFunction() {
     return m -> {
       if (m != null) {

@@ -202,7 +202,7 @@ public class IdentifiableMap<T extends Identifiable> implements Serializable {
    * @param clazz the object class
    * @return the objects sorted by ID, empty collection if none
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public <P extends T> Collection<P> getAllSorted(Class<P> clazz) {
     return ((TreeMap) getSortedMap()).
             subMap(new IdentifiableKey<>(clazz, Long.MIN_VALUE),

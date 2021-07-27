@@ -38,7 +38,7 @@ public class TableViewConfigurator<T extends TableView<?>> extends ComponentConf
     // no super.configure()... -> no key remapping!
 
     if (control instanceof FxTableView) {
-      ((FxTableView) control).setCopyToClipboardEnabled(true);
+      ((FxTableView<?>) control).setCopyToClipboardEnabled(true);
     }
   }
 

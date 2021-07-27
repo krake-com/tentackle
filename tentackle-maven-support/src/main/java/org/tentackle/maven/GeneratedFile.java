@@ -33,6 +33,7 @@ import java.util.Map;
 public class GeneratedFile {
 
   private final Configuration cfg;
+  @SuppressWarnings("rawtypes")
   private final Map model;
   private final String templateName;
   private final File outputFile;
@@ -45,6 +46,7 @@ public class GeneratedFile {
    * @param templateName the name of the freemarker template
    * @param outputFile the output file
    */
+  @SuppressWarnings("rawtypes")
   public GeneratedFile(Configuration cfg, Map model, String templateName, File outputFile) {
     this.cfg = cfg;
     this.model = model;

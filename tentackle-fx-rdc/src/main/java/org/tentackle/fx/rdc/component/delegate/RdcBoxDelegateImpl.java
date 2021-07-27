@@ -35,11 +35,14 @@ import java.util.function.Supplier;
 public class RdcBoxDelegateImpl {
 
   private final FxComponent component;                          // the combo- or choicebox
+  @SuppressWarnings("rawtypes")
   private final Supplier<ObservableList> itemSupplier;          // component::getItems
+  @SuppressWarnings("rawtypes")
   private final Supplier<PdoComponentAddon> pdoAddonSupplier;   // delegate::getPdoAddon
   private long lastModificationCount;                           // 0 if no pdo, -1 if load initial serial, else last serial at time of selectAll
   private long lastPdoId;                                       // the ID of the last current PDO
   private long lastPdoSerial;                                   // the last current PDO serial
+  @SuppressWarnings("rawtypes")
   private PersistentDomainObject proxy;                         // proxy PDO of the component's PDO type
 
 
@@ -50,6 +53,7 @@ public class RdcBoxDelegateImpl {
    * @param itemSupplier gets the list of items shown by the component
    * @param pdoAddonSupplier get the PDO addon
    */
+  @SuppressWarnings("rawtypes")
   public RdcBoxDelegateImpl(FxComponent component, Supplier<ObservableList> itemSupplier,
                             Supplier<PdoComponentAddon> pdoAddonSupplier) {
     this.component = component;
@@ -86,7 +90,7 @@ public class RdcBoxDelegateImpl {
   /**
    * Prepare the component's setViewValue method.
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public void prepareSetViewValue() {
     if (lastModificationCount != 0) {
       boolean loadItems = false;

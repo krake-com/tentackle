@@ -197,7 +197,7 @@ public class Login extends AbstractFxController {
           if (newValue != null) {
             newValue.windowProperty().addListener(
                 (observable1, oldValue1, newValue1) -> {
-                  if (newValue != null) {
+                  if (newValue1 != null) {
                     newValue1.addEventHandler(WindowEvent.WINDOW_SHOWN, event -> {
                       if (timeoutThread == null) {
                         timeoutThread = new TimeoutThread();
@@ -366,6 +366,7 @@ public class Login extends AbstractFxController {
   /**
    * Performs the login.
    */
+  @SuppressWarnings("rawtypes")
   private void login() {
     if (progressBar.getProgress() <= 0.0) {
       sessionInfo.setUserName(usernameField.getText());

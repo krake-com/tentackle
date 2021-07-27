@@ -65,7 +65,6 @@ public abstract class TableConfigurationProviderTest extends FxRdcTestApplicatio
   }
 
   @Test(alwaysRun = true)
-  @SuppressWarnings({ "unchecked", "rawtypes" })
   public void testTableConfigurationProviders() {
     for (String servicedClassName : classMapper.getMap().keySet()) {
       try {

@@ -303,7 +303,7 @@ public class DTOWurblet extends AbstractJavaWurblet {
           int lineNdx = line.lastIndexOf(':');
           if (lineNdx >= Constants.ORIGIN_INFO_LEAD.length()) {
             modelSourceName = line.substring(Constants.ORIGIN_INFO_LEAD.length(), lineNdx);
-            modelSourceLine = Integer.valueOf(line.substring(lineNdx + 1));
+            modelSourceLine = Integer.parseInt(line.substring(lineNdx + 1));
           }
           else {
             modelSourceName = line.substring(Constants.ORIGIN_INFO_LEAD.length());

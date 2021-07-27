@@ -97,10 +97,12 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
 
   // the following methods are a PdoInvocation, mapped by PdoMethodCache
 
+  @SuppressWarnings("rawtypes")
   private static Object invokePersistence(PdoInvocationHandler invocationHandler, InterceptableMethod method, Object[] args) throws Throwable {
     return INVOKER.invoke(invocationHandler.persistenceMixin.getDelegate(), method, args);
   }
 
+  @SuppressWarnings("rawtypes")
   private static Object invokeDomain(PdoInvocationHandler invocationHandler, InterceptableMethod method, Object[] args) throws Throwable {
     return INVOKER.invoke(invocationHandler.domainMixin.getDelegate(), method, args);
   }
@@ -276,7 +278,7 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
   }
 
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 

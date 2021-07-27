@@ -647,12 +647,11 @@ public class RmiServer {
       connectionObject = constructor.newInstance(this, loginPort, loginCsf, loginSsf);
 
       final int registryPort;
-      final String serviceName;
 
       if (createRegistry) {
         URI uri = new URI(service);
         String uriPath = uri.getPath();
-        serviceName = uriPath.startsWith("/") ? uriPath.substring(1) : uriPath;
+        String serviceName = uriPath.startsWith("/") ? uriPath.substring(1) : uriPath;
         int uriPort = uri.getPort();
         registryPort = uriPort <= 0 ? Registry.REGISTRY_PORT : uriPort;
         registry = LocateRegistry.createRegistry(registryPort, loginCsf, loginSsf);
@@ -662,7 +661,6 @@ public class RmiServer {
         // rebind if already bound
         Naming.rebind(service, connectionObject);
         registryPort = 0;
-        serviceName = null;
       }
 
       // start cleanup thread

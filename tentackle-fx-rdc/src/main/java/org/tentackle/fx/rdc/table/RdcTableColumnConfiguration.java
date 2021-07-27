@@ -64,13 +64,13 @@ public class RdcTableColumnConfiguration<S, T> extends DefaultTableColumnConfigu
   }
 
   @Override
-  @SuppressWarnings("unchecked")    // since T is not PDO-type by def, but only by fact
+  @SuppressWarnings({ "rawtypes", "unchecked" })    // since T is not PDO-type by def, but only by fact
   protected TableCell<S, T> createTableCell(TableColumn<S, T> column) {
     return pdoTypeConfigured ? new PdoTableCell(this) : super.createTableCell(column);
   }
 
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   protected TreeTableCell<S, T> createTreeTableCell(TreeTableColumn<S, T> column) {
     return pdoTypeConfigured ? new PdoTreeTableCell(this) : super.createTreeTableCell(column);
   }

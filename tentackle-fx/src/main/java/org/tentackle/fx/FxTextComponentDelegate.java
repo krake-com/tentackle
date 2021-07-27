@@ -319,6 +319,7 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate
    * @param text the input text, never null
    * @return the filtered text, never null
    */
+  @SuppressWarnings("rawtypes")
   public String filter(String text) {
     if (getValueTranslator() instanceof ValueStringTranslator) {
       String transValidChars = ((ValueStringTranslator) getValueTranslator()).getValidChars();

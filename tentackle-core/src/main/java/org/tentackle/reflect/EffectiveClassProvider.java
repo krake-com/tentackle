@@ -41,7 +41,7 @@ public interface EffectiveClassProvider<T> {
     Class<?> clazz;
     if (object != null) {
       if (object instanceof EffectiveClassProvider) {
-        clazz = ((EffectiveClassProvider) object).getEffectiveClass();
+        clazz = ((EffectiveClassProvider<?>) object).getEffectiveClass();
       }
       else {
         clazz = object.getClass();

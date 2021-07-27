@@ -228,9 +228,9 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
   default void applyTo(DomainContextDependable obj) {
     if (obj instanceof PersistentDomainObject) {
       // fast without invocation handler
-      DomainContext otherCtx = ((PersistentDomainObject) obj).getPersistenceDelegate().getDomainContext();
+      DomainContext otherCtx = ((PersistentDomainObject<?>) obj).getPersistenceDelegate().getDomainContext();
       if (otherCtx != this) {
-        ((PersistentDomainObject) obj).getPersistenceDelegate().setDomainContext(this);
+        ((PersistentDomainObject<?>) obj).getPersistenceDelegate().setDomainContext(this);
       }
     }
     else if (obj != null && obj.getDomainContext() != this)  {

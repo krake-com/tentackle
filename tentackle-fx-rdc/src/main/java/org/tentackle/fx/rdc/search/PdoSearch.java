@@ -851,9 +851,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
       }
       toggleShiftKey(event.isShiftDown());
     });
-    getView().addEventFilter(KeyEvent.KEY_RELEASED, (KeyEvent event) -> {
-      toggleShiftKey(event.isShiftDown());
-    });
+    getView().addEventFilter(KeyEvent.KEY_RELEASED, event -> toggleShiftKey(event.isShiftDown()));
   }
 
 

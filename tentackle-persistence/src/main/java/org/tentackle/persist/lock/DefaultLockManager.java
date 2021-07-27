@@ -68,6 +68,7 @@ public class DefaultLockManager implements LockManager {
       this.pdoId = lock.getPdoId();
     }
 
+    @SuppressWarnings("rawtypes")
     PdoKey(PersistentDomainObject pdo) {
       this.classId = pdo.getClassId();
       this.pdoId = pdo.getId();

@@ -70,7 +70,7 @@ public class MethodCache {
         return false;
       }
       final Key other = (Key) obj;
-      if (this.clazz != other.clazz && (this.clazz == null || !this.clazz.equals(other.clazz))) {
+      if (this.clazz != other.clazz) {
         return false;
       }
       return Arrays.deepEquals(this.parameterTypes, other.parameterTypes);

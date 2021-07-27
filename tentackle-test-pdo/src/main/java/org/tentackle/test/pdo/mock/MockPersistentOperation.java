@@ -41,6 +41,7 @@ public class MockPersistentOperation<T extends Operation<T>>
        implements PersistentOperation<T>, OperationMethodCacheProvider<T> {
 
   private static final String UNSUPPORTED = "not implemented";
+  @SuppressWarnings("rawtypes")
   private static final Map<Class, OperationMethodCache> METHOD_CACHE_MAP = new ConcurrentHashMap<>();
 
 
