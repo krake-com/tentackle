@@ -5,12 +5,12 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent-osgi-activators</artifactId>
-    <version>7.3.0</version>
+    <version>7.3.1</version>
   </parent>
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-fx-rdc-osgi-activator</artifactId>
-  <version>7.3.0</version>
+  <version>7.3.1</version>
   <packaging>jar</packaging>
 
   <name>Tentackle FX RDC OSGi Bundle Activator</name>
