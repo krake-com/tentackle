@@ -57,6 +57,16 @@
           <index>META-INF/RESOURCE-INDEX.LIST</index>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <jdkToolchain>
+            <!-- see https://bugs.openjdk.java.net/browse/JDK-8208269 -->
+            <version>latest-lts</version>
+          </jdkToolchain>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 
