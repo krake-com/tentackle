@@ -22,14 +22,14 @@
       <optional>true</optional>   <!-- avoid transitive dependency -->
     </dependency>
     <dependency>
+      <!-- already modularized -->
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-api</artifactId>
     </dependency>
-    <!-- still not modularized -->
     <dependency>
+      <!-- still not modularized, but ok as dependency since not required in module-info -->
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-core</artifactId>
-      <scope>test</scope>  <!-- no regular dep yet, only for testing! -->
     </dependency>
   </dependencies>
 
