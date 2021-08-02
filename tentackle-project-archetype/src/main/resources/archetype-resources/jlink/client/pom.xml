@@ -58,6 +58,9 @@
           <withUpdater>true</withUpdater>
           <mainModule>${package}.client</mainModule>
           <mainClass>${package}.client.${application}FxClient</mainClass>
+          <modulePathOnly>
+            <module>org.apache.poi.poi</module>
+          </modulePathOnly>
           <addModules>
             <addModule>jdk.jcmd</addModule>
             <addModule>jdk.localedata</addModule>

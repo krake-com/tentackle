@@ -72,6 +72,7 @@
       </plugin>
 
       <plugin>
+        <!-- still an automatic module, see README.md -->
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
