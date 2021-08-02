@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-module tentackle.log.log4j2v {
+module org.tentackle.log.log4j2v {
   exports org.tentackle.log.log4j2v;
 
   requires org.apache.logging.log4j;

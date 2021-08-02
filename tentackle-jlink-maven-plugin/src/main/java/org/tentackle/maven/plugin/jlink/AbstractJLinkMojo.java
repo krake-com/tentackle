@@ -159,7 +159,10 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   /**
    * List of full-blown modules that should be moved to the module path explicitly.<br>
    * By default, all full-blown modules are passed to the jlink tool. If a module is listed
-   * for the module path only, the module it will be moved to the <code>mp</code> folder instead.
+   * for the module path only, the module it will be moved to the <code>mp</code> folder instead.<br>
+   * This may become necessary, if a 3rd-party full-blown module (illegally!) requires automatic modules, which
+   * would cause all artifacts to be moved to the module path by this plugin automatically, since the
+   * jlink tool can only handle full-blown modules.
    * <p>
    * If all modules must be moved to the <code>mp</code> folder, the single values <code>true</code>,
    * <code>all</code> or <code>*</code> can be used as a shortcut.
