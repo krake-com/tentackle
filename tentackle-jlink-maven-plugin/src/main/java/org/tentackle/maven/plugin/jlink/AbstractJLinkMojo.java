@@ -157,13 +157,27 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   private boolean withUpdater;
 
   /**
-   * Forces the modules to be put onto the module path explicitly.<br>
-   * The application's jars will be moved to the <code>mp</code> folder
-   * and the jimage file will only contain java modules from the runtime or jdk.
-   * Use this option if the module path order is important and must match the maven's project model.
+   * List of full-blown modules that should be moved to the module path explicitly.<br>
+   * By default, all full-blown modules are passed to the jlink tool. If a module is listed
+   * for the module path only, the module it will be moved to the <code>mp</code> folder instead.
+   * <p>
+   * If all modules must be moved to the <code>mp</code> folder, the single values <code>true</code>,
+   * <code>all</code> or <code>*</code> can be used as a shortcut.
+   * <p>
+   * Examples:
+   * <pre>
+   *    &lt;modulePathOnly&gt;
+   *        &lt;module&gt;tentackle.log.log4j2v&lt;/module&gt;
+   *        &lt;module&gt;org.apache.logging.log4j&lt;/module&gt;
+   *    &lt;/modulePathOnly&gt;
+   * </pre>
+   * or
+   * <pre>
+   *   &lt;modulePathOnly&gt;all&lt;/modulePathOnly&gt;
+   * </pre>
    */
   @Parameter
-  private boolean modulePathOnly;
+  private List<String> modulePathOnly;
 
   /**
    * The directory where to store the ZIP files.
@@ -350,10 +364,24 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    * Returns whether all application modules should go to the module path and
    * not the jimage file.
    *
-   * @return true if forced
+   * @return true if forced to mp folder
    */
   public boolean isModulePathOnly() {
-    return modulePathOnly;
+    return modulePathOnly != null && modulePathOnly.size() == 1 &&
+           ("true".equals(modulePathOnly.get(0)) ||
+            "all".equals(modulePathOnly.get(0)) ||
+            "*".equals(modulePathOnly.get(0)));
+  }
+
+  /**
+   * Returns whether given mudule name should go to the module path and
+   * not the jimage file.
+   *
+   * @param moduleName the name of the full-blown module
+   * @return true if forced to mp folder
+   */
+  public boolean isModulePathOnly(String moduleName) {
+    return modulePathOnly != null && modulePathOnly.contains(moduleName);
   }
 
   /**

@@ -447,10 +447,14 @@ public class JLinkResolver {
         mojo.getLog().debug(moduleName + " is an automatic module");
         automaticModules.put(moduleName, new ModularArtifact(artifact, moduleDescriptor));
       }
+      else if (mojo.isModulePathOnly(moduleName)) {
+        mojo.getLog().info("full-blown module " + moduleName + " moved to the module-path");
+        automaticModules.put(moduleName, new ModularArtifact(artifact, moduleDescriptor));
+      }
       else {
         mojo.getLog().debug(moduleName + " is a full-blown module");
         modules.put(moduleName, new ModularArtifact(artifact, moduleDescriptor));
-
+        addRequired(moduleName);
         for (JavaModuleDescriptor.JavaRequires requires : moduleDescriptor.requires()) {
           addRequired(requires.name());
           mojo.getLog().debug(moduleName + " requires " + requires.name());
@@ -462,8 +466,7 @@ public class JLinkResolver {
     // those are old school modules (like java.mail) that are not runtime modules but simple dependencies
     for (Iterator<String> iter = runtimeModules.iterator(); iter.hasNext(); ) {
       String moduleName = iter.next();
-      if (automaticModules.get(moduleName) != null ||
-          modules.get(moduleName) != null) {
+      if (automaticModules.get(moduleName) != null || modules.get(moduleName) != null) {
         iter.remove();
         requiredModules.add(moduleName);
       }
@@ -494,7 +497,7 @@ public class JLinkResolver {
       else {
         for (ModularArtifact unresolvedModule: unresolvedModules) {
           mojo.getLog().info("required " + unresolvedModule + " is not a full-blown module");
-          result.addToModulePath(unresolvedModule);   // must go to modulepath!
+          result.addToModulePath(unresolvedModule);   // must go to module path!
         }
         mojo.getLog().info("linking runtime modules only: project dependencies moved to the module-path");
         result.addRuntimeModuleNames(runtimeModules);
