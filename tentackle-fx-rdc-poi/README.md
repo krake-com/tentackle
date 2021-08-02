@@ -40,3 +40,24 @@ That's how the module-info.java would look like:
         requires org.tentackle.fx.rdc;
         requires org.apache.poi.poi;
     }
+
+### Optionally exclude slf4j artifacts
+
+By default, logging is disabled in POI. If you don't need logging for debugging
+purposes and want to keep the images as small as possible, you may consider excluding
+the slf4j artifacts, if you're using another logging backend than slf4j.
+
+    <dependency>
+      <groupId>org.tentackle</groupId>
+      <artifactId>tentackle-fx-rdc-poi</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>jcl-over-slf4j</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
