@@ -21,8 +21,4 @@ module ${package}.server {
   requires org.tentackle.update;
 
   provides org.tentackle.common.ModuleHook with ${package}.server.service.Hook;
-
-  // SLF4J isnt a module yet. For some odd reason, we need a lookup scan for deps on the classpath.
-  // Otherwise non-modularized deps cannot be located via META-INF/services.
-  uses org.tentackle.log.Logger;
 }

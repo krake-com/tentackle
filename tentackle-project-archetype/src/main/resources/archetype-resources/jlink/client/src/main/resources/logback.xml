@@ -7,7 +7,7 @@
   <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <file>logs/client.log</file>
     <encoder>
-      <pattern>[%thread] %X{session} - %d{dd.MM.yyyy HH:mm:ss} %-5p %c.%M${symbol_escape}(%F:%L${symbol_escape}) - %m%n</pattern>
+      <pattern>[%thread] - %d{dd.MM.yyyy HH:mm:ss} %-5p %c.%M${symbol_escape}(%F:%L${symbol_escape}) - %m%n</pattern>
     </encoder>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
       <!-- daily rollover -->
