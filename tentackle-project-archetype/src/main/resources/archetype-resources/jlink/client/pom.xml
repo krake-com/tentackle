@@ -71,7 +71,7 @@
             <addModule>jdk.localedata</addModule>
           </addModules>
           <excludeModules>
-            <!-- unsupported reference since java 12 -->
+            <!-- SLF4J: unsupported reference since java 12 -->
             <excludeModule>jdk8internals</excludeModule>
           </excludeModules>
         </configuration>
