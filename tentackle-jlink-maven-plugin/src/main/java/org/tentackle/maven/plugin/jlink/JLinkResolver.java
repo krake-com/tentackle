@@ -447,6 +447,10 @@ public class JLinkResolver {
         mojo.getLog().debug(moduleName + " is an automatic module");
         automaticModules.put(moduleName, new ModularArtifact(artifact, moduleDescriptor));
       }
+      else if (mojo.isClasspathDependency(artifact)) {
+        mojo.getLog().info("full-blown module " + moduleName + " moved to the class-path");
+        automaticModules.put(moduleName, new ModularArtifact(artifact, moduleDescriptor));
+      }
       else if (mojo.isModulePathOnly(moduleName)) {
         mojo.getLog().info("full-blown module " + moduleName + " moved to the module-path");
         automaticModules.put(moduleName, new ModularArtifact(artifact, moduleDescriptor));

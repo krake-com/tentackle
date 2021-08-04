@@ -16,8 +16,8 @@ before commons-math3 and SparseBitSet were modularized as well...
 ### IMPORTANT!
 
 If the **tentackle-jlink-maven-plugin** is used to create a jlink or jpackage image,
-make sure to move the poi artifact to the module path! Otherwise, all depenendencies
-will be moved to the module path, because POI requires automatic modules. Like so:
+make sure to move the poi artifact to the classpath! 
+Otherwise, all depenendencies will be moved to the module path, because POI requires automatic modules. Like so:
 
     <plugin>
         <groupId>org.tentackle</groupId>
@@ -25,10 +25,19 @@ will be moved to the module path, because POI requires automatic modules. Like s
         ...
         <configuration>
             ...
-            <modulePathOnly>
-                <module>org.apache.poi.poi</module>
-            </modulePathOnly>
+            <classpathDependencies>
+                <dependency>
+                    <groupId>org.apache.poi</groupId>
+                    <artifactId>poi</artifactId>
+                </dependency>
+            </classpathDependencies>`
         ...
+
+Notice: moving it to the mp folder via modulePathOnly is not sufficient, because
+it would still be treated as a module. But that module is referenced
+from an automatic module and therefore using the wrong classloader, which
+will result in a ClassNotFoundException. Maybe, this illegal setup will be changed
+in POI 6.x or whatever...
 
 ### When all deps are modularized...
 
