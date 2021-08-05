@@ -83,6 +83,7 @@
     <javac.lint>unchecked,deprecation,removal,requires-transitive-automatic,requires-automatic</javac.lint>
     <javac.version.src>11</javac.version.src>
     <javac.version.target>${javac.version.src}</javac.version.target>
+
     <javafx.version>16</javafx.version>
     <ow2.asm.version>9.2</ow2.asm.version>
     <groovy.version>3.0.8</groovy.version>
@@ -91,12 +92,17 @@
     <testng.version>7.4.0</testng.version>
     <slf4j.version>1.7.32</slf4j.version>
     <log4j2.version>2.14.1</log4j2.version>
-    <maven.resources.plugin.version>3.2.0</maven.resources.plugin.version>
-    <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
-    <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
-    <maven.install.plugin.version>2.5.2</maven.install.plugin.version>
-    <maven.deploy.plugin.version>2.8.2</maven.deploy.plugin.version>
+
     <maven.archetype.plugin.version>3.2.0</maven.archetype.plugin.version>
+    <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
+    <maven.dependency.plugin.version>3.2.0</maven.dependency.plugin.version>
+    <maven.deploy.plugin.version>2.8.2</maven.deploy.plugin.version>
+    <maven.install.plugin.version>2.5.2</maven.install.plugin.version>
+    <maven.javadoc.plugin.version>3.3.0</maven.javadoc.plugin.version>
+    <maven.resources.plugin.version>3.2.0</maven.resources.plugin.version>
+    <maven.source.plugin.version>3.2.1</maven.source.plugin.version>
+    <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
+
     <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
 
     <tentackle.serviceDir>${project.build.directory}/generated-resources/services</tentackle.serviceDir>
@@ -444,15 +450,21 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-source-plugin</artifactId>
-          <version>3.2.1</version>
+          <version>${maven.source.plugin.version}</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <!-- need to stick with 3.0.1 since newer plugins cannot doc a non-module referencing a module
-               (such as buildsupport which deps on common)
-               see https://bugs.openjdk.java.net/browse/JDK-8240169 -->
-          <version>3.0.1</version>
+          <version>${maven.javadoc.plugin.version}</version>
+          <configuration>
+            <jdkToolchain>
+              <!--
+                need at least 11.0.9
+                see https://bugs.openjdk.java.net/browse/JDK-8208269 and https://bugs.openjdk.java.net/browse/JDK-8240169
+              -->
+              <version>latest-lts-11</version>
+            </jdkToolchain>
+          </configuration>
           <dependencies>
             <dependency>
               <groupId>org.ow2.asm</groupId>
@@ -479,7 +491,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-dependency-plugin</artifactId>
-          <version>3.1.2</version>
+          <version>${maven.dependency.plugin.version}</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
