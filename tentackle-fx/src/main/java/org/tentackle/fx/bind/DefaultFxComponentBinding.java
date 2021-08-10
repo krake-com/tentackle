@@ -65,7 +65,7 @@ public class DefaultFxComponentBinding extends AbstractBinding implements FxComp
    *          <li>LC: convert to lowercase</li>
    *          <li>COLS=n: width in columns</li>
    *          <li>MAXCOLS=n: limit input to max. columns</li>
-   *          <li>LINESS=n: number of lines in textareas</li>
+   *          <li>LINES=n: number of lines in textareas</li>
    *          <li>[-]AUTOSELECT: turn autoselect on/off</li>
    *          <li>UTC: utc timestamps</li>
    *          <li>SCALE=n: numeric scale</li>

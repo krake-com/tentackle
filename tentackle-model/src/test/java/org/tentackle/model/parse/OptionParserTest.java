@@ -40,13 +40,17 @@ public class OptionParserTest {
     next = parser.nextOption(1);
     assertNull(next);
 
-    args = "blah ...\\[\\][cached , +name ] and some other stuff";
+    args = "blah ...\\[\\][cached , +name, FMT=\"\\,##0\", end ] and some other stuff";
     StringBuilder comment = new StringBuilder();
     parser = new OptionParser(args, comment);
     next = parser.nextOption();
     assertEquals(next, "cached");
     next = parser.nextOption();
     assertEquals(next, "+name");
+    next = parser.nextOption();
+    assertEquals(next, "FMT=\"\\,##0\"");
+    next = parser.nextOption();
+    assertEquals(next, "end");
     next = parser.nextOption();
     assertNull(next);
     assertEquals(comment.toString(),"blah ...[] and some other stuff");
