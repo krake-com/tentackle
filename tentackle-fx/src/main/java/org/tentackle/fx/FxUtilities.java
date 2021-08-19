@@ -81,6 +81,7 @@ import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.ConcurrencyHelper;
+import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.validate.ValidationFailedException;
 import org.tentackle.validate.ValidationMapper;
 import org.tentackle.validate.ValidationResult;
@@ -89,6 +90,7 @@ import java.awt.Desktop;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.Type;
 import java.net.URI;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -297,7 +299,7 @@ public class FxUtilities {
       if (node instanceof FxContainer) {
         FxController controller = ((FxContainer) node).getController();
         if (controller != null) {
-          buf.append(controller.getClass().getName()).append(": ");
+          buf.append(ReflectionHelper.getClassBaseName(controller.getClass())).append(": ");
         }
       }
       else if (node instanceof FxTableView) {
@@ -308,9 +310,34 @@ public class FxUtilities {
       }
       buf.append(node).append(" @ [").append(node.getLayoutX()).append("/").append(node.getLayoutY()).append(']');
       if (node instanceof FxComponent) {
-        Binding binding = ((FxComponent) node).getBinding();
+        FxComponent fxComponent = (FxComponent) node;
+        Binding binding = fxComponent.getBinding();
         if (binding != null) {
-          buf.append(" bound to ").append(binding.getMember());
+          BindingMember member = binding.getMember();
+          if (member != null) {
+            buf.append(" bound to '");
+            Class<?> type = member.getType();
+            if (type != null) {
+              String typeName = ReflectionHelper.getClassBaseName(type);
+              buf.append(typeName);
+              Type genericType = member.getGenericType();
+              if (genericType != null) {
+                Class<?> innerType = ReflectionHelper.extractGenericInnerTypeClass(genericType);
+                if (innerType != null) {
+                  String innerTypeName = ReflectionHelper.getClassBaseName(innerType);
+                  if (!innerTypeName.equals(typeName)) {
+                    buf.append('<').append(innerTypeName).append('>');
+                  }
+                }
+              }
+              buf.append(' ');
+            }
+            buf.append(member).append("'");
+            ValueTranslator<?, ?> valueTranslator = fxComponent.getValueTranslator();
+            if (valueTranslator != null) {
+              buf.append(" via ").append(ReflectionHelper.getClassBaseName(valueTranslator.getClass()));
+            }
+          }
         }
       }
       node = node.getParent();
