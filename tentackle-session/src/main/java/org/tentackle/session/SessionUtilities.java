@@ -18,12 +18,16 @@
 
 package org.tentackle.session;
 
+import org.tentackle.common.ExceptionHelper;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.ServiceFinder;
 import org.tentackle.common.StringHelper;
 import org.tentackle.misc.IdSerialTuple;
+import org.tentackle.misc.Identifiable;
 
+import java.rmi.NoSuchObjectException;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -31,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 
 interface SessionUtilitiesHolder {
@@ -237,7 +242,6 @@ public class SessionUtilities {
   }
 
 
-
   /**
    * Inspects an expiration set and determines whether at least one object has been removed.
    *
@@ -263,6 +267,168 @@ public class SessionUtilities {
     return someRemoved;
   }
 
+
+  /**
+   * Replaces exception cause probably not in the jvm's classpath when the stacktrace gets deserialized
+   * in another (usually remote) jvm.
+   *
+   * @param t the throwable
+   * @return the probably replaced throwable
+   */
+  public Throwable alignExceptionCause(Throwable t) {
+    // the default does nothing
+    return t;
+  }
+
+
+  /**
+   * Creates the lazy exception message for a {@link PersistenceException}.
+   *
+   * @param msg the original message
+   * @param cause the cause
+   * @param identifiable the identifiable
+   * @param session the session
+   * @return the extended message string builder
+   */
+  public StringBuilder createLazyExceptionMessage(String msg, Throwable cause, Identifiable identifiable, Session session) {
+    StringBuilder buf = new StringBuilder();
+    if (msg == null) {
+      msg = "";
+    }
+    boolean multiline = isMultiLineExceptionMessage(msg, cause, identifiable, session);
+    buf.append(msg);
+
+    // append optional extra identifiable and/or session info
+    String identStr = null;
+    if (identifiable != null) {
+      identStr = identifiable.toGenericString();    // toString may fail!
+      if (msg.contains(identStr)) {
+        identStr = null;
+      }
+    }
+    String sessionStr = null;
+    if (session != null) {
+      sessionStr = session.toString();
+      if (msg.contains(sessionStr)) {
+        sessionStr = null;
+      }
+    }
+    if (identStr != null || sessionStr != null) {
+      if (multiline) {
+        buf.append('\n');
+      }
+      else {
+        buf.append(' ');
+      }
+      buf.append("[_ ");
+      if (identStr != null) {
+        buf.append(identStr);
+      }
+      if (sessionStr != null) {
+        if (identStr != null) {
+          buf.append(" -- ");
+        }
+        buf.append(sessionStr);
+      }
+      buf.append(" _]");
+    }
+
+    return buf;
+  }
+
+
+  /**
+   * Creates a RuntimeException from a {@link RemoteException}.<br>
+   * Returns the first RuntimeException in chain.
+   * If the first non-RemoteException is not a RuntimeException, the exception
+   * is wrapped by a PersistenceException.
+   *
+   * @param relatedObject the optional related object, only used if remote cause is not a {@link PersistenceException}
+   * @param remoteException the remote exception
+   * @return the runtime exception
+   */
+  public RuntimeException createFromRemoteException(Object relatedObject, RemoteException remoteException) {
+
+    // find the first cause in chain which is not a RemoteException
+    Throwable remoteCause = remoteException;
+
+    boolean remoteClosed;
+    if (remoteCause instanceof NoSuchObjectException) {
+      remoteClosed = true;
+    }
+    else {
+      remoteClosed = false;
+      while (remoteCause instanceof RemoteException && remoteCause.getCause() != null) {
+        remoteCause = remoteCause.getCause();
+      }
+    }
+
+    RuntimeException pex;
+
+    if (remoteCause instanceof RuntimeException) {
+      pex = (RuntimeException) remoteCause;
+    }
+    else  {
+      // other exception found
+      if (remoteClosed) {
+        if (relatedObject instanceof Identifiable) {
+          pex = new SessionClosedException((Identifiable) relatedObject, remoteCause);
+        }
+        else if (relatedObject instanceof Session) {
+          pex = new SessionClosedException((Session) relatedObject, remoteCause);
+        }
+        else {
+          pex = new SessionClosedException((relatedObject != null ? relatedObject.toString() : ""), remoteCause);
+        }
+      }
+      else {
+        if (relatedObject instanceof Identifiable) {
+          pex = new PersistenceException((Identifiable) relatedObject, remoteCause);
+        }
+        else if (relatedObject instanceof Session) {
+          pex = new PersistenceException((Session) relatedObject, remoteCause);
+        }
+        else {
+          pex = new PersistenceException((relatedObject != null ? relatedObject.toString() : ""), remoteCause);
+        }
+      }
+    }
+
+    StackWalker walker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+    List<StackTraceElement> stack = walker.walk(s -> s.filter(sf -> ExceptionHelper.isClassValuableForStackTrace(sf.getClassName()))
+                                                      .map(sf -> new StackTraceElement(sf.getDeclaringClass().getName(), sf.getMethodName(), sf.getFileName(), sf.getLineNumber()))
+                                                      .collect(Collectors.toList()));
+    if (stack.isEmpty()) {
+      // pathological case: don't filter
+      walker.walk(s -> s.map(sf -> new StackTraceElement(sf.getDeclaringClass().getName(), sf.getMethodName(), sf.getFileName(), sf.getLineNumber()))
+                        .collect(Collectors.toList()));
+    }
+    StackTraceElement[] localTrace = new StackTraceElement[stack.size()];
+    stack.toArray(localTrace);
+    StackTraceElement[] remoteTrace = pex.getStackTrace();
+    StackTraceElement[] trace = new StackTraceElement[localTrace.length + remoteTrace.length];
+    System.arraycopy(remoteTrace, 0, trace, 0, remoteTrace.length);
+    trace[remoteTrace.length] = new StackTraceElement(">>>>> REMOTE METHOD INVOCATION >>>>>", "", "", 0);
+    System.arraycopy(localTrace, 1, trace, remoteTrace.length + 1, localTrace.length - 1);
+    pex.setStackTrace(trace);
+
+    return pex;
+  }
+
+
+
+  /**
+   * Returns whether the exception message will span multiple lines.
+   *
+   * @param msg the original message
+   * @param cause the cause
+   * @param identifiable the identifiable
+   * @param session the session
+   * @return true if multiple lines
+   */
+  protected boolean isMultiLineExceptionMessage(String msg, Throwable cause, Identifiable identifiable, Session session) {
+    return msg.length() > 80 || msg.contains("\n");
+  }
 
   /**
    * Creates the session keep alive daemon.
