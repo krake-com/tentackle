@@ -44,7 +44,10 @@ import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 
 /**
- * Wizard to create PDO files.
+ * Wizard to create PDO files.<br>
+ * Brings up an FX UI to create the PDO related Java files.
+ * <p>
+ * Best invoked from within the directory of the maven parent of the project.
  */
 @Mojo(name = "pdo", inheritByDefault = false, aggregator = true)
 public class PdoMojo extends AbstractWizardMojo {
