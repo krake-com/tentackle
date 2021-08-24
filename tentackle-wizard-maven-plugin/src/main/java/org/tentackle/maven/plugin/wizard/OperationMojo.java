@@ -35,7 +35,10 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 /**
- * Wizard to create operation files.
+ * Wizard to create operation files.<br>
+ * Brings up an FX UI to create the operation related Java files.
+ * <p>
+ * Best invoked from within the directory of the maven parent of the project.
  */
 @Mojo(name = "operation", inheritByDefault = false, aggregator = true)
 public class OperationMojo extends AbstractWizardMojo {
