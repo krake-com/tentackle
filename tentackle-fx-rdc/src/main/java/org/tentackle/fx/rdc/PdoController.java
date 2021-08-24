@@ -19,6 +19,7 @@
 package org.tentackle.fx.rdc;
 
 import org.tentackle.fx.FxController;
+import org.tentackle.pdo.PdoProvider;
 import org.tentackle.pdo.PersistentDomainObject;
 
 /**
@@ -26,7 +27,7 @@ import org.tentackle.pdo.PersistentDomainObject;
  *
  * @param <T> the pdo type
  */
-public interface PdoController<T extends PersistentDomainObject<T>> extends FxController {
+public interface PdoController<T extends PersistentDomainObject<T>> extends FxController, PdoProvider<T> {
 
   /**
    * Sets the PDO.
@@ -34,12 +35,5 @@ public interface PdoController<T extends PersistentDomainObject<T>> extends FxCo
    * @param pdo the pdo
    */
   void setPdo(T pdo);
-
-  /**
-   * Gets the PDO.
-   *
-   * @return the pdo
-   */
-  T getPdo();
 
 }
