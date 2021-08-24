@@ -16,19 +16,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.session;
 
-import org.tentackle.common.ExceptionHelper;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.misc.Identifiable;
 
-import java.lang.StackWalker.Option;
-import java.rmi.NoSuchObjectException;
 import java.rmi.RemoteException;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Database runtime exception.
@@ -38,12 +31,6 @@ import java.util.stream.Collectors;
 public class PersistenceException extends TentackleRuntimeException {
 
   private static final long serialVersionUID = -5355906838551059053L;
-
-  /** Tag starting extra identifiable/session info in message. */
-  public static final String START_INFO = "[_ ";
-
-  /** Tag ending extra identifiable/session info in message. */
-  public static final String END_INFO = " _]";
 
 
   /**
@@ -57,73 +44,7 @@ public class PersistenceException extends TentackleRuntimeException {
    * @return the runtime exception
    */
   public static RuntimeException createFromRemoteException(Object relatedObject, RemoteException remoteException) {
-
-    // find the first cause in chain which is not a RemoteException
-    Throwable remoteCause = remoteException;
-
-    boolean remoteClosed;
-    if (remoteCause instanceof NoSuchObjectException) {
-      remoteClosed = true;
-    }
-    else {
-      remoteClosed = false;
-      while (remoteCause instanceof RemoteException && remoteCause.getCause() != null) {
-        remoteCause = remoteCause.getCause();
-      }
-    }
-
-    RuntimeException pex;
-
-    if (remoteCause instanceof RuntimeException) {
-      pex = (RuntimeException) remoteCause;
-    }
-    else  {
-      // other exception found
-      if (remoteClosed) {
-        if (relatedObject instanceof Identifiable) {
-          pex = new SessionClosedException((Identifiable) relatedObject, remoteCause);
-        }
-        else if (relatedObject instanceof Session) {
-          pex = new SessionClosedException((Session) relatedObject, remoteCause);
-        }
-        else {
-          pex = new SessionClosedException((relatedObject != null ? relatedObject.toString() : ""), remoteCause);
-        }
-      }
-      else {
-        if (relatedObject instanceof Identifiable) {
-          pex = new PersistenceException((Identifiable) relatedObject, remoteCause);
-        }
-        else if (relatedObject instanceof Session) {
-          pex = new PersistenceException((Session) relatedObject, remoteCause);
-        }
-        else {
-          pex = new PersistenceException((relatedObject != null ? relatedObject.toString() : ""), remoteCause);
-        }
-      }
-    }
-
-    StackWalker walker = StackWalker.getInstance(Option.RETAIN_CLASS_REFERENCE);
-    List<StackTraceElement> stack = walker.walk(s ->
-      s.filter(sf -> ExceptionHelper.isClassValuableForStackTrace(sf.getClassName())).map(sf ->
-        new StackTraceElement(sf.getDeclaringClass().getName(), sf.getMethodName(), sf.getFileName(), sf.getLineNumber())).
-          collect(Collectors.toList()));
-    if (stack.isEmpty()) {
-      // pathological case: don't filter
-      walker.walk(s -> s.map(sf ->
-        new StackTraceElement(sf.getDeclaringClass().getName(), sf.getMethodName(), sf.getFileName(), sf.getLineNumber())).
-          collect(Collectors.toList()));
-    }
-    StackTraceElement[] localTrace = new StackTraceElement[stack.size()];
-    stack.toArray(localTrace);
-    StackTraceElement[] remoteTrace = pex.getStackTrace();
-    StackTraceElement[] trace = new StackTraceElement[localTrace.length + remoteTrace.length];
-    System.arraycopy(remoteTrace, 0, trace, 0, remoteTrace.length);
-    trace[remoteTrace.length] = new StackTraceElement(">>>>> REMOTE METHOD INVOCATION >>>>>", "", "", 0);
-    System.arraycopy(localTrace, 1, trace, remoteTrace.length + 1, localTrace.length - 1);
-    pex.setStackTrace(trace);
-
-    return pex;
+    return SessionUtilities.getInstance().createFromRemoteException(relatedObject, remoteException);
   }
 
 
@@ -195,7 +116,7 @@ public class PersistenceException extends TentackleRuntimeException {
    *         unknown.)
    */
   public PersistenceException(Session session, String message, Throwable cause) {
-    super(message, translateSQLException(cause));
+    super(message, SessionUtilities.getInstance().alignExceptionCause(cause));
     setSession(session);
   }
 
@@ -213,11 +134,9 @@ public class PersistenceException extends TentackleRuntimeException {
    *         unknown.)
    */
   public PersistenceException(Session session, Throwable cause) {
-    super(translateSQLException(cause));
+    super(SessionUtilities.getInstance().alignExceptionCause(cause));
     setSession(session);
   }
-
-
 
   /**
    * Constructs a new database runtime exception for a given db object
@@ -231,7 +150,6 @@ public class PersistenceException extends TentackleRuntimeException {
     super();
     setIdentifiable(identifiable);
   }
-
 
   /**
    * Constructs a new database runtime exception for a given db connection with the specified detail message.
@@ -262,7 +180,7 @@ public class PersistenceException extends TentackleRuntimeException {
    *         unknown.)
    */
   public PersistenceException(Identifiable object, String message, Throwable cause) {
-    super(message, translateSQLException(cause));
+    super(message, SessionUtilities.getInstance().alignExceptionCause(cause));
     setIdentifiable(object);
   }
 
@@ -280,11 +198,9 @@ public class PersistenceException extends TentackleRuntimeException {
    *         unknown.)
    */
   public PersistenceException(Identifiable object, Throwable cause) {
-    super(translateSQLException(cause));
+    super(SessionUtilities.getInstance().alignExceptionCause(cause));
     setIdentifiable(object);
   }
-
-
 
   /**
    * Constructs a new database runtime exception without a db connection and
@@ -295,7 +211,6 @@ public class PersistenceException extends TentackleRuntimeException {
   public PersistenceException() {
     super();
   }
-
 
   /**
    * Constructs a new database runtime exception without a db connection with the specified detail message.
@@ -323,7 +238,7 @@ public class PersistenceException extends TentackleRuntimeException {
    *         unknown.)
    */
   public PersistenceException(String message, Throwable cause) {
-    super(message, translateSQLException(cause));
+    super(message, SessionUtilities.getInstance().alignExceptionCause(cause));
   }
 
   /**
@@ -339,10 +254,8 @@ public class PersistenceException extends TentackleRuntimeException {
    *         unknown.)
    */
   public PersistenceException(Throwable cause) {
-    super(translateSQLException(cause));
+    super(SessionUtilities.getInstance().alignExceptionCause(cause));
   }
-
-
 
 
   /**
@@ -354,7 +267,6 @@ public class PersistenceException extends TentackleRuntimeException {
     return session;
   }
 
-
   /**
    * Gets the persistent object.
    *
@@ -364,65 +276,13 @@ public class PersistenceException extends TentackleRuntimeException {
     return identifiable;
   }
 
-
   @Override
   public String getMessage() {
     if (lazyMessage == null) {
-      StringBuilder buf = new StringBuilder();
-      String msg = super.getMessage();
-      if (msg == null) {
-        msg = "";
-      }
-      boolean sqlEx = getCause() instanceof SQLException;
-      boolean multiline = msg.length() > 80 || sqlEx || msg.contains("\n");
-      buf.append(msg);
-
-      // append optional extra identifiable and/or session info
-      String identStr = null;
-      if (identifiable != null) {
-        identStr = identifiable.toGenericString();    // toString may fail!
-        if (msg.contains(identStr)) {
-          identStr = null;
-        }
-      }
-      String sessionStr = null;
-      if (session != null) {
-        sessionStr = session.toString();
-        if (msg.contains(sessionStr)) {
-          sessionStr = null;
-        }
-      }
-      if (identStr != null || sessionStr != null) {
-        if (multiline) {
-          buf.append('\n');
-        }
-        else {
-          buf.append(' ');
-        }
-        buf.append(START_INFO);
-        if (identStr != null) {
-          buf.append(identStr);
-        }
-        if (sessionStr != null) {
-          if (identStr != null) {
-            buf.append(" -- ");
-          }
-          buf.append(sessionStr);
-        }
-        buf.append(END_INFO);
-      }
-
-      if (sqlEx) {
-        SQLException sx = (SQLException) getCause();
-        buf.append("\nSQL-Message: ").append(sx.getMessage())
-           .append("\nSQL-Code:    ").append(sx.getErrorCode())
-           .append("\nSQL-State:   ").append(sx.getSQLState());
-      }
-      lazyMessage = buf.toString();
+      lazyMessage = SessionUtilities.getInstance().createLazyExceptionMessage(super.getMessage(), getCause(), getIdentifiable(), getSession()).toString();
     }
     return lazyMessage;
   }
-
 
   /**
    * Updates the pdo if not set so far.<br>
@@ -449,7 +309,6 @@ public class PersistenceException extends TentackleRuntimeException {
     }
   }
 
-
   /**
    * Sets the db.<br>
    *
@@ -457,24 +316,6 @@ public class PersistenceException extends TentackleRuntimeException {
    */
   protected void setSession(Session session) {
     this.session = session;
-  }
-
-
-  /**
-   * Replaces SQLExceptions probably not in the remote client's classpath.
-   *
-   * @param t the throwable
-   * @return the filtered throwable
-   */
-  private static Throwable translateSQLException(Throwable t) {
-    if (t instanceof SQLException) {
-      StackTraceElement[] trace = t.getStackTrace();
-      SQLException sx = (SQLException) t;
-      // replace by java.sql.SQLException which definitely is in the classpath!
-      t = new SQLException(sx.getMessage() + " (" + t.getClass().getName() + ")", sx.getSQLState(), sx.getErrorCode());
-      t.setStackTrace(trace);
-    }
-    return t;
   }
 
 }
