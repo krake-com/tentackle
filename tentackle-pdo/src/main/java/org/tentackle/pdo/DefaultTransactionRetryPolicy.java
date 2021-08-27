@@ -18,10 +18,12 @@
 
 package org.tentackle.pdo;
 
+import java.util.Random;
+
 /**
  * The default transaction retry policy.
  * <p>
- * Retries 7 times after 0.5, 1.0, 2.0, 4.0, 8.0, 16.0 and 32.0 seconds.<br>
+ * Retries 7 times after random values around 0.5, 1.0, 2.0, 4.0, 8.0, 16.0 and 32.0 seconds.<br>
  * Should be enough in most cases.
  * <p>
  * Application can easily replace this default policy by providing their own implementation
@@ -30,12 +32,14 @@ package org.tentackle.pdo;
 @TransactionRetryPolicyService("")
 public class DefaultTransactionRetryPolicy implements TransactionRetryPolicy {
 
-  private static final long INITIAL_WAIT_MS = 500;
+  private static final Random rand = new Random();
+  private static final long OFFSET_WAIT_MS = 250;   // random value between 250 ...
+  private static final int RANGE_WAIT_MS = 500;     // ... and 750
   private static final int MAX_RETRIES = 7;
 
   @Override
   public long waitMillis(String txName, int count) {
-    return count > MAX_RETRIES ? 0 : INITIAL_WAIT_MS * (1 << (count - 1));    // double time each invocation
+    return count > MAX_RETRIES ? 0 : (OFFSET_WAIT_MS + rand.nextInt(RANGE_WAIT_MS)) * (1 << (count - 1));    // double time each invocation
   }
 
 }
