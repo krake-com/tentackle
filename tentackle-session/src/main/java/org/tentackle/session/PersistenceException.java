@@ -118,6 +118,7 @@ public class PersistenceException extends TentackleRuntimeException {
   public PersistenceException(Session session, String message, Throwable cause) {
     super(message, SessionUtilities.getInstance().alignExceptionCause(cause));
     setSession(session);
+    SessionUtilities.getInstance().alignTemporaryExceptionStatus(this);
   }
 
   /**
@@ -136,6 +137,7 @@ public class PersistenceException extends TentackleRuntimeException {
   public PersistenceException(Session session, Throwable cause) {
     super(SessionUtilities.getInstance().alignExceptionCause(cause));
     setSession(session);
+    SessionUtilities.getInstance().alignTemporaryExceptionStatus(this);
   }
 
   /**
@@ -182,6 +184,7 @@ public class PersistenceException extends TentackleRuntimeException {
   public PersistenceException(Identifiable object, String message, Throwable cause) {
     super(message, SessionUtilities.getInstance().alignExceptionCause(cause));
     setIdentifiable(object);
+    SessionUtilities.getInstance().alignTemporaryExceptionStatus(this);
   }
 
   /**
@@ -200,6 +203,7 @@ public class PersistenceException extends TentackleRuntimeException {
   public PersistenceException(Identifiable object, Throwable cause) {
     super(SessionUtilities.getInstance().alignExceptionCause(cause));
     setIdentifiable(object);
+    SessionUtilities.getInstance().alignTemporaryExceptionStatus(this);
   }
 
   /**
@@ -302,7 +306,7 @@ public class PersistenceException extends TentackleRuntimeException {
    * Sets the pdo.
    * @param object the persistent object
    */
-  protected void setIdentifiable(Identifiable object) {
+  private void setIdentifiable(Identifiable object) {
     this.identifiable = object;
     if (object instanceof SessionProvider) {
       setSession(((SessionProvider) object).getSession());
@@ -314,7 +318,7 @@ public class PersistenceException extends TentackleRuntimeException {
    *
    * @param session the session
    */
-  protected void setSession(Session session) {
+  private void setSession(Session session) {
     this.session = session;
   }
 

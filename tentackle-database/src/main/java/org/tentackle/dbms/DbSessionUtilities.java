@@ -20,8 +20,11 @@ package org.tentackle.dbms;
 
 import org.tentackle.common.Service;
 import org.tentackle.misc.Identifiable;
+import org.tentackle.reflect.ReflectionHelper;
+import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionUtilities;
+import org.tentackle.sql.Backend;
 
 import java.sql.SQLException;
 
@@ -33,14 +36,31 @@ public class DbSessionUtilities extends SessionUtilities {
 
   @Override
   public Throwable alignExceptionCause(Throwable t) {
-    if (t instanceof SQLException) {
+    if (t instanceof SQLException && !"java.sql".equals(ReflectionHelper.getPackageName(t.getClass().getName()))) {
+      // if some JDBC-driver specific exception (usually not in the classpath of a remote client)
       StackTraceElement[] trace = t.getStackTrace();
       SQLException sx = (SQLException) t;
+      SQLException next = sx.getNextException();
       // replace by java.sql.SQLException which definitely is in the classpath!
-      t = new SQLException(sx.getMessage() + " (" + t.getClass().getName() + ")", sx.getSQLState(), sx.getErrorCode());
-      t.setStackTrace(trace);
+      sx = new SQLException(sx.getMessage() + " (" + sx.getClass().getName() + ")", sx.getSQLState(), sx.getErrorCode());
+      sx.setStackTrace(trace);
+      if (next != null) {
+        sx.setNextException((SQLException) alignExceptionCause(next));
+      }
+      t = sx;
     }
     return t;
+  }
+
+  @Override
+  public void alignTemporaryExceptionStatus(PersistenceException exception) {
+    if (exception.getSession() instanceof Db) {    // just for sure...
+      Throwable cause = exception.getCause();
+      if (cause instanceof SQLException) {    // local session!
+        Backend backend = ((Db) exception.getSession()).getBackend();
+        exception.setTemporary(backend.isTransientTransactionException((SQLException) cause));
+      }
+    }
   }
 
   @Override

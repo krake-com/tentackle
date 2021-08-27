@@ -232,7 +232,24 @@ public interface Session extends Comparable<Session>, AutoCloseable {
   SessionInfo getSessionInfo();
 
   /**
-   * Starts a transaction.<br> Does nothing if a transaction is already running!
+   * Starts a transaction.<br>
+   * Does nothing if a transaction is already running!
+   * <p>
+   * If a transaction is already running and the transactionIsolation or readOnly mode
+   * does not correspond to the values at the effective beginning of the transaction,
+   * a {@link PersistenceException} is thrown.
+   *
+   * @param txName is the optional transaction name, null if none
+   * @param transactionIsolation the transaction isolation level, null or {@link TransactionIsolation#DEFAULT} if default
+   * @param transactionWritability the transaction writabilty, null or {@link TransactionWritability#DEFAULT} if default
+   *
+   * @return the tx-voucher, 0 if no tx begun
+   */
+  long begin(String txName, TransactionIsolation transactionIsolation, TransactionWritability transactionWritability);
+
+  /**
+   * Starts a transaction.<br>
+   * Does nothing if a transaction is already running!
    *
    * @param txName is the optional transaction name, null if none
    *

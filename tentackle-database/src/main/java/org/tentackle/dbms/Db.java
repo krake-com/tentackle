@@ -47,6 +47,8 @@ import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionPool;
 import org.tentackle.session.SessionTaskDispatcher;
 import org.tentackle.session.SessionUtilities;
+import org.tentackle.session.TransactionIsolation;
+import org.tentackle.session.TransactionWritability;
 import org.tentackle.session.VersionIncompatibleException;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
@@ -84,6 +86,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 
@@ -901,6 +904,8 @@ public class Db implements Session, Cloneable {
    * <p>
    * If a database is readonly, no updates, deletes or inserts
    * are possible. Any attempt to do so results in a persistence exception.
+   * <p>
+   * Notice that this flag is valid for the session, not for the connection, as the physical connection may change over time!
    *
    * @param readOnly true if readonly
    */
@@ -1468,22 +1473,19 @@ public class Db implements Session, Cloneable {
   }
 
 
-  /**
-   * Starts a transaction.<br>
-   * Does nothing if a transaction is already running!
-   *
-   * @param txName is the optional transaction name, null if none
-   *
-   * @return the transaction voucher (!= 0) if a new transaction was begun, else 0
-   */
+  @Override
+  public long begin(String txName, TransactionIsolation transactionIsolation, TransactionWritability transactionWritability) {
+    return begin(txName, false, transactionIsolation, transactionWritability);
+  }
+
   @Override
   public long begin(String txName)  {
-    return begin(txName, false);
+    return begin(txName, false, null, null);
   }
 
   @Override
   public long begin() {
-    return begin(null);
+    return begin(null, false, null, null);
   }
 
 
@@ -1493,10 +1495,12 @@ public class Db implements Session, Cloneable {
    *
    * @param txName is the optional transaction name, null if none
    * @param fromRemote true if invocation from remote client via {@link DbRemoteDelegate#begin}
+   * @param transactionIsolation the transaction isolation level, null or {@link TransactionIsolation#DEFAULT} if default
+   * @param transactionWritability the transaction writabilty, null or {@link TransactionWritability#DEFAULT} if default
    *
    * @return the transaction voucher (!= 0) if a new transaction was begun, else 0
    */
-  private long begin(String txName, boolean fromRemote)  {
+  private long begin(String txName, boolean fromRemote, TransactionIsolation transactionIsolation, TransactionWritability transactionWritability)  {
 
     assertOpen();
     assertOwnerThread();
@@ -1506,7 +1510,7 @@ public class Db implements Session, Cloneable {
     if (isRemote()) {
       if (autoCommit) {
         try {
-          txVoucher = resources.rdel.begin(txName);
+          txVoucher = resources.rdel.begin(txName, transactionIsolation, transactionWritability);
           if (txVoucher != 0) {
             autoCommit = false;           // we are now within a tx
           }
@@ -1529,9 +1533,17 @@ public class Db implements Session, Cloneable {
 
       immediatelyRolledBack = 0;  // the first begin clears all pending immediate rollbacks() ...
 
-      if (setAutoCommit(false)) {
-        // new transaction
-        assertNoTxRunning();
+      if (setAutoCommit(c -> {
+          // new transaction
+          assertNoTxRunning();
+          if (transactionIsolation != null && transactionIsolation != TransactionIsolation.DEFAULT) {
+            c.setTransactionIsolation(transactionIsolation.getLevel());
+          }
+          if (transactionWritability != null && transactionWritability != TransactionWritability.DEFAULT) {
+            c.setReadOnly(transactionWritability.getWritable());
+          }
+        })) {
+
         modificationLogList = null;
         transaction = createTransaction(txName, fromRemote);
         txVoucher = transaction.getTxVoucher();
@@ -1540,6 +1552,18 @@ public class Db implements Session, Cloneable {
       else  {
         // already running transaction
         assertTxRunning();
+        if (transactionIsolation != null && transactionIsolation != TransactionIsolation.DEFAULT &&
+            connection().getTransactionIsolation() != transactionIsolation.getLevel()) {
+          throw new PersistenceException(this, "cannot change a running transaction's isolation from " +
+                                               TransactionIsolation.valueOf(connection().getTransactionIsolation()) +
+                                               " to " + transactionIsolation);
+        }
+        if (transactionWritability != null && transactionWritability != TransactionWritability.DEFAULT &&
+            transactionWritability.getWritable() != connection().isReadOnly()) {
+          throw new PersistenceException(this, connection().isReadOnly() ?
+                                               "cannot change a running read-only transaction to read-write" :
+                                               "cannot change a running read-write transaction to read-only");
+        }
         transaction.incrementTxLevel(txName);    // just increment the nesting level
         LOGGER.fine("{0}: nested begin", this);
       }
@@ -1978,7 +2002,7 @@ public class Db implements Session, Cloneable {
           }
           transaction.commit();
           logCommitTx();
-          setAutoCommit(true);    // according to the specs: this will commit!
+          setAutoCommit(null);    // according to the specs: this will commit!
           logModificationDeferred = false;
           long txNo = getTxNumber();
           transaction = null;
@@ -2077,7 +2101,7 @@ public class Db implements Session, Cloneable {
             ManagedConnection c = resources.con;
             if (c != null) {
               c.rollback(withLog);  // avoid a commit ...
-              setAutoCommit(true);    // ... in setAutoCommit
+              setAutoCommit(null);    // ... in setAutoCommit
             }
             else {
               LOGGER.warning("rollback too late: connection already detached");
@@ -2231,7 +2255,7 @@ public class Db implements Session, Cloneable {
 
   /**
    * Detach the session.<br>
-   * Used in execption handling to cleanup all pending statements and result sets.
+   * Used in exception handling to cleanup all pending statements and result sets.
    */
   void forceDetached() {
     resources.conMgr.forceDetach(this);
@@ -2618,18 +2642,22 @@ public class Db implements Session, Cloneable {
    * if the autoCommit boolean value wouldn't change.
    * This allows nested setAutoCommit(false) in large transactions.
    *
-   * @param autoCommit the new commit value
+   * @param txStarter connection consumer invoked immediately when a transaction is begun (sets autocommit to false), null for autocommit = true
    * @return the old(!) value of autoCommit
    */
-  private boolean setAutoCommit (boolean autoCommit) {
+  private boolean setAutoCommit (Consumer<ManagedConnection> txStarter) {
+    boolean autoCommit = txStarter == null;
     if (this.autoCommit != autoCommit) {
-      if (autoCommit && getBackend().sqlRequiresExtraCommit()) {
-        // some dbms need a commit before setAutoCommit(true);
-        connection().commit();
+      if (autoCommit) {
+        if (getBackend().sqlRequiresExtraCommit()) {
+          // some dbms need a commit before setAutoCommit(true);
+          connection().commit();
+        }
       }
-      if (!autoCommit) {
+      else {
         // starting a tx
         attach();
+        txStarter.accept(connection());
       }
       connection().setAutoCommit(autoCommit);
       if (autoCommit) {

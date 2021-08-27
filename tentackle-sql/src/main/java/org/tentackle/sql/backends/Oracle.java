@@ -268,6 +268,18 @@ public class Oracle extends AbstractSql2003Backend {
   }
 
   @Override
+  public boolean isTransientTransactionException(SQLException ex) {
+    return super.isTransientTransactionException(ex) ||
+           isExceptionErrorCodeMatching(ex,
+                                        54,     // ORA-00054: resource busy and acquire with NOWAIT specified or timeout expired
+                                        60,     // ORA-00060: deadlock detected while waiting for resource
+                                        1013,   // ORA-01013: user requested cancel of current operation
+                                        4020,   // ORA-04020 deadlock detected while trying to lock object
+                                        4021,   // ORA-04021 timeout occurred while waiting to lock object
+                                        30006); // ORA-30006: resource busy; acquire with WAIT timeout expired
+  }
+
+  @Override
   public String getEmptyString() {
     return ORACLE_EMPTY_STRING;
   }

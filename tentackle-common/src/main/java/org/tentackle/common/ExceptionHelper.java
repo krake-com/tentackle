@@ -83,6 +83,45 @@ public final class ExceptionHelper {
 
 
   /**
+   * Extracts the first/last {@link TentackleRuntimeException} marked as temporay in the throwable chain.
+   *
+   * @param first true if finds the first, else the last in chain
+   * @param ex the head of chained exceptions, may be null
+   * @return the temporary exception, null if not found
+   */
+  public static TentackleRuntimeException extractTemporaryException(boolean first, Throwable ex) {
+    TentackleRuntimeException temporaryException = null;
+    while (ex != null) {
+      if (ex instanceof TentackleRuntimeException && ((TentackleRuntimeException) ex).isTemporary()) {
+        temporaryException = (TentackleRuntimeException) ex;
+        if (first)  {
+          break;
+        }
+      }
+      ex = ex.getCause();
+    }
+    return temporaryException;
+  }
+
+  /**
+   * Determines the first exception in the chain with a valid message.
+   *
+   * @param ex the head of chained exceptions, may be null
+   * @return the message, null if none
+   */
+  public static String getMessage(Throwable ex) {
+    while (ex != null) {
+      String message = ex.getMessage();
+      if (message != null && !message.isBlank()) {
+        return message;
+      }
+      ex = ex.getCause();
+    }
+    return null;
+  }
+
+
+  /**
    * Exception handler.
    *
    * @param <T> the exception type

@@ -42,6 +42,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLTransactionRollbackException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -127,35 +128,6 @@ public abstract class AbstractBackend implements Backend {
     }
 
     return DriverManager.getConnection(url, username, createPassword(password));
-  }
-
-  /**
-   * Creates a password string from a password char array.<br>
-   * Unfortunately, {@link DriverManager#getConnection(String, String, String)} requires the password as a string.
-   * This method creates a string from a char array and optionally decrypts it.
-   * Encrypted passwords are detected by a leading {@code ~}. If an unencrypted password must begin
-   * with a {@code ~}, a double {@code ~~} must be used.
-   *
-   * @param password the probably encrypted password
-   * @return the cleartext password
-   */
-  protected String createPassword(char[] password) {
-    String pw;
-    if (password != null) {
-      // encrypted passwords start with a ~.
-      // if a non-encrypted password must start with ~, ~~ must be used
-      if (password.length > 1 && password[0] == '~' && password[1] != '~') {
-        // password is encrypted
-        pw = Cryptor.getInstance().decrypt64(new String(password, 1, password.length - 1));
-      }
-      else {
-        pw = new String(password);
-      }
-    }
-    else {
-      pw = "";
-    }
-    return pw;
   }
 
   @Override
@@ -289,8 +261,14 @@ public abstract class AbstractBackend implements Backend {
 
   @Override
   public boolean isCommunicationLinkException(SQLException ex) {
-    return isExceptionStateStartingWith(ex, "08") ||    // initial connection failed
-           isExceptionStateStartingWith(ex, "57");      // connection vanished or became unusable
+    // initial connection failed or connection vanished or became unusable
+    return isExceptionStateStartingWith(ex, "08", "57");
+  }
+
+  @Override
+  public boolean isTransientTransactionException(SQLException ex) {
+    return ex instanceof SQLTransactionRollbackException ||   // the preferred way, but rarely implemented
+           isExceptionStateMatching(ex, "40001");     // serialization failure or deadlock
   }
 
   @Override
@@ -332,12 +310,10 @@ public abstract class AbstractBackend implements Backend {
     return 0;
   }
 
-
   @Override
   public String getDefaultSchema() {
     return null;
   }
-
 
   @Override
   public ModelMetaData getModelMetaData(DatabaseMetaData[] metaData, String[] schemas, String... tableNames) {
@@ -350,7 +326,6 @@ public abstract class AbstractBackend implements Backend {
     }
     return modelMetaData;
   }
-
 
   @Override
   public TableMetaData getTableMetaData(ModelMetaData modelMetaData, String tableName) {
@@ -408,8 +383,6 @@ public abstract class AbstractBackend implements Backend {
     return found ? table : null;
   }
 
-
-
   @Override
   public TableMetaData createTableMetaData(ModelMetaData modelMetaData, String tableName) {
     return new TableMetaData(modelMetaData, tableName);
@@ -439,16 +412,6 @@ public abstract class AbstractBackend implements Backend {
     }
     buf.append('\n');
     return buf.toString();
-  }
-
-  /**
-   * Generates the first line of a CREATE TABLE statement.
-   *
-   * @param tableName the tablename with optional schema separated by a dot
-   * @return the SQL code including the opening bracket
-   */
-  protected String sqlCreateTableIntroWithoutComment(String tableName) {
-    return "CREATE TABLE " + tableName + " (";
   }
 
   @Override
@@ -508,8 +471,6 @@ public abstract class AbstractBackend implements Backend {
     return buf.toString();
   }
 
-
-
   @Override
   public String valueToLiteral(SqlType sqlType, Object value) {
     switch(sqlType) {
@@ -551,28 +512,6 @@ public abstract class AbstractBackend implements Backend {
       rv = Objects.equals(defaultValue, value);
     }
     return rv;
-  }
-
-  /**
-   * Normalize the default string to compare.
-   *
-   * @param str the default value as a string, may be null
-   * @return the normalized value, never null
-   */
-  protected String normalizeDefault(String str) {
-    if (str == null) {
-      str = "";
-    }
-    else {
-      str = str.toUpperCase();
-      if (str.startsWith("'")) {
-        str = str.substring(1);
-      }
-      if (str.endsWith("'")) {
-        str = str.substring(0, str.length() - 1);
-      }
-    }
-    return str;
   }
 
   @Override
@@ -650,8 +589,6 @@ public abstract class AbstractBackend implements Backend {
     throw new BackendException("backend supports rename column without full declaration");
   }
 
-
-
   @Override
   public String sqlAddColumn(String tableName, String columnName, String comment, SqlType sqlType, int size, int scale,
           boolean nullable, Object defaultValue) {
@@ -715,38 +652,6 @@ public abstract class AbstractBackend implements Backend {
       buf.append(valueToLiteral(sqlType, defaultValue));
     }
     buf.append(";\n");
-    return buf.toString();
-  }
-
-
-
-
-
-
-  /**
-   * Generates the attribute definition of a CREATE TABLE statement.
-   *
-   * @param columnName the database column name
-   * @param sqlType the JDBC sql type
-   * @param size the optional size
-   * @param scale the optional scale
-   * @param nullable true if NULL, else NOT NULL
-   * @param defaultValue the optional default value
-   * @param primaryKey true if this is a primary key
-   * @param withTrailingComma true if append a comma
-   * @return the SQL code
-   */
-  protected String sqlCreateTableAttributeWithoutComment(String columnName, SqlType sqlType, int size, int scale,
-                                        boolean nullable, Object defaultValue, boolean primaryKey, boolean withTrailingComma) {
-    StringBuilder buf = new StringBuilder(columnName);
-    buf.append(' ');
-    buf.append(columnTypeNullDefaultToString(columnName, sqlType, size, scale, nullable, defaultValue));
-    if (primaryKey) {
-      buf.append(" PRIMARY KEY");
-    }
-    if (withTrailingComma) {
-      buf.append(',');
-    }
     return buf.toString();
   }
 
@@ -907,31 +812,6 @@ public abstract class AbstractBackend implements Backend {
     select.append(buf);
   }
 
-
-  /**
-   * Extracts the where clause from a given sql.
-   *
-   * @param sql the sql statement
-   * @param whereOffset the location of WHERE in sql
-   * @return the where clause without the keyword WHERE
-   */
-  protected String extractWhereClause(String sql, int whereOffset) {
-    // cut order by
-    int ndx = sql.lastIndexOf(SQL_ORDERBY);
-    if (ndx >= 0) {
-      sql = sql.substring(whereOffset + SQL_WHERE.length(), ndx);
-    }
-    else  {
-      sql = sql.substring(whereOffset + SQL_WHERE.length());
-    }
-    sql = sql.trim();
-    if (sql.equals("1=1")) {
-      sql = "";
-    }
-    return sql;
-  }
-
-
   @Override
   public void assertValidName(SqlNameType nameType, String name) {
     if (name != null) {
@@ -960,7 +840,6 @@ public abstract class AbstractBackend implements Backend {
       }
     }
   }
-
 
   @Override
   public SqlType[] jdbcTypeToSqlType(int jdbcType, int size, int scale) {
@@ -1046,8 +925,6 @@ public abstract class AbstractBackend implements Backend {
     return new SqlType[] { sqlType };
   }
 
-
-
   @Override
   public String toQuotedString(String str) {
     StringBuilder buf = new StringBuilder("'");
@@ -1063,7 +940,6 @@ public abstract class AbstractBackend implements Backend {
     buf.append("'");
     return buf.toString();
   }
-
 
   @Override
   public String optimizeSql(String sql)  {
@@ -1106,7 +982,6 @@ public abstract class AbstractBackend implements Backend {
     return false;
   }
 
-
   @Override
   public void setDropIfExistsEnabled(boolean dropIfExistsEnabled) {
     this.dropIfExistsEnabled = dropIfExistsEnabled;
@@ -1116,18 +991,6 @@ public abstract class AbstractBackend implements Backend {
   public boolean isDropIfExistsEnabled() {
     return dropIfExistsEnabled && isDropIfExistsSupported();
   }
-
-  /**
-   * Adds "IF EXISTS" to drop clauses, if supported by the backend.<br>
-   * Makes migration a little more robust in case the same SQL scripts are
-   * applied to different databases than those used to generate the migration scripts for.
-   *
-   * @return true if supported
-   */
-  protected boolean isDropIfExistsSupported() {
-    return false;
-  }
-
 
   @Override
   public String toInternalType(String sqlTypeName) {
@@ -1147,19 +1010,213 @@ public abstract class AbstractBackend implements Backend {
     statement.setArray(pos, jdbcArray);
   }
 
+
   /**
-   * Checks if the exception's state starts with a given string.
+   * Generates the first line of a CREATE TABLE statement.
+   *
+   * @param tableName the tablename with optional schema separated by a dot
+   * @return the SQL code including the opening bracket
+   */
+  protected String sqlCreateTableIntroWithoutComment(String tableName) {
+    return "CREATE TABLE " + tableName + " (";
+  }
+
+  /**
+   * Creates a password string from a password char array.<br>
+   * Unfortunately, {@link DriverManager#getConnection(String, String, String)} requires the password as a string.
+   * This method creates a string from a char array and optionally decrypts it.
+   * Encrypted passwords are detected by a leading {@code ~}. If an unencrypted password must begin
+   * with a {@code ~}, a double {@code ~~} must be used.
+   *
+   * @param password the probably encrypted password
+   * @return the cleartext password
+   */
+  protected String createPassword(char[] password) {
+    String pw;
+    if (password != null) {
+      // encrypted passwords start with a ~.
+      // if a non-encrypted password must start with ~, ~~ must be used
+      if (password.length > 1 && password[0] == '~' && password[1] != '~') {
+        // password is encrypted
+        pw = Cryptor.getInstance().decrypt64(new String(password, 1, password.length - 1));
+      }
+      else {
+        pw = new String(password);
+      }
+    }
+    else {
+      pw = "";
+    }
+    return pw;
+  }
+
+  /**
+   * Normalize the default string to compare.
+   *
+   * @param str the default value as a string, may be null
+   * @return the normalized value, never null
+   */
+  protected String normalizeDefault(String str) {
+    if (str == null) {
+      str = "";
+    }
+    else {
+      str = str.toUpperCase();
+      if (str.startsWith("'")) {
+        str = str.substring(1);
+      }
+      if (str.endsWith("'")) {
+        str = str.substring(0, str.length() - 1);
+      }
+    }
+    return str;
+  }
+
+  /**
+   * Generates the attribute definition of a CREATE TABLE statement.
+   *
+   * @param columnName the database column name
+   * @param sqlType the JDBC sql type
+   * @param size the optional size
+   * @param scale the optional scale
+   * @param nullable true if NULL, else NOT NULL
+   * @param defaultValue the optional default value
+   * @param primaryKey true if this is a primary key
+   * @param withTrailingComma true if append a comma
+   * @return the SQL code
+   */
+  protected String sqlCreateTableAttributeWithoutComment(String columnName, SqlType sqlType, int size, int scale,
+                                                         boolean nullable, Object defaultValue, boolean primaryKey, boolean withTrailingComma) {
+    StringBuilder buf = new StringBuilder(columnName);
+    buf.append(' ');
+    buf.append(columnTypeNullDefaultToString(columnName, sqlType, size, scale, nullable, defaultValue));
+    if (primaryKey) {
+      buf.append(" PRIMARY KEY");
+    }
+    if (withTrailingComma) {
+      buf.append(',');
+    }
+    return buf.toString();
+  }
+
+  /**
+   * Extracts the where clause from a given sql.
+   *
+   * @param sql the sql statement
+   * @param whereOffset the location of WHERE in sql
+   * @return the where clause without the keyword WHERE
+   */
+  protected String extractWhereClause(String sql, int whereOffset) {
+    // cut order by
+    int ndx = sql.lastIndexOf(SQL_ORDERBY);
+    if (ndx >= 0) {
+      sql = sql.substring(whereOffset + SQL_WHERE.length(), ndx);
+    }
+    else  {
+      sql = sql.substring(whereOffset + SQL_WHERE.length());
+    }
+    sql = sql.trim();
+    if (sql.equals("1=1")) {
+      sql = "";
+    }
+    return sql;
+  }
+
+  /**
+   * Adds "IF EXISTS" to drop clauses, if supported by the backend.<br>
+   * Makes migration a little more robust in case the same SQL scripts are
+   * applied to different databases than those used to generate the migration scripts for.
+   *
+   * @return true if supported
+   */
+  protected boolean isDropIfExistsSupported() {
+    return false;
+  }
+
+  /**
+   * Checks if the exception's state starts with a given string(s).
    *
    * @param ex the exception
-   * @param prefix the prefix the state starts with
+   * @param prefixes the prefixes the state starts with
    * @return true if so
    */
-  private boolean isExceptionStateStartingWith(SQLException ex, String prefix) {
-    if (ex != null) {
-      String state = ex.getSQLState();
-      return state != null && state.startsWith(prefix);
+  protected boolean isExceptionStateStartingWith(SQLException ex, String... prefixes) {
+    boolean match = false;
+    String sqlState = extractSqlState(ex);
+    if (sqlState != null) {
+      for (String prefix : prefixes) {
+        if (sqlState.startsWith(prefix)) {
+          match = true;
+          break;
+        }
+      }
     }
-    return false;
+    return match;
+  }
+
+  /**
+   * Checks if the exception's state equals given string(s).
+   *
+   * @param ex the exception
+   * @param states the states to check for
+   * @return true if matches
+   */
+  protected boolean isExceptionStateMatching(SQLException ex, String... states) {
+    boolean match = false;
+    String sqlState = extractSqlState(ex);
+    if (sqlState != null) {
+      for (String state : states) {
+        if (state.equals(state)) {
+          match = true;
+          break;
+        }
+      }
+    }
+    return match;
+  }
+
+  /**
+   * Checks if the exception's error code equals given number(s).
+   *
+   * @param ex the exception
+   * @param codes the error codes to check for
+   * @return true if matches
+   */
+  protected boolean isExceptionErrorCodeMatching(SQLException ex, int... codes) {
+    boolean match = false;
+    int errorCode = extractErrorCode(ex);
+    for (int code : codes) {
+      if (errorCode == code) {
+        match = true;
+        break;
+      }
+    }
+    return match;
+  }
+
+
+  private String extractSqlState(SQLException ex) {
+    String sqlState = null;
+    while (ex != null) {
+      sqlState = ex.getSQLState();
+      if (sqlState != null && !sqlState.isBlank()) {
+        break;
+      }
+      ex = ex.getNextException();
+    }
+    return sqlState;
+  }
+
+  private int extractErrorCode(SQLException ex) {
+    int errorCode = 0;
+    while (ex != null) {
+      errorCode = ex.getErrorCode();
+      if (errorCode != 0) {
+        break;
+      }
+      ex = ex.getNextException();
+    }
+    return errorCode;
   }
 
 }

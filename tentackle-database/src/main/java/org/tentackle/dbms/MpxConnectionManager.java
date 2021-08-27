@@ -157,15 +157,21 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   @Override
   public synchronized void shutdown() {
     shutdownRequested = true;
-    if (connectThread.isAlive()) {
+    InterruptedException ix = null;
+    for (int loop=0; connectThread.isAlive() && loop < 3; loop++) {   // loop because we may receive an interrupt as well
+      ix = null;
       connectThread.interrupt();
       try {
         connectThread.join();   // wait until connect thread terminates
+        break;
       }
       catch (InterruptedException ex) {
         // daemon thread is terminated via shutdown()!
-        LOGGER.warning(this + ": stopping the connect thread failed", ex);
+        ix = ex;
       }
+    }
+    if (connectThread.isAlive()) {
+      LOGGER.warning(this + ": stopping the connect thread failed", ix);
     }
     // close all connections
     super.shutdown();

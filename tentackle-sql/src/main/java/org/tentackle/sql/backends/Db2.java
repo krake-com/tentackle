@@ -94,6 +94,13 @@ public class Db2 extends AbstractSql2003Backend {
   }
 
   @Override
+  public boolean isTransientTransactionException(SQLException ex) {
+    return super.isTransientTransactionException(ex) ||
+           isExceptionStateMatching(ex, "57014") ||
+           isExceptionErrorCodeMatching(ex, -952);
+  }
+
+  @Override
   public boolean isFunctionBasedIndexSupported() {
     return true;
   }

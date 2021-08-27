@@ -27,6 +27,8 @@ import org.tentackle.log.Logger.Level;
 import org.tentackle.log.MappedDiagnosticContext;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SessionClosedException;
+import org.tentackle.session.TransactionIsolation;
+import org.tentackle.session.TransactionWritability;
 import org.tentackle.sql.Backend;
 
 import java.lang.ref.Cleaner;
@@ -307,6 +309,10 @@ public class ManagedConnection {
   private final String backendId;                         // a unique ID to identify the connection at the backend
   private final long instanceNumber;                      // unique instance number (for logging only)
   private final long establishedSince;                    // connection established establishedSince... (epochal [ms])
+  private final int defaultTxIsolation;                   // the initial/default transaction isolation level
+  private final boolean defaultReadOnly;                  // the initial/default read-only mode
+  private int txIsolation;                                // the current transaction isolation level
+  private boolean readOnly;                               // the current read-only mode
   private Db db;                                          // currently attached Db, null = free connection
   private long expireAt;                                  // connection shutdown at (epochal [ms]), 0 = forever
   private long attachedSince;                             // attached since when...
@@ -350,6 +356,9 @@ public class ManagedConnection {
     resources = new Resources(connection);
     resources.name = toString();    // cannot be a constructor arg because of chicken egg
     cleanable = CLEANER.register(this, resources);
+
+    defaultTxIsolation = txIsolation = getTransactionIsolation();
+    defaultReadOnly = readOnly = isReadOnly();
   }
 
 
@@ -618,6 +627,8 @@ public class ManagedConnection {
 
       statementHistory.clear();
       currentStatement = null;
+
+      restoreTransactionDefaults();
     }
     else {
       if (db.getConnection() != this) {
@@ -829,6 +840,13 @@ public class ManagedConnection {
     else  {
       buf.append(" <unlimited>");
     }
+    if (readOnly != defaultReadOnly) {
+      buf.append(", ").append(TransactionWritability.valueOf(!readOnly));
+    }
+    if (txIsolation != defaultTxIsolation) {
+      buf.append(", ").append(TransactionIsolation.valueOf(txIsolation));
+    }
+
     Db lDb = db;    // may be closed in the meantime...
     if (lDb != null) {
       buf.append("\n    -> ");
@@ -906,9 +924,73 @@ public class ManagedConnection {
   }
 
 
+  /**
+   * Gets the current transaction isolation level.
+   *
+   * @return the isolation level
+   * @see Connection#getTransactionIsolation()
+   */
+  public int getTransactionIsolation() {
+    try {
+      return getConnection().getTransactionIsolation();
+    }
+    catch (SQLException sx) {
+      throw createFromSqlException("getting transaction isolation level failed", sx);
+    }
+  }
+
+  /**
+   * Sets the transaction isolation level.
+   *
+   * @param txIsolation the isolation level
+   * @see Connection#setTransactionIsolation(int)
+   */
+  public void setTransactionIsolation(int txIsolation) {
+    try {
+      getConnection().setTransactionIsolation(txIsolation);
+      this.txIsolation = txIsolation;
+    }
+    catch (SQLException sx) {
+      throw createFromSqlException("setting transaction isolation level to " + txIsolation + " failed", sx);
+    }
+  }
+
+
+  /**
+   * Gets the read-only mode.
+   *
+   * @return true if read-only
+   * @see Connection#isReadOnly()
+   */
+  public boolean isReadOnly() {
+    try {
+      return getConnection().isReadOnly();
+    }
+    catch (SQLException sx) {
+      throw createFromSqlException("getting read-only mode failed", sx);
+    }
+  }
+
+  /**
+   * Sets the read-only mode.
+   *
+   * @param readOnly true if read-only
+   * @see Connection#setReadOnly(boolean)
+   */
+  public void setReadOnly(boolean readOnly) {
+    try {
+      getConnection().setReadOnly(readOnly);
+      this.readOnly = readOnly;
+    }
+    catch (SQLException sx) {
+      throw createFromSqlException("setting read-only mode to " + readOnly + " failed", sx);
+    }
+  }
 
   /**
    * Sets the autocommit feature.
+   * <p>
+   * Restores the default transaction isolation level and read-only mode, if set to true and isolation or read-only mode was changed.
    *
    * @param autoCommit true to enable autocomit, false to disable.
    */
@@ -916,9 +998,12 @@ public class ManagedConnection {
     assertAttached();
     try {
       getConnection().setAutoCommit(autoCommit);
+      if (autoCommit) {
+        restoreTransactionDefaults();
+      }
     }
     catch (SQLException ex) {
-      throw createFromSqlException("setting autocommit failed", ex);
+      throw createFromSqlException("setting autocommit to " + autoCommit + " failed", ex);
     }
   }
 
@@ -1215,6 +1300,7 @@ public class ManagedConnection {
       statementHistory.clear();
       currentStatement = null;
       openResultSets.clear();
+      restoreTransactionDefaults();
     }
     // else already detached
   }
@@ -1473,6 +1559,16 @@ public class ManagedConnection {
     }
     catch (SQLException sqx) {
       throw createFromSqlException("cannot determine prepared statement configuration for '" + prepStmt.getSql() + "'", sqx);
+    }
+  }
+
+
+  private void restoreTransactionDefaults() {
+    if (txIsolation != defaultTxIsolation) {
+      setTransactionIsolation(defaultTxIsolation);
+    }
+    if (readOnly != defaultReadOnly) {
+      setReadOnly(defaultReadOnly);
     }
   }
 
