@@ -23,6 +23,8 @@ import org.tentackle.log.Logger;
 import org.tentackle.misc.FormatHelper;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SessionInfo;
+import org.tentackle.session.TransactionIsolation;
+import org.tentackle.session.TransactionWritability;
 import org.tentackle.sql.BackendInfo;
 
 import java.lang.ref.WeakReference;
@@ -583,8 +585,10 @@ public class DefaultConnectionManager implements ConnectionManager {
       con.setExpireAt(con.getEstablishedSince() +
                       (minMinutes * 60L + random.nextInt((maxMinutes - minMinutes) * 60)) * 1000L);
     }
-    LOGGER.info("{0}: open connection {1}, valid until {2}",
-                this, con, FormatHelper.formatTimestamp(new Date(con.getExpireAt())));
+    LOGGER.info("{0}: open connection {1}, {2}, {3}, valid until {4}",
+                this, con, TransactionIsolation.valueOf(con.getTransactionIsolation()),
+                TransactionWritability.valueOf(!con.isReadOnly()),
+                FormatHelper.formatTimestamp(new Date(con.getExpireAt())));
     return con;
   }
 

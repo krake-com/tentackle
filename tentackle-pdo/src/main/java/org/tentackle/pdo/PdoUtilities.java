@@ -22,6 +22,7 @@ import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.ServiceFinder;
 import org.tentackle.common.StringHelper;
+import org.tentackle.log.Logger;
 import org.tentackle.misc.IdentifiableKey;
 import org.tentackle.misc.TrackedList;
 import org.tentackle.session.ModificationEvent;
@@ -31,6 +32,7 @@ import org.tentackle.session.Persistent;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionUtilities;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -56,6 +58,8 @@ interface PdoUtilitiesHolder {
  */
 @Service(PdoUtilities.class)      // defaults to self
 public class PdoUtilities {
+
+  private static final Logger LOGGER = Logger.get(PdoUtilities.class);
   
   private static final String NULL_SESSION = "session in PDO is null";
   private static final String UNEXPECTED_SESSION = "unexpected session: ";
@@ -97,7 +101,10 @@ public class PdoUtilities {
    */
   private final Map<String, String> pluralMap;
 
-
+  /**
+   * The map of transaction retry policies.
+   */
+  private final Map<String, TransactionRetryPolicy> transactionRetryPolicyMap;
 
   /**
    * Creates a utility instance.
@@ -116,6 +123,25 @@ public class PdoUtilities {
       String multiName = StringHelper.stripEnclosingDoubleQuotes(entry.getKey());
       pluralMap.put(entry.getValue(), multiName);
     }
+
+    transactionRetryPolicyMap = new HashMap<>();
+    for (Map.Entry<String,String> entry: finder.createNameMap(TransactionRetryPolicyService.class.getName()).entrySet()) {
+      String policyName = StringHelper.stripEnclosingDoubleQuotes(entry.getKey());
+      try {
+        Class<?> retryPolicyClass = Class.forName(entry.getValue());
+        Object object = retryPolicyClass.getConstructor().newInstance();
+        if (object instanceof TransactionRetryPolicy) {
+          transactionRetryPolicyMap.putIfAbsent(policyName, (TransactionRetryPolicy) object);
+        }
+        else {
+          LOGGER.severe(retryPolicyClass + " is not a TransactionRetryPolicy");
+        }
+      }
+      catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+        LOGGER.severe("cannot instantiate transaction retry policy", e);
+      }
+    }
+
   }
 
 
@@ -666,6 +692,21 @@ public class PdoUtilities {
    */
   public void unlisten(PdoListener listener) {
     ModificationTracker.getInstance().removeModificationListener(listener);
+  }
+
+
+  /**
+   * Gets the transaction retry policy.
+   *
+   * @param policyName the name of the policy, empty string or null for default
+   * @return the policy, never null
+   */
+  public TransactionRetryPolicy getTransactionRetryPolicy(String policyName) {
+    TransactionRetryPolicy policy = transactionRetryPolicyMap.get(policyName == null ? "" : policyName);
+    if (policy == null) {
+      throw new PersistenceException("no such TransactionRetryPolicy: '" + policyName + "'");
+    }
+    return policy;
   }
 
 }

@@ -280,6 +280,15 @@ public class SessionUtilities {
     return t;
   }
 
+  /**
+   * Sets the temporary flag according to the exception's root cause and the session.
+   *
+   * @param exception the exception
+   */
+  public void alignTemporaryExceptionStatus(PersistenceException exception) {
+    // default does nothing
+  }
+
 
   /**
    * Creates the lazy exception message for a {@link PersistenceException}.

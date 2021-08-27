@@ -196,6 +196,13 @@ public class MsSql extends AbstractSql2003Backend {
   }
 
   @Override
+  public boolean isTransientTransactionException(SQLException ex) {
+    return super.isTransientTransactionException(ex) ||
+           isExceptionErrorCodeMatching(ex, 1222) ||
+           isExceptionStateMatching(ex, "HY008");
+  }
+
+  @Override
   protected String extractWhereClause(String sql, int whereOffset) {
     int ndx = sql.indexOf(SQL_TOP);
     if (ndx >= 0) {

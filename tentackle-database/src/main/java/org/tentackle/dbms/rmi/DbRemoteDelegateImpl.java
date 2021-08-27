@@ -29,6 +29,8 @@ import org.tentackle.dbms.PersistenceVisitor;
 import org.tentackle.dbms.RollbackTxRunnable;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SavepointHandle;
+import org.tentackle.session.TransactionIsolation;
+import org.tentackle.session.TransactionWritability;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
@@ -55,7 +57,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
 
     // figure out private begin method
     try {
-      beginMethod = dbClass.getDeclaredMethod("begin", String.class, Boolean.TYPE);
+      beginMethod = dbClass.getDeclaredMethod("begin", String.class, Boolean.TYPE, TransactionIsolation.class, TransactionWritability.class);
       beginMethod.setAccessible(true);
     }
     catch (NoSuchMethodException ex) {
@@ -126,9 +128,9 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
   }
 
   @Override
-  public long begin(String txName) throws RemoteException {
+  public long begin(String txName, TransactionIsolation transactionIsolation, TransactionWritability transactionWritability) throws RemoteException {
     try {
-      return (long) beginMethod.invoke(getSession(), txName, true);
+      return (long) beginMethod.invoke(getSession(), txName, true, transactionIsolation, transactionWritability);
     }
     catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex)  {
       throw createException(ex);

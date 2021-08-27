@@ -537,6 +537,18 @@ public interface Backend {
 
 
   /**
+   * Determines whether exception is transient and retrying the transaction may succeed.<br>
+   * Typical transient exceptions are thrown when a deadlock is detected or when serialized transaction isolation is used.
+   * <p>
+   * Other transient errors are not covered by this method (e.g. connection timeouts, etc...).
+   *
+   * @param ex the exception
+   * @return true if retrying the transaction may succeed
+   */
+  boolean isTransientTransactionException(SQLException ex);
+
+
+  /**
    * Returns the maximum size for a given SQL-type.<br>
    *
    * @param sqlType the SQL-type

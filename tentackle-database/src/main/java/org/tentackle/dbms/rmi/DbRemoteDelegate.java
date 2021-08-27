@@ -26,6 +26,8 @@ import org.tentackle.dbms.ModificationLog;
 import org.tentackle.dbms.PersistenceVisitor;
 import org.tentackle.dbms.RollbackTxRunnable;
 import org.tentackle.session.SavepointHandle;
+import org.tentackle.session.TransactionIsolation;
+import org.tentackle.session.TransactionWritability;
 
 import java.io.Serializable;
 import java.rmi.RemoteException;
@@ -47,7 +49,7 @@ public interface DbRemoteDelegate extends RemoteDelegate {
 
   void setAlive(boolean alive) throws RemoteException;
 
-  long begin(String txName) throws RemoteException;
+  long begin(String txName, TransactionIsolation transactionIsolation, TransactionWritability transactionWritability) throws RemoteException;
 
   boolean commit(long txVoucher) throws RemoteException;
 

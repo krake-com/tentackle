@@ -143,6 +143,13 @@ public class Postgres extends AbstractSql92Backend {
   }
 
   @Override
+  public boolean isTransientTransactionException(SQLException ex) {
+    return super.isTransientTransactionException(ex) ||
+           // deadlock detected, lock not available
+           isExceptionStateMatching(ex, "40P01", "55P03");
+  }
+
+  @Override
   public boolean isClobSupported() {
     return false;   // use TEXT instead
   }
