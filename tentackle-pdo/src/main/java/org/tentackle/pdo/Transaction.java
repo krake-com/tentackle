@@ -67,14 +67,18 @@ public @interface Transaction {
   TransactionWritability writability() default TransactionWritability.DEFAULT;
 
   /**
-   * Determines whether a transaction that receives a transient exception from the backend should be retried.<br>
+   * Determines whether a transaction that is rolled back due to a temporary exception should be retried.<br>
    * By default, transactions will not be retried.<br>
-   * Isolation levels {@link TransactionIsolation#REPEATABLE_READ} and {@link TransactionIsolation#SERIALIZABLE} usually
-   * require retryable transactions to work reliably in production.
+   * Isolation levels {@link TransactionIsolation#REPEATABLE_READ} and {@link TransactionIsolation#SERIALIZABLE}
+   * may produce database serialization errors and throw transient SQL exceptions, which usually
+   * requires retryable transactions to work reliably in production.<br>
+   * Another source for such temporary exceptions are database deadlocks.<br>
+   * The Tentackle persistence layer will also mark {@link org.tentackle.session.NotFoundException}s as temporary,
+   * if an optimistic locking error is detected (serial mismatch).
    * <p>
    * CAUTION: retryable transactions must be idempotent except for database modifications! This basically means,
    * that all code executed within such a transaction must not modify the conditions that exist at the beginning
-   * of its execution. Whenever a transient exception is thrown, the modifications of the database are rolled back,
+   * of its execution. Whenever a temporary exception is thrown, the modifications of the database are rolled back,
    * but the state of the involved java objects is left unchanged.
    *
    * @return true if retry transaction after transient exceptions

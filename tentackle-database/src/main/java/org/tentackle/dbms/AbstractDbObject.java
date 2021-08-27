@@ -3021,18 +3021,22 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       if (count < 1) {
         String message = "no rows affected";
         long persistedSerial = 0;
+        boolean temporary = false;
         if (!isVirgin()) {
-          // read the serial to figure out whether object exists
+          // read the serial to figure out whether object exists in database
           persistedSerial = selectSerial(getId());
           if (persistedSerial > 0) {
             // object exists, but probably with wrong serial (depends on the statement)
             message += " (persisted serial=" + persistedSerial + ")";
+            temporary = true;   // optimistic locking failure? may disappear if whole tx is retried (see @Transaction)
           }
           else  {
             message += " (object with id=" + id + " doesn't exist in table " + getTableName() + ")";
           }
         }
-        throw new NotFoundException(this, message, persistedSerial);
+        PersistenceException nfx = new NotFoundException(this, message, persistedSerial);
+        nfx.setTemporary(temporary);
+        throw nfx;
       }
       else {
         throw new PersistenceException(this, "more than one row affected: " + count);
