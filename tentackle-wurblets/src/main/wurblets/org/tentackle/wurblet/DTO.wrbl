@@ -23,7 +23,11 @@ If the optional &lt;code&gt; is missing, the default <code>"ValidationUtilities.
 </li>
 <li><em>--names:</em> generate the name constants for all properties.</li>
 <li><em>--from:</em> only if --builder set: generate method to create a builder from instance. This will automatically
-happen if the '+' option at set for at least one property.</li>
+happen if the '+' option is set for at least one property.</li>
+<li><em>--with:</em> same as <code>--from</code>, but the generated methods are prefixed by "with" instead of "from".
+In TT, the default is to use "frommers" instead of "withers", since builder implementations exist in the wild
+that use withers for builder methods (which return the builder and not the object to be built!). This may be confusing.
+TT supports both, though.</li>
 <li><em>--nott:</em> generate generic code that does not need any Tentackle dependency (such as TentackleRuntimeException)</li>
 <li><em>filename:</em> the file holding the DTO model.</li>
 </ul>
@@ -37,26 +41,27 @@ Example:
 String  name    the object's name
 int     count   the counter
 </pre>
-If the line is prefixed with "^", the property is passed to the super entity within the constructor.<br>
+If the line is prefixed by "^", the property is passed to the super entity within the constructor.<br>
 In builder pattern mode, standard java inheritance must be used instead.<br>
 Example:
 <pre>
 ^String name   the name
 </pre>
-If the line is prefixed with "=" or "~", the property is mutable and a setter is generated. "~" marks
+If the line is prefixed by "=" or "~", the property is mutable and a setter is generated. "~" marks
 the property transient as well.<br>
 In builder pattern mode, no builder method is generated for this property.<br>
 Examples:
 <pre>
 =String name   the name
 </pre>
-Only for builder mode: lines prefixed with "!" are considered as required and a (Tentackle)RuntimeException is
+Only for builder mode: lines prefixed by "!" are considered as required and a (Tentackle)RuntimeException is
 thrown by the build-method, if a required attribute was not configured. Notice that a required attribute
 is always immutable.
 <pre>
 !String name   the name
 </pre>
-For lines prefixed with "+" a from-Method is generated that creates a new DTO from the current one by replacing the given property.
+For lines prefixed by "+" a from-Method is generated that creates a new DTO from the current one by replacing the given property.
+If the option --with is set, the methods are prefixed by <code>with</code> (a.k.a. "withers").
 <pre>
 +String name   the name
 </pre>

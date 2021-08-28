@@ -109,7 +109,7 @@ public interface BindingMember {
    *
    * @param parent the parent containing this member
    * @param value the object to set
-   * @return the new parent if value was updated via "from"-method
+   * @return the new parent if value was updated via "from"- or "with"-method
    */
   Object setObject(Object parent, Object value);
 

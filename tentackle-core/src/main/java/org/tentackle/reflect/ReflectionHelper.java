@@ -569,22 +569,26 @@ public final class ReflectionHelper {
 
 
   /**
-   * Gets the method name reduced to the part used in paths if method is an attribute "from" method.
+   * Gets the method name reduced to the part used in binding or validation paths, if method is a "from"- or "with"-method.
    * <p>
    * Examples:<br>
    * <pre>
    * fromBlah -&gt; blah
+   * withBlah -&gt; blah
    * </pre>
    *
    * @param method the method
-   * @return the method's reduced name, null if this is not a from method
+   * @return the method's reduced name, null if this is not a from- or with-method
    */
   public static String getFromPathName(Method method) {
     if (isFunction(method) && !method.getReturnType().isPrimitive()) {    // must return an (immutable) object
       String methodName = method.getName();
       String elementName = skipMethodNamePrefix(methodName, "from");
       if (elementName == null) {
-        elementName = methodName;
+        elementName = skipMethodNamePrefix(methodName, "with");
+        if (elementName == null) {
+          elementName = methodName;
+        }
       }
       return elementName;
     }
