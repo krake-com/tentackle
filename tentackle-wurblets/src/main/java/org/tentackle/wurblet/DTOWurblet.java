@@ -193,7 +193,7 @@ public class DTOWurblet extends AbstractJavaWurblet {
     }
 
     public String getFromName() {
-      return "from" + StringHelper.firstToUpper(name);
+      return (asWithers ? "with" : "from") + StringHelper.firstToUpper(name);
     }
 
     public String getSetterName() {
@@ -237,7 +237,8 @@ public class DTOWurblet extends AbstractJavaWurblet {
   protected List<Property> properties;  // the DTO properties
   protected boolean needConstructor;    // true if constructor necessary
   protected boolean withBuilder;        // use the builder pattern
-  protected boolean withFrom;           // true if at least one property has the from option set (or --from forced)
+  protected boolean withFrom;           // true if at least one property has the from option set (or --from/--with forced)
+  protected boolean asWithers;          // true if withFrom is set and from-methods should be generated as withers
   protected boolean withEquals;         // true if generate equals method
   protected boolean withHashCode;       // true if generate hashCode method
   protected String validate;            // != null if validate after construction (java code)
@@ -262,6 +263,10 @@ public class DTOWurblet extends AbstractJavaWurblet {
       }
       else if ("--from".equals(arg)) {
         withFrom = true;
+      }
+      else if ("--with".equals(arg)) {
+        withFrom = true;
+        asWithers = true;
       }
       else if ("--equals".equals(arg)) {
         if (isRecord()) {
