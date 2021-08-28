@@ -10,9 +10,8 @@
 <strong>({\@code \@wurblet})</strong> DTO creates code for a data transfer object.
 <p>
 usage:<br>
-&#064;wurblet &lt;tag&gt; DTO [--builder [--from]] &lt;filename&gt;
+&#064;wurblet &lt;tag&gt; DTO [options] &lt;filename&gt;
 <p>
-arguments:
 <ul>
 <li><em>--builder:</em> generate code according to the builder pattern.</li>
 <li><em>--equals:</em> generate the equals method.</li>
