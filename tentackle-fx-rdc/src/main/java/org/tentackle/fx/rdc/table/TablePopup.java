@@ -37,7 +37,6 @@ import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.component.FxTreeTableView;
-import org.tentackle.fx.rdc.FileUtilities;
 import org.tentackle.fx.rdc.RdcFxRdcBundle;
 import org.tentackle.log.Logger;
 import org.tentackle.prefs.PersistedPreferencesFactory;
@@ -455,14 +454,14 @@ public class TablePopup<S> {
         File file = TableUtilities.getInstance().selectSpreadsheetFile(table.getConfiguration().getName(), Fx.getStage(table));
         if (file != null) {
           TableUtilities.getInstance().toSpreadsheet(table, file, onlySelected);
-          FileUtilities.getInstance().editFile(file);
+          FxUtilities.getInstance().edit(file);
         }
       }
       else {
         File file = TableUtilities.getInstance().selectSpreadsheetFile(treeTable.getConfiguration().getName(), Fx.getStage(treeTable));
         if (file != null) {
           TableUtilities.getInstance().toSpreadsheet(treeTable, file, onlySelected);
-          FileUtilities.getInstance().editFile(file);
+          FxUtilities.getInstance().edit(file);
         }
       }
     }
@@ -485,14 +484,14 @@ public class TablePopup<S> {
         File file = TableUtilities.getInstance().selectXmlFile(table.getConfiguration().getName(), Fx.getStage(table));
         if (file != null) {
           TableUtilities.getInstance().toXml(table, file, onlySelected);
-          FileUtilities.getInstance().editFile(file);
+          FxUtilities.getInstance().edit(file);
         }
       }
       else {
         File file = TableUtilities.getInstance().selectXmlFile(treeTable.getConfiguration().getName(), Fx.getStage(treeTable));
         if (file != null) {
           TableUtilities.getInstance().toXml(treeTable, file, onlySelected);
-          FileUtilities.getInstance().editFile(file);
+          FxUtilities.getInstance().edit(file);
         }
       }
     }
