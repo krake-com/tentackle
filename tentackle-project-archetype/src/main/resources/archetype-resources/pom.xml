@@ -365,7 +365,7 @@
           <version>${maven.compiler.plugin.version}</version>
           <configuration>
             <encoding>UTF-8</encoding>
-            <release>${javac.version.src}</release>
+            <release>${javac.version}</release>
             <showWarnings>true</showWarnings>
             <showDeprecation>true</showDeprecation>
             <compilerArgs>
