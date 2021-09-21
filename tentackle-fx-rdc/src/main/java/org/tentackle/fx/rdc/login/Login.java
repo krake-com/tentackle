@@ -411,7 +411,9 @@ public class Login extends AbstractFxController {
    * @return true if CAPS LOCK on
    */
   private boolean isCapsLock() {
-    return Platform.isFxApplicationThread() && Platform.isKeyLocked(KeyCode.CAPS).orElse(false);
+    // @todo: this starts the XAWT-Thread! There is no other way currently in Java FX 8.
+    // as soon as FX provides its own implementation, use that!
+    return java.awt.Toolkit.getDefaultToolkit().getLockingKeyState(java.awt.event.KeyEvent.VK_CAPS_LOCK);
   }
 
   /**

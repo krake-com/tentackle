@@ -19,7 +19,7 @@ module ${package}.client {
   requires org.tentackle.fx.rdc.update;
 
   requires javafx.graphics;
-  requires java.prefs;
+  requires java.rmi;
 
   provides org.tentackle.common.ModuleHook with ${package}.client.service.Hook;
 }

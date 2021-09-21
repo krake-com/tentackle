@@ -7,7 +7,6 @@
 
 package ${package}.client;
 
-import ${package}.common.${application}Preferences;
 import ${package}.common.${application}SessionInfo;
 import ${package}.common.Version;
 import ${package}.gui.GuiBundle;
@@ -16,7 +15,6 @@ import ${package}.pdo.md.User;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
-import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.rdc.app.FxApplication;
 import org.tentackle.fx.rdc.update.UpdatableDesktopApplication;
 import org.tentackle.pdo.DomainContext;
@@ -64,15 +62,6 @@ public class ${application}FxClient extends UpdatableDesktopApplication<MainCont
     User user = getUser(getDomainContext());    // must exist!
     PersistedPreferencesFactory.getInstance().setSystemOnly(user.isSystemPreferencesOnly());
     PersistedPreferencesFactory.getInstance().setReadOnly(!user.isChangingPreferencesAllowed());
-    ${application}Preferences.getInstance().getSystemPrefs().addPreferenceChangeListener(evt -> {
-      switch (evt.getKey()) {
-        case ${application}Preferences.HELP_URL:
-          configureHelpURL();
-          break;
-        // other application specific pref changes go here...
-      }
-    });
-    configureHelpURL();
   }
 
   @Override
@@ -81,10 +70,6 @@ public class ${application}FxClient extends UpdatableDesktopApplication<MainCont
     return Pdo.create(User.class, context).selectCached(userId);
   }
 
-
-  private void configureHelpURL() {
-    FxUtilities.getInstance().setHelpURL(${application}Preferences.getInstance().getHelpUrl());
-  }
 
   /**
    * Starts the FX client application.

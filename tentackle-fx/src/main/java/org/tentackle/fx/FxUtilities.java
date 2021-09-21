@@ -22,7 +22,6 @@ package org.tentackle.fx;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.concurrent.Task;
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.geometry.Point2D;
@@ -88,7 +87,6 @@ import org.tentackle.validate.ValidationMapper;
 import org.tentackle.validate.ValidationResult;
 
 import java.awt.Desktop;
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -185,95 +183,32 @@ public class FxUtilities {
 
 
   /**
-   * Sets the help URL prefix.
-   *
-   * @param helpURL the URL prefix
-   */
-  public void setHelpURL(String helpURL) {
-    this.helpURL = helpURL;
-  }
-
-  /**
-   * Gets the help URL prefix.
-   *
-   * @return the URL prefix
-   */
-  public String getHelpURL() {
-    return helpURL;
-  }
-
-
-  /**
    * Opens the online help for a given component.
    *
-   * @param control the Fx control, null to show application top level help
-   * @see #setHelpURL(String)
+   * @param control the Fx control
    */
   public void showHelp(FxControl control)  {
-    String compUrl = null;
-    while (compUrl == null && control != null) {
-      compUrl = control.getHelpUrl();
-      control = control.getParentContainer();
-    }
+    if (control != null) {
+      String url = control.getHelpUrl();
 
-    StringBuilder buf = new StringBuilder();
-    String urlPrefix = getHelpURL();
-    if (urlPrefix != null) {
-      buf.append(urlPrefix);
-      if (!urlPrefix.endsWith("/")) {
-        buf.append('/');
+      if (helpURL != null) {    // with global prefix?
+        if (url != null)  {
+          url = helpURL + url;
+        }
+        else  {
+          url = helpURL;
+        }
       }
-    }
-    if (compUrl != null) {
-      buf.append(compUrl);
-    }
-    String url = buf.toString();
 
-    if (!url.isEmpty())  {
-      run(() -> browse(URI.create(url)));
-    }
-  }
-
-
-  /**
-   * Launches the default browser to display a {@code URI}.<br>
-   * Throws {@link FxRuntimeException} if failed.
-   *
-   * @param uri the URI to be displayed in the user default browser
-   */
-  public void browse(URI uri) {
-    try {
-      LOGGER.info("launching browser for {0}", uri);
-      Desktop.getDesktop().browse(uri);
-    }
-    catch (IOException ex) {
-      throw new FxRuntimeException(MessageFormat.format(FxFxBundle.getString("CANT OPEN URL {0}"), uri), ex);
-    }
-  }
-
-
-  /**
-   * Edits/opens a given file via the Desktop utilities.<br>
-   * The corresponding application will be chosen according to the mime/file type.
-   *
-   * @param file the file
-   */
-  public void edit(File file) {
-    run(() -> {
-      try {
-        LOGGER.info("launching EDIT action for {0}", file);
-        Desktop.getDesktop().edit(file);
-      }
-      catch (UnsupportedOperationException | IOException ex) {
-        LOGGER.info("{0} -> trying OPEN action for {1}", ex.getMessage(), file);
+      if (url != null)  {
         try {
-          Desktop.getDesktop().open(file);
+          Desktop.getDesktop().browse(URI.create(url));
         }
-        catch (IOException ex2) {
-          throw new FxRuntimeException(MessageFormat.format(FxFxBundle.getString("CANT OPEN FILE {0}"), file.getName()), ex2);
+        catch (IOException | RuntimeException ex) {
+          Fx.error(MessageFormat.format(FxFxBundle.getString("CANT OPEN HELP FOR {0}"), url), ex);
         }
       }
-    });
+    }
   }
 
 
@@ -425,43 +360,6 @@ public class FxUtilities {
     }
     blockingFxExecutor.execute(runnable);
   }
-
-
-  /**
-   * Runs a runnable in a separate thread.<br>
-   * Avoids blocking the FX-application thread.<br>
-   * If the execution fails, an error dialog is shown.
-   *
-   * @param runnable the runnable to execute in background
-   */
-  public void run(Runnable runnable) {
-    javafx.concurrent.Service<Void> service = new javafx.concurrent.Service<>() {
-
-      @Override
-      protected Task<Void> createTask() {
-        return new Task<>() {
-
-          @Override
-          protected Void call() throws Exception {
-            runnable.run();
-            return null;
-          }
-        };
-      }
-    };
-
-    service.setOnFailed(event -> {
-      Throwable exception = event.getSource().getException();
-      if (exception != null) {
-        LOGGER.warning("FX background execution failed", exception);
-        Platform.runLater(() -> showErrorDialog(exception.getMessage(), exception, null));
-      }
-    });
-
-    service.start();
-  }
-
-
 
   /**
    * Workaround for the bug that messages are not completely displayed if text is wrapped.
@@ -821,36 +719,26 @@ public class FxUtilities {
   public void filterKeys(Control control) {
     if (control instanceof FxComponent) {
       control.addEventFilter(KeyEvent.ANY, event -> {
-        if (!event.isAltDown() && !event.isMetaDown() && !event.isShiftDown()) {
+        if (event.isControlDown() && !event.isAltDown() && !event.isMetaDown() && !event.isShiftDown()) {
           FxComponent comp = (FxComponent) control;
-          if (event.isControlDown()) {
-            if (event.getCode() == KeyCode.Z) {
-              if (comp.isViewModified() && comp.isSavedViewObjectValid()) {
-                if (event.getEventType() == KeyEvent.KEY_PRESSED) {
-                  // Ctrl-Z restores the saved view value (usually the persisted values in the database)
-                  Object viewObject = comp.getViewObject();
-                  comp.setViewObject(comp.getSavedViewObject());
-                  // With Ctrl-Z and Ctrl-Y the user can switch between the old persisted value and the new input value
-                  comp.getDelegate().setLastViewObject(viewObject);
-                }
-                event.consume();
+          if (event.getCode() == KeyCode.Z) {
+            if (comp.isViewModified() && comp.isSavedViewObjectValid()) {
+              if (event.getEventType() == KeyEvent.KEY_PRESSED) {
+                // Ctrl-Z restores the saved view value (usually the persisted values in the database)
+                Object viewObject = comp.getViewObject();
+                comp.setViewObject(comp.getSavedViewObject());
+                // With Ctrl-Z and Ctrl-Y the user can switch between the old persisted value and the new input value
+                comp.getDelegate().setLastViewObject(viewObject);
               }
-            }
-            else if (event.getCode() == KeyCode.Y) {
-              Object viewObject = comp.getDelegate().getLastViewObject();
-              if (viewObject != null) {
-                if (event.getEventType() == KeyEvent.KEY_PRESSED) {
-                  // Ctrl-Y brings back the last set view value (the value when the user entered the field)
-                  comp.setViewObject(viewObject);
-                }
-                event.consume();
-              }
+              event.consume();
             }
           }
-          else {    // !controlDown
-            if (event.getCode() == KeyCode.F1) {
+          if (event.getCode() == KeyCode.Y) {
+            Object viewObject = comp.getDelegate().getLastViewObject();
+            if (viewObject != null) {
               if (event.getEventType() == KeyEvent.KEY_PRESSED) {
-                comp.showHelp();
+                // Ctrl-Y brings back the last set view value (the value when the user entered the field)
+                comp.setViewObject(viewObject);
               }
               event.consume();
             }
@@ -1314,7 +1202,7 @@ public class FxUtilities {
                 cell.getProperties().put("deferToParentPrefWidth", Boolean.TRUE); // see TableCellSkinBase
                 double maxWidth = 20;   // don't go below this so that column remains visible
                 // apply header text first
-                cell.updateTableColumn(column);
+                cell.updateTreeTableColumn(column);
                 cell.updateTreeTableView(table);
                 cell.setText(column.getText());
                 cell.setGraphic(column.getGraphic());

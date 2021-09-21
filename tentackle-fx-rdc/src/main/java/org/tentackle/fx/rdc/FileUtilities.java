@@ -27,7 +27,9 @@ import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
 import org.tentackle.log.Logger;
 
+import java.awt.Desktop;
 import java.io.File;
+import java.io.IOException;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
@@ -100,6 +102,32 @@ public class FileUtilities {
       }
     }
     return selectedFile;
+  }
+
+
+  /**
+   * Edits/opens a given file via the Desktop utilities.<br>
+   * The corresponding application will be chosen according to the mime/file type.
+   *
+   * @param file the file
+   */
+  public void editFile(File file) {
+    new Thread(() -> {  // needs another thread because Desktop will block the FX-application thread
+      try {
+        LOGGER.info("launching EDIT action for {0}", file);
+        Desktop.getDesktop().edit(file);
+      }
+      catch (UnsupportedOperationException | IOException ex) {
+        LOGGER.info("{0} -> trying OPEN action for {1}", ex.getMessage(), file);
+        try {
+          Desktop.getDesktop().open(file);
+          LOGGER.info("success!");
+        }
+        catch (IOException ex2) {
+          LOGGER.severe("cannot open file", ex2);
+        }
+      }
+    }).start();
   }
 
 }
