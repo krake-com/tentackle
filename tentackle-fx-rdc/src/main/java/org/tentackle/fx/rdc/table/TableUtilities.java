@@ -35,8 +35,8 @@ import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.bind.FxTableBinding;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.component.FxTreeTableView;
-import org.tentackle.fx.rdc.FileUtilities;
 import org.tentackle.fx.rdc.RdcFxRdcBundle;
+import org.tentackle.fx.rdc.RdcUtilities;
 import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.pdo.PdoMember;
@@ -140,7 +140,7 @@ public class TableUtilities {
    * @return the selected file, null if aborted
    */
   public File selectSpreadsheetFile(String tableName, Stage owner) {
-    return FileUtilities.getInstance().selectFile(
+    return RdcUtilities.getInstance().selectFile(
                   StringHelper.trimRight(LAST_SPREADSHEET_PREFIX + tableName, '/'),
                   SPREADSHEET_KEY, SPREADSHEET_EXTENSION,
                   RdcFxRdcBundle.getString("SPREADSHEET FILE"), owner);
@@ -155,7 +155,7 @@ public class TableUtilities {
    * @return the selected file, null if aborted
    */
   public File selectXmlFile(String tableName, Stage owner) {
-    return FileUtilities.getInstance().selectFile(
+    return RdcUtilities.getInstance().selectFile(
                   StringHelper.trimRight(LAST_XML_PREFIX + tableName, '/'),
                   XML_KEY, XML_EXTENSION,
                   RdcFxRdcBundle.getString("XML FILE"), owner);

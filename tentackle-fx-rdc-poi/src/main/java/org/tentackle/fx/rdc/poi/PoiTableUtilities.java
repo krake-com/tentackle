@@ -35,8 +35,8 @@ import org.tentackle.common.Service;
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.bind.FxTableBinding;
-import org.tentackle.fx.rdc.FileUtilities;
 import org.tentackle.fx.rdc.RdcFxRdcBundle;
+import org.tentackle.fx.rdc.RdcUtilities;
 import org.tentackle.fx.rdc.table.TableUtilities;
 import org.tentackle.fx.table.TableColumnConfiguration;
 
@@ -67,7 +67,7 @@ public class PoiTableUtilities extends TableUtilities {
 
   @Override
   public File selectSpreadsheetFile(String tableName, Stage owner) {
-    return FileUtilities.getInstance().selectFile(
+    return RdcUtilities.getInstance().selectFile(
         StringHelper.trimRight(LAST_SPREADSHEET_PREFIX + tableName, '/'),
         SPREADSHEET_KEY, SPREADSHEET_EXTENSION,
         RdcFxRdcBundle.getString("SPREADSHEET FILE"), owner);
