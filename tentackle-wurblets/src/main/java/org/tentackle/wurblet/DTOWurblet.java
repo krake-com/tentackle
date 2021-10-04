@@ -20,10 +20,14 @@
 package org.tentackle.wurblet;
 
 import org.wurbelizer.misc.Constants;
+import org.wurbelizer.wurbel.WurbelDiscardException;
 import org.wurbelizer.wurbel.WurbelException;
 import org.wurbelizer.wurbel.WurbelHelper;
 import org.wurbelizer.wurblet.AbstractJavaWurblet;
 
+import org.tentackle.buildsupport.AnalyzeProcessor;
+import org.tentackle.buildsupport.RecordDTOInfo;
+import org.tentackle.buildsupport.RecordDTOInfoParameter;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.parse.OptionParser;
 
@@ -111,6 +115,10 @@ public class DTOWurblet extends AbstractJavaWurblet {
       buf = new StringBuilder(comment == null || comment.isEmpty() ? "the " + name + " property" : comment);
       this.annotations = parseAnnotations(buf);
       this.comment = buf.toString().trim();
+    }
+
+    public Property(RecordDTOInfoParameter recordParameter) {
+      this((DTOWurblet.this.withFrom ? "+" : "") + recordParameter.getType(), recordParameter.getName(), null, 0);
     }
 
     public boolean isPrimitive() {
@@ -261,9 +269,15 @@ public class DTOWurblet extends AbstractJavaWurblet {
         asWithers = true;
       }
       else if ("--equals".equals(arg)) {
+        if (isRecord()) {
+          throw new WurbelException("--equals option not allowed for records");
+        }
         withEquals = true;
       }
       else if ("--hashCode".equals(arg)) {
+        if (isRecord()) {
+          throw new WurbelException("--hashCode option not allowed for records");
+        }
         withHashCode = true;
       }
       else if ("--names".equals(arg)) {
@@ -273,6 +287,9 @@ public class DTOWurblet extends AbstractJavaWurblet {
         nott = true;
       }
       else if (arg.startsWith("--validate")) {
+        if (isRecord()) {
+          throw new WurbelException("--validate option not allowed for records");
+        }
         if (arg.length() > 11 && arg.charAt(10) == '=') {
           validate = arg.substring(11);
         }
@@ -285,112 +302,134 @@ public class DTOWurblet extends AbstractJavaWurblet {
       }
     }
 
-    if (filename == null) {
-      throw new WurbelException("usage: @wurblet <guardname> DTO [--builder] <filename>");
-    }
-
-    try {
-      superClass = getSuperClassName();
-    }
-    catch (WurbelException wx) {
-      // ok: no superclass
-    }
 
     properties = new ArrayList<>();
     annotations = new ArrayList<>();
 
-    int lineNo = 0;
-    try (BufferedReader reader = new BufferedReader(WurbelHelper.openReader(filename))) {
-      String line;
-      while ((line = reader.readLine()) != null) {
-        line = line.trim();
-        if (line.startsWith(Constants.ORIGIN_INFO_LEAD)) {
-          int lineNdx = line.lastIndexOf(':');
-          if (lineNdx >= Constants.ORIGIN_INFO_LEAD.length()) {
-            modelSourceName = line.substring(Constants.ORIGIN_INFO_LEAD.length(), lineNdx);
-            modelSourceLine = Integer.parseInt(line.substring(lineNdx + 1));
-          }
-          else {
-            modelSourceName = line.substring(Constants.ORIGIN_INFO_LEAD.length());
-          }
+    if (isRecord()) {
+      // load the info file
+      String infoName = (getPackageName() + "." + getClassName()).replace('.', '/') +
+                        "/" + RecordDTOInfo.INFO_FILE_NAME;
+      try {
+        RecordDTOInfo info = RecordDTOInfo.readInfo(getContainer().getAnalyzeFile(infoName));
+        for (RecordDTOInfoParameter parameter : info.getParameters()) {
+          properties.add(new Property(parameter));
         }
-        else if (line.startsWith("[")) {
-          // global annotations
-          annotations.addAll(parseAnnotations(new StringBuilder(line)));
-        }
-        else if (!line.isEmpty() && !line.startsWith("#")) {
-          StringTokenizer stok = new StringTokenizer(line);
-          String type = null;
-          String name = null;
-          StringBuilder comment = new StringBuilder();
-          while (stok.hasMoreTokens()) {
-            String token = stok.nextToken();
-            if (type == null) {
-              type = token;
-            }
-            else if (name == null) {
-              name = token;
-            }
-            else {
-              if (comment.length() > 0) {
-                comment.append(' ');
-              }
-              comment.append(token);
-            }
-          }
-          if (type == null || name == null) {
-            throw new WurbelException("property line too short: '" + line + "'");
-          }
-          Property property = new Property(type, name, comment.toString(), modelSourceLine + lineNo);
-          if (!property.isMutable()) {
-            needConstructor = true;
-          }
-          if (property.isWithFrom()) {
-            withFrom = true;
-          }
-          properties.add(property);
-        }
-        lineNo++;
       }
-
-      // apply global annotations but only if not already used in properties
-      // for example @Bindable overridden in property line with @Bindable(MAXCOLS=50)
-      for (Property property: properties) {
-        for (String annotation: annotations) {
-          property.addGlobalAnnotation(annotation);
+      catch (IOException ex) {
+        if (getContainer().getAnalyzeFile(AnalyzeProcessor.COMPILE_ERROR_LOG).exists()) {
+          throw new WurbelDiscardException("reading info '" + infoName + "' failed", ex);
         }
-        property.cleanupAnnotations();
-      }
-
-      // validate
-      Map<String, Property> nameMap = new HashMap<>();
-      for (Property property : properties) {
-        if (property.getType().isEmpty()) {
-          throw new WurbelException("missing property type");
-        }
-        if (!Character.isLetter(property.getType().charAt(0))) {
-          throw new WurbelException("property '" + property.getName() + "' has a malformed Java type '" + property.getType() + "'");
-        }
-        if (!StringHelper.isValidJavaIdentifier(property.getName())) {
-          throw new WurbelException("property '" + property.getName() + "' is not a valid Java identifier");
-        }
-        if (withBuilder) {
-          if (property.isInherited()) {
-            throw new WurbelException("property '" + property.getName() + "': inherit-option not applicable in builder mode");
-          }
-        }
-        else if (property.isRequired()) {
-          throw new WurbelException("property '" + property.getName() + "': required-option only applicable in builder mode");
-        }
-        Property existingProperty = nameMap.put(property.getName(), property);
-        if (existingProperty != null) {
-          throw new WurbelException("property '" + property.getName() + "' defined more than once in " + modelSourceName +
-                                    ":" + property.lineNo);
+        else {
+          throw new WurbelException("reading info '" + infoName + "' failed (@RecordDTO annotation missing?)", ex);
         }
       }
     }
-    catch (IOException ex) {
-      throw new WurbelException("reading model " + filename + " failed", ex);
+    else {
+      if (filename == null) {
+        throw new WurbelException("usage: @wurblet <guardname> DTO [--builder] <filename>");
+      }
+
+      try {
+        superClass = getSuperClassName();
+      }
+      catch (WurbelException wx) {
+        // ok: no superclass
+      }
+
+      int lineNo = 0;
+      try (BufferedReader reader = new BufferedReader(WurbelHelper.openReader(filename))) {
+        String line;
+        while ((line = reader.readLine()) != null) {
+          line = line.trim();
+          if (line.startsWith(Constants.ORIGIN_INFO_LEAD)) {
+            int lineNdx = line.lastIndexOf(':');
+            if (lineNdx >= Constants.ORIGIN_INFO_LEAD.length()) {
+              modelSourceName = line.substring(Constants.ORIGIN_INFO_LEAD.length(), lineNdx);
+              modelSourceLine = Integer.parseInt(line.substring(lineNdx + 1));
+            }
+            else {
+              modelSourceName = line.substring(Constants.ORIGIN_INFO_LEAD.length());
+            }
+          }
+          else if (line.startsWith("[")) {
+            // global annotations
+            annotations.addAll(parseAnnotations(new StringBuilder(line)));
+          }
+          else if (!line.isEmpty() && !line.startsWith("#")) {
+            StringTokenizer stok = new StringTokenizer(line);
+            String type = null;
+            String name = null;
+            StringBuilder comment = new StringBuilder();
+            while (stok.hasMoreTokens()) {
+              String token = stok.nextToken();
+              if (type == null) {
+                type = token;
+              }
+              else if (name == null) {
+                name = token;
+              }
+              else {
+                if (comment.length() > 0) {
+                  comment.append(' ');
+                }
+                comment.append(token);
+              }
+            }
+            if (type == null || name == null) {
+              throw new WurbelException("property line too short: '" + line + "'");
+            }
+            Property property = new Property(type, name, comment.toString(), modelSourceLine + lineNo);
+            if (!property.isMutable()) {
+              needConstructor = true;
+            }
+            if (property.isWithFrom()) {
+              withFrom = true;
+            }
+            properties.add(property);
+          }
+          lineNo++;
+        }
+
+        // apply global annotations but only if not already used in properties
+        // for example @Bindable overridden in property line with @Bindable(MAXCOLS=50)
+        for (Property property : properties) {
+          for (String annotation : annotations) {
+            property.addGlobalAnnotation(annotation);
+          }
+          property.cleanupAnnotations();
+        }
+
+        // validate
+        Map<String, Property> nameMap = new HashMap<>();
+        for (Property property : properties) {
+          if (property.getType().isEmpty()) {
+            throw new WurbelException("missing property type");
+          }
+          if (!Character.isLetter(property.getType().charAt(0))) {
+            throw new WurbelException("property '" + property.getName() + "' has a malformed Java type '" + property.getType() + "'");
+          }
+          if (!StringHelper.isValidJavaIdentifier(property.getName())) {
+            throw new WurbelException("property '" + property.getName() + "' is not a valid Java identifier");
+          }
+          if (withBuilder) {
+            if (property.isInherited()) {
+              throw new WurbelException("property '" + property.getName() + "': inherit-option not applicable in builder mode");
+            }
+          }
+          else if (property.isRequired()) {
+            throw new WurbelException("property '" + property.getName() + "': required-option only applicable in builder mode");
+          }
+          Property existingProperty = nameMap.put(property.getName(), property);
+          if (existingProperty != null) {
+            throw new WurbelException("property '" + property.getName() + "' defined more than once in " + modelSourceName +
+                                      ":" + property.lineNo);
+          }
+        }
+      }
+      catch (IOException ex) {
+        throw new WurbelException("reading model " + filename + " failed", ex);
+      }
     }
   }
 

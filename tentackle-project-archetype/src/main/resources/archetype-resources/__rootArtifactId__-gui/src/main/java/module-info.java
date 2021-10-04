@@ -16,7 +16,6 @@ open module ${package}.gui {
 
   requires org.tentackle.fx.rdc;
 
-  requires java.desktop;
   requires java.prefs;
 
   provides org.tentackle.common.ModuleHook with ${package}.gui.service.Hook;

@@ -34,7 +34,6 @@ import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationScopeFactory;
 import org.tentackle.validate.Validator;
 
-import java.awt.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -81,8 +80,6 @@ public class DefaultFxComponentBinding extends AbstractBinding implements FxComp
     super(binder, parents, member);
 
     this.component = Objects.requireNonNull(component, "component");
-
-    updateComponentName();
     component.setBinding(this);
     if (component instanceof FxTextComponent) {
       FxUtilities.getInstance().applyBindingOptions((FxTextComponent) component, member, componentOptions);
@@ -218,36 +215,6 @@ public class DefaultFxComponentBinding extends AbstractBinding implements FxComp
       component.setChangeable(false);
     }
   }
-
-
-  /**
-   * Sets the component name to some meaningful value.<br>
-   * Required by some GUI testing tools.
-   * <p>
-   * The component name will be the <code>memberPath</code> prepended
-   * with the names of the parent components, each separated by a slash.<br>
-   * Example:
-   * <pre>
-   * "Shipment/ShipmentFile/Booking/shipment.customer.addressNumber"
-   * </pre>
-   */
-  protected void updateComponentName() {
-    if (component instanceof Component && ((Component) component).getName() == null) {
-      // if not already set by the application
-      StringBuilder buf = new StringBuilder(getMember().getMemberPath());
-      // prepend the parent names, if any
-      Component parent = ((Component) component).getParent();
-      while (parent != null) {
-        if (parent.getName() != null) {
-          buf.insert(0, parent.getName() + "/");
-        }
-        parent = parent.getParent();
-      }
-      ((Component) component).setName(buf.toString());
-      LOGGER.fine("{0}.setName(\"{1}\")", component.getComponentPath(), ((Component) component).getName());
-    }
-  }
-
 
   @Override
   public void setMandatory(boolean mandatory) {

@@ -16,7 +16,23 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+package org.tentackle.common;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 /**
- * Log4J logging provider.
+ * Annotation for records that must be analyzed for code generation.
+ * <p>
+ * The analyze handler's result is picked up by the <code>DTO</code> wurblet.
  */
-package org.tentackle.log.log4j;
+@Documented
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+@Analyze("org.tentackle.buildsupport.RecordDTOAnalyzeHandler")
+public @interface RecordDTO {
+
+}

@@ -19,6 +19,7 @@
 
 package org.tentackle.buildsupport;
 
+import org.tentackle.common.RemoteMethod;
 import org.tentackle.common.Settings;
 import org.tentackle.common.StringHelper;
 
@@ -40,7 +41,7 @@ import java.lang.reflect.Method;
 
 
 /**
- * Handler for the @RemoteMethod annotation.
+ * Handler for the {@code @RemoteMethod} annotation.
  *
  * @author harald
  */
@@ -85,7 +86,7 @@ public class RemoteMethodAnalyzeHandler extends AbstractAnalyzeHandler {
           try {
             Method valueMethod = annotationClass.getDeclaredMethod("value");
             String value = (String) valueMethod.invoke(annotation);
-            if (!value.startsWith("[")) {
+            if (!RemoteMethod.DEFAULT_METHODNAME.equals(value)) {
               methodName = value;
             }
           }
@@ -114,7 +115,7 @@ public class RemoteMethodAnalyzeHandler extends AbstractAnalyzeHandler {
             }
           }
           catch (IOException ex) {
-            print(Kind.ERROR, "extracting AnalyzeInfo failed: " + ex, element);
+            print(Kind.ERROR, "extracting RemoteMethodInfo failed: " + ex, element);
           }
         }
         else {

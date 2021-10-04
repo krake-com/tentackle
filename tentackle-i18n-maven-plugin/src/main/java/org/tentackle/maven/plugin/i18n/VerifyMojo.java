@@ -28,7 +28,6 @@ import org.tentackle.i18n.pdo.StoredBundleKey;
 import org.tentackle.session.Session;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Verifies the bundles stored in the backend against the property resource bundles of the application.<br>
@@ -88,8 +87,7 @@ public class VerifyMojo extends AbstractVerifyMojo {
       getLog().warn(buf);
     }
 
-    List<String> resourceNames = resourceBundleMap.entrySet().stream().filter(entry -> entry.getValue().isNew())
-                                                  .map(entry -> entry.getKey()).collect(Collectors.toList());
+    List<String> resourceNames = resourceBundleMap.entrySet().stream().filter(entry -> entry.getValue().isNew()).map(entry -> entry.getKey()).toList();
     if (!resourceNames.isEmpty()) {
       StringBuilder buf = new StringBuilder();
       appendCount(buf, resourceNames.size(), " missing stored bundle");
@@ -100,8 +98,7 @@ public class VerifyMojo extends AbstractVerifyMojo {
       getLog().warn(buf);
     }
 
-    List<Translation> missingTrans = missingTranslations.stream().filter(translation -> translation.bundle.getLocale() != null)
-                                                        .collect(Collectors.toList());
+    List<Translation> missingTrans = missingTranslations.stream().filter(translation -> translation.bundle.getLocale() != null).toList();
     if (!missingTrans.isEmpty()) {
       StringBuilder buf = new StringBuilder();
       appendCount(buf, missingTrans.size(), " missing translation");
@@ -118,8 +115,7 @@ public class VerifyMojo extends AbstractVerifyMojo {
       getLog().warn(buf);
     }
 
-    missingTrans = missingTranslations.stream().filter(translation -> translation.bundle.getLocale() == null)
-                                      .collect(Collectors.toList());
+    missingTrans = missingTranslations.stream().filter(translation -> translation.bundle.getLocale() == null).toList();
     if (!missingTrans.isEmpty()) {
       StringBuilder buf = new StringBuilder();
       appendCount(buf, missingTrans.size(), " missing default translation");

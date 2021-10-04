@@ -28,7 +28,7 @@ In TT, the default is to use "frommers" instead of "withers", since builder impl
 that use withers for builder methods (which return the builder and not the object to be built!). This may be confusing.
 TT supports both, though.</li>
 <li><em>--nott:</em> generate generic code that does not need any Tentackle dependency (such as TentackleRuntimeException)</li>
-<li><em>filename:</em> the file holding the DTO model.</li>
+<li><em>filename:</em> the file holding the DTO model. Obsolete if the class is a java record.</li>
 </ul>
 For more options, see {\@link AbstractWurblet}.
 <p>
@@ -89,6 +89,21 @@ of the superclass'es builder.
 <p>
 Important: if <code>--equals</code> or <code>--hashCode</code> is given in a subclass, all superclasses must
 get those options as well!
+<p>
+<br>
+The wurblet can also be used for the new java record type to generate additional "from" methods and/or a builder.
+The record declaration must be annotated with <code>&#64;RecordDTO</code> to get the record components from
+the analyze build phase instead of a DTO model (which is not necessary in that case). Example:
+<pre>
+&#64;RecordDTO
+public record Position3D(&#64;Bindable(options="AUTOSELECT") int x,
+                         &#64;Bindable(options="AUTOSELECT") int y,
+                         &#64;Bindable(options="AUTOSELECT") int z) {
+  ...
+
+  // &#064;wurblet dto DTO --builder --from
+
+</pre>
 }@
 @[
   private void wurbel() throws WurbelException {
@@ -108,19 +123,21 @@ get those options as well!
       }
     }
 
-    // create declarations
-    for (Property property: properties) {
-      if (!property.isInherited()) {
-        String decl = "private";
-        if (!property.isMutable()) {
-          decl += " final";
-        }
-        else if (property.isTransient()) {
-          decl += " transient";
-        }
+    if (!isRecord()) {
+      // create declarations
+      for (Property property: properties) {
+        if (!property.isInherited()) {
+          String decl = "private";
+          if (!property.isMutable()) {
+            decl += " final";
+          }
+          else if (property.isTransient()) {
+            decl += " transient";
+          }
 ]@
   @(decl)@ @(property.getType())@ @(property.getName())@;  // @(property.getComment())@
 @[
+        }
       }
     }
 
@@ -172,29 +189,49 @@ get those options as well!
 ]@
   protected @(getClassName())@(Builder builder) {
 @[
-        if (superClass != null) {
+        if (isRecord()) {
+          StringBuilder buf = new StringBuilder();
+          buf.append("this(");
+          boolean needComma = false;
+          for (Property property: properties) {
+            if (needComma) {
+              buf.append(", ");
+            }
+            else {
+              needComma = true;
+            }
+            buf.append("builder.").append(property.getName());
+          }
+          buf.append(")");
+]@
+    @(buf)@;
+@[
+        }
+        else {
+          if (superClass != null) {
 ]@
     super(builder);
 @[
-        }
-        for (Property property: properties) {
-          if (!property.isInherited() && !property.isMutable()) {
-            if (property.isRequired()) {
+          }
+          for (Property property: properties) {
+            if (!property.isInherited() && !property.isMutable()) {
+              if (property.isRequired()) {
 ]@
     if (!builder.@(property.getName())@Provided) {
       throw new @(exceptionName)@("@(property.getName())@ is required");
     }
 @[
-            }
+              }
 ]@
     this.@(property.getName())@ = builder.@(property.getName())@;
 @[
+            }
           }
-        }
-        if (validate != null) {
+          if (validate != null) {
 ]@
     @(validate)@;
 @[
+          }
         }
 ]@
   }
@@ -227,9 +264,10 @@ get those options as well!
       }
     }
 
-    // create getter
-    for (Property property: properties) {
-      if (!property.isInherited()) {
+    if (!isRecord()) {
+      // create getter
+      for (Property property: properties) {
+        if (!property.isInherited()) {
 ]@
 
   /**
@@ -238,22 +276,22 @@ get those options as well!
    * \@return @(property.getComment())@
    */
 @[
-        for (String anno: property.getAnnotations()) {
+          for (String anno: property.getAnnotations()) {
 ]@
   @(anno)@
 @[
-        }
+          }
 ]@
   public @(property.getType())@ @(property.getGetterName())@() {
     return @(property.getName())@;
   }
 @[
+        }
       }
-    }
 
-    // create setter
-    for (Property property: properties) {
-      if (property.isMutable()) {
+      // create setter
+      for (Property property: properties) {
+        if (property.isMutable()) {
 ]@
 
   /**
@@ -262,16 +300,17 @@ get those options as well!
    * \@param @(property.getName())@ @(property.getComment())@
    */
 @[
-        for (String anno: property.getAnnotations()) {
+          for (String anno: property.getAnnotations()) {
 ]@
   @(anno)@
 @[
-        }
+          }
 ]@
   public void @(property.getSetterName())@(@(property.getType())@ @(property.getName())@) {
     this.@(property.getName())@ = @(property.getName())@;
   }
 @[
+        }
       }
     }
 
@@ -488,10 +527,17 @@ get those options as well!
 @[
         }
         for (Property property: properties) {
-          if (!property.isMutable()) {
+          if (isRecord()) {
+]@
+      @(property.getName())@(template.@(property.getName())@());
+@[
+          }
+          else {
+            if (!property.isMutable()) {
 ]@
       @(property.getName())@(template.@(property.getGetterName())@());
 @[
+            }
           }
         }
 ]@

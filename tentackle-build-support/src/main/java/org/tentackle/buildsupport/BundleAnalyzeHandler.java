@@ -35,7 +35,7 @@ import java.util.Map;
 
 /**
  * Handler to extract the name of the resource bundle from
- * the class annotated with &#64;Bundle.
+ * the class annotated with {@code @Bundle}.
  *
  * @author harald
  */

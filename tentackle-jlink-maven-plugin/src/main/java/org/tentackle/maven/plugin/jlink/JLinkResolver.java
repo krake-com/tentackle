@@ -625,15 +625,9 @@ public class JLinkResolver {
   private void runJdeps(Artifact artifact) throws MojoExecutionException {
     List<String> lines = JDEPS_MAP.get(artifact);   // no computeIfAbsent due to checked exception
     if (lines == null) {
-      ToolRunner jdepsRunner = new ToolRunner(mojo.getJdepsTool()).arg("--list-deps");
-      if (mojo.getJavaMajorRuntimeVersion() >= 12) {
-        // necessary since java 12
-        jdepsRunner.arg("--ignore-missing-deps");
-      }
-      lines = jdepsRunner.arg(artifact.getFile()).run().getOutput();
+      lines = new ToolRunner(mojo.getJdepsTool()).arg("--list-deps").arg("--ignore-missing-deps").arg(artifact.getFile()).run().getOutput();
       JDEPS_MAP.put(artifact, lines);
     }
-
     for (String line: lines) {
       line = line.trim();
       if (!line.isEmpty() && !line.contains(" ")) {   // a valid module name (no "not found" and such)

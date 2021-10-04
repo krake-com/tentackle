@@ -5,12 +5,11 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent-osgi-activators</artifactId>
-    <version>7.4.0</version>
+    <version>8.0.0</version>
   </parent>
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-log-log4j-osgi-activator</artifactId>
-  <version>7.4.0</version>
   <packaging>jar</packaging>
 
   <name>Tentackle Logging Log4J OSGi Bundle Activator</name>

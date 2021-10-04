@@ -13,8 +13,8 @@ By default, the server connects to a PostgreSQL database, but in principle
 you can use any relational database (see the [Tentackle docs](https://tentackle.org) for more info).
 
 ## Prerequisites
-* Java (JDK) >= 11
-* Maven >= 3.6.0
+* Java (JDK) >= 17
+* Maven >= 3.6.3
 * PostgreSQL >= 9
 
 Verify with:
@@ -30,7 +30,7 @@ Generate your project via the Tentackle Maven archetype:
 mvn archetype:generate \
     -DarchetypeGroupId=org.tentackle \
     -DarchetypeArtifactId=tentackle-project-archetype \
-    -DarchetypeVersion=11.7.3.0
+    -DarchetypeVersion=17.8.0.0
 ```
 When all dependencies have been pulled from [Maven Central](https://search.maven.org/),
 you will be prompted for:
@@ -101,7 +101,7 @@ Take a look at the other logs in `jlink/server/target/jlink/logs` and
 Notice: on Windows, the scripts are named `server.cmd`, `daemon.cmd` and `client.cmd`.
 
 ## Explore the code with your favorite IDE
-You can use any Java IDE that supports at least Java 11, JPMS (Jigsaw) and Maven. 
+You can use any Java IDE that supports at least Java 15, JPMS (Jigsaw) and Maven. 
 There are no special plugins necessary. However, not all IDEs provide support
 for custom code folding regions, which are pretty nice to automatically collapse generated code.
 [IntelliJ](https://www.jetbrains.com/idea/) and [Netbeans](https://netbeans.apache.org/) work fine out of the box.
