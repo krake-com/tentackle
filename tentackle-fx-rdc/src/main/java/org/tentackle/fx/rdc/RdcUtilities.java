@@ -33,13 +33,16 @@ import javafx.scene.control.TreeView;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
+import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 
+import org.tentackle.app.AbstractApplication;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
+import org.tentackle.common.StringHelper;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.FxUtilities;
@@ -55,6 +58,7 @@ import org.tentackle.session.AbstractSessionTask;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.SessionDependable;
 
+import java.io.File;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -64,6 +68,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.prefs.BackingStoreException;
+import java.util.prefs.Preferences;
 
 interface RdcUtilitiesHolder {
   RdcUtilities INSTANCE = ServiceFactory.createService(RdcUtilities.class);
@@ -479,6 +485,54 @@ public class RdcUtilities {
   public PersistentDomainObject<?> getPdoFromDragboard(Dragboard dragboard, DomainContext context) {
     IdentifiableKey pdoKey = getPdoKeyFromDragboard(dragboard);
     return pdoKey == null ? null : Pdo.create(pdoKey.getIdentifiableClass(), context).select(pdoKey.getIdentifiableId());
+  }
+
+
+  /**
+   * Selects a file via filechooser dialog and remembers the decision in the user preferences.
+   *
+   * @param prefName the preferences name
+   * @param prefKey the preferences key
+   * @param fileExtension the filename extension (including the leading dot)
+   * @param fileType the localized name of the file type
+   * @param owner the dialog owner for the selection dialog, null if none
+   * @return the selected file, null if aborted
+   */
+  public File selectFile(String prefName, String prefKey, String fileExtension, String fileType, Stage owner) {
+    // prefs stored in the database don't make sense in this case.
+    // the filename applies to a machine + user only!
+    Preferences prefs = Preferences.userRoot();
+    String applicationName = AbstractApplication.getRunningApplication().getName();
+    if (!StringHelper.isAllWhitespace(applicationName)) {
+      prefs = prefs.node(applicationName);
+    }
+    prefs = prefs.node(prefName);
+    String lastName = prefs.get(prefKey, null);
+
+    FileChooser fc = new FileChooser();
+    if (lastName != null) {
+      fc.setInitialFileName(lastName);
+    }
+    fc.getExtensionFilters().addAll(new FileChooser.ExtensionFilter(fileType, fileExtension));
+    File selectedFile = fc.showSaveDialog(owner);
+    if (selectedFile != null) {
+      if (!selectedFile.getName().toLowerCase().endsWith(fileExtension)) {
+        selectedFile = new File(selectedFile.getPath() + fileExtension);
+      }
+      // remember the last filename in userspace
+      String filePath = selectedFile.getAbsolutePath();
+      prefs.put(prefKey, filePath);
+      try {
+        prefs.flush();
+      }
+      catch (BackingStoreException bx) {
+        // does no harm if not successful
+        LOGGER.warning("cannot save user preferences {0}", prefs.absolutePath());
+        // log stacktrace only if level is FINE
+        LOGGER.fine(filePath, bx);
+      }
+    }
+    return selectedFile;
   }
 
 }
