@@ -254,6 +254,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
           if (!db.isRemote()) {
             db.rollbackImmediately(null); // roll back if anything pending
           }
+
           if (cleanup) {
             db.close(); // closed db will be removed from the pool in putDb
             LOGGER.warning("pooled {0} closed due to session cleanup", db);
@@ -262,16 +263,18 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
             // only return the db to the pool, don't close it
             LOGGER.info("returning {0} to pool", db);
           }
+
           if (db.isRemote()) {
             // remote sessions are closed and will be removed from the pool.
             // this closes the remote session in the remote server as well
             db.close();
           }
-          else {
+          else if (db.isOpen()) {
             // reset the user info for this db for sure (the application may have changed it to clientInfo)
             db.setSessionInfo(serverInfo);
             db.setExportedSessionGroupId(0);      // remove from session group
           }
+
           db.getPool().putSession(db);    // this will work for MultiUserDbPool as well!
         }
         else {
@@ -1104,6 +1107,14 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
     return timeoutCount > timeout;
   }
 
+  /**
+   * Gets the current timeout counter.
+   *
+   * @return the timeout counter
+   */
+  protected int getTimeoutCount() {
+    return timeoutCount;
+  }
 
   /**
    * Sets this session as being polled for timeout.

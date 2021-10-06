@@ -59,6 +59,36 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
 
 
   /**
+   * Keeps the timeout info for a session group.<br>
+   * Mitigates the race condition when the only active session of a session group is closed while the cleanup thread
+   * is checking the others -- and closing them.
+   * The remaining sessions should stay alive at least until the least recently active session (the closed one)
+   * would have timed out.
+   */
+  private static class GroupTimeoutInfo {
+    private int timeout = -1;         // timeout in polling intervals of the cleanupthread (<0 = uninitialized)
+    private int timeoutCount = -1;    // consecutive timeouts  (<0 = uninitialized)
+
+    private void update(int timeout, int timeoutCount) {
+      if (this.timeout < 0 || this.timeout > timeout) {
+        this.timeout = timeout;
+      }
+      if (this.timeoutCount < 0 || this.timeoutCount > timeoutCount) {
+        this.timeoutCount = timeoutCount;
+      }
+    }
+
+    private boolean hasTimedOut() {
+      return ++timeoutCount > timeout;
+    }
+  }
+
+  /** map of group-number::timeout-info. */
+  private final Map<Integer, GroupTimeoutInfo> activeGroups;
+
+
+
+  /**
    * Creates the cleanup thread.
    *
    * @param checkInterval milliseconds to sleep between runs
@@ -71,6 +101,7 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
     this.sessions = sessions;
     this.cleanupRetryMax = cleanupRetryMax;
     this.zombieSessions = new HashMap<>();
+    this.activeGroups = new HashMap<>();
     setDaemon(true);    // stop JVM if the last user process terminates
   }
 
@@ -113,13 +144,12 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
    * Finds all db-groups or non-grouped db that are not alive anymore
    * and closes their sessions.
    * If _all_ dbs of a group have timed out, the whole group is closed.
-   * Usually the ModificationThread of a client connection will keep up
+   * Usually the ModificationThread of a client sessions will keep up
    * a db-group alive. If the application uses only a single db-session,
    * it must set the db-alive manually.
    */
   protected void verifySessions() {
 
-    Set<Integer> aliveGroups = new HashSet<>();  // numbers of db groups that are still alive
     Set<Integer> deadTxGroups = new HashSet<>(); // numbers of db groups that are dead while in a transaction
 
     for (Iterator<WeakReference<RemoteDbSessionImpl>> iter = sessions.iterator(); iter.hasNext(); ) {
@@ -142,13 +172,13 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
               continue;
             }
 
-            int group = db.getExportedSessionGroupId();
+            int groupId = db.getExportedSessionGroupId();
             boolean timedOut = session.hasTimedOut();
 
             if (timedOut) {
               boolean inTransaction = db.isTxRunning();
               // database has timed out
-              if (group == 0) {
+              if (groupId == 0) {
                 // database without a group: close session immediately
                 LOGGER.info("disconnect dead " + session + ", ungrouped");
                 cleanupSession(session);
@@ -158,16 +188,17 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
               else {
                 if (inTransaction) {
                   // there is a dead session within a transaction for this group
-                  deadTxGroups.add(group);
+                  deadTxGroups.add(groupId);
                 }
-                // grouped connections are handled below
+                // grouped sessions are handled below
               }
             }
-
-            if (!timedOut && group > 0) {
-              // belongs to a group and at least one connection still alive
-              aliveGroups.add(group);    // append group if not yet done
+            else if (groupId > 0) {
+              // not timed out and belongs to a group and at least one session still alive
+              GroupTimeoutInfo groupTimeoutInfo = activeGroups.computeIfAbsent(groupId, g -> new GroupTimeoutInfo());
+              groupTimeoutInfo.update(session.getTimeout(), session.getTimeoutCount());
             }
+
             session.polled();   // reset alive flag
           }
         }
@@ -179,7 +210,10 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
       }
     }
 
-    // close all grouped connections not belonging to alive groups
+    // run the timeout count on all group infos
+    activeGroups.entrySet().removeIf(entry -> entry.getValue().hasTimedOut());
+
+    // close all grouped sessions not belonging to alive groups
     for (Iterator<WeakReference<RemoteDbSessionImpl>> iter = sessions.iterator(); iter.hasNext(); ) {
       RemoteDbSessionImpl session = iter.next().get();
       if (session == null) {
@@ -187,18 +221,16 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
       }
       else  {
         if (session.isOpen()) {
-          int group = session.getSession().getExportedSessionGroupId();
-          if (group != 0) {
-            boolean deadInTransaction = deadTxGroups.contains(group);
-            boolean notAlive = !aliveGroups.contains(group);
-            if (deadInTransaction || notAlive) {
-              // close the db of the group
+          int groupId = session.getSession().getExportedSessionGroupId();
+          if (groupId != 0) {
+            boolean deadInTransaction = deadTxGroups.contains(groupId);
+            if (deadInTransaction || !activeGroups.containsKey(groupId)) {
               if (deadInTransaction) {
                 LOGGER.info("disconnect dead {0}, group={1}, due to hanging transaction on {2}",
-                            session, group, session.getSession());
+                            session, groupId, session.getSession());
               }
               else  {
-                LOGGER.info("disconnect dead {0}, group={1}", session, group);
+                LOGGER.info("disconnect dead {0}, group={1}", session, groupId);
               }
               cleanupSession(session);
               iter.remove();
