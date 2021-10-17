@@ -1,5 +1,4 @@
 @{package org.tentackle.wurblet}@
-@{import org.tentackle.sql.*}@
 @{import java.util.*}@
 @{import java.io.*}@
 @{import org.wurbelizer.wurbel.*}@
