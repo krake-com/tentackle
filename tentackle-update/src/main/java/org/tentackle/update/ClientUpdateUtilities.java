@@ -18,6 +18,7 @@
 
 package org.tentackle.update;
 
+import org.tentackle.common.Cryptor;
 import org.tentackle.common.FileHelper;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
@@ -184,6 +185,7 @@ public class ClientUpdateUtilities {
    * @return the update service
    */
   public UpdateService getUpdateService(String serviceName, RMIClientSocketFactory csf) {
+    serviceName = Cryptor.getInstance().deriveURL(serviceName, new String[] {"http:", "https:"});
     try {
       URI uri = new URI(serviceName);
       String host = uri.getHost();
