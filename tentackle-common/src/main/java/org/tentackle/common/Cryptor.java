@@ -34,6 +34,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.StringTokenizer;
 import java.util.function.Function;
 
 interface CryptorHolder {
@@ -285,7 +286,6 @@ public class Cryptor implements Function<String, String> {
   }
 
 
-
   /**
    * Encrypts a string.<br>
    * Provided for the tentackle-maven-plugin.
@@ -299,6 +299,34 @@ public class Cryptor implements Function<String, String> {
   }
 
 
+  /**
+   * Derive the unencrypted URL.<br>
+   * The URL is considered to be encrypted, if started with a fake protocol unsupported by the application in the given context.
+   * The first word after =~ is taken as the encrypted URL. Example:
+   * <pre>
+   *   https://somehost.somedomain.org/login?id=~GK+AG1QIjpBaD51HP/kw9HzpdKZLt2FrInFxd1jtPWvGzaw5lcLcHy5RB/q9yEKQ&user=100
+   * </pre>
+   * Hidden gem... ;)
+   *
+   * @param url the probably encrypted URL
+   * @param protocols the fake protocols not used by the application, such as "http:" or "https:"
+   * @return the decrypted URL or the unchanged url, if no encryption pattern found
+   */
+  public String deriveURL(String url, String[] protocols) {
+    for (String protocol: protocols) {
+      if (url.startsWith(protocol)) {
+        int ndx = url.indexOf("=~");
+        if (ndx >= 0) {
+          StringTokenizer stok = new StringTokenizer(url.substring(ndx + 2), "&");
+          if (stok.hasMoreTokens()) {
+            url = decrypt64(stok.nextToken());
+          }
+        }
+        break;
+      }
+    }
+    return url;
+  }
 
 
   /**
