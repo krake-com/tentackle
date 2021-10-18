@@ -185,7 +185,11 @@ public class ClientUpdateUtilities {
    * @return the update service
    */
   public UpdateService getUpdateService(String serviceName, RMIClientSocketFactory csf) {
-    serviceName = Cryptor.getInstance().deriveURL(serviceName, new String[] {"http:", "https:"});
+    Cryptor cryptor = Cryptor.getInstance();
+    if (cryptor != null) {
+      serviceName = cryptor.deriveURL(serviceName, new String[]{"http:", "https:"});
+    }
+
     try {
       URI uri = new URI(serviceName);
       String host = uri.getHost();
