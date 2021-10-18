@@ -528,7 +528,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
       try {
         @SuppressWarnings("unchecked")
         AbstractDbObject<?> obj = AbstractDbObject.newInstance(db, (Class<AbstractDbObject<?>>) ref.method.getDeclaringClass());
-        if (ref.method.invoke(obj, id).equals(Boolean.TRUE)) {
+        if (Boolean.TRUE.equals(ref.method.invoke(obj, id))) {
           return true;
         }
       }
