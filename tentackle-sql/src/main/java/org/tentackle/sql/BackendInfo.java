@@ -89,7 +89,10 @@ public class BackendInfo {
     this.password = password;
     this.schemas = schemas;
 
-    url = Cryptor.getInstance().deriveURL(url, new String[] {"http:", "https:"});
+    Cryptor cryptor = Cryptor.getInstance();
+    if (cryptor != null) {
+      url = cryptor.deriveURL(url, new String[]{"http:", "https:"});
+    }
 
     // cut the optional backend type
     String backendType = null;
