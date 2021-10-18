@@ -19,6 +19,7 @@
 package org.tentackle.sql;
 
 import org.tentackle.common.Constants;
+import org.tentackle.common.Cryptor;
 import org.tentackle.common.StringHelper;
 
 import javax.naming.InitialContext;
@@ -87,6 +88,8 @@ public class BackendInfo {
     this.user = user;
     this.password = password;
     this.schemas = schemas;
+
+    url = Cryptor.getInstance().deriveURL(url, new String[] {"http:", "https:"});
 
     // cut the optional backend type
     String backendType = null;
