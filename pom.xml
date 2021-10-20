@@ -82,7 +82,7 @@
     <javac.lint>unchecked,deprecation,removal,requires-transitive-automatic,requires-automatic</javac.lint>
     <javac.version>17</javac.version>
 
-    <javafx.version>17.0.0.1</javafx.version>
+    <javafx.version>17.0.1</javafx.version>
     <ow2.asm.version>9.2</ow2.asm.version>
     <groovy.version>3.0.9</groovy.version>
     <maven.version>3.6.3</maven.version>
