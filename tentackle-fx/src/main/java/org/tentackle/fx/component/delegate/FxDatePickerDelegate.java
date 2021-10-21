@@ -170,10 +170,10 @@ public class FxDatePickerDelegate extends FxTextComponentDelegate {
           ValueTranslator translator = getValueTranslator();
           Object modelValue;
           if (LocalDate.class.isAssignableFrom(component.getType())) {
-            modelValue = new java.sql.Date(cal.getTime().getTime()).toLocalDate();
+            modelValue = new java.sql.Date(cal.getTimeInMillis()).toLocalDate();
           }
           else if (LocalDateTime.class.isAssignableFrom(component.getType())) {
-            modelValue = new java.sql.Timestamp(cal.getTime().getTime()).toLocalDateTime();
+            modelValue = new java.sql.Timestamp(cal.getTimeInMillis()).toLocalDateTime();
           }
           else {
             modelValue = cal.getTime();

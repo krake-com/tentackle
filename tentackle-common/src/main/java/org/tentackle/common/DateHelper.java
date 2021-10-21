@@ -89,7 +89,7 @@ public final class DateHelper {
    * @return the date, null if cal was null
    */
   public static Date toDate(Calendar cal)  {
-    return cal == null ? null : new Date(cal.getTime().getTime());
+    return cal == null ? null : new Date(cal.getTimeInMillis());
   }
 
 
@@ -111,7 +111,7 @@ public final class DateHelper {
    * @return the time of day, null if cal was null
    */
   public static Time toTime(Calendar cal)  {
-    return cal == null ? null : new Time(cal.getTime().getTime());
+    return cal == null ? null : new Time(cal.getTimeInMillis());
   }
 
 
@@ -133,7 +133,7 @@ public final class DateHelper {
    * @return the timestamp, null if cal was null
    */
   public static Timestamp toTimestamp(Calendar cal)  {
-    return cal == null ? null : new Timestamp(cal.getTime().getTime());
+    return cal == null ? null : new Timestamp(cal.getTimeInMillis());
   }
 
 
