@@ -65,7 +65,7 @@ public class FormatHelperTest {
 
       Calendar cal = DateHelper.today();
       DateHelper.setMidnight(cal);
-      Date d = new Date(cal.getTime().getTime());
+      Date d = new Date(cal.getTimeInMillis());
       String sd = FormatHelper.formatDate(d);
       Date pd = FormatHelper.parseDate(sd);
       assertEquals(pd, d);
