@@ -228,8 +228,7 @@ public class Timestamp extends java.sql.Timestamp implements Freezable {
           throws IOException {
     s.writeBoolean(utc);
     if (utc) {
-      Calendar calendar = DateHelper.today();
-      calendar.setTime(this);
+      Calendar calendar = DateHelper.toCalendar(this);
       s.writeShort(calendar.get(YEAR));
       s.writeByte(calendar.get(MONTH));
       s.writeByte(calendar.get(DAY_OF_MONTH));

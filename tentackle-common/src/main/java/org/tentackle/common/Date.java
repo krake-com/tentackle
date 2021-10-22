@@ -180,8 +180,7 @@ public class Date extends java.sql.Date implements Freezable {
    * @throws IOException if writing to stream failed
    */
   private void writeObject(ObjectOutputStream s) throws IOException {
-    Calendar calendar = DateHelper.today();
-    calendar.setTime(this);
+    Calendar calendar = DateHelper.toCalendar(this);
     s.writeShort(calendar.get(YEAR));
     s.writeByte(calendar.get(MONTH));
     s.writeByte(calendar.get(DAY_OF_MONTH));

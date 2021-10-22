@@ -177,8 +177,7 @@ public class Time extends java.sql.Time implements Freezable {
    */
   private void writeObject(ObjectOutputStream s)
           throws IOException {
-    Calendar calendar = DateHelper.today();
-    calendar.setTime(this);
+    Calendar calendar = DateHelper.toCalendar(this);
     s.writeByte(calendar.get(HOUR_OF_DAY));
     s.writeByte(calendar.get(MINUTE));
     s.writeByte(calendar.get(SECOND));
