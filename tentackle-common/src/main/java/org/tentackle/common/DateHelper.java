@@ -138,13 +138,59 @@ public final class DateHelper {
 
 
   /**
-   * Gets the calendar of the current date and time.<br>
+   * Creates a calendar of the current date and time.<br>
    * The calendar is created using the thread-local locale, if set, else the default locale.
    *
    * @return the current calendar instance
    */
   public static Calendar today()  {
     return Calendar.getInstance(LocaleProvider.getInstance().getLocale());
+  }
+
+
+  /**
+   * Creates a calendar for the given date.<br>
+   * The calendar is created using the thread-local locale, if set, else the default locale.
+   *
+   * @param date the date
+   * @return the calendar representing the date
+   */
+  public static Calendar toCalendar(Date date) {
+    Calendar calendar = today();
+    calendar.setTime(date);
+    return calendar;
+  }
+
+
+  /**
+   * Creates a calendar for the given timestamp.<br>
+   * The calendar is created using the thread-local locale, if set, else the default locale.
+   * <p>
+   * Notice: org.tentackle.common.Timestamp does <em>not</em> extend org.tentackle.common.Date!
+   *
+   * @param timestamp the timestamp
+   * @return the calendar representing the timestamp
+   */
+  public static Calendar toCalendar(Timestamp timestamp) {
+    Calendar calendar = today();
+    calendar.setTime(timestamp);
+    return calendar;
+  }
+
+
+  /**
+   * Creates a calendar for the given time.<br>
+   * The calendar is created using the thread-local locale, if set, else the default locale.
+   * <p>
+   * Notice: org.tentackle.common.Time does <em>not</em> extend org.tentackle.common.Date!
+   *
+   * @param time the time
+   * @return the calendar representing the time
+   */
+  public static Calendar toCalendar(Time time) {
+    Calendar calendar = today();
+    calendar.setTime(time);
+    return calendar;
   }
 
 
