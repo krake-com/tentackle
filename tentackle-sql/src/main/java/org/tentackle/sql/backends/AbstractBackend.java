@@ -1166,7 +1166,7 @@ public abstract class AbstractBackend implements Backend {
     String sqlState = extractSqlState(ex);
     if (sqlState != null) {
       for (String state : states) {
-        if (state.equals(state)) {
+        if (sqlState.equals(state)) {
           match = true;
           break;
         }
