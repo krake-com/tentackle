@@ -758,8 +758,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
     // Throw delayed wurbel execption if the real cause is related to this entity
     if (model instanceof TentackleWurbletsModel && entity != null) {
       WurbelException wex = ((TentackleWurbletsModel) model).getLoadingException();
-      if (wex != null && wex.getCause() instanceof ModelException) {
-        ModelException mex = (ModelException) wex.getCause();
+      if (wex != null && wex.getCause() instanceof ModelException mex) {
         if (mex.isRelatedTo(entity)) {
           throw wex;
         }

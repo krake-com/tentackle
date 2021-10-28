@@ -19,9 +19,9 @@
 
 package org.tentackle.domain.ns;
 
+import org.tentackle.domain.AbstractDomainObject;
 import org.tentackle.ns.NumberSource.Range;
 import org.tentackle.ns.NumberSourceEmptyException;
-import org.tentackle.domain.AbstractDomainObject;
 import org.tentackle.ns.pdo.NumberRange;
 import org.tentackle.ns.pdo.NumberRangeDomain;
 import org.tentackle.pdo.DomainObjectService;
@@ -80,7 +80,7 @@ public class NumberRangeDomainImpl extends AbstractDomainObject<NumberRange, Num
       count = size;
     }
     Range range = new Range(me().getBegin(), me().getBegin() + count);
-    me().setBegin(range.getEnd());
+    me().setBegin(range.end());
     return range;
   }
 

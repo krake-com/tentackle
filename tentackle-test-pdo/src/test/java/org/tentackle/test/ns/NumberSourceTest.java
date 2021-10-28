@@ -19,6 +19,9 @@
 
 package org.tentackle.test.ns;
 
+import org.testng.Reporter;
+import org.testng.annotations.Test;
+
 import org.tentackle.ns.NumberSource;
 import org.tentackle.ns.NumberSourceFactory;
 import org.tentackle.ns.pdo.NumberPool;
@@ -26,8 +29,6 @@ import org.tentackle.ns.pdo.NumberRange;
 import org.tentackle.pdo.PdoMember;
 import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.test.pdo.AbstractPdoTest;
-import org.testng.Reporter;
-import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -77,14 +78,14 @@ public class NumberSourceTest extends AbstractPdoTest {
     NumberSource.Range[] ranges = ns.getRanges();
     assertEquals(ranges.length, 3);
     NumberSource.Range range = ranges[0];
-    assertEquals(range.getBegin(), 2000);
-    assertEquals(range.getEnd(), 3000);
+    assertEquals(range.begin(), 2000);
+    assertEquals(range.end(), 3000);
     range = ranges[1];
-    assertEquals(range.getBegin(), 1);
-    assertEquals(range.getEnd(), 1000);
+    assertEquals(range.begin(), 1);
+    assertEquals(range.end(), 1000);
     range = ranges[2];
-    assertEquals(range.getBegin(), 5000);
-    assertEquals(range.getEnd(), 6000);
+    assertEquals(range.begin(), 5000);
+    assertEquals(range.end(), 6000);
 
     long number = 0;
     for (int i=0; i < 500; i++) {
@@ -94,40 +95,40 @@ public class NumberSourceTest extends AbstractPdoTest {
     ranges = ns.popNumbers(700);
     assertEquals(ranges.length, 2);
     range = ranges[0];
-    assertEquals(range.getBegin(), 501);
-    assertEquals(range.getEnd(), 1000);
+    assertEquals(range.begin(), 501);
+    assertEquals(range.end(), 1000);
     range = ranges[1];
-    assertEquals(range.getBegin(), 2000);
-    assertEquals(range.getEnd(), 2201);
+    assertEquals(range.begin(), 2000);
+    assertEquals(range.end(), 2201);
 
     ranges = ns.getRanges();
     assertEquals(ranges.length, 2);
     range = ranges[0];
-    assertEquals(range.getBegin(), 2201);
-    assertEquals(range.getEnd(), 3000);
+    assertEquals(range.begin(), 2201);
+    assertEquals(range.end(), 3000);
     range = ranges[1];
-    assertEquals(range.getBegin(), 5000);
-    assertEquals(range.getEnd(), 6000);
+    assertEquals(range.begin(), 5000);
+    assertEquals(range.end(), 6000);
 
     ns.popNumbers(5500, 5600);
     ranges = ns.getRanges();
     assertEquals(ranges.length, 3);
     range = ranges[0];
-    assertEquals(range.getBegin(), 2201);
-    assertEquals(range.getEnd(), 3000);
+    assertEquals(range.begin(), 2201);
+    assertEquals(range.end(), 3000);
     range = ranges[1];
-    assertEquals(range.getBegin(), 5000);
-    assertEquals(range.getEnd(), 5500);
+    assertEquals(range.begin(), 5000);
+    assertEquals(range.end(), 5500);
     range = ranges[2];
-    assertEquals(range.getBegin(), 5600);
-    assertEquals(range.getEnd(), 6000);
+    assertEquals(range.begin(), 5600);
+    assertEquals(range.end(), 6000);
 
     ns.pushNumbers(2500, 5900);
     ranges = ns.popNumbers(1000, 7000);
     assertEquals(ranges.length, 1);
     range = ranges[0];
-    assertEquals(range.getBegin(), 2201);
-    assertEquals(range.getEnd(), 6000);
+    assertEquals(range.begin(), 2201);
+    assertEquals(range.end(), 6000);
     assertTrue(ns.isEmpty());
   }
 

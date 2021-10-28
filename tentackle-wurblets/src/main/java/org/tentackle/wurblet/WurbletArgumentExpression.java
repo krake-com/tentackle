@@ -92,8 +92,7 @@ public class WurbletArgumentExpression implements WurbletArgumentOperand {
     if (mergedPaths == null) {
       List<WurbletArgument> pathArgs = new ArrayList<>();
       for (WurbletArgumentOperand oper: operands) {
-        if (oper instanceof WurbletArgument) {
-          WurbletArgument arg = (WurbletArgument) oper;
+        if (oper instanceof WurbletArgument arg) {
           if (arg.isPath()) {
             pathArgs.add(arg);
           }
@@ -187,8 +186,7 @@ public class WurbletArgumentExpression implements WurbletArgumentOperand {
   public String toString() {
     try {
       return toCode(t -> {
-        if (t instanceof WurbletArgumentOperator) {
-          WurbletArgumentOperator operator = (WurbletArgumentOperator) t;
+        if (t instanceof WurbletArgumentOperator operator) {
           if (operator == WurbletArgumentOperator.NOT) {
             return t + " ";
           }

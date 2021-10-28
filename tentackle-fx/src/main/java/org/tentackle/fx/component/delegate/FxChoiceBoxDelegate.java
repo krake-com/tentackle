@@ -113,11 +113,11 @@ public class FxChoiceBoxDelegate extends FxComponentDelegate {
   @Override
   public Object getViewObject() {
     if (fakeBool) {
-      switch (component.getSelectionModel().getSelectedIndex()) {
-        case 0:   return Boolean.TRUE;
-        case 1:   return Boolean.FALSE;
-        default:  return null;
-      }
+      return switch (component.getSelectionModel().getSelectedIndex()) {
+        case 0 -> Boolean.TRUE;
+        case 1 -> Boolean.FALSE;
+        default -> null;
+      };
     }
     return component.getSelectionModel().getSelectedItem();
   }

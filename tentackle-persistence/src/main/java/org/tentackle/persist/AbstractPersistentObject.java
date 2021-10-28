@@ -3698,8 +3698,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       }
       catch (RemoteException e) {
         RuntimeException rex = PersistenceException.createFromRemoteException(this, e);
-        if (rex instanceof LockException) {
-          LockException lx = (LockException) rex;
+        if (rex instanceof LockException lx) {
           applyTokenLockInfo(lx.getTokenLockInfo());
         }
         throw rex;

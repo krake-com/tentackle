@@ -66,17 +66,11 @@ public class Db2 extends AbstractSql2003Backend {
 
   @Override
   public int getMaxSize(SqlType sqlType) {
-    switch(sqlType) {
-
-      case DECIMAL:
-        return 31;
-
-      case VARCHAR:
-        return 512;
-
-      default:
-        return super.getMaxSize(sqlType);
-    }
+    return switch (sqlType) {
+      case DECIMAL -> 31;
+      case VARCHAR -> 512;
+      default -> super.getMaxSize(sqlType);
+    };
   }
 
   @Override
@@ -112,67 +106,30 @@ public class Db2 extends AbstractSql2003Backend {
 
   @Override
   public String sqlTypeToString(SqlType sqlType, int size) {
-    switch(sqlType) {
-
-      case BIT:
-      case TINYINT:
-      case SMALLINT:
-        return TYPE_SMALLINT;
-
-      case INTEGER:
-        return TYPE_INTEGER;
-
-      case BIGINT:
-        return TYPE_BIGINT;
-
-      case FLOAT:
-        return TYPE_REAL;
-
-      case DOUBLE:
-        return TYPE_DOUBLE;
-
-      case DECIMAL:
-        return TYPE_DECIMAL;
-
-      case CHAR:
-        return TYPE_CHAR_1;
-
-      case VARCHAR:
-        return TYPE_VARCHAR;
-
-      case DATE:
-      case TIME:
-        return TYPE_DATE;
-
-      case TIMESTAMP:
-        return TYPE_TIMESTAMP;
-
-      case BLOB:
-        return TYPE_BLOB;
-
-      case CLOB:
-        return TYPE_CLOB;
-
-      default:
-        return super.sqlTypeToString(sqlType, size);
-    }
+    return switch (sqlType) {
+      case BIT, TINYINT, SMALLINT -> TYPE_SMALLINT;
+      case INTEGER -> TYPE_INTEGER;
+      case BIGINT -> TYPE_BIGINT;
+      case FLOAT -> TYPE_REAL;
+      case DOUBLE -> TYPE_DOUBLE;
+      case DECIMAL -> TYPE_DECIMAL;
+      case CHAR -> TYPE_CHAR_1;
+      case VARCHAR -> TYPE_VARCHAR;
+      case DATE, TIME -> TYPE_DATE;
+      case TIMESTAMP -> TYPE_TIMESTAMP;
+      case BLOB -> TYPE_BLOB;
+      case CLOB -> TYPE_CLOB;
+      default -> super.sqlTypeToString(sqlType, size);
+    };
   }
 
   @Override
   public SqlType[] jdbcTypeToSqlType(int jdbcType, int size, int scale) {
-    switch(jdbcType) {
-      case Types.BIT:
-      case Types.TINYINT:
-      case Types.SMALLINT:
-        return new SqlType[] { SqlType.BIT, SqlType.TINYINT, SqlType.SMALLINT };
-
-      case Types.DATE:
-      case Types.TIME:
-        return new SqlType[] { SqlType.DATE, SqlType.TIME };
-
-      default:
-        return super.jdbcTypeToSqlType(jdbcType, size, scale);
-    }
+    return switch (jdbcType) {
+      case Types.BIT, Types.TINYINT, Types.SMALLINT -> new SqlType[]{SqlType.BIT, SqlType.TINYINT, SqlType.SMALLINT};
+      case Types.DATE, Types.TIME -> new SqlType[]{SqlType.DATE, SqlType.TIME};
+      default -> super.jdbcTypeToSqlType(jdbcType, size, scale);
+    };
   }
 
 

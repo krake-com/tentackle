@@ -126,8 +126,8 @@ public class CheckValidationsMojo extends AbstractCheckMojo {
    */
   private void checkMessage(ValidatorEntry validatorEntry) throws MojoFailureException {
     try {
-      Validator validator = validatorEntry.getValidator();
-      Class<?> enclosingClass = getProcessingClassloader().loadClass(validatorEntry.getClassName());
+      Validator validator = validatorEntry.validator();
+      Class<?> enclosingClass = getProcessingClassloader().loadClass(validatorEntry.className());
       String message = validator.getMessage();
       if (message != null && !message.isEmpty()) {
         CompoundValue cv = ValidatorCompoundValueFactory.getInstance().createMessageParameter(message);
@@ -161,7 +161,7 @@ public class CheckValidationsMojo extends AbstractCheckMojo {
    */
   private void checkCondition(ValidatorEntry validatorEntry) {
     try {
-      Validator validator = validatorEntry.getValidator();
+      Validator validator = validatorEntry.validator();
       String condition = validator.getCondition();
       if (condition != null && !condition.isEmpty()) {
         CompoundValue cv = ValidatorCompoundValueFactory.getInstance().createConditionParameter(condition);
@@ -185,7 +185,7 @@ public class CheckValidationsMojo extends AbstractCheckMojo {
    */
   private void checkValue(ValidatorEntry validatorEntry) {
     try {
-      Validator validator = validatorEntry.getValidator();
+      Validator validator = validatorEntry.validator();
       String value = validator.getValue();
       if (value != null && !value.isEmpty()) {
         CompoundValue cv = ValidatorCompoundValueFactory.getInstance().createValueParameter(value, Object.class);

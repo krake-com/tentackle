@@ -346,67 +346,31 @@ public class Oracle extends AbstractSql2003Backend {
 
   @Override
   public int getMaxSize(SqlType sqlType) {
-    switch(sqlType) {
-
-      case DECIMAL:
-        return 37;
-
-      case VARCHAR:
-        return 4000;
-
-      default:
-        return super.getMaxSize(sqlType);
-    }
+    return switch (sqlType) {
+      case DECIMAL -> 37;
+      case VARCHAR -> 4000;
+      default -> super.getMaxSize(sqlType);
+    };
   }
 
   @Override
   public String sqlTypeToString(SqlType sqlType, int size) {
-    switch(sqlType) {
-
-      case BIT:
-      case TINYINT:
-        return TYPE_NUMBER_1;
-
-      case SMALLINT:
-        return TYPE_NUMBER_5;
-
-      case INTEGER:
-        return TYPE_NUMBER_10;
-
-      case BIGINT:
-        return TYPE_NUMBER_19;
-
-      case FLOAT:
-        return TYPE_REAL;
-
-      case DOUBLE:
-        return TYPE_DOUBLE;
-
-      case DECIMAL:
-        return TYPE_NUMBER;
-
-      case CHAR:
-        return TYPE_CHAR_1;
-
-      case VARCHAR:
-        return TYPE_VARCHAR;
-
-      case DATE:
-      case TIME:
-        return TYPE_DATE;
-
-      case TIMESTAMP:
-        return TYPE_TIMESTAMP;
-
-      case BLOB:
-        return TYPE_BLOB;
-
-      case CLOB:
-        return TYPE_CLOB;
-
-      default:
-        return super.sqlTypeToString(sqlType, size);
-    }
+    return switch (sqlType) {
+      case BIT, TINYINT -> TYPE_NUMBER_1;
+      case SMALLINT -> TYPE_NUMBER_5;
+      case INTEGER -> TYPE_NUMBER_10;
+      case BIGINT -> TYPE_NUMBER_19;
+      case FLOAT -> TYPE_REAL;
+      case DOUBLE -> TYPE_DOUBLE;
+      case DECIMAL -> TYPE_NUMBER;
+      case CHAR -> TYPE_CHAR_1;
+      case VARCHAR -> TYPE_VARCHAR;
+      case DATE, TIME -> TYPE_DATE;
+      case TIMESTAMP -> TYPE_TIMESTAMP;
+      case BLOB -> TYPE_BLOB;
+      case CLOB -> TYPE_CLOB;
+      default -> super.sqlTypeToString(sqlType, size);
+    };
   }
 
   @Override

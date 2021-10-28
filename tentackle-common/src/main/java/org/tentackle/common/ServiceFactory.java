@@ -28,7 +28,6 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.Objects;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
@@ -371,48 +370,9 @@ public class ServiceFactory {
 
   // --------------------------- implementation goes here -------------------------------------
 
+  private record ClassLoaderKey(String servicePath, String serviceName) {}      // key to maintain explicit classloaders
 
-  /**
-   * Key to maintain explicit classloaders.
-   */
-  private static class ClassLoaderKey {
-    private final String servicePath;
-    private final String serviceName;
-
-    public ClassLoaderKey(String servicePath, String serviceName) {
-      this.servicePath = servicePath;
-      this.serviceName = serviceName;
-    }
-
-    @Override
-    public int hashCode() {
-      int hash = 3;
-      hash = 37 * hash + Objects.hashCode(this.servicePath);
-      hash = 37 * hash + Objects.hashCode(this.serviceName);
-      return hash;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      if (this == obj) {
-        return true;
-      }
-      if (obj == null) {
-        return false;
-      }
-      if (getClass() != obj.getClass()) {
-        return false;
-      }
-      final ClassLoaderKey other = (ClassLoaderKey) obj;
-      if (!Objects.equals(this.servicePath, other.servicePath)) {
-        return false;
-      }
-      return Objects.equals(this.serviceName, other.serviceName);
-    }
-  }
-
-
-  private final Map<ClassLoaderKey,LinkedList<ClassLoader>> explicitLoaders;          // optional explicit loaders for named services
+  private final Map<ClassLoaderKey, LinkedList<ClassLoader>> explicitLoaders;   // optional explicit loaders for named services
 
 
   /**

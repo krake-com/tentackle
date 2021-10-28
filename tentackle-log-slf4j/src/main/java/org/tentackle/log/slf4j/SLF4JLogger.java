@@ -80,13 +80,13 @@ public class SLF4JLogger implements Logger {
 
   @Override
   public boolean isLoggable(Level level) {
-    switch (level) {
-      case FINER:   return isFinerLoggable();
-      case FINE:    return isFineLoggable();
-      case INFO:    return isInfoLoggable();
-      case WARNING: return isWarningLoggable();
-      default:      return isSevereLoggable();
-    }
+    return switch (level) {
+      case FINER -> isFinerLoggable();
+      case FINE -> isFineLoggable();
+      case INFO -> isInfoLoggable();
+      case WARNING -> isWarningLoggable();
+      default -> isSevereLoggable();
+    };
   }
 
 
@@ -320,13 +320,13 @@ public class SLF4JLogger implements Logger {
    * @return one of org.slf4j.spi.LocationAwareLogger.XXX_INT
    */
   protected int translateLevel(Level level) {
-    switch (level) {
-      case FINER:   return org.slf4j.spi.LocationAwareLogger.TRACE_INT;
-      case FINE:    return org.slf4j.spi.LocationAwareLogger.DEBUG_INT;
-      case INFO:    return org.slf4j.spi.LocationAwareLogger.INFO_INT;
-      case WARNING: return org.slf4j.spi.LocationAwareLogger.WARN_INT;
-      default:      return org.slf4j.spi.LocationAwareLogger.ERROR_INT;
-    }
+    return switch (level) {
+      case FINER -> org.slf4j.spi.LocationAwareLogger.TRACE_INT;
+      case FINE -> org.slf4j.spi.LocationAwareLogger.DEBUG_INT;
+      case INFO -> org.slf4j.spi.LocationAwareLogger.INFO_INT;
+      case WARNING -> org.slf4j.spi.LocationAwareLogger.WARN_INT;
+      default -> org.slf4j.spi.LocationAwareLogger.ERROR_INT;
+    };
   }
 
 

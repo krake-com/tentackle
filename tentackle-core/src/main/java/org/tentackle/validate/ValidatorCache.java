@@ -19,14 +19,14 @@
 
 package org.tentackle.validate;
 
+import org.tentackle.common.Service;
+import org.tentackle.common.ServiceFactory;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import org.tentackle.common.Service;
-import org.tentackle.common.ServiceFactory;
 
 
 interface ValidatorCacheHolder {
@@ -57,66 +57,27 @@ public class ValidatorCache {
 
   /**
    * Key to lookup by field and/or method
+   *
+   * @param field  the field, null if none
+   * @param method the method, null if none
    */
-  private static class FieldMethodKey {
-
-    private final Field field;
-    private final Method method;
-
-    /**
-     * Creates a combined field/method key.
-     *
-     * @param field the field, null if none
-     * @param method the method, null if none
-     */
-    private FieldMethodKey(Field field, Method method) {
-      this.field = field;
-      this.method = method;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      if (obj == null) {
-        return false;
-      }
-      if (getClass() != obj.getClass()) {
-        return false;
-      }
-      final FieldMethodKey other = (FieldMethodKey) obj;
-      if (!Objects.equals(this.field, other.field)) {
-        return false;
-      }
-      return Objects.equals(this.method, other.method);
-    }
-
-    @Override
-    public int hashCode() {
-      int hash = 5;
-      hash = 29 * hash + (this.field != null ? this.field.hashCode() : 0);
-      hash = 29 * hash + (this.method != null ? this.method.hashCode() : 0);
-      return hash;
-    }
-
-  }
-
-
-
+  private record FieldMethodKey(Field field, Method method) {}
 
 
   /**
    * Map of field validators by clazz
    */
-  private final Map<Class<?>,List<Validator>> fieldMap;
+  private final Map<Class<?>, List<Validator>> fieldMap;
 
   /**
    * Map of field validators by field and/or method
    */
-  private final Map<FieldMethodKey,List<Validator>> fieldMethodMap;
+  private final Map<FieldMethodKey, List<Validator>> fieldMethodMap;
 
   /**
    * Map of object validators
    */
-  private final Map<Class<?>,List<Validator>> objectMap;
+  private final Map<Class<?>, List<Validator>> objectMap;
 
 
 

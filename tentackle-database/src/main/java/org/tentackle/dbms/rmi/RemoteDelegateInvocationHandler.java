@@ -331,8 +331,7 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
          * is meant for the client.
          */
         realCause = cause.getCause();
-        if (realCause instanceof Loggable) {
-          Loggable loggable = (Loggable) realCause;
+        if (realCause instanceof Loggable loggable) {
           loggingLevel = loggable.getLogLevel();
           withStacktrace = loggable.withStacktrace();
         }

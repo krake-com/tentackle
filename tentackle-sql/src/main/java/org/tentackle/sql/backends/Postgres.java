@@ -242,74 +242,32 @@ public class Postgres extends AbstractSql92Backend {
 
   @Override
   public SqlType[] jdbcTypeToSqlType(int jdbcType, int size, int scale) {
-    switch(jdbcType) {
-      case Types.TINYINT:
-      case Types.SMALLINT:
-        return new SqlType[] { SqlType.TINYINT, SqlType.SMALLINT };
-
-      case Types.VARCHAR:
-      case Types.LONGVARCHAR:
-      case Types.NVARCHAR:
-      case Types.LONGNVARCHAR:
-      case Types.CLOB:
-      case Types.NCLOB:
-        return new SqlType[] { SqlType.VARCHAR, SqlType.CLOB };
-
-      default:
-        return super.jdbcTypeToSqlType(jdbcType, size, scale);
-    }
+    return switch (jdbcType) {
+      case Types.TINYINT, Types.SMALLINT -> new SqlType[]{SqlType.TINYINT, SqlType.SMALLINT};
+      case Types.VARCHAR, Types.LONGVARCHAR, Types.NVARCHAR, Types.LONGNVARCHAR, Types.CLOB, Types.NCLOB -> new SqlType[]{SqlType.VARCHAR, SqlType.CLOB};
+      default -> super.jdbcTypeToSqlType(jdbcType, size, scale);
+    };
   }
 
   @Override
   public String sqlTypeToString(SqlType sqlType, int size) {
-    switch(sqlType) {
-
-      case BIT:
-        return TYPE_BOOL;
-
-      case TINYINT:
-      case SMALLINT:
-        return TYPE_INT2;
-
-      case INTEGER:
-        return TYPE_INT4;
-
-      case BIGINT:
-        return TYPE_INT8;
-
-      case FLOAT:
-        return TYPE_FLOAT4;
-
-      case DOUBLE:
-        return TYPE_FLOAT8;
-
-      case DECIMAL:
-        return TYPE_DECIMAL;
-
-      case CHAR:
-        return TYPE_CHAR_1;
-
-      case VARCHAR:
-        return size == 0 ? TYPE_TEXT : TYPE_VARCHAR;
-
-      case DATE:
-        return TYPE_DATE;
-
-      case TIME:
-        return TYPE_TIME;
-
-      case TIMESTAMP:
-        return TYPE_TIMESTAMP;
-
-      case BLOB:
-        return TYPE_BYTEA;
-
-      case CLOB:
-        return TYPE_TEXT;
-
-      default:
-        return super.sqlTypeToString(sqlType, size);
-    }
+    return switch (sqlType) {
+      case BIT -> TYPE_BOOL;
+      case TINYINT, SMALLINT -> TYPE_INT2;
+      case INTEGER -> TYPE_INT4;
+      case BIGINT -> TYPE_INT8;
+      case FLOAT -> TYPE_FLOAT4;
+      case DOUBLE -> TYPE_FLOAT8;
+      case DECIMAL -> TYPE_DECIMAL;
+      case CHAR -> TYPE_CHAR_1;
+      case VARCHAR -> size == 0 ? TYPE_TEXT : TYPE_VARCHAR;
+      case DATE -> TYPE_DATE;
+      case TIME -> TYPE_TIME;
+      case TIMESTAMP -> TYPE_TIMESTAMP;
+      case BLOB -> TYPE_BYTEA;
+      case CLOB -> TYPE_TEXT;
+      default -> super.sqlTypeToString(sqlType, size);
+    };
   }
 
 

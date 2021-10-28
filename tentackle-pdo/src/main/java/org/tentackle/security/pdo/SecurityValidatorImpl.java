@@ -73,8 +73,7 @@ public class SecurityValidatorImpl extends AbstractObjectValidator<SecurityValid
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {
     List<ValidationResult> results = null;
     Object object = validationContext.getObject();
-    if (object instanceof Security) {
-      Security security = (Security) object;
+    if (object instanceof Security security) {
       results = new ArrayList<>();
       /*
        * was via scripting formerly -> replaced by object validator to avoid requirement for scripting at all.

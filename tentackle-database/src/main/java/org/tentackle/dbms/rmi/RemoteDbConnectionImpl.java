@@ -135,8 +135,7 @@ public abstract class RemoteDbConnectionImpl extends RemoteServerObject implemen
     }
 
     int portRange = 0;
-    if (ssf instanceof ServerSocketConfiguratorHolder) {
-      ServerSocketConfiguratorHolder sscd = (ServerSocketConfiguratorHolder) ssf;
+    if (ssf instanceof ServerSocketConfiguratorHolder sscd) {
       ServerSocketConfigurator ssc = sscd.getSocketConfigurator();
       if (ssc != null) {
         portRange = ssc.getPortRange();

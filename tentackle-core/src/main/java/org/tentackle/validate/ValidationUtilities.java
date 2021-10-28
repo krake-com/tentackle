@@ -370,8 +370,7 @@ public class ValidationUtilities {
       Class<?> type = null;                   // the object's type
 
       AnnotatedElement element = validator.getAnnotatedElement();
-      if (element instanceof Field) {
-        Field field = (Field) element;
+      if (element instanceof Field field) {
         type = field.getType();
         objectSupplier = parentObject == null ? null : () -> {
           try {
@@ -388,8 +387,7 @@ public class ValidationUtilities {
           }
         };
       }
-      else if (element instanceof Method) {
-        Method method = (Method) element;
+      else if (element instanceof Method method) {
         type = method.getReturnType();
         objectSupplier = parentObject == null ? null : () -> {
           try {
@@ -834,8 +832,7 @@ public class ValidationUtilities {
 
     // check the annotations present on given annotation
     for (Annotation anno: annotation.annotationType().getAnnotations()) {
-      if (anno instanceof Validation) {
-        Validation validation = (Validation) anno;
+      if (anno instanceof Validation validation) {
         Class<? extends Validator> validatorClazz = validation.value();   // get validator implementation class
         addValidator(annotation, element, -1, validators, scope, validatorClazz);
       }
@@ -849,8 +846,7 @@ public class ValidationUtilities {
          */
         for (Annotation repeatedAnno: repeatedAnnotations) {
           for (Annotation anno2: repeatedAnno.annotationType().getAnnotations()) {
-            if (anno2 instanceof Validation) {
-              Validation validation = (Validation) anno2;
+            if (anno2 instanceof Validation validation) {
               Class<? extends Validator> validatorClazz = validation.value();   // get validator implementation class
               addValidator(repeatedAnno, element, validationIndex++, validators, scope, validatorClazz);
             }

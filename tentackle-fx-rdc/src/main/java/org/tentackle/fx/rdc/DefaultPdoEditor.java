@@ -243,14 +243,12 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
 
     if (FxUtilities.getInstance().getBindingOption(bindingOptions, Constants.BIND_COLS) == null) {
       // if not already set via COLS= in model options
-      if (node instanceof FxTextField) {
-        FxTextField textField = (FxTextField) node;
+      if (node instanceof FxTextField textField) {
         if (textField.getMaxColumns() > 0) {
           textField.setColumns(textField.getMaxColumns());
         }
       }
-      else if (node instanceof FxTextArea) {
-        FxTextArea textArea = (FxTextArea) node;
+      else if (node instanceof FxTextArea textArea) {
         textArea.setColumns(FxUtilities.getInstance().getDefaultTextAreaColumns(textArea));
       }
     }

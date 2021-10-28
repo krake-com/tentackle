@@ -75,30 +75,15 @@ public enum LineType {
    * @return the created line
    */
   public Line createLine(Document document, int offset) {
-    switch (this) {
-      case EMPTY:
-        return new EmptyLine(document, offset, this);
-
-      case COMMENT:
-        return new CommentLine(document, offset, this);
-
-      case CONFIGURATION:
-        return new ConfigurationLine(document, offset, this);
-
-      case GLOBAL_OPTION:
-        return new GlobalOptionLine(document, offset, this);
-
-      case ATTRIBUTE_OPTION:
-      case RELATION_OPTION:
-        return new OptionLine(document, offset, this);
-
-      case ATTRIBUTE:
-        return new AttributeLine(document, offset, this);
-
-      case RELATION:
-        return new RelationLine(document, offset, this);
-
-      default:  throw new IllegalArgumentException("unimplemented line type");
-    }
+    return switch (this) {
+      case EMPTY -> new EmptyLine(document, offset, this);
+      case COMMENT -> new CommentLine(document, offset, this);
+      case CONFIGURATION -> new ConfigurationLine(document, offset, this);
+      case GLOBAL_OPTION -> new GlobalOptionLine(document, offset, this);
+      case ATTRIBUTE_OPTION, RELATION_OPTION -> new OptionLine(document, offset, this);
+      case ATTRIBUTE -> new AttributeLine(document, offset, this);
+      case RELATION -> new RelationLine(document, offset, this);
+      default -> throw new IllegalArgumentException("unimplemented line type");
+    };
   }
 }

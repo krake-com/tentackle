@@ -374,8 +374,7 @@ public class FxUtilities {
         }
       }
       buf.append(node).append(" @ [").append(node.getLayoutX()).append("/").append(node.getLayoutY()).append(']');
-      if (node instanceof FxComponent) {
-        FxComponent fxComponent = (FxComponent) node;
+      if (node instanceof FxComponent fxComponent) {
         Binding binding = fxComponent.getBinding();
         if (binding != null) {
           BindingMember member = binding.getMember();
@@ -703,8 +702,7 @@ public class FxUtilities {
    * @param control the fx control
    */
   public void setupFocusHandling(Control control) {
-    if (control instanceof FxComponent) {
-      final FxComponent component = (FxComponent) control;
+    if (control instanceof FxComponent component) {
       control.focusedProperty().addListener((observable, oldValue, newValue) -> {
         if (newValue) {
           FxUtilities.getInstance().focusGained(component);

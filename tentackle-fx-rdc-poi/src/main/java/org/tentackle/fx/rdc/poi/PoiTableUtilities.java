@@ -121,11 +121,10 @@ public class PoiTableUtilities extends TableUtilities {
 
               HSSFCell cell = row.createCell(columnIndex);
 
-              if (value instanceof Boolean) {
-                cell.setCellValue(((Boolean) value));
+              if (value instanceof Boolean boolValue) {
+                cell.setCellValue(boolValue);
               }
-              else if (value instanceof BMoney) {
-                BMoney money = (BMoney) value;
+              else if (value instanceof BMoney money) {
                 cell.setCellValue(money.doubleValue());
 
                 String fmt = "#,##0";
