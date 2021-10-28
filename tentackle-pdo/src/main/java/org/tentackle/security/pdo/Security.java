@@ -66,7 +66,7 @@ import org.tentackle.session.TableName;
  * A security rule.
  * <p>
  * This is the entity used by the default implementation {@link DefaultSecurityManager}.
- * Applications may use a completely different {@link SecurityManager} not using {@link Security}-entities at all.
+ * Applications may use a completely different {@link org.tentackle.security.SecurityManager} not using {@link Security}-entities at all.
  * <p>
  * Any object, whether it is a ({@link PersistentDomainObject}) or any
  * other class (for example a dialog) can be secured by rules.<br>

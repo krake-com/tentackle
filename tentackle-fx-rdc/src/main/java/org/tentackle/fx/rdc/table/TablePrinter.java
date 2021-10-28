@@ -175,26 +175,6 @@ public class TablePrinter extends AbstractFxController {
 
 
   /**
-   * Info for one printable page.
-   */
-  private static class PageInfo {
-
-    private final int rowStart;
-    private final int rowCount;
-
-    public PageInfo(int rowStart, int rowCount) {
-      this.rowStart = rowStart;
-      this.rowCount = rowCount;
-    }
-
-    @Override
-    public String toString() {
-      return "print " + rowCount + " rows starting at row " + rowStart;
-    }
-  }
-
-
-  /**
    * Cell factory to suppress not summable cells in totals.
    *
    * @param <S> The type of the TableView generic type (i.e. S == TableView&lt;S&gt;)
@@ -397,6 +377,15 @@ public class TablePrinter extends AbstractFxController {
     @Override
     @SuppressWarnings("unchecked")
     public void run() {
+
+      // Info for one printable page
+      record PageInfo(int rowStart, int rowCount) {
+
+        @Override
+        public String toString() {
+          return "print " + rowCount + " rows starting at row " + rowStart;
+        }
+      }
 
       // calculate the page contents and number of pages
       List<PageInfo> pages = new ArrayList<>();

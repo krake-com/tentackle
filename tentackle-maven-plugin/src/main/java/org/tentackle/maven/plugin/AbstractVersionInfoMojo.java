@@ -66,38 +66,6 @@ public abstract class AbstractVersionInfoMojo extends AbstractTentackleMojo {
   private int groupVersions;
 
 
-  private static class Group {
-    private final String groupId;
-    private final String version;
-
-    private Group(String groupId, String version) {
-      this.groupId = groupId;
-      this.version = version;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-      Group group = (Group) o;
-      if (!groupId.equals(group.groupId)) {
-        return false;
-      }
-      return version.equals(group.version);
-    }
-
-    @Override
-    public int hashCode() {
-      int result = groupId.hashCode();
-      result = 31 * result + version.hashCode();
-      return result;
-    }
-  }
-
 
   /**
    * Generates the version properties.
@@ -106,6 +74,8 @@ public abstract class AbstractVersionInfoMojo extends AbstractTentackleMojo {
    * @param artifacts the artifacts
    */
   protected void generateVersionProperties(String comment, Set<Artifact> artifacts) throws MojoExecutionException {
+
+    record Group(String groupId, String version) {}
 
     Map<String, String> versionsMap = new TreeMap<>();                    // property -> version: sorted by property name
     Map<Group, List<Artifact>> groupMap = new HashMap<>();                // groupId+version -> list of artifacts: to build group versions

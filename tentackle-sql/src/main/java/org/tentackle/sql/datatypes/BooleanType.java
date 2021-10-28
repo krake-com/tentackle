@@ -64,18 +64,11 @@ public class BooleanType extends AbstractDataType<Boolean> {
   @Override
   public Boolean valueOf(String str) {
     String bstr = StringHelper.parseString(str);
-    switch (bstr.toLowerCase()) {
-      case "true":
-      case "t":
-      case "1":
-        return Boolean.TRUE;
-      case "false":
-      case "f":
-      case "0":
-        return Boolean.FALSE;
-      default:
-        throw new BackendException("invalid boolean value: " + bstr);
-    }
+    return switch (bstr.toLowerCase()) {
+      case "true", "t", "1" -> Boolean.TRUE;
+      case "false", "f", "0" -> Boolean.FALSE;
+      default -> throw new BackendException("invalid boolean value: " + bstr);
+    };
   }
 
   @Override

@@ -27,40 +27,11 @@ public interface NumberSource {
 
   /**
    * A range of numbers.
+   *
+   * @param begin the first number
+   * @param end   the last number + 1
    */
-  final class Range {
-
-    private final long begin;
-    private final long end;
-
-    /**
-     * Creates a range.
-     *
-     * @param begin the first number
-     * @param end the last number + 1
-     */
-    public Range(long begin, long end) {
-      this.begin = begin;
-      this.end = end;
-    }
-
-    /**
-     * Gets the begin of the range.
-     *
-     * @return the first number
-     */
-    public long getBegin() {
-      return begin;
-    }
-
-    /**
-     * Gets the end of the range.
-     *
-     * @return the end of range (last number + 1)
-     */
-    public long getEnd() {
-      return end;
-    }
+  record Range(long begin, long end) {
 
     /**
      * Gets the size of the range.
@@ -70,7 +41,6 @@ public interface NumberSource {
     public long size() {
       return end - begin;
     }
-
   }
 
 

@@ -37,7 +37,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
@@ -109,36 +108,7 @@ public class MigrationHints {
   /**
    * Key for explicit column migration.
    */
-  private static class ColumnKey {
-
-    private final String columnName;        // the (old) columnname
-    private final String newColumnName;     // the new columnname (if renamed)
-
-    private ColumnKey(String columnName, String newColumnName) {
-      this.columnName = columnName;
-      this.newColumnName = newColumnName;
-    }
-
-    @Override
-    public int hashCode() {
-      int hash = 7;
-      hash = 23 * hash + Objects.hashCode(this.columnName);
-      return hash;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      if (obj == null) {
-        return false;
-      }
-      if (getClass() != obj.getClass()) {
-        return false;
-      }
-      final ColumnKey other = (ColumnKey) obj;
-      return Objects.equals(this.columnName, other.columnName);
-    }
-
-  }
+  private record ColumnKey(String columnName, String newColumnName) {}
 
 
   private final List<String> hintFileNames;                       // applied hint files

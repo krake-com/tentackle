@@ -36,10 +36,9 @@ public class DbSessionUtilities extends SessionUtilities {
 
   @Override
   public Throwable alignExceptionCause(Throwable t) {
-    if (t instanceof SQLException && !"java.sql".equals(ReflectionHelper.getPackageName(t.getClass().getName()))) {
+    if (t instanceof SQLException sx && !"java.sql".equals(ReflectionHelper.getPackageName(t.getClass().getName()))) {
       // if some JDBC-driver specific exception (usually not in the classpath of a remote client)
       StackTraceElement[] trace = t.getStackTrace();
-      SQLException sx = (SQLException) t;
       SQLException next = sx.getNextException();
       // replace by java.sql.SQLException which definitely is in the classpath!
       sx = new SQLException(sx.getMessage() + " (" + sx.getClass().getName() + ")", sx.getSQLState(), sx.getErrorCode());
@@ -66,8 +65,7 @@ public class DbSessionUtilities extends SessionUtilities {
   @Override
   public StringBuilder createLazyExceptionMessage(String msg, Throwable cause, Identifiable identifiable, Session session) {
     StringBuilder buf = super.createLazyExceptionMessage(msg, cause, identifiable, session);
-    if (cause instanceof SQLException) {
-      SQLException sx = (SQLException) cause;
+    if (cause instanceof SQLException sx) {
       buf.append("\nSQL-Message: ").append(sx.getMessage())
          .append("\nSQL-Code:    ").append(sx.getErrorCode())
          .append("\nSQL-State:   ").append(sx.getSQLState());

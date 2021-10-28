@@ -18,16 +18,17 @@
 
 package org.tentackle.security;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.PersistentObject;
 import org.tentackle.reflect.AbstractInterceptor;
 import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.session.PersistenceException;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Interceptor to perform security checks.
@@ -58,9 +59,8 @@ public class SecuredInterceptor extends AbstractInterceptor {
       int classId = 0;
       long id = 0;
       Class<?> effectiveClass;    // != null if Operation, null if Identifiable PDO
-      if (orgProxy instanceof PersistentObject) {
+      if (orgProxy instanceof PersistentObject<?> po) {
         // pdo
-        PersistentObject<?> po = (PersistentObject<?>) orgProxy;
         classId = po.getClassId();
         id = po.getId();
         effectiveClass = null;

@@ -52,40 +52,11 @@ public class CheckValidationsProcessor extends AbstractTentackleProcessor {
   /**
    * Validator entry.<br>
    * Hold the validator and the class where the annotation was found.
+   *
+   * @param validator the validator instance
+   * @param className the enclosing class of the annotation
    */
-  public static class ValidatorEntry {
-
-    private final Validator validator;    // the validator instance
-    private final String className;       // the enclosing class of the annotation
-
-    /**
-     * Creates an entry.
-     *
-     * @param validator the validator instance
-     * @param className the enclosing class of the annotation
-     */
-    public ValidatorEntry(Validator validator, String className) {
-      this.validator = validator;
-      this.className = className;
-    }
-
-    /**
-     * Gets the validator instance.
-     *
-     * @return the validator
-     */
-    public Validator getValidator() {
-      return validator;
-    }
-
-    /**
-     * Gets the enclosing class of the annotation.
-     *
-     * @return the classname
-     */
-    public String getClassName() {
-      return className;
-    }
+  public record ValidatorEntry(Validator validator, String className) {
 
     @Override
     public String toString() {

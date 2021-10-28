@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Method cache for operations.<br>
+ * Method-cache for operations.<br>
  * Each operation class provides its own cache.
  *
  * @param <T> the operation type
@@ -56,20 +56,11 @@ public class OperationMethodCache<T extends Operation<T>> {
   /**
    * VO holding the method and its invocation.
    */
-  private static class OperationMethod {
-
-    private final InterceptableMethod method;
-    private final OperationInvocation invocation;
-
-    private OperationMethod(InterceptableMethod method, OperationInvocation invocation) {
-      this.method = method;
-      this.invocation = invocation;
-    }
-  }
+  private record OperationMethod(InterceptableMethod method, OperationInvocation invocation) {}
 
 
   private final Class<? extends Interceptable> clazz;       // the topmost interceptable's interface
-  private final Map<Method,OperationMethod> methodCache;          // the method cache
+  private final Map<Method, OperationMethod> methodCache;   // the method cache
 
   /**
    * Creates a method cache.

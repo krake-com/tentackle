@@ -371,8 +371,7 @@ public final class ReflectionHelper {
         if (typeArgument instanceof Class) {
           clazz = (Class<T>) typeArgument;
         }
-        else if (typeArgument instanceof WildcardType) {
-          WildcardType wildcardType = (WildcardType) typeArgument;
+        else if (typeArgument instanceof WildcardType wildcardType) {
           typeArguments = wildcardType.getLowerBounds();
           if (typeArguments == null || typeArguments.length != 1) {
             typeArguments = wildcardType.getUpperBounds();

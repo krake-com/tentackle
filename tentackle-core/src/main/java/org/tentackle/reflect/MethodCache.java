@@ -43,23 +43,14 @@ public class MethodCache {
 
   /**
    * Method lookup key.
+   *
+   * @param clazz          the class the method to search in
+   * @param parameterTypes the parameter types
    */
-  private static class Key {
+  private record Key(Class<?> clazz, Class<?>[] parameterTypes) {
 
-    private final Class<?> clazz;
-    private final Class<?>[] parameterTypes;
-
-
-    /**
-     * Creates a key.
-     *
-     * @param clazz the class the method to search in
-     * @param parameterTypes the parameter types
-     */
-    private Key(Class<?> clazz, Class<?>[] parameterTypes) {
-      this.clazz = clazz;
-      this.parameterTypes = parameterTypes;
-    }
+    // Important: overrides of equals and hashCode necessary since record's defaults don't do deepEquals/deepHashCode on arrays.
+    // see test/java/.../reflect/RecordTest.java.
 
     @Override
     public boolean equals(Object obj) {
@@ -73,17 +64,16 @@ public class MethodCache {
       if (this.clazz != other.clazz) {
         return false;
       }
-      return Arrays.deepEquals(this.parameterTypes, other.parameterTypes);
+      return Arrays.equals(this.parameterTypes, other.parameterTypes);
     }
 
     @Override
     public int hashCode() {
       int hash = 3;
       hash = 83 * hash + (this.clazz != null ? this.clazz.hashCode() : 0);
-      hash = 83 * hash + Arrays.deepHashCode(this.parameterTypes);
+      hash = 83 * hash + Arrays.hashCode(this.parameterTypes);
       return hash;
     }
-
 
     @Override
     public String toString() {
@@ -93,11 +83,11 @@ public class MethodCache {
       if (parameterTypes != null) {
         buf.append(", parameters=");
         boolean needComma = false;
-        for (Class<?> type: parameterTypes) {
+        for (Class<?> type : parameterTypes) {
           if (needComma) {
             buf.append(',');
           }
-          else  {
+          else {
             needComma = true;
           }
           buf.append(type.getName());
@@ -105,8 +95,8 @@ public class MethodCache {
       }
       return buf.toString();
     }
-
   }
+
 
   private final ConcurrentMap<Key, Method> methodMap;   // the method map
   private final String name;                            // the cache's name (for logging only)

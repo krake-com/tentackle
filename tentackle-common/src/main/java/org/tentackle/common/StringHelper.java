@@ -1401,8 +1401,7 @@ public final class StringHelper {
       return "<null>";
     }
     else  {
-      if (object instanceof String) {
-        String str = (String) object;
+      if (object instanceof String str) {
         StringBuilder buf = new StringBuilder();
         buf.append('"');
         if (str.indexOf('\n') >= 0) {

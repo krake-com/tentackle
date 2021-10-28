@@ -99,8 +99,7 @@ public class LoginFailedHandler {
     if (ex instanceof AlreadyLoggedInException) {
       application.showApplicationStatus(ex.getLocalizedMessage(), 0.0);
     }
-    else if (ex instanceof VersionIncompatibleException) {
-      VersionIncompatibleException vx = (VersionIncompatibleException) ex;
+    else if (ex instanceof VersionIncompatibleException vx) {
       Platform.runLater(() -> {
         Fx.info(MessageFormat.format(AppFxRdcBundle.getString("client version {0} does not match server version {1}"),
                 vx.getClientVersion(), vx.getServerVersion()));

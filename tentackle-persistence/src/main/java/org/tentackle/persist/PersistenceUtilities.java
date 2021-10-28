@@ -85,9 +85,8 @@ public class PersistenceUtilities extends DbUtilities {
       AbstractDbObject<?> po = AbstractDbObject.newInstance(clazzVar.clazz);
       if (po.isTableSerialProvided()) {
         tableSerialTableName = po.getTableName();
-        if (clazzVar instanceof PersistentObjectClassVariables) {
+        if (clazzVar instanceof PersistentObjectClassVariables<?, ?> cv) {
           // check if the topmost superclass provides its own table: take that
-          PersistentObjectClassVariables<?, ?> cv = (PersistentObjectClassVariables<?, ?>) clazzVar;
           while (cv != null) {
             if (cv.tableName != null) {
               tableSerialTableName = cv.tableName;

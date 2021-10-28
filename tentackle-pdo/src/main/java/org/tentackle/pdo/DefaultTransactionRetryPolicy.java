@@ -39,7 +39,7 @@ public class DefaultTransactionRetryPolicy implements TransactionRetryPolicy {
 
   @Override
   public long waitMillis(String txName, int count) {
-    return count > MAX_RETRIES ? 0 : (OFFSET_WAIT_MS + rand.nextInt(RANGE_WAIT_MS)) * (1 << (count - 1));    // double time each invocation
+    return count > MAX_RETRIES ? 0 : (OFFSET_WAIT_MS + rand.nextInt(RANGE_WAIT_MS)) * (1L << (count - 1));    // double time each invocation
   }
 
 }

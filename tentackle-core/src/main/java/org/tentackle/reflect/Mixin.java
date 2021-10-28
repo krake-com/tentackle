@@ -41,17 +41,8 @@ public class Mixin<T, M extends Serializable> implements Serializable {
   /**
    * Key to speed up lookup of constructors.
    */
-  private static class ConstructorKey {
-    @SuppressWarnings("rawtypes")
-    private final Class implClass;
-    @SuppressWarnings("rawtypes")
-    private final Class[] parameterTypes;
-
-    @SuppressWarnings("rawtypes")
-    public ConstructorKey(Class implClass, Class[] parameterTypes) {
-      this.implClass = implClass;
-      this.parameterTypes = parameterTypes;
-    }
+  private record ConstructorKey(Class<?> implClass, Class<?>[] parameterTypes) {
+    // see test/java/.../reflect/RecordTest.java
 
     @Override
     public boolean equals(Object o) {
@@ -76,6 +67,7 @@ public class Mixin<T, M extends Serializable> implements Serializable {
     }
   }
 
+  
   /**
    * Cache to speed up constructor lookup.
    */

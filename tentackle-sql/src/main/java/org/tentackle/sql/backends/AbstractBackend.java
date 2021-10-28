@@ -273,25 +273,10 @@ public abstract class AbstractBackend implements Backend {
 
   @Override
   public int getMaxSize(SqlType sqlType) {
-    switch(sqlType) {
-      case BIT:
-      case TINYINT:
-      case SMALLINT:
-      case INTEGER:
-      case BIGINT:
-      case FLOAT:
-      case DOUBLE:
-      case CHAR:
-      case DATE:
-      case TIME:
-      case TIMESTAMP:
-      case BLOB:
-      case CLOB:
-        return -1;    // sizeless type
-
-      default:
-        return 0;   // default is unlimited
-    }
+    return switch (sqlType) {
+      case BIT, TINYINT, SMALLINT, INTEGER, BIGINT, FLOAT, DOUBLE, CHAR, DATE, TIME, TIMESTAMP, BLOB, CLOB -> -1;    // sizeless type
+      default -> 0;   // default is unlimited
+    };
   }
 
   @Override
@@ -473,19 +458,10 @@ public abstract class AbstractBackend implements Backend {
 
   @Override
   public String valueToLiteral(SqlType sqlType, Object value) {
-    switch(sqlType) {
-      case CHAR:
-      case VARCHAR:
-      case CLOB:
-      case TIME:
-      case DATE:
-      case TIMESTAMP:
-      case BIT:
-        return "'" + value + "'";
-
-      default:
-        return value.toString();
-    }
+    return switch (sqlType) {
+      case CHAR, VARCHAR, CLOB, TIME, DATE, TIMESTAMP, BIT -> "'" + value + "'";
+      default -> value.toString();
+    };
   }
 
   @Override

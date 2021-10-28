@@ -318,13 +318,13 @@ public class Log4J2Logger implements Logger {
    * @return the LOG4J level
    */
   protected org.apache.logging.log4j.Level translateLevel(Level level) {
-    switch (level) {
-      case FINER:   return org.apache.logging.log4j.Level.TRACE;
-      case FINE:    return org.apache.logging.log4j.Level.DEBUG;
-      case INFO:    return org.apache.logging.log4j.Level.INFO;
-      case WARNING: return org.apache.logging.log4j.Level.WARN;
-      default:      return org.apache.logging.log4j.Level.ERROR;
-    }
+    return switch (level) {
+      case FINER -> org.apache.logging.log4j.Level.TRACE;
+      case FINE -> org.apache.logging.log4j.Level.DEBUG;
+      case INFO -> org.apache.logging.log4j.Level.INFO;
+      case WARNING -> org.apache.logging.log4j.Level.WARN;
+      default -> org.apache.logging.log4j.Level.ERROR;
+    };
   }
 
 

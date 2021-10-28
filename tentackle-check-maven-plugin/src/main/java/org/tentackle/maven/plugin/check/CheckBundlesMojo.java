@@ -32,7 +32,6 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.MissingResourceException;
-import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
 
@@ -78,7 +77,6 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
   }
 
 
-
   @Override
   public void finishExecute() throws MojoExecutionException {
 
@@ -88,6 +86,14 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
       String bundleName = ReflectionHelper.getOutermostClassName(key.getBundleName());
       if (usedBundleNames.add(bundleName) && verbosityLevel.isDebug()) {
         getLog().info("bundle " + bundleName + " is referenced");
+      }
+    }
+
+    // Key locale:bundlename
+    record NameKey(Locale locale, String name) {
+      @Override
+      public String toString() {
+        return name + "(" + locale + ")";
       }
     }
 
@@ -195,54 +201,6 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
     else {
       getLog().info(msg + "no errors");
     }
-  }
-
-
-
-  /**
-   * Key locale:bundlename.
-   */
-  private static class NameKey {
-
-    private final Locale locale;
-    private final String name;
-
-    private NameKey(Locale locale, String name) {
-      this.locale = locale;
-      this.name = name;
-    }
-
-    @Override
-    public String toString() {
-      return name + "(" + locale + ")";
-    }
-
-    @Override
-    public int hashCode() {
-      int hash = 5;
-      hash = 59 * hash + Objects.hashCode(this.locale);
-      hash = 59 * hash + Objects.hashCode(this.name);
-      return hash;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      if (this == obj) {
-        return true;
-      }
-      if (obj == null) {
-        return false;
-      }
-      if (getClass() != obj.getClass()) {
-        return false;
-      }
-      final NameKey other = (NameKey) obj;
-      if (!Objects.equals(this.name, other.name)) {
-        return false;
-      }
-      return Objects.equals(this.locale, other.locale);
-    }
-
   }
 
 }

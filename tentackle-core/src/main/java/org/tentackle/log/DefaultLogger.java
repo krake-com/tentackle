@@ -78,13 +78,13 @@ public class DefaultLogger implements Logger {
 
 
   private java.util.logging.Level translateLevel(Level level) {
-    switch (level) {
-      case FINER:   return java.util.logging.Level.FINER;
-      case FINE:    return java.util.logging.Level.FINE;
-      case INFO:    return java.util.logging.Level.INFO;
-      case WARNING: return java.util.logging.Level.WARNING;
-      default:      return java.util.logging.Level.SEVERE;
-    }
+    return switch (level) {
+      case FINER -> java.util.logging.Level.FINER;
+      case FINE -> java.util.logging.Level.FINE;
+      case INFO -> java.util.logging.Level.INFO;
+      case WARNING -> java.util.logging.Level.WARNING;
+      default -> java.util.logging.Level.SEVERE;
+    };
   }
 
   @Override

@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Method cache for PDOs.<br>
+ * Method-cache for PDOs.<br>
  * Each PDO class provides its own cache.
  *
  * @param <T> the PDO type
@@ -38,20 +38,11 @@ public class PdoMethodCache<T extends PersistentDomainObject<T>> {
   /**
    * VO holding the method and its invocation.
    */
-  private static class PdoMethod {
-
-    private final InterceptableMethod method;
-    private final PdoInvocation invocation;
-
-    private PdoMethod(InterceptableMethod method, PdoInvocation invocation) {
-      this.method = method;
-      this.invocation = invocation;
-    }
-  }
+  private record PdoMethod(InterceptableMethod method, PdoInvocation invocation) {}
 
 
   private final Class<? extends Interceptable> clazz;       // the topmost interceptable's interface
-  private final Map<Method,PdoMethod> methodCache;          // the method cache
+  private final Map<Method, PdoMethod> methodCache;         // the method cache
 
   /**
    * Creates a method cache.

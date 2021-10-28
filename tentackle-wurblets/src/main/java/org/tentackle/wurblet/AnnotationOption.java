@@ -74,12 +74,12 @@ public class AnnotationOption {
 
 
   private Modifier toModifier(char c) {
-    switch(c) {
-      case '=': return Modifier.SETTER_ONLY;
-      case '+': return Modifier.SETTER_AND_GETTER;
-      case '~': return Modifier.HIDDEN;
-    }
-    return null;
+    return switch (c) {
+      case '=' -> Modifier.SETTER_ONLY;
+      case '+' -> Modifier.SETTER_AND_GETTER;
+      case '~' -> Modifier.HIDDEN;
+      default -> null;
+    };
   }
 
   private void applyModifier(Modifier modifier) {

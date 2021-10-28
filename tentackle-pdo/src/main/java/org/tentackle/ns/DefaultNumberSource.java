@@ -18,6 +18,12 @@
 
 package org.tentackle.ns;
 
+import org.tentackle.ns.pdo.NumberPool;
+import org.tentackle.ns.pdo.NumberRange;
+import org.tentackle.pdo.Pdo;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.Session;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -26,11 +32,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import org.tentackle.ns.pdo.NumberPool;
-import org.tentackle.ns.pdo.NumberRange;
-import org.tentackle.pdo.Pdo;
-import org.tentackle.session.PersistenceException;
-import org.tentackle.session.Session;
 
 /**
  * The default implementation of a number source.<br>
@@ -131,7 +132,7 @@ public class DefaultNumberSource implements NumberSource {
       lockPool();
       findCurrentRange();
       // returned ranges sorted by begin
-      Set<Range> ranges = new TreeSet<>(Comparator.comparingLong(Range::getBegin));
+      Set<Range> ranges = new TreeSet<>(Comparator.comparingLong(Range::begin));
 
       long remains = count;
       while (remains > 0) {
@@ -155,7 +156,7 @@ public class DefaultNumberSource implements NumberSource {
     return Session.getSession().transaction(() -> {
       lockPool();
       // returned ranges sorted by begin
-      Set<Range> ranges = new TreeSet<>(Comparator.comparingLong(Range::getBegin));
+      Set<Range> ranges = new TreeSet<>(Comparator.comparingLong(Range::begin));
 
       List<NumberRange> splitRanges = new ArrayList<>();  // splitted ranges (to add)
       for (Iterator<NumberRange> iter =  pool.getNumberRangeList().iterator(); iter.hasNext(); ) {
@@ -323,7 +324,7 @@ public class DefaultNumberSource implements NumberSource {
    */
   private void fixRanges() {
     // ranges sorted by begin
-    Map<Range, NumberRange> rangeMap = new TreeMap<>(Comparator.comparingLong(Range::getBegin));
+    Map<Range, NumberRange> rangeMap = new TreeMap<>(Comparator.comparingLong(Range::begin));
     for (NumberRange range: pool.getNumberRangeList()) {
       rangeMap.put(new Range(range.getBegin(), range.getEnd()), range);
     }

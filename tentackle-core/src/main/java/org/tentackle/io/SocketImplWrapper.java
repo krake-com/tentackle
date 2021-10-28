@@ -233,40 +233,19 @@ public class SocketImplWrapper extends SocketImpl {
 
   @Override
   public Object getOption(int optID) throws SocketException {
-    switch (optID) {
-      case SocketOptions.TCP_NODELAY:
-        return soc.getTcpNoDelay();
-
-      case SocketOptions.SO_BINDADDR:
-        return soc.getLocalAddress();
-
-      case SocketOptions.SO_REUSEADDR:
-        return soc.getReuseAddress();
-
-      case SocketOptions.IP_TOS:
-        return soc.getTrafficClass();
-
-      case SocketOptions.SO_LINGER:
-        return soc.getSoLinger();
-
-      case SocketOptions.SO_TIMEOUT:
-        return soc.getSoTimeout();
-
-      case SocketOptions.SO_SNDBUF:
-        return soc.getSendBufferSize();
-
-      case SocketOptions.SO_RCVBUF:
-        return soc.getReceiveBufferSize();
-
-      case SocketOptions.SO_KEEPALIVE:
-        return soc.getKeepAlive();
-
-      case SocketOptions.SO_OOBINLINE:
-        return soc.getOOBInline();
-
-      default:
-        throw new SocketException("unsupported option ID");
-    }
+    return switch (optID) {
+      case SocketOptions.TCP_NODELAY -> soc.getTcpNoDelay();
+      case SocketOptions.SO_BINDADDR -> soc.getLocalAddress();
+      case SocketOptions.SO_REUSEADDR -> soc.getReuseAddress();
+      case SocketOptions.IP_TOS -> soc.getTrafficClass();
+      case SocketOptions.SO_LINGER -> soc.getSoLinger();
+      case SocketOptions.SO_TIMEOUT -> soc.getSoTimeout();
+      case SocketOptions.SO_SNDBUF -> soc.getSendBufferSize();
+      case SocketOptions.SO_RCVBUF -> soc.getReceiveBufferSize();
+      case SocketOptions.SO_KEEPALIVE -> soc.getKeepAlive();
+      case SocketOptions.SO_OOBINLINE -> soc.getOOBInline();
+      default -> throw new SocketException("unsupported option ID");
+    };
   }
 
 }

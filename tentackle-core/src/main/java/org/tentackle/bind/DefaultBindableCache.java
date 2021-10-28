@@ -40,6 +40,26 @@ public class DefaultBindableCache implements BindableCache {
 
   private static final Logger LOGGER = Logger.get(DefaultBindableCache.class);
 
+  /**
+   * The key for the class cache map.
+   */
+  private record ClassKey(Class<?> clazz, boolean declaredOnly) {}
+
+
+  /**
+   * Element key to sort by ordinal + camelName.
+   */
+  private record ElementKey(String camelName, int ordinal) implements Comparable<ElementKey> {
+
+    @Override
+    public int compareTo(ElementKey o) {
+      int rv = ordinal - o.ordinal;
+      if (rv == 0) {
+        rv = camelName.compareTo(o.camelName);
+      }
+      return rv;
+    }
+  }
 
   /**
    * The binding factory.
@@ -228,91 +248,6 @@ public class DefaultBindableCache implements BindableCache {
     }
 
     return bindableMap.values();
-  }
-
-
-  /**
-   * The key for the class cache map.
-   */
-  private static class ClassKey {
-
-    private final Class<?> clazz;
-    private final boolean declaredOnly;
-
-    private ClassKey(Class<?> clazz, boolean declaredOnly) {
-      this.clazz = clazz;
-      this.declaredOnly = declaredOnly;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      if (obj == null) {
-        return false;
-      }
-      if (getClass() != obj.getClass()) {
-        return false;
-      }
-      final ClassKey other = (ClassKey) obj;
-      if (this.clazz != other.clazz) {
-        return false;
-      }
-      return this.declaredOnly == other.declaredOnly;
-    }
-
-    @Override
-    public int hashCode() {
-      int hash = 3;
-      hash = 29 * hash + (this.clazz != null ? this.clazz.hashCode() : 0);
-      hash = 29 * hash + (this.declaredOnly ? 1 : 0);
-      return hash;
-    }
-
-  }
-
-
-  /**
-   * Element key to sort by ordinal + camelName.
-   */
-  private static class ElementKey implements Comparable<ElementKey> {
-
-    private final String camelName;
-    private final int ordinal;
-
-    public ElementKey(String camelName, int ordinal) {
-      this.camelName = camelName;
-      this.ordinal = ordinal;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-      ElementKey that = (ElementKey) o;
-      if (ordinal != that.ordinal) {
-        return false;
-      }
-      return camelName.equals(that.camelName);
-    }
-
-    @Override
-    public int hashCode() {
-      int result = camelName.hashCode();
-      result = 31 * result + ordinal;
-      return result;
-    }
-
-    @Override
-    public int compareTo(ElementKey o) {
-      int rv = ordinal - o.ordinal;
-      if (rv == 0) {
-        rv = camelName.compareTo(o.camelName);
-      }
-      return rv;
-    }
   }
 
 }

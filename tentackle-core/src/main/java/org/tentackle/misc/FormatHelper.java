@@ -890,26 +890,17 @@ public class FormatHelper {
    * @return the name, the empty string if unsupported field type
    */
   public static String calendarFieldToString(int field, boolean plural) {
-    switch (field) {
-      case YEAR:
-        return plural ? MiscCoreBundle.getString("years") : MiscCoreBundle.getString("year");
-      case MONTH:
-        return plural ? MiscCoreBundle.getString("months") : MiscCoreBundle.getString("month");
-      case WEEK_OF_YEAR:
-        return plural ? MiscCoreBundle.getString("weeks") : MiscCoreBundle.getString("week");
-      case DAY_OF_MONTH:
-        return plural ? MiscCoreBundle.getString("days") : MiscCoreBundle.getString("day");
-      case HOUR:
-      case HOUR_OF_DAY:
-        return plural ? MiscCoreBundle.getString("hours") : MiscCoreBundle.getString("hour");
-      case MINUTE:
-        return plural ? MiscCoreBundle.getString("minutes") : MiscCoreBundle.getString("minute");
-      case SECOND:
-        return plural ? MiscCoreBundle.getString("seconds") : MiscCoreBundle.getString("second");
-      case MILLISECOND:
-        return plural ? MiscCoreBundle.getString("milliseconds") : MiscCoreBundle.getString("millisecond");
-    }
-    return "";
+    return switch (field) {
+      case YEAR -> plural ? MiscCoreBundle.getString("years") : MiscCoreBundle.getString("year");
+      case MONTH -> plural ? MiscCoreBundle.getString("months") : MiscCoreBundle.getString("month");
+      case WEEK_OF_YEAR -> plural ? MiscCoreBundle.getString("weeks") : MiscCoreBundle.getString("week");
+      case DAY_OF_MONTH -> plural ? MiscCoreBundle.getString("days") : MiscCoreBundle.getString("day");
+      case HOUR, HOUR_OF_DAY -> plural ? MiscCoreBundle.getString("hours") : MiscCoreBundle.getString("hour");
+      case MINUTE -> plural ? MiscCoreBundle.getString("minutes") : MiscCoreBundle.getString("minute");
+      case SECOND -> plural ? MiscCoreBundle.getString("seconds") : MiscCoreBundle.getString("second");
+      case MILLISECOND -> plural ? MiscCoreBundle.getString("milliseconds") : MiscCoreBundle.getString("millisecond");
+      default -> "";
+    };
   }
 
 
