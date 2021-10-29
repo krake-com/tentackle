@@ -34,7 +34,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
@@ -125,22 +124,10 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
   }
 
 
-
-
-  protected static class ForeignReference implements Comparable<ForeignReference> {
-
-    private final Method method;     // the ...IsReferencing method
-    private final int priority;      // the priority, i.e. order in which the methods should be invoked, 0 = first
-
-    ForeignReference(Method method, int priority) {
-      this.method = method;
-      this.priority = priority;
-    }
+  protected record ForeignReference(Method method, int priority) implements Comparable<ForeignReference> {
 
     /**
-     * {@inheritDoc}
-     * <p>
-     * Sorted by priority.
+     * Sorted by priority + method.
      */
     @Override
     public int compareTo(ForeignReference o) {
@@ -149,29 +136,6 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
         rv = method.hashCode() - o.method.hashCode();
       }
       return rv;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      if (obj == null) {
-        return false;
-      }
-      if (getClass() != obj.getClass()) {
-        return false;
-      }
-      final ForeignReference other = (ForeignReference) obj;
-      if (!Objects.equals(this.method, other.method)) {
-        return false;
-      }
-      return this.priority == other.priority;
-    }
-
-    @Override
-    public int hashCode() {
-      int hash = 5;
-      hash = 67 * hash + (this.method != null ? this.method.hashCode() : 0);
-      hash = 67 * hash + this.priority;
-      return hash;
     }
   }
 

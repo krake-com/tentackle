@@ -71,9 +71,9 @@ public class PdoMethodCache<T extends PersistentDomainObject<T>> {
   public Object invoke(PdoInvocationHandler<T> invocationHandler, Method method, Object[] args) throws Throwable {
     PdoMethod pdoMethod = methodCache.computeIfAbsent(method, m -> {
       PdoMethodCacheInfo info = invocationHandler.determineInvocation(method);
-      InterceptableMethod interceptableMethod = info.getDelegateClass() == null ? null :
-          InterceptionUtilities.getInstance().createInterceptableMethod(clazz, info.getDelegateClass(), method);
-      return new PdoMethod(interceptableMethod, info.getInvocation());
+      InterceptableMethod interceptableMethod = info.delegateClass() == null ? null :
+                                                InterceptionUtilities.getInstance().createInterceptableMethod(clazz, info.delegateClass(), method);
+      return new PdoMethod(interceptableMethod, info.invocation());
     });
     return pdoMethod.invocation.invoke(invocationHandler, pdoMethod.method, args);
   }
