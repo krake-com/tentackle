@@ -26,71 +26,13 @@ import java.io.Serializable;
  * <p>
  * Handles are only valid within a transaction.
  *
+ * @param txId   the transaction id
+ * @param handle the unique ID referencing this object
+ *
  * @author harald
  */
-public class DbTransactionHandle implements Serializable {
+public record DbTransactionHandle(long txId, int handle) implements Serializable {
 
   private static final long serialVersionUID = -1632629938313090092L;
-
-
-  private final long txId;    // the transaction id
-  private final int handle;   // the object handle
-
-
-  /**
-   * Creates a handle.
-   *
-   * @param txId the transaction id
-   * @param handle the unique ID referencing this object
-   */
-  public DbTransactionHandle(long txId, int handle) {
-    this.txId = txId;
-    this.handle = handle;
-  }
-
-
-  /**
-   * Gets the transaction id.
-   *
-   * @return the transaction id
-   */
-  public long getTxId() {
-    return txId;
-  }
-
-
-  /**
-   * Gets the object handle.
-   *
-   * @return the handle
-   */
-  public int getHandle() {
-    return handle;
-  }
-
-
-
-  @Override
-  public boolean equals(Object obj) {
-    if (obj == null) {
-      return false;
-    }
-    if (getClass() != obj.getClass()) {
-      return false;
-    }
-    final DbTransactionHandle other = (DbTransactionHandle) obj;
-    if (txId != other.txId) {
-      return false;
-    }
-    return handle == other.handle;
-  }
-
-  @Override
-  public int hashCode() {
-    int hash = 7;
-    hash = 11 * hash + (int) (this.txId ^ (this.txId >>> 32));
-    hash = 11 * hash + this.handle;
-    return hash;
-  }
 
 }

@@ -23,66 +23,15 @@ import java.util.Objects;
 /**
  * Key to map service finders.
  *
+ * @param classLoader the classloader
+ * @param servicePath the service path
+ *
  * @author harald
  */
-public class ServiceFinderKey {
+public record ServiceFinderKey(ClassLoader classLoader, String servicePath) {
 
-  private final ClassLoader classLoader;
-  private final String servicePath;
-
-  /**
-   * Creates a finder key.
-   *
-   * @param classLoader the classloader
-   * @param servicePath the service path
-   */
-  public ServiceFinderKey(ClassLoader classLoader, String servicePath) {
-    this.classLoader = Objects.requireNonNull(classLoader, "classLoader");
-    this.servicePath = Objects.requireNonNull(servicePath, "servicePath");
+  public ServiceFinderKey {
+    Objects.requireNonNull(classLoader, "classLoader");
+    Objects.requireNonNull(servicePath, "servicePath");
   }
-
-  /**
-   * Gets the classloader.
-   *
-   * @return the classloader
-   */
-  public ClassLoader getClassLoader() {
-    return classLoader;
-  }
-
-  /**
-   * Gets the service path.
-   *
-   * @return the service path in META-INF
-   */
-  public String getServicePath() {
-    return servicePath;
-  }
-
-  @Override
-  public int hashCode() {
-    int hash = 7;
-    hash = 19 * hash + Objects.hashCode(this.classLoader);
-    hash = 19 * hash + Objects.hashCode(this.servicePath);
-    return hash;
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (this == obj) {
-      return true;
-    }
-    if (obj == null) {
-      return false;
-    }
-    if (getClass() != obj.getClass()) {
-      return false;
-    }
-    final ServiceFinderKey other = (ServiceFinderKey) obj;
-    if (!Objects.equals(this.servicePath, other.servicePath)) {
-      return false;
-    }
-    return Objects.equals(this.classLoader, other.classLoader);
-  }
-
 }

@@ -378,7 +378,7 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
     try {
       dbObject.setId(id);
       dbObject.updateTokenLock(tokenExpiry, userId, curTime);
-      return new TokenLockInfo(dbObject);
+      return new TokenLockInfo(dbObject.getEditedBy(), dbObject.getEditedSince(), dbObject.getEditedExpiry());
     }
     catch (RuntimeException e) {
       throw createException(e);

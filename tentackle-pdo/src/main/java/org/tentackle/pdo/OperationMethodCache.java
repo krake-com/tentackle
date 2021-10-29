@@ -89,9 +89,9 @@ public class OperationMethodCache<T extends Operation<T>> {
   public Object invoke(OperationInvocationHandler<T> invocationHandler, Method method, Object[] args) throws Throwable {
     OperationMethod operationMethod = methodCache.computeIfAbsent(method, m -> {
       OperationMethodCacheInfo info = invocationHandler.determineInvocation(method);
-      InterceptableMethod interceptableMethod = info.getDelegateClass() == null ? null :
-          InterceptionUtilities.getInstance().createInterceptableMethod(clazz, info.getDelegateClass(), method);
-      return new OperationMethod(interceptableMethod, info.getInvocation());
+      InterceptableMethod interceptableMethod = info.delegateClass() == null ? null :
+                                                InterceptionUtilities.getInstance().createInterceptableMethod(clazz, info.delegateClass(), method);
+      return new OperationMethod(interceptableMethod, info.invocation());
     });
     return operationMethod.invocation.invoke(invocationHandler, operationMethod.method, args);
   }

@@ -24,14 +24,25 @@ import java.util.Objects;
 /**
  * A savepoint handle.
  *
+ * @param name the savepoint's name, null if unnamed
+ * @param id the savepoint's id, null if named
+ *
  * @author harald
  */
-public class SavepointHandle implements Serializable {
+public record SavepointHandle(String name, Integer id) implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
-  private final String name;      // the savepoint name, null if unnamed
-  private final Integer id;       // the savepoint id, null if named
+  public SavepointHandle {
+    if (id == null) {
+      if (Objects.requireNonNull(name, "name").isEmpty()) {
+        throw new IllegalArgumentException("empty name");
+      }
+    }
+    else if (name != null) {
+      throw new IllegalArgumentException("name must be null, if id set");
+    }
+  }
 
   /**
    * Creates a handle for a named savepoint.
@@ -39,11 +50,7 @@ public class SavepointHandle implements Serializable {
    * @param name the savepoint's name
    */
   public SavepointHandle(String name) {
-    if (Objects.requireNonNull(name, "name").isEmpty()) {
-      throw new IllegalArgumentException("empty name");
-    }
-    this.name = name;
-    this.id = null;
+    this(name, null);
   }
 
   /**
@@ -52,26 +59,7 @@ public class SavepointHandle implements Serializable {
    * @param id the savepoint's id
    */
   public SavepointHandle(int id) {
-    this.name = null;
-    this.id = id;
-  }
-
-  /**
-   * Gets the savepoint's name.
-   *
-   * @return the name, null if unnamed savepoint
-   */
-  public String getName() {
-    return name;
-  }
-
-  /**
-   * Gets the savepoint's id.
-   *
-   * @return the id, null if named savepoint
-   */
-  public Integer getId() {
-    return id;
+    this(null, id);
   }
 
   @Override
@@ -80,33 +68,6 @@ public class SavepointHandle implements Serializable {
       return name;
     }
     return id.toString();
-  }
-
-
-  @Override
-  public int hashCode() {
-    int hash = 7;
-    hash = 29 * hash + Objects.hashCode(this.name);
-    hash = 29 * hash + Objects.hashCode(this.id);
-    return hash;
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (this == obj) {
-      return true;
-    }
-    if (obj == null) {
-      return false;
-    }
-    if (getClass() != obj.getClass()) {
-      return false;
-    }
-    final SavepointHandle other = (SavepointHandle) obj;
-    if (!Objects.equals(this.name, other.name)) {
-      return false;
-    }
-    return Objects.equals(this.id, other.id);
   }
 
 }

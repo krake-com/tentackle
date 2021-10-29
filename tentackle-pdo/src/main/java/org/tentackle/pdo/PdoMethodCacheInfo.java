@@ -21,39 +21,10 @@ import org.tentackle.reflect.Interceptable;
 
 /**
  * Cache info provided for the {@link PdoMethodCache} to create method entries.
+ *
+ * @param invocation    the PDO invocation
+ * @param delegateClass the delegate
  */
-public class PdoMethodCacheInfo {
-
-  private final PdoInvocation invocation;
-  private final Class<? extends Interceptable> delegateClass;
-
-  /**
-   * Creates a cache info.
-   *
-   * @param invocation the PDO invocation
-   * @param delegateClass the delegate
-   */
-  public PdoMethodCacheInfo(PdoInvocation invocation, Class<? extends Interceptable> delegateClass) {
-    this.invocation = invocation;
-    this.delegateClass = delegateClass;
-  }
-
-  /**
-   * Gets the PDO invocation.
-   *
-   * @return the invocation
-   */
-  public PdoInvocation getInvocation() {
-    return invocation;
-  }
-
-  /**
-   * Gets the delegate class.
-   *
-   * @return the implementing class
-   */
-  public Class<? extends Interceptable> getDelegateClass() {
-    return delegateClass;
-  }
+public record PdoMethodCacheInfo(PdoInvocation invocation, Class<? extends Interceptable> delegateClass) {
 
 }

@@ -149,6 +149,8 @@ public class DefaultFxFactory implements FxFactory {
       throw new FxRuntimeException("loading image providers failed", ex);
     }
 
+    record ValueTranslatorKey<M, V>(Class<M> modelClass, Class<V> viewClass) {}
+
     Map<ValueTranslatorKey<?,?>, Class<ValueTranslator>> translatorMap = new HashMap<>();
     try {
       for (Class<ValueTranslator> clazz: ServiceFactory.getServiceFinder().findServiceProviders(ValueTranslator.class)) {
@@ -167,13 +169,13 @@ public class DefaultFxFactory implements FxFactory {
     }
     viewTranslatorMap = new HashMap<>();
     for (Map.Entry<ValueTranslatorKey<?,?>, Class<ValueTranslator>> entry: translatorMap.entrySet()) {
-      Class<?> viewClass = entry.getKey().getViewClass();
+      Class<?> viewClass = entry.getKey().viewClass();
       DefaultClassMapper translators = viewTranslatorMap.computeIfAbsent(viewClass, k ->
               new DefaultClassMapper(
                       ReflectionHelper.getClassBaseName(viewClass) + "-translator",
                       ServiceFactory.getClassLoader(Constants.DEFAULT_SERVICE_PATH, ValueTranslator.class.getName()),
                       new HashMap<>(), null));
-      translators.getNameMap().put(entry.getKey().getModelClass().getName(), entry.getValue().getName());
+      translators.getNameMap().put(entry.getKey().modelClass().getName(), entry.getValue().getName());
     }
 
   }

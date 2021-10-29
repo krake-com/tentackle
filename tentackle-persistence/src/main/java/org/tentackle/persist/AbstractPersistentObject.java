@@ -3653,9 +3653,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   public void applyTokenLockInfo(TokenLockInfo tokenLockInfo) {
     if (tokenLockInfo != null) {
-      setEditedBy(tokenLockInfo.getEditedBy());
-      setEditedSince(tokenLockInfo.getEditedSince());
-      setEditedExpiry(tokenLockInfo.getEditedExpiry());
+      setEditedBy(tokenLockInfo.editedBy());
+      setEditedSince(tokenLockInfo.editedSince());
+      setEditedExpiry(tokenLockInfo.editedExpiry());
     }
   }
 
