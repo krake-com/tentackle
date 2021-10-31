@@ -130,7 +130,7 @@ public class VersionInfoMojo extends AbstractVersionInfoMojo {
         buildingRequest.setProject(subProject);
 
         try {
-          scanNode(dependencyGraphBuilder.buildDependencyGraph(buildingRequest, null, List.of(subProject)));
+          scanNode(dependencyGraphBuilder.buildDependencyGraph(buildingRequest, null));
         }
         catch (DependencyGraphBuilderException e) {
           throw new MojoExecutionException("scanning for dependencies failed", e);
