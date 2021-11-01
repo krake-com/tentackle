@@ -86,9 +86,10 @@
     <ow2.asm.version>9.2</ow2.asm.version>
     <groovy.version>3.0.9</groovy.version>
     <maven.version>3.6.3</maven.version>
-    <postgresql.version>42.2.23</postgresql.version>
+    <postgresql.version>42.3.1</postgresql.version>
     <testng.version>7.4.0</testng.version>
     <slf4j.version>1.7.32</slf4j.version>
+    <logback.version>1.2.6</logback.version>
     <log4j2.version>2.14.1</log4j2.version>
 
     <maven.archetype.plugin.version>3.2.0</maven.archetype.plugin.version>
@@ -213,7 +214,7 @@
       <dependency>
         <groupId>org.jruby</groupId>
         <artifactId>jruby</artifactId>
-        <version>9.2.19.0</version>
+        <version>9.3.1.0</version>
       </dependency>
 
       <dependency>
@@ -258,7 +259,7 @@
       <dependency>
         <groupId>ch.qos.logback</groupId>
         <artifactId>logback-classic</artifactId>
-        <version>1.2.3</version>
+        <version>${logback.version}</version>
         <scope>test</scope>
       </dependency>
 
@@ -266,7 +267,7 @@
       <dependency>
         <groupId>org.apache.maven</groupId>
         <artifactId>maven-plugin-api</artifactId>
-        <version>3.8.2</version>
+        <version>3.8.3</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven.shared</groupId>
@@ -498,7 +499,7 @@
         <plugin>
           <groupId>org.owasp</groupId>
           <artifactId>dependency-check-maven</artifactId>
-          <version>6.3.1</version>
+          <version>6.4.1</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
