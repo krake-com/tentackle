@@ -317,11 +317,12 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
    */
   protected Set<ScriptVariable> createScriptVariables(ValidationContext validationContext) {
     Set<ScriptVariable> variables = new HashSet<>();
-    variables.add(new ScriptVariable(ScriptVariable.VAR_SCOPE, validationContext.getEffectiveScope()));
-    variables.add(new ScriptVariable(ScriptVariable.VAR_PATH, validationContext.getValidationPath()));
-    variables.add(new ScriptVariable(ScriptVariable.VAR_OBJECT, validationContext.getParentObject()));
-    variables.add(new ScriptVariable(ScriptVariable.VAR_VALUE, validationContext.getObject()));
-    variables.add(new ScriptVariable(ScriptVariable.VAR_CLASS, EffectiveClassProvider.getEffectiveClass(validationContext.getParentObject())));
+    variables.add(new ScriptVariable(ValidationContext.VAR_CONTEXT, validationContext));
+    variables.add(new ScriptVariable(ValidationContext.VAR_SCOPE, validationContext.getEffectiveScope()));
+    variables.add(new ScriptVariable(ValidationContext.VAR_PATH, validationContext.getValidationPath()));
+    variables.add(new ScriptVariable(ValidationContext.VAR_OBJECT, validationContext.getParentObject()));
+    variables.add(new ScriptVariable(ValidationContext.VAR_VALUE, validationContext.getObject()));
+    variables.add(new ScriptVariable(ValidationContext.VAR_CLASS, EffectiveClassProvider.getEffectiveClass(validationContext.getParentObject())));
     return variables;
   }
 

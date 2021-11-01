@@ -30,22 +30,6 @@ import java.util.Set;
  */
 public class ScriptVariable {
 
-  /** script variable for effective scope. */
-  public static final String VAR_SCOPE = "scope";
-
-  /** script variable for validation path. */
-  public static final String VAR_PATH = "path";
-
-  /** script variable for the parent object. */
-  public static final String VAR_OBJECT = "object";
-
-  /** script variable for the value. */
-  public static final String VAR_VALUE = "value";
-
-  /** script variable for the parent class. */
-  public static final String VAR_CLASS = "clazz";
-
-
   private static final long serialVersionUID = 7698497385959487231L;
 
 

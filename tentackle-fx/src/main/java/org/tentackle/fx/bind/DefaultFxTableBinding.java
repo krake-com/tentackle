@@ -28,6 +28,7 @@ import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.validate.ChangeableBindingEvaluator;
 import org.tentackle.validate.MandatoryBindingEvaluator;
 import org.tentackle.validate.ValidationContext;
+import org.tentackle.validate.ValidationContextFactory;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationScopeFactory;
 import org.tentackle.validate.Validator;
@@ -161,12 +162,12 @@ public class DefaultFxTableBinding<S,T> extends AbstractBinding implements FxTab
       for (Validator validator: mandatoryValidators) {
         if (parent != null) { // if parent path is valid, i.e. no null reference
           ValidationScope scope = ValidationScopeFactory.getInstance().getMandatoryScope();
-          ValidationContext validationContext = new ValidationContext(
-                  getMember().getMemberPath(),
-                  getMember().getType(),
-                  modelValue,
-                  parent,
-                  scope);
+          ValidationContext validationContext = ValidationContextFactory.getInstance().create(
+              getMember().getMemberPath(),
+              getMember().getType(),
+              modelValue,
+              parent,
+              scope);
           if (scope.appliesTo(validator.getConfiguredScopes(validationContext)) &&
               validator.isConditionValid(validationContext) &&
               ((MandatoryBindingEvaluator)validator).isMandatory(validationContext)) {
@@ -183,12 +184,12 @@ public class DefaultFxTableBinding<S,T> extends AbstractBinding implements FxTab
       for (Validator validator: changeableValidators) {
         if (parent != null) { // if parent path is valid, i.e. no null reference
           ValidationScope scope = ValidationScopeFactory.getInstance().getChangeableScope();
-          ValidationContext validationContext = new ValidationContext(
-                  getMember().getMemberPath(),
-                  getMember().getType(),
-                  modelValue,
-                  parent,
-                  scope);
+          ValidationContext validationContext = ValidationContextFactory.getInstance().create(
+              getMember().getMemberPath(),
+              getMember().getType(),
+              modelValue,
+              parent,
+              scope);
           if (scope.appliesTo(validator.getConfiguredScopes(validationContext)) &&
               validator.isConditionValid(validationContext) &&
               ((ChangeableBindingEvaluator)validator).isChangeable(validationContext)) {

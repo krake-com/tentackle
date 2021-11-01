@@ -405,9 +405,9 @@ public class ValidationUtilities {
         };
       }
 
-      ValidationContext validationContext = new ValidationContext(
-              validationPath + "." + validator.getValidatedElementName(),
-              type, objectSupplier, parentObject, effectiveScope);
+      ValidationContext validationContext = ValidationContextFactory.getInstance().create(
+          validationPath + "." + validator.getValidatedElementName(),
+          type, objectSupplier, parentObject, effectiveScope);
 
       if (inTest) {
         logTest(validator, validationContext);
@@ -454,8 +454,8 @@ public class ValidationUtilities {
         validationPath = getDefaultValidationPath(object);
       }
 
-      ValidationContext validationContext = new ValidationContext(
-                validationPath, type, object, parentObject, effectiveScope);
+      ValidationContext validationContext = ValidationContextFactory.getInstance().create(
+          validationPath, type, object, parentObject, effectiveScope);
 
       boolean inTest = testLogLevel != null;
 
@@ -786,12 +786,14 @@ public class ValidationUtilities {
    * @param validators the validators
    */
   protected void sortValidatorsByPriority(List<Validator> validators) {
-    validators.sort((Validator o1, Validator o2) -> {
+    validators.sort((o1, o2) -> {
       if (o1 == null) {
         return o2 == null ? 0 : -1;
-      } else if (o2 == null) {
+      }
+      else if (o2 == null) {
         return 1;
-      } else {
+      }
+      else {
         return o1.getPriority() - o2.getPriority();
       }
     });

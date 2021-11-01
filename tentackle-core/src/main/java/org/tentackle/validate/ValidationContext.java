@@ -16,101 +16,32 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.validate;
 
-import java.util.function.Supplier;
-
 /**
- * The validation context.<br>
- * No logic in here, just data.
- * The VC itself is immutable.
+ * The validation context.
  *
  * @author harald
  */
-public class ValidationContext {
+public interface ValidationContext {
 
-  private final String validationPath;
-  private final Class<?> type;
-  private final Object object;
-  private final Supplier<?> objectSupplier;
-  private final Object parentObject;
-  private final ValidationScope effectiveScope;
+  /** script variable for the validation context itself (to access properties via put/get). */
+  String VAR_CONTEXT = "context";
 
+  /** script variable for effective scope. */
+  String VAR_SCOPE = "scope";
 
-  /**
-   * Creates a validation context.
-   *
-   * @param validationPath the validation path
-   * @param type the type of the object to validate, null if derive from object
-   * @param object the element to validate
-   * @param parentObject the parent object containing the element
-   * @param effectiveScope the effective validation scope
-   */
-  public ValidationContext(String validationPath,
-                           Class<?> type,
-                           Object object,
-                           Object parentObject,
-                           ValidationScope effectiveScope) {
+  /** script variable for validation path. */
+  String VAR_PATH = "path";
 
-    this.validationPath = validationPath;
-    this.type = type;
-    this.object = object;
-    this.objectSupplier = null;
-    this.parentObject = parentObject;
-    this.effectiveScope = effectiveScope;
-  }
+  /** script variable for the parent object. */
+  String VAR_OBJECT = "object";
 
-  /**
-   * Creates a validation context with lazy object provider.<br>
-   * The object to validate is retrieved only if actually validated.
-   * Allows validators to avoid the invocation of the method to load the object
-   * if the pre condition fails. Useful for lazy list relations, for example.
-   *
-   * @param validationPath the validation path
-   * @param type the type of the object to validate, null if derive from object
-   * @param objectSupplier the supplier providing the element to validate
-   * @param parentObject the parent object containing the element
-   * @param effectiveScope the effective validation scope
-   */
-  public ValidationContext(String validationPath,
-                           Class<?> type,
-                           Supplier<?> objectSupplier,
-                           Object parentObject,
-                           ValidationScope effectiveScope) {
+  /** script variable for the value. */
+  String VAR_VALUE = "value";
 
-    this.validationPath = validationPath;
-    this.type = type;
-    this.object = null;
-    this.objectSupplier = objectSupplier;
-    this.parentObject = parentObject;
-    this.effectiveScope = effectiveScope;
-  }
-
-  /**
-   * Creates a dummy context for a given object.
-   *
-   * @param object the object, may be null
-   */
-  public ValidationContext(Object object) {
-    this(object == null ? "null" : "object", null, object, object, null);
-  }
-
-  /**
-   * Creates a validation context from another one with a replaced parent object.
-   *
-   * @param validationContext the original context
-   * @param parentObject the parent object
-   */
-  public ValidationContext(ValidationContext validationContext, Object parentObject) {
-    this.validationPath = validationContext.validationPath;
-    this.type = validationContext.type;
-    this.object = validationContext.object;
-    this.objectSupplier = validationContext.objectSupplier;
-    this.effectiveScope = validationContext.effectiveScope;
-
-    this.parentObject = parentObject;
-  }
+  /** script variable for the parent class. */
+  String VAR_CLASS = "clazz";
 
 
   /**
@@ -119,9 +50,7 @@ public class ValidationContext {
    *
    * @return the validation path
    */
-  public String getValidationPath() {
-    return validationPath;
-  }
+  String getValidationPath();
 
   /**
    * Gets the element to validate.<br>
@@ -129,40 +58,45 @@ public class ValidationContext {
    *
    * @return the element to validate
    */
-  public Object getObject() {
-    return objectSupplier == null ? object : objectSupplier.get();
-  }
+  Object getObject();
 
   /**
    * Gets the type of the object.
    *
    * @return the type, null if derive from object
    */
-  public Class<?> getType() {
-    return type;
-  }
+  Class<?> getType();
 
   /**
    * Gets the effective scope.
    *
    * @return the effective scope
    */
-  public ValidationScope getEffectiveScope() {
-    return effectiveScope;
-  }
+  ValidationScope getEffectiveScope();
 
   /**
    * Gets the parent object.<br>
    *
    * @return the object containing the element to validate
    */
-  public Object getParentObject() {
-    return parentObject;
-  }
+  Object getParentObject();
 
-  @Override
-  public String toString() {
-    return validationPath;
-  }
+  /**
+   * Sets an application-specific validation property.<br>
+   * May be used to pass information between validators during validation of an object.
+   *
+   * @param key the key to locate the property
+   * @param value the property value
+   * @return null if property added, else the replaced property
+   */
+  Object put(Object key, Object value);
+
+  /**
+   * Gets an application-specific validation property.
+   *
+   * @param key the key to locate the property
+   * @return the property value, null if no such key
+   */
+  Object get(Object key);
 
 }

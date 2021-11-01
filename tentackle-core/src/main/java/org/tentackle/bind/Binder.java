@@ -19,11 +19,11 @@
 
 package org.tentackle.bind;
 
-import java.util.Collection;
-import java.util.List;
-import org.tentackle.validate.ValidationListener;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScope;
+
+import java.util.Collection;
+import java.util.List;
 
 
 
@@ -104,7 +104,7 @@ public interface Binder extends Comparable<Binder> {
   Object getBindingProperty(Object key);
 
   /**
-   * Gets a binding property for a object of given class.<br>
+   * Gets a binding property for an object of given class.<br>
    * Some components need additional info which is not provided by the bound field.
    * <p>
    * Example: context = getBindingProperty(DomainContext.class);
@@ -245,7 +245,7 @@ public interface Binder extends Comparable<Binder> {
   List<ValidationListener> getValidationListeners();
 
   /**
-   * Invokes {@link ValidationListener#validated(org.tentackle.validate.ValidationEvent)}
+   * Invokes {@link ValidationListener#validated(ValidationEvent)}
    * for all registered listeners.
    *
    * @param binding the binding

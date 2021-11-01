@@ -1,0 +1,82 @@
+/*
+ * Tentackle - https://tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+
+package org.tentackle.validate;
+
+import org.tentackle.common.ServiceFactory;
+
+import java.util.function.Supplier;
+
+
+interface ValidationContextFactoryHolder {
+  ValidationContextFactory INSTANCE = ServiceFactory.createService(ValidationContextFactory.class);
+}
+
+
+/**
+ * Factory for validation contexts.
+ *
+ * @author harald
+ */
+public interface ValidationContextFactory {
+
+  /**
+   * The singleton.
+   *
+   * @return the singleton
+   */
+  static ValidationContextFactory getInstance() {
+    return ValidationContextFactoryHolder.INSTANCE;
+  }
+
+
+  /**
+   * Creates a validation context.
+   *
+   * @param validationPath the validation path
+   * @param type the type of the object to validate, null if derive from object
+   * @param object the element to validate
+   * @param parentObject the parent object containing the element
+   * @param effectiveScope the effective validation scope
+   */
+  ValidationContext create(String validationPath,
+                           Class<?> type,
+                           Object object,
+                           Object parentObject,
+                           ValidationScope effectiveScope);
+
+  /**
+   * Creates a validation context with a lazy object provider.<br>
+   * The object to validate is retrieved only if actually validated.
+   * Allows validators to avoid the invocation of the method to load the object
+   * if the pre-condition fails. Useful for lazy list relations, for example.
+   *
+   * @param validationPath the validation path
+   * @param type the type of the object to validate, null if derive from object
+   * @param objectSupplier the supplier providing the element to validate
+   * @param parentObject the parent object containing the element
+   * @param effectiveScope the effective validation scope
+   */
+  ValidationContext create(String validationPath,
+                           Class<?> type,
+                           Supplier<?> objectSupplier,
+                           Object parentObject,
+                           ValidationScope effectiveScope);
+
+}
