@@ -96,8 +96,7 @@ public class UserGuiProvider extends DefaultGuiProvider<User> {
 
   @Override
   public void dropPdo(PersistentDomainObject<?> pdoToDrop) {
-    if (pdoToDrop instanceof UserGroup) {
-      UserGroup group = (UserGroup) pdoToDrop;
+    if (pdoToDrop instanceof UserGroup group) {
       User user = getPdo().reload();
       if (user.isEditAllowed() && !user.getUserGroups().contains(group)) {   // check again for sure
         user.getUserGroups().add(group);
