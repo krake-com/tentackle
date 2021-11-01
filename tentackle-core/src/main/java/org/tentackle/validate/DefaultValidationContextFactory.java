@@ -16,24 +16,25 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.validate;
 
-import java.util.EventListener;
+import org.tentackle.common.Service;
+
+import java.util.function.Supplier;
 
 /**
- * A listener that gets invoked on binding events.
- *
- * @author harald
+ * Default implementation of a {@link ValidationContextFactory}.
  */
-@FunctionalInterface
-public interface ValidationListener extends EventListener {
+@Service(ValidationContextFactory.class)
+public class DefaultValidationContextFactory implements ValidationContextFactory {
 
-    /**
-     * A validation was performed.
-     *
-     * @param e the validation event
-     */
-    void validated(ValidationEvent e);
+  @Override
+  public ValidationContext create(String validationPath, Class<?> type, Object object, Object parentObject, ValidationScope effectiveScope) {
+    return new DefaultValidationContext(validationPath, type, object, parentObject, effectiveScope);
+  }
 
+  @Override
+  public ValidationContext create(String validationPath, Class<?> type, Supplier<?> objectSupplier, Object parentObject, ValidationScope effectiveScope) {
+    return new DefaultValidationContext(validationPath, type, objectSupplier, parentObject, effectiveScope);
+  }
 }

@@ -19,16 +19,15 @@
 
 package org.tentackle.bind;
 
+import org.tentackle.validate.ValidationResult;
+import org.tentackle.validate.ValidationScope;
+import org.tentackle.validate.ValidationScopeFactory;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
-import org.tentackle.validate.ValidationEvent;
-import org.tentackle.validate.ValidationListener;
-import org.tentackle.validate.ValidationResult;
-import org.tentackle.validate.ValidationScope;
-import org.tentackle.validate.ValidationScopeFactory;
 
 
 /**

@@ -304,7 +304,7 @@ public class Cryptor implements Function<String, String> {
    * The URL is considered to be encrypted, if started with a fake protocol unsupported by the application in the given context.
    * The first word after =~ is taken as the encrypted URL. Example:
    * <pre>
-   *   https://somehost.somedomain.org/login?id=~GK+AG1QIjpBaD51HP/kw9HzpdKZLt2FrInFxd1jtPWvGzaw5lcLcHy5RB/q9yEKQ&user=100
+   *   https://somehost.somedomain.org/login?id=~GK+AG1QIjpBaD51HP/kw9HzpdKZLt2FrInFxd1jtPWvGzaw5lcLcHy5RB/q9yEKQ&#38;user=100
    * </pre>
    * Hidden gem... ;)
    *

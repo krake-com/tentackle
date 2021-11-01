@@ -36,6 +36,7 @@ import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.validate.ChangeableBindingEvaluator;
 import org.tentackle.validate.MandatoryBindingEvaluator;
 import org.tentackle.validate.ValidationContext;
+import org.tentackle.validate.ValidationContextFactory;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationScopeFactory;
 import org.tentackle.validate.Validator;
@@ -115,12 +116,12 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
             Object parentObject = mandatoryBinding.getParentObject();
             if (parentObject != null) { // if parent path is valid, i.e. no null reference
               ValidationScope scope = ValidationScopeFactory.getInstance().getMandatoryScope();
-              ValidationContext validationContext = new ValidationContext(
-                      mandatoryBinding.getMember().getMemberPath(),
-                      mandatoryBinding.getMember().getType(),
-                      mandatoryBinding.getModelValue(),
-                      parentObject,
-                      scope);
+              ValidationContext validationContext = ValidationContextFactory.getInstance().create(
+                  mandatoryBinding.getMember().getMemberPath(),
+                  mandatoryBinding.getMember().getType(),
+                  mandatoryBinding.getModelValue(),
+                  parentObject,
+                  scope);
               // we must check the scope, because it may change due to CompoundValues
               if (scope.appliesTo(validator.getConfiguredScopes(validationContext)) &&
                   // and the validator still applies:
@@ -143,12 +144,12 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
             Object parentObject = changeableBinding.getParentObject();
             if (parentObject != null) { // if parent path is valid, i.e. no null reference
               ValidationScope scope = ValidationScopeFactory.getInstance().getChangeableScope();
-              ValidationContext validationContext = new ValidationContext(
-                      changeableBinding.getMember().getMemberPath(),
-                      changeableBinding.getMember().getType(),
-                      changeableBinding.getModelValue(),
-                      parentObject,
-                      scope);
+              ValidationContext validationContext = ValidationContextFactory.getInstance().create(
+                  changeableBinding.getMember().getMemberPath(),
+                  changeableBinding.getMember().getType(),
+                  changeableBinding.getModelValue(),
+                  parentObject,
+                  scope);
               // we must check the scope, because it may change due to CompoundValues
               if (scope.appliesTo(validator.getConfiguredScopes(validationContext)) &&
                   // and the validator still applies:

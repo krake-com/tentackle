@@ -20,8 +20,8 @@
 package org.tentackle.validate.validator;
 
 import org.tentackle.script.ScriptConverter;
-import org.tentackle.script.ScriptVariable;
 import org.tentackle.script.ScriptingLanguage;
+import org.tentackle.validate.ValidationContext;
 import org.tentackle.validate.ValidationUtilities;
 
 /**
@@ -42,7 +42,7 @@ public abstract class AbstractScriptValidationMessageConverter implements Script
     int ndx = code.indexOf(I18N_INTRO);
     if (ndx > 0) {
       return code.substring(0, ndx) + VALIDATION_UTILITIES_NAME + ".getInstance().format(" +
-             language.createLocalVariableReference(ScriptVariable.VAR_OBJECT) + "," +
+             language.createLocalVariableReference(ValidationContext.VAR_OBJECT) + "," +
              code.substring(ndx + 2);
     }
     return code;

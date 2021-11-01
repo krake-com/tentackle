@@ -17,11 +17,13 @@
  */
 
 
-package org.tentackle.validate;
+package org.tentackle.bind;
+
+import org.tentackle.validate.ValidationResult;
+import org.tentackle.validate.ValidationUtilities;
 
 import java.util.EventObject;
 import java.util.List;
-import org.tentackle.bind.Binding;
 
 /**
  * A validation event.

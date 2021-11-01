@@ -19,13 +19,10 @@
 
 package org.tentackle.bind;
 
-import java.util.List;
-import org.tentackle.validate.ValidationContext;
-import org.tentackle.validate.ValidationEvent;
-import org.tentackle.validate.ValidationListener;
 import org.tentackle.validate.ValidationResult;
-import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.Validator;
+
+import java.util.List;
 
 
 /**
@@ -228,20 +225,12 @@ public interface Binding {
   List<ValidationResult> validate();
 
   /**
-   * Invokes {@link ValidationListener#validated(org.tentackle.validate.ValidationEvent)}
+   * Invokes {@link ValidationListener#validated(ValidationEvent)}
    * for all registered listeners.
    *
    * @param results the validation results
    */
   void fireValidated(List<ValidationResult> results);
-
-  /**
-   * Creates a validation context for a given scope.
-   *
-   * @param scope the validation scope
-   * @return the validation context
-   */
-  ValidationContext createValidationContext(ValidationScope scope);
 
   /**
    * Creates a validation event.

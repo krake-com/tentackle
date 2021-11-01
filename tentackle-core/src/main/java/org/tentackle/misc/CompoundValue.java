@@ -24,6 +24,7 @@ import org.tentackle.script.ScriptConverter;
 import org.tentackle.script.ScriptFactory;
 import org.tentackle.script.ScriptRuntimeException;
 import org.tentackle.script.ScriptVariable;
+import org.tentackle.validate.ValidationContext;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -356,7 +357,7 @@ public class CompoundValue {
    * The <code>parentObject</code> is required for {@link Type#REFERENCE} and denotes the
    * object the reference refers to.<br>
    * For {@link Type#SCRIPT} it is optional and if given will set the script's variable
-   * {@link ScriptVariable#VAR_OBJECT}.
+   * {@link ValidationContext#VAR_OBJECT}.
    * <p>
    * Throws {@link IllegalArgumentException} if evaluating the value failed.
    *
@@ -403,7 +404,7 @@ public class CompoundValue {
       case SCRIPT:
         try {
           if (parentObject != null) {
-            ScriptVariable parentVariable = new ScriptVariable(ScriptVariable.VAR_OBJECT, parentObject);
+            ScriptVariable parentVariable = new ScriptVariable(ValidationContext.VAR_OBJECT, parentObject);
             if (variables == null) {
               variables = Set.of(parentVariable);
             }
@@ -439,7 +440,7 @@ public class CompoundValue {
    * The <code>parentObject</code> is required for {@link Type#REFERENCE} and denotes the
    * object the reference refers to.<br>
    * For {@link Type#SCRIPT} it is optional and if given will set the script's variable
-   * {@link ScriptVariable#VAR_OBJECT}.
+   * {@link ValidationContext#VAR_OBJECT}.
    * <p>
    * Throws {@link IllegalArgumentException} if evaluating the value failed
    * or if there are any duplicate variable names.
