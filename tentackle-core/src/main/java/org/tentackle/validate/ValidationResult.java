@@ -74,7 +74,7 @@ public interface ValidationResult extends Serializable {
    * Gets the validation context.
    * <p>
    * Notice that the context is null for results sent over the wire,
-   * since the VC is transient!
+   * since it is transient!
    *
    * @return the validation context, null if received via a remote session
    */
@@ -89,8 +89,11 @@ public interface ValidationResult extends Serializable {
 
   /**
    * Gets the validator that created this result.
+   * <p>
+   * Notice that the validator is null for results sent over the wire,
+   * since it is transient!
    *
-   * @return the validator
+   * @return the validator, null if received via a remote session
    */
   Validator getValidator();
 
