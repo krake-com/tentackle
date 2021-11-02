@@ -109,9 +109,9 @@ public interface Binder extends Comparable<Binder> {
    * <p>
    * Example: context = getBindingProperty(DomainContext.class);
    *
-   * @param <T> the key type
-   * @param clazz the property key
-   * @return the property value, null if no such key
+   * @param <T> the property type
+   * @param clazz the property class
+   * @return the property value, null if no such property
    */
   <T> T getBindingProperty(Class<T> clazz);
 

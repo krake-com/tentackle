@@ -130,6 +130,11 @@ public class DefaultValidationContext implements ValidationContext {
     return getProperties().get(key);
   }
 
+  @Override
+  public <T> T get(Class<T> clazz) {
+    return (T) getProperties().get(clazz);
+  }
+
   private Map<Object, Object> getProperties() {
     if (properties == null) {
       properties = new HashMap<>();

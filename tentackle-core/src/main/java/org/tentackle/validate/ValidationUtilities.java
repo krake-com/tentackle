@@ -363,51 +363,52 @@ public class ValidationUtilities {
 
     boolean inTest = testLogLevel != null;
 
+    Map<String, ValidationContext> contextMap = new HashMap<>();    // same validation context for all validators of each field
+
     for (Validator validator : validators) {
 
-      // build validation context
-      Supplier<?> objectSupplier = null;      // lazy object provider
-      Class<?> type = null;                   // the object's type
+      ValidationContext validationContext = contextMap.computeIfAbsent(validationPath + "." + validator.getValidatedElementName(), path -> {
+        // build validation context
+        Supplier<?> objectSupplier = null;      // lazy object provider
+        Class<?> type = null;                   // the object's type
 
-      AnnotatedElement element = validator.getAnnotatedElement();
-      if (element instanceof Field field) {
-        type = field.getType();
-        objectSupplier = parentObject == null ? null : () -> {
-          try {
-            return field.get(parentObject);
-          }
-          catch (IllegalAccessException ex1) {
-            field.setAccessible(true);    // set accessible and try again
+        AnnotatedElement element = validator.getAnnotatedElement();
+        if (element instanceof Field field) {
+          type = field.getType();
+          objectSupplier = parentObject == null ? null : () -> {
             try {
               return field.get(parentObject);
             }
-            catch (IllegalAccessException ex2) {
-              throw new ValidationRuntimeException("cannot access field " + field, ex2);
+            catch (IllegalAccessException ex1) {
+              field.setAccessible(true);    // set accessible and try again
+              try {
+                return field.get(parentObject);
+              }
+              catch (IllegalAccessException ex2) {
+                throw new ValidationRuntimeException("cannot access field " + field, ex2);
+              }
             }
-          }
-        };
-      }
-      else if (element instanceof Method method) {
-        type = method.getReturnType();
-        objectSupplier = parentObject == null ? null : () -> {
-          try {
+          };
+        }
+        else if (element instanceof Method method) {
+          type = method.getReturnType();
+          objectSupplier = parentObject == null ? null : () -> {
             try {
-              return method.invoke(parentObject);
+              try {
+                return method.invoke(parentObject);
+              }
+              catch (IllegalAccessException ex) {
+                method.setAccessible(true);    // set accessible and try again
+                return method.invoke(parentObject);
+              }
             }
-            catch (IllegalAccessException ex) {
-              method.setAccessible(true);    // set accessible and try again
-              return method.invoke(parentObject);
+            catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+              throw new ValidationRuntimeException("cannot invoke method " + method, ex);
             }
-          }
-          catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
-            throw new ValidationRuntimeException("cannot invoke method " + method, ex);
-          }
-        };
-      }
-
-      ValidationContext validationContext = ValidationContextFactory.getInstance().create(
-          validationPath + "." + validator.getValidatedElementName(),
-          type, objectSupplier, parentObject, effectiveScope);
+          };
+        }
+        return ValidationContextFactory.getInstance().create(path, type, objectSupplier, parentObject, effectiveScope);
+      });
 
       if (inTest) {
         logTest(validator, validationContext);
@@ -454,6 +455,7 @@ public class ValidationUtilities {
         validationPath = getDefaultValidationPath(object);
       }
 
+      // same validation context for all object validators per object
       ValidationContext validationContext = ValidationContextFactory.getInstance().create(
           validationPath, type, object, parentObject, effectiveScope);
 
@@ -863,7 +865,7 @@ public class ValidationUtilities {
    *
    * @param annotation the annotation
    * @param element the annotated element
-   * @param validationIndex the validation index &ge; 0 if
+   * @param validationIndex the validation index &ge; 0 if repeatable validator, -1 if standard single validator
    * @param validators the list of validators
    * @param scope the validation scope
    * @param validatorClass the class to create a validator instance from

@@ -34,20 +34,6 @@ public class FailedValidationResult extends AbstractValidationResult {
   private static final long serialVersionUID = 7944890568191272731L;
 
   /**
-   * Creates a validation result.
-   *
-   * @param validator the validator
-   * @param validationPath the validation path
-   * @param parentObject the parent object
-   * @param object the validated object
-   * @param message the message
-   * @param errorCode the error code, null to take it from the validator (default)
-   */
-  public FailedValidationResult(Validator validator, String validationPath, Object parentObject, Object object, String message, String errorCode) {
-    super(validator, validationPath, parentObject, object, message, errorCode);
-  }
-
-  /**
    * Creates a failed validation result.
    *
    * @param validator the validator

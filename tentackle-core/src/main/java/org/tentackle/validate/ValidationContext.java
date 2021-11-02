@@ -83,7 +83,9 @@ public interface ValidationContext {
 
   /**
    * Sets an application-specific validation property.<br>
-   * May be used to pass information between validators during validation of an object.
+   * May be used to pass information between the field validators of the same field
+   * or object validators of the same object. Notice that the {@link ValidationResult}
+   * holds a reference to the {@code ValidationContext} as well.
    *
    * @param key the key to locate the property
    * @param value the property value
@@ -98,5 +100,14 @@ public interface ValidationContext {
    * @return the property value, null if no such key
    */
   Object get(Object key);
+
+  /**
+   * Gets a validation property for an object of given class.
+   *
+   * @param <T> the property type
+   * @param clazz the property class
+   * @return the property value, null if no such property
+   */
+  <T> T get(Class<T> clazz);
 
 }

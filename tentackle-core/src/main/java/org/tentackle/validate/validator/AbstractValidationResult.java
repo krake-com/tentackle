@@ -42,32 +42,10 @@ public abstract class AbstractValidationResult implements ValidationResult {
   private final String validationPath;                                // the validation path
   private final Class<? extends ValidationScope>[] configuredScopes;  // the configured scopes
 
-  // transient because we cannot be sure that those objects are serializable
-  private final transient Object object;                              // the validated object
-  private final transient Object parentObject;                        // the validated parent object
+  // transient because those objects are not serializable!
+  private final transient ValidationContext validationContext;        // the validation context
   private final transient Validator validator;                        // the validator
 
-
-  /**
-   * Creates a validation result.
-   *
-   * @param validator the validator
-   * @param validationPath the validation path
-   * @param parentObject the parent object
-   * @param object the validated object
-   * @param message the message
-   * @param errorCode the error code, null to take it from the validator (default)
-   */
-  public AbstractValidationResult(Validator validator, String validationPath, Object parentObject, Object object, String message, String errorCode) {
-    this.validator = Objects.requireNonNull(validator, "validator");
-    this.validationPath = validationPath;
-    this.parentObject = parentObject;
-    this.object = object;
-    this.message = message;
-    this.errorCode = errorCode != null ? errorCode : validator.getErrorCode();
-
-    configuredScopes = validator.getConfiguredScopes(null);
-  }
 
   /**
    * Creates a validation result.
@@ -79,13 +57,12 @@ public abstract class AbstractValidationResult implements ValidationResult {
    */
   public AbstractValidationResult(Validator validator, ValidationContext validationContext, String message, String errorCode) {
     this.validator = Objects.requireNonNull(validator, "validator");
+    this.validationContext = Objects.requireNonNull(validationContext, "validationContext");
     this.message = message;
     this.errorCode = errorCode != null ? errorCode : validator.getErrorCode();
-
-    configuredScopes = validator.getConfiguredScopes(Objects.requireNonNull(validationContext, "validationContext"));
+    // extract early in case result is passed back via rmi to the client
+    configuredScopes = validator.getConfiguredScopes(validationContext);
     validationPath = validationContext.getValidationPath();
-    object = validationContext.getObject();
-    parentObject = validationContext.getParentObject();
   }
 
   /**
@@ -146,20 +123,14 @@ public abstract class AbstractValidationResult implements ValidationResult {
   }
 
   @Override
-  public Object getObject() {
-    return object;
-  }
-
-  @Override
-  public Object getParentObject() {
-    return parentObject;
+  public ValidationContext getValidationContext() {
+    return validationContext;
   }
 
   @Override
   public Class<? extends ValidationScope>[] getConfiguredScopes() {
     return configuredScopes;
   }
-
 
   @Override
   public CollectionIndex[] getValidationCollectionIndexes() {
