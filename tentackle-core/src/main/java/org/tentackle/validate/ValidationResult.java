@@ -71,18 +71,14 @@ public interface ValidationResult extends Serializable {
   String getValidationPath();
 
   /**
-   * Gets the validated object.
+   * Gets the validation context.
+   * <p>
+   * Notice that the context is null for results sent over the wire,
+   * since the VC is transient!
    *
-   * @return the object.
+   * @return the validation context, null if received via a remote session
    */
-  Object getObject();
-
-  /**
-   * Gets the validated parent object
-   *
-   * @return the object containing the annotated element
-   */
-  Object getParentObject();
+  ValidationContext getValidationContext();
 
   /**
    * Gets the configured scopes for this validation.
