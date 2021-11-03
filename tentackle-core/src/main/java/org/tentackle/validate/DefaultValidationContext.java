@@ -131,6 +131,7 @@ public class DefaultValidationContext implements ValidationContext {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public <T> T get(Class<T> clazz) {
     return (T) getProperties().get(clazz);
   }
