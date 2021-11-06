@@ -110,7 +110,7 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
       }
       bundle = super.newBundle(baseName, locale, format, loader, reload);
       if (bundle != null && key != null) {
-        LOGGER.info("no stored bundle for {0} -> resource bundle from properties loaded instead", key.name);
+        LOGGER.info("no stored bundle for {0} -> resource bundle from properties loaded instead", key.name());
       }
     }
 
