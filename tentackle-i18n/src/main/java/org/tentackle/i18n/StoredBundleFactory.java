@@ -18,15 +18,16 @@
 
 package org.tentackle.i18n;
 
-import java.util.Locale;
-import java.util.Map;
-import java.util.ResourceBundle;
-import java.util.concurrent.ConcurrentHashMap;
 import org.tentackle.common.BundleFactory;
 import org.tentackle.common.BundleSupport;
 import org.tentackle.common.DefaultBundleFactory;
 import org.tentackle.common.Service;
 import org.tentackle.i18n.pdo.StoredBundle;
+
+import java.util.Locale;
+import java.util.Map;
+import java.util.ResourceBundle;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Factory for stored bundles.<br>
@@ -117,16 +118,16 @@ public class StoredBundleFactory extends DefaultBundleFactory {
    */
   private StoredBundle.StoredBundleUDK createParentKey(StoredBundle.StoredBundleUDK key) {
     StoredBundle.StoredBundleUDK parentKey = null;
-    if (key.locale != null && !key.locale.isEmpty()) {
+    if (key.locale() != null && !key.locale().isEmpty()) {
       String parentLocaleName;
-      int ndx = key.locale.lastIndexOf('_');
+      int ndx = key.locale().lastIndexOf('_');
       if (ndx > 0) {
-        parentLocaleName = key.locale.substring(0, ndx);
+        parentLocaleName = key.locale().substring(0, ndx);
       }
       else {
         parentLocaleName = null;
       }
-      parentKey = new StoredBundle.StoredBundleUDK(key.name, parentLocaleName);
+      parentKey = new StoredBundle.StoredBundleUDK(key.name(), parentLocaleName);
     }
     return parentKey;
   }

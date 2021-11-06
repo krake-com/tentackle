@@ -36,16 +36,8 @@ For more options, see {\@link ModelWurblet}.
 @[
     }
     else  {
-      // public static is noise if within an interface
-      String modifiers = isInterface() ? "" : "public static ";
-]@
-  /**
-   * The unique domain key for @(getEntity())@.
-   */
-  @(modifiers)@class @(getEntity())@UDK implements Serializable, Comparable<@(getEntity())@UDK> {
-
-    private static final long serialVersionUID = 1L;
-@[
+      // public is noise if within an interface and nested records are implicitly static
+      String modifiers = isInterface() ? "" : "public ";
       StringBuilder con1Args = new StringBuilder();   // 1st constructor arguments
       StringBuilder con2Args = new StringBuilder();   // 2nd constructor arguments
       boolean first = true;
@@ -59,34 +51,21 @@ For more options, see {\@link ModelWurblet}.
         }
         con1Args.append(attr.getJavaType()).append(" ").append(attr.getName());
         con2Args.append("pdo.").append(attr.getGetterName()).append("()");
-]@
-
-    /** @(attr.getOptions().getComment())@. */
-    public final @(attr.getJavaType())@ @(attr.getName())@;
-@[
       }
 ]@
-
-    /**
-     * Creates a unique domain key.
-     *
+  /**
+   * The unique domain key for @(getEntity())@.
+   *
 @[
       for (Attribute attr: udk) {
 ]@
-     * \@param @(attr.getName())@ @(attr.getOptions().getComment())@
+   * \@param @(attr.getName())@ @(attr.getOptions().getComment())@
 @[
       }
 ]@
-     */
-    public @(getEntity())@UDK(@(con1Args.toString())@) {
-@[
-      for (Attribute attr: udk) {
-]@
-      this.@(attr.getName())@ = @(attr.getName())@;
-@[
-      }
-]@
-    }
+   */
+  @(modifiers)@record @(getEntity())@UDK(@(con1Args.toString())@)
+         implements Serializable, Comparable<@(getEntity())@UDK> {
 
     /**
      * Creates a unique domain key for a pdo.
@@ -95,56 +74,6 @@ For more options, see {\@link ModelWurblet}.
      */
     public @(getEntity())@UDK(@(getEntity())@ pdo) {
       this(@(con2Args.toString())@);
-    }
-
-    \@Override
-    public int hashCode() {
-      int hash = 7;
-@[
-      for (Attribute attr: udk) {
-        if (attr.getDataType().isPrimitive()) {
-]@
-      hash = 79 * hash + @(attr.getName())@;
-@[
-        }
-        else  {
-]@
-      hash = 79 * hash + Objects.hashCode(@(attr.getName())@);
-@[
-        }
-      }
-]@
-      return hash;
-    }
-
-    \@Override
-    public boolean equals(Object obj) {
-      if (obj == null) {
-        return false;
-      }
-      if (getClass() != obj.getClass()) {
-        return false;
-      }
-      @(getEntity())@UDK other = (@(getEntity())@UDK) obj;
-@[
-      for (Attribute attr: udk) {
-        if (attr.getDataType().isPrimitive()) {
-]@
-      if (@(attr.getName())@ != other.@(attr.getName())@) {
-        return false;
-      }
-@[
-        }
-        else  {
-]@
-      if (!Objects.equals(@(attr.getName())@, other.@(attr.getName())@)) {
-        return false;
-      }
-@[
-        }
-      }
-]@
-      return true;
     }
 
     \@Override

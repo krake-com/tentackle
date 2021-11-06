@@ -19,14 +19,14 @@
 
 package org.tentackle.i18n.pdo;
 
-import java.io.Serializable;
-import java.util.Objects;
 import org.tentackle.common.Compare;
-import org.tentackle.session.ClassId;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.Plural;
 import org.tentackle.pdo.Singular;
+import org.tentackle.session.ClassId;
 import org.tentackle.session.TableName;
+
+import java.io.Serializable;
 
 
 /*
@@ -67,7 +67,7 @@ import org.tentackle.session.TableName;
  * <p>
  * Important: modifications of the bundle should only be done via
  * {@link #setTranslation(java.lang.String, java.lang.String)} and never by adding or modifying a bundle key
- * directly. Bundles are always loaded eagerly, i.e. including all components..
+ * directly. Bundles are always loaded eagerly, i.e. including all components.
  *
  * @author harald
  */
@@ -113,27 +113,12 @@ public interface StoredBundle extends PersistentDomainObject<StoredBundle>, Stor
 
   /**
    * The unique domain key for StoredBundle.
+   *
+   * @param name the resource bundle name
+   * @param locale the locale, null if default
    */
-  class StoredBundleUDK implements Serializable, Comparable<StoredBundleUDK> {
-
-    private static final long serialVersionUID = 1L;
-
-    /** the resource bundle name. */
-    public final String name;
-
-    /** the locale, null if default. */
-    public final String locale;
-
-    /**
-     * Creates a unique domain key.
-     *
-     * @param name the resource bundle name
-     * @param locale the locale, null if default
-     */
-    public StoredBundleUDK(String name, String locale) {
-      this.name = name;
-      this.locale = locale;
-    }
+  record StoredBundleUDK(String name, String locale)
+         implements Serializable, Comparable<StoredBundleUDK> {
 
     /**
      * Creates a unique domain key for a pdo.
@@ -142,32 +127,6 @@ public interface StoredBundle extends PersistentDomainObject<StoredBundle>, Stor
      */
     public StoredBundleUDK(StoredBundle pdo) {
       this(pdo.getName(), pdo.getLocale());
-    }
-
-    @Override
-    public int hashCode() {
-      int hash = 7;
-      hash = 79 * hash + Objects.hashCode(name);
-      hash = 79 * hash + Objects.hashCode(locale);
-      return hash;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      if (obj == null) {
-        return false;
-      }
-      if (getClass() != obj.getClass()) {
-        return false;
-      }
-      StoredBundleUDK other = (StoredBundleUDK) obj;
-      if (!Objects.equals(name, other.name)) {
-        return false;
-      }
-      if (!Objects.equals(locale, other.locale)) {
-        return false;
-      }
-      return true;
     }
 
     @Override

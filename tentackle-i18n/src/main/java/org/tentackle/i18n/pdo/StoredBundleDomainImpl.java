@@ -18,12 +18,13 @@
 
 package org.tentackle.i18n.pdo;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 import org.tentackle.domain.AbstractDomainObject;
 import org.tentackle.i18n.pdo.StoredBundle.StoredBundleUDK;
 import org.tentackle.pdo.DomainObjectService;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * StoredBundle domain implementation.
@@ -56,7 +57,7 @@ public class StoredBundleDomainImpl extends AbstractDomainObject<StoredBundle, S
   @Override
   public StoredBundle findByUniqueDomainKey(Object domainKey) {
     StoredBundleUDK udk = (StoredBundleUDK) domainKey;
-    return me().findByNameAndLocale(udk.name, udk.locale);
+    return me().findByNameAndLocale(udk.name(), udk.locale());
   }
 
   @Override
