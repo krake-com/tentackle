@@ -20,17 +20,18 @@ For more options, see {\@link ModelWurblet}.
         superUdk = getEntity().getSuperEntity().getUniqueDomainKey();
       }
       if (superUdk == null || !udk.equals(superUdk)) {
+]@
+  \@Override
+  public boolean isUniqueDomainKeyProvided() {
+    return true;
+  }
+@[
         String returnType = isGenerified() ? "T" : getPdoClassName();
         if (udk.size() == 1) {
           Attribute attr = udk.get(0);
           String javaType = attr.getDataType().isPrimitive() ?
                                 attr.getDataType().toNonPrimitive().toString() : attr.getJavaType();
 ]@
-
-  \@Override
-  public boolean isUniqueDomainKeyProvided() {
-    return true;
-  }
 
   \@Override
   public Class<?> getUniqueDomainKeyType() {
@@ -57,7 +58,7 @@ For more options, see {\@link ModelWurblet}.
           StringBuilder params = new StringBuilder();
           for (Attribute attr: udk) {
             appendCommaSeparated(params, "udk.");
-            params.append(attr.getName());
+            params.append(attr.getName()).append("()");
           }
 ]@
 
@@ -83,7 +84,7 @@ For more options, see {\@link ModelWurblet}.
 @[
           for (Attribute attr: udk) {
 ]@
-    me().@(attr.getSetterName())@(udk.@(attr.getName())@);
+    me().@(attr.getSetterName())@(udk.@(attr.getName())@());
 @[
           }
 ]@
