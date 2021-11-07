@@ -204,16 +204,14 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    * The effective eager joins.
    */
   private List<Join<? super T,?>> effectiveEagerJoins;
+  private boolean eagerJoinsPending = true;
 
   /**
-   * Flag is true to check the security rules for each access to objects of this class.
-   * The rules will be checked in local db access only (i.e. the check will be applied
-   * already at the RMI-side *before* the data is leaving the client!)
-   * Because this check can be somewhat time consuming, it's turned off by default.
-   * The flag cannot be changed at runtime anymore!
+   * Flag is true to check the security rules for each access to objects of this class.<br>
+   * See isSecurityEnabled() below.
    */
   private boolean securityEnabled;
-  private boolean securityEnabledInitialized;
+  private boolean securityEnabledPending = true;
 
 
   // cached snapshot methods (determined only once per persistence class)
@@ -266,7 +264,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    * @return the joins, null if none
    */
   public List<Join<? super T, ?>> getEagerJoins() {
-    if (effectiveEagerJoins == null) {
+    if (eagerJoinsPending) {
       PersistentObjectClassVariables<? super T, ? super P> cv = this;
       do {
         if (cv.eagerJoins != null && !cv.eagerJoins.isEmpty()) {
@@ -278,6 +276,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
         cv = cv.superClassVariables;
       }
       while (cv != null);
+      eagerJoinsPending = false;
     }
     return effectiveEagerJoins;
   }
@@ -367,11 +366,12 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
 
   public boolean isSecurityEnabled() {
-    if (!securityEnabledInitialized) {
+    if (securityEnabledPending) {
       String prop = getProperty(PROPERTY_CHECKSECURITY);
       securityEnabled = prop == null ||
                         !(prop.equals("no") || prop.equals("off") || prop.equals("false") ||
                           prop.equals("disabled") || prop.equals("0"));
+      securityEnabledPending = false;
     }
     return securityEnabled;
   }
