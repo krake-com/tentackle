@@ -63,7 +63,7 @@ For more options, see {\@link DbModelWurblet}.
       if (joins != null) {
         String poImpl = deriveClassNameForEntity(getEntity());
 ]@
-                    List.of(
+                    Arrays.asList(
 @[
         int joinCount = 0;
         for (Relation join: joins) {
