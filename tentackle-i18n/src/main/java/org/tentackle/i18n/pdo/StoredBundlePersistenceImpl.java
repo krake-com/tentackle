@@ -46,7 +46,6 @@ import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationUtilities;
 
 import java.rmi.RemoteException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -75,7 +74,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
                     StoredBundlePersistenceImpl.class,
                     "bndl",
                     null,
-                    Arrays.asList(
+                    List.of(
                       new Join<>(JoinType.LEFT, "bndl.id", "e_1.bundle_id", StoredBundleKey.class, "e_1",
                         (bndl, bkey) -> {
                           ((StoredBundlePersistenceImpl) bndl.getPersistenceDelegate()).getKeysBlunt().addBlunt(bkey);
