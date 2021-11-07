@@ -35,6 +35,7 @@ import org.tentackle.security.SecurityFactory;
 import org.tentackle.session.SessionUtilities;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -105,7 +106,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   public final PdoMethodCache<T> methodCache;
 
   /**
-   * The optional eager join.
+   * The optional eager join as defined in the model.
    */
   public final List<Join<T,?>> eagerJoins;
 
@@ -200,6 +201,11 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   private String effectiveTableAlias;
 
   /**
+   * The effective eager joins.
+   */
+  private List<Join<? super T,?>> effectiveEagerJoins;
+
+  /**
    * Flag is true to check the security rules for each access to objects of this class.
    * The rules will be checked in local db access only (i.e. the check will be applied
    * already at the RMI-side *before* the data is leaving the client!)
@@ -255,12 +261,25 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   }
 
   /**
-   * Gets the eager joins.
+   * Gets the effective eager joins.
    *
-   * @return the join, null or empty if none
+   * @return the joins, null if none
    */
-  public List<Join<T, ?>> getEagerJoins() {
-    return eagerJoins;
+  public List<Join<? super T, ?>> getEagerJoins() {
+    if (effectiveEagerJoins == null) {
+      PersistentObjectClassVariables<? super T, ? super P> cv = this;
+      do {
+        if (cv.eagerJoins != null && !cv.eagerJoins.isEmpty()) {
+          if (effectiveEagerJoins == null) {
+            effectiveEagerJoins = new ArrayList<>();
+          }
+          effectiveEagerJoins.addAll(cv.eagerJoins);
+        }
+        cv = cv.superClassVariables;
+      }
+      while (cv != null);
+    }
+    return effectiveEagerJoins;
   }
 
 
@@ -576,8 +595,10 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
   /**
    * Finds a snapshot method.<br>
-   * Snapshot methods ({@link AbstractPersistentObject#createAttributesInSnapshot}, {@link AbstractPersistentObject#createComponentsInSnapshot},
-   * {@link AbstractPersistentObject#revertAttributesToSnapshot} and {@link AbstractPersistentObject#revertComponentsToSnapshot}) take the snapshot
+   * Snapshot methods ({@link AbstractPersistentObject#createAttributesInSnapshot(AbstractPersistentObject)},
+   * {@link AbstractPersistentObject#createComponentsInSnapshot(AbstractPersistentObject)},
+   * {@link AbstractPersistentObject#revertAttributesToSnapshot(AbstractPersistentObject)} and
+   * {@link AbstractPersistentObject#revertComponentsToSnapshot(AbstractPersistentObject)}) take the snapshot
    * object with the correct implementation type and are implemented at some implementation class.
    * This method finds the most specific snapshot-method along the inheritance hierarchy.
    *

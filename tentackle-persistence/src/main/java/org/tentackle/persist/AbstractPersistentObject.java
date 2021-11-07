@@ -1518,18 +1518,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @return the list of eager joins, null if none
    */
   public List<Join<? super T,?>> getEagerJoins() {
-    List<Join<? super T,?>> eagerJoins = null;
-    PersistentObjectClassVariables<? super T, ? super P> cv = getClassVariables();
-    while (cv != null) {
-      if (cv.eagerJoins != null && !cv.eagerJoins.isEmpty()) {
-        if (eagerJoins == null) {
-          eagerJoins = new ArrayList<>();
-        }
-        eagerJoins.addAll(cv.eagerJoins);
-      }
-      cv = cv.superClassVariables;
-    }
-    return eagerJoins;
+    return getClassVariables().getEagerJoins();
   }
 
 
