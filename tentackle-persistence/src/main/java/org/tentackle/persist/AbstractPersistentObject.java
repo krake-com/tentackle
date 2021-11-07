@@ -76,7 +76,29 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
-import static org.tentackle.sql.Backend.*;
+import static org.tentackle.sql.Backend.SQL_ALLSTAR;
+import static org.tentackle.sql.Backend.SQL_AND;
+import static org.tentackle.sql.Backend.SQL_COMMA;
+import static org.tentackle.sql.Backend.SQL_EQUAL;
+import static org.tentackle.sql.Backend.SQL_EQUAL_PAR;
+import static org.tentackle.sql.Backend.SQL_EQUAL_PAR_COMMA;
+import static org.tentackle.sql.Backend.SQL_EQUAL_ZERO;
+import static org.tentackle.sql.Backend.SQL_FROM;
+import static org.tentackle.sql.Backend.SQL_GREATER_PAR;
+import static org.tentackle.sql.Backend.SQL_ISNULL;
+import static org.tentackle.sql.Backend.SQL_LEFT_PARENTHESIS;
+import static org.tentackle.sql.Backend.SQL_LESS_PAR;
+import static org.tentackle.sql.Backend.SQL_LIKE_PAR;
+import static org.tentackle.sql.Backend.SQL_NOTLIKE_PAR;
+import static org.tentackle.sql.Backend.SQL_OR;
+import static org.tentackle.sql.Backend.SQL_ORDERBY;
+import static org.tentackle.sql.Backend.SQL_PLUS_ONE;
+import static org.tentackle.sql.Backend.SQL_RIGHT_PARENTHESIS;
+import static org.tentackle.sql.Backend.SQL_SELECT;
+import static org.tentackle.sql.Backend.SQL_SET;
+import static org.tentackle.sql.Backend.SQL_UPDATE;
+import static org.tentackle.sql.Backend.SQL_WHERE;
+import static org.tentackle.sql.Backend.SQL_WHEREALL;
 
 
 /**
@@ -1469,18 +1491,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @return the list of eager joins, null if none
    */
   public List<Join<? super T,?>> getEagerJoins() {
-    List<Join<? super T,?>> eagerJoins = null;
-    PersistentObjectClassVariables<? super T, ? super P> cv = getClassVariables();
-    while (cv != null) {
-      if (cv.eagerJoins != null && !cv.eagerJoins.isEmpty()) {
-        if (eagerJoins == null) {
-          eagerJoins = new ArrayList<>();
-        }
-        eagerJoins.addAll(cv.eagerJoins);
-      }
-      cv = cv.superClassVariables;
-    }
-    return eagerJoins;
+    return getClassVariables().getEagerJoins();
   }
 
 

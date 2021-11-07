@@ -34,6 +34,7 @@ import org.tentackle.security.SecurityFactory;
 import org.tentackle.session.SessionUtilities;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -100,7 +101,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   public final Class<T> pdoClass;
 
   /**
-   * The optional eager join.
+   * The optional eager join as defined in the model.
    */
   public final List<Join<T,?>> eagerJoins;
 
@@ -195,14 +196,17 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   private String effectiveTableAlias;
 
   /**
-   * Flag is true to check the security rules for each access to objects of this class.
-   * The rules will be checked in local db access only (i.e. the check will be applied
-   * already at the RMI-side *before* the data is leaving the client!)
-   * Because this check can be somewhat time consuming, it's turned off by default.
-   * The flag cannot be changed at runtime anymore!
+   * The effective eager joins.
+   */
+  private List<Join<? super T,?>> effectiveEagerJoins;
+  private boolean eagerJoinsPending = true;
+
+  /**
+   * Flag is true to check the security rules for each access to objects of this class.<br>
+   * See isSecurityEnabled() below.
    */
   private boolean securityEnabled;
-  private boolean securityEnabledInitialized;
+  private boolean securityEnabledPending = true;
 
   // cached snapshot methods (determined only once per persistence class)
   private Method createAttributesInSnapshotMethod;
@@ -248,12 +252,26 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   }
 
   /**
-   * Gets the eager joins.
+   * Gets the effective eager joins.
    *
-   * @return the join, null or empty if none
+   * @return the joins, null if none
    */
-  public List<Join<T, ?>> getEagerJoins() {
-    return eagerJoins;
+  public List<Join<? super T, ?>> getEagerJoins() {
+    if (eagerJoinsPending) {
+      PersistentObjectClassVariables<? super T, ? super P> cv = this;
+      do {
+        if (cv.eagerJoins != null && !cv.eagerJoins.isEmpty()) {
+          if (effectiveEagerJoins == null) {
+            effectiveEagerJoins = new ArrayList<>();
+          }
+          effectiveEagerJoins.addAll(cv.eagerJoins);
+        }
+        cv = cv.superClassVariables;
+      }
+      while (cv != null);
+      eagerJoinsPending = false;
+    }
+    return effectiveEagerJoins;
   }
 
 
@@ -341,11 +359,12 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
 
   public boolean isSecurityEnabled() {
-    if (!securityEnabledInitialized) {
+    if (securityEnabledPending) {
       String prop = getProperty(PROPERTY_CHECKSECURITY);
       securityEnabled = prop == null ||
                         !(prop.equals("no") || prop.equals("off") || prop.equals("false") ||
                           prop.equals("disabled") || prop.equals("0"));
+      securityEnabledPending = false;
     }
     return securityEnabled;
   }
@@ -569,8 +588,10 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
   /**
    * Finds a snapshot method.<br>
-   * Snapshot methods ({@link AbstractPersistentObject#createAttributesInSnapshot}, {@link AbstractPersistentObject#createComponentsInSnapshot},
-   * {@link AbstractPersistentObject#revertAttributesToSnapshot} and {@link AbstractPersistentObject#revertComponentsToSnapshot}) take the snapshot
+   * Snapshot methods ({@link AbstractPersistentObject#createAttributesInSnapshot(AbstractPersistentObject)},
+   * {@link AbstractPersistentObject#createComponentsInSnapshot(AbstractPersistentObject)},
+   * {@link AbstractPersistentObject#revertAttributesToSnapshot(AbstractPersistentObject)} and
+   * {@link AbstractPersistentObject#revertComponentsToSnapshot(AbstractPersistentObject)}) take the snapshot
    * object with the correct implementation type and are implemented at some implementation class.
    * This method finds the most specific snapshot-method along the inheritance hierarchy.
    *
