@@ -200,7 +200,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
   /**
    * database table name.
    */
-  public String tableName;
+  public final String tableName;
 
   /**
    * ID for the remote delegate for this class.
