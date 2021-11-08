@@ -34,6 +34,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.RecordComponent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -348,31 +349,35 @@ public class DbUtilities {
 
 
   /**
-   * Holds the mapping of a datatype to a setter or builder method.
+   * Holds the mapping between a parameter type and its positions in the resultset.
    */
-  private static class ColumnMapping {
-    private final Method method;            // the method to set the data
-    private final DataType<?> dataType;     // the datatype corresponding to the methods argument
-    private final int[] positions;          // the result set positions for the datatype's columns
+  private record ColumnMapping(DataType<?> dataType, int[] positions) {
 
-    ColumnMapping(Method method, DataType<?> dataType, int[] positions) {
-      this.method = method;
-      this.dataType = dataType;
-      this.positions = positions;
-    }
-
-    private void invoke(Object object, ResultSetWrapper rs) throws InvocationTargetException, IllegalAccessException {
-      method.invoke(object, rs.get(dataType, positions, false, 0));
+    private Object getParameter(ResultSetWrapper rs) {
+      return rs.get(dataType, positions, false, 0);
     }
   }
 
   /**
+   * Holds the mapping of a datatype to a setter or builder method.
+   */
+  private record MethodMapping(Method method, ColumnMapping columnMapping) {
+
+    private void invoke(Object object, ResultSetWrapper rs) throws InvocationTargetException, IllegalAccessException {
+      method.invoke(object, columnMapping.getParameter(rs));
+    }
+  }
+
+
+
+  /**
    * Converts a resultset to a list of DTOs.<br>
    * Works for builder- and setter pattern and all registered {@link DataType}s.<br>
-   * Not for constructor pattern since in Java the parameters are unnamed.
+   * Constructor pattern works for records, but not for classes, since in Java the parameters are unnamed.
    * <p>
    * For the builder pattern see the DTO wurblet.<br>
-   * For the setter pattern the DTO class needs a public no-arg constructor.
+   * For the setter pattern the DTO class needs a public no-arg constructor.<br>
+   * For the record pattern the cononical constructor is used.
    * <p>
    * The method- and columnnames are matched case-insensitive with all underscores removed.<br>
    * For primitive members of the DTO class the result set must not contain null values, of course.
@@ -400,8 +405,10 @@ public class DbUtilities {
     List<T> dtos = new ArrayList<>();                             // returned list of DTOs
     Method buildMethod = null;                                    // the build-method of the builder
     Constructor<T> noArgConstructor = null;                       // != null for the setter pattern
-    List<ColumnMapping> builderMapping = new ArrayList<>();       // mappings for the builder pattern
-    List<ColumnMapping> setterMapping = new ArrayList<>();        // mappings for the setters
+    Constructor<T> recordConstructor = null;                      // != null for the record pattern
+    List<MethodMapping> builderMappings = new ArrayList<>();      // mappings for the builder pattern
+    List<MethodMapping> setterMappings = new ArrayList<>();       // mappings for the setters
+    List<ColumnMapping> recordMappings = null;                    // != null if mappings for the record pattern were found
 
     // build converted column names
     columnNames = new String[columnCount];
@@ -410,21 +417,43 @@ public class DbUtilities {
     }
 
     // find all setters
-    for (Method method : clazz.getMethods()) {
-      if (method.getDeclaringClass() != Object.class &&
-          method.getReturnType() == Void.TYPE && method.getParameterCount() == 1 &&
-          method.getName().startsWith("set")) {
-        String name = method.getName().substring(3);
-        if (!name.isEmpty() && Character.isUpperCase(name.charAt(0))) {
-          ColumnMapping mapping = createColumnMapping(name, columnNames, method);
+    if (clazz.isRecord()) {
+      RecordComponent[] recordComponents = clazz.getRecordComponents();
+      // find the record constructor
+      for (Constructor<?> constructor : clazz.getDeclaredConstructors()) {
+        List<ColumnMapping> mappings = new ArrayList<>();
+        for (RecordComponent recordComponent : recordComponents) {
+          ColumnMapping mapping = createColumnMapping(recordComponent.getName(), columnNames, recordComponent.getType());
           if (mapping != null) {
-            setterMapping.add(mapping);
+            mappings.add(mapping);
+          }
+        }
+        if (mappings.size() == recordComponents.length) {
+          // canonical constructor found!
+          recordConstructor = (Constructor<T>) constructor;
+          recordMappings = mappings;
+          break;
+        }
+      }
+    }
+    else {
+      for (Method method : clazz.getMethods()) {
+        if (method.getDeclaringClass() != Object.class &&
+            method.getReturnType() == Void.TYPE && method.getParameterCount() == 1 &&
+            method.getName().startsWith("set")) {
+          String name = method.getName().substring(3);
+          if (!name.isEmpty() && Character.isUpperCase(name.charAt(0))) {
+            MethodMapping mapping = createMethodMapping(name, columnNames, method);
+            if (mapping != null) {
+              setterMappings.add(mapping);
+            }
           }
         }
       }
     }
 
     // check for builder pattern (see DTO.wrbl)
+    // This is even possible for records!
     try {
       builderMethod = clazz.getDeclaredMethod("builder");
       if (!Modifier.isStatic(builderMethod.getModifiers()) || !Modifier.isPublic(builderMethod.getModifiers())) {
@@ -440,9 +469,9 @@ public class DbUtilities {
           for (Method method : builderClass.getMethods()) {
             if (method.getDeclaringClass() != Object.class &&
                 method.getReturnType() == Void.TYPE && method.getParameterCount() == 1) {
-              ColumnMapping mapping = createColumnMapping(method.getName(), columnNames, method);
+              MethodMapping mapping = createMethodMapping(method.getName(), columnNames, method);
               if (mapping != null) {
-                builderMapping.add(mapping);
+                builderMappings.add(mapping);
               }
             }
           }
@@ -455,7 +484,7 @@ public class DbUtilities {
       builderMethod = null;
     }
 
-    if (builderMethod == null) {
+    if (builderMethod == null && !clazz.isRecord()) {
       try {
         noArgConstructor = clazz.getConstructor();
       }
@@ -464,7 +493,7 @@ public class DbUtilities {
       }
     }
 
-    if (builderMapping.isEmpty() && setterMapping.isEmpty()) {
+    if (builderMappings.isEmpty() && setterMappings.isEmpty() && recordMappings == null) {
       throw new PersistenceException("no matching columns found");
     }
 
@@ -474,13 +503,16 @@ public class DbUtilities {
         T dto;
         if (builderMethod != null) {
           builder = builderMethod.invoke(null);
-          retrieveColumnMappings(builderMapping, builder, rs);
+          retrieveMethodMappings(builderMappings, builder, rs);
           dto = (T) buildMethod.invoke(builder);
+        }
+        else if (recordConstructor != null) {
+          dto = retrieveRecordMappings(recordConstructor, recordMappings, rs);
         }
         else {
           dto = noArgConstructor.newInstance();
+          retrieveMethodMappings(setterMappings, dto, rs);
         }
-        retrieveColumnMappings(setterMapping, dto, rs);
         dtos.add(dto);
       }
     }
@@ -495,40 +527,65 @@ public class DbUtilities {
     return name.replace("_", "").toLowerCase(); // remove underscores and convert to lowercase
   }
 
-  private ColumnMapping createColumnMapping(String memberName, String[] columnNames, Method method) {
-    ColumnMapping mapping = null;
-    DataType<?> dataType = DataTypeFactory.getInstance().get(method.getParameterTypes()[0]);
-    if (dataType != null) {
-      int[] positions = new int[dataType.getColumnCount()];
-      for (int p=0; p < positions.length; p++) {
-        String colName = normalizeColumnName(memberName + dataType.getColumnSuffix(p).orElse(""));
-        boolean found = false;
-        for (int c=0; c < columnNames.length; c++) {
-          if (colName.equals(columnNames[c])) {
-            positions[p] = c + 1;
-            found = true;
-            break;
-          }
-        }
-        if (!found) {
-          positions = null;
+  private int[] determinePositions(String memberName, String[] columnNames, DataType<?> dataType) {
+    int[] positions = new int[dataType.getColumnCount()];
+    for (int p=0; p < positions.length; p++) {
+      String normalizedColumnName = normalizeColumnName(memberName + dataType.getColumnSuffix(p).orElse(""));
+      boolean found = false;
+      for (int c=0; c < columnNames.length; c++) {
+        if (normalizedColumnName.equals(columnNames[c])) {
+          positions[p] = c + 1;
+          found = true;
           break;
         }
       }
-      // all columns found in resultset!
-      if (positions != null) {
-        mapping = new ColumnMapping(method, dataType, positions);
+      if (!found) {
+        positions = null;
+        break;
       }
     }
-    return mapping;
+    return positions;
   }
 
-  private void retrieveColumnMappings(List<ColumnMapping> columnMappings, Object object, ResultSetWrapper rs)
+  private ColumnMapping createColumnMapping(String memberName, String[] columnNames, Class<?> type) {
+    ColumnMapping columnMapping = null;
+    DataType<?> dataType = DataTypeFactory.getInstance().get(type);
+    if (dataType != null) {
+      int[] positions = determinePositions(memberName, columnNames, dataType);
+      if (positions != null) {
+        // all columns found in resultset!
+        columnMapping = new ColumnMapping(dataType, positions);
+      }
+    }
+    return columnMapping;
+  }
+
+  private MethodMapping createMethodMapping(String memberName, String[] columnNames, Method method) {
+    MethodMapping methodMapping = null;
+    ColumnMapping columnMapping = createColumnMapping(memberName, columnNames, method.getParameterTypes()[0]);
+    if (columnMapping != null) {
+      methodMapping = new MethodMapping(method, columnMapping);
+    }
+    return methodMapping;
+  }
+
+  private void retrieveMethodMappings(List<MethodMapping> methodMappings, Object object, ResultSetWrapper rs)
       throws InvocationTargetException, IllegalAccessException {
 
-    for (ColumnMapping columnMapping : columnMappings) {
-      columnMapping.invoke(object, rs);
+    for (MethodMapping methodMapping : methodMappings) {
+      methodMapping.invoke(object, rs);
     }
+  }
+
+  private <T> T retrieveRecordMappings(Constructor<T> recordConstructor, List<ColumnMapping> recordMappings, ResultSetWrapper rs)
+      throws InvocationTargetException, InstantiationException, IllegalAccessException {
+
+    Object[] args = new Object[recordMappings.size()];
+    int argNdx = 0;
+    for (ColumnMapping recordMapping : recordMappings) {
+      args[argNdx++] = recordMapping.getParameter(rs);
+    }
+    return recordConstructor.newInstance(args);
   }
 
 }

@@ -37,7 +37,7 @@ public class ResultSetTest extends AbstractPdoTest {
   private static class SetterDTO {
     private String name;
     private String realm;
-    private Boolean online;
+    private Boolean poolOnline;
 
     public SetterDTO() {}
 
@@ -58,18 +58,18 @@ public class ResultSetTest extends AbstractPdoTest {
     }
 
     public Boolean isPoolOnline() {
-      return online;
+      return poolOnline;
     }
 
     public void setPoolOnline(Boolean online) {
-      this.online = online;
+      this.poolOnline = online;
     }
   }
 
   private static class BuilderDTO {
     private final String name;
     private final String realm;
-    private final boolean online;   // primitive!
+    private final boolean poolOnline;   // primitive!
 
     public static Builder builder() {
       return new Builder();
@@ -78,7 +78,7 @@ public class ResultSetTest extends AbstractPdoTest {
     private BuilderDTO(Builder builder) {
       this.name = builder.name;
       this.realm = builder.realm;
-      this.online = builder.online;
+      this.poolOnline = builder.poolOnline;
     }
 
     public String getName() {
@@ -90,13 +90,13 @@ public class ResultSetTest extends AbstractPdoTest {
     }
 
     public boolean isPoolOnline() {
-      return online;
+      return poolOnline;
     }
 
     private static class Builder {
       private String name;
       private String realm;
-      private boolean online;
+      private boolean poolOnline;
 
       public void name(String name) {
         this.name = name;
@@ -107,7 +107,7 @@ public class ResultSetTest extends AbstractPdoTest {
       }
 
       public void poolOnline(boolean online) {
-        this.online = online;
+        this.poolOnline = online;
       }
 
       public BuilderDTO build() {
@@ -115,6 +115,9 @@ public class ResultSetTest extends AbstractPdoTest {
       }
     }
   }
+
+
+  public record RecordDTO(String name, String realm, boolean poolOnline) {}
 
 
   @Test(groups = "local")
@@ -158,6 +161,20 @@ public class ResultSetTest extends AbstractPdoTest {
       Assert.assertEquals(dto.getName(), "pool2");
       Assert.assertEquals(dto.getRealm(), "realm2");
       Assert.assertEquals(dto.isPoolOnline(), false);
+    }
+
+    // same with record
+    try (ResultSetWrapper rs = session.createStatement().executeQuery("select * from " + numberPool.getTableName())) {
+      List<RecordDTO> dtos = rs.toList(RecordDTO.class);
+      Assert.assertEquals(dtos.size(), 2);
+      RecordDTO dto = dtos.get(0);
+      Assert.assertEquals(dto.name(), "pool1");
+      Assert.assertEquals(dto.realm(), "realm1");
+      Assert.assertEquals(dto.poolOnline(), true);
+      dto = dtos.get(1);
+      Assert.assertEquals(dto.name(), "pool2");
+      Assert.assertEquals(dto.realm(), "realm2");
+      Assert.assertEquals(dto.poolOnline(), false);
     }
 
   }
