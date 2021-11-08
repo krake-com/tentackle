@@ -479,8 +479,8 @@ public class DbUtilities {
         }
         else {
           dto = noArgConstructor.newInstance();
+          retrieveColumnMappings(setterMapping, dto, rs);
         }
-        retrieveColumnMappings(setterMapping, dto, rs);
         dtos.add(dto);
       }
     }
