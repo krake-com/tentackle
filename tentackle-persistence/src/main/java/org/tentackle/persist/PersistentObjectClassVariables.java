@@ -53,9 +53,6 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   /** property key for the check security. */
   public static final String PROPERTY_CHECKSECURITY = "checksecurity";
 
-  /** the declared name of the static class variables. */
-  public static final String CLASSVARIABLES_NAME = "CLASSVARIABLES";
-
 
   /**
    * Creates a PDO classvariable.
@@ -113,7 +110,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   /**
    * The table alias to be used in joined selects.
    */
-  public String tableAlias;
+  public final String tableAlias;
 
   /**
    * The classvariables of the parent class.<br>
@@ -238,6 +235,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
     this.tableAlias = tableAlias;
     this.superClassVariables = superClassVariables;
     this.eagerJoins = eagerJoins;
+
     pdoClassBaseName = ReflectionHelper.getClassBaseName(this.pdoClass);
   }
 
