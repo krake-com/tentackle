@@ -122,14 +122,6 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   public final PersistentObjectClassVariables<? super T, ? super P> superClassVariables;
 
   /**
-   * The classvariables of the topmost parent class.<br>
-   * "this" if not inherited.
-   */
-  public PersistentObjectClassVariables<? super T, ? super P> topSuperClassVariables;
-
-
-
-  /**
    * prepared statement ID for {@link AbstractPersistentObject#selectByNormText}.
    */
   public final StatementId selectByNormTextStatementId = new StatementId();
@@ -186,20 +178,29 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
 
   /**
+   * The classvariables of the topmost parent class.<br>
+   * "this" if not inherited.
+   */
+  private PersistentObjectClassVariables<? super T, ? super P> topSuperClassVariables;
+  private boolean topSuperClassVariablesPending = true;
+
+  /**
    * The effective tablename.
    */
   private String effectiveTableName;
+  private boolean effectiveTableNamePending = true;
 
   /**
    * The effective table alias.
    */
   private String effectiveTableAlias;
+  private boolean effectiveTableAliasPending = true;
 
   /**
    * The effective eager joins.
    */
   private List<Join<? super T,?>> effectiveEagerJoins;
-  private boolean eagerJoinsPending = true;
+  private boolean effectiveEagerJoinsPending = true;
 
   /**
    * Flag is true to check the security rules for each access to objects of this class.<br>
@@ -257,19 +258,21 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    * @return the joins, null if none
    */
   public List<Join<? super T, ?>> getEagerJoins() {
-    if (eagerJoinsPending) {
+    if (effectiveEagerJoinsPending) {
       PersistentObjectClassVariables<? super T, ? super P> cv = this;
+      List<Join<? super T,?>> egList = null;
       do {
         if (cv.eagerJoins != null && !cv.eagerJoins.isEmpty()) {
-          if (effectiveEagerJoins == null) {
-            effectiveEagerJoins = new ArrayList<>();
+          if (egList == null) {
+            egList = new ArrayList<>();
           }
-          effectiveEagerJoins.addAll(cv.eagerJoins);
+          egList.addAll(cv.eagerJoins);
         }
         cv = cv.superClassVariables;
       }
       while (cv != null);
-      eagerJoinsPending = false;
+      effectiveEagerJoins = egList;
+      effectiveEagerJoinsPending = false;
     }
     return effectiveEagerJoins;
   }
@@ -283,18 +286,20 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    * @return the tablename, null if class does not map to any database table
    */
   public String getTableName () {
-    if (effectiveTableName == null) {
-      effectiveTableName = tableName;
-      if (effectiveTableName == null) {
+    if (effectiveTableNamePending) {
+      String name = tableName;
+      if (name == null) {
         PersistentObjectClassVariables<? super T, ? super P> superCV = superClassVariables;
         while (superCV != null) {
-          effectiveTableName = superCV.tableName;
-          if (effectiveTableName != null) {
+          name = superCV.tableName;
+          if (name != null) {
             break;
           }
           superCV = superCV.superClassVariables;
         }
       }
+      effectiveTableName = name;
+      effectiveTableNamePending = false;
     }
     return effectiveTableName;
   }
@@ -308,18 +313,20 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    * @return the alias, null if class does not map to any database table
    */
   public String getTableAlias () {
-    if (effectiveTableAlias == null) {
-      effectiveTableAlias = tableAlias;
-      if (effectiveTableAlias == null) {
+    if (effectiveTableAliasPending) {
+      String alias = tableAlias;
+      if (alias == null) {
         PersistentObjectClassVariables<? super T, ? super P> superCV = superClassVariables;
         while (superCV != null) {
-          effectiveTableAlias = superCV.tableAlias;
-          if (effectiveTableAlias != null) {
+          alias = superCV.tableAlias;
+          if (alias != null) {
             break;
           }
           superCV = superCV.superClassVariables;
         }
       }
+      effectiveTableAlias = alias;
+      effectiveTableAliasPending = false;
     }
     return effectiveTableAlias;
   }
@@ -348,11 +355,13 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    * @return the topmost variables, this if not inherited, never null
    */
   public PersistentObjectClassVariables<? super T, ? super P> getTopSuperClassVariables() {
-    if (topSuperClassVariables == null) {
-      topSuperClassVariables = this;
-      while (topSuperClassVariables.superClassVariables != null) {
-        topSuperClassVariables = topSuperClassVariables.superClassVariables;
+    if (topSuperClassVariablesPending) {
+      PersistentObjectClassVariables<? super T, ? super P> variables = this;
+      while (variables.superClassVariables != null) {
+        variables = variables.superClassVariables;
       }
+      topSuperClassVariables = variables;
+      topSuperClassVariablesPending = false;
     }
     return topSuperClassVariables;
   }
