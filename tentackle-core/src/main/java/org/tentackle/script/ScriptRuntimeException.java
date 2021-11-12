@@ -20,6 +20,8 @@
 package org.tentackle.script;
 
 
+import java.io.Serial;
+
 /**
  * Script exception.
  * <p>
@@ -29,7 +31,8 @@ package org.tentackle.script;
  */
 public class ScriptRuntimeException extends RuntimeException {
 
-  private static final long serialVersionUID = -745289405301413681L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   
 

@@ -18,6 +18,7 @@
 
 package org.tentackle.model;
 
+import java.io.Serial;
 import java.util.Collection;
 
 /**
@@ -27,7 +28,8 @@ import java.util.Collection;
  */
 public class ModelException extends Exception {
 
-  private static final long serialVersionUID = 3405985077474898397L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private final transient ModelElement element;   // the related model element
 

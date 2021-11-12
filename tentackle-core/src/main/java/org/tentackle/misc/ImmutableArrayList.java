@@ -19,6 +19,7 @@
 
 package org.tentackle.misc;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -39,6 +40,7 @@ import org.tentackle.log.Logger.Level;
  */
 public class ImmutableArrayList<E> extends ArrayList<E> implements ImmutableCollection<E> {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   private static final Logger LOGGER = Logger.get(ImmutableArrayList.class);

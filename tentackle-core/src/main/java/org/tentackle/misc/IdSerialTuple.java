@@ -20,6 +20,8 @@ package org.tentackle.misc;
 
 import org.tentackle.common.TentackleRuntimeException;
 
+import java.io.Serial;
+
 
 /**
  * A tuple holding the ID and the serial of an object.<br>
@@ -29,7 +31,8 @@ import org.tentackle.common.TentackleRuntimeException;
  */
 public class IdSerialTuple implements Identifiable, SerialNumbered, Cloneable, Comparable<IdSerialTuple> {
 
-  private static final long serialVersionUID = 4038857102103180382L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   /**
    * The object id.

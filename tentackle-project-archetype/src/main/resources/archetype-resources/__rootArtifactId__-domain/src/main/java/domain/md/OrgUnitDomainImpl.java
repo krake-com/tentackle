@@ -13,6 +13,8 @@ import ${package}.pdo.md.domain.OrgUnitDomain;
 import org.tentackle.domain.AbstractDomainObject;
 import org.tentackle.pdo.DomainObjectService;
 
+import java.io.Serial;
+
 /**
  * Domain implementation for OrgUnit.
  *
@@ -23,7 +25,7 @@ import org.tentackle.pdo.DomainObjectService;
 public class OrgUnitDomainImpl<T extends OrgUnit<T>, D extends OrgUnitDomainImpl<T, D>>
         extends AbstractDomainObject<T, D> implements OrgUnitDomain<T> {
 
-  /** serial version UID. */
+  @Serial
   private static final long serialVersionUID = 1L;
 
   //<editor-fold defaultstate="collapsed" desc="constructors">

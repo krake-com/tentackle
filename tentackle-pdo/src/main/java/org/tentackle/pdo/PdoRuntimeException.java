@@ -22,6 +22,8 @@ package org.tentackle.pdo;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 
+import java.io.Serial;
+
 
 /**
  * PDO runtime exception.<br>
@@ -31,7 +33,8 @@ import org.tentackle.session.Session;
  */
 public class PdoRuntimeException extends PersistenceException {
 
-  private static final long serialVersionUID = -5355906838551059054L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
 
   /**

@@ -19,8 +19,11 @@
 
 package org.tentackle.test.pdo.pdofactory;
 
-import org.tentackle.test.pdo.mock.MockDomainObject;
 import org.testng.Reporter;
+
+import org.tentackle.test.pdo.mock.MockDomainObject;
+
+import java.io.Serial;
 
 
 /**
@@ -29,6 +32,9 @@ import org.testng.Reporter;
  * @author harald
  */
 public class InvoiceDomainImpl<T extends Invoice<T>> extends MockDomainObject<T, InvoiceDomainImpl<T>> implements InvoiceDomain<T> {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   /**
    * Creates an invoice domain object.

@@ -72,6 +72,7 @@ import org.tentackle.validate.scope.ChangeableScope;
 import org.tentackle.validate.scope.MandatoryScope;
 import org.tentackle.validate.scope.PersistenceScope;
 
+import java.io.Serial;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.rmi.RemoteException;
@@ -119,7 +120,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
        extends AbstractDbObject<P>
        implements PersistentObject<T>, EffectiveClassProvider<T>, PdoMethodCacheProvider<T>, Cloneable {
 
-  private static final long serialVersionUID = 1921941642168910515L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private transient boolean contextImmutable;     // true if domain context cannot be changed anymore
   private T pdo;                                  // the pdo instance this is a delegate for

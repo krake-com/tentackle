@@ -22,6 +22,7 @@ import org.tentackle.domain.AbstractDomainObject;
 import org.tentackle.i18n.pdo.StoredBundle.StoredBundleUDK;
 import org.tentackle.pdo.DomainObjectService;
 
+import java.io.Serial;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -34,6 +35,7 @@ import java.util.Map;
 @DomainObjectService(StoredBundle.class)
 public class StoredBundleDomainImpl extends AbstractDomainObject<StoredBundle, StoredBundleDomainImpl> implements StoredBundleDomain {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
 

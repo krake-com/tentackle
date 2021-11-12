@@ -19,6 +19,7 @@
 
 package org.tentackle.common;
 
+import java.io.Serial;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
@@ -33,7 +34,8 @@ import java.math.BigInteger;
  */
 public class DMoney extends BMoney {
 
-  private static final long serialVersionUID = -7253450602162675490L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   /**
    * Creates a DMoney value.

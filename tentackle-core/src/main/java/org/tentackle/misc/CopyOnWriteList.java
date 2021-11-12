@@ -18,6 +18,7 @@
 
 package org.tentackle.misc;
 
+import java.io.Serial;
 import java.util.Collection;
 import java.util.List;
 import java.util.ListIterator;
@@ -47,6 +48,7 @@ import java.util.ListIterator;
  */
 public class CopyOnWriteList<E> extends CopyOnWriteCollection<E> implements List<E> {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   /**

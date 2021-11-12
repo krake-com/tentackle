@@ -25,6 +25,8 @@ import org.tentackle.misc.Identifiable;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 
+import java.io.Serial;
+
 
 /**
  * Runtime exception thrown for security violations.
@@ -33,7 +35,8 @@ import org.tentackle.session.Session;
  */
 public class SecurityException extends PersistenceException implements Loggable {
 
-  private static final long serialVersionUID = -5355906838551059054L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
  /**
    * Constructs a new security violation exception for a given session

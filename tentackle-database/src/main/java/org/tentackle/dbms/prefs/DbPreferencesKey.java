@@ -32,6 +32,7 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.session.TableName;
 import org.tentackle.sql.Backend;
 
+import java.io.Serial;
 import java.util.Objects;
 
 
@@ -71,7 +72,8 @@ import java.util.Objects;
 @TableName(/**/"prefkey"/**/)     // @wurblet < Inject --string $tablename
 public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
 
-  private static final long serialVersionUID = 5733105489734329678L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   /** Variables common to all instances of {@link DbPreferencesKey}. */
   public static final DbObjectClassVariables<DbPreferencesKey> CLASSVARIABLES =

@@ -25,6 +25,7 @@ import org.tentackle.session.Session;
 import org.tentackle.session.SessionDependable;
 import org.tentackle.session.SessionHolder;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -38,6 +39,7 @@ import java.io.Serializable;
 public abstract class AbstractDbOperation<P extends AbstractDbOperation<P>>
                 implements SessionDependable, Serializable {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   private transient Db db;                                // the bound db connection

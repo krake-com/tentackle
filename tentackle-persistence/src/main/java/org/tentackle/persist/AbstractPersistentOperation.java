@@ -33,6 +33,7 @@ import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 
+import java.io.Serial;
 import java.util.List;
 import java.util.Objects;
 
@@ -50,6 +51,7 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
        extends AbstractDbOperation<P>
        implements PersistenceDelegate<T>, PersistentOperation<T>, EffectiveClassProvider<T>, OperationMethodCacheProvider<T> {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   private DomainContext context;                  // application domain context

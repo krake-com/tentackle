@@ -23,6 +23,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.tentackle.maven.TemplateModel;
 import org.tentackle.sql.BackendInfo;
 
+import java.io.Serial;
 import java.util.Map;
 
 /**
@@ -44,6 +45,9 @@ import java.util.Map;
  * </pre>
  */
 public class MigrateTemplateModel extends TemplateModel {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   /**
    * Creates the model.

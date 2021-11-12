@@ -31,6 +31,7 @@ import org.tentackle.session.Session;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.JoinType;
 
+import java.io.Serial;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -48,7 +49,7 @@ import java.util.function.Supplier;
 public class OrgUnitPersistenceImpl<T extends OrgUnit<T>, P extends OrgUnitPersistenceImpl<T, P>>
         extends AbstractPersistentMasterData<T, P> implements OrgUnitPersistence<T> {
 
-  /** serial version UID. */
+  @Serial
   private static final long serialVersionUID = -1;
 
   // @wurblet classVariables ClassVariables

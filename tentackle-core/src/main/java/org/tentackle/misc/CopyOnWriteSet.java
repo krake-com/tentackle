@@ -18,6 +18,7 @@
 
 package org.tentackle.misc;
 
+import java.io.Serial;
 import java.util.Set;
 
 /**
@@ -39,6 +40,7 @@ import java.util.Set;
  */
 public class CopyOnWriteSet<E> extends CopyOnWriteCollection<E> implements Set<E> {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   /**

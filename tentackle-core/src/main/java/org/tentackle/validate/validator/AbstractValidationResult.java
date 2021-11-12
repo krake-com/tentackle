@@ -26,6 +26,7 @@ import org.tentackle.validate.ValidationRuntimeException;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.Validator;
 
+import java.io.Serial;
 import java.util.Objects;
 
 /**
@@ -35,7 +36,8 @@ import java.util.Objects;
  */
 public abstract class AbstractValidationResult implements ValidationResult {
 
-  private static final long serialVersionUID = 415899327881601354L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private final String message;                                       // the validation failed message
   private final String errorCode;                                     // error code

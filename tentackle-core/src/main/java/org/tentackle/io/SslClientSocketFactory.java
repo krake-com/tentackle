@@ -21,6 +21,7 @@ package org.tentackle.io;
 
 import javax.rmi.ssl.SslRMIClientSocketFactory;
 import java.io.IOException;
+import java.io.Serial;
 import java.net.Socket;
 import java.util.Objects;
 
@@ -31,7 +32,8 @@ import java.util.Objects;
  */
 public class SslClientSocketFactory extends SslRMIClientSocketFactory implements SocketConfiguratorHolder {
 
-  private static final long serialVersionUID = 2357672465175511279L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private volatile SocketConfigurator socketConfigurator;   // the optional socket configurator
 

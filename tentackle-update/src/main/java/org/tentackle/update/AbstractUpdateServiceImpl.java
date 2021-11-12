@@ -22,6 +22,7 @@ import org.tentackle.common.FileHelper;
 import org.tentackle.common.TentackleRuntimeException;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -43,6 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class AbstractUpdateServiceImpl extends UnicastRemoteObject implements UpdateService {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   private final Map<URL, Long> downloadSizes = new ConcurrentHashMap<>();       // size in bytes of the download ZIPs

@@ -18,6 +18,7 @@
 
 package org.tentackle.model;
 
+import java.io.Serial;
 import java.util.HashMap;
 import java.util.StringTokenizer;
 
@@ -39,6 +40,7 @@ import java.util.StringTokenizer;
  */
 public class EntityAliases extends HashMap<String,String> {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   /**

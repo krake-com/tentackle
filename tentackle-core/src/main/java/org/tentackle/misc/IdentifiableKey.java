@@ -19,6 +19,7 @@
 
 package org.tentackle.misc;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -30,7 +31,8 @@ import java.io.Serializable;
  */
 public class IdentifiableKey<T extends Identifiable> implements Comparable<IdentifiableKey<T>>, Serializable {
 
-  private static final long serialVersionUID = -2881185378941379031L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private final Class<T> identifiableClass;     // the identifiable class
   private final long identifiableId;            // the object id

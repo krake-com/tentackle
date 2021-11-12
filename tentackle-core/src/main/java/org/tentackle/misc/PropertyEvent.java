@@ -18,6 +18,7 @@
 
 package org.tentackle.misc;
 
+import java.io.Serial;
 import java.util.EventObject;
 import java.util.Objects;
 
@@ -31,6 +32,7 @@ import java.util.Objects;
  */
 public class PropertyEvent extends EventObject {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   private final String propertyName;    // name of the property

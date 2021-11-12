@@ -22,6 +22,7 @@ package org.tentackle.validate.validator;
 import org.tentackle.validate.ValidationContext;
 import org.tentackle.validate.Validator;
 
+import java.io.Serial;
 import java.util.Objects;
 
 /**
@@ -31,7 +32,8 @@ import java.util.Objects;
  */
 public class FailedValidationResult extends AbstractValidationResult {
 
-  private static final long serialVersionUID = 7944890568191272731L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   /**
    * Creates a failed validation result.

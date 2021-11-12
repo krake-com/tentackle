@@ -23,6 +23,7 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Serial;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -45,6 +46,7 @@ public class SocketImplWrapper extends SocketImpl {
 
   private static class WrappedException extends IOException {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private WrappedException() {

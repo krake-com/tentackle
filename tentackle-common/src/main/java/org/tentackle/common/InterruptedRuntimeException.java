@@ -17,10 +17,15 @@
  */
 package org.tentackle.common;
 
+import java.io.Serial;
+
 /**
  * Wraps a checked {@link InterruptedException} into a {@link RuntimeException} and sets the interrupted flag.
  */
 public class InterruptedRuntimeException extends RuntimeException {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   /**
    * Constructs a new interrupt exception with the specified detail message and

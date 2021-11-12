@@ -19,6 +19,8 @@
 
 package org.tentackle.session;
 
+import java.io.Serial;
+
 /**
  * A session holder returning the thread-local session.<br>
  * Nice if no domain context available, e.g. for low-level AbstractDbObjects.
@@ -27,7 +29,8 @@ package org.tentackle.session;
  */
 public class ThreadLocalSessionHolder implements SessionHolder {
 
-  private static final long serialVersionUID = 6201552901046919635L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private boolean sessionImmutable;
 

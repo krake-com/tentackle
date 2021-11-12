@@ -22,6 +22,7 @@ package org.tentackle.misc;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
 
+import java.io.Serial;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,7 +45,8 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
   private static final String MSG_NOT_MY_SNAPSHOT = "not my snapshot";
 
-  private static final long serialVersionUID = 5820724718467532237L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private static final Logger LOGGER = Logger.get(TrackedArrayList.class);
 

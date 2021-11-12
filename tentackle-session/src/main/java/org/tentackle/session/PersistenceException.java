@@ -21,6 +21,7 @@ package org.tentackle.session;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.misc.Identifiable;
 
+import java.io.Serial;
 import java.rmi.RemoteException;
 
 /**
@@ -30,7 +31,8 @@ import java.rmi.RemoteException;
  */
 public class PersistenceException extends TentackleRuntimeException {
 
-  private static final long serialVersionUID = -5355906838551059053L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
 
   /**

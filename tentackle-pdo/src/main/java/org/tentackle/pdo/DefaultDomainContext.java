@@ -29,6 +29,7 @@ import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
 
 import java.io.ObjectStreamException;
+import java.io.Serial;
 
 
 /**
@@ -38,7 +39,8 @@ import java.io.ObjectStreamException;
  */
 public class DefaultDomainContext implements DomainContext {
 
-  private static final long serialVersionUID = 1326690682129400506L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   // attributes are transient because session could be remote (is serializable)
 
@@ -417,6 +419,7 @@ public class DefaultDomainContext implements DomainContext {
    * @throws ObjectStreamException to fullfill the signature only
    * @see ObjectStreamException
    */
+  @Serial
   public Object writeReplace() throws ObjectStreamException {
   // public! Otherwise writeReplace would not be invoked in subclasses!
     if (rootEntity != null && rootClassId == 0) {

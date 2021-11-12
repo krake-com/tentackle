@@ -19,6 +19,7 @@
 
 package org.tentackle.domain.security;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -43,6 +44,7 @@ import org.tentackle.session.SessionUtilities;
 @DomainObjectService(Security.class)
 public class SecurityDomainImpl extends AbstractDomainObject<Security, SecurityDomainImpl> implements SecurityDomain {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   @SuppressWarnings("stateful-domain-logic")

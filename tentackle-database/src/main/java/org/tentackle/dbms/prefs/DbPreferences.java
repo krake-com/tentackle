@@ -20,6 +20,7 @@ package org.tentackle.dbms.prefs;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -65,6 +66,7 @@ import org.tentackle.session.SavepointHandle;
  */
 public class DbPreferences extends Preferences implements PersistedPreferences, Serializable {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   private static final Logger LOGGER = Logger.get(DbPreferences.class);

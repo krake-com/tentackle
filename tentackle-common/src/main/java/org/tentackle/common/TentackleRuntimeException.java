@@ -20,6 +20,8 @@
 package org.tentackle.common;
 
 
+import java.io.Serial;
+
 /**
  * Tentackle runtime exception.
  *
@@ -27,7 +29,8 @@ package org.tentackle.common;
  */
 public class TentackleRuntimeException extends RuntimeException {
 
-  private static final long serialVersionUID = 807132614199245159L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
 
   private boolean temporary;    // temporary exception

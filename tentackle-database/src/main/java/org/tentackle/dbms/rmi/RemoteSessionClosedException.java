@@ -22,6 +22,7 @@ package org.tentackle.dbms.rmi;
 
 import org.tentackle.session.SessionClosedException;
 
+import java.io.Serial;
 
 
 /**
@@ -31,7 +32,8 @@ import org.tentackle.session.SessionClosedException;
  */
 public class RemoteSessionClosedException extends SessionClosedException {
 
-  private static final long serialVersionUID = -6175651458048862623L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
 
   /**

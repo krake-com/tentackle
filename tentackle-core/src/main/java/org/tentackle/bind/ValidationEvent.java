@@ -22,6 +22,7 @@ package org.tentackle.bind;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationUtilities;
 
+import java.io.Serial;
 import java.util.EventObject;
 import java.util.List;
 
@@ -32,7 +33,8 @@ import java.util.List;
  */
 public class ValidationEvent extends EventObject {
 
-  private static final long serialVersionUID = 6094806807648243530L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private final List<ValidationResult> results;
 

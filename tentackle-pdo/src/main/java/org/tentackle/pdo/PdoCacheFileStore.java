@@ -35,6 +35,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
@@ -51,7 +52,8 @@ import java.util.Objects;
  */
 public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements Serializable {
 
-  private static final long serialVersionUID = 1029177241051535961L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private static final Logger LOGGER = Logger.get(PdoCacheFileStore.class);
 

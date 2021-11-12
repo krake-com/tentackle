@@ -32,6 +32,7 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.session.TableName;
 import org.tentackle.sql.Backend;
 
+import java.io.Serial;
 import java.util.Objects;
 
 
@@ -71,7 +72,8 @@ import java.util.Objects;
 @TableName(/**/"prefnode"/**/)    // @wurblet < Inject --string $tablename
 public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
 
-  private static final long serialVersionUID = 4677525106428955014L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   /** Variables common to all instances of {@link DbPreferencesNode}. */
   public static final DbObjectClassVariables<DbPreferencesNode> CLASSVARIABLES =

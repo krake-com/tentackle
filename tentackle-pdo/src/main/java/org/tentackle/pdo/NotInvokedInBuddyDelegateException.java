@@ -21,6 +21,8 @@ package org.tentackle.pdo;
 
 import org.tentackle.common.TentackleRuntimeException;
 
+import java.io.Serial;
+
 /**
  * Exception thrown when an implementation is not invoked in buddy delegate.<br>
  * Should be used in unused method body to avoid direct invocation without interceptor.
@@ -29,6 +31,7 @@ import org.tentackle.common.TentackleRuntimeException;
  */
 public class NotInvokedInBuddyDelegateException extends TentackleRuntimeException {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   /**

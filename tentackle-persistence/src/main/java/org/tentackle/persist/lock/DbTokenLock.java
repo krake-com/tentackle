@@ -33,6 +33,8 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.session.TableName;
 import org.tentackle.sql.Backend;
 
+import java.io.Serial;
+
 
 /*
  * @> $mapfile
@@ -78,7 +80,8 @@ import org.tentackle.sql.Backend;
 @TableName(/**/"tokenlock"/**/)     // @wurblet < Inject --string $tablename
 public class DbTokenLock extends AbstractDbObject<DbTokenLock> implements TokenLock {
 
-  private static final long serialVersionUID = -1723181864077614924L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   /** Variables common to all instances of {@link DbTokenLock}. */
   public static final DbObjectClassVariables<DbTokenLock> CLASSVARIABLES =

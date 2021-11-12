@@ -25,6 +25,8 @@ import org.tentackle.pdo.PersistenceDelegate;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.session.Session;
 
+import java.io.Serial;
+
 /**
  * A mocked domain object.
  *
@@ -34,6 +36,9 @@ import org.tentackle.session.Session;
  */
 public class MockDomainObject<T extends PersistentDomainObject<T>, D extends MockDomainObject<T,D>>
        implements DomainObject<T> {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private static final String UNSUPPORTED = "not implemented";
   

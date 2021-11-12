@@ -21,6 +21,7 @@ package org.tentackle.common;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.util.Calendar;
 
 import static java.util.Calendar.DAY_OF_MONTH;
@@ -47,7 +48,8 @@ import static java.util.Calendar.YEAR;
 @SuppressWarnings("deprecation")
 public class Date extends java.sql.Date implements Freezable {
 
-  private static final long serialVersionUID = 1511598038487230101L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   /**
    * Creates a frozen date.
@@ -179,6 +181,7 @@ public class Date extends java.sql.Date implements Freezable {
    * @param s the stream
    * @throws IOException if writing to stream failed
    */
+  @Serial
   private void writeObject(ObjectOutputStream s) throws IOException {
     Calendar calendar = DateHelper.toCalendar(this);
     s.writeShort(calendar.get(YEAR));
@@ -195,6 +198,7 @@ public class Date extends java.sql.Date implements Freezable {
    * @throws IOException if reading from stream failed
    * @throws ClassNotFoundException if class contained in stream is not found
    */
+  @Serial
   private void readObject(ObjectInputStream s) throws IOException, ClassNotFoundException {
     int year = s.readShort();
     int month = s.readByte();

@@ -25,6 +25,7 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.sql.Backend;
 
+import java.io.Serial;
 import java.rmi.RemoteException;
 
 /**
@@ -33,7 +34,7 @@ import java.rmi.RemoteException;
 @PersistentObjectService(User2Group.class)
 public class User2GroupPersistenceImpl extends AbstractPersistentMasterData<User2Group, User2GroupPersistenceImpl> implements User2GroupPersistence {
 
-  /** serial version UID. */
+  @Serial
   private static final long serialVersionUID = -1;
 
   // @wurblet classVariables ClassVariables

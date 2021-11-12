@@ -12,6 +12,7 @@ import ${persistencePackage}.${persistenceInterface};
 import ${persistenceImplPackage}.rmi.${operationInterface}RemoteDelegate;
 </#if>
 
+import java.io.Serial;
 import java.rmi.RemoteException;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentOperationService;
@@ -32,7 +33,7 @@ public class ${persistenceImplementation}<T extends ${operationInterface}<T>, P 
 public class ${persistenceImplementation} extends ${superPersistenceImplementation}<${operationInterface}, ${persistenceImplementation}> implements ${persistenceInterface} {
 </#if>
 
-  /** serial version UID. */
+  @Serial
   private static final long serialVersionUID = -1;
 
   //<editor-fold defaultstate="collapsed" desc="classvariables">

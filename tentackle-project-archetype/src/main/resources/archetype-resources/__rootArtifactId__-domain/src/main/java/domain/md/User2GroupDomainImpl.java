@@ -13,13 +13,15 @@ import ${package}.pdo.md.domain.User2GroupDomain;
 import org.tentackle.domain.AbstractDomainObject;
 import org.tentackle.pdo.DomainObjectService;
 
+import java.io.Serial;
+
 /**
  * Domain implementation for User2Group.
  */
 @DomainObjectService(User2Group.class)
 public class User2GroupDomainImpl extends AbstractDomainObject<User2Group, User2GroupDomainImpl> implements User2GroupDomain {
 
-  /** serial version UID. */
+  @Serial
   private static final long serialVersionUID = 1L;
 
   //<editor-fold defaultstate="collapsed" desc="constructors">

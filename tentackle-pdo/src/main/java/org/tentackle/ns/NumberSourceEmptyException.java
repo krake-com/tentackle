@@ -18,6 +18,8 @@
 
 package org.tentackle.ns;
 
+import java.io.Serial;
+
 /**
  * Number source empty exception.
  *
@@ -25,6 +27,7 @@ package org.tentackle.ns;
  */
 public class NumberSourceEmptyException extends NumberSourceException {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   /**

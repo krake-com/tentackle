@@ -12,13 +12,15 @@ import ${package}.pdo.md.domain.UserDomain;
 
 import org.tentackle.pdo.DomainObjectService;
 
+import java.io.Serial;
+
 /**
  * Domain implementation for User.
  */
 @DomainObjectService(User.class)
 public class UserDomainImpl extends OrgUnitDomainImpl<User, UserDomainImpl> implements UserDomain {
 
-  /** serial version UID. */
+  @Serial
   private static final long serialVersionUID = 1L;
 
   //<editor-fold defaultstate="collapsed" desc="constructors">

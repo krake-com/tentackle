@@ -21,6 +21,8 @@ package org.tentackle.session;
 
 import org.tentackle.misc.Identifiable;
 
+import java.io.Serial;
+
 
 /**
  * Runtime exception thrown if objects that should exist are not found in the database.
@@ -29,7 +31,8 @@ import org.tentackle.misc.Identifiable;
  */
 public class NotFoundException extends PersistenceException {
 
-  private static final long serialVersionUID = -5355906838551059054L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private long persistedSerial;     // 0 if unknown, -1 if object not in database, else the object's serial in db
 

@@ -14,6 +14,8 @@ import org.tentackle.domain.AbstractDomainOperation;
 import org.tentackle.operation.DomainException;
 import org.tentackle.operation.DomainOperationService;
 
+import java.io.Serial;
+
 /**
  * Domain implementation for ${operationInterface}.
  */
@@ -25,7 +27,7 @@ public class ${domainImplementation}<T extends ${operationInterface}<T>, D exten
 public class ${domainImplementation} extends ${superDomainImplementation}<${operationInterface}, ${domainImplementation}> implements ${domainInterface} {
 </#if>
 
-  /** serial version UID. */
+  @Serial
   private static final long serialVersionUID = 1L;
 
   //<editor-fold defaultstate="collapsed" desc="constructors">

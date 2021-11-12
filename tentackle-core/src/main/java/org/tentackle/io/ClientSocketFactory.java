@@ -20,6 +20,7 @@
 package org.tentackle.io;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.io.Serializable;
 import java.net.Socket;
 import java.rmi.server.RMIClientSocketFactory;
@@ -32,7 +33,8 @@ import java.util.Objects;
  */
 public class ClientSocketFactory implements RMIClientSocketFactory, SocketConfiguratorHolder, Serializable {
 
-  private static final long serialVersionUID = 2357672465175511279L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   protected volatile SocketConfigurator socketConfigurator;   // the optional socket configurator
 

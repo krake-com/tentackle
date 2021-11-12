@@ -22,6 +22,7 @@ package org.tentackle.pdo;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -34,6 +35,7 @@ import java.util.Objects;
  */
 public class DummyPersistentOperation<T extends Operation<T>> implements PersistentOperation<T>, OperationMethodCacheProvider<T>, Serializable {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   @SuppressWarnings({ "rawtypes", "unchecked" })

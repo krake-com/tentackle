@@ -29,6 +29,7 @@ import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.Session;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 
@@ -42,6 +43,7 @@ import java.util.List;
 public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, D extends AbstractDomainObject<T,D>>
        implements DomainObject<T>, EffectiveClassProvider<T>, Serializable {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
 

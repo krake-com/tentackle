@@ -21,6 +21,8 @@ package org.tentackle.dbms;
 
 import org.tentackle.session.PersistenceException;
 
+import java.io.Serial;
+
 
 /**
  * Runtime exception thrown for id source failures.
@@ -29,7 +31,8 @@ import org.tentackle.session.PersistenceException;
  */
 public class IdSourceException extends PersistenceException {
 
-  private static final long serialVersionUID = 8798531919860588803L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
 
  /**
