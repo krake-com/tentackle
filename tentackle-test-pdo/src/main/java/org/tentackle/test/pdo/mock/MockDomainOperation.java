@@ -25,6 +25,8 @@ import org.tentackle.pdo.Operation;
 import org.tentackle.pdo.PersistenceDelegate;
 import org.tentackle.session.Session;
 
+import java.io.Serial;
+
 /**
  * A mocked domain object.
  *
@@ -34,6 +36,9 @@ import org.tentackle.session.Session;
  */
 public class MockDomainOperation<T extends Operation<T>, D extends MockDomainOperation<T,D>>
        implements DomainOperation<T> {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private static final String UNSUPPORTED = "not implemented";
 

@@ -22,6 +22,7 @@ package org.tentackle.misc;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.io.Serial;
 import java.util.Iterator;
 
 /**
@@ -32,6 +33,9 @@ import java.util.Iterator;
 public class IdentifiableMapTest {
 
   private abstract static class NumberIdentifiable implements Identifiable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private static long idCount;
 
@@ -61,6 +65,9 @@ public class IdentifiableMapTest {
 
 
   private static class IntegerIdentifiable extends NumberIdentifiable {
+    @Serial
+    private static final long serialVersionUID = 1L;
+
     private IntegerIdentifiable(Integer number) {
       super(number);
     }
@@ -68,6 +75,9 @@ public class IdentifiableMapTest {
 
 
   private static class LongIdentifiable extends NumberIdentifiable {
+    @Serial
+    private static final long serialVersionUID = 1L;
+
     private LongIdentifiable(Long number) {
       super(number);
     }

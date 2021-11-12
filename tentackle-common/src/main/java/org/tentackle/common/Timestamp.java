@@ -21,6 +21,7 @@ package org.tentackle.common;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.util.Calendar;
 
 import static java.util.Calendar.DAY_OF_MONTH;
@@ -50,7 +51,8 @@ import static java.util.Calendar.YEAR;
 @SuppressWarnings("deprecation")
 public class Timestamp extends java.sql.Timestamp implements Freezable {
 
-  private static final long serialVersionUID = 2745179027874758503L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
 
   /**
@@ -224,6 +226,7 @@ public class Timestamp extends java.sql.Timestamp implements Freezable {
    * @param s the stream
    * @throws IOException if writing to stream failed
    */
+  @Serial
   private void writeObject(ObjectOutputStream s)
           throws IOException {
     s.writeBoolean(utc);
@@ -251,6 +254,7 @@ public class Timestamp extends java.sql.Timestamp implements Freezable {
    * @throws IOException if reading from stream failed
    * @throws ClassNotFoundException if class contained in stream is not found
    */
+  @Serial
   private void readObject(ObjectInputStream s)
           throws IOException, ClassNotFoundException {
     utc = s.readBoolean();

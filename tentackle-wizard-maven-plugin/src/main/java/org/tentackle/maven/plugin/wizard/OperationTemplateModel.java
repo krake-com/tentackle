@@ -19,10 +19,15 @@ package org.tentackle.maven.plugin.wizard;
 
 import org.tentackle.maven.TemplateModel;
 
+import java.io.Serial;
+
 /**
  * Freemarker model for the operation templates.
  */
 public class OperationTemplateModel extends TemplateModel {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   /**
    * Creates the model from the generator.

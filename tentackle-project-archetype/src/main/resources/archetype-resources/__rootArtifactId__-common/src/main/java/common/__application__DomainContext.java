@@ -10,11 +10,14 @@ package ${package}.common;
 import org.tentackle.pdo.DefaultDomainContext;
 import org.tentackle.session.Session;
 
+import java.io.Serial;
+
 /**
  * Application specific domain context.
  */
 public class ${application}DomainContext extends DefaultDomainContext {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   /**

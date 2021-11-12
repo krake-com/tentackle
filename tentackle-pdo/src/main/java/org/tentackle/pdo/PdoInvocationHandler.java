@@ -27,6 +27,7 @@ import org.tentackle.reflect.InterceptableMethodInvoker;
 import org.tentackle.reflect.Mixin;
 import org.tentackle.session.Session;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -43,6 +44,7 @@ import java.util.List;
  */
 public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implements InvocationHandler, Serializable {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   /**

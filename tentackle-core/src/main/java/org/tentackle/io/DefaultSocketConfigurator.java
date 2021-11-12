@@ -18,6 +18,7 @@
 
 package org.tentackle.io;
 
+import java.io.Serial;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.Objects;
@@ -29,6 +30,7 @@ import java.util.Objects;
  */
 public class DefaultSocketConfigurator extends SocketConfiguratorBase implements SocketConfigurator {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
 

@@ -19,6 +19,7 @@
 
 package org.tentackle.reflect;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -36,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class Mixin<T, M extends Serializable> implements Serializable {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   /**

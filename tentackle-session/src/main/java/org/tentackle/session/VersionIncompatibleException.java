@@ -20,6 +20,8 @@
 
 package org.tentackle.session;
 
+import java.io.Serial;
+
 /**
  * Exception thrown if client's and server's versions don't match.
  *
@@ -27,7 +29,8 @@ package org.tentackle.session;
  */
 public class VersionIncompatibleException extends LoginFailedException {
 
-  private static final long serialVersionUID = -9655629806960356L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private final String clientVersion;
   private final String serverVersion;

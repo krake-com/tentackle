@@ -21,6 +21,7 @@ package org.tentackle.common;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.util.Calendar;
 
 import static java.util.Calendar.HOUR_OF_DAY;
@@ -48,7 +49,8 @@ import static java.util.Calendar.SECOND;
 @SuppressWarnings("deprecation")
 public class Time extends java.sql.Time implements Freezable {
 
-  private static final long serialVersionUID = 8397324403548013688L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private boolean frozen;               // true if time cannot be modified anymore
 
@@ -175,6 +177,7 @@ public class Time extends java.sql.Time implements Freezable {
    * @param s the stream
    * @throws IOException if writing to stream failed
    */
+  @Serial
   private void writeObject(ObjectOutputStream s)
           throws IOException {
     Calendar calendar = DateHelper.toCalendar(this);
@@ -193,6 +196,7 @@ public class Time extends java.sql.Time implements Freezable {
    * @throws IOException if reading from stream failed
    * @throws ClassNotFoundException if class contained in stream is not found
    */
+  @Serial
   private void readObject(ObjectInputStream s)
           throws IOException, ClassNotFoundException {
     int hours = s.readByte();

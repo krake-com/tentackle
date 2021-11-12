@@ -20,6 +20,8 @@ package org.tentackle.ns;
 
 import org.tentackle.common.TentackleRuntimeException;
 
+import java.io.Serial;
+
 /**
  * Number source exception.
  *
@@ -27,6 +29,7 @@ import org.tentackle.common.TentackleRuntimeException;
  */
 public class NumberSourceException extends TentackleRuntimeException {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   /**

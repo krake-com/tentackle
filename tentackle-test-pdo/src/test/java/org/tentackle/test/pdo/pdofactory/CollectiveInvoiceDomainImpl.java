@@ -21,12 +21,17 @@ package org.tentackle.test.pdo.pdofactory;
 
 import org.testng.Reporter;
 
+import java.io.Serial;
+
 /**
  * Collective invoice domain implementation.
  *
  * @author harald
  */
 public class CollectiveInvoiceDomainImpl extends InvoiceDomainImpl<CollectiveInvoice> implements CollectiveInvoiceDomain {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   /**
    * Creates a collective invoice domain object.

@@ -14,6 +14,7 @@ import org.tentackle.domain.AbstractDomainObject;
 import org.tentackle.pdo.DomainException;
 import org.tentackle.pdo.DomainObjectService;
 
+import java.io.Serial;
 
 /**
  * Domain implementation for ${pdoInterface}.
@@ -26,7 +27,7 @@ public class ${domainImplementation}<T extends ${pdoInterface}<T>, D extends ${d
 public class ${domainImplementation} extends ${superDomainImplementation}<${pdoInterface}, ${domainImplementation}> implements ${domainInterface} {
 </#if>
 
-  /** serial version UID. */
+  @Serial
   private static final long serialVersionUID = 1L;
 
   //<editor-fold defaultstate="collapsed" desc="constructors">

@@ -18,6 +18,7 @@
 
 package org.tentackle.persist;
 
+import java.io.Serial;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Cleaner.Cleanable;
 import java.rmi.RemoteException;
@@ -845,6 +846,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
    */
   public static class FetchList<T> extends ArrayList<T> {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /** true if closed. */

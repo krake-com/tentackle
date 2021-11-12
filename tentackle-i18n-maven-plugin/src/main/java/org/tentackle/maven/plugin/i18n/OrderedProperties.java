@@ -18,6 +18,7 @@
 
 package org.tentackle.maven.plugin.i18n;
 
+import java.io.Serial;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
@@ -32,6 +33,9 @@ import java.util.Set;
  * Not thread-safe!
  */
 public class OrderedProperties extends Properties {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private final LinkedHashMap<Object, Object> map;
 

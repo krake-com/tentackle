@@ -19,6 +19,7 @@
 
 package org.tentackle.common;
 
+import java.io.Serial;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
@@ -33,7 +34,8 @@ import java.util.Currency;
  */
 public class BMoney extends BigDecimal implements Cloneable {
 
-  private static final long serialVersionUID = 3669978240319189746L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
 
   /**

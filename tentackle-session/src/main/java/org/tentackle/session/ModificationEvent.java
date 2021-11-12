@@ -18,6 +18,7 @@
 
 package org.tentackle.session;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
@@ -40,6 +41,7 @@ import java.util.Objects;
  */
 public class ModificationEvent implements Serializable {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
 

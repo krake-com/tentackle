@@ -39,6 +39,7 @@ import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationUtilities;
 
+import java.io.Serial;
 import java.rmi.RemoteException;
 import java.text.MessageFormat;
 import java.util.Iterator;
@@ -52,7 +53,7 @@ import java.util.function.Supplier;
 @PersistentObjectService(User.class)
 public class UserPersistenceImpl extends OrgUnitPersistenceImpl<User, UserPersistenceImpl> implements UserPersistence {
 
-  /** serial version UID. */
+  @Serial
   private static final long serialVersionUID = -1;
 
   // @wurblet classVariables ClassVariables

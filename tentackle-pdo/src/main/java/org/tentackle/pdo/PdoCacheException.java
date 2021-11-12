@@ -21,6 +21,8 @@ package org.tentackle.pdo;
 
 import org.tentackle.session.Session;
 
+import java.io.Serial;
+
 
 /**
  * PDO cache exception.<br>
@@ -29,7 +31,8 @@ import org.tentackle.session.Session;
  */
 public class PdoCacheException extends PdoRuntimeException {
 
-  private static final long serialVersionUID = -5355906838551059054L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
 
   /**

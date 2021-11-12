@@ -23,13 +23,15 @@ import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.session.SessionUtilities;
 
+import java.io.Serial;
+
 /**
  * Domain implementation for Message.
  */
 @DomainObjectService(Message.class)
 public class MessageDomainImpl extends AbstractDomainObject<Message, MessageDomainImpl> implements MessageDomain {
 
-  /** serial version UID. */
+  @Serial
   private static final long serialVersionUID = 1L;
 
   //<editor-fold defaultstate="collapsed" desc="constructors">

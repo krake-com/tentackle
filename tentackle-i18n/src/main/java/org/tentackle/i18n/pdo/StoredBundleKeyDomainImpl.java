@@ -22,6 +22,8 @@ package org.tentackle.i18n.pdo;
 import org.tentackle.domain.AbstractDomainObject;
 import org.tentackle.pdo.DomainObjectService;
 
+import java.io.Serial;
+
 /**
  * StoredBundleKey domain implementation.
  *
@@ -30,6 +32,7 @@ import org.tentackle.pdo.DomainObjectService;
 @DomainObjectService(StoredBundleKey.class)
 public class StoredBundleKeyDomainImpl extends AbstractDomainObject<StoredBundleKey, StoredBundleKeyDomainImpl> implements StoredBundleKeyDomain {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
 

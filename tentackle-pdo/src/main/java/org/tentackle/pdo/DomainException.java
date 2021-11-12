@@ -24,6 +24,8 @@ import org.tentackle.misc.Identifiable;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 
+import java.io.Serial;
+
 /**
  * Domain logic runtime exception.
  *
@@ -31,7 +33,8 @@ import org.tentackle.session.Session;
  */
 public class DomainException extends TentackleRuntimeException {
 
-  private static final long serialVersionUID = -5355906838551059053L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
 
   /**

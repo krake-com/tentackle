@@ -19,10 +19,13 @@
 
 package org.tentackle.test.pdo.pdofactory;
 
+import org.testng.Reporter;
+
 import org.tentackle.pdo.OperationMethodCache;
 import org.tentackle.pdo.OperationMethodCacheProvider;
 import org.tentackle.test.pdo.mock.MockPersistentOperation;
-import org.testng.Reporter;
+
+import java.io.Serial;
 
 
 /**
@@ -32,6 +35,9 @@ import org.testng.Reporter;
  */
 public class SomeOperationPersistenceImpl extends MockPersistentOperation<SomeOperation>
        implements SomeOperationPersistence, OperationMethodCacheProvider<SomeOperation> {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private static final OperationMethodCache<SomeOperation> METHOD_CACHE = new OperationMethodCache<>(SomeOperation.class);
 

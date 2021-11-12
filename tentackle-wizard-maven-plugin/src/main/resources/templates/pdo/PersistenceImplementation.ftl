@@ -12,6 +12,7 @@ import ${persistencePackage}.${persistenceInterface};
 import ${persistenceImplPackage}.rmi.${pdoInterface}RemoteDelegate;
 </#if>
 
+import java.io.Serial;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -62,7 +63,7 @@ public class ${persistenceImplementation}<T extends ${pdoInterface}<T>, P extend
 public class ${persistenceImplementation} extends ${superPersistenceImplementation}<${pdoInterface}, ${persistenceImplementation}> implements ${persistenceInterface} {
 </#if>
 
-  /** serial version UID. */
+  @Serial
   private static final long serialVersionUID = -1;
 
 

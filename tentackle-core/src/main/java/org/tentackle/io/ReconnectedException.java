@@ -20,6 +20,8 @@ package org.tentackle.io;
 
 import org.tentackle.common.TentackleRuntimeException;
 
+import java.io.Serial;
+
 /**
  * Exception thrown if a resource has been reconnected.<br>
  * When an application catches this exception, it indicates that
@@ -36,6 +38,7 @@ import org.tentackle.common.TentackleRuntimeException;
  */
 public class ReconnectedException extends TentackleRuntimeException {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   /**

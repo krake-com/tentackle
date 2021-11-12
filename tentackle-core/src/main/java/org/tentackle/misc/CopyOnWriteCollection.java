@@ -18,6 +18,7 @@
 
 package org.tentackle.misc;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -45,6 +46,7 @@ import org.tentackle.common.TentackleRuntimeException;
  */
 public class CopyOnWriteCollection<E> implements Collection<E>, Serializable {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   /**

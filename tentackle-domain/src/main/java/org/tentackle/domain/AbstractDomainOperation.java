@@ -26,6 +26,7 @@ import org.tentackle.pdo.PersistenceDelegate;
 import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.session.Session;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 
@@ -39,6 +40,7 @@ import java.util.List;
 public abstract class AbstractDomainOperation<T extends Operation<T>, D extends AbstractDomainOperation<T,D>>
        implements DomainOperation<T>, EffectiveClassProvider<T>, Serializable {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
 

@@ -37,9 +37,6 @@ import static org.tentackle.common.Constants.CN_ID;
  */
 public class ObjectId extends AbstractIdSource {
 
-  private static final long serialVersionUID = -2463189262257268747L;
-
-
   private static final StatementId SELECT_ID = new StatementId();
   private static final StatementId INCREMENT_ID = new StatementId();
   private static final StatementId UPDATE_ID = new StatementId();
@@ -110,8 +107,8 @@ public class ObjectId extends AbstractIdSource {
         }
       }
       else {
-          // same tx: optimize and count only
-        // begin didn't return a new voucher
+        // same tx: optimize and count only
+        // begin() didn't return a new voucher
         if (txVoucher != 0) {
           throw new PersistenceException(db, "transaction counter corrupted");
         }

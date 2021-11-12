@@ -20,6 +20,7 @@
 package org.tentackle.sql;
 
 
+import java.io.Serial;
 
 /**
  * Runtime exception thrown for database backend configuration errors.
@@ -28,7 +29,8 @@ package org.tentackle.sql;
  */
 public class BackendException extends RuntimeException {
 
-  private static final long serialVersionUID = -7122397723020544671L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
 
  /**

@@ -45,6 +45,7 @@ import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationUtilities;
 
+import java.io.Serial;
 import java.rmi.RemoteException;
 import java.util.List;
 import java.util.Objects;
@@ -59,7 +60,8 @@ import java.util.Objects;
 @PersistentObjectService(StoredBundle.class)
 public class StoredBundlePersistenceImpl extends AbstractPersistentObject<StoredBundle, StoredBundlePersistenceImpl> implements StoredBundlePersistence {
 
-  private static final long serialVersionUID = -1178587730540795339L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
 
   // @wurblet classVariables ClassVariables

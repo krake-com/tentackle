@@ -28,6 +28,7 @@ import org.tentackle.pdo.PersistentOperation;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 
+import java.io.Serial;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -39,6 +40,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class MockPersistentOperation<T extends Operation<T>>
        implements PersistentOperation<T>, OperationMethodCacheProvider<T> {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private static final String UNSUPPORTED = "not implemented";
   @SuppressWarnings("rawtypes")

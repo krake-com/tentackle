@@ -17,6 +17,7 @@ import org.tentackle.dbms.rmi.RmiServer;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.VersionIncompatibleException;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -29,6 +30,7 @@ import java.util.Objects;
  */
 public class ${application}RemoteDbConnectionImpl extends RemoteDbConnectionImpl implements ${application}Connection {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   /**

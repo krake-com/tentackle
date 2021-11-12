@@ -40,6 +40,7 @@ import org.tentackle.session.Session;
 import org.tentackle.session.SessionUtilities;
 import org.tentackle.sql.Backend;
 
+import java.io.Serial;
 import java.rmi.RemoteException;
 import java.util.List;
 import java.util.Objects;
@@ -54,7 +55,8 @@ import java.util.Objects;
 @PersistentObjectService(Security.class)
 public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, SecurityPersistenceImpl> implements SecurityPersistence {
 
-  private static final long serialVersionUID = -1178387730540795339L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private static final Logger LOGGER = Logger.get(SecurityPersistenceImpl.class);
 

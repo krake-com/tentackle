@@ -11,6 +11,7 @@ import ${package}.common.Version;
 
 import org.tentackle.update.AbstractUpdateServiceImpl;
 
+import java.io.Serial;
 import java.rmi.RemoteException;
 
 
@@ -19,6 +20,7 @@ import java.rmi.RemoteException;
  */
 public class UpdateServiceImpl extends AbstractUpdateServiceImpl {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   /**

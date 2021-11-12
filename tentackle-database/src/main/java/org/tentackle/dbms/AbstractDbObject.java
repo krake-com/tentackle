@@ -35,6 +35,7 @@ import org.tentackle.session.Session;
 import org.tentackle.session.SessionHolder;
 import org.tentackle.sql.Backend;
 
+import java.io.Serial;
 import java.lang.reflect.InvocationTargetException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
@@ -164,7 +165,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   private static final Logger LOGGER = Logger.get(AbstractDbObject.class);
 
-  private static final long serialVersionUID = 3452560056309085969L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
 
 
@@ -2034,6 +2036,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * Note: this method does *NOT* set the ID and should be used
    * by the application with great care! Use {@link #saveObject} instead!
    */
+  @SuppressWarnings("unchecked")
   public void insertObject()  {
 
     assertPersistable();
@@ -2041,11 +2044,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     Db db = getSession();
     if (db.isRemote())  {
       try {
-        @SuppressWarnings("unchecked")
-        DbObjectResult result = getRemoteDelegate().insertObject((P) this);
-        id = result.getId();
-        serial = result.getSerial();
-        tableSerial = result.getTableSerial();
+        applyDbObjectResult(getRemoteDelegate().insertObject((P) this));
         setModified(false);
       }
       catch (RemoteException e) {
@@ -2107,6 +2106,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * Note: this method should be used by the application with great care!
    * Use {@link #saveObject} instead!
    */
+  @SuppressWarnings("unchecked")
   public void updateObject()  {
 
     assertPersistable();
@@ -2114,11 +2114,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     Db db = getSession();
     if (db.isRemote())  {
       try {
-        @SuppressWarnings("unchecked")
-        DbObjectResult result = getRemoteDelegate().updateObject((P) this);
-        id = result.getId();
-        serial = result.getSerial();
-        tableSerial = result.getTableSerial();
+        applyDbObjectResult(getRemoteDelegate().updateObject((P) this));
         setModified(false);
       }
       catch (RemoteException e) {
@@ -2239,9 +2235,10 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * This is the standard method applications should use to insert or update
    * objects.<br>
    * If the ID is 0, a new ID is obtained and this object inserted.
-   * Otherwise this object is updated.
+   * Otherwise, this object is updated.
    * The modified attribute gets cleared if save() was successful.
    */
+  @SuppressWarnings("unchecked")
   public void saveObject ()  {
     Db db = getSession();
     if (db.isRemote())  {
@@ -2251,11 +2248,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       prepareSave();
 
       try {
-        @SuppressWarnings("unchecked")
-        DbObjectResult result = getRemoteDelegate().saveObject((P) this);
-        id = result.getId();
-        serial = result.getSerial();
-        tableSerial = result.getTableSerial();
+        applyDbObjectResult(getRemoteDelegate().saveObject((P) this));
         setModified(false);
       }
       catch (RemoteException e) {
@@ -2373,6 +2366,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    *
    * @throws NotFoundException if object is new or not saveable or not in database
    */
+  @SuppressWarnings("unchecked")
   public void deleteObject()  {
 
     assertNotNew();
@@ -2382,11 +2376,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     if (db.isRemote())  {
       prepareDelete();
       try {
-        @SuppressWarnings("unchecked")
-        DbObjectResult result = getRemoteDelegate().deleteObject((P) this);
-        id = result.getId();
-        serial = result.getSerial();
-        tableSerial = result.getTableSerial();
+        applyDbObjectResult(getRemoteDelegate().deleteObject((P) this));
         setModified(false);
       }
       catch (RemoteException e) {
@@ -2967,6 +2957,18 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
         append(CN_TABLESERIAL).append(">?").
         append(SQL_ORDERBY).append(CN_TABLESERIAL).append(SQL_COMMA).append(CN_ID);
     return sql;
+  }
+
+
+  /**
+   * Applies a {@link DbObjectResult} to this persistence object.
+   *
+   * @param result the remote result
+   */
+  protected void applyDbObjectResult(DbObjectResult result) {
+    id = result.id();
+    serial = result.serial();
+    tableSerial = result.tableSerial();
   }
 
 

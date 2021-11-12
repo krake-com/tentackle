@@ -19,6 +19,7 @@
 
 package org.tentackle.dbms;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -33,6 +34,7 @@ import java.io.Serializable;
  */
 public record DbTransactionHandle(long txId, int handle) implements Serializable {
 
-  private static final long serialVersionUID = -1632629938313090092L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
 }

@@ -21,6 +21,7 @@ package org.tentackle.update;
 import org.tentackle.common.Cryptor;
 import org.tentackle.common.TentackleRuntimeException;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -30,6 +31,7 @@ import java.net.URL;
  */
 public class UpdateInfo implements Serializable {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   // transfer as strings because it may be encrypted

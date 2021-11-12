@@ -18,6 +18,7 @@
 
 package org.tentackle.io;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.util.Objects;
@@ -40,6 +41,7 @@ import org.tentackle.misc.ParameterString;
  */
 public abstract class SocketConfiguratorBase implements Serializable {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
 

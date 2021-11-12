@@ -19,6 +19,8 @@
 
 package org.tentackle.dbms;
 
+import java.io.Serial;
+
 /**
  * Runtime exception thrown if an idsource becomes empty.
  * 
@@ -26,7 +28,8 @@ package org.tentackle.dbms;
  */
 public class IdSourceEmptyException extends IdSourceException {
   
-  private static final long serialVersionUID = 8798531919860588803L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
 
  /**

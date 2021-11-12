@@ -35,6 +35,7 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.sql.Backend;
 
+import java.io.Serial;
 import java.rmi.RemoteException;
 
 
@@ -47,7 +48,8 @@ import java.rmi.RemoteException;
 @PersistentObjectService(NumberRange.class)
 public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberRange, NumberRangePersistenceImpl> implements NumberRangePersistence {
 
-  private static final long serialVersionUID = -1178387730540795339L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
 
   // @wurblet classVariables ClassVariables

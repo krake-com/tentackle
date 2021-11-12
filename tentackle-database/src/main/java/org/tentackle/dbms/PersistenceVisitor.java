@@ -19,6 +19,7 @@
 
 package org.tentackle.dbms;
 
+import java.io.Serial;
 import java.io.Serializable;
 import org.tentackle.reflect.ReflectiveVisitor;
 
@@ -48,6 +49,7 @@ import org.tentackle.reflect.ReflectiveVisitor;
  */
 public abstract class PersistenceVisitor extends ReflectiveVisitor implements Serializable {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   /**

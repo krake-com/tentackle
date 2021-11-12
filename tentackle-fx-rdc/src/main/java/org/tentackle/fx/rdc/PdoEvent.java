@@ -25,6 +25,8 @@ import javafx.event.EventType;
 
 import org.tentackle.pdo.PersistentDomainObject;
 
+import java.io.Serial;
+
 /**
  * Event related to persistence operations on a PDO.
  *
@@ -32,6 +34,7 @@ import org.tentackle.pdo.PersistentDomainObject;
  */
 public class PdoEvent extends Event {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
 

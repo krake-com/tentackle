@@ -19,10 +19,13 @@
 
 package org.tentackle.test.pdo.pdofactory;
 
+import org.testng.Reporter;
+
 import org.tentackle.pdo.PdoMethodCache;
 import org.tentackle.pdo.PdoMethodCacheProvider;
 import org.tentackle.test.pdo.mock.MockPersistentObject;
-import org.testng.Reporter;
+
+import java.io.Serial;
 
 
 /**
@@ -32,6 +35,9 @@ import org.testng.Reporter;
  */
 public class InvoicePersistenceImpl<T extends Invoice<T>> extends MockPersistentObject<T,InvoicePersistenceImpl<T>>
        implements InvoicePersistence<T>, PdoMethodCacheProvider<T> {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   @SuppressWarnings({ "unchecked", "rawtypes" })
   private static final PdoMethodCache METHOD_CACHE = new PdoMethodCache<>(Invoice.class);

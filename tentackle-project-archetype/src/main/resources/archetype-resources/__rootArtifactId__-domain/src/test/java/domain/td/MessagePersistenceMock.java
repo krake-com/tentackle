@@ -21,11 +21,16 @@ import org.tentackle.pdo.PersistentObjectService;
 import org.tentackle.session.Session;
 import org.tentackle.test.pdo.mock.MockPersistentObject;
 
+import java.io.Serial;
+
 /**
  * Sample persistence mock.
  */
 @PersistentObjectService(Message.class)
 public class MessagePersistenceMock extends MockPersistentObject<Message, MessagePersistenceMock> implements MessagePersistence {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   // @wurblet declare Declare --mock
 

@@ -26,6 +26,8 @@ import org.tentackle.ns.pdo.NumberRange;
 import org.tentackle.ns.pdo.NumberRangeDomain;
 import org.tentackle.pdo.DomainObjectService;
 
+import java.io.Serial;
+
 /**
  * NumberRange domain implementation.
  *
@@ -34,6 +36,7 @@ import org.tentackle.pdo.DomainObjectService;
 @DomainObjectService(NumberRange.class)
 public class NumberRangeDomainImpl extends AbstractDomainObject<NumberRange, NumberRangeDomainImpl> implements NumberRangeDomain {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
 

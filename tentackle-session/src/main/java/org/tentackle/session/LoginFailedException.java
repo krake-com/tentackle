@@ -24,6 +24,8 @@ import org.tentackle.log.Loggable;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.Identifiable;
 
+import java.io.Serial;
+
 
 /**
  * RMI servers should throw a LoginFailedException if authentication fails (or
@@ -33,7 +35,8 @@ import org.tentackle.misc.Identifiable;
  */
 public class LoginFailedException extends PersistenceException implements Loggable {
 
-  private static final long serialVersionUID = -6175651458048862623L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
  /**
    * Constructs a new login failed exception for a given session

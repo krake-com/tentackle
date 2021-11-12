@@ -18,6 +18,7 @@
 
 package org.tentackle.session;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -28,6 +29,7 @@ import java.util.Objects;
  */
 public class ModificationEventDetail implements Serializable {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
 

@@ -22,6 +22,7 @@ import org.apache.maven.plugin.logging.Log;
 
 import org.tentackle.common.StringHelper;
 
+import java.io.Serial;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -30,6 +31,9 @@ import java.util.Properties;
  * The freemarker template model.
  */
 public class TemplateModel extends HashMap<String, Object> {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private final Log logger;   // the maven logger
 

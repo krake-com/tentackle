@@ -13,12 +13,15 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.persist.AbstractPersistentObject;
 import org.tentackle.session.Session;
 
+import java.io.Serial;
+
 /**
  * Common persistence implementation for master data.
  */
 public abstract class AbstractPersistentMasterData<T extends MasterData<T>, P extends AbstractPersistentMasterData<T,P>>
        extends AbstractPersistentObject<T,P> {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   //<editor-fold defaultstate="collapsed" desc="constructors">

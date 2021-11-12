@@ -31,6 +31,7 @@ import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.SecurityResult;
 import org.tentackle.session.SessionInfo;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.rmi.RemoteException;
 import java.text.DecimalFormat;
@@ -134,6 +135,7 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDelegateImpl<
    */
   private static class SessionDataImpl implements SessionData, Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private static final NumberFormat OFFSET_FMT = new DecimalFormat("+#0.#");

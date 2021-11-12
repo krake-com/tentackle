@@ -20,77 +20,31 @@
 
 package org.tentackle.dbms.rmi;
 
-import java.io.Serializable;
 import org.tentackle.dbms.AbstractDbObject;
+
+import java.io.Serial;
+import java.io.Serializable;
 
 /**
  * Result used to return the possibly new objectid, changed serial and a
  * result code for success or failure.
  *
- * @author harald
+ * @param id the object ID
+ * @param serial the object's serial
+ * @param tableSerial the table serial
  */
-public class DbObjectResult implements Serializable {
+public record DbObjectResult(long id, long serial, long tableSerial) implements Serializable {
 
-  private static final long serialVersionUID = 3143529012167549556L;
-
-  /** the object ID. */
-  private final long id;
-
-  /** the serial number. */
-  private final long serial;
-
-  /** the table serial. */
-  private final long tableSerial;
-
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   /**
    * Creates a result for the client.
    *
-   * @param id the object ID
-   * @param serial the object's serial
-   * @param tableSerial the table serial
+   * @param po the persistence object
    */
-  public DbObjectResult(long id, long serial, long tableSerial) {
-    this.id = id;
-    this.serial = serial;
-    this.tableSerial = tableSerial;
-  }
-
-  /**
-   * Creates a result for the client.
-   *
-   * @param object the object
-   */
-  public DbObjectResult(AbstractDbObject<?> object) {
-    this(object.getId(), object.getSerial(), object.getTableSerial());
-  }
-
-
-  /**
-   * Gets the obejct id.
-   *
-   * @return the id
-   */
-  public long getId() {
-    return id;
-  }
-
-  /**
-   * Gets the object's serial.
-   *
-   * @return the serial
-   */
-  public long getSerial() {
-    return serial;
-  }
-
-  /**
-   * Gets the object's table serial.
-   *
-   * @return the table serial, 0 if no table serial
-   */
-  public long getTableSerial() {
-    return tableSerial;
+  public DbObjectResult(AbstractDbObject<?> po) {
+    this(po.getId(), po.getSerial(), po.getTableSerial());
   }
 
 }

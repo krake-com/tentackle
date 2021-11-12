@@ -19,12 +19,17 @@
 
 package org.tentackle.test.pdo.pdofactory;
 
+import java.io.Serial;
+
 /**
  * Collective invoice domain implementation.
  *
  * @author harald
  */
 public class SingleInvoiceDomainImpl extends InvoiceDomainImpl<SingleInvoice> implements SingleInvoiceDomain {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   /**
    * Creates a collective invoice domain object.

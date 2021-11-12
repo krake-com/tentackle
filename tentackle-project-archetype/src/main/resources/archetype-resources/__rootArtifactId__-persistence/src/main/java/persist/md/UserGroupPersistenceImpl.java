@@ -36,6 +36,7 @@ import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationUtilities;
 
+import java.io.Serial;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -47,7 +48,7 @@ import java.util.function.Supplier;
 @PersistentObjectService(UserGroup.class)
 public class UserGroupPersistenceImpl extends OrgUnitPersistenceImpl<UserGroup, UserGroupPersistenceImpl> implements UserGroupPersistence {
 
-  /** serial version UID. */
+  @Serial
   private static final long serialVersionUID = -1;
 
   // @wurblet classVariables ClassVariables

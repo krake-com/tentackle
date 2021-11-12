@@ -35,6 +35,7 @@ import org.tentackle.session.SessionUtilities;
 import org.tentackle.session.TableName;
 import org.tentackle.sql.Backend;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.rmi.RemoteException;
 import java.text.ParseException;
@@ -92,7 +93,8 @@ import java.util.List;
 @TableName(/**/"modlog"/**/)      // @wurblet < Inject --string $tablename
 public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
-  private static final long serialVersionUID = 7997968053729155282L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private static final Logger LOGGER = Logger.get(ModificationLog.class);
 
@@ -2097,6 +2099,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    */
   public static class ReplayState implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /** saved logModificationAllowed. */

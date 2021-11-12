@@ -18,6 +18,7 @@
 
 package org.tentackle.misc;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.util.LinkedHashMap;
@@ -42,7 +43,8 @@ import java.util.Properties;
  */
 public class ParameterString implements Serializable {
 
-  private static final long serialVersionUID = 2801124242820219135L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   // the name/value pairs
   private final Map<String,String> parameters;

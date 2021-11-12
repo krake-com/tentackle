@@ -20,6 +20,7 @@ package org.tentackle.pdo;
 
 import org.tentackle.common.Timestamp;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 
@@ -33,7 +34,8 @@ import java.io.Serializable;
  */
 public record TokenLockInfo(long editedBy, Timestamp editedSince, Timestamp editedExpiry) implements Serializable {
 
-  private static final long serialVersionUID = 438202973417850958L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   @Override
   public String toString() {

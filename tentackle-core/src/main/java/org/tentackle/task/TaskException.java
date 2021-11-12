@@ -21,6 +21,8 @@ package org.tentackle.task;
 
 import org.tentackle.common.TentackleRuntimeException;
 
+import java.io.Serial;
+
 /**
  * Runtime exception for tasks and task dispatching.
  *
@@ -28,7 +30,8 @@ import org.tentackle.common.TentackleRuntimeException;
  */
 public class TaskException extends TentackleRuntimeException {
 
-  private static final long serialVersionUID = 3230153472140695051L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   /**
    * Constructs a new task exception with <code>null</code> as its detail message.<br>

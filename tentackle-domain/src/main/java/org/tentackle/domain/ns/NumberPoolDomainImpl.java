@@ -19,6 +19,7 @@
 
 package org.tentackle.domain.ns;
 
+import java.io.Serial;
 import java.util.Iterator;
 import org.tentackle.ns.NumberSourceEmptyException;
 import org.tentackle.domain.AbstractDomainObject;
@@ -35,6 +36,7 @@ import org.tentackle.pdo.DomainObjectService;
 @DomainObjectService(NumberPool.class)
 public class NumberPoolDomainImpl extends AbstractDomainObject<NumberPool, NumberPoolDomainImpl> implements NumberPoolDomain {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
 

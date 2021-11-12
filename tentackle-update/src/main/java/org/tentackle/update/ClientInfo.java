@@ -20,6 +20,7 @@ package org.tentackle.update;
 
 import org.tentackle.common.StringHelper;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -28,6 +29,7 @@ import java.util.Objects;
  */
 public class ClientInfo implements Serializable {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   private final String application;

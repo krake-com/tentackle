@@ -19,6 +19,8 @@
 
 package org.tentackle.bind;
 
+import java.io.Serial;
+
 /**
  * BindingListeners may throw a BindingVetoException to
  * inhibit the transfer of data between the view and the model,
@@ -28,7 +30,8 @@ package org.tentackle.bind;
  */
 public class BindingVetoException extends Exception {
 
-  private static final long serialVersionUID = -2817529018969629515L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
 
   private final boolean rethrowEnabled;       // true if rethrowEnabled as Binding(Runtime)Exception

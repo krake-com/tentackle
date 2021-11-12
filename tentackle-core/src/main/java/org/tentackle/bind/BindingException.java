@@ -20,6 +20,8 @@
 
 package org.tentackle.bind;
 
+import java.io.Serial;
+
 /**
  * Binding exception.
  * <p>
@@ -29,7 +31,8 @@ package org.tentackle.bind;
  */
 public class BindingException extends RuntimeException {
 
-  private static final long serialVersionUID = -8560243373742735009L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   /**
    * Creates a binding exception.

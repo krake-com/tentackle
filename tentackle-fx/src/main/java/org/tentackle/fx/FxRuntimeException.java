@@ -21,6 +21,8 @@ package org.tentackle.fx;
 
 import org.tentackle.common.TentackleRuntimeException;
 
+import java.io.Serial;
+
 /**
  * FX runtime exception.
  * 
@@ -28,6 +30,7 @@ import org.tentackle.common.TentackleRuntimeException;
  */
 public class FxRuntimeException extends TentackleRuntimeException {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
 

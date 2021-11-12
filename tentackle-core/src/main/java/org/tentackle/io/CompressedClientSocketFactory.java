@@ -20,6 +20,7 @@
 package org.tentackle.io;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.net.Socket;
 
 /**
@@ -29,7 +30,8 @@ import java.net.Socket;
  */
 public class CompressedClientSocketFactory extends ClientSocketFactory {
 
-  private static final long serialVersionUID = 2357672465175511279L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
 
   @Override

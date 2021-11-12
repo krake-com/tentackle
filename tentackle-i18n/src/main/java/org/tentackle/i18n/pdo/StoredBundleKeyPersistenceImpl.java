@@ -32,6 +32,7 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.sql.Backend;
 
+import java.io.Serial;
 import java.rmi.RemoteException;
 import java.util.Objects;
 
@@ -45,7 +46,8 @@ import java.util.Objects;
 @PersistentObjectService(StoredBundleKey.class)
 public class StoredBundleKeyPersistenceImpl extends AbstractPersistentObject<StoredBundleKey, StoredBundleKeyPersistenceImpl> implements StoredBundleKeyPersistence {
 
-  private static final long serialVersionUID = -1178387730540795319L;
+  @Serial
+  private static final long serialVersionUID = 1L;
 
 
   // @wurblet classVariables ClassVariables

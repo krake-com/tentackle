@@ -22,6 +22,7 @@ package org.tentackle.session;
 import org.tentackle.log.Logger;
 import org.tentackle.task.AbstractTask;
 
+import java.io.Serial;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -36,11 +37,13 @@ import java.util.concurrent.TimeoutException;
  */
 public class SessionKeepAliveTask extends AbstractTask {
 
+  @Serial
+  private static final long serialVersionUID = 1L;
+
   private static final Logger LOGGER = Logger.get(SessionKeepAliveTask.class);
 
   private static final int MAX_FAILURES = 10;     // max. 10 failures -> then close the db
 
-  private static final long serialVersionUID = 1L;
 
   private final transient SessionKeepAliveDaemon daemon;    // the keep alive daemon
   private final transient Session session;                  // the session to keep alive

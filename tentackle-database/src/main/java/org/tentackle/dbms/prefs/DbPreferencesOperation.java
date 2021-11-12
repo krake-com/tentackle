@@ -26,6 +26,7 @@ import org.tentackle.log.Logger;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 import org.tentackle.session.PersistenceException;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
@@ -41,6 +42,7 @@ import java.util.Map;
  */
 public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOperation> {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   private static final Logger LOGGER = Logger.get(DbPreferencesOperation.class);
@@ -53,6 +55,7 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
    * Holds all nodes and keys for a user- or system-root along with its version.
    */
   public static class RefreshInfo implements Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /** the serial version of the preferences tree. */
