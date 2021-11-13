@@ -146,7 +146,7 @@ public abstract class AbstractFxController implements FxController, ScopeConfigu
    * {@link MandatoryScope} and {@link ChangeableScope}.
    */
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public Class<? extends ValidationScope>[] getDefaultScopes() {
     return new Class[] { MandatoryScope.class, ChangeableScope.class };
   }

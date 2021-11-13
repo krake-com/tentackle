@@ -250,7 +250,7 @@ public class ClientUpdateUtilities {
            FileOutputStream fileOutputStream = new FileOutputStream(zipFile);
            FileChannel fileChannel = fileOutputStream.getChannel()) {
 
-        fileOutputStream.getChannel().transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
+        fileChannel.transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
       }
 
       // check the hash

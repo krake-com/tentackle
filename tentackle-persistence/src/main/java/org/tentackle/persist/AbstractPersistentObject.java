@@ -3950,7 +3950,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * The default scopes are: {@link PersistenceScope}, {@link MandatoryScope} and {@link ChangeableScope}.
    */
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public Class<? extends ValidationScope>[] getDefaultScopes() {
     return new Class[] { PersistenceScope.class, MandatoryScope.class, ChangeableScope.class };
   }

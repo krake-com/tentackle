@@ -31,7 +31,7 @@ import org.tentackle.validate.scope.MandatoryScope;
 public class AbstractValidateableGenerator extends AbstractGenerator implements ScopeConfigurator, Validateable {
 
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public Class<? extends ValidationScope>[] getDefaultScopes() {
     return new Class[] { MandatoryScope.class, ChangeableScope.class};
   }
