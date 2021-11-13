@@ -19,10 +19,6 @@
 
 package org.tentackle.domain.security;
 
-import java.io.Serial;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.StringTokenizer;
 import org.tentackle.domain.AbstractDomainObject;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainObjectService;
@@ -35,6 +31,11 @@ import org.tentackle.security.pdo.Security;
 import org.tentackle.security.pdo.SecurityDomain;
 import org.tentackle.security.pdo.SecurityPersistence;
 import org.tentackle.session.SessionUtilities;
+
+import java.io.Serial;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringTokenizer;
 
 /**
  * Security domain implementation.
@@ -128,7 +129,7 @@ public class SecurityDomainImpl extends AbstractDomainObject<Security, SecurityD
    *
    * @return the permissions
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   protected Class<? extends Permission>[] getPermissions() {
     if (permissions == null) {
       if (po().getPermissions() == null) {

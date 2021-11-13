@@ -79,7 +79,7 @@ public abstract class AbstractSessionConfiguration implements Validateable, Scop
   }
 
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public Class<? extends ValidationScope>[] getDefaultScopes() {
     return new Class[] { MandatoryScope.class };
   }

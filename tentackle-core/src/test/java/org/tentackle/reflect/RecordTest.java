@@ -58,8 +58,8 @@ public class RecordTest {
       }
     }
 
-    Key key1 = new Key(String.class, new Class[]{String.class, Long.class, Integer.class});
-    Key key2 = new Key(String.class, new Class[]{String.class, Long.class, Integer.class});
+    Key key1 = new Key(String.class, new Class<?>[]{String.class, Long.class, Integer.class});
+    Key key2 = new Key(String.class, new Class<?>[]{String.class, Long.class, Integer.class});
     Assert.assertEquals(key1, key2);
     Assert.assertEquals(key1.hashCode(), key2.hashCode());
   }
@@ -70,8 +70,8 @@ public class RecordTest {
 
     record Key(Class<?> clazz, Class<?>[] parameterTypes) {}
 
-    Key key1 = new Key(String.class, new Class[] {String.class, Long.class, Integer.class });
-    Key key2 = new Key(String.class, new Class[] {String.class, Long.class, Integer.class });
+    Key key1 = new Key(String.class, new Class<?>[] {String.class, Long.class, Integer.class });
+    Key key2 = new Key(String.class, new Class<?>[] {String.class, Long.class, Integer.class });
     Assert.assertNotEquals(key1, key2);
     Assert.assertNotEquals(key1.hashCode(), key2.hashCode());
   }

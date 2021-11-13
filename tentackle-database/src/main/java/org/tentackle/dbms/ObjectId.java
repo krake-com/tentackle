@@ -22,6 +22,8 @@ package org.tentackle.dbms;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.Backend;
 
+import java.io.Serial;
+
 import static org.tentackle.common.Constants.CN_ID;
 
 
@@ -116,7 +118,8 @@ public class ObjectId extends AbstractIdSource {
         if (registerTxPending) {
           // register final update for end of transaction
           db.registerCommitTxRunnable(new CommitTxRunnable() {
-            private static final long serialVersionUID = 3540652948263201449L;
+            @Serial
+            private static final long serialVersionUID = 1L;
 
             @Override
             public void commit(Db db) {

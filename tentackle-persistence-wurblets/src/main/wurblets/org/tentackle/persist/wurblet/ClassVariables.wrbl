@@ -38,18 +38,18 @@ For more options, see {\@link DbModelWurblet}.
         if (superEntity != null) {
           superCV = deriveClassNameForEntity(superEntity) + ".CLASSVARIABLES";
 ]@
-  \@SuppressWarnings({"unchecked", "FieldNameHidesFieldInSuperclass"})
+  \@SuppressWarnings({"unchecked", "rawtypes", "FieldNameHidesFieldInSuperclass"})
 @[
         }
         else {
 ]@
-  \@SuppressWarnings("unchecked")
+  \@SuppressWarnings({"unchecked", "rawtypes"})
 @[
         }
       }
       else if (joins != null) {
 ]@
-  \@SuppressWarnings("unchecked")
+  \@SuppressWarnings({"unchecked", "rawtypes"})
 @[
       }
 ]@
