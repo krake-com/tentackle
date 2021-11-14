@@ -491,8 +491,11 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
       if (getParentContainer() != null) {
         getParentContainer().triggerViewModified();
       }
-      if (viewModified && !isErrorTemporary()) {
-        setError(null);   // error will be re-checked by application on operations like "save" or alike
+      if (viewModified) {
+        if(!isErrorTemporary()) {
+          setError(null);   // error will be re-checked by application on operations like "save" or alike
+        }
+        setInfo(null);
       }
     }
   }

@@ -16,47 +16,22 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-package org.tentackle.validate.validator;
+package org.tentackle.validate.severity;
 
 import org.tentackle.validate.ValidationContext;
+import org.tentackle.validate.ValidationResult;
+import org.tentackle.validate.ValidationSeverityService;
 import org.tentackle.validate.Validator;
 
-import java.io.Serial;
-import java.util.Objects;
-
 /**
- * Simple failed result.
- *
- * @author harald
+ * Implements the major severity.<br>
+ * Creates a {@link FailedValidationResult}.
  */
-public class FailedValidationResult extends AbstractValidationResult {
-
-  @Serial
-  private static final long serialVersionUID = 1L;
-
-  /**
-   * Creates a failed validation result.
-   *
-   * @param validator the validator
-   * @param validationContext the validation context
-   * @param message the message
-   */
-  public FailedValidationResult(Validator validator, ValidationContext validationContext, String message) {
-    super(validator, validationContext, message);
-    if (Objects.requireNonNull(message, "message").isEmpty()) {
-      throw new IllegalArgumentException("empty message");
-    }
-  }
+@ValidationSeverityService(MajorSeverity.class)
+public class MajorSeverityImpl implements MajorSeverity {
 
   @Override
-  public boolean hasFailed() {
-    return true;
+  public ValidationResult createValidationResult(Validator validator, ValidationContext validationContext, String message) {
+    return new FailedValidationResult(validator, validationContext, message);
   }
-
-  @Override
-  public boolean hasMessage() {
-    return true;
-  }
-
 }

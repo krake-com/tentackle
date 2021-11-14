@@ -18,10 +18,10 @@
 package org.tentackle.validate.validator;
 
 import org.tentackle.validate.DefaultScope;
-import org.tentackle.validate.DefaultSeverity;
 import org.tentackle.validate.Validation;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationSeverity;
+import org.tentackle.validate.severity.DefaultSeverity;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -80,11 +80,11 @@ public @interface False {
   Class<? extends ValidationScope>[] scope() default {DefaultScope.class};
 
   /**
-   * The application specific validation severities.
+   * The validation severity.
    *
-   * @return the severities
+   * @return the severity
    */
-  Class<? extends ValidationSeverity>[] severity() default {DefaultSeverity.class};
+  Class<? extends ValidationSeverity> severity() default DefaultSeverity.class;
 
   /**
    * The optional condition.

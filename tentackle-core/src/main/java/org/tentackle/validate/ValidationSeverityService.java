@@ -19,11 +19,33 @@
 
 package org.tentackle.validate;
 
+import org.tentackle.common.MappedService;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+
 /**
- * The default severity.
- * 
- * @author harald
+ * Annotation to express that the annotated class
+ * is an implementation of a validation severity.
  */
-public interface DefaultSeverity extends ValidationSeverity {
+@Documented
+@Inherited
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+@MappedService(ValidationSeverityService.class)
+public @interface ValidationSeverityService {
+
+  /**
+   * Determines the validation severity interface.<br>
+   *
+   * @return the interface
+   */
+  Class<? extends ValidationSeverity> value();
 
 }
+

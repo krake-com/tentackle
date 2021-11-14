@@ -64,7 +64,7 @@ public class ChangeableImpl extends AbstractValidator<Changeable> implements Cha
   }
 
   @Override
-  public Class<? extends ValidationSeverity>[] getSeverity() {
+  public Class<? extends ValidationSeverity> getSeverity() {
     return annotation.severity();
   }
 

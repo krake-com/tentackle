@@ -35,7 +35,7 @@ import java.util.Map;
 
 
 /**
- * Default implementation of a security manager factory.
+ * Default implementation of a validation scope factory.
  *
  * @author harald
  */

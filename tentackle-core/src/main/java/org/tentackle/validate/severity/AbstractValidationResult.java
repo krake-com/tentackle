@@ -17,7 +17,7 @@
  */
 
 
-package org.tentackle.validate.validator;
+package org.tentackle.validate.severity;
 
 import org.tentackle.common.StringHelper;
 import org.tentackle.validate.ValidationContext;

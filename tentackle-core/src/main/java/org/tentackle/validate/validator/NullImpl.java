@@ -64,7 +64,7 @@ public class NullImpl extends AbstractValidator<Null> {
   }
 
   @Override
-  public Class<? extends ValidationSeverity>[] getSeverity() {
+  public Class<? extends ValidationSeverity> getSeverity() {
     return annotation.severity();
   }
 
@@ -91,7 +91,7 @@ public class NullImpl extends AbstractValidator<Null> {
                    // replace with compound value which should be a script
                    getValue(validationContext);
 
-    return value != null ? createFailedValidationResult(
+    return value != null ? createValidationResultList(
         MessageFormat.format(ValidatorBundle.getString("{0} must be missing"), validationContext), validationContext) :
            Collections.emptyList();
   }

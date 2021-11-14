@@ -281,15 +281,15 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
   }
 
   /**
-   * Creates a list of a single failed result.
+   * Creates a list of a single validation result.
    *
-   * @param message the fail message
+   * @param message the default fail message
    * @param validationContext the validation context
    * @return immutable list of the result
    */
-  protected List<? extends ValidationResult> createFailedValidationResult(String message, ValidationContext validationContext) {
+  protected List<? extends ValidationResult> createValidationResultList(String message, ValidationContext validationContext) {
     String msg = createMessage(message, validationContext);
-    ValidationResult result = ValidationUtilities.getInstance().createFailedValidationResult(
+    ValidationResult result = ValidationUtilities.getInstance().createValidationResult(
             this, validationContext, msg == null || msg.isEmpty() ? message : msg);
     return List.of(result);
   }

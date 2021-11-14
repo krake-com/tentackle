@@ -13,11 +13,11 @@
 
 package org.tentackle.security.pdo;
 
-import org.tentackle.validate.DefaultSeverity;
 import org.tentackle.validate.Validation;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationSeverity;
 import org.tentackle.validate.scope.AllScope;
+import org.tentackle.validate.severity.DefaultSeverity;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -53,8 +53,7 @@ public @interface SecurityValidator {
   String error() default "";
 
   /**
-   * Priority that determines the execution order of validations.<br>
-   * Starts with 0.
+   * Priority that determines the execution order of validations.
    *
    * @return the priority
    */
@@ -68,10 +67,10 @@ public @interface SecurityValidator {
 	Class<? extends ValidationScope>[] scope() default {AllScope.class };
 
   /**
-   * The application specific validation severities.
+   * The validation severity.
    *
-   * @return the severities
+   * @return the severity
    */
-  Class<? extends ValidationSeverity>[] severity() default {DefaultSeverity.class };
+  Class<? extends ValidationSeverity> severity() default DefaultSeverity.class;
 
 }

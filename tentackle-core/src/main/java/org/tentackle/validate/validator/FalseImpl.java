@@ -64,7 +64,7 @@ public class FalseImpl extends AbstractValidator<False> {
   }
 
   @Override
-  public Class<? extends ValidationSeverity>[] getSeverity() {
+  public Class<? extends ValidationSeverity> getSeverity() {
     return annotation.severity();
   }
 
@@ -93,7 +93,7 @@ public class FalseImpl extends AbstractValidator<False> {
                    getValue(Boolean.class, validationContext);
 
     return value == null && annotation.ignoreNulls() || Boolean.FALSE.equals(value) ? Collections.emptyList() :
-           createFailedValidationResult(MessageFormat.format(ValidatorBundle.getString("{0} must be false"), validationContext), validationContext);
+           createValidationResultList(MessageFormat.format(ValidatorBundle.getString("{0} must be false"), validationContext), validationContext);
   }
 
 }

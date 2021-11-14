@@ -17,8 +17,8 @@ import org.tentackle.validate.ValidationContext;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationSeverity;
+import org.tentackle.validate.ValidationUtilities;
 import org.tentackle.validate.validator.AbstractObjectValidator;
-import org.tentackle.validate.validator.FailedValidationResult;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
@@ -55,7 +55,7 @@ public class SecurityValidatorImpl extends AbstractObjectValidator<SecurityValid
   }
 
   @Override
-  public Class<? extends ValidationSeverity>[] getSeverity() {
+  public Class<? extends ValidationSeverity> getSeverity() {
     return annotation.severity();
   }
 
@@ -83,17 +83,17 @@ public class SecurityValidatorImpl extends AbstractObjectValidator<SecurityValid
        */
       if (security.getObjectClassId() == 0) {
         if (security.getObjectClassName() == null) {
-          results.add(new FailedValidationResult(this, validationContext,
-                                                 ValidationBundle.getString("missing object classname")));
+          results.add(ValidationUtilities.getInstance().createValidationResult(
+              this, validationContext, ValidationBundle.getString("missing object classname")));
         }
       }
       else if (security.getObjectClassName() != null) {
-        results.add(new FailedValidationResult(this, validationContext,
-                                               ValidationBundle.getString("object classname must be null")));
+        results.add(ValidationUtilities.getInstance().createValidationResult(
+            this, validationContext, ValidationBundle.getString("object classname must be null")));
       }
       if (security.getPermissions() == null) {
-        results.add(new FailedValidationResult(this, validationContext,
-                                               ValidationBundle.getString("missing permissions")));
+        results.add(ValidationUtilities.getInstance().createValidationResult(
+            this, validationContext, ValidationBundle.getString("missing permissions")));
       }
     }
     return results;

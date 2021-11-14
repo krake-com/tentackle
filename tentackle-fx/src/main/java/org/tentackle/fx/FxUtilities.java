@@ -679,17 +679,25 @@ public class FxUtilities {
     if (errors.length() > 0) {
       Fx.error(errors.toString()).setOnHidden(event -> {
         for (InteractiveError error : errorList) {
-          if (!error.isWarning()) {
-            FxControl control = error.getControl();
-            if (control instanceof FxComponent) {
-              ((FxComponent) control).setError(error.getText());
+          if (error.getControl() instanceof FxComponent component) {
+            if (error.isWarning()) {
+              component.setInfo(error.getText());
+            }
+            else {
+              component.setError(error.getText());
             }
           }
         }
       });
     }
     else if (warnings.length() > 0) {
-      Fx.info(warnings.toString());
+      Fx.info(warnings.toString()).setOnHidden(event -> {
+        for (InteractiveError error : errorList) {
+          if (error.getControl() instanceof FxComponent component) {
+            component.setInfo(error.getText());
+          }
+        }
+      });
     }
 
     return errors.length() > 0;
@@ -706,10 +714,14 @@ public class FxUtilities {
       control.focusedProperty().addListener((observable, oldValue, newValue) -> {
         if (newValue) {
           FxUtilities.getInstance().focusGained(component);
+          if (component.getError() == null) {
+            component.showInfoPopup();
+          }
           component.showErrorPopup();
         }
         else {
           FxUtilities.getInstance().focusLost(component);
+          component.hideInfoPopup();
           component.hideErrorPopup();
         }
       });

@@ -65,7 +65,7 @@ public class ZeroImpl extends AbstractValidator<Zero> {
   }
 
   @Override
-  public Class<? extends ValidationSeverity>[] getSeverity() {
+  public Class<? extends ValidationSeverity> getSeverity() {
     return annotation.severity();
   }
 
@@ -94,16 +94,16 @@ public class ZeroImpl extends AbstractValidator<Zero> {
 
     if (value == null) {
       return annotation.ignoreNulls() ? Collections.emptyList() :
-          createFailedValidationResult("value is null", validationContext);
+             createValidationResultList("value is null", validationContext);
     }
 
     if (value instanceof Number) {
       return ObjectUtilities.getInstance().isZero((Number) value) ?
              Collections.emptyList() :
-             createFailedValidationResult(MessageFormat.format(ValidatorBundle.getString("{0} must be zero"), validationContext), validationContext);
+             createValidationResultList(MessageFormat.format(ValidatorBundle.getString("{0} must be zero"), validationContext), validationContext);
     }
     else  {
-      return createFailedValidationResult("value is not a number", validationContext);
+      return createValidationResultList("value is not a number", validationContext);
     }
   }
 

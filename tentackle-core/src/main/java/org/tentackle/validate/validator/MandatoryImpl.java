@@ -64,7 +64,7 @@ public class MandatoryImpl extends AbstractValidator<Mandatory> implements Manda
   }
 
   @Override
-  public Class<? extends ValidationSeverity>[] getSeverity() {
+  public Class<? extends ValidationSeverity> getSeverity() {
     return annotation.severity();
   }
 

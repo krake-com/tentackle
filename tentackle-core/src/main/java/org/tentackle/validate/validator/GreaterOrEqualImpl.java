@@ -64,7 +64,7 @@ public class GreaterOrEqualImpl extends AbstractValidator<GreaterOrEqual> {
   }
 
   @Override
-  public Class<? extends ValidationSeverity>[] getSeverity() {
+  public Class<? extends ValidationSeverity> getSeverity() {
     return annotation.severity();
   }
 
@@ -110,7 +110,7 @@ public class GreaterOrEqualImpl extends AbstractValidator<GreaterOrEqual> {
       }
     }
 
-    return failed ? createFailedValidationResult(object + " < " + getValue(), validationContext) : Collections.emptyList();
+    return failed ? createValidationResultList(object + " < " + getValue(), validationContext) : Collections.emptyList();
   }
 
 }
