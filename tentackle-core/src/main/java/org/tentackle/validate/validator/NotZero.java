@@ -62,7 +62,7 @@ public @interface NotZero {
 
   /**
    * Priority that determines the execution order of validations.<br>
-   * Starts with 0.
+   * Higher values will be invoked first.
    *
    * @return the priority
    */

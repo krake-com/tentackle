@@ -44,29 +44,6 @@ public class FailedValidationResult extends AbstractValidationResult {
    */
   public FailedValidationResult(Validator validator, ValidationContext validationContext, String message) {
     super(validator, validationContext, message);
-    checkArgs();
-  }
-
-  /**
-   * Creates a failed validation result.
-   *
-   * @param validator the validator
-   * @param validationContext the validation context
-   * @param message the message
-   * @param errorCode the error code, null to take it from the validator (default)
-   */
-  public FailedValidationResult(Validator validator, ValidationContext validationContext, String message, String errorCode) {
-    super(validator, validationContext, message, errorCode);
-    checkArgs();
-  }
-
-  /**
-   * Checks the arguments.
-   * <p>
-   * Throws IllegalArgumentException if message is empty.
-   */
-  protected void checkArgs() {
-    String message = getMessage();
     if (Objects.requireNonNull(message, "message").isEmpty()) {
       throw new IllegalArgumentException("empty message");
     }

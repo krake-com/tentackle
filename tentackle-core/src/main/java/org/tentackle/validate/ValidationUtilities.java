@@ -25,6 +25,7 @@ import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
 import org.tentackle.log.Logger;
+import org.tentackle.misc.Holder;
 import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.validate.validator.FailedValidationResult;
@@ -333,8 +334,9 @@ public class ValidationUtilities {
    */
   public List<Validator> getObjectValidators(Class<?> clazz, ValidationScope scope) {
     List<Validator> validators = new ArrayList<>();
+    Holder<Integer> validationIndexHolder = new Holder<>(0);
     for (Annotation annotation: clazz.getAnnotations()) {
-      extractValidators(annotation, clazz, validators, scope);
+      extractValidators(annotation, clazz, validators, scope, validationIndexHolder);
     }
     sortValidatorsByPriority(validators);
     return validators;
@@ -733,8 +735,9 @@ public class ValidationUtilities {
    * @param scope optional validation scope, null = all
    */
   protected void addFieldValidatorsToMap(Map<ValidatorKey,Validator> validatorMap, Class<?> clazz, ValidationScope scope) {
+    Holder<Integer> validationIndexHolder = new Holder<>(0);
     for (Field field: ReflectionHelper.getAllFields(clazz, null, true, null, true)) {
-      for (Validator validator: getElementValidators(field, scope)) {
+      for (Validator validator: getElementValidators(field, scope, validationIndexHolder)) {
         LOGGER.fine("field validator @{0} found for {1}:{2}",
                     validator.getClass().getName(), clazz.getName(), field.getName());
         validatorMap.put(new ValidatorKey(validator), validator);
@@ -743,7 +746,7 @@ public class ValidationUtilities {
 
     for (Method method: ReflectionHelper.getAllMethods(clazz, null, true, null, true)) {
       if (!method.isBridge() && ReflectionHelper.isGetter(method)) {
-        for (Validator validator: getElementValidators(method, scope)) {
+        for (Validator validator: getElementValidators(method, scope, validationIndexHolder)) {
           LOGGER.fine("method validator @{0} found for {1}:{2}",
                       validator.getClass().getName(), clazz.getName(), method.getName());
           validatorMap.put(new ValidatorKey(validator), validator);
@@ -762,8 +765,9 @@ public class ValidationUtilities {
    */
   protected void addFieldValidatorsToMap(Map<ValidatorKey,Validator> validatorMap, Field field, Method method, ValidationScope scope) {
     boolean fineLoggable = LOGGER.isFineLoggable();  // faster than lambda because only one check if fine is not loggable
+    Holder<Integer> validationIndexHolder = new Holder<>(0);
     if (field != null) {
-      for (Validator validator: getElementValidators(field, scope)) {
+      for (Validator validator: getElementValidators(field, scope, validationIndexHolder)) {
         if (fineLoggable) {
           LOGGER.fine("field validator @{0} found for {1}:{2}",
                       validator.getClass().getName(), field.getDeclaringClass().getName(), field.getName());
@@ -772,7 +776,7 @@ public class ValidationUtilities {
       }
     }
     if (method != null && ReflectionHelper.isGetter(method)) {
-      for (Validator validator: getElementValidators(method, scope)) {
+      for (Validator validator: getElementValidators(method, scope, validationIndexHolder)) {
         if (fineLoggable) {
           LOGGER.fine("method validator @{0} found for {1}:{2}",
                       validator.getClass().getName(), method.getDeclaringClass().getName(), method.getName());
@@ -783,20 +787,25 @@ public class ValidationUtilities {
   }
 
   /**
-   * Sorts validators by priority
+   * Sorts validators by priority and validation index.<br>
+   * Lowest priority (0) comes last, highest first.
    *
    * @param validators the validators
    */
   protected void sortValidatorsByPriority(List<Validator> validators) {
     validators.sort((o1, o2) -> {
       if (o1 == null) {
-        return o2 == null ? 0 : -1;
+        return o2 == null ? 0 : 1;
       }
       else if (o2 == null) {
-        return 1;
+        return -1;
       }
       else {
-        return o1.getPriority() - o2.getPriority();
+        int rv = o2.getPriority() - o1.getPriority();
+        if (rv == 0) {
+          rv = o1.getValidationIndex() - o2.getValidationIndex();
+        }
+        return rv;
       }
     });
   }
@@ -830,20 +839,21 @@ public class ValidationUtilities {
    * @param element the annotated element
    * @param validators the validation annotation(s)
    * @param scope the validation scope, null = all
+   * @param validationIndexHolder the holder of the next validation index
    */
   protected void extractValidators(Annotation annotation, AnnotatedElement element,
-                                   List<Validator> validators, ValidationScope scope) {
+                                   List<Validator> validators, ValidationScope scope, Holder<Integer> validationIndexHolder) {
 
     // check the annotations present on given annotation
     for (Annotation anno: annotation.annotationType().getAnnotations()) {
       if (anno instanceof Validation validation) {
         Class<? extends Validator> validatorClazz = validation.value();   // get validator implementation class
-        addValidator(annotation, element, -1, validators, scope, validatorClazz);
+        addValidator(annotation, element, validationIndexHolder.get(), validators, scope, validatorClazz);
+        validationIndexHolder.accept(validationIndexHolder.get() + 1);
       }
       else if (anno instanceof RepeatableValidation) {
         Class<? extends Annotation> repeatedAnnoClazz = ((RepeatableValidation) anno).value();
         Annotation[] repeatedAnnotations = element.getAnnotationsByType(repeatedAnnoClazz);   // this returns proxies!
-        int validationIndex = 0;
         /*
          * We need to analyze the annotations of repeatedAnnotations again, because the
          * returned proxies are not instanceof Validation. (is this a bug in Java8?)
@@ -852,7 +862,8 @@ public class ValidationUtilities {
           for (Annotation anno2: repeatedAnno.annotationType().getAnnotations()) {
             if (anno2 instanceof Validation validation) {
               Class<? extends Validator> validatorClazz = validation.value();   // get validator implementation class
-              addValidator(repeatedAnno, element, validationIndex++, validators, scope, validatorClazz);
+              addValidator(repeatedAnno, element, validationIndexHolder.get(), validators, scope, validatorClazz);
+              validationIndexHolder.accept(validationIndexHolder.get() + 1);
             }
           }
         }
@@ -865,7 +876,7 @@ public class ValidationUtilities {
    *
    * @param annotation the annotation
    * @param element the annotated element
-   * @param validationIndex the validation index &ge; 0 if repeatable validator, -1 if standard single validator
+   * @param validationIndex the invocation index
    * @param validators the list of validators
    * @param scope the validation scope
    * @param validatorClass the class to create a validator instance from
@@ -894,12 +905,13 @@ public class ValidationUtilities {
    *
    * @param element the {@link Field} or {@link Method} to inspect
    * @param scope optional validation scope, null = all
+   * @param validationIndexHolder the holder of the next validation index
    * @return the list of field validators
    */
-  protected List<Validator> getElementValidators(AnnotatedElement element, ValidationScope scope) {
+  protected List<Validator> getElementValidators(AnnotatedElement element, ValidationScope scope, Holder<Integer> validationIndexHolder) {
     List<Validator> validators = new ArrayList<>();
     for (Annotation annotation: element.getAnnotations()) {
-      extractValidators(annotation, element, validators, scope);
+      extractValidators(annotation, element, validators, scope, validationIndexHolder);
     }
     return validators;
   }

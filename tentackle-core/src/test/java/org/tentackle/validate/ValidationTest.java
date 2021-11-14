@@ -19,15 +19,27 @@
 
 package org.tentackle.validate;
 
-import java.util.List;
+import org.testng.Reporter;
+import org.testng.annotations.Test;
+
 import org.tentackle.validate.scope.AllScope;
 import org.tentackle.validate.scope.ChangeableScope;
 import org.tentackle.validate.scope.InteractiveScope;
 import org.tentackle.validate.scope.MandatoryScope;
 import org.tentackle.validate.scope.PersistenceScope;
-import org.testng.Assert;
-import org.testng.Reporter;
-import org.testng.annotations.Test;
+import org.tentackle.validate.validator.GreaterImpl;
+import org.tentackle.validate.validator.GreaterOrEqualImpl;
+import org.tentackle.validate.validator.LessOrEqualImpl;
+import org.tentackle.validate.validator.NotNullImpl;
+import org.tentackle.validate.validator.NotZeroImpl;
+import org.tentackle.validate.validator.PatternImpl;
+import org.tentackle.validate.validator.TrueImpl;
+
+import java.util.List;
+
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 
 /**
  * Validation test.
@@ -45,10 +57,10 @@ public class ValidationTest {
     Class<MandatoryScope> mandatory = (Class<MandatoryScope>) ValidationScopeFactory.getInstance().getValidationScope(MandatoryScope.NAME);
     Class<PersistenceScope> persistence = (Class<PersistenceScope>) ValidationScopeFactory.getInstance().getValidationScope(PersistenceScope.NAME);
 
-    Assert.assertTrue(ValidationScopeFactory.getInstance().getAllScope().appliesTo(changeable, interactive, mandatory, persistence));
-    Assert.assertFalse(ValidationScopeFactory.getInstance().getInteractiveScope().appliesTo(changeable, mandatory, persistence));
-    Assert.assertTrue(ValidationScopeFactory.getInstance().getPersistenceScope().appliesTo(changeable, interactive, mandatory, persistence));
-    Assert.assertTrue(ValidationScopeFactory.getInstance().getPersistenceScope().appliesTo(all));
+    assertTrue(ValidationScopeFactory.getInstance().getAllScope().appliesTo(changeable, interactive, mandatory, persistence));
+    assertFalse(ValidationScopeFactory.getInstance().getInteractiveScope().appliesTo(changeable, mandatory, persistence));
+    assertTrue(ValidationScopeFactory.getInstance().getPersistenceScope().appliesTo(changeable, interactive, mandatory, persistence));
+    assertTrue(ValidationScopeFactory.getInstance().getPersistenceScope().appliesTo(all));
   }
 
   @Test
@@ -60,7 +72,17 @@ public class ValidationTest {
     for (Validator validator: validators) {
       Reporter.log("1: " + validator + "<br/>");
     }
-    Assert.assertEquals(validators.size(), 9);
+    assertEquals(validators.size(), 10);
+    assertTrue(validators.get(0) instanceof GreaterImpl);
+    assertTrue(validators.get(1) instanceof NotZeroImpl);
+    assertTrue(validators.get(2) instanceof NotNullImpl);
+    assertTrue(validators.get(3) instanceof PatternImpl);
+    assertTrue(validators.get(4) instanceof LessOrEqualImpl);
+    assertTrue(validators.get(5) instanceof GreaterOrEqualImpl);
+    assertTrue(validators.get(6) instanceof TrueImpl);
+    assertTrue(validators.get(7) instanceof GreaterImpl);
+    assertTrue(validators.get(8) instanceof GreaterImpl);
+    assertTrue(validators.get(9) instanceof NotZeroImpl);
 
 
     object.text = "no match";
@@ -71,7 +93,7 @@ public class ValidationTest {
     for (ValidationResult result: results) {
       Reporter.log("2: " + result + "<br/>");
     }
-    Assert.assertEquals(results.size(), 5);
+    assertEquals(results.size(), 6);
 
 
     object.text = "blah";
@@ -82,7 +104,7 @@ public class ValidationTest {
     for (ValidationResult result: results) {
       Reporter.log("3: " + result + "<br/>");
     }
-    Assert.assertTrue(results.isEmpty());
+    assertTrue(results.isEmpty());
 
     object.percent = 87;
 
@@ -90,18 +112,18 @@ public class ValidationTest {
     for (ValidationResult result: results) {
       Reporter.log("4: " + result + "<br/>");
     }
-    Assert.assertEquals(results.size(), 1);
+    assertEquals(results.size(), 1);
 
 
     object.percent = 50;
     validators = ValidatorCache.getInstance().getObjectValidators(object.getClass());
-    Assert.assertEquals(validators.size(), 1);
+    assertEquals(validators.size(), 1);
 
     results = ValidationUtilities.getInstance().validateObject(validators, null, "object", null, object, object.getClass());
     for (ValidationResult result: results) {
       Reporter.log("5: " + result + "<br/>");
     }
-    Assert.assertTrue(results.isEmpty());
+    assertTrue(results.isEmpty());
 
     object.percent = 81;
 
@@ -109,7 +131,7 @@ public class ValidationTest {
     for (ValidationResult result: results) {
       Reporter.log("6: " + result + "<br/>");
     }
-    Assert.assertEquals(results.size(), 1);
+    assertEquals(results.size(), 1);
   }
 
 }
