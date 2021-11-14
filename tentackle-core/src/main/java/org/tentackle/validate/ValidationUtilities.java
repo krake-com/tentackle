@@ -28,7 +28,6 @@ import org.tentackle.log.Logger;
 import org.tentackle.misc.Holder;
 import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.reflect.ReflectionHelper;
-import org.tentackle.validate.validator.FailedValidationResult;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
@@ -225,15 +224,19 @@ public class ValidationUtilities {
   }
 
   /**
-   * Creates a failed validation result.
+   * Creates a validation result.
    *
    * @param validator the validator
    * @param validationContext the validation context
    * @param message the message
    * @return the validation result
    */
-  public ValidationResult createFailedValidationResult(Validator validator, ValidationContext validationContext, String message) {
-    return new FailedValidationResult(validator, validationContext, message);
+  public ValidationResult createValidationResult(Validator validator, ValidationContext validationContext, String message) {
+    ValidationSeverity severity = ValidationSeverityFactory.getInstance().getValidationSeverity(validator.getSeverity());
+    if (severity != null) {
+      return severity.createValidationResult(validator, validationContext, message);
+    }
+    throw new ValidationRuntimeException("missing implementation for " + validator.getSeverity());
   }
 
   /**
@@ -305,7 +308,7 @@ public class ValidationUtilities {
     Map<ValidatorKey,Validator> validatorMap = new HashMap<>();
     addFieldValidatorsToMap(validatorMap, clazz, scope);
     List<Validator> validators = new ArrayList<>(validatorMap.values());
-    sortValidatorsByPriority(validators);
+    sortValidators(validators);
     return validators;
   }
 
@@ -321,7 +324,7 @@ public class ValidationUtilities {
     Map<ValidatorKey,Validator> validatorMap = new HashMap<>();
     addFieldValidatorsToMap(validatorMap, field, method, scope);
     List<Validator> validators = new ArrayList<>(validatorMap.values());
-    sortValidatorsByPriority(validators);
+    sortValidators(validators);
     return validators;
   }
 
@@ -338,7 +341,7 @@ public class ValidationUtilities {
     for (Annotation annotation: clazz.getAnnotations()) {
       extractValidators(annotation, clazz, validators, scope, validationIndexHolder);
     }
-    sortValidatorsByPriority(validators);
+    sortValidators(validators);
     return validators;
   }
 
@@ -792,7 +795,7 @@ public class ValidationUtilities {
    *
    * @param validators the validators
    */
-  protected void sortValidatorsByPriority(List<Validator> validators) {
+  protected void sortValidators(List<Validator> validators) {
     validators.sort((o1, o2) -> {
       if (o1 == null) {
         return o2 == null ? 0 : 1;

@@ -61,7 +61,7 @@ public class TestObjectValidatorImpl extends AbstractObjectValidator<TestObjectV
   }
 
   @Override
-  public Class<? extends ValidationSeverity>[] getSeverity() {
+  public Class<? extends ValidationSeverity> getSeverity() {
     return annotation.severity();
   }
 
@@ -85,7 +85,7 @@ public class TestObjectValidatorImpl extends AbstractObjectValidator<TestObjectV
       if (((TestObject)object).percent % 2 == 0) {
         return Collections.emptyList();
       }
-      return createFailedValidationResult("percent is not even", validationContext);
+      return createValidationResultList("percent is not even", validationContext);
     }
     else  {
       throw new ValidationRuntimeException("not a Comparable");

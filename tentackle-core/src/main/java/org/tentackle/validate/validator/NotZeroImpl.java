@@ -66,7 +66,7 @@ public class NotZeroImpl extends AbstractValidator<NotZero> implements Mandatory
   }
 
   @Override
-  public Class<? extends ValidationSeverity>[] getSeverity() {
+  public Class<? extends ValidationSeverity> getSeverity() {
     return annotation.severity();
   }
 
@@ -110,16 +110,16 @@ public class NotZeroImpl extends AbstractValidator<NotZero> implements Mandatory
 
     if (value == null) {
       return annotation.ignoreNulls() ? Collections.emptyList() :
-          createFailedValidationResult("value is null", validationContext);
+             createValidationResultList("value is null", validationContext);
     }
 
     if (value instanceof Number) {
       return ObjectUtilities.getInstance().isZero((Number) value) ?
-             createFailedValidationResult(MessageFormat.format(ValidatorBundle.getString("{0} is zero"), validationContext), validationContext) :
+             createValidationResultList(MessageFormat.format(ValidatorBundle.getString("{0} is zero"), validationContext), validationContext) :
              Collections.emptyList();
     }
     else  {
-      return createFailedValidationResult("value is not a number", validationContext);
+      return createValidationResultList("value is not a number", validationContext);
     }
   }
 

@@ -68,7 +68,7 @@ public class SizeImpl extends AbstractValidator<Size> {
   }
 
   @Override
-  public Class<? extends ValidationSeverity>[] getSeverity() {
+  public Class<? extends ValidationSeverity> getSeverity() {
     return annotation.severity();
   }
 
@@ -93,7 +93,7 @@ public class SizeImpl extends AbstractValidator<Size> {
 
     if (object == null) {
       return annotation.ignoreNulls() ? Collections.emptyList() :
-                                        createFailedValidationResult("object is null", validationContext);
+             createValidationResultList("object is null", validationContext);
     }
     else {
       final int size;
@@ -115,10 +115,10 @@ public class SizeImpl extends AbstractValidator<Size> {
       }
 
       return size < annotation.min() || size > annotation.max() ?
-          createFailedValidationResult(
+             createValidationResultList(
               MessageFormat.format(ValidatorBundle.getString("size of {0} = {1}, expected {2} <= {0} <= {3}"),
                                    validationContext, size, annotation.min(), annotation.max()), validationContext) :
-          Collections.emptyList();
+             Collections.emptyList();
     }
   }
 

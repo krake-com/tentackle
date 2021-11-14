@@ -19,12 +19,14 @@
 
 package org.tentackle.validate;
 
+import org.tentackle.validate.scope.AllScope;
+import org.tentackle.validate.severity.DefaultSeverity;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import org.tentackle.validate.scope.AllScope;
 
 /**
  * Validator annotation.
@@ -63,11 +65,11 @@ public @interface TestObjectValidator {
 	Class<? extends ValidationScope>[] scope() default { AllScope.class };
 
   /**
-   * The application specific validation severities.
+   * The validation severity.
    *
-   * @return the severities
+   * @return the severity
    */
-  Class<? extends ValidationSeverity>[] severity() default { DefaultSeverity.class };
+  Class<? extends ValidationSeverity> severity() default DefaultSeverity.class;
 
   /**
    * Determines whether the validation process stops if this validator fails.

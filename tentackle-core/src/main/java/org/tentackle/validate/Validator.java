@@ -72,7 +72,7 @@ public interface Validator {
    *
    * @return the severity
    */
-  Class<? extends ValidationSeverity>[] getSeverity();
+  Class<? extends ValidationSeverity> getSeverity();
 
   /**
    * Gets the priority set by the annotation's priority()-parameter.<br>

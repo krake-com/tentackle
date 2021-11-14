@@ -64,7 +64,7 @@ public class GreaterImpl extends AbstractValidator<Greater> {
   }
 
   @Override
-  public Class<? extends ValidationSeverity>[] getSeverity() {
+  public Class<? extends ValidationSeverity> getSeverity() {
     return annotation.severity();
   }
 
@@ -111,7 +111,7 @@ public class GreaterImpl extends AbstractValidator<Greater> {
       }
     }
 
-    return failed ? createFailedValidationResult(object + " <= " + getValue(), validationContext) : Collections.emptyList();
+    return failed ? createValidationResultList(object + " <= " + getValue(), validationContext) : Collections.emptyList();
   }
 
 }

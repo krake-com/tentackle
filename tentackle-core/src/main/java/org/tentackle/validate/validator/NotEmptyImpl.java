@@ -69,7 +69,7 @@ public class NotEmptyImpl extends AbstractValidator<NotEmpty> implements Mandato
   }
 
   @Override
-  public Class<? extends ValidationSeverity>[] getSeverity() {
+  public Class<? extends ValidationSeverity> getSeverity() {
     return annotation.severity();
   }
 
@@ -109,7 +109,7 @@ public class NotEmptyImpl extends AbstractValidator<NotEmpty> implements Mandato
     Object object = validationContext.getObject();
 
     if (object == null) {
-      return createFailedValidationResult("object is null", validationContext);
+      return createValidationResultList("object is null", validationContext);
     }
 
     final boolean empty;
@@ -130,7 +130,7 @@ public class NotEmptyImpl extends AbstractValidator<NotEmpty> implements Mandato
       throw new ValidationRuntimeException("unsupported type: " + object.getClass().getName());
     }
 
-    return empty ? createFailedValidationResult(
+    return empty ? createValidationResultList(
         MessageFormat.format(ValidatorBundle.getString("{0} is empty"), validationContext), validationContext) :
            Collections.emptyList();
   }

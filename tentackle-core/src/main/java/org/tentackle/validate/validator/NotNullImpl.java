@@ -65,7 +65,7 @@ public class NotNullImpl extends AbstractValidator<NotNull> implements Mandatory
   }
 
   @Override
-  public Class<? extends ValidationSeverity>[] getSeverity() {
+  public Class<? extends ValidationSeverity> getSeverity() {
     return annotation.severity();
   }
 
@@ -107,7 +107,7 @@ public class NotNullImpl extends AbstractValidator<NotNull> implements Mandatory
                    // replace with compound value which should be a script
                    getValue(validationContext);
 
-    return value == null ? createFailedValidationResult(
+    return value == null ? createValidationResultList(
         MessageFormat.format(ValidatorBundle.getString("{0} is missing"), validationContext), validationContext) :
            Collections.emptyList();
   }

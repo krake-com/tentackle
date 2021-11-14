@@ -68,7 +68,7 @@ public class PatternImpl extends AbstractValidator<Pattern> {
   }
 
   @Override
-  public Class<? extends ValidationSeverity>[] getSeverity() {
+  public Class<? extends ValidationSeverity> getSeverity() {
     return annotation.severity();
   }
 
@@ -93,11 +93,11 @@ public class PatternImpl extends AbstractValidator<Pattern> {
 
     if (object == null) {
       return annotation.ignoreNulls() ? Collections.emptyList() :
-          createFailedValidationResult("object is null", validationContext);
+             createValidationResultList("object is null", validationContext);
     }
     java.util.regex.Pattern pattern = getPattern(validationContext);
     return pattern.matcher(object.toString()).matches() ? Collections.emptyList() :
-        createFailedValidationResult(MessageFormat.format(ValidatorBundle.getString("{0} does not match {1}"), validationContext, pattern.pattern()), validationContext);
+           createValidationResultList(MessageFormat.format(ValidatorBundle.getString("{0} does not match {1}"), validationContext, pattern.pattern()), validationContext);
   }
 
 

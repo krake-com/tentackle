@@ -16,16 +16,27 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.validate;
 
 /**
- * A severity associated with the annotation if it fails.
+ * A severity associated with a failed validation.<br>
+ * Applications may define their own severities or replace the default ones in order to create
+ * application-specific validation results.
  * <p>
- * To be implemented by the application.
- * 
+ * IMPORTANT: a severity is a singleton and must not maintain any state!
+ *
  * @author harald
  */
 public interface ValidationSeverity {
+
+  /**
+   * Creates the validation result.
+   *
+   * @param validator the validator instance
+   * @param validationContext the validation context
+   * @param message the diagnostic message
+   * @return the created validation result
+   */
+  ValidationResult createValidationResult(Validator validator, ValidationContext validationContext, String message);
 
 }
