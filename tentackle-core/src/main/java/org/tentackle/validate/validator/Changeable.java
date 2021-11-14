@@ -17,17 +17,18 @@
  */
 package org.tentackle.validate.validator;
 
+import org.tentackle.validate.DefaultScope;
+import org.tentackle.validate.DefaultSeverity;
+import org.tentackle.validate.Validation;
+import org.tentackle.validate.ValidationScope;
+import org.tentackle.validate.ValidationSeverity;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import org.tentackle.validate.DefaultScope;
-import org.tentackle.validate.DefaultSeverity;
-import org.tentackle.validate.Validation;
-import org.tentackle.validate.ValidationScope;
-import org.tentackle.validate.ValidationSeverity;
 
 /**
  * The annotated element is changeable.
@@ -61,7 +62,7 @@ public @interface Changeable {
 
   /**
    * Priority that determines the execution order of validations.<br>
-   * Starts with 0.
+   * Higher values will be invoked first.
    *
    * @return the priority
    */

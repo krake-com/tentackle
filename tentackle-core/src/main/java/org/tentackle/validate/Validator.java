@@ -24,7 +24,7 @@ import java.lang.reflect.AnnotatedElement;
 import java.util.List;
 
 /**
- * The validator.
+ * A validator.
  * <p>
  * IMPORTANT: validators are cached and created only once per class and annotation.
  * Therefore, validators MUST NOT maintain any state beyond their initial configuration!
@@ -69,13 +69,19 @@ public interface Validator {
 
   /**
    * Gets the severity set by the annotation's severity()-parameter.
+   *
    * @return the severity
    */
   Class<? extends ValidationSeverity>[] getSeverity();
 
   /**
-   * Gets the priority set by the annotation's priority()-parameter.
-   * @return the priority
+   * Gets the priority set by the annotation's priority()-parameter.<br>
+   * Highest priority will be invoked first.
+   * <p>
+   * By default, validators are invoked in the order they appear in the source file,
+   * if no priority is explicitly set.
+   *
+   * @return the priority, 0 is lowest (default)
    */
   int getPriority();
 
@@ -139,25 +145,25 @@ public interface Validator {
 
 
   /**
-   * Sets the index of this validator for a {@link RepeatableValidator}.
+   * Sets the invocation index of this validator.
    *
-   * @param index the index starting at 0, -1 if single validator
+   * @param index the index starting at 0
    */
   void setValidationIndex(int index);
 
   /**
-   * Sets the index of this validator for a {@link RepeatableValidator}.
+   * Gets the invocation index of this validator.
    *
-   * @return the index in a {@link RepeatableValidator}, -1 if single validator
+   * @return the index
    */
   int getValidationIndex();
 
 
   /**
    * Validates the validator's configuration.<br>
-   * Checks references and parses the scripts, if any.
+   * Checks the references and parses the scripts, if any.
    * <p>
-   * Throws a {@link ValidationRuntimeException} if failed.
+   * Throws a {@link ValidationRuntimeException}, if failed.
    */
   void validate();
 
