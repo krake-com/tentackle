@@ -130,7 +130,7 @@ For more options, see {\@link DbModelWurblet}.
         generateSnapshot            = true;
         generateSetImmutable        = true;
 
-        if (generateValidate == null) {
+        if (generateValidate == null && getAnnotationOptions(rel.getAnnotations(), "Validate").isEmpty()) {
           generateValidate = true;
         }
 
