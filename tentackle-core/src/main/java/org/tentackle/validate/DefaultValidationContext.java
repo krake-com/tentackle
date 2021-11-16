@@ -19,6 +19,7 @@
 package org.tentackle.validate;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -37,6 +38,7 @@ public class DefaultValidationContext implements ValidationContext {
   private final Supplier<?> objectSupplier;
   private final Object parentObject;
   private final ValidationScope effectiveScope;
+  private final List<ValidationResult> validationResults;
 
   private Map<Object, Object> properties;   // lazily created
 
@@ -49,12 +51,14 @@ public class DefaultValidationContext implements ValidationContext {
    * @param object the element to validate
    * @param parentObject the parent object containing the element
    * @param effectiveScope the effective validation scope
+   * @param validationResults the current list of validation results
    */
   public DefaultValidationContext(String validationPath,
                                   Class<?> type,
                                   Object object,
                                   Object parentObject,
-                                  ValidationScope effectiveScope) {
+                                  ValidationScope effectiveScope,
+                                  List<ValidationResult> validationResults) {
 
     this.validationPath = validationPath;
     this.type = type;
@@ -62,6 +66,7 @@ public class DefaultValidationContext implements ValidationContext {
     this.objectSupplier = null;
     this.parentObject = parentObject;
     this.effectiveScope = effectiveScope;
+    this.validationResults = validationResults;
   }
 
   /**
@@ -75,12 +80,14 @@ public class DefaultValidationContext implements ValidationContext {
    * @param objectSupplier the supplier providing the element to validate
    * @param parentObject the parent object containing the element
    * @param effectiveScope the effective validation scope
+   * @param validationResults the current list of validation results
    */
   public DefaultValidationContext(String validationPath,
                                   Class<?> type,
                                   Supplier<?> objectSupplier,
                                   Object parentObject,
-                                  ValidationScope effectiveScope) {
+                                  ValidationScope effectiveScope,
+                                  List<ValidationResult> validationResults) {
 
     this.validationPath = validationPath;
     this.type = type;
@@ -88,6 +95,7 @@ public class DefaultValidationContext implements ValidationContext {
     this.objectSupplier = objectSupplier;
     this.parentObject = parentObject;
     this.effectiveScope = effectiveScope;
+    this.validationResults = validationResults;
   }
 
   @Override
@@ -113,6 +121,11 @@ public class DefaultValidationContext implements ValidationContext {
   @Override
   public Object getParentObject() {
     return parentObject;
+  }
+
+  @Override
+  public List<ValidationResult> getValidationResults() {
+    return validationResults;
   }
 
   @Override

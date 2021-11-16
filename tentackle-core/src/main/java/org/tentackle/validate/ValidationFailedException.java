@@ -22,13 +22,38 @@ package org.tentackle.validate;
 import org.tentackle.log.Loggable;
 
 import java.io.Serial;
+import java.util.ArrayList;
 import java.util.List;
 
 
 /**
- * Exception thrown if a validation fails.
+ * Exception thrown if a validation fails logically.
  * <p>
  * A runtime exception that holds the validation results.
+ * <p>
+ * The purpose of this exception is two-fold:
+ * <ol>
+ *   <li>holds the final validation results</li>
+ *   <li>holds the results of a component collected so far, when the validation process has been aborted,
+ *   for example due to the {@link org.tentackle.validate.validator.Fail}-validator</li>
+ * </ol>
+ *
+ * A validating method should be implemented as follows:
+ * <pre>
+ *  public void validate(...) {
+ *    List&lt;ValidationResult&gt; results = new ArrayList&lt;&gt;();
+ *    try {
+ *      // validate members and components
+ *      results.addAll(ValidationUtilities().getInstance().validate(...);
+ *      ...
+ *    }
+ *    catch (ValidationFailedException vfx) {
+ *      // validation was aborted somewhere: add those results and return to caller
+ *      vfx.reThrow(results);
+ *    }
+ *    return results;
+ *  }
+ * </pre>
  *
  * @author harald
  */
@@ -42,11 +67,14 @@ public class ValidationFailedException extends RuntimeException implements Logga
 
 
   /**
-   * Creates an empty validation exception.
+   * Creates a validation exception.
+   *
+   * @param message the message
+   * @param results the validation results
    */
-  public ValidationFailedException() {
-    super();
-    results = null;
+  public ValidationFailedException(String message, List<ValidationResult> results) {
+    super(message);
+    this.results = results == null ? new ArrayList<>() : results;
   }
 
   /**
@@ -55,8 +83,7 @@ public class ValidationFailedException extends RuntimeException implements Logga
    * @param results the validation results
    */
   public ValidationFailedException(List<ValidationResult> results) {
-    super(ValidationUtilities.getInstance().resultsToMessage(results));
-    this.results = results;
+    this(ValidationUtilities.getInstance().resultsToMessage(results), results);
   }
 
   /**
@@ -65,49 +92,14 @@ public class ValidationFailedException extends RuntimeException implements Logga
    * @param message the message
    */
   public ValidationFailedException(String message) {
-    super(message);
-    this.results = null;
-  }
-
-  /**
-   * Creates a validation exception.
-   *
-   * @param message the message
-   * @param results the validation results
-   */
-  public ValidationFailedException(String message, List<ValidationResult> results) {
-    super(message);
-    this.results = results;
-  }
-
-  /**
-   * Creates a validation exception.
-   *
-   * @param cause the cause
-   * @param results the validation results
-   */
-  public ValidationFailedException(Throwable cause, List<ValidationResult> results) {
-    super(cause);
-    this.results = results;
-  }
-
-  /**
-   * Creates a validation exception.
-   *
-   * @param message the message
-   * @param cause the cause
-   * @param results the validation results
-   */
-  public ValidationFailedException(String message, Throwable cause, List<ValidationResult> results) {
-    super(message, cause);
-    this.results = results;
+    this(message, null);
   }
 
 
   /**
    * Gets the validation results.
    *
-   * @return the list of results
+   * @return the list of results, never null
    */
   public List<ValidationResult> getResults() {
     return results;
@@ -129,6 +121,19 @@ public class ValidationFailedException extends RuntimeException implements Logga
   @Override
   public boolean withStacktrace() {
     return false;   // log only the message
+  }
+
+
+  /**
+   * Rethrows this exception with the given validation results prepended.
+   *
+   * @param resultsSoFar the results collected so far
+   */
+  public void reThrow(List<ValidationResult> resultsSoFar) {
+    if (resultsSoFar != null && resultsSoFar != results && !resultsSoFar.isEmpty()) {
+      results.addAll(0, resultsSoFar);
+    }
+    throw this;
   }
 
 }

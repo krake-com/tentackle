@@ -1249,30 +1249,42 @@ For more options, see {\@link DbModelWurblet}.
   \@Override
   public List<ValidationResult> validate(String validationPath, ValidationScope scope) {
     List<ValidationResult> results = super.validate(validationPath, scope);
+    try {
 @[
       for (Relation rel: getEntity().getRelations()) {
         String var = rel.getVariableName();
         if (rel.isComposite()) {
+          if (getAnnotationOptions(rel.getAnnotations(), "Validate").isEmpty()) {
 ]@
-    if (@(var)@ != null) {
+      if (@(var)@ != null) {
 @[
           if (rel.getRelationType() == RelationType.LIST) {
 ]@
-      results.addAll(ValidationUtilities.getInstance().validateCollection(
-                @(rel.getVariableName())@, validationPath + ".@(var)@", scope));
+        results.addAll(ValidationUtilities.getInstance().validateCollection(
+                  @(rel.getVariableName())@, validationPath + ".@(var)@", scope));
 @[
           }
           else  {
 ]@
-      results.addAll(@(rel.getVariableName())@.validate(validationPath + ".@(var)@", scope));
+        results.addAll(@(rel.getVariableName())@.validate(validationPath + ".@(var)@", scope));
 @[
           }
 ]@
-    }
+      }
 @[
+          }
+          else {
+]@
+      // @(rel.getVariableName())@ already validated via @Validate annotation
+@[
+          }
         }
       }
 ]@
+    }
+    catch (ValidationFailedException vfx) {
+      vfx.reThrow(results);
+    }
     return results;
   }
 @[

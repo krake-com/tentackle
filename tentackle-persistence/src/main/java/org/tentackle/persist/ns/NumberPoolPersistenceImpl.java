@@ -37,6 +37,7 @@ import org.tentackle.persist.ns.rmi.NumberPoolRemoteDelegate;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.sql.Backend;
+import org.tentackle.validate.ValidationFailedException;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationUtilities;
@@ -658,9 +659,14 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   @Override
   public List<ValidationResult> validate(String validationPath, ValidationScope scope) {
     List<ValidationResult> results = super.validate(validationPath, scope);
-    if (numberRangeList != null) {
-      results.addAll(ValidationUtilities.getInstance().validateCollection(
-                numberRangeList, validationPath + ".numberRangeList", scope));
+    try {
+      if (numberRangeList != null) {
+        results.addAll(ValidationUtilities.getInstance().validateCollection(
+                  numberRangeList, validationPath + ".numberRangeList", scope));
+      }
+    }
+    catch (ValidationFailedException vfx) {
+      vfx.reThrow(results);
     }
     return results;
   }

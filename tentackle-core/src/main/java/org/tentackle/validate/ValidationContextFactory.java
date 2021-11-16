@@ -21,6 +21,7 @@ package org.tentackle.validate;
 
 import org.tentackle.common.ServiceFactory;
 
+import java.util.List;
 import java.util.function.Supplier;
 
 
@@ -54,12 +55,14 @@ public interface ValidationContextFactory {
    * @param object the element to validate
    * @param parentObject the parent object containing the element
    * @param effectiveScope the effective validation scope
+   * @param validationResults the current list of validation results
    */
   ValidationContext create(String validationPath,
                            Class<?> type,
                            Object object,
                            Object parentObject,
-                           ValidationScope effectiveScope);
+                           ValidationScope effectiveScope,
+                           List<ValidationResult> validationResults);
 
   /**
    * Creates a validation context with a lazy object provider.<br>
@@ -72,11 +75,13 @@ public interface ValidationContextFactory {
    * @param objectSupplier the supplier providing the element to validate
    * @param parentObject the parent object containing the element
    * @param effectiveScope the effective validation scope
+   * @param validationResults the current list of validation results
    */
   ValidationContext create(String validationPath,
                            Class<?> type,
                            Supplier<?> objectSupplier,
                            Object parentObject,
-                           ValidationScope effectiveScope);
+                           ValidationScope effectiveScope,
+                           List<ValidationResult> validationResults);
 
 }

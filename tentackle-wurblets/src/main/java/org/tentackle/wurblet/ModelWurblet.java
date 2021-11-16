@@ -591,6 +591,29 @@ public class ModelWurblet extends AbstractJavaWurblet {
 
 
   /**
+   * Returns the annotation options for all annotation strings provided by the model and a given annotation type.
+   *
+   * @param annotations the annotations of the model
+   * @return the annotation options matching the annotation type (without package name)
+   */
+  public List<AnnotationOption> getAnnotationOptions(List<String> annotations, String annotationType) {
+    List<AnnotationOption> annotationOptions = new ArrayList<>();
+    for (String annotation : annotations) {
+      AnnotationOption annotationOption = new AnnotationOption(annotation);
+      String type = annotationOption.getAnnotationType();
+      int ndx = type.lastIndexOf('.');    // in case FQCN
+      if (ndx >= 0) {
+        type = type.substring(ndx + 1);
+      }
+      if (type.equals(annotationType)) {
+        annotationOptions.add(annotationOption);
+      }
+    }
+    return annotationOptions;
+  }
+
+
+  /**
    * {@inheritDoc}
    * <p>
    * Overridden to load the map file.

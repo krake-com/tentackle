@@ -28,13 +28,9 @@ import org.tentackle.validate.scope.InteractiveScope;
 import org.tentackle.validate.scope.MandatoryScope;
 import org.tentackle.validate.scope.PersistenceScope;
 import org.tentackle.validate.validator.GreaterImpl;
-import org.tentackle.validate.validator.GreaterOrEqualImpl;
-import org.tentackle.validate.validator.LessOrEqualImpl;
-import org.tentackle.validate.validator.NotNullImpl;
 import org.tentackle.validate.validator.NotZeroImpl;
-import org.tentackle.validate.validator.PatternImpl;
-import org.tentackle.validate.validator.TrueImpl;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.testng.Assert.assertEquals;
@@ -73,17 +69,21 @@ public class ValidationTest {
       Reporter.log("1: " + validator + "<br/>");
     }
     assertEquals(validators.size(), 10);
-    assertTrue(validators.get(0) instanceof GreaterImpl);
-    assertTrue(validators.get(1) instanceof NotZeroImpl);
-    assertTrue(validators.get(2) instanceof NotNullImpl);
-    assertTrue(validators.get(3) instanceof PatternImpl);
-    assertTrue(validators.get(4) instanceof LessOrEqualImpl);
-    assertTrue(validators.get(5) instanceof GreaterOrEqualImpl);
-    assertTrue(validators.get(6) instanceof TrueImpl);
-    assertTrue(validators.get(7) instanceof GreaterImpl);
-    assertTrue(validators.get(8) instanceof GreaterImpl);
-    assertTrue(validators.get(9) instanceof NotZeroImpl);
+    assertTrue(validators.get(0) instanceof GreaterImpl);   // priority 1 comes first!
 
+    // annotation order is only guaranteed within the same annotated element.
+    List<Validator> valueValidators = new ArrayList<>();
+    for (Validator validator: validators) {
+      if (validator.getAnnotatedElement().toString().endsWith(".value")) {
+        valueValidators.add(validator);
+      }
+    }
+    assertEquals(valueValidators.size(), 4);
+    assertTrue("50".equals(valueValidators.get(0).getValue()));   // has priority 1!
+    assertTrue("100".equals(valueValidators.get(1).getValue()));
+    assertTrue("25".equals(valueValidators.get(2).getValue()));
+    // repeatable annotations are always grouped together within the same priority, so NotZeroImpl comes after GreaterImpls
+    assertTrue(valueValidators.get(3) instanceof NotZeroImpl);
 
     object.text = "no match";
     object.percent = 200;

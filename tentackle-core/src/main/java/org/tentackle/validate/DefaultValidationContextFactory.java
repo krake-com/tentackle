@@ -20,6 +20,7 @@ package org.tentackle.validate;
 
 import org.tentackle.common.Service;
 
+import java.util.List;
 import java.util.function.Supplier;
 
 /**
@@ -29,12 +30,14 @@ import java.util.function.Supplier;
 public class DefaultValidationContextFactory implements ValidationContextFactory {
 
   @Override
-  public ValidationContext create(String validationPath, Class<?> type, Object object, Object parentObject, ValidationScope effectiveScope) {
-    return new DefaultValidationContext(validationPath, type, object, parentObject, effectiveScope);
+  public ValidationContext create(String validationPath, Class<?> type, Object object, Object parentObject,
+                                  ValidationScope effectiveScope, List<ValidationResult> validationResults) {
+    return new DefaultValidationContext(validationPath, type, object, parentObject, effectiveScope, validationResults);
   }
 
   @Override
-  public ValidationContext create(String validationPath, Class<?> type, Supplier<?> objectSupplier, Object parentObject, ValidationScope effectiveScope) {
-    return new DefaultValidationContext(validationPath, type, objectSupplier, parentObject, effectiveScope);
+  public ValidationContext create(String validationPath, Class<?> type, Supplier<?> objectSupplier, Object parentObject,
+                                  ValidationScope effectiveScope, List<ValidationResult> validationResults) {
+    return new DefaultValidationContext(validationPath, type, objectSupplier, parentObject, effectiveScope, validationResults);
   }
 }

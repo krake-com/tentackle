@@ -25,8 +25,8 @@ import java.io.Serializable;
  * The result of a validation.
  * <p>
  * Validation results are serializable, however,
- * the object, parentObject and validator are transient and
- * therefore null if deserialized.
+ * the validation context and the validator are transient and
+ * therefore null if deserialized!
  *
  * @author harald
  */
@@ -71,22 +71,14 @@ public interface ValidationResult extends Serializable {
   String getValidationPath();
 
   /**
-   * Gets the validation context.
-   * <p>
-   * Notice that the context is null for results sent over the wire,
-   * since it is transient!
-   *
-   * @return the validation context, null if received via a remote session
-   */
-  ValidationContext getValidationContext();
-
-  /**
    * Gets the configured scopes for this validation.
    *
    * @return the configured scopes
    */
   Class<? extends ValidationScope>[] getConfiguredScopes();
 
+
+  
   /**
    * Gets the validator that created this result.
    * <p>
@@ -96,6 +88,16 @@ public interface ValidationResult extends Serializable {
    * @return the validator, null if received via a remote session
    */
   Validator getValidator();
+
+  /**
+   * Gets the validation context.
+   * <p>
+   * Notice that the context is null for results sent over the wire,
+   * since it is transient!
+   *
+   * @return the validation context, null if received via a remote session
+   */
+  ValidationContext getValidationContext();
 
 
 
