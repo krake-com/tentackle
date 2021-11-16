@@ -1275,7 +1275,7 @@ For more options, see {\@link DbModelWurblet}.
           }
           else {
 ]@
-      // @(rel.getVariableName())@ already validated via @Validate annotation
+      // @(rel.getVariableName())@ already validated via \@Validate annotation
 @[
           }
         }
