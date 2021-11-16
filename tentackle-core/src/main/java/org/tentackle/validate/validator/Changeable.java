@@ -90,13 +90,6 @@ public @interface Changeable {
   String condition() default "";
 
   /**
-   * Determines whether the validation process stops if this validator fails.
-   *
-   * @return true if stop, false if continue with other validators (default)
-   */
-  boolean stop() default false;
-
-  /**
    * Replaces the annoted object with an expression.<br>
    * Used in conjunction with scripts.
    *

@@ -41,6 +41,7 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.JoinType;
+import org.tentackle.validate.ValidationFailedException;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationUtilities;
@@ -408,9 +409,14 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
   @Override
   public List<ValidationResult> validate(String validationPath, ValidationScope scope) {
     List<ValidationResult> results = super.validate(validationPath, scope);
-    if (keys != null) {
-      results.addAll(ValidationUtilities.getInstance().validateCollection(
-                keys, validationPath + ".keys", scope));
+    try {
+      if (keys != null) {
+        results.addAll(ValidationUtilities.getInstance().validateCollection(
+                  keys, validationPath + ".keys", scope));
+      }
+    }
+    catch (ValidationFailedException vfx) {
+      vfx.reThrow(results);
     }
     return results;
   }

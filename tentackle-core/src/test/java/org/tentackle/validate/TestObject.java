@@ -49,8 +49,8 @@ public class TestObject {
   // we cannot use scripts in core since nashorn was removed (see CompoundValue<Scriptinglanguage>Test)
   public int percent;
 
-  @Greater(value = "100", priority = 1)
-  @Greater("50")
+  @Greater("100")
+  @Greater(value = "50", priority = 1)
   @NotZero
   @Greater("25")
   public int value;

@@ -125,7 +125,8 @@ public class DefaultFxComponentBinding extends AbstractBinding implements FxComp
               getMember().getType(),
               modelValue,
               parent,
-              scope);
+              scope,
+              null);
           if (scope.appliesTo(validator.getConfiguredScopes(validationContext)) &&
               validator.isConditionValid(validationContext) &&
               ((MandatoryBindingEvaluator) validator).isMandatory(validationContext)) {
@@ -148,7 +149,8 @@ public class DefaultFxComponentBinding extends AbstractBinding implements FxComp
               getMember().getType(),
               modelValue,
               parent,
-              scope);
+              scope,
+              null);
           if (scope.appliesTo(validator.getConfiguredScopes(validationContext)) &&
               validator.isConditionValid(validationContext) &&
               ((ChangeableBindingEvaluator) validator).isChangeable(validationContext)) {

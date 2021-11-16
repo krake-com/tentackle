@@ -18,6 +18,8 @@
 
 package org.tentackle.validate;
 
+import java.util.List;
+
 /**
  * The validation context.
  *
@@ -80,6 +82,13 @@ public interface ValidationContext {
    * @return the object containing the element to validate
    */
   Object getParentObject();
+
+  /**
+   * Gets the list of validation results collected for the current object so far.
+   *
+   * @return the results, may be null if n/a
+   */
+  List<ValidationResult> getValidationResults();
 
   /**
    * Sets an application-specific validation property.<br>

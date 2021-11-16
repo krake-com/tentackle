@@ -121,7 +121,8 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
                   mandatoryBinding.getMember().getType(),
                   mandatoryBinding.getModelValue(),
                   parentObject,
-                  scope);
+                  scope,
+                  null);
               // we must check the scope, because it may change due to CompoundValues
               if (scope.appliesTo(validator.getConfiguredScopes(validationContext)) &&
                   // and the validator still applies:
@@ -149,7 +150,8 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
                   changeableBinding.getMember().getType(),
                   changeableBinding.getModelValue(),
                   parentObject,
-                  scope);
+                  scope,
+                  null);
               // we must check the scope, because it may change due to CompoundValues
               if (scope.appliesTo(validator.getConfiguredScopes(validationContext)) &&
                   // and the validator still applies:

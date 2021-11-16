@@ -247,8 +247,14 @@ public class ValidationUtilities {
    * @param object the validateable object
    */
   public void validate(Validateable object) {
-    List<ValidationResult> results = validate(object, getDefaultValidationPath(object),
-                                              ValidationScopeFactory.getInstance().getAllScope());
+    List<ValidationResult> results;
+    try {
+      results = validate(object, getDefaultValidationPath(object),
+                         ValidationScopeFactory.getInstance().getAllScope());
+    }
+    catch (ValidationFailedException vfx) {
+      results = vfx.getResults();
+    }
     if (hasFailed(results)) {
       throw new ValidationFailedException(resultsToString(results), results);
     }
@@ -268,8 +274,13 @@ public class ValidationUtilities {
     Class<?> clazz = EffectiveClassProvider.getEffectiveClass(object);
     List<Validator> validators = ValidatorCache.getInstance().getFieldValidators(clazz);
     List<ValidationResult> results = validateFields(validators, scope, validationPath, object);
-    validators = ValidatorCache.getInstance().getObjectValidators(clazz);
-    results.addAll(validateObject(validators, scope, validationPath, object, object, clazz));
+    try {
+      validators = ValidatorCache.getInstance().getObjectValidators(clazz);
+      results.addAll(validateObject(validators, scope, validationPath, object, object, clazz));
+    }
+    catch (ValidationFailedException vfx) {
+      vfx.reThrow(results);
+    }
     return results;
   }
 
@@ -284,12 +295,17 @@ public class ValidationUtilities {
   public List<ValidationResult> validateCollection(Collection<? extends Validateable> collection,
                                                    String validationPath, ValidationScope scope)  {
     List<ValidationResult> results = new ArrayList<>();
-    if (collection != null) {
-      int ndx = 0;
-      for (Validateable obj: collection)  {
-        if (obj != null) {
-          results.addAll(obj.validate(validationPath + "[" + (ndx++) + "]", scope));
+    if (collection != null && !collection.isEmpty()) {
+      try {
+        int ndx = 0;
+        for (Validateable obj : collection) {
+          if (obj != null) {
+            results.addAll(obj.validate(validationPath + "[" + (ndx++) + "]", scope));
+          }
         }
+      }
+      catch (ValidationFailedException vfx) {
+        vfx.reThrow(results);
       }
     }
     return results;
@@ -370,67 +386,73 @@ public class ValidationUtilities {
 
     Map<String, ValidationContext> contextMap = new HashMap<>();    // same validation context for all validators of each field
 
-    for (Validator validator : validators) {
+    try {
+      for (Validator validator : validators) {
 
-      ValidationContext validationContext = contextMap.computeIfAbsent(validationPath + "." + validator.getValidatedElementName(), path -> {
-        // build validation context
-        Supplier<?> objectSupplier = null;      // lazy object provider
-        Class<?> type = null;                   // the object's type
+        ValidationContext validationContext = contextMap.computeIfAbsent(validationPath + "." + validator.getValidatedElementName(), path -> {
+          // build validation context
+          Supplier<?> objectSupplier = null;      // lazy object provider
+          Class<?> type = null;                   // the object's type
 
-        AnnotatedElement element = validator.getAnnotatedElement();
-        if (element instanceof Field field) {
-          type = field.getType();
-          objectSupplier = parentObject == null ? null : () -> {
-            try {
-              return field.get(parentObject);
-            }
-            catch (IllegalAccessException ex1) {
-              field.setAccessible(true);    // set accessible and try again
+          AnnotatedElement element = validator.getAnnotatedElement();
+          if (element instanceof Field field) {
+            type = field.getType();
+            objectSupplier = parentObject == null ? null : () -> {
               try {
                 return field.get(parentObject);
               }
-              catch (IllegalAccessException ex2) {
-                throw new ValidationRuntimeException("cannot access field " + field, ex2);
+              catch (IllegalAccessException ex1) {
+                field.setAccessible(true);    // set accessible and try again
+                try {
+                  return field.get(parentObject);
+                }
+                catch (IllegalAccessException ex2) {
+                  throw new ValidationRuntimeException("cannot access field " + field, ex2);
+                }
               }
-            }
-          };
-        }
-        else if (element instanceof Method method) {
-          type = method.getReturnType();
-          objectSupplier = parentObject == null ? null : () -> {
-            try {
+            };
+          }
+          else if (element instanceof Method method) {
+            type = method.getReturnType();
+            objectSupplier = parentObject == null ? null : () -> {
               try {
-                return method.invoke(parentObject);
+                try {
+                  return method.invoke(parentObject);
+                }
+                catch (IllegalAccessException ex) {
+                  method.setAccessible(true);    // set accessible and try again
+                  return method.invoke(parentObject);
+                }
               }
-              catch (IllegalAccessException ex) {
-                method.setAccessible(true);    // set accessible and try again
-                return method.invoke(parentObject);
+              catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+                throw new ValidationRuntimeException("cannot invoke method " + method, ex);
               }
-            }
-            catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
-              throw new ValidationRuntimeException("cannot invoke method " + method, ex);
-            }
-          };
+            };
+          }
+          return ValidationContextFactory.getInstance().create(path, type, objectSupplier, parentObject, effectiveScope, allResults);
+        });
+
+        if (inTest) {
+          logTest(validator, validationContext);
         }
-        return ValidationContextFactory.getInstance().create(path, type, objectSupplier, parentObject, effectiveScope);
-      });
 
-      if (inTest) {
-        logTest(validator, validationContext);
-      }
-
-      // check if scope applies
-      // runs condition check even if in testmode
-      if (validator.isConditionValid(validationContext) &&
-           (effectiveScope == null || effectiveScope.appliesTo(validator.getConfiguredScopes(validationContext)))
-          ||
-          inTest) {
-        // condition and scope applies
-        List<? extends ValidationResult> results = validator.validate(validationContext);
-        if (results != null && !results.isEmpty()) {  // should never be null, but who knows...
-          allResults.addAll(results);
+        // check if scope applies
+        // runs condition check even if in testmode
+        if (validator.isConditionValid(validationContext) &&
+            (effectiveScope == null || effectiveScope.appliesTo(validator.getConfiguredScopes(validationContext)))
+            ||
+            inTest) {
+          // condition and scope applies
+          List<? extends ValidationResult> results = validator.validate(validationContext);
+          if (results != null && !results.isEmpty()) {  // should never be null, but who knows...
+            allResults.addAll(results);
+          }
         }
       }
+    }
+    catch (ValidationFailedException vfx) {
+      // validation aborted
+      vfx.reThrow(allResults);
     }
 
     return allResults;
@@ -462,34 +484,40 @@ public class ValidationUtilities {
 
       // same validation context for all object validators per object
       ValidationContext validationContext = ValidationContextFactory.getInstance().create(
-          validationPath, type, object, parentObject, effectiveScope);
+          validationPath, type, object, parentObject, effectiveScope, allResults);
 
       boolean inTest = testLogLevel != null;
 
-      for (Validator validator : validators) {
+      try {
+        for (Validator validator : validators) {
 
-        if (inTest) {
-          logTest(validator, validationContext);
-        }
+          if (inTest) {
+            logTest(validator, validationContext);
+          }
 
-        // check if scope applies and validator is valid (even if in testmode)
-        if (validator.isConditionValid(validationContext) &&
-             (effectiveScope == null || effectiveScope.appliesTo(validator.getConfiguredScopes(validationContext)))
-            ||
-            inTest) {
-          // condition and scope applies
-          try {
-            List<? extends ValidationResult> results = validator.validate(validationContext);
-            if (results != null && !results.isEmpty()) {    // should never be null, but who knows...
-              allResults.addAll(results);
+          // check if scope applies and validator is valid (even if in testmode)
+          if (validator.isConditionValid(validationContext) &&
+              (effectiveScope == null || effectiveScope.appliesTo(validator.getConfiguredScopes(validationContext)))
+              ||
+              inTest) {
+            // condition and scope applies
+            try {
+              List<? extends ValidationResult> results = validator.validate(validationContext);
+              if (results != null && !results.isEmpty()) {    // should never be null, but who knows...
+                allResults.addAll(results);
+              }
+            }
+            catch (RuntimeException ex) {
+              // just log the error for diagnostics
+              LOGGER.severe("validator '" + validator + "' failed", ex);
+              throw ex;
             }
           }
-          catch (RuntimeException ex) {
-            // just log the error for diagnostics
-            LOGGER.severe("validator '" + validator + "' failed", ex);
-            throw ex;
-          }
         }
+      }
+      catch (ValidationFailedException vfx) {
+        // validation aborted
+        vfx.reThrow(allResults);
       }
     }
 
@@ -796,20 +824,13 @@ public class ValidationUtilities {
    * @param validators the validators
    */
   protected void sortValidators(List<Validator> validators) {
+    // the list does not contain null-values, hence no null checks
     validators.sort((o1, o2) -> {
-      if (o1 == null) {
-        return o2 == null ? 0 : 1;
+      int rv = o2.getPriority() - o1.getPriority();
+      if (rv == 0) {
+        rv = o1.getValidationIndex() - o2.getValidationIndex();
       }
-      else if (o2 == null) {
-        return -1;
-      }
-      else {
-        int rv = o2.getPriority() - o1.getPriority();
-        if (rv == 0) {
-          rv = o1.getValidationIndex() - o2.getValidationIndex();
-        }
-        return rv;
-      }
+      return rv;
     });
   }
 

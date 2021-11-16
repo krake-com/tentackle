@@ -26,6 +26,7 @@ import org.tentackle.model.AttributeOptions;
 public class AnnotationOption {
 
   private final String annotation;
+  private String annotationType;
   private boolean setterOnly;
   private boolean setterAndGetter;
   private boolean hidden;
@@ -36,6 +37,11 @@ public class AnnotationOption {
     HIDDEN
   }
 
+  /**
+   * Creates the annotation option.
+   *
+   * @param annotation the annotation string from the model
+   */
   public AnnotationOption(String annotation) {
     if (annotation.length() > 2) {
       Modifier modifier = toModifier(annotation.charAt(1));
@@ -54,23 +60,61 @@ public class AnnotationOption {
     this.annotation = annotation;
   }
 
-
+  /**
+   * Gets the total annotation string without the optional modifier.
+   *
+   * @return the annotation string
+   */
   public String getAnnotation() {
     return annotation;
   }
 
+  /**
+   * Returns whether setter annotation only.
+   *
+   * @return true if setter only
+   */
   public boolean isSetterOnly() {
     return setterOnly;
   }
 
+  /**
+   * Returns whether setter and getter annotation.
+   *
+   * @return true if both
+   */
   public boolean isSetterAndGetter() {
     return setterAndGetter;
   }
 
+  /**
+   * Returns whether this is a hidden annotation.
+   *
+   * @return true if only applicable to the implementation layer and not the interface
+   */
   public boolean isHidden() {
     return hidden;
   }
 
+
+  /**
+   * Gets the annotation type without the at-sign and optional parameters.
+   *
+   * @return the annotation type
+   */
+  public String getAnnotationType() {
+    if (annotationType == null && annotation.startsWith("@")) {   // lazy...
+      // extract the annotation type
+      int ndx = annotation.indexOf('(');
+      if (ndx > 1) {
+        annotationType = annotation.substring(1, ndx).trim();
+      }
+      else {
+        annotationType = annotation.substring(1).trim();
+      }
+    }
+    return annotationType;
+  }
 
 
   private Modifier toModifier(char c) {
@@ -95,4 +139,5 @@ public class AnnotationOption {
         break;
     }
   }
+
 }

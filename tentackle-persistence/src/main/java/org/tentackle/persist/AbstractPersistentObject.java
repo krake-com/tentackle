@@ -150,7 +150,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   private int rootClassId;
 
-  private transient boolean validated;            // true if validated (transient because we don't trust remote clients)
+  private transient boolean validated;            // true if validated ok (transient because we don't trust remote clients)
   private boolean renewTokenLock;                 // true if renew token lock once(!) upon next persistent operation
 
   // for PdoCache
@@ -3965,7 +3965,13 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   public void validate() {
     validated = false;
     String validationPath = ValidationUtilities.getInstance().getDefaultValidationPath(pdo);
-    List<ValidationResult> results = validate(validationPath, ValidationScopeFactory.getInstance().getPersistenceScope());
+    List<ValidationResult> results;
+    try {
+      results = validate(validationPath, ValidationScopeFactory.getInstance().getPersistenceScope());
+    }
+    catch (ValidationFailedException vfx) {
+      results = vfx.getResults();
+    }
     if (ValidationUtilities.getInstance().hasFailed(results)) {
       throw new ValidationFailedException(
               "validation of " + pdo.toGenericString() + " as " + validationPath + " failed:\n"
@@ -3981,7 +3987,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
   /**
    * Sets the modified flag.<p>
-   * For optimizations it is possible to skip objects that have not
+   * For optimizations, it is possible to skip objects that have not
    * been modified. The modified-attribute is cleared whenever the
    * object is persisted.
    *
