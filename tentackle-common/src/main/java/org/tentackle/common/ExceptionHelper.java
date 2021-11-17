@@ -92,8 +92,8 @@ public final class ExceptionHelper {
   public static TentackleRuntimeException extractTemporaryException(boolean first, Throwable ex) {
     TentackleRuntimeException temporaryException = null;
     while (ex != null) {
-      if (ex instanceof TentackleRuntimeException && ((TentackleRuntimeException) ex).isTemporary()) {
-        temporaryException = (TentackleRuntimeException) ex;
+      if (ex instanceof TentackleRuntimeException tex && tex.isTemporary()) {
+        temporaryException = tex;
         if (first)  {
           break;
         }

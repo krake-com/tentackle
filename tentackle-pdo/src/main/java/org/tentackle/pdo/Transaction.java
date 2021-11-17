@@ -53,16 +53,16 @@ public @interface Transaction {
   String value() default Constants.NAME_UNKNOWN;
 
   /**
-   * Determines whether rollbacks should be logged or not.<br>
-   * By default, rollbacks are logged with extensive diagnostics, such as executed statements, durations and more,
-   * if they are caused by a {@link org.tentackle.session.PersistenceException} (for example, due to a constraint violation).
+   * Determines whether rollbacks should be logged in detail or not.<br>
+   * By default, rollbacks are logged with detailed diagnostics, such as executed statements, durations and more,
+   * if they are caused by a non-temporary {@link org.tentackle.session.PersistenceException} (for example, due to a constraint violation).
    * This is desired for most of such rollbacks, since they are unexpected. Certain transactions, however, are expected
    * to fail most of the time. In such cases, the amount of logging can be reduced significantly by setting this flag to true.
    * <p>
-   * Please notice that rollbacks caused by other exceptions (application specific, domain related),
+   * Please notice that rollbacks caused by temporary or other exceptions (application specific, domain related),
    * are always rolled back silently.
    *
-   * @return true to suppress logging for rollbacks caused by a {@code PersistenceException}, default is false
+   * @return true to suppress detailed logging for rollbacks, default is false
    */
   boolean rollbackSilently() default false;
 
@@ -89,7 +89,7 @@ public @interface Transaction {
    * requires retryable transactions to work reliably in production.<br>
    * Another source for such temporary exceptions are database deadlocks.<br>
    * The Tentackle persistence layer will also mark {@link org.tentackle.session.NotFoundException}s as temporary,
-   * if an optimistic locking error is detected (serial mismatch).
+   * if an optimistic locking error is detected (serial mismatch). The same applies to the pessimistic {@link LockException}.
    * <p>
    * CAUTION: retryable transactions must be idempotent except for database modifications! This basically means,
    * that all code executed within such a transaction must not modify the conditions that exist at the beginning

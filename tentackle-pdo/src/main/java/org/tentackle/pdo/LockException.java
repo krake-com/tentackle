@@ -29,6 +29,8 @@ import java.io.Serial;
 
 /**
  * Runtime exception thrown for failed lock operations.
+ * <p>
+ * By default, {@link LockException}s are marked as temporary.
  *
  * @author harald
  */
@@ -51,20 +53,7 @@ public class LockException extends PersistenceException implements Loggable {
   public LockException(Session session, TokenLockInfo tokenLockInfo) {
     super(session);
     this.tokenLockInfo = tokenLockInfo;
-  }
-
-  /**
-   * Constructs a new locking exception for a given session
-   * with <code>null</code> as its detail message.
-   * The cause is not initialized, and may subsequently be
-   * initialized by a call to {@link #initCause}.
-   *
-   * @param session the session
-   * @param message the message
-   */
-  public LockException(Session session, String message) {
-    super(session, message);
-    this.tokenLockInfo = null;
+    setTemporary(true);
   }
 
   /**
