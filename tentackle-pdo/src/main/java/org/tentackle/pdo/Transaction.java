@@ -32,10 +32,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation to flag a method as a transaction.
+ * Annotation to mark a method as transactional.
  * <p>
  * Methods of the PDO- or Operation-interfaces annotated
- * with {@code @Transaction} will be encapsulated by a transaction.
+ * with {@code @Transaction} will be enclosed by a transaction.
  */
 @Documented
 @Inherited
@@ -45,11 +45,26 @@ import java.lang.annotation.Target;
 public @interface Transaction {
 
   /**
-   * The transaction name.
+   * The transaction name.<br>
+   * By default, the name will be derived from the annotated method.
    *
-   * @return the optional name
+   * @return the optional transaction name
    */
   String value() default Constants.NAME_UNKNOWN;
+
+  /**
+   * Determines whether rollbacks should be logged or not.<br>
+   * By default, rollbacks are logged with extensive diagnostics, such as executed statements, durations and more,
+   * if they are caused by a {@link org.tentackle.session.PersistenceException} (for example, due to a constraint violation).
+   * This is desired for most of such rollbacks, since they are unexpected. Certain transactions, however, are expected
+   * to fail most of the time. In such cases, the amount of logging can be reduced significantly by setting this flag to true.
+   * <p>
+   * Please notice that rollbacks caused by other exceptions (application specific, domain related),
+   * are always rolled back silently.
+   *
+   * @return true to suppress logging for rollbacks caused by a {@code PersistenceException}, default is false
+   */
+  boolean rollbackSilently() default false;
 
   /**
    * The transaction isolation level.
@@ -79,7 +94,7 @@ public @interface Transaction {
    * CAUTION: retryable transactions must be idempotent except for database modifications! This basically means,
    * that all code executed within such a transaction must not modify the conditions that exist at the beginning
    * of its execution. Whenever a temporary exception is thrown, the modifications of the database are rolled back,
-   * but the state of the involved java objects is left unchanged.
+   * but the state of the involved java objects is left unchanged!
    *
    * @return true if retry transaction after transient exceptions
    */
