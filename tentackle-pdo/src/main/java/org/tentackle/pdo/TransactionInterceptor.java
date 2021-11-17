@@ -88,19 +88,22 @@ public class TransactionInterceptor extends AbstractInterceptor {
         catch (Throwable t) {
           // transcation failed!
           try {
-            if (rollbackSilently || txVoucher == 0 || ExceptionHelper.extractException(PersistenceException.class, true, t) == null) {
-              // explicit silent rollback requested, nested tx or application-specific exception (domain logic) -> no need to log
+            PersistenceException rootPex;    // temporary LockException is always the root cause
+            if (rollbackSilently || txVoucher == 0 ||
+                (rootPex = ExceptionHelper.extractException(PersistenceException.class, false, t)) == null || rootPex.isTemporary() ||
+                ExceptionHelper.extractTemporaryException(true, t) != null) {
+              // silent rollback requested, nested tx, temporary or application-specific exception (domain logic) -> no detailed logging
               session.rollbackSilently(txVoucher);
             }
             else {
-              // cause is a PersistenceException (usually some database error such as a constraint exception) -> log that!
+              // cause is a non-temporary PersistenceException (usually some database error such as a constraint exception) -> log details
               session.rollback(txVoucher);
             }
           }
           catch (RuntimeException rex) {
             // rollback may fail for several reasons, usually some subsequent database errors. Those errors
-            // are mapped to a PersistenceException, cluttering the logfile and therefore not logged.
-            // Other exceptions like NPEs, however, definitely provide useful information that must be logged.
+            // are mapped to a PersistenceException and just cluttering the logfile, if logged.
+            // Other exceptions like NPEs, however, definitely provide useful information, that must be logged.
             if (ExceptionHelper.extractException(PersistenceException.class, true, rex) == null) {
               LOGGER.severe("rollback failed after " + ReflectionHelper.getClassBaseName(t.getClass()) + " (" + t.getMessage() + ")", rex);
             }
