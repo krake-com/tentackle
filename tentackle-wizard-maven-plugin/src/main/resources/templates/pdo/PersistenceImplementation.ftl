@@ -65,7 +65,7 @@ public class ${persistenceImplementation} extends ${superPersistenceImplementati
 </#if>
 
   @Serial
-  private static final long serialVersionUID = -1;
+  private static final long serialVersionUID = 1L;
 
 
   // @wurblet classVariables ClassVariables

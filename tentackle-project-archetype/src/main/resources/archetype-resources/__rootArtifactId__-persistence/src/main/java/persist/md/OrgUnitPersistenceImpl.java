@@ -50,7 +50,7 @@ public class OrgUnitPersistenceImpl<T extends OrgUnit<T>, P extends OrgUnitPersi
         extends AbstractPersistentMasterData<T, P> implements OrgUnitPersistence<T> {
 
   @Serial
-  private static final long serialVersionUID = -1;
+  private static final long serialVersionUID = 1L;
 
   // @wurblet classVariables ClassVariables
 

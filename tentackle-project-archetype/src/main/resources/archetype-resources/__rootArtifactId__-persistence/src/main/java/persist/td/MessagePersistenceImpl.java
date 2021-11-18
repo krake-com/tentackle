@@ -44,7 +44,7 @@ import java.util.Objects;
 public class MessagePersistenceImpl extends AbstractPersistentTransactionData<Message, MessagePersistenceImpl> implements MessagePersistence {
 
   @Serial
-  private static final long serialVersionUID = -1;
+  private static final long serialVersionUID = 1L;
 
   // @wurblet classVariables ClassVariables
 
