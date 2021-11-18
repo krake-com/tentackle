@@ -55,7 +55,7 @@ import java.util.function.Supplier;
 public class UserPersistenceImpl extends OrgUnitPersistenceImpl<User, UserPersistenceImpl> implements UserPersistence {
 
   @Serial
-  private static final long serialVersionUID = -1;
+  private static final long serialVersionUID = 1L;
 
   // @wurblet classVariables ClassVariables
 

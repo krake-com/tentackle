@@ -35,7 +35,7 @@ import java.rmi.RemoteException;
 public class User2GroupPersistenceImpl extends AbstractPersistentMasterData<User2Group, User2GroupPersistenceImpl> implements User2GroupPersistence {
 
   @Serial
-  private static final long serialVersionUID = -1;
+  private static final long serialVersionUID = 1L;
 
   // @wurblet classVariables ClassVariables
 
