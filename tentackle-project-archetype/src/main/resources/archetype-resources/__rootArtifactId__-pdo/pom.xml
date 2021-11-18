@@ -14,7 +14,7 @@
   <artifactId>${artifactId}</artifactId>
   <packaging>jar</packaging>
   <name>${application} PDO</name>
-  <description>PDO Layer for ${pplication}</description>
+  <description>PDO Layer for ${application}</description>
 
   <properties>
     <rootBasedir>${symbol_dollar}{project.parent.basedir}</rootBasedir>

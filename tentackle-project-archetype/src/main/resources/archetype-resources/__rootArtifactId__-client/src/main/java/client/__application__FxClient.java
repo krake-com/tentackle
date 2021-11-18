@@ -8,7 +8,6 @@
 package ${package}.client;
 
 import ${package}.common.${application}Preferences;
-import ${package}.common.${application}SessionInfo;
 import ${package}.common.Version;
 import ${package}.gui.GuiBundle;
 import ${package}.gui.main.MainController;
