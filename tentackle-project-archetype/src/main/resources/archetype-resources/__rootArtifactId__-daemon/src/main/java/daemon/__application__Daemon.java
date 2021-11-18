@@ -16,7 +16,6 @@ import org.tentackle.log.Logger;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.prefs.PersistedPreferencesFactory;
-import org.tentackle.session.SessionInfo;
 
 
 /**

@@ -17,7 +17,6 @@ import ${package}.server.ServerBundle;
 
 import org.tentackle.app.AbstractApplication;
 import org.tentackle.common.LocaleProvider;
-import org.tentackle.common.StringHelper;
 import org.tentackle.dbms.Db;
 import org.tentackle.dbms.rmi.RemoteDbConnectionImpl;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;

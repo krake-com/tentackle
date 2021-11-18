@@ -20,14 +20,14 @@ import java.util.MissingResourceException;
  */
 public class EnumI18nTest {
 
-  private static final Class[] ENUMS = {
+  private static final Class<?>[] ENUMS = {
       MessageType.class
       // to be cont'd ...
   };
 
   @Test
   public void testEnums() {
-    for (Class clazz : ENUMS) {
+    for (Class<?> clazz : ENUMS) {
       Reporter.log("testing enum " + clazz.getName() + "<br>", true);
       for (Object constant: clazz.getEnumConstants()) {
         try {
