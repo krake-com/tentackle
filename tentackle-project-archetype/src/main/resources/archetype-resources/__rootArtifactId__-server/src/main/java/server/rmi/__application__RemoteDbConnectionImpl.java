@@ -18,12 +18,10 @@ import org.tentackle.session.SessionInfo;
 import org.tentackle.session.VersionIncompatibleException;
 
 import java.io.Serial;
-import java.io.Serializable;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
-import java.util.Objects;
 
 /**
  * Application specific remote connection.

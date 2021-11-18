@@ -73,12 +73,12 @@ public class MessageDomainImpl extends AbstractDomainObject<Message, MessageDoma
     me().setMessageType(messageType);
 
     if (refersTo instanceof PdoProvider) {
-      refersTo = ((PdoProvider) refersTo).getPdo();
+      refersTo = ((PdoProvider<?>) refersTo).getPdo();
     }
 
-    if (refersTo instanceof PersistentDomainObject) {
-      me().setRefersToPdoId(((PersistentDomainObject) refersTo).getId());
-      me().setRefersToClassId(((PersistentDomainObject) refersTo).getClassId());
+    if (refersTo instanceof PersistentDomainObject pdo) {
+      me().setRefersToPdoId(pdo.getId());
+      me().setRefersToClassId(pdo.getClassId());
       me().setRefersToText(refersTo.toString());
     }
     else if (refersTo != null) {
@@ -132,7 +132,7 @@ public class MessageDomainImpl extends AbstractDomainObject<Message, MessageDoma
       }
       PersistentDomainObject<?> refPdo = getRefersToPdo();
       if (refPdo != null) {
-        return refPdo.getSingular() + " " + refPdo.toString();
+        return refPdo.getSingular() + " " + refPdo;
       }
       else if (me().getRefersToPdoId() != 0) {   // if not new
         String tableName = null;

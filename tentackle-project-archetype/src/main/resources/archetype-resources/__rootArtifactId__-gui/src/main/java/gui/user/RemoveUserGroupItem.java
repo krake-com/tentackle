@@ -43,7 +43,7 @@ public class RemoveUserGroupItem extends MenuItem implements PdoTreeContextMenuI
         setOnAction(e -> {
           user.getUserGroups().remove(group);
           user.save();
-          @SuppressWarnings("unchecked")
+          @SuppressWarnings({ "unchecked", "rawtypes" })
           ObservableList<TreeItem<UserGroup>> items = (ObservableList) cell.getPdoTreeItem().getParentPdoItem().getChildren();
           int i=0;
           for (TreeItem<UserGroup> item: items) {
