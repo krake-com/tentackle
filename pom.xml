@@ -586,11 +586,8 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
         <configuration>
+          <doclint>none</doclint>
           <failOnError>false</failOnError>
-          <sourceFileExcludes>
-            <exclude>module-info.java</exclude>
-            <exclude>**/rmi/*.java</exclude>
-          </sourceFileExcludes>
           <tags>
             <tag>
               <name>wurblet</name>
@@ -598,11 +595,6 @@
               <head>Wurblet:</head>
             </tag>
           </tags>
-          <additionalOptions>
-            <additionalOption>-html5</additionalOption>
-            <!-- don't complain about wurblet args -->
-            <additionalOption>-Xdoclint:none</additionalOption>
-          </additionalOptions>
           <bottom><![CDATA[<a href="${project.url}">Tentackle</a> - distributed, domain- and model-driven]]></bottom>
         </configuration>
         <reportSets>
@@ -614,6 +606,7 @@
           </reportSet>
           <reportSet>
             <id>aggregate</id>
+            <inherited>false</inherited>
             <reports>
               <report>aggregate</report>
             </reports>
@@ -686,8 +679,8 @@
                   <goal>jar</goal>
                 </goals>
                 <configuration>
+                  <doclint>none</doclint>
                   <bottom><![CDATA[<a href="${project.url}">Tentackle</a> - distributed, domain- and model-driven]]></bottom>
-                  <quiet>true</quiet>
                   <archive>
                     <manifest>
                       <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
@@ -696,11 +689,6 @@
                       <Implementation-Build-Date>${maven.build.timestamp}</Implementation-Build-Date>
                     </manifestEntries>
                   </archive>
-                  <additionalOptions>
-                    <additionalOption>-html5</additionalOption>
-                    <!-- don't complain about wurblet args -->
-                    <additionalOption>-Xdoclint:none</additionalOption>
-                  </additionalOptions>
                 </configuration>
               </execution>
             </executions>
