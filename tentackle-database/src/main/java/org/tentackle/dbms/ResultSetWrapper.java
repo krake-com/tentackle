@@ -34,6 +34,7 @@ import org.tentackle.session.PersistenceException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -1731,6 +1732,23 @@ public class ResultSetWrapper implements AutoCloseable {
     }
   }
 
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this {@code ResultSet} object as an {@code Array} object
+   * in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   *         value returned is <code>null</code>
+   */
+  public Array getArray(String name) {
+    try {
+      return rs.getArray(name);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
 
 
   // ------------------- getter with positions -----------------------------
@@ -2501,6 +2519,24 @@ public class ResultSetWrapper implements AutoCloseable {
   public <T> T getObject(int pos, Class<T> type) {
     try {
       return rs.getObject(pos + columnOffset, type);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this {@code ResultSet} object as an {@code Array} object
+   * in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   *         value returned is <code>null</code>
+   */
+  public Array getArray(int pos) {
+    try {
+      return rs.getArray(pos + columnOffset);
     }
     catch (SQLException e)  {
       throw new PersistenceException(db, e);
