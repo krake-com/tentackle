@@ -36,6 +36,7 @@ import java.io.Serializable;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Cleaner.Cleanable;
 import java.math.BigDecimal;
+import java.sql.Array;
 import java.sql.Clob;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -1808,6 +1809,23 @@ public class ResultSetWrapper implements AutoCloseable {
     }
   }
 
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this {@code ResultSet} object as an {@code Array} object
+   * in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   *         value returned is <code>null</code>
+   */
+  public Array getArray(String name) {
+    try {
+      return resources.rs.getArray(name);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
 
 
   // ------------------- getter via positions -----------------------------
@@ -2650,6 +2668,24 @@ public class ResultSetWrapper implements AutoCloseable {
   public <T> T getObject(int pos, Class<T> type) {
     try {
       return resources.rs.getObject(pos + columnOffset, type);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this {@code ResultSet} object as an {@code Array} object
+   * in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   *         value returned is <code>null</code>
+   */
+  public Array getArray(int pos) {
+    try {
+      return resources.rs.getArray(pos + columnOffset);
     }
     catch (SQLException e)  {
       throw new PersistenceException(resources.db, e);
