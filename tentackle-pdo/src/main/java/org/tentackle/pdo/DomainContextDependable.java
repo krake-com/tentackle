@@ -23,7 +23,7 @@ package org.tentackle.pdo;
 
 /**
  * Interface all persistent objects must implement.<br>
- * In multitenant applications the interface must be subclassed.
+ * In multi-tenant applications the interface must be subclassed.
  *
  * @see DomainContext
  * @author harald
@@ -58,7 +58,7 @@ public interface DomainContextDependable extends DomainContextProvider {
    * Gets the minimum context, i.e. the one that is sufficient for this object.<br>
    * Objects may have a "higher" context they live in.<br>
    * If the current context is already the base context, the current context is returned.
-   * Otherwise a new context will be created.
+   * Otherwise, a new context will be created.
    *
    * @return the base context, null if no context set at all
    */

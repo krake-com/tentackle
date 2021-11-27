@@ -134,6 +134,16 @@ public interface PdoFactory {
   <T extends PersistentDomainObject<T>> T create(T pdo);
 
   /**
+   * Creates a PDO within a sub context.
+   *
+   * @param <T> the PDO type
+   * @param pdo the PDO
+   * @param contextName the context name
+   * @return the created PDO belonging to the same class as the given {@code pdo} in a sub context of given name
+   */
+  <T extends PersistentDomainObject<T>> T create(T pdo, String contextName);
+
+  /**
    * Creates a PDO for a given persistence delegate.
    *
    * @param <T> the PDO type

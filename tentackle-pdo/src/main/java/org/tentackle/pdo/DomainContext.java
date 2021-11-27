@@ -25,6 +25,7 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SessionHolder;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  * The domain context.
@@ -36,6 +37,12 @@ import java.util.Collection;
  * which can be used to hold domain-related information, for example to implement multi-tenancy.
  * As this is application specific, it is recommended to provide an application specific context
  * via a {@link DomainContextFactory}.
+ * <p>
+ * By default, domain contexts are unnamed. By creating a named clone, the new context becomes the root of an application-specific sub context.
+ * This sub context usually describes a distinct part of the application, like a module, task or purpose.
+ * Named contexts can be used, for example, to inhibit or allow invocation of certain methods.
+ * Another purpose is to ensure that a PDO being locked in a named context cannot be locked,
+ * persisted or unlocked by the same user in another named context. Sub contexts may have any number of other sub contexts.
  * <p>
  * Furthermore, since all PDOs must be either a root-entity or a direct or indirect component of a root-entity,
  * each root-entity maintains its own copy of the domain context, which is known as
@@ -63,7 +70,7 @@ import java.util.Collection;
  * Tenant -&gt; FiscalYear -&gt; Book.
  * </pre>
  * <p>
- * The domain model supports multitenancy by means of the option {@code CONTEXT}.
+ * The domain model supports multi-tenancy by means of the option {@code CONTEXT}.
  * When generating the finders, the {@code WHERE}-clause is automatically {@code AND}ed with the context column
  * using the value from the domain context.
  * <p>
@@ -83,6 +90,29 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
   DomainContext clone();
 
   /**
+   * Clones this context with another context name.
+   * <p>
+   * Same as {@link #clone()}, but appends the given name to the current context names.<br>
+   * The new name must be different from the current ones,
+   * not null, not containing only whitespaces and not containing a colon (: is used to concatenate the context names in toGenericString).
+   *
+   * @param name the name of the new context
+   * @return the cloned context
+   */
+  DomainContext clone(String name);
+
+  /**
+   * Gets the names of this context.
+   * <p>
+   * Notice: the names must not be part in equals, hashCode or compareTo implementations,
+   * because they denote only sub contexts. As a result, all sub contexts of the same
+   * root context are considered <em>logically</em> equal from a multi-tenancy perspective.
+   *
+   * @return the unmodifiable list of names, never null, never empty, the first element is always the empty string
+   */
+  List<String> getNames();
+
+  /**
    * Gets a clone of this context with a thread-local session.
    * <p>
    * Notice: A thread-local domain context is always a non-root context.
@@ -99,10 +129,10 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
 
   /**
    * Asserts that this context is allowed to be used by the current user.<br>
-   * Only invoked when session is updated after deserialization (objects traveling between jvms).
+   * Only invoked when session is updated after deserialization (objects traveling between JVMs).
    * <p>
    * If it is not allowed, a {@link PersistenceException} must be thrown.<br>
-   * Override the method in middle tier servers, usually only necessary in multi-tentant applications.
+   * Override the method in middle tier servers, usually only necessary in multi-tenant applications.
    * The default implementation does nothing.
    */
   void assertPermissions();
@@ -133,7 +163,7 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
    * <p>
    * The default implementation returns {@code contextId &lt; 0 || contextId == getContextId()}.<br>
    * This is sufficient for zero or one level of context inheritance. For more than one
-   * level this method must be overwridden in each level. Example:
+   * level this method must be overridden in each level. Example:
    * <pre>
    *  boolean isWithinContext(long contextId, int contextClassId) {
    *    return contextClassId == BLAH_CLASS_ID &amp;&amp; contextId == getContextId() ||
@@ -154,6 +184,16 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
    * @return true if within that context, false if context does not apply
    */
   boolean isWithinContext(long contextId, int contextClassId);
+
+  /**
+   * Checks whether the given name equals the name of this or one of its parent contexts.<br>
+   * Notice that the empty string is always within the context, since the topmost parent context
+   * is always unnamed.
+   *
+   * @param name the requested name
+   * @return true if within context, false if not.
+   */
+  boolean isWithinContext(String name);
 
   /**
    * Returns the generic string representation of this context.
@@ -214,7 +254,7 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
   /**
    * Gets the class-ID of the root entity.
    *
-   * @return the classid, 0 if there is no root entity
+   * @return the class-ID, 0 if there is no root entity
    */
   int getRootClassId();
 

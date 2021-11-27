@@ -569,7 +569,7 @@ public class Pdo {
    * @return the domain context
    */
   public static DomainContext createDomainContext() {
-    return DomainContextFactory.getInstance().create(null);
+    return DomainContextFactory.getInstance().create((Session) null);
   }
 
 

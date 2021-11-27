@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.pdo;
 
 import org.tentackle.common.Service;
@@ -38,6 +37,11 @@ public class DefaultDomainContextFactory implements DomainContextFactory {
   @Override
   public DomainContext create(Session session, boolean sessionImmutable) {
     return new DefaultDomainContext(session, sessionImmutable);
+  }
+
+  @Override
+  public <T extends PersistentDomainObject<T>> DomainContext create(T contextPdo) {
+    return contextPdo.getDomainContext().clone();
   }
 
 }

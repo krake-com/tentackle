@@ -35,7 +35,7 @@ public interface DomainContextProvider {
   DomainContext getDomainContext();
 
   /**
-   * Creates a PDO for another entity type within the domain context of this object.<br>
+   * Creates a PDO for an entity type within the domain context of this object.<br>
    * The method is an acronym for "object new" and is provided as a shorter and better readable alternative to
    * {@link Pdo#create(java.lang.Class, org.tentackle.pdo.DomainContext)}.
    *
@@ -58,8 +58,21 @@ public interface DomainContextProvider {
   }
 
   /**
+   * Creates a PDO within a new named domain context.<br>
+   * Same as {@link #on(Class)}, but uses a new sub context of the given name.
+   *
+   * @param <T> the persistent domain object type
+   * @param clazz the PDO interface
+   * @param contextName the context name
+   * @return the created PDO
+   */
+  default <T extends PersistentDomainObject<T>> T on(Class<T> clazz, String contextName) {
+    return PdoFactory.getInstance().create(clazz, getDomainContext().clone(contextName));
+  }
+
+  /**
    * Creates an operation within the domain context of this object.<br>
-   * Same as {@link #on} but for operations.
+   * Same as {@link #on(Class)} but for operations.
    *
    * @param <T> the operation type
    * @param clazz the operation interface
@@ -67,6 +80,19 @@ public interface DomainContextProvider {
    */
   default <T extends Operation<T>> T op(Class<T> clazz) {
     return OperationFactory.getInstance().create(clazz, getDomainContext());
+  }
+
+  /**
+   * Creates an operation within a new domain context.<br>
+   * Same as {@link #op(Class)}, but uses a new sub context of the given name.
+   *
+   * @param <T> the operation type
+   * @param clazz the operation interface
+   * @param contextName the context name
+   * @return the created operation
+   */
+  default <T extends Operation<T>> T op(Class<T> clazz, String contextName) {
+    return OperationFactory.getInstance().create(clazz, getDomainContext().clone(contextName));
   }
 
 }

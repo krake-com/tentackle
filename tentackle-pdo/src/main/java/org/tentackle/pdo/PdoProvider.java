@@ -42,4 +42,14 @@ public interface PdoProvider<T extends PersistentDomainObject<T>> {
     return PdoFactory.getInstance().create(getPdo());
   }
 
+  /**
+   * Creates a new instance of the same type as the PDO within a new sub context.
+   *
+   * @param contextName the context name
+   * @return the new instance
+   */
+  default T on(String contextName) {
+    return PdoFactory.getInstance().create(getPdo(), contextName);
+  }
+
 }

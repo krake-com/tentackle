@@ -22,6 +22,7 @@
 
 package org.tentackle.pdo;
 
+import org.tentackle.common.StringHelper;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.PersistenceException;
@@ -30,6 +31,8 @@ import org.tentackle.session.SessionInfo;
 
 import java.io.ObjectStreamException;
 import java.io.Serial;
+import java.util.Arrays;
+import java.util.List;
 
 
 /**
@@ -41,6 +44,10 @@ public class DefaultDomainContext implements DomainContext {
 
   @Serial
   private static final long serialVersionUID = 1L;
+
+  /** the unnamed context name chain. */
+  private static final List<String> UNNAMED = List.of("");
+
 
   // attributes are transient because session could be remote (is serializable)
 
@@ -58,10 +65,19 @@ public class DefaultDomainContext implements DomainContext {
   /**
    * the root entity, null if none.
    * <p>
-   * Notice that the rootentity is transient!
+   * Notice that the root-entity is transient!
    * For remote sessions the rootId and rootClassId will be transferred.
    */
   private transient PersistentDomainObject<?> rootEntity;
+
+  /**
+   * Lazily created chained context name.<br>
+   * Defaults to {@code "<unnamed>"}.
+   */
+  private transient String chainedName;
+
+
+  // non transient
 
   /**
    * ID of the root entity.<br>
@@ -84,6 +100,13 @@ public class DefaultDomainContext implements DomainContext {
    * the non-root context.
    */
   private DefaultDomainContext nonRootContext;
+
+  /**
+   * The context name chain.<br>
+   * Array is faster to serialize/deserialize than List.
+   */
+  private String[] names;   // null if unnamed
+
 
 
   /**
@@ -110,6 +133,11 @@ public class DefaultDomainContext implements DomainContext {
     this(session, false);
   }
 
+
+  @Override
+  public List<String> getNames() {
+    return names == null ? UNNAMED : List.of(names);
+  }
 
   @Override
   public boolean isSessionThreadLocal() {
@@ -194,7 +222,7 @@ public class DefaultDomainContext implements DomainContext {
 
   @Override
   public int getSessionInstanceNumber() {
-    // the instanceno must be 0 for dynamic thread-local session (due to sorting, e.g. in caches)
+    // the instance-no must be 0 for dynamic thread-local session (due to sorting, e.g. in caches)
     return session == null ? 0 : session.getInstanceNumber();
   }
 
@@ -230,26 +258,43 @@ public class DefaultDomainContext implements DomainContext {
     return contextId < 0 || contextId == getContextId();
   }
 
+  @Override
+  public boolean isWithinContext(String name) {
+    for (String n : getNames()) {   // getNames will always begin with the empty string!
+      if (n.equals(name)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
 
   /**
    * Gets the string representation of this context.
    * The default implementation returns the string of the context object,
    * or the empty string (not the null-string!), if no such object,
-   * which is the case for the plain DomainContext.
+   * which is the case for the plain context.
    *
    * @return the string
    */
   @Override
   public String toString()  {
-    // context does not include Db.toString() because context.toString() is
-    // heavily used in GUIs to show the users context.
+    // context does not include Session.toString() because DomainContext.toString() is
+    // heavily used in GUIs to show the user's context.
     return getContextId() == 0 ? "" : getContextPdo().toString();
   }
 
 
   @Override
   public String toGenericString() {
-    return getClass().getName() + "[" + getContextId() + "]";
+    if (chainedName == null) {
+      chainedName = createChainedName();
+    }
+    long contextId = getContextId();
+    if (contextId != 0) {
+      return chainedName + "[" + getContextId() + "]";
+    }
+    return chainedName;
   }
 
 
@@ -259,7 +304,7 @@ public class DefaultDomainContext implements DomainContext {
     if (isRootContext()) {
       buf.append("root ");
     }
-    buf.append("context '").append(this).append("' using ");
+    buf.append("context '").append(toGenericString()).append("' using ");
     if (isSessionThreadLocal()) {
       buf.append("thread-local ");
     } // thread-local implicitly means immutable
@@ -280,8 +325,8 @@ public class DefaultDomainContext implements DomainContext {
 
   /**
    * Compares this domain context with another domain context.<br>
-   * The default implementation just compares the classes, the contextIds
-   * and the sessions.<br>
+   * The default implementation just compares the class, the contextId
+   * and the session.<br>
    * Checking against the null context returns 1.
    *
    * @param otherContext the context to compare this context to
@@ -306,7 +351,7 @@ public class DefaultDomainContext implements DomainContext {
    * {@inheritDoc}
    * <p>
    * Overridden to check whether contexts are equal.<br>
-   * The default implementation checks the classes, the contextIds and sessions for equality.
+   * The default implementation checks the class, the contextId and session for equality.
    * Checking against the null context returns false.
    */
   @Override
@@ -343,6 +388,24 @@ public class DefaultDomainContext implements DomainContext {
     }
   }
 
+  @Override
+  public DefaultDomainContext clone(String name) {
+    if (StringHelper.isAllWhitespace(name) || name.contains(":")) {
+      throw new DomainException("illegal context name: '" + name + "'");
+    }
+    if (isWithinContext(name)) {
+      throw new DomainException("context name '" + name + "' already within " + toDiagnosticString());
+    }
+    DefaultDomainContext context = clone();
+    if (names == null) {
+      context.names = new String[]{"", name};
+    }
+    else {
+      context.names = Arrays.copyOf(names, names.length + 1);
+      context.names[names.length] = name;
+    }
+    return context;
+  }
 
   @Override
   public DomainContext getThreadLocalSessionContext() {
@@ -413,15 +476,15 @@ public class DefaultDomainContext implements DomainContext {
   }
 
   /**
-   * This does the trick to setup the non-transient rootId and rootClassId when sent via rmi the first time.
+   * This does the trick to set up the non-transient rootId and rootClassId when sent via rmi the first time.
    *
    * @return me
-   * @throws ObjectStreamException to fullfill the signature only
+   * @throws ObjectStreamException to fulfill the signature only
    * @see ObjectStreamException
    */
   @Serial
+  // public! Otherwise, writeReplace would not be invoked in subclasses!
   public Object writeReplace() throws ObjectStreamException {
-  // public! Otherwise writeReplace would not be invoked in subclasses!
     if (rootEntity != null && rootClassId == 0) {
       rootClassId = rootEntity.getPersistenceDelegate().getClassId();
       rootId = rootEntity.getPersistenceDelegate().getId();
@@ -442,6 +505,27 @@ public class DefaultDomainContext implements DomainContext {
   @Override
   public long getRootId() {
     return rootEntity == null ? rootId : rootEntity.getPersistenceDelegate().getId();
+  }
+
+
+  private String createChainedName() {
+    if (names == null) {
+      return "<unnamed>";
+    }
+    StringBuilder buf = new StringBuilder();
+    boolean needColon = false;
+    for (String name : names) {
+      if (!name.isEmpty()) {    // skip first ""
+        if (needColon) {
+          buf.append(':');
+        }
+        else {
+          needColon = true;
+        }
+        buf.append(name);
+      }
+    }
+    return buf.toString();
   }
 
 }
