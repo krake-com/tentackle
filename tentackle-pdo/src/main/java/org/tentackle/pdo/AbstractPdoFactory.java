@@ -155,12 +155,16 @@ public abstract class AbstractPdoFactory implements PdoFactory {
 
 
   @SuppressWarnings("unchecked")
-  private <T extends PersistentDomainObject<T>> T createPdo(T pdo) {
+  private <T extends PersistentDomainObject<T>> T createPdo(T pdo, String contextName) {
     try {
       Class<T> clazz = pdo.getEffectiveClass();
       PdoInvocationHandler<T> handler = createInvocationHandler(clazz);
       T instance = (T) Proxy.newProxyInstance(clazz.getClassLoader(), new Class<?>[] { clazz }, handler);
-      handler.setupDelegates(instance, pdo.getPersistenceDelegate().getDomainContext());
+      DomainContext context = pdo.getPersistenceDelegate().getDomainContext();
+      if (contextName != null) {
+        context = context.clone(contextName);
+      }
+      handler.setupDelegates(instance, context);
       return instance;
     }
     catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
@@ -262,7 +266,12 @@ public abstract class AbstractPdoFactory implements PdoFactory {
 
   @Override
   public <T extends PersistentDomainObject<T>> T create(T pdo) {
-    return createPdo(pdo);
+    return createPdo(pdo, null);
+  }
+
+  @Override
+  public <T extends PersistentDomainObject<T>> T create(T pdo, String contextName) {
+    return createPdo(pdo, contextName);
   }
 
   @Override

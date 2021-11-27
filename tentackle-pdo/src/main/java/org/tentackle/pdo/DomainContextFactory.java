@@ -65,4 +65,16 @@ public interface DomainContextFactory {
    */
   DomainContext create(Session session, boolean sessionImmutable);
 
+  /**
+   * Creates a domain context for a given context root PDO.
+   * <p>
+   * This method must be overridden by an application-specific {@link DomainContextFactory}!
+   * The default implementation just returns a clone of the given PDO's domain context.
+   *
+   * @param contextPdo the PDO spawning a domain context space in a multi-tenant system
+   * @param <T> the PDO type
+   * @return the domain context
+   */
+  <T extends PersistentDomainObject<T>> DomainContext create(T contextPdo);
+
 }

@@ -317,4 +317,15 @@ public class DbTokenLock extends AbstractDbObject<DbTokenLock> implements TokenL
     return getId();
   }
 
+  /**
+   * Creates a diagnostic string for logging.
+   *
+   * @return the diagnostic string
+   */
+  public String toDiagnosticString() {
+    return "{pdoClassId=" + pdoClassId +
+           ", lockedBy=" + lockedBy +
+           ", lockedSince=" + lockedSince +
+           ", lockExpiry=" + lockExpiry + '}';
+  }
 }

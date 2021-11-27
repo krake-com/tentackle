@@ -8,6 +8,7 @@
 package ${package}.common;
 
 import org.tentackle.common.Service;
+import org.tentackle.pdo.DefaultDomainContextFactory;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextFactory;
 import org.tentackle.session.Session;
@@ -16,7 +17,7 @@ import org.tentackle.session.Session;
  * Application specific domain context factory.
  */
 @Service(DomainContextFactory.class)
-public class ${application}DomainContextFactory implements DomainContextFactory {
+public class ${application}DomainContextFactory extends DefaultDomainContextFactory {
 
   @Override
   public DomainContext create(Session session) {

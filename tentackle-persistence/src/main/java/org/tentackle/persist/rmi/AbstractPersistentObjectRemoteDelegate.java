@@ -65,10 +65,10 @@ public interface AbstractPersistentObjectRemoteDelegate<T extends PersistentDoma
 
   boolean isReferenced(DomainContext cb, long id) throws RemoteException;
 
-  TokenLockInfo updateTokenLock(long id, Timestamp tokenExpiry, long userId, Timestamp curTime) throws RemoteException;
+  TokenLockInfo updateTokenLock(DomainContext cb, long id, Timestamp tokenExpiry, long userId, Timestamp curTime) throws RemoteException;
 
   T transferTokenLock(T pdo, long userId) throws RemoteException;
 
-  void updateTokenLockOnly(long id, long editedBy, Timestamp editedSince, Timestamp editedExpiry) throws RemoteException;
+  void updateTokenLockOnly(DomainContext cb, long id, long editedBy, Timestamp editedSince, Timestamp editedExpiry) throws RemoteException;
 
 }
