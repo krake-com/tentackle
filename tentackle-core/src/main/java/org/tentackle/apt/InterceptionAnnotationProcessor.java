@@ -21,6 +21,7 @@ package org.tentackle.apt;
 
 import org.tentackle.common.AnnotationProcessor;
 import org.tentackle.reflect.Interception;
+import org.tentackle.reflect.Interceptor;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
@@ -75,7 +76,7 @@ public class InterceptionAnnotationProcessor extends AbstractProcessor {
                 annoMirror.getElementValues().entrySet()) {
               String implName = entry.getKey().getSimpleName().toString();
               String implValue = entry.getValue().toString();
-              if ("implementedBy".equals(implName) && !ANNO_NAME.equals(implValue) ||
+              if ("implementedBy".equals(implName) && !Interceptor.class.getName().equals(implValue) ||
                   "implementedByName".equals(implName) && !implValue.isEmpty() ||
                   "implementedByService".equals(implName) && !implValue.isEmpty()) {
                 validCount++;
