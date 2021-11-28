@@ -18,13 +18,14 @@
 
 package org.tentackle.security;
 
+import org.tentackle.reflect.Interception;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import org.tentackle.reflect.Interception;
 
 /**
  * Annotation to secure a method.
@@ -38,7 +39,7 @@ import org.tentackle.reflect.Interception;
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-@Interception(implementedBy=SecuredInterceptor.class)
+@Interception(implementedBy=SecuredInterceptor.class, type = Interception.Type.PUBLIC)
 public @interface Secured {
 
   /**

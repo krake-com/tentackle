@@ -20,8 +20,7 @@
 package org.tentackle.apt;
 
 import org.tentackle.common.AnnotationProcessor;
-
-import javax.annotation.processing.SupportedAnnotationTypes;
+import org.tentackle.reflect.Interception;
 
 /**
  * Processor for the hidden interception annotations in the core package.<br>
@@ -29,14 +28,11 @@ import javax.annotation.processing.SupportedAnnotationTypes;
  *
  * @author harald
  */
-@SupportedAnnotationTypes({
-  "org.tentackle.pdo.InvokeInBuddyDelegate"
-})
 @AnnotationProcessor
 public class HiddenInterceptorAnnotationProcessor extends AbstractInterceptorAnnotationProcessor {
 
   public HiddenInterceptorAnnotationProcessor() {
-    super(Type.HIDDEN);
+    super(Interception.Type.HIDDEN);
   }
 
 }

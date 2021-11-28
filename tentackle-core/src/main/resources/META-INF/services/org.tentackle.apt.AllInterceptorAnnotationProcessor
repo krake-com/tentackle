@@ -1,0 +1,2 @@
+# tentackle-core is compiled with proc:none due to chicken-egg
+org.tentackle.log.Log

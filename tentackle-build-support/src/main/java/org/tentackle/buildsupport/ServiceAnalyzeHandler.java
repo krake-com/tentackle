@@ -37,7 +37,7 @@ import java.util.Map;
 
 
 /**
- * Helper for the annotations that denote services.<br>
+ * Handler for the annotations that denote services.<br>
  *
  * @author harald
  */

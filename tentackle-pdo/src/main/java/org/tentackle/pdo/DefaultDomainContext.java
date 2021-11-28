@@ -46,7 +46,7 @@ public class DefaultDomainContext implements DomainContext {
   private static final long serialVersionUID = 1L;
 
   /** the unnamed context name chain. */
-  private static final List<String> UNNAMED = List.of("");
+  private static final List<String> UNNAMED_LIST = List.of("");
 
 
   // attributes are transient because session could be remote (is serializable)
@@ -105,7 +105,8 @@ public class DefaultDomainContext implements DomainContext {
    * The context name chain.<br>
    * Array is faster to serialize/deserialize than List.
    */
-  private String[] names;   // null if unnamed
+  private String[] names;                     // null if unnamed (internal only)
+  private transient List<String> namesList;   // lazy unmodifiable list for external API
 
 
 
@@ -136,7 +137,10 @@ public class DefaultDomainContext implements DomainContext {
 
   @Override
   public List<String> getNames() {
-    return names == null ? UNNAMED : List.of(names);
+    if (namesList == null) {
+      namesList = names == null ? UNNAMED_LIST : List.of(names);
+    }
+    return namesList;
   }
 
   @Override
@@ -510,7 +514,7 @@ public class DefaultDomainContext implements DomainContext {
 
   private String createChainedName() {
     if (names == null) {
-      return "<unnamed>";
+      return "";
     }
     StringBuilder buf = new StringBuilder();
     boolean needColon = false;
