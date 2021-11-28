@@ -20,8 +20,7 @@
 package org.tentackle.apt;
 
 import org.tentackle.common.AnnotationProcessor;
-
-import javax.annotation.processing.SupportedAnnotationTypes;
+import org.tentackle.reflect.Interception;
 
 /**
  * Processor for the public interception annotations in the core package.<br>
@@ -29,16 +28,11 @@ import javax.annotation.processing.SupportedAnnotationTypes;
  *
  * @author harald
  */
-@SupportedAnnotationTypes({
-  "org.tentackle.pdo.Transaction",
-  "org.tentackle.pdo.NoTransaction",
-  "org.tentackle.security.Secured"
-})
 @AnnotationProcessor
 public class PublicInterceptorAnnotationProcessor extends AbstractInterceptorAnnotationProcessor {
 
   public PublicInterceptorAnnotationProcessor() {
-    super(Type.PUBLIC);
+    super(Interception.Type.PUBLIC);
   }
 
 }

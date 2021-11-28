@@ -20,7 +20,10 @@
 package org.tentackle.apt;
 
 import org.tentackle.apt.visitor.SuperTypeVisitor;
+import org.tentackle.common.Constants;
+import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.reflect.Interceptable;
+import org.tentackle.reflect.Interception.Type;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -33,6 +36,13 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic.Kind;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Set;
 
 
@@ -45,21 +55,8 @@ import java.util.Set;
  */
 public abstract class AbstractInterceptorAnnotationProcessor extends AbstractProcessor {
 
-  /** the interceptor type. */
-  public enum Type {
-
-    /** public interceptors only. */
-    PUBLIC,
-
-    /** hidden interceptors only. */
-    HIDDEN,
-
-    /** public or hidden. */
-    ALL
-
-  }
-
   private final Type type;
+  private final Set<String> annotationTypes;
   private Types typeUtils;
   private SuperTypeVisitor typeVisitor;
 
@@ -71,11 +68,17 @@ public abstract class AbstractInterceptorAnnotationProcessor extends AbstractPro
    */
   public AbstractInterceptorAnnotationProcessor(Type type) {
     this.type = type;
+    annotationTypes = loadAnnotationTypes();
   }
 
   @Override
   public SourceVersion getSupportedSourceVersion() {
     return SourceVersion.latest();
+  }
+
+  @Override
+  public Set<String> getSupportedAnnotationTypes() {
+    return annotationTypes;
   }
 
   @Override
@@ -96,6 +99,7 @@ public abstract class AbstractInterceptorAnnotationProcessor extends AbstractPro
 
   private void processAnnotation(TypeElement annotationType, RoundEnvironment roundEnv) {
 
+    outer:
     for (Element element : roundEnv.getElementsAnnotatedWith(annotationType)) {
       if (element.getKind().equals(ElementKind.METHOD)) {    // only annotated methods
 
@@ -118,7 +122,7 @@ public abstract class AbstractInterceptorAnnotationProcessor extends AbstractPro
                     element);
                 }
                 // else ok
-                return;
+                continue outer;
               }
             }
             TypeMirror superType = classElement.getSuperclass();
@@ -159,6 +163,31 @@ public abstract class AbstractInterceptorAnnotationProcessor extends AbstractPro
                   "annotated element '" + element + "' is not a method",
                   element);
       }
+    }
+  }
+
+
+  private Set<String> loadAnnotationTypes() {
+    Set<String> types = new HashSet<>();
+    try {
+      // we can't use ServiceFinder because it's not in META-INF / the classpath of the compiler
+      Enumeration<URL> urls = getClass().getClassLoader().getResources(Constants.DEFAULT_SERVICE_PATH + getClass().getName());
+      while (urls.hasMoreElements()) {
+        URL url = urls.nextElement();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))) {
+          String line;
+          while ((line = reader.readLine()) != null) {
+            line = line.trim();
+            if (!line.isEmpty() && !line.startsWith("#")) {
+              types.add(line);
+            }
+          }
+        }
+      }
+      return types;
+    }
+    catch (IOException iox) {
+      throw new TentackleRuntimeException("loading annotation types failed", iox);
     }
   }
 

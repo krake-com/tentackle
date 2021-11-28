@@ -16,8 +16,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.reflect;
+
+import org.tentackle.common.Analyze;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -27,33 +28,59 @@ import java.lang.annotation.Target;
 
 
 /**
- * Annotation to mark another annotation as an interception.<br>
- * The implementation can be referenced either by class, classname or servicename.
- * By classname does not need the concrete dependency, which may be necessary to
- * avoid circular dependencies in multi-module maven projects.
- * By servicename goes even further, so that the actual name of the implementation
- * is unknown.
+ * Annotation to mark another annotation as an interception.
  * <p>
- * If no arguments are given, the implementation is found by the service-name which
- * is the classname of the annotated annotation.
+ * There are 4 different ways to assign the implementation:
+ * <ol>
+ *   <li>by class ({@code implementedBy=...}): direct reference to the implementing class.</li>
+ *   <li>by class name ({@code implementedByName=...}): the name of the implementing class.
+ *   Avoids the dependency to the class, but may be prone to typos.</li>
+ *   <li>by service name ({@code implementedByService=...}):
+ *   the implementing class must be annotated with &#64;{@link org.tentackle.common.ServiceName} and
+ *   both names must match. Again, this may be prone to typos, but avoids dependency.</li>
+ *   <li>by service class: same as option 3, but the implementation must be annotated with &#64;{@link org.tentackle.common.Service},
+ *   referencing the interception annotation.</li>
+ * </ol>
+ *
  * <p>
- * Annotation processors should be implemented to verify at compile-time, that the interceptors
- * apply to the proper methods and/or classes. For example, the {@code PublicInterceptorAnnotationProcessor}
- * verifies that the annotated method belongs to an interface extending {@code Interceptable} such as
- * {@code DomainObject} or {@code PersistentObject}.
- * <br>
- * The {@code HiddenInterceptorAnnotationProcessor} checks that the methods belong real implementation classes
- * that implement {@code Interceptable}.
- * <br>
- * The {@code AllInterceptorAnnotationProcessor} checks that the interceptor is either public or hidden
- * on a class implementing or extending {@code Interceptable}.
+ * The optional {@code type} parameter defines the visibility of the interception:
+ * <ul>
+ *   <li>ALL: no restrictions. This is the default.</li>
+ *   <li>PUBLIC: interface only, i.e. part of the model.</li>
+ *   <li>HIDDEN: classes only, i.e. not visible in the model interfaces.</li>
+ * </ul>
+ *
+ * <p>
+ * Annotation processors verify at compile-time, that the interceptors
+ * are applied to the proper methods and/or classes according to the {@code type} parameter:
+ * <ul>
+ * <li>{@code AllInterceptorAnnotationProcessor}:
+ * verifies that the annotated method belongs to an {@code Interceptable} such as
+ * {@code DomainObject}, {@code PersistentObject} or some of their implementations.</li>
+ * <li>{@code PublicInterceptorAnnotationProcessor}: same as above, but only for declared methods in interfaces.</li>
+ * <li>{@code HiddenInterceptorAnnotationProcessor}: same as above, but only for implementing methods.</li>
+ * </ul>
  *
  * @author harald
  */
 @Documented
 @Target(ElementType.ANNOTATION_TYPE)
 @Retention(RetentionPolicy.RUNTIME)
+@Analyze("org.tentackle.buildsupport.InterceptionAnalyzeHandler")
 public @interface Interception {
+
+  /** the interceptor type. */
+  enum Type {
+
+    /** public interceptors only. */
+    PUBLIC,
+
+    /** hidden interceptors only. */
+    HIDDEN,
+
+    /** public or hidden. */
+    ALL
+  }
 
   /**
    * Defines the interceptor implementation by class.
@@ -77,5 +104,12 @@ public @interface Interception {
    * @return the interceptor implementing the interception.
    */
   String implementedByService() default "";
+
+  /**
+   * Defines the interceptor type.
+   *
+   * @return PUBLIC, HIDDEN or ALL (default)
+   */
+  Type type() default Type.ALL;
 
 }

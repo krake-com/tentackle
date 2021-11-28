@@ -20,8 +20,7 @@
 package org.tentackle.apt;
 
 import org.tentackle.common.AnnotationProcessor;
-
-import javax.annotation.processing.SupportedAnnotationTypes;
+import org.tentackle.reflect.Interception;
 
 /**
  * Processor for all interception annotations in the core package.<br>
@@ -30,14 +29,11 @@ import javax.annotation.processing.SupportedAnnotationTypes;
  *
  * @author harald
  */
-@SupportedAnnotationTypes({
-  "org.tentackle.log.Log"
-})
 @AnnotationProcessor
 public class AllInterceptorAnnotationProcessor extends AbstractInterceptorAnnotationProcessor {
 
   public AllInterceptorAnnotationProcessor() {
-    super(Type.ALL);
+    super(Interception.Type.ALL);
   }
 
 }

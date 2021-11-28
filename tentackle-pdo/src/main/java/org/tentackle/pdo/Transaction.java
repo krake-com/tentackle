@@ -41,7 +41,7 @@ import java.lang.annotation.Target;
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-@Interception(implementedBy=TransactionInterceptor.class)
+@Interception(implementedBy=TransactionInterceptor.class, type = Interception.Type.PUBLIC)
 public @interface Transaction {
 
   /**

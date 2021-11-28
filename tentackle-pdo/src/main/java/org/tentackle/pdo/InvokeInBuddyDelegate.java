@@ -19,14 +19,15 @@
 
 package org.tentackle.pdo;
 
+import org.tentackle.common.Constants;
+import org.tentackle.reflect.Interception;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import org.tentackle.common.Constants;
-import org.tentackle.reflect.Interception;
 
 
 
@@ -42,7 +43,7 @@ import org.tentackle.reflect.Interception;
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-@Interception(implementedBy=InvokeInBuddyDelegateInterceptor.class)
+@Interception(implementedBy=InvokeInBuddyDelegateInterceptor.class, type = Interception.Type.HIDDEN)
 public @interface InvokeInBuddyDelegate {
 
   /**
