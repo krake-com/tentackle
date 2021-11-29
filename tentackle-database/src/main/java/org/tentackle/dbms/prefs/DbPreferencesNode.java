@@ -361,11 +361,10 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
    * @param user name of user, null if system
    */
   public void setUser(String user) {
-    assertMutable();
     if (!Objects.equals(this.user, user)) {
       setModified(true);
+      this.user = user;
     }
-    this.user = user;
   }
 
   /**
@@ -383,11 +382,10 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
    * @param name name of the node
    */
   public void setName(String name) {
-    assertMutable();
     if (!Objects.equals(this.name, name)) {
       setModified(true);
+      this.name = name;
     }
-    this.name = name;
   }
 
   /**
@@ -405,11 +403,10 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
    * @param parentId ID of parent node, 0 if rootnode
    */
   public void setParentId(long parentId) {
-    assertMutable();
     if (this.parentId != parentId) {
       setModified(true);
+      this.parentId = parentId;
     }
-    this.parentId = parentId;
   }
 
   /**
@@ -427,11 +424,10 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
    * @param rootNodeId ID of the root node
    */
   public void setRootNodeId(long rootNodeId) {
-    assertMutable();
     if (this.rootNodeId != rootNodeId) {
       setModified(true);
+      this.rootNodeId = rootNodeId;
     }
-    this.rootNodeId = rootNodeId;
   }
 
   //</editor-fold>//GEN-END:methods

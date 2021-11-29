@@ -234,11 +234,10 @@ public class StoredBundleKeyPersistenceImpl extends AbstractPersistentObject<Sto
    * @param bundleId the bundle id
    */
   private void setBundleId(long bundleId) {
-    assertMutable();
     if (this.bundleId != bundleId) {
       setModified(true);
+      this.bundleId = bundleId;
     }
-    this.bundleId = bundleId;
   }
 
   @Override
@@ -248,11 +247,10 @@ public class StoredBundleKeyPersistenceImpl extends AbstractPersistentObject<Sto
 
   @Override
   public void setKey(String key) {
-    assertMutable();
     if (!Objects.equals(this.key, key)) {
       setModified(true);
+      this.key = key;
     }
-    this.key = key;
   }
 
   @Override
@@ -262,11 +260,10 @@ public class StoredBundleKeyPersistenceImpl extends AbstractPersistentObject<Sto
 
   @Override
   public void setValue(String value) {
-    assertMutable();
     if (!Objects.equals(this.value, value)) {
       setModified(true);
+      this.value = value;
     }
-    this.value = value;
   }
 
   /**
@@ -312,7 +309,6 @@ public class StoredBundleKeyPersistenceImpl extends AbstractPersistentObject<Sto
 
   @Override
   public void setBundle(StoredBundle bundle)  {
-    assertMutable();
     this.bundle = bundle;
     setBundleId(bundle == null ? 0 : bundle.getId());
     bundleLoaded = true;

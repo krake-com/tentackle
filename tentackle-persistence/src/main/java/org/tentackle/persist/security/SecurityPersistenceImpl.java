@@ -891,11 +891,10 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
 
   @Override
   public void setObjectClassName(String objectClassName) {
-    assertMutable();
     if (!Objects.equals(this.objectClassName, objectClassName)) {
       setModified(true);
+      this.objectClassName = objectClassName;
     }
-    this.objectClassName = objectClassName;
   }
 
   @Override
@@ -905,11 +904,10 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
 
   @Override
   public void setObjectClassId(int objectClassId) {
-    assertMutable();
     if (this.objectClassId != objectClassId) {
       setModified(true);
+      this.objectClassId = objectClassId;
     }
-    this.objectClassId = objectClassId;
   }
 
   @Override
@@ -919,11 +917,10 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
 
   @Override
   public void setObjectId(long objectId) {
-    assertMutable();
     if (this.objectId != objectId) {
       setModified(true);
+      this.objectId = objectId;
     }
-    this.objectId = objectId;
   }
 
   @Override
@@ -933,11 +930,10 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
 
   @Override
   public void setDomainContextClassId(int domainContextClassId) {
-    assertMutable();
     if (this.domainContextClassId != domainContextClassId) {
       setModified(true);
+      this.domainContextClassId = domainContextClassId;
     }
-    this.domainContextClassId = domainContextClassId;
   }
 
   @Override
@@ -947,11 +943,10 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
 
   @Override
   public void setDomainContextId(long domainContextId) {
-    assertMutable();
     if (this.domainContextId != domainContextId) {
       setModified(true);
+      this.domainContextId = domainContextId;
     }
-    this.domainContextId = domainContextId;
   }
 
   @Override
@@ -961,11 +956,10 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
 
   @Override
   public void setGranteeClassId(int granteeClassId) {
-    assertMutable();
     if (this.granteeClassId != granteeClassId) {
       setModified(true);
+      this.granteeClassId = granteeClassId;
     }
-    this.granteeClassId = granteeClassId;
   }
 
   @Override
@@ -975,11 +969,10 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
 
   @Override
   public void setGranteeId(long granteeId) {
-    assertMutable();
     if (this.granteeId != granteeId) {
       setModified(true);
+      this.granteeId = granteeId;
     }
-    this.granteeId = granteeId;
   }
 
   @Override
@@ -989,11 +982,10 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
 
   @Override
   public void setPriority(int priority) {
-    assertMutable();
     if (this.priority != priority) {
       setModified(true);
+      this.priority = priority;
     }
-    this.priority = priority;
   }
 
   @Override
@@ -1003,11 +995,10 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
 
   @Override
   public void setPermissions(String permissions) {
-    assertMutable();
     if (!Objects.equals(this.permissions, permissions)) {
       setModified(true);
+      this.permissions = permissions;
     }
-    this.permissions = permissions;
   }
 
   @Override
@@ -1017,11 +1008,10 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
 
   @Override
   public void setAllowed(boolean allowed) {
-    assertMutable();
     if (this.allowed != allowed) {
       setModified(true);
+      this.allowed = allowed;
     }
-    this.allowed = allowed;
   }
 
   @Override
@@ -1031,11 +1021,10 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
 
   @Override
   public void setMessage(String message) {
-    assertMutable();
     if (!Objects.equals(this.message, message)) {
       setModified(true);
+      this.message = message;
     }
-    this.message = message;
   }
 
   /**
