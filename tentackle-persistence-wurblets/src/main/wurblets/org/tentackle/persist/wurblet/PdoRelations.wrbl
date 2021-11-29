@@ -733,11 +733,6 @@ For more options, see {\@link DbModelWurblet}.
   @(scope)@ void @(linkMethodName)@(@(type)@ @(var)@)  {
 @[
           }
-          if (!rel.isReversed()) {
-]@
-    assertMutable();
-@[
-          }
           if ((rel.getRelationType() == RelationType.LIST && !rel.isReversed()) ||
               rel.getSelectionType() != SelectionType.ALWAYS || rel.isComposite()) {
             if (rel.isComposite() && rel.getRelationType() == RelationType.OBJECT) {

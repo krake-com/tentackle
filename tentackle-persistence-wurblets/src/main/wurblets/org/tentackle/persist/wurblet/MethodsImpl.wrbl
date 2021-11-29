@@ -9,7 +9,7 @@ arguments:
 <ul>
 <li><em>--noif:</em> there is no interface (don't generate \@Override).</li>
 <li><em>--noudk:</em> don't generate selectByUniqueDomainKey wurblet anchor.</li>
-<li><em>--noisroot:</em> don't generate isRoot method.</li>
+<li><em>--noisroot:</em> don't generate isRootEntity() method.</li>
 <li><em>--mock:</em> generate code for mock object.</li>
 </ul>
 For more options, see {\@link DbModelWurblet}.
@@ -908,23 +908,29 @@ For more options, see {\@link DbModelWurblet}.
 ]@
   @(setterProtection)@ void @(setter)@(@(type)@ @(attr.getName())@) {
 @[
-          if (!generateMock) {
+          if (generateMock) {
 ]@
-    assertMutable();
+    this.@(attr.getName())@ = @(attr.getName())@;
 @[
+          }
+          else {
             if (isTracked())  {
               if (isFullTracked()) {
                 if (attr.getDataType().isPrimitive()) {
 ]@
     if (this.@(attr.getName())@ != @(attr.getName())@) {
+      assertMutable();
       firePropertyChange(AN_@(attr.getName().toUpperCase())@, this.@(attr.getName())@, @(attr.getName())@);
+      this.@(attr.getName())@ = @(attr.getName())@;
     }
 @[
                 }
                 else {
 ]@
     if (!Objects.equals(this.@(attr.getName())@, @(attr.getName())@)) {
+      assertMutable();
       firePropertyChange(AN_@(attr.getName().toUpperCase())@, this.@(attr.getName())@, @(attr.getName())@);
+      this.@(attr.getName())@ = @(attr.getName())@;
     }
 @[
                 }
@@ -934,6 +940,7 @@ For more options, see {\@link DbModelWurblet}.
 ]@
     if (this.@(attr.getName())@ != @(attr.getName())@) {
       setModified(true);
+      this.@(attr.getName())@ = @(attr.getName())@;
 @[
                   if (isAttracked()) {
 ]@
@@ -949,6 +956,7 @@ For more options, see {\@link DbModelWurblet}.
 ]@
     if (!Objects.equals(this.@(attr.getName())@, @(attr.getName())@)) {
       setModified(true);
+      this.@(attr.getName())@ = @(attr.getName())@;
 @[
                   if (isAttracked()) {
 ]@
@@ -962,10 +970,13 @@ For more options, see {\@link DbModelWurblet}.
                 }
               }
             }
-          }
+            else {
 ]@
+    assertMutable();
     this.@(attr.getName())@ = @(attr.getName())@;
 @[
+            }
+          }
           if (type.equals("Timestamp")) {
 ]@
     Timestamp.setUTC(@(attr.getName())@, @(attr.getOptions().isUTC() ? "true" : "false")@);

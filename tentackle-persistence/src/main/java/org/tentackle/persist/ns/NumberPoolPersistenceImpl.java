@@ -335,11 +335,11 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
 
   @Override
   public void setName(String name) {
-    assertMutable();
     if (!Objects.equals(this.name, name)) {
+      assertMutable();
       firePropertyChange(AN_NAME, this.name, name);
+      this.name = name;
     }
-    this.name = name;
   }
 
   @Override
@@ -359,11 +359,11 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
 
   @Override
   public void setRealm(String realm) {
-    assertMutable();
     if (!Objects.equals(this.realm, realm)) {
+      assertMutable();
       firePropertyChange(AN_REALM, this.realm, realm);
+      this.realm = realm;
     }
-    this.realm = realm;
   }
 
   @Override
@@ -383,11 +383,11 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
 
   @Override
   public void setDescription(String description) {
-    assertMutable();
     if (!Objects.equals(this.description, description)) {
+      assertMutable();
       firePropertyChange(AN_DESCRIPTION, this.description, description);
+      this.description = description;
     }
-    this.description = description;
   }
 
   @Override
@@ -407,11 +407,11 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
 
   @Override
   public void setOnline(boolean online) {
-    assertMutable();
     if (this.online != online) {
+      assertMutable();
       firePropertyChange(AN_ONLINE, this.online, online);
+      this.online = online;
     }
-    this.online = online;
   }
 
   @Override
@@ -431,11 +431,11 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
 
   @Override
   public void setLowWaterMark(long lowWaterMark) {
-    assertMutable();
     if (this.lowWaterMark != lowWaterMark) {
+      assertMutable();
       firePropertyChange(AN_LOWWATERMARK, this.lowWaterMark, lowWaterMark);
+      this.lowWaterMark = lowWaterMark;
     }
-    this.lowWaterMark = lowWaterMark;
   }
 
   @Override
@@ -455,11 +455,11 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
 
   @Override
   public void setRequestSize(long requestSize) {
-    assertMutable();
     if (this.requestSize != requestSize) {
+      assertMutable();
       firePropertyChange(AN_REQUESTSIZE, this.requestSize, requestSize);
+      this.requestSize = requestSize;
     }
-    this.requestSize = requestSize;
   }
 
   @Override
@@ -479,11 +479,11 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
 
   @Override
   public void setUplink(String uplink) {
-    assertMutable();
     if (!Objects.equals(this.uplink, uplink)) {
+      assertMutable();
       firePropertyChange(AN_UPLINK, this.uplink, uplink);
+      this.uplink = uplink;
     }
-    this.uplink = uplink;
   }
 
   @Override

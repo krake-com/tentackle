@@ -1021,9 +1021,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
   /**
    * Returns whether an explicit id alias is necessary in joins.<br>
-   * This applies to MULTI-table inherited PDOs only (abstracts and leafs).
+   * This applies to MULTI-table inherited PDOs only (abstracts and leaves).
    *
-   * @return true if need explicit id alias
+   * @return true if we need an explicit id alias
    */
   public boolean isExplicitIdAliasRequiredInJoins() {
     return false;
@@ -1327,7 +1327,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Selects an object according to a template object.
    * Useful to find corresponding objects in another context.
    * The default implementation loads the same object by its ID.
-   * Should be overwridden to select by some other unique key.
+   * Should be overridden to select by some other unique key.
    *
    * @param template the template object
    * @return the object if found, else null.
@@ -1350,7 +1350,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Gets a prepared statement and marks it as batchable.<br>
    * If there is a transaction running in batched mode, the statement will be executed via JDBC batching.
-   * Otherwise the method is equivalent to {@link #getPreparedStatement(StatementId, Supplier)}.
+   * Otherwise, the method is equivalent to {@link #getPreparedStatement(StatementId, Supplier)}.
    * <p>
    * The method must only be used for inserts, updates and delete of a single row!
    *
@@ -1527,7 +1527,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Reads the next row from a result set within a joined select.<br>
    * The results may come in any order. Thus, it is possible to sort the results
-   * according the to the domain's requirements.
+   * according to the domain's requirements.
    *
    * @param js the joined select
    * @param rs the result set
@@ -1584,7 +1584,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     }
     rs.skip(columnCount);
 
-    // recursively read joined joins
+    // recursively read the joined joins
     for (Join<?,?> subJoin: join.getJoins()) {
       readJoin(rs, joinedPdo, (Join) subJoin);
     }
@@ -1747,7 +1747,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Reloads the object with a write lock.<br>
+   * Reloads the object with a write-lock.<br>
    * Restores transient data, if present.
    *
    * @return the object if reloaded, else null (never <em>this</em>)
@@ -1804,10 +1804,23 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     if (po.isRootEntity()) {
       // set the root-context for sure
       po.setSessionHolder(context.getRootContext(derivedPdo));   // no setDomainContext!
-      // check always because context wasn't checked by assertRootContextIsAccepted
+      // always check because context wasn't checked by assertRootContextIsAccepted
       // but simply created along with the PDO!
       if (!po.isReadAllowed()) {
         return null;
+      }
+      // special case for PDOs being programmatically either root entity or component.
+      // Those PDOs must be modeled like a normal component, but with [root] in the global options,
+      // with \@wurblet MethodsImpl --noisroot option and the isRootEntity() method overridden to return
+      // true or false according to the domain logic.
+      // The component will then point to the logical parent, either as a component or just a non-composite relation.
+      //
+      // If loaded from within such a root-entity context, make it immutable, since it's loaded like a component,
+      // but must not be updated and therefore not modified!
+      if (po.getRootId() != 0 && po.getRootClassId() != 0 &&              // related to some other entity
+          po.getRootId() == context.getRootId() && po.getRootClassId() == context.getRootClassId()) {
+        // loaded from within the associated root entity's context
+        po.setFinallyImmutable();   // must not be persisted within the other root's context!
       }
     }
     else {    // component
@@ -1839,7 +1852,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Checks the root context agains the security rules.
+   * Checks the root context against the security rules.
    */
   public void assertRootContextIsAccepted() {
     DomainContext context = getDomainContext();
@@ -1945,7 +1958,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Creates the SQL code for select by normtext.
    *
-   * @param not true if find all not matching the normtext
+   * @param not true to find all not matching the normtext
    * @return the sql code
    */
   public String createSelectByNormTextSql(boolean not) {
@@ -2518,7 +2531,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * If there is no cache (i.e. the method is not overridden),
    * the default implementation just loads from the db.
    *
-   * @param id the uniue object ID
+   * @param id the unique object ID
    * @return the object, null if no such object
    * @see #selectObject(long)
    */
@@ -2532,7 +2545,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * If there is no cache (i.e. the method is not overridden),
    * the default implementation just loads from the db.
    *
-   * @param id the uniue object ID
+   * @param id the unique object ID
    * @return the object, null if no such object
    * @see #selectObject(long)
    */
@@ -2743,7 +2756,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * {@inheritDoc}
    * <p>
-   * Ovewridden to get the token lock removed, if any.
+   * Overridden to get the token lock removed, if any.
    */
   @Override
   protected void finishNotUpdated(ModificationType modType) {
@@ -3312,7 +3325,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Determines whether in updates of composite objects unmodified objects in the
    * update path get at least the serial updated or are not touched at all.
    * The default is to leave unmodified objects untouched, except root entities.
-   * However, in some applications it is necessary to update the master object if some of its childs are updated (usually
+   * However, in some applications it is necessary to update the master object if some of its children are updated (usually
    * to trigger something, e.g. a cache-update).<p>
    * The default implementation returns true if this is a root entity.
    *
@@ -3326,7 +3339,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Checks whether some of the objects in the list are modified.<br>
+   * Checks whether some objects in the list are modified.<br>
    * This method is provided to save components in PDOs only.
    * Assumes that a transaction is already running.
    * This method must not be used from within the application!
@@ -3357,7 +3370,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
   /**
-   * By default objects don't need to include the editedBy/Since/Expiry columns in the
+   * By default, objects don't need to include the editedBy/Since/Expiry columns in the
    * database table.
    * Override this method if object contains such columns, i.e. global model option [TOKENLOCK] set.
    *
@@ -3660,7 +3673,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * If expiry == 0, the "token" is released.
    * True is returned if operation was successful and editedBy will hold 0 while editedSince
    * holds the current (release) time. False is returned if token could not
-   * be released and nothing is changed. This usually is the case when another
+   * be released and nothing is changed. This is usually the case when another
    * user holds the token (and indicates some logic errors in the application, btw.)
    * EditedBy and editedSince are updated in the object to reflect the current values
    * in the database.
@@ -3767,7 +3780,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * If expiry == 0, the "token" is released.
    * True is returned if operation was successful and editedBy will hold 0 while editedSince
    * holds the current (release) time. False is returned if token could not
-   * be released and nothing is changed. This usually is the case when another
+   * be released and nothing is changed. This is usually the case when another
    * user holds the token (and indicates some logic errors in the application, btw.)
    * EditedBy and editedSince are updated in the object to reflect the current values
    * in the database.
@@ -3793,7 +3806,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Update the editedBy-attributes to persistent storage.<br>
    * No check is done whether locked or not and there is no serial
-   * update and no modlog. Used by daemons to cleanup.
+   * update and no modlog. Used by daemons to clean up.
    */
   public void updateTokenLockOnly() {
     Db db = getSession();
@@ -3866,7 +3879,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
           boolean withTableSerial = isTableSerialProvided();
           PreparedStatementWrapper st = getPreparedStatement(getClassVariables().transferTokenLockStatementId,
                   () -> withTableSerial ? createTransferTokenLockWithTableSerialSql() : createTransferTokenLockSql());
-          long newTableSerial = countModification();    // this will rollback and terminate on error
+          long newTableSerial = countModification();    // this will roll back and terminate on error
           if (withTableSerial) {
             setTableSerial(newTableSerial);
           }

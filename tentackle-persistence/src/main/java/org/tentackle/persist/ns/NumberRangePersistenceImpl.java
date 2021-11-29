@@ -266,11 +266,11 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
    * @param numberPoolId ID of the number pool
    */
   private void setNumberPoolId(long numberPoolId) {
-    assertMutable();
     if (this.numberPoolId != numberPoolId) {
+      assertMutable();
       firePropertyChange(AN_NUMBERPOOLID, this.numberPoolId, numberPoolId);
+      this.numberPoolId = numberPoolId;
     }
-    this.numberPoolId = numberPoolId;
   }
 
   @Override
@@ -290,11 +290,11 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
 
   @Override
   public void setBegin(long begin) {
-    assertMutable();
     if (this.begin != begin) {
+      assertMutable();
       firePropertyChange(AN_BEGIN, this.begin, begin);
+      this.begin = begin;
     }
-    this.begin = begin;
   }
 
   @Override
@@ -314,11 +314,11 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
 
   @Override
   public void setEnd(long end) {
-    assertMutable();
     if (this.end != end) {
+      assertMutable();
       firePropertyChange(AN_END, this.end, end);
+      this.end = end;
     }
-    this.end = end;
   }
 
   @Override
@@ -377,7 +377,6 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
 
   @Override
   public void setNumberPool(NumberPool numberPool)  {
-    assertMutable();
     this.numberPool = numberPool;
     setNumberPoolId(numberPool == null ? 0 : numberPool.getId());
     numberPoolLoaded = true;

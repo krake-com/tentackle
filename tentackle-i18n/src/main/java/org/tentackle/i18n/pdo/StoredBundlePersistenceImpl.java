@@ -248,11 +248,10 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
 
   @Override
   public void setName(String name) {
-    assertMutable();
     if (!Objects.equals(this.name, name)) {
       setModified(true);
+      this.name = name;
     }
-    this.name = name;
   }
 
   @Override
@@ -262,11 +261,10 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
 
   @Override
   public void setLocale(String locale) {
-    assertMutable();
     if (!Objects.equals(this.locale, locale)) {
       setModified(true);
+      this.locale = locale;
     }
-    this.locale = locale;
   }
 
   /**

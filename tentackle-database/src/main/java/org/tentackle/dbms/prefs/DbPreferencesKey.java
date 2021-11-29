@@ -361,11 +361,10 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
    * @param nodeId ID of the preferences node
    */
   public void setNodeId(long nodeId) {
-    assertMutable();
     if (this.nodeId != nodeId) {
       setModified(true);
+      this.nodeId = nodeId;
     }
-    this.nodeId = nodeId;
   }
 
   /**
@@ -383,11 +382,10 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
    * @param rootNodeId ID of the root node
    */
   public void setRootNodeId(long rootNodeId) {
-    assertMutable();
     if (this.rootNodeId != rootNodeId) {
       setModified(true);
+      this.rootNodeId = rootNodeId;
     }
-    this.rootNodeId = rootNodeId;
   }
 
   /**
@@ -405,11 +403,10 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
    * @param key name of the key
    */
   public void setKey(String key) {
-    assertMutable();
     if (!Objects.equals(this.key, key)) {
       setModified(true);
+      this.key = key;
     }
-    this.key = key;
   }
 
   /**
@@ -427,11 +424,10 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
    * @param value value of the key
    */
   public void setValue(String value) {
-    assertMutable();
     if (!Objects.equals(this.value, value)) {
       setModified(true);
+      this.value = value;
     }
-    this.value = value;
   }
 
   //</editor-fold>//GEN-END:methods
