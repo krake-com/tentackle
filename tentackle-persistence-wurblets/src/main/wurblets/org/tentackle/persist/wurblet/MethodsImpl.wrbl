@@ -908,6 +908,16 @@ For more options, see {\@link DbModelWurblet}.
 ]@
   @(setterProtection)@ void @(setter)@(@(type)@ @(attr.getName())@) {
 @[
+          if (type.equals("Timestamp")) {
+]@
+    Timestamp.setUTC(@(attr.getName())@, @(attr.getOptions().isUTC() ? "true" : "false")@);
+@[
+          }
+          if (attr.getDataType().isMutable()) {
+]@
+    Freezable.freeze(@(attr.getName())@);
+@[
+          }
           if (generateMock) {
 ]@
     this.@(attr.getName())@ = @(attr.getName())@;
@@ -976,16 +986,6 @@ For more options, see {\@link DbModelWurblet}.
     this.@(attr.getName())@ = @(attr.getName())@;
 @[
             }
-          }
-          if (type.equals("Timestamp")) {
-]@
-    Timestamp.setUTC(@(attr.getName())@, @(attr.getOptions().isUTC() ? "true" : "false")@);
-@[
-          }
-          if (attr.getDataType().isMutable()) {
-]@
-    Freezable.freeze(@(attr.getName())@);
-@[
           }
 ]@
   }
