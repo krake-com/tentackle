@@ -393,10 +393,11 @@ public class Postgres extends AbstractSql92Backend {
     boolean defaultChanged = !isDefaultEqual(column, sqlType, defaultValue);
     boolean nullChanged = column.isNullable() != nullable;
     boolean typeChanged = !column.matchesSqlType(sqlType);
-    boolean sizeChanged = size > column.getSize() ||    // model size increased
-                          // or changed from VARCHAR(x) to TEXT
-                          size == 0 && (sqlType == SqlType.VARCHAR || sqlType == SqlType.CLOB) &&
-                          column.getSize() > 0 && column.getSize() != Integer.MAX_VALUE;
+    boolean sizeChanged = maxSize != -1 &&
+                          (size > column.getSize() ||    // model size increased
+                           // or changed from VARCHAR(x) to TEXT
+                           size == 0 && (sqlType == SqlType.VARCHAR || sqlType == SqlType.CLOB) &&
+                           column.getSize() > 0 && column.getSize() != Integer.MAX_VALUE);
     boolean sizeWarning = maxSize != -1 && size != 0 && size < column.getSize();
     boolean scaleChanged = scale > column.getScale(); // smaller model scale is allowed
     boolean scaleWarning = maxSize != -1 && scale < column.getScale();
