@@ -542,10 +542,10 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    * @param when time of event
    */
   public void setWhen(Timestamp when) {
-    assertMutable();
-    this.when = when;
     Timestamp.setUTC(when, false);
     Freezable.freeze(when);
+    assertMutable();
+    this.when = when;
   }
 
   /**
@@ -587,10 +587,10 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    * @param processed processing time
    */
   public void setProcessed(Timestamp processed) {
-    assertMutable();
-    this.processed = processed;
     Timestamp.setUTC(processed, false);
     Freezable.freeze(processed);
+    assertMutable();
+    this.processed = processed;
   }
 
   //</editor-fold>//GEN-END:methods

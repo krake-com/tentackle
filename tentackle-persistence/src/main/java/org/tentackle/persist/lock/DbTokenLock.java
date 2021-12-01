@@ -282,10 +282,10 @@ public class DbTokenLock extends AbstractDbObject<DbTokenLock> implements TokenL
    * @param lockedSince time since token lock given to user
    */
   public void setLockedSince(Timestamp lockedSince) {
-    assertMutable();
-    this.lockedSince = lockedSince;
     Timestamp.setUTC(lockedSince, false);
     Freezable.freeze(lockedSince);
+    assertMutable();
+    this.lockedSince = lockedSince;
   }
 
   /**
@@ -303,10 +303,10 @@ public class DbTokenLock extends AbstractDbObject<DbTokenLock> implements TokenL
    * @param lockExpiry time when token lock expires
    */
   public void setLockExpiry(Timestamp lockExpiry) {
-    assertMutable();
-    this.lockExpiry = lockExpiry;
     Timestamp.setUTC(lockExpiry, false);
     Freezable.freeze(lockExpiry);
+    assertMutable();
+    this.lockExpiry = lockExpiry;
   }
 
   //</editor-fold>//GEN-END:methods
