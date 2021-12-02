@@ -679,6 +679,7 @@
                   <goal>jar</goal>
                 </goals>
                 <configuration>
+                  <quiet>true</quiet>
                   <doclint>none</doclint>
                   <bottom><![CDATA[<a href="${project.url}">Tentackle</a> - distributed, domain- and model-driven]]></bottom>
                   <archive>
