@@ -494,7 +494,19 @@ public class DbUtilities {
     }
 
     if (builderMappings.isEmpty() && setterMappings.isEmpty() && recordMappings == null) {
-      throw new PersistenceException("no matching columns found");
+      StringBuilder buf = new StringBuilder();
+      buf.append("cannot create ").append(clazz.getSimpleName()).append(" from ");
+      boolean needComma = false;
+      for (String columnName : columnNames) {
+        if (needComma) {
+          buf.append(", ");
+        }
+        else {
+          needComma = true;
+        }
+        buf.append(columnName);
+      }
+      throw new PersistenceException(buf.toString());
     }
 
     try {

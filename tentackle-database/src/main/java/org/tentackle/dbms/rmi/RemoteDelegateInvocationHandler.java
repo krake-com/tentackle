@@ -28,7 +28,6 @@ import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;
 import org.tentackle.log.MappedDiagnosticContext;
 import org.tentackle.misc.Duration;
-import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.Session;
 
 import java.lang.reflect.InvocationHandler;
@@ -462,9 +461,9 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
   private StringBuilder createInvocationLog(Method method, Object[] args, Object retval, Duration duration, int collectionSize) {
     StringBuilder buf = new StringBuilder();
     if (logInvocationDetails) {
-      buf.append(ReflectionHelper.getClassBaseName(delegate.getServicedClass())).
+      buf.append(delegate.getServicedClass().getSimpleName()).
           append(": ").
-          append(ReflectionHelper.getClassBaseName(delegate.getClass())).
+          append(delegate.getClass().getSimpleName()).
           append('.').
           append(method.getName()).
           append('(');

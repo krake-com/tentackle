@@ -18,8 +18,6 @@
 
 package org.tentackle.dbms;
 
-import org.tentackle.reflect.ReflectionHelper;
-
 import java.util.Objects;
 
 /**
@@ -116,7 +114,7 @@ public class StatementKey {
       buf.append(sql);
     }
     else {
-      buf.append(ReflectionHelper.getClassBaseName(usingClass)).append('#').append(statementId);
+      buf.append(usingClass.getSimpleName()).append('#').append(statementId);
     }
     buf.append('>');
     return buf.toString();

@@ -25,7 +25,6 @@ import org.tentackle.log.Logger;
 import org.tentackle.misc.CopyOnWriteList;
 import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.misc.ImmutableArrayList;
-import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.permissions.ReadPermission;
 import org.tentackle.session.ModificationTracker;
@@ -116,7 +115,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
     LOGGER.fine("creating cache for {0}", clazz);
 
     // createPdo default index by object-ID.
-    idIndex = new PdoCacheIndex<>(ReflectionHelper.getClassBaseName(clazz) + ":ID") {
+    idIndex = new PdoCacheIndex<>(clazz.getSimpleName() + ":ID") {
 
       @Override
       public Long extract(T pdo) {

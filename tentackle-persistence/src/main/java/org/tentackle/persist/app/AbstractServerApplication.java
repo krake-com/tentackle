@@ -33,7 +33,6 @@ import org.tentackle.log.Logger;
 import org.tentackle.pdo.OperationInvocationHandler;
 import org.tentackle.pdo.PdoInvocationHandler;
 import org.tentackle.prefs.PersistedPreferencesFactory;
-import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.MultiUserSessionPool;
 import org.tentackle.session.PersistenceException;
@@ -229,7 +228,7 @@ public abstract class AbstractServerApplication extends AbstractApplication
     }
 
     if (sessionInfo.getApplicationName() == null) {
-      sessionInfo.setApplicationName(ReflectionHelper.getClassBaseName(getClass()));
+      sessionInfo.setApplicationName(getClass().getSimpleName());
     }
 
     sessionInfo.applyProperties();

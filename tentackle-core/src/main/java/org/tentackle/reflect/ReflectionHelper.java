@@ -55,19 +55,6 @@ public final class ReflectionHelper {
 
 
   /**
-   * Gets the basename of a class.
-   * The basename is the class name without the package.
-   *
-   * @param clazz the class
-   * @return the basename
-   * @see #getClassBaseName(java.lang.String)
-   */
-  public static String getClassBaseName(Class<?> clazz)  {
-    return getClassBaseName(clazz.getName());
-  }
-
-
-  /**
    * Returns the absolute path name of the package of a class.<br>
    * Example:
    * <pre>
@@ -78,13 +65,13 @@ public final class ReflectionHelper {
    * @return the package path name, "/" if class is in the root package
    */
   public static String getPackagePathName(Class<?> clazz) {
-    String pkgName = getPackageName(clazz);
+    String pkgName = clazz.getPackageName();
     return "/" + pkgName.replace('.', '/');
   }
 
 
   /**
-   * Gets the package name.<br>
+   * Gets the package name of a classname(-like) string.<br>
    * Works also for inner classes.
    *
    * @param str the classname
@@ -127,17 +114,6 @@ public final class ReflectionHelper {
   }
 
   /**
-   * Gets the package name.
-   *
-   * @param clazz the class
-   * @return the package name, "" if no package
-   */
-  public static String getPackageName(Class<?> clazz) {
-    return getPackageName(clazz.getName());
-  }
-
-
-  /**
    * Creates a string from a method.<br>
    * This variant produces a much shorter string than {@link Method#toString()} and
    * shortens logging output.
@@ -148,11 +124,11 @@ public final class ReflectionHelper {
   public static String methodToString(Method method) {
     try {
       StringBuilder sb = new StringBuilder();
-      sb.append(getClassBaseName(method.getDeclaringClass())).append('.');
+      sb.append(method.getDeclaringClass().getSimpleName()).append('.');
       sb.append(method.getName()).append('(');
       Class<?>[] params = method.getParameterTypes();
       for (int j = 0; j < params.length; j++) {
-        sb.append(getClassBaseName(params[j]));
+        sb.append(params[j].getSimpleName());
         if (j < (params.length - 1)) {
           sb.append(',');
         }

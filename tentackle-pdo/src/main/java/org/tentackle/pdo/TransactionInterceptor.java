@@ -26,7 +26,6 @@ import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
 import org.tentackle.reflect.AbstractInterceptor;
 import org.tentackle.reflect.EffectiveClassProvider;
-import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionProvider;
@@ -74,7 +73,7 @@ public class TransactionInterceptor extends AbstractInterceptor {
     if (orgProxy instanceof SessionProvider) {
       Session session = ((SessionProvider) orgProxy).getSession();
       String txName = Constants.NAME_UNKNOWN.equals(transactionName) ?
-                        (ReflectionHelper.getClassBaseName(orgMethod.getDeclaringClass()) + "#" + orgMethod.getName()) :
+                        (orgMethod.getDeclaringClass().getSimpleName() + "#" + orgMethod.getName()) :
                         transactionName;
       TransactionRetryPolicy retryPolicy = transactionRetry ? PdoUtilities.getInstance().getTransactionRetryPolicy(transactionRetryPolicy) : null;
 
@@ -105,7 +104,7 @@ public class TransactionInterceptor extends AbstractInterceptor {
             // are mapped to a PersistenceException and just cluttering the logfile, if logged.
             // Other exceptions like NPEs, however, definitely provide useful information, that must be logged.
             if (ExceptionHelper.extractException(PersistenceException.class, true, rex) == null) {
-              LOGGER.severe("rollback failed after " + ReflectionHelper.getClassBaseName(t.getClass()) + " (" + t.getMessage() + ")", rex);
+              LOGGER.severe("rollback failed after " + t.getClass().getSimpleName() + " (" + t.getMessage() + ")", rex);
             }
           }
 

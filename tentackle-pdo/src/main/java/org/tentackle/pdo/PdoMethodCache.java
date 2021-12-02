@@ -21,7 +21,6 @@ package org.tentackle.pdo;
 import org.tentackle.reflect.Interceptable;
 import org.tentackle.reflect.InterceptableMethod;
 import org.tentackle.reflect.InterceptionUtilities;
-import org.tentackle.reflect.ReflectionHelper;
 
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -56,7 +55,7 @@ public class PdoMethodCache<T extends PersistentDomainObject<T>> {
 
   @Override
   public String toString() {
-    return ReflectionHelper.getClassBaseName(getClass()) + "(" + ReflectionHelper.getClassBaseName(clazz) + ")";
+    return getClass().getSimpleName() + "(" + clazz.getSimpleName() + ")";
   }
 
   /**
