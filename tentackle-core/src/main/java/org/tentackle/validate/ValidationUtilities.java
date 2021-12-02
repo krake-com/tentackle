@@ -220,7 +220,7 @@ public class ValidationUtilities {
    */
   public String getDefaultValidationPath(Object object) {
     Class<?> clazz = EffectiveClassProvider.getEffectiveClass(object);
-    return clazz == null ? "null" : StringHelper.firstToLower(ReflectionHelper.getClassBaseName(clazz));
+    return clazz == null ? "null" : StringHelper.firstToLower(clazz.getSimpleName());
   }
 
   /**
@@ -681,7 +681,7 @@ public class ValidationUtilities {
         throw new ValidationRuntimeException("clazz is necessary to determine package");
       }
       // find package of given object
-      String packageName = ReflectionHelper.getPackageName(clazz);
+      String packageName = clazz.getPackageName();
 
       // go up the package hierarchy until a class ValidationBundle is found
       for (;;) {

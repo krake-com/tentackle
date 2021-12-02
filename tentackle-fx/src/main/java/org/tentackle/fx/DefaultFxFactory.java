@@ -172,7 +172,7 @@ public class DefaultFxFactory implements FxFactory {
       Class<?> viewClass = entry.getKey().viewClass();
       DefaultClassMapper translators = viewTranslatorMap.computeIfAbsent(viewClass, k ->
               new DefaultClassMapper(
-                      ReflectionHelper.getClassBaseName(viewClass) + "-translator",
+                      viewClass.getSimpleName() + "-translator",
                       ServiceFactory.getClassLoader(Constants.DEFAULT_SERVICE_PATH, ValueTranslator.class.getName()),
                       new HashMap<>(), null));
       translators.getNameMap().put(entry.getKey().modelClass().getName(), entry.getValue().getName());
@@ -301,7 +301,7 @@ public class DefaultFxFactory implements FxFactory {
           }
         }
         else {
-          urlStr = ReflectionHelper.getClassBaseName(annotatedClass) + ".fxml";
+          urlStr = annotatedClass.getSimpleName() + ".fxml";
           fxmlUrl = annotatedClass.getResource(urlStr);
           if (fxmlUrl == null) {
             throw new FxRuntimeException("no such default URL '" + urlStr + "'");
@@ -352,13 +352,13 @@ public class DefaultFxFactory implements FxFactory {
 
       if (singleton) {
         controllers.put(controllerClass, controller);
-        LOGGER.info("controller {0} added to singletons", () -> ReflectionHelper.getClassBaseName(controllerClass));
+        LOGGER.info("controller {0} added to singletons", () -> controllerClass.getSimpleName());
       }
 
       if (cssUrl == null) {
         String cssName = service.css();
         if (cssName.isEmpty()) {
-          cssName = ReflectionHelper.getClassBaseName(controllerClass) + ".css";
+          cssName = controllerClass.getSimpleName() + ".css";
         }
         cssUrl = controllerClass.getResource(cssName);
       }

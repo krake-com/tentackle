@@ -32,7 +32,6 @@ import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.component.FxTreeTableView;
 import org.tentackle.prefs.PersistedPreferences;
 import org.tentackle.reflect.EffectiveClassProvider;
-import org.tentackle.reflect.ReflectionHelper;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -142,7 +141,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   public DefaultTableConfiguration(S template, String name) {
     this.template = template;
     this.objectClass = (Class<S>) EffectiveClassProvider.getEffectiveClass(template);
-    this.name = name == null ? ReflectionHelper.getClassBaseName(objectClass) : name;
+    this.name = name == null ? objectClass.getSimpleName() : name;
   }
 
   /**
@@ -154,7 +153,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   public DefaultTableConfiguration(Class<S> objectClass, String name) {
     this.template = null;
     this.objectClass = objectClass;
-    this.name = name == null ? ReflectionHelper.getClassBaseName(objectClass) : name;
+    this.name = name == null ? objectClass.getSimpleName() : name;
   }
 
   /**

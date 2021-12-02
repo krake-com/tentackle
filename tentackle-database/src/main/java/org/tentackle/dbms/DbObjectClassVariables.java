@@ -23,7 +23,6 @@ package org.tentackle.dbms;
 import org.tentackle.common.FileHelper;
 import org.tentackle.dbms.rmi.AbstractDbObjectRemoteDelegate;
 import org.tentackle.log.Logger;
-import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SessionUtilities;
 
@@ -299,7 +298,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
     this.classId = classId;
     this.tableName = tableName;
 
-    classBaseName = ReflectionHelper.getClassBaseName(clazz);
+    classBaseName = clazz.getSimpleName();
     expirationBacklog = createBacklog();
 
     // register and check extension hierarchy

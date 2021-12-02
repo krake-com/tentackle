@@ -26,7 +26,6 @@ import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistenceDelegate;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.reflect.EffectiveClassProvider;
-import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.Session;
 
 import java.io.Serial;
@@ -187,7 +186,7 @@ public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, 
   public String getSingular() {
     String name = PdoUtilities.getInstance().getSingular(me().getEffectiveClass());
     if (name == null) {
-      name = ReflectionHelper.getClassBaseName(me().getEffectiveClass());
+      name = me().getEffectiveClass().getSimpleName();
     }
     return name;
   }

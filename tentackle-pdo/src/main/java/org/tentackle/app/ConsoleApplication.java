@@ -22,7 +22,6 @@ package org.tentackle.app;
 import org.tentackle.common.Constants;
 import org.tentackle.common.StringHelper;
 import org.tentackle.log.Logger;
-import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
 
@@ -105,7 +104,7 @@ public abstract class ConsoleApplication extends AbstractClientApplication {
     }
     sessionInfo.applyProperties();
     if (sessionInfo.getApplicationName() == null) {
-      sessionInfo.setApplicationName(ReflectionHelper.getClassBaseName(getClass()));
+      sessionInfo.setApplicationName(getClass().getSimpleName());
     }
     applyProperties(sessionInfo.getProperties());
   }

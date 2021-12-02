@@ -40,7 +40,6 @@ import org.tentackle.log.Logger;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PdoFactory;
 import org.tentackle.reflect.ClassMappedListener;
-import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
@@ -257,7 +256,7 @@ public abstract class DesktopApplication<C extends FxController>
                 }
                 catch (RuntimeException rex) {
                   String msg = MessageFormat.format(AppFxRdcBundle.getString("LAUNCHING {0} FAILED"),
-                                                    ReflectionHelper.getClassBaseName(getMainControllerClass()));
+                                                    getMainControllerClass().getSimpleName());
                   LOGGER.severe(msg, rex);
                   Fx.error(msg, rex);
                   view.getScene().getWindow().hide();

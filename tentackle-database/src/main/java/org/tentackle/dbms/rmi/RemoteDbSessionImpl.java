@@ -30,7 +30,6 @@ import org.tentackle.log.Logger.Level;
 import org.tentackle.log.MethodStatistics;
 import org.tentackle.misc.DiagnosticUtilities;
 import org.tentackle.misc.Duration;
-import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.LoginFailedException;
 import org.tentackle.session.MultiUserSessionPool;
 import org.tentackle.session.PersistenceException;
@@ -768,13 +767,13 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   @Override
   public String toString() {
     StringBuilder buf = new StringBuilder();
-    buf.append(ReflectionHelper.getClassBaseName(getClass())).append('#').append(sessionNumber).append(": csf=");
+    buf.append(getClass().getSimpleName()).append('#').append(sessionNumber).append(": csf=");
 
     if (csf == null) {
       buf.append("<system>");
     }
     else {
-      buf.append(ReflectionHelper.getClassBaseName(csf.getClass()));
+      buf.append(csf.getClass().getSimpleName());
       if (csf instanceof SocketConfiguratorHolder) {
         SocketConfigurator csc = ((SocketConfiguratorHolder) csf).getSocketConfigurator();
         if (csc != null && csc.isValid()) {
@@ -788,7 +787,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
       buf.append("<system>");
     }
     else {
-      buf.append(ReflectionHelper.getClassBaseName(ssf.getClass()));
+      buf.append(ssf.getClass().getSimpleName());
       if (ssf instanceof ServerSocketConfiguratorHolder) {
         ServerSocketConfigurator ssc = ((ServerSocketConfiguratorHolder) ssf).getSocketConfigurator();
         if (ssc != null && ssc.isValid()) {

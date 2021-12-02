@@ -288,8 +288,7 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
           buf.append(comp.getComponentPath());
         }
       }
-      throw new BindingException("unbound components in " +
-                                 ReflectionHelper.getClassBaseName(controller.getClass()) + ": " + buf);
+      throw new BindingException("unbound components in " + controller.getClass().getSimpleName() + ": " + buf);
     }
   }
 
@@ -611,7 +610,7 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
             // if not explicitly set by application: generate default binding path(s)
             bindingPath = field.getName();
             // alternative 1: remove trailing component type name (blahTextField -> blah)
-            String componentClassName = ReflectionHelper.getClassBaseName(component.getClass());
+            String componentClassName = component.getClass().getSimpleName();
             if (componentClassName.startsWith("Fx")) {    // TT component
               componentClassName = componentClassName.substring(2);
             }

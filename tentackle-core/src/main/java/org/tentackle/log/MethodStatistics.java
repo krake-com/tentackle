@@ -18,11 +18,12 @@
 
 package org.tentackle.log;
 
+import org.tentackle.misc.Duration;
+import org.tentackle.reflect.ReflectionHelper;
+
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
-import org.tentackle.misc.Duration;
-import org.tentackle.reflect.ReflectionHelper;
 
 /**
  * Method statistics collector.
@@ -96,7 +97,7 @@ public class MethodStatistics {
                 append(" ms / ").append(result.getCount()).append(" x ").
                 append(ReflectionHelper.methodToString(key.getMethod()));
             if (!key.getServicedClass().equals(key.getMethod().getDeclaringClass())) {
-              buf.append(" for ").append(ReflectionHelper.getClassBaseName(key.getServicedClass()));
+              buf.append(" for ").append(key.getServicedClass().getSimpleName());
             }
           }
           if (clear) {

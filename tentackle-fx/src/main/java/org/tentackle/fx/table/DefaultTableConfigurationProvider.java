@@ -24,7 +24,6 @@ import org.tentackle.common.StringHelper;
 import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.bind.FxBindingFactory;
-import org.tentackle.reflect.ReflectionHelper;
 
 import java.util.Collection;
 import java.util.ResourceBundle;
@@ -67,7 +66,7 @@ public class DefaultTableConfigurationProvider<T> implements TableConfigurationP
     TableConfigurationProviderService annotation = getClass().getAnnotation(TableConfigurationProviderService.class);
     if (annotation == null) {
       if (getClass() != DefaultTableConfigurationProvider.class) {
-        throw new FxRuntimeException(getClass() + " is not annotated with @" + ReflectionHelper.getClassBaseName(TableConfigurationProviderService.class));
+        throw new FxRuntimeException(getClass() + " is not annotated with @" + TableConfigurationProviderService.class.getSimpleName());
       }
       // see DefaultTableConfigurationProviderFactory
       clazz = (Class<T>) Object.class;

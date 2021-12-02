@@ -53,7 +53,7 @@ public class ReflectionHelperTest {
 
   @Test
   public void testClassBaseName() {
-    Assert.assertEquals(ReflectionHelper.getClassBaseName(getClass()), "ReflectionHelperTest");
+    Assert.assertEquals(ReflectionHelper.getClassBaseName(getClass().getName()), "ReflectionHelperTest");
   }
 
   @Test

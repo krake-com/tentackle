@@ -29,7 +29,6 @@ import org.tentackle.pdo.PdoCache;
 import org.tentackle.pdo.PdoMethodCache;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.persist.security.SecurityPersistenceImpl;
-import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.security.Permission;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.session.SessionUtilities;
@@ -243,7 +242,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
     this.superClassVariables = superClassVariables;
     this.eagerJoins = eagerJoins;
 
-    pdoClassBaseName = ReflectionHelper.getClassBaseName(this.pdoClass);
+    pdoClassBaseName = pdoClass.getSimpleName();
   }
 
   /**

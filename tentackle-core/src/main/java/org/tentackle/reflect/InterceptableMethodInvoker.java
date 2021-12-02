@@ -273,9 +273,9 @@ public class InterceptableMethodInvoker extends MethodStatistics {
   private StringBuilder createInvocationLog(Object delegate, Method method, Object[] args, Object retval, Duration duration, int collectionSize) {
     StringBuilder buf = new StringBuilder();
     if (logInvocationDetails) {
-      buf.append(ReflectionHelper.getClassBaseName(delegate.getClass())).
+      buf.append(delegate.getClass().getSimpleName()).
           append(": ").
-          append(ReflectionHelper.getClassBaseName(method.getDeclaringClass())).
+          append(method.getDeclaringClass().getSimpleName()).
           append('.').
           append(method.getName()).
           append('(');
@@ -300,7 +300,7 @@ public class InterceptableMethodInvoker extends MethodStatistics {
       buf.append('}');
     }
     else {
-      buf.append(ReflectionHelper.getClassBaseName(method.getDeclaringClass())).
+      buf.append(method.getDeclaringClass().getSimpleName()).
           append('.').
           append(method.getName()).
           append(" [").

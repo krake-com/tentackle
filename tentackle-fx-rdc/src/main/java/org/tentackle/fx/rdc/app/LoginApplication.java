@@ -31,7 +31,6 @@ import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.rdc.login.Login;
 import org.tentackle.log.Logger;
-import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.SessionInfo;
 
 import java.awt.Rectangle;
@@ -142,7 +141,7 @@ public class LoginApplication extends FxApplication {
     }
 
     if (sessionInfo.getApplicationName() == null) {
-      sessionInfo.setApplicationName(ReflectionHelper.getClassBaseName(application.getClass()));
+      sessionInfo.setApplicationName(application.getClass().getSimpleName());
     }
 
     AbstractApplication.getRunningApplication().applyProperties(sessionInfo.getProperties());

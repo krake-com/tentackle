@@ -50,7 +50,6 @@ import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.security.pdo.Security;
 import org.tentackle.session.SessionUtilities;
 import org.tentackle.validate.ValidationFailedException;
@@ -81,7 +80,7 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
     }
     else {
       controller.setSecuredObject(clazz);
-      stage.setTitle(MessageFormat.format(RdcFxRdcBundle.getString("Security Rules for {0}"), ReflectionHelper.getClassBaseName(clazz)));
+      stage.setTitle(MessageFormat.format(RdcFxRdcBundle.getString("Security Rules for {0}"), clazz.getSimpleName()));
     }
     Scene scene = Fx.createScene(controller.getView());
     stage.setScene(scene);
@@ -281,7 +280,7 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
       if (clazz != null) {
         trackedClassRules = on(Security.class).selectByObjectClass(clazz.getName());
         classRules.setAll(trackedClassRules);
-        classTab.setText(MessageFormat.format(RdcFxRdcBundle.getString("Rules for {0}"), ReflectionHelper.getClassBaseName(clazz)));
+        classTab.setText(MessageFormat.format(RdcFxRdcBundle.getString("Rules for {0}"), clazz.getSimpleName()));
       }
       else {
         classRules.clear();

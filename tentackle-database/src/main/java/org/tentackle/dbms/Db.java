@@ -1421,7 +1421,7 @@ public class Db implements Session, Cloneable {
       });
       if (sh.get() == null) {
         // call tree too long? -> just use the classname (better than nothing...)
-        txName = ReflectionHelper.getClassBaseName(txe.getClass());
+        txName = txe.getClass().getSimpleName();
         int ndx = txName.indexOf('$');    // cut useless info $$Lambda$0/123456789
         if (ndx > 0) {
           txName = txName.substring(0, ndx);

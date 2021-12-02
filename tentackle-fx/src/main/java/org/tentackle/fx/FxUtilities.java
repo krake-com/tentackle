@@ -364,7 +364,7 @@ public class FxUtilities {
       if (node instanceof FxContainer) {
         FxController controller = ((FxContainer) node).getController();
         if (controller != null) {
-          buf.append(ReflectionHelper.getClassBaseName(controller.getClass())).append(": ");
+          buf.append(controller.getClass().getSimpleName()).append(": ");
         }
       }
       else if (node instanceof FxTableView) {
@@ -382,13 +382,13 @@ public class FxUtilities {
             buf.append(" bound to '");
             Class<?> type = member.getType();
             if (type != null) {
-              String typeName = ReflectionHelper.getClassBaseName(type);
+              String typeName = type.getSimpleName();
               buf.append(typeName);
               Type genericType = member.getGenericType();
               if (genericType != null) {
                 Class<?> innerType = ReflectionHelper.extractGenericInnerTypeClass(genericType);
                 if (innerType != null) {
-                  String innerTypeName = ReflectionHelper.getClassBaseName(innerType);
+                  String innerTypeName = innerType.getSimpleName();
                   if (!innerTypeName.equals(typeName)) {
                     buf.append('<').append(innerTypeName).append('>');
                   }
@@ -399,7 +399,7 @@ public class FxUtilities {
             buf.append(member).append("'");
             ValueTranslator<?, ?> valueTranslator = fxComponent.getValueTranslator();
             if (valueTranslator != null) {
-              buf.append(" via ").append(ReflectionHelper.getClassBaseName(valueTranslator.getClass()));
+              buf.append(" via ").append(valueTranslator.getClass().getSimpleName());
             }
           }
         }

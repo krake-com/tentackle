@@ -63,7 +63,7 @@ public class InterceptableMethodCache {
 
   @Override
   public String toString() {
-    return ReflectionHelper.getClassBaseName(getClass()) + "(" + ReflectionHelper.getClassBaseName(clazz) + ")";
+    return getClass().getSimpleName() + "(" + clazz.getSimpleName() + ")";
   }
 
   /**
