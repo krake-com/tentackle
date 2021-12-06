@@ -193,7 +193,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
     private Db db;                                    // the local session
     private String mdcInfo;                           // the cached MDC info
     private final RemoteDbConnectionImpl con;         // the connection object
-    private final Collection<WeakReference<RemoteDelegate>> exportedDelegates;  // delegates to unexport on close
+    private final Collection<WeakReference<RemoteDelegate>> exportedDelegates;  // delegates to un-export on close
     private final MethodStatistics methodStats;       // statistics for method invocations
                                                       // (managed by invocation handler, null if no stats)
 
@@ -222,7 +222,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
         }
         exportedDelegates.clear();
         if (me != null) {
-          unexportMe(me);
+          unExportMe(me);
         }
       }
       catch (RemoteException | RuntimeException ex) {
@@ -283,7 +283,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
       }
     }
 
-    void unexportMe(RemoteDbSessionImpl remoteSession) throws RemoteException {
+    void unExportMe(RemoteDbSessionImpl remoteSession) throws RemoteException {
       LOGGER.info("end {0}", remoteSession);
       con.unexportRemoteObject(remoteSession);
     }
@@ -295,12 +295,12 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
 
 
   private final Resources resources;                  // resources to be cleaned up
-  private final Cleanable cleanable;                  // to cleanup the connection
+  private final Cleanable cleanable;                  // to clean up the connection
   private final SessionInfo clientInfo;               // saved client info
   private final SessionInfo serverInfo;               // the server info for creating a new Db connection
   private final long sessionNumber;                   // unique session number
   private final String clientHost;                    // the client host string
-  private int timeout;                                // timeout in polling intervals of the cleanupthread
+  private int timeout;                                // timeout in polling intervals of the RemoteDbSessionCleanupThread
   private int port;                                   // port for all delegates
   private RMIClientSocketFactory csf;                 // client socket factory for all delegates
   private RMIServerSocketFactory ssf;                 // server socket factory for all delegates
@@ -315,7 +315,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * @param clientInfo the SessionInfo from the client
    * @param serverInfo the SessionInfo to establish the connection to the database server
    *
-   * @throws PersistenceException if the session could not initiated.
+   * @throws PersistenceException if the session could not be initiated.
    */
   public RemoteDbSessionImpl(RemoteDbConnectionImpl con, SessionInfo clientInfo, SessionInfo serverInfo) {
 
@@ -376,8 +376,8 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   }
 
   @Override
-  public void unexportMe() throws RemoteException {
-    resources.unexportMe(this);
+  public void unExportMe() throws RemoteException {
+    resources.unExportMe(this);
   }
 
 
@@ -395,15 +395,15 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   }
 
   /**
-   * Unexports given remote delegate.
+   * Un-exports given remote delegate.
    * <p>
-   * Notice: when the session is closed, all still exported objects will be unexported.
-   * This method is only necessary if a delegate must be explicitly unexported.
+   * Notice: when the session is closed, all still exported objects will be un-exported.
+   * This method is only necessary if a delegate must be explicitly un-exported.
    *
    * @param delegate the delegate
    * @throws RemoteException if object not exported
    */
-  public void unexportRemoteDelegate(RemoteDelegate delegate) throws RemoteException {
+  public void unExportRemoteDelegate(RemoteDelegate delegate) throws RemoteException {
     resources.con.unexportRemoteObject(delegate);
     for (Iterator<WeakReference<RemoteDelegate>> iter = resources.exportedDelegates.iterator(); iter.hasNext(); ) {
       WeakReference<RemoteDelegate> ref = iter.next();
@@ -704,7 +704,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * Closes the database connection (and thus rolls back any pending transaction).
    * If the db is pooled, it will be returned to the pool instead of being closed.
    *
-   * @param cleanup true if db must be physically closed even if pooled, due to cleanup
+   * @param cleanup true if db must be physically closed even if pooled, due to clean up
    */
   protected void closeDb(boolean cleanup) {
     if (closedSince == 0) {
@@ -942,7 +942,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
     }
     catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
            NoSuchMethodException | InvocationTargetException ex)  {
-      throw new RemoteException("coudn't create delegate for " + classname, ex);
+      throw new RemoteException("couldn't create delegate for " + classname, ex);
     }
   }
 
@@ -956,7 +956,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
     }
     catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
            InvocationTargetException | RemoteException ex)  {
-      throw new RemoteException("coudn't create delegate for " + resources.db, ex);
+      throw new RemoteException("couldn't create delegate for " + resources.db, ex);
     }
   }
 

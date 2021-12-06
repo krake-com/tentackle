@@ -138,9 +138,9 @@ public class MpxConnectionManager extends DefaultConnectionManager {
    * Don't drop below 4 connections.
    * Maximum of 40 connections, i.e. concurrent db operations (i.e. info above 10, warning above 20)
    * Within 12 to 36h (approx. once a day), close and reopen connections
-   * (allows updates of the database servers's QEPs, prepared statements cache, etc...).
+   * (allows updates of the database server's QEPs, prepared statements cache, etc...).
    *
-   * @param backendInfo backend info to use for creating connections (may be open or closed)
+   * @param backendInfo backend info to use for creating connections
    * @param idOffset the offset for connection ids (&gt; 0)
    */
   public MpxConnectionManager(BackendInfo backendInfo, int idOffset) {
@@ -276,7 +276,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
         /*
          * Crashed due to a dead server connection. This is a strong indicator that the database is facing some
          * severe problems. Because we don't know how many unattached connections are down we will probe them here. This
-         * is a little time consuming but better than waiting for other clients to crash.
+         * is a little time-consuming but better than waiting for other clients to crash.
          */
         int[] newUnConList = new int[unConList.length];
         int newUnConCount = 0;
@@ -317,7 +317,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
         ManagedConnection con = session.getConnection();
         if (con != null) {
           // already attached (e.g. within transaction)
-          con.attachSession(session);   // just increment the attach count
+          con.attachSession(session);   // just increment the attach-count
           break;
         }
 
@@ -359,9 +359,9 @@ public class MpxConnectionManager extends DefaultConnectionManager {
       }
 
       /*
-       * continue unsyncd (allow other threads to use the connection manager).
+       * continue un-synchronized (allow other threads to use the connection manager).
        * In order not to stop all clients for the duration of establishing new connections
-       * this is done in the connecThread. We will just trigger the thread and wait.
+       * this is done in the connectThread. We will just trigger the thread and wait.
        */
       boolean request = false;
       boolean runningOutOfConnections = false;
@@ -387,10 +387,10 @@ public class MpxConnectionManager extends DefaultConnectionManager {
         // else: some request is already running
       }
 
-      // unsyncd again...
+      // un-synchronized again...
       if (runningOutOfConnections) {
         try {
-          // sleep a randomly with increasing time according to loopcount
+          // sleep randomly with increasing time according to loopCount
           int baseMs = loopCount * BASE_MS;
           long ms = baseMs + random.nextInt(baseMs);
           LOGGER.warning("{0}: Running out of connections! Putting {1} to sleep for {2} ms, attempt {3}",
@@ -483,7 +483,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
       }
     }
 
-    // unsyncd...
+    // un-synchronized...
     if (closeIt) {
       LOGGER.info("{0}: closing connection {1}, open since {2}",
                   this, con, FormatHelper.formatTimestamp(new Date(con.getEstablishedSince())));
@@ -549,7 +549,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     }
 
     if (conSize + count < minSize) {
-      // at least to minsize
+      // at least to minSize
       count = minSize - conSize;
     }
 
@@ -648,7 +648,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   private static class ConnectionThread extends Thread {
 
     private final Object requestMtx;                            // connections requested mutex
-    private final WeakReference<MpxConnectionManager> cmRef;    // weak ref to check for GC'd conn manager
+    private final WeakReference<MpxConnectionManager> cmRef;    // weak ref to check for garbage collected connection manager
     private boolean lastAttemptFailed;                          // true if the last connection attempt failed
 
     ConnectionThread(MpxConnectionManager mgr) {

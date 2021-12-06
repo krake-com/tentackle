@@ -18,12 +18,6 @@
 
 package org.tentackle.persist;
 
-import java.io.Serial;
-import java.lang.ref.Cleaner;
-import java.lang.ref.Cleaner.Cleanable;
-import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.List;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.ScrollableResource;
@@ -33,6 +27,13 @@ import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.persist.rmi.RemoteResultSetCursor;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
+
+import java.io.Serial;
+import java.lang.ref.Cleaner;
+import java.lang.ref.Cleaner.Cleanable;
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A cursor for a {@link ResultSetWrapper}.
@@ -304,7 +305,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
     }
 
     /*
-     * some drivers don't allow positioning in resultsets that are not TYPE_FORWARD_ONLY. However, first() is a
+     * some drivers don't allow positioning in result-sets that are not TYPE_FORWARD_ONLY. However, first() is a
      * convenient way to test whether the result set contains some data at all. If the cursor is at the beginning or no
      * access made at all, we will do nothing or perform a next() instead.
      */
@@ -462,7 +463,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
 
   /**
    * Positions the cursor before the first row.<br>
-   * Works even for empty cursoresources.rs.
+   * Works even for empty cursors.
    */
   @Override
   public void beforeFirst() {
@@ -489,7 +490,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
 
   /**
    * Positions the cursor after the last row.<br>
-   * Works even for empty cursoresources.rs.
+   * Works even for empty cursors.
    */
   @Override
   public void afterLast() {
@@ -600,7 +601,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
     List<T> list;
     if (session.isRemote())  {
       try {
-        // this is faster then a getObject()-loop because it saves rmi-roundtrips
+        // this is faster than a getObject()-loop because it saves rmi-roundtrips
         list = resources.remoteCursor.toList();    // unchecked
         if (list != null) {
           for (T obj: list) {
@@ -632,12 +633,12 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
   }
 
   /**
-   * Sets the fetchsize.<br>
+   * Sets the fetch size.<br>
    * This is the number of rows the cursor will fetch
    * from the server in one batch.
-   * A fetchsize of 0 means server default.
+   * A fetch size of 0 means server default.
    *
-   * @param rows the fetchsize
+   * @param rows the fetch size
    */
   @Override
   public void setFetchSize(int rows) {
@@ -655,9 +656,9 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
   }
 
   /**
-   * Gets the fetchsize.
+   * Gets the fetch size.
    *
-   * @return the fetchsize
+   * @return the fetch size
    */
   @Override
   public int getFetchSize() {
@@ -691,9 +692,9 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
   }
 
   /**
-   * Fetches the next objects up to the fetchsize.<br>
+   * Fetches the next objects up to the fetch size.<br>
    * This method is provided to minimize the number of
-   * roundtrips especially for remote cursoresources.rs.
+   * roundtrips especially for remote cursors.
    * The cursor is closed at the end of the cursor.
    *
    * @return the list of objects, null if no more objects found
@@ -706,7 +707,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
     if (!isClosed()) {
       if (session.isRemote()) {
         try {
-          // this is faster then a get()-loop because it saves rmi-roundtrips
+          // this is faster than a get()-loop because it saves rmi-roundtrips
           list = resources.remoteCursor.fetch();    // unchecked
           if (list != null) {
             for (T obj : list) {
@@ -744,7 +745,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
           // load next fetch block
           list = new FetchList<>();
           // special optimization if first() has been invoked before (to prevent beforeFirst()
-          // called on FORWARD_ONLY cursors, some dbms don't support that, i.e. Oracle)
+          // called on FORWARD_ONLY cursors, some databases don't support that, i.e. Oracle)
           if (firstInvoked && row == 1) {
             T obj = get();
             if (obj != null) {

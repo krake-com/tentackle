@@ -195,7 +195,7 @@ public class ValidationUtilities {
   /**
    * Gets the classloader to load the validation bundle class.
    *
-   * @return the classloader, never null (default to this classes classloader)
+   * @return the classloader, never null (default to {@code getClass().getClassLoader()})
    */
   public ClassLoader getValidationBundleClassLoader() {
     return validationBundleClassLoader == null ? getClass().getClassLoader() : validationBundleClassLoader;
@@ -664,7 +664,7 @@ public class ValidationUtilities {
    * Or much shorter directly as a message parameter in the validator:
    * <pre>message={ @('{0}_is_wrong', value) }</pre>
    * <p>
-   * This method will lookup a class named <code>ValidationBundle</code> in the package or super-packages of where the validator is used
+   * This method will look up a class named <code>ValidationBundle</code> in the package or super-packages of where the validator is used
    * and invokes the static method getString().
    *
    * @param clazz the class to look for <code>ValidationBundle</code> in the same package

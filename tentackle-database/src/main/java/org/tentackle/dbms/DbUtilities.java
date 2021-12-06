@@ -74,7 +74,7 @@ public class DbUtilities {
 
 
   /**
-   * Creates a sessionless object for given class.
+   * Creates a session-less object for given class.
    *
    * @param <T> the object type
    * @param clazz the object class
@@ -377,7 +377,7 @@ public class DbUtilities {
    * <p>
    * For the builder pattern see the DTO wurblet.<br>
    * For the setter pattern the DTO class needs a public no-arg constructor.<br>
-   * For the record pattern the cononical constructor is used.
+   * For the record pattern the canonical constructor is used.
    * <p>
    * The method- and columnnames are matched case-insensitive with all underscores removed.<br>
    * For primitive members of the DTO class the result set must not contain null values, of course.

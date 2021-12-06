@@ -144,10 +144,10 @@ public class ResultSetWrapper implements AutoCloseable {
 
 
   private final Resources resources;                // resources to be cleaned up
-  private final Cleanable cleanable;                // to cleanup the result set
+  private final Cleanable cleanable;                // to clean up the result set
   private int columnOffset;                         // offset to add to column index (e.g. for eager loading / joins)
   private int columnCount;                          // number of columns returned, -1 if unknown
-  private ResultSetMetaData metaData;               // the meta data, null if not retrieved yet
+  private ResultSetMetaData metaData;               // the metadata, null if not retrieved yet
   private int skipBlockIndex;                       // the current skip block
   private boolean cursorMovedInSkipMode;            // true if cursor moved the first time while in skipmode
   private Map<Object,ResultSetSection> sections;    // the configured column sections
@@ -231,7 +231,7 @@ public class ResultSetWrapper implements AutoCloseable {
 
   /**
    * Set whether to commit() before close() or not.<br>
-   * Some dbms (e.g. Postgres) cannot use cursors outside of a transaction.
+   * Some dbms (e.g. Postgres) cannot use cursors outside a transaction.
    * In this case a transaction must be started before executeQuery()
    * (see PreparedStatementWrapper and Query).
    * and closed when the resultset (or the cursor) is closed.
@@ -271,7 +271,7 @@ public class ResultSetWrapper implements AutoCloseable {
 
   /**
    * Set the statement to be closed when result set is closed.
-   * By default the statement remains open.
+   * By default, the statement remains open.
    *
    * @param closeStatementOnClose true if close statement on close
    */
@@ -356,7 +356,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * <p>
    * If the result set is in skip mode, the first column with that name is found
    * after having skipped some columns according to the last invocation of {@link #skip()}.
-   * Otherwise the standard JDBC-implementation is used.
+   * Otherwise, the standard JDBC-implementation is used.
    *
    * @param name the column name
    * @return the index in the result set
@@ -393,7 +393,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * Skipmode allows multiple columns with the same name belonging to different entities.
    * For example, in a joined select of two unrelated tables (i.e. no MULTI-inheritance),
    * at least the columns id and serial will appear twice. With skip mode enabled,
-   * the column configuration allows to skip already configured columns (hence the name skipmode).
+   * the column configuration allows skipping already configured columns (hence the name skipmode).
    * <p>
    * Skipmode is implemented by changing the way {@link #findColumn(java.lang.String)} maps names to column indexes.
    * All other methods are unaffected.
@@ -533,7 +533,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * If {@code configureSection} returns true, a new section was created and
    * the columns of this section must be configured once via {@link #configureColumn} in
    * the order of their retrieval.<br>
-   * Otherwise the section is already configured.<br>
+   * Otherwise, the section is already configured.<br>
    * This is the preferred way to retrieve values from a result set, since
    * it is the best compromise between speed and flexibility with respect to
    * the order of the returned columns.<p>
@@ -904,7 +904,7 @@ public class ResultSetWrapper implements AutoCloseable {
   /**
    * Moves the cursor a relative number of rows, either positive or negative.
    * Attempting to move beyond the first/last row in the
-   * result set positions the cursor before/after the
+   * result set positions the cursor before/after
    * the first/last row. Calling <code>relative(0)</code> is valid, but does
    * not change the cursor position.
    *

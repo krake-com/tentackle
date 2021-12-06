@@ -177,14 +177,14 @@ public abstract class RemoteDbConnectionImpl extends RemoteServerObject implemen
   }
 
   /**
-   * Exports the given remote object.
+   * Un-exports the given remote object.
    *
-   * @param remoteObject the object to unexport
+   * @param remoteObject the object to un-export
    * @throws RemoteException if the remote object is not currently exported
    */
   public void unexportRemoteObject(Remote remoteObject) throws RemoteException {
     UnicastRemoteObject.unexportObject(remoteObject, true);
-    LOGGER.fine("{0} unexported", remoteObject);
+    LOGGER.fine("{0} un-exported", remoteObject);
   }
 
 

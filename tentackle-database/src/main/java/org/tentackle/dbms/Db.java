@@ -392,7 +392,7 @@ public class Db implements Session, Cloneable {
                   closeHandler.beforeClose(me);
                 }
                 catch (RuntimeException ex) {
-                  LOGGER.warning("closehandler.beforeClose failed for " + me, ex);
+                  LOGGER.warning("SessionCloseHandler.beforeClose failed for " + me, ex);
                 }
               }
               for (SessionCloseHandler closeHandler : GLOBAL_CLOSE_HANDLERS) {
@@ -400,7 +400,7 @@ public class Db implements Session, Cloneable {
                   closeHandler.beforeClose(me);
                 }
                 catch (RuntimeException ex) {
-                  LOGGER.warning("global closehandler.beforeClose failed for " + me, ex);
+                  LOGGER.warning("global SessionCloseHandler.beforeClose failed for " + me, ex);
                 }
               }
             }
@@ -411,7 +411,7 @@ public class Db implements Session, Cloneable {
               if (crashed) {
                 // don't rses.close() if crashed, because connection may block!
                 // do it from a background thread instead.
-                // remote side must timeout anyway. (or has already timed out)
+                // remote side must time out anyway. (or has already timed out)
                 // this is especially useful if this is a server running against another server.
                 REMOTE_CLOSING_EXECUTOR.submit(() -> remoteClose(rses));
               }
@@ -453,7 +453,7 @@ public class Db implements Session, Cloneable {
                   closeHandler.afterClose(me);
                 }
                 catch (RuntimeException ex) {
-                  LOGGER.warning("closehandler.afterClose failed for " + me, ex);
+                  LOGGER.warning("SessionCloseHandler.afterClose failed for " + me, ex);
                 }
               }
               for (SessionCloseHandler closeHandler : GLOBAL_CLOSE_HANDLERS) {
@@ -461,7 +461,7 @@ public class Db implements Session, Cloneable {
                   closeHandler.afterClose(me);
                 }
                 catch (RuntimeException ex) {
-                  LOGGER.warning("global closehandler.afterClose failed for " + me, ex);
+                  LOGGER.warning("global SessionCloseHandler.afterClose failed for " + me, ex);
                 }
               }
             }
@@ -520,41 +520,41 @@ public class Db implements Session, Cloneable {
   }
 
 
-  private final BackendInfo backendInfo;                  // the backend information
-  private Resources resources;                            // resources to be cleaned up (not final due to reopen)
-  private Cleanable cleanable;                            // to cleanup the connection (not final due to reopen)
-  private int instanceNumber;                             // each session gets a unique instance number
-  private String idConfig;                                // configuration of IdSource
-  private int sessionGroupId;                             // ID of the session group, 0 = none
-  private int exportedSessionGroupId;                     // session group exported to the remote client, 0 = none
-  private SessionPool dbPool;                             // != null if this Db is managed by a SessionPool
-  private int poolId;                                     // the poolid if dbPool != null
-  private SessionInfo sessionInfo;                        // user information
-  private Db clonedFromDb;                                // the original session if this is a cloned one
-  private volatile boolean autoCommit;                    // true if autocommit on, else false
-  private boolean countModificationAllowed = true;        // allow modification count
-  private boolean logModificationAllowed = true;          // allow modification log
-  private boolean readOnly;                               // true if database is readonly
-  private IdSource defaultIdSource;                       // default ID-Source for db-connection (if not overridden in derivates)
-  private int fetchSize;                                  // default fetchsize, 0 = drivers default
-  private int maxRows;                                    // maximum rows per resultset, 0 = no limit
-  private boolean logModificationTxEnabled;               // true if log transaction begin/commit in modification log
-  private long logModificationTxId;                       // transaction id. !=0 if 'commit' is pending in modification log
-  private boolean logModificationDeferred;                // true if log to memory rather than dbms
-  private List<ModificationLog> modificationLogList;      // in-memory modification-log for current transaction
-  private DbTransaction transaction;                      // the running transaction
-  private int immediatelyRolledBack;                      // txLevel > 0 if a transaction has been rolled back by rollbackImmediately (only for local Db)
-  private volatile boolean alive;                         // true = connection is still in use, false = connection has timed out
-  private long keepAliveInterval;                         // the auto keep alive interval in ms, 0 = no keep alive
-  private volatile Thread ownerThread;                    // the exclusive owner thread
-  private WeakReference<SessionTaskDispatcher> dispatcherRef;  // task dispatcher for asynchroneous tasks
-  private Map<String,Serializable> applicationProperties; // application-specific properties
-  private ReconnectionPolicy<Db> reconnectionPolicy;      // reconnection policy, null if none (default)
-  private int batchSize;                                  // >1 if JDBC batching should be used for certain prepared statements
+  private final BackendInfo backendInfo;                      // the backend information
+  private Resources resources;                                // resources to be cleaned up (not final due to reopen)
+  private Cleanable cleanable;                                // to clean up the connection (not final due to reopen)
+  private int instanceNumber;                                 // each session gets a unique instance number
+  private String idConfig;                                    // configuration of IdSource
+  private int sessionGroupId;                                 // ID of the session group, 0 = none
+  private int exportedSessionGroupId;                         // session group exported to the remote client, 0 = none
+  private SessionPool dbPool;                                 // != null if this Db is managed by a SessionPool
+  private int poolId;                                         // the poolid if dbPool != null
+  private SessionInfo sessionInfo;                            // user information
+  private Db clonedFromDb;                                    // the original session if this is a cloned one
+  private volatile boolean autoCommit;                        // true if autocommit on, else false
+  private boolean countModificationAllowed = true;            // allow modification count
+  private boolean logModificationAllowed = true;              // allow modification log
+  private boolean readOnly;                                   // true if database is readonly
+  private IdSource defaultIdSource;                           // default ID-Source for db-connection (if not overridden in derivates)
+  private int fetchSize;                                      // default fetchsize, 0 = drivers default
+  private int maxRows;                                        // maximum rows per resultset, 0 = no limit
+  private boolean logModificationTxEnabled;                   // true if log transaction begin/commit in modification log
+  private long logModificationTxId;                           // transaction id. !=0 if 'commit' is pending in modification log
+  private boolean logModificationDeferred;                    // true if log to memory rather than dbms
+  private List<ModificationLog> modificationLogList;          // in-memory modification-log for current transaction
+  private DbTransaction transaction;                          // the running transaction
+  private int immediatelyRolledBack;                          // txLevel > 0 if a transaction has been rolled back by rollbackImmediately (only for local Db)
+  private volatile boolean alive;                             // true = connection is still in use, false = connection has timed out
+  private long keepAliveInterval;                             // the auto keep alive interval in ms, 0 = no keep alive
+  private volatile Thread ownerThread;                        // the exclusive owner thread
+  private WeakReference<SessionTaskDispatcher> dispatcherRef; // task dispatcher for asynchronous tasks
+  private Map<String,Serializable> applicationProperties;     // application-specific properties
+  private ReconnectionPolicy<Db> reconnectionPolicy;          // reconnection policy, null if none (default)
+  private int batchSize;                                      // >1 if JDBC batching should be used for certain prepared statements
 
   // for RMI remote connections
-  private RMIClientSocketFactory csf;                     // client socket factory, null if system default
-  private RemoteDelegate[] delegates;                     // the delegates per session
+  private RMIClientSocketFactory csf;                         // client socket factory, null if system default
+  private RemoteDelegate[] delegates;                         // the delegates per session
 
 
 
@@ -1066,8 +1066,8 @@ public class Db implements Session, Cloneable {
   /**
    * Checks whether the session is still in use.
    * Whenever a {@link StatementWrapper} or {@link PreparedStatementWrapper} is used
-   * (i.e executeQuery or executeUpdate), the session is set to be alive.
-   * Some other thread may clear this flag regulary and check whether it has
+   * (i.e. executeQuery or executeUpdate), the session is set to be alive.
+   * Some other thread may clear this flag regularly and check whether it has
    * been set in the meantime.
    *
    * @return true if connection still in use, false if not used since last setAlive(false).
@@ -1131,8 +1131,8 @@ public class Db implements Session, Cloneable {
 
   /**
    * Gets the dispatcher for this session.<br>
-   * The dispatcher can be used to submit asynchroneous tasks in a serial manner.
-   * The returned dispatcher is configured to shutdown if idle for a given timeout.
+   * The dispatcher can be used to submit asynchronous tasks in a serial manner.
+   * The returned dispatcher is configured to shut down if idle for a given timeout.
    *
    * @return the dispatcher
    */
@@ -1219,7 +1219,7 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Handles a connect exception (in open or clone).
+   * Handles a connect-exception (in open or clone).
    * The method returns a PersistenceException.
    */
   private PersistenceException handleConnectException(Exception e) {
@@ -1689,7 +1689,7 @@ public class Db implements Session, Cloneable {
   }
 
   /**
-   * Returns whethe a transaction with savepoints is currently running.
+   * Returns whether a transaction with savepoints is currently running.
    *
    * @return true if savepoints present
    */
@@ -1710,7 +1710,7 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Creates a begin modification log if necessary.
+   * Creates a {@link  DbModificationType#BEGIN} modification log, if necessary.
    */
   public void logBeginTx() {
     if (logModificationTxEnabled && logModificationTxId == 0 && isTxRunning()) {
@@ -1953,7 +1953,7 @@ public class Db implements Session, Cloneable {
    * If it is 0, nothing will happen.
    * In all other cases an exception will be thrown.
    *
-   * @param txVoucher the transaction voucher, 0 if do nothing (nested tx)
+   * @param txVoucher the transaction voucher, 0 to do nothing (nested tx)
    *
    * @return true if committed, false if nested tx
    */
@@ -2133,7 +2133,7 @@ public class Db implements Session, Cloneable {
 
   /**
    * Rolls back the current transaction, if pending.<br>
-   * Used to cleanup in case of an exception or alike.
+   * Used to clean up in case of an exception or alike.
    * <p>
    * Only applicable to local sessions.
    * <p>
@@ -2164,7 +2164,7 @@ public class Db implements Session, Cloneable {
           throw new PersistenceException(this, transaction + " not rolled back despite valid voucher");
         }
         transaction = null;
-        // remember the txLevel for pending rollback()s, if any will arive from the application
+        // remember the txLevel for pending rollback()s, if any will arrive from the application
         immediatelyRolledBack = currentTxLevel;
       }
       // else: not within a transaction: cleanup forced
@@ -2240,7 +2240,7 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Asserts that that the connection is attached and returns it.
+   * Asserts that the connection is attached and returns it.
    *
    * @return the attached connection
    */
@@ -2255,7 +2255,7 @@ public class Db implements Session, Cloneable {
 
   /**
    * Detach the session.<br>
-   * Used in exception handling to cleanup all pending statements and result sets.
+   * Used in exception handling to clean up all pending statements and result sets.
    */
   void forceDetached() {
     resources.conMgr.forceDetach(this);
@@ -2287,7 +2287,7 @@ public class Db implements Session, Cloneable {
    * Sets the group number for this db.<br>
    *
    * This is an optional number describing groups of db-connections,
-   * which is particulary useful in rmi-servers: if one connection
+   * which is particularly useful in rmi-servers: if one connection
    * fails, all others should be closed as well.
    * Groups are only meaningful for local db-connections, i.e.
    * for remote dbs the group instance refers to that of the rmi-server.
@@ -2420,7 +2420,7 @@ public class Db implements Session, Cloneable {
   /**
    * Sets the exclusive owner thread.
    * <p>
-   * Allows to detect other threads accidently using this session.<br>
+   * Allows detecting other threads accidentally using this session.<br>
    * Caution: don't forget to clear!
    *
    * @param ownerThread the owner thread, null to clear
@@ -2447,7 +2447,7 @@ public class Db implements Session, Cloneable {
    * Creates a non-prepared statement.
    * <p>
    * Non-prepared statements attach the session as soon as they
-   * are instatiated! The session is detached after executeUpdate or after
+   * are instantiated! The session is detached after executeUpdate or after
    * executeQuery when its result set is closed.
    *
    * @param resultSetType a result set type; one of
@@ -2794,7 +2794,7 @@ public class Db implements Session, Cloneable {
   /**
    * Gets the original session if this session is cloned.
    *
-   * @return the orginal session, null if this session is not cloned.
+   * @return the original session, null if this session is not cloned.
    */
   public Db getClonedFromDb() {
     return clonedFromDb;
@@ -3034,7 +3034,7 @@ public class Db implements Session, Cloneable {
   /**
    * Sets the modification logging deferred state for the current transaction.<br>
    * In deferred mode the {@link ModificationLog}s are not written to the database.
-   * Instead they are kept in memory and can be processed later via
+   * Instead, they are kept in memory and can be processed later via
    * {@link #popModificationLogsOfTransaction()}.
    * The state will be handed over to the remote session as well.
    * <p>
@@ -3182,7 +3182,7 @@ public class Db implements Session, Cloneable {
 
   /**
    * Sets the transaction id.
-   * Normally the tx-ID is derived from the id of the BEGIN-modlog
+   * Normally the tx-ID is derived from the id of the BEGIN-modlog,
    * so it's not necessary to invoke this method from an application.
    * (Poolkeeper's replication layer will do so!)
    *

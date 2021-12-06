@@ -92,7 +92,7 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
 
 
   /**
-   * Retuns whether statictics should be collected.
+   * Returns whether statistics should be collected.
    *
    * @return true if method invocations are counted and measured per method
    */
@@ -101,7 +101,7 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
   }
 
   /**
-   * Sets whether statictics should be collected.
+   * Sets whether statistics should be collected.
    *
    * @param collect true if method invocations are counted and measured per method
    */
@@ -132,7 +132,7 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
   /**
    * Returns whether args and return values will be logged as well.
    *
-   * @return true if log args and retval
+   * @return true if log arguments and return value
    */
   public static boolean isLoggingInvocationDetails() {
     return logInvocationDetails;
@@ -141,7 +141,7 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
   /**
    * Sets whether args and return values will be logged as well.
    *
-   * @param log true if log args and retval
+   * @param log true if log arguments and return value
    */
   public static void setLoggingInvocationDetails(boolean log) {
     logInvocationDetails = log;
@@ -386,7 +386,7 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
       try {
         // rollback any pending transaction and/or force detaching the db.
         // this improves stability in case the client is misbehaving, waits at a user prompt, or whatever.
-        // if it behaves as expected, subsequent rollbacks will just decrememt a counter.
+        // if it behaves as expected, subsequent rollbacks will just decrement a counter.
         db.rollbackImmediately(cause);
       }
       catch (RuntimeException ex) {
