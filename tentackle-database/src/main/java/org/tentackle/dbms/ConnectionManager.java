@@ -25,8 +25,8 @@ import java.util.Collection;
 /**
  * Connection Manager for local connections.<br>
  *
- * JDBC connections are never used directly. Instead Db-instances refer to a ConnectionManager
- * in order to use a connection. The usage of a connection is initiated by an attach operation.
+ * JDBC connections are never used directly. Instead, Db-instances refer to a ConnectionManager
+ * in order to use a connection. The usage of a connection is initiated by an attach-operation.
  * After completion of the task (transaction, one-shot, etc...) the Db will be detached.
  * The connection manager as a broker in between the Db and a connection gives the opportunity to
  * multiplex connections. This is especially useful in application servers.
@@ -72,8 +72,8 @@ public interface ConnectionManager {
   /**
    * Cleans up any resources for the given session ID.<br>
    * Connection managers should not keep references to the sessions.
-   * Instead they map connections via a session ID which is unique for each session.
-   * If, for whatever reason, the session is garbage collected (see {@link java.lang.ref.Cleaner},
+   * Instead, they map connections via a session ID which is unique for each session.
+   * If, for whatever reason, the session is garbage collected (see {@link java.lang.ref.Cleaner}),
    * the connection manager must be notified that the session ID is no longer valid and the
    * connection is no more associated to a session.
    *
@@ -92,7 +92,7 @@ public interface ConnectionManager {
 
 
   /**
-   * Gets the mininum session id.
+   * Gets the minimum session id.
    *
    * @return the lowest valid session ID.
    * @see #getMaxSessions()
@@ -118,12 +118,12 @@ public interface ConnectionManager {
   /**
    * Attaches a {@link Db} to a connection.<br>
    * A Db must be attached before it can use any statements.
-   * The framework will attach at the begining of a transaction or when getting a prepared
+   * The framework will attach at the beginning of a transaction or when getting a prepared
    * statement or when getting a one-shot non-prepared statement.
    * Note that attachments can be nested to any depth, i.e. only the first attach really binds
    * the connection to the Db.
    * <p>
-   * Upon return the the session will reference the connection.
+   * Upon return the session will reference the connection.
    *
    * @param session the session
    * @throws org.tentackle.session.PersistenceException if attach failed.
@@ -135,7 +135,7 @@ public interface ConnectionManager {
    * Detaches a connection from a {@link Db}.<br>
    * A Db must be detached to release the connection for use of other Db instances.
    * The framework will detach the db on every commit or rollback, after executeUpdate
-   * or after a resultset is closed for an executeQuery.
+   * or after a ResultSet is closed for an executeQuery.
    * Note that attachments can be nested to any depth, i.e. only the last detach really
    * unbinds the connection from the Db.
    *
@@ -146,7 +146,7 @@ public interface ConnectionManager {
 
 
   /**
-   * Detaches but also scans for pending statements to cleanup.
+   * Detaches but also scans for pending statements to clean up.
    * <p>
    * This will detach at any nesting level!
    *

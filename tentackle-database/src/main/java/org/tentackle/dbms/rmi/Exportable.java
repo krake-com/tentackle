@@ -39,6 +39,6 @@ public interface Exportable {
    *
    * @throws RemoteException if unexport failed
    */
-  void unexportMe() throws RemoteException;
+  void unExportMe() throws RemoteException;
 
 }

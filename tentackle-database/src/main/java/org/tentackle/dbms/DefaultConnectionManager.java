@@ -40,8 +40,8 @@ import java.util.Random;
  * The default implementation of a connection manager.<br>
  * Each session will get its own physical connection.
  * <p>
- * Although this manager implements a strict 1:1 mapping between sessions and connections
- * it can be easily extended to implememt a M:N mapping, see the {@link MpxConnectionManager}.
+ * Although this manager implements a strict 1:1 mapping between sessions and connections,
+ * it can be easily extended to implement an M:N mapping, see the {@link MpxConnectionManager}.
  *
  * @author harald
  */
@@ -98,7 +98,7 @@ public class DefaultConnectionManager implements ConnectionManager {
 
   private int maxCountForClearWarnings = 1000;  // trigger when to clearWarning() on a connection (enabled by default)
   private long attachTimeout;                   // max. attach timeout, 0 to disable check (default)
-  private volatile boolean shutdownRequested;   // true if connection manager and timeout thread should shutdown
+  private volatile boolean shutdownRequested;   // true if connection manager and timeout thread should shut down
   private Thread timeoutThread;                 // thread to check for connections attached too long (default null)
 
 
@@ -161,7 +161,7 @@ public class DefaultConnectionManager implements ConnectionManager {
    * by opening connections excessively. The usual application holds 2 connections and temporarily
    * 1 or 2 more. If you need more, change the connection manager in Db.
    * Within 12 to 36h (approx. once a day), close and reopen connections
-   * (allows updates of the database servers's QEPs, prepared statements cache, etc...).
+   * (allows updates of the database server's QEPs, prepared statements cache, etc...).
    */
   public DefaultConnectionManager() {
     this("default-mgr", 2, 8, 1, 720, 2160);
@@ -198,7 +198,7 @@ public class DefaultConnectionManager implements ConnectionManager {
 
 
   /**
-   * Gets the attach timeout.
+   * Gets the attach-timeout.
    *
    * @return the max. attach time, 0 if check is disabled (default)
    */
@@ -207,7 +207,7 @@ public class DefaultConnectionManager implements ConnectionManager {
   }
 
   /**
-   * Sets the attach timeout.
+   * Sets the attach-timeout.
    *
    * @param attachTimeout the max. attach time, 0 if check is disabled (default)
    */
@@ -284,7 +284,7 @@ public class DefaultConnectionManager implements ConnectionManager {
       int id = addDb(session);
       /*
        * because we add the connections in the same order as the db (1:1 mapping), the
-       * index returned after adding the conncetion must be the same as for the db.
+       * index returned after adding the connection must be the same as for the db.
        */
       if (addConnection(con) != id) {
         con.close();
@@ -413,7 +413,7 @@ public class DefaultConnectionManager implements ConnectionManager {
    * Adds a Db to the list.
    *
    * @param db the db to add
-   * @return the index of db in the dblist
+   * @return the index of db in the list
    */
   protected int addDb(Db db) {
     if (freeDbCount == 0) {
@@ -444,7 +444,7 @@ public class DefaultConnectionManager implements ConnectionManager {
   /**
    * Removes a Db from the list.
    *
-   * @param index the index of db in the dblist
+   * @param index the index of db in the list
    */
   protected void removeDb(int index) {
     freeDbList[freeDbCount++] = index;
@@ -455,7 +455,7 @@ public class DefaultConnectionManager implements ConnectionManager {
    * Adds a connection to the list.
    *
    * @param con the connection to add
-   * @return the index of connection in the conlist
+   * @return the index of connection in the list
    */
   protected int addConnection(ManagedConnection con) {
     if (freeConCount == 0) {
@@ -493,7 +493,7 @@ public class DefaultConnectionManager implements ConnectionManager {
   /**
    * Removes a connection from the list.
    *
-   * @param index the index of connection in the conlist
+   * @param index the index of connection in the list
    * @return the removed connection
    */
   protected ManagedConnection removeConnection(int index) {
@@ -623,7 +623,7 @@ public class DefaultConnectionManager implements ConnectionManager {
 
 
   /**
-   * The attach timeout thread.<br>
+   * The attach-timeout thread.<br>
    * Detaches connections that have been attached for longer than attachTimeout milliseconds.
    * The thread is stopped as soon as the connection manager is shut down or becomes unreferenced.
    */

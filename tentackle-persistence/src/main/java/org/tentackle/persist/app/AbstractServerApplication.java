@@ -95,7 +95,7 @@ public abstract class AbstractServerApplication extends AbstractApplication
   /**
    * {@inheritDoc}
    * <p>
-   * Overwridden to protect the sessioninfo once it is set.
+   * Overridden to protect the SessionInfo once it is set.
    */
   @Override
   protected void setSessionInfo(SessionInfo sessionInfo) {
@@ -166,7 +166,7 @@ public abstract class AbstractServerApplication extends AbstractApplication
   public MultiUserSessionPool createRemoteSessionPool() {
     // 100 remote sessions should be ok for most proxy rmi servers. Should be smaller than the local server's pool maxSize anyway.
     // Timeouts make no sense at all for pooling of remote client sessions ("get" when logged in and "close with put" on logout,
-    // i.e. there are no idle sessions and the session must remain open untol logout).
+    // i.e. there are no idle sessions and the session must remain open until logout).
     if (getSession().getSessionGroupId() == 0) {
       // if not grouped so far, build a new session group within the remote server with a single session at start
       // so that all sessions of the session pool are grouped properly with the server's main session.
@@ -339,9 +339,9 @@ public abstract class AbstractServerApplication extends AbstractApplication
 
 
   /**
-   * Deregisters all JDBC-Drivers loaded by the app's classloader.<br>
+   * De-registers all JDBC-Drivers loaded by the app's classloader.<br>
    * Necessary in containers only (in case connected directly via JDBC and not via JNDI).
-   * Avoids memleaks.
+   * Avoids memory leaks.
    *
    * @param cl the app's classloader
    */
@@ -351,7 +351,7 @@ public abstract class AbstractServerApplication extends AbstractApplication
       Driver driver = drivers.nextElement();
       if (driver.getClass().getClassLoader() == cl) {
         try {
-          LOGGER.info("deregistering JDBC driver {0}", driver);
+          LOGGER.info("de-registering JDBC driver {0}", driver);
           DriverManager.deregisterDriver(driver);
         }
         catch (SQLException sx) {

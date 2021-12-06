@@ -173,7 +173,7 @@ public class ManagedConnection {
   }
 
   /**
-   * Gets the ptional periodical log of statistics in milliseconds.
+   * Gets the optional periodical log of statistics in milliseconds.
    *
    * @return the period in milliseconds, 0 if disabled (default)
    */
@@ -182,7 +182,7 @@ public class ManagedConnection {
   }
 
   /**
-   * Sets the ptional periodical log of statistics in milliseconds.<br>
+   * Sets the optional periodical log of statistics in milliseconds.<br>
    * If turned on, the statistics will be logged and cleared every logStatisticsMillis milliseconds.
    *
    * @param millis the period in milliseconds, 0 to disable
