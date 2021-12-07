@@ -19,9 +19,9 @@
 package org.tentackle.fx.rdc.junit;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.junit.platform.commons.logging.Logger;
 import org.junit.platform.commons.logging.LoggerFactory;
-import org.testng.annotations.Test;
 
 import org.tentackle.common.Version;
 import org.tentackle.fx.table.TableConfigurationProvider;
@@ -67,7 +67,7 @@ public abstract class TableConfigurationProviderTest extends FxRdcTestApplicatio
     this(null);
   }
 
-  @Test(alwaysRun = true)
+  @Test
   public void testTableConfigurationProviders() {
     for (String servicedClassName : classMapper.getMap().keySet()) {
       try {
