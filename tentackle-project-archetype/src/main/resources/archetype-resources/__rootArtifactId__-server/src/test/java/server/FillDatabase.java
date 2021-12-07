@@ -17,7 +17,7 @@ import org.testng.annotations.Test;
 import org.tentackle.log.Logger;
 import org.tentackle.ns.pdo.NumberPool;
 import org.tentackle.ns.pdo.NumberRange;
-import org.tentackle.test.pdo.AbstractPdoTest;
+import org.tentackle.pdo.testng.AbstractPdoTest;
 
 
 /**

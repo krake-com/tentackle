@@ -21,7 +21,7 @@ package org.tentackle.test.pdo.pdofactory;
 
 import org.testng.Reporter;
 
-import org.tentackle.test.pdo.mock.MockDomainObject;
+import org.tentackle.pdo.mock.MockDomainObject;
 
 import java.io.Serial;
 

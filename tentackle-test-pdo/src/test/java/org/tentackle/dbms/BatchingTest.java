@@ -23,7 +23,7 @@ import org.testng.Reporter;
 import org.testng.annotations.Test;
 
 import org.tentackle.misc.Duration;
-import org.tentackle.test.pdo.AbstractPdoTest;
+import org.tentackle.pdo.testng.AbstractPdoTest;
 
 public class BatchingTest extends AbstractPdoTest {
 

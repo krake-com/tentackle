@@ -23,7 +23,7 @@ import org.testng.Reporter;
 
 import org.tentackle.pdo.PdoMethodCache;
 import org.tentackle.pdo.PdoMethodCacheProvider;
-import org.tentackle.test.pdo.mock.MockPersistentObject;
+import org.tentackle.pdo.mock.MockPersistentObject;
 
 import java.io.Serial;
 

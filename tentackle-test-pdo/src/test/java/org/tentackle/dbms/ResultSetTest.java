@@ -23,7 +23,7 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import org.tentackle.ns.pdo.NumberPool;
-import org.tentackle.test.pdo.AbstractPdoTest;
+import org.tentackle.pdo.testng.AbstractPdoTest;
 
 import java.util.List;
 

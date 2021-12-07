@@ -16,19 +16,19 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.test.fx.rdc;
+package org.tentackle.fx.rdc.testng;
 
 import javafx.application.Platform;
 import org.testng.Reporter;
 import org.testng.SkipException;
 import org.testng.annotations.BeforeSuite;
 
-import org.tentackle.test.pdo.TestApplication;
+import org.tentackle.pdo.testng.TestApplication;
 
 import java.awt.GraphicsEnvironment;
 
 /**
- * FX test application.
+ * FX TestNG application.
  *
  * @author harald
  */

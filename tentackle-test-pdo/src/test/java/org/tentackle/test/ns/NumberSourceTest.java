@@ -28,7 +28,7 @@ import org.tentackle.ns.pdo.NumberPool;
 import org.tentackle.ns.pdo.NumberRange;
 import org.tentackle.pdo.PdoMember;
 import org.tentackle.pdo.PdoUtilities;
-import org.tentackle.test.pdo.AbstractPdoTest;
+import org.tentackle.pdo.testng.AbstractPdoTest;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;

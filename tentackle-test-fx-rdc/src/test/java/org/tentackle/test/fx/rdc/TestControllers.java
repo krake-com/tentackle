@@ -18,6 +18,8 @@
 
 package org.tentackle.test.fx.rdc;
 
+import org.tentackle.fx.rdc.testng.ControllerTest;
+
 /**
  * Tests all FX controllers.
  *

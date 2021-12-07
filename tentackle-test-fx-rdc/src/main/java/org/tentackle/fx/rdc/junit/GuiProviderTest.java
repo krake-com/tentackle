@@ -16,11 +16,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.test.fx.rdc;
+package org.tentackle.fx.rdc.junit;
 
-import org.testng.Assert;
-import org.testng.Reporter;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.platform.commons.logging.Logger;
+import org.junit.platform.commons.logging.LoggerFactory;
 
 import org.tentackle.common.Version;
 import org.tentackle.fx.rdc.GuiProvider;
@@ -32,7 +33,7 @@ import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.reflect.ClassMapper;
 
 /**
- * Tests whether GUI-providers could be loaded and bound.<br>
+ * Junit5 test to verify that all GUI-providers can be loaded and bound.<br>
  * Opens a session in case some providers need it.<br>
  * Simply extend this class and put that in a test source folder.
  * <p>
@@ -48,6 +49,8 @@ import org.tentackle.reflect.ClassMapper;
  * @author harald
  */
 public abstract class GuiProviderTest extends FxRdcTestApplication {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(GuiProviderTest.class);
 
   private final String packagePrefix;
   private final ClassMapper classMapper;
@@ -67,7 +70,7 @@ public abstract class GuiProviderTest extends FxRdcTestApplication {
     this(null);
   }
 
-  @Test(alwaysRun = true)
+  @Test
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public void testGuiProviders() {
     for (String pdoClassName : classMapper.getMap().keySet()) {
@@ -77,7 +80,7 @@ public abstract class GuiProviderTest extends FxRdcTestApplication {
         if (packagePrefix == null || provider.getClass().getName().startsWith(packagePrefix)) {
           GuiProviderService anno = provider.getClass().getAnnotation(GuiProviderService.class);
           if (anno == null || anno.test()) {
-            Reporter.log("testing gui provider " + provider.getClass().getName() + "<br>", true);
+            LOGGER.info(() -> "testing gui provider " + provider.getClass().getName());
             if (provider.editorExists()) {
               provider.createEditor();
             }
@@ -89,20 +92,20 @@ public abstract class GuiProviderTest extends FxRdcTestApplication {
             provider.createTreeItem();
           }
           else {
-            Reporter.log("gui provider " + provider.getClass().getName() + " not tested!<br>", true);
+            LOGGER.info(() -> "gui provider " + provider.getClass().getName() + " not tested!");
           }
         }
       }
       catch (PdoRuntimeException nx) {
         if (!(nx.getCause() instanceof ClassNotFoundException)) {
-          Assert.fail("creating GuiProvider for " + pdo.getClassBaseName() + " failed", nx);
+          Assertions.fail("creating GuiProvider for " + pdo.getClassBaseName() + " failed", nx);
         }
         else {
-          Reporter.log("no GuiProvider for " + pdo.getClassBaseName() + "<br>", true);
+          LOGGER.info(() -> "no GuiProvider for " + pdo.getClassBaseName());
         }
       }
       catch (RuntimeException ex) {
-        Assert.fail("testing GuiProvider for " + pdo.getClassBaseName() + " failed", ex);
+        Assertions.fail("testing GuiProvider for " + pdo.getClassBaseName() + " failed", ex);
       }
     }
   }

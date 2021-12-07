@@ -18,17 +18,17 @@
 
 package org.tentackle.test.persist;
 
+import org.testng.annotations.Test;
+
 import org.tentackle.dbms.Db;
 import org.tentackle.log.Logger;
 import org.tentackle.ns.pdo.NumberPool;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.Pdo;
+import org.tentackle.pdo.testng.AbstractPdoTest;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SessionInfo;
-import org.tentackle.test.pdo.AbstractPdoTest;
-
-import org.testng.annotations.Test;
 
 
 

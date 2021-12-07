@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.test.fx.rdc;
+package org.tentackle.fx.rdc.testng;
 
 import org.testng.Assert;
 import org.testng.Reporter;
@@ -29,7 +29,7 @@ import org.tentackle.fx.table.TableConfigurationProviderService;
 import org.tentackle.reflect.ClassMapper;
 
 /**
- * Tests whether {@link org.tentackle.fx.table.TableConfigurationProvider}s could be loaded and bound.<br>
+ * TestNG test to verify that all {@link org.tentackle.fx.table.TableConfigurationProvider}s can be loaded and bound.<br>
  * Opens a session in case some providers need it.<br>
  * Simply extend this class and put that in a test source folder.
  * <p>

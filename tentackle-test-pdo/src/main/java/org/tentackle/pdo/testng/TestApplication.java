@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.test.pdo;
+package org.tentackle.pdo.testng;
 
 import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
@@ -34,7 +34,7 @@ import org.tentackle.session.SessionInfo;
 import java.util.Properties;
 
 /**
- * Base class for tests that must run as an application.
+ * Base class for TestNG tests that must run as an application.
  *
  * @author harald
  */

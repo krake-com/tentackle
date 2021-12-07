@@ -19,7 +19,7 @@ import org.tentackle.misc.TrackedArrayList;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentObjectService;
 import org.tentackle.session.Session;
-import org.tentackle.test.pdo.mock.MockPersistentObject;
+import org.tentackle.pdo.mock.MockPersistentObject;
 
 import java.io.Serial;
 
