@@ -17,16 +17,14 @@
  *
  */
 
-package org.tentackle.test.pdo;
+package org.tentackle.pdo.junit;
 
-import org.testng.Reporter;
-import org.testng.SkipException;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.AfterSuite;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.BeforeSuite;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.platform.commons.logging.Logger;
+import org.junit.platform.commons.logging.LoggerFactory;
+import org.opentest4j.AssertionFailedError;
 
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
@@ -40,10 +38,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 
-import static org.testng.Assert.fail;
 
 /**
- * Base class for tests on PDO level.
+ * Base class for Junit5 tests on PDO level.
  *
  * @author harald
  */
@@ -63,13 +60,16 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
     NONE
   }
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(AbstractPdoTest.class);
 
-  private static Session session;           // session for all methods in all test classes
-  private static DomainContext context;     // domain context for all methods in all test classes
+  private static Session session;               // session for all methods in all test classes
+  private static DomainContext context;         // domain context for all methods in all test classes
+  private static AbstractPdoTest currentTest;   // the currently running test
 
-  private final TransactionType txType;     // transaction handling
-  private final boolean commit;             // true if commit transaction, else rollback (default)
-  private long txVoucher;                   // transaction voucher for current test class
+  private final boolean closeIt;                // true if we're the first test that created the session
+  private final TransactionType txType;         // transaction handling
+  private final boolean commit;                 // true if commit transaction, else rollback (default)
+  private long txVoucher;                       // transaction voucher for current test class
 
 
   /**
@@ -81,6 +81,10 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   public AbstractPdoTest(TransactionType txType, boolean commit) {
     this.txType = txType;
     this.commit = commit;
+    closeIt = openSessionsAndStartModificationTracker();
+    if (txType == TransactionType.CLASS) {
+      beginTransaction();
+    }
   }
 
   /**
@@ -101,19 +105,28 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
 
 
   /**
-   * Opens the sessions and starts the modification tracker.
+   * Opens the sessions and starts the modification tracker exactly once.
    *
    * @throws Exception if failed
    */
-  @BeforeSuite(alwaysRun = true)
-  public void openSessionsAndStartModificationTracker() throws Exception {
-    session = openSession();
-    context = createDomainContext();
+  public boolean openSessionsAndStartModificationTracker() {
+    synchronized (AbstractPdoTest.class) {
+      if (currentTest != null) {
+        throw new AssertionFailedError("another AbstractPdoTest is currently running: " + currentTest.getClass().getName());
+      }
+      currentTest = this;
+      if (session == null) {
+        session = openSession();
+        context = createDomainContext();
 
-    ModificationTracker tracker = ModificationTracker.getInstance();
-    tracker.setSession(session.clone(null));
-    tracker.setSleepInterval(500);   // fast polling for tests
-    tracker.start();
+        ModificationTracker tracker = ModificationTracker.getInstance();
+        tracker.setSession(session.clone(null));
+        tracker.setSleepInterval(500);   // fast polling for tests
+        tracker.start();
+        return true;
+      }
+      return false;
+    }
   }
 
   /**
@@ -121,35 +134,19 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
    *
    * @throws Exception if failed
    */
-  @AfterSuite(alwaysRun = true)
-  public void closeSessionsAndTerminateModificationTracker() throws Exception {
-    if (session != null) {
-      ModificationTracker.getInstance().terminate();
-      session.close();
-    }
-  }
-
-  /**
-   * Begins the transaction if type is {@link TransactionType#CLASS}.
-   *
-   * @throws Exception if failed
-   */
-  @BeforeClass(alwaysRun = true)
-  public void beforeClass() throws Exception {
-    if (txType == TransactionType.CLASS) {
-      beginTransaction();
-    }
-  }
-
-  /**
-   * Ends the transaction if type is {@link TransactionType#CLASS}.
-   *
-   * @throws Exception if failed
-   */
-  @AfterClass(alwaysRun = true)
-  public void afterClass() throws Exception {
-    if (txType == TransactionType.CLASS) {
-      endTransaction();
+  @AfterAll
+  public static synchronized void closeSessionsAndTerminateModificationTracker() {
+    if (currentTest != null) {
+      if (currentTest.txType == TransactionType.CLASS) {
+        currentTest.endTransaction();
+      }
+      if (currentTest.closeIt && session != null) {
+        ModificationTracker.getInstance().terminate();
+        session.close();
+        session = null;
+        context = null;
+      }
+      currentTest = null;
     }
   }
 
@@ -158,7 +155,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
    *
    * @throws Exception if failed
    */
-  @BeforeMethod(alwaysRun = true)
+  @BeforeEach
   public void beforeMethod() throws Exception {
     if (txType == TransactionType.METHOD) {
       beginTransaction();
@@ -170,7 +167,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
    *
    * @throws Exception if failed
    */
-  @AfterMethod(alwaysRun = true)
+  @AfterEach
   public void afterMethod() throws Exception {
     if (txType == TransactionType.METHOD) {
       endTransaction();
@@ -208,7 +205,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
 
   /**
    * Runs the given class in another JVM.<br>
-   * The testclass must have a main method.
+   * The test class must have a main method.
    *
    * @param testClass the test class
    * @return the exit value
@@ -232,7 +229,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
     }
     catch (PersistenceException ex) {
       // no database? wrong database? whatever: testing environment incomplete
-      throw new SkipException("no backend found -> no tests", ex);
+      throw new AssertionFailedError("no backend found -> no tests", ex);
     }
     s.makeCurrent();
     return s;
@@ -275,7 +272,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
 
   /**
    * Runs the given class in another JVM and waits for termination.<br>
-   * The testclass must have a main method.
+   * The test class must have a main method.
    *
    * @param testClass the test class
    * @param args optional arguments
@@ -301,12 +298,12 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
         cmd.append(' ').append(arg);
       }
     }
-    Reporter.log("running: " + cmd + "<br>");
+    LOGGER.info(() -> "running: " + cmd);
     return Runtime.getRuntime().exec(cmd.toString());
   }
 
   /**
-   * Waits for process to terminate and write stdout and stderr to the reporter log.
+   * Waits for process to terminate and write stdout and stderr to the junit log.
    *
    * @param process the process
    * @throws IOException if some IO failed
@@ -316,14 +313,15 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
       process.waitFor();
     }
     catch (InterruptedException ex) {
-      fail("executing " + process + " failed<br>", ex);
+      throw new AssertionFailedError("executing " + process + " failed", ex);
     }
     // collect stdout
     Reader r = new InputStreamReader(process.getInputStream());
     try (BufferedReader in = new BufferedReader(r)) {
       String line;
       while ((line = in.readLine()) != null) {
-        Reporter.log(line + "<br>");
+        String msg = line;
+        LOGGER.info(() -> msg);
       }
     }
     // collect stderr
@@ -331,7 +329,8 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
     try (BufferedReader in = new BufferedReader(r)) {
       String line;
       while ((line = in.readLine()) != null) {
-        Reporter.log(line + "<br>");
+        String msg = line;
+        LOGGER.info(() -> msg);
       }
     }
   }

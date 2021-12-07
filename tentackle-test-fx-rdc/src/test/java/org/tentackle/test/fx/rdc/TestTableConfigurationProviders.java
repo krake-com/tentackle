@@ -4,6 +4,8 @@
 
 package org.tentackle.test.fx.rdc;
 
+import org.tentackle.fx.rdc.testng.TableConfigurationProviderTest;
+
 /**
  * Tests all TableConfigurationProviders.
  */

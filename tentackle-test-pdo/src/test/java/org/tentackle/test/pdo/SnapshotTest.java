@@ -22,6 +22,7 @@ import org.testng.annotations.Test;
 
 import org.tentackle.ns.pdo.NumberPool;
 import org.tentackle.ns.pdo.NumberRange;
+import org.tentackle.pdo.testng.AbstractPdoTest;
 import org.tentackle.session.PersistenceException;
 
 import static org.testng.Assert.assertEquals;

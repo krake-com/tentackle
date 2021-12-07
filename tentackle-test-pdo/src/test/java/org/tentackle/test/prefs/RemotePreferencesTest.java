@@ -29,7 +29,7 @@ import org.tentackle.session.AbstractSessionTask;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
-import org.tentackle.test.pdo.AbstractPdoTest;
+import org.tentackle.pdo.testng.AbstractPdoTest;
 
 import java.util.ArrayList;
 import java.util.List;
