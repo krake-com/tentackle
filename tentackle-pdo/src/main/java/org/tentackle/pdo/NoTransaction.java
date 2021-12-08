@@ -31,10 +31,14 @@ import java.lang.annotation.Target;
 
 
 /**
- * Annotation to flag a method must not be used within a transaction.
+ * Annotation to verify that there is no transaction currently running.
  * <p>
- * This may be the case for methods providing stale data (cached, lazy references, for example)
- * that will not perform any database interaction, where this might be expected by the developer.
+ * This may be useful for methods providing stale data, for example cached or lazy references.
+ * <p>
+ * Another use case is to make sure that a new transaction is always started. This can be accomplished
+ * by a {@code @NoTransaction} annotation followed by a {@code  @Transaction} annotation.
+ *
+ * @see Transaction
  */
 @Documented
 @Inherited
@@ -44,7 +48,7 @@ import java.lang.annotation.Target;
 public @interface NoTransaction {
  
   /**
-   * Returns whether transaction must be avoided only if PDO is cached.
+   * Transactions must be avoided only if the PDO is cached.
    *
    * @return true if cached only, default is false
    */

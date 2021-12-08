@@ -36,6 +36,15 @@ import java.lang.annotation.Target;
  * <p>
  * Methods of the PDO- or Operation-interfaces annotated
  * with {@code @Transaction} will be enclosed by a transaction.
+ * If there is no transaction running, a new transaction is started immediately before the method is invoked.
+ * Any exception within that method will roll back the transaction. Otherwise, the transaction will be
+ * committed after the method's execution.<br>
+ * If there is already a transaction running, the method is executed within that transaction.
+ * <p>
+ * Another use case is to ensure that a transaction is already running via {@code running=true} and/or
+ * the method is invoked within a certain transaction (additionally specified transaction name).
+ *
+ * @see NoTransaction
  */
 @Documented
 @Inherited
@@ -51,6 +60,14 @@ public @interface Transaction {
    * @return the optional transaction name
    */
   String value() default Constants.NAME_UNKNOWN;
+
+  /**
+   * Requires that a transaction is already running.<br>
+   * If the optional transaction name is given, it must match the name of the current transaction.
+   *
+   * @return true if transaction must be running already, false is default
+   */
+  boolean running() default false;
 
   /**
    * Determines whether rollbacks should be logged in detail or not.<br>

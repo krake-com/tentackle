@@ -46,6 +46,7 @@ public class TransactionInterceptor extends AbstractInterceptor {
 
 
   private String transactionName;                         // the transaction name from the annotation
+  private boolean running;                                // true if tx must be running already
   private boolean rollbackSilently;                       // true if don't log rollbacks
   private TransactionIsolation transactionIsolation;      // the isolation level
   private TransactionWritability transactionWritability;  // the writability
@@ -58,6 +59,7 @@ public class TransactionInterceptor extends AbstractInterceptor {
     super.setAnnotation(annotation);
     Transaction txAnno = (Transaction) annotation;
     transactionName = txAnno.value();
+    running = txAnno.running();
     rollbackSilently = txAnno.rollbackSilently();
     transactionIsolation = txAnno.isolation();
     transactionWritability = txAnno.writability();
@@ -72,44 +74,57 @@ public class TransactionInterceptor extends AbstractInterceptor {
 
     if (orgProxy instanceof SessionProvider) {
       Session session = ((SessionProvider) orgProxy).getSession();
-      String txName = Constants.NAME_UNKNOWN.equals(transactionName) ?
+
+      if (running) {
+        if (session.isTxRunning()) {
+          if (Constants.NAME_UNKNOWN.equals(transactionName) || transactionName.equals(session.getTxName())) {
+            return method.invoke(proxy, args);
+          }
+          throw new PersistenceException(session, "unexpected transaction named '" + session.getTxName() +
+                                                  "' running (expected '" + transactionName + "')");
+        }
+        throw new PersistenceException(session, "no transaction running");
+      }
+      else {
+        String txName = Constants.NAME_UNKNOWN.equals(transactionName) ?
                         (orgMethod.getDeclaringClass().getSimpleName() + "#" + orgMethod.getName()) :
                         transactionName;
-      TransactionRetryPolicy retryPolicy = transactionRetry ? PdoUtilities.getInstance().getTransactionRetryPolicy(transactionRetryPolicy) : null;
+        TransactionRetryPolicy retryPolicy = transactionRetry ? PdoUtilities.getInstance().getTransactionRetryPolicy(transactionRetryPolicy) : null;
 
-      for (int retryCount=1; ;retryCount++) {
-        long txVoucher = session.begin(txName, transactionIsolation, transactionWritability);
-        try {
-          Object result = method.invoke(proxy, args);
-          session.commit(txVoucher);
-          return result;
-        }
-        catch (Throwable t) {
-          // transcation failed!
+        for (int retryCount = 1; ; retryCount++) {
+          long txVoucher = session.begin(txName, transactionIsolation, transactionWritability);
           try {
-            PersistenceException rootPex;    // temporary LockException is always the root cause
-            if (rollbackSilently || txVoucher == 0 ||
-                (rootPex = ExceptionHelper.extractException(PersistenceException.class, false, t)) == null || rootPex.isTemporary() ||
-                ExceptionHelper.extractTemporaryException(true, t) != null) {
-              // silent rollback requested, nested tx, temporary or application-specific exception (domain logic) -> no detailed logging
-              session.rollbackSilently(txVoucher);
-            }
-            else {
-              // cause is a non-temporary PersistenceException (usually some database error such as a constraint exception) -> log details
-              session.rollback(txVoucher);
-            }
+            Object result = method.invoke(proxy, args);
+            session.commit(txVoucher);
+            return result;
           }
-          catch (RuntimeException rex) {
-            // rollback may fail for several reasons, usually some subsequent database errors. Those errors
-            // are mapped to a PersistenceException and just cluttering the logfile, if logged.
-            // Other exceptions like NPEs, however, definitely provide useful information, that must be logged.
-            if (ExceptionHelper.extractException(PersistenceException.class, true, rex) == null) {
-              LOGGER.severe("rollback failed after " + t.getClass().getSimpleName() + " (" + t.getMessage() + ")", rex);
+          catch (Throwable t) {
+            // transaction failed!
+            try {
+              PersistenceException rootPex;    // temporary LockException is always the root cause
+              if (rollbackSilently || txVoucher == 0 ||
+                  (rootPex = ExceptionHelper.extractException(PersistenceException.class, false, t)) == null || rootPex.isTemporary() ||
+                  ExceptionHelper.extractTemporaryException(true, t) != null) {
+                // silent rollback requested, nested tx, temporary or application-specific exception (domain logic) -> no detailed logging
+                session.rollbackSilently(txVoucher);
+              }
+              else {
+                // cause is a non-temporary PersistenceException (usually some database error such as a constraint exception) -> log details
+                session.rollback(txVoucher);
+              }
             }
-          }
+            catch (RuntimeException rex) {
+              // rollback may fail for several reasons, usually some subsequent database errors. Those errors
+              // are mapped to a PersistenceException and just cluttering the logfile, if logged.
+              // Other exceptions like NPEs, however, definitely provide useful information, that must be logged.
+              if (ExceptionHelper.extractException(PersistenceException.class, true, rex) == null) {
+                LOGGER.severe("rollback failed after " + t.getClass().getSimpleName() + " (" + t.getMessage() + ")", rex);
+              }
+            }
 
-          if (txVoucher == 0 || !isRetrying(retryPolicy, txName, retryCount, t)) {
-            throw t;
+            if (txVoucher == 0 || !isRetrying(retryPolicy, txName, retryCount, t)) {
+              throw t;
+            }
           }
         }
       }
