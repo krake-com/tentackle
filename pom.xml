@@ -91,7 +91,7 @@
     <testng.version>7.4.0</testng.version>
     <slf4j.version>1.7.32</slf4j.version>
     <logback.version>1.2.7</logback.version>
-    <log4j2.version>2.14.1</log4j2.version>
+    <log4j2.version>2.15.0</log4j2.version>
 
     <maven.archetype.plugin.version>3.2.0</maven.archetype.plugin.version>
     <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
