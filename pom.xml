@@ -87,10 +87,10 @@
     <ow2.asm.version>9.2</ow2.asm.version>
     <groovy.version>3.0.9</groovy.version>
     <maven.version>3.6.3</maven.version>
-    <postgresql.version>42.2.23</postgresql.version>
+    <postgresql.version>42.3.1</postgresql.version>
     <testng.version>7.4.0</testng.version>
     <slf4j.version>1.7.32</slf4j.version>
-    <log4j2.version>2.14.1</log4j2.version>
+    <log4j2.version>2.15.0</log4j2.version>
 
     <maven.archetype.plugin.version>3.2.0</maven.archetype.plugin.version>
     <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
