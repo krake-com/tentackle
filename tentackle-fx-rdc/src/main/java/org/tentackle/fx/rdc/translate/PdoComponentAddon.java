@@ -45,7 +45,7 @@ import org.tentackle.pdo.PdoRuntimeException;
 import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -108,8 +108,8 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
     });
 
     control.setOnDragDetected(event -> {
-      T pdo = pdoSupplier.get();
-      if (pdo != null && RdcUtilities.getInstance().createDragboard((Node) component, pdo) != null) {
+      T pdo = this.pdoSupplier.get();
+      if (pdo != null && RdcUtilities.getInstance().createDragboard(control, pdo) != null) {
         event.consume();
       }
     });
@@ -140,7 +140,7 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
           if (context != null) {
             PersistentDomainObject<?> pdoToDrop = RdcUtilities.getInstance().getPdoFromDragboard(e.getDragboard(), context);
             if (pdoToDrop != null && type.isAssignableFrom(pdoToDrop.getEffectiveClass())) {
-              pdoConsumer.accept((T) pdoToDrop);
+              this.pdoConsumer.accept((T) pdoToDrop);
               e.setDropCompleted(true);
               dropped = true;
             }
@@ -181,10 +181,10 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
 
       menu.setOnShowing(event -> {
         if (control.getStyleClass().contains(PDO_STYLE)) {
-          editItem.setDisable(pdoSupplier.get() == null);
+          editItem.setDisable(this.pdoSupplier.get() == null);
         }
         else {
-          // remove items again (application removed PDO_STYLE after creatiobn of this component)
+          // remove items again (application removed PDO_STYLE after creation of this component)
           menu.getItems().remove(searchItem);
           menu.getItems().remove(editItem);
           if (separatorItem != null) {
@@ -193,6 +193,33 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
         }
       });
     }
+  }
+
+  /**
+   * Gets the fx component.
+   *
+   * @return the fx component
+   */
+  public FxComponent getComponent() {
+    return component;
+  }
+
+  /**
+   * Gets the supplier for the currently displayed PDO.
+   *
+   * @return the supplier for the currently displayed PDO
+   */
+  public Supplier<T> getPdoSupplier() {
+    return pdoSupplier;
+  }
+
+  /**
+   * Gets the consumer for the PDO.
+   *
+   * @return the consumer for the PDO
+   */
+  public Consumer<T> getPdoConsumer() {
+    return pdoConsumer;
   }
 
   /**
@@ -331,7 +358,7 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
   /**
    * Modal search of the pdo.
    *
-   * @param proxy the proxy pdo (possibly presetted with partial search criteria)
+   * @param proxy the proxy pdo (possibly preset with partial search criteria)
    * @param selectedItem the consumer for the selected pdo, invoked with null if no pdo found
    */
   public void searchPdo(T proxy, Consumer<T> selectedItem) {
@@ -340,13 +367,13 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
   }
 
   /**
-   * Returns a list of all pdos.<br>
-   * Used in comboboxes and choiceboxes to initialize the component's item list.
+   * Returns a list of all PDOs.<br>
+   * Used in ComboBoxes and ChoiceBoxes to initialize the component's item list.
    *
    * @param proxy the proxy pdo
-   * @return the list of all PDOs
+   * @return the collection of all PDOs
    */
-  public List<T> selectAll(T proxy) {
+  public Collection<T> selectAll(T proxy) {
     return proxy.selectAllCached();
   }
 
