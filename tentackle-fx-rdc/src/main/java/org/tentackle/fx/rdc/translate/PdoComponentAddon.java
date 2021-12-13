@@ -241,6 +241,17 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
   }
 
   /**
+   * Returns a collection of all PDOs.<br>
+   * Used in ComboBoxes and ChoiceBoxes to initialize the component's item list.
+   *
+   * @param proxy the proxy pdo
+   * @return the collection of all PDOs
+   */
+  public Collection<T> getAllPdos(T proxy) {
+    return proxy.selectAllCached();
+  }
+
+  /**
    * Returns whether search or edit dialog is currently displayed.
    *
    * @return true if within search or edit
@@ -364,17 +375,6 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
   public void searchPdo(T proxy, Consumer<T> selectedItem) {
     RdcUtilities.getInstance().displaySearchStage(proxy, Modality.APPLICATION_MODAL, Fx.getStage((Node) component), true,
                                                   list -> selectedItem.accept(list.isEmpty() ? null : list.get(0)));
-  }
-
-  /**
-   * Returns a list of all PDOs.<br>
-   * Used in ComboBoxes and ChoiceBoxes to initialize the component's item list.
-   *
-   * @param proxy the proxy pdo
-   * @return the collection of all PDOs
-   */
-  public Collection<T> selectAll(T proxy) {
-    return proxy.selectAllCached();
   }
 
 }

@@ -137,7 +137,7 @@ public class RdcBoxDelegateImpl {
           lastModificationCount = proxy.getModificationCount();
         }
         ObservableList items = itemSupplier.get();
-        items.setAll(pdoAddonSupplier.get().selectAll(proxy));
+        items.setAll(pdoAddonSupplier.get().getAllPdos(proxy));
       }
     }
   }
