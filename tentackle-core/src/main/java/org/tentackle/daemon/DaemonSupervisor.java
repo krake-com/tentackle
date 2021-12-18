@@ -91,7 +91,6 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
     private Thread supervisedDaemon;              // the managed daemon
     private final int daemonIndex;                // the slot index
     private Supervisable supervisable;            // != null if daemon is a Supervisable
-    private boolean supervisableKilled;           // true if supervisable was killed
     private int startCount;                       // number of starts
     private boolean enabled = true;               // true if daemon is enabled (default)
     private TerminationInfo terminationInfo;      // the termination info, null if daemon running
@@ -114,7 +113,6 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
     private void setThread(Thread supervisedDaemon) {
       this.supervisedDaemon = supervisedDaemon;
       supervisable = supervisedDaemon instanceof Supervisable ? (Supervisable) supervisedDaemon : null;
-      supervisableKilled = false;
     }
 
     /**
@@ -163,7 +161,6 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
      */
     private void kill() {
       supervisable.kill();
-      supervisableKilled = true;
       synchronized(killedDaemons) {
         killedDaemons.add(supervisedDaemon);
       }
@@ -352,11 +349,8 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
             if (daemon.supervisable != null && !daemon.supervisable.isKilled()) {
               daemon.kill();
             }
-            if (daemon.supervisableKilled) {
-              oldDaemons[i] = null;
-              daemonDiff++;
-            }
-            // else: cannot kill non-supervisables
+            oldDaemons[i] = null;
+            daemonDiff++;
           }
           if (daemonDiff < 0) {
             throw new TentackleRuntimeException("cannot decrease daemonNum: no more supervisables to kill");
