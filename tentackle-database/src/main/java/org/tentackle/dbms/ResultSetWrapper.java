@@ -2726,8 +2726,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * <code>null</code> in the Java programming language.
    */
   public BMoney getBMoney () {
-    double value = getDouble(nextConfiguredIndex());
-    return wasNull() ? null : new BMoney (value, getInt(nextConfiguredIndex()));
+    return getBMoney(nextConfiguredIndex(), nextConfiguredIndex());
   }
 
 
@@ -2744,8 +2743,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * <code>null</code> in the Java programming language.
    */
   public DMoney getDMoney () {
-    BigDecimal value = getBigDecimal(nextConfiguredIndex());
-    return wasNull() ? null : new DMoney (value.movePointLeft(getInt(nextConfiguredIndex())));
+    return getDMoney(nextConfiguredIndex(), nextConfiguredIndex());
   }
 
 
