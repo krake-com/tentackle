@@ -22,6 +22,7 @@ import org.tentackle.common.DateHelper;
 import org.tentackle.common.Service;
 import org.tentackle.common.StringHelper;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.BackendException;
 import org.tentackle.sql.DataType;
 import org.tentackle.sql.SqlType;
 
@@ -31,12 +32,21 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 /**
  * Datatype for {@link LocalDateTime}.
+ * <p>
+ * Mapped to {@link Timestamp}-related JDBC methods.
  */
 @Service(DataType.class)
 public class LocalDateTimeType extends AbstractDateTimeType<LocalDateTime> {
+
+  // timestamp formats withZone necessary for Instant
+  private static final DateTimeFormatter TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+  private static final DateTimeFormatter MS_TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+
 
   @Override
   public String getJavaType() {
@@ -58,12 +68,12 @@ public class LocalDateTimeType extends AbstractDateTimeType<LocalDateTime> {
 
   @Override
   public LocalDateTime valueOf(String str) {
-    return parseTimestamp(str).toLocalDateTime();
+    return parse(str);
   }
 
   @Override
   public String toString(LocalDateTime object) {
-    return StringHelper.toParsableString(printTimestamp(Timestamp.valueOf(object)));
+    return StringHelper.toParsableString(format(object));
   }
 
   @Override
@@ -92,6 +102,35 @@ public class LocalDateTimeType extends AbstractDateTimeType<LocalDateTime> {
     }
     // upgrade to org.tentackle.common.Timestamp
     return timestamp.toLocalDateTime();
+  }
+
+
+  protected LocalDateTime parse(String str) throws BackendException {
+    str = StringHelper.parseString(str);
+    if (str.contains(".")) {
+      try {
+        return LocalDateTime.parse(str, MS_TIMESTAMP_FORMATTER);
+      }
+      catch (DateTimeParseException e) {
+        throw new BackendException("parsing timestamp with ms from '" + str + "' failed", e);
+      }
+    }
+    else {
+      try {
+        return LocalDateTime.parse(str, TIMESTAMP_FORMATTER);
+      }
+      catch (DateTimeParseException e) {
+        throw new BackendException("parsing timestamp from '" + str + "' failed", e);
+      }
+    }
+  }
+
+  protected String format(LocalDateTime dateTime) {
+    int nanos = dateTime.getNano();
+    if (nanos != 0) {
+      return MS_TIMESTAMP_FORMATTER.format(dateTime);
+    }
+    return TIMESTAMP_FORMATTER.format(dateTime);
   }
 
 }

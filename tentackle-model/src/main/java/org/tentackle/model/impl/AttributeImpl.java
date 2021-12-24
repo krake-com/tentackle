@@ -468,7 +468,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
       throw createModelException("UTC option not applicable to " + dataType);
     }
 
-    if (getOptions().isWithTimezone() && !dataType.isDateOrTime()) {
+    if (getOptions().isWithTimezone() && !dataType.isTimezoneApplicable()) {
       throw createModelException("TZ option not applicable to " + dataType);
     }
 

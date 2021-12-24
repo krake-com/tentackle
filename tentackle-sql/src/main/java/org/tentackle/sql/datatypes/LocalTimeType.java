@@ -21,6 +21,7 @@ package org.tentackle.sql.datatypes;
 import org.tentackle.common.Service;
 import org.tentackle.common.StringHelper;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.BackendException;
 import org.tentackle.sql.DataType;
 import org.tentackle.sql.SqlType;
 
@@ -30,9 +31,13 @@ import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Types;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 /**
  * Datatype for {@link LocalTime}.
+ * <p>
+ * Mapped to {@link Time}-related JDBC methods.
  */
 @Service(DataType.class)
 public class LocalTimeType extends AbstractDateTimeType<LocalTime> {
@@ -52,12 +57,12 @@ public class LocalTimeType extends AbstractDateTimeType<LocalTime> {
 
   @Override
   public LocalTime valueOf(String str) {
-    return parseTime(str).toLocalTime();
+    return parse(str);
   }
 
   @Override
   public String toString(LocalTime object) {
-    return StringHelper.toParsableString(printTime(Time.valueOf(object)));
+    return StringHelper.toParsableString(format(object));
   }
 
   @Override
@@ -75,6 +80,20 @@ public class LocalTimeType extends AbstractDateTimeType<LocalTime> {
   public LocalTime get(Backend backend, ResultSet resultSet, int[] pos, boolean mapNull, Integer size) throws SQLException {
     Time time = resultSet.getTime(pos[0]);
     return time == null ? null : time.toLocalTime();
+  }
+
+
+  protected LocalTime parse(String str) throws BackendException {
+    try {
+      return LocalTime.parse(StringHelper.parseString(str), DateTimeFormatter.ISO_LOCAL_TIME);
+    }
+    catch (DateTimeParseException e) {
+      throw new BackendException("parsing time from '" + str + "' failed", e);
+    }
+  }
+
+  protected String format(LocalTime time) {
+    return DateTimeFormatter.ISO_LOCAL_TIME.format(time);
   }
 
 }

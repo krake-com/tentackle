@@ -1,0 +1,240 @@
+/*
+ * Tentackle - https://tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+package org.tentackle.sql.datatypes;
+
+import org.tentackle.common.DateHelper;
+import org.tentackle.common.Service;
+import org.tentackle.common.StringHelper;
+import org.tentackle.sql.Backend;
+import org.tentackle.sql.BackendException;
+import org.tentackle.sql.DataType;
+import org.tentackle.sql.SqlType;
+
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.sql.Types;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.Optional;
+
+/**
+ * Datatype for {@link OffsetDateTime}.
+ * <p>
+ * Stored as 2 columns:
+ * <ol>
+ *   <li>the timestamp</li>
+ *   <li>the zone offset in seconds</li>
+ * </ol>
+ * The MAPNULL option maps to {@code 1970-01-01 00:00:00+00:00}.
+ */
+@Service(DataType.class)
+public class OffsetDateTimeType extends AbstractDateTimeType<OffsetDateTime> {
+
+  private static final DateTimeFormatter TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ssxxx");
+  private static final DateTimeFormatter MS_TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSxxx");
+
+  @Override
+  public String getJavaType() {
+    return "OffsetDateTime";
+  }
+
+  @Override
+  public boolean isMapNullSupported() {
+    return true;
+  }
+
+  @Override
+  public int getColumnCount() {
+    return 2;
+  }
+
+  @Override
+  public Optional<String> getCommentSuffix(int index) {
+    return switch (index) {
+      case 0 -> Optional.empty();
+      case 1 -> Optional.of(" [+-s]");
+      default -> throw new IndexOutOfBoundsException(index);
+    };
+  }
+
+  @Override
+  public String getColumnGetter(int index) {
+    return switch (index) {
+      case 0 -> "toLocalDateTime";
+      case 1 -> "getOffset";
+      default -> throw new IndexOutOfBoundsException(index);
+    };
+  }
+
+  @Override
+  public Object getColumnValue(int index, OffsetDateTime value) {
+    if (value != null) {
+      return switch (index) {
+        case 0 -> value.toLocalDateTime();
+        case 1 -> value.getOffset();
+        default -> throw new IndexOutOfBoundsException(index);
+      };
+    }
+    return null;
+  }
+
+  @Override
+  public int getSize(int index, Integer size) {
+    return switch (index) {
+      case 0 -> super.getSize(index, size);
+      case 1 -> 0;
+      default -> throw new IndexOutOfBoundsException(index);
+    };
+  }
+
+  @Override
+  public int getScale(int index, Integer scale) {
+    return 0;
+  }
+
+  @Override
+  public SqlType getSqlType(int index) {
+    return switch (index) {
+      case 0 -> SqlType.TIMESTAMP;
+      case 1 -> SqlType.INTEGER;
+      default -> throw new IndexOutOfBoundsException();
+    };
+  }
+
+  @Override
+  public OffsetDateTime valueOf(String str) {
+    return parse(str);
+  }
+
+  @Override
+  public String toString(OffsetDateTime object) {
+    return StringHelper.toParsableString(format(object));
+  }
+
+  @Override
+  public Object[] set(Backend backend, PreparedStatement statement, int pos, OffsetDateTime object, boolean mapNull, Integer size) throws SQLException {
+    Timestamp timestamp;
+    int offset;
+    if (object == null) {
+      if (mapNull) {
+        timestamp = DateHelper.MIN_TIMESTAMP;
+        offset = 0;
+      }
+      else {
+        statement.setNull(pos, Types.TIMESTAMP);
+        statement.setNull(pos + 1, Types.INTEGER);
+        return new Object[]{null, null};
+      }
+    }
+    else {
+      timestamp = Timestamp.valueOf(object.toLocalDateTime());
+      offset = object.getOffset().getTotalSeconds();
+    }
+    statement.setTimestamp(pos, timestamp);
+    statement.setInt(pos + 1, offset);
+    return new Object[] { timestamp, offset };
+  }
+
+  @Override
+  public Object set(Backend backend, PreparedStatement statement, int pos, OffsetDateTime object, int index, boolean mapNull, Integer size) throws SQLException {
+    Timestamp timestamp;
+    int offset;
+    if (object == null) {
+      if (mapNull) {
+        timestamp = DateHelper.MIN_TIMESTAMP;
+        offset = 0;
+      }
+      else {
+        timestamp = null;
+        offset = 0;
+      }
+    }
+    else {
+      timestamp = Timestamp.valueOf(object.toLocalDateTime());
+      offset = object.getOffset().getTotalSeconds();
+    }
+
+    if (timestamp == null) {
+      switch (index) {
+        case 0:
+          statement.setNull(pos, Types.TIMESTAMP);
+          return null;
+        case 1:
+          statement.setNull(pos, Types.INTEGER);
+          return null;
+      }
+    }
+    else {
+      switch (index) {
+        case 0:
+          statement.setTimestamp(pos, timestamp);
+          return timestamp;
+        case 1:
+          statement.setInt(pos, offset);
+          return offset;
+      }
+    }
+    throw new IndexOutOfBoundsException(index);
+  }
+
+  @Override
+  public OffsetDateTime get(Backend backend, ResultSet resultSet, int[] pos, boolean mapNull, Integer size) throws SQLException {
+    Timestamp timestamp = resultSet.getTimestamp(pos[0]);
+    int offset = resultSet.getInt(pos[1]);
+    if (resultSet.wasNull() ||
+        mapNull && timestamp.getTime() == 0 && offset == 0) {
+      return null;
+    }
+    return OffsetDateTime.of(timestamp.toLocalDateTime(), ZoneOffset.ofTotalSeconds(offset));
+  }
+
+
+  protected OffsetDateTime parse(String str) throws BackendException {
+    str = StringHelper.parseString(str);
+    if (str.contains(".")) {
+      try {
+        return MS_TIMESTAMP_FORMATTER.parse(str, OffsetDateTime::from);
+      }
+      catch (DateTimeParseException e) {
+        throw new BackendException("parsing timestamp with ms from '" + str + "' failed", e);
+      }
+    }
+    else {
+      try {
+        return TIMESTAMP_FORMATTER.parse(str, OffsetDateTime::from);
+      }
+      catch (DateTimeParseException e) {
+        throw new BackendException("parsing timestamp from '" + str + "' failed", e);
+      }
+    }
+  }
+
+  protected String format(OffsetDateTime dateTime) {
+    int nanos = dateTime.getNano();
+    if (nanos != 0) {
+      return MS_TIMESTAMP_FORMATTER.format(dateTime);
+    }
+    return TIMESTAMP_FORMATTER.format(dateTime);
+  }
+
+}

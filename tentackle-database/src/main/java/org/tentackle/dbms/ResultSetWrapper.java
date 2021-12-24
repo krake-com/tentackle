@@ -30,6 +30,7 @@ import org.tentackle.common.Timestamp;
 import org.tentackle.log.Logger;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.DataType;
+import org.tentackle.sql.datatypes.ZonedDateTimeType;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -41,9 +42,15 @@ import java.sql.Clob;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -60,6 +67,12 @@ public class ResultSetWrapper implements AutoCloseable {
 
   private static final Logger LOGGER = Logger.get(ResultSetWrapper.class);
 
+  /**
+   * Column name suffix for 2nd column in double-column predefined types.
+   *
+   * @see org.tentackle.sql.datatypes.AbstractDataType#getColumnSuffix(int)
+   */
+  private static final String COL2_SUFFIX = "_2";
 
   private static final Cleaner CLEANER = Cleaner.create();        // instead of deprecated finalize()
 
@@ -1216,7 +1229,7 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public BMoney getBMoney (String name) {
     double value = getDouble(name);
-    return wasNull() ? null : new BMoney (value, getInt(name + "_2"));
+    return wasNull() ? null : new BMoney (value, getInt(name + COL2_SUFFIX));
   }
 
   /**
@@ -1233,19 +1246,8 @@ public class ResultSetWrapper implements AutoCloseable {
    * <code>null</code> in the Java programming language.
    */
   public DMoney getDMoney (String name) {
-    try {
-      BigDecimal decimal = resources.rs.getBigDecimal(name);
-      if (!wasNull()) {
-        // set scale
-        return new DMoney(decimal.movePointLeft(getInt(name + "_2")));
-      }
-      else  {
-        return null;
-      }
-    }
-    catch (SQLException e) {
-      throw new PersistenceException(resources.db, e);
-    }
+    BigDecimal decimal = getBigDecimal(name);
+    return wasNull() ? null : new DMoney(decimal.movePointLeft(getInt(name + COL2_SUFFIX)));
   }
 
 
@@ -1472,13 +1474,12 @@ public class ResultSetWrapper implements AutoCloseable {
    *
    * @param name the label for the column specified with the SQL AS clause.
    *  If the SQL AS clause was not specified, then the label is the name of the column
-   * @param timezone the calendar providing the timezone configuration
    * @param mapNull true if 1.1.1970 should be mapped to null
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>
    */
-  public LocalDate getLocalDate(String name, Calendar timezone, boolean mapNull)  {
-    Date date = getDate(name, timezone, mapNull);
+  public LocalDate getLocalDate(String name, boolean mapNull)  {
+    Date date = getDate(name, mapNull);
     return date == null ? null : date.toLocalDate();
   }
 
@@ -1500,21 +1501,6 @@ public class ResultSetWrapper implements AutoCloseable {
   /**
    * Retrieves the value of the designated column in the current row
    * of this <code>ResultSet</code> object as
-   * a <code>java.time.LocalDate</code> in the Java programming language.
-   *
-   * @param name the label for the column specified with the SQL AS clause.
-   *  If the SQL AS clause was not specified, then the label is the name of the column
-   * @param timezone the calendar providing the timezone configuration
-   * @return the column value; if the value is SQL <code>NULL</code>, the
-   * value returned is <code>null</code>
-   */
-  public LocalDate getLocalDate(String name, Calendar timezone) {
-    return getLocalDate(name, timezone, false);
-  }
-
-  /**
-   * Retrieves the value of the designated column in the current row
-   * of this <code>ResultSet</code> object as
    * a <code>java.sql.Date</code> in the Java programming language.
    *
    * @param name the label for the column specified with the SQL AS clause.
@@ -1525,21 +1511,6 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public Date getDate(String name, boolean mapNull)  {
     return getDate(name, null, mapNull);
-  }
-
-  /**
-   * Retrieves the value of the designated column in the current row
-   * of this <code>ResultSet</code> object as
-   * a <code>java.time.LocalDate</code> in the Java programming language.
-   *
-   * @param name the label for the column specified with the SQL AS clause.
-   *  If the SQL AS clause was not specified, then the label is the name of the column
-   * @param mapNull true if 1.1.1970 should be mapped to null
-   * @return the column value; if the value is SQL <code>NULL</code>, the
-   * value returned is <code>null</code>
-   */
-  public LocalDate getLocalDate(String name, boolean mapNull)  {
-    return getLocalDate(name, null, mapNull);
   }
 
   /**
@@ -1567,7 +1538,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * value returned is <code>null</code>
    */
   public LocalDate getLocalDate(String name)  {
-    return getLocalDate(name, null, false);
+    return getLocalDate(name, false);
   }
 
 
@@ -1606,14 +1577,76 @@ public class ResultSetWrapper implements AutoCloseable {
    *
    * @param name the label for the column specified with the SQL AS clause.
    * If the SQL AS clause was not specified, then the label is the name of the column
-   * @param timezone the calendar providing the timezone configuration
    * @param mapNull true if 1.1.1970 00:00:00.000 should be mapped to null
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>
    */
-  public LocalDateTime getLocalDateTime(String name, Calendar timezone, boolean mapNull)  {
-    Timestamp ts = getTimestamp(name, timezone, mapNull);
+  public LocalDateTime getLocalDateTime(String name, boolean mapNull)  {
+    Timestamp ts = getTimestamp(name, mapNull);
     return ts == null ? null : ts.toLocalDateTime();
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.time.Instant</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.
+   * If the SQL AS clause was not specified, then the label is the name of the column
+   * @param mapNull true if 0/0 should be mapped to null
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Instant getInstant(String name, boolean mapNull)  {
+    long seconds = getLong(name);
+    int nanos = getInt(name + COL2_SUFFIX);
+    if (wasNull() ||
+        mapNull && seconds == 0 && nanos == 0) {
+      return null;
+    }
+    return Instant.ofEpochSecond(seconds, nanos);
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.time.OffsetDateTime</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.
+   * If the SQL AS clause was not specified, then the label is the name of the column
+   * @param mapNull true if 1.1.1970 00:00:00.000+00:00 should be mapped to null
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public OffsetDateTime getOffsetDateTime(String name, boolean mapNull)  {
+    Timestamp timestamp = getTimestamp(name);
+    int offset = getInt(name + COL2_SUFFIX);
+    if (wasNull() ||
+        mapNull && timestamp.getTime() == 0 && offset == 0) {
+      return null;
+    }
+    return OffsetDateTime.of(timestamp.toLocalDateTime(), ZoneOffset.ofTotalSeconds(offset));
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.time.ZonedDateTime</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.
+   * If the SQL AS clause was not specified, then the label is the name of the column
+   * @param mapNull true if 1.1.1970 00:00:00.000 GMT should be mapped to null
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public ZonedDateTime getZonedDateTime(String name, boolean mapNull)  {
+    Timestamp timestamp = getTimestamp(name);
+    String zoneId = getString(name + COL2_SUFFIX);
+    if (wasNull() ||
+        mapNull && timestamp.getTime() == 0 && ZonedDateTimeType.isGMT(zoneId)) {
+      return null;
+    }
+    return ZonedDateTime.of(timestamp.toLocalDateTime(), ZoneId.of(zoneId));
   }
 
   /**
@@ -1634,21 +1667,6 @@ public class ResultSetWrapper implements AutoCloseable {
   /**
    * Retrieves the value of the designated column in the current row
    * of this <code>ResultSet</code> object as
-   * a <code>java.time.LocalDateTime</code> in the Java programming language.
-   *
-   * @param name the label for the column specified with the SQL AS clause.
-   * If the SQL AS clause was not specified, then the label is the name of the column
-   * @param timezone the calendar providing the timezone configuration
-   * @return the column value; if the value is SQL <code>NULL</code>, the
-   * value returned is <code>null</code>
-   */
-  public LocalDateTime getLocalDateTime(String name, Calendar timezone) {
-    return getLocalDateTime(name, timezone, false);
-  }
-
-  /**
-   * Retrieves the value of the designated column in the current row
-   * of this <code>ResultSet</code> object as
    * a <code>java.sql.Timestamp</code> in the Java programming language.
    *
    * @param name the label for the column specified with the SQL AS clause.
@@ -1659,21 +1677,6 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public Timestamp getTimestamp(String name, boolean mapNull) {
     return getTimestamp(name, null, mapNull);
-  }
-
-  /**
-   * Retrieves the value of the designated column in the current row
-   * of this <code>ResultSet</code> object as
-   * a <code>java.time.LocalDateTime</code> in the Java programming language.
-   *
-   * @param name the label for the column specified with the SQL AS clause.
-   * If the SQL AS clause was not specified, then the label is the name of the column
-   * @param mapNull true if 1.1.1970 00:00:00.000 should be mapped to null
-   * @return the column value; if the value is SQL <code>NULL</code>, the
-   * value returned is <code>null</code>
-   */
-  public LocalDateTime getLocalDateTime(String name, boolean mapNull) {
-    return getLocalDateTime(name, null, mapNull);
   }
 
   /**
@@ -1701,7 +1704,49 @@ public class ResultSetWrapper implements AutoCloseable {
    * value returned is <code>null</code>
    */
   public LocalDateTime getLocalDateTime(String name)  {
-    return getLocalDateTime(name, null, false);
+    return getLocalDateTime(name, false);
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.time.Instant</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.
+   * If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Instant getInstant(String name)  {
+    return getInstant(name, false);
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.time.OffsetDateTime</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.
+   * If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public OffsetDateTime getOffsetDateTime(String name)  {
+    return getOffsetDateTime(name, false);
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.time.ZonedDateTime</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.
+   * If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public ZonedDateTime getZonedDateTime(String name)  {
+    return getZonedDateTime(name, false);
   }
 
   /**
@@ -1730,22 +1775,6 @@ public class ResultSetWrapper implements AutoCloseable {
   /**
    * Retrieves the value of the designated column in the current row
    * of this <code>ResultSet</code> object as
-   * a <code>java.time.LocalTime</code> in the Java programming language.
-   *
-   * @param name the label for the column specified with the SQL AS clause.
-   * If the SQL AS clause was not specified, then the label is the name of the column
-   * @param timezone the calendar providing the timezone configuration
-   * @return the column value; if the value is SQL <code>NULL</code>, the
-   * value returned is <code>null</code>
-   */
-  public LocalTime getLocalTime(String name, Calendar timezone)  {
-    Time time = getTime(name, timezone);
-    return time == null ? null : time.toLocalTime();
-  }
-
-  /**
-   * Retrieves the value of the designated column in the current row
-   * of this <code>ResultSet</code> object as
    * a <code>java.sql.Time</code> in the Java programming language.
    *
    * @param name the label for the column specified with the SQL AS clause.
@@ -1768,8 +1797,25 @@ public class ResultSetWrapper implements AutoCloseable {
    * value returned is <code>null</code>
    */
   public LocalTime getLocalTime(String name)  {
-    return getLocalTime(name, null);
+    Time time = getTime(name);
+    return time == null ? null : time.toLocalTime();
   }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.time.OffsetTime</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.
+   * If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public OffsetTime getOffsetTime(String name)  {
+    Time time = getTime(name);
+    return time == null ? null : OffsetTime.of(time.toLocalTime(), ZoneOffset.ofTotalSeconds(getInt(name + COL2_SUFFIX)));
+  }
+
 
   /**
    * Retrieves the value of the designated column in the current row
@@ -2357,13 +2403,12 @@ public class ResultSetWrapper implements AutoCloseable {
    * a <code>java.time.LocalDate</code> in the Java programming language.
    *
    * @param pos the parameter index in the result set
-   * @param timezone the calendar providing the timezone configuration
    * @param mapNull true if 1.1.1970 should be mapped to null
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>
    */
-  public LocalDate getLocalDate(int pos, Calendar timezone, boolean mapNull)  {
-    Date date = getDate(pos, timezone, mapNull);
+  public LocalDate getLocalDate(int pos, boolean mapNull)  {
+    Date date = getDate(pos, mapNull);
     return date == null ? null : date.toLocalDate();
   }
 
@@ -2384,20 +2429,6 @@ public class ResultSetWrapper implements AutoCloseable {
   /**
    * Retrieves the value of the designated column in the current row
    * of this <code>ResultSet</code> object as
-   * a <code>java.time.LocalDate</code> in the Java programming language.
-   *
-   * @param pos the parameter index in the result set
-   * @param mapNull true if 1.1.1970 should be mapped to null
-   * @return the column value; if the value is SQL <code>NULL</code>, the
-   * value returned is <code>null</code>
-   */
-  public LocalDate getLocalDate(int pos, boolean mapNull)  {
-    return getLocalDate(pos, null, mapNull);
-  }
-
-  /**
-   * Retrieves the value of the designated column in the current row
-   * of this <code>ResultSet</code> object as
    * a <code>java.sql.Date</code> in the Java programming language.
    *
    * @param pos the parameter index in the result set
@@ -2407,20 +2438,6 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public Date getDate(int pos, Calendar timezone) {
     return getDate(pos, timezone, false);
-  }
-
-  /**
-   * Retrieves the value of the designated column in the current row
-   * of this <code>ResultSet</code> object as
-   * a <code>java.time.LocalDate</code> in the Java programming language.
-   *
-   * @param pos the parameter index in the result set
-   * @param timezone the calendar providing the timezone configuration
-   * @return the column value; if the value is SQL <code>NULL</code>, the
-   * value returned is <code>null</code>
-   */
-  public LocalDate getLocalDate(int pos, Calendar timezone) {
-    return getLocalDate(pos, timezone, false);
   }
 
   /**
@@ -2446,7 +2463,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * value returned is <code>null</code>
    */
   public LocalDate getLocalDate(int pos)  {
-    return getLocalDate(pos, null, false);
+    return getLocalDate(pos, false);
   }
 
   /**
@@ -2482,14 +2499,76 @@ public class ResultSetWrapper implements AutoCloseable {
    * a <code>java.time.LocalDateTime</code> in the Java programming language.
    *
    * @param pos the parameter index in the result set
-   * @param timezone the calendar providing the timezone configuration
    * @param mapNull true if 1.1.1970 00:00:00.000 should be mapped to null
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>
    */
-  public LocalDateTime getLocalDateTime(int pos, Calendar timezone, boolean mapNull)  {
-    Timestamp ts = getTimestamp(pos, timezone, mapNull);
+  public LocalDateTime getLocalDateTime(int pos, boolean mapNull)  {
+    Timestamp ts = getTimestamp(pos, mapNull);
     return ts == null ? null : ts.toLocalDateTime();
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.time.Instant</code> in the Java programming language.
+   *
+   * @param pos the parameter index for the seconds column
+   * @param npos the parameter index for the nanoseconds column
+   * @param mapNull true if 0/0 should be mapped to null
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Instant getInstant(int pos, int npos, boolean mapNull)  {
+    long seconds = getLong(pos);
+    int nanos = getInt(npos);
+    if (wasNull() ||
+        mapNull && seconds == 0 && nanos == 0) {
+      return null;
+    }
+    return Instant.ofEpochSecond(seconds, nanos);
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.time.OffsetDateTime</code> in the Java programming language.
+   *
+   * @param pos the parameter index for the timestamp column
+   * @param opos the parameter index for the offset integer column
+   * @param mapNull true if 1.1.1970 00:00:00.000+00:00 should be mapped to null
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public OffsetDateTime getOffsetDateTime(int pos, int opos, boolean mapNull)  {
+    Timestamp timestamp = getTimestamp(pos);
+    int offset = getInt(opos);
+    if (wasNull() ||
+        mapNull && timestamp.getTime() == 0 && offset == 0) {
+      return null;
+    }
+    return OffsetDateTime.of(timestamp.toLocalDateTime(), ZoneOffset.ofTotalSeconds(offset));
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.time.ZonedDateTime</code> in the Java programming language.
+   *
+   * @param pos the parameter index for the timestamp column
+   * @param zpos the parameter index for the timezone varchar column
+   * @param mapNull true if 1.1.1970 00:00:00.000 GMT should be mapped to null
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public ZonedDateTime getZonedDateTime(int pos, int zpos, boolean mapNull)  {
+    Timestamp timestamp = getTimestamp(pos);
+    String zoneId = getString(zpos);
+    if (wasNull() ||
+        mapNull && timestamp.getTime() == 0 && ZonedDateTimeType.isGMT(zoneId)) {
+      return null;
+    }
+    return ZonedDateTime.of(timestamp.toLocalDateTime(), ZoneId.of(zoneId));
   }
 
   /**
@@ -2509,20 +2588,6 @@ public class ResultSetWrapper implements AutoCloseable {
   /**
    * Retrieves the value of the designated column in the current row
    * of this <code>ResultSet</code> object as
-   * a <code>java.time.LocalDateTime</code> in the Java programming language.
-   *
-   * @param pos the parameter index in the result set
-   * @param mapNull true if 1.1.1970 00:00:00.000 should be mapped to null
-   * @return the column value; if the value is SQL <code>NULL</code>, the
-   * value returned is <code>null</code>
-   */
-  public LocalDateTime getLocalDateTime(int pos, boolean mapNull)  {
-    return getLocalDateTime(pos, null, mapNull);
-  }
-
-  /**
-   * Retrieves the value of the designated column in the current row
-   * of this <code>ResultSet</code> object as
    * a <code>java.sql.Timestamp</code> in the Java programming language.
    *
    * @param pos the parameter index in the result set
@@ -2532,20 +2597,6 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public Timestamp getTimestamp(int pos, Calendar timezone)  {
     return getTimestamp(pos, timezone, false);
-  }
-
-  /**
-   * Retrieves the value of the designated column in the current row
-   * of this <code>ResultSet</code> object as
-   * a <code>java.time.LocalDateTime</code> in the Java programming language.
-   *
-   * @param pos the parameter index in the result set
-   * @param timezone the calendar providing the timezone configuration
-   * @return the column value; if the value is SQL <code>NULL</code>, the
-   * value returned is <code>null</code>
-   */
-  public LocalDateTime getLocalDateTime(int pos, Calendar timezone)  {
-    return getLocalDateTime(pos, timezone, false);
   }
 
   /**
@@ -2571,7 +2622,49 @@ public class ResultSetWrapper implements AutoCloseable {
    * value returned is <code>null</code>
    */
   public LocalDateTime getLocalDateTime(int pos)  {
-    return getLocalDateTime(pos, null, false);
+    return getLocalDateTime(pos, false);
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.time.Instant</code> in the Java programming language.
+   *
+   * @param pos the parameter index for the seconds column
+   * @param npos the parameter index for the nanoseconds column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Instant getInstant(int pos, int npos)  {
+    return getInstant(pos, npos, false);
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.time.OffsetDateTime</code> in the Java programming language.
+   *
+   * @param pos the parameter index for the timestamp column
+   * @param opos the parameter index for the offset integer column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public OffsetDateTime getOffsetDateTime(int pos, int opos)  {
+    return getOffsetDateTime(pos, opos, false);
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.time.ZonedDateTime</code> in the Java programming language.
+   *
+   * @param pos the parameter index for the timestamp column
+   * @param zpos the parameter index for the timezone varchar column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public ZonedDateTime getZonedDateTime(int pos, int zpos)  {
+    return getZonedDateTime(pos, zpos, false);
   }
 
   /**
@@ -2599,21 +2692,6 @@ public class ResultSetWrapper implements AutoCloseable {
   /**
    * Retrieves the value of the designated column in the current row
    * of this <code>ResultSet</code> object as
-   * a <code>java.time.LocalTime</code> in the Java programming language.
-   *
-   * @param pos the parameter index in the result set
-   * @param timezone the calendar providing the timezone configuration
-   * @return the column value; if the value is SQL <code>NULL</code>, the
-   * value returned is <code>null</code>
-   */
-  public LocalTime getLocalTime(int pos, Calendar timezone)  {
-    Time time = getTime(pos, timezone);
-    return time == null ? null : time.toLocalTime();
-  }
-
-  /**
-   * Retrieves the value of the designated column in the current row
-   * of this <code>ResultSet</code> object as
    * a <code>java.sql.Time</code> in the Java programming language.
    *
    * @param pos the parameter index in the result set
@@ -2634,7 +2712,23 @@ public class ResultSetWrapper implements AutoCloseable {
    * value returned is <code>null</code>
    */
   public LocalTime getLocalTime(int pos)  {
-    return getLocalTime(pos, null);
+    Time time = getTime(pos);
+    return time == null ? null : time.toLocalTime();
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.time.OffsetTime</code> in the Java programming language.
+   *
+   * @param pos the parameter index for the time in the result set
+   * @param opos the parameter index for the offset in the result set
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public OffsetTime getOffsetTime(int pos, int opos)  {
+    Time time = getTime(pos);
+    return wasNull() ? null : OffsetTime.of(time.toLocalTime(), ZoneOffset.ofTotalSeconds(getInt(opos)));
   }
 
   /**
@@ -2930,8 +3024,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * <code>null</code> in the Java programming language.
    */
   public BMoney getBMoney () {
-    double value = getDouble(nextConfiguredIndex());
-    return wasNull() ? null : new BMoney (value, getInt(nextConfiguredIndex()));
+    return getBMoney(nextConfiguredIndex(), nextConfiguredIndex());
   }
 
 
@@ -2946,8 +3039,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * <code>null</code> in the Java programming language.
    */
   public DMoney getDMoney () {
-    BigDecimal value = getBigDecimal(nextConfiguredIndex());
-    return wasNull() ? null : new DMoney (value.movePointLeft(getInt(nextConfiguredIndex())));
+    return getDMoney(nextConfiguredIndex(), nextConfiguredIndex());
   }
 
 
@@ -3158,21 +3250,6 @@ public class ResultSetWrapper implements AutoCloseable {
   /**
    * Retrieves the value of the designated column in the current row
    * of this <code>ResultSet</code> object as
-   * a <code>java.time.LocalDate</code> in the Java programming language.
-   *
-   * @param timezone the calendar providing the timezone configuration
-   * @param mapNull true if 1.1.1970 should be mapped to null
-   * @return the column value; if the value is SQL <code>NULL</code>, the
-   * value returned is <code>null</code>
-   */
-  public LocalDate getLocalDate(Calendar timezone, boolean mapNull)  {
-    Date date = getDate(timezone, mapNull);
-    return date == null ? null : date.toLocalDate();
-  }
-
-  /**
-   * Retrieves the value of the designated column in the current row
-   * of this <code>ResultSet</code> object as
    * a <code>java.sql.Date</code> in the Java programming language.
    *
    * @param mapNull true if 1.1.1970 should be mapped to null
@@ -3193,7 +3270,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * value returned is <code>null</code>
    */
   public LocalDate getLocalDate(boolean mapNull)  {
-    return getLocalDate(nextConfiguredIndex(), null, mapNull);
+    return getLocalDate(nextConfiguredIndex(), mapNull);
   }
 
   /**
@@ -3207,19 +3284,6 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public Date getDate(Calendar timezone) {
     return getDate(nextConfiguredIndex(), timezone, false);
-  }
-
-  /**
-   * Retrieves the value of the designated column in the current row
-   * of this <code>ResultSet</code> object as
-   * a <code>java.time.LocalDate</code> in the Java programming language.
-   *
-   * @param timezone the calendar providing the timezone configuration
-   * @return the column value; if the value is SQL <code>NULL</code>, the
-   * value returned is <code>null</code>
-   */
-  public LocalDate getLocalDate(Calendar timezone) {
-    return getLocalDate(nextConfiguredIndex(), timezone, false);
   }
 
   /**
@@ -3243,7 +3307,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * value returned is <code>null</code>
    */
   public LocalDate getLocalDate()  {
-    return getLocalDate(nextConfiguredIndex(), null, false);
+    return getLocalDate(nextConfiguredIndex(), false);
   }
 
   /**
@@ -3276,21 +3340,6 @@ public class ResultSetWrapper implements AutoCloseable {
   /**
    * Retrieves the value of the designated column in the current row
    * of this <code>ResultSet</code> object as
-   * a <code>java.time.LocalDateTime</code> in the Java programming language.
-   *
-   * @param timezone the calendar providing the timezone configuration
-   * @param mapNull true if 1.1.1970 00:00:00.000 should be mapped to null
-   * @return the column value; if the value is SQL <code>NULL</code>, the
-   * value returned is <code>null</code>
-   */
-  public LocalDateTime getLocalDateTime(Calendar timezone, boolean mapNull)  {
-    Timestamp ts = getTimestamp(timezone, mapNull);
-    return ts == null ? null : ts.toLocalDateTime();
-  }
-
-  /**
-   * Retrieves the value of the designated column in the current row
-   * of this <code>ResultSet</code> object as
    * a <code>java.sql.Timestamp</code> in the Java programming language.
    *
    * @param mapNull true if 1.1.1970 00:00:00.000 should be mapped to null
@@ -3311,7 +3360,46 @@ public class ResultSetWrapper implements AutoCloseable {
    * value returned is <code>null</code>
    */
   public LocalDateTime getLocalDateTime(boolean mapNull)  {
-    return getLocalDateTime(nextConfiguredIndex(), null, mapNull);
+    return getLocalDateTime(nextConfiguredIndex(), mapNull);
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.time.Instant</code> in the Java programming language.
+   *
+   * @param mapNull true if 0/0 should be mapped to null
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Instant getInstant(boolean mapNull)  {
+    return getInstant(nextConfiguredIndex(), nextConfiguredIndex(), mapNull);
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.time.OffsetDateTime</code> in the Java programming language.
+   *
+   * @param mapNull true if 1.1.1970 00:00:00.000+00:00 should be mapped to null
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public OffsetDateTime getOffsetDateTime(boolean mapNull)  {
+    return getOffsetDateTime(nextConfiguredIndex(), nextConfiguredIndex(), mapNull);
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.time.ZonedDateTime</code> in the Java programming language.
+   *
+   * @param mapNull true if 1.1.1970 00:00:00.000 GMT should be mapped to null
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public ZonedDateTime getZonedDateTime(boolean mapNull)  {
+    return getZonedDateTime(nextConfiguredIndex(), nextConfiguredIndex(), mapNull);
   }
 
   /**
@@ -3325,19 +3413,6 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public Timestamp getTimestamp(Calendar timezone)  {
     return getTimestamp(nextConfiguredIndex(), timezone, false);
-  }
-
-  /**
-   * Retrieves the value of the designated column in the current row
-   * of this <code>ResultSet</code> object as
-   * a <code>java.time.LocalDateTime</code> in the Java programming language.
-   *
-   * @param timezone the calendar providing the timezone configuration
-   * @return the column value; if the value is SQL <code>NULL</code>, the
-   * value returned is <code>null</code>
-   */
-  public LocalDateTime getLocalDateTime(Calendar timezone)  {
-    return getLocalDateTime(nextConfiguredIndex(), timezone, false);
   }
 
   /**
@@ -3361,9 +3436,44 @@ public class ResultSetWrapper implements AutoCloseable {
    * value returned is <code>null</code>
    */
   public LocalDateTime getLocalDateTime()  {
-    return getLocalDateTime(nextConfiguredIndex(), null, false);
+    return getLocalDateTime(nextConfiguredIndex(), false);
   }
 
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.time.Instant</code> in the Java programming language.
+   *
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Instant getInstant()  {
+    return getInstant(nextConfiguredIndex(), nextConfiguredIndex(), false);
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.time.OffsetDateTime</code> in the Java programming language.
+   *
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public OffsetDateTime getOffsetDateTime()  {
+    return getOffsetDateTime(nextConfiguredIndex(), nextConfiguredIndex(), false);
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.time.ZonedDateTime</code> in the Java programming language.
+   *
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public ZonedDateTime getZonedDateTime()  {
+    return getZonedDateTime(nextConfiguredIndex(), nextConfiguredIndex(), false);
+  }
 
   /**
    * Retrieves the value of the designated column in the current row
@@ -3390,20 +3500,6 @@ public class ResultSetWrapper implements AutoCloseable {
   /**
    * Retrieves the value of the designated column in the current row
    * of this <code>ResultSet</code> object as
-   * a <code>java.time.LocalTime</code> in the Java programming language.
-   *
-   * @param timezone the calendar providing the timezone configuration
-   * @return the column value; if the value is SQL <code>NULL</code>, the
-   * value returned is <code>null</code>
-   */
-  public LocalTime getLocalTime(Calendar timezone)  {
-    Time time = getTime(timezone);
-    return time == null ? null : time.toLocalTime();
-  }
-
-  /**
-   * Retrieves the value of the designated column in the current row
-   * of this <code>ResultSet</code> object as
    * a <code>java.sql.Time</code> in the Java programming language.
    *
    * @return the column value; if the value is SQL <code>NULL</code>, the
@@ -3422,9 +3518,20 @@ public class ResultSetWrapper implements AutoCloseable {
    * value returned is <code>null</code>
    */
   public LocalTime getLocalTime()  {
-    return getLocalTime(nextConfiguredIndex(), null);
+    return getLocalTime(nextConfiguredIndex());
   }
 
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.time.OffsetTime</code> in the Java programming language.
+   *
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public OffsetTime getOffsetTime()  {
+    return getOffsetTime(nextConfiguredIndex(), nextConfiguredIndex());
+  }
 
   /**
    * Retrieves the value of the designated column in the current row
@@ -3458,7 +3565,6 @@ public class ResultSetWrapper implements AutoCloseable {
       throw new PersistenceException(resources.db, e);
     }
   }
-
 
   /**
    * Retrieves the value of the designated column in the current row

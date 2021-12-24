@@ -30,6 +30,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.Optional;
 
 /**
  * Datatype for {@link DMoney}.
@@ -53,17 +54,30 @@ public class DMoneyType extends AbstractDataType<DMoney> {
   }
 
   @Override
+  public Optional<String> getCommentSuffix(int index) {
+    return switch (index) {
+      case 0 -> Optional.empty();
+      case 1 -> Optional.of(" (scale)");
+      default -> throw new IndexOutOfBoundsException(index);
+    };
+  }
+
+  @Override
   public SqlType getSqlType(int index) {
-    switch (index) {
-      case 0: return SqlType.DECIMAL;
-      case 1: return SqlType.SMALLINT;
-    }
-    throw new IndexOutOfBoundsException();
+    return switch (index) {
+      case 0 -> SqlType.DECIMAL;
+      case 1 -> SqlType.SMALLINT;
+      default -> throw new IndexOutOfBoundsException(index);
+    };
   }
 
   @Override
   public int getSize(int index, Integer size) {
-    return index == 1 ? 0 : super.getSize(index, size);
+    return switch (index) {
+      case 0 -> super.getSize(index, size);
+      case 1 -> 0;
+      default -> throw new IndexOutOfBoundsException(index);
+    };
   }
 
   @Override
@@ -74,24 +88,22 @@ public class DMoneyType extends AbstractDataType<DMoney> {
   @Override
   public Object getColumnValue(int index, DMoney value) {
     if (value != null) {
-      switch (index) {
-        case 0:
-          return value.bigDecimalValue();
-        case 1:
-          return value.scale();
-      }
-      throw new IndexOutOfBoundsException();
+      return switch (index) {
+        case 0 -> value.bigDecimalValue();
+        case 1 -> value.scale();
+        default -> throw new IndexOutOfBoundsException(index);
+      };
     }
     return null;
   }
 
   @Override
   public String getColumnGetter(int index) {
-    switch (index) {
-      case 0: return "bigDecimalValue";
-      case 1: return "scale";
-    }
-    throw new IndexOutOfBoundsException();
+    return switch (index) {
+      case 0 -> "bigDecimalValue";
+      case 1 -> "scale";
+      default -> throw new IndexOutOfBoundsException(index);
+    };
   }
 
   @Override
@@ -137,7 +149,7 @@ public class DMoneyType extends AbstractDataType<DMoney> {
           return s;
       }
     }
-    throw new IndexOutOfBoundsException();
+    throw new IndexOutOfBoundsException(index);
   }
 
   @Override

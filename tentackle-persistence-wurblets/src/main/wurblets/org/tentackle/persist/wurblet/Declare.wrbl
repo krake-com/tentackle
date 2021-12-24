@@ -95,7 +95,7 @@ For more options, see {\@link DbModelWurblet}.
       String attribNames = entry.getValue();
 ]@
 
-  /** application specific datatype for @(attribNames)@. */
+  /** datatype for @(dataType.getJavaType())@ @(attribNames)@. */
   public static final DataType<@(dataType.getJavaType())@> @(dataType.getDataTypeConstant())@ = DataTypeFactory.getInstance().get(@(dataType.getJavaType())@.class);
 @[
     }
