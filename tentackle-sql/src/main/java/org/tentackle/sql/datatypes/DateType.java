@@ -22,6 +22,7 @@ import org.tentackle.common.DateHelper;
 import org.tentackle.common.Service;
 import org.tentackle.common.StringHelper;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.BackendException;
 import org.tentackle.sql.DataType;
 import org.tentackle.sql.SqlType;
 
@@ -30,12 +31,23 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 
 /**
  * Datatype for {@link Date}.
  */
 @Service(DataType.class)
 public class DateType extends AbstractDateTimeType<Date> {
+
+  private static final String DATE_PATTERN = "yyyy-MM-dd";
+  private static final DateFormat DATE_FORMAT = new SimpleDateFormat(DATE_PATTERN);
+
+  @Override
+  public boolean isTimezoneApplicable() {
+    return true;
+  }
 
   @Override
   public String getJavaType() {
@@ -62,12 +74,12 @@ public class DateType extends AbstractDateTimeType<Date> {
 
   @Override
   public Date valueOf(String str) {
-    return parseDate(str);
+    return parse(str);
   }
 
   @Override
   public String toString(Date object) {
-    return StringHelper.toParsableString(printDate(object));
+    return StringHelper.toParsableString(format(object));
   }
 
   @Override
@@ -92,6 +104,24 @@ public class DateType extends AbstractDateTimeType<Date> {
       return null;
     }
     return org.tentackle.common.Date.createFrozen(date.getTime());    // upgrade to org.tentackle.common.Date
+  }
+
+
+  protected Date parse(String str) throws BackendException {
+    synchronized(DATE_FORMAT) {  // formatters are not thread-safe :(
+      try {
+        return new Date(DATE_FORMAT.parse(StringHelper.parseString(str)).getTime());
+      }
+      catch (ParseException e) {
+        throw new BackendException("parsing date from '" + str + "' failed", e);
+      }
+    }
+  }
+
+  protected String format(java.util.Date date) {
+    synchronized(DATE_FORMAT) {  // formatters are not thread-safe :(
+      return DATE_FORMAT.format(date);
+    }
   }
 
 }

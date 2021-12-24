@@ -22,6 +22,7 @@ import org.tentackle.common.DateHelper;
 import org.tentackle.common.Service;
 import org.tentackle.common.StringHelper;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.BackendException;
 import org.tentackle.sql.DataType;
 import org.tentackle.sql.SqlType;
 
@@ -30,12 +31,25 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 
 /**
  * Datatype for {@link Timestamp}.
  */
 @Service(DataType.class)
 public class TimestampType extends AbstractDateTimeType<Timestamp> {
+
+  private static final String TIMESTAMP_PATTERN = "yyyy-MM-dd HH:mm:ss";
+  private static final DateFormat TIMESTAMP_FORMAT = new SimpleDateFormat(TIMESTAMP_PATTERN);
+  private static final String MS_TIMESTAMP_PATTERN = TIMESTAMP_PATTERN + ".SSS";
+  private static final DateFormat MS_TIMESTAMP_FORMAT = new SimpleDateFormat(MS_TIMESTAMP_PATTERN);
+
+  @Override
+  public boolean isTimezoneApplicable() {
+    return true;
+  }
 
   @Override
   public String getJavaType() {
@@ -67,12 +81,12 @@ public class TimestampType extends AbstractDateTimeType<Timestamp> {
 
   @Override
   public Timestamp valueOf(String str) {
-    return parseTimestamp(str);
+    return parse(str);
   }
 
   @Override
   public String toString(Timestamp object) {
-    return StringHelper.toParsableString(printTimestamp(object));
+    return StringHelper.toParsableString(format(object));
   }
 
   @Override
@@ -98,6 +112,42 @@ public class TimestampType extends AbstractDateTimeType<Timestamp> {
     }
     // upgrade to org.tentackle.common.Timestamp
     return org.tentackle.common.Timestamp.createFrozen(timestamp.getTime(), timestamp.getNanos());
+  }
+
+
+  protected Timestamp parse(String str) throws BackendException {
+    str = StringHelper.parseString(str);
+    if (str.contains(".")) {
+      synchronized(MS_TIMESTAMP_FORMAT) {
+        try {
+          return new Timestamp(MS_TIMESTAMP_FORMAT.parse(str).getTime());
+        }
+        catch (ParseException e) {
+          throw new BackendException("parsing timestamp with ms from '" + str + "' failed", e);
+        }
+      }
+    }
+    else  {
+      synchronized(TIMESTAMP_FORMAT) {
+        try {
+          return new Timestamp(TIMESTAMP_FORMAT.parse(str).getTime());
+        }
+        catch (ParseException e) {
+          throw new BackendException("parsing timestamp from '" + str + "' failed", e);
+        }
+      }
+    }
+  }
+
+  protected String format(java.util.Date timestamp) {
+    if (timestamp.getTime() % 1000 != 0) {
+      synchronized(MS_TIMESTAMP_FORMAT) {
+        return MS_TIMESTAMP_FORMAT.format(timestamp);
+      }
+    }
+    synchronized(TIMESTAMP_FORMAT) {
+      return TIMESTAMP_FORMAT.format(timestamp);
+    }
   }
 
 }

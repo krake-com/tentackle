@@ -22,9 +22,13 @@ import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Collection;
 
@@ -273,8 +277,6 @@ public interface BackendPreparedStatement {
    * Sets the designated parameter to the given <code>java.time.LocalDate</code> value
    * using the default time zone of the virtual machine that is running
    * the application.
-   * The driver converts this
-   * to an SQL <code>DATE</code> value when it sends it to the database.
    *
    * @param p the first parameter is 1, the second is 2, ...
    * @param d the parameter value, null if the value should be set to SQL NULL
@@ -285,8 +287,6 @@ public interface BackendPreparedStatement {
    * Sets the designated parameter to the given <code>java.time.LocalDate</code> value
    * using the default time zone of the virtual machine that is running
    * the application.
-   * The driver converts this
-   * to an SQL <code>DATE</code> value when it sends it to the database.
    *
    * @param p the first parameter is 1, the second is 2, ...
    * @param d the parameter value
@@ -295,37 +295,7 @@ public interface BackendPreparedStatement {
   void setLocalDate(int p, LocalDate d, boolean mapNull);
 
   /**
-   * Sets the designated parameter to the given <code>java.time.LocalDate</code> value
-   * using the default time zone of the virtual machine that is running
-   * the application.
-   * The driver converts this
-   * to an SQL <code>DATE</code> value when it sends it to the database.
-   *
-   * @param p the first parameter is 1, the second is 2, ...
-   * @param d the parameter value
-   * @param timezone the calendar providing the timezone configuration
-   */
-  void setLocalDate(int p, LocalDate d, Calendar timezone);
-
-  /**
-   * Sets the designated parameter to the given <code>java.time.LocalDate</code> value
-   * using the default time zone of the virtual machine that is running
-   * the application.
-   * The driver converts this
-   * to an SQL <code>DATE</code> value when it sends it to the database.
-   *
-   * @param p the first parameter is 1, the second is 2, ...
-   * @param d the parameter value
-   * @param timezone the calendar providing the timezone configuration
-   * @param mapNull to map null values to 1.1.1970 (epochal time zero), else SQL NULL
-   */
-  void setLocalDate(int p, LocalDate d, Calendar timezone, boolean mapNull);
-
-  /**
    * Sets the designated parameter to the given <code>java.time.LocalDateTime</code> value.
-   * The driver
-   * converts this to an SQL <code>TIMESTAMP</code> value when it sends it to the
-   * database.
    *
    * @param p the first parameter is 1, the second is 2, ...
    * @param ts the parameter value, null if the value should be set to SQL NULL
@@ -334,9 +304,6 @@ public interface BackendPreparedStatement {
 
   /**
    * Sets the designated parameter to the given <code>java.time.LocalDateTime</code> value.
-   * The driver
-   * converts this to an SQL <code>TIMESTAMP</code> value when it sends it to the
-   * database.
    *
    * @param p the first parameter is 1, the second is 2, ...
    * @param ts the parameter value
@@ -346,36 +313,61 @@ public interface BackendPreparedStatement {
   void setLocalDateTime(int p, LocalDateTime ts, boolean mapNull);
 
   /**
-   * Sets the designated parameter to the given <code>java.time.LocalDateTime</code> value.
-   * The driver
-   * converts this to an SQL <code>TIMESTAMP</code> value when it sends it to the
-   * database.
+   * Sets the designated parameter to the given <code>java.time.OffsetDateTime</code> value.
    *
    * @param p the first parameter is 1, the second is 2, ...
-   * @param ts the parameter value
-   * @param timezone the calendar providing the timezone configuration
-   * else SQL NULL
+   * @param ts the parameter value, null if the value should be set to SQL NULL
    */
-  void setLocalDateTime(int p, LocalDateTime ts, Calendar timezone);
+  void setOffsetDateTime(int p, OffsetDateTime ts);
 
   /**
-   * Sets the designated parameter to the given <code>java.time.LocalDateTime</code> value.
-   * The driver
-   * converts this to an SQL <code>TIMESTAMP</code> value when it sends it to the
-   * database.
+   * Sets the designated parameter to the given <code>java.time.OffsetDateTime</code> value.
    *
    * @param p the first parameter is 1, the second is 2, ...
    * @param ts the parameter value
-   * @param timezone the calendar providing the timezone configuration
    * @param mapNull to map null values to 1.1.1970 00:00:00.000 (epochal time zero),
    * else SQL NULL
    */
-  void setLocalDateTime(int p, LocalDateTime ts, Calendar timezone, boolean mapNull);
+  void setOffsetDateTime(int p, OffsetDateTime ts, boolean mapNull);
+
+  /**
+   * Sets the designated parameter to the given <code>java.time.ZonedDateTime</code> value.
+   *
+   * @param p the first parameter is 1, the second is 2, ...
+   * @param ts the parameter value, null if the value should be set to SQL NULL
+   */
+  void setZonedDateTime(int p, ZonedDateTime ts);
+
+  /**
+   * Sets the designated parameter to the given <code>java.time.ZonedDateTime</code> value.
+   *
+   * @param p the first parameter is 1, the second is 2, ...
+   * @param ts the parameter value
+   * @param mapNull to map null values to 1.1.1970 00:00:00.000 GMT (epochal time zero),
+   * else SQL NULL
+   */
+  void setZonedDateTime(int p, ZonedDateTime ts, boolean mapNull);
+
+  /**
+   * Sets the designated parameter to the given <code>java.time.Instant</code> value.
+   *
+   * @param p the first parameter is 1, the second is 2, ...
+   * @param ts the parameter value, null if the value should be set to SQL NULL
+   */
+  void setInstant(int p, Instant ts);
+
+  /**
+   * Sets the designated parameter to the given <code>java.time.Instant</code> value.
+   *
+   * @param p the first parameter is 1, the second is 2, ...
+   * @param ts the parameter value
+   * @param mapNull to map null values to 1.1.1970 00:00:00.000 (epochal time zero),
+   * else SQL NULL
+   */
+  void setInstant(int p, Instant ts, boolean mapNull);
 
   /**
    * Sets the designated parameter to the given <code>java.time.LocalTime</code> value.
-   * The driver converts this
-   * to an SQL <code>TIME</code> value when it sends it to the database.
    *
    * @param p the first parameter is 1, the second is 2, ...
    * @param t the parameter value, null if the value should be set to SQL NULL
@@ -383,15 +375,12 @@ public interface BackendPreparedStatement {
   void setLocalTime(int p, LocalTime t);
 
   /**
-   * Sets the designated parameter to the given <code>java.time.LocalTime</code> value.
-   * The driver converts this
-   * to an SQL <code>TIME</code> value when it sends it to the database.
+   * Sets the designated parameter to the given <code>java.time.OffsetTime</code> value.
    *
    * @param p the first parameter is 1, the second is 2, ...
    * @param t the parameter value, null if the value should be set to SQL NULL
-   * @param timezone the calendar providing the timezone configuration
    */
-  void setLocalTime(int p, LocalTime t, Calendar timezone);
+  void setOffsetTime(int p, OffsetTime t);
 
   /**
    * Sets the designated parameter to the given Java <code>Long</code> value.

@@ -136,6 +136,14 @@ public interface DataType<T> {
 
 
   /**
+   * Returns whether a {@link java.util.Calendar}-timezone can be applied to this date and/or time related type.<br>
+   * Only for types where methods with Calendar argument are provided in ResultSet and PreparedStatement.
+   *
+   * @return true if methods exist with timezone correction
+   */
+  boolean isTimezoneApplicable();
+
+  /**
    * Returns whether this is a boolean or Boolean type.
    *
    * @return true if bool

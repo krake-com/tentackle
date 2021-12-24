@@ -21,6 +21,7 @@ package org.tentackle.sql.datatypes;
 import org.tentackle.common.Service;
 import org.tentackle.common.StringHelper;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.BackendException;
 import org.tentackle.sql.DataType;
 import org.tentackle.sql.SqlType;
 
@@ -29,12 +30,23 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Types;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 
 /**
  * Datatype for {@link Time}.
  */
 @Service(DataType.class)
 public class TimeType extends AbstractDateTimeType<Time> {
+
+  private static final String TIME_PATTERN = "HH:mm:ss";
+  private static final DateFormat TIME_FORMAT = new SimpleDateFormat(TIME_PATTERN);
+
+  @Override
+  public boolean isTimezoneApplicable() {
+    return true;
+  }
 
   @Override
   public String getJavaType() {
@@ -56,12 +68,12 @@ public class TimeType extends AbstractDateTimeType<Time> {
 
   @Override
   public Time valueOf(String str) {
-    return parseTime(str);
+    return parse(str);
   }
 
   @Override
   public String toString(Time object) {
-    return StringHelper.toParsableString(printTime(object));
+    return StringHelper.toParsableString(format(object));
   }
 
   @Override
@@ -79,6 +91,24 @@ public class TimeType extends AbstractDateTimeType<Time> {
   public Time get(Backend backend, ResultSet resultSet, int[] pos, boolean mapNull, Integer size) throws SQLException {
     Time time = resultSet.getTime(pos[0]);
     return time == null ? null : org.tentackle.common.Time.createFrozen(time.getTime());    // upgrade to org.tentackle.common.Time
+  }
+
+
+  protected Time parse(String str) throws BackendException {
+    synchronized(TIME_FORMAT) {
+      try {
+        return new Time(TIME_FORMAT.parse(StringHelper.parseString(str)).getTime());
+      }
+      catch (ParseException e) {
+        throw new BackendException("parsing time from '" + str + "' failed", e);
+      }
+    }
+  }
+
+  protected String format(java.util.Date time) {
+    synchronized(TIME_FORMAT) {
+      return TIME_FORMAT.format(time);
+    }
   }
 
 }

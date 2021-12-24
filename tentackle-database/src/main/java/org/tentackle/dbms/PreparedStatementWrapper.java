@@ -30,6 +30,7 @@ import org.tentackle.sql.BackendPreparedStatement;
 import org.tentackle.sql.DataType;
 import org.tentackle.sql.DataTypeFactory;
 import org.tentackle.sql.SqlType;
+import org.tentackle.sql.datatypes.ZonedDateTimeType;
 
 import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
@@ -41,9 +42,13 @@ import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -775,57 +780,174 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
     }
   }
 
-
   @Override
-  public void setLocalDate(int p, LocalDate d, Calendar timezone, boolean mapNull) {
-    setDate(p, d == null ? null : Date.valueOf(d), timezone, mapNull);
+  public void setLocalDate(int p, LocalDate d, boolean mapNull) {
+    setDate(p, d == null ? null : Date.valueOf(d), mapNull);
   }
 
   @Override
   public void setLocalDate(int p, LocalDate d) {
-    setLocalDate(p, d, null, false);
-  }
-
-  @Override
-  public void setLocalDate(int p, LocalDate d, boolean mapNull) {
-    setLocalDate(p, d, null, mapNull);
-  }
-
-  @Override
-  public void setLocalDate(int p, LocalDate d, Calendar timezone) {
-    setLocalDate(p, d, timezone, false);
+    setLocalDate(p, d, false);
   }
 
   @Override
   public void setLocalDateTime(int p, LocalDateTime ts) {
-    setLocalDateTime(p, ts, null, false);
+    setLocalDateTime(p, ts, false);
   }
 
   @Override
   public void setLocalDateTime(int p, LocalDateTime ts, boolean mapNull) {
-    setLocalDateTime(p, ts, null, mapNull);
+    setTimestamp(p, ts == null ? null : Timestamp.valueOf(ts), mapNull);
   }
 
   @Override
-  public void setLocalDateTime(int p, LocalDateTime ts, Calendar timezone) {
-    setLocalDateTime(p, ts, timezone, false);
+  public void setOffsetDateTime(int p, OffsetDateTime ts) {
+    setOffsetDateTime(p, ts, false);
   }
 
   @Override
-  public void setLocalDateTime(int p, LocalDateTime ts, Calendar timezone, boolean mapNull) {
-    setTimestamp(p, ts == null ? null : Timestamp.valueOf(ts), timezone, mapNull);
+  public void setOffsetDateTime(int p, OffsetDateTime ts, boolean mapNull) {
+    try {
+      int ep = effectivePosition(p);
+      Timestamp timestamp;
+      Integer offset;
+      if (ts == null) {
+        if (mapNull) {
+          timestamp = DateHelper.MIN_TIMESTAMP;
+          offset = 0;
+        }
+        else {
+          timestamp = null;
+          offset = null;
+        }
+      }
+      else {
+        timestamp = Timestamp.valueOf(ts.toLocalDateTime());
+        offset = ts.getOffset().getTotalSeconds();
+      }
+
+      if (timestamp == null) {
+        getStatement().setNull(ep, Types.TIMESTAMP);
+        getStatement().setNull(ep + 1, Types.INTEGER);
+      }
+      else {
+        getStatement().setTimestamp(ep, timestamp);
+        getStatement().setInt(ep + 1, offset);
+      }
+      rememberParameter(ep, timestamp);
+      rememberParameter(ep + 1, offset);
+    }
+    catch (SQLException e) {
+      throw new PersistenceException(getSession(), this.toString(), e);
+    }
+  }
+
+  @Override
+  public void setZonedDateTime(int p, ZonedDateTime ts) {
+    setZonedDateTime(p, ts, false);
+  }
+
+  @Override
+  public void setZonedDateTime(int p, ZonedDateTime ts, boolean mapNull) {
+    try {
+      int ep = effectivePosition(p);
+      Timestamp timestamp;
+      String zoneId;
+      if (ts == null) {
+        if (mapNull) {
+          timestamp = DateHelper.MIN_TIMESTAMP;
+          zoneId = ZonedDateTimeType.GMT;
+        }
+        else {
+          timestamp = null;
+          zoneId = null;
+        }
+      }
+      else {
+        timestamp = Timestamp.valueOf(ts.toLocalDateTime());
+        zoneId = ts.getZone().getId();
+      }
+
+      if (timestamp == null) {
+        getStatement().setNull(ep, Types.TIMESTAMP);
+        getStatement().setNull(ep + 1, Types.VARCHAR);
+      }
+      else {
+        getStatement().setTimestamp(ep, timestamp);
+        getStatement().setString(ep + 1, zoneId);
+      }
+      rememberParameter(ep, timestamp);
+      rememberParameter(ep + 1, zoneId);
+    }
+    catch (SQLException e) {
+      throw new PersistenceException(getSession(), this.toString(), e);
+    }
+  }
+
+  @Override
+  public void setInstant(int p, Instant ts) {
+    setInstant(p, ts, false);
+  }
+
+  @Override
+  public void setInstant(int p, Instant ts, boolean mapNull) {
+    try {
+      int ep = effectivePosition(p);
+      Long seconds;
+      int nanos;
+      if (ts == null) {
+        seconds = mapNull ? 0L : null;
+        nanos = 0;
+      }
+      else {
+        seconds = ts.getEpochSecond();
+        nanos = ts.getNano();
+      }
+
+      if (seconds == null) {
+        getStatement().setNull(ep, Types.BIGINT);
+        getStatement().setNull(ep + 1, Types.INTEGER);
+      }
+      else {
+        getStatement().setLong(ep, seconds);
+        getStatement().setInt(ep + 1, nanos);
+      }
+      rememberParameter(ep, seconds);
+      rememberParameter(ep + 1, nanos);
+    }
+    catch (SQLException e) {
+      throw new PersistenceException(getSession(), this.toString(), e);
+    }
   }
 
   @Override
   public void setLocalTime(int p, LocalTime t) {
-    setLocalTime(p, t, null);
+    setTime(p, t == null ? null : Time.valueOf(t));
   }
 
   @Override
-  public void setLocalTime(int p, LocalTime t, Calendar timezone) {
-    setTime(p, t == null ? null : Time.valueOf(t), timezone);
+  public void setOffsetTime(int p, OffsetTime t) {
+    try {
+      int ep = effectivePosition(p);
+      if (t == null) {
+        getStatement().setNull(ep, Types.TIME);
+        getStatement().setNull(ep + 1, Types.INTEGER);
+        rememberParameter(ep, null);
+        rememberParameter(ep + 1, null);
+      }
+      else {
+        Time time = Time.valueOf(t.toLocalTime());
+        int offset = t.getOffset().getTotalSeconds();
+        getStatement().setTime(ep, time);    // set the value
+        getStatement().setInt(ep + 1, offset);   // set the scale
+        rememberParameter(ep, time);
+        rememberParameter(ep + 1, offset);
+      }
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(getSession(), this.toString(), e);
+    }
   }
-
 
   @Override
   public void setLong (int p, long l) {

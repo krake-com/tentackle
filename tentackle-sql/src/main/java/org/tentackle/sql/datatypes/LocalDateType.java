@@ -22,6 +22,7 @@ import org.tentackle.common.DateHelper;
 import org.tentackle.common.Service;
 import org.tentackle.common.StringHelper;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.BackendException;
 import org.tentackle.sql.DataType;
 import org.tentackle.sql.SqlType;
 
@@ -31,9 +32,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 /**
  * Datatype for {@link LocalDate}.
+ * <p>
+ * Mapped to {@link Date}-related JDBC methods.
  */
 @Service(DataType.class)
 public class LocalDateType extends AbstractDateTimeType<LocalDate> {
@@ -58,12 +63,12 @@ public class LocalDateType extends AbstractDateTimeType<LocalDate> {
 
   @Override
   public LocalDate valueOf(String str) {
-    return parseDate(str).toLocalDate();
+    return parse(str);
   }
 
   @Override
   public String toString(LocalDate object) {
-    return StringHelper.toParsableString(printDate(Date.valueOf(object)));
+    return StringHelper.toParsableString(format(object));
   }
 
   @Override
@@ -91,6 +96,19 @@ public class LocalDateType extends AbstractDateTimeType<LocalDate> {
       return null;
     }
     return date.toLocalDate();
+  }
+
+  protected LocalDate parse(String str) throws BackendException {
+    try {
+      return LocalDate.parse(StringHelper.parseString(str), DateTimeFormatter.ISO_LOCAL_DATE);
+    }
+    catch (DateTimeParseException e) {
+      throw new BackendException("parsing date from '" + str + "' failed", e);
+    }
+  }
+
+  protected String format(LocalDate date) {
+    return DateTimeFormatter.ISO_LOCAL_DATE.format(date);
   }
 
 }

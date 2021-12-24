@@ -100,8 +100,12 @@ public interface AttributeOptions extends CommonOptions {
    *
    * Example: Calendar getPrintedTimezoneConfig();
    * </pre>
+   * <p>
+   * This option applies only to predefined data types that provide special methods
+   * in {@code ResultSet} and {@code PreparedStatement} with a {@code Calendar} argument for
+   * timezone correction (such as {@code Timestamp}, {@code Date} or {@code Time}).
    *
-   * @return true if with timezone
+   * @return true if timezone is applied
    */
   boolean isWithTimezone();
 

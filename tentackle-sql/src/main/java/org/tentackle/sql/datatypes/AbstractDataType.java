@@ -27,7 +27,7 @@ import java.sql.SQLException;
 import java.util.Optional;
 
 /**
- * Implements some common methods for datatypes.
+ * Implements some common methods for data types.
  */
 public abstract class AbstractDataType<T> implements DataType<T> {
 
@@ -46,10 +46,16 @@ public abstract class AbstractDataType<T> implements DataType<T> {
     return 1;
   }
 
+  /**
+   * Predefined DataTypes must not override this method!<br>
+   * See {@code ResultSetWrapper#COL2_SUFFIX}.
+   * <p>
+   * {@inheritDoc}
+   */
   @Override
   public Optional<String> getColumnSuffix(int index) {
     if (index < 0 || index >= getColumnCount()) {
-      throw new IndexOutOfBoundsException();
+      throw new IndexOutOfBoundsException(index);
     }
     return index == 0 ? Optional.empty() : Optional.of("_" + (index + 1));    // none or _2, _3, etc...
   }
@@ -117,6 +123,11 @@ public abstract class AbstractDataType<T> implements DataType<T> {
 
   @Override
   public boolean isDateOrTime() {
+    return false;
+  }
+
+  @Override
+  public boolean isTimezoneApplicable() {
     return false;
   }
 
@@ -209,7 +220,7 @@ public abstract class AbstractDataType<T> implements DataType<T> {
 
 
   // in case someone uses equals or hashCode.
-  // == is sufficient since datatypes are singletons.
+  // == is sufficient since data types are singletons.
 
   @Override
   public boolean equals(Object o) {
