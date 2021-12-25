@@ -31,6 +31,8 @@ import java.util.Optional;
  */
 public abstract class AbstractDataType<T> implements DataType<T> {
 
+  private static final int[] SORTABLE_COLUMNS = { 0 };
+
   @Override
   public boolean isPredefined() {
     return true;
@@ -44,6 +46,11 @@ public abstract class AbstractDataType<T> implements DataType<T> {
   @Override
   public int getColumnCount() {
     return 1;
+  }
+
+  @Override
+  public int[] getSortableColumns() {
+    return SORTABLE_COLUMNS;
   }
 
   /**

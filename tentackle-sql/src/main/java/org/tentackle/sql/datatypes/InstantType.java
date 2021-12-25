@@ -40,13 +40,16 @@ import java.util.Optional;
  * <p>
  * Stored as 2 columns:
  * <ol>
- *   <li>the epochal seconds since 1970-01-01 00:00:00 UTC</li>
+ *   <li>the epochal seconds since 1970-01-01 00:00:00 GMT</li>
  *   <li>the nanoseconds</li>
  * </ol>
- * The {@code [MAPNULL]} option maps null values to {@code 0s/0ns}.
+ * The {@code [MAPNULL]} option maps null values to {@code 0s/0ns}.<br>
+ * This type is sortable by the first column followed by the second.
  */
 @Service(DataType.class)
 public class InstantType extends AbstractDateTimeType<Instant> {
+
+  private static final int[] SORTABLE_COLUMNS = { 0, 1 };
 
   // timestamp formats withZone necessary for Instant
   private static final DateTimeFormatter TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault());
@@ -66,6 +69,11 @@ public class InstantType extends AbstractDateTimeType<Instant> {
   @Override
   public int getColumnCount() {
     return 2;
+  }
+
+  @Override
+  public int[] getSortableColumns() {
+    return SORTABLE_COLUMNS;
   }
 
   @Override

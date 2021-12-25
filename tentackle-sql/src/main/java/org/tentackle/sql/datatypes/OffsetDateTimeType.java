@@ -42,10 +42,11 @@ import java.util.Optional;
  * <p>
  * Stored as 2 columns:
  * <ol>
- *   <li>the timestamp</li>
+ *   <li>the timestamp normalized to GMT (hence sortable)</li>
  *   <li>the zone offset in seconds</li>
  * </ol>
- * The MAPNULL option maps to {@code 1970-01-01 00:00:00+00:00}.
+ * The MAPNULL option maps to {@code 1970-01-01 00:00:00+00:00}.<br>
+ * This type is sortable by the first column.
  */
 @Service(DataType.class)
 public class OffsetDateTimeType extends AbstractDateTimeType<OffsetDateTime> {
@@ -147,8 +148,8 @@ public class OffsetDateTimeType extends AbstractDateTimeType<OffsetDateTime> {
       }
     }
     else {
-      timestamp = Timestamp.valueOf(object.toLocalDateTime());
       offset = object.getOffset().getTotalSeconds();
+      timestamp = Timestamp.valueOf(object.toLocalDateTime().minusSeconds(offset));
     }
     statement.setTimestamp(pos, timestamp);
     statement.setInt(pos + 1, offset);
@@ -170,8 +171,8 @@ public class OffsetDateTimeType extends AbstractDateTimeType<OffsetDateTime> {
       }
     }
     else {
-      timestamp = Timestamp.valueOf(object.toLocalDateTime());
       offset = object.getOffset().getTotalSeconds();
+      timestamp = Timestamp.valueOf(object.toLocalDateTime().minusSeconds(offset));
     }
 
     if (timestamp == null) {
@@ -205,7 +206,7 @@ public class OffsetDateTimeType extends AbstractDateTimeType<OffsetDateTime> {
         mapNull && timestamp.getTime() == 0 && offset == 0) {
       return null;
     }
-    return OffsetDateTime.of(timestamp.toLocalDateTime(), ZoneOffset.ofTotalSeconds(offset));
+    return OffsetDateTime.of(timestamp.toLocalDateTime().plusSeconds(offset), ZoneOffset.ofTotalSeconds(offset));
   }
 
 

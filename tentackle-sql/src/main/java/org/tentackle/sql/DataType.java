@@ -161,6 +161,15 @@ public interface DataType<T> {
 
 
   /**
+   * Gets the indexes to the sortable columns.<br>
+   * The number and order of the indexes is reflected in the generated order-by SQL clause.
+   *
+   * @return the column indexes, null or empty if datatype is not sortable in a meaningful manner by the database
+   */
+  int[] getSortableColumns();
+
+
+  /**
    * Gets the SQL type.
    *
    * @param index the column index

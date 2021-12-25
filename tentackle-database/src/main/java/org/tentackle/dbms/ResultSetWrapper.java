@@ -1625,7 +1625,7 @@ public class ResultSetWrapper implements AutoCloseable {
         mapNull && timestamp.getTime() == 0 && offset == 0) {
       return null;
     }
-    return OffsetDateTime.of(timestamp.toLocalDateTime(), ZoneOffset.ofTotalSeconds(offset));
+    return OffsetDateTime.of(timestamp.toLocalDateTime().plusSeconds(offset), ZoneOffset.ofTotalSeconds(offset));
   }
 
   /**
@@ -2547,7 +2547,7 @@ public class ResultSetWrapper implements AutoCloseable {
         mapNull && timestamp.getTime() == 0 && offset == 0) {
       return null;
     }
-    return OffsetDateTime.of(timestamp.toLocalDateTime(), ZoneOffset.ofTotalSeconds(offset));
+    return OffsetDateTime.of(timestamp.toLocalDateTime().plusSeconds(offset), ZoneOffset.ofTotalSeconds(offset));
   }
 
   /**

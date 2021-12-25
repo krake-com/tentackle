@@ -33,7 +33,13 @@ import java.sql.Types;
 import java.util.Optional;
 
 /**
- * Datatype for {@link DMoney}.
+ * Datatype for {@link DMoney}.<br>
+ * Stored as two columns:
+ * <ol>
+ *   <li>the value as a decimal without scale/li>
+ *   <li>the scale</li>
+ * </ol>
+ * This type is not sortable by the database in a meaningful manner.
  */
 @Service(DataType.class)
 public class DMoneyType extends AbstractDataType<DMoney> {
@@ -51,6 +57,11 @@ public class DMoneyType extends AbstractDataType<DMoney> {
   @Override
   public int getColumnCount() {
     return 2;
+  }
+
+  @Override
+  public int[] getSortableColumns() {
+    return null;
   }
 
   @Override
