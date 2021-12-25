@@ -822,8 +822,8 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
         }
       }
       else {
-        timestamp = Timestamp.valueOf(ts.toLocalDateTime());
         offset = ts.getOffset().getTotalSeconds();
+        timestamp = Timestamp.valueOf(ts.toLocalDateTime().minusSeconds(offset));
       }
 
       if (timestamp == null) {

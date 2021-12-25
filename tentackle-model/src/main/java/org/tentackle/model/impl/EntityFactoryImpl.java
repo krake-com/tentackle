@@ -288,6 +288,12 @@ public class EntityFactoryImpl implements EntityFactory {
       List<AttributeSorting> sorting = new ArrayList<>();
       for (String sortOpt: sortOpts) {
         String name = sortOpt.substring(1);
+        String suffix = null;
+        int ndx = name.indexOf('#');
+        if (ndx > 0) {
+          suffix = name.substring(ndx + 1);
+          name = name.substring(0, ndx);
+        }
         SortType sortType = sortOpt.charAt(0) == '+' ? SortType.ASC : SortType.DESC;
         Attribute attribute = entity.getAttributeByJavaName(name, false);
         if (attribute == null) {
@@ -296,7 +302,7 @@ public class EntityFactoryImpl implements EntityFactory {
         if (attribute == null) {
           throw new ModelException("no such attribute '" + name + "' to sort", entity);
         }
-        sorting.add(new AttributeSorting(attribute, sortType));
+        sorting.add(new AttributeSorting(attribute, suffix, sortType));
       }
       entity.setSorting(sorting);
     }

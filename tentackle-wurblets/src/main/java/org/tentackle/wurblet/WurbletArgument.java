@@ -254,7 +254,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
           relop = relop.substring(0, relop.length() - 3);
         }
         else {
-          relop = "=";
+          relop = Backend.SQL_EQUAL;
         }
         arrayOperator = Backend.SQL_ARRAY_ANY;
       }
@@ -263,7 +263,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
           relop = relop.substring(0, relop.length() - 3);
         }
         else {
-          relop = "=";
+          relop = Backend.SQL_EQUAL;
         }
         arrayOperator = Backend.SQL_ARRAY_ALL;
       }
@@ -432,14 +432,21 @@ public class WurbletArgument implements WurbletArgumentOperand {
             }
           }
           else if (dataType.getColumnCount() > 1) {
-            // no column specified for a multicolumn type: take the one without suffix
-            for (int i = 0; i < dataType.getColumnCount(); i++) {
-              if (dataType.getColumnSuffix(i).isEmpty()) {
-                columnIndex = i;
-                break;
+            // no column specified for a multi-column type:
+            if (!Backend.SQL_EQUAL.equals(relop) || value != null || literally) {
+              int[] sortableColumns = dataType.getSortableColumns();
+              if (sortableColumns != null && sortableColumns.length == 1) {
+                // if it's sortable by exactly one column, this may work
+                columnIndex = sortableColumns[0];
+              }
+              else {
+                if (sortType != null) {
+                  throw new WurbelException("datatype " + dataType + " is not sortable by the database");
+                }
+                throw new WurbelException("datatype " + dataType + " requires a column suffix for relop '" + relop + "'");
               }
             }
-            // if no such column: take all
+            // else: take all columns for "="
           }
         }
 

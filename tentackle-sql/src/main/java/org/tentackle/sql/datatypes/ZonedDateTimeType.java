@@ -45,7 +45,8 @@ import java.util.Optional;
  *   <li>the timestamp</li>
  *   <li>the zone id string</li>
  * </ol>
- * The MAPNULL option maps to {@code 1970-01-01 00:00:00 GMT}.
+ * The MAPNULL option maps to {@code 1970-01-01 00:00:00 GMT}.<br>
+ * This type is not sortable by the database in a meaningful manner.
  */
 @Service(DataType.class)
 public class ZonedDateTimeType extends AbstractDateTimeType<ZonedDateTime> {
@@ -81,6 +82,11 @@ public class ZonedDateTimeType extends AbstractDateTimeType<ZonedDateTime> {
   @Override
   public int getColumnCount() {
     return 2;
+  }
+
+  @Override
+  public int[] getSortableColumns() {
+    return null;
   }
 
   @Override

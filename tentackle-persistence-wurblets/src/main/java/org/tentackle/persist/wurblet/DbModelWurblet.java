@@ -548,8 +548,20 @@ public class DbModelWurblet extends ModelWurblet {
       StringBuilder buf = new StringBuilder();
       boolean needComma = false;
       for (WurbletArgument key: sortKeys) {
+        int[] columnIndexes;
         Attribute attr = key.getAttribute();
-        for (int columnIndex = 0; columnIndex < getEffectiveDataType(attr).getColumnCount(); columnIndex++) {
+        Integer index = key.getColumnIndex();
+        DataType<?> effectiveDataType = getEffectiveDataType(attr);
+        if (index != null) {
+          columnIndexes = new int[] { index };
+        }
+        else {
+          columnIndexes = effectiveDataType.getSortableColumns();
+        }
+        if (columnIndexes == null || columnIndexes.length == 0) {
+          throw new WurbelException(effectiveDataType + " is not sortable by the database");
+        }
+        for (int columnIndex : columnIndexes) {
           if (needComma) {
             buf.append("\n           .append(Backend.SQL_COMMA)");
           }

@@ -33,7 +33,13 @@ import java.sql.Types;
 import java.util.Optional;
 
 /**
- * Datatype for {@link BMoney}.
+ * Datatype for {@link BMoney}.<br>
+ * Stored as two columns:
+ * <ol>
+ *   <li>the value in double precision</li>
+ *   <li>the scale</li>
+ * </ol>
+ * This type is sortable by the first column.
  */
 @Service(DataType.class)
 public class BMoneyType extends AbstractDataType<BMoney> {

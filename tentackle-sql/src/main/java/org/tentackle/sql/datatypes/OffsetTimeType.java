@@ -44,6 +44,7 @@ import java.util.Optional;
  *   <li>the time</li>
  *   <li>the zone offset in seconds</li>
  * </ol>
+ * This type is not sortable by the database in a meaningful manner.
  */
 @Service(DataType.class)
 public class OffsetTimeType extends AbstractDateTimeType<OffsetTime> {
@@ -56,6 +57,11 @@ public class OffsetTimeType extends AbstractDateTimeType<OffsetTime> {
   @Override
   public int getColumnCount() {
     return 2;
+  }
+
+  @Override
+  public int[] getSortableColumns() {
+    return null;
   }
 
   @Override

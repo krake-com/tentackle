@@ -107,8 +107,8 @@ public class ModelTest {
 
       assertEquals(entity.getSorting().size(), 2);
       AttributeSorting sorting = entity.getSorting().get(0);
-      assertEquals(sorting.getAttribute().getName(), "id");
-      assertEquals(sorting.getSortType(), SortType.DESC);
+      assertEquals(sorting.attribute().getName(), "id");
+      assertEquals(sorting.sortType(), SortType.DESC);
 
       assertEquals(18, entity.getAttributes().size());
       Attribute attribute;
