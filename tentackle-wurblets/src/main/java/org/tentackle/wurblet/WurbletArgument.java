@@ -431,7 +431,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
               throw new WurbelException("datatype " + dataType + " does not map to column suffix '" + colName + "'");
             }
           }
-          else if (dataType.getColumnCount() > 1) {
+          else if (dataType.getColumnCount() > 1 && sortType == null) {
             // no column specified for a multi-column type:
             if (!Backend.SQL_EQUAL.equals(relop) || value != null || literally) {
               int[] sortableColumns = dataType.getSortableColumns();
@@ -440,9 +440,6 @@ public class WurbletArgument implements WurbletArgumentOperand {
                 columnIndex = sortableColumns[0];
               }
               else {
-                if (sortType != null) {
-                  throw new WurbelException("datatype " + dataType + " is not sortable by the database");
-                }
                 throw new WurbelException("datatype " + dataType + " requires a column suffix for relop '" + relop + "'");
               }
             }
