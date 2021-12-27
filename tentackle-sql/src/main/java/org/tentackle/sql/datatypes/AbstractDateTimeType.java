@@ -30,4 +30,15 @@ public abstract class AbstractDateTimeType<T> extends AbstractDataType<T> {
     return true;
   }
 
+  @Override
+  public String valueOfLiteralToCode(String str, Integer index) {
+    if ("null".equals(str)) {
+      return str;
+    }
+    if (index == null && str.length() > 0 && Character.isDigit(str.charAt(0))) {
+      str = "\"" + str + "\"";
+    }
+    return (isPredefined() ? getJavaType() : getDataTypeConstant()) + ".valueOf(" + str + ")";
+  }
+
 }

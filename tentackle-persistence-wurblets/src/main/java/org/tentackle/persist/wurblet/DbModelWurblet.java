@@ -782,15 +782,18 @@ public class DbModelWurblet extends ModelWurblet {
              arg.getArrayOperator().replace(' ', '_') + ")";
     }
     if (arg.getColumnIndex() == null) {
-      return createWhereSetPars(attr,attr.toMethodArgument(arg.getJdbcValue()));
+      return createWhereSetPars(attr, attr.toMethodArgument(arg.getJdbcValue()));
     }
     columnIndex = arg.getColumnIndex();
     StringBuilder buf = new StringBuilder();
     if (arg.getDataType().isPredefined()) {   // currently only BMoney and DMoney
-      buf.append("st.set(SqlType.").append(arg.getDataType().getSqlType(columnIndex))
-         .append(", ndx++, ").append(arg.getJdbcValue());
+      String jdbcValue = arg.getJdbcValue();
+      buf.append("st.set(SqlType.").append(arg.getDataType().getSqlType(columnIndex)).append(", ndx++, ");
       if (arg.isMethodArgument()) {
-        buf.append(".").append(arg.getDataType().getColumnGetter(columnIndex)).append("()");
+        buf.append(arg.getDataType().getColumnGetter(columnIndex, jdbcValue));
+      }
+      else {
+        buf.append(jdbcValue);
       }
       buf.append(")");
     }

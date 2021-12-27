@@ -414,8 +414,8 @@ public class WurbletArgument implements WurbletArgumentOperand {
             // find the column index within the datatype
             for (int i = 0; i < dataType.getColumnCount(); i++) {
               String columnSuffix = dataType.getColumnSuffix(i).orElse("");
-              String columnGetter = dataType.getColumnGetter(i);
-              if (colName.equalsIgnoreCase(columnSuffix) || colName.equals(columnGetter)) {
+              String columnAlias = dataType.getColumnAlias(i);
+              if (colName.equalsIgnoreCase(columnSuffix) || colName.equals(columnAlias)) {
                 columnIndex = i;
                 break;
               }
@@ -460,16 +460,14 @@ public class WurbletArgument implements WurbletArgumentOperand {
                                       arrayOperator + "'");
           }
         }
-        if (columnIndex == null) {
-          if (literally) {
-            if (!dataType.isLiteralSupported()) {
-              throw new WurbelException("datatype " + dataType + " does not support literals");
-            }
-            value = dataType.toLiteral(value);
+        if (literally) {
+          if (!dataType.isLiteralSupported(columnIndex)) {
+            throw new WurbelException("datatype " + dataType + " does not support literals");
           }
-          else if (value != null) {
-            value = dataType.valueOfLiteralToCode(value);
-          }
+          value = dataType.toLiteral(value, columnIndex);
+        }
+        else if (value != null) {
+          value = dataType.valueOfLiteralToCode(value, columnIndex);
         }
       }
     }

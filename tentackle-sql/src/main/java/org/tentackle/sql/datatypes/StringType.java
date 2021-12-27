@@ -61,7 +61,7 @@ public class StringType extends AbstractDataType<String> {
   }
 
   @Override
-  public String valueOfLiteralToCode(String str) {
+  public String valueOfLiteralToCode(String str, Integer index) {
     if (str.length() > 0 && str.charAt(0) != '"') {
       str = "\"" + str + "\"";
     }

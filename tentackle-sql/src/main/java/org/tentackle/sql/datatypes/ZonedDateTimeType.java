@@ -46,7 +46,8 @@ import java.util.Optional;
  *   <li>the zone id string</li>
  * </ol>
  * The MAPNULL option maps to {@code 1970-01-01 00:00:00 GMT}.<br>
- * This type is not sortable by the database in a meaningful manner.
+ * This type is not generally sortable by the database in a meaningful manner.
+ * It is sortable only within the same timezone.
  */
 @Service(DataType.class)
 public class ZonedDateTimeType extends AbstractDateTimeType<ZonedDateTime> {
@@ -62,6 +63,26 @@ public class ZonedDateTimeType extends AbstractDateTimeType<ZonedDateTime> {
    */
   public static boolean isGMT(String zoneId) {
     return zoneId == null || zoneId.isBlank() || GMT.equals(zoneId) || "UTC".equals(zoneId);
+  }
+
+  /**
+   * Derives the timestamp from an ZonedDateTime value.
+   *
+   * @param value the ZonedDateTime value
+   * @return the timestamp
+   */
+  public static Timestamp timestampOf(ZonedDateTime value) {
+    return Timestamp.valueOf(value.toLocalDateTime());
+  }
+
+  /**
+   * Derives the timezone name from an ZonedDateTime value.
+   *
+   * @param value the ZonedDateTime value
+   * @return the zone name
+   */
+  public static String zoneOf(ZonedDateTime value) {
+    return value.getZone().getId();
   }
 
 
@@ -99,10 +120,19 @@ public class ZonedDateTimeType extends AbstractDateTimeType<ZonedDateTime> {
   }
 
   @Override
-  public String getColumnGetter(int index) {
+  public String getColumnGetter(int index, String varName) {
     return switch (index) {
-      case 0 -> "toLocalDateTime";
-      case 1 -> "getZone";
+      case 0 -> "ZonedDateTimeType.timestampOf(" + varName + ")";
+      case 1 -> "ZonedDateTimeType.zoneOf(" + varName + ")";
+      default -> throw new IndexOutOfBoundsException(index);
+    };
+  }
+
+  @Override
+  public String getColumnAlias(int index) {
+    return switch (index) {
+      case 0 -> "timestamp";
+      case 1 -> "zone";
       default -> throw new IndexOutOfBoundsException(index);
     };
   }
@@ -111,8 +141,8 @@ public class ZonedDateTimeType extends AbstractDateTimeType<ZonedDateTime> {
   public Object getColumnValue(int index, ZonedDateTime value) {
     if (value != null) {
       return switch (index) {
-        case 0 -> value.toLocalDateTime();
-        case 1 -> value.getZone();
+        case 0 -> timestampOf(value);
+        case 1 -> zoneOf(value);
         default -> throw new IndexOutOfBoundsException(index);
       };
     }
@@ -153,6 +183,35 @@ public class ZonedDateTimeType extends AbstractDateTimeType<ZonedDateTime> {
   }
 
   @Override
+  public String toLiteral(String str, Integer index) {
+    if (!str.isEmpty() && str.charAt(0) != '\'') {
+      str = "'" + str + "'";
+    }
+    return str;
+  }
+
+  @Override
+  public String valueOfLiteralToCode(String str, Integer index) {
+    if (index != null) {
+      if ("null".equals(str)) {
+        return str;
+      }
+      if (str.length() > 0 && Character.isDigit(str.charAt(0))) {
+        str = "\"" + str + "\"";
+      }
+      return switch (index) {
+        case 0 -> "Timestamp.valueOf(" + str + ")";
+        case 1 -> str;
+        default -> throw new IndexOutOfBoundsException(index);
+      };
+    }
+    if (str.length() > 0 && Character.isDigit(str.charAt(0))) {
+      str = "\"" + str + "\"";
+    }
+    return "ZonedDateTime.parse(" + str + ")";
+  }
+
+  @Override
   public Object[] set(Backend backend, PreparedStatement statement, int pos, ZonedDateTime object, boolean mapNull, Integer size) throws SQLException {
     Timestamp timestamp;
     String zoneId;
@@ -168,8 +227,8 @@ public class ZonedDateTimeType extends AbstractDateTimeType<ZonedDateTime> {
       }
     }
     else {
-      timestamp = Timestamp.valueOf(object.toLocalDateTime());
-      zoneId = object.getZone().getId();
+      timestamp = timestampOf(object);
+      zoneId = zoneOf(object);
     }
     statement.setTimestamp(pos, timestamp);
     statement.setString(pos + 1, zoneId);
@@ -178,44 +237,46 @@ public class ZonedDateTimeType extends AbstractDateTimeType<ZonedDateTime> {
 
   @Override
   public Object set(Backend backend, PreparedStatement statement, int pos, ZonedDateTime object, int index, boolean mapNull, Integer size) throws SQLException {
-    Timestamp timestamp;
-    String zoneId;
-    if (object == null) {
-      if (mapNull) {
-        timestamp = DateHelper.MIN_TIMESTAMP;
-        zoneId = GMT;
-      }
-      else {
-        timestamp = null;
-        zoneId = null;
-      }
-    }
-    else {
-      timestamp = Timestamp.valueOf(object.toLocalDateTime());
-      zoneId = object.getZone().getId();
-    }
+    return switch (index) {
 
-    if (timestamp == null) {
-      switch (index) {
-        case 0:
-          statement.setNull(pos, Types.TIMESTAMP);
-          return null;
-        case 1:
-          statement.setNull(pos, Types.VARCHAR);
-          return null;
+      case 0 -> {
+        Timestamp timestamp;
+        if (object == null) {
+          if (mapNull) {
+            timestamp = DateHelper.MIN_TIMESTAMP;
+          }
+          else {
+            statement.setNull(pos, Types.TIMESTAMP);
+            yield null;
+          }
+        }
+        else {
+          timestamp = timestampOf(object);
+        }
+        statement.setTimestamp(pos, timestamp);
+        yield timestamp;
       }
-    }
-    else {
-      switch (index) {
-        case 0:
-          statement.setTimestamp(pos, timestamp);
-          return timestamp;
-        case 1:
-          statement.setString(pos, zoneId);
-          return zoneId;
+
+      case 1 -> {
+        String zoneId;
+        if (object == null) {
+          if (mapNull) {
+            zoneId = GMT;
+          }
+          else {
+            statement.setNull(pos, Types.VARCHAR);
+            yield null;
+          }
+        }
+        else {
+          zoneId = zoneOf(object);
+        }
+        statement.setString(pos, zoneId);
+        yield zoneId;
       }
-    }
-    throw new IndexOutOfBoundsException(index);
+
+      default -> throw new IndexOutOfBoundsException(index);
+    };
   }
 
   @Override
@@ -231,7 +292,6 @@ public class ZonedDateTimeType extends AbstractDateTimeType<ZonedDateTime> {
 
 
   protected ZonedDateTime parse(String str) throws BackendException {
-    // TODO with zone offset
     str = StringHelper.parseString(str);
     if (str.contains(".")) {
       try {

@@ -104,7 +104,16 @@ public class BMoneyType extends AbstractDataType<BMoney> {
   }
 
   @Override
-  public String getColumnGetter(int index) {
+  public String getColumnGetter(int index, String varName) {
+    return switch (index) {
+      case 0 -> varName + ".doubleValue()";
+      case 1 -> "(short) " + varName + ".scale()";
+      default -> throw new IndexOutOfBoundsException(index);
+    };
+  }
+
+  @Override
+  public String getColumnAlias(int index) {
     return switch (index) {
       case 0 -> "doubleValue";
       case 1 -> "scale";

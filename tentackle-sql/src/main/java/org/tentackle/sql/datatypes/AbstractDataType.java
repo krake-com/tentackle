@@ -96,11 +96,19 @@ public abstract class AbstractDataType<T> implements DataType<T> {
   }
 
   @Override
-  public String getColumnGetter(int index) {
+  public String getColumnGetter(int index, String varName) {
     if (getColumnCount() == 1) {
       return "";
     }
-    throw new UnsupportedOperationException("getColumnGetter not yet implemented for datatype " + this);
+    throw new UnsupportedOperationException("getColumnGetter not yet implemented for multi-column datatype " + this);
+  }
+
+  @Override
+  public String getColumnAlias(int index) {
+    if (getColumnCount() == 1) {
+      return "";
+    }
+    throw new UnsupportedOperationException("getColumnAlias not yet implemented for multi-column datatype " + this);
   }
 
   @Override
@@ -169,27 +177,27 @@ public abstract class AbstractDataType<T> implements DataType<T> {
   }
 
   @Override
-  public boolean isLiteralSupported() {
-    return getColumnCount() == 1;
+  public boolean isLiteralSupported(Integer index) {
+    return getColumnCount() == 1 || index != null;
   }
 
   @Override
-  public String toLiteral(String str) {
-    if (!isNumeric() && !str.isEmpty() && str.charAt(0) != '\'') {
+  public String toLiteral(String str, Integer index) {
+    if (index == null && !isNumeric() && !str.isEmpty() && str.charAt(0) != '\'') {
       str = "'" + str + "'";
     }
     return str;
   }
 
   @Override
-  public String valueOfLiteralToCode(String str) {
-    if (isLiteralSupported()) {
+  public String valueOfLiteralToCode(String str, Integer index) {
+    if (isLiteralSupported(index)) {
       return str;
     }
-    if (str.length() > 0 && str.charAt(0) != '"') {
+    if (index == null && str.length() > 0 && str.charAt(0) != '"') {
       str = "\"" + str + "\"";
     }
-    return isPredefined() ? getJavaType() : getDataTypeConstant() + ".valueOf(" + str + ")";
+    return (isPredefined() ? getJavaType() : getDataTypeConstant()) + ".valueOf(" + str + ")";
   }
 
   @Override
@@ -222,7 +230,7 @@ public abstract class AbstractDataType<T> implements DataType<T> {
     if (getColumnCount() == 1) {
       return set(backend, statement, pos, object, mapNull, size);
     }
-    throw new UnsupportedOperationException("not yet implemented for datatype " + this);
+    throw new UnsupportedOperationException("not yet implemented for multi-column datatype " + this);
   }
 
 

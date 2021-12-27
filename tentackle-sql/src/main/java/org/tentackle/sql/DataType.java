@@ -209,12 +209,22 @@ public interface DataType<T> {
 
 
   /**
-   * Gets the java getter name of a column.
+   * Returns the java code to get the value of a column.
    *
-   * @param index the datatype's value according to the model
-   * @return the column's getter name, empty string if this is a single column type
+   * @param index the column index
+   * @param varName the java variable name
+   * @return the java code, empty string if this is a single column type
    */
-  String getColumnGetter(int index);
+  String getColumnGetter(int index, String varName);
+
+
+  /**
+   * Gets the alias name of a column.
+   *
+   * @param index the column index
+   * @return the column's alias
+   */
+  String getColumnAlias(int index);
 
 
   /**
@@ -285,8 +295,9 @@ public interface DataType<T> {
    * Returns whether this type can be used literally in a query String.
    *
    * @return true if literal String supported, else false
+   * @param index the column index, null if applies to object of this type
    */
-  boolean isLiteralSupported();
+  boolean isLiteralSupported(Integer index);
 
 
   /**
@@ -294,9 +305,10 @@ public interface DataType<T> {
    * Some types need single quotes, for example.
    *
    * @param str the value string
+   * @param index the column index, null if applies to object of this type
    * @return the SQL literal
    */
-  String toLiteral(String str);
+  String toLiteral(String str, Integer index);
 
 
   /**
@@ -316,9 +328,10 @@ public interface DataType<T> {
    * Creates the java code to apply the valueOf method to a String.
    *
    * @param str the literal to be parsed
+   * @param index the column index, null if applies to object of this type
    * @return the java code
    */
-  String valueOfLiteralToCode(String str);
+  String valueOfLiteralToCode(String str, Integer index);
 
 
   /**
