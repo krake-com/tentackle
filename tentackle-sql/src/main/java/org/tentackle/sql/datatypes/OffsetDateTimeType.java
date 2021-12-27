@@ -51,6 +51,27 @@ import java.util.Optional;
 @Service(DataType.class)
 public class OffsetDateTimeType extends AbstractDateTimeType<OffsetDateTime> {
 
+  /**
+   * Derives the timestamp from an OffsetDateTime value.
+   *
+   * @param value the OffsetDateTime value
+   * @return the timestamp
+   */
+  public static Timestamp timestampOf(OffsetDateTime value) {
+    return Timestamp.valueOf(value.toLocalDateTime().minusSeconds(offsetOf(value)));
+  }
+
+  /**
+   * Derives the timezone offset from an OffsetDateTime value.
+   *
+   * @param value the OffsetDateTime value
+   * @return the timezone offset in seconds
+   */
+  public static int offsetOf(OffsetDateTime value) {
+    return value.getOffset().getTotalSeconds();
+  }
+
+
   private static final DateTimeFormatter TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ssxxx");
   private static final DateTimeFormatter MS_TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSxxx");
 
@@ -79,10 +100,19 @@ public class OffsetDateTimeType extends AbstractDateTimeType<OffsetDateTime> {
   }
 
   @Override
-  public String getColumnGetter(int index) {
+  public String getColumnGetter(int index, String varName) {
     return switch (index) {
-      case 0 -> "toLocalDateTime";
-      case 1 -> "getOffset";
+      case 0 -> "OffsetDateTimeType.timestampOf(" + varName + ")";
+      case 1 -> "OffsetDateTimeType.offsetOf(" + varName + ")";
+      default -> throw new IndexOutOfBoundsException(index);
+    };
+  }
+
+  @Override
+  public String getColumnAlias(int index) {
+    return switch (index) {
+      case 0 -> "timestamp";
+      case 1 -> "offset";
       default -> throw new IndexOutOfBoundsException(index);
     };
   }
@@ -90,9 +120,10 @@ public class OffsetDateTimeType extends AbstractDateTimeType<OffsetDateTime> {
   @Override
   public Object getColumnValue(int index, OffsetDateTime value) {
     if (value != null) {
+      int offset = offsetOf(value);
       return switch (index) {
-        case 0 -> value.toLocalDateTime();
-        case 1 -> value.getOffset();
+        case 0 -> Timestamp.valueOf(value.toLocalDateTime().minusSeconds(offset));
+        case 1 -> offset;
         default -> throw new IndexOutOfBoundsException(index);
       };
     }
@@ -133,6 +164,37 @@ public class OffsetDateTimeType extends AbstractDateTimeType<OffsetDateTime> {
   }
 
   @Override
+  public String toLiteral(String str, Integer index) {
+    if (index != null && index == 0 && !str.isEmpty() && str.charAt(0) != '\'') {
+      str = "'" + str + "'";
+    }
+    return str;
+  }
+
+  @Override
+  public String valueOfLiteralToCode(String str, Integer index) {
+    if (index != null) {
+      return switch (index) {
+        case 0 -> {
+          if ("null".equals(str)) {
+            yield str;
+          }
+          if (str.length() > 0 && Character.isDigit(str.charAt(0))) {
+            str = "\"" + str + "\"";
+          }
+          yield "Timestamp.valueOf(" + str + ")";
+        }
+        case 1 -> str;
+        default -> throw new IndexOutOfBoundsException(index);
+      };
+    }
+    if (str.length() > 0 && Character.isDigit(str.charAt(0))) {
+      str = "\"" + str + "\"";
+    }
+    return "OffsetDateTime.parse(" + str + ")";
+  }
+
+  @Override
   public Object[] set(Backend backend, PreparedStatement statement, int pos, OffsetDateTime object, boolean mapNull, Integer size) throws SQLException {
     Timestamp timestamp;
     int offset;
@@ -148,7 +210,7 @@ public class OffsetDateTimeType extends AbstractDateTimeType<OffsetDateTime> {
       }
     }
     else {
-      offset = object.getOffset().getTotalSeconds();
+      offset = offsetOf(object);
       timestamp = Timestamp.valueOf(object.toLocalDateTime().minusSeconds(offset));
     }
     statement.setTimestamp(pos, timestamp);
@@ -158,44 +220,46 @@ public class OffsetDateTimeType extends AbstractDateTimeType<OffsetDateTime> {
 
   @Override
   public Object set(Backend backend, PreparedStatement statement, int pos, OffsetDateTime object, int index, boolean mapNull, Integer size) throws SQLException {
-    Timestamp timestamp;
-    int offset;
-    if (object == null) {
-      if (mapNull) {
-        timestamp = DateHelper.MIN_TIMESTAMP;
-        offset = 0;
-      }
-      else {
-        timestamp = null;
-        offset = 0;
-      }
-    }
-    else {
-      offset = object.getOffset().getTotalSeconds();
-      timestamp = Timestamp.valueOf(object.toLocalDateTime().minusSeconds(offset));
-    }
+    return switch (index) {
 
-    if (timestamp == null) {
-      switch (index) {
-        case 0:
-          statement.setNull(pos, Types.TIMESTAMP);
-          return null;
-        case 1:
-          statement.setNull(pos, Types.INTEGER);
-          return null;
+      case 0 -> {
+        Timestamp timestamp;
+        if (object == null) {
+          if (mapNull) {
+            timestamp = DateHelper.MIN_TIMESTAMP;
+          }
+          else {
+            statement.setNull(pos, Types.TIMESTAMP);
+            yield null;
+          }
+        }
+        else {
+          timestamp = timestampOf(object);
+        }
+        statement.setTimestamp(pos, timestamp);
+        yield timestamp;
       }
-    }
-    else {
-      switch (index) {
-        case 0:
-          statement.setTimestamp(pos, timestamp);
-          return timestamp;
-        case 1:
-          statement.setInt(pos, offset);
-          return offset;
+
+      case 1 -> {
+        int offset;
+        if (object == null) {
+          if (mapNull) {
+            offset = 0;
+          }
+          else {
+            statement.setNull(pos, Types.INTEGER);
+            yield null;
+          }
+        }
+        else {
+          offset = offsetOf(object);
+        }
+        statement.setInt(pos, offset);
+        yield offset;
       }
-    }
-    throw new IndexOutOfBoundsException(index);
+
+      default -> throw new IndexOutOfBoundsException(index);
+    };
   }
 
   @Override

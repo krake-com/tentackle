@@ -109,7 +109,16 @@ public class DMoneyType extends AbstractDataType<DMoney> {
   }
 
   @Override
-  public String getColumnGetter(int index) {
+  public String getColumnGetter(int index, String varName) {
+    return switch (index) {
+      case 0 -> varName + ".bigDecimalValue()";
+      case 1 -> "(short) " + varName + ".scale()";
+      default -> throw new IndexOutOfBoundsException(index);
+    };
+  }
+
+  @Override
+  public String getColumnAlias(int index) {
     return switch (index) {
       case 0 -> "bigDecimalValue";
       case 1 -> "scale";

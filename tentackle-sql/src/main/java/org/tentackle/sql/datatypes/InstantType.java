@@ -86,10 +86,19 @@ public class InstantType extends AbstractDateTimeType<Instant> {
   }
 
   @Override
-  public String getColumnGetter(int index) {
+  public String getColumnGetter(int index, String varName) {
     return switch (index) {
-      case 0 -> "getEpochSecond";
-      case 1 -> "getNano";
+      case 0 -> varName + ".getEpochSecond()";
+      case 1 -> varName + ".getNano()";
+      default -> throw new IndexOutOfBoundsException(index);
+    };
+  }
+
+  @Override
+  public String getColumnAlias(int index) {
+    return switch (index) {
+      case 0 -> "epochSecond";
+      case 1 -> "nano";
       default -> throw new IndexOutOfBoundsException(index);
     };
   }
@@ -140,6 +149,17 @@ public class InstantType extends AbstractDateTimeType<Instant> {
   }
 
   @Override
+  public String valueOfLiteralToCode(String str, Integer index) {
+    if (index != null) {
+      return str;
+    }
+    if (str.length() > 0 && Character.isDigit(str.charAt(0))) {
+      str = "\"" + str + "\"";
+    }
+    return "Instant.parse(" + str + ")";
+  }
+
+  @Override
   public Object[] set(Backend backend, PreparedStatement statement, int pos, Instant object, boolean mapNull, Integer size) throws SQLException {
     Long seconds;
     int nanos;
@@ -164,38 +184,46 @@ public class InstantType extends AbstractDateTimeType<Instant> {
 
   @Override
   public Object set(Backend backend, PreparedStatement statement, int pos, Instant object, int index, boolean mapNull, Integer size) throws SQLException {
-    Long seconds;
-    int nanos;
-    if (object == null) {
-      seconds = mapNull ? 0L : null;
-      nanos = 0;
-    }
-    else {
-      seconds = object.getEpochSecond();
-      nanos = object.getNano();
-    }
+    return switch (index) {
 
-    if (seconds == null) {
-      switch (index) {
-        case 0:
-          statement.setNull(pos, Types.BIGINT);
-          return null;
-        case 1:
-          statement.setNull(pos, Types.INTEGER);
-          return null;
+      case 0 -> {
+        Long seconds;
+        if (object == null) {
+          if (mapNull) {
+            seconds = 0L;
+          }
+          else {
+            statement.setNull(pos, Types.BIGINT);
+            yield null;
+          }
+        }
+        else {
+          seconds = object.getEpochSecond();
+        }
+        statement.setLong(pos, seconds);
+        yield seconds;
       }
-    }
-    else {
-      switch (index) {
-        case 0:
-          statement.setLong(pos, seconds);
-          return seconds;
-        case 1:
-          statement.setInt(pos, nanos);
-          return nanos;
+
+      case 1 -> {
+        Integer nanos;
+        if (object == null) {
+          if (mapNull) {
+            nanos = 0;
+          }
+          else {
+            statement.setNull(pos, Types.INTEGER);
+            yield null;
+          }
+        }
+        else {
+          nanos = object.getNano();
+        }
+        statement.setInt(pos, nanos);
+        yield nanos;
       }
-    }
-    throw new IndexOutOfBoundsException(index);
+
+      default -> throw new IndexOutOfBoundsException(index);
+    };
   }
 
   @Override

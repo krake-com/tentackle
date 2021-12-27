@@ -49,6 +49,27 @@ import java.util.Optional;
 @Service(DataType.class)
 public class OffsetTimeType extends AbstractDateTimeType<OffsetTime> {
 
+  /**
+   * Derives the time from an OffsetTime value.
+   *
+   * @param value the OffsetTime value
+   * @return the time
+   */
+  public static Time timeOf(OffsetTime value) {
+    return Time.valueOf(value.toLocalTime());
+  }
+
+  /**
+   * Derives the timezone offset from an OffsetTime value.
+   *
+   * @param value the OffsetTime value
+   * @return the timezone offset in seconds
+   */
+  public static int offsetOf(OffsetTime value) {
+    return value.getOffset().getTotalSeconds();
+  }
+
+
   @Override
   public String getJavaType() {
     return "OffsetTime";
@@ -74,10 +95,19 @@ public class OffsetTimeType extends AbstractDateTimeType<OffsetTime> {
   }
 
   @Override
-  public String getColumnGetter(int index) {
+  public String getColumnGetter(int index, String varName) {
     return switch (index) {
-      case 0 -> "toLocalTime";
-      case 1 -> "getOffset";
+      case 0 -> "OffsetTimeType.timeOf(" + varName + ")";
+      case 1 -> "OffsetTimeType.offsetOf(" + varName + ")";
+      default -> throw new IndexOutOfBoundsException(index);
+    };
+  }
+
+  @Override
+  public String getColumnAlias(int index) {
+    return switch (index) {
+      case 0 -> "time";
+      case 1 -> "offset";
       default -> throw new IndexOutOfBoundsException(index);
     };
   }
@@ -86,8 +116,8 @@ public class OffsetTimeType extends AbstractDateTimeType<OffsetTime> {
   public Object getColumnValue(int index, OffsetTime value) {
     if (value != null) {
       return switch (index) {
-        case 0 -> value.toLocalTime();
-        case 1 -> value.getOffset();
+        case 0 -> timeOf(value);
+        case 1 -> offsetOf(value);
         default -> throw new IndexOutOfBoundsException(index);
       };
     }
@@ -128,14 +158,45 @@ public class OffsetTimeType extends AbstractDateTimeType<OffsetTime> {
   }
 
   @Override
+  public String toLiteral(String str, Integer index) {
+    if (index != null && index == 0 && !str.isEmpty() && str.charAt(0) != '\'') {
+      str = "'" + str + "'";
+    }
+    return str;
+  }
+
+  @Override
+  public String valueOfLiteralToCode(String str, Integer index) {
+    if (index != null) {
+      return switch (index) {
+        case 0 -> {
+          if ("null".equals(str)) {
+            yield str;
+          }
+          if (str.length() > 0 && Character.isDigit(str.charAt(0))) {
+            str = "\"" + str + "\"";
+          }
+          yield "Time.valueOf(" + str + ")";
+        }
+        case 1 -> str;
+        default -> throw new IndexOutOfBoundsException(index);
+      };
+    }
+    if (str.length() > 0 && Character.isDigit(str.charAt(0))) {
+      str = "\"" + str + "\"";
+    }
+    return "OffsetTime.parse(" + str + ")";
+  }
+
+  @Override
   public Object[] set(Backend backend, PreparedStatement statement, int pos, OffsetTime object, boolean mapNull, Integer size) throws SQLException {
     if (object == null) {
       statement.setNull(pos, Types.TIME);
       statement.setNull(pos + 1, Types.INTEGER);
       return new Object[] { null, null };
     }
-    Time time = Time.valueOf(object.toLocalTime());
-    int offset = object.getOffset().getTotalSeconds();
+    Time time = timeOf(object);
+    int offset = offsetOf(object);
     statement.setTime(pos, time);
     statement.setInt(pos + 1, offset);
     return new Object[] { time, offset };
@@ -156,11 +217,11 @@ public class OffsetTimeType extends AbstractDateTimeType<OffsetTime> {
     else {
       switch (index) {
         case 0:
-          Time time = Time.valueOf(object.toLocalTime());
+          Time time = timeOf(object);
           statement.setTime(pos, time);
           return time;
         case 1:
-          int offset = object.getOffset().getTotalSeconds();
+          int offset = offsetOf(object);
           statement.setInt(pos, offset);
           return offset;
       }
