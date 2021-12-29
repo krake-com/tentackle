@@ -250,7 +250,7 @@ public class TablePrinter extends AbstractFxController {
 
     LOGGER.fine("table print job {0}", job);
 
-    dateLabel.setText(FormatHelper.formatShortTimestamp(new Timestamp()));
+    dateLabel.setText(FormatHelper.formatShortTimestampFast(new Timestamp()));
 
     // copy the columns to the printing table
     double tableWidth = 0.0;

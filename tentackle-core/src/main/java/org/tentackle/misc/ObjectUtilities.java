@@ -31,8 +31,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.text.ParseException;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -102,6 +100,7 @@ public class ObjectUtilities {
     setConverter(LocalDateTime.class, this::toLocalDateTime);
     setConverter(LocalDate.class, this::toLocalDate);
     setConverter(LocalTime.class, this::toLocalTime);
+    // TODO: Instant, OffsetTime, OffsetDateTime, ZonedDateTime
   }
 
 
@@ -350,33 +349,23 @@ public class ObjectUtilities {
   }
 
   private java.sql.Timestamp toSqlTimestamp(Object value) {
-    if (value instanceof java.util.Date) {
-      return new java.sql.Timestamp(((java.util.Date) value).getTime());
+    if (value instanceof java.util.Date date) {
+      return new java.sql.Timestamp(date.getTime());
     }
-    if (value instanceof LocalDateTime) {
-      return java.sql.Timestamp.from(((LocalDateTime) value).atZone(ZoneId.systemDefault()).toInstant());
+    if (value instanceof LocalDateTime localDateTime) {
+      return java.sql.Timestamp.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant());
     }
-    try {
-      return FormatHelper.parseTimestamp(value.toString());   // tentackle Timestamp extends sql Timestamp
-    }
-    catch (ParseException px) {
-      throw new IllegalArgumentException(px);
-    }
+    return FormatHelper.parseTimestampFast(value.toString());   // tentackle Timestamp extends sql Timestamp
   }
 
   private org.tentackle.common.Timestamp toTimestamp(Object value) {
     if (value instanceof java.util.Date) {
       return new org.tentackle.common.Timestamp(((java.util.Date) value).getTime());
     }
-    if (value instanceof LocalDateTime) {
-      return new org.tentackle.common.Timestamp(((LocalDateTime) value).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
+    if (value instanceof LocalDateTime localDateTime) {
+      return new org.tentackle.common.Timestamp(localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
     }
-    try {
-      return FormatHelper.parseTimestamp(value.toString());
-    }
-    catch (ParseException px) {
-      throw new IllegalArgumentException(px);
-    }
+    return FormatHelper.parseTimestampFast(value.toString());
   }
 
   private java.sql.Time toSqlTime(Object value) {
@@ -386,94 +375,69 @@ public class ObjectUtilities {
     if (value instanceof LocalTime) {
       return new java.sql.Time(((LocalTime) value).toSecondOfDay() * 1000L - TimeZone.getDefault().getRawOffset());
     }
-    try {
-      return FormatHelper.parseTime(value.toString());   // tentackle Time extends sql Time
-    }
-    catch (ParseException px) {
-      throw new IllegalArgumentException(px);
-    }
+    return FormatHelper.parseTimeFast(value.toString());   // tentackle Time extends sql Time
   }
 
   private org.tentackle.common.Time toTime(Object value) {
-    if (value instanceof java.util.Date) {
-      return new org.tentackle.common.Time(((java.util.Date) value).getTime());
+    if (value instanceof java.util.Date date) {
+      return new org.tentackle.common.Time(date.getTime());
     }
-    if (value instanceof LocalTime) {
-      return new org.tentackle.common.Time(((LocalTime) value).toSecondOfDay() * 1000L - TimeZone.getDefault().getRawOffset());
+    if (value instanceof LocalTime time) {
+      return new org.tentackle.common.Time(time.toSecondOfDay() * 1000L - TimeZone.getDefault().getRawOffset());
     }
-    try {
-      return FormatHelper.parseTime(value.toString());
-    }
-    catch (ParseException px) {
-      throw new IllegalArgumentException(px);
-    }
+    return FormatHelper.parseTimeFast(value.toString());
   }
 
   private java.util.Date toUtilDate(Object value) {
-    if (value instanceof LocalDate) {
-      return new java.util.Date(((LocalDate) value).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli());
+    if (value instanceof LocalDate localDate) {
+      return new java.util.Date(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli());
     }
-    try {
-      return FormatHelper.parseDate(value.toString());   // tentackle Date extends sql Date which extends util Date
-    }
-    catch (ParseException px) {
-      throw new IllegalArgumentException(px);
-    }
+    return FormatHelper.parseDateFast(value.toString());   // tentackle Date extends sql Date which extends util Date
   }
 
   private java.sql.Date toSqlDate(Object value) {
-    if (value instanceof java.util.Date) {
-      return new java.sql.Date(((java.util.Date) value).getTime());
+    if (value instanceof java.util.Date date) {
+      return new java.sql.Date(date.getTime());
     }
-    if (value instanceof LocalDate) {
-      return new java.sql.Date(((LocalDate) value).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli());
+    if (value instanceof LocalDate localDate) {
+      return new java.sql.Date(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli());
     }
-    try {
-      return FormatHelper.parseDate(value.toString());   // tentackle Date extends sql Date
-    }
-    catch (ParseException px) {
-      throw new IllegalArgumentException(px);
-    }
+    return FormatHelper.parseDateFast(value.toString());   // tentackle Date extends sql Date
   }
 
   private org.tentackle.common.Date toDate(Object value) {
-    if (value instanceof java.util.Date) {
-      return new org.tentackle.common.Date(((java.util.Date) value).getTime());
+    if (value instanceof java.util.Date date) {
+      return new org.tentackle.common.Date(date.getTime());
     }
-    if (value instanceof LocalDate) {
-      return new org.tentackle.common.Date(((LocalDate) value).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli());
+    if (value instanceof LocalDate localDate) {
+      return new org.tentackle.common.Date(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli());
     }
-    try {
-      return FormatHelper.parseDate(value.toString());
-    }
-    catch (ParseException px) {
-      throw new IllegalArgumentException(px);
-    }
+    return FormatHelper.parseDateFast(value.toString());
   }
 
   private LocalDateTime toLocalDateTime(Object value) {
-    if (value instanceof java.sql.Timestamp) {
-      return LocalDateTime.ofInstant(((java.sql.Timestamp) value).toInstant(), ZoneId.systemDefault());
+    if (value instanceof java.sql.Timestamp timestamp) {
+      return timestamp.toLocalDateTime();
     }
     return FormatHelper.parseLocalDateTime(value.toString());
   }
 
   private LocalDate toLocalDate(Object value) {
-    if (value instanceof java.util.Date) {
-      return LocalDate.ofInstant(Instant.ofEpochMilli(((java.util.Date) value).getTime()), ZoneId.systemDefault());
+    if (value instanceof java.util.Date date) {
+      return new java.sql.Date(date.getTime()).toLocalDate();
     }
-    if (value instanceof LocalDateTime) {
-      return ((LocalDateTime) value).toLocalDate();
+    if (value instanceof LocalDateTime localDateTime) {
+      return localDateTime.toLocalDate();
     }
     return FormatHelper.parseLocalDate(value.toString());
   }
 
   private LocalTime toLocalTime(Object value) {
-    if (value instanceof LocalDateTime) {
-      return ((LocalDateTime) value).toLocalTime();
+    if (value instanceof LocalDateTime localDateTime) {
+      return localDateTime.toLocalTime();
     }
-    if (value instanceof java.sql.Time) {
-      return LocalTime.ofInstant(Instant.ofEpochMilli(((java.sql.Time) value).getTime()), ZoneId.systemDefault());
+    if (value instanceof java.sql.Time time) {
+      return time.toLocalTime();
     }
     return FormatHelper.parseLocalTime(value.toString());
   }
