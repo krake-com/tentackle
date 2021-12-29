@@ -20,8 +20,6 @@
 
 package org.tentackle.common;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.Calendar;
 
 import static java.util.Calendar.DATE;
@@ -35,31 +33,19 @@ import static java.util.Calendar.YEAR;
 
 
 /**
- * Some common methods for date and time.
- *
- * @author harald
+ * Some common methods for date- and time-related types based on {@link java.util.Date}.
  */
 public final class DateHelper {
 
   /**
-   * epochal date zero: 1.1.1970 00:00:00 UTC
+   * epochal date zero: 1.1.1970 00:00:00 GMT
    */
   public static final Date MIN_DATE = new Date(0);
 
   /**
-   * epochal date zero: 1.1.1970 00:00:00 UTC
-   */
-  public static final LocalDate MIN_LOCALDATE = MIN_DATE.toLocalDate();
-
-  /**
-   * epochal timestamp zero: 1.1.1970 00:00:00.000 UTC
+   * epochal timestamp zero: 1.1.1970 00:00:00.000 GMT
    */
   public static final Timestamp MIN_TIMESTAMP = new Timestamp(0);
-
-  /**
-   * epochal timestamp zero: 1.1.1970 00:00:00.000 UTC
-   */
-  public static final LocalDateTime MIN_LOCALDATETIME = MIN_TIMESTAMP.toLocalDateTime();
 
 
   /**

@@ -40,6 +40,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.function.Function;
@@ -683,7 +684,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
               if (timeOnly) {
                 try {
                   Calendar cal = DateHelper.today();
-                  cal.setTime(colonCount == 1 ? FormatHelper.parseShortTime(str) : FormatHelper.parseTime(str));
+                  cal.setTime(colonCount == 1 ? FormatHelper.parseShortTimeFast(str) : FormatHelper.parseTimeFast(str));
                   int hour = cal.get(HOUR_OF_DAY);
                   int minute = cal.get(MINUTE);
                   int second = cal.get(SECOND);
@@ -694,7 +695,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
                   getComponent().setError(null);
                   return cal.getTime();
                 }
-                catch (ParseException ex) {
+                catch (DateTimeParseException ex) {
                   // did not work
                 }
               }

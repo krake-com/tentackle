@@ -78,19 +78,21 @@ public class LocalDateTimeType extends AbstractDateTimeType<LocalDateTime> {
 
   @Override
   public Object[] set(Backend backend, PreparedStatement statement, int pos, LocalDateTime object, boolean mapNull, Integer size) throws SQLException {
-    if (object == null && mapNull) {
-      object = DateHelper.MIN_LOCALDATETIME;
-      statement.setTimestamp(pos, DateHelper.MIN_TIMESTAMP);
-    }
-    else {
-      if (object == null) {
-        statement.setNull(pos, Types.TIMESTAMP);
+    Timestamp value;
+    if (object == null) {
+      if (mapNull) {
+        value = DateHelper.MIN_TIMESTAMP;
       }
       else {
-        statement.setTimestamp(pos, Timestamp.valueOf(object));
+        statement.setNull(pos, Types.TIMESTAMP);
+        return new Object[] { null };
       }
     }
-    return new Object[] { object };
+    else {
+      value = Timestamp.valueOf(object);
+    }
+    statement.setTimestamp(pos, value);
+    return new Object[] { value };
   }
 
   @Override

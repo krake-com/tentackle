@@ -69,6 +69,6 @@ public class AlreadyLoggedInException extends LoginFailedException {
   public String getMessage() {
     return MessageFormat.format(SessionBundle.getString("YOU ARE ALREADY LOGGED IN AT {0} SINCE {1}"),
                                 loginInfo.getHostInfo(),
-                                FormatHelper.formatShortTimestamp(new Date(loginInfo.getSince())));
+                                FormatHelper.formatShortTimestampFast(new Date(loginInfo.getSince())));
   }
 }

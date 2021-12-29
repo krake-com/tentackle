@@ -29,6 +29,7 @@ import org.tentackle.sql.BackendInfo;
 
 import java.lang.ref.WeakReference;
 import java.sql.SQLException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -585,10 +586,10 @@ public class DefaultConnectionManager implements ConnectionManager {
       con.setExpireAt(con.getEstablishedSince() +
                       (minMinutes * 60L + random.nextInt((maxMinutes - minMinutes) * 60)) * 1000L);
     }
-    LOGGER.info("{0}: open connection {1}, {2}, {3}, valid until {4}",
+    LOGGER.info(() -> MessageFormat.format("{0}: open connection {1}, {2}, {3}, valid until {4}",
                 this, con, TransactionIsolation.valueOf(con.getTransactionIsolation()),
                 TransactionWritability.valueOf(!con.isReadOnly()),
-                FormatHelper.formatTimestamp(new Date(con.getExpireAt())));
+                FormatHelper.formatTimestampFast(new Date(con.getExpireAt()))));
     return con;
   }
 
@@ -608,7 +609,7 @@ public class DefaultConnectionManager implements ConnectionManager {
     }
     else if (con.isExpired()) {
       LOGGER.info("{0}: closing connection {1}, open since {2}",
-                  this, con, FormatHelper.formatTimestamp(new Date(con.getEstablishedSince())));
+                  this, con, FormatHelper.formatTimestampFast(new Date(con.getEstablishedSince())));
     }
     else if (con.isClosed()) {
       LOGGER.warning("{0}: connection {1} is closed", this, con);

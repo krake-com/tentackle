@@ -486,7 +486,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     // un-synchronized...
     if (closeIt) {
       LOGGER.info("{0}: closing connection {1}, open since {2}",
-                  this, con, FormatHelper.formatTimestamp(new Date(con.getEstablishedSince())));
+                  this, con, FormatHelper.formatTimestampFast(new Date(con.getEstablishedSince())));
       try {
         con.close();
       }

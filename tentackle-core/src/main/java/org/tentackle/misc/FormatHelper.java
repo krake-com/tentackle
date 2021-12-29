@@ -31,9 +31,9 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static java.util.Calendar.DAY_OF_MONTH;
 import static java.util.Calendar.HOUR;
@@ -48,56 +48,38 @@ import static java.util.Calendar.YEAR;
 
 
 /**
- * Formatting helper.
+ * Formatting helper methods.
  *
  * @author harald
  */
 public class FormatHelper {
 
-
   /**
    * Patterns to initialize formatting.
+   *
+   * @param integerPattern the localized integer format string
+   * @param floatingNumberPattern the localized float/double format string
+   * @param moneyPattern the localized money format string
+   * @param timestampPattern the localized format string for a timestamp
+   * @param datePattern the localized format string for a date
+   * @param timePattern the localized format string for a time
+   * @param shortTimestampPattern the localized format string for a short timestamp
+   * @param shortDatePattern the localized format string for a short date
+   * @param shortTimePattern the localized format string for a short time
+   * @param debitLetter the short letter for "debit" (Soll)
+   * @param creditLetter the short letter for "credit" (Haben)
    */
-  public static class Patterns {
-
-    /** localized integer format string. */
-    public String integerPattern;
-
-    /** localized float/double format string. */
-    public String floatingNumberPattern;
-
-    /** localized money format string. */
-    public String moneyPattern;
-
-    /** localized format string for a timestamp. */
-    public String timestampPattern;
-
-    /** localized format string for a date. */
-    public String datePattern;
-
-    /** localized format string for a time. */
-    public String timePattern;
-
-    /** localized format string for a short timestamp. */
-    public String shortTimestampPattern;
-
-    /** localized format string for a short date. */
-    public String shortDatePattern;
-
-    /** localized format string for a short time. */
-    public String shortTimePattern;
-
-    /** short letter for "debit" (soll). */
-    public char debitLetter;
-
-    /** short letter for "credit" (haben). */
-    public char creditLetter;
-
-    /**
-     * Creates empty patterns.
-     */
-    public Patterns() {
-    }
+  public record Patterns(String integerPattern,
+                         String floatingNumberPattern,
+                         String moneyPattern,
+                         String timestampPattern,
+                         String datePattern,
+                         String timePattern,
+                         String shortTimestampPattern,
+                         String shortDatePattern,
+                         String shortTimePattern,
+                         char debitLetter,
+                         char creditLetter) {
 
     /**
      * Creates patterns for the given locale.
@@ -105,20 +87,18 @@ public class FormatHelper {
      * @param locale the locale
      */
     public Patterns(Locale locale) {
-      integerPattern = MiscCoreBundle.getString(locale, "integerPattern");
-      floatingNumberPattern = MiscCoreBundle.getString(locale, "floatingNumberPattern");
-      moneyPattern = MiscCoreBundle.getString(locale, "moneyPattern");
-      integerPattern = MiscCoreBundle.getString(locale, "integerPattern");
-      timestampPattern = MiscCoreBundle.getString(locale, "timestampPattern");
-      datePattern = MiscCoreBundle.getString(locale, "datePattern");
-      timePattern = MiscCoreBundle.getString(locale, "timePattern");
-      shortTimestampPattern = MiscCoreBundle.getString(locale, "shortTimestampPattern");
-      shortDatePattern = MiscCoreBundle.getString(locale, "shortDatePattern");
-      shortTimePattern = MiscCoreBundle.getString(locale, "shortTimePattern");
-      debitLetter = MiscCoreBundle.getString(locale, "debitLetter").charAt(0);
-      creditLetter = MiscCoreBundle.getString(locale, "creditLetter").charAt(0);
+      this(MiscCoreBundle.getString(locale, "integerPattern"),
+           MiscCoreBundle.getString(locale, "floatingNumberPattern"),
+           MiscCoreBundle.getString(locale, "moneyPattern"),
+           MiscCoreBundle.getString(locale, "timestampPattern"),
+           MiscCoreBundle.getString(locale, "datePattern"),
+           MiscCoreBundle.getString(locale, "timePattern"),
+           MiscCoreBundle.getString(locale, "shortTimestampPattern"),
+           MiscCoreBundle.getString(locale, "shortDatePattern"),
+           MiscCoreBundle.getString(locale, "shortTimePattern"),
+           MiscCoreBundle.getString(locale, "debitLetter").charAt(0),
+           MiscCoreBundle.getString(locale, "creditLetter").charAt(0));
     }
-
   }
 
 
@@ -127,32 +107,16 @@ public class FormatHelper {
    */
   private static class Formatting {
 
-    /** localized integer format string. */
-    private final String integerPattern;
+    private final Patterns patterns;
 
-    /** localized float/double format string. */
-    private final String floatingNumberPattern;
+    private final char decimalSeparator;
 
-    /** localized money format string. */
-    private final String moneyPattern;
+    /** short letter for "debit" (soll). */
+    private final String debitString;
 
-    /** localized format string for a timestamp. */
-    private final String timestampPattern;
+    /** short letter for "credit" (haben). */
+    private final String creditString;
 
-    /** localized format string for a date. */
-    private final String datePattern;
-
-    /** localized format string for a time. */
-    private final String timePattern;
-
-    /** localized format string for a short timestamp. */
-    private final String shortTimestampPattern;
-
-    /** localized format string for a short date. */
-    private final String shortDatePattern;
-
-    /** localized format string for a short time. */
-    private final String shortTimePattern;
 
     /** localized {@link DecimalFormat} for an integer. */
     private final DecimalFormat integerFormat;
@@ -181,7 +145,6 @@ public class FormatHelper {
     /** localized {@link java.text.DateFormat} for a short time. */
     private final SimpleDateFormat shortTimeFormat;
 
-
     /** localized {@link java.time.format.DateTimeFormatter} for a timestamp. */
     private final DateTimeFormatter localDateTimeFormat;
 
@@ -201,63 +164,154 @@ public class FormatHelper {
     private final DateTimeFormatter shortLocalTimeFormat;
 
 
-
-    /** short letter for "debit" (soll). */
-    private final char debitLetter;
-    private final String debitString;    // used in betragSH
-
-    /** short letter for "credit" (haben). */
-    private final char creditLetter;
-    private final String creditString;
-
     private Formatting(Locale locale, Patterns patterns) {
-      // copy format strings from patterns
-      integerPattern = patterns.integerPattern;
-      floatingNumberPattern = patterns.floatingNumberPattern;
-      moneyPattern = patterns.moneyPattern;
-      timestampPattern = patterns.timestampPattern;
-      datePattern = patterns.datePattern;
-      timePattern = patterns.timePattern;
-      shortTimestampPattern = patterns.shortTimestampPattern;
-      shortDatePattern = patterns.shortDatePattern;
-      shortTimePattern = patterns.shortTimePattern;
-      debitLetter = patterns.debitLetter;
-      creditLetter = patterns.creditLetter;
-      debitString = " " + debitLetter + "    ";
-      creditString = " " + creditLetter;
-      // create formats
-      integerFormat = new DecimalFormat(integerPattern);
-      floatingNumberFormat = new DecimalFormat(floatingNumberPattern);
-      moneyFormat = new DecimalFormat(moneyPattern);
-      timestampFormat = new SimpleDateFormat(timestampPattern, locale);
-      dateFormat = new SimpleDateFormat(datePattern, locale);
-      timeFormat = new SimpleDateFormat(timePattern, locale);
-      shortTimestampFormat = new SimpleDateFormat(shortTimestampPattern, locale);
-      shortDateFormat = new SimpleDateFormat(shortDatePattern, locale);
-      shortTimeFormat = new SimpleDateFormat(shortTimePattern, locale);
-      // new java.time package
-      localDateTimeFormat = DateTimeFormatter.ofPattern(timestampPattern, locale);
-      localDateFormat = DateTimeFormatter.ofPattern(datePattern, locale);
-      localTimeFormat = DateTimeFormatter.ofPattern(timePattern, locale);
-      shortLocalDateTimeFormat = DateTimeFormatter.ofPattern(shortTimestampPattern, locale);
-      shortLocalDateFormat = DateTimeFormatter.ofPattern(shortDatePattern, locale);
-      shortLocalTimeFormat = DateTimeFormatter.ofPattern(shortTimePattern, locale);
+      this.patterns = patterns;
+      debitString = " " + patterns.debitLetter + "    ";
+      creditString = " " + patterns.creditLetter;
+      // old java.util classes w/o threadsafe formats
+      integerFormat = new DecimalFormat(patterns.integerPattern);
+      floatingNumberFormat = new DecimalFormat(patterns.floatingNumberPattern);
+      decimalSeparator = floatingNumberFormat.getDecimalFormatSymbols().getDecimalSeparator();
+      moneyFormat = new DecimalFormat(patterns.moneyPattern);
+      timestampFormat = new SimpleDateFormat(patterns.timestampPattern, locale);
+      dateFormat = new SimpleDateFormat(patterns.datePattern, locale);
+      timeFormat = new SimpleDateFormat(patterns.timePattern, locale);
+      shortTimestampFormat = new SimpleDateFormat(patterns.shortTimestampPattern, locale);
+      shortDateFormat = new SimpleDateFormat(patterns.shortDatePattern, locale);
+      shortTimeFormat = new SimpleDateFormat(patterns.shortTimePattern, locale);
+      // new java.time package (threadsafe formats)
+      localDateTimeFormat = DateTimeFormatter.ofPattern(patterns.timestampPattern, locale);
+      localDateFormat = DateTimeFormatter.ofPattern(patterns.datePattern, locale);
+      localTimeFormat = DateTimeFormatter.ofPattern(patterns.timePattern, locale);
+      shortLocalDateTimeFormat = DateTimeFormatter.ofPattern(patterns.shortTimestampPattern, locale);
+      shortLocalDateFormat = DateTimeFormatter.ofPattern(patterns.shortDatePattern, locale);
+      shortLocalTimeFormat = DateTimeFormatter.ofPattern(patterns.shortTimePattern, locale);
     }
 
     private String debitCreditToString(BMoney money, boolean debit) {
       if (money == null) {
         return "";
       }
-      setScale(moneyFormat, money.scale());
-      return debit ? (moneyFormat.format(money) + debitString) :
-              ("    " + moneyFormat.format(money) + creditString);
+      synchronized (moneyFormat) {
+        setScale(moneyFormat, money.scale());
+        return debit ? (moneyFormat.format(money) + debitString) :
+               ("    " + moneyFormat.format(money) + creditString);
+      }
+    }
+
+    private Number parseInteger(String str) throws ParseException {
+      synchronized (integerFormat) {
+        return integerFormat.parse(str);
+      }
+    }
+
+    private String formatInteger(long number) {
+      synchronized (integerFormat) {
+        return integerFormat.format(number);
+      }
+    }
+
+    private Number parseFloatingNumber(String str) throws ParseException {
+      synchronized (floatingNumberFormat) {
+        return floatingNumberFormat.parse(str);
+      }
+    }
+
+    private String formatFloatingNumber(double number) {
+      synchronized (floatingNumberFormat) {
+        return floatingNumberFormat.format(number);
+      }
+    }
+
+    // money makes no sense to parse or format since we need to know the scale and reflect that in the format itself
+
+    private Date parseTimestamp(String str) throws ParseException {
+      synchronized (timestampFormat) {
+        return timestampFormat.parse(str);
+      }
+    }
+
+    private String formatTimestamp(Date date) {
+      synchronized (timestampFormat) {
+        return timestampFormat.format(date);
+      }
+    }
+
+    private Date parseShortTimestamp(String str) throws ParseException {
+      synchronized (shortTimestampFormat) {
+        return shortTimestampFormat.parse(str);
+      }
+    }
+
+    private String formatShortTimestamp(Date date) {
+      synchronized (shortTimestampFormat) {
+        return shortTimestampFormat.format(date);
+      }
+    }
+
+    private Date parseDate(String str) throws ParseException {
+      synchronized (dateFormat) {
+        return dateFormat.parse(str);
+      }
+    }
+
+    private String formatDate(Date date) {
+      synchronized (dateFormat) {
+        return dateFormat.format(date);
+      }
+    }
+
+    private Date parseShortDate(String str) throws ParseException {
+      synchronized (shortDateFormat) {
+        return shortDateFormat.parse(str);
+      }
+    }
+
+    private String formatShortDate(Date date) {
+      synchronized (shortDateFormat) {
+        return shortDateFormat.format(date);
+      }
+    }
+
+    private Date parseTime(String str) throws ParseException {
+      synchronized (timeFormat) {
+        return timeFormat.parse(str);
+      }
+    }
+
+    private String formatTime(Date date) {
+      synchronized (timeFormat) {
+        return timeFormat.format(date);
+      }
+    }
+
+    private Date parseShortTime(String str) throws ParseException {
+      synchronized (shortTimeFormat) {
+        return shortTimeFormat.parse(str);
+      }
+    }
+
+    private String formatShortTime(Date date) {
+      synchronized (shortTimeFormat) {
+        return shortTimeFormat.format(date);
+      }
     }
   }
 
 
   /** formattings by locale. */
-  private static final Map<Locale,Formatting> FORMATTING_MAP = new HashMap<>();
+  private static final Map<Locale, Formatting> FORMATTING_MAP = new ConcurrentHashMap<>();
 
+
+  /**
+   * Gets the formatting for the given locale.
+   *
+   * @param locale the locale
+   * @return the formatting
+   */
+  private static Formatting getFormatting(Locale locale) {
+    return FORMATTING_MAP.computeIfAbsent(locale, l -> new Formatting(l, new Patterns(locale)));
+  }
 
   /**
    * Gets the formatting for the current locale.
@@ -265,8 +319,7 @@ public class FormatHelper {
    * @return the formatting
    */
   private static Formatting getFormatting() {
-    Locale locale = LocaleProvider.getInstance().getLocale();
-    return FORMATTING_MAP.computeIfAbsent(locale, l -> new Formatting(l, new Patterns(locale)));
+    return getFormatting(LocaleProvider.getInstance().getLocale());
   }
 
 
@@ -276,7 +329,7 @@ public class FormatHelper {
    * @param locale the locale
    * @param patterns the patterns
    */
-  public static synchronized void applyPatterns(Locale locale, Patterns patterns) {
+  public static void applyPatterns(Locale locale, Patterns patterns) {
     FORMATTING_MAP.put(locale, new Formatting(locale, patterns));
   }
 
@@ -286,9 +339,100 @@ public class FormatHelper {
    * @param patterns the patterns
    */
   public static void applyPatterns(Patterns patterns) {
-    Locale locale = LocaleProvider.getInstance().getLocale();
-    applyPatterns(locale, patterns);
+    applyPatterns(LocaleProvider.getInstance().getLocale(), patterns);
   }
+
+
+  /**
+   * Gets the integer pattern.
+   *
+   * @param locale the locale
+   * @return the pattern
+   */
+  public static String getIntegerPattern(Locale locale) {
+    return getFormatting(locale).patterns.integerPattern;
+  }
+
+  /**
+   * Gets the floating number pattern.
+   *
+   * @param locale the locale
+   * @return the pattern
+   */
+  public static String getFloatingNumberPattern(Locale locale) {
+    return getFormatting(locale).patterns.floatingNumberPattern;
+  }
+
+  /**
+   * Gets the money pattern.
+   *
+   * @param locale the locale
+   * @return the pattern
+   */
+  public static String getMoneyPattern(Locale locale) {
+    return getFormatting(locale).patterns.moneyPattern;
+  }
+
+  /**
+   * Gets the timestamp pattern.
+   *
+   * @param locale the locale
+   * @return the pattern
+   */
+  public static String getTimestampPattern(Locale locale) {
+    return getFormatting(locale).patterns.timestampPattern;
+  }
+
+  /**
+   * Gets the short timestamp pattern.
+   *
+   * @param locale the locale
+   * @return the pattern
+   */
+  public static String getShortTimestampPattern(Locale locale) {
+    return getFormatting(locale).patterns.shortTimestampPattern;
+  }
+
+  /**
+   * Gets the date pattern.
+   *
+   * @param locale the locale
+   * @return the pattern
+   */
+  public static String getDatePattern(Locale locale) {
+    return getFormatting(locale).patterns.datePattern;
+  }
+
+  /**
+   * Gets the short date pattern.
+   *
+   * @param locale the locale
+   * @return the pattern
+   */
+  public static String getShortDatePattern(Locale locale) {
+    return getFormatting(locale).patterns.shortDatePattern;
+  }
+
+  /**
+   * Gets the time pattern.
+   *
+   * @param locale the locale
+   * @return the pattern
+   */
+  public static String getTimePattern(Locale locale) {
+    return getFormatting(locale).patterns.timePattern;
+  }
+
+  /**
+   * Gets the short time pattern.
+   *
+   * @param locale the locale
+   * @return the pattern
+   */
+  public static String getShortTimePattern(Locale locale) {
+    return getFormatting(locale).patterns.shortTimePattern;
+  }
+
 
 
   /**
@@ -296,8 +440,8 @@ public class FormatHelper {
    *
    * @return the pattern
    */
-  public static synchronized String getIntegerPattern() {
-    return getFormatting().integerPattern;
+  public static String getIntegerPattern() {
+    return getFormatting().patterns.integerPattern;
   }
 
   /**
@@ -305,8 +449,8 @@ public class FormatHelper {
    *
    * @return the pattern
    */
-  public static synchronized String getFloatingNumberPattern() {
-    return getFormatting().floatingNumberPattern;
+  public static String getFloatingNumberPattern() {
+    return getFormatting().patterns.floatingNumberPattern;
   }
 
   /**
@@ -314,8 +458,8 @@ public class FormatHelper {
    *
    * @return the pattern
    */
-  public static synchronized String getMoneyPattern() {
-    return getFormatting().moneyPattern;
+  public static String getMoneyPattern() {
+    return getFormatting().patterns.moneyPattern;
   }
 
   /**
@@ -323,8 +467,8 @@ public class FormatHelper {
    *
    * @return the pattern
    */
-  public static synchronized String getTimestampPattern() {
-    return getFormatting().timestampPattern;
+  public static String getTimestampPattern() {
+    return getFormatting().patterns.timestampPattern;
   }
 
   /**
@@ -332,8 +476,8 @@ public class FormatHelper {
    *
    * @return the pattern
    */
-  public static synchronized String getShortTimestampPattern() {
-    return getFormatting().shortTimestampPattern;
+  public static String getShortTimestampPattern() {
+    return getFormatting().patterns.shortTimestampPattern;
   }
 
   /**
@@ -341,8 +485,8 @@ public class FormatHelper {
    *
    * @return the pattern
    */
-  public static synchronized String getDatePattern() {
-    return getFormatting().datePattern;
+  public static String getDatePattern() {
+    return getFormatting().patterns.datePattern;
   }
 
   /**
@@ -350,8 +494,8 @@ public class FormatHelper {
    *
    * @return the pattern
    */
-  public static synchronized String getShortDatePattern() {
-    return getFormatting().shortDatePattern;
+  public static String getShortDatePattern() {
+    return getFormatting().patterns.shortDatePattern;
   }
 
   /**
@@ -359,8 +503,8 @@ public class FormatHelper {
    *
    * @return the pattern
    */
-  public static synchronized String getTimePattern() {
-    return getFormatting().timePattern;
+  public static String getTimePattern() {
+    return getFormatting().patterns.timePattern;
   }
 
   /**
@@ -368,8 +512,8 @@ public class FormatHelper {
    *
    * @return the pattern
    */
-  public static synchronized String getShortTimePattern() {
-    return getFormatting().shortTimePattern;
+  public static String getShortTimePattern() {
+    return getFormatting().patterns.shortTimePattern;
   }
 
 
@@ -380,30 +524,30 @@ public class FormatHelper {
    * @return the number
    * @throws ParseException if parsing failed
    */
-  public static synchronized Number parseInteger(String str) throws ParseException {
-    return getFormatting().integerFormat.parse(str);
+  public static int parseInteger(String str) throws ParseException {
+    return getFormatting().parseInteger(str).intValue();
   }
 
   /**
-   * Parses a floating number.
+   * Parses a float.
    *
    * @param str the string to parse
    * @return the number
    * @throws ParseException if parsing failed
    */
-  public static synchronized Number parseFloatingNumber(String str) throws ParseException {
-    return getFormatting().floatingNumberFormat.parse(str);
+  public static float parseFloat(String str) throws ParseException {
+    return getFormatting().parseFloatingNumber(str).floatValue();
   }
 
   /**
-   * Parses a money value.
+   * Parses a double.
    *
    * @param str the string to parse
    * @return the number
    * @throws ParseException if parsing failed
    */
-  public static synchronized Number parseMoney(String str) throws ParseException {
-    return getFormatting().moneyFormat.parse(str);
+  public static double parseDouble(String str) throws ParseException {
+    return getFormatting().parseFloatingNumber(str).doubleValue();
   }
 
   /**
@@ -412,9 +556,24 @@ public class FormatHelper {
    * @param str the string to parse
    * @return the timestamp
    * @throws ParseException if parsing failed
+   * @deprecated use {@link #parseTimestampFast(String)} instead
    */
-  public static synchronized Timestamp parseTimestamp(String str) throws ParseException {
-    return new Timestamp(getFormatting().timestampFormat.parse(str).getTime());
+  @Deprecated
+  public static Timestamp parseTimestamp(String str) throws ParseException {
+    return new Timestamp(getFormatting().parseTimestamp(str).getTime());
+  }
+
+  /**
+   * Parses a timestamp.<br>
+   * Faster than {@link #parseTimestamp(String)} using {@link DateTimeFormatter}.
+   * <p>
+   * Throws {@link java.time.format.DateTimeParseException} if parsing failed.
+   *
+   * @param str the string to parse
+   * @return the timestamp
+   */
+  public static Timestamp parseTimestampFast(String str) {
+    return new Timestamp(java.sql.Timestamp.valueOf(getFormatting().localDateTimeFormat.parse(str, LocalDateTime::from)).getTime());
   }
 
   /**
@@ -423,9 +582,24 @@ public class FormatHelper {
    * @param str the string to parse
    * @return the timestamp
    * @throws ParseException if parsing failed
+   * @deprecated use {@link #parseShortTimestampFast(String)} instead
    */
-  public static synchronized Timestamp parseShortTimestamp(String str) throws ParseException {
-    return new Timestamp(getFormatting().shortTimestampFormat.parse(str).getTime());
+  @Deprecated
+  public static Timestamp parseShortTimestamp(String str) throws ParseException {
+    return new Timestamp(getFormatting().parseShortTimestamp(str).getTime());
+  }
+
+  /**
+   * Parses a short timestamp.<br>
+   * Faster than {@link #parseShortTimestamp(String)} using {@link DateTimeFormatter}.
+   * <p>
+   * Throws {@link java.time.format.DateTimeParseException} if parsing failed.
+   *
+   * @param str the string to parse
+   * @return the timestamp
+   */
+  public static Timestamp parseShortTimestampFast(String str) {
+    return new Timestamp(java.sql.Timestamp.valueOf(getFormatting().shortLocalDateTimeFormat.parse(str, LocalDateTime::from)).getTime());
   }
 
   /**
@@ -434,9 +608,24 @@ public class FormatHelper {
    * @param str the string to parse
    * @return the date
    * @throws ParseException if parsing failed
+   * @deprecated use {@link #parseDateFast(String)} instead
    */
-  public static synchronized org.tentackle.common.Date parseDate(String str) throws ParseException {
-    return new org.tentackle.common.Date(getFormatting().dateFormat.parse(str).getTime());
+  @Deprecated
+  public static org.tentackle.common.Date parseDate(String str) throws ParseException {
+    return new org.tentackle.common.Date(getFormatting().parseDate(str).getTime());
+  }
+
+  /**
+   * Parses a date.<br>
+   * Faster than {@link #parseDate(String)} using {@link DateTimeFormatter}.
+   * <p>
+   * Throws {@link java.time.format.DateTimeParseException} if parsing failed.
+   *
+   * @param str the string to parse
+   * @return the date
+   */
+  public static org.tentackle.common.Date parseDateFast(String str) {
+    return new org.tentackle.common.Date(java.sql.Date.valueOf(getFormatting().localDateFormat.parse(str, LocalDate::from)).getTime());
   }
 
   /**
@@ -445,9 +634,24 @@ public class FormatHelper {
    * @param str the string to parse
    * @return the date
    * @throws ParseException if parsing failed
+   * @deprecated use {@link #parseShortDateFast(String)} instead
    */
-  public static synchronized org.tentackle.common.Date parseShortDate(String str) throws ParseException {
-    return new org.tentackle.common.Date(getFormatting().shortDateFormat.parse(str).getTime());
+  @Deprecated
+  public static org.tentackle.common.Date parseShortDate(String str) throws ParseException {
+    return new org.tentackle.common.Date(getFormatting().parseShortDate(str).getTime());
+  }
+
+  /**
+   * Parses a short date.<br>
+   * Faster than {@link #parseShortDate(String)} using {@link DateTimeFormatter}.
+   * <p>
+   * Throws {@link java.time.format.DateTimeParseException} if parsing failed.
+   *
+   * @param str the string to parse
+   * @return the date
+   */
+  public static org.tentackle.common.Date parseShortDateFast(String str) {
+    return new org.tentackle.common.Date(java.sql.Date.valueOf(getFormatting().shortLocalDateFormat.parse(str, LocalDate::from)).getTime());
   }
 
   /**
@@ -456,9 +660,24 @@ public class FormatHelper {
    * @param str the string to parse
    * @return the time
    * @throws ParseException if parsing failed
+   * @deprecated use {@link #parseTimeFast(String)} instead
    */
-  public static synchronized org.tentackle.common.Time parseTime(String str) throws ParseException {
-    return new org.tentackle.common.Time(getFormatting().timeFormat.parse(str).getTime());
+  @Deprecated
+  public static org.tentackle.common.Time parseTime(String str) throws ParseException {
+    return new org.tentackle.common.Time(getFormatting().parseTime(str).getTime());
+  }
+
+  /**
+   * Parses a time.<br>
+   * Faster than {@link #parseTime(String)} using {@link DateTimeFormatter}.
+   * <p>
+   * Throws {@link java.time.format.DateTimeParseException} if parsing failed.
+   *
+   * @param str the string to parse
+   * @return the time
+   */
+  public static org.tentackle.common.Time parseTimeFast(String str) {
+    return new org.tentackle.common.Time(java.sql.Time.valueOf(getFormatting().localTimeFormat.parse(str, LocalTime::from)).getTime());
   }
 
   /**
@@ -467,9 +686,24 @@ public class FormatHelper {
    * @param str the string to parse
    * @return the time
    * @throws ParseException if parsing failed
+   * @deprecated use {@link #parseShortTimeFast(String)} instead
    */
-  public static synchronized org.tentackle.common.Time parseShortTime(String str) throws ParseException {
-    return new org.tentackle.common.Time(getFormatting().shortTimeFormat.parse(str).getTime());
+  @Deprecated
+  public static org.tentackle.common.Time parseShortTime(String str) throws ParseException {
+    return new org.tentackle.common.Time(getFormatting().parseShortTime(str).getTime());
+  }
+
+  /**
+   * Parses a short time.<br>
+   * Faster than {@link  #parseShortTime(String)} using {@link DateTimeFormatter}.
+   * <p>
+   * Throws {@link java.time.format.DateTimeParseException} if parsing failed.
+   *
+   * @param str the string to parse
+   * @return the time
+   */
+  public static org.tentackle.common.Time parseShortTimeFast(String str) {
+    return new org.tentackle.common.Time(java.sql.Time.valueOf(getFormatting().shortLocalTimeFormat.parse(str, LocalTime::from)).getTime());
   }
 
 
@@ -553,8 +787,8 @@ public class FormatHelper {
    * @param number the number to format
    * @return the formatted string
    */
-  public static synchronized String formatInteger(Number number) {
-    return getFormatting().integerFormat.format(number);
+  public static String formatInteger(Number number) {
+    return getFormatting().formatInteger(number.longValue());
   }
 
   /**
@@ -563,18 +797,8 @@ public class FormatHelper {
    * @param number the number to format
    * @return the formatted string
    */
-  public static synchronized String formatFloatingNumber(Number number) {
-    return getFormatting().floatingNumberFormat.format(number);
-  }
-
-  /**
-   * Formats a money value.
-   *
-   * @param number the number to format
-   * @return the formatted string
-   */
-  public static synchronized String formatMoney(Number number) {
-    return getFormatting().moneyFormat.format(number);
+  public static String formatFloatingNumber(Number number) {
+    return getFormatting().formatFloatingNumber(number.doubleValue());
   }
 
   /**
@@ -582,9 +806,22 @@ public class FormatHelper {
    *
    * @param timestamp the timestamp to format
    * @return the formatted string
+   * @deprecated use {@link #formatTimestampFast(Date)} instead
    */
-  public static synchronized String formatTimestamp(Date timestamp) {
-    return getFormatting().timestampFormat.format(timestamp);
+  @Deprecated
+  public static String formatTimestamp(Date timestamp) {
+    return getFormatting().formatTimestamp(timestamp);
+  }
+
+  /**
+   * Formats a timestamp.<br>
+   * Faster than {@link #formatTimestamp(Date)} using {@link DateTimeFormatter}.
+   *
+   * @param timestamp the timestamp to format
+   * @return the formatted string
+   */
+  public static String formatTimestampFast(Date timestamp) {
+    return getFormatting().localDateTimeFormat.format(new java.sql.Timestamp(timestamp.getTime()).toLocalDateTime());
   }
 
   /**
@@ -592,9 +829,22 @@ public class FormatHelper {
    *
    * @param timestamp the timestamp to format
    * @return the formatted string
+   * @deprecated use {@link #formatShortTimestampFast(Date)} instead
    */
-  public static synchronized String formatShortTimestamp(Date timestamp) {
-    return getFormatting().shortTimestampFormat.format(timestamp);
+  @Deprecated
+  public static String formatShortTimestamp(Date timestamp) {
+    return getFormatting().formatShortTimestamp(timestamp);
+  }
+
+  /**
+   * Formats a short timestamp.<br>
+   * Faster than {@link #formatShortTimestamp(Date)} using {@link DateTimeFormatter}.
+   *
+   * @param timestamp the timestamp to format
+   * @return the formatted string
+   */
+  public static String formatShortTimestampFast(Date timestamp) {
+    return getFormatting().shortLocalDateTimeFormat.format(new java.sql.Timestamp(timestamp.getTime()).toLocalDateTime());
   }
 
   /**
@@ -602,9 +852,22 @@ public class FormatHelper {
    *
    * @param date the date to format
    * @return the formatted string
+   * @deprecated use {@link #formatDateFast(Date)} instead
    */
-  public static synchronized String formatDate(Date date) {
-    return getFormatting().dateFormat.format(date);
+  @Deprecated
+  public static String formatDate(Date date) {
+    return getFormatting().formatDate(date);
+  }
+
+  /**
+   * Formats a date.<br>
+   * Faster than {@link #formatDate(Date)} using {@link DateTimeFormatter}.
+   *
+   * @param date the date to format
+   * @return the formatted string
+   */
+  public static String formatDateFast(Date date) {
+    return getFormatting().localDateFormat.format(new java.sql.Date(date.getTime()).toLocalDate());
   }
 
   /**
@@ -612,9 +875,22 @@ public class FormatHelper {
    *
    * @param date the date to format
    * @return the formatted string
+   * @deprecated use {@link #formatShortDateFast(Date)} instead
    */
-  public static synchronized String formatShortDate(Date date) {
-    return getFormatting().shortDateFormat.format(date);
+  @Deprecated
+  public static String formatShortDate(Date date) {
+    return getFormatting().formatShortDate(date);
+  }
+
+  /**
+   * Formats a short date.<br>
+   * Faster than {@link #formatShortDate(Date)} using {@link DateTimeFormatter}.
+   *
+   * @param date the date to format
+   * @return the formatted string
+   */
+  public static String formatShortDateFast(Date date) {
+    return getFormatting().shortLocalDateFormat.format(new java.sql.Date(date.getTime()).toLocalDate());
   }
 
   /**
@@ -622,9 +898,22 @@ public class FormatHelper {
    *
    * @param time the time to format
    * @return the formatted string
+   * @deprecated use {@link #formatTimeFast(Date)} instead
    */
-  public static synchronized String formatTime(Date time) {
-    return getFormatting().timeFormat.format(time);
+  @Deprecated
+  public static String formatTime(Date time) {
+    return getFormatting().formatTime(time);
+  }
+
+  /**
+   * Formats a time.<br>
+   * Faster than {@link #formatTime(Date)} using {@link DateTimeFormatter}.
+   *
+   * @param time the time to format
+   * @return the formatted string
+   */
+  public static String formatTimeFast(Date time) {
+    return getFormatting().localTimeFormat.format(new java.sql.Time(time.getTime()).toLocalTime());
   }
 
   /**
@@ -632,9 +921,22 @@ public class FormatHelper {
    *
    * @param time the time to format
    * @return the formatted string
+   * @deprecated use {@link #formatShortTimeFast(Date)} instead
    */
-  public static synchronized String formatShortTime(Date time) {
-    return getFormatting().shortTimeFormat.format(time);
+  @Deprecated
+  public static String formatShortTime(Date time) {
+    return getFormatting().formatShortTime(time);
+  }
+
+  /**
+   * Formats a short time.<br>
+   * Faster than {@link #formatShortTime(Date)} using {@link DateTimeFormatter}.
+   *
+   * @param time the time to format
+   * @return the formatted string
+   */
+  public static String formatShortTimeFast(Date time) {
+    return getFormatting().shortLocalTimeFormat.format(new java.sql.Time(time.getTime()).toLocalTime());
   }
 
 
@@ -763,11 +1065,11 @@ public class FormatHelper {
    * @param value the numeric string
    * @return the scale
    */
-  public static synchronized int determineScale(String value) {
+  public static int determineScale(String value) {
     int scale = 0;
     if (value != null) {
       int len = value.length();
-      char sep = getFormatting().floatingNumberFormat.getDecimalFormatSymbols().getDecimalSeparator();
+      char sep = getFormatting().decimalSeparator;
       int ndx = value.lastIndexOf(sep);
       if (ndx >= 0) {
         scale = len - ndx - 1;
@@ -827,7 +1129,7 @@ public class FormatHelper {
    * @param debit true if the amount is debit
    * @return the formatted value
    */
-  public static synchronized String debitCreditToString(BMoney money, boolean debit) {
+  public static String debitCreditToString(BMoney money, boolean debit) {
     return getFormatting().debitCreditToString(money, debit);
   }
 
