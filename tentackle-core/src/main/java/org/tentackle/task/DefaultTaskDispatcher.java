@@ -19,15 +19,13 @@
 
 package org.tentackle.task;
 
+import org.tentackle.common.Timestamp;
 import org.tentackle.daemon.Supervisable;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.NamedCounter;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -63,8 +61,6 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   public static final NamedCounter INSTANCE_COUNTER = new NamedCounter();   // daemon instance counter
 
   private static final Logger LOGGER = Logger.get(DefaultTaskDispatcher.class);
-
-  private static final DateFormat MILLIS_FORMAT = new SimpleDateFormat("HH:mm:ss.SSS");
 
   private static final AtomicLong TASK_COUNTER = new AtomicLong();           // global task ID
 
@@ -200,7 +196,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
     buf.append(", deadInterval=");
     buf.append(getDeadInterval());
     buf.append("\n    lastMillis=");
-    buf.append(MILLIS_FORMAT.format(new Date(lastMillis)));
+    buf.append(new Timestamp(lastMillis));
     buf.append(", stopRequested=");
     buf.append(stopRequested);
     buf.append(", dead=");

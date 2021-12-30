@@ -31,9 +31,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 /**
  * Datatype for {@link Timestamp}.
@@ -42,9 +42,9 @@ import java.text.SimpleDateFormat;
 public class TimestampType extends AbstractDateTimeType<Timestamp> {
 
   private static final String TIMESTAMP_PATTERN = "yyyy-MM-dd HH:mm:ss";
-  private static final DateFormat TIMESTAMP_FORMAT = new SimpleDateFormat(TIMESTAMP_PATTERN);
+  private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern(TIMESTAMP_PATTERN);
   private static final String MS_TIMESTAMP_PATTERN = TIMESTAMP_PATTERN + ".SSS";
-  private static final DateFormat MS_TIMESTAMP_FORMAT = new SimpleDateFormat(MS_TIMESTAMP_PATTERN);
+  private static final DateTimeFormatter MS_TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern(MS_TIMESTAMP_PATTERN);
 
   @Override
   public boolean isTimezoneApplicable() {
@@ -118,35 +118,31 @@ public class TimestampType extends AbstractDateTimeType<Timestamp> {
   protected Timestamp parse(String str) throws BackendException {
     str = StringHelper.parseString(str);
     if (str.contains(".")) {
-      synchronized(MS_TIMESTAMP_FORMAT) {
-        try {
-          return new Timestamp(MS_TIMESTAMP_FORMAT.parse(str).getTime());
-        }
-        catch (ParseException e) {
-          throw new BackendException("parsing timestamp with ms from '" + str + "' failed", e);
-        }
+      try {
+        return Timestamp.valueOf(MS_TIMESTAMP_FORMAT.parse(str, LocalDateTime::from));
+      }
+      catch (DateTimeParseException e) {
+        throw new BackendException("parsing timestamp with ms from '" + str + "' failed", e);
       }
     }
-    else  {
-      synchronized(TIMESTAMP_FORMAT) {
-        try {
-          return new Timestamp(TIMESTAMP_FORMAT.parse(str).getTime());
-        }
-        catch (ParseException e) {
-          throw new BackendException("parsing timestamp from '" + str + "' failed", e);
-        }
+    else {
+      try {
+        return Timestamp.valueOf(TIMESTAMP_FORMAT.parse(str, LocalDateTime::from));
+      }
+      catch (DateTimeParseException e) {
+        throw new BackendException("parsing timestamp from '" + str + "' failed", e);
       }
     }
   }
 
-  protected String format(java.util.Date timestamp) {
+  protected String format(Timestamp timestamp) {
     if (timestamp.getTime() % 1000 != 0) {
       synchronized(MS_TIMESTAMP_FORMAT) {
-        return MS_TIMESTAMP_FORMAT.format(timestamp);
+        return MS_TIMESTAMP_FORMAT.format(timestamp.toLocalDateTime());
       }
     }
     synchronized(TIMESTAMP_FORMAT) {
-      return TIMESTAMP_FORMAT.format(timestamp);
+      return TIMESTAMP_FORMAT.format(timestamp.toLocalDateTime());
     }
   }
 

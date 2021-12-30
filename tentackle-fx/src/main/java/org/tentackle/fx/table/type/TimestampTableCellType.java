@@ -20,28 +20,30 @@
 package org.tentackle.fx.table.type;
 
 import org.tentackle.fx.table.TableCellTypeService;
-import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.misc.FormatHelper;
 
 import java.sql.Timestamp;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 
 /**
- * Timestamp cell type.
+ * Timestamp cell type.<br>
+ * Applies to java.sql.Timestamp and org.tentackle.common.Timestamp.
  *
  * @author harald
  */
 @TableCellTypeService(Timestamp.class)
-public class TimestampTableCellType extends UtilDateTableCellType<Timestamp> {
+public class TimestampTableCellType extends AbstractDateTimeTableCellType<Timestamp> {
 
   @Override
-  public DateFormat getFormat(TableColumnConfiguration<?, Timestamp> tableCell) {
-    DateFormat fmt = super.getFormat(tableCell);
-    if (fmt == null) {
-      fmt = new SimpleDateFormat(FormatHelper.getTimestampPattern());
+  protected String formatItem(DateTimeFormatter fmt, Timestamp item) {
+    String text;
+    if (fmt != null) {
+      text = fmt.format(item.toLocalDateTime());
     }
-    return fmt;
+    else {
+      text = FormatHelper.formatTimestampFast(item);
+    }
+    return text;
   }
 
 }

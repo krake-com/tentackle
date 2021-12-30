@@ -27,7 +27,6 @@ import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.bind.FxTableBinding;
 
 import java.lang.reflect.Type;
-import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.time.format.DateTimeFormatter;
 
@@ -120,13 +119,6 @@ public interface TableColumnConfiguration<S,T> {
    * @return the number format, null if default
    */
   DecimalFormat getNumberFormat();
-
-  /**
-   * Gets the date format.
-   *
-   * @return the date format, null if default
-   */
-  DateFormat getDateFormat();
 
   /**
    * Gets the date or time formatter.

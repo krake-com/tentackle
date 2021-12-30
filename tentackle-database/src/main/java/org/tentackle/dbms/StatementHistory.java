@@ -19,12 +19,10 @@
 
 package org.tentackle.dbms;
 
+import org.tentackle.common.Timestamp;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.Duration;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
@@ -55,11 +53,6 @@ public class StatementHistory {
   public static long getLogMinDurationMillis() {
     return logMinDurationMillis;
   }
-
-  /**
-   * Format for execution starting time.
-   */
-  private static final DateFormat START_TIME_FORMAT = new SimpleDateFormat("HH:mm:ss.SSS");
 
   private static final Logger LOGGER = Logger.get(StatementHistory.class);
 
@@ -162,9 +155,7 @@ public class StatementHistory {
   @Override
   public String toString() {
     StringBuilder buf = new StringBuilder();
-    synchronized(START_TIME_FORMAT) {   // formatters are not thread-safe :(
-      buf.append(START_TIME_FORMAT.format(new Date(getExecutionStart())));
-    }
+    buf.append(new Timestamp(getExecutionStart()));
     buf.append('(');
     if (duration.isValid()) {
       buf.append(duration.millisToString());

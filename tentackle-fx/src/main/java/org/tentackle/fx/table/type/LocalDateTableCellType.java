@@ -19,10 +19,6 @@
 
 package org.tentackle.fx.table.type;
 
-import javafx.geometry.Pos;
-
-import org.tentackle.fx.table.FxTableCell;
-import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
 import org.tentackle.misc.FormatHelper;
 
@@ -35,30 +31,14 @@ import java.time.format.DateTimeFormatter;
  * @author harald
  */
 @TableCellTypeService(LocalDate.class)
-public class LocalDateTableCellType extends AbstractTableCellType<LocalDate> {
+public class LocalDateTableCellType extends AbstractDateTimeTableCellType<LocalDate> {
 
   @Override
-  public void updateItem(FxTableCell<?, LocalDate> tableCell, LocalDate item) {
-    tableCell.setGraphic(null);
-    DateTimeFormatter fmt = tableCell.getColumnConfiguration().getDateTimeFormatter();
+  protected String formatItem(DateTimeFormatter fmt, LocalDate item) {
     if (fmt == null) {
       fmt = FormatHelper.getLocalDateFormatter();
     }
-    String text = fmt.format(item);
-    tableCell.setText(text);
-    updateAlignment(tableCell, Pos.CENTER);
-  }
-
-  @Override
-  public void updateItem(FxTreeTableCell<?, LocalDate> treeTableCell, LocalDate item) {
-    treeTableCell.setGraphic(null);
-    DateTimeFormatter fmt = treeTableCell.getColumnConfiguration().getDateTimeFormatter();
-    if (fmt == null) {
-      fmt = FormatHelper.getLocalDateFormatter();
-    }
-    String text = fmt.format(item);
-    treeTableCell.setText(text);
-    updateAlignment(treeTableCell, Pos.CENTER);
+    return fmt.format(item);
   }
 
 }

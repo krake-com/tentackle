@@ -20,28 +20,35 @@
 package org.tentackle.fx.table.type;
 
 import org.tentackle.fx.table.TableCellTypeService;
-import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.misc.FormatHelper;
 
-import java.sql.Date;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 
 /**
- * Date cell type.
+ * Date cell type.<br>
+ * Applies to java.util.Date, java.sql.Date and org.tentackle.common.Date.
  *
  * @author harald
  */
 @TableCellTypeService(Date.class)
-public class DateTableCellType extends UtilDateTableCellType<Date> {
+public class DateTableCellType<T extends Date> extends AbstractDateTimeTableCellType<T> {
 
   @Override
-  public DateFormat getFormat(TableColumnConfiguration<?, Date> tableCell) {
-    DateFormat fmt = super.getFormat(tableCell);
-    if (fmt == null) {
-      fmt = new SimpleDateFormat(FormatHelper.getDatePattern());
+  protected String formatItem(DateTimeFormatter fmt, T item) {
+    String text;
+    if (fmt != null) {
+      if (item instanceof java.sql.Date date) {
+        text = fmt.format(date.toLocalDate());
+      }
+      else {
+        text = fmt.format(new java.sql.Date(item.getTime()).toLocalDate());
+      }
     }
-    return fmt;
+    else {
+      text = FormatHelper.formatDateFast(item);
+    }
+    return text;
   }
 
 }

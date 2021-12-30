@@ -39,8 +39,7 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.Properties;
 
 
@@ -85,9 +84,9 @@ public class Oracle extends AbstractSql2003Backend {
   private static final String JAVA_TIMESTAMP_FORMAT = JAVA_DATE_FORMAT + " " + JAVA_TIME_FORMAT;
 
   // java formats
-  private static final DateFormat DATE_FORMAT      = new SimpleDateFormat(JAVA_DATE_FORMAT);
-  private static final DateFormat TIME_FORMAT      = new SimpleDateFormat(JAVA_TIME_FORMAT);
-  private static final DateFormat TIMESTAMP_FORMAT = new SimpleDateFormat(JAVA_TIMESTAMP_FORMAT);
+  private static final DateTimeFormatter DATE_FORMAT      = DateTimeFormatter.ofPattern(JAVA_DATE_FORMAT);
+  private static final DateTimeFormatter TIME_FORMAT      = DateTimeFormatter.ofPattern(JAVA_TIME_FORMAT);
+  private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern(JAVA_TIMESTAMP_FORMAT);
 
   // oracle empty string (special because oracle treats "" as NULL)
   private static final String ORACLE_EMPTY_STRING = " ";   // one blank
@@ -143,13 +142,11 @@ public class Oracle extends AbstractSql2003Backend {
    * @return a TO_DATE-date-string
    */
   public static String dateString(Date date) {
-    synchronized(DATE_FORMAT) {
-      return  ORA_TO_DATE_LEAD +
-              DATE_FORMAT.format(date) +
-              ORA_TO_DATE_SEP +
-              ORA_DATE_FORMAT +
-              ORA_TO_DATE_TAIL;
-    }
+    return ORA_TO_DATE_LEAD +
+           DATE_FORMAT.format(date.toLocalDate()) +
+           ORA_TO_DATE_SEP +
+           ORA_DATE_FORMAT +
+           ORA_TO_DATE_TAIL;
   }
 
 
@@ -159,14 +156,12 @@ public class Oracle extends AbstractSql2003Backend {
    * @param time the time
    * @return a TO_DATE-time-string
    */
-  public static String timeString(Time time)  {
-    synchronized(TIME_FORMAT) {
-      return  ORA_TO_DATE_LEAD +
-              TIME_FORMAT.format(time) +
-              ORA_TO_DATE_SEP +
-              ORA_TIME_FORMAT +
-              ORA_TO_DATE_TAIL;
-    }
+  public static String timeString(Time time) {
+    return ORA_TO_DATE_LEAD +
+           TIME_FORMAT.format(time.toLocalTime()) +
+           ORA_TO_DATE_SEP +
+           ORA_TIME_FORMAT +
+           ORA_TO_DATE_TAIL;
   }
 
 
@@ -176,14 +171,12 @@ public class Oracle extends AbstractSql2003Backend {
    * @param timestamp the timestamp
    * @return a TO_DATE-timestamp-string
    */
-  public static String timestampString(Timestamp timestamp)  {
-    synchronized(TIMESTAMP_FORMAT) {
-      return  ORA_TO_DATE_LEAD +
-              TIMESTAMP_FORMAT.format(timestamp) +
-              ORA_TO_DATE_SEP +
-              ORA_TIMESTAMP_FORMAT +
-              ORA_TO_DATE_TAIL;
-    }
+  public static String timestampString(Timestamp timestamp) {
+    return ORA_TO_DATE_LEAD +
+           TIMESTAMP_FORMAT.format(timestamp.toLocalDateTime()) +
+           ORA_TO_DATE_SEP +
+           ORA_TIMESTAMP_FORMAT +
+           ORA_TO_DATE_TAIL;
   }
 
   @Override

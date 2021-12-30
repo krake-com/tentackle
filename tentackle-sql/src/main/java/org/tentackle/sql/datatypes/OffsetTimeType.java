@@ -70,6 +70,10 @@ public class OffsetTimeType extends AbstractDateTimeType<OffsetTime> {
   }
 
 
+  private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss[ ]xxx");
+  private static final DateTimeFormatter MS_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss.SSS[ ]xxx");
+
+
   @Override
   public String getJavaType() {
     return "OffsetTime";
@@ -237,16 +241,31 @@ public class OffsetTimeType extends AbstractDateTimeType<OffsetTime> {
 
 
   protected OffsetTime parse(String str) throws BackendException {
-    try {
-      return OffsetTime.parse(StringHelper.parseString(str), DateTimeFormatter.ISO_OFFSET_TIME);
+    str = StringHelper.parseString(str);
+    if (str.contains(".")) {
+      try {
+        return MS_TIME_FORMATTER.parse(str, OffsetTime::from);
+      }
+      catch (DateTimeParseException e) {
+        throw new BackendException("parsing time with ms from '" + str + "' failed", e);
+      }
     }
-    catch (DateTimeParseException e) {
-      throw new BackendException("parsing time from '" + str + "' failed", e);
+    else {
+      try {
+        return TIME_FORMATTER.parse(str, OffsetTime::from);
+      }
+      catch (DateTimeParseException e) {
+        throw new BackendException("parsing time from '" + str + "' failed", e);
+      }
     }
   }
 
   protected String format(OffsetTime time) {
-    return DateTimeFormatter.ISO_OFFSET_TIME.format(time);
+    int nanos = time.getNano();
+    if (nanos != 0) {
+      return MS_TIME_FORMATTER.format(time);
+    }
+    return TIME_FORMATTER.format(time);
   }
 
 }

@@ -46,7 +46,7 @@ public class TemporalTest {
     Assert.assertEquals(time1, time);
     time = time.truncatedTo(ChronoUnit.SECONDS);
     str = type.format(time);
-    Reporter.log(str + "<br>");
+    Reporter.log(str + "<br>", true);
     time1 = type.parse(str);
     Assert.assertEquals(time1, time);
   }
@@ -56,12 +56,12 @@ public class TemporalTest {
     OffsetTime time = OffsetTime.now().truncatedTo(ChronoUnit.MILLIS);
     OffsetTimeType type = new OffsetTimeType();
     String str = type.format(time);
-    Reporter.log(str + "<br>");
+    Reporter.log(str + "<br>", true);
     OffsetTime time1 = type.parse(str);
     Assert.assertEquals(time1, time);
     time = time.truncatedTo(ChronoUnit.SECONDS);
     str = type.format(time);
-    Reporter.log(str + "<br>");
+    Reporter.log(str + "<br>", true);
     time1 = type.parse(str);
     Assert.assertEquals(time1, time);
   }
@@ -71,7 +71,7 @@ public class TemporalTest {
     LocalDate date = LocalDate.now();
     LocalDateType type = new LocalDateType();
     String str = type.format(date);
-    Reporter.log(str + "<br>");
+    Reporter.log(str + "<br>", true);
     LocalDate date1 = type.parse(str);
     Assert.assertEquals(date1, date);
   }
@@ -81,12 +81,12 @@ public class TemporalTest {
     LocalDateTime dateTime = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS);
     LocalDateTimeType type = new LocalDateTimeType();
     String str = type.format(dateTime);
-    Reporter.log(str + "<br>");
+    Reporter.log(str + "<br>", true);
     LocalDateTime dateTime1 = type.parse(str);
     Assert.assertEquals(dateTime1, dateTime);
     dateTime = dateTime.truncatedTo(ChronoUnit.SECONDS);
     str = type.format(dateTime);
-    Reporter.log(str + "<br>");
+    Reporter.log(str + "<br>", true);
     dateTime1 = type.parse(str);
     Assert.assertEquals(dateTime1, dateTime);
   }
@@ -96,12 +96,12 @@ public class TemporalTest {
     OffsetDateTime dateTime = OffsetDateTime.now().truncatedTo(ChronoUnit.MILLIS);
     OffsetDateTimeType type = new OffsetDateTimeType();
     String str = type.format(dateTime);
-    Reporter.log(str + "<br>");
+    Reporter.log(str + "<br>", true);
     OffsetDateTime dateTime1 = type.parse(str);
     Assert.assertEquals(dateTime1, dateTime);
     dateTime = dateTime.truncatedTo(ChronoUnit.SECONDS);
     str = type.format(dateTime);
-    Reporter.log(str + "<br>");
+    Reporter.log(str + "<br>", true);
     dateTime1 = type.parse(str);
     Assert.assertEquals(dateTime1, dateTime);
   }
@@ -111,12 +111,12 @@ public class TemporalTest {
     ZonedDateTime dateTime = ZonedDateTime.now().truncatedTo(ChronoUnit.MILLIS);
     ZonedDateTimeType type = new ZonedDateTimeType();
     String str = type.format(dateTime);
-    Reporter.log(str + "<br>");
+    Reporter.log(str + "<br>", true);
     ZonedDateTime dateTime1 = type.parse(str);
     Assert.assertEquals(dateTime1, dateTime);
     dateTime = dateTime.truncatedTo(ChronoUnit.SECONDS);
     str = type.format(dateTime);
-    Reporter.log(str + "<br>");
+    Reporter.log(str + "<br>", true);
     dateTime1 = type.parse(str);
     Assert.assertEquals(dateTime1, dateTime);
   }
@@ -126,17 +126,17 @@ public class TemporalTest {
     Instant instant = Instant.now();
     InstantType type = new InstantType();
     String str = type.format(instant);
-    Reporter.log(str + "<br>");
+    Reporter.log(str + "<br>", true);
     Instant instant1 = type.parse(str);
     Assert.assertEquals(instant1, instant);
     instant = instant.truncatedTo(ChronoUnit.MILLIS);
     str = type.format(instant);
-    Reporter.log(str + "<br>");
+    Reporter.log(str + "<br>", true);
     instant1 = type.parse(str);
     Assert.assertEquals(instant1, instant);
     instant = instant.truncatedTo(ChronoUnit.SECONDS);
     str = type.format(instant);
-    Reporter.log(str + "<br>");
+    Reporter.log(str + "<br>", true);
     instant1 = type.parse(str);
     Assert.assertEquals(instant1, instant);
   }

@@ -23,58 +23,48 @@ import javafx.geometry.Pos;
 
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.FxTreeTableCell;
-import org.tentackle.fx.table.TableCellTypeService;
 import org.tentackle.fx.table.TableColumnConfiguration;
 
-import java.text.DateFormat;
-import java.util.Date;
+import java.time.format.DateTimeFormatter;
 
 /**
- * Base date cell type.
+ * Base cell type for all date- and time-related types.
  *
  * @author harald
  */
-@TableCellTypeService(Date.class)
-public class UtilDateTableCellType<T extends Date> extends AbstractTableCellType<T> {
+public abstract class AbstractDateTimeTableCellType<T> extends AbstractTableCellType<T> {
 
   @Override
   public void updateItem(FxTableCell<?, T> tableCell, T item) {
     tableCell.setGraphic(null);
-    DateFormat fmt = getFormat(tableCell.getColumnConfiguration());
-    String text;
-    if (fmt != null) {
-      text = fmt.format(item);
-    }
-    else {
-      text = item.toString();
-    }
-    tableCell.setText(text);
-    updateAlignment(tableCell, Pos.CENTER);
+    tableCell.setText(formatItem(getFormatter(tableCell.getColumnConfiguration()), item));
+    updateAlignment(tableCell, Pos.BASELINE_CENTER);
   }
 
   @Override
   public void updateItem(FxTreeTableCell<?, T> treeTableCell, T item) {
     treeTableCell.setGraphic(null);
-    DateFormat fmt = getFormat(treeTableCell.getColumnConfiguration());
-    String text;
-    if (fmt != null) {
-      text = fmt.format(item);
-    }
-    else {
-      text = item.toString();
-    }
-    treeTableCell.setText(text);
-    updateAlignment(treeTableCell, Pos.CENTER);
+    treeTableCell.setText(formatItem(getFormatter(treeTableCell.getColumnConfiguration()), item));
+    updateAlignment(treeTableCell, Pos.BASELINE_CENTER);
   }
 
   /**
-   * Gets the date format.
+   * Gets the formatter.
    *
    * @param config the table column configuration
-   * @return the format, null if default toString()
+   * @return the formatter, null if default according to type
    */
-  protected DateFormat getFormat(TableColumnConfiguration<?, T> config) {
-    return config.getDateFormat();
+  protected DateTimeFormatter getFormatter(TableColumnConfiguration<?, T> config) {
+    return config.getDateTimeFormatter();
   }
+
+  /**
+   * Formats the item.
+   *
+   * @param fmt the formatter
+   * @param item the item
+   * @return the formatted string
+   */
+  abstract protected String formatItem(DateTimeFormatter fmt, T item);
 
 }

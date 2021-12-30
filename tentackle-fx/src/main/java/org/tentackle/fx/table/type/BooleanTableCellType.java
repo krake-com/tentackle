@@ -45,7 +45,7 @@ public class BooleanTableCellType extends AbstractTableCellType<Boolean> {
     else {
       tableCell.setGraphic(Fx.createImageView("cancel_mini"));
     }
-    updateAlignment(tableCell, Pos.CENTER);
+    updateAlignment(tableCell, Pos.BASELINE_CENTER);
   }
 
   @Override
@@ -57,7 +57,7 @@ public class BooleanTableCellType extends AbstractTableCellType<Boolean> {
     else {
       tableCell.setGraphic(Fx.createImageView("cancel_mini"));
     }
-    updateAlignment(tableCell, Pos.CENTER);
+    updateAlignment(tableCell, Pos.BASELINE_CENTER);
   }
 
   @Override

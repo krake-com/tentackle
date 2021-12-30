@@ -29,6 +29,9 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Locale;
@@ -61,11 +64,17 @@ public class FormatHelper {
    * @param floatingNumberPattern the localized float/double format string
    * @param moneyPattern the localized money format string
    * @param timestampPattern the localized format string for a timestamp
+   * @param timestampPatternWithOffset the localized format string for a timestamp with zone offset
+   * @param timestampPatternWithTimeZone the localized format string for a timestamp with timezone
    * @param datePattern the localized format string for a date
    * @param timePattern the localized format string for a time
+   * @param timePatternWithOffset the localized format string for a time with zone offset
    * @param shortTimestampPattern the localized format string for a short timestamp
+   * @param shortTimestampPatternWithOffset the localized format string for a short timestamp with zone offset
+   * @param shortTimestampPatternWithTimeZone the localized format string for a short timestamp with timezone
    * @param shortDatePattern the localized format string for a short date
    * @param shortTimePattern the localized format string for a short time
+   * @param shortTimePatternWithOffset the localized format string for a short time with zone offset
    * @param debitLetter the short letter for "debit" (Soll)
    * @param creditLetter the short letter for "credit" (Haben)
    */
@@ -73,11 +82,17 @@ public class FormatHelper {
                          String floatingNumberPattern,
                          String moneyPattern,
                          String timestampPattern,
+                         String timestampPatternWithOffset,
+                         String timestampPatternWithTimeZone,
                          String datePattern,
                          String timePattern,
+                         String timePatternWithOffset,
                          String shortTimestampPattern,
+                         String shortTimestampPatternWithOffset,
+                         String shortTimestampPatternWithTimeZone,
                          String shortDatePattern,
                          String shortTimePattern,
+                         String shortTimePatternWithOffset,
                          char debitLetter,
                          char creditLetter) {
 
@@ -91,11 +106,17 @@ public class FormatHelper {
            MiscCoreBundle.getString(locale, "floatingNumberPattern"),
            MiscCoreBundle.getString(locale, "moneyPattern"),
            MiscCoreBundle.getString(locale, "timestampPattern"),
+           MiscCoreBundle.getString(locale, "timestampPatternWithOffset"),
+           MiscCoreBundle.getString(locale, "timestampPatternWithTimeZone"),
            MiscCoreBundle.getString(locale, "datePattern"),
            MiscCoreBundle.getString(locale, "timePattern"),
+           MiscCoreBundle.getString(locale, "timePatternWithOffset"),
            MiscCoreBundle.getString(locale, "shortTimestampPattern"),
+           MiscCoreBundle.getString(locale, "shortTimestampPatternWithOffset"),
+           MiscCoreBundle.getString(locale, "shortTimestampPatternWithTimeZone"),
            MiscCoreBundle.getString(locale, "shortDatePattern"),
            MiscCoreBundle.getString(locale, "shortTimePattern"),
+           MiscCoreBundle.getString(locale, "shortTimePatternWithOffset"),
            MiscCoreBundle.getString(locale, "debitLetter").charAt(0),
            MiscCoreBundle.getString(locale, "creditLetter").charAt(0));
     }
@@ -147,21 +168,27 @@ public class FormatHelper {
 
     /** localized {@link java.time.format.DateTimeFormatter} for a timestamp. */
     private final DateTimeFormatter localDateTimeFormat;
+    private final DateTimeFormatter localDateTimeFormatWithOffset;
+    private final DateTimeFormatter localDateTimeFormatWithTimeZone;
 
     /** localized {@link java.time.format.DateTimeFormatter} for a date. */
     private final DateTimeFormatter localDateFormat;
 
     /** localized {@link java.time.format.DateTimeFormatter} for a time. */
     private final DateTimeFormatter localTimeFormat;
+    private final DateTimeFormatter localTimeFormatWithOffset;
 
     /** localized {@link java.time.format.DateTimeFormatter} for a short timestamp. */
     private final DateTimeFormatter shortLocalDateTimeFormat;
+    private final DateTimeFormatter shortLocalDateTimeFormatWithOffset;
+    private final DateTimeFormatter shortLocalDateTimeFormatWithTimeZone;
 
     /** localized {@link java.time.format.DateTimeFormatter} for a short date. */
     private final DateTimeFormatter shortLocalDateFormat;
 
     /** localized {@link java.time.format.DateTimeFormatter} for a short time. */
     private final DateTimeFormatter shortLocalTimeFormat;
+    private final DateTimeFormatter shortLocalTimeFormatWithOffset;
 
 
     private Formatting(Locale locale, Patterns patterns) {
@@ -181,11 +208,17 @@ public class FormatHelper {
       shortTimeFormat = new SimpleDateFormat(patterns.shortTimePattern, locale);
       // new java.time package (threadsafe formats)
       localDateTimeFormat = DateTimeFormatter.ofPattern(patterns.timestampPattern, locale);
+      localDateTimeFormatWithOffset = DateTimeFormatter.ofPattern(patterns.timestampPatternWithOffset, locale);
+      localDateTimeFormatWithTimeZone = DateTimeFormatter.ofPattern(patterns.timestampPatternWithTimeZone, locale);
       localDateFormat = DateTimeFormatter.ofPattern(patterns.datePattern, locale);
       localTimeFormat = DateTimeFormatter.ofPattern(patterns.timePattern, locale);
+      localTimeFormatWithOffset = DateTimeFormatter.ofPattern(patterns.timePatternWithOffset, locale);
       shortLocalDateTimeFormat = DateTimeFormatter.ofPattern(patterns.shortTimestampPattern, locale);
+      shortLocalDateTimeFormatWithOffset = DateTimeFormatter.ofPattern(patterns.shortTimestampPatternWithOffset, locale);
+      shortLocalDateTimeFormatWithTimeZone = DateTimeFormatter.ofPattern(patterns.shortTimestampPatternWithTimeZone, locale);
       shortLocalDateFormat = DateTimeFormatter.ofPattern(patterns.shortDatePattern, locale);
       shortLocalTimeFormat = DateTimeFormatter.ofPattern(patterns.shortTimePattern, locale);
+      shortLocalTimeFormatWithOffset = DateTimeFormatter.ofPattern(patterns.shortTimePatternWithOffset, locale);
     }
 
     private String debitCreditToString(BMoney money, boolean debit) {
@@ -384,6 +417,26 @@ public class FormatHelper {
   }
 
   /**
+   * Gets the timestamp pattern with zone offset.
+   *
+   * @param locale the locale
+   * @return the pattern
+   */
+  public static String getTimestampPatternWithOffset(Locale locale) {
+    return getFormatting(locale).patterns.timestampPatternWithOffset;
+  }
+
+  /**
+   * Gets the timestamp pattern with timezone
+   *
+   * @param locale the locale
+   * @return the pattern
+   */
+  public static String getTimestampPatternWithTimeZone(Locale locale) {
+    return getFormatting(locale).patterns.timestampPatternWithTimeZone;
+  }
+
+  /**
    * Gets the short timestamp pattern.
    *
    * @param locale the locale
@@ -391,6 +444,26 @@ public class FormatHelper {
    */
   public static String getShortTimestampPattern(Locale locale) {
     return getFormatting(locale).patterns.shortTimestampPattern;
+  }
+
+  /**
+   * Gets the short timestamp pattern with zone offset
+   *
+   * @param locale the locale
+   * @return the pattern
+   */
+  public static String getShortTimestampPatternWithOffset(Locale locale) {
+    return getFormatting(locale).patterns.shortTimestampPatternWithOffset;
+  }
+
+  /**
+   * Gets the short timestamp pattern with timezone.
+   *
+   * @param locale the locale
+   * @return the pattern
+   */
+  public static String getShortTimestampPatternWithTimeZone(Locale locale) {
+    return getFormatting(locale).patterns.shortTimestampPatternWithTimeZone;
   }
 
   /**
@@ -424,6 +497,16 @@ public class FormatHelper {
   }
 
   /**
+   * Gets the time pattern with zone offset.
+   *
+   * @param locale the locale
+   * @return the pattern
+   */
+  public static String getTimePatternWithOffset(Locale locale) {
+    return getFormatting(locale).patterns.timePatternWithOffset;
+  }
+
+  /**
    * Gets the short time pattern.
    *
    * @param locale the locale
@@ -433,6 +516,15 @@ public class FormatHelper {
     return getFormatting(locale).patterns.shortTimePattern;
   }
 
+  /**
+   * Gets the short time pattern with zone offset.
+   *
+   * @param locale the locale
+   * @return the pattern
+   */
+  public static String getShortTimePatternWithOffset(Locale locale) {
+    return getFormatting(locale).patterns.shortTimePatternWithOffset;
+  }
 
 
   /**
@@ -472,12 +564,48 @@ public class FormatHelper {
   }
 
   /**
+   * Gets the timestamp pattern with zone offset.
+   *
+   * @return the pattern
+   */
+  public static String getTimestampPatternWithOffset() {
+    return getFormatting().patterns.timestampPatternWithOffset;
+  }
+
+  /**
+   * Gets the timestamp pattern with timezone.
+   *
+   * @return the pattern
+   */
+  public static String getTimestampPatternWithTimeZone() {
+    return getFormatting().patterns.timestampPatternWithTimeZone;
+  }
+
+  /**
    * Gets the short timestamp pattern.
    *
    * @return the pattern
    */
   public static String getShortTimestampPattern() {
     return getFormatting().patterns.shortTimestampPattern;
+  }
+
+  /**
+   * Gets the short timestamp pattern with offset.
+   *
+   * @return the pattern
+   */
+  public static String getShortTimestampPatternWithOffset() {
+    return getFormatting().patterns.shortTimestampPatternWithOffset;
+  }
+
+  /**
+   * Gets the short timestamp pattern with timezone.
+   *
+   * @return the pattern
+   */
+  public static String getShortTimestampPatternWithTimeZone() {
+    return getFormatting().patterns.shortTimestampPatternWithTimeZone;
   }
 
   /**
@@ -508,12 +636,30 @@ public class FormatHelper {
   }
 
   /**
+   * Gets the time pattern with zone offset.
+   *
+   * @return the pattern
+   */
+  public static String getTimePatternWithOffset() {
+    return getFormatting().patterns.timePatternWithOffset;
+  }
+
+  /**
    * Gets the short time pattern.
    *
    * @return the pattern
    */
   public static String getShortTimePattern() {
     return getFormatting().patterns.shortTimePattern;
+  }
+
+  /**
+   * Gets the short time pattern with zone offset.
+   *
+   * @return the pattern
+   */
+  public static String getShortTimePatternWithOffset() {
+    return getFormatting().patterns.shortTimePatternWithOffset;
   }
 
 
@@ -720,6 +866,30 @@ public class FormatHelper {
   }
 
   /**
+   * Parses a timestamp with zone offset.
+   * <p>
+   * Throws java.time.format.DateTimeParseException if parsing failed
+   *
+   * @param str the string to parse
+   * @return the timestamp
+   */
+  public static OffsetDateTime parseOffsetDateTime(String str) {
+    return OffsetDateTime.parse(str, getFormatting().localDateTimeFormatWithOffset);
+  }
+
+  /**
+   * Parses a timestamp with timezone.
+   * <p>
+   * Throws java.time.format.DateTimeParseException if parsing failed
+   *
+   * @param str the string to parse
+   * @return the timestamp
+   */
+  public static ZonedDateTime parseZonedDateTime(String str) {
+    return ZonedDateTime.parse(str, getFormatting().localDateTimeFormatWithTimeZone);
+  }
+
+  /**
    * Parses a short timestamp.
    * <p>
    * Throws java.time.format.DateTimeParseException if parsing failed
@@ -729,6 +899,30 @@ public class FormatHelper {
    */
   public static LocalDateTime parseShortLocalDateTime(String str) {
     return LocalDateTime.parse(str, getFormatting().shortLocalDateTimeFormat);
+  }
+
+  /**
+   * Parses a short timestamp with zone offset.
+   * <p>
+   * Throws java.time.format.DateTimeParseException if parsing failed
+   *
+   * @param str the string to parse
+   * @return the timestamp
+   */
+  public static OffsetDateTime parseShortOffsetDateTime(String str) {
+    return OffsetDateTime.parse(str, getFormatting().shortLocalDateTimeFormatWithOffset);
+  }
+
+  /**
+   * Parses a short timestamp with timezone.
+   * <p>
+   * Throws java.time.format.DateTimeParseException if parsing failed
+   *
+   * @param str the string to parse
+   * @return the timestamp
+   */
+  public static ZonedDateTime parseShortZonedDateTime(String str) {
+    return ZonedDateTime.parse(str, getFormatting().shortLocalDateTimeFormatWithTimeZone);
   }
 
   /**
@@ -768,6 +962,18 @@ public class FormatHelper {
   }
 
   /**
+   * Parses a time with zone offset.
+   * <p>
+   * Throws java.time.format.DateTimeParseException if parsing failed
+   *
+   * @param str the string to parse
+   * @return the time
+   */
+  public static OffsetTime parseOffsetTime(String str) {
+    return OffsetTime.parse(str, getFormatting().localTimeFormatWithOffset);
+  }
+
+  /**
    * Parses a short time.
    * <p>
    * Throws java.time.format.DateTimeParseException if parsing failed
@@ -777,6 +983,18 @@ public class FormatHelper {
    */
   public static LocalTime parseShortLocalTime(String str) {
     return LocalTime.parse(str, getFormatting().shortLocalTimeFormat);
+  }
+
+  /**
+   * Parses short a time with zone offset.
+   * <p>
+   * Throws java.time.format.DateTimeParseException if parsing failed
+   *
+   * @param str the string to parse
+   * @return the time
+   */
+  public static OffsetTime parseShortOffsetTime(String str) {
+    return OffsetTime.parse(str, getFormatting().shortLocalTimeFormatWithOffset);
   }
 
 
@@ -951,6 +1169,26 @@ public class FormatHelper {
   }
 
   /**
+   * Formats a timestamp with zone offset.
+   *
+   * @param timestamp the timestamp to format
+   * @return the formatted string
+   */
+  public static String formatOffsetDateTime(OffsetDateTime timestamp) {
+    return getFormatting().localDateTimeFormatWithOffset.format(timestamp);
+  }
+
+  /**
+   * Formats a timestamp with timezone.
+   *
+   * @param timestamp the timestamp to format
+   * @return the formatted string
+   */
+  public static String formatZonedDateTime(ZonedDateTime timestamp) {
+    return getFormatting().localDateTimeFormatWithTimeZone.format(timestamp);
+  }
+
+  /**
    * Formats a short timestamp.
    *
    * @param timestamp the timestamp to format
@@ -958,6 +1196,26 @@ public class FormatHelper {
    */
   public static String formatShortLocalDateTime(LocalDateTime timestamp) {
     return getFormatting().shortLocalDateTimeFormat.format(timestamp);
+  }
+
+  /**
+   * Formats a short timestamp with zone offset.
+   *
+   * @param timestamp the timestamp to format
+   * @return the formatted string
+   */
+  public static String formatShortOffsetDateTime(OffsetDateTime timestamp) {
+    return getFormatting().shortLocalDateTimeFormatWithOffset.format(timestamp);
+  }
+
+  /**
+   * Formats a short timestamp with timezone.
+   *
+   * @param timestamp the timestamp to format
+   * @return the formatted string
+   */
+  public static String formatShortZonedDateTime(ZonedDateTime timestamp) {
+    return getFormatting().shortLocalDateTimeFormatWithTimeZone.format(timestamp);
   }
 
   /**
@@ -991,6 +1249,16 @@ public class FormatHelper {
   }
 
   /**
+   * Formats a time with zone offset.
+   *
+   * @param time the time to format
+   * @return the formatted string
+   */
+  public static String formatOffsetTime(OffsetTime time) {
+    return getFormatting().localTimeFormatWithOffset.format(time);
+  }
+
+  /**
    * Formats a short time.
    *
    * @param time the time to format
@@ -998,6 +1266,16 @@ public class FormatHelper {
    */
   public static String formatShortLocalTime(LocalTime time) {
     return getFormatting().shortLocalTimeFormat.format(time);
+  }
+
+  /**
+   * Formats a short time with zone offset.
+   *
+   * @param time the time to format
+   * @return the formatted string
+   */
+  public static String formatShortOffsetTime(OffsetTime time) {
+    return getFormatting().shortLocalTimeFormatWithOffset.format(time);
   }
 
 
@@ -1008,6 +1286,24 @@ public class FormatHelper {
    */
   public static DateTimeFormatter getLocalDateTimeFormatter() {
     return getFormatting().localDateTimeFormat;
+  }
+
+  /**
+   * Gets the formatter for an OffsetDateTime.
+   *
+   * @return the immutable and threadsafe formatter
+   */
+  public static DateTimeFormatter getOffsetDateTimeFormatter() {
+    return getFormatting().localDateTimeFormatWithOffset;
+  }
+
+  /**
+   * Gets the formatter for a ZonedDateTime.
+   *
+   * @return the immutable and threadsafe formatter
+   */
+  public static DateTimeFormatter getZonedDateTimeFormatter() {
+    return getFormatting().localDateTimeFormatWithTimeZone;
   }
 
   /**
@@ -1029,12 +1325,39 @@ public class FormatHelper {
   }
 
   /**
+   * Gets the formatter for an OffsetTime.
+   *
+   * @return the immutable and threadsafe formatter
+   */
+  public static DateTimeFormatter getOffsetTimeFormatter() {
+    return getFormatting().localTimeFormatWithOffset;
+  }
+
+  /**
    * Gets the formatter for a short LocalDateTime.
    *
    * @return the immutable and threadsafe formatter
    */
   public static DateTimeFormatter getShortLocalDateTimeFormatter() {
     return getFormatting().shortLocalDateTimeFormat;
+  }
+
+  /**
+   * Gets the formatter for a short OffsetDateTime.
+   *
+   * @return the immutable and threadsafe formatter
+   */
+  public static DateTimeFormatter getShortOffsetDateTimeFormatter() {
+    return getFormatting().shortLocalDateTimeFormatWithOffset;
+  }
+
+  /**
+   * Gets the formatter for a short ZonedDateTime.
+   *
+   * @return the immutable and threadsafe formatter
+   */
+  public static DateTimeFormatter getShortZonedDateTimeFormatter() {
+    return getFormatting().shortLocalDateTimeFormatWithTimeZone;
   }
 
   /**
@@ -1053,6 +1376,15 @@ public class FormatHelper {
    */
   public static DateTimeFormatter getShortLocalTimeFormatter() {
     return getFormatting().shortLocalTimeFormat;
+  }
+
+  /**
+   * Gets the formatter for a short OffsetTime.
+   *
+   * @return the immutable and threadsafe formatter
+   */
+  public static DateTimeFormatter getShortOffsetTimeFormatter() {
+    return getFormatting().shortLocalTimeFormatWithOffset;
   }
 
 

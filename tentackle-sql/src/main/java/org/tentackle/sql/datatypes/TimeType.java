@@ -30,9 +30,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Types;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 /**
  * Datatype for {@link Time}.
@@ -41,7 +41,7 @@ import java.text.SimpleDateFormat;
 public class TimeType extends AbstractDateTimeType<Time> {
 
   private static final String TIME_PATTERN = "HH:mm:ss";
-  private static final DateFormat TIME_FORMAT = new SimpleDateFormat(TIME_PATTERN);
+  private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern(TIME_PATTERN);
 
   @Override
   public boolean isTimezoneApplicable() {
@@ -95,20 +95,16 @@ public class TimeType extends AbstractDateTimeType<Time> {
 
 
   protected Time parse(String str) throws BackendException {
-    synchronized(TIME_FORMAT) {
-      try {
-        return new Time(TIME_FORMAT.parse(StringHelper.parseString(str)).getTime());
-      }
-      catch (ParseException e) {
-        throw new BackendException("parsing time from '" + str + "' failed", e);
-      }
+    try {
+      return Time.valueOf(TIME_FORMAT.parse(StringHelper.parseString(str), LocalTime::from));
+    }
+    catch (DateTimeParseException e) {
+      throw new BackendException("parsing time from '" + str + "' failed", e);
     }
   }
 
-  protected String format(java.util.Date time) {
-    synchronized(TIME_FORMAT) {
-      return TIME_FORMAT.format(time);
-    }
+  protected String format(Time time) {
+    return TIME_FORMAT.format(time.toLocalTime());
   }
 
 }

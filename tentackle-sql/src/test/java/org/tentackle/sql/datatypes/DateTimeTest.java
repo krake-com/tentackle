@@ -38,7 +38,7 @@ public class DateTimeTest {
     Time time = Time.valueOf(LocalTime.now());    // does the trick to remove the date
     TimeType type = new TimeType();
     String str = type.format(time);
-    Reporter.log(str + "<br>");
+    Reporter.log(str + "<br>", true);
     Time time1 = type.parse(str);
     Assert.assertEquals(time1, time);
   }
@@ -48,7 +48,7 @@ public class DateTimeTest {
     Date date = Date.valueOf(LocalDate.now());    // does the trick to remove the millis
     DateType type = new DateType();
     String str = type.format(date);
-    Reporter.log(str + "<br>");
+    Reporter.log(str + "<br>", true);
     Date date1 = type.parse(str);
     Assert.assertEquals(date1, date);
   }
@@ -58,12 +58,12 @@ public class DateTimeTest {
     Timestamp timestamp = new Timestamp(System.currentTimeMillis());
     TimestampType type = new TimestampType();
     String str = type.format(timestamp);
-    Reporter.log(str + "<br>");
+    Reporter.log(str + "<br>", true);
     Timestamp timestamp1 = type.parse(str);
     Assert.assertEquals(timestamp1, timestamp);
     timestamp.setNanos(0);
     str = type.format(timestamp);
-    Reporter.log(str + "<br>");
+    Reporter.log(str + "<br>", true);
     timestamp1 = type.parse(str);
     Assert.assertEquals(timestamp1, timestamp);
   }
