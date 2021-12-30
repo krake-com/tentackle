@@ -36,9 +36,7 @@ import org.tentackle.misc.FormatHelper;
 import org.tentackle.reflect.ReflectionHelper;
 
 import java.lang.reflect.Type;
-import java.text.DateFormat;
 import java.text.DecimalFormat;
-import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
 
 /**
@@ -92,7 +90,7 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   private Type genericType;
 
   /**
-   * For formatting.
+   * The format pattern.
    */
   private String pattern;
 
@@ -103,13 +101,7 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   private DecimalFormat numberFormat;
 
   /**
-   * The date format.<br>
-   * null if pattern is null.
-   */
-  private DateFormat dateFormat;
-
-  /**
-   * Date and time formatter.<br>
+   * Formatter for all date- and time-related types.<br>
    * null if pattern is null.
    */
   private DateTimeFormatter dateTimeFormatter;
@@ -277,14 +269,6 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
       }
     }
     return numberFormat;
-  }
-
-  @Override
-  public DateFormat getDateFormat() {
-    if (dateFormat == null && pattern != null) {
-      dateFormat = new SimpleDateFormat(pattern);
-    }
-    return dateFormat;
   }
 
   @Override

@@ -32,6 +32,9 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
@@ -135,6 +138,49 @@ public class FormatHelperTest {
     }
   }
 
+
+  @Test
+  public void testOffsetTime() {
+    OffsetTime offsetTime = OffsetTime.now().truncatedTo(ChronoUnit.SECONDS);
+    String str = FormatHelper.formatOffsetTime(offsetTime);
+    Reporter.log(str + "<br>", true);
+    OffsetTime ot = FormatHelper.parseOffsetTime(str);
+    assertEquals(ot, offsetTime);
+    offsetTime = offsetTime.truncatedTo(ChronoUnit.MINUTES);
+    str = FormatHelper.formatShortOffsetTime(offsetTime);
+    Reporter.log(str + "<br>", true);
+    ot = FormatHelper.parseShortOffsetTime(str);
+    assertEquals(ot, offsetTime);
+  }
+
+  @Test
+  public void testOffsetDateTime() {
+    OffsetDateTime offsetDateTime = OffsetDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+    String str = FormatHelper.formatOffsetDateTime(offsetDateTime);
+    Reporter.log(str + "<br>", true);
+    OffsetDateTime odt = FormatHelper.parseOffsetDateTime(str);
+    assertEquals(odt, offsetDateTime);
+    offsetDateTime = offsetDateTime.truncatedTo(ChronoUnit.MINUTES);
+    str = FormatHelper.formatShortOffsetDateTime(offsetDateTime);
+    Reporter.log(str + "<br>", true);
+    odt = FormatHelper.parseShortOffsetDateTime(str);
+    assertEquals(odt, offsetDateTime);
+  }
+
+  @Test
+  public void testZonedDateTime() {
+    ZonedDateTime zonedDateTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+    String str = FormatHelper.formatZonedDateTime(zonedDateTime);
+    Reporter.log(str + "<br>", true);
+    ZonedDateTime zdt = FormatHelper.parseZonedDateTime(str);
+    assertEquals(zdt, zonedDateTime);
+    zonedDateTime = zonedDateTime.truncatedTo(ChronoUnit.MINUTES);
+    str = FormatHelper.formatShortZonedDateTime(zonedDateTime);
+    Reporter.log(str + "<br>", true);
+    zdt = FormatHelper.parseShortZonedDateTime(str);
+    assertEquals(zdt, zonedDateTime);
+  }
+
   /**
    * Determines the scan/format/conversion performance differences between old DateFormat and new DateTimeFormatter.
    */
@@ -157,7 +203,7 @@ public class FormatHelperTest {
       fail("parsing failed", parseException);
     }
     duration.end();
-    Reporter.log("old java.util package w/ sync: " + duration.millisToString() + " ms", true);
+    Reporter.log("old java.util package w/ sync: " + duration.millisToString() + " ms<br>", true);
 
     timestamp = new Timestamp();
     duration = new Duration();
@@ -173,7 +219,7 @@ public class FormatHelperTest {
       fail("parsing failed", parseException);
     }
     duration.end();
-    Reporter.log("old java.util package w/o sync: " + duration.millisToString() + " ms", true);
+    Reporter.log("old java.util package w/o sync: " + duration.millisToString() + " ms<br>", true);
 
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern(FormatHelper.getTimestampPattern(Locale.US));
     LocalDateTime localDateTime = LocalDateTime.now();
@@ -190,7 +236,7 @@ public class FormatHelperTest {
       fail("parsing failed", parseException);
     }
     duration.end();
-    Reporter.log("new java.time package: " + duration.millisToString() + " ms", true);
+    Reporter.log("new java.time package: " + duration.millisToString() + " ms<br>", true);
 
     timestamp = new Timestamp();
     duration = new Duration();
@@ -206,7 +252,7 @@ public class FormatHelperTest {
       fail("parsing failed", parseException);
     }
     duration.end();
-    Reporter.log("new java.time package w/ conversion: " + duration.millisToString() + " ms", true);
+    Reporter.log("new java.time package w/ conversion: " + duration.millisToString() + " ms<br>", true);
   }
 
   /**
@@ -230,7 +276,7 @@ public class FormatHelperTest {
       fail("parsing failed", parseException);
     }
     duration.end();
-    Reporter.log("old java.util package w/ sync: " + duration.millisToString() + " ms", true);
+    Reporter.log("old java.util package w/ sync: " + duration.millisToString() + " ms<br>", true);
 
     duration = new Duration();
     try {
@@ -243,7 +289,7 @@ public class FormatHelperTest {
       fail("parsing failed", parseException);
     }
     duration.end();
-    Reporter.log("old java.util package w/o sync: " + duration.millisToString() + " ms", true);
+    Reporter.log("old java.util package w/o sync: " + duration.millisToString() + " ms<br>", true);
 
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern(FormatHelper.getTimestampPattern(Locale.US));
     LocalDateTime localDateTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
@@ -259,7 +305,7 @@ public class FormatHelperTest {
       fail("parsing failed", parseException);
     }
     duration.end();
-    Reporter.log("new java.time package: " + duration.millisToString() + " ms", true);
+    Reporter.log("new java.time package: " + duration.millisToString() + " ms<br>", true);
 
     timestamp = new Timestamp(Timestamp.valueOf(localDateTime).getTime());
     duration = new Duration();
@@ -273,7 +319,7 @@ public class FormatHelperTest {
       fail("parsing failed", parseException);
     }
     duration.end();
-    Reporter.log("new java.time package w/ conversion: " + duration.millisToString() + " ms", true);
+    Reporter.log("new java.time package w/ conversion: " + duration.millisToString() + " ms<br>", true);
   }
 
   /**
@@ -291,14 +337,14 @@ public class FormatHelperTest {
       }
     }
     duration.end();
-    Reporter.log("old java.util package w/ sync: " + duration.millisToString() + " ms", true);
+    Reporter.log("old java.util package w/ sync: " + duration.millisToString() + " ms<br>", true);
 
     duration = new Duration();
     for (int i = 0; i < LOOPS; i++) {
       assertEquals(dateFormat.format(timestamp), str);
     }
     duration.end();
-    Reporter.log("old java.util package w/ sync: " + duration.millisToString() + " ms", true);
+    Reporter.log("old java.util package w/ sync: " + duration.millisToString() + " ms<br>", true);
 
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern(FormatHelper.getTimestampPattern(Locale.US));
     LocalDateTime localDateTime = LocalDateTime.now();
@@ -308,7 +354,7 @@ public class FormatHelperTest {
       assertEquals(formatter.format(localDateTime), str);
     }
     duration.end();
-    Reporter.log("new java.time package: " + duration.millisToString() + " ms", true);
+    Reporter.log("new java.time package: " + duration.millisToString() + " ms<br>", true);
 
     timestamp = new Timestamp();
     localDateTime = timestamp.toLocalDateTime();
@@ -318,7 +364,7 @@ public class FormatHelperTest {
       assertEquals(formatter.format(timestamp.toLocalDateTime()), str);
     }
     duration.end();
-    Reporter.log("new java.time package w/ conversion: " + duration.millisToString() + " ms", true);
+    Reporter.log("new java.time package w/ conversion: " + duration.millisToString() + " ms<br>", true);
   }
 
 }

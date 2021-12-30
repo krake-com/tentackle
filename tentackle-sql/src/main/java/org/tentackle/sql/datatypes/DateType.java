@@ -31,9 +31,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 /**
  * Datatype for {@link Date}.
@@ -42,7 +42,7 @@ import java.text.SimpleDateFormat;
 public class DateType extends AbstractDateTimeType<Date> {
 
   private static final String DATE_PATTERN = "yyyy-MM-dd";
-  private static final DateFormat DATE_FORMAT = new SimpleDateFormat(DATE_PATTERN);
+  private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern(DATE_PATTERN);
 
   @Override
   public boolean isTimezoneApplicable() {
@@ -108,20 +108,16 @@ public class DateType extends AbstractDateTimeType<Date> {
 
 
   protected Date parse(String str) throws BackendException {
-    synchronized(DATE_FORMAT) {  // formatters are not thread-safe :(
-      try {
-        return new Date(DATE_FORMAT.parse(StringHelper.parseString(str)).getTime());
-      }
-      catch (ParseException e) {
-        throw new BackendException("parsing date from '" + str + "' failed", e);
-      }
+    try {
+      return Date.valueOf(DATE_FORMAT.parse(StringHelper.parseString(str), LocalDate::from));
+    }
+    catch (DateTimeParseException e) {
+      throw new BackendException("parsing date from '" + str + "' failed", e);
     }
   }
 
-  protected String format(java.util.Date date) {
-    synchronized(DATE_FORMAT) {  // formatters are not thread-safe :(
-      return DATE_FORMAT.format(date);
-    }
+  protected String format(Date date) {
+    return DATE_FORMAT.format(date.toLocalDate());
   }
 
 }
