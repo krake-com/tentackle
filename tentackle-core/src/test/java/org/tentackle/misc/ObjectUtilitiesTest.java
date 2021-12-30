@@ -26,10 +26,13 @@ import org.tentackle.common.LocaleProvider;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Currency;
 import java.util.TimeZone;
 
@@ -75,9 +78,23 @@ public class ObjectUtilitiesTest {
 
     LocalTime localTime = LocalTime.now();
     localTime = localTime.minusNanos(localTime.getNano());
-    org.tentackle.common.Time time = new org.tentackle.common.Time(localTime.toSecondOfDay() * 1000 - TimeZone.getDefault().getRawOffset());
+    org.tentackle.common.Time time = new org.tentackle.common.Time(localTime.toSecondOfDay() * 1000L - TimeZone.getDefault().getRawOffset());
     assertEquals(ObjectUtilities.getInstance().convert(org.tentackle.common.Time.class, localTime), time);
     assertEquals(ObjectUtilities.getInstance().convert(LocalTime.class, time), localTime);
+
+    OffsetDateTime offsetDateTime = OffsetDateTime.now();
+    Instant instant = ObjectUtilities.getInstance().convert(Instant.class, offsetDateTime);
+    assertEquals(ObjectUtilities.getInstance().convert(OffsetDateTime.class, instant), offsetDateTime);
+
+    instant = ObjectUtilities.getInstance().convert(Instant.class, localDateTime);
+    assertEquals(ObjectUtilities.getInstance().convert(LocalDateTime.class, instant), localDateTime);
+
+    instant = ObjectUtilities.getInstance().convert(Instant.class, sqlTs);
+    assertEquals(ObjectUtilities.getInstance().convert(java.sql.Timestamp.class, instant), sqlTs);
+
+    ZonedDateTime zonedDateTime = ZonedDateTime.now();
+    instant = ObjectUtilities.getInstance().convert(Instant.class, zonedDateTime);
+    assertEquals(ObjectUtilities.getInstance().convert(ZonedDateTime.class, instant), zonedDateTime);
 
     assertEquals(ObjectUtilities.getInstance().convert(BindingEvent.Type.class, "TO_VIEW_VIA_GETTER"), BindingEvent.Type.TO_VIEW_VIA_GETTER);
 
