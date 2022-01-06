@@ -18,18 +18,19 @@
 
 package org.tentackle.wurblet;
 
-import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.Entity;
 import org.tentackle.model.MethodArgument;
 import org.tentackle.model.ModelElement;
 import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
+
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Support methods for model comment.
@@ -113,10 +114,13 @@ public class ModelCommentSupport {
         if (!relation.getName().equalsIgnoreCase(referencingEntity.toString())) {
           out.print(" as " + relation.getVariableName());
         }
-        if (relation.getRelationType() == RelationType.LIST) {
+        if (relation.getRelationType() == RelationType.LIST && !relation.isReversed()) {
           out.println(" [1:N]");
         }
         else {
+          if (relation.isReversed()) {
+            out.print(" reversed");
+          }
           out.println(" [1:1]");
         }
       }
