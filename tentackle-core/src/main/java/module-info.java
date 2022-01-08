@@ -42,6 +42,7 @@ module org.tentackle.core {
   exports org.tentackle.validate.scope;
   exports org.tentackle.validate.validator;
   exports org.tentackle.validate.severity;
+  exports org.tentackle.misc.time;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.service.Hook;
 

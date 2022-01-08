@@ -1388,6 +1388,127 @@ public class FormatHelper {
   }
 
 
+  /**
+   * Gets the formatter for a LocalDateTime.
+   *
+   * @param locale the locale
+   * @return the immutable and threadsafe formatter
+   */
+  public static DateTimeFormatter getLocalDateTimeFormatter(Locale locale) {
+    return getFormatting(locale).localDateTimeFormat;
+  }
+
+  /**
+   * Gets the formatter for an OffsetDateTime.
+   *
+   * @param locale the locale
+   * @return the immutable and threadsafe formatter
+   */
+  public static DateTimeFormatter getOffsetDateTimeFormatter(Locale locale) {
+    return getFormatting(locale).localDateTimeFormatWithOffset;
+  }
+
+  /**
+   * Gets the formatter for a ZonedDateTime.
+   *
+   * @param locale the locale
+   * @return the immutable and threadsafe formatter
+   */
+  public static DateTimeFormatter getZonedDateTimeFormatter(Locale locale) {
+    return getFormatting(locale).localDateTimeFormatWithTimeZone;
+  }
+
+  /**
+   * Gets the formatter for a LocalDate.
+   *
+   * @param locale the locale
+   * @return the immutable and threadsafe formatter
+   */
+  public static DateTimeFormatter getLocalDateFormatter(Locale locale) {
+    return getFormatting(locale).localDateFormat;
+  }
+
+  /**
+   * Gets the formatter for a LocalTime.
+   *
+   * @param locale the locale
+   * @return the immutable and threadsafe formatter
+   */
+  public static DateTimeFormatter getLocalTimeFormatter(Locale locale) {
+    return getFormatting(locale).localTimeFormat;
+  }
+
+  /**
+   * Gets the formatter for an OffsetTime.
+   *
+   * @param locale the locale
+   * @return the immutable and threadsafe formatter
+   */
+  public static DateTimeFormatter getOffsetTimeFormatter(Locale locale) {
+    return getFormatting(locale).localTimeFormatWithOffset;
+  }
+
+  /**
+   * Gets the formatter for a short LocalDateTime.
+   *
+   * @param locale the locale
+   * @return the immutable and threadsafe formatter
+   */
+  public static DateTimeFormatter getShortLocalDateTimeFormatter(Locale locale) {
+    return getFormatting(locale).shortLocalDateTimeFormat;
+  }
+
+  /**
+   * Gets the formatter for a short OffsetDateTime.
+   *
+   * @param locale the locale
+   * @return the immutable and threadsafe formatter
+   */
+  public static DateTimeFormatter getShortOffsetDateTimeFormatter(Locale locale) {
+    return getFormatting(locale).shortLocalDateTimeFormatWithOffset;
+  }
+
+  /**
+   * Gets the formatter for a short ZonedDateTime.
+   *
+   * @param locale the locale
+   * @return the immutable and threadsafe formatter
+   */
+  public static DateTimeFormatter getShortZonedDateTimeFormatter(Locale locale) {
+    return getFormatting(locale).shortLocalDateTimeFormatWithTimeZone;
+  }
+
+  /**
+   * Gets the formatter for a short LocalDate.
+   *
+   * @param locale the locale
+   * @return the immutable and threadsafe formatter
+   */
+  public static DateTimeFormatter getShortLocalDateFormatter(Locale locale) {
+    return getFormatting(locale).shortLocalDateFormat;
+  }
+
+  /**
+   * Gets the formatter for a short LocalTime.
+   *
+   * @param locale the locale
+   * @return the immutable and threadsafe formatter
+   */
+  public static DateTimeFormatter getShortLocalTimeFormatter(Locale locale) {
+    return getFormatting(locale).shortLocalTimeFormat;
+  }
+
+  /**
+   * Gets the formatter for a short OffsetTime.
+   *
+   * @param locale the locale
+   * @return the immutable and threadsafe formatter
+   */
+  public static DateTimeFormatter getShortOffsetTimeFormatter(Locale locale) {
+    return getFormatting(locale).shortLocalTimeFormatWithOffset;
+  }
+
+
 
   /**
    * Determines the scale from a given numeric string.
@@ -1467,38 +1588,64 @@ public class FormatHelper {
 
 
   /**
-   * Checks whether dateformat contains formatting codes for time.
+   * Checks whether format pattern contains formatting codes for time.
    *
-   * @param format the format
+   * @param pattern the format pattern
    * @return true if contains time-formatting
    */
-  public static boolean isFormattingTime(SimpleDateFormat format) {
-    String fmt = format.toPattern();
-    return fmt.indexOf('H') >= 0 ||
-           fmt.indexOf('k') >= 0 ||
-           fmt.indexOf('K') >= 0 ||
-           fmt.indexOf('h') >= 0 ||
-           fmt.indexOf('m') >= 0 ||
-           fmt.indexOf('s') >= 0 ||
-           fmt.indexOf('S') >= 0;
+  public static boolean isFormattingTime(String pattern) {
+    return pattern.indexOf('H') >= 0 ||
+           pattern.indexOf('k') >= 0 ||
+           pattern.indexOf('K') >= 0 ||
+           pattern.indexOf('h') >= 0 ||
+           pattern.indexOf('m') >= 0 ||
+           pattern.indexOf('s') >= 0 ||
+           pattern.indexOf('a') >= 0 ||
+           pattern.indexOf('S') >= 0;
   }
 
   /**
-   * Checks whether dateformat contains formatting codes for date.
+   * Checks whether format pattern contains formatting codes for date.
    *
-   * @param format the format
+   * @param pattern the format pattern
    * @return true if contains date-formatting
    */
-  public static boolean isFormattingDate(SimpleDateFormat format) {
-    String fmt = format.toPattern();
-    return fmt.indexOf('y') >= 0 ||
-           fmt.indexOf('M') >= 0 ||
-           fmt.indexOf('w') >= 0 ||
-           fmt.indexOf('W') >= 0 ||
-           fmt.indexOf('D') >= 0 ||
-           fmt.indexOf('d') >= 0 ||
-           fmt.indexOf('F') >= 0 ||
-           fmt.indexOf('E') >= 0;
+  public static boolean isFormattingDate(String pattern) {
+    return pattern.indexOf('y') >= 0 ||
+           pattern.indexOf('u') >= 0 ||
+           pattern.indexOf('M') >= 0 ||
+           pattern.indexOf('L') >= 0 ||
+           pattern.indexOf('w') >= 0 ||
+           pattern.indexOf('W') >= 0 ||
+           pattern.indexOf('D') >= 0 ||
+           pattern.indexOf('d') >= 0 ||
+           pattern.indexOf('F') >= 0 ||
+           pattern.indexOf('E') >= 0;
+  }
+
+  /**
+   * Checks whether format pattern contains formatting codes for the zone offset.
+   *
+   * @param pattern the format pattern
+   * @return true if contains zone-offset formatting
+   */
+  public static boolean isFormattingOffset(String pattern) {
+    return pattern.indexOf('x') >= 0 ||
+           pattern.indexOf('X') >= 0 ||
+           pattern.indexOf('O') >= 0 ||
+           pattern.indexOf('Z') >= 0;
+  }
+
+  /**
+   * Checks whether format pattern contains formatting codes for the timezone.
+   *
+   * @param pattern the format pattern
+   * @return true if contains timezone formatting
+   */
+  public static boolean isFormattingTimeZone(String pattern) {
+    return pattern.indexOf('v') >= 0 ||
+           pattern.indexOf('V') >= 0 ||
+           pattern.indexOf('z') >= 0;
   }
 
 
