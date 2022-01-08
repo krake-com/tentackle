@@ -274,13 +274,14 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
     if (value != null) {
       boolean infoLoss = false;
 
+      String pattern = getFormat().toPattern();
       if (value instanceof Timestamp || value instanceof Time) {
-        if (!FormatHelper.isFormattingTime(getFormat())) {
+        if (!FormatHelper.isFormattingTime(pattern)) {
           infoLoss = true;
         }
       }
       else {
-        if (!FormatHelper.isFormattingDate(getFormat())) {
+        if (!FormatHelper.isFormattingDate(pattern)) {
           infoLoss = true;
         }
       }
@@ -402,8 +403,9 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
 
         getFormat();    // make sure format is initialized and up to date
 
-        boolean withDate = FormatHelper.isFormattingDate(format);
-        boolean withTime = FormatHelper.isFormattingTime(format);
+        String pattern = format.toPattern();
+        boolean withDate = FormatHelper.isFormattingDate(pattern);
+        boolean withTime = FormatHelper.isFormattingTime(pattern);
 
         if (slen == 1) {
           // only one char: check for shortcut
