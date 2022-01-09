@@ -34,6 +34,7 @@ module org.tentackle.core {
   exports org.tentackle.io;
   exports org.tentackle.log;
   exports org.tentackle.misc;
+  exports org.tentackle.misc.time;
   exports org.tentackle.prefs;
   exports org.tentackle.reflect;
   exports org.tentackle.script;
@@ -42,7 +43,6 @@ module org.tentackle.core {
   exports org.tentackle.validate.scope;
   exports org.tentackle.validate.validator;
   exports org.tentackle.validate.severity;
-  exports org.tentackle.misc.time;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.service.Hook;
 

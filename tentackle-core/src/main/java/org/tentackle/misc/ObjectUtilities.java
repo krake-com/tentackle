@@ -359,6 +359,9 @@ public class ObjectUtilities {
     if (value instanceof java.util.Date date) {
       return new java.sql.Timestamp(date.getTime());
     }
+    if (value instanceof LocalDate localDate) {
+      return java.sql.Timestamp.valueOf(LocalDateTime.of(localDate, LocalTime.of(0, 0)));
+    }
     if (value instanceof LocalDateTime localDateTime) {
       return java.sql.Timestamp.valueOf(localDateTime);
     }
@@ -441,6 +444,9 @@ public class ObjectUtilities {
     if (value instanceof java.sql.Timestamp timestamp) {
       return timestamp.toLocalDateTime();
     }
+    if (value instanceof LocalDate localDate) {
+      return LocalDateTime.of(localDate, LocalTime.of(0, 0));
+    }
     if (value instanceof OffsetDateTime offsetDateTime) {
       return offsetDateTime.toLocalDateTime();
     }
@@ -456,6 +462,9 @@ public class ObjectUtilities {
   private OffsetDateTime toOffsetDateTime(Object value) {
     if (value instanceof java.sql.Timestamp timestamp) {
       return timestamp.toLocalDateTime().atOffset(OffsetDateTime.now().getOffset());
+    }
+    if (value instanceof LocalDate localDate) {
+      return OffsetDateTime.of(localDate, LocalTime.of(0, 0), OffsetDateTime.now().getOffset());
     }
     if (value instanceof LocalDateTime localDateTime) {
       return localDateTime.atOffset(OffsetDateTime.now().getOffset());
@@ -473,6 +482,9 @@ public class ObjectUtilities {
     if (value instanceof java.sql.Timestamp timestamp) {
       return ZonedDateTime.of(timestamp.toLocalDateTime(), ZoneId.systemDefault());
     }
+    if (value instanceof LocalDate localDate) {
+      return ZonedDateTime.of(localDate, LocalTime.of(0, 0),  ZoneId.systemDefault());
+    }
     if (value instanceof LocalDateTime localDateTime) {
       return ZonedDateTime.of(localDateTime, ZoneId.systemDefault());
     }
@@ -488,6 +500,9 @@ public class ObjectUtilities {
   private Instant toInstant(Object value) {
     if (value instanceof java.sql.Timestamp timestamp) {
       return Instant.ofEpochMilli(timestamp.getTime());
+    }
+    if (value instanceof LocalDate localDate) {
+      return LocalDateTime.of(localDate, LocalTime.of(0,0)).toInstant(OffsetDateTime.now().getOffset());
     }
     if (value instanceof LocalDateTime localDateTime) {
       return localDateTime.toInstant(OffsetDateTime.now().getOffset());
@@ -513,6 +528,9 @@ public class ObjectUtilities {
     }
     if (value instanceof LocalDateTime localDateTime) {
       return localDateTime.toLocalDate();
+    }
+    if (value instanceof OffsetDateTime offsetDateTime) {
+      return offsetDateTime.toLocalDate();
     }
     if (value instanceof ZonedDateTime zonedDateTime) {
       return zonedDateTime.toLocalDate();

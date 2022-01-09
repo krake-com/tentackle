@@ -21,6 +21,9 @@ package org.tentackle.misc;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.misc.time.AddShortcut;
+import org.tentackle.misc.time.MissingOffsetHandler;
+import org.tentackle.misc.time.MissingTimeHandler;
+import org.tentackle.misc.time.MissingZoneIdHandler;
 import org.tentackle.misc.time.NowShortcut;
 import org.tentackle.misc.time.NumberShortcut;
 import org.tentackle.misc.time.OffsetFilter;
@@ -43,6 +46,8 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -76,7 +81,7 @@ public class DateTimeUtilities {
    * @return the time
    */
   public static LocalTime parseLocalTime(String text) {
-    return getInstance().parse(LocalTime::from, LocalTime::truncatedTo, LocalTime::now,
+    return getInstance().parse(LocalTime.class, LocalTime::from, LocalTime::truncatedTo, LocalTime::now,
                                FormatHelper.getLocalTimeFormatter(), FormatHelper.getTimePattern(),
                                text);
   }
@@ -88,7 +93,7 @@ public class DateTimeUtilities {
    * @return the date
    */
   public static LocalDate parseLocalDate(String text) {
-    return getInstance().parse(LocalDate::from, null, LocalDate::now,
+    return getInstance().parse(LocalDate.class, LocalDate::from, null, LocalDate::now,
                                FormatHelper.getLocalDateFormatter(), FormatHelper.getDatePattern(),
                                text);
   }
@@ -100,7 +105,7 @@ public class DateTimeUtilities {
    * @return the timestamp
    */
   public static LocalDateTime parseLocalDateTime(String text) {
-    return getInstance().parse(LocalDateTime::from, LocalDateTime::truncatedTo, LocalDateTime::now,
+    return getInstance().parse(LocalDateTime.class, LocalDateTime::from, LocalDateTime::truncatedTo, LocalDateTime::now,
                                FormatHelper.getLocalDateTimeFormatter(), FormatHelper.getTimestampPattern(),
                                text);
   }
@@ -112,7 +117,7 @@ public class DateTimeUtilities {
    * @return the time with offset
    */
   public static OffsetTime parseOffsetTime(String text) {
-    return getInstance().parse(OffsetTime::from, OffsetTime::truncatedTo, OffsetTime::now,
+    return getInstance().parse(OffsetTime.class, OffsetTime::from, OffsetTime::truncatedTo, OffsetTime::now,
                                FormatHelper.getOffsetTimeFormatter(), FormatHelper.getTimePatternWithOffset(),
                                text);
   }
@@ -124,7 +129,7 @@ public class DateTimeUtilities {
    * @return the timestamp with offset
    */
   public static OffsetDateTime parseOffsetDateTime(String text) {
-    return getInstance().parse(OffsetDateTime::from, OffsetDateTime::truncatedTo, OffsetDateTime::now,
+    return getInstance().parse(OffsetDateTime.class, OffsetDateTime::from, OffsetDateTime::truncatedTo, OffsetDateTime::now,
                                FormatHelper.getOffsetDateTimeFormatter(), FormatHelper.getTimestampPatternWithOffset(),
                                text);
   }
@@ -136,7 +141,7 @@ public class DateTimeUtilities {
    * @return the timestamp with timezone
    */
   public static ZonedDateTime parseZonedDateTime(String text) {
-    return getInstance().parse(ZonedDateTime::from, ZonedDateTime::truncatedTo, ZonedDateTime::now,
+    return getInstance().parse(ZonedDateTime.class, ZonedDateTime::from, ZonedDateTime::truncatedTo, ZonedDateTime::now,
                                FormatHelper.getZonedDateTimeFormatter(), FormatHelper.getTimestampPatternWithTimeZone(),
                                text);
   }
@@ -149,7 +154,7 @@ public class DateTimeUtilities {
    * @return the time
    */
   public static LocalTime parseShortLocalTime(String text) {
-    return getInstance().parse(LocalTime::from, LocalTime::truncatedTo, LocalTime::now,
+    return getInstance().parse(LocalTime.class, LocalTime::from, LocalTime::truncatedTo, LocalTime::now,
                                FormatHelper.getShortLocalTimeFormatter(), FormatHelper.getShortTimePattern(),
                                text);
   }
@@ -161,7 +166,7 @@ public class DateTimeUtilities {
    * @return the date
    */
   public static LocalDate parseShortLocalDate(String text) {
-    return getInstance().parse(LocalDate::from, null, LocalDate::now,
+    return getInstance().parse(LocalDate.class, LocalDate::from, null, LocalDate::now,
                                FormatHelper.getShortLocalDateFormatter(), FormatHelper.getShortDatePattern(),
                                text);
   }
@@ -173,7 +178,7 @@ public class DateTimeUtilities {
    * @return the timestamp
    */
   public static LocalDateTime parseShortLocalDateTime(String text) {
-    return getInstance().parse(LocalDateTime::from, LocalDateTime::truncatedTo, LocalDateTime::now,
+    return getInstance().parse(LocalDateTime.class, LocalDateTime::from, LocalDateTime::truncatedTo, LocalDateTime::now,
                                FormatHelper.getShortLocalDateTimeFormatter(), FormatHelper.getShortTimestampPattern(),
                                text);
   }
@@ -185,7 +190,7 @@ public class DateTimeUtilities {
    * @return the time with offset
    */
   public static OffsetTime parseShortOffsetTime(String text) {
-    return getInstance().parse(OffsetTime::from, OffsetTime::truncatedTo, OffsetTime::now,
+    return getInstance().parse(OffsetTime.class, OffsetTime::from, OffsetTime::truncatedTo, OffsetTime::now,
                                FormatHelper.getShortOffsetTimeFormatter(), FormatHelper.getShortTimePatternWithOffset(),
                                text);
   }
@@ -197,7 +202,7 @@ public class DateTimeUtilities {
    * @return the timestamp with offset
    */
   public static OffsetDateTime parseShortOffsetDateTime(String text) {
-    return getInstance().parse(OffsetDateTime::from, OffsetDateTime::truncatedTo, OffsetDateTime::now,
+    return getInstance().parse(OffsetDateTime.class, OffsetDateTime::from, OffsetDateTime::truncatedTo, OffsetDateTime::now,
                                FormatHelper.getShortOffsetDateTimeFormatter(), FormatHelper.getShortTimestampPatternWithOffset(),
                                text);
   }
@@ -209,7 +214,7 @@ public class DateTimeUtilities {
    * @return the timestamp with timezone
    */
   public static ZonedDateTime parseShortZonedDateTime(String text) {
-    return getInstance().parse(ZonedDateTime::from, ZonedDateTime::truncatedTo, ZonedDateTime::now,
+    return getInstance().parse(ZonedDateTime.class, ZonedDateTime::from, ZonedDateTime::truncatedTo, ZonedDateTime::now,
                                FormatHelper.getShortZonedDateTimeFormatter(), FormatHelper.getShortTimestampPatternWithTimeZone(),
                                text);
   }
@@ -225,6 +230,11 @@ public class DateTimeUtilities {
                                                                               new NumberShortcut(),
                                                                               new OffsetShortcut(),
                                                                               new ZoneShortcut());
+
+  private static final List<SmartDateTimeParser.ErrorHandler> handlers = List.of(new MissingTimeHandler(),
+                                                                                 new MissingOffsetHandler(),
+                                                                                 new MissingZoneIdHandler());
+
 
   // Temporal classes are all final -> class.hash/equals is ok
   private static final Map<Class<? extends Temporal>, Supplier<Temporal>> NOW_MAP = Map.of(
@@ -257,6 +267,15 @@ public class DateTimeUtilities {
   }
 
   /**
+   * Gets the list of error handlers.
+   *
+   * @return the handlers
+   */
+  public List<SmartDateTimeParser.ErrorHandler> getHandlers() {
+    return handlers;
+  }
+
+  /**
    * Converts a string to a temporal value of given type.
    *
    * @param temporalQuery the formatter query
@@ -268,10 +287,14 @@ public class DateTimeUtilities {
    * @param <T> the type
    * @return the temporal value object
    */
-  public <T extends Temporal> T parse(TemporalQuery<T> temporalQuery, BiFunction<T, TemporalUnit, T> truncate, Supplier<T> currentValueSupplier,
-                                      DateTimeFormatter formatter, String pattern, String text) {
+  public <T extends Temporal> T parse(Class<T> clazz,
+                                      TemporalQuery<T> temporalQuery, BiFunction<T, TemporalUnit, T> truncate,
+                                      Supplier<T> currentValueSupplier,
+                                      DateTimeFormatter formatter, String pattern,
+                                      String text) {
 
-    return new SmartDateTimeParser<>(temporalQuery, truncate, formatter, pattern, getFilters(), getShortcuts()).parse(currentValueSupplier, text);
+    return new SmartDateTimeParser<>(clazz, temporalQuery, truncate, formatter, pattern,
+                                     getFilters(), getShortcuts(), getHandlers()).parse(currentValueSupplier, text);
   }
 
 
@@ -301,6 +324,23 @@ public class DateTimeUtilities {
   }
 
 
+  private List<String> zoneIds;
+
+  /**
+   * Gets the sorted list of zone ids.
+   *
+   * @return the zone id strings
+   */
+  public List<String> getZoneIds() {
+    if (zoneIds == null) {
+      List<String> zones = new ArrayList<>(ZoneId.getAvailableZoneIds());
+      Collections.sort(zones);
+      zoneIds = zones;
+    }
+    return zoneIds;
+  }
+
+
   /**
    * Creates a timezone from a string.<br>
    * Returns the default zone, if the string is null or empty.
@@ -318,7 +358,7 @@ public class DateTimeUtilities {
       catch (DateTimeException ex) {
         // by partial name
         text = text.toUpperCase();
-        for (String zoneId : ZoneId.getAvailableZoneIds()) {
+        for (String zoneId : getZoneIds()) {
           if (zoneId.toUpperCase().contains(text)) {
             return ZoneId.of(zoneId);
           }
@@ -342,15 +382,15 @@ public class DateTimeUtilities {
    *   Temporal now = DateTimeUtilities.getInstance().nowOf(temporal);
    * </pre>
    *
-   * @param temporal the temporal template instance
+   * @param temporalClass the temporal class
    * @param <T> the type
    * @return the current time of the template's type
    */
   @SuppressWarnings("unchecked")
-  public <T extends Temporal> T nowOf(T temporal) {
-    Supplier<Temporal> supplier = NOW_MAP.get(Objects.requireNonNull(temporal, "temporal").getClass());
+  public <T extends Temporal> T nowOf(Class<T> temporalClass) {
+    Supplier<Temporal> supplier = NOW_MAP.get(Objects.requireNonNull(temporalClass, "temporal"));
     if (supplier == null) {
-      throw new DateTimeException("unsupported Temporal " + temporal.getClass());
+      throw new DateTimeException("unsupported Temporal " + temporalClass);
     }
     return (T) supplier.get();
   }

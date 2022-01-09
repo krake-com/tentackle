@@ -297,12 +297,50 @@ public class DateTimeUtilitiesTest {
     zonedDateTime = DateTimeUtilities.parseZonedDateTime("+1d16h =york");    // tomorrow 16:00 local time converted to New York time
     assertEquals(zonedDateTime.getZone().getId(), "America/New_York");
 
-    // TODO
     zonedDateTime = DateTimeUtilities.parseZonedDateTime("05/30/2020 15:30:00 york");
     assertEquals(zonedDateTime.getZone().getId(), "America/New_York");
     zonedDateTime = DateTimeUtilities.parseZonedDateTime("=paris");
     assertEquals(zonedDateTime.getZone().getId(), "Europe/Paris");
   }
+
+  @Test
+  public void handlers() {
+    ZonedDateTime zonedDateTime = DateTimeUtilities.parseZonedDateTime("05/30/2020 15:30:00");
+    assertEquals(zonedDateTime.getZone(), ZonedDateTime.now().getZone());
+    zonedDateTime = DateTimeUtilities.parseZonedDateTime("05/30/2020 915");
+    assertEquals(zonedDateTime.getZone(), ZonedDateTime.now().getZone());
+    assertEquals(zonedDateTime.getHour(), 9);
+    assertEquals(zonedDateTime.getMinute(), 15);
+    zonedDateTime = DateTimeUtilities.parseZonedDateTime("05/30/2020 9:15:30");
+    assertEquals(zonedDateTime.getZone(), ZonedDateTime.now().getZone());
+    assertEquals(zonedDateTime.getHour(), 9);
+    assertEquals(zonedDateTime.getMinute(), 15);
+    assertEquals(zonedDateTime.getSecond(), 30);
+    zonedDateTime = DateTimeUtilities.parseZonedDateTime("05/30/2020 91530");
+    assertEquals(zonedDateTime.getZone(), ZonedDateTime.now().getZone());
+    assertEquals(zonedDateTime.getHour(), 9);
+    assertEquals(zonedDateTime.getMinute(), 15);
+    assertEquals(zonedDateTime.getSecond(), 30);
+    zonedDateTime = DateTimeUtilities.parseZonedDateTime("05/30/2020 9");
+    assertEquals(zonedDateTime.getZone(), ZonedDateTime.now().getZone());
+    assertEquals(zonedDateTime.getHour(), 9);
+    zonedDateTime = DateTimeUtilities.parseZonedDateTime("05/30/2020");
+    assertEquals(zonedDateTime.getZone(), ZonedDateTime.now().getZone());
+
+    OffsetDateTime offsetDateTime = DateTimeUtilities.parseShortOffsetDateTime("05/30/20 1530");
+    assertEquals(offsetDateTime.getOffset(), OffsetDateTime.now().getOffset());
+    assertEquals(offsetDateTime.getHour(), 15);
+    assertEquals(offsetDateTime.getMinute(), 30);
+    assertEquals(offsetDateTime.getSecond(), 0);
+
+    offsetDateTime = DateTimeUtilities.parseShortOffsetDateTime("05/30/20 1530 +2");
+    assertEquals(offsetDateTime.getOffset().getTotalSeconds(), 7200);
+    assertEquals(offsetDateTime.getHour(), 15);
+    assertEquals(offsetDateTime.getMinute(), 30);
+    assertEquals(offsetDateTime.getSecond(), 0);
+  }
+
+
 
   private void skipFlip() {
     LocalTime localTimeNow = LocalTime.now();

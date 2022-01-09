@@ -33,8 +33,10 @@ import java.time.temporal.Temporal;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
@@ -42,7 +44,7 @@ import java.util.function.Supplier;
 /**
  * Parser for {@link Temporal} date and time types with smart syntax support.
  * <p>
- * Parsing works in 3 steps:
+ * Parsing works in 4 steps:
  * <ol>
  *   <li>The input is filtered by a list of {@link TextFilter}s, one after another. Filters usually
  *   convert parts of the input or add missing data.</li>
@@ -50,6 +52,7 @@ import java.util.function.Supplier;
  *   according to the patterns found in the input string. Applied patterns are usually removed from the input string.</li>
  *   <li>If at least one shortcut was applied, the current value is returned. Otherwise the remaining input string is passed
  *   to the appropriate {@link DateTimeFormatter}.
+ *   <li>If parsing fails with an exception, optional exception handlers will be invoked to fix the input.</li>
  * </ol>
  *
  * A predefined list of {@link TextFilter}s and {@link Shortcut}s is already provided by the framework.
@@ -115,11 +118,30 @@ public class SmartDateTimeParser<T extends Temporal> {
 
   }
 
+  /**
+   * Parse exception handler.
+   */
+  public interface ErrorHandler {
 
+    /**
+     * Applies the handler to given text and modifies it for retry.
+     *
+     * @param parser the parser
+     * @param parseException the parse exception
+     * @param text the input text
+     * @return the updated text, null if handler does not apply
+     */
+    String apply(SmartDateTimeParser<? extends Temporal> parser, DateTimeParseException parseException, String text);
+
+  }
+
+
+  private final Class<T> type;
   private final BiFunction<T, TemporalUnit, T> truncate;
   private final DateTimeFormatter formatter;
   private final List<TextFilter> filters;
   private final List<Shortcut> shortcuts;
+  private final List<ErrorHandler> errorHandlers;
   private final TemporalQuery<T> temporalQuery;
 
   private final String pattern;
@@ -131,28 +153,42 @@ public class SmartDateTimeParser<T extends Temporal> {
   /**
    * Creates a parser.
    *
+   * @param type the temporal class
    * @param temporalQuery the formatter query, usually the method reference {@code ::from}
    * @param truncate optional truncate method, usually the method reference {@code ::truncatedTo}, null if unsupported by the temporal type
    * @param formatter the formatter
    * @param pattern the formatting pattern
    * @param filters list of filters, null or empty if none
    * @param shortcuts list of shortcut input methods, null or empty if none
+   * @param errorHandlers list of error handlers, null or empty if none
    */
-  public SmartDateTimeParser(TemporalQuery<T> temporalQuery, BiFunction<T, TemporalUnit, T> truncate,
+  public SmartDateTimeParser(Class<T> type,
+                             TemporalQuery<T> temporalQuery, BiFunction<T, TemporalUnit, T> truncate,
                              DateTimeFormatter formatter, String pattern,
-                             List<TextFilter> filters, List<Shortcut> shortcuts) {
+                             List<TextFilter> filters, List<Shortcut> shortcuts, List<ErrorHandler> errorHandlers) {
 
+    this.type = Objects.requireNonNull(type, "type");
     this.temporalQuery = Objects.requireNonNull(temporalQuery, "temporalQuery");
     this.truncate = truncate;
     this.formatter = Objects.requireNonNull(formatter, "formatter");
     this.pattern = Objects.requireNonNull(pattern, "pattern");
     this.filters = filters == null ? Collections.emptyList() : filters;
     this.shortcuts = shortcuts == null ? Collections.emptyList() : shortcuts;
+    this.errorHandlers = errorHandlers == null ? Collections.emptyList() : errorHandlers;
 
     withDate = FormatHelper.isFormattingDate(pattern);
     withTime = FormatHelper.isFormattingTime(pattern);
     withOffset = FormatHelper.isFormattingOffset(pattern);
     withTimeZone = FormatHelper.isFormattingTimeZone(pattern);
+  }
+
+  /**
+   * Gets the temporal class.
+   *
+   * @return the type
+   */
+  public Class<T> getType() {
+    return type;
   }
 
   /**
@@ -207,6 +243,15 @@ public class SmartDateTimeParser<T extends Temporal> {
    */
   public List<TextFilter> getFilters() {
     return filters;
+  }
+
+  /**
+   * Gets the list of error handler implementations.
+   *
+   * @return the list, empty if none, never null
+   */
+  public List<ErrorHandler> getErrorHandlers() {
+    return errorHandlers;
   }
 
   /**
@@ -273,7 +318,11 @@ public class SmartDateTimeParser<T extends Temporal> {
           if (textRange != null) {
             String part = token.substring(textRange.beginIndex, textRange.endIndex);
             token = (token.substring(0, textRange.beginIndex) + token.substring(textRange.endIndex)).trim();
-            temporalHolder.accept(shortcut.parse(this, currentValueSupplier.get(), part));
+            T currentValue = currentValueSupplier.get();
+            if (currentValue == null) {
+              currentValue = DateTimeUtilities.getInstance().nowOf(getType());
+            }
+            temporalHolder.accept(shortcut.parse(this, currentValue, part));
             currentValueSupplier = temporalHolder;
           }
         }
@@ -333,29 +382,49 @@ public class SmartDateTimeParser<T extends Temporal> {
 
       if (temporalHolder != currentValueSupplier) {
         // none of the shortcuts matched: parse with full pattern
-        try {
-          temporalHolder.accept(getFormatter().parse(text, getTemporalQuery()));
-        }
-        catch (DateTimeParseException px) {
-          if (px.getErrorIndex() == text.length()) {    // something is just missing?
-            if (isWithOffset()) {
-              temporalHolder.accept(getFormatter().parse(text + " " + DateTimeUtilities.getInstance().parseOffset(null), getTemporalQuery()));
-            }
-            else if (isWithTimeZone()) {
-              temporalHolder.accept(getFormatter().parse(text + " " + DateTimeUtilities.getInstance().parseZoneId(null), getTemporalQuery()));
-            }
-            else {
-              throw px;
-            }
+        int retryCount = 0;
+        Set<ErrorHandler> appliedHandlers = new HashSet<>();
+        for (;;) {   // retry once, if handlers apply
+          try {
+            temporalHolder.accept(getFormatter().parse(text, getTemporalQuery()));
+            break;
           }
-          else {
-            throw px;
+          catch (DateTimeParseException px) {
+            if (retryCount++ == 0) {
+              String fixedText = null;
+              for (ErrorHandler handler : getErrorHandlers()) {
+                fixedText = handler.apply(this, px, text);
+                if (fixedText != null) {
+                  if (appliedHandlers.add(handler)) {
+                    break;
+                  }
+                  fixedText = null;   // handler already applied
+                }
+              }
+              if (fixedText != null) {
+                text = fixedText;
+                retryCount = 0;
+                continue;
+              }
+            }
+            throw px;   // no handler applied or exception remains after one retry
           }
         }
       }
     }
 
     return temporalHolder.get();
+  }
+
+
+  /**
+   * Formats the given temporal.
+   *
+   * @param value the temporal
+   * @return the formatted string, null if value is null
+   */
+  public String format(T value) {
+    return value == null ? null : getFormatter().format(value);
   }
 
 }

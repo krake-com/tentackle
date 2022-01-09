@@ -20,37 +20,31 @@ package org.tentackle.fx.translate;
 
 import org.tentackle.fx.FxTextComponent;
 import org.tentackle.fx.ValueTranslatorService;
+import org.tentackle.misc.FormatHelper;
+import org.tentackle.misc.time.SmartDateTimeParser;
 
 import java.time.LocalTime;
-import java.util.Date;
-import java.util.function.Function;
 
 /**
- * LocalTime translator.
- *
- * @author harald
+ * Translator for {@link LocalTime}.
  */
 @ValueTranslatorService(modelClass = LocalTime.class, viewClass = String.class)
-public class LocalTimeStringTranslator extends ValueStringTranslator<LocalTime> {
+public class LocalTimeStringTranslator extends TemporalStringTranslator<LocalTime> {
 
-  private final DateStringTranslator translator;
-
+  /**
+   * Creates a translator.
+   *
+   * @param component the text component
+   */
   public LocalTimeStringTranslator(FxTextComponent component) {
     super(component);
-    translator = new DateStringTranslator(component);
   }
 
   @Override
-  public Function<LocalTime, String> toViewFunction() {
-    return v -> translator.format(v == null ? null : java.sql.Time.valueOf(v));
-  }
-
-  @Override
-  public Function<String, LocalTime> toModelFunction() {
-    return s -> {
-      Date date = translator.parse(s);
-      return date == null ? null : new java.sql.Time(date.getTime()).toLocalTime();
-    };
+  protected SmartDateTimeParser<LocalTime> createParser() {
+    return new SmartDateTimeParser<>(LocalTime.class, LocalTime::from, LocalTime::truncatedTo,
+                                     FormatHelper.getLocalTimeFormatter(), FormatHelper.getTimePattern(),
+                                     getFilters(), getShortcuts(), getHandlers());
   }
 
 }

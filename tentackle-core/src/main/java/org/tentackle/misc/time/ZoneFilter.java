@@ -42,9 +42,11 @@ public class ZoneFilter implements SmartDateTimeParser.TextFilter {
       Matcher matcher = pattern.matcher(text);
       if (matcher.find() && matcher.groupCount() == 1) {
         String zone = matcher.group(1);
-        int zoneLen = zone.length();   // counted from the of the string (at least 1 char)
-        ZoneId zoneId = DateTimeUtilities.getInstance().parseZoneId(zone);
-        text = text.substring(0, text.length() - zoneLen) + zoneId.getId();
+        if (Character.isLetter(zone.charAt(0))) {
+          int zoneLen = zone.length();
+          ZoneId zoneId = DateTimeUtilities.getInstance().parseZoneId(zone);
+          text = text.substring(0, text.length() - zoneLen) + zoneId.getId();
+        }
       }
     }
     return text;
