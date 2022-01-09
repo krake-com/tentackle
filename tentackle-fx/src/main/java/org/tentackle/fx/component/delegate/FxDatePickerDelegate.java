@@ -24,26 +24,18 @@ import javafx.scene.Node;
 import javafx.scene.control.TextFormatter;
 import javafx.util.StringConverter;
 
-import org.tentackle.common.DateHelper;
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.FxTextComponentDelegate;
 import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.component.FxDatePicker;
+import org.tentackle.misc.ObjectUtilities;
 
 import java.sql.Time;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.ZoneId;
-import java.util.Calendar;
 import java.util.Date;
-
-import static java.util.Calendar.HOUR_OF_DAY;
-import static java.util.Calendar.MILLISECOND;
-import static java.util.Calendar.MINUTE;
-import static java.util.Calendar.SECOND;
 
 
 /**
@@ -148,36 +140,15 @@ public class FxDatePickerDelegate extends FxTextComponentDelegate {
    */
   private class DatePickerConverter extends StringConverter<LocalDate> {
 
-    private Date lastDate;
+    private LocalDate lastDate;
 
     @Override
     @SuppressWarnings({ "unchecked", "rawtypes" })
 		public String toString(LocalDate object) {
       if (component.isChangeable()) {
         if (object != null) {
-          // merge localDate into lastDate
-          Calendar cal = DateHelper.today();
-          if (lastDate != null) {
-            cal.setTime(lastDate);
-          }
-          else {
-            cal.set(HOUR_OF_DAY, 0);
-            cal.set(MINUTE, 0);
-            cal.set(SECOND, 0);
-            cal.set(MILLISECOND, 0);
-          }
-          cal.set(object.getYear(), object.getMonthValue() - 1, object.getDayOfMonth());
           ValueTranslator translator = getValueTranslator();
-          Object modelValue;
-          if (LocalDate.class.isAssignableFrom(component.getType())) {
-            modelValue = new java.sql.Date(cal.getTimeInMillis()).toLocalDate();
-          }
-          else if (LocalDateTime.class.isAssignableFrom(component.getType())) {
-            modelValue = new java.sql.Timestamp(cal.getTimeInMillis()).toLocalDateTime();
-          }
-          else {
-            modelValue = cal.getTime();
-          }
+          Object modelValue = ObjectUtilities.getInstance().convert(component.getType(), object);
           return (String) translator.toView(modelValue);
         }
         else {
@@ -195,31 +166,10 @@ public class FxDatePickerDelegate extends FxTextComponentDelegate {
       if (getError() == null) {
         ValueTranslator translator = getValueTranslator();
         Object modelValue = translator.toModel(value);
-        if (modelValue instanceof Date) {
-          lastDate = (Date) modelValue;
-        }
-        else if (modelValue instanceof LocalDate) {
-          lastDate = java.sql.Date.valueOf((LocalDate) modelValue);
-        }
-        else if (modelValue instanceof LocalDateTime) {
-          lastDate = java.sql.Timestamp.valueOf((LocalDateTime) modelValue);
-        }
-        else {
-          lastDate = null;
-        }
+        lastDate = ObjectUtilities.getInstance().convert(LocalDate.class, modelValue);
       }
-			return fromDate(lastDate);
+			return lastDate;
 		}
-
-    private LocalDate fromDate(Date date) {
-      LocalDate localDate = null;
-      if (date != null) {
-        Instant instant = Instant.ofEpochMilli(date.getTime());
-        LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
-        localDate = localDateTime.toLocalDate();
-      }
-      return localDate;
-    }
 	}
 
 }

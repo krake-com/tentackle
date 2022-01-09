@@ -42,7 +42,7 @@ public class NowShortcut implements SmartDateTimeParser.Shortcut {
 
   @Override
   public <V extends Temporal> V parse(SmartDateTimeParser<V> parser, V currentValue, String part) {
-    return DateTimeUtilities.getInstance().nowOf(currentValue);
+    return DateTimeUtilities.getInstance().nowOf(parser.getType());
   }
 
 }

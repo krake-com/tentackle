@@ -42,8 +42,8 @@ import java.util.function.Function;
 /**
  * Extended DatePicker.<br>
  * Tentackle's FxDatePicker is a TextComponent and maps to Date or Timestamp.<br>
- * It uses the DateStringTranslator to map to/from the model. DatePicker's LocalDate
- * is only used internally.
+ * It uses the ValueTranslator (TemporalStringTranslator) to map to/from the model.
+ * DatePicker's LocalDate is only used internally.
  *
  * @author harald
  */
