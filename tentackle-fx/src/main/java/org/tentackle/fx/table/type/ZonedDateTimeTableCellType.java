@@ -19,6 +19,10 @@
 
 package org.tentackle.fx.table.type;
 
+import javafx.geometry.Pos;
+
+import org.tentackle.fx.table.FxTableCell;
+import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
 import org.tentackle.misc.FormatHelper;
 
@@ -32,6 +36,20 @@ import java.time.format.DateTimeFormatter;
  */
 @TableCellTypeService(ZonedDateTime.class)
 public class ZonedDateTimeTableCellType extends AbstractDateTimeTableCellType<ZonedDateTime> {
+
+  @Override
+  public void updateItem(FxTableCell<?, ZonedDateTime> tableCell, ZonedDateTime item) {
+    tableCell.setGraphic(null);
+    tableCell.setText(formatItem(getFormatter(tableCell.getColumnConfiguration()), item));
+    updateAlignment(tableCell, Pos.BASELINE_LEFT);
+  }
+
+  @Override
+  public void updateItem(FxTreeTableCell<?, ZonedDateTime> treeTableCell, ZonedDateTime item) {
+    treeTableCell.setGraphic(null);
+    treeTableCell.setText(formatItem(getFormatter(treeTableCell.getColumnConfiguration()), item));
+    updateAlignment(treeTableCell, Pos.BASELINE_LEFT);
+  }
 
   @Override
   protected String formatItem(DateTimeFormatter fmt, ZonedDateTime item) {
