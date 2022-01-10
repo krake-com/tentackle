@@ -21,6 +21,7 @@ package org.tentackle.fx.translate;
 import javafx.scene.Node;
 
 import org.tentackle.bind.BindingException;
+import org.tentackle.fx.FxFxBundle;
 import org.tentackle.fx.FxTextComponent;
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.misc.DateTimeUtilities;
@@ -28,6 +29,9 @@ import org.tentackle.misc.ObjectUtilities;
 import org.tentackle.misc.time.NumberShortcut;
 import org.tentackle.misc.time.SmartDateTimeParser;
 
+import java.text.MessageFormat;
+import java.time.DateTimeException;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.Temporal;
 import java.util.ArrayList;
 import java.util.List;
@@ -116,10 +120,10 @@ public abstract class TemporalStringTranslator<T extends Temporal> extends Value
   }
 
 
-  private List<SmartDateTimeParser.TextFilter> filters;       // the input filters
-  private List<SmartDateTimeParser.Shortcut> shortcuts;       // the input shortcuts
-  private T lastValue;                                        // last processed date or time
-  private SmartDateTimeParser<T> parser;                      // the smart parser
+  private List<SmartDateTimeParser.Shortcut> shortcuts;         // the input shortcuts
+  private NumberShortcut.WindowProvider defaultWindowProvider;  // the default provider, null if none
+  private T lastValue;                                          // last processed date or time
+  private SmartDateTimeParser<T> parser;                        // the smart parser
 
   /**
    * Creates a translator.
@@ -129,6 +133,18 @@ public abstract class TemporalStringTranslator<T extends Temporal> extends Value
   public TemporalStringTranslator(FxTextComponent component) {
     super(component);
   }
+
+
+  @Override
+  public Function<T, String> toViewFunction() {
+    return this::format;
+  }
+
+  @Override
+  public Function<String, T> toModelFunction() {
+    return this::parse;
+  }
+
 
 
   /**
@@ -153,7 +169,7 @@ public abstract class TemporalStringTranslator<T extends Temporal> extends Value
    * @return the default (50 years)
    */
   protected int getDefaultYearWindow() {
-    return 50;
+    return defaultWindowProvider == null ? 50 : defaultWindowProvider.getYearWindow();
   }
 
 
@@ -169,7 +185,7 @@ public abstract class TemporalStringTranslator<T extends Temporal> extends Value
    * @return the default (-1 == disabled)
    */
   protected int getDefaultMonthWindow() {
-    return -1;
+    return defaultWindowProvider == null ? -1 : defaultWindowProvider.getMonthWindow();
   }
 
   @Override
@@ -184,7 +200,7 @@ public abstract class TemporalStringTranslator<T extends Temporal> extends Value
    * @return the default (-1 == disabled)
    */
   protected int getDefaultDayWindow() {
-    return -1;
+    return defaultWindowProvider == null ? -1 : defaultWindowProvider.getDayWindow();
   }
 
 
@@ -218,8 +234,14 @@ public abstract class TemporalStringTranslator<T extends Temporal> extends Value
   public List<SmartDateTimeParser.Shortcut> getShortcuts() {
     if (shortcuts == null) {
       List<SmartDateTimeParser.Shortcut> scList = new ArrayList<>();
-      scList.add(this);    // @ shortcut comes first
-      scList.addAll(DateTimeUtilities.getInstance().getShortcuts());
+      scList.add(this);    // @-shortcut comes first
+      for (SmartDateTimeParser.Shortcut shortcut : DateTimeUtilities.getInstance().getShortcuts()) {
+        if (shortcut instanceof NumberShortcut) {
+          defaultWindowProvider = ((NumberShortcut) shortcut).getWindowProvider();  // remember old provider, if any
+          shortcut = new NumberShortcut(this);                        // replace with TemporalStringTranslator
+        }
+        scList.add(shortcut);
+      }
       shortcuts = scList;
     }
     return shortcuts;
@@ -240,14 +262,21 @@ public abstract class TemporalStringTranslator<T extends Temporal> extends Value
    * @return the list of filters
    */
   public List<SmartDateTimeParser.TextFilter> getFilters() {
-    if (filters == null) {
-      filters = DateTimeUtilities.getInstance().getFilters();
-    }
-    return filters;
+    return DateTimeUtilities.getInstance().getFilters();
   }
 
+  /**
+   * Creates the parser instance according to the concrete data type.
+   *
+   * @return the parser
+   */
   protected abstract SmartDateTimeParser<T> createParser();
 
+  /**
+   * Gets the parser instance.
+   *
+   * @return the parser
+   */
   protected SmartDateTimeParser<T> getParser() {
     if (parser == null) {
       parser = createParser();
@@ -266,22 +295,50 @@ public abstract class TemporalStringTranslator<T extends Temporal> extends Value
     return getParser().format(value);
   }
 
+  /**
+   * Gets the last formatted value.
+   *
+   * @return the last date- or time formatted
+   */
   protected T getLastValue() {
     return lastValue;
   }
 
+  /**
+   * Parses the input.
+   *
+   * @param s the input string
+   * @return the model value
+   */
   protected T parse(String s) {
-    return getParser().parse(this::getLastValue, s);
-  }
-
-  @Override
-  public Function<T, String> toViewFunction() {
-    return this::format;
-  }
-
-  @Override
-  public Function<String, T> toModelFunction() {
-    return this::parse;
+    try {
+      return getParser().parse(this::getLastValue, s);
+    }
+    catch (DateTimeException dtx) {
+      String text;
+      if (dtx instanceof DateTimeParseException px) {
+        getComponent().setErrorOffset(px.getErrorIndex());
+        text = px.getParsedString();
+      }
+      else {
+        text = s;
+      }
+      String msg;
+      if (parser.isWithDate()) {
+        if (parser.isWithTime()) {
+          msg = FxFxBundle.getString("INVALID TIMESTAMP: {0}");
+        }
+        else {
+          msg = FxFxBundle.getString("INVALID DATE: {0}");
+        }
+      }
+      else {
+        msg = FxFxBundle.getString("INVALID TIME: {0}");
+      }
+      getComponent().setError(MessageFormat.format(msg, text));
+      getComponent().setErrorTemporary(true);
+      return null;
+    }
   }
 
 }

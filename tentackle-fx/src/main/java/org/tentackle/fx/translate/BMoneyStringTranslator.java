@@ -97,6 +97,7 @@ public class BMoneyStringTranslator extends FractionNumberStringTranslator<BMone
           if (value.precision() > Constants.DMONEY_DIGITS) {
             getComponent().setError(MessageFormat.format(
                     FxFxBundle.getString("MONEY VALUE MUST NOT EXCEED {0} DIGITS"), Constants.DMONEY_DIGITS));
+            getComponent().setErrorTemporary(true);
           }
           else {
             money = new DMoney(value);
@@ -106,6 +107,7 @@ public class BMoneyStringTranslator extends FractionNumberStringTranslator<BMone
           if (value.precision() > Constants.BMONEY_DIGITS) {
             getComponent().setError(MessageFormat.format(
                     FxFxBundle.getString("MONEY VALUE MUST NOT EXCEED {0} DIGITS"), Constants.BMONEY_DIGITS));
+            getComponent().setErrorTemporary(true);
           }
           else {
             money = new BMoney(value);
@@ -118,6 +120,7 @@ public class BMoneyStringTranslator extends FractionNumberStringTranslator<BMone
         getComponent().setErrorOffset(e.getErrorOffset());
         // ParseExceptions are not localized, unfortunately
         getComponent().setError(MessageFormat.format(FxFxBundle.getString("INVALID MONEY VALUE: {0}"), str));
+        getComponent().setErrorTemporary(true);
       }
     }
     return null;
