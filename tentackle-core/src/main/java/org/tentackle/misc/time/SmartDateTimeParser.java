@@ -301,13 +301,14 @@ public class SmartDateTimeParser<T extends Temporal> {
   @SuppressWarnings("unchecked")
   public T parse(Supplier<T> currentValueSupplier, String text) {
     Objects.requireNonNull(currentValueSupplier, "currentValueSupplier");
-
-    for (TextFilter filter : getFilters()) {
-      text = filter.apply(this, text);
-    }
-
     Holder<T> temporalHolder = new Holder<>();
+
     if (text != null) {
+      text = text.trim();
+      for (TextFilter filter : getFilters()) {
+        text = filter.apply(this, text);
+      }
+
       StringTokenizer stok = new StringTokenizer(text);
       if (stok.hasMoreTokens()) {
         String part1;

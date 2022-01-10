@@ -105,6 +105,15 @@ public class NumberShortcut implements SmartDateTimeParser.Shortcut {
   }
 
   /**
+   * Gets the window provider.
+   *
+   * @return the provider, null if none
+   */
+  public WindowProvider getWindowProvider() {
+    return windowProvider;
+  }
+
+  /**
    * Gets tumber of years after the current year to automatically determine the century.<br>
    * If the {@link WindowProvider} is missing, the value 50 is used. Supposed we're in 2020 and the user enters 99,
    * then the year would be expanded to 1999 and 30 would be expanded to 2030, accordingly.<br>

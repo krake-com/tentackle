@@ -21,6 +21,7 @@ package org.tentackle.misc;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.misc.time.AddShortcut;
+import org.tentackle.misc.time.DateFilter;
 import org.tentackle.misc.time.MissingOffsetHandler;
 import org.tentackle.misc.time.MissingTimeHandler;
 import org.tentackle.misc.time.MissingZoneIdHandler;
@@ -221,21 +222,6 @@ public class DateTimeUtilities {
 
 
 
-
-  private static final List<SmartDateTimeParser.TextFilter> filters = List.of(new OffsetFilter(),
-                                                                              new ZoneFilter());
-
-  private static final List<SmartDateTimeParser.Shortcut> shortcuts = List.of(new NowShortcut(),
-                                                                              new AddShortcut(),
-                                                                              new NumberShortcut(),
-                                                                              new OffsetShortcut(),
-                                                                              new ZoneShortcut());
-
-  private static final List<SmartDateTimeParser.ErrorHandler> handlers = List.of(new MissingTimeHandler(),
-                                                                                 new MissingOffsetHandler(),
-                                                                                 new MissingZoneIdHandler());
-
-
   // Temporal classes are all final -> class.hash/equals is ok
   private static final Map<Class<? extends Temporal>, Supplier<Temporal>> NOW_MAP = Map.of(
       OffsetTime.class, OffsetTime::now,
@@ -246,6 +232,20 @@ public class DateTimeUtilities {
       ZonedDateTime.class, ZonedDateTime::now,
       Instant.class, Instant::now);
 
+
+  private final List<SmartDateTimeParser.TextFilter> filters = List.of(new DateFilter(),
+                                                                       new OffsetFilter(),
+                                                                       new ZoneFilter());
+
+  private final List<SmartDateTimeParser.Shortcut> shortcuts = List.of(new NowShortcut(),
+                                                                       new AddShortcut(),
+                                                                       new NumberShortcut(),
+                                                                       new OffsetShortcut(),
+                                                                       new ZoneShortcut());
+
+  private final List<SmartDateTimeParser.ErrorHandler> handlers = List.of(new MissingTimeHandler(),
+                                                                          new MissingOffsetHandler(),
+                                                                          new MissingZoneIdHandler());
 
 
   /**

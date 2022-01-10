@@ -35,7 +35,7 @@ public class OffsetFilter implements SmartDateTimeParser.TextFilter {
 
   @Override
   public String apply(SmartDateTimeParser<?> parser, String text) {
-    if (parser.isWithOffset() && text != null) {
+    if (parser.isWithOffset()) {
       Matcher matcher = pattern.matcher(text);
       if (matcher.find() && matcher.groupCount() == 1) {
         String offset = matcher.group(1);

@@ -340,6 +340,28 @@ public class DateTimeUtilitiesTest {
     assertEquals(offsetDateTime.getSecond(), 0);
   }
 
+  @Test
+  public void filter() {
+    LocalDateTime localDateTime = DateTimeUtilities.parseLocalDateTime("05/30/21 15:45");
+    assertEquals(localDateTime.getYear(), 2021);
+    assertEquals(localDateTime.getMonthValue(), 5);
+    assertEquals(localDateTime.getDayOfMonth(), 30);
+    // notice that it is not possible to enter more than one shortcut in a row
+    // thus, the above will be interpreted as 05/30/2021 00:00:00 and the user must change the time in a second step
+    assertEquals(localDateTime.getHour(), 0);
+
+    localDateTime = DateTimeUtilities.parseLocalDateTime("5/30/");
+    assertEquals(localDateTime.getMonthValue(), 5);
+    assertEquals(localDateTime.getDayOfMonth(), 30);
+
+    localDateTime = DateTimeUtilities.parseLocalDateTime("5/30");
+    assertEquals(localDateTime.getMonthValue(), 5);
+    assertEquals(localDateTime.getDayOfMonth(), 30);
+
+    localDateTime = DateTimeUtilities.parseLocalDateTime("1/8");
+    assertEquals(localDateTime.getMonthValue(), 1);
+    assertEquals(localDateTime.getDayOfMonth(), 8);
+  }
 
 
   private void skipFlip() {

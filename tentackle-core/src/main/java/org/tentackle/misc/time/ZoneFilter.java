@@ -38,7 +38,7 @@ public class ZoneFilter implements SmartDateTimeParser.TextFilter {
 
   @Override
   public String apply(SmartDateTimeParser<?> parser, String text) {
-    if (parser.isWithTimeZone() && text != null) {
+    if (parser.isWithTimeZone()) {
       Matcher matcher = pattern.matcher(text);
       if (matcher.find() && matcher.groupCount() == 1) {
         String zone = matcher.group(1);
