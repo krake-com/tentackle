@@ -620,6 +620,16 @@ public class Db implements Session, Cloneable {
 
 
   /**
+   * Asserts that a pooled session is requested from the pool (in use).
+   */
+  public void assertRequestedIfPooled() {
+    if (isPooled() && getPoolId() == 0) {
+      throw new PersistenceException(this, "illegal attempt to use a pooled session which resides in the pool (not requested or already returned)");
+    }
+  }
+
+
+  /**
    * Asserts that the database is open.
    */
   public void assertOpen() {
@@ -2230,11 +2240,9 @@ public class Db implements Session, Cloneable {
   void attach() {
     assertOpen();
     assertOwnerThread();
+    assertRequestedIfPooled();
     if (conMgr == null) {
       throw new PersistenceException(this, "no connection manager");
-    }
-    if (isPooled() && getPoolId() == 0) {
-      throw new PersistenceException(this, "illegal attempt to attach a pooled session which is not in use");
     }
     conMgr.attach(this);
   }
@@ -2717,7 +2725,8 @@ public class Db implements Session, Cloneable {
    */
   public RemoteDelegate getRemoteDelegate (int delegateId)  {
 
-    assertRemote();        // only allowed on remote connections!
+    assertRemote();               // only allowed on remote connections!
+    assertRequestedIfPooled();    // same as in attach(), but for remote session pools
 
     delegateId--; // starting from 0
 
