@@ -984,7 +984,7 @@ public class Db implements Session, Cloneable {
    */
   public void assertRequestedIfPooled() {
     if (isPooled() && getPoolId() == 0) {
-      throw new PersistenceException(this, "illegal attempt to use a pooled session which resides in the pool (not requested or already returned)");
+      throw new PersistenceException(this, "illegal attempt to use a pooled session which was already returned to the pool");
     }
   }
 
