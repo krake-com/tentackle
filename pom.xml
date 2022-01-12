@@ -90,8 +90,8 @@
     <postgresql.version>42.3.1</postgresql.version>
     <testng.version>7.4.0</testng.version>
     <slf4j.version>1.7.32</slf4j.version>
-    <logback.version>1.2.9</logback.version>
-    <log4j2.version>2.17.0</log4j2.version>
+    <logback.version>1.2.10</logback.version>
+    <log4j2.version>2.17.1</log4j2.version>
 
     <maven.archetype.plugin.version>3.2.0</maven.archetype.plugin.version>
     <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
@@ -279,7 +279,7 @@
       <dependency>
         <groupId>org.apache.maven.plugin-tools</groupId>
         <artifactId>maven-plugin-annotations</artifactId>
-        <version>3.6.1</version>
+        <version>3.6.2</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven.shared</groupId>
