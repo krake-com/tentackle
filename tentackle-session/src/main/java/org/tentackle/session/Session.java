@@ -24,6 +24,7 @@ import org.tentackle.misc.TrackedList;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.function.Consumer;
 
 
 interface SessionThreadLocalHolder {
@@ -530,5 +531,18 @@ public interface Session extends Comparable<Session>, AutoCloseable {
    * @return the property value, null if no such property
    */
   <T extends Serializable> T getProperty(String key);
+
+  /**
+   * Registers a post commit.<br>
+   * Post commits are invoked <em>after</em> the successful physical commit of a transaction.
+   * They must be registered from within a transactional method, i.e. the transaction must be running.<br>
+   * They are executed in reverse order of their registration, which is the expected behavior for
+   * nested transactions.<br>
+   * Post commits are intended for non-transactional purposes, such as firing events. They must not be used to
+   * directly or indirectly invoke other transactional methods that in turn register post commits.
+   *
+   * @param postCommit the post commit
+   */
+  void postCommit(Consumer<Session> postCommit);
 
 }

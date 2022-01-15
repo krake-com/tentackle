@@ -71,9 +71,11 @@ import java.rmi.server.RMIClientSocketFactory;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Savepoint;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -543,6 +545,8 @@ public class Db implements Session, Cloneable {
   private boolean logModificationDeferred;                    // true if log to memory rather than dbms
   private List<ModificationLog> modificationLogList;          // in-memory modification-log for current transaction
   private DbTransaction transaction;                          // the running transaction
+  private Deque<Consumer<Session>> postCommits;               // post commits
+  private boolean postCommitsRunning;                         // flag to inhibit registering post commits while running them
   private int immediatelyRolledBack;                          // txLevel > 0 if a transaction has been rolled back by rollbackImmediately (only for local Db)
   private volatile boolean alive;                             // true = connection is still in use, false = connection has timed out
   private long keepAliveInterval;                             // the auto keep alive interval in ms, 0 = no keep alive
@@ -1829,6 +1833,44 @@ public class Db implements Session, Cloneable {
   }
 
 
+  @Override
+  public void postCommit(Consumer<Session> postCommit) {
+    if (isTxRunning()) {
+      if (postCommitsRunning) {
+        throw new PersistenceException(this, "post-commits cannot be registered from within another post-commit");
+      }
+      if (postCommits == null) {
+        postCommits = new ArrayDeque<>();
+      }
+      postCommits.push(postCommit);
+    }
+    else {
+      throw new PersistenceException(this, "post-commits can only be registered from within a running transaction");
+    }
+  }
+
+
+  /**
+   * Runs the post commits in reverse order of registration.<br>
+   * Post commits are registered for the session, not the transaction,
+   * i.e. they are not transferred via RMI to the middle tier like {@link CommitTxRunnable}s or {@link RollbackTxRunnable}s.
+   */
+  protected void runPostCommits() {
+    try {
+      postCommitsRunning = true;
+      if (postCommits != null) {
+        Iterator<Consumer<Session>> iterator = postCommits.iterator();
+        while (iterator.hasNext()) {
+          iterator.next().accept(this);
+        }
+        postCommits = null;
+      }
+    }
+    finally {
+      postCommitsRunning = false;
+    }
+  }
+
 
   /**
    * Registers a {@link CommitTxRunnable} to be invoked just before
@@ -1984,6 +2026,7 @@ public class Db implements Session, Cloneable {
           committed = resources.rdel.commit(txVoucher);
           if (committed) {
             autoCommit = true;   // now outside tx again
+            runPostCommits();
           }
           else {
             throw new PersistenceException(this, "no server transaction running");
@@ -2019,6 +2062,7 @@ public class Db implements Session, Cloneable {
           modificationLogList = null;
           committed = true;
           DbUtilities.getInstance().notifyCommit(this, txNo);
+          runPostCommits();
         }
         else  {
           throw new PersistenceException(this, "transaction ended unexpectedly before commit, valid voucher " + txVoucher);
@@ -2070,6 +2114,7 @@ public class Db implements Session, Cloneable {
           rolledBack = resources.rdel.rollback(txVoucher, withLog);
           if (rolledBack) {
             autoCommit = true;   // now outside tx again
+            postCommits = null;
           }
           else {
             throw new PersistenceException(this, "no server transaction running");
@@ -2122,6 +2167,7 @@ public class Db implements Session, Cloneable {
             logModificationTxId = 0;
             long txNo = getTxNumber();
             transaction = null;
+            postCommits = null;
             rolledBack = true;
             DbUtilities.getInstance().notifyRollback(this, txNo);
           }
@@ -2174,6 +2220,7 @@ public class Db implements Session, Cloneable {
           throw new PersistenceException(this, transaction + " not rolled back despite valid voucher");
         }
         transaction = null;
+        postCommits = null;
         // remember the txLevel for pending rollback()s, if any will arrive from the application
         immediatelyRolledBack = currentTxLevel;
       }
@@ -2748,6 +2795,7 @@ public class Db implements Session, Cloneable {
       transaction = null;
     }
 
+    postCommits = null;
     ownerThread = null;
 
     if (sessionInfo != null && !sessionInfo.isImmutable()) {
