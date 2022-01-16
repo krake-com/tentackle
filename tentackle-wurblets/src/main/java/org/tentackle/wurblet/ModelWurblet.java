@@ -752,16 +752,18 @@ public class ModelWurblet extends AbstractJavaWurblet {
     }
 
     if (entity == null && !missingModelOk) {
-      Throwable delayedModelException = null;
+      Throwable delayedException = null;
       if (model instanceof TentackleWurbletsModel) {
         WurbelException wex = ((TentackleWurbletsModel) model).getLoadingException();
         if (wex != null) {
-          delayedModelException = wex.getCause();
+          delayedException = wex.getCause();
         }
       }
-      throw new WurbelTerminationException("no such entity '" + getModelName() + "' in model " + modelDir, delayedModelException);
+      if (delayedException instanceof ModelException) {
+        throw new WurbelTerminationException(delayedException.getMessage(), delayedException);
+      }
+      throw new WurbelTerminationException("no such entity '" + getModelName() + "' in model " + modelDir, delayedException);
     }
-
 
     if (entity != null) {
       remote = entity.getOptions().isRemote();
