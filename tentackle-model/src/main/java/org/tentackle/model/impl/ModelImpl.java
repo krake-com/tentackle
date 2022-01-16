@@ -130,8 +130,11 @@ public class ModelImpl implements Model {
   @Override
   public synchronized void loadModel(String modelDir, ModelDefaults defaults, EntityAliases aliases) throws ModelException {
 
+    boolean modelChanged = false;
+
     ModelDirectory dir = modelDirs.get(modelDir);
     if (dir == null || dir.hasChanged()) {
+      modelChanged = true;
       dir = createModelDirectory(modelDir, defaults, aliases);
       modelDirs.put(modelDir, dir);
       for (String filePath : dir.getFilePaths()) {
@@ -182,9 +185,11 @@ public class ModelImpl implements Model {
       entity.validate();  // validate again
     }
 
-    // run the application-specific validators
-    for (CustomModelValidator validator: customModelValidators) {
-      validator.validate(this);
+    if (modelChanged) {
+      // run the application-specific validators
+      for (CustomModelValidator validator : customModelValidators) {
+        validator.validate(this);
+      }
     }
   }
 
