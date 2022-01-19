@@ -24,7 +24,7 @@ import org.tentackle.dbms.Db;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.Holder;
 import org.tentackle.pdo.DomainContext;
-import org.tentackle.pdo.DomainException;
+import org.tentackle.pdo.LockException;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.persist.AbstractPersistentObject;
@@ -274,8 +274,7 @@ public class DefaultLockManager implements LockManager {
             }
             else if (!pdo.getDomainContext().isWithinContext(lock.contextName)) {
               // lock is neither unnamed nor a valid name within the pdo's context
-              throw new DomainException(pdo, "already locked in context '" + lock.contextName +
-                                             "' which is not within " + pdo.getDomainContext().toDiagnosticString());
+              throw new LockException(db, lock.contextName);
             }
             DbTokenLock dbTokenLock = lock.tokenLock;
             if (locked) {
@@ -311,8 +310,8 @@ public class DefaultLockManager implements LockManager {
           }
         }
       }
-      catch (DomainException dx) {
-        throw dx;   // already locked for same user, but in wrong context (see above)
+      catch (LockException lx) {
+        throw lx;   // already locked for same user, but in wrong context (see above)
       }
       catch (RuntimeException rx) {
         LOGGER.severe("trigger re-initialization of lock manager -> PLEASE FIX THE ROOT-CAUSE A.S.A.P.", rx);
