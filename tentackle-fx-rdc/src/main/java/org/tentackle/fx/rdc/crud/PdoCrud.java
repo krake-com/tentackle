@@ -266,16 +266,15 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
         editing.set(false);
         editor.setChangeable(false);
         deleteButton.setDisable(true);
-        if (lx.getTokenLockInfo() != null) {
+        if (lx.isLockedByAnotherUser()) {
           Fx.info(MessageFormat.format(RdcFxRdcBundle.getString("{0} {1} is being locked by {2} since {3}"),
                   pdo.getSingular(), pdo.toString(),
                   AbstractApplication.getRunningApplication().getUser(pdo.getDomainContext(), pdo.getEditedBy()),
                   pdo.getEditedSince()));
         }
         else {
-          LOGGER.severe("locking the PDO failed", lx);
-          Fx.error(MessageFormat.format(RdcFxRdcBundle.getString("{0} {1} could not be locked"),
-                   pdo.getSingular(), pdo.toString()));
+          Fx.info(MessageFormat.format(RdcFxRdcBundle.getString("{0} {1} is already locked in context {2}"),
+                                       pdo.getSingular(), pdo.toString(), lx.getContextName()));
         }
       }
     }
@@ -589,10 +588,10 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
           try {
             oldPdo.releaseTokenLock();
           }
-          catch (LockException lex) {
+          catch (LockException lx) {
             // probably locked by another user meanwhile.
             // just log it and don't bother the user
-            LOGGER.info("token unlock failed (ignored): " + lex.getLocalizedMessage());
+            LOGGER.info("token unlock failed (ignored): " + lx.getMessage());
           }
         }
         released.accept(Boolean.TRUE);
