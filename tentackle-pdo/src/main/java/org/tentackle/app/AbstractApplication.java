@@ -43,7 +43,6 @@ import org.tentackle.session.SessionProvider;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.text.MessageFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
@@ -240,7 +239,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
   protected void register() {
     synchronized(AbstractApplication.class) {   // not getClass() because this applies to all kinds of applications!
       if (running != null) {
-        throw new TentackleRuntimeException(MessageFormat.format(AppCoreBundle.getString("APPLICATION {0} ALREADY RUNNING"), running));
+        throw new TentackleRuntimeException("application '" + running + "' already registered");
       }
       running = this;
     }
@@ -257,7 +256,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
     synchronized(AbstractApplication.class) {   // not getClass() because this applies to all kinds of applications!
       if (running != null) {
         if (running != this) {
-          throw new TentackleRuntimeException(MessageFormat.format(AppCoreBundle.getString("APPLICATION {0} IS NOT RUNNING"), this));
+          throw new TentackleRuntimeException("application '" + running + "' not registered");
         }
         running = null;
       }
