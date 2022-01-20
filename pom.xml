@@ -83,7 +83,7 @@
     <javac.lint>auxiliaryclass,cast,classfile,deprecation,dep-ann,divzero,empty,fallthrough,finally,opens,overloads,options,overrides,path,rawtypes,removal,requires-transitive-automatic,requires-automatic,serial,static,try,varargs,unchecked</javac.lint>
     <javac.version>17</javac.version>
 
-    <javafx.version>17.0.1</javafx.version>
+    <javafx.version>17.0.2</javafx.version>
     <ow2.asm.version>9.2</ow2.asm.version>
     <groovy.version>3.0.9</groovy.version>
     <maven.version>3.6.3</maven.version>
