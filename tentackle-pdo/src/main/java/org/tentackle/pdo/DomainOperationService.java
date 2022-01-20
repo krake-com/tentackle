@@ -16,8 +16,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.pdo;
+
+import org.tentackle.common.MappedService;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -25,13 +26,10 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import org.tentackle.common.MappedService;
-
 
 
 /**
- * Annotation to express that the annotated class
- * is a domain-service for an operation.
+ * Annotation to express that the annotated class is an implementation of the domain logic for a given operation type.
  */
 @Documented
 @Inherited
@@ -50,4 +48,3 @@ public @interface DomainOperationService {
   Class<? extends Operation> value();    // no <?> because of abstract operations!
 
 }
-

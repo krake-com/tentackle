@@ -18,11 +18,13 @@
 
 package org.tentackle.pdo;
 
+import org.tentackle.app.AbstractApplication;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.ServiceFinder;
 import org.tentackle.common.StringHelper;
 import org.tentackle.log.Logger;
+import org.tentackle.misc.FormatHelper;
 import org.tentackle.misc.IdentifiableKey;
 import org.tentackle.misc.TrackedList;
 import org.tentackle.session.ModificationEvent;
@@ -35,6 +37,7 @@ import org.tentackle.session.SessionUtilities;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -707,6 +710,30 @@ public class PdoUtilities {
       throw new PersistenceException("no such TransactionRetryPolicy: '" + policyName + "'");
     }
     return policy;
+  }
+
+
+  /**
+   * Creates a localized string from a {@link LockException} for a PDO.
+   *
+   * @param lockException the lock exception
+   * @param pdo the PDO
+   * @return the message
+   */
+  public String lockExceptionToString(LockException lockException, PersistentDomainObject<?> pdo) {
+    String str;
+    if (lockException.isLockedByAnotherUser()) {
+      Object user = AbstractApplication.getRunningApplication().getUser(pdo.getDomainContext(), pdo.getEditedBy());
+      String userTxt = user == null ? ("ID=" + pdo.getEditedBy()) : user.toString();
+      str = MessageFormat.format(PdoPdoBundle.getString("{0} {1} is being locked by {2} since {3}"),
+                                 pdo.getSingular(), pdo.toString(), userTxt,
+                                 pdo.getEditedSince() == null ? "?" : FormatHelper.formatTimestampFast(pdo.getEditedSince()));
+    }
+    else {
+      str = MessageFormat.format(PdoPdoBundle.getString("{0} {1} is already locked in context {2}"),
+                                 pdo.getSingular(), pdo.toString(), lockException.getContextName());
+    }
+    return str;
   }
 
 }

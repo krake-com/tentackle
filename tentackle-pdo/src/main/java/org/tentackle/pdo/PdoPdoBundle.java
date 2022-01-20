@@ -16,20 +16,21 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.app;
+package org.tentackle.pdo;
 
-import java.util.ResourceBundle;
-import org.tentackle.common.LocaleProvider;
 import org.tentackle.common.Bundle;
 import org.tentackle.common.BundleFactory;
+import org.tentackle.common.LocaleProvider;
+
+import java.util.ResourceBundle;
 
 /**
- * Bundle for app-package in tentackle-core.
+ * Bundle for the pdo-package in tentackle-pdo.
  *
  * @author harald
  */
 @Bundle
-public class AppCoreBundle {
+public class PdoPdoBundle {
 
   /**
    * Gets the bundle.
@@ -37,7 +38,7 @@ public class AppCoreBundle {
    * @return the resource bundle
    */
   public static ResourceBundle getBundle() {
-    return BundleFactory.getBundle(AppCoreBundle.class.getName(), LocaleProvider.getInstance().getLocale());
+    return BundleFactory.getBundle(PdoPdoBundle.class.getName(), LocaleProvider.getInstance().getLocale());
   }
 
   /**
@@ -50,7 +51,7 @@ public class AppCoreBundle {
     return getBundle().getString(key);
   }
 
-  private AppCoreBundle() {
+  private PdoPdoBundle() {
   }
 
 }

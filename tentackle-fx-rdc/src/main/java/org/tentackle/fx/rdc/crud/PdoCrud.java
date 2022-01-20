@@ -39,7 +39,6 @@ import javafx.stage.Modality;
 import javafx.stage.Popup;
 import javafx.stage.Stage;
 
-import org.tentackle.app.AbstractApplication;
 import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxControllerService;
@@ -59,6 +58,7 @@ import org.tentackle.fx.rdc.security.SecurityDialogFactory;
 import org.tentackle.log.Logger;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.LockException;
+import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.session.NotFoundException;
 import org.tentackle.validate.ValidationFailedException;
@@ -266,16 +266,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
         editing.set(false);
         editor.setChangeable(false);
         deleteButton.setDisable(true);
-        if (lx.isLockedByAnotherUser()) {
-          Fx.info(MessageFormat.format(RdcFxRdcBundle.getString("{0} {1} is being locked by {2} since {3}"),
-                  pdo.getSingular(), pdo.toString(),
-                  AbstractApplication.getRunningApplication().getUser(pdo.getDomainContext(), pdo.getEditedBy()),
-                  pdo.getEditedSince()));
-        }
-        else {
-          Fx.info(MessageFormat.format(RdcFxRdcBundle.getString("{0} {1} is already locked in context {2}"),
-                                       pdo.getSingular(), pdo.toString(), lx.getContextName()));
-        }
+        Fx.info(PdoUtilities.getInstance().lockExceptionToString(lx, pdo));
       }
     }
   }
