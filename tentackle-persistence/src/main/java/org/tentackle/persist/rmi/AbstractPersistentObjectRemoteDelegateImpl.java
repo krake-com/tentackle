@@ -374,12 +374,10 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
   }
 
   @Override
-  public TokenLockInfo updateTokenLock(DomainContext cb, long id, Timestamp tokenExpiry, long userId, Timestamp curTime) throws RemoteException  {
+  public TokenLockInfo updateTokenLock(P po, Timestamp tokenExpiry, long userId, Timestamp curTime) throws RemoteException  {
     try {
-      setDomainContext(cb);
-      dbObject.setId(id);
-      dbObject.updateTokenLock(tokenExpiry, userId, curTime);
-      return new TokenLockInfo(dbObject.getEditedBy(), dbObject.getEditedSince(), dbObject.getEditedExpiry());
+      po.updateTokenLock(tokenExpiry, userId, curTime);
+      return new TokenLockInfo(po.getEditedBy(), po.getEditedSince(), po.getEditedExpiry());
     }
     catch (RuntimeException e) {
       throw createException(e);
@@ -397,14 +395,12 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
   }
 
   @Override
-  public void updateTokenLockOnly(DomainContext cb, long id, long editedBy, Timestamp editedSince, Timestamp editedExpiry) throws RemoteException {
+  public void updateTokenLockOnly(P po, long editedBy, Timestamp editedSince, Timestamp editedExpiry) throws RemoteException {
     try {
-      setDomainContext(cb);
-      dbObject.setId(id);
-      dbObject.setEditedBy(editedBy);
-      dbObject.setEditedSince(editedSince);
-      dbObject.setEditedExpiry(editedExpiry);
-      dbObject.updateTokenLockOnly();
+      po.setEditedBy(editedBy);
+      po.setEditedSince(editedSince);
+      po.setEditedExpiry(editedExpiry);
+      po.updateTokenLockOnly();
     }
     catch (RuntimeException e) {
       throw createException(e);
