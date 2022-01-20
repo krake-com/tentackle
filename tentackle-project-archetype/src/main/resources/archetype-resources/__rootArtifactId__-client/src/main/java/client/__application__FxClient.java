@@ -75,7 +75,6 @@ public class ${application}FxClient extends UpdatableDesktopApplication<MainCont
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public User getUser(DomainContext context, long userId) {
     return Pdo.create(User.class, context).selectCached(userId);
   }
