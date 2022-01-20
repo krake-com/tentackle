@@ -19,6 +19,7 @@
 
 package org.tentackle.fx.rdc.crud;
 
+import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.SortedList;
@@ -267,15 +268,15 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
         editor.setChangeable(false);
         deleteButton.setDisable(true);
         if (lx.getTokenLockInfo() != null) {
-          Fx.info(MessageFormat.format(RdcFxRdcBundle.getString("{0} {1} is being locked by {2} since {3}"),
-                  pdo.getSingular(), pdo.toString(),
-                  AbstractApplication.getRunningApplication().getUser(pdo.getDomainContext(), pdo.getEditedBy()),
-                  pdo.getEditedSince()));
+          Platform.runLater(() -> Fx.info(MessageFormat.format(RdcFxRdcBundle.getString("{0} {1} is being locked by {2} since {3}"),
+                                                               pdo.getSingular(), pdo.toString(),
+                                                               AbstractApplication.getRunningApplication().getUser(pdo.getDomainContext(), pdo.getEditedBy()),
+                                                               pdo.getEditedSince())));
         }
         else {
           LOGGER.severe("locking the PDO failed", lx);
-          Fx.error(MessageFormat.format(RdcFxRdcBundle.getString("{0} {1} could not be locked"),
-                   pdo.getSingular(), pdo.toString()));
+          Platform.runLater(() -> Fx.error(MessageFormat.format(RdcFxRdcBundle.getString("{0} {1} could not be locked"),
+                                                                pdo.getSingular(), pdo.toString())));
         }
       }
     }
