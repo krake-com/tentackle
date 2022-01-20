@@ -36,7 +36,6 @@ public class ${application}Server extends ServerApplication {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public User getUser(DomainContext context, long userId) {
     return Pdo.create(User.class, context).selectCached(userId);
   }

@@ -76,7 +76,7 @@ public class MessageDomainImpl extends AbstractDomainObject<Message, MessageDoma
       refersTo = ((PdoProvider<?>) refersTo).getPdo();
     }
 
-    if (refersTo instanceof PersistentDomainObject pdo) {
+    if (refersTo instanceof PersistentDomainObject<?> pdo) {
       me().setRefersToPdoId(pdo.getId());
       me().setRefersToClassId(pdo.getClassId());
       me().setRefersToText(refersTo.toString());
