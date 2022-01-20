@@ -19,6 +19,7 @@
 
 package org.tentackle.fx.rdc.crud;
 
+import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.SortedList;
@@ -266,7 +267,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
         editing.set(false);
         editor.setChangeable(false);
         deleteButton.setDisable(true);
-        Fx.info(PdoUtilities.getInstance().lockExceptionToString(lx, pdo));
+        Platform.runLater(() -> Fx.info(PdoUtilities.getInstance().lockExceptionToString(lx, pdo)));
       }
     }
   }
