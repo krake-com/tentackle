@@ -365,28 +365,26 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
           cellInRowCopied = false;
         }
         for (int col = colMin; col < colMax; col++) {
-          TreeTableColumn<S, ?> treeTableColumn = getColumns().get(col);
-          if (treeTableColumn.isVisible()) {
-            Object item = treeTableColumn.getCellData(row);
-            if (item != null) {
-              String text = null;
-              // try to lookup the rendered text
-              for (Node c : lookupAll(".tree-table-cell")) {    // all visible cells only
-                TreeTableCell<?, ?> tc = (TreeTableCell<?, ?>) c;
-                if (tc.getItem() == item) {   // == is ok here, must be the same instance!
-                  text = tc.getText();
-                  break;
-                }
+          TreeTableColumn<S, ?> treeTableColumn = getVisibleLeafColumn(col);
+          Object item = treeTableColumn.getCellData(row);
+          if (item != null) {
+            String text = null;
+            // try to lookup the rendered text
+            for (Node c : lookupAll(".tree-table-cell")) {    // all visible cells only
+              TreeTableCell<?, ?> tc = (TreeTableCell<?, ?>) c;
+              if (tc.getItem() == item) {   // == is ok here, must be the same instance!
+                text = tc.getText();
+                break;
               }
-              if (text == null) {
-                text = item.toString();   // fallback if no rendered text found
-              }
-              if (cellInRowCopied) {
-                buf.append(separator);
-              }
-              buf.append(text);
-              cellInRowCopied = true;
             }
+            if (text == null) {
+              text = item.toString();   // fallback if no rendered text found
+            }
+            if (cellInRowCopied) {
+              buf.append(separator);
+            }
+            buf.append(text);
+            cellInRowCopied = true;
           }
         }
         lastRow = row;
