@@ -19,15 +19,14 @@
 
 package org.tentackle.persist.rmi;
 
+import java.rmi.RemoteException;
+import java.util.List;
 import org.tentackle.common.Timestamp;
 import org.tentackle.dbms.rmi.AbstractDbObjectRemoteDelegate;
+import org.tentackle.persist.AbstractPersistentObject;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.TokenLock;
-import org.tentackle.persist.AbstractPersistentObject;
-
-import java.rmi.RemoteException;
-import java.util.List;
 
 
 
@@ -65,10 +64,10 @@ public interface AbstractPersistentObjectRemoteDelegate<T extends PersistentDoma
 
   boolean isReferenced(DomainContext cb, long id) throws RemoteException;
 
-  TokenLock updateTokenLock(P po, Timestamp tokenExpiry, long userId, Timestamp curTime) throws RemoteException;
+  TokenLock updateTokenLock(long id, Timestamp tokenExpiry, long userId, Timestamp curTime) throws RemoteException;
 
   T transferTokenLock(T pdo, long userId) throws RemoteException;
 
-  void updateTokenLockOnly(P po, long editedBy, Timestamp editedSince, Timestamp editedExpiry) throws RemoteException;
+  void updateTokenLockOnly(long id, long editedBy, Timestamp editedSince, Timestamp editedExpiry) throws RemoteException;
 
 }
