@@ -3683,7 +3683,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     Db db = getSession();
     if (db.isRemote())  {
       try {
-        applyTokenLockInfo(getRemoteDelegate().updateTokenLock(getId(), tokenExpiry, userId, curTime));
+        applyTokenLockInfo(getRemoteDelegate().updateTokenLock(getDomainContext(), getId(), tokenExpiry, userId, curTime));
       }
       catch (RemoteException e) {
         RuntimeException rex = PersistenceException.createFromRemoteException(this, e);
@@ -3798,7 +3798,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     Db db = getSession();
     if (db.isRemote())  {
       try {
-        getRemoteDelegate().updateTokenLockOnly(getId(), getEditedBy(), getEditedSince(), getEditedExpiry());
+        getRemoteDelegate().updateTokenLockOnly(getDomainContext(), getId(), getEditedBy(), getEditedSince(), getEditedExpiry());
       }
       catch (RemoteException e) {
         throw PersistenceException.createFromRemoteException(this, e);
