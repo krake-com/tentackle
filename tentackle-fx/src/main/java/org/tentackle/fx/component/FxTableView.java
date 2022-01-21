@@ -239,24 +239,22 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
         int row = pos.getRow();
         int col = pos.getColumn();
         if (row >= 0 && col >= 0) {
-          TableColumn<S, ?> tableColumn = getColumns().get(col);
-          if (tableColumn.isVisible()) {
-            Object item = tableColumn.getCellData(row);
-            if (item != null) {
-              String text = null;
-              // try to lookup the rendered text
-              for (Node c : lookupAll(".table-cell")) {    // all visible cells only
-                TableCell<?, ?> tc = (TableCell<?, ?>) c;
-                if (tc.getItem() == item) {   // == is ok here, must be the same instance!
-                  text = tc.getText();
-                  break;
-                }
+          TableColumn<S, ?> tableColumn = getVisibleLeafColumn(col);
+          Object item = tableColumn.getCellData(row);
+          if (item != null) {
+            String text = null;
+            // try to lookup the rendered text
+            for (Node c : lookupAll(".table-cell")) {    // all visible cells only
+              TableCell<?, ?> tc = (TableCell<?, ?>) c;
+              if (tc.getItem() == item) {   // == is ok here, must be the same instance!
+                text = tc.getText();
+                break;
               }
-              if (text == null) {
-                text = item.toString();   // fallback if no rendered text found
-              }
-              cells[row - rowMin][col - colMin] = text;
             }
+            if (text == null) {
+              text = item.toString();   // fallback if no rendered text found
+            }
+            cells[row - rowMin][col - colMin] = text;
           }
         }
       }
