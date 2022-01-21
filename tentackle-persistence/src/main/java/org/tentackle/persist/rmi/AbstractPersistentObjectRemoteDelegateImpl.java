@@ -31,6 +31,7 @@ import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.TokenLockInfo;
 import org.tentackle.persist.AbstractPersistentObject;
+import org.tentackle.session.NotFoundException;
 
 import java.lang.reflect.InvocationTargetException;
 import java.rmi.RemoteException;
@@ -115,6 +116,33 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
     // allow overloads for simple proxy objects
     ((AbstractDbObject<?>) newPdo.getPersistenceDelegate()).setOverloadable(true);
     return newPdo;
+  }
+
+  /**
+   * Selects by ID into a new instance.<br>
+   * Throws {@link NotFoundException}, if no such PDO in database.
+   *
+   * @param context the domain context
+   * @param id the ID
+   * @return the pdo, never null
+   */
+  protected T newInstance(DomainContext context, long id) {
+    T newPdo = newInstance(context).select(id);
+    if (newPdo == null) {
+      throw new NotFoundException(getSession(), "no such " + pdoClass.getSimpleName() + " with ID " + id + " in database");
+    }
+    return newPdo;
+  }
+
+  /**
+   * Gets the persistence delegate from a PDO.
+   *
+   * @param pDo the PDO
+   * @return the persistence delegate
+   */
+  @SuppressWarnings("unchecked")
+  protected P getPersistenceDelegate(T pDo) {
+    return (P) pDo.getPersistenceDelegate();
   }
 
 
@@ -376,10 +404,14 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
   @Override
   public TokenLockInfo updateTokenLock(DomainContext cb, long id, Timestamp tokenExpiry, long userId, Timestamp curTime) throws RemoteException  {
     try {
-      setDomainContext(cb);
-      dbObject.setId(id);
-      dbObject.updateTokenLock(tokenExpiry, userId, curTime);
-      return new TokenLockInfo(dbObject.getEditedBy(), dbObject.getEditedSince(), dbObject.getEditedExpiry());
+      if (getSession().isRemote()) {
+        // optimize, if running in remote middle tier
+        return dbObject.getRemoteDelegate().updateTokenLock(cb, id, tokenExpiry, userId, curTime);
+      }
+      P po = getPersistenceDelegate(newInstance(cb, id));
+      po.setId(id);
+      po.updateTokenLock(tokenExpiry, userId, curTime);
+      return new TokenLockInfo(po.getEditedBy(), po.getEditedSince(), po.getEditedExpiry());
     }
     catch (RuntimeException e) {
       throw createException(e);
@@ -399,12 +431,18 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
   @Override
   public void updateTokenLockOnly(DomainContext cb, long id, long editedBy, Timestamp editedSince, Timestamp editedExpiry) throws RemoteException {
     try {
-      setDomainContext(cb);
-      dbObject.setId(id);
-      dbObject.setEditedBy(editedBy);
-      dbObject.setEditedSince(editedSince);
-      dbObject.setEditedExpiry(editedExpiry);
-      dbObject.updateTokenLockOnly();
+      if (getSession().isRemote()) {
+        // optimize, if running in remote middle tier
+        dbObject.getRemoteDelegate().updateTokenLockOnly(cb, id, editedBy, editedSince, editedExpiry);
+      }
+      else {
+        P po = getPersistenceDelegate(newInstance(cb, id));
+        po.setId(id);
+        po.setEditedBy(editedBy);
+        po.setEditedSince(editedSince);
+        po.setEditedExpiry(editedExpiry);
+        po.updateTokenLockOnly();
+      }
     }
     catch (RuntimeException e) {
       throw createException(e);
