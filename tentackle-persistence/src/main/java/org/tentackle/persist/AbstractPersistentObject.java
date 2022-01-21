@@ -3679,12 +3679,11 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @param userId is the current user (unused if tokenExpiry is null)
    * @param curTime is the current system time
    */
-  @SuppressWarnings("unchecked")
   public void updateTokenLock(Timestamp tokenExpiry, long userId, Timestamp curTime) {
     Db db = getSession();
     if (db.isRemote())  {
       try {
-        applyTokenLockInfo(getRemoteDelegate().updateTokenLock((P) this, tokenExpiry, userId, curTime));
+        applyTokenLockInfo(getRemoteDelegate().updateTokenLock(getId(), tokenExpiry, userId, curTime));
       }
       catch (RemoteException e) {
         RuntimeException rex = PersistenceException.createFromRemoteException(this, e);
@@ -3795,12 +3794,11 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * No check is done whether locked or not and there is no serial
    * update and no modlog. Used by daemons to cleanup.
    */
-  @SuppressWarnings("unchecked")
   public void updateTokenLockOnly() {
     Db db = getSession();
     if (db.isRemote())  {
       try {
-        getRemoteDelegate().updateTokenLockOnly((P) this, getEditedBy(), getEditedSince(), getEditedExpiry());
+        getRemoteDelegate().updateTokenLockOnly(getId(), getEditedBy(), getEditedSince(), getEditedExpiry());
       }
       catch (RemoteException e) {
         throw PersistenceException.createFromRemoteException(this, e);
