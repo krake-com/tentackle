@@ -3595,7 +3595,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     Db db = getSession();
     if (db.isRemote())  {
       try {
-        TokenLock token = getRemoteDelegate().updateTokenLock(getId(), tokenExpiry, userId, curTime);
+        TokenLock token = getRemoteDelegate().updateTokenLock(getDomainContext(), getId(), tokenExpiry, userId, curTime);
         token.applyTo(this);
       }
       catch (RemoteException e) {
@@ -3704,7 +3704,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     Db db = getSession();
     if (db.isRemote())  {
       try {
-        getRemoteDelegate().updateTokenLockOnly(getId(), getEditedBy(), getEditedSince(), getEditedExpiry());
+        getRemoteDelegate().updateTokenLockOnly(getDomainContext(), getId(), getEditedBy(), getEditedSince(), getEditedExpiry());
       }
       catch (RemoteException e) {
         throw PersistenceException.createFromRemoteException(this, e);
