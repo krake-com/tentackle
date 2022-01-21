@@ -23,6 +23,7 @@ import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.ServiceFinder;
 import org.tentackle.common.StringHelper;
+import org.tentackle.common.Timestamp;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.FormatHelper;
 import org.tentackle.misc.IdentifiableKey;
@@ -723,11 +724,13 @@ public class PdoUtilities {
   public String lockExceptionToString(LockException lockException, PersistentDomainObject<?> pdo) {
     String str;
     if (lockException.isLockedByAnotherUser()) {
-      Object user = AbstractApplication.getRunningApplication().getUser(pdo.getDomainContext(), pdo.getEditedBy());
-      String userTxt = user == null ? ("ID=" + pdo.getEditedBy()) : user.toString();
+      long userId = lockException.getTokenLockInfo().editedBy();
+      Timestamp since = lockException.getTokenLockInfo().editedSince();
+      Object user = AbstractApplication.getRunningApplication().getUser(pdo.getDomainContext(), userId);
+      String userTxt = user == null ? ("ID=" + userId) : user.toString();
       str = MessageFormat.format(PdoPdoBundle.getString("{0} {1} is being locked by {2} since {3}"),
                                  pdo.getSingular(), pdo.toString(), userTxt,
-                                 pdo.getEditedSince() == null ? "?" : FormatHelper.formatTimestampFast(pdo.getEditedSince()));
+                                 since == null ? "?" : FormatHelper.formatTimestampFast(since));
     }
     else {
       str = MessageFormat.format(PdoPdoBundle.getString("{0} {1} is already locked in context {2}"),
