@@ -3506,10 +3506,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   @Override
   public void requestTokenLock() {
-    getSession().transaction("lock", () -> {      // tx necessary for LockManager
-      updateTokenLock(DateHelper.now(getTokenLockTimeout()));
-      return null;
-    });
+    updateTokenLock(DateHelper.now(getTokenLockTimeout()));
   }
 
   /**
@@ -3518,10 +3515,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   @Override
   public void releaseTokenLock() {
-    getSession().transaction("unlock", () -> {      // tx necessary for LockManager
-      updateTokenLock(null);
-      return null;
-    });
+    updateTokenLock(null);
   }
 
   /**
