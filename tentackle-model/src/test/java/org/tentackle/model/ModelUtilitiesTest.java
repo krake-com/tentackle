@@ -15,24 +15,24 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-package org.tentackle.model.migrate;
+package org.tentackle.model;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.util.List;
 
-public class MigrationUtilitiesTest {
+public class ModelUtilitiesTest {
 
-  private final MigrationUtilities mu = MigrationUtilities.getInstance();
+  private final ModelUtilities mu = ModelUtilities.getInstance();
 
   @Test
   public void testSyllableExtration() {
     Assert.assertEquals(mu.extractSyllables("pickupposition"),
-                        List.of("pic", "kup", "os", "it", "ion"));
+                        List.of("pick", "up", "os", "it", "ion"));
 
     Assert.assertEquals(mu.extractSyllables("pickup_position"),
-                        List.of("pic", "kup", "pos", "it", "ion"));
+                        List.of("pick", "up", "pos", "it", "ion"));
 
     Assert.assertEquals(mu.extractSyllables("release_pos_x"),
                         List.of("rel", "ease", "pos", "x"));

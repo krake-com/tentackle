@@ -36,6 +36,7 @@ import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelError;
 import org.tentackle.model.ModelException;
+import org.tentackle.model.ModelUtilities;
 import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
 import org.tentackle.model.SelectionType;
@@ -888,50 +889,51 @@ public class ModelImpl implements Model {
       if (entity.getTableName() != null && entity.getTableAlias() == null) {
         // determine the meaningful letters: Start and end of camel case words
         StringBuilder letters = new StringBuilder();
-        char lastChar = '_';
-        boolean lastCharAppended = false;
         for (int i = 0; i < entity.getName().length(); i++) {
           char currentChar = entity.getName().charAt(i);
           // each uppercase letter and digit (2=to, 4=for, etc...)
           if (Character.isUpperCase(currentChar) || Character.isDigit(currentChar)) {
             letters.append(currentChar);
           }
-          lastChar = currentChar;
-        }
-        if (letters.length() <= 1) {
-          // append the last character, if only one Uppercase letter (e.g. Shipment -> st)
-          letters.append(lastChar);
-          lastCharAppended = true;
         }
 
-        if (!applyTableAlias(aliasMap, entity, letters.toString().toLowerCase())) {
-          // alias already exists
+        boolean aliasFound = false;
 
-          if (!lastCharAppended) {
-            // try with appended last character
-            letters.append(lastChar);
-            if (applyTableAlias(aliasMap, entity, letters.toString().toLowerCase())) {
-              continue;   // yep! -> next entity
+        if (applyTableAlias(aliasMap, entity, letters.toString().toLowerCase())) {
+          aliasFound = true;
+        }
+        else {
+          // alias already exists, try syllables
+          List<String> syllables = ModelUtilities.getInstance().extractSyllables(entity.getName());
+          if (!syllables.isEmpty()) {
+            letters.setLength(0);
+            for (String syllable : syllables) {
+              letters.append(syllable.charAt(0));
+              if (applyTableAlias(aliasMap, entity, letters.toString().toLowerCase())) {
+                aliasFound = true;
+                break;
+              }
             }
           }
+        }
 
-          // If lastchar was added (Shipment -> st), try the first 3 chars, then the first 4, finally 5 non-vocal chars
+        if (!aliasFound) {
+          // try the first 3 chars, then the first 4, finally 5 non-vocal chars
           letters.setLength(1);
-          boolean nonVocalNameFound = false;
           for (int i = 1; i < entity.getName().length() && i < 6; i++) {
             char c = Character.toLowerCase(entity.getName().charAt(i));
             if (c != 'a' && c != 'e' && c != 'i' && c != 'o' && c != 'u') {
               letters.append(c);
               if (letters.length() >= 3) {
                 if (applyTableAlias(aliasMap, entity, letters.toString().toLowerCase())) {
-                  nonVocalNameFound = true;
+                  aliasFound = true;
                   break;
                 }
               }
             }
           }
 
-          if (!nonVocalNameFound) {
+          if (!aliasFound) {
             // just take the first letter and count. This will always work
             String aliasPrefix = entity.getName().substring(0, 1).toLowerCase();
             int count = 1;

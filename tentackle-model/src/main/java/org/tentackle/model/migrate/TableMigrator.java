@@ -25,6 +25,7 @@ import org.tentackle.model.ForeignKey;
 import org.tentackle.model.Index;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelException;
+import org.tentackle.model.ModelUtilities;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.DataType;
 import org.tentackle.sql.metadata.ColumnMetaData;
@@ -508,7 +509,7 @@ public class TableMigrator {
               possibleNames.add(dropColumn.getColumnName());
             }
           }
-          String matchingName = MigrationUtilities.getInstance().bestMatch(columnName, possibleNames);
+          String matchingName = ModelUtilities.getInstance().bestMatch(columnName, possibleNames);
           if (matchingName != null) {
             matchingColumns.add(columnsToDrop.get(matchingName));   // must exist!
           }
