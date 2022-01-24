@@ -884,6 +884,8 @@ public class ModelImpl implements Model {
     }
 
     // generate automatic alias if not specified in model
+
+    // prio 1: apply camelcase letters and digits if possible
     for (ModelEntity modelEntity: mapByEntityName.values()) {
       Entity entity = modelEntity.getEntity();
       if (entity.getTableName() != null && entity.getTableAlias() == null) {
@@ -896,30 +898,34 @@ public class ModelImpl implements Model {
             letters.append(currentChar);
           }
         }
+        applyTableAlias(aliasMap, entity, letters.toString().toLowerCase());
+      }
+    }
 
+    // for all others still unnamed
+    for (ModelEntity modelEntity: mapByEntityName.values()) {
+      Entity entity = modelEntity.getEntity();
+      if (entity.getTableName() != null && entity.getTableAlias() == null) {
+        StringBuilder letters = new StringBuilder();
         boolean aliasFound = false;
 
-        if (applyTableAlias(aliasMap, entity, letters.toString().toLowerCase())) {
-          aliasFound = true;
-        }
-        else {
-          // alias already exists, try syllables
-          List<String> syllables = ModelUtilities.getInstance().extractSyllables(entity.getName());
-          if (!syllables.isEmpty()) {
-            letters.setLength(0);
-            for (String syllable : syllables) {
-              letters.append(syllable.charAt(0));
-              if (applyTableAlias(aliasMap, entity, letters.toString().toLowerCase())) {
-                aliasFound = true;
-                break;
-              }
+        // try syllables
+        List<String> syllables = ModelUtilities.getInstance().extractSyllables(entity.getName());
+        if (!syllables.isEmpty()) {
+          for (String syllable : syllables) {
+            letters.append(syllable.charAt(0));
+            if (applyTableAlias(aliasMap, entity, letters.toString().toLowerCase())) {
+              aliasFound = true;
+              break;
             }
           }
         }
 
         if (!aliasFound) {
           // try the first 3 chars, then the first 4, finally 5 non-vocal chars
-          letters.setLength(1);
+          if (letters.length() > 1) {
+            letters.setLength(1);
+          }
           for (int i = 1; i < entity.getName().length() && i < 6; i++) {
             char c = Character.toLowerCase(entity.getName().charAt(i));
             if (c != 'a' && c != 'e' && c != 'i' && c != 'o' && c != 'u') {
