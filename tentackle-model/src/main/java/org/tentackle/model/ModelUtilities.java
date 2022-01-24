@@ -31,7 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-interface MigrationUtilitiesHolder {
+interface ModelUtilitiesHolder {
   ModelUtilities INSTANCE = ServiceFactory.createService(ModelUtilities.class, ModelUtilities.class);
 }
 
@@ -48,7 +48,7 @@ public class ModelUtilities {
    * @return the singleton
    */
   public static ModelUtilities getInstance() {
-    return MigrationUtilitiesHolder.INSTANCE;
+    return ModelUtilitiesHolder.INSTANCE;
   }
 
 
