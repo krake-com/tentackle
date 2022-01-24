@@ -334,12 +334,12 @@ public class WurbletArgument implements WurbletArgumentOperand {
       if (argumentType == WurbletArgumentType.JOIN) {
         throw new WurbelException("leading dot not allowed for " + argumentType + "-argument '" + this.text + "'");
       }
-      int ndx2 = str.indexOf('.', ndx + 1);    // length already checked above
       if (!entity.isRootEntity()) {
         throw new WurbelException("component not allowed for non-root entity " + entity +
                                   " in argument '" + this.text + "'");
       }
 
+      int ndx2 = str.indexOf('.', ndx + 1);    // length already checked above
       String componentName = str.substring(ndx + 1, ndx2);
       try {
         component = Model.getInstance().getByEntityName(componentName);

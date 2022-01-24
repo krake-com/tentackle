@@ -18,7 +18,10 @@
 
 package org.tentackle.wurblet;
 
+import org.wurbelizer.wurbel.WurbelException;
+
 import org.tentackle.common.Path;
+import org.tentackle.model.Entity;
 import org.tentackle.model.Relation;
 
 import java.util.ArrayList;
@@ -73,6 +76,47 @@ public class JoinPath implements Path<JoinPath, Join> {
     return paths;
   }
 
+
+  /**
+   * Finds the join for a given component.
+   *
+   * @param component the component
+   * @return the path if unique, null if no path
+   * @throws WurbelException if component path is ambiguous
+   */
+  public Join findJoin(Entity component) throws WurbelException {
+    return component == null ? null : findJoinImpl(this, component);
+  }
+
+  private Join findJoinImpl(JoinPath path, Entity component) throws WurbelException {
+    Join join = null;
+    JoinPath joinPath = null;
+
+    List<Join> joins = path.getElements();
+    int joinCount = joins.size();
+    for (Join jn : path.getElements()) {
+      if (component.equals(jn.getRelation().getForeignEntity())) {
+        if (join != null) {
+          throw new WurbelException("ambiguous path to " + component + " in path " + path);
+        }
+        join = jn;
+        joinPath = path;
+      }
+    }
+    for (JoinPath subPath: path.getPaths()) {
+      Join jn = findJoinImpl(subPath, component);
+      if (jn != null) {
+        if (join != null) {
+          throw new WurbelException("ambiguous path to " + component + " in paths " + joinPath + " / " + subPath);
+        }
+        join = jn;
+        joinPath = subPath;
+      }
+    }
+    return join;
+  }
+
+
   /**
    * Find the join for given relation path.
    *
@@ -80,7 +124,7 @@ public class JoinPath implements Path<JoinPath, Join> {
    * @return the join if found, else null
    */
   public Join findJoin(List<Relation> relations) {
-    return findJoinImpl(this, relations);
+    return relations == null || relations.isEmpty() ? null : findJoinImpl(this, relations);
   }
 
   private Join findJoinImpl(JoinPath path, List<Relation> relations) {
