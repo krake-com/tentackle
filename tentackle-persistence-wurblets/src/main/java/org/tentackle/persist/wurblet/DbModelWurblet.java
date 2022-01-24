@@ -577,6 +577,9 @@ public class DbModelWurblet extends ModelWurblet {
               boolean joinFound = false;
               for (JoinPath joinPath: getJoinPaths()) {
                 Join join = joinPath.findJoin(key.getRelations());
+                if (join == null) {
+                  join = joinPath.findJoin(key.getComponent());
+                }
                 if (join != null) {
                   buf.append('"').append(join.getName())
                      .append('.').append(attr.getColumnName()).append('"');
