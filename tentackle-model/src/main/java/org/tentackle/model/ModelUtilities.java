@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.model.migrate;
+package org.tentackle.model;
 
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
@@ -32,22 +32,22 @@ import java.util.Set;
 import java.util.TreeSet;
 
 interface MigrationUtilitiesHolder {
-  MigrationUtilities INSTANCE = ServiceFactory.createService(MigrationUtilities.class, MigrationUtilities.class);
+  ModelUtilities INSTANCE = ServiceFactory.createService(ModelUtilities.class, ModelUtilities.class);
 }
 
 /**
- * Utility methods to match columns for migration.<br>
- * May be replaced by project specific migration rules via <code>@Service</code>.
+ * Model utility methods.<br>
+ * May be replaced by project specific implementation via <code>@Service</code>.
  */
-@Service(MigrationUtilities.class)    // defaults to self
-public class MigrationUtilities {
+@Service(ModelUtilities.class)    // defaults to self
+public class ModelUtilities {
 
   /**
    * The singleton.
    *
    * @return the singleton
    */
-  public static MigrationUtilities getInstance() {
+  public static ModelUtilities getInstance() {
     return MigrationUtilitiesHolder.INSTANCE;
   }
 
@@ -130,11 +130,13 @@ public class MigrationUtilities {
               else {
                 if (!isVwl && containsVowel && i < len - 2 && containsVowel(s.substring(i + 1))) {
                   // word already contains at least one vowel and this is not a vowel
-                  // and not only one char remaining and remainer contains at least one vowel
+                  // and not only one char remaining and remainder contains at least one vowel
                   syllable.append(c);
-                  syllables.add(syllable.toString());
-                  syllable.setLength(0);
-                  containsVowel = false;
+                  if (!isJoinedLetter(c, s.charAt(i + 1))) {
+                    syllables.add(syllable.toString());
+                    syllable.setLength(0);
+                    containsVowel = false;
+                  }
                 }
                 else {
                   syllable.append(c);
@@ -171,6 +173,19 @@ public class MigrationUtilities {
       return iterator.next().existingName;
     }
     return null;
+  }
+
+
+  /**
+   * Returns whether two character can be regarded as one.
+   *
+   * @param c1 the first char
+   * @param c2 the second char
+   * @return true if treat as single char
+   */
+  protected boolean isJoinedLetter(char c1, char c2) {
+    return c1 == 'c' && c2 == 'k' ||
+           c1 == 's' && c2 == 't';
   }
 
 
