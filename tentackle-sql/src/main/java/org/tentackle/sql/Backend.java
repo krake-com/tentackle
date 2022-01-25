@@ -467,7 +467,7 @@ public interface Backend {
    * @param name the name of the sequence
    * @return the SQL code
    */
-  String sqlNextFromSequene(String name);
+  String sqlNextFromSequence(String name);
 
   /**
    * Create comment sql code that is interpreted as a comment by the backend.
@@ -1051,6 +1051,13 @@ public interface Backend {
    * @return true if supported, false if treat as varchar
    */
   boolean isClobSupported();
+
+  /**
+   * Returns whether the backend supports the {@link java.util.UUID} natively via JDBC setObject/getObject.
+   *
+   * @return true if supported, false if mapped to VARCHAR(36)
+   */
+  boolean isUUIDSupported();
 
   /**
    * Returns whether function based indexes are supported.

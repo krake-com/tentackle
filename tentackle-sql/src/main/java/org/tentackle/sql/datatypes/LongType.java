@@ -48,7 +48,7 @@ public class LongType extends AbstractNumberType<Long> {
   }
 
   @Override
-  public SqlType getSqlType(int index) {
+  public SqlType getSqlType(Backend backend, int index) {
     if (index != 0) {
       throw new IndexOutOfBoundsException();
     }

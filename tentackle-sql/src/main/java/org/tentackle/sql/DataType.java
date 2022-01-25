@@ -170,32 +170,41 @@ public interface DataType<T> {
 
 
   /**
-   * Gets the SQL type.
+   * Gets the SQL type.<br>
+   * For predefined types, the type must be the same for all backends and
+   * the backend argument may be null.<br>
+   * Application specific types, however, can use different sql types for different backends
+   * and for those types the backend argument is always valid.
    *
+   * @param backend the backend, not used by predefined types
    * @param index the column index
    * @return the SQL type
    */
-  SqlType getSqlType(int index);
+  SqlType getSqlType(Backend backend, int index);
 
 
   /**
-   * Gets the column size.
+   * Gets the column size.<br>
+   * Sizes may be differently aligned according to the backend.
    *
+   * @param backend the backend
    * @param index the column index
    * @param size the size from the model
    * @return the column size
    */
-  int getSize(int index, Integer size);
+  int getSize(Backend backend, int index, Integer size);
 
 
   /**
-   * Gets the column scale.
+   * Gets the column scale.<br>
+   * The scale may be differently aligned according to the backend.
    *
+   * @param backend the backend
    * @param index the column index
    * @param scale the scale from the model
    * @return the column scale
    */
-  int getScale(int index, Integer scale);
+  int getScale(Backend backend, int index, Integer scale);
 
 
   /**

@@ -375,7 +375,7 @@ public class TableMigrator {
 
       ColumnMetaData typeMatchingColumn = null;
       for (ColumnMetaData dropColumn: columnsToDrop.values()) {
-        if (dropColumn.matchesSqlType(addDataType.getSqlType(0))) {
+        if (dropColumn.matchesSqlType(addDataType.getSqlType(backend, 0))) {
           if (typeMatchingColumn == null) {
             typeMatchingColumn = dropColumn;
           }
@@ -505,7 +505,7 @@ public class TableMigrator {
           String columnName = addAttribute.getColumnName() + addDataType.getColumnSuffix(columnIndex).orElse("");
           List<String> possibleNames = new ArrayList<>();
           for (ColumnMetaData dropColumn : columnsToDrop.values()) {
-            if (dropColumn.matchesSqlType(addDataType.getSqlType(columnIndex))) {
+            if (dropColumn.matchesSqlType(addDataType.getSqlType(backend, columnIndex))) {
               possibleNames.add(dropColumn.getColumnName());
             }
           }

@@ -150,21 +150,21 @@ public class ZonedDateTimeType extends AbstractDateTimeType<ZonedDateTime> {
   }
 
   @Override
-  public int getSize(int index, Integer size) {
+  public int getSize(Backend backend, int index, Integer size) {
     return switch (index) {
-      case 0 -> super.getSize(index, size);
+      case 0 -> super.getSize(backend, index, size);
       case 1 -> 32;
       default -> throw new IndexOutOfBoundsException(index);
     };
   }
 
   @Override
-  public int getScale(int index, Integer scale) {
+  public int getScale(Backend backend, int index, Integer scale) {
     return 0;
   }
 
   @Override
-  public SqlType getSqlType(int index) {
+  public SqlType getSqlType(Backend backend, int index) {
     return switch (index) {
       case 0 -> SqlType.TIMESTAMP;
       case 1 -> SqlType.VARCHAR;

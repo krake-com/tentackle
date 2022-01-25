@@ -20,7 +20,6 @@
 package org.tentackle.sql.backends;
 
 import org.tentackle.common.Service;
-import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.NonStandardCommons;
@@ -225,7 +224,7 @@ public class Oracle extends AbstractSql2003Backend {
       return null;
     }
     catch (SQLException ex) {
-      throw new TentackleRuntimeException("cannot determine backend id", ex);
+      throw new BackendException("cannot determine backend id", ex);
     }
   }
 
@@ -400,7 +399,7 @@ public class Oracle extends AbstractSql2003Backend {
 
 
   @Override
-  public String sqlNextFromSequene(String name) {
+  public String sqlNextFromSequence(String name) {
     return "SELECT " + name + ".NEXTVAL FROM DUAL";
   }
 

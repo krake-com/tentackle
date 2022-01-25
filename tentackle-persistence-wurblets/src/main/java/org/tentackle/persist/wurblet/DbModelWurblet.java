@@ -789,9 +789,9 @@ public class DbModelWurblet extends ModelWurblet {
     }
     columnIndex = arg.getColumnIndex();
     StringBuilder buf = new StringBuilder();
-    if (arg.getDataType().isPredefined()) {   // currently only BMoney and DMoney
+    if (arg.getDataType().isPredefined()) {   // predefined multi-column types like BMoney, OffsetDateTime, etc...
       String jdbcValue = arg.getJdbcValue();
-      buf.append("st.set(SqlType.").append(arg.getDataType().getSqlType(columnIndex)).append(", ndx++, ");
+      buf.append("st.set(SqlType.").append(arg.getDataType().getSqlType(null, columnIndex)).append(", ndx++, ");
       if (arg.isMethodArgument()) {
         buf.append(arg.getDataType().getColumnGetter(columnIndex, jdbcValue));
       }

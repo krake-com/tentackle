@@ -520,13 +520,15 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
             getLog().warn((modelDir.exists() ? "empty modelDir " : "no modelDir ") + modelDir.getAbsolutePath());
           }
         }
-
-        if (totalErrors > 0) {
-          throw new MojoFailureException(totalErrors + " model errors");
-        }
       }
-      finally {
-        closeResources(backendInfo);
+      catch (RuntimeException rx) {
+        throw new MojoExecutionException(rx);
+      }
+
+      closeResources(backendInfo);
+
+      if (totalErrors > 0) {
+        throw new MojoFailureException(totalErrors + " model errors");
       }
     }
 

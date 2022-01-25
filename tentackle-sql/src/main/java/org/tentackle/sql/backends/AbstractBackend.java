@@ -20,7 +20,6 @@
 package org.tentackle.sql.backends;
 
 import org.tentackle.common.Cryptor;
-import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendInfo;
@@ -100,6 +99,7 @@ public abstract class AbstractBackend implements Backend {
   protected static final String TYPE_SMALLINT = "SMALLINT";
   protected static final String TYPE_VARBINARY_MAX = "VARBINARY(MAX)";
   protected static final String TYPE_VARCHAR = "VARCHAR";
+  protected static final String TYPE_UUID = "UUID";
 
 
   /** use DROP IF EXISTS if supported. */
@@ -644,7 +644,7 @@ public abstract class AbstractBackend implements Backend {
 
   @Override
   public String sqlTypeToString(SqlType sqlType, int size) {
-    throw new TentackleRuntimeException(sqlType + " is not supported for " + this);
+    throw new BackendException(sqlType + " is not supported by " + this);
   }
 
   @Override
@@ -947,6 +947,11 @@ public abstract class AbstractBackend implements Backend {
   @Override
   public boolean isClobSupported() {
     return true;
+  }
+
+  @Override
+  public boolean isUUIDSupported() {
+    return false;
   }
 
   @Override

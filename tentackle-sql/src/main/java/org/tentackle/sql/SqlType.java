@@ -19,6 +19,7 @@
 package org.tentackle.sql;
 
 import org.tentackle.common.Binary;
+import org.tentackle.sql.datatypes.UUIDType;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -177,8 +178,19 @@ public enum SqlType {
     }
   }),
 
+  /** UUID. */
+  UUID(java.util.UUID.class, UUIDType.NIL, t -> {
+    t = removeSingleQuotes(t);
+    try {
+      return java.util.UUID.fromString(t);
+    }
+    catch (RuntimeException rex) {
+      return UUIDType.NIL;   // parsing failed
+    }
+  }),
+
   /** Application specific. */
-  JAVA_OBJECT(Object.class, null, t -> null);    // conversion not possible (never returned from meta data)
+  JAVA_OBJECT(Object.class, null, t -> null);    // conversion not possible
 
 
   /**
