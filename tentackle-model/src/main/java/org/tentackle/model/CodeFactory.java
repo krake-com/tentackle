@@ -199,16 +199,16 @@ public class CodeFactory {
       for (int columnIndex = 0; columnIndex < dataType.getColumnCount(); columnIndex++) {
         buf.append("    ");
         String columnName = attribute.getColumnName(columnIndex);
-        int size = dataType.getSize(columnIndex, attribute.getSize());
-        int scale = dataType.getScale(columnIndex, attribute.getScale());
-        SqlType sqlType = dataType.getSqlType(columnIndex);
+        int size = dataType.getSize(backend, columnIndex, attribute.getSize());
+        int scale = dataType.getScale(backend, columnIndex, attribute.getScale());
+        SqlType sqlType = dataType.getSqlType(backend, columnIndex);
         String comment = attribute.getOptions().getComment();
         if (comment != null && !comment.isEmpty()) {
           comment += dataType.getCommentSuffix(columnIndex).orElse("");
         }
         Object defaultValue = dataType.getColumnValue(columnIndex, attribute.getOptions().getDefaultValue());
         buf.append(backend.sqlCreateColumn(
-            columnName, comment, dataType.getSqlType(columnIndex), size, scale,
+            columnName, comment, dataType.getSqlType(backend, columnIndex), size, scale,
             attribute.isNullable(), defaultValue,
             attribute.getName().equals(Constants.AN_ID) && !entity.getOptions().isNoPrimaryKey(),
             attributeCount < attributeNum || columnIndex < dataType.getColumnCount() - 1));

@@ -19,9 +19,10 @@
 
 package org.tentackle.dbms;
 
+import org.tentackle.session.PersistenceException;
+
 import java.util.HashMap;
 import java.util.Map;
-import org.tentackle.session.PersistenceException;
 
 
 
@@ -156,7 +157,7 @@ public class ObjectSequenceId extends AbstractIdSource {
       // get new offset from sequence
       try {
         PreparedStatementWrapper selectStatement = db.getPreparedStatement(new StatementKey(SELECT_ID, getClass()), false,
-                () -> db.getBackend().sqlNextFromSequene(getName())
+                () -> db.getBackend().sqlNextFromSequence(getName())
         );
         try (ResultSetWrapper rs = selectStatement.executeQuery()) {
           if (rs.next()) {

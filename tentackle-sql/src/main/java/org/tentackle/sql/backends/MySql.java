@@ -20,7 +20,6 @@
 package org.tentackle.sql.backends;
 
 import org.tentackle.common.Service;
-import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendInfo;
@@ -95,7 +94,7 @@ public class MySql extends AbstractSql92Backend {
       return null;
     }
     catch (SQLException ex) {
-      throw new TentackleRuntimeException("cannot determine backend id", ex);
+      throw new BackendException("cannot determine backend id", ex);
     }
   }
 

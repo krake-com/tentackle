@@ -20,8 +20,8 @@
 package org.tentackle.sql.backends;
 
 import org.tentackle.common.Service;
-import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendPreparedStatement;
 import org.tentackle.sql.MigrationStrategy;
 import org.tentackle.sql.NonStandardCommons;
@@ -123,7 +123,7 @@ public class Postgres extends AbstractSql92Backend {
       return null;
     }
     catch (SQLException ex) {
-      throw new TentackleRuntimeException("cannot determine backend id", ex);
+      throw new BackendException("cannot determine backend id", ex);
     }
   }
 
@@ -152,6 +152,11 @@ public class Postgres extends AbstractSql92Backend {
   @Override
   public boolean isClobSupported() {
     return false;   // use TEXT instead
+  }
+
+  @Override
+  public boolean isUUIDSupported() {
+    return true;
   }
 
   @Override
@@ -245,6 +250,7 @@ public class Postgres extends AbstractSql92Backend {
     return switch (jdbcType) {
       case Types.TINYINT, Types.SMALLINT -> new SqlType[]{SqlType.TINYINT, SqlType.SMALLINT};
       case Types.VARCHAR, Types.LONGVARCHAR, Types.NVARCHAR, Types.LONGNVARCHAR, Types.CLOB, Types.NCLOB -> new SqlType[]{SqlType.VARCHAR, SqlType.CLOB};
+      case Types.OTHER -> new SqlType[] { SqlType.UUID };
       default -> super.jdbcTypeToSqlType(jdbcType, size, scale);
     };
   }
@@ -266,6 +272,7 @@ public class Postgres extends AbstractSql92Backend {
       case TIMESTAMP -> TYPE_TIMESTAMP;
       case BLOB -> TYPE_BYTEA;
       case CLOB -> TYPE_TEXT;
+      case UUID -> TYPE_UUID;
       default -> super.sqlTypeToString(sqlType, size);
     };
   }
@@ -278,7 +285,7 @@ public class Postgres extends AbstractSql92Backend {
   }
 
   @Override
-  public String sqlNextFromSequene(String name) {
+  public String sqlNextFromSequence(String name) {
     return "SELECT NEXTVAL('" + name + "')";
   }
 

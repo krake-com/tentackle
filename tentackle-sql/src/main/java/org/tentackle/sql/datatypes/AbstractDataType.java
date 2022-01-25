@@ -81,12 +81,12 @@ public abstract class AbstractDataType<T> implements DataType<T> {
   }
 
   @Override
-  public int getSize(int index, Integer size) {
+  public int getSize(Backend backend, int index, Integer size) {
     return size == null ? 0 : size;
   }
 
   @Override
-  public int getScale(int index, Integer scale) {
+  public int getScale(Backend backend, int index, Integer scale) {
     return scale == null ? 0 : scale;
   }
 

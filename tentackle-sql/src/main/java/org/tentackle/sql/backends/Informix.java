@@ -166,7 +166,7 @@ public class Informix extends AbstractSql92Backend {
   }
 
   @Override
-  public String sqlNextFromSequene(String name) {
+  public String sqlNextFromSequence(String name) {
     return "SELECT " + name + ".NEXTVAL";
   }
 

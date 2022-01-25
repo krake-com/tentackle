@@ -160,7 +160,7 @@ public abstract class AbstractSql92Backend extends AbstractBackend {
   }
 
   @Override
-  public String sqlNextFromSequene(String name) {
+  public String sqlNextFromSequence(String name) {
     throw new BackendException(this + " does not support sequences");
   }
 

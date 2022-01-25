@@ -90,14 +90,16 @@ For more options, see {\@link DbModelWurblet}.
       }
     }
 
-    for (Map.Entry<DataType<?>, String> entry : nonPredefinedDataTypes.entrySet()) {
-      DataType<?> dataType = entry.getKey();
-      String attribNames = entry.getValue();
+    if (!generateMock) {
+      for (Map.Entry<DataType<?>, String> entry : nonPredefinedDataTypes.entrySet()) {
+        DataType<?> dataType = entry.getKey();
+        String attribNames = entry.getValue();
 ]@
 
   /** datatype for @(dataType.getJavaType())@ @(attribNames)@. */
   public static final DataType<@(dataType.getJavaType())@> @(dataType.getDataTypeConstant())@ = DataTypeFactory.getInstance().get(@(dataType.getJavaType())@.class);
 @[
+      }
     }
 
   }

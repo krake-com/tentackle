@@ -112,7 +112,7 @@ public abstract class AbstractSql2003Backend extends AbstractSql92Backend {
   }
 
   @Override
-  public String sqlNextFromSequene(String name) {
+  public String sqlNextFromSequence(String name) {
     return "SELECT NEXT VALUE FOR " + name;
   }
 

@@ -547,7 +547,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
         break;
 
       default:
-        throw new PersistenceException("cannot set applition specific types");
+        throw new PersistenceException("cannot set application specific types");
     }
   }
 
@@ -583,7 +583,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
         }
       }
     }
-    SqlType sqlType = dataType.getSqlType(columnIndex);
+    SqlType sqlType = dataType.getSqlType(con.getBackend(), columnIndex);
     int ep = effectivePosition(p);
     try {
       getConnection().getBackend().setArray(getStatement(), ep, sqlType, arrayElements, operator);

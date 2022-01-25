@@ -134,9 +134,9 @@ public class ColumnMigrator {
         for (int columnIndex = 0; columnIndex < dataType.getColumnCount(); columnIndex++) {
           if (!migrated[columnIndex]) {
             columnName = attribute.getColumnName(columnIndex);
-            sqlType = dataType.getSqlType(columnIndex);
-            columnSize = dataType.getSize(columnIndex, attribute.getSize());
-            columnScale = dataType.getScale(columnIndex, attribute.getScale());
+            sqlType = dataType.getSqlType(backend, columnIndex);
+            columnSize = dataType.getSize(backend, columnIndex, attribute.getSize());
+            columnScale = dataType.getScale(backend, columnIndex, attribute.getScale());
             comment = attribute.getOptions().getComment();
             if (comment != null && !comment.isEmpty()) {
               comment += dataType.getCommentSuffix(columnIndex).orElse("");
