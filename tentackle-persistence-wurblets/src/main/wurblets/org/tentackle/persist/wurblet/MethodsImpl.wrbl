@@ -52,10 +52,13 @@ For more options, see {\@link DbModelWurblet}.
     }
 
     boolean generateCreateNormText = false;
+    boolean generatePresetVirgin = false;
     for (Attribute attr: getEntity().getAttributes())  {
       if (attr.getOptions().isPartOfNormText())  {
         generateCreateNormText = true;
-        break;
+      }
+      if (attr.getOptions().getNewValue() != null) {
+        generatePresetVirgin = true;
       }
     }
 
@@ -1128,6 +1131,25 @@ For more options, see {\@link DbModelWurblet}.
         }
 ]@
     return buf;
+  }
+@[
+      }
+
+      if (generatePresetVirgin) {
+]@
+
+  \@Override
+  protected void presetVirgin() {
+@[
+        for (Attribute attr: getEntity().getAttributes())  {
+          String newValue = attr.getOptions().getNewValue();
+          if (newValue != null)  {
+]@
+    @(attr.getName())@ = @(newValue)@;
+@[
+          }
+        }
+]@
   }
 @[
       }

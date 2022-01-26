@@ -52,6 +52,11 @@ public class UUIDType extends AbstractDataType<UUID> {
   }
 
   @Override
+  public int[] getSortableColumns() {
+    return null;
+  }
+
+  @Override
   public boolean isMapNullSupported() {
     return true;
   }
