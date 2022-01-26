@@ -58,9 +58,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
@@ -473,6 +475,16 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
           }
         }
       }
+
+      Set<Backend> validatedBackends = new HashSet<>();
+      for (BackendInfo backendInfo : backendInfos.values()) {
+        validatedBackends.add(backendInfo.getBackend());
+      }
+      for (BackendInfo backendInfo : connectableBackendInfos.values()) {
+        validatedBackends.add(backendInfo.getBackend());
+      }
+      Model.getInstance().getEntityFactory().setBackends(validatedBackends);
+
       return true;
     }
     return false;
@@ -542,7 +554,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
           }
         }
         PrintConfiguration configuration = new PrintConfiguration(dumpAsComment, dumpVariables, defaults,
-        optionAnnotations, dumpColumnGap);
+                                                                  optionAnnotations, dumpColumnGap);
 
         Map<String, String> aliasesMap = new TreeMap<>();     // alias:entityname
         Map<String, String> tableMap = new TreeMap<>();       // tablename:entityname
