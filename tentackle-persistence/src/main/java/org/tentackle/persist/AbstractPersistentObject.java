@@ -683,6 +683,14 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
            component.getRootClassId() == getClassId();
   }
 
+  /**
+   * Presets the attributes with initial values, if the PDO is persisted the first time.<br>
+   * The method is invoked <em>before</em> the PDO is validated.
+   */
+  protected void presetVirgin() {
+    // default does nothing
+  }
+
   @Override
   public boolean isNormTextProvided() {
     return false;
@@ -3964,6 +3972,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
   @Override
   public List<ValidationResult> validate(String validationPath, ValidationScope scope) {
+    if (isVirgin()) {   // if never persisted before (isNew() would be true for deleted objects as well)
+      presetVirgin();
+    }
     return ValidationUtilities.getInstance().validate(getPdo(), validationPath, scope);   // not this but getPdo()!
   }
 

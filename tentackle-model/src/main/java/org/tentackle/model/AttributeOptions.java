@@ -66,9 +66,16 @@ public interface AttributeOptions extends CommonOptions {
   /**
    * Gets the initial value if [INIT value] given.<br>
    *
-   * @return the string to initialize the declaration with
+   * @return the Java code to initialize the declaration with
    */
   String getInitialValue();
+
+  /**
+   * Gets the new value if [NEW value] given.<br>
+   *
+   * @return the Java code to initialize before validation if PDO is persisted the first time
+   */
+  String getNewValue();
 
   /**
    * Returns whether this is the object id holding the context.
