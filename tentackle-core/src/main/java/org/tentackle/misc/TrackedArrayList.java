@@ -19,16 +19,19 @@
 
 package org.tentackle.misc;
 
+import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.ListIterator;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
-import org.tentackle.common.TentackleRuntimeException;
-import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 
 
 
@@ -424,7 +427,6 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   @Override
   public boolean add(E element) {
     if (super.add(element)) {
-      added = true;
       removeRemovedObject(element);
       fireAdded(element);
       return true;
@@ -446,7 +448,6 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   public void add(int index, E element) {
     super.add(index, element);
     removeRemovedObject(element);
-    added = true;
     fireAdded(element);
   }
 
@@ -468,12 +469,14 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   @Override
   public boolean addAll(Collection<? extends E> collection) {
     if (super.addAll(collection))  {
-      added = true;
       removeRemovedObjects(collection);
       if (listeners != null) {
         for (E element: collection) {
           fireAdded(element);
         }
+      }
+      else {
+        added = true;
       }
       return true;
     }
@@ -497,12 +500,14 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   @Override
   public boolean addAll(int index, Collection<? extends E> collection) {
     if (super.addAll(index, collection))  {
-      added = true;
       removeRemovedObjects(collection);
       if (listeners != null) {
         for (E element: collection) {
           fireAdded(element);
         }
+      }
+      else {
+        added = true;
       }
       return true;
     }
@@ -666,7 +671,6 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
       addRemovedObject(obj);
       removeRemovedObject(element);
       fireAdded(element);
-      added = true;
     }
     return obj;
   }
@@ -735,12 +739,19 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   }
 
 
+  @Override
+  public List<E> subList(int fromIndex, int toIndex) {
+    return createSubListWrapper(super.subList(fromIndex, toIndex));
+  }
+
+
   /**
    * Fires an object added event.
    *
    * @param object the added object
    */
   private void fireAdded(E object) {
+    added = true;
     if (listeners != null && !listeners.isEmpty()) {
       for (TrackedListListener<E> listener: getListeners()) {
         listener.added(object);
@@ -808,4 +819,177 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
     }
     return false;
   }
+
+  /**
+   * Gets the removed object set.
+   *
+   * @return the set, never null
+   */
+  private Set<E> removedObjects() {
+    if (removedObjects == null) {
+      removedObjects = new LinkedHashSet<>();
+    }
+    return removedObjects;
+  }
+
+
+  private List<E> createSubListWrapper(List<E> subList) {
+    return new SubListWrapper(subList);
+  }
+
+
+  /**
+   * Wrapper class necessary since some methods of {@link ArrayList#subList(int, int)} manipulate the
+   * underlying element array directly, which would bypass the tracking capabilities of the TAL.
+   */
+  private class SubListWrapper implements List<E> {
+
+    private final List<E> subList;
+
+    public SubListWrapper(List<E> subList) {
+      this.subList = subList;
+    }
+
+    @Override
+    public int size() {
+      return subList.size();
+    }
+
+    @Override
+    public boolean isEmpty() {
+      return subList.isEmpty();
+    }
+
+    @Override
+    public boolean contains(Object o) {
+      return subList.contains(o);
+    }
+
+    @Override
+    public Iterator<E> iterator() {
+      return subList.iterator();
+    }
+
+    @Override
+    public Object[] toArray() {
+      return subList.toArray();
+    }
+
+    @Override
+    public <T> T[] toArray(T[] a) {
+      return subList.toArray(a);
+    }
+
+    @Override
+    public boolean add(E e) {
+      return subList.add(e);    // properly delegated to TAL#add (see ArrayList.SubList#add)
+    }
+
+    @Override
+    public boolean remove(Object o) {
+      return subList.remove(o);   // properly delegated to TAL#remove (see ArrayList.SubList#add)
+    }
+
+    @Override
+    public boolean containsAll(Collection<?> c) {
+      return subList.containsAll(c);
+    }
+
+    @Override
+    public boolean addAll(Collection<? extends E> c) {
+      return subList.addAll(c);   // properly delegated to TAL#addAll (see ArrayList.SubList#add)
+    }
+
+    @Override
+    public boolean addAll(int index, Collection<? extends E> c) {
+      return subList.addAll(index, c);    // properly delegated to TAL#addAll(see ArrayList.SubList#add)
+    }
+
+    @Override
+    public boolean removeAll(Collection<?> c) {
+      // removeAll is delegated to ArrayList.SubList#batchremove, which directly operates on the element array
+      Objects.requireNonNull(c);
+      boolean modified = false;
+      Iterator<?> it = iterator();
+      while (it.hasNext()) {
+        if (c.contains(it.next())) {
+          it.remove();    // ArrayList.SubList#iterator#remove is properly delegated to TAL#remove
+          modified = true;
+        }
+      }
+      return modified;
+    }
+
+    @Override
+    public boolean retainAll(Collection<?> c) {
+      // removeAll is delegated to ArrayList.SubList#batchremove, which directly operates on the element array
+      Objects.requireNonNull(c);
+      boolean modified = false;
+      Iterator<E> it = iterator();
+      while (it.hasNext()) {
+        if (!c.contains(it.next())) {
+          it.remove();    // ArrayList.SubList#iterator#remove is properly delegated to TAL#remove
+          modified = true;
+        }
+      }
+      return modified;
+    }
+
+    @Override
+    public void clear() {
+      subList.clear();    // properly delegated to removeRange which is overridden in TAL
+    }
+
+    @Override
+    public E get(int index) {
+      return subList.get(index);
+    }
+
+    @Override
+    public E set(int index, E element) {
+      E obj = subList.set(index, element);    // ArrayList.SubList#set directly operates on the element array
+      if (obj != element)  {    // if not exactly the same instance
+        addRemovedObject(obj);
+        removeRemovedObject(element);
+        fireAdded(element);
+      }
+      return obj;
+    }
+
+    @Override
+    public void add(int index, E element) {
+      subList.add(index, element);    // properly delegated to TAL#add (see ArrayList.SubList#add)
+    }
+
+    @Override
+    public E remove(int index) {
+      return subList.remove(index);   // properly delegated to TAL#remove (see ArrayList.SubList#remove)
+    }
+
+    @Override
+    public int indexOf(Object o) {
+      return subList.indexOf(o);
+    }
+
+    @Override
+    public int lastIndexOf(Object o) {
+      return subList.lastIndexOf(o);
+    }
+
+    @Override
+    public ListIterator<E> listIterator() {
+      return subList.listIterator();    // sublist's iterator properly delegates set/add/remove to TAL
+    }
+
+    @Override
+    public ListIterator<E> listIterator(int index) {
+      return subList.listIterator(index);   // sublist's iterator properly delegates set/add/remove to TAL
+    }
+
+    @Override
+    public List<E> subList(int fromIndex, int toIndex) {
+      return createSubListWrapper(subList.subList(fromIndex, toIndex));
+    }
+  }
+
 }
