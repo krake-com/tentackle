@@ -22,7 +22,7 @@ import org.testng.Assert;
 import org.testng.Reporter;
 import org.testng.SkipException;
 
-import org.tentackle.misc.Duration;
+import org.tentackle.misc.TimeKeeper;
 import org.tentackle.script.Script;
 import org.tentackle.script.ScriptFactory;
 import org.tentackle.script.ScriptVariable;
@@ -89,7 +89,7 @@ public class JSR223ThreadingTest {
   }
 
   public void runIt(Script script1, Script script2) {
-    Duration duration = new Duration();
+    TimeKeeper timeKeeper = new TimeKeeper();
     Runner[] runners = new Runner[threadNum];
     for (int i=0; i < threadNum; i++) {
       Runner runner = new Runner(i % 2 == 0 ? script1 : script2, i);
@@ -107,7 +107,7 @@ public class JSR223ThreadingTest {
         runners[i].interrupt();
       }
     }
-    Reporter.log("Duration " + duration.end().millisToString() + "<br>");
+    Reporter.log("Duration " + timeKeeper.end().millisToString() + "<br>");
     if (errorBuffer.length() > 0) {
       Assert.fail(errorBuffer.toString());
     }

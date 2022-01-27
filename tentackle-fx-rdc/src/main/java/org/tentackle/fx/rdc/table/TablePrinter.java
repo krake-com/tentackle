@@ -53,8 +53,8 @@ import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.fx.table.TotalsTableView;
 import org.tentackle.log.Logger;
-import org.tentackle.misc.Duration;
 import org.tentackle.misc.FormatHelper;
+import org.tentackle.misc.TimeKeeper;
 import org.tentackle.session.AbstractSessionTask;
 
 import java.text.MessageFormat;
@@ -167,7 +167,7 @@ public class TablePrinter extends AbstractFxController {
 
 
   private int pageCount;                                          // number of pages
-  private Duration jobDuration;                                   // for logging only
+  private TimeKeeper jobTimeKeeper;                                   // for logging only
   private int rowCount;                                           // number of rows to print (incl. totals)
   private int totalsRowCount;                                     // number of total rows, 0 = none
   private volatile boolean terminationRequested;                  // true if user closed the printing dialog
@@ -232,7 +232,7 @@ public class TablePrinter extends AbstractFxController {
     bottomLine.getStyleClass().add(STYLE_BOTTOMLINE);
     pageLabel.getStyleClass().add(STYLE_BOTTOMLINE);
     dateLabel.getStyleClass().add(STYLE_BOTTOMLINE);
-    jobDuration = new Duration();
+    jobTimeKeeper = new TimeKeeper();
   }
 
 
@@ -447,9 +447,9 @@ public class TablePrinter extends AbstractFxController {
             }
             else {
               job.endJob();
-              jobDuration.end();
+              jobTimeKeeper.end();
               LOGGER.info("job \"{0}\", {1} pages printed, {2} s",
-                          titleLabel.getText(), pages.size(), jobDuration.secondsToString());
+                          titleLabel.getText(), pages.size(), jobTimeKeeper.secondsToString());
             }
           }
           stage.close();

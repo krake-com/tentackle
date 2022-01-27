@@ -188,7 +188,7 @@ public class FormatHelperTest {
   public void testPerformance() {
     DateFormat dateFormat = new SimpleDateFormat(FormatHelper.getTimestampPattern(Locale.US));
     Timestamp timestamp = new Timestamp();
-    Duration duration = new Duration();
+    TimeKeeper timeKeeper = new TimeKeeper();
     try {
       for (int i = 0; i < LOOPS; i++) {
         synchronized (dateFormat) {   // dateFormat is not threadsafe
@@ -202,11 +202,11 @@ public class FormatHelperTest {
     catch (ParseException parseException) {
       fail("parsing failed", parseException);
     }
-    duration.end();
-    Reporter.log("old java.util package w/ sync: " + duration.millisToString() + " ms<br>", true);
+    timeKeeper.end();
+    Reporter.log("old java.util package w/ sync: " + timeKeeper.millisToString() + " ms<br>", true);
 
     timestamp = new Timestamp();
-    duration = new Duration();
+    timeKeeper = new TimeKeeper();
     try {
       for (int i = 0; i < LOOPS; i++) {
         String str = dateFormat.format(timestamp);
@@ -218,12 +218,12 @@ public class FormatHelperTest {
     catch (ParseException parseException) {
       fail("parsing failed", parseException);
     }
-    duration.end();
-    Reporter.log("old java.util package w/o sync: " + duration.millisToString() + " ms<br>", true);
+    timeKeeper.end();
+    Reporter.log("old java.util package w/o sync: " + timeKeeper.millisToString() + " ms<br>", true);
 
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern(FormatHelper.getTimestampPattern(Locale.US));
     LocalDateTime localDateTime = LocalDateTime.now();
-    duration = new Duration();
+    timeKeeper = new TimeKeeper();
     try {
       for (int i = 0; i < LOOPS; i++) {
         String str = formatter.format(localDateTime);
@@ -235,11 +235,11 @@ public class FormatHelperTest {
     catch (DateTimeParseException parseException) {
       fail("parsing failed", parseException);
     }
-    duration.end();
-    Reporter.log("new java.time package: " + duration.millisToString() + " ms<br>", true);
+    timeKeeper.end();
+    Reporter.log("new java.time package: " + timeKeeper.millisToString() + " ms<br>", true);
 
     timestamp = new Timestamp();
-    duration = new Duration();
+    timeKeeper = new TimeKeeper();
     try {
       for (int i = 0; i < LOOPS; i++) {
         String str = formatter.format(timestamp.toLocalDateTime());
@@ -251,8 +251,8 @@ public class FormatHelperTest {
     catch (DateTimeParseException parseException) {
       fail("parsing failed", parseException);
     }
-    duration.end();
-    Reporter.log("new java.time package w/ conversion: " + duration.millisToString() + " ms<br>", true);
+    timeKeeper.end();
+    Reporter.log("new java.time package w/ conversion: " + timeKeeper.millisToString() + " ms<br>", true);
   }
 
   /**
@@ -263,7 +263,7 @@ public class FormatHelperTest {
     DateFormat dateFormat = new SimpleDateFormat(FormatHelper.getTimestampPattern(Locale.US));
     Timestamp timestamp = new Timestamp(System.currentTimeMillis() / 1000 * 1000);
     String str = dateFormat.format(timestamp);
-    Duration duration = new Duration();
+    TimeKeeper timeKeeper = new TimeKeeper();
     try {
       for (int i = 0; i < LOOPS; i++) {
         synchronized (dateFormat) {   // dateFormat is not threadsafe
@@ -275,10 +275,10 @@ public class FormatHelperTest {
     catch (ParseException parseException) {
       fail("parsing failed", parseException);
     }
-    duration.end();
-    Reporter.log("old java.util package w/ sync: " + duration.millisToString() + " ms<br>", true);
+    timeKeeper.end();
+    Reporter.log("old java.util package w/ sync: " + timeKeeper.millisToString() + " ms<br>", true);
 
-    duration = new Duration();
+    timeKeeper = new TimeKeeper();
     try {
       for (int i = 0; i < LOOPS; i++) {
         Timestamp ts = new Timestamp(dateFormat.parse(str).getTime());
@@ -288,13 +288,13 @@ public class FormatHelperTest {
     catch (ParseException parseException) {
       fail("parsing failed", parseException);
     }
-    duration.end();
-    Reporter.log("old java.util package w/o sync: " + duration.millisToString() + " ms<br>", true);
+    timeKeeper.end();
+    Reporter.log("old java.util package w/o sync: " + timeKeeper.millisToString() + " ms<br>", true);
 
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern(FormatHelper.getTimestampPattern(Locale.US));
     LocalDateTime localDateTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     str = formatter.format(localDateTime);
-    duration = new Duration();
+    timeKeeper = new TimeKeeper();
     try {
       for (int i = 0; i < LOOPS; i++) {
         LocalDateTime parsed = formatter.parse(str, LocalDateTime::from);
@@ -304,11 +304,11 @@ public class FormatHelperTest {
     catch (DateTimeParseException parseException) {
       fail("parsing failed", parseException);
     }
-    duration.end();
-    Reporter.log("new java.time package: " + duration.millisToString() + " ms<br>", true);
+    timeKeeper.end();
+    Reporter.log("new java.time package: " + timeKeeper.millisToString() + " ms<br>", true);
 
     timestamp = new Timestamp(Timestamp.valueOf(localDateTime).getTime());
-    duration = new Duration();
+    timeKeeper = new TimeKeeper();
     try {
       for (int i = 0; i < LOOPS; i++) {
         Timestamp parsed = new Timestamp(Timestamp.valueOf(formatter.parse(str, LocalDateTime::from)).getTime());
@@ -318,8 +318,8 @@ public class FormatHelperTest {
     catch (DateTimeParseException parseException) {
       fail("parsing failed", parseException);
     }
-    duration.end();
-    Reporter.log("new java.time package w/ conversion: " + duration.millisToString() + " ms<br>", true);
+    timeKeeper.end();
+    Reporter.log("new java.time package w/ conversion: " + timeKeeper.millisToString() + " ms<br>", true);
   }
 
   /**
@@ -330,41 +330,41 @@ public class FormatHelperTest {
     DateFormat dateFormat = new SimpleDateFormat(FormatHelper.getTimestampPattern(Locale.US));
     Timestamp timestamp = new Timestamp();
     String str = dateFormat.format(timestamp);
-    Duration duration = new Duration();
+    TimeKeeper timeKeeper = new TimeKeeper();
     for (int i = 0; i < LOOPS; i++) {
       synchronized (dateFormat) {   // dateFormat is not threadsafe
         assertEquals(dateFormat.format(timestamp), str);
       }
     }
-    duration.end();
-    Reporter.log("old java.util package w/ sync: " + duration.millisToString() + " ms<br>", true);
+    timeKeeper.end();
+    Reporter.log("old java.util package w/ sync: " + timeKeeper.millisToString() + " ms<br>", true);
 
-    duration = new Duration();
+    timeKeeper = new TimeKeeper();
     for (int i = 0; i < LOOPS; i++) {
       assertEquals(dateFormat.format(timestamp), str);
     }
-    duration.end();
-    Reporter.log("old java.util package w/ sync: " + duration.millisToString() + " ms<br>", true);
+    timeKeeper.end();
+    Reporter.log("old java.util package w/ sync: " + timeKeeper.millisToString() + " ms<br>", true);
 
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern(FormatHelper.getTimestampPattern(Locale.US));
     LocalDateTime localDateTime = LocalDateTime.now();
     str = formatter.format(localDateTime);
-    duration = new Duration();
+    timeKeeper = new TimeKeeper();
     for (int i = 0; i < LOOPS; i++) {
       assertEquals(formatter.format(localDateTime), str);
     }
-    duration.end();
-    Reporter.log("new java.time package: " + duration.millisToString() + " ms<br>", true);
+    timeKeeper.end();
+    Reporter.log("new java.time package: " + timeKeeper.millisToString() + " ms<br>", true);
 
     timestamp = new Timestamp();
     localDateTime = timestamp.toLocalDateTime();
     str = formatter.format(localDateTime);
-    duration = new Duration();
+    timeKeeper = new TimeKeeper();
     for (int i = 0; i < LOOPS; i++) {
       assertEquals(formatter.format(timestamp.toLocalDateTime()), str);
     }
-    duration.end();
-    Reporter.log("new java.time package w/ conversion: " + duration.millisToString() + " ms<br>", true);
+    timeKeeper.end();
+    Reporter.log("new java.time package w/ conversion: " + timeKeeper.millisToString() + " ms<br>", true);
   }
 
 }

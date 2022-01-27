@@ -19,11 +19,12 @@
 
 package org.tentackle.log;
 
+import org.tentackle.log.Logger.Level;
+import org.tentackle.misc.TimeKeeper;
+import org.tentackle.reflect.AbstractInterceptor;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import org.tentackle.log.Logger.Level;
-import org.tentackle.misc.Duration;
-import org.tentackle.reflect.AbstractInterceptor;
 
 /**
  * Implementation for the {@link Log} interception.
@@ -47,14 +48,14 @@ public class LogInterceptor extends AbstractInterceptor {
 
   @Override
   public Object proceed(Object proxy, Method method, Object[] args, Object orgProxy, Method orgMethod, Object[] orgArgs) throws Throwable {
-    Duration duration = null;
+    TimeKeeper timeKeeper = null;
     if (LOGGER.isLoggable(level)) {
-      duration = new Duration();
+      timeKeeper = new TimeKeeper();
     }
     Object value = method.invoke(proxy, args);
-    if (duration != null) {
-      duration.end();
-      LOGGER.log(level, orgMethod.toGenericString() + " took " + duration.millisToString() + "ms", null);
+    if (timeKeeper != null) {
+      timeKeeper.end();
+      LOGGER.log(level, orgMethod.toGenericString() + " took " + timeKeeper.millisToString() + "ms", null);
     }
     return value;
   }

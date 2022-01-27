@@ -27,7 +27,7 @@ import org.tentackle.log.Loggable;
 import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;
 import org.tentackle.log.MappedDiagnosticContext;
-import org.tentackle.misc.Duration;
+import org.tentackle.misc.TimeKeeper;
 import org.tentackle.session.Session;
 
 import java.lang.reflect.InvocationHandler;
@@ -425,13 +425,13 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
    * @param method the method executed
    * @param args the method args
    * @param retval the method's return value
-   * @param duration the duration when execution was started, null if don't care
+   * @param timeKeeper the duration when execution was started, null if don't care
    */
-  protected void log(Method method, Object[] args, Object retval, Duration duration) {
+  protected void log(Method method, Object[] args, Object retval, TimeKeeper timeKeeper) {
 
-    boolean durationExceeded = logMinDurationMillis > 0 && duration.millis() > logMinDurationMillis;
+    boolean durationExceeded = logMinDurationMillis > 0 && timeKeeper.millis() > logMinDurationMillis;
     if (collectStatistics && isMDCValid()) {
-      delegate.getServerSession().countMethodInvocation(method, delegate.getServicedClass(), duration);
+      delegate.getServerSession().countMethodInvocation(method, delegate.getServicedClass(), timeKeeper);
     }
 
     if (isMDCValid()) {
@@ -440,7 +440,7 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
 
       if (durationExceeded || collectionSizeExceeded) {
         LOGGER.warning(() -> {
-          StringBuilder buf = createInvocationLog(method, args, retval, duration, collectionSize);
+          StringBuilder buf = createInvocationLog(method, args, retval, timeKeeper, collectionSize);
           if (durationExceeded) {
             buf.insert(0, ">>> duration exceeded:\n");
           }
@@ -451,14 +451,14 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
         });
       }
       else if (logInvocations) {
-        LOGGER.info(() -> createInvocationLog(method, args, retval, duration, collectionSize).toString());
+        LOGGER.info(() -> createInvocationLog(method, args, retval, timeKeeper, collectionSize).toString());
       }
     }
     // else no logging
   }
 
 
-  private StringBuilder createInvocationLog(Method method, Object[] args, Object retval, Duration duration, int collectionSize) {
+  private StringBuilder createInvocationLog(Method method, Object[] args, Object retval, TimeKeeper timeKeeper, int collectionSize) {
     StringBuilder buf = new StringBuilder();
     if (logInvocationDetails) {
       buf.append(delegate.getServicedClass().getSimpleName()).
@@ -478,7 +478,7 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
       buf.append(") = ").
           append(StringHelper.objectToLoggableString(retval)).
           append(" {").
-          append(duration.millisToString()).
+          append(timeKeeper.millisToString()).
           append("ms");
       if (collectionSize > 0) {
         buf.append(", ").
@@ -492,7 +492,7 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
           append('.').
           append(method.getName()).
           append(" [").
-          append(duration.millisToString()).
+          append(timeKeeper.millisToString()).
           append("ms]");
     }
     return buf;
@@ -554,10 +554,10 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
 
       try {
         if (durationNecessary) {
-          Duration duration = new Duration();
+          TimeKeeper timeKeeper = new TimeKeeper();
           Object retval = invokeImpl(proxy, method, args);
-          duration.end();
-          log(method, args, retval, duration);
+          timeKeeper.end();
+          log(method, args, retval, timeKeeper);
           return retval;
         }
         else {

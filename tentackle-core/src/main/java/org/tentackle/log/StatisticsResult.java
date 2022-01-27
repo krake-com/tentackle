@@ -18,7 +18,7 @@
 
 package org.tentackle.log;
 
-import org.tentackle.misc.Duration;
+import org.tentackle.misc.TimeKeeper;
 
 /**
  * Method statistics result.
@@ -28,36 +28,36 @@ import org.tentackle.misc.Duration;
 public class StatisticsResult {
 
   private long count;               // invocation count
-  private Duration minDuration;     // the shorted duration
-  private Duration maxDuration;     // the longest duration
-  private Duration totalDuration;   // total duration
+  private TimeKeeper minTimeKeeper;     // the shorted duration
+  private TimeKeeper maxTimeKeeper;     // the longest duration
+  private TimeKeeper totalTimeKeeper;   // total duration
 
 
   /**
    * Count invocations.
    *
    * @param count the number of invocations
-   * @param duration the duration
+   * @param timeKeeper the duration
    */
-  public void count(Duration duration, int count) {
+  public void count(TimeKeeper timeKeeper, int count) {
     if (count <= 1) {
-      count(duration);
+      count(timeKeeper);
     }
     else {
-      Duration singleDuration = duration.clone().divide(count);
-      long nanos = singleDuration.nanos() / count;
-      if (minDuration == null || minDuration.nanos() > nanos) {
-        minDuration = singleDuration;
+      TimeKeeper singleTimeKeeper = timeKeeper.clone().divide(count);
+      long nanos = singleTimeKeeper.nanos() / count;
+      if (minTimeKeeper == null || minTimeKeeper.nanos() > nanos) {
+        minTimeKeeper = singleTimeKeeper;
       }
-      if (maxDuration == null || maxDuration.nanos() < nanos) {
-        maxDuration = singleDuration;
+      if (maxTimeKeeper == null || maxTimeKeeper.nanos() < nanos) {
+        maxTimeKeeper = singleTimeKeeper;
       }
       this.count += count;
-      if (totalDuration == null) {
-        totalDuration = duration.clone();
+      if (totalTimeKeeper == null) {
+        totalTimeKeeper = timeKeeper.clone();
       }
       else {
-        totalDuration.add(duration);
+        totalTimeKeeper.add(timeKeeper);
       }
     }
   }
@@ -65,22 +65,22 @@ public class StatisticsResult {
   /**
    * Count an invocation.
    *
-   * @param duration the duration
+   * @param timeKeeper the duration
    */
-  public void count(Duration duration) {
-    long nanos = duration.nanos();
-    if (minDuration == null || minDuration.nanos() > nanos) {
-      minDuration = duration.clone();
+  public void count(TimeKeeper timeKeeper) {
+    long nanos = timeKeeper.nanos();
+    if (minTimeKeeper == null || minTimeKeeper.nanos() > nanos) {
+      minTimeKeeper = timeKeeper.clone();
     }
-    if (maxDuration == null || maxDuration.nanos() < nanos) {
-      maxDuration = duration.clone();
+    if (maxTimeKeeper == null || maxTimeKeeper.nanos() < nanos) {
+      maxTimeKeeper = timeKeeper.clone();
     }
     count++;
-    if (totalDuration == null) {
-      totalDuration = duration.clone();
+    if (totalTimeKeeper == null) {
+      totalTimeKeeper = timeKeeper.clone();
     }
     else {
-      totalDuration.add(duration);
+      totalTimeKeeper.add(timeKeeper);
     }
   }
 
@@ -89,8 +89,8 @@ public class StatisticsResult {
    *
    * @return the minimum duration.
    */
-  public Duration getMinDuration() {
-    return minDuration;
+  public TimeKeeper getMinDuration() {
+    return minTimeKeeper;
   }
 
   /**
@@ -98,8 +98,8 @@ public class StatisticsResult {
    *
    * @return the maximum durations
    */
-  public Duration getMaxDuration() {
-    return maxDuration;
+  public TimeKeeper getMaxDuration() {
+    return maxTimeKeeper;
   }
 
   /**
@@ -107,8 +107,8 @@ public class StatisticsResult {
    *
    * @return the total duration
    */
-  public Duration getTotalDuration() {
-    return totalDuration;
+  public TimeKeeper getTotalDuration() {
+    return totalTimeKeeper;
   }
 
   /**

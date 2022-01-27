@@ -22,7 +22,7 @@ import org.testng.Assert;
 import org.testng.Reporter;
 import org.testng.annotations.Test;
 
-import org.tentackle.misc.Duration;
+import org.tentackle.misc.TimeKeeper;
 import org.tentackle.pdo.testng.AbstractPdoTest;
 
 public class BatchingTest extends AbstractPdoTest {
@@ -41,12 +41,12 @@ public class BatchingTest extends AbstractPdoTest {
   public void testInserts() {
     Db session = (Db) getSession();
     ModificationLog log = new ModificationLog(session, DbModificationType.INSERT);
-    Duration duration = new Duration();
+    TimeKeeper timeKeeper = new TimeKeeper();
     for (int i=0; i < COUNT; i++) {
       new ModificationLog(log, DbModificationType.INSERT).saveObject();
     }
-    duration.end();
-    Reporter.log("elapsed time for " + COUNT + " simple inserts: " + duration.millis() + " ms <br>", true);
+    timeKeeper.end();
+    Reporter.log("elapsed time for " + COUNT + " simple inserts: " + timeKeeper.millis() + " ms <br>", true);
   }
 
   /**
@@ -58,7 +58,7 @@ public class BatchingTest extends AbstractPdoTest {
     ModificationLog log = new ModificationLog(session, DbModificationType.INSERT);
     log.setSerial(1);
     PreparedStatementWrapper st = log.getPreparedStatement(log.getClassVariables().insertStatementId, () -> log.createInsertSql());
-    Duration duration = new Duration();
+    TimeKeeper timeKeeper = new TimeKeeper();
     int batchCount = 0;
     for (int i=1; i <= COUNT; i++) {
       log.setId(i);
@@ -78,8 +78,8 @@ public class BatchingTest extends AbstractPdoTest {
     if (batchCount != COUNT / BATCHSIZE) {
       Assert.fail("batch failed");
     }
-    duration.end();
-    Reporter.log("elapsed time for " + COUNT + " batch inserts: " + duration.millis() + " ms <br>", true);
+    timeKeeper.end();
+    Reporter.log("elapsed time for " + COUNT + " batch inserts: " + timeKeeper.millis() + " ms <br>", true);
   }
 
   /**

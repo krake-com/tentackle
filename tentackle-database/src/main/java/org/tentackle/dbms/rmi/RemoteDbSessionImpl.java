@@ -29,7 +29,7 @@ import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;
 import org.tentackle.log.MethodStatistics;
 import org.tentackle.misc.DiagnosticUtilities;
-import org.tentackle.misc.Duration;
+import org.tentackle.misc.TimeKeeper;
 import org.tentackle.session.LoginFailedException;
 import org.tentackle.session.MultiUserSessionPool;
 import org.tentackle.session.PersistenceException;
@@ -573,10 +573,10 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    *
    * @param method the method invoked
    * @param servicedClass the serviced class
-   * @param duration execution duration
+   * @param timeKeeper execution duration
    */
-  public void countMethodInvocation(Method method, Class<?> servicedClass, Duration duration) {
-    resources.methodStats.countMethodInvocation(method, servicedClass, duration);
+  public void countMethodInvocation(Method method, Class<?> servicedClass, TimeKeeper timeKeeper) {
+    resources.methodStats.countMethodInvocation(method, servicedClass, timeKeeper);
   }
 
 

@@ -22,7 +22,7 @@ import org.testng.Assert;
 import org.testng.Reporter;
 import org.testng.annotations.Test;
 
-import org.tentackle.misc.Duration;
+import org.tentackle.misc.TimeKeeper;
 import org.tentackle.script.Script;
 import org.tentackle.script.ScriptFactory;
 import org.tentackle.script.ScriptVariable;
@@ -82,7 +82,7 @@ public class GroovyThreadingTest {
   public void runIt() {
     Script script1 = ScriptFactory.getInstance().createScript("groovy", "a + b", false, true, null);
     Script script2 = ScriptFactory.getInstance().createScript("groovy", "b + a", false, true, null);
-    Duration duration = new Duration();
+    TimeKeeper timeKeeper = new TimeKeeper();
     Runner[] runners = new Runner[THREAD_NUM];
     for (int i=0; i < THREAD_NUM; i++) {
       Runner runner = new Runner(i % 2 == 0 ? script1 : script2, i);
@@ -100,7 +100,7 @@ public class GroovyThreadingTest {
         runners[i].interrupt();
       }
     }
-    Reporter.log("Duration " + duration.end().millisToString() + "<br>");
+    Reporter.log("Duration " + timeKeeper.end().millisToString() + "<br>");
     if (errorBuffer.length() > 0) {
       Assert.fail(errorBuffer.toString());
     }

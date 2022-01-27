@@ -20,7 +20,7 @@ package org.tentackle.test.pdo;
 import org.testng.Reporter;
 import org.testng.annotations.Test;
 
-import org.tentackle.misc.Duration;
+import org.tentackle.misc.TimeKeeper;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.persist.security.SecurityPersistenceImpl;
 import org.tentackle.security.pdo.Security;
@@ -45,21 +45,21 @@ public class PdoInvocationTest {
     int count = 1;
     for (long j=0; j < LOOPS; j++, count *= 10) {
 
-      Duration duration = new Duration();
+      TimeKeeper timeKeeper = new TimeKeeper();
       for (int i = 0; i < count; i++) {
         securityPersistence.setAllowed(true);
       }
-      duration.end();
-      String msg = count + " direct invocations: " + duration.millisToString() + "ms";
+      timeKeeper.end();
+      String msg = count + " direct invocations: " + timeKeeper.millisToString() + "ms";
       System.out.println(msg);
       Reporter.log(msg + "<br>");
 
-      duration = new Duration();
+      timeKeeper = new TimeKeeper();
       for (int i = 0; i < count; i++) {
         security.setAllowed(true);
       }
-      duration.end();
-      msg = count + " PDO invocations: " + duration.millisToString() + "ms";
+      timeKeeper.end();
+      msg = count + " PDO invocations: " + timeKeeper.millisToString() + "ms";
       System.out.println(msg);
       Reporter.log(msg + "<br>");
     }
@@ -69,64 +69,64 @@ public class PdoInvocationTest {
   @Test(groups = "local")
   public void invocations2() {
 
-    Duration duration = new Duration();
+    TimeKeeper timeKeeper = new TimeKeeper();
     SecurityPersistenceImpl[] securityImpls = new SecurityPersistenceImpl[SIZE];
     for (int i = 0; i < SIZE; i++) {
       securityImpls[i] = new SecurityPersistenceImpl();
     }
-    duration.end();
-    String msg = SIZE + " direct creations: " + duration.millisToString() + "ms";
+    timeKeeper.end();
+    String msg = SIZE + " direct creations: " + timeKeeper.millisToString() + "ms";
     System.out.println(msg);
     Reporter.log(msg + "<br>");
 
-    duration = new Duration();
+    timeKeeper = new TimeKeeper();
     Security[] securities = new Security[SIZE];
     int sum = 0;
     for (int i = 0; i < SIZE; i++) {
       securities[i] = Pdo.create(Security.class);
     }
-    duration.end();
-    msg = SIZE + " proxy creations: " + duration.millisToString() + "ms";
+    timeKeeper.end();
+    msg = SIZE + " proxy creations: " + timeKeeper.millisToString() + "ms";
     System.out.println(msg);
     Reporter.log(msg + "<br>");
 
-    duration = new Duration();
+    timeKeeper = new TimeKeeper();
     sum = 0;
     for (int i = 0; i < SIZE; i++) {
       sum += securityImpls[i].getClassId();
     }
-    duration.end();
-    msg = SIZE + " direct invocations: " + duration.millisToString() + "ms " + sum;
+    timeKeeper.end();
+    msg = SIZE + " direct invocations: " + timeKeeper.millisToString() + "ms " + sum;
     System.out.println(msg);
     Reporter.log(msg + "<br>");
 
-    duration = new Duration();
+    timeKeeper = new TimeKeeper();
     sum = 0;
     for (int i = 0; i < SIZE; i++) {
       sum += securities[i].getClassId();
     }
-    duration.end();
-    msg = SIZE + " 1st proxy invocations: " + duration.millisToString() + "ms " + sum;
+    timeKeeper.end();
+    msg = SIZE + " 1st proxy invocations: " + timeKeeper.millisToString() + "ms " + sum;
     System.out.println(msg);
     Reporter.log(msg + "<br>");
 
-    duration = new Duration();
+    timeKeeper = new TimeKeeper();
     sum = 0;
     for (int i = 0; i < SIZE; i++) {
       sum += securities[i].getClassId();
     }
-    duration.end();
-    msg = SIZE + " 2nd proxy invocations: " + duration.millisToString() + "ms " + sum;
+    timeKeeper.end();
+    msg = SIZE + " 2nd proxy invocations: " + timeKeeper.millisToString() + "ms " + sum;
     System.out.println(msg);
     Reporter.log(msg + "<br>");
 
-    duration = new Duration();
+    timeKeeper = new TimeKeeper();
     sum = 0;
     for (int i = 0; i < SIZE; i++) {
       sum += securities[i].getClassId();
     }
-    duration.end();
-    msg = SIZE + " 3rd proxy invocations: " + duration.millisToString() + "ms " + sum;
+    timeKeeper.end();
+    msg = SIZE + " 3rd proxy invocations: " + timeKeeper.millisToString() + "ms " + sum;
     System.out.println(msg);
     Reporter.log(msg + "<br>");
   }
