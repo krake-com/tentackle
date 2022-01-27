@@ -145,7 +145,7 @@ public interface TrackedList<E> extends List<E>, ImmutableCollection<E>, Snapsho
    * @param element element to be stored at the specified position
    * @return the element previously at the specified position
    */
-  E replace(int index, E element);
+  E replaceSilently(int index, E element);
 
   /**
    * Adds the element to the list only if not already in the list.
