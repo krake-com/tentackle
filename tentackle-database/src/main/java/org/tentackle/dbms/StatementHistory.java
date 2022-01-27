@@ -21,7 +21,7 @@ package org.tentackle.dbms;
 
 import org.tentackle.common.Timestamp;
 import org.tentackle.log.Logger;
-import org.tentackle.misc.Duration;
+import org.tentackle.misc.TimeKeeper;
 
 import java.util.List;
 import java.util.Map;
@@ -59,7 +59,7 @@ public class StatementHistory {
 
   private final String txName;                                // transaction name if tx was running, else null
   private final long executionStart;                          // start of execution in epochal milliseconds
-  private final Duration duration;                            // duration in nanoseconds
+  private final TimeKeeper timeKeeper;                            // duration in nanoseconds
   private final String sql;                                   // the SQL statement
   private final Map<Integer,Object> parameters;               // execution parameters if prepared statement, else null
   private final List<Map<Integer,Object>> batchParameters;    // batched execution parameters
@@ -75,7 +75,7 @@ public class StatementHistory {
     this.batchParameters = statement instanceof PreparedStatementWrapper ? ((PreparedStatementWrapper) statement).getBatchParameters() : null;
     this.txName = statement.getAttachedSession().getTxName();
     this.executionStart = System.currentTimeMillis();
-    this.duration = new Duration();
+    this.timeKeeper = new TimeKeeper();
     if (sql != null) {
       this.sql = sql;
     }
@@ -89,8 +89,8 @@ public class StatementHistory {
    * Sets the execution end.
    */
   public void end() {
-    duration.end();
-    if (logMinDurationMillis > 0 && duration.millis() > logMinDurationMillis) {
+    timeKeeper.end();
+    if (logMinDurationMillis > 0 && timeKeeper.millis() > logMinDurationMillis) {
       LOGGER.warning(">>> duration >>> " + this);
     }
     else {
@@ -112,8 +112,8 @@ public class StatementHistory {
    *
    * @return the duration, never null
    */
-  public Duration getDuration() {
-    return duration;
+  public TimeKeeper getDuration() {
+    return timeKeeper;
   }
 
   /**
@@ -157,8 +157,8 @@ public class StatementHistory {
     StringBuilder buf = new StringBuilder();
     buf.append(new Timestamp(getExecutionStart()));
     buf.append('(');
-    if (duration.isValid()) {
-      buf.append(duration.millisToString());
+    if (timeKeeper.isValid()) {
+      buf.append(timeKeeper.millisToString());
       buf.append("ms): ");
     }
     else  {

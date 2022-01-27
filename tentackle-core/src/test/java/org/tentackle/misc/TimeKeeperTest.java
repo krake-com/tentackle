@@ -26,16 +26,16 @@ import org.testng.annotations.Test;
  *
  * @author harald
  */
-public class DurationTest {
+public class TimeKeeperTest {
 
 
   private static final int LOOPCOUNT = 1000000;   // loops
 
   @Test
   public void testDuration() {
-    Duration total = new Duration();
+    TimeKeeper total = new TimeKeeper();
     for (int i=0; i < LOOPCOUNT; i++) {
-      Duration dur = new Duration();
+      TimeKeeper dur = new TimeKeeper();
       dur.end();
     }
     total.end();
@@ -44,7 +44,7 @@ public class DurationTest {
 
 
     // same with milliseconds (just to measure performance difference)
-    total = new Duration();
+    total = new TimeKeeper();
     for (int i=0; i < LOOPCOUNT; i++) {
       System.currentTimeMillis();
     }

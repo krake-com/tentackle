@@ -28,11 +28,11 @@ import java.text.DecimalFormat;
  * <p>
  * The implementation is based on {@link System#nanoTime()}.
  * <p>
- * Notice: dispite the fluent API, {@link Duration} is not immutable!
+ * Notice: despite its fluent API, {@link TimeKeeper} is not immutable, since it measures time.
  *
  * @author harald
  */
-public class Duration implements Cloneable {
+public class TimeKeeper implements Cloneable {
 
   /**
    * Format for xxxxToString().
@@ -60,7 +60,7 @@ public class Duration implements Cloneable {
    *
    * @see #isValid()
    */
-  public Duration() {
+  public TimeKeeper() {
     start = System.nanoTime();
   }
 
@@ -72,7 +72,7 @@ public class Duration implements Cloneable {
    * @param nanos the nanoseconds
    * @see #isValid()
    */
-  public Duration(long nanos) {
+  public TimeKeeper(long nanos) {
     this();
     end = start + nanos;
     durationValid = true;
@@ -80,9 +80,9 @@ public class Duration implements Cloneable {
 
 
   @Override
-  public Duration clone() {
+  public TimeKeeper clone() {
     try {
-      return (Duration) super.clone();
+      return (TimeKeeper) super.clone();
     }
     catch (CloneNotSupportedException ex) {
       throw new TentackleRuntimeException(ex);    // this shouldn't happen, since we are Cloneable
@@ -95,7 +95,7 @@ public class Duration implements Cloneable {
    *
    * @return the duration itself (for fluent style)
    */
-  public Duration zero() {
+  public TimeKeeper zero() {
     end = start;
     durationValid = true;
     return this;
@@ -109,7 +109,7 @@ public class Duration implements Cloneable {
    *
    * @return the duration itself (for fluent style)
    */
-  public Duration end() {
+  public TimeKeeper end() {
     end = System.nanoTime();
     durationValid = true;
     return this;
@@ -175,24 +175,24 @@ public class Duration implements Cloneable {
   /**
    * Adds another duration.
    *
-   * @param duration the nanos to add
+   * @param timeKeeper the nanos to add
    * @return this duration
    */
-  public Duration add(Duration duration) {
+  public TimeKeeper add(TimeKeeper timeKeeper) {
     assertDurationValid();
-    end += duration.nanos();
+    end += timeKeeper.nanos();
     return this;
   }
 
   /**
    * Subtracts another duration.
    *
-   * @param duration the nanos to subtract
+   * @param timeKeeper the nanos to subtract
    * @return this duration
    */
-  public Duration subtract(Duration duration) {
+  public TimeKeeper subtract(TimeKeeper timeKeeper) {
     assertDurationValid();
-    end -= duration.nanos();
+    end -= timeKeeper.nanos();
     return this;
   }
 
@@ -202,7 +202,7 @@ public class Duration implements Cloneable {
    * @param multiplier the multiplier (must be &ge; 0)
    * @return this duration
    */
-  public Duration multiply(long multiplier) {
+  public TimeKeeper multiply(long multiplier) {
     assertDurationValid();
     if (multiplier < 0) {
       throw new IllegalArgumentException("multiplier must be >= 0");
@@ -217,7 +217,7 @@ public class Duration implements Cloneable {
    * @param divisor the divisor (must be &gt; 0)
    * @return this duration
    */
-  public Duration divide(long divisor) {
+  public TimeKeeper divide(long divisor) {
     assertDurationValid();
     if (divisor <= 0) {
       throw new IllegalArgumentException("divisor must be > 0");

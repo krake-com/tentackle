@@ -21,7 +21,7 @@ package org.tentackle.reflect;
 import org.tentackle.common.StringHelper;
 import org.tentackle.log.Logger;
 import org.tentackle.log.MethodStatistics;
-import org.tentackle.misc.Duration;
+import org.tentackle.misc.TimeKeeper;
 
 import java.lang.reflect.Method;
 import java.util.Collection;
@@ -209,10 +209,10 @@ public class InterceptableMethodInvoker extends MethodStatistics {
    */
   public Object invoke(Object delegate, InterceptableMethod delegateMethod, Object[] args) throws Throwable {
     if (durationNecessary) {
-      Duration duration = new Duration();
+      TimeKeeper timeKeeper = new TimeKeeper();
       Object retval = delegateMethod.invoke(delegate, args);
-      duration.end();
-      log(delegate, delegateMethod.getMethod(), args, retval, duration);
+      timeKeeper.end();
+      log(delegate, delegateMethod.getMethod(), args, retval, timeKeeper);
       return retval;
     }
     else {
@@ -239,13 +239,13 @@ public class InterceptableMethodInvoker extends MethodStatistics {
    * @param method the method executed
    * @param args the method args
    * @param retval the method's return value
-   * @param duration the duration when execution was started
+   * @param timeKeeper the duration when execution was started
    */
-  protected void log(Object delegate, Method method, Object[] args, Object retval, Duration duration) {
+  protected void log(Object delegate, Method method, Object[] args, Object retval, TimeKeeper timeKeeper) {
 
-    boolean durationExceeded = logMinDurationMillis > 0 && duration.millis() > logMinDurationMillis;
+    boolean durationExceeded = logMinDurationMillis > 0 && timeKeeper.millis() > logMinDurationMillis;
     if (collectStatistics) {
-      countMethodInvocation(method, delegate.getClass(), duration);
+      countMethodInvocation(method, delegate.getClass(), timeKeeper);
     }
 
     @SuppressWarnings("rawtypes")
@@ -254,7 +254,7 @@ public class InterceptableMethodInvoker extends MethodStatistics {
 
     if (durationExceeded || collectionSizeExceeded) {
       LOGGER.warning(() -> {
-        StringBuilder buf = createInvocationLog(delegate, method, args, retval, duration, collectionSize);
+        StringBuilder buf = createInvocationLog(delegate, method, args, retval, timeKeeper, collectionSize);
         if (durationExceeded) {
           buf.insert(0, ">>> duration exceeded:\n");
         }
@@ -265,12 +265,12 @@ public class InterceptableMethodInvoker extends MethodStatistics {
       });
     }
     else if (logInvocationDetails) {
-      LOGGER.info(() -> createInvocationLog(delegate, method, args, retval, duration, collectionSize).toString());
+      LOGGER.info(() -> createInvocationLog(delegate, method, args, retval, timeKeeper, collectionSize).toString());
     }
   }
 
 
-  private StringBuilder createInvocationLog(Object delegate, Method method, Object[] args, Object retval, Duration duration, int collectionSize) {
+  private StringBuilder createInvocationLog(Object delegate, Method method, Object[] args, Object retval, TimeKeeper timeKeeper, int collectionSize) {
     StringBuilder buf = new StringBuilder();
     if (logInvocationDetails) {
       buf.append(delegate.getClass().getSimpleName()).
@@ -290,7 +290,7 @@ public class InterceptableMethodInvoker extends MethodStatistics {
       buf.append(") = ").
           append(StringHelper.objectToLoggableString(retval)).
           append(" {").
-          append(duration.millisToString()).
+          append(timeKeeper.millisToString()).
           append("ms");
       if (collectionSize > 0) {
         buf.append(", ").
@@ -304,7 +304,7 @@ public class InterceptableMethodInvoker extends MethodStatistics {
           append('.').
           append(method.getName()).
           append(" [").
-          append(duration.millisToString()).
+          append(timeKeeper.millisToString()).
           append("ms]");
     }
     return buf;

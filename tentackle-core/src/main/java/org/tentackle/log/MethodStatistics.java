@@ -18,7 +18,7 @@
 
 package org.tentackle.log;
 
-import org.tentackle.misc.Duration;
+import org.tentackle.misc.TimeKeeper;
 import org.tentackle.reflect.ReflectionHelper;
 
 import java.lang.reflect.Method;
@@ -52,22 +52,22 @@ public class MethodStatistics {
    *
    * @param method the method invoked
    * @param servicedClass the serviced class, null if method#getDeclatingClass
-   * @param duration execution duration
+   * @param timeKeeper execution duration
    */
-  public synchronized void countMethodInvocation(Method method, Class<?> servicedClass, Duration duration) {
+  public synchronized void countMethodInvocation(Method method, Class<?> servicedClass, TimeKeeper timeKeeper) {
     MethodStatisticsKey key = new MethodStatisticsKey(method, servicedClass);
     StatisticsResult result = stats.computeIfAbsent(key, k -> new StatisticsResult());
-    result.count(duration);
+    result.count(timeKeeper);
   }
 
   /**
    * Counts the invocation of a delegate method.
    *
    * @param method the method invoked
-   * @param duration execution duration
+   * @param timeKeeper execution duration
    */
-  public void countMethodInvocation(Method method, Duration duration) {
-    countMethodInvocation(method, null, duration);
+  public void countMethodInvocation(Method method, TimeKeeper timeKeeper) {
+    countMethodInvocation(method, null, timeKeeper);
   }
 
   /**

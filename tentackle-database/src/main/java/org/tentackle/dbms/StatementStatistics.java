@@ -22,7 +22,7 @@ import org.tentackle.common.Compare;
 import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;
 import org.tentackle.log.StatisticsResult;
-import org.tentackle.misc.Duration;
+import org.tentackle.misc.TimeKeeper;
 
 import java.util.HashMap;
 import java.util.List;
@@ -85,9 +85,9 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
     List<Map<Integer, Object>> batchParameters = history.getBatchParameters();
     if (withParameters) {
       if (batchParameters != null && !batchParameters.isEmpty()) {    // size must be > 0!
-        Duration duration = history.getDuration().clone().divide(batchParameters.size());
+        TimeKeeper timeKeeper = history.getDuration().clone().divide(batchParameters.size());
         for (Map<Integer, Object> parameters : batchParameters) {
-          collect(new StatementStatistics(history.getSql(), history.getTxName(), parameters), duration);
+          collect(new StatementStatistics(history.getSql(), history.getTxName(), parameters), timeKeeper);
         }
       }
       else {
@@ -104,12 +104,12 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
     }
   }
 
-  private static void collect(StatementStatistics key, Duration duration, int count) {
-    STAT_MAP.computeIfAbsent(key, k -> k).countInvocation(duration, count);
+  private static void collect(StatementStatistics key, TimeKeeper timeKeeper, int count) {
+    STAT_MAP.computeIfAbsent(key, k -> k).countInvocation(timeKeeper, count);
   }
 
-  private static void collect(StatementStatistics key, Duration duration) {
-    STAT_MAP.computeIfAbsent(key, k -> k).countInvocation(duration);
+  private static void collect(StatementStatistics key, TimeKeeper timeKeeper) {
+    STAT_MAP.computeIfAbsent(key, k -> k).countInvocation(timeKeeper);
   }
 
 
@@ -204,22 +204,22 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
    * Count invocations and duration of a statement.
    *
    * @param count the number of invocations
-   * @param duration the execution time in milliseconds
+   * @param timeKeeper the execution time in milliseconds
    */
-  public void countInvocation(Duration duration, int count) {
-    if (duration != null && duration.isValid()) {
-      statResult.count(duration, count);
+  public void countInvocation(TimeKeeper timeKeeper, int count) {
+    if (timeKeeper != null && timeKeeper.isValid()) {
+      statResult.count(timeKeeper, count);
     }
   }
 
   /**
    * Count an invocation.
    *
-   * @param duration the execution time in milliseconds
+   * @param timeKeeper the execution time in milliseconds
    */
-  public void countInvocation(Duration duration) {
-    if (duration != null && duration.isValid()) {
-      statResult.count(duration);
+  public void countInvocation(TimeKeeper timeKeeper) {
+    if (timeKeeper != null && timeKeeper.isValid()) {
+      statResult.count(timeKeeper);
     }
   }
 
