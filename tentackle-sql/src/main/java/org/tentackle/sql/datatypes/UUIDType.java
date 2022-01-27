@@ -32,7 +32,9 @@ import java.util.UUID;
 /**
  * Datatype for {@link UUID}.
  * <p>
- * For databases not supporting this type natively, it is mapped to VARCHAR(36).
+ * For databases not supporting this type natively, it is mapped to VARCHAR(36).<br>
+ * There are alternatives (storing in 2 longs or 16 bytes, etc...),
+ * but manually written SQL queries may become rather tricky.
  */
 @Service(DataType.class)
 public class UUIDType extends AbstractDataType<UUID> {

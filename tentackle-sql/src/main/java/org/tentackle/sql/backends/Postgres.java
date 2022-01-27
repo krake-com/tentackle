@@ -73,7 +73,7 @@ public class Postgres extends AbstractSql92Backend {
 
   /** array of additional reserved words. */
   public static final String[] RESERVED_WORDS_PG = new String[] {
-    "TEXT"
+    "TEXT", "UUID"
   };
 
 
