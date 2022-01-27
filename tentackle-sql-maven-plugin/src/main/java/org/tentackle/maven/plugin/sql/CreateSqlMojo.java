@@ -32,7 +32,6 @@ import org.tentackle.model.Index;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelException;
 import org.tentackle.sql.BackendInfo;
-import org.tentackle.sql.metadata.MetaDataUtilities;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -152,11 +151,11 @@ public class CreateSqlMojo extends AbstractSqlMojo {
                 getLog().error("table '" + entity.getTableName() + "' is reserved for other uses");
                 errorCount++;
               }
-              if (checkReservedTables && MetaDataUtilities.getInstance().isReservedTable(plainTableName)) {
-                getLog().warn("table '" + plainTableName + "' of entity " + entity + " is reserved by framework");
+              if (checkReservedTables && checkAndLogReservedTable(entity)) {
+                errorCount++;
               }
               if (entity.getSchemaName() != null && backendInfo.getBackend().isReservedSchemaName(entity.getSchemaName())) {
-                getLog().error("schema '" + entity.getSchemaName() + "' is reserved in " + backendInfo.getBackend());
+                getLog().error("schema '" + entity.getSchemaName() + "' is a reserved word for backend " + backendInfo.getBackend());
                 errorCount++;
               }
               // create table

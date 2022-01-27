@@ -40,6 +40,7 @@ import org.tentackle.model.print.PrintConfiguration;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendFactory;
 import org.tentackle.sql.BackendInfo;
+import org.tentackle.sql.metadata.MetaDataUtilities;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -743,6 +744,28 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
       }
     }
     return isOther;
+  }
+
+
+  /**
+   * Checks and logs whether the table name is already used by Tentackle.
+   *
+   * @param entity the entity
+   * @return true if reusing the same table name, false if other name or only warning since used in another schema
+   */
+  protected boolean checkAndLogReservedTable(Entity entity) {
+    String plainTableName = entity.getTableNameWithoutSchema();
+    if (checkReservedTables && MetaDataUtilities.getInstance().isReservedTable(plainTableName)) {
+      String msg = "table '" + plainTableName + "' of entity " + entity + " is reserved by the Tentackle framework";
+      if (entity.getSchemaName() == null) {
+        getLog().error(msg);
+        return true;
+      }
+      else {
+        getLog().warn(msg + " -> consider renaming");
+      }
+    }
+    return false;
   }
 
 }

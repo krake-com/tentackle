@@ -39,7 +39,6 @@ import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendInfo;
 import org.tentackle.sql.metadata.DatabaseMetaDataTableHeader;
 import org.tentackle.sql.metadata.ForeignKeyMetaData;
-import org.tentackle.sql.metadata.MetaDataUtilities;
 import org.tentackle.sql.metadata.ModelMetaData;
 import org.tentackle.sql.metadata.TableMetaData;
 
@@ -540,8 +539,8 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
               String oldTableName = entity.getSchemaName() != null && plainOldTableName != null ?
                                     entity.getSchemaName() + "." + plainOldTableName : plainOldTableName;
 
-              if (checkReservedTables && MetaDataUtilities.getInstance().isReservedTable(plainTableName)) {
-                getLog().warn("table name '" + plainTableName + "' of entity " + entity + " is reserved by framework -> consider renaming");
+              if (checkReservedTables && checkAndLogReservedTable(entity)) {
+                errorCount++;
               }
 
               TableMetaData table = backendInfo.getBackend().getTableMetaData(modelMetaData, oldTableName != null ? oldTableName : tableName);
