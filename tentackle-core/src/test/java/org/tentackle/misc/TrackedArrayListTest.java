@@ -27,6 +27,9 @@ import org.tentackle.log.Logger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Test for TrackedArrayList.
@@ -185,7 +188,7 @@ public class TrackedArrayListTest {
       // ok, just logged
     }
     catch (ImmutableException imex) {
-      Assert.fail("must not throw ImmutableException");
+      Assert.fail("must not throw ImmutableException, just logging!");
     }
 
     list.setNullAllowed(false);
@@ -209,6 +212,31 @@ public class TrackedArrayListTest {
     Assert.assertEquals(list2.get(2), Integer.valueOf(5));
     Assert.assertEquals(list2.get(3), Integer.valueOf(3));
     Assert.assertEquals(list2.get(4), Integer.valueOf(1));
+
+    List<Integer> subList = list2.subList(1, 3);
+    Iterator<Integer> iterator = subList.iterator();
+    Assert.assertEquals(iterator.next(), Integer.valueOf(7));
+    iterator.remove();
+    Assert.assertEquals(subList.get(0), Integer.valueOf(5));
+    Assert.assertEquals(list2.size(), 4);
+    Assert.assertEquals(list2.getRemovedObjects().size(), 6);
+    subList.removeAll(new ArrayList<>(subList));
+    Assert.assertEquals(list2.size(), 3);
+    Assert.assertEquals(list2.getRemovedObjects().size(), 7);
+    subList.add(7);
+    subList.add(5);
+    Assert.assertEquals(list2.size(), 5);
+    Assert.assertEquals(list2.getRemovedObjects().size(), 5);
+    subList.set(0, 77);
+    Assert.assertEquals(list2.get(1), Integer.valueOf(77));
+    Assert.assertEquals(list2.getRemovedObjects().size(), 6);
+    subList.set(0, 7);
+    Assert.assertEquals(list2.getRemovedObjects().size(), 6);
+    Assert.assertEquals(list2.getRemovedObjects().toArray()[5], 77);
+    Assert.assertEquals(list2.get(1), Integer.valueOf(7));
+    subList.sort(Comparator.naturalOrder());
+    Assert.assertEquals(list2.get(1), Integer.valueOf(5));
+    Assert.assertEquals(list2.getRemovedObjects().size(), 6);
   }
 
 
