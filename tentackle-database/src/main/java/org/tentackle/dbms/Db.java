@@ -552,7 +552,7 @@ public class Db implements Session, Cloneable {
   private long keepAliveInterval;                             // the auto keep alive interval in ms, 0 = no keep alive
   private volatile Thread ownerThread;                        // the exclusive owner thread
   private WeakReference<SessionTaskDispatcher> dispatcherRef; // task dispatcher for asynchronous tasks
-  private Map<String,Serializable> applicationProperties;     // application-specific properties
+  private Map<String, Serializable> applicationProperties;    // application-specific properties
   private ReconnectionPolicy<Db> reconnectionPolicy;          // reconnection policy, null if none (default)
   private int batchSize;                                      // >1 if JDBC batching should be used for certain prepared statements
 
@@ -735,7 +735,7 @@ public class Db implements Session, Cloneable {
         sessionInfo.setSince(System.currentTimeMillis());
       }
 
-      alive = true;   // all sedsions start alive!
+      alive = true;   // all sessions start alive!
 
       resources = new Resources(conMgr, sessionId, rdel, rcon, rses);
       resources.name = toString();
@@ -2793,9 +2793,14 @@ public class Db implements Session, Cloneable {
     else  {
       defaultIdSource = null;
       transaction = null;
+      logModificationTxId = 0;
+      logModificationDeferred = false;
+      modificationLogList = null;
+      immediatelyRolledBack = 0;
     }
 
     postCommits = null;
+    postCommitsRunning = false;
     ownerThread = null;
 
     if (sessionInfo != null && !sessionInfo.isImmutable()) {
@@ -2815,6 +2820,10 @@ public class Db implements Session, Cloneable {
   @Override
   public Db clone(String sessionName) {
     assertOpen();
+    if (isPooled()) {
+      throw new PersistenceException(this, "pooled sessions must not be cloned");
+    }
+
     try {
 
       Db newDb = (Db) super.clone();
@@ -2830,9 +2839,11 @@ public class Db implements Session, Cloneable {
       newDb.resources = null;
       newDb.clearMembers();
       newDb.sessionGroupId = 0;
+      newDb.exportedSessionGroupId = 0;
 
       newDb.instanceNumber = INSTANCE_COUNTER.incrementAndGet();
       newDb.clonedFromDb = this;
+      newDb.dispatcherRef = null;
 
       newDb.open(resources.conMgr);
 
@@ -3105,7 +3116,7 @@ public class Db implements Session, Cloneable {
    * or nothing. Only {@link #popModificationLogsOfTransaction()} removes the logs
    * collected so far or the end of the transaction.
    *
-   * @param logModificationDeferred true to defer logs for the rest of current transaction, false to undefer
+   * @param logModificationDeferred true to defer logs for the rest of current transaction, false to un-defer
    */
   public void setLogModificationDeferred(boolean logModificationDeferred) {
     assertOpen();
