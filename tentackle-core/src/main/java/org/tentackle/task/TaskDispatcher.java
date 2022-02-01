@@ -18,8 +18,9 @@
 
 package org.tentackle.task;
 
-import java.util.Collection;
 import org.tentackle.daemon.Terminatable;
+
+import java.util.Collection;
 
 
 /**
@@ -32,28 +33,28 @@ public interface TaskDispatcher extends Terminatable {
   /**
    * Sets the dead interval.
    * <p>
-   * @param deadInterval the dead interval, 0 to disable dead check
+   * @param deadInterval the dead interval in ms, 0 to disable dead check
    */
   void setDeadInterval(long deadInterval);
 
   /**
    * Gets the dead interval.
    * <p>
-   * @return the dead interval, 0 if none
+   * @return the dead interval in ms, 0 if none
    */
   long getDeadInterval();
 
   /**
    * Sets the sleep interval.
    * <p>
-   * @param sleepInterval the sleep interval, must be &gt; 0
+   * @param sleepInterval the sleep interval in ms, must be &gt; 0
    */
   void setSleepInterval(long sleepInterval);
 
   /**
    * Gets the sleep interval.
    * <p>
-   * @return the sleep interval
+   * @return the sleep interval in ms
    */
   long getSleepInterval();
 
@@ -157,13 +158,17 @@ public interface TaskDispatcher extends Terminatable {
   boolean isInstanceOfTaskPending(Class<? extends Task> clazz);
 
   /**
-   * Waits for a task to get completed.
+   * Waits for a task to get completed.<br>
+   * Throws a {@link TaskException} if the wait times out (see {@link #getDeadInterval()}).
+   *
    * @param task the task to check for completion
    */
   void waitForTask(Task task);
 
   /**
-   * Adds a task to the queue.
+   * Adds a task to the queue.<br>
+   * Throws a {@link TaskException} if the wait times out (see {@link #getDeadInterval()}.
+   *
    * @param task the task to add
    * @return true if added, false if already in queue
    */
