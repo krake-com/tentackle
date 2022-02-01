@@ -29,7 +29,7 @@ import org.tentackle.validate.Validator;
  */
 public class FailedValidationResult extends AbstractValidationResult {
 
-  private static final long serialVersionUID = 7944890568191272731L;
+  private static final long serialVersionUID = 1L;
 
   private static final String DEFAULT_MESSAGE = "unspecified";   // only for deserialization
 

@@ -33,7 +33,7 @@ import org.tentackle.validate.Validator;
  */
 public abstract class AbstractValidationResult implements ValidationResult {
 
-  private static final long serialVersionUID = 415899327881601354L;
+  private static final long serialVersionUID = 1L;
 
   private String message;                                       // the validation failed message
   private String errorCode;                                     // error code

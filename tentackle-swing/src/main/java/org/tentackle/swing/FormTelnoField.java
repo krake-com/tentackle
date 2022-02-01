@@ -20,10 +20,11 @@
 
 package org.tentackle.swing;
 
-import java.awt.Component;
-import java.util.StringTokenizer;
 import org.tentackle.misc.Telno;
 import org.tentackle.swing.plaf.PlafUtilities;
+
+import java.awt.Component;
+import java.util.StringTokenizer;
 
 
 /**
@@ -279,7 +280,7 @@ public class FormTelnoField extends FormFieldComponentPanel {
 
   private class TelnoField extends StringFormField {
 
-    private static final long serialVersionUID = -8307736594510076617L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public String getText () {

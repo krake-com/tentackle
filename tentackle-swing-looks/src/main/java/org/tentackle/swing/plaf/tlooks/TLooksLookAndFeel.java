@@ -23,16 +23,18 @@ import com.jgoodies.looks.LookUtils;
 import com.jgoodies.looks.Options;
 import com.jgoodies.looks.plastic.Plastic3DLookAndFeel;
 import com.jgoodies.looks.plastic.PlasticLookAndFeel;
-import java.awt.Color;
-import java.net.URL;
-import java.util.MissingResourceException;
+
+import org.tentackle.common.Service;
+import org.tentackle.swing.plaf.PlafUtilities;
+import org.tentackle.swing.plaf.TentackleLookAndFeel;
+
 import javax.swing.ImageIcon;
 import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 import javax.swing.plaf.ColorUIResource;
-import org.tentackle.common.Service;
-import org.tentackle.swing.plaf.PlafUtilities;
-import org.tentackle.swing.plaf.TentackleLookAndFeel;
+import java.awt.Color;
+import java.net.URL;
+import java.util.MissingResourceException;
 
 
 
@@ -44,7 +46,7 @@ import org.tentackle.swing.plaf.TentackleLookAndFeel;
 @Service(TentackleLookAndFeel.class)
 public class TLooksLookAndFeel extends Plastic3DLookAndFeel implements TentackleLookAndFeel {
 
-  private static final long serialVersionUID = 5384580948728456238L;
+  private static final long serialVersionUID = 1L;
 
 
   private Color mandatoryColor;               // mandatory background color for text fields and selected table cells

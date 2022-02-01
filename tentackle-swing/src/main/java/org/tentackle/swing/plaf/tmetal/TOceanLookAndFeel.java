@@ -30,7 +30,7 @@ import org.tentackle.swing.plaf.TentackleLookAndFeel;
 @Service(TentackleLookAndFeel.class)
 public class TOceanLookAndFeel extends TMetalLookAndFeel {
 
-  private static final long serialVersionUID = -1250547646125471999L;
+  private static final long serialVersionUID = 1L;
   
   /** Creates a new instance of TOceanLookAndFeel */
   public TOceanLookAndFeel() {

@@ -52,7 +52,7 @@ public abstract class PdoFormTableEntry<T extends PersistentDomainObject<T>> ext
           PdoCache<T> cache = Pdo.getPdoCache(pdoClass);
           if (cache != null && cache.isPreloading()) {
             cellEditor = new FormFieldComponentCellEditor(new PdoComboBox() {
-              private static final long serialVersionUID = 8971057555239907788L;
+              private static final long serialVersionUID = 1L;
               @Override
               protected void setup() {
                 super.setup();
@@ -63,7 +63,7 @@ public abstract class PdoFormTableEntry<T extends PersistentDomainObject<T>> ext
           }
           else  {
             cellEditor = new FormFieldComponentCellEditor(new PdoFieldPanel() {
-              private static final long serialVersionUID = 8971057555239907788L;
+              private static final long serialVersionUID = 1L;
               @Override
               protected void setup() {
                 super.setup();

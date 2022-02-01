@@ -19,6 +19,13 @@
 
 package org.tentackle.swing;
 
+import org.tentackle.swing.plaf.PlafUtilities;
+
+import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
+import javax.swing.JLabel;
+import javax.swing.JToggleButton;
+import javax.swing.border.Border;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
@@ -32,12 +39,6 @@ import java.text.ParseException;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
-import javax.swing.BorderFactory;
-import javax.swing.ButtonGroup;
-import javax.swing.JLabel;
-import javax.swing.JToggleButton;
-import javax.swing.border.Border;
-import org.tentackle.swing.plaf.PlafUtilities;
 
 import static java.util.Calendar.DAY_OF_MONTH;
 import static java.util.Calendar.DAY_OF_WEEK;
@@ -89,7 +90,7 @@ public class FormCalendar extends org.tentackle.swing.FormPanel {
    */
   private class CalToggleButton extends JToggleButton {
 
-    private static final long serialVersionUID = -3905831436360712248L;
+    private static final long serialVersionUID = 1L;
 
     CalToggleButton(String text) {
       super(text);

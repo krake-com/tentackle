@@ -20,30 +20,6 @@
 package org.tentackle.swing.rdc;
 
 
-import java.awt.Dimension;
-import java.awt.EventQueue;
-import java.awt.Toolkit;
-import java.awt.Window;
-import java.awt.datatransfer.Clipboard;
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.beans.PropertyChangeEvent;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.List;
-import javax.swing.ListSelectionModel;
-import javax.swing.RowSorter;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.event.TableColumnModelEvent;
-import javax.swing.event.TableColumnModelListener;
-import javax.swing.event.TreeSelectionEvent;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.TreePath;
-import javax.swing.tree.TreeSelectionModel;
 import org.tentackle.misc.ObjectFilter;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentDomainObject;
@@ -57,6 +33,31 @@ import org.tentackle.swing.FormTableUtilityPopup;
 import org.tentackle.swing.FormTree;
 import org.tentackle.swing.FormUtilities;
 import org.tentackle.swing.SumFormTableEntry;
+
+import javax.swing.ListSelectionModel;
+import javax.swing.RowSorter;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.TableColumnModelEvent;
+import javax.swing.event.TableColumnModelListener;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.Toolkit;
+import java.awt.Window;
+import java.awt.datatransfer.Clipboard;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.beans.PropertyChangeEvent;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 
 
@@ -98,7 +99,7 @@ public class PdoNavigationPanel<T extends PersistentDomainObject<T>> extends For
   /** "close" action **/
   public static final String ACTION_CLOSE  = "close";
 
-  private static final long serialVersionUID = -5490593382006669760L;
+  private static final long serialVersionUID = 1L;
 
   /**
    * The view mode.

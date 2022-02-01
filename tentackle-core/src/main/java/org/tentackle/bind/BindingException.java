@@ -29,7 +29,7 @@ package org.tentackle.bind;
  */
 public class BindingException extends RuntimeException {
 
-  private static final long serialVersionUID = -8560243373742735009L;
+  private static final long serialVersionUID = 1L;
 
   /**
    * Creates a binding exception.

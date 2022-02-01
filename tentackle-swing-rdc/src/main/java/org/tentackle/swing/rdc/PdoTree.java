@@ -20,6 +20,32 @@
 
 package org.tentackle.swing.rdc;
 
+import org.tentackle.log.Logger;
+import org.tentackle.log.Logger.Level;
+import org.tentackle.log.LoggerFactory;
+import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.security.SecurityFactory;
+import org.tentackle.security.permissions.EditPermission;
+import org.tentackle.security.permissions.ViewPermission;
+import org.tentackle.swing.FileTransferable;
+import org.tentackle.swing.FormInfo;
+import org.tentackle.swing.FormTree;
+import org.tentackle.swing.FormUtilities;
+
+import javax.swing.JComponent;
+import javax.swing.JMenuItem;
+import javax.swing.JSeparator;
+import javax.swing.ListSelectionModel;
+import javax.swing.ToolTipManager;
+import javax.swing.TransferHandler;
+import javax.swing.event.TreeExpansionEvent;
+import javax.swing.event.TreeWillExpandListener;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.ExpandVetoException;
+import javax.swing.tree.TreeCellRenderer;
+import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
 import java.awt.HeadlessException;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -51,31 +77,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
-import javax.swing.JComponent;
-import javax.swing.JMenuItem;
-import javax.swing.JSeparator;
-import javax.swing.ListSelectionModel;
-import javax.swing.ToolTipManager;
-import javax.swing.TransferHandler;
-import javax.swing.event.TreeExpansionEvent;
-import javax.swing.event.TreeWillExpandListener;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.ExpandVetoException;
-import javax.swing.tree.TreeCellRenderer;
-import javax.swing.tree.TreePath;
-import javax.swing.tree.TreeSelectionModel;
-import org.tentackle.log.Logger;
-import org.tentackle.log.Logger.Level;
-import org.tentackle.log.LoggerFactory;
-import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.security.SecurityFactory;
-import org.tentackle.security.permissions.EditPermission;
-import org.tentackle.security.permissions.ViewPermission;
-import org.tentackle.swing.FileTransferable;
-import org.tentackle.swing.FormInfo;
-import org.tentackle.swing.FormTree;
-import org.tentackle.swing.FormUtilities;
 
 
 /**
@@ -92,7 +93,7 @@ public class PdoTree extends FormTree implements TreeWillExpandListener, DragSou
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(PdoTree.class);
 
-  private static final long serialVersionUID = -559339241973400671L;
+  private static final long serialVersionUID = 1L;
 
 
 
@@ -247,7 +248,7 @@ public class PdoTree extends FormTree implements TreeWillExpandListener, DragSou
      */
     setTransferHandler(new TransferHandler() {
 
-      private static final long serialVersionUID = 6532199703856836746L;
+      private static final long serialVersionUID = 1L;
 
       @Override
       public int getSourceActions(JComponent c) {

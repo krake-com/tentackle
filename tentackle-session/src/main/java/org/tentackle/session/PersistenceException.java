@@ -33,7 +33,7 @@ import java.sql.SQLException;
  */
 public class PersistenceException extends TentackleRuntimeException {
 
-  private static final long serialVersionUID = -5355906838551059053L;
+  private static final long serialVersionUID = 1L;
 
   /** Tag starting extra identifiable/session info in message. */
   public static final String START_INFO = "[_ ";

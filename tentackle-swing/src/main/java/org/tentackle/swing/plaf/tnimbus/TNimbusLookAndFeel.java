@@ -19,15 +19,16 @@
 
 package org.tentackle.swing.plaf.tnimbus;
 
-import java.awt.Color;
-import java.net.URL;
-import java.util.MissingResourceException;
-import javax.swing.ImageIcon;
-import javax.swing.plaf.ColorUIResource;
-import javax.swing.plaf.nimbus.NimbusLookAndFeel;
 import org.tentackle.common.Service;
 import org.tentackle.swing.plaf.PlafUtilities;
 import org.tentackle.swing.plaf.TentackleLookAndFeel;
+
+import javax.swing.ImageIcon;
+import javax.swing.plaf.ColorUIResource;
+import javax.swing.plaf.nimbus.NimbusLookAndFeel;
+import java.awt.Color;
+import java.net.URL;
+import java.util.MissingResourceException;
 
 
 
@@ -40,7 +41,7 @@ import org.tentackle.swing.plaf.TentackleLookAndFeel;
 @Service(TentackleLookAndFeel.class)
 public class TNimbusLookAndFeel extends NimbusLookAndFeel implements TentackleLookAndFeel {
 
-  private static final long serialVersionUID = -1L;
+  private static final long serialVersionUID = 1L;
 
 
   private Color mandatoryColor;               // mandatory background color for text fields and selected table cells

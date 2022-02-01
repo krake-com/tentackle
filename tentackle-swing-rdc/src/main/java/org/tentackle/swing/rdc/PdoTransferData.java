@@ -20,10 +20,11 @@
 
 package org.tentackle.swing.rdc;
 
-import java.io.Serializable;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.session.Session;
+
+import java.io.Serializable;
 
 /**
  * Transfer data for an {@link PersistentDomainObject}.
@@ -35,7 +36,7 @@ import org.tentackle.session.Session;
  */
 public class PdoTransferData<T extends PersistentDomainObject<T>> implements Serializable {
 
-  private static final long serialVersionUID = -3764286209206994624L;
+  private static final long serialVersionUID = 1L;
 
   private final long   id;              // the object id
   private final String className;       // the name of the pdo class

@@ -33,7 +33,7 @@ import java.util.Vector;
  */
 public class FileTransferable extends Vector<File> implements Transferable  {
 
-  private static final long serialVersionUID = 316070171066467593L;
+  private static final long serialVersionUID = 1L;
 
   private final static int FILE   = 0;
   private final static int STRING = 1;

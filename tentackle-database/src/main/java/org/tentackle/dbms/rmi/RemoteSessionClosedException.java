@@ -31,7 +31,7 @@ import org.tentackle.session.SessionClosedException;
  */
 public class RemoteSessionClosedException extends SessionClosedException {
 
-  private static final long serialVersionUID = -6175651458048862623L;
+  private static final long serialVersionUID = 1L;
 
 
   /**

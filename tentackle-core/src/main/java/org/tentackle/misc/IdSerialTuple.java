@@ -18,8 +18,9 @@
 
 package org.tentackle.misc;
 
-import java.io.Serializable;
 import org.tentackle.common.TentackleRuntimeException;
+
+import java.io.Serializable;
 
 
 /**
@@ -30,7 +31,7 @@ import org.tentackle.common.TentackleRuntimeException;
  */
 public class IdSerialTuple implements Identifiable, SerialNumbered, Serializable, Cloneable, Comparable<IdSerialTuple> {
 
-  private static final long serialVersionUID = 4038857102103180382L;
+  private static final long serialVersionUID = 1L;
 
   /**
    * The object id.

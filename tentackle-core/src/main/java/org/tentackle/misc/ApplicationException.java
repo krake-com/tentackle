@@ -29,7 +29,7 @@ import org.tentackle.common.ExceptionHelper;
 public class ApplicationException extends Exception {
 
   /* serialUID. */
-  private static final long serialVersionUID = 8926134267476125235L;
+  private static final long serialVersionUID = 1L;
 
   /** the default error code **/
   public static final int ERROR_DEFAULT = 1;

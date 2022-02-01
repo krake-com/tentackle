@@ -19,8 +19,9 @@
 
 package org.tentackle.validate;
 
-import java.util.List;
 import org.tentackle.log.Loggable;
+
+import java.util.List;
 
 
 /**
@@ -32,7 +33,7 @@ import org.tentackle.log.Loggable;
  */
 public class ValidationFailedException extends RuntimeException implements Loggable {
 
-  private static final long serialVersionUID = 922168908361481367L;
+  private static final long serialVersionUID = 1L;
 
   private final List<ValidationResult> results;   // the validation results
   private transient String resultsMessage;        // cached results message

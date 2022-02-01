@@ -33,7 +33,7 @@ import org.tentackle.swing.FormDialog;
  */
 public class PdoCursorProgressDialog extends FormDialog {
 
-  private static final long serialVersionUID = -6880264515974835266L;
+  private static final long serialVersionUID = 1L;
 
 
   private volatile boolean abortRequested;    // true if abort has been requested

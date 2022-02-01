@@ -19,18 +19,19 @@
 
 package org.tentackle.swing.plaf.tmetal;
 
-import java.awt.Color;
-import java.net.URL;
-import java.util.MissingResourceException;
-import javax.swing.ImageIcon;
-import javax.swing.UIDefaults;
-import javax.swing.plaf.ColorUIResource;
-import javax.swing.plaf.metal.MetalLookAndFeel;
-import javax.swing.plaf.metal.DefaultMetalTheme;
-import javax.swing.plaf.metal.MetalTheme;
 import org.tentackle.common.Service;
 import org.tentackle.swing.plaf.PlafUtilities;
 import org.tentackle.swing.plaf.TentackleLookAndFeel;
+
+import javax.swing.ImageIcon;
+import javax.swing.UIDefaults;
+import javax.swing.plaf.ColorUIResource;
+import javax.swing.plaf.metal.DefaultMetalTheme;
+import javax.swing.plaf.metal.MetalLookAndFeel;
+import javax.swing.plaf.metal.MetalTheme;
+import java.awt.Color;
+import java.net.URL;
+import java.util.MissingResourceException;
 
 
 
@@ -42,7 +43,7 @@ import org.tentackle.swing.plaf.TentackleLookAndFeel;
 @Service(TentackleLookAndFeel.class)
 public class TMetalLookAndFeel extends MetalLookAndFeel implements TentackleLookAndFeel {
 
-  private static final long serialVersionUID = -5383733820337968815L;
+  private static final long serialVersionUID = 1L;
 
 
   private static MetalTheme currentTheme = null;

@@ -30,7 +30,7 @@ import java.io.Serializable;
  */
 public class VersionInfoIncompatibleException extends LoginFailedException {
 
-  private static final long serialVersionUID = -9655629806960356L;
+  private static final long serialVersionUID = 1L;
 
   private final Serializable clientVersion;
   private final Serializable serverVersion;

@@ -29,7 +29,7 @@ import org.tentackle.task.AbstractTask;
  */
 public abstract class AbstractSessionTask extends AbstractTask {
 
-  private static final long serialVersionUID = -702889862433380249L;
+  private static final long serialVersionUID = 1L;
 
   private transient Session session;        // the session to use
 

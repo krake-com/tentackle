@@ -65,6 +65,17 @@
 
 package org.tentackle.web.misc;
 
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerFactory;
+import org.tentackle.persist.app.ServerApplication;
+
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
@@ -79,16 +90,6 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import org.tentackle.persist.app.ServerApplication;
-import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 
 
 
@@ -118,7 +119,7 @@ public class ApplicationServlet extends HttpServlet {
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(ApplicationServlet.class);
 
-  private static final long serialVersionUID = -746056612270951056L;
+  private static final long serialVersionUID = 1L;
 
 
 
@@ -635,7 +636,7 @@ public class ApplicationServlet extends HttpServlet {
    */
   private static class ServletClientException extends Exception {
 
-    private static final long serialVersionUID = -8749500232249233431L;
+    private static final long serialVersionUID = 1L;
 
     public ServletClientException(String s) {
       super(s);
@@ -647,7 +648,7 @@ public class ApplicationServlet extends HttpServlet {
    */
   private static class ServletServerException extends Exception {
 
-    private static final long serialVersionUID = 4055847163720192584L;
+    private static final long serialVersionUID = 1L;
 
     public ServletServerException(String s) {
       super(s);

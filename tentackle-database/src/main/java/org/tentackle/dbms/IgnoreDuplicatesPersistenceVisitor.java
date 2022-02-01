@@ -19,10 +19,11 @@
 
 package org.tentackle.dbms;
 
-import java.util.HashSet;
-import java.util.Set;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * A visitor to ignore duplicates within a persistence operation.<br>
@@ -39,7 +40,7 @@ public class IgnoreDuplicatesPersistenceVisitor extends PersistenceVisitor {
   private static final Logger LOGGER = LoggerFactory.getLogger(IgnoreDuplicatesPersistenceVisitor.class);
 
   /** seriialUID. */
-  private static final long serialVersionUID = 8166893128074169609L;
+  private static final long serialVersionUID = 1L;
 
 
   private final Set<AbstractDbObject<?>> objectSet;   // all persisted objects so far

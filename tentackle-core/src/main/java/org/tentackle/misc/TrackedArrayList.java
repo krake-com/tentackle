@@ -43,7 +43,7 @@ import java.util.function.Predicate;
  */
 public class TrackedArrayList<E> extends ImmutableArrayList<E> implements TrackedList<E> {
 
-  private static final long serialVersionUID = 5820724718467532237L;
+  private static final long serialVersionUID = 1L;
 
   /** the logger for this class. */
   private static final Logger LOGGER = LoggerFactory.getLogger(TrackedArrayList.class);

@@ -44,7 +44,7 @@ import java.util.TimeZone;
  */
 public class DefaultSessionInfo implements SessionInfo, Serializable, Cloneable {
 
-  static final long serialVersionUID = 6002689783347165834L;
+  static final long serialVersionUID = 1L;
 
   /**
    * The logger for this class.

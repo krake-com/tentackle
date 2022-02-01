@@ -29,7 +29,7 @@ import java.net.Socket;
  */
 public class CompressedClientSocketFactory extends ClientSocketFactory {
 
-  private static final long serialVersionUID = 2357672465175511279L;
+  private static final long serialVersionUID = 1L;
 
 
   @Override

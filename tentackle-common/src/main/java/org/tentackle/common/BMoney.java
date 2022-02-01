@@ -32,7 +32,7 @@ import java.util.Currency;
  */
 public class BMoney extends BigDecimal implements Cloneable {
 
-  private static final long serialVersionUID = 3669978240319189746L;
+  private static final long serialVersionUID = 1L;
 
 
   /**

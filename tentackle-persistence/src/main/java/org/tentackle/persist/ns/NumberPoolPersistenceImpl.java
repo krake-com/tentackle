@@ -58,7 +58,7 @@ import java.util.Objects;
 @PersistentObjectService(NumberPool.class)
 public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPool, NumberPoolPersistenceImpl> implements NumberPoolPersistence {
 
-  private static final long serialVersionUID = -1178387730540795339L;
+  private static final long serialVersionUID = 1L;
 
   /**
    * logger for this class.

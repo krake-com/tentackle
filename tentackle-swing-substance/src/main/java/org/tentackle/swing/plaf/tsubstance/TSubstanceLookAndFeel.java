@@ -21,21 +21,23 @@
 
 package org.tentackle.swing.plaf.tsubstance;
 
-import java.awt.Color;
-import java.net.URL;
-import java.util.MissingResourceException;
+import org.jvnet.lafwidget.animation.FadeConfigurationManager;
+import org.jvnet.lafwidget.animation.FadeKind;
+import org.jvnet.substance.skin.SubstanceModerateLookAndFeel;
+
+import org.tentackle.common.Service;
+import org.tentackle.swing.plaf.PlafUtilities;
+import org.tentackle.swing.plaf.TentackleLookAndFeel;
+
 import javax.swing.ImageIcon;
 import javax.swing.UIDefaults;
 import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.metal.DefaultMetalTheme;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 import javax.swing.plaf.metal.MetalTheme;
-import org.jvnet.lafwidget.animation.FadeConfigurationManager;
-import org.jvnet.lafwidget.animation.FadeKind;
-import org.jvnet.substance.skin.SubstanceModerateLookAndFeel;
-import org.tentackle.common.Service;
-import org.tentackle.swing.plaf.PlafUtilities;
-import org.tentackle.swing.plaf.TentackleLookAndFeel;
+import java.awt.Color;
+import java.net.URL;
+import java.util.MissingResourceException;
 
 
 
@@ -46,7 +48,7 @@ import org.tentackle.swing.plaf.TentackleLookAndFeel;
 @Service(TentackleLookAndFeel.class)
 public class TSubstanceLookAndFeel extends SubstanceModerateLookAndFeel implements TentackleLookAndFeel {
 
-  private static final long serialVersionUID = -1426152671864702049L;
+  private static final long serialVersionUID = 1L;
 
   protected static MetalTheme currentTheme = null;
 

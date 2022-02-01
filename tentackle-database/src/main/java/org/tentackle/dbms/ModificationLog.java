@@ -96,7 +96,7 @@ import java.util.List;
 @TableName(/**/"modlog"/**/)      // @wurblet < Inject --string $tablename
 public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
-  private static final long serialVersionUID = 7997968053729155282L;
+  private static final long serialVersionUID = 1L;
 
   /**
    * logger for this class.

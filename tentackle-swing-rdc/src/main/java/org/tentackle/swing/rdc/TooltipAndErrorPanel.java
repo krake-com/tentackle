@@ -20,19 +20,20 @@
 
 package org.tentackle.swing.rdc;
 
-import java.util.Arrays;
+import org.tentackle.log.Logger.Level;
 import org.tentackle.swing.FormUtilities;
 import org.tentackle.swing.TooltipDisplay;
-import java.awt.Component;
-import java.awt.Font;
-import java.util.List;
+import org.tentackle.swing.plaf.PlafUtilities;
+
 import javax.swing.AbstractListModel;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.ListSelectionModel;
-import org.tentackle.log.Logger.Level;
-import org.tentackle.swing.plaf.PlafUtilities;
+import java.awt.Component;
+import java.awt.Font;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Provides a tooltip-like info field and an error-list the user can
@@ -42,7 +43,7 @@ import org.tentackle.swing.plaf.PlafUtilities;
  */
 public class TooltipAndErrorPanel extends org.tentackle.swing.FormPanel implements TooltipDisplay {
 
-  private static final long serialVersionUID = 3958009871918539709L;
+  private static final long serialVersionUID = 1L;
 
   private List<InteractiveError> errors;  // current errors
   private final ErrorModel model;         // model for JList
@@ -217,7 +218,7 @@ public class TooltipAndErrorPanel extends org.tentackle.swing.FormPanel implemen
 
   private class ErrorModel extends AbstractListModel<InteractiveError> {
 
-    private static final long serialVersionUID = 4345877639111757820L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public int getSize() {
@@ -237,7 +238,7 @@ public class TooltipAndErrorPanel extends org.tentackle.swing.FormPanel implemen
 
   private static class ErrorCellRenderer extends DefaultListCellRenderer {
 
-    private static final long serialVersionUID = 5377387954067688753L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public Component getListCellRendererComponent(

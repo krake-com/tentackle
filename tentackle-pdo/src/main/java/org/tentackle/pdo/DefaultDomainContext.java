@@ -22,11 +22,12 @@
 
 package org.tentackle.pdo;
 
-import java.io.ObjectStreamException;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
+
+import java.io.ObjectStreamException;
 
 
 /**
@@ -36,7 +37,7 @@ import org.tentackle.session.SessionInfo;
  */
 public class DefaultDomainContext implements DomainContext {
 
-  private static final long serialVersionUID = 1326690682129400506L;
+  private static final long serialVersionUID = 1L;
 
   // attributes are transient because session could be remote (is serializable)
 

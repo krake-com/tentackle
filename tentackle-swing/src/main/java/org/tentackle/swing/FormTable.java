@@ -19,6 +19,37 @@
 
 package org.tentackle.swing;
 
+import org.tentackle.common.BMoney;
+import org.tentackle.common.DMoney;
+import org.tentackle.common.StringHelper;
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerFactory;
+import org.tentackle.misc.FormatHelper;
+import org.tentackle.prefs.PersistedPreferences;
+import org.tentackle.prefs.PersistedPreferencesFactory;
+import org.tentackle.swing.bind.FormTableBinding;
+
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.DefaultCellEditor;
+import javax.swing.JCheckBox;
+import javax.swing.JLabel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JViewport;
+import javax.swing.KeyStroke;
+import javax.swing.ListSelectionModel;
+import javax.swing.UIManager;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.table.DefaultTableColumnModel;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellEditor;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
+import javax.swing.table.TableModel;
 import java.awt.AWTEvent;
 import java.awt.Color;
 import java.awt.Component;
@@ -48,36 +79,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.prefs.BackingStoreException;
-import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.DefaultCellEditor;
-import javax.swing.JCheckBox;
-import javax.swing.JLabel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.JViewport;
-import javax.swing.KeyStroke;
-import javax.swing.ListSelectionModel;
-import javax.swing.UIManager;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.table.DefaultTableColumnModel;
-import javax.swing.table.JTableHeader;
-import javax.swing.table.TableCellEditor;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableColumn;
-import javax.swing.table.TableColumnModel;
-import javax.swing.table.TableModel;
-import org.tentackle.common.BMoney;
-import org.tentackle.common.DMoney;
-import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
-import org.tentackle.misc.FormatHelper;
-import org.tentackle.common.StringHelper;
-import org.tentackle.prefs.PersistedPreferences;
-import org.tentackle.prefs.PersistedPreferencesFactory;
-import org.tentackle.swing.bind.FormTableBinding;
 
 
 
@@ -284,7 +285,7 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
     nextCellAction      = new NextCellAction();
     previousCellAction  = new PreviousCellAction();
     helpAction          = new AbstractAction() {
-      private static final long serialVersionUID = -5644390861803492172L;
+      private static final long serialVersionUID = 1L;
       @Override
       public void actionPerformed(ActionEvent e)  {
         FormUtilities.getInstance().openHelpURL(FormTable.this);

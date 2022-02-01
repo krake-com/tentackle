@@ -20,6 +20,36 @@
 
 package org.tentackle.swing.rdc;
 
+import org.tentackle.common.ExceptionHelper;
+import org.tentackle.common.StringHelper;
+import org.tentackle.log.Logger;
+import org.tentackle.log.Logger.Level;
+import org.tentackle.log.LoggerFactory;
+import org.tentackle.misc.FormatHelper;
+import org.tentackle.pdo.DomainContext;
+import org.tentackle.pdo.Pdo;
+import org.tentackle.pdo.PdoRuntimeException;
+import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.security.SecurityFactory;
+import org.tentackle.security.SecurityManager;
+import org.tentackle.security.SecurityResult;
+import org.tentackle.security.permissions.EditPermission;
+import org.tentackle.security.permissions.ViewPermission;
+import org.tentackle.session.ConstraintException;
+import org.tentackle.session.NotFoundException;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.swing.FormContainer;
+import org.tentackle.swing.FormDialog;
+import org.tentackle.swing.FormError;
+import org.tentackle.swing.FormInfo;
+import org.tentackle.swing.FormPanel;
+import org.tentackle.swing.FormQuestion;
+import org.tentackle.swing.plaf.PlafUtilities;
+import org.tentackle.swing.rdc.security.SecurityDialogFactory;
+import org.tentackle.validate.ValidationFailedException;
+import org.tentackle.validate.ValidationResult;
+
+import javax.swing.event.EventListenerList;
 import java.awt.AWTEvent;
 import java.awt.CardLayout;
 import java.awt.EventQueue;
@@ -48,35 +78,6 @@ import java.rmi.RemoteException;
 import java.text.MessageFormat;
 import java.util.Date;
 import java.util.List;
-import javax.swing.event.EventListenerList;
-import org.tentackle.common.ExceptionHelper;
-import org.tentackle.log.Logger;
-import org.tentackle.log.Logger.Level;
-import org.tentackle.log.LoggerFactory;
-import org.tentackle.misc.FormatHelper;
-import org.tentackle.common.StringHelper;
-import org.tentackle.pdo.DomainContext;
-import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.PdoRuntimeException;
-import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.swing.rdc.security.SecurityDialogFactory;
-import org.tentackle.security.SecurityFactory;
-import org.tentackle.security.SecurityManager;
-import org.tentackle.security.SecurityResult;
-import org.tentackle.security.permissions.EditPermission;
-import org.tentackle.security.permissions.ViewPermission;
-import org.tentackle.session.ConstraintException;
-import org.tentackle.session.NotFoundException;
-import org.tentackle.session.PersistenceException;
-import org.tentackle.swing.FormContainer;
-import org.tentackle.swing.FormDialog;
-import org.tentackle.swing.FormError;
-import org.tentackle.swing.FormInfo;
-import org.tentackle.swing.FormPanel;
-import org.tentackle.swing.FormQuestion;
-import org.tentackle.swing.plaf.PlafUtilities;
-import org.tentackle.validate.ValidationFailedException;
-import org.tentackle.validate.ValidationResult;
 
 
 /**
@@ -106,7 +107,7 @@ import org.tentackle.validate.ValidationResult;
  */
 public class PdoEditDialog<T extends PersistentDomainObject<T>> extends FormDialog implements DropTargetListener, KeyEventDispatcher {
 
-  private static final long serialVersionUID = 3026626637222875722L;
+  private static final long serialVersionUID = 1L;
 
   /**
    * logger for this class.

@@ -20,14 +20,6 @@
 
 package org.tentackle.swing.rdc;
 
-import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import javax.swing.JButton;
-import javax.swing.ListSelectionModel;
-import javax.swing.event.TableModelListener;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.swing.FormButton;
@@ -39,6 +31,15 @@ import org.tentackle.swing.FormTableSorter;
 import org.tentackle.swing.FormUtilities;
 import org.tentackle.swing.mocking.MockFormTableEntry;
 
+import javax.swing.JButton;
+import javax.swing.ListSelectionModel;
+import javax.swing.event.TableModelListener;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
 
 
 /*
@@ -48,7 +49,7 @@ import org.tentackle.swing.mocking.MockFormTableEntry;
  */
 public class PdoTablePanel<T extends PersistentDomainObject<T>> extends org.tentackle.swing.FormPanel {
 
-  private static final long serialVersionUID = -7533825918254146044L;
+  private static final long serialVersionUID = 1L;
 
   private boolean                     templateChanged;        // true = template changed -> setup datatable again if listChanged
   private List<T>                     objList;                // list of objects

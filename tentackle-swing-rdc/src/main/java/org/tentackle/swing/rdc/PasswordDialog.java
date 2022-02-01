@@ -20,10 +20,10 @@
 package org.tentackle.swing.rdc;
 
 import org.tentackle.common.Compare;
+import org.tentackle.common.StringHelper;
 import org.tentackle.log.Logger;
 import org.tentackle.swing.FormQuestion;
 import org.tentackle.swing.FormUtilities;
-import org.tentackle.common.StringHelper;
 
 /**
  * Password dialog.
@@ -37,7 +37,7 @@ import org.tentackle.common.StringHelper;
  */
 public class PasswordDialog extends org.tentackle.swing.FormDialog {
 
-  private static final long serialVersionUID = -4354288019954531769L;
+  private static final long serialVersionUID = 1L;
 
   private final String oldPassword; // the old (encrypted) password
   private final boolean checkOld;   // true if check old password

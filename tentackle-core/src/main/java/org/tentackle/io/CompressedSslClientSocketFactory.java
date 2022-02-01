@@ -32,7 +32,7 @@ import java.util.Objects;
  */
 public class CompressedSslClientSocketFactory extends SslRMIClientSocketFactory implements SocketConfiguratorHolder {
 
-  private static final long serialVersionUID = 3906670971029103850L;
+  private static final long serialVersionUID = 1L;
 
   private volatile SocketConfigurator socketConfigurator;   // the optional socket configurator
 

@@ -44,7 +44,7 @@ public class CancelSaveDiscardDialog extends org.tentackle.swing.FormDialog {
   /** return code for "discard" **/
   public static final int DISCARD = 2;
 
-  private static final long serialVersionUID = -7542059032899743591L;
+  private static final long serialVersionUID = 1L;
 
 
   /**

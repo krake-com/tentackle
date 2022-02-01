@@ -42,7 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class RubyScript extends AbstractScript {
 
-  private static final long serialVersionUID = -7188401350915879268L;
+  private static final long serialVersionUID = 1L;
 
   /**
    * logger for this class.

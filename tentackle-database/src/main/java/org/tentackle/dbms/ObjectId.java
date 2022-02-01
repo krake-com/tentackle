@@ -37,7 +37,7 @@ import static org.tentackle.common.Constants.CN_ID;
  */
 public class ObjectId extends AbstractIdSource {
 
-  private static final long serialVersionUID = -2463189262257268747L;
+  private static final long serialVersionUID = 1L;
 
 
   private static final StatementId SELECT_ID = new StatementId();
@@ -119,7 +119,7 @@ public class ObjectId extends AbstractIdSource {
         if (registerTxPending) {
           // register final update for end of transaction
           db.registerCommitTxRunnable(new CommitTxRunnable() {
-            private static final long serialVersionUID = 3540652948263201449L;
+            private static final long serialVersionUID = 1L;
 
             @Override
             public void commit(Db db) {

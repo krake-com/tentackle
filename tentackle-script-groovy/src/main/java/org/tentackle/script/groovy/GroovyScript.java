@@ -39,7 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class GroovyScript extends AbstractScript {
 
-  private static final long serialVersionUID = -2854720758013476291L;
+  private static final long serialVersionUID = 1L;
 
   /**
    * logger for this class.

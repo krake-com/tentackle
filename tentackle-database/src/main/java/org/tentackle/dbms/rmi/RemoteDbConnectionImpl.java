@@ -60,7 +60,7 @@ import java.rmi.server.UnicastRemoteObject;
 
 abstract public class RemoteDbConnectionImpl extends RemoteServerObject implements RemoteDbConnection {
 
-  private static final long serialVersionUID = -1008588987968414154L;
+  private static final long serialVersionUID = 1L;
 
   /**
    * logger for this class.

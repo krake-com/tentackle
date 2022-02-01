@@ -28,7 +28,7 @@ package org.tentackle.validate;
  */
 public class ValidationRuntimeException extends RuntimeException {
 
-  private static final long serialVersionUID = -5355906838551059050L;
+  private static final long serialVersionUID = 1L;
 
   /**
    * Constructs a new validation runtime exception with <code>null</code> as its

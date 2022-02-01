@@ -5,9 +5,6 @@
 
 package org.tentackle.swing.rdc;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.Collection;
-import java.util.Objects;
 import org.tentackle.bind.Binding;
 import org.tentackle.bind.BindingException;
 import org.tentackle.pdo.DomainContext;
@@ -16,6 +13,10 @@ import org.tentackle.pdo.PdoRuntimeException;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.swing.AbstractFormField;
 import org.tentackle.swing.FormFieldComboBox;
+
+import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
+import java.util.Objects;
 
 /**
  * A combobox for PDOs.
@@ -28,7 +29,7 @@ import org.tentackle.swing.FormFieldComboBox;
  */
 public class PdoComboBox<T extends PersistentDomainObject<T>> extends FormFieldComboBox<T> implements DomainContextProvider {
 
-  private static final long serialVersionUID = 1826592080778987508L;
+  private static final long serialVersionUID = 1L;
 
   private Class<T> pdoClass;                    // the managed class
   private DomainContext domainContext;          // the current domain context

@@ -71,7 +71,7 @@ import java.util.Objects;
 @TableName(/**/"prefnode"/**/)    // @wurblet < Inject --string $tablename
 public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
 
-  private static final long serialVersionUID = 4677525106428955014L;
+  private static final long serialVersionUID = 1L;
 
   /** Variables common to all instances of {@link DbPreferencesNode}. */
   public static final DbObjectClassVariables<DbPreferencesNode> CLASSVARIABLES =

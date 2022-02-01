@@ -20,12 +20,12 @@
 
 package org.tentackle.swing.rdc;
 
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.text.MessageFormat;
 import java.util.StringTokenizer;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
 
 /**
  * About dialog.<br>
@@ -37,7 +37,7 @@ import javax.swing.ImageIcon;
  */
 public class AboutDialog extends org.tentackle.swing.FormDialog {
 
-  private static final long serialVersionUID = -3397099233126775727L;
+  private static final long serialVersionUID = 1L;
 
   private Thread gcUpdater;     // update GC-Button thread
   private final String text;    // the text

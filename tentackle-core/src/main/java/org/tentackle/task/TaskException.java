@@ -28,7 +28,7 @@ import org.tentackle.common.TentackleRuntimeException;
  */
 public class TaskException extends TentackleRuntimeException {
 
-  private static final long serialVersionUID = 3230153472140695051L;
+  private static final long serialVersionUID = 1L;
 
   /**
    * Constructs a new task exception with <code>null</code> as its detail message.<br>

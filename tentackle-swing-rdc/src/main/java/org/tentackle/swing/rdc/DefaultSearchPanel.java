@@ -20,9 +20,10 @@
 
 package org.tentackle.swing.rdc;
 
+import org.tentackle.swing.FormPanel;
+
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
-import org.tentackle.swing.FormPanel;
 
 
 /**
@@ -30,7 +31,7 @@ import org.tentackle.swing.FormPanel;
  */
 public class DefaultSearchPanel extends FormPanel {
 
-  private static final long serialVersionUID = -2212802891577868573L;
+  private static final long serialVersionUID = 1L;
 
 
   private String pattern;  // normtext pattern

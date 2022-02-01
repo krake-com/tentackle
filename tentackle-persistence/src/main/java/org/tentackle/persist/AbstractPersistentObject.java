@@ -117,7 +117,7 @@ import static org.tentackle.sql.Backend.SQL_WHEREALL;
 public abstract class AbstractPersistentObject<T extends PersistentDomainObject<T>, P extends AbstractPersistentObject<T,P>>
        extends AbstractDbObject<P> implements PersistentObject<T>, EffectiveClassProvider<T> {
 
-  private static final long serialVersionUID = 1921941642168910515L;
+  private static final long serialVersionUID = 1L;
 
   private transient boolean contextImmutable;     // true if domain context cannot be changed anymore
   private T pdo;                                  // the pdo instance this is a delegate for

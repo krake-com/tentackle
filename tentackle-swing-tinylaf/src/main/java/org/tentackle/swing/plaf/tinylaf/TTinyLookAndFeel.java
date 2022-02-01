@@ -19,19 +19,21 @@
 
 package org.tentackle.swing.plaf.tinylaf;
 
-import java.awt.Color;
-import java.net.URL;
-import java.util.MissingResourceException;
-import javax.swing.ImageIcon;
-import javax.swing.UIDefaults;
-import javax.swing.plaf.ColorUIResource;
 import net.sf.tinylaf.Theme;
 import net.sf.tinylaf.TinyLookAndFeel;
+
 import org.tentackle.common.Service;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.swing.plaf.PlafUtilities;
 import org.tentackle.swing.plaf.TentackleLookAndFeel;
+
+import javax.swing.ImageIcon;
+import javax.swing.UIDefaults;
+import javax.swing.plaf.ColorUIResource;
+import java.awt.Color;
+import java.net.URL;
+import java.util.MissingResourceException;
 
 
 
@@ -45,7 +47,7 @@ import org.tentackle.swing.plaf.TentackleLookAndFeel;
 @Service(TentackleLookAndFeel.class)
 public class TTinyLookAndFeel extends TinyLookAndFeel implements TentackleLookAndFeel {
 
-  private static final long serialVersionUID = 4681423326797721021L;
+  private static final long serialVersionUID = 1L;
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TTinyLookAndFeel.class);
 

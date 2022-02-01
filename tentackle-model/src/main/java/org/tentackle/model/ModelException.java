@@ -27,7 +27,7 @@ import java.util.Collection;
  */
 public class ModelException extends Exception {
 
-  private static final long serialVersionUID = 3405985077474898397L;
+  private static final long serialVersionUID = 1L;
 
   private ModelElement element;   // the related model element
 

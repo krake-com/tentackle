@@ -42,7 +42,7 @@ import java.util.Calendar;
 @SuppressWarnings("deprecation")
 public class Time extends java.sql.Time implements Freezable {
 
-  private static final long serialVersionUID = 8397324403548013688L;
+  private static final long serialVersionUID = 1L;
 
   private boolean frozen;               // true if time cannot be modified anymore
   private transient Calendar cal;       // lazy calendar

@@ -31,7 +31,7 @@ import org.tentackle.session.Session;
  */
 public class DomainException extends TentackleRuntimeException {
 
-  private static final long serialVersionUID = -5355906838551059053L;
+  private static final long serialVersionUID = 1L;
 
 
   /**

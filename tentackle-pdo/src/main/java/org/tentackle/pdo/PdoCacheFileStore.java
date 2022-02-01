@@ -19,6 +19,14 @@
 
 package org.tentackle.pdo;
 
+import org.tentackle.app.AbstractApplication;
+import org.tentackle.common.StringHelper;
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerFactory;
+import org.tentackle.misc.UserHomeJavaDir;
+import org.tentackle.session.ModificationTracker;
+import org.tentackle.session.Session;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -31,13 +39,6 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
-import org.tentackle.app.AbstractApplication;
-import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
-import org.tentackle.common.StringHelper;
-import org.tentackle.misc.UserHomeJavaDir;
-import org.tentackle.session.ModificationTracker;
-import org.tentackle.session.Session;
 
 
 /**
@@ -51,7 +52,7 @@ import org.tentackle.session.Session;
  */
 public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements Serializable {
 
-  private static final long serialVersionUID = 1029177241051535961L;
+  private static final long serialVersionUID = 1L;
 
   /**
    * logger for this class.

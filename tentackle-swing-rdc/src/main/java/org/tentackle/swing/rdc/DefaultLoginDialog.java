@@ -20,6 +20,16 @@
 
 package org.tentackle.swing.rdc;
 
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerFactory;
+import org.tentackle.pdo.Pdo;
+import org.tentackle.session.SessionInfo;
+import org.tentackle.swing.FormUtilities;
+import org.tentackle.swing.StringFormField;
+
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JPasswordField;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.SplashScreen;
@@ -28,15 +38,6 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
-import javax.swing.JPasswordField;
-import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
-import org.tentackle.pdo.Pdo;
-import org.tentackle.session.SessionInfo;
-import org.tentackle.swing.FormUtilities;
-import org.tentackle.swing.StringFormField;
 
 /**
  * The default tentackle login dialog.
@@ -45,7 +46,7 @@ import org.tentackle.swing.StringFormField;
  */
 public class DefaultLoginDialog extends org.tentackle.swing.FormDialog implements LoginDialog {
 
-  private static final long serialVersionUID = -1244250738977558564L;
+  private static final long serialVersionUID = 1L;
 
   /**
    * logger for this class.

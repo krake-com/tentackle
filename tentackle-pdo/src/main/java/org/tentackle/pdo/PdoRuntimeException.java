@@ -31,7 +31,7 @@ import org.tentackle.session.Session;
  */
 public class PdoRuntimeException extends PersistenceException {
 
-  private static final long serialVersionUID = -5355906838551059054L;
+  private static final long serialVersionUID = 1L;
 
 
   /**

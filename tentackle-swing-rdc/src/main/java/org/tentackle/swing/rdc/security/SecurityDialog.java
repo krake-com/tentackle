@@ -20,9 +20,6 @@
 
 package org.tentackle.swing.rdc.security;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.WindowEvent;
-import java.text.MessageFormat;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.TrackedList;
@@ -41,6 +38,10 @@ import org.tentackle.swing.rdc.CancelSaveDiscardDialog;
 import org.tentackle.swing.rdc.PdoTablePanel;
 import org.tentackle.swing.rdc.Rdc;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.WindowEvent;
+import java.text.MessageFormat;
+
 
 
 
@@ -58,7 +59,7 @@ public class SecurityDialog extends FormDialog {
   /** transaction name for "save rules" **/
   public static final String TX_SAVE_RULES  = "save rules";
 
-  private static final long serialVersionUID = 7560878743739380186L;
+  private static final long serialVersionUID = 1L;
 
   /** database context. */
   private final DomainContext context;

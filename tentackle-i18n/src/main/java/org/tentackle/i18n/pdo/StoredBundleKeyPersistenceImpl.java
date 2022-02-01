@@ -46,7 +46,7 @@ import java.util.Objects;
 @PersistentObjectService(StoredBundleKey.class)
 public class StoredBundleKeyPersistenceImpl extends AbstractPersistentObject<StoredBundleKey, StoredBundleKeyPersistenceImpl> implements StoredBundleKeyPersistence {
 
-  private static final long serialVersionUID = -1178387730540795319L;
+  private static final long serialVersionUID = 1L;
 
 
   // @wurblet classVariables ClassVariables
