@@ -19,6 +19,7 @@
 
 package org.tentackle.task;
 
+import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.common.Timestamp;
 import org.tentackle.daemon.Supervisable;
 import org.tentackle.log.Logger;
@@ -327,22 +328,25 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
 
   @Override
   public void waitForTask(Task task) {
-    for (;;) {
+    long startedToWait = System.currentTimeMillis();
+    while (deadInterval == 0 || System.currentTimeMillis() - startedToWait < deadInterval) {
       try {
         synchronized(task) {
           if (isTaskPending(task)) {
             task.wait(sleepInterval);
           }
           else  {
-            break;
+            return;
           }
         }
       }
       catch (InterruptedException ex) {
-        // daemon thread is terminated via requestTermination!
-        LOGGER.warning("interrupted -> ignored");
+        throw new InterruptedRuntimeException(ex);
       }
     }
+    // Could be a deadlock: a task being executed is blocked by the waiting thread somehow.
+    // we don't want a dead dispatcher...
+    throw new TaskException("pending task timed out");
   }
 
   @Override
