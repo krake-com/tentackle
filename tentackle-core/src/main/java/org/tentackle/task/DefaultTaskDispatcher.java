@@ -354,6 +354,8 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
       }
     } while (waitInterval <= 0 || System.currentTimeMillis() - startedToWait < waitInterval);
 
+    removeTask(task);
+
     // Could be a deadlock: a task being executed is blocked by the waiting thread somehow.
     // we don't want a dead dispatcher...
     throw new TaskException("pending task timed out");
