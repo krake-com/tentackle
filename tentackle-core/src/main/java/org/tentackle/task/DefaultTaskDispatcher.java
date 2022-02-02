@@ -372,15 +372,16 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
 
   @Override
   public boolean removeTask(Task task) {
-    synchronized(task) {
-      assertNotKilled();
-      boolean removed = queue.remove(task);
-      if (removed) {
-        idMap.remove(task.getId());
-        task.setDispatcher(null);
+    assertNotKilled();
+    boolean removed = queue.remove(task);
+    if (removed) {
+      idMap.remove(task.getId());
+      task.setDispatcher(null);   // this triggers the warning when finished
+      if (task.getStarted() != 0 && task.getCompleted() == 0) {
+        LOGGER.warning("{0}: removed task {1} is still running -> dispatcher remains blocked until task has finished!", this, task);
       }
-      return removed;
     }
+    return removed;
   }
 
   @Override
@@ -676,6 +677,11 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
           delayInterrupt = false;
           interruptMutex.writeLock().unlock();
         }
+
+        if (task.getDispatcher() == null) {
+          LOGGER.warning("{0}: already removed task {1} completed", this, task);
+        }
+
         lastMillis = System.currentTimeMillis();
         try {
           task.setCompleted(lastMillis);
