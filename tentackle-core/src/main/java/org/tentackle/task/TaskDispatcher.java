@@ -32,44 +32,59 @@ public interface TaskDispatcher extends Terminatable {
 
   /**
    * Sets the dead interval.
-   * <p>
+   *
    * @param deadInterval the dead interval in ms, 0 to disable dead check
    */
   void setDeadInterval(long deadInterval);
 
   /**
    * Gets the dead interval.
-   * <p>
+   *
    * @return the dead interval in ms, 0 if none
    */
   long getDeadInterval();
 
   /**
    * Sets the sleep interval.
-   * <p>
+   *
    * @param sleepInterval the sleep interval in ms, must be &gt; 0
    */
   void setSleepInterval(long sleepInterval);
 
   /**
    * Gets the sleep interval.
-   * <p>
+   *
    * @return the sleep interval in ms
    */
   long getSleepInterval();
 
   /**
+   * Sets the timeout interval for {@link #waitForTask(Task)}.<br>
+   * The wait interval should be shorter than the dead interval,
+   * usually deadInterval / 2.
+   *
+   * @param waitInterval the wait interval in ms, 0 to disable
+   */
+  void setWaitInterval(long waitInterval);
+
+  /**
+   * Gets the timeout interval for {@link #waitForTask(Task)}.
+   *
+   * @return the wait interval in ms, 0 if disabled
+   */
+  long getWaitInterval();
+
+  /**
    * Sets the locking method.
-   * <p>
+   *
    * @param usingMutexLocking true if mutex locking, else counter locking
-   * <p>
    * @throws TaskException if dispatcher is already running
    */
   void setUsingMutexLocking(boolean usingMutexLocking);
 
   /**
    * Returns the locking method.
-   * <p>
+   *
    * @return true if mutex locking, else counter locking
    */
   boolean isUsingMutexLocking();

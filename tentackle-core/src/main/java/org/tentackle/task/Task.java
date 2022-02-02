@@ -29,12 +29,14 @@ public interface Task extends Runnable, Serializable, Comparable<Task> {
 
   /**
    * Gets the task id.
+   *
    * @return the id
    */
   long getId();
 
   /**
-   * Sets the task id
+   * Sets the task id.
+   *
    * @param id the id
    */
   void setId(long id);
@@ -82,7 +84,8 @@ public interface Task extends Runnable, Serializable, Comparable<Task> {
 
   /**
    * Gets the completed timestamp in milliseconds.
-   * @return time when completed, null if not completed
+   *
+   * @return time when completed, 0 if not completed
    */
   long getCompleted();
 
@@ -95,12 +98,14 @@ public interface Task extends Runnable, Serializable, Comparable<Task> {
 
   /**
    * Gets the started timestamp in milliseconds.
-   * @return time when started, null if not yet started
+   *
+   * @return time when started, 0 if not yet started
    */
   long getStarted();
 
   /**
-   * Sets the stated timestamp
+   * Sets the stated timestamp.
+   *
    * @param started true if started
    */
   void setStarted(long started);
@@ -120,14 +125,12 @@ public interface Task extends Runnable, Serializable, Comparable<Task> {
   void removeTaskListener(TaskListener listener);
 
   /**
-   * Invoke {@link TaskListener#started(org.tentackle.task.Task)}
-   * for all listeners.
+   * Invoke {@link TaskListener#started(org.tentackle.task.Task)} for all listeners.
    */
   void fireStarted();
 
   /**
-   * Invoke {@link TaskListener#completed(org.tentackle.task.Task)}
-   * for all listeners.
+   * Invoke {@link TaskListener#completed(org.tentackle.task.Task)} for all listeners.
    */
   void fireCompleted();
 

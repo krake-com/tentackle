@@ -65,11 +65,15 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
 
   private static final AtomicLong TASK_COUNTER = new AtomicLong();           // global task ID
 
+  private static final long DEFAULT_SLEEP_INTERVAL = 1000;      // 1s
+  private static final long DEFAULT_DEAD_INTERVAL = 30000;      // 30s
+
 
   private boolean usingMutexLocking;                    // true if using a mutex lock, else just a counter
   private ReentrantReadWriteLock mutex;                 // mutex lock
   private long sleepInterval;                           // keepalive in ms
   private long deadInterval;                            // dead detection interval in ms, 0 if disabled
+  private long waitInterval;                            // timeout for waitForTask, 0 if disabled
   private long shutdownIdleTimeout;                     // shutdown thread after idle milliseconds, 0 if permanent
   private long lastActivity;                            // last activity, 0 if a tasks is currently executed
   private final ConcurrentSkipListSet<Task> queue;      // the job queue
@@ -104,6 +108,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
     setUsingMutexLocking(usingMutexLocking);
     setSleepInterval(sleepInterval);
     setDeadInterval(deadInterval);
+    setWaitInterval(deadInterval / 2);
 
     queue = new ConcurrentSkipListSet<>();
     listeners = new ArrayList<>();
@@ -112,12 +117,12 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   }
 
   /**
-   * Creates a task dispatcher with counter-based locking, 1s sleep, 10s dead interval.
+   * Creates a task dispatcher with counter-based locking, 1s sleep, 30s dead interval.
    *
    * @param name the dispatcher's name
    */
   public DefaultTaskDispatcher(String name) {
-    this(name, false, 1000, 10000);
+    this(name, false, DEFAULT_SLEEP_INTERVAL, DEFAULT_DEAD_INTERVAL);
   }
 
   /**
@@ -168,6 +173,16 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   }
 
   @Override
+  public long getWaitInterval() {
+    return waitInterval;
+  }
+
+  @Override
+  public void setWaitInterval(long waitInterval) {
+    this.waitInterval = waitInterval;
+  }
+
+  @Override
   public synchronized boolean isUsingMutexLocking() {
     return usingMutexLocking;
   }
@@ -188,26 +203,17 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   @Override
   public synchronized String toDiagnosticString() {
     StringBuilder buf = new StringBuilder(toString());
-    buf.append("\n    class=");
-    buf.append(getClass());
-    buf.append(", useMutexLocking=");
-    buf.append(isUsingMutexLocking());
-    buf.append(", sleepInterval=");
-    buf.append(getSleepInterval());
-    buf.append(", deadInterval=");
-    buf.append(getDeadInterval());
-    buf.append("\n    lastMillis=");
-    buf.append(new Timestamp(lastMillis));
-    buf.append(", stopRequested=");
-    buf.append(stopRequested);
-    buf.append(", dead=");
-    buf.append(isDead());
-    buf.append(", killed=");
-    buf.append(isKilled());
+    buf.append("\n    class=").append(getClass())
+       .append(", useMutexLocking=").append(isUsingMutexLocking())
+       .append(", sleepInterval=").append(getSleepInterval())
+       .append(", deadInterval=").append(getDeadInterval())
+       .append(", waitInterval=").append(getWaitInterval())
+       .append("\n    lastMillis=").append(new Timestamp(lastMillis))
+       .append(", stopRequested=").append(stopRequested)
+       .append(", dead=").append(isDead())
+       .append(", killed=").append(isKilled());
     if (unlockKey != null) {
-      buf.append(", unlockKey='");
-      buf.append(unlockKey);
-      buf.append("'");
+      buf.append(", unlockKey='").append(unlockKey).append("'");
     }
     return buf.toString();
   }
@@ -329,11 +335,14 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   @Override
   public void waitForTask(Task task) {
     long startedToWait = System.currentTimeMillis();
-    while (deadInterval == 0 || System.currentTimeMillis() - startedToWait < deadInterval) {
+    do {
       try {
         synchronized(task) {
           if (isTaskPending(task)) {
             task.wait(sleepInterval);
+            if (task.getCompleted() != 0) {
+              return;
+            }
           }
           else  {
             return;
@@ -343,7 +352,8 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
       catch (InterruptedException ex) {
         throw new InterruptedRuntimeException(ex);
       }
-    }
+    } while (waitInterval <= 0 || System.currentTimeMillis() - startedToWait < waitInterval);
+
     // Could be a deadlock: a task being executed is blocked by the waiting thread somehow.
     // we don't want a dead dispatcher...
     throw new TaskException("pending task timed out");
