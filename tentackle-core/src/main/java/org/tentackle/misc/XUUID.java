@@ -27,7 +27,7 @@ import java.util.UUID;
  * An {@code XUUID} is a combination of an ID and a {@link UUID}.
  * The external representation is {@code "id-uuid"}, i.e. the ID prepended to the UUID separated by a dash.
  * With {@code XUUID}s, the internal logic (domain/persistence) does not need to be changed, but an additional check for the UUID
- * can be applied to prevent brute force attacks.<br>
+ * can be applied to prevent brute force attacks.
  */
 public class XUUID implements Identifiable {
 
