@@ -30,7 +30,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -38,7 +37,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 /**
  * A thread executing tasks in a serialized manner.
  * <p>
- * Primariliy, the task dispatcher executes tasks from a queue.
+ * Primarily, the task dispatcher executes tasks from a queue.
  * Additionally, dispatchers can be locked by the application which will
  * prevent tasks from being executed until the dispatcher is unlocked again.
  * This is particularly useful whenever resources must be shared between the dispatcher and the application.<br>
@@ -49,7 +48,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * If different threads may lock and unlock, counter-based synchronization should be used instead.
  * For example, RMI services requests via threads from a threadpool and consecutive RMI-requests
  * may be serviced by different threads.<br>
- * With counter based synchronization it is stronly recommended to provide
+ * With counter based synchronization it is strongly recommended to provide
  * an application-specific locking key for each lock/unlock operation. This ensures
  * that only threads with the correct key (usually a shared resource) may unlock the dispatcher.
  *
@@ -81,7 +80,6 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   private final ConcurrentHashMap<Long,Task> idMap;     // tasks by id
   private final List<TaskListener> listeners;           // task listeners
   private final ReentrantReadWriteLock interruptMutex;  // mutex lock to prevent interrupts during execution of task
-  private final AtomicInteger taskCount;                // task execution counter to detect deadlocks
   private int nonMutexLockCount;                        // non-mutex lock count
   private Object unlockKey;                             // optional key to unlock
   private volatile long lastMillis;                     // last milliseconds to check for dead dispatcher
@@ -116,7 +114,6 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
     listeners = new ArrayList<>();
     idMap = new ConcurrentHashMap<>();
     interruptMutex = new ReentrantReadWriteLock();
-    taskCount = new AtomicInteger();
   }
 
   /**
@@ -338,7 +335,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   @Override
   public void waitForTask(Task task) {
     long startedToWait = System.currentTimeMillis();
-    int lastCount = taskCount.get();
+    long oldMillis = lastMillis;
     do {
       try {
         synchronized(task) {
@@ -347,11 +344,11 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
             if (task.getCompleted() != 0) {
               return;
             }
-            int currentCount = taskCount.get();
-            if (currentCount != lastCount) {
+            long newMillis = lastMillis;
+            if (newMillis != oldMillis) {
               // there is some activity and therefore obviously no deadlock -> reset wait interval
               startedToWait = System.currentTimeMillis();
-              lastCount = currentCount;
+              oldMillis = newMillis;
             }
           }
           else  {
@@ -720,8 +717,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
       }
     }
 
-    int count = taskCount.incrementAndGet();    // this will reset the timer in waitForTask
-    LOGGER.fine("{0}: task {1}, {2} completed", this, count, task);
+    LOGGER.fine("{0}: task {1} completed", this, task);
 
     fireCompleted(task);
   }
