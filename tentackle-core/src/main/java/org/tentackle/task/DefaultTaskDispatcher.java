@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -63,10 +64,10 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
 
   private static final Logger LOGGER = Logger.get(DefaultTaskDispatcher.class);
 
-  private static final AtomicLong TASK_COUNTER = new AtomicLong();           // global task ID
+  private static final AtomicLong TASK_ID = new AtomicLong();   // task ID counter
 
   private static final long DEFAULT_SLEEP_INTERVAL = 1000;      // 1s
-  private static final long DEFAULT_DEAD_INTERVAL = 30000;      // 30s
+  private static final long DEFAULT_DEAD_INTERVAL = 60000;      // 60s
 
 
   private boolean usingMutexLocking;                    // true if using a mutex lock, else just a counter
@@ -80,6 +81,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   private final ConcurrentHashMap<Long,Task> idMap;     // tasks by id
   private final List<TaskListener> listeners;           // task listeners
   private final ReentrantReadWriteLock interruptMutex;  // mutex lock to prevent interrupts during execution of task
+  private final AtomicInteger taskCount;                // task execution counter to detect deadlocks
   private int nonMutexLockCount;                        // non-mutex lock count
   private Object unlockKey;                             // optional key to unlock
   private volatile long lastMillis;                     // last milliseconds to check for dead dispatcher
@@ -114,6 +116,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
     listeners = new ArrayList<>();
     idMap = new ConcurrentHashMap<>();
     interruptMutex = new ReentrantReadWriteLock();
+    taskCount = new AtomicInteger();
   }
 
   /**
@@ -294,7 +297,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
         task.setDispatcher(this);
         if (task.getId() == 0) {
           // task never added before: set a unique id
-          task.setId(TASK_COUNTER.incrementAndGet());
+          task.setId(TASK_ID.incrementAndGet());
         }
         queue.add(task);
         idMap.put(task.getId(), task);
@@ -335,6 +338,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   @Override
   public void waitForTask(Task task) {
     long startedToWait = System.currentTimeMillis();
+    int lastCount = taskCount.get();
     do {
       try {
         synchronized(task) {
@@ -342,6 +346,12 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
             task.wait(sleepInterval);
             if (task.getCompleted() != 0) {
               return;
+            }
+            int currentCount = taskCount.get();
+            if (currentCount != lastCount) {
+              // there is some activity and therefore obviously no deadlock -> reset wait interval
+              startedToWait = System.currentTimeMillis();
+              lastCount = currentCount;
             }
           }
           else  {
@@ -710,7 +720,8 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
       }
     }
 
-    LOGGER.fine("{0}: task {1} completed", this, task);
+    int count = taskCount.incrementAndGet();    // this will reset the timer in waitForTask
+    LOGGER.fine("{0}: task {1}, {2} completed", this, count, task);
 
     fireCompleted(task);
   }
