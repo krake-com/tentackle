@@ -81,6 +81,10 @@ public abstract class AbstractTask implements Task {
     return hash;
   }
 
+  @Override
+  public String toString() {
+    return super.toString() + '[' + id + ']';
+  }
 
   @Override
   public void setScheduledEpochalTime(long scheduled) {

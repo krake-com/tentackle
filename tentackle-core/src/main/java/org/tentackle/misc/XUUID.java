@@ -18,6 +18,7 @@
 
 package org.tentackle.misc;
 
+import java.io.Serial;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -31,6 +32,9 @@ import java.util.UUID;
  * in PDOs, for example. {@code XUUID}s are immutable as well.
  */
 public class XUUID implements Identifiable {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private final long id;
   private final Identifiable identifiable;
