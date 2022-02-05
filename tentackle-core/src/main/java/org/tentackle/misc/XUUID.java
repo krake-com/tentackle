@@ -28,8 +28,6 @@ import java.util.UUID;
  * The external representation is {@code "id-uuid"}, i.e. the ID prepended to the UUID separated by a dash.
  * With {@code XUUID}s, the internal logic (domain/persistence) does not need to be changed, but an additional check for the UUID
  * can be applied to prevent brute force attacks.<br>
- * {@code XUUID}s are intentionally not {@link java.io.Serializable}, since they must not be used as regular attributes
- * in PDOs, for example. {@code XUUID}s are immutable as well.
  */
 public class XUUID implements Identifiable {
 
