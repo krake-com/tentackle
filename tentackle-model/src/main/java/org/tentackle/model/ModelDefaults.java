@@ -25,7 +25,7 @@ import java.util.StringTokenizer;
  * Simply set a default attribute to a non-null value to be honored during model parsing.
  * Only logically "higher" values will be copied to the model.
  * For example: fulltracked will overwrite tracked, but a default of tracked will not overwrite fulltracked if
- * already defined in the model. Accordingly deletionCascaded will never clear the model setting to false if true.
+ * already defined in the model. Accordingly, deletionCascaded will never clear the model setting to false if true.
  *
  * @author harald
  */
@@ -149,6 +149,66 @@ public class ModelDefaults {
     }
   }
 
+  @Override
+  public String toString() {
+    StringBuilder buf = new StringBuilder();
+    if (trackType != null) {
+      buf.append(trackType).append(", ");
+    }
+    if (deletionCascaded != null) {
+      if (!deletionCascaded) {
+        buf.append('!');
+      }
+      buf.append("CASCADE, ");
+    }
+    if (root != null) {
+      if (!root) {
+        buf.append('!');
+      }
+      buf.append("ROOT, ");
+    }
+    if (rootId != null) {
+      if (!rootId) {
+        buf.append('!');
+      }
+      buf.append("ROOTID, ");
+    }
+    if (rootClassId != null) {
+      if (!rootClassId) {
+        buf.append('!');
+      }
+      buf.append("ROOTCLASSID, ");
+    }
+    if (bind != null) {
+      if (!bind) {
+        buf.append('!');
+      }
+      buf.append("BIND, ");
+    }
+    if (size != null) {
+      if (!size) {
+        buf.append('!');
+      }
+      buf.append("SIZE, ");
+    }
+    if (autoSelect != null) {
+      if (!autoSelect) {
+        buf.append('!');
+      }
+      buf.append("AUTOSELECT, ");
+    }
+    if (remote != null) {
+      if (!remote) {
+        buf.append('!');
+      }
+      buf.append("REMOTE, ");
+    }
+    String str = buf.toString();
+    if (str.endsWith(", ")) {
+      str = str.substring(0, str.length() - 2);
+    }
+    return str;
+  }
 
   /**
    * Clears the defaults.

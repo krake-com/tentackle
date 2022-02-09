@@ -28,12 +28,14 @@ import org.tentackle.model.CustomModelValidator;
 import org.tentackle.model.Entity;
 import org.tentackle.model.EntityAliases;
 import org.tentackle.model.EntityFactory;
+import org.tentackle.model.EntityInfo;
 import org.tentackle.model.ForeignKey;
 import org.tentackle.model.Index;
 import org.tentackle.model.InheritanceType;
 import org.tentackle.model.Integrity;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
+import org.tentackle.model.ModelDirectory;
 import org.tentackle.model.ModelError;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.ModelUtilities;
@@ -67,23 +69,23 @@ import java.util.TreeMap;
 @Service(Model.class)
 public class ModelImpl implements Model {
 
-  /** cached entities mapped by filepath. */
-  private final Map<String,ModelEntity> mapByFilePath;
+  /** cached entities mapped by file path. */
+  private final Map<String, EntityInfo> mapByFilePath;
 
-  /** cached java source paths mapped to filepaths. */
+  /** cached java source paths mapped to file paths. */
   private final Map<String,String> mapJavaFilePath;
 
   /** cached entities mapped by entity name. */
-  private final Map<String,ModelEntity> mapByEntityName;
+  private final Map<String, EntityInfo> mapByEntityName;
 
-  /** cached entities mapped by the tablename (for entities associated with a table). */
-  private final Map<String,ModelEntity> mapByTableName;
+  /** cached entities mapped by the table name (for entities associated with a table). */
+  private final Map<String, EntityInfo> mapByTableName;
 
   /** cached entities mapped by entity id (for entities associated with a class id). */
-  private final Map<Integer,ModelEntity> mapByClassId;
+  private final Map<Integer, EntityInfo> mapByClassId;
 
   /** model dirs processed so far. */
-  private final Map<String,ModelDirectory> modelDirs;   // <dirname,modeldir>
+  private final Map<String, ModelDirectory> modelDirs;   // <dirname,modeldir>
 
   /** the entity factory. */
   private final EntityFactory entityFactory;
@@ -147,8 +149,8 @@ public class ModelImpl implements Model {
     if (defaults != null) {
       boolean updateRelations = false;
       if (defaults.getTrackType() != null) {
-        for (ModelEntity modelEntity: mapByEntityName.values()) {
-          Entity entity = modelEntity.getEntity();
+        for (EntityInfo entityInfo : mapByEntityName.values()) {
+          Entity entity = entityInfo.getEntity();
           if (!entity.getOptions().noModelDefaults() &&
               defaults.getTrackType().ordinal() > entity.getOptions().getTrackType().ordinal()) {
             ((EntityImpl) entity).getOptions().setTrackType(defaults.getTrackType());
@@ -157,8 +159,8 @@ public class ModelImpl implements Model {
         }
       }
       if (defaults.getDeletionCascaded() != null && defaults.getDeletionCascaded()) {
-        for (ModelEntity modelEntity: mapByEntityName.values()) {
-          Entity entity = modelEntity.getEntity();
+        for (EntityInfo entityInfo : mapByEntityName.values()) {
+          Entity entity = entityInfo.getEntity();
           if (!entity.getOptions().noModelDefaults()) {
             for (Relation relation: entity.getRelations()) {
               if (relation.isComposite() && !relation.isDeletionCascaded()) {
@@ -175,8 +177,8 @@ public class ModelImpl implements Model {
     }
 
     // indexes are parsed when the model is complete
-    for (ModelEntity modelEntity: mapByEntityName.values()) {
-      EntityImpl entity = (EntityImpl) modelEntity.getEntity();
+    for (EntityInfo entityInfo : mapByEntityName.values()) {
+      EntityImpl entity = (EntityImpl) entityInfo.getEntity();
       for (Index idx: entity.getIndexes()) {
         IndexImpl index = (IndexImpl) idx;
         if (!index.isParsed()) {
@@ -214,19 +216,19 @@ public class ModelImpl implements Model {
   }
 
   @Override
-  public synchronized Collection<Entity> getAllEntitites() throws ModelException {
+  public synchronized Collection<Entity> getAllEntities() throws ModelException {
     List<Entity> list = new ArrayList<>();
 
     boolean refreshed = false;
     do {
-      for (ModelEntity modelEntity: mapByEntityName.values()) {
-        if (modelEntity.hasChanged()) {
+      for (EntityInfo entityInfo : mapByEntityName.values()) {
+        if (entityInfo.hasChanged()) {
           refreshModel();
           list.clear();
           refreshed = true;
           break;
         }
-        list.add(modelEntity.getEntity());
+        list.add(entityInfo.getEntity());
       }
     } while (refreshed);
 
@@ -236,24 +238,24 @@ public class ModelImpl implements Model {
 
   @Override
   public synchronized Entity getByFilePath(String filePath) throws ModelException {
-    ModelEntity modelEntity = mapByFilePath.get(filePath);
-    if (modelEntity != null && modelEntity.hasChanged()) {
+    EntityInfo entityInfo = mapByFilePath.get(filePath);
+    if (entityInfo != null && entityInfo.hasChanged()) {
       refreshModel();
-      modelEntity = mapByFilePath.get(filePath);
+      entityInfo = mapByFilePath.get(filePath);
     }
-    return modelEntity == null ? null : modelEntity.getEntity();
+    return entityInfo == null ? null : entityInfo.getEntity();
   }
 
 
   @Override
   public synchronized Entity getByEntityName(String entityName) throws ModelException {
     String name = entityName.toLowerCase();
-    ModelEntity modelEntity = mapByEntityName.get(name);
-    if (modelEntity != null && modelEntity.hasChanged()) {
+    EntityInfo entityInfo = mapByEntityName.get(name);
+    if (entityInfo != null && entityInfo.hasChanged()) {
       refreshModel();
-      modelEntity = mapByEntityName.get(name);
+      entityInfo = mapByEntityName.get(name);
     }
-    return modelEntity == null ? null : modelEntity.getEntity();
+    return entityInfo == null ? null : entityInfo.getEntity();
   }
 
   @Override
@@ -263,147 +265,139 @@ public class ModelImpl implements Model {
     if (ndx >= 0) {
       tableName = tableName.substring(ndx + 1); // skip schema
     }
-    ModelEntity modelEntity = mapByTableName.get(tableName);
-    if (modelEntity != null && modelEntity.hasChanged()) {
+    EntityInfo entityInfo = mapByTableName.get(tableName);
+    if (entityInfo != null && entityInfo.hasChanged()) {
       refreshModel();
-      modelEntity = mapByTableName.get(tableName);
+      entityInfo = mapByTableName.get(tableName);
     }
-    return modelEntity == null ? null : modelEntity.getEntity();
+    return entityInfo == null ? null : entityInfo.getEntity();
   }
 
   @Override
   public synchronized Entity getByClassId(int classId) throws ModelException {
-    ModelEntity modelEntity = mapByClassId.get(classId);
-    if (modelEntity != null && modelEntity.hasChanged()) {
+    EntityInfo entityInfo = mapByClassId.get(classId);
+    if (entityInfo != null && entityInfo.hasChanged()) {
       refreshModel();
-      modelEntity = mapByClassId.get(classId);
+      entityInfo = mapByClassId.get(classId);
     }
-    return modelEntity == null ? null : modelEntity.getEntity();
+    return entityInfo == null ? null : entityInfo.getEntity();
   }
 
+  @Override
+  public EntityInfo getEntityInfo(Entity entity) throws ModelException {
+    String name = entity.getName().toLowerCase();
+    EntityInfo entityInfo = mapByEntityName.get(name);
+    if (entityInfo != null && entityInfo.hasChanged()) {
+      refreshModel();
+      entityInfo = mapByEntityName.get(name);
+    }
+    if (entityInfo == null) {
+      throw new ModelException("no such entity " + entity);
+    }
+    return entityInfo;
+  }
 
   @Override
   public Entity loadByFilePath(String filePath, ModelDefaults defaults, EntityAliases aliases) throws ModelException {
     return loadByFilePath(filePath, defaults, aliases, true);
   }
 
+  @Override
+  public Collection<ModelDirectory> getModelDirectories() {
+    return modelDirs.values();
+  }
 
   /**
-   * Loads an entity for a given mapfile path.<br>
-   * Entities are cached so they are loaded and parsed only once.
+   * Loads an entity for a given model file path.<br>
+   * Entities are cached, so they are loaded and parsed only once.
    *
-   * @param filePath the path of the mapfile
+   * @param filePath the path of the model file
    * @param defaults optional model defaults, null if none
    * @param aliases optional entity aliases, null if none
-   * @param updateRelations true if update the related entites in the model
+   * @param updateRelations true if update the related entities in the model
    * @return the entity
-   * @throws ModelException if no such mapfile or parsing error
+   * @throws ModelException if no such model file or parsing error
    */
   protected synchronized Entity loadByFilePath(String filePath, ModelDefaults defaults, EntityAliases aliases,
                                                boolean updateRelations)
             throws ModelException {
 
-    ModelEntity modelEntity = mapByFilePath.get(filePath);
+    EntityInfo entityInfo = mapByFilePath.get(filePath);
 
-    if (modelEntity != null && modelEntity.hasChanged()) {
+    if (entityInfo != null && entityInfo.hasChanged()) {
       // check modification time
-      modelEntity = null;    // force reload
+      entityInfo = null;    // force reload
     }
 
-    if (modelEntity == null) {
+    if (entityInfo == null) {
 
       // load from file
       try {
-        Entity entity = parseEntity(defaults, filePath);
-        modelEntity = createModelEntity(entity, filePath);
+        entityInfo = createEntityInfo(defaults, filePath);
       }
       catch (ModelException mex) {
         String msg = "parsing '" + filePath + "' failed:\n    " + ExceptionHelper.concatenateMessages(mex);
         throw new ModelException(msg, mex.getElement(), mex);
       }
 
-      addModelEntity(modelEntity);
+      addEntityInfo(entityInfo);
 
       foreignKeys = null;
 
       if (updateRelations) {
-        updateRelations(defaults, aliases, modelEntity);
+        updateRelations(defaults, aliases, entityInfo);
       }
     }
 
-    return modelEntity.getEntity();
-  }
-
-
-  /**
-   * Parses the given file and returns the created entity.
-   *
-   * @param defaults the model defaults, null if none
-   * @param fileName the name of the file holding the model
-   * @return the entity
-   * @throws ModelException if parsing failed
-   */
-  protected Entity parseEntity(ModelDefaults defaults, String fileName) throws ModelException {
-    StringBuilder modelSource = new StringBuilder();
-    try (Reader reader = createReader(fileName)) {
-      char[] buf = new char[1024];
-      int len;
-      while ((len = reader.read(buf)) != -1)  {
-        modelSource.append(buf, 0, len);
-      }
-    }
-    catch (IOException ex) {
-      throw new ModelException("reading model '" + fileName + "' failed", ex);
-    }
-    return getEntityFactory().createEntity(modelSource.toString(), defaults);
+    return entityInfo.getEntity();
   }
 
 
   /**
    * Adds an entity to the model.
    *
-   * @param modelEntity the model entity
+   * @param entityInfo the model entity
    * @throws ModelException if duplicate entities detected
    */
-  protected void addModelEntity(ModelEntity modelEntity) throws ModelException {
+  protected void addEntityInfo(EntityInfo entityInfo) throws ModelException {
     if (mapSchemas) {
-      String tableName = modelEntity.getEntity().getTableName();
+      String tableName = entityInfo.getEntity().getTableName();
       if (tableName != null) {
-        ((EntityImpl) modelEntity.getEntity()).setTableName(tableName.replace('.', '_'));
+        ((EntityImpl) entityInfo.getEntity()).setTableName(tableName.replace('.', '_'));
       }
     }
 
-    String filePath = modelEntity.getFilePath();
+    String filePath = entityInfo.getFilePath();
 
     // append to maps
-    mapByFilePath.put(filePath, modelEntity);    // must be new...
+    mapByFilePath.put(filePath, entityInfo);    // must be new...
 
-    String javaPath = modelEntity.getEntity().getSourceInfo().getFileName();
+    String javaPath = entityInfo.getEntity().getSourceInfo().getFileName();
 
     String oldFilePath = mapJavaFilePath.put(javaPath, filePath);
     if (oldFilePath != null && !oldFilePath.equals(filePath)) {
-      throw new ModelException("entity " + modelEntity.getEntity() + " defined from more than one model file:\n" +
+      throw new ModelException("entity " + entityInfo.getEntity() + " defined from more than one model file:\n" +
                                oldFilePath + "\n" + filePath);
     }
 
-    ModelEntity oldModelEntity = mapByEntityName.put(modelEntity.getEntity().getName().toLowerCase(), modelEntity);
-    if (modelEntity.getEntity().getClassId() != 0) {
-      if (oldModelEntity != null && oldModelEntity.getEntity().getClassId() != modelEntity.getEntity().getClassId()) {
-        throw new ModelException("duplicate entity " + modelEntity.getEntity().getName() + " in file " + filePath, modelEntity.getEntity());
+    EntityInfo oldEntityInfo = mapByEntityName.put(entityInfo.getEntity().getName().toLowerCase(), entityInfo);
+    if (entityInfo.getEntity().getClassId() != 0) {
+      if (oldEntityInfo != null && oldEntityInfo.getEntity().getClassId() != entityInfo.getEntity().getClassId()) {
+        throw new ModelException("duplicate entity " + entityInfo.getEntity().getName() + " in file " + filePath, entityInfo.getEntity());
       }
-      oldModelEntity = mapByClassId.put(modelEntity.getEntity().getClassId(), modelEntity);
-      if (oldModelEntity != null && !oldModelEntity.getEntity().getName().equals(modelEntity.getEntity().getName())) {
-        throw new ModelException("duplicate entity id " + modelEntity.getEntity().getClassId() + " for " + modelEntity.getEntity().getName() +
-                                 ", already assigned to " + oldModelEntity.getEntity().getName(), modelEntity.getEntity());
+      oldEntityInfo = mapByClassId.put(entityInfo.getEntity().getClassId(), entityInfo);
+      if (oldEntityInfo != null && !oldEntityInfo.getEntity().getName().equals(entityInfo.getEntity().getName())) {
+        throw new ModelException("duplicate entity id " + entityInfo.getEntity().getClassId() + " for " + entityInfo.getEntity().getName() +
+                                 ", already assigned to " + oldEntityInfo.getEntity().getName(), entityInfo.getEntity());
       }
     }
 
-    String tableName = modelEntity.getEntity().getTableNameWithoutSchema();
+    String tableName = entityInfo.getEntity().getTableNameWithoutSchema();
     if (tableName != null) {
-      oldModelEntity = mapByTableName.put(tableName, modelEntity);
-      if (oldModelEntity != null && !oldModelEntity.getEntity().getName().equals(modelEntity.getEntity().getName())) {
-        throw new ModelException("duplicate table name '" + modelEntity.getEntity().getTableNameWithoutSchema() + "' for " + modelEntity.getEntity().getName() +
-                                 ", already assigned to " + oldModelEntity.getEntity().getName(), modelEntity.getEntity());
+      oldEntityInfo = mapByTableName.put(tableName, entityInfo);
+      if (oldEntityInfo != null && !oldEntityInfo.getEntity().getName().equals(entityInfo.getEntity().getName())) {
+        throw new ModelException("duplicate table name '" + entityInfo.getEntity().getTableNameWithoutSchema() + "' for " + entityInfo.getEntity().getName() +
+                                 ", already assigned to " + oldEntityInfo.getEntity().getName(), entityInfo.getEntity());
       }
     }
   }
@@ -414,7 +408,7 @@ public class ModelImpl implements Model {
    *
    * @param defaults the optional model defaults
    * @param aliases the optional entity aliases
-   * @throws ModelException if relations or inheritance misconfigured
+   * @throws ModelException if relations or inheritance misconfiguration
    */
   protected void updateRelations(ModelDefaults defaults, EntityAliases aliases) throws ModelException {
     updateRelations(defaults, aliases, null);
@@ -425,23 +419,23 @@ public class ModelImpl implements Model {
    *
    * @param defaults the optional model defaults
    * @param aliases the optional entity aliases
-   * @param loadedModelEntity the entity that caused the update, null if none
-   * @throws ModelException if relations or inheritance misconfigured
+   * @param loadedEntityInfo the entity that caused the update, null if none
+   * @throws ModelException if relations or inheritance misconfiguration
    */
-  protected void updateRelations(ModelDefaults defaults, EntityAliases aliases, ModelEntity loadedModelEntity)
+  protected void updateRelations(ModelDefaults defaults, EntityAliases aliases, EntityInfo loadedEntityInfo)
             throws ModelException {
 
     Set<ModelError> errors = new LinkedHashSet<>();
-    Entity loadedEntity = loadedModelEntity == null ? null : loadedModelEntity.getEntity();
+    Entity loadedEntity = loadedEntityInfo == null ? null : loadedEntityInfo.getEntity();
 
     // set inheritance entities links
 
-    for (ModelEntity modelEntity: mapByEntityName.values()) {
-      modelEntity.getEntity().getSubEntities().clear();
+    for (EntityInfo entityInfo : mapByEntityName.values()) {
+      entityInfo.getEntity().getSubEntities().clear();
     }
 
-    for (ModelEntity modelEntity: mapByEntityName.values()) {
-      Entity entity = modelEntity.getEntity();
+    for (EntityInfo entityInfo : mapByEntityName.values()) {
+      Entity entity = entityInfo.getEntity();
       if (entity.getSuperEntityName() != null) {
         Entity superEntity = getByEntityName(translateAlias(aliases, entity.getSuperEntityName()));
         if (superEntity == null) {
@@ -465,8 +459,8 @@ public class ModelImpl implements Model {
     }
 
     // check for normtext provided
-    for (ModelEntity modelEntity: mapByEntityName.values()) {
-      Entity entity = modelEntity.getEntity();
+    for (EntityInfo entityInfo : mapByEntityName.values()) {
+      Entity entity = entityInfo.getEntity();
       boolean normTextProvided = entity.getOptions().isNormTextProvided();
       if (!normTextProvided) {
         for (Attribute attribute: entity.getAttributes()) {
@@ -503,8 +497,8 @@ public class ModelImpl implements Model {
     }
 
     // update relations
-    for (ModelEntity modelEntity: mapByEntityName.values()) {
-      Entity entity = modelEntity.getEntity();
+    for (EntityInfo entityInfo : mapByEntityName.values()) {
+      Entity entity = entityInfo.getEntity();
       entity.getReferencingRelations().clear();
       entity.getCompositePaths().clear();
       entity.getDeepReferences().clear();
@@ -593,10 +587,10 @@ public class ModelImpl implements Model {
     }
 
     // update referencing relations
-    for (ModelEntity modelEntity: mapByEntityName.values()) {
-      Entity entity = modelEntity.getEntity();
-      for (ModelEntity otherModelEntity: mapByEntityName.values()) {
-        Entity otherEntity = otherModelEntity.getEntity();
+    for (EntityInfo entityInfo : mapByEntityName.values()) {
+      Entity entity = entityInfo.getEntity();
+      for (EntityInfo otherEntityInfo : mapByEntityName.values()) {
+        Entity otherEntity = otherEntityInfo.getEntity();
         for (Relation relation: otherEntity.getRelations()) {
           Entity foreignEntity = relation.getForeignEntity();
           if (foreignEntity != null && foreignEntity.equals(entity)) {
@@ -607,8 +601,8 @@ public class ModelImpl implements Model {
     }
 
     // update foreign relations
-    for (ModelEntity modelEntity: mapByEntityName.values()) {
-      Entity entity = modelEntity.getEntity();
+    for (EntityInfo entityInfo : mapByEntityName.values()) {
+      Entity entity = entityInfo.getEntity();
       for (Relation relation: entity.getReferencingRelations()) {
         if (relation.getForeignRelation() == null) {
           // find a relation with opposite attributes
@@ -625,8 +619,8 @@ public class ModelImpl implements Model {
     }
 
     // update composite paths and inspect model for root, rootid and rootclassid
-    for (ModelEntity modelEntity: mapByEntityName.values()) {
-      Entity entity = modelEntity.getEntity();
+    for (EntityInfo entityInfo : mapByEntityName.values()) {
+      Entity entity = entityInfo.getEntity();
       boolean isRootEntity = true;
       for (Relation relation: entity.getAllReferencingRelations()) {
         if (relation.isComposite() && !entity.equals(relation.getEntity())) {
@@ -647,8 +641,8 @@ public class ModelImpl implements Model {
     }
 
     // determine deep references and set rootid,rootclassid options
-    for (ModelEntity modelEntity: mapByEntityName.values()) {
-      Entity entity = modelEntity.getEntity();
+    for (EntityInfo entityInfo : mapByEntityName.values()) {
+      Entity entity = entityInfo.getEntity();
       /*
        * The entity should provide a root class id if it is a composite of more than one root entities
        * and holds exactly one root attribute column (2 means N:M relation, for example).
@@ -701,8 +695,8 @@ public class ModelImpl implements Model {
     // applies model defaults
     if (defaults != null) {
 
-      for (ModelEntity modelEntity : mapByEntityName.values()) {
-        Entity entity = modelEntity.getEntity();
+      for (EntityInfo entityInfo : mapByEntityName.values()) {
+        Entity entity = entityInfo.getEntity();
         if (!entity.getOptions().noModelDefaults()) {
           if (defaults.getTrackType() != null &&
               defaults.getTrackType().ordinal() > entity.getOptions().getTrackType().ordinal()) {
@@ -729,8 +723,8 @@ public class ModelImpl implements Model {
 
 
     // add/remove rootId, rootClassId to/from model
-    for (ModelEntity modelEntity: mapByEntityName.values()) {
-      Entity entity = modelEntity.getEntity();
+    for (EntityInfo entityInfo : mapByEntityName.values()) {
+      Entity entity = entityInfo.getEntity();
 
       if (entity.getOptions().isRootClassIdProvided()) {
         if (entity.getAttributeByColumnName(Constants.CN_ROOTCLASSID, true) == null) {
@@ -758,8 +752,8 @@ public class ModelImpl implements Model {
     }
 
     // do some automatic settings and verifications
-    for (ModelEntity modelEntity: mapByEntityName.values()) {
-      Entity entity = modelEntity.getEntity();
+    for (EntityInfo entityInfo : mapByEntityName.values()) {
+      Entity entity = entityInfo.getEntity();
       if (entity.getOptions().isCached() && !entity.isRootEntityAccordingToModel()) {
         errors.add(new ModelError(entity,"component " + entity + " cannot be cached"));
       }
@@ -813,8 +807,8 @@ public class ModelImpl implements Model {
 
 
     // validate configuration depending on other entities
-    for (ModelEntity modelEntity: mapByEntityName.values()) {
-      Entity entity = modelEntity.getEntity();
+    for (EntityInfo entityInfo : mapByEntityName.values()) {
+      Entity entity = entityInfo.getEntity();
       try {
         ((EntityImpl) entity).validateRelated();
       }
@@ -826,8 +820,8 @@ public class ModelImpl implements Model {
     }
 
     // verify that columns are defined only once in the inheritance hierarchy
-    for (ModelEntity modelEntity: mapByEntityName.values()) {
-      Entity entity = modelEntity.getEntity();
+    for (EntityInfo entityInfo : mapByEntityName.values()) {
+      Entity entity = entityInfo.getEntity();
       if (entity.getSuperEntity() == null && !entity.getInheritanceType().isMappingToNoTable()) {
         // check
         Map<String,Attribute> columnMap = new HashMap<>();  // map by column name
@@ -868,8 +862,8 @@ public class ModelImpl implements Model {
 
     // generate the table aliases.
     Map<String,Entity> aliasMap = new HashMap<>();
-    for (ModelEntity modelEntity: mapByEntityName.values()) {
-      Entity entity = modelEntity.getEntity();
+    for (EntityInfo entityInfo : mapByEntityName.values()) {
+      Entity entity = entityInfo.getEntity();
       if (entity.getTableAlias() != null) {
         Entity dupAliasEntity = aliasMap.get(entity.getTableAlias());
         if (dupAliasEntity != null) {
@@ -886,8 +880,8 @@ public class ModelImpl implements Model {
     // generate automatic alias if not specified in model
 
     // prio 1: apply camelcase letters and digits if possible
-    for (ModelEntity modelEntity: mapByEntityName.values()) {
-      Entity entity = modelEntity.getEntity();
+    for (EntityInfo entityInfo : mapByEntityName.values()) {
+      Entity entity = entityInfo.getEntity();
       if (entity.getTableName() != null && entity.getTableAlias() == null) {
         // determine the meaningful letters: Start and end of camel case words
         StringBuilder letters = new StringBuilder();
@@ -903,8 +897,8 @@ public class ModelImpl implements Model {
     }
 
     // for all others still unnamed
-    for (ModelEntity modelEntity: mapByEntityName.values()) {
-      Entity entity = modelEntity.getEntity();
+    for (EntityInfo entityInfo : mapByEntityName.values()) {
+      Entity entity = entityInfo.getEntity();
       if (entity.getTableName() != null && entity.getTableAlias() == null) {
         StringBuilder letters = new StringBuilder();
         boolean aliasFound = false;
@@ -952,8 +946,8 @@ public class ModelImpl implements Model {
     }
 
     // sets the inheritance level (ordinal)
-    for (ModelEntity modelEntity: mapByEntityName.values()) {
-      Entity entity = modelEntity.getEntity();
+    for (EntityInfo entityInfo : mapByEntityName.values()) {
+      Entity entity = entityInfo.getEntity();
       int level = 0;
       Entity superEntity = entity.getSuperEntity();
       while (superEntity != null) {
@@ -964,10 +958,10 @@ public class ModelImpl implements Model {
     }
 
     // sets the ordinals of attributes, relations and indexes
-    for (ModelEntity modelEntity: mapByEntityName.values()) {
-      Entity entity = modelEntity.getEntity();
+    for (EntityInfo entityInfo : mapByEntityName.values()) {
+      Entity entity = entityInfo.getEntity();
       if (!entity.isAbstract()) {   // only leafs
-        Entity[] entities = new Entity[modelEntity.getEntity().getOrdinal() + 1];
+        Entity[] entities = new Entity[entityInfo.getEntity().getOrdinal() + 1];
         List<Entity> superEntities = entity.getSuperEntities();
         // reverse the path in the array
         int superNdx = superEntities.size() - 1;
@@ -1007,8 +1001,8 @@ public class ModelImpl implements Model {
     }
     else  {
       // check that within each class hierarchy
-      for (ModelEntity modelEntity: mapByEntityName.values()) {
-        Entity entity = modelEntity.getEntity();
+      for (EntityInfo entityInfo : mapByEntityName.values()) {
+        Entity entity = entityInfo.getEntity();
         validateInheritanceHierarchy(entity, entity.getInheritanceType(), entity.getOptions().getTrackType(),
                                      entity.getIntegrity(), errors);
         validateComponents(entity, entity.getIntegrity(), errors);
@@ -1092,8 +1086,8 @@ public class ModelImpl implements Model {
       Map<ForeignKey, ForeignKey> foreignKeyMap = new TreeMap<>(); // map to update composite flag and sort
       Set<ModelError> errors = new LinkedHashSet<>();
 
-      for (ModelEntity modelEntity : mapByEntityName.values()) {
-        Entity entity = modelEntity.getEntity();
+      for (EntityInfo entityInfo : mapByEntityName.values()) {
+        Entity entity = entityInfo.getEntity();
 
         if (entity.getInheritanceType().isMappingToOwnTable()) {
 
@@ -1222,13 +1216,31 @@ public class ModelImpl implements Model {
   /**
    * Creates a model entity wrapper.
    *
-   * @param entity the entity
+   * @param defaults the optional model defaults
    * @param fileName the model file name
    * @return the model entity
    * @throws ModelException if creation failed
    */
-  protected ModelEntity createModelEntity(Entity entity, String fileName) throws ModelException {
-    return new ModelEntityImpl(entity, fileName);
+  protected EntityInfo createEntityInfo(ModelDefaults defaults, String fileName) throws ModelException {
+    StringBuilder modelBuf = new StringBuilder();
+    try (Reader reader = createReader(fileName)) {
+      char[] buf = new char[1024];
+      int len;
+      while ((len = reader.read(buf)) != -1)  {
+        modelBuf.append(buf, 0, len);
+      }
+    }
+    catch (IOException ex) {
+      throw new ModelException("reading model '" + fileName + "' failed", ex);
+    }
+    String modelSource = modelBuf.toString();
+    if (modelSource.startsWith("#[")) {
+      // no source info, but override the model defaults (see AbstractSqlMojo#dumpModelSource)
+      int ndx = modelSource.indexOf(']');
+      defaults = new ModelDefaults(modelSource.substring(2, ndx));
+    }
+    Entity entity = getEntityFactory().createEntity(modelSource, defaults);
+    return new EntityInfoImpl(entity, fileName, modelSource, defaults);
   }
 
   /**
@@ -1249,8 +1261,8 @@ public class ModelImpl implements Model {
 
 
   /**
-   * Verifies that the inheritance, integrity and track type is the same within a given interitance hierarchy.<br>
-   * Notice that concrete classes (the leafs of the hierarchy) must have InheritanceType.NONE defined!
+   * Verifies that the inheritance, integrity and track type is the same within a given inheritance hierarchy.<br>
+   * Notice that concrete classes (the leafs of the hierarchy) must have {@code InheritanceType.NONE} defined!
    *
    * @param entity the entity to check
    * @param inheritanceType the inheritance type

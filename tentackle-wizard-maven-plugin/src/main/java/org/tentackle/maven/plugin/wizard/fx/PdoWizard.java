@@ -129,7 +129,7 @@ public class PdoWizard extends AbstractFxController {
   @Override
   public void configure() {
     try {
-      for (Entity entity: Model.getInstance().getAllEntitites()) {
+      for (Entity entity: Model.getInstance().getAllEntities()) {
         if (entity.isAbstract()) {
           genSuperEntity.getItems().add(entity);
         }

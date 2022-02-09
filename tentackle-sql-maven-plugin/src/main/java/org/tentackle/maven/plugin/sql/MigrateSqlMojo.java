@@ -763,7 +763,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
    */
   private Map<String, String> determineRenamedTables(MigrationHints hints) throws ModelException {
     Map<String, String> renameMap = new HashMap<>();
-    for (Entity entity: Model.getInstance().getAllEntitites()) {
+    for (Entity entity: Model.getInstance().getAllEntities()) {
       String name = entity.getTableNameWithoutSchema();
       String oldName = hints.getRenameTable(name);
       if (oldName != null && otherTablesMap.get(name) == null) {

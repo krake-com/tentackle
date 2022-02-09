@@ -26,11 +26,13 @@ import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
 import org.wurbelizer.misc.Settings;
 
+import org.tentackle.common.Constants;
 import org.tentackle.common.StringHelper;
 import org.tentackle.maven.AbstractTentackleMojo;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
 import org.tentackle.model.EntityAliases;
+import org.tentackle.model.EntityInfo;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
@@ -60,6 +62,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -154,6 +157,20 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
    */
   @Parameter(defaultValue = "true")
   protected boolean dumpVariables;
+
+  /**
+   * Dumps the original model source instead of the parsed entity.
+   */
+  @Parameter
+  protected boolean dumpModelSource;
+
+  /**
+   * Creates an additional file containing the names of the dumped files.<br>
+   * Usually combined with {@link #dumpModelSource} to create {@code META-INF/MODEL-INDEX.LIST} in order to load the model
+   * from a jar file.
+   */
+  @Parameter
+  protected File dumpModelIndex;
 
   /**
    * Minimum number of spaces between columns in attribute section (default = 2).
@@ -562,8 +579,9 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
         Map<String, String> aliasesMap = new TreeMap<>();     // alias:entityname
         Map<String, String> tableMap = new TreeMap<>();       // tablename:entityname
         Map<Integer, String> classidMap = new TreeMap<>();    // classid:entityname
+        Set<String> dumpSet = new LinkedHashSet<>();          // dumped files
 
-        for (Entity entity : Model.getInstance().getAllEntitites()) {
+        for (Entity entity : Model.getInstance().getAllEntities()) {
           if (entity.getDefinedTableAlias() != null) {
             aliasesMap.put(entity.getDefinedTableAlias(), entity.getName() + " (configured)");
           }
@@ -577,12 +595,61 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
             classidMap.put(entity.getClassId(), entity.getName());
           }
 
-          File dumpFile = new File(dumpDir, entity.getName() + ".txt");
+          if (dumpModelSource) {
+            EntityInfo entityInfo = Model.getInstance().getEntityInfo(entity);
+            File dumpFile = new File(dumpDir, new File(entityInfo.getFilePath()).getName());
+            dumpSet.add(dumpFile.getAbsolutePath());
+            try (BufferedWriter writer =
+                     new BufferedWriter(
+                         new OutputStreamWriter(
+                             new FileOutputStream(dumpFile), Settings.getEncodingCharset()))) {
+              String modelSource = entityInfo.getModelSource();
+              if (modelSource.startsWith(Constants.ORIGIN_INFO_LEAD)) {
+                // cut source info, makes no sense outside the project
+                int ndx = modelSource.indexOf('\n');
+                if (ndx >= 0) {
+                  modelSource = modelSource.substring(ndx + 1);
+                }
+              }
+              // add model defaults
+              ModelDefaults modelDefaults = entityInfo.getModelDefaults();
+              if (modelDefaults != null) {
+                modelSource = "#[" + modelDefaults + "]\n" + modelSource;
+              }
+              writer.write(modelSource);
+            }
+          }
+          else {
+            File dumpFile = new File(dumpDir, entity.getName() + ".txt");
+            dumpSet.add(dumpFile.getAbsolutePath());
+            try (BufferedWriter writer =
+                     new BufferedWriter(
+                         new OutputStreamWriter(
+                             new FileOutputStream(dumpFile), Settings.getEncodingCharset()))) {
+              writer.write(new EntityPrinter(entity, configuration).print());
+            }
+          }
+        }
+
+        if (dumpModelIndex != null) {
+          String dumpPath = dumpDir.getAbsolutePath();
+          String indexPath = dumpModelIndex.getAbsolutePath();
+          int commonLength = 0;
+          while (commonLength < indexPath.length() && commonLength < dumpPath.length()) {
+            if (dumpPath.charAt(commonLength) != indexPath.charAt(commonLength)) {
+              break;
+            }
+            commonLength++;
+          }
+          dumpModelIndex.getParentFile().mkdirs();
           try (BufferedWriter writer =
                    new BufferedWriter(
                        new OutputStreamWriter(
-                           new FileOutputStream(dumpFile), Settings.getEncodingCharset()))) {
-            writer.write(new EntityPrinter(entity, configuration).print());
+                           new FileOutputStream(dumpModelIndex), Settings.getEncodingCharset()))) {
+            for (String dumpedName : dumpSet) {
+              dumpedName = dumpedName.substring(commonLength);
+              writer.write(dumpedName + "\n");
+            }
           }
         }
 
@@ -633,7 +700,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
     if (bundleDir != null) {
       bundleDir.mkdirs();
       try {
-        for (Entity entity : Model.getInstance().getAllEntitites()) {
+        for (Entity entity : Model.getInstance().getAllEntities()) {
           File dumpFile = new File(bundleDir, entity.getName() + ".properties");
           try (BufferedWriter writer =
                    new BufferedWriter(
@@ -661,7 +728,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
     try {
       StringBuilder aliasBuf = new StringBuilder();
 
-      for (Entity entity : Model.getInstance().getAllEntitites()) {
+      for (Entity entity : Model.getInstance().getAllEntities()) {
         String alias = entity.getTableAlias();
         if (entity.getDefinedTableAlias() == null && alias != null && alias.length() > 1 &&
             StringHelper.isAllDigits(alias.substring(1))) {

@@ -20,6 +20,8 @@
 package org.tentackle.model.impl;
 
 import org.tentackle.model.Entity;
+import org.tentackle.model.EntityInfo;
+import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
 
 import java.io.File;
@@ -29,24 +31,30 @@ import java.io.File;
  *
  * @author harald
  */
-public class ModelEntityImpl implements ModelEntity {
+public class EntityInfoImpl implements EntityInfo {
 
-  private final Entity entity;      // the entity
-  private final String filePath;    // the file path
-  private final File file;          // its source file
-  private final long lastModified;  // the last modification time
+  private final Entity entity;            // the entity
+  private final String filePath;          // the file path
+  private final String modelSource;       // the model source text
+  private final ModelDefaults defaults;   // the model defaults
+  private final File file;                // its source file
+  private final long lastModified;        // the last modification time
 
 
   /**
    * Creates a model entity.
    *
    * @param entity the entity
-   * @param filePath the modelfile's path
+   * @param filePath the model file's path
+   * @param modelSource the model source text
+   * @param defaults the model defaults
    * @throws ModelException if file does not exist or is not a regular file
    */
-  public ModelEntityImpl(Entity entity, String filePath) throws ModelException {
+  public EntityInfoImpl(Entity entity, String filePath, String modelSource, ModelDefaults defaults) throws ModelException {
     this.entity = entity;
     this.filePath = filePath;
+    this.modelSource = modelSource;
+    this.defaults = defaults;
     file = new File(filePath);
     if (!file.exists()) {
       throw new ModelException(filePath + " does not exist");
@@ -70,6 +78,16 @@ public class ModelEntityImpl implements ModelEntity {
   @Override
   public String getFilePath() {
     return filePath;
+  }
+
+  @Override
+  public String getModelSource() {
+    return modelSource;
+  }
+
+  @Override
+  public ModelDefaults getModelDefaults() {
+    return defaults;
   }
 
   @Override

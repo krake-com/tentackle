@@ -21,6 +21,7 @@ package org.tentackle.model.impl;
 
 import org.tentackle.model.EntityAliases;
 import org.tentackle.model.ModelDefaults;
+import org.tentackle.model.ModelDirectory;
 import org.tentackle.model.ModelException;
 
 import java.io.File;

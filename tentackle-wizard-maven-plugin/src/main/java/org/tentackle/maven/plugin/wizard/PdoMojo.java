@@ -149,7 +149,7 @@ public class PdoMojo extends AbstractWizardMojo {
 
     // determine consumed class IDs
     try {
-      for (Entity entity: Model.getInstance().getAllEntitites()) {
+      for (Entity entity: Model.getInstance().getAllEntities()) {
         int classId = entity.getClassId();
         if (classId > 0) {
           for (PdoProfile profile: sortedProfiles) {
