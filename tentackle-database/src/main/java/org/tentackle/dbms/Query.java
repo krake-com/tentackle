@@ -321,7 +321,7 @@ public class Query {
     StringBuilder buf = buildInnerSql();
     buf.insert(0, "SELECT COUNT(*) FROM (");
     buf.append(')');
-    if (db.getBackend().needAliasForSubselect()) {
+    if (db.getBackend().needAliasForSubSelect()) {
       buf.append(" AS F_O_O");
     }
     int count = 0;

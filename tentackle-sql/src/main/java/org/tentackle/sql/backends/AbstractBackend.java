@@ -179,7 +179,7 @@ public abstract class AbstractBackend implements Backend {
   }
 
   @Override
-  public boolean needAliasForSubselect() {
+  public boolean needAliasForSubSelect() {
     return false;
   }
 

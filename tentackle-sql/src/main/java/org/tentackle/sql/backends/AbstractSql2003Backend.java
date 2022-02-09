@@ -19,6 +19,7 @@
 package org.tentackle.sql.backends;
 
 import org.tentackle.sql.BackendPreparedStatement;
+import org.tentackle.sql.NonStandardCommons;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -109,6 +110,11 @@ public abstract class AbstractSql2003Backend extends AbstractSql92Backend {
   @Override
   public boolean supportsSequences() {
     return true;
+  }
+
+  @Override
+  public String sqlCreateSequence(String name, Long start, Long increment) {
+    return NonStandardCommons.sqlCreateSequence(name, start, increment);
   }
 
   @Override

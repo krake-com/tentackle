@@ -60,10 +60,6 @@
   <build>
 
     <resources>
-      <!-- fixed SQL -->
-      <resource>
-        <directory>src/main/resources</directory>
-      </resource>
       <!-- generated SQL -->
       <resource>
         <directory>target/generated-resources</directory>
@@ -112,6 +108,12 @@
               <password>${dbPasswd}</password>
             </backend>
           </backends>
+          <sequences>
+            <sequence>
+              <name>object_sequence_id</name>
+              <comment>to generate the ID of PDOs</comment>
+            </sequence>
+          </sequences>
           <prependFilesets>
             <prependFileset>
               <directory>${project.basedir}/src/sql</directory>
@@ -122,6 +124,7 @@
           </prependFilesets>
         </configuration>
         <dependencies>
+          <!-- for migration only -->
           <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
