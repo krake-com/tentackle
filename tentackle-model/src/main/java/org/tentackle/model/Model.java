@@ -70,7 +70,7 @@ public interface Model {
   void clearModel();
 
   /**
-   * Sets whether schema names should be mapped to the leading part of tablenames.
+   * Sets whether schema names should be mapped to the leading part of table names.
    *
    * @param mapSchemas true if map
    */
@@ -97,12 +97,12 @@ public interface Model {
    * @return all entities loaded so far
    * @throws ModelException if the model is inconsistent
    */
-  Collection<Entity> getAllEntitites() throws ModelException;
+  Collection<Entity> getAllEntities() throws ModelException;
 
   /**
-   * Gets the entity by the mapfile path.
+   * Gets the entity by the model file path.
    *
-   * @param filePath the pathname of the mapfile
+   * @param filePath the pathname of the model file
    * @return the entity, null if no such entity
    * @throws ModelException if the model is inconsistent
    */
@@ -136,16 +136,32 @@ public interface Model {
   Entity getByClassId(int classId) throws ModelException;
 
   /**
-   * Loads an entity for a given mapfile name.<br>
-   * Entities are cached so they are loaded and parsed only once.
+   * Loads an entity for a given model file name.<br>
+   * Entities are cached, so they are loaded and parsed only once.
    *
-   * @param filePath the path of the mapfile
+   * @param filePath the path of the model file
    * @param defaults optional model defaults, null if none
    * @param aliases optional entity aliases, null if none
    * @return the entity
-   * @throws ModelException if no such mapfile or parsing error
+   * @throws ModelException if no such model file or parsing error
    */
   Entity loadByFilePath(String filePath, ModelDefaults defaults, EntityAliases aliases) throws ModelException;
+
+  /**
+   * Gets the model information for the given entity.
+   *
+   * @param entity the entity
+   * @return the model info, never null
+   * @throws ModelException if the model is inconsistent or no such entity
+   */
+  EntityInfo getEntityInfo(Entity entity) throws ModelException;
+
+  /**
+   * Gets the model directories.
+   *
+   * @return the model directories, never null
+   */
+  Collection<ModelDirectory> getModelDirectories();
 
   /**
    * Gets all foreign keys.

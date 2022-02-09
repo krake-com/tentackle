@@ -147,7 +147,7 @@ public class PdoGenerator extends AbstractValidateableGenerator {
   public boolean isNewClassId() {
     if (classId != null && classId > 0) {
       try {
-        for (Entity entity : Model.getInstance().getAllEntitites()) {
+        for (Entity entity : Model.getInstance().getAllEntities()) {
           if (entity.getClassId() == classId) {
             return false;
           }
@@ -181,7 +181,7 @@ public class PdoGenerator extends AbstractValidateableGenerator {
   public boolean isNewTableName() {
     if (tableName != null) {
       try {
-        for (Entity entity : Model.getInstance().getAllEntitites()) {
+        for (Entity entity : Model.getInstance().getAllEntities()) {
           if (tableName.equalsIgnoreCase(entity.getTableName())) {
             return false;
           }

@@ -17,16 +17,14 @@
  *
  */
 
-package org.tentackle.model.impl;
-
-import org.tentackle.model.Entity;
+package org.tentackle.model;
 
 /**
- * Entity as a component of a model.
+ * Entity model information.
  *
  * @author harald
  */
-public interface ModelEntity {
+public interface EntityInfo {
 
   /**
    * Gets the entity.
@@ -36,14 +34,28 @@ public interface ModelEntity {
   Entity getEntity();
 
   /**
-   * Gets the path of the modelfile.
+   * Gets the path of the model file.
    *
    * @return the canonical file path
    */
   String getFilePath();
 
   /**
-   * Returns whether the modelfile has changed.
+   * Gets the source text of the model for this entity.
+   *
+   * @return the source text
+   */
+  String getModelSource();
+
+  /**
+   * Gets the model defaults.
+   *
+   * @return the defaults, null if none
+   */
+  ModelDefaults getModelDefaults();
+
+  /**
+   * Returns whether the model file has changed.
    *
    * @return true if changed
    */

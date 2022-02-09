@@ -213,7 +213,7 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
     }
 
     try {
-      getLog().info(Model.getInstance().getAllEntitites().size() + " entities loaded");
+      getLog().info(Model.getInstance().getAllEntities().size() + " entities loaded");
     }
     catch (ModelException e) {
       throw new MojoExecutionException("cannot determine entities", e);

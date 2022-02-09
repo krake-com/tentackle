@@ -17,10 +17,7 @@
  *
  */
 
-package org.tentackle.model.impl;
-
-import org.tentackle.model.EntityAliases;
-import org.tentackle.model.ModelDefaults;
+package org.tentackle.model;
 
 import java.util.List;
 
