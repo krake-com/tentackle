@@ -31,6 +31,43 @@ import java.util.UUID;
  */
 public class XUUID implements Identifiable {
 
+  /**
+   * The NIL XUUID.
+   */
+  public static final XUUID NIL = new XUUID(0, new UUID(0, 0));
+
+
+  /**
+   * Creates an XUUID from a string.<br>
+   * The null string returns null.<br>
+   * The empty or blank string is mapped to {@link #NIL}.
+   *
+   * @param str the XUUID string
+   * @return the XUUID
+   */
+  public static XUUID valueOf(String str) {
+    XUUID xuuid;
+    if (str == null) {
+      xuuid = null;
+    }
+    else {
+      if (str.isBlank()) {
+        xuuid = NIL;
+      }
+      else {
+        int ndx = str.indexOf('-');
+        if (ndx > 0) {
+          xuuid = new XUUID(Long.parseLong(str.substring(0, ndx)), UUID.fromString(str.substring(ndx + 1)));
+        }
+        else {
+          throw new IllegalArgumentException("malformed XUUID '" + str + "'");
+        }
+      }
+    }
+    return xuuid;
+  }
+
+
   @Serial
   private static final long serialVersionUID = 1L;
 
