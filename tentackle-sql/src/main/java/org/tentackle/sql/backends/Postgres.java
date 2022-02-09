@@ -175,7 +175,7 @@ public class Postgres extends AbstractSql92Backend {
   }
 
   @Override
-  public boolean needAliasForSubselect() {
+  public boolean needAliasForSubSelect() {
     return true;
   }
 
@@ -289,6 +289,15 @@ public class Postgres extends AbstractSql92Backend {
     return "SELECT NEXTVAL('" + name + "')";
   }
 
+  @Override
+  public String sqlCreateSequence(String name, Long start, Long increment) {
+    return NonStandardCommons.sqlCreateSequence(name, start, increment);
+  }
+
+  @Override
+  public String sqlCreateSequenceComment(String name, String comment) {
+    return NonStandardCommons.sqlCreateCommentOnSequence(this, name, comment);
+  }
 
   @Override
   public String sqlCreateTableComment(String tableName, String comment) {

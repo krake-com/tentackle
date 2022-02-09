@@ -455,11 +455,30 @@ public interface Backend {
   String sqlAsBeforeTableAlias();
 
   /**
-   * Returns whether backend needs an alias for a subselect.
+   * Returns whether backend needs an alias for a sub-select.
    *
-   * @return true if subselect needs an alias.
+   * @return true if sub-select needs an alias.
    */
-  boolean needAliasForSubselect();
+  boolean needAliasForSubSelect();
+
+  /**
+   * Creates the SQL string to create a sequence.
+   *
+   * @param name the sequence name
+   * @param start the optional start value, defaults to 1
+   * @param increment the optional increment, defaults to 1
+   * @return the SQL code
+   */
+  String sqlCreateSequence(String name, Long start, Long increment);
+
+  /**
+   * Creates the SQL string to comment a sequence.
+   *
+   * @param name the sequence name
+   * @param comment the comment
+   * @return the SQL code
+   */
+  String sqlCreateSequenceComment(String name, String comment);
 
   /**
    * Creates the SQL string to retrieve the next id from a sequence.

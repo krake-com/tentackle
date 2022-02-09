@@ -26,11 +26,13 @@ import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
 
 import org.tentackle.common.Settings;
+import org.tentackle.common.StringHelper;
 import org.tentackle.model.Entity;
 import org.tentackle.model.ForeignKey;
 import org.tentackle.model.Index;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelException;
+import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendInfo;
 
 import java.io.BufferedReader;
@@ -56,6 +58,12 @@ public class CreateSqlMojo extends AbstractSqlMojo {
   @Parameter(defaultValue = "createmodel.sql",
              property = "tentackle.createSqlFile")
   private String sqlFileName;
+
+  /**
+   * Optional list of sequences to create.
+   */
+  @Parameter
+  protected List<SequenceParameter> sequences;
 
   /**
    * Optional filesets to prepend to the generated sql file.
@@ -84,6 +92,7 @@ public class CreateSqlMojo extends AbstractSqlMojo {
   protected void createSqlFile(BackendInfo backendInfo) throws MojoExecutionException {
     super.createSqlFile(backendInfo);
     copyFileSets(prependFilesets);
+    createSequences(backendInfo.getBackend());
   }
 
   @Override
@@ -222,10 +231,49 @@ public class CreateSqlMojo extends AbstractSqlMojo {
             }
           }
           catch (IOException e) {
-            throw new MojoExecutionException("cannot read from " + fullName, e);
+            throw new MojoExecutionException("cannot copy " + fullName, e);
           }
         }
       }
+    }
+  }
+
+
+  /**
+   * Creates the SQL code for sequences.
+   *
+   * @param backend the backend
+   * @throws MojoExecutionException if failed
+   */
+  protected void createSequences(Backend backend) throws MojoExecutionException {
+    try {
+      if (sequences != null && !sequences.isEmpty()) {
+        if (backend.supportsSequences()) {
+          for (SequenceParameter sequence : sequences) {
+            if (sequence.name != null) {
+              sqlWriter.append("\n").append(backend.sqlCreateSequence(sequence.name, sequence.start, sequence.increment)).append(";");
+              if (!StringHelper.isAllWhitespace(sequence.comment)) {
+                String sqlComment = backend.sqlCreateSequenceComment(sequence.name, sequence.comment);
+                if (!StringHelper.isAllWhitespace(sqlComment)) {
+                  sqlWriter.append("\n").append(sqlComment);
+                }
+                else {
+                  sqlWriter.append(" -- ").append(sequence.comment).append("\n");
+                }
+              }
+              else {
+                sqlWriter.append("\n");
+              }
+            }
+          }
+        }
+        else {
+          sqlWriter.append("\n\n-- sequences not supported by backend " + backend + "\n");
+        }
+      }
+    }
+    catch (IOException e) {
+      throw new MojoExecutionException("cannot create sequence", e);
     }
   }
 

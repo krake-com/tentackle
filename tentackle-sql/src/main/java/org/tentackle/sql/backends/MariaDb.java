@@ -20,6 +20,7 @@ package org.tentackle.sql.backends;
 
 import org.tentackle.common.Service;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.NonStandardCommons;
 
 /**
  * Backend for MariaDB.
@@ -47,5 +48,20 @@ public class MariaDb extends MySql {
   @Override
   protected boolean isDropIfExistsSupported() {
     return true;
+  }
+
+  @Override
+  public boolean supportsSequences() {
+    return true;
+  }
+
+  @Override
+  public String sqlNextFromSequence(String name) {
+    return "SELECT NEXTVAL('" + name + "')";
+  }
+
+  @Override
+  public String sqlCreateSequence(String name, Long start, Long increment) {
+    return NonStandardCommons.sqlCreateSequence(name, start, increment);
   }
 }

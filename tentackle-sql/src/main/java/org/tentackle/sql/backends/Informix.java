@@ -23,6 +23,7 @@ import org.tentackle.common.Service;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendPreparedStatement;
+import org.tentackle.sql.NonStandardCommons;
 import org.tentackle.sql.SqlType;
 
 import java.sql.Connection;
@@ -163,6 +164,11 @@ public class Informix extends AbstractSql92Backend {
   @Override
   public boolean supportsSequences() {
     return true;
+  }
+
+  @Override
+  public String sqlCreateSequence(String name, Long start, Long increment) {
+    return NonStandardCommons.sqlCreateSequence(name, start, increment);
   }
 
   @Override
