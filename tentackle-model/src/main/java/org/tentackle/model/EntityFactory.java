@@ -18,8 +18,10 @@
 
 package org.tentackle.model;
 
-import java.util.Collection;
+import org.tentackle.model.parse.Document;
 import org.tentackle.sql.Backend;
+
+import java.util.Collection;
 
 /**
  * A factory for entity models.
@@ -53,12 +55,12 @@ public interface EntityFactory {
   /**
    * Creates an entity from a model source.
    *
-   * @param model the model source
+   * @param document the model source document
    * @param modelDefaults the model defaults, null if none
    * @return the created entity
    * @throws ModelException if parsing the model failed
    */
-  Entity createEntity(String model, ModelDefaults modelDefaults) throws ModelException;
+  Entity createEntity(Document document, ModelDefaults modelDefaults) throws ModelException;
 
   /**
    * Creates an attribute.

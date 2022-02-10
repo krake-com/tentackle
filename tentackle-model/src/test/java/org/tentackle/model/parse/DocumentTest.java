@@ -81,10 +81,8 @@ public class DocumentTest {
 
   @Test
   public void parseModel() {
-
-    Document document = new Document(MODEL_TEXT);
-
     try {
+      Document document = new Document(MODEL_TEXT);
       List<Line> lines = document.getLines();
       Iterator<Line> iter = lines.iterator();
       Line line;

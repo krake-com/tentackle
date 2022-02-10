@@ -224,13 +224,6 @@ public class Constants {
 
 
   /**
-   * Heredocs may start with this lead followed by the source info.<br>
-   * Same as in wurbelizer's Constants.
-   */
-  public static final String ORIGIN_INFO_LEAD = "#@";
-
-
-  /**
    * All digits in a string.
    */
   public static final String DIGITS = "0123456789";

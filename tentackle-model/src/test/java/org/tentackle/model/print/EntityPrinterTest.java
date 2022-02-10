@@ -26,6 +26,7 @@ import org.tentackle.model.Index;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.impl.IndexImpl;
+import org.tentackle.model.parse.Document;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -104,12 +105,12 @@ public class EntityPrinterTest {
 
    @Test
    public void printEntity() throws Exception {
-     String model = StringHelper.readTextFromResource(null, MODEL_FILENAME);
+     Document model = new Document(StringHelper.readTextFromResource(null, MODEL_FILENAME));
      Entity entity = Model.getInstance().getEntityFactory().createEntity(model, null);
      for (Index index : entity.getIndexes()) {   // due to delayed parsing
        ((IndexImpl) index).parse(entity);
      }
-     ModelDefaults defaults = new ModelDefaults("AUTOSELECT,ATTRACKED,ROOT");
+     ModelDefaults defaults = model.getModelDefaults() == null ? new ModelDefaults("AUTOSELECT,ATTRACKED,ROOT") : model.getModelDefaults();
      List<String> optionAnnos = new ArrayList<>();
      optionAnnos.add("@MyAnno");
      PrintConfiguration configuration = new PrintConfiguration(true, true, defaults, optionAnnos, 2);
