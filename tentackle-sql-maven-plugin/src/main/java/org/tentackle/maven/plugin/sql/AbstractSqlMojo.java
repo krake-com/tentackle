@@ -26,7 +26,6 @@ import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
 import org.wurbelizer.misc.Settings;
 
-import org.tentackle.common.Constants;
 import org.tentackle.common.StringHelper;
 import org.tentackle.maven.AbstractTentackleMojo;
 import org.tentackle.model.Attribute;
@@ -37,6 +36,7 @@ import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
+import org.tentackle.model.parse.Document;
 import org.tentackle.model.print.EntityPrinter;
 import org.tentackle.model.print.PrintConfiguration;
 import org.tentackle.sql.Backend;
@@ -604,7 +604,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
                          new OutputStreamWriter(
                              new FileOutputStream(dumpFile), Settings.getEncodingCharset()))) {
               String modelSource = entityInfo.getModelSource();
-              if (modelSource.startsWith(Constants.ORIGIN_INFO_LEAD)) {
+              if (modelSource.startsWith(Document.ORIGIN_INFO_LEAD)) {
                 // cut source info, makes no sense outside the project
                 int ndx = modelSource.indexOf('\n');
                 if (ndx >= 0) {
@@ -614,7 +614,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
               // add model defaults
               ModelDefaults modelDefaults = entityInfo.getModelDefaults();
               if (modelDefaults != null) {
-                modelSource = "#[" + modelDefaults + "]\n" + modelSource;
+                modelSource = Document.DEFAULTS_INFO_LEAD + modelDefaults + "]\n" + modelSource;
               }
               writer.write(modelSource);
             }

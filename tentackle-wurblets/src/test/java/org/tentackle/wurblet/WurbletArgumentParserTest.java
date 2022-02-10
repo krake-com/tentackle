@@ -26,6 +26,7 @@ import org.tentackle.model.Entity;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.SortType;
+import org.tentackle.model.parse.Document;
 
 import java.util.Arrays;
 import java.util.List;
@@ -47,14 +48,14 @@ public class WurbletArgumentParserTest {
   @BeforeClass
   public void createEntity() {
     try {
-      entity = Model.getInstance().getEntityFactory().createEntity(
+      entity = Model.getInstance().getEntityFactory().createEntity(new Document(
                 "name := Blah\n" +
                 "id := 1\n" +
                 "table := blah\n" +
                 "long       txId      txid\n" +
                 "char       modType   modtype\n" +
                 "String(32) user      moduser\n" +
-                "Timestamp  processed processed",
+                "Timestamp  processed processed"),
                 null);
     }
     catch (ModelException mx) {

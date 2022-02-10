@@ -18,7 +18,8 @@
 
 package org.tentackle.model.parse;
 
-import org.tentackle.common.Constants;
+import org.tentackle.common.StringHelper;
+import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.SourceInfo;
 
@@ -28,26 +29,41 @@ import java.util.Objects;
 import java.util.StringTokenizer;
 
 /**
- * The input document.
+ * The input document describing the model of an entity.
  *
  * @author harald
  */
 public class Document {
 
-  private final String text;            // the whole document text
-  private final SourceInfo sourceInfo;  // source information, null if none
+  /**
+   * The model source may start with this lead followed by the source info.<br>
+   * Same as in {@code org.wurbelizer.misc.Constants}.
+   */
+  public static final String ORIGIN_INFO_LEAD = "#@";
 
-  private int offset;                   // current offset
-  private List<Line> parsedLines;       // the parsed lines
+  /**
+   * If the model source is stored in a jar, the source info lead doesn't make sense.<br>
+   * Instead, the model defaults used to parse the model in the project become necessary, since we have no access to the original project's poms.
+   */
+  public static final String DEFAULTS_INFO_LEAD = "#[";
+
+
+  private final String text;                  // the whole document text
+  private final SourceInfo sourceInfo;        // source information, null if none
+  private final ModelDefaults modelDefaults;  // the model defaults, null if none
+
+  private int offset;                         // current offset
+  private List<Line> parsedLines;             // the parsed lines
 
 
   /**
    * Creates a document.
    *
    * @param text the model specification source
+   * @throws ModelException if parsing the model defaults failed
    */
-  public Document(String text) {
-    if (Objects.requireNonNull(text, "text").startsWith(Constants.ORIGIN_INFO_LEAD)) {
+  public Document(String text) throws ModelException {
+    if (Objects.requireNonNull(text, "text").startsWith(ORIGIN_INFO_LEAD)) {
       // source info line
       int ndx = text.indexOf('\n');   // the end of line
       if (ndx > 0) {
@@ -65,9 +81,25 @@ public class Document {
         sourceInfo = null;
       }
     }
-    else  {
+    else {
       sourceInfo = null;
     }
+
+    if (text.startsWith(DEFAULTS_INFO_LEAD)) {
+      String firstLine = StringHelper.firstLine(text);
+      // no source info, but override the model defaults (see AbstractSqlMojo#dumpModelSource)
+      int ndx = firstLine.indexOf(']');
+      if (ndx > 3) {
+        modelDefaults = new ModelDefaults(firstLine.substring(2, ndx));
+      }
+      else {
+        throw new ModelException("missing closing square bracket in first line of model: " + firstLine);
+      }
+    }
+    else {
+      modelDefaults = null;
+    }
+
     this.text = processContinuationLines(text);
   }
 
@@ -85,12 +117,22 @@ public class Document {
   /**
    * Gets the source info.
    *
-   * @return the info, null if unknown
+   * @return the info, null if not defined within the document
+   * @see #ORIGIN_INFO_LEAD
    */
   public SourceInfo getSourceInfo() {
     return sourceInfo;
   }
 
+  /**
+   * Gets the optional model defaults.
+   *
+   * @return the defaults, null if not defined within the document
+   * @see #DEFAULTS_INFO_LEAD
+   */
+  public ModelDefaults getModelDefaults() {
+    return modelDefaults;
+  }
 
   /**
    * Gets the parsed lines.

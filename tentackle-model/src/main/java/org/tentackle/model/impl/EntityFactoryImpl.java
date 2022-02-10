@@ -112,10 +112,9 @@ public class EntityFactoryImpl implements EntityFactory {
 
 
   @Override
-  public Entity createEntity(String model, ModelDefaults modelDefaults) throws ModelException {
+  public Entity createEntity(Document document, ModelDefaults modelDefaults) throws ModelException {
 
     // parse the model (syntax only)
-    Document document = new Document(model);
     List<Line> lines = document.getLines();
 
     // apply the semantics to the entity

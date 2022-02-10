@@ -43,6 +43,7 @@ import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
 import org.tentackle.model.SelectionType;
 import org.tentackle.model.TrackType;
+import org.tentackle.model.parse.Document;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.SqlNameType;
 
@@ -1234,12 +1235,11 @@ public class ModelImpl implements Model {
       throw new ModelException("reading model '" + fileName + "' failed", ex);
     }
     String modelSource = modelBuf.toString();
-    if (modelSource.startsWith("#[")) {
-      // no source info, but override the model defaults (see AbstractSqlMojo#dumpModelSource)
-      int ndx = modelSource.indexOf(']');
-      defaults = new ModelDefaults(modelSource.substring(2, ndx));
+    Document document = new Document(modelSource);
+    if (document.getModelDefaults() != null) {
+      defaults = document.getModelDefaults(); // overridden by the document
     }
-    Entity entity = getEntityFactory().createEntity(modelSource, defaults);
+    Entity entity = getEntityFactory().createEntity(document, defaults);
     return new EntityInfoImpl(entity, fileName, modelSource, defaults);
   }
 

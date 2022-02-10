@@ -36,6 +36,7 @@ import org.tentackle.model.RelationType;
 import org.tentackle.model.SelectionType;
 import org.tentackle.model.SortType;
 import org.tentackle.model.TrackType;
+import org.tentackle.model.parse.Document;
 import org.tentackle.sql.DataTypeFactory;
 
 import java.io.IOException;
@@ -65,7 +66,7 @@ public class ModelTest {
   public void testModel() {
 
     try {
-      String model = StringHelper.readTextFromResource(null, MODEL_FILENAME);
+      Document model = new Document(StringHelper.readTextFromResource(null, MODEL_FILENAME));
       Entity entity = Model.getInstance().getEntityFactory().createEntity(model, null);
       for (Index index : entity.getIndexes()) {   // due to delayed parsing
         ((IndexImpl) index).parse(entity);
