@@ -38,8 +38,8 @@
     <wurbel.wurbelDir>\${symbol_dollar}{rootBasedir}/target/wurbel</wurbel.wurbelDir>
 
     <tentackle.version>${project.version}</tentackle.version>
-    <tentackle.serviceDir>\${symbol_dollar}{project.build.directory}/generated-resources/services</tentackle.serviceDir>
-    <tentackle.testServiceDir>\${symbol_dollar}{project.build.directory}/generated-test-resources/services</tentackle.testServiceDir>
+    <tentackle.serviceDir>\${symbol_dollar}{project.build.directory}/generated-resources</tentackle.serviceDir>
+    <tentackle.testServiceDir>\${symbol_dollar}{project.build.directory}/generated-test-resources</tentackle.testServiceDir>
     <tentackle.manifestDirectory>\${symbol_dollar}{project.build.directory}/generated-resources/manifest</tentackle.manifestDirectory>
     <tentackle.modelDir>\${symbol_dollar}{wurbel.wurbelDir}/model</tentackle.modelDir>
     <tentackle.sqlDir>\${symbol_dollar}{wurbel.wurbelDir}/sql</tentackle.sqlDir>
