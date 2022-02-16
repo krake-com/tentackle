@@ -19,10 +19,12 @@
 
 package org.tentackle.model;
 
+import java.net.URL;
 import java.util.List;
 
 /**
- * A directory holding model files.
+ * A directory holding model files.<br>
+ * The model dir is capable to detect changes, usually model files added by the wurbelizer.
  *
  * @author harald
  */
@@ -36,11 +38,11 @@ public interface ModelDirectory {
   String getPath();
 
   /**
-   * Gets the model file paths.
+   * Gets the model file URLs.
    *
-   * @return the list of canonical path names, never null
+   * @return the list of urls, never null
    */
-  List<String> getFilePaths();
+  List<URL> getURLs() throws ModelException;
 
   /**
    * Gets the model defaults.

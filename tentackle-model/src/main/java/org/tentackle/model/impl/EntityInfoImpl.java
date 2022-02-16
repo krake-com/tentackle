@@ -25,6 +25,7 @@ import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
 
 import java.io.File;
+import java.net.URL;
 
 /**
  * Entity as a component of a model.
@@ -34,7 +35,7 @@ import java.io.File;
 public class EntityInfoImpl implements EntityInfo {
 
   private final Entity entity;            // the entity
-  private final String filePath;          // the file path
+  private final URL url;                  // the model source URL
   private final String modelSource;       // the model source text
   private final ModelDefaults defaults;   // the model defaults
   private final File file;                // its source file
@@ -45,24 +46,30 @@ public class EntityInfoImpl implements EntityInfo {
    * Creates a model entity.
    *
    * @param entity the entity
-   * @param filePath the model file's path
+   * @param url the model source URL
    * @param modelSource the model source text
-   * @param defaults the model defaults
+   * @param defaults the model defaults used when the entity was created from the model source
    * @throws ModelException if file does not exist or is not a regular file
    */
-  public EntityInfoImpl(Entity entity, String filePath, String modelSource, ModelDefaults defaults) throws ModelException {
+  public EntityInfoImpl(Entity entity, URL url, String modelSource, ModelDefaults defaults) throws ModelException {
     this.entity = entity;
-    this.filePath = filePath;
+    this.url = url;
     this.modelSource = modelSource;
     this.defaults = defaults;
-    file = new File(filePath);
-    if (!file.exists()) {
-      throw new ModelException(filePath + " does not exist");
+    if ("file".equals(url.getProtocol())) {
+      file = new File(url.getPath());
+      if (!file.exists()) {
+        throw new ModelException(file + " does not exist");
+      }
+      if (!file.isFile()) {
+        throw new ModelException(file + " is not a regular file");
+      }
+      lastModified = file.lastModified();
     }
-    if (!file.isFile()) {
-      throw new ModelException(filePath + " is not a regular file");
+    else {
+      file = null;
+      lastModified = 0;
     }
-    lastModified = file.lastModified();
   }
 
   @Override
@@ -76,8 +83,16 @@ public class EntityInfoImpl implements EntityInfo {
   }
 
   @Override
-  public String getFilePath() {
-    return filePath;
+  public URL getURL() {
+    return url;
+  }
+
+  @Override
+  public File getFile() throws ModelException {
+    if (file == null) {
+      throw new ModelException(url + " is not a file");
+    }
+    return file;
   }
 
   @Override
@@ -92,7 +107,7 @@ public class EntityInfoImpl implements EntityInfo {
 
   @Override
   public boolean hasChanged() {
-    return file.lastModified() > lastModified;
+    return file != null && file.lastModified() > lastModified;
   }
 
 }

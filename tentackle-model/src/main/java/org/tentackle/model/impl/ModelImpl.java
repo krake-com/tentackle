@@ -21,6 +21,7 @@ package org.tentackle.model.impl;
 import org.tentackle.common.Constants;
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.common.Service;
+import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.Settings;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
@@ -42,16 +43,19 @@ import org.tentackle.model.ModelUtilities;
 import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
 import org.tentackle.model.SelectionType;
+import org.tentackle.model.SourceInfo;
 import org.tentackle.model.TrackType;
 import org.tentackle.model.parse.Document;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.SqlNameType;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -61,6 +65,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 /**
  * Model implementation.
@@ -70,23 +76,23 @@ import java.util.TreeMap;
 @Service(Model.class)
 public class ModelImpl implements Model {
 
-  /** cached entities mapped by file path. */
-  private final Map<String, EntityInfo> mapByFilePath;
+  /** cached entities mapped by URL. */
+  private final Map<URL, EntityInfo> urlToEntityInfoMap;
 
   /** cached java source paths mapped to file paths. */
-  private final Map<String,String> mapJavaFilePath;
+  private final Map<Entity, SourceInfo> entityToSourceInfoMap;
 
   /** cached entities mapped by entity name. */
-  private final Map<String, EntityInfo> mapByEntityName;
+  private final Map<String, EntityInfo> nameToEntityInfoMap;
 
   /** cached entities mapped by the table name (for entities associated with a table). */
-  private final Map<String, EntityInfo> mapByTableName;
+  private final Map<String, EntityInfo> tableToEntityInfoMap;
 
   /** cached entities mapped by entity id (for entities associated with a class id). */
-  private final Map<Integer, EntityInfo> mapByClassId;
+  private final Map<Integer, EntityInfo> classidToEntityInfoMap;
 
   /** model dirs processed so far. */
-  private final Map<String, ModelDirectory> modelDirs;   // <dirname,modeldir>
+  private final Map<String, ModelDirectory> modelDirs;   // <dirname, modeldir>
 
   /** the entity factory. */
   private final EntityFactory entityFactory;
@@ -100,6 +106,12 @@ public class ModelImpl implements Model {
   /** map schema names. */
   private boolean mapSchemas;
 
+  /** the optional model defaults. */
+  private ModelDefaults modelDefaults;
+
+  /** the optional entity aliases. */
+  private EntityAliases entityAliases;
+
 
 
   /**
@@ -107,11 +119,11 @@ public class ModelImpl implements Model {
    */
   public ModelImpl() {
     entityFactory = createEntityFactory();
-    mapByEntityName = new TreeMap<>();    // tree map for implicit sort by name
-    mapByTableName = new HashMap<>();
-    mapByClassId = new HashMap<>();
-    mapByFilePath = new HashMap<>();
-    mapJavaFilePath = new HashMap<>();
+    nameToEntityInfoMap = new TreeMap<>();    // tree map for implicit sort by name
+    tableToEntityInfoMap = new HashMap<>();
+    classidToEntityInfoMap = new HashMap<>();
+    urlToEntityInfoMap = new HashMap<>();
+    entityToSourceInfoMap = new HashMap<>();
     modelDirs = new HashMap<>();
     customModelValidators = CustomModelValidator.loadValidators();
   }
@@ -127,58 +139,78 @@ public class ModelImpl implements Model {
   }
 
   @Override
+  public ModelDefaults getModelDefaults() {
+    return modelDefaults;
+  }
+
+  @Override
+  public void setModelDefaults(ModelDefaults modelDefaults) {
+    this.modelDefaults = modelDefaults;
+  }
+
+  @Override
+  public EntityAliases getEntityAliases() {
+    return entityAliases;
+  }
+
+  @Override
+  public void setEntityAliases(EntityAliases entityAliases) {
+    this.entityAliases = entityAliases;
+  }
+
+  @Override
   public EntityFactory getEntityFactory() {
     return entityFactory;
   }
 
   @Override
-  public synchronized void loadModel(String modelDir, ModelDefaults defaults, EntityAliases aliases) throws ModelException {
+  public synchronized Collection<EntityInfo> loadFromDirectory(String modelDir, boolean updateRelations) throws ModelException {
 
+    Collection<EntityInfo> entityInfos = new ArrayList<>();
     boolean modelChanged = false;
 
     ModelDirectory dir = modelDirs.get(modelDir);
     if (dir == null || dir.hasChanged()) {
       modelChanged = true;
-      dir = createModelDirectory(modelDir, defaults, aliases);
+      dir = createModelDirectory(modelDir);
       modelDirs.put(modelDir, dir);
-      for (String filePath : dir.getFilePaths()) {
-        loadByFilePath(filePath, defaults, aliases, false);
+      for (URL url : dir.getURLs()) {
+        entityInfos.add(loadFromURL(url, false));
       }
-      updateRelations(defaults, aliases);
+      if (updateRelations) {
+        updateRelations();
+      }
     }
 
-    if (defaults != null) {
-      boolean updateRelations = false;
-      if (defaults.getTrackType() != null) {
-        for (EntityInfo entityInfo : mapByEntityName.values()) {
-          Entity entity = entityInfo.getEntity();
-          if (!entity.getOptions().noModelDefaults() &&
-              defaults.getTrackType().ordinal() > entity.getOptions().getTrackType().ordinal()) {
-            ((EntityImpl) entity).getOptions().setTrackType(defaults.getTrackType());
-            updateRelations = true;
-          }
+    // update track type and cascaded delete according to model defaults
+    boolean updateRelationsNecessary = false;
+    for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
+      ModelDefaults defaults = entityInfo.getModelDefaults();
+      Entity entity = entityInfo.getEntity();
+      if (defaults != null && !entity.getOptions().noModelDefaults()) {
+        if (defaults.getTrackType() != null &&
+            defaults.getTrackType().ordinal() > entity.getOptions().getTrackType().ordinal()) {
+          ((EntityImpl) entity).getOptions().setTrackType(defaults.getTrackType());
+          updateRelationsNecessary = true;
         }
-      }
-      if (defaults.getDeletionCascaded() != null && defaults.getDeletionCascaded()) {
-        for (EntityInfo entityInfo : mapByEntityName.values()) {
-          Entity entity = entityInfo.getEntity();
-          if (!entity.getOptions().noModelDefaults()) {
-            for (Relation relation: entity.getRelations()) {
-              if (relation.isComposite() && !relation.isDeletionCascaded()) {
-                ((RelationImpl) relation).setDeletionCascaded(defaults.getDeletionCascaded());
-                updateRelations = true;
-              }
+
+        if (Boolean.TRUE.equals(defaults.getDeletionCascaded())) {
+          for (Relation relation : entity.getRelations()) {
+            if (relation.isComposite() && !relation.isDeletionCascaded()) {
+              ((RelationImpl) relation).setDeletionCascaded(true);
+              updateRelationsNecessary = true;
             }
           }
         }
       }
-      if (updateRelations) {
-        updateRelations(defaults, aliases);
-      }
+    }
+
+    if (updateRelationsNecessary && updateRelations) {
+      updateRelations();
     }
 
     // indexes are parsed when the model is complete
-    for (EntityInfo entityInfo : mapByEntityName.values()) {
+    for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       EntityImpl entity = (EntityImpl) entityInfo.getEntity();
       for (Index idx: entity.getIndexes()) {
         IndexImpl index = (IndexImpl) idx;
@@ -195,16 +227,123 @@ public class ModelImpl implements Model {
         validator.validate(this);
       }
     }
+
+    return entityInfos;
   }
 
+  @Override
+  public synchronized EntityInfo loadFromURL(URL url, boolean updateRelations) throws ModelException {
+
+    EntityInfo entityInfo = urlToEntityInfoMap.get(url);
+
+    if (entityInfo != null && entityInfo.hasChanged()) {
+      // check modification time
+      entityInfo = null;    // force reload
+    }
+
+    if (entityInfo == null) {
+      // load from file
+      try {
+        entityInfo = createEntityInfo(modelDefaults, url);
+      }
+      catch (ModelException mex) {
+        String msg = "parsing '" + url + "' failed:\n    " + ExceptionHelper.concatenateMessages(mex);
+        throw new ModelException(msg, mex.getElement(), mex);
+      }
+
+      addEntityInfo(entityInfo);
+
+      foreignKeys = null;
+
+      if (updateRelations) {
+        updateRelations(entityInfo);
+      }
+    }
+
+    return entityInfo;
+  }
+
+  @Override
+  public Collection<EntityInfo> loadFromJar(File file, boolean updateRelations) throws ModelException {
+    Collection<EntityInfo> entityInfos = new ArrayList<>();
+    String indexName = Constants.META_INF + MODEL_INDEX_LIST;
+    try {
+      JarFile jarFile = new JarFile(file);
+      JarEntry indexEntry = jarFile.getJarEntry(indexName);
+      if (indexEntry != null) {
+        String urlLead = "jar:file:" + file.getCanonicalPath() + "!/";
+        try (BufferedReader indexReader = new BufferedReader(new InputStreamReader(jarFile.getInputStream(indexEntry), Settings.getEncodingCharset()))) {
+          String line;
+          while ((line = indexReader.readLine()) != null) {
+            JarEntry modelEntry = jarFile.getJarEntry(line);
+            if (modelEntry != null) {
+              URL url = new URL(urlLead + modelEntry.getName());
+              entityInfos.add(loadFromURL(url, false));
+            }
+            else {
+              throw new ModelException("no such model resource '" + line + "' in " + file);
+            }
+          }
+        }
+      }
+      else {
+        throw new ModelException("missing " + indexName + " in " + file);
+      }
+    }
+    catch (IOException e) {
+      throw new ModelException("cannot load model from jar " + file, e);
+    }
+
+    if (updateRelations) {
+      updateRelations();
+    }
+
+    return entityInfos;
+  }
+
+  @Override
+  public Collection<EntityInfo> loadFromResources(boolean updateRelations) throws ModelException {
+    Collection<EntityInfo> entityInfos = new ArrayList<>();
+    for (Map.Entry<String, URL> entry : ServiceFactory.getServiceFinder(Constants.META_INF).findServiceConfigurations(MODEL_INDEX_LIST).entrySet()) {
+      // URL forms:
+      // from jimage:       jrt:/com.example.myapp.client/META-INF/MODEL-INDEX.LIST
+      // from artifact:     jar:file:/home/harald/.m2/repository/com/example/myapp-client/1.0/myapp-client-1.0.jar!/META-INF/MODEL-INDEX.LIST
+      // from classfiles:   file:/applic/src/myapp/client/target/classes/META-INF/MODEL-INDEX.LIST
+      String urlName = entry.getValue().toString();
+      int ndx = urlName.indexOf(Constants.META_INF);
+      if (ndx >= 0) {
+        urlName = urlName.substring(0, ndx) + entry.getKey();   // "xxx:..../" + "META-INF/model/blah.map"
+        try {
+          URL url = new URL(urlName);
+          // order is not important, since we don't update the relations for each loaded entity
+          entityInfos.add(loadFromURL(url, false));
+        }
+        catch (MalformedURLException e) {
+          throw new ModelException("cannot create model URL for " + entry.getKey() + " in " + entry.getValue());
+        }
+      }
+      else {
+        throw new ModelException("unexpected url: " + urlName);
+      }
+    }
+    if (updateRelations) {
+      updateRelations();
+    }
+    return entityInfos;
+  }
+
+  @Override
+  public void updateRelations() throws ModelException {
+    updateRelations(null);
+  }
 
   @Override
   public synchronized void clearModel() {
-    mapByEntityName.clear();
-    mapByTableName.clear();
-    mapByClassId.clear();
-    mapByFilePath.clear();
-    mapJavaFilePath.clear();
+    nameToEntityInfoMap.clear();
+    tableToEntityInfoMap.clear();
+    classidToEntityInfoMap.clear();
+    urlToEntityInfoMap.clear();
+    entityToSourceInfoMap.clear();
     modelDirs.clear();
   }
 
@@ -212,8 +351,9 @@ public class ModelImpl implements Model {
   public void refreshModel() throws ModelException {
     for (ModelDirectory modelDir: modelDirs.values()) {
       modelDir.markDirty();
-      loadModel(modelDir.getPath(), modelDir.getModelDefaults(), modelDir.getEntityAliases());
+      loadFromDirectory(modelDir.getPath(), false);
     }
+    updateRelations();
   }
 
   @Override
@@ -222,7 +362,7 @@ public class ModelImpl implements Model {
 
     boolean refreshed = false;
     do {
-      for (EntityInfo entityInfo : mapByEntityName.values()) {
+      for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
         if (entityInfo.hasChanged()) {
           refreshModel();
           list.clear();
@@ -236,25 +376,23 @@ public class ModelImpl implements Model {
     return list;
   }
 
-
   @Override
-  public synchronized Entity getByFilePath(String filePath) throws ModelException {
-    EntityInfo entityInfo = mapByFilePath.get(filePath);
+  public synchronized Entity getByURL(URL url) throws ModelException {
+    EntityInfo entityInfo = urlToEntityInfoMap.get(url);
     if (entityInfo != null && entityInfo.hasChanged()) {
       refreshModel();
-      entityInfo = mapByFilePath.get(filePath);
+      entityInfo = urlToEntityInfoMap.get(url);
     }
     return entityInfo == null ? null : entityInfo.getEntity();
   }
 
-
   @Override
   public synchronized Entity getByEntityName(String entityName) throws ModelException {
     String name = entityName.toLowerCase();
-    EntityInfo entityInfo = mapByEntityName.get(name);
+    EntityInfo entityInfo = nameToEntityInfoMap.get(name);
     if (entityInfo != null && entityInfo.hasChanged()) {
       refreshModel();
-      entityInfo = mapByEntityName.get(name);
+      entityInfo = nameToEntityInfoMap.get(name);
     }
     return entityInfo == null ? null : entityInfo.getEntity();
   }
@@ -266,20 +404,20 @@ public class ModelImpl implements Model {
     if (ndx >= 0) {
       tableName = tableName.substring(ndx + 1); // skip schema
     }
-    EntityInfo entityInfo = mapByTableName.get(tableName);
+    EntityInfo entityInfo = tableToEntityInfoMap.get(tableName);
     if (entityInfo != null && entityInfo.hasChanged()) {
       refreshModel();
-      entityInfo = mapByTableName.get(tableName);
+      entityInfo = tableToEntityInfoMap.get(tableName);
     }
     return entityInfo == null ? null : entityInfo.getEntity();
   }
 
   @Override
   public synchronized Entity getByClassId(int classId) throws ModelException {
-    EntityInfo entityInfo = mapByClassId.get(classId);
+    EntityInfo entityInfo = classidToEntityInfoMap.get(classId);
     if (entityInfo != null && entityInfo.hasChanged()) {
       refreshModel();
-      entityInfo = mapByClassId.get(classId);
+      entityInfo = classidToEntityInfoMap.get(classId);
     }
     return entityInfo == null ? null : entityInfo.getEntity();
   }
@@ -287,10 +425,10 @@ public class ModelImpl implements Model {
   @Override
   public EntityInfo getEntityInfo(Entity entity) throws ModelException {
     String name = entity.getName().toLowerCase();
-    EntityInfo entityInfo = mapByEntityName.get(name);
+    EntityInfo entityInfo = nameToEntityInfoMap.get(name);
     if (entityInfo != null && entityInfo.hasChanged()) {
       refreshModel();
-      entityInfo = mapByEntityName.get(name);
+      entityInfo = nameToEntityInfoMap.get(name);
     }
     if (entityInfo == null) {
       throw new ModelException("no such entity " + entity);
@@ -298,59 +436,114 @@ public class ModelImpl implements Model {
     return entityInfo;
   }
 
-  @Override
-  public Entity loadByFilePath(String filePath, ModelDefaults defaults, EntityAliases aliases) throws ModelException {
-    return loadByFilePath(filePath, defaults, aliases, true);
-  }
 
   @Override
-  public Collection<ModelDirectory> getModelDirectories() {
-    return modelDirs.values();
-  }
+  public synchronized Collection<ForeignKey> getForeignKeys() throws ModelException {
 
-  /**
-   * Loads an entity for a given model file path.<br>
-   * Entities are cached, so they are loaded and parsed only once.
-   *
-   * @param filePath the path of the model file
-   * @param defaults optional model defaults, null if none
-   * @param aliases optional entity aliases, null if none
-   * @param updateRelations true if update the related entities in the model
-   * @return the entity
-   * @throws ModelException if no such model file or parsing error
-   */
-  protected synchronized Entity loadByFilePath(String filePath, ModelDefaults defaults, EntityAliases aliases,
-                                               boolean updateRelations)
-            throws ModelException {
+    if (foreignKeys == null) {
+      Map<ForeignKey, ForeignKey> foreignKeyMap = new TreeMap<>(); // map to update composite flag and sort
+      Set<ModelError> errors = new LinkedHashSet<>();
 
-    EntityInfo entityInfo = mapByFilePath.get(filePath);
+      for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
+        Entity entity = entityInfo.getEntity();
 
-    if (entityInfo != null && entityInfo.hasChanged()) {
-      // check modification time
-      entityInfo = null;    // force reload
+        if (entity.getInheritanceType().isMappingToOwnTable()) {
+
+          for (Relation relation : entity.getTableRelations()) {
+
+            Attribute referencingAttribute = null;
+            Entity referencingEntity = null;
+            Attribute referencedAttribute = null;
+            Entity referencedEntity = null;
+            boolean composite = relation.isComposite();   // valid for OBJECT relations
+            if (!composite) {
+              Relation foreignRelation = relation.getForeignRelation();
+              if (foreignRelation != null && foreignRelation.getRelationType() == RelationType.LIST &&
+                  foreignRelation.isComposite()) {
+                // the list relation is composite
+                composite = true;
+              }
+            }
+
+            if (relation.getAttribute() != null) {
+              // object reference
+              if (relation.getForeignEntity() == null) {
+                errors.add(new ModelError(relation, "no foreign entity for " + relation));
+              }
+              else {
+                referencingEntity = relation.getEntity();
+                referencingAttribute = relation.getAttribute();
+                referencedEntity = relation.getForeignEntity();
+                referencedAttribute = referencedEntity.getAttributeByJavaName(Constants.AN_ID, true);
+              }
+            }
+            else if (relation.getForeignAttribute() != null) {
+              // list reference
+              referencingEntity = relation.getForeignEntity();
+              referencingAttribute = relation.getForeignAttribute();
+              referencedEntity = entity;
+              referencedAttribute = entity.getAttributeByJavaName(Constants.AN_ID, true);
+            }
+            else {
+              if (!relation.getMethodArgs().isEmpty()) {
+                continue;   // complex relation, classname + id, whatever -> no foreign key possible
+              }
+              errors.add(new ModelError(relation,
+                                        "broken foreign key relation " + relation + " in " + entity));
+            }
+
+            List<Entity> referencingEntities;
+            if (referencingEntity != null && referencingEntity.getTableProvidingEntity() == null) {
+              // PLAIN
+              referencingEntities = referencingEntity.getLeafEntities();
+            }
+            else  {
+              referencingEntities = new ArrayList<>();
+              if (referencedEntity != null) {
+                referencingEntities.add(referencingEntity);
+              }
+            }
+
+            for (Entity refingEnt: referencingEntities) {
+              if (!refingEnt.getOptions().isProvided() && referencingAttribute != null && referencedAttribute != null &&
+                  (!composite && referencedAttribute.getEntity().getIntegrity().isRelatedCheckedByDatabase() ||
+                   composite && referencedAttribute.getEntity().getIntegrity().isCompositesCheckedByDatabase())) {
+                ForeignKey foreignKey = new ForeignKeyImpl(refingEnt, referencingAttribute, referencedEntity,
+                                                           referencedAttribute, composite);
+                ForeignKey oppositeForeignKey = foreignKeyMap.get(foreignKey);
+                if (oppositeForeignKey != null) {
+                  if (composite && !oppositeForeignKey.isComposite()) {
+                    // upgrade to composite
+                    ((ForeignKeyImpl) oppositeForeignKey).setComposite(true);
+                  }
+                }
+                else {
+                  // new
+                  foreignKeyMap.put(foreignKey, foreignKey);
+                }
+              }
+            }
+          }
+
+          // add constraints for MULTI table inheritance
+          if (!entity.getOptions().isProvided() && entity.getSuperEntity() != null && entity.getHierarchyInheritanceType().isMappingToOwnTable()) {
+            // is a subclass
+            Entity topEntity = entity.getTopSuperEntity();
+            Attribute idAttribute = topEntity.getAttributeByJavaName(Constants.AN_ID, false);
+            ForeignKey foreignKey = new ForeignKeyImpl(entity, idAttribute, topEntity, idAttribute, false);
+            foreignKeyMap.put(foreignKey, foreignKey);
+          }
+        }
+      }
+
+      if (!errors.isEmpty()) {
+        throw new ModelException(errors);
+      }
+
+      foreignKeys = foreignKeyMap.values();
     }
 
-    if (entityInfo == null) {
-
-      // load from file
-      try {
-        entityInfo = createEntityInfo(defaults, filePath);
-      }
-      catch (ModelException mex) {
-        String msg = "parsing '" + filePath + "' failed:\n    " + ExceptionHelper.concatenateMessages(mex);
-        throw new ModelException(msg, mex.getElement(), mex);
-      }
-
-      addEntityInfo(entityInfo);
-
-      foreignKeys = null;
-
-      if (updateRelations) {
-        updateRelations(defaults, aliases, entityInfo);
-      }
-    }
-
-    return entityInfo.getEntity();
+    return foreignKeys;
   }
 
 
@@ -368,25 +561,26 @@ public class ModelImpl implements Model {
       }
     }
 
-    String filePath = entityInfo.getFilePath();
+    URL url = entityInfo.getURL();
 
     // append to maps
-    mapByFilePath.put(filePath, entityInfo);    // must be new...
+    urlToEntityInfoMap.put(url, entityInfo);    // must be new...
 
-    String javaPath = entityInfo.getEntity().getSourceInfo().getFileName();
-
-    String oldFilePath = mapJavaFilePath.put(javaPath, filePath);
-    if (oldFilePath != null && !oldFilePath.equals(filePath)) {
-      throw new ModelException("entity " + entityInfo.getEntity() + " defined from more than one model file:\n" +
-                               oldFilePath + "\n" + filePath);
+    SourceInfo sourceInfo = entityInfo.getEntity().getSourceInfo();
+    if (sourceInfo != null) {
+      SourceInfo otherSourceInfo = entityToSourceInfoMap.put(entityInfo.getEntity(), sourceInfo);
+      if (otherSourceInfo != null && !otherSourceInfo.equals(sourceInfo)) {
+        throw new ModelException("entity " + entityInfo.getEntity() + " defined from more than one model file:\n" +
+                                 otherSourceInfo + "\n" + sourceInfo);
+      }
     }
 
-    EntityInfo oldEntityInfo = mapByEntityName.put(entityInfo.getEntity().getName().toLowerCase(), entityInfo);
+    EntityInfo oldEntityInfo = nameToEntityInfoMap.put(entityInfo.getEntity().getName().toLowerCase(), entityInfo);
     if (entityInfo.getEntity().getClassId() != 0) {
       if (oldEntityInfo != null && oldEntityInfo.getEntity().getClassId() != entityInfo.getEntity().getClassId()) {
-        throw new ModelException("duplicate entity " + entityInfo.getEntity().getName() + " in file " + filePath, entityInfo.getEntity());
+        throw new ModelException("duplicate entity " + entityInfo.getEntity().getName() + " in " + url, entityInfo.getEntity());
       }
-      oldEntityInfo = mapByClassId.put(entityInfo.getEntity().getClassId(), entityInfo);
+      oldEntityInfo = classidToEntityInfoMap.put(entityInfo.getEntity().getClassId(), entityInfo);
       if (oldEntityInfo != null && !oldEntityInfo.getEntity().getName().equals(entityInfo.getEntity().getName())) {
         throw new ModelException("duplicate entity id " + entityInfo.getEntity().getClassId() + " for " + entityInfo.getEntity().getName() +
                                  ", already assigned to " + oldEntityInfo.getEntity().getName(), entityInfo.getEntity());
@@ -395,7 +589,7 @@ public class ModelImpl implements Model {
 
     String tableName = entityInfo.getEntity().getTableNameWithoutSchema();
     if (tableName != null) {
-      oldEntityInfo = mapByTableName.put(tableName, entityInfo);
+      oldEntityInfo = tableToEntityInfoMap.put(tableName, entityInfo);
       if (oldEntityInfo != null && !oldEntityInfo.getEntity().getName().equals(entityInfo.getEntity().getName())) {
         throw new ModelException("duplicate table name '" + entityInfo.getEntity().getTableNameWithoutSchema() + "' for " + entityInfo.getEntity().getName() +
                                  ", already assigned to " + oldEntityInfo.getEntity().getName(), entityInfo.getEntity());
@@ -403,42 +597,27 @@ public class ModelImpl implements Model {
     }
   }
 
-
-  /**
-   * Updates the inheritance links and relations of all entities in the model.
-   *
-   * @param defaults the optional model defaults
-   * @param aliases the optional entity aliases
-   * @throws ModelException if relations or inheritance misconfiguration
-   */
-  protected void updateRelations(ModelDefaults defaults, EntityAliases aliases) throws ModelException {
-    updateRelations(defaults, aliases, null);
-  }
-
   /**
    * Updates all relations.
    *
-   * @param defaults the optional model defaults
-   * @param aliases the optional entity aliases
    * @param loadedEntityInfo the entity that caused the update, null if none
    * @throws ModelException if relations or inheritance misconfiguration
    */
-  protected void updateRelations(ModelDefaults defaults, EntityAliases aliases, EntityInfo loadedEntityInfo)
-            throws ModelException {
+  protected void updateRelations(EntityInfo loadedEntityInfo) throws ModelException {
 
     Set<ModelError> errors = new LinkedHashSet<>();
     Entity loadedEntity = loadedEntityInfo == null ? null : loadedEntityInfo.getEntity();
 
     // set inheritance entities links
 
-    for (EntityInfo entityInfo : mapByEntityName.values()) {
+    for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       entityInfo.getEntity().getSubEntities().clear();
     }
 
-    for (EntityInfo entityInfo : mapByEntityName.values()) {
+    for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       Entity entity = entityInfo.getEntity();
       if (entity.getSuperEntityName() != null) {
-        Entity superEntity = getByEntityName(translateAlias(aliases, entity.getSuperEntityName()));
+        Entity superEntity = getByEntityName(translateAlias(entity.getSuperEntityName()));
         if (superEntity == null) {
           if (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity)) {
             errors.add(new ModelError(entity,
@@ -460,7 +639,7 @@ public class ModelImpl implements Model {
     }
 
     // check for normtext provided
-    for (EntityInfo entityInfo : mapByEntityName.values()) {
+    for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       Entity entity = entityInfo.getEntity();
       boolean normTextProvided = entity.getOptions().isNormTextProvided();
       if (!normTextProvided) {
@@ -498,7 +677,7 @@ public class ModelImpl implements Model {
     }
 
     // update relations
-    for (EntityInfo entityInfo : mapByEntityName.values()) {
+    for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       Entity entity = entityInfo.getEntity();
       entity.getReferencingRelations().clear();
       entity.getCompositePaths().clear();
@@ -510,7 +689,7 @@ public class ModelImpl implements Model {
 
         ((RelationImpl) relation).setForeignRelation(null);
 
-        Entity foreignEntity = getByEntityName(translateAlias(aliases, relation.getClassName()));
+        Entity foreignEntity = getByEntityName(translateAlias(relation.getClassName()));
         if (foreignEntity == null) {
           if (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity)) {
             // log error only if class is associated to the updated one
@@ -567,7 +746,7 @@ public class ModelImpl implements Model {
                           "nm-relation " + nmRelation.getName() + " in " + foreignEntity +
                           " must be non-composite object"));
                 }
-                if (translateAlias(aliases, nmRelation.getClassName()).equals(entity.getName()) &&
+                if (translateAlias(nmRelation.getClassName()).equals(entity.getName()) &&
                     (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity))) {
                   errors.add(new ModelError(nmRelation,
                           "nm-relation " + nmRelation.getName() + " in " + foreignEntity +
@@ -588,9 +767,9 @@ public class ModelImpl implements Model {
     }
 
     // update referencing relations
-    for (EntityInfo entityInfo : mapByEntityName.values()) {
+    for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       Entity entity = entityInfo.getEntity();
-      for (EntityInfo otherEntityInfo : mapByEntityName.values()) {
+      for (EntityInfo otherEntityInfo : nameToEntityInfoMap.values()) {
         Entity otherEntity = otherEntityInfo.getEntity();
         for (Relation relation: otherEntity.getRelations()) {
           Entity foreignEntity = relation.getForeignEntity();
@@ -602,7 +781,7 @@ public class ModelImpl implements Model {
     }
 
     // update foreign relations
-    for (EntityInfo entityInfo : mapByEntityName.values()) {
+    for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       Entity entity = entityInfo.getEntity();
       for (Relation relation: entity.getReferencingRelations()) {
         if (relation.getForeignRelation() == null) {
@@ -620,7 +799,7 @@ public class ModelImpl implements Model {
     }
 
     // update composite paths and inspect model for root, rootid and rootclassid
-    for (EntityInfo entityInfo : mapByEntityName.values()) {
+    for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       Entity entity = entityInfo.getEntity();
       boolean isRootEntity = true;
       for (Relation relation: entity.getAllReferencingRelations()) {
@@ -642,7 +821,7 @@ public class ModelImpl implements Model {
     }
 
     // determine deep references and set rootid,rootclassid options
-    for (EntityInfo entityInfo : mapByEntityName.values()) {
+    for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       Entity entity = entityInfo.getEntity();
       /*
        * The entity should provide a root class id if it is a composite of more than one root entities
@@ -694,37 +873,35 @@ public class ModelImpl implements Model {
     }
 
     // applies model defaults
-    if (defaults != null) {
-
-      for (EntityInfo entityInfo : mapByEntityName.values()) {
-        Entity entity = entityInfo.getEntity();
-        if (!entity.getOptions().noModelDefaults()) {
-          if (defaults.getTrackType() != null &&
-              defaults.getTrackType().ordinal() > entity.getOptions().getTrackType().ordinal()) {
-            ((EntityOptionsImpl) entity.getOptions()).setTrackType(defaults.getTrackType());
-          }
-          if (Boolean.TRUE.equals(defaults.getRoot()) &&
-              entity.isRootEntityAccordingToModel()) {
-            ((EntityImpl) entity.getTopSuperEntity()).getOptions().setRootEntity(true);
-          }
-          if (Boolean.TRUE.equals(defaults.getRootClassId()) &&
-              entity.isProvidingRootClassIdAccordingToModel()) {
-              ((EntityImpl) entity.getTopSuperEntity()).getOptions().setRootClassIdProvided(true);
-          }
-          if (Boolean.TRUE.equals(defaults.getRootId()) &&
-              entity.isProvidingRootIdAccordingToModel()) {
-            ((EntityImpl) entity.getTopSuperEntity()).getOptions().setRootIdProvided(true);
-          }
-          if (defaults.getRemote() != null) {
-            ((EntityOptionsImpl) entity.getOptions()).setRemote(defaults.getRemote());
-          }
+    for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
+      ModelDefaults defaults = entityInfo.getModelDefaults();
+      Entity entity = entityInfo.getEntity();
+      if (defaults != null && !entity.getOptions().noModelDefaults()) {
+        if (defaults.getTrackType() != null &&
+            defaults.getTrackType().ordinal() > entity.getOptions().getTrackType().ordinal()) {
+          ((EntityOptionsImpl) entity.getOptions()).setTrackType(defaults.getTrackType());
+        }
+        if (Boolean.TRUE.equals(defaults.getRoot()) &&
+            entity.isRootEntityAccordingToModel()) {
+          ((EntityImpl) entity.getTopSuperEntity()).getOptions().setRootEntity(true);
+        }
+        if (Boolean.TRUE.equals(defaults.getRootClassId()) &&
+            entity.isProvidingRootClassIdAccordingToModel()) {
+          ((EntityImpl) entity.getTopSuperEntity()).getOptions().setRootClassIdProvided(true);
+        }
+        if (Boolean.TRUE.equals(defaults.getRootId()) &&
+            entity.isProvidingRootIdAccordingToModel()) {
+          ((EntityImpl) entity.getTopSuperEntity()).getOptions().setRootIdProvided(true);
+        }
+        if (defaults.getRemote() != null) {
+          ((EntityOptionsImpl) entity.getOptions()).setRemote(defaults.getRemote());
         }
       }
     }
 
 
     // add/remove rootId, rootClassId to/from model
-    for (EntityInfo entityInfo : mapByEntityName.values()) {
+    for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       Entity entity = entityInfo.getEntity();
 
       if (entity.getOptions().isRootClassIdProvided()) {
@@ -753,7 +930,7 @@ public class ModelImpl implements Model {
     }
 
     // do some automatic settings and verifications
-    for (EntityInfo entityInfo : mapByEntityName.values()) {
+    for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       Entity entity = entityInfo.getEntity();
       if (entity.getOptions().isCached() && !entity.isRootEntityAccordingToModel()) {
         errors.add(new ModelError(entity,"component " + entity + " cannot be cached"));
@@ -806,9 +983,8 @@ public class ModelImpl implements Model {
       }
     }
 
-
     // validate configuration depending on other entities
-    for (EntityInfo entityInfo : mapByEntityName.values()) {
+    for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       Entity entity = entityInfo.getEntity();
       try {
         ((EntityImpl) entity).validateRelated();
@@ -821,7 +997,7 @@ public class ModelImpl implements Model {
     }
 
     // verify that columns are defined only once in the inheritance hierarchy
-    for (EntityInfo entityInfo : mapByEntityName.values()) {
+    for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       Entity entity = entityInfo.getEntity();
       if (entity.getSuperEntity() == null && !entity.getInheritanceType().isMappingToNoTable()) {
         // check
@@ -863,7 +1039,7 @@ public class ModelImpl implements Model {
 
     // generate the table aliases.
     Map<String,Entity> aliasMap = new HashMap<>();
-    for (EntityInfo entityInfo : mapByEntityName.values()) {
+    for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       Entity entity = entityInfo.getEntity();
       if (entity.getTableAlias() != null) {
         Entity dupAliasEntity = aliasMap.get(entity.getTableAlias());
@@ -881,7 +1057,7 @@ public class ModelImpl implements Model {
     // generate automatic alias if not specified in model
 
     // prio 1: apply camelcase letters and digits if possible
-    for (EntityInfo entityInfo : mapByEntityName.values()) {
+    for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       Entity entity = entityInfo.getEntity();
       if (entity.getTableName() != null && entity.getTableAlias() == null) {
         // determine the meaningful letters: Start and end of camel case words
@@ -898,7 +1074,7 @@ public class ModelImpl implements Model {
     }
 
     // for all others still unnamed
-    for (EntityInfo entityInfo : mapByEntityName.values()) {
+    for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       Entity entity = entityInfo.getEntity();
       if (entity.getTableName() != null && entity.getTableAlias() == null) {
         StringBuilder letters = new StringBuilder();
@@ -947,7 +1123,7 @@ public class ModelImpl implements Model {
     }
 
     // sets the inheritance level (ordinal)
-    for (EntityInfo entityInfo : mapByEntityName.values()) {
+    for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       Entity entity = entityInfo.getEntity();
       int level = 0;
       Entity superEntity = entity.getSuperEntity();
@@ -959,7 +1135,7 @@ public class ModelImpl implements Model {
     }
 
     // sets the ordinals of attributes, relations and indexes
-    for (EntityInfo entityInfo : mapByEntityName.values()) {
+    for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       Entity entity = entityInfo.getEntity();
       if (!entity.isAbstract()) {   // only leafs
         Entity[] entities = new Entity[entityInfo.getEntity().getOrdinal() + 1];
@@ -1002,7 +1178,7 @@ public class ModelImpl implements Model {
     }
     else  {
       // check that within each class hierarchy
-      for (EntityInfo entityInfo : mapByEntityName.values()) {
+      for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
         Entity entity = entityInfo.getEntity();
         validateInheritanceHierarchy(entity, entity.getInheritanceType(), entity.getOptions().getTrackType(),
                                      entity.getIntegrity(), errors);
@@ -1080,116 +1256,6 @@ public class ModelImpl implements Model {
     }
   }
 
-  @Override
-  public synchronized Collection<ForeignKey> getForeignKeys() throws ModelException {
-
-    if (foreignKeys == null) {
-      Map<ForeignKey, ForeignKey> foreignKeyMap = new TreeMap<>(); // map to update composite flag and sort
-      Set<ModelError> errors = new LinkedHashSet<>();
-
-      for (EntityInfo entityInfo : mapByEntityName.values()) {
-        Entity entity = entityInfo.getEntity();
-
-        if (entity.getInheritanceType().isMappingToOwnTable()) {
-
-          for (Relation relation : entity.getTableRelations()) {
-
-            Attribute referencingAttribute = null;
-            Entity referencingEntity = null;
-            Attribute referencedAttribute = null;
-            Entity referencedEntity = null;
-            boolean composite = relation.isComposite();   // valid for OBJECT relations
-            if (!composite) {
-              Relation foreignRelation = relation.getForeignRelation();
-              if (foreignRelation != null && foreignRelation.getRelationType() == RelationType.LIST &&
-                  foreignRelation.isComposite()) {
-                // the list relation is composite
-                composite = true;
-              }
-            }
-
-            if (relation.getAttribute() != null) {
-              // object reference
-              if (relation.getForeignEntity() == null) {
-                errors.add(new ModelError(relation, "no foreign entity for " + relation));
-              }
-              else {
-                referencingEntity = relation.getEntity();
-                referencingAttribute = relation.getAttribute();
-                referencedEntity = relation.getForeignEntity();
-                referencedAttribute = referencedEntity.getAttributeByJavaName(Constants.AN_ID, true);
-              }
-            }
-            else if (relation.getForeignAttribute() != null) {
-              // list reference
-              referencingEntity = relation.getForeignEntity();
-              referencingAttribute = relation.getForeignAttribute();
-              referencedEntity = entity;
-              referencedAttribute = entity.getAttributeByJavaName(Constants.AN_ID, true);
-            }
-            else {
-              if (!relation.getMethodArgs().isEmpty()) {
-                continue;   // complex relation, classname + id, whatever -> no foreign key possible
-              }
-              errors.add(new ModelError(relation,
-                      "broken foreign key relation " + relation + " in " + entity));
-            }
-
-            List<Entity> referencingEntities;
-            if (referencingEntity != null && referencingEntity.getTableProvidingEntity() == null) {
-              // PLAIN
-              referencingEntities = referencingEntity.getLeafEntities();
-            }
-            else  {
-              referencingEntities = new ArrayList<>();
-              if (referencedEntity != null) {
-                referencingEntities.add(referencingEntity);
-              }
-            }
-
-            for (Entity refingEnt: referencingEntities) {
-              if (!refingEnt.getOptions().isProvided() && referencingAttribute != null && referencedAttribute != null &&
-                  (!composite && referencedAttribute.getEntity().getIntegrity().isRelatedCheckedByDatabase() ||
-                   composite && referencedAttribute.getEntity().getIntegrity().isCompositesCheckedByDatabase())) {
-                ForeignKey foreignKey = new ForeignKeyImpl(refingEnt, referencingAttribute, referencedEntity,
-                                                           referencedAttribute, composite);
-                ForeignKey oppositeForeignKey = foreignKeyMap.get(foreignKey);
-                if (oppositeForeignKey != null) {
-                  if (composite && !oppositeForeignKey.isComposite()) {
-                    // upgrade to composite
-                    ((ForeignKeyImpl) oppositeForeignKey).setComposite(true);
-                  }
-                }
-                else {
-                  // new
-                  foreignKeyMap.put(foreignKey, foreignKey);
-                }
-              }
-            }
-          }
-
-          // add constraints for MULTI table inheritance
-          if (!entity.getOptions().isProvided() && entity.getSuperEntity() != null && entity.getHierarchyInheritanceType().isMappingToOwnTable()) {
-            // is a subclass
-            Entity topEntity = entity.getTopSuperEntity();
-            Attribute idAttribute = topEntity.getAttributeByJavaName(Constants.AN_ID, false);
-            ForeignKey foreignKey = new ForeignKeyImpl(entity, idAttribute, topEntity, idAttribute, false);
-            foreignKeyMap.put(foreignKey, foreignKey);
-          }
-        }
-      }
-
-      if (!errors.isEmpty()) {
-        throw new ModelException(errors);
-      }
-
-      foreignKeys = foreignKeyMap.values();
-    }
-
-    return foreignKeys;
-  }
-
-
   /**
    * Creates the entity factory for this model.<br>
    * The method is invoked once from within the Model constructor.
@@ -1204,27 +1270,24 @@ public class ModelImpl implements Model {
    * Creates a model directory object.
    *
    * @param modelDir the directory name
-   * @param defaults optional model defaults, null if none
-   * @param aliases optional entity aliases, null if none
    * @return the model directory
    * @throws ModelException if directory does not exist or is not a directory
    */
-  protected ModelDirectory createModelDirectory(String modelDir, ModelDefaults defaults, EntityAliases aliases)
-            throws ModelException {
-    return new ModelDirectoryImpl(modelDir, defaults, aliases);
+  protected ModelDirectory createModelDirectory(String modelDir) throws ModelException {
+    return new ModelDirectoryImpl(modelDir, modelDefaults, entityAliases);
   }
 
   /**
    * Creates a model entity wrapper.
    *
    * @param defaults the optional model defaults
-   * @param fileName the model file name
+   * @param url the url of the model file
    * @return the model entity
    * @throws ModelException if creation failed
    */
-  protected EntityInfo createEntityInfo(ModelDefaults defaults, String fileName) throws ModelException {
+  protected EntityInfo createEntityInfo(ModelDefaults defaults, URL url) throws ModelException {
     StringBuilder modelBuf = new StringBuilder();
-    try (Reader reader = createReader(fileName)) {
+    try (Reader reader = createReader(url)) {
       char[] buf = new char[1024];
       int len;
       while ((len = reader.read(buf)) != -1)  {
@@ -1232,7 +1295,7 @@ public class ModelImpl implements Model {
       }
     }
     catch (IOException ex) {
-      throw new ModelException("reading model '" + fileName + "' failed", ex);
+      throw new ModelException("reading model '" + url + "' failed", ex);
     }
     String modelSource = modelBuf.toString();
     Document document = new Document(modelSource);
@@ -1240,25 +1303,24 @@ public class ModelImpl implements Model {
       defaults = document.getModelDefaults(); // overridden by the document
     }
     Entity entity = getEntityFactory().createEntity(document, defaults);
-    return new EntityInfoImpl(entity, fileName, modelSource, defaults);
+    return new EntityInfoImpl(entity, url, modelSource, defaults);
   }
 
   /**
    * Creates a reader for given name.
    *
-   * @param name the file- or resource name
+   * @param url the model url
    * @return the reader
    * @throws ModelException if creating the reader failed (because file not found)
    */
-  protected Reader createReader(String name) throws ModelException {
+  protected Reader createReader(URL url) throws ModelException {
     try {
-      return new BufferedReader(new InputStreamReader(new FileInputStream(name), Settings.getEncodingCharset()));
+      return new BufferedReader(new InputStreamReader(url.openStream(), Settings.getEncodingCharset()));
     }
     catch (IOException ex) {
-      throw new ModelException("cannot open reader for " + name, ex);
+      throw new ModelException("cannot open reader for " + url, ex);
     }
   }
-
 
   /**
    * Verifies that the inheritance, integrity and track type is the same within a given inheritance hierarchy.<br>
@@ -1299,7 +1361,6 @@ public class ModelImpl implements Model {
     // of development. We could issue warnings though, but there is no logger...
   }
 
-
   /**
    * Verifies that the integrity is the same within a given composite hierarchy.<br>
    *
@@ -1325,17 +1386,15 @@ public class ModelImpl implements Model {
     }
   }
 
-
   /**
    * Translates an entity name if it is an alias.
    *
-   * @param aliases the entity aliases
    * @param name the original name
    * @return the possibly translated name
    */
-  protected String translateAlias(EntityAliases aliases, String name) {
-    if (aliases != null) {
-      String mappedName = aliases.get(name);
+  protected String translateAlias(String name) {
+    if (entityAliases != null) {
+      String mappedName = entityAliases.get(name);
       if (mappedName != null) {
         name = mappedName;
       }

@@ -240,7 +240,10 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
     String modelDirName = dir.getPath();
 
     try {
-      Model.getInstance().loadModel(modelDirName, getModelDefaults(), getEntityAliases());
+      Model model = Model.getInstance();
+      model.setModelDefaults(getModelDefaults());
+      model.setEntityAliases(getEntityAliases());
+      Model.getInstance().loadFromDirectory(modelDirName, true);
     }
     catch (ModelException mex) {
       getLog().error("parsing model failed in directory " + modelDirName + ":\n" + mex.getMessage());

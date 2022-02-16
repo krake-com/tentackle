@@ -19,6 +19,9 @@
 
 package org.tentackle.model;
 
+import java.io.File;
+import java.net.URL;
+
 /**
  * Entity model information.
  *
@@ -34,11 +37,19 @@ public interface EntityInfo {
   Entity getEntity();
 
   /**
-   * Gets the path of the model file.
+   * Gets the URL of the model file.
    *
-   * @return the canonical file path
+   * @return the URL
    */
-  String getFilePath();
+  URL getURL();
+
+  /**
+   * Gets the model file.
+   *
+   * @return the file
+   * @throws ModelException if the URL does not represent a file in the filesystem
+   */
+  File getFile() throws ModelException;
 
   /**
    * Gets the source text of the model for this entity.
@@ -48,7 +59,7 @@ public interface EntityInfo {
   String getModelSource();
 
   /**
-   * Gets the model defaults.
+   * Gets the model defaults used when the entity was created from the model source.
    *
    * @return the defaults, null if none
    */
@@ -57,7 +68,7 @@ public interface EntityInfo {
   /**
    * Returns whether the model file has changed.
    *
-   * @return true if changed
+   * @return true if changed, always false if URL is not a file
    */
   boolean hasChanged();
 

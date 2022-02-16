@@ -40,6 +40,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -122,10 +123,10 @@ public class CreateSqlMojo extends AbstractSqlMojo {
     Collection<ForeignKey> foreignKeys = null;
     try {
       Model model = Model.getInstance();
-      if (mapSchemas) {
-        model.setSchemaNameMapped(true);
-      }
-      model.loadModel(modelDirName, getModelDefaults(), getEntityAliases());
+      model.setModelDefaults(getModelDefaults());
+      model.setEntityAliases(getEntityAliases());
+      model.setSchemaNameMapped(mapSchemas);
+      model.loadFromDirectory(modelDirName, true);
       foreignKeys = Model.getInstance().getForeignKeys();
     }
     catch (ModelException mex) {
@@ -148,9 +149,10 @@ public class CreateSqlMojo extends AbstractSqlMojo {
             getLog().info("processing " + modelFile);
           }
           try {
-            Entity entity = Model.getInstance().getByFilePath(modelFile.getAbsolutePath());
+            URL url = modelFile.toURI().toURL();
+            Entity entity = Model.getInstance().getByURL(url);
             if (entity == null) {
-              throw new MojoExecutionException("no entity for path " + modelFile.getAbsolutePath());
+              throw new MojoExecutionException("no entity for " + url);
             }
 
             if (entity.getTableProvidingEntity() == entity && !entity.getOptions().isProvided()) {

@@ -45,6 +45,7 @@ import org.tentackle.sql.metadata.TableMetaData;
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.sql.Connection;
@@ -416,7 +417,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
 
   @Override
   protected void processBackend(BackendInfoParameter backendParameter, BackendInfo backendInfo) throws MojoExecutionException {
-    MigrationHints hints = backendParameter.loadMigrationHints(backendInfo, this, verbosityLevel.isDebug(), resourceDirs);
+    MigrationHints hints = backendParameter.loadMigrationHints(backendInfo, this, verbosityLevel.isDebug(), getResourceDirs());
     migrationHints.put(backendInfo.getUrl(), hints);
     getLog().info("backend: " + backendInfo);
     getLog().info("version: " + backendParameter.minVersion);
@@ -465,10 +466,10 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       Collection<ForeignKey> foreignKeys;
       try {
         Model model = Model.getInstance();
-        if (mapSchemas) {
-          model.setSchemaNameMapped(true);
-        }
-        model.loadModel(modelDirName, defaults, aliases);
+        model.setModelDefaults(defaults);
+        model.setEntityAliases(aliases);
+        model.setSchemaNameMapped(mapSchemas);
+        model.loadFromDirectory(modelDirName, true);
         foreignKeys = Model.getInstance().getForeignKeys();
         // build table rename maps if hints given
         renamedTables = determineRenamedTables(hints);
@@ -507,9 +508,10 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
               getLog().info("processing " + modelFile);
             }
             try {
-              Entity entity = Model.getInstance().getByFilePath(modelFile.getAbsolutePath());
+              URL url = modelFile.toURI().toURL();
+              Entity entity = Model.getInstance().getByURL(url);
               if (entity == null) {
-                throw new MojoExecutionException("no entity for path " + modelFile.getAbsolutePath());
+                throw new MojoExecutionException("no entity for " + url);
               }
               if (entity.getTableProvidingEntity() != entity || entity.getOptions().isProvided()) {
                 continue;   // skip
@@ -698,7 +700,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
               }
             }
 
-            catch (BackendException | ModelException ex) {
+            catch (IOException | BackendException | ModelException ex) {
               getLog().error("parsing model failed for " + filename, ex);
               errorCount++;
             }
