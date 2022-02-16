@@ -105,8 +105,8 @@
 
     <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
 
-    <tentackle.serviceDir>${project.build.directory}/generated-resources/services</tentackle.serviceDir>
-    <tentackle.testServiceDir>${project.build.directory}/generated-test-resources/services</tentackle.testServiceDir>
+    <tentackle.serviceDir>${project.build.directory}/generated-resources</tentackle.serviceDir>
+    <tentackle.testServiceDir>${project.build.directory}/generated-test-resources</tentackle.testServiceDir>
     <tentackle.manifestDirectory>${project.build.directory}/generated-resources/manifest</tentackle.manifestDirectory>
     <netbeans.hint.license>tentackle</netbeans.hint.license>
 
