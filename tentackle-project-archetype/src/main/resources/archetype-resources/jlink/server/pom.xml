@@ -74,6 +74,14 @@
         </executions>
         <configuration>
           <sqlDir>${symbol_dollar}{project.build.directory}/sql</sqlDir>
+          <prependFilesets>
+            <prependFileset>
+              <directory>${symbol_dollar}{project.basedir}/src/sql</directory>
+              <includes>
+                <include>*.sql</include>
+              </includes>
+            </prependFileset>
+          </prependFilesets>
           <appendFilesets>
             <appendFileset>
               <directory>${symbol_dollar}{rootBasedir}/target/tmp/META-INF/sql/PostgreSQL</directory>
