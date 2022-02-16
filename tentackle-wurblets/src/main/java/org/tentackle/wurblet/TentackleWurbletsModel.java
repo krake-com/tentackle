@@ -18,13 +18,16 @@
 
 package org.tentackle.wurblet;
 
-import java.io.Reader;
+import org.wurbelizer.wurbel.WurbelException;
+import org.wurbelizer.wurbel.WurbelHelper;
+
 import org.tentackle.common.Service;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.impl.ModelImpl;
-import org.wurbelizer.wurbel.WurbelException;
-import org.wurbelizer.wurbel.WurbelHelper;
+
+import java.io.Reader;
+import java.net.URL;
 
 /**
  * Extended model aware of heap-files and global loading exception.
@@ -51,12 +54,18 @@ public class TentackleWurbletsModel extends ModelImpl {
   private WurbelException loadingException;
 
   @Override
-  protected Reader createReader(String name) throws ModelException {
-    try {
-      return WurbelHelper.openReader(name);
+  protected Reader createReader(URL url) throws ModelException {
+    String path = url.getPath();
+    if ("file".equals(url.getProtocol()) && path.startsWith(".")) {
+      try {
+        return WurbelHelper.openReader(path);   // heap file
+      }
+      catch (WurbelException wex) {
+        throw new ModelException("cannot create reader for " + path, wex);
+      }
     }
-    catch (WurbelException wex) {
-      throw new ModelException("cannot create reader for " + name, wex);
+    else {
+      return super.createReader(url);
     }
   }
 

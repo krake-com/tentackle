@@ -26,6 +26,8 @@ import org.tentackle.model.ModelException;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -76,13 +78,18 @@ public class ModelDirectoryImpl implements ModelDirectory {
   }
 
   @Override
-  public List<String> getFilePaths() {
-    List<String> paths = new ArrayList<>();
+  public List<URL> getURLs() throws ModelException {
+    List<URL> paths = new ArrayList<>();
     File[] files = dir.listFiles();
     if (files != null) {
       for (File file : files) {
         if (file.isFile() && !file.isHidden()) {
-          paths.add(new File(path, file.getName()).getAbsolutePath());
+          try {
+            paths.add(new File(path, file.getName()).toURI().toURL());
+          }
+          catch (MalformedURLException e) {
+            throw new ModelException("cannot convert file '" + file + " to URL", e);
+          }
         }
       }
     }

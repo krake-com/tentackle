@@ -164,7 +164,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   /**
    * List of resource dirs.
    */
-  protected List<String> resourceDirs;
+  private List<String> resourceDirs;
 
   /**
    * The toolfinder.
@@ -428,33 +428,41 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   }
 
   /**
-   * Finds all resource directories.
+   * Gets the names of all resource directories.
+   *
+   * @return the names provided by the maven project model, never null
    */
-  public void findResourceDirs() {
-    resourceDirs = new ArrayList<>();
-    for (Resource resource : mavenProject.getBuild().getResources()) {
-      if (resource != null) {
-        String name = resource.getDirectory();
-        if (name != null) {
-          getLog().debug("found resource directory " + name);
-          resourceDirs.add(name);
+  public List<String> getResourceDirs() {
+    if (resourceDirs == null) {
+      List<String> dirs = new ArrayList<>();
+      for (Resource resource : mavenProject.getBuild().getResources()) {
+        if (resource != null) {
+          String name = resource.getDirectory();
+          if (name != null) {
+            getLog().debug("found resource directory " + name);
+            dirs.add(name);
+          }
         }
       }
+      resourceDirs = dirs;
     }
+    return resourceDirs;
   }
 
   /**
-   * Checks if given directory resides in resources.
+   * Checks if given file resides in a resource directory.
    *
-   * @param dirName the directory name
+   * @param file the file
    * @return the resource dir, null if not a resource
+   * @throws MojoExecutionException if calculating a canonical pathname failed
    */
-  public String getResourceDirName(String dirName) {
-    if (resourceDirs != null) {
-      for (String resourceDir: resourceDirs) {
-        if (dirName.startsWith(resourceDir)) {
-          return resourceDir;
-        }
+  public File getResourceDir(File file) throws MojoExecutionException {
+    String filePath = getCanonicalPath(file);
+    for (String resourceDirName: getResourceDirs()) {
+      File resourceDir = new File(resourceDirName);
+      String resourceDirPath = getCanonicalPath(resourceDir);
+      if (filePath.startsWith(resourceDirPath)) {
+        return resourceDir;
       }
     }
     return null;

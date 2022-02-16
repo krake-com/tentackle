@@ -422,7 +422,6 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
         throw new MojoExecutionException("undefined variable(s) in sqlDir: " + sqlDir.getPath());
       }
 
-      findResourceDirs();
       backendInfos = new HashMap<>();
       connectableBackendInfos = new HashMap<>();
 
@@ -446,7 +445,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
           FileSetManager fileSetManager = new FileSetManager(getLog(), verbosityLevel.isDebug());
           List<String> propertiesDirNames;
           if (fileset.getDirectory() == null) {
-            propertiesDirNames = resourceDirs;  // try all resource directories
+            propertiesDirNames = getResourceDirs();  // try all resource directories
             if (propertiesDirNames == null || propertiesDirNames.isEmpty()) {
               throw new MojoExecutionException(
               "no <directory> given in <fileset> of <backendProperties> and no resource directories found");
@@ -579,7 +578,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
         Map<String, String> aliasesMap = new TreeMap<>();     // alias:entityname
         Map<String, String> tableMap = new TreeMap<>();       // tablename:entityname
         Map<Integer, String> classidMap = new TreeMap<>();    // classid:entityname
-        Set<String> dumpSet = new LinkedHashSet<>();          // dumped files
+        Set<File> dumpedFiles = new LinkedHashSet<>();        // dumped model files
 
         for (Entity entity : Model.getInstance().getAllEntities()) {
           if (entity.getDefinedTableAlias() != null) {
@@ -597,8 +596,8 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
 
           if (dumpModelSource) {
             EntityInfo entityInfo = Model.getInstance().getEntityInfo(entity);
-            File dumpFile = new File(dumpDir, new File(entityInfo.getFilePath()).getName());
-            dumpSet.add(dumpFile.getAbsolutePath());
+            File dumpFile = new File(dumpDir, entityInfo.getFile().getName());
+            dumpedFiles.add(dumpFile);
             try (BufferedWriter writer =
                      new BufferedWriter(
                          new OutputStreamWriter(
@@ -621,7 +620,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
           }
           else {
             File dumpFile = new File(dumpDir, entity.getName() + ".txt");
-            dumpSet.add(dumpFile.getAbsolutePath());
+            dumpedFiles.add(dumpFile);
             try (BufferedWriter writer =
                      new BufferedWriter(
                          new OutputStreamWriter(
@@ -632,22 +631,25 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
         }
 
         if (dumpModelIndex != null) {
-          String dumpPath = dumpDir.getAbsolutePath();
-          String indexPath = dumpModelIndex.getAbsolutePath();
-          int commonLength = 0;
-          while (commonLength < indexPath.length() && commonLength < dumpPath.length()) {
-            if (dumpPath.charAt(commonLength) != indexPath.charAt(commonLength)) {
-              break;
-            }
-            commonLength++;
-          }
           dumpModelIndex.getParentFile().mkdirs();
           try (BufferedWriter writer =
                    new BufferedWriter(
                        new OutputStreamWriter(
                            new FileOutputStream(dumpModelIndex), Settings.getEncodingCharset()))) {
-            for (String dumpedName : dumpSet) {
-              dumpedName = dumpedName.substring(commonLength);
+            for (File dumpedFile : dumpedFiles) {
+              String dumpedName;
+              File resourceDir = getResourceDir(dumpedFile);
+              if (resourceDir != null) {
+                String resourcePath = getCanonicalPath(resourceDir);
+                String dumpedFilePath = getCanonicalPath(dumpedFile);
+                dumpedName = dumpedFilePath.substring(resourcePath.length());
+                if (dumpedName.startsWith("/")) {
+                  dumpedName = dumpedName.substring(1);
+                }
+              }
+              else {
+                dumpedName = getPathRelativeToBasedir(getCanonicalPath(dumpedFile));
+              }
               writer.write(dumpedName + "\n");
             }
           }

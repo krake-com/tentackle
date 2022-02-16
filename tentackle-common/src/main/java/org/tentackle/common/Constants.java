@@ -26,17 +26,20 @@ package org.tentackle.common;
  */
 public class Constants {
 
+  /** {@code META-INF} directory name. */
+  public static final String META_INF = "META-INF/";
+
   /** the directory for mapped service provider configurations. */
-  public static final String MAPPED_SERVICE_PATH = "META-INF/mapped-services/";
+  public static final String MAPPED_SERVICE_PATH = META_INF + "mapped-services/";
 
   /** the directory for meta service provider configurations. */
-  public static final String META_SERVICE_PATH = "META-INF/meta-services/";
+  public static final String META_SERVICE_PATH = META_INF + "meta-services/";
 
   /** the directory for default service provider configurations. */
-  public static final String DEFAULT_SERVICE_PATH = "META-INF/services/";
+  public static final String DEFAULT_SERVICE_PATH = META_INF + "services/";
 
   /** the directory for resource bundle names. */
-  public static final String BUNDLE_SERVICE_PATH = "META-INF/bundles/";
+  public static final String BUNDLE_SERVICE_PATH = META_INF + "bundles/";
 
   /** suppress warnings for suspicious stateful domain logic. */
   public static final String SUPPRESS_WARNINGS_STATEFUL_DOMAIN_LOGIC = "stateful-domain-logic";

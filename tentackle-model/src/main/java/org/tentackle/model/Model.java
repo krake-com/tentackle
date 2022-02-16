@@ -20,6 +20,8 @@ package org.tentackle.model;
 
 import org.tentackle.common.ServiceFactory;
 
+import java.io.File;
+import java.net.URL;
 import java.util.Collection;
 
 
@@ -35,6 +37,11 @@ interface ModelHolder {
  */
 public interface Model {
 
+  /**
+   * Name of the index file holding the model names within a jar or classpath.<br>
+   * Resides in {@code META-INF}.
+   */
+  String MODEL_INDEX_LIST = "MODEL-INDEX.LIST";
 
   /**
    * The singleton.
@@ -55,14 +62,85 @@ public interface Model {
   EntityFactory getEntityFactory();
 
   /**
+   * Sets the model defaults to apply when loading the model sources.
+   *
+   * @param modelDefaults the model defaults, null if none
+   */
+  void setModelDefaults(ModelDefaults modelDefaults);
+
+  /**
+   * Gets the model defaults.
+   *
+   * @return the model defaults, null if none
+   */
+  ModelDefaults getModelDefaults();
+
+  /**
+   * Sets the entity aliases for relations between entities.
+   *
+   * @param entityAliases the aliases, null if none
+   */
+  void setEntityAliases(EntityAliases entityAliases);
+
+  /**
+   * Gets the entity aliases.
+   *
+   * @return the aliases, null if none
+   */
+  EntityAliases getEntityAliases();
+
+  /**
    * Loads the whole model from the model directory if not yet done.
    *
-   * @param modelDir the directory containing the model files
-   * @param defaults optional model defaults, null if none
-   * @param aliases optional entity aliases, null if none
+   * @param modelDir the name of the directory containing the model files
+   * @param updateRelations true if update the relations, false if model is still incomplete
+   * @return the entity infos of the loaded model files
+   * @throws ModelException if the model is inconsistent
+   * @see #updateRelations()
+   */
+  Collection<EntityInfo> loadFromDirectory(String modelDir, boolean updateRelations) throws ModelException;
+
+  /**
+   * Loads an entity from a given URL.<br>
+   * Entities are cached, so they are loaded and parsed only once.
+   *
+   * @param url the URL of the model file
+   * @param updateRelations true if update the relations, false if model is still incomplete
+   * @return the entity info
+   * @throws ModelException if the model is inconsistent
+   * @see #updateRelations()
+   */
+  EntityInfo loadFromURL(URL url, boolean updateRelations) throws ModelException;
+
+  /**
+   * Loads the model from a jar file.<br>
+   * Reads the model files listed in {@code META-INF/MODEL-INDEX.LIST}.
+   *
+   * @param file the jar file
+   * @param updateRelations true if update the relations, false if model is still incomplete
+   * @return the entity infos of the loaded model files
    * @throws ModelException if the model is inconsistent
    */
-  void loadModel(String modelDir, ModelDefaults defaults, EntityAliases aliases) throws ModelException;
+  Collection<EntityInfo> loadFromJar(File file, boolean updateRelations) throws ModelException;
+
+  /**
+   * Loads from resources.<br>
+   * Locates all {@code META-INF/MODEL-INDEX.LIST} resources and loads the model files.
+   *
+   * @param updateRelations true if update the relations, false if model is still incomplete
+   * @return the entity infos of the loaded model files
+   * @throws ModelException if the model is inconsistent
+   */
+  Collection<EntityInfo> loadFromResources(boolean updateRelations) throws ModelException;
+
+  /**
+   * Updates the relations if not yet done during load.
+   *
+   * @throws ModelException if model is inconsistent
+   * @see #loadFromURL(URL, boolean)
+   * @see #loadFromDirectory(String, boolean)
+   */
+  void updateRelations() throws ModelException;
 
   /**
    * Clears the model.
@@ -102,11 +180,11 @@ public interface Model {
   /**
    * Gets the entity by the model file path.
    *
-   * @param filePath the pathname of the model file
+   * @param url the URL of the model file
    * @return the entity, null if no such entity
    * @throws ModelException if the model is inconsistent
    */
-  Entity getByFilePath(String filePath) throws ModelException;
+  Entity getByURL(URL url) throws ModelException;
 
   /**
    * Gets the entity by its table name.
@@ -136,18 +214,6 @@ public interface Model {
   Entity getByClassId(int classId) throws ModelException;
 
   /**
-   * Loads an entity for a given model file name.<br>
-   * Entities are cached, so they are loaded and parsed only once.
-   *
-   * @param filePath the path of the model file
-   * @param defaults optional model defaults, null if none
-   * @param aliases optional entity aliases, null if none
-   * @return the entity
-   * @throws ModelException if no such model file or parsing error
-   */
-  Entity loadByFilePath(String filePath, ModelDefaults defaults, EntityAliases aliases) throws ModelException;
-
-  /**
    * Gets the model information for the given entity.
    *
    * @param entity the entity
@@ -155,13 +221,6 @@ public interface Model {
    * @throws ModelException if the model is inconsistent or no such entity
    */
   EntityInfo getEntityInfo(Entity entity) throws ModelException;
-
-  /**
-   * Gets the model directories.
-   *
-   * @return the model directories, never null
-   */
-  Collection<ModelDirectory> getModelDirectories();
 
   /**
    * Gets all foreign keys.

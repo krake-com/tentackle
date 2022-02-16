@@ -20,7 +20,6 @@ package org.tentackle.maven.plugin.i18n;
 
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
@@ -122,22 +121,13 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
   }
 
   @Override
-  protected boolean validate() throws MojoExecutionException {
-    if (super.validate()) {
-      findResourceDirs();
-      return true;
-    }
-    return false;
-  }
-
-  @Override
-  public void prepareExecute() throws MojoExecutionException, MojoFailureException {
+  public void prepareExecute() {
     // disable provider because we need only the PDOs from tt-i18n, not the bundle control
     StoredBundleFactory.setEnabled(false);
   }
 
   @Override
-  public void executeImpl() throws MojoExecutionException, MojoFailureException {
+  public void executeImpl() throws MojoExecutionException {
 
     // grab the extra locale suffixes
     localeSuffixes = new ArrayList<>();

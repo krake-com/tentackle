@@ -708,13 +708,16 @@ public class ModelWurblet extends AbstractJavaWurblet {
 
     // load the model (if not yet done)
     Model model = Model.getInstance();
+    model.setModelDefaults(modelDefaults);
+    model.setEntityAliases(entityAliases);
+
     try {
       if (otherModelDirNames != null) {
         for (String otherModelDirName: otherModelDirNames) {
-          model.loadModel(otherModelDirName, modelDefaults, entityAliases);
+          model.loadFromDirectory(otherModelDirName, false);
         }
       }
-      model.loadModel(modelDirName, modelDefaults, entityAliases);
+      model.loadFromDirectory(modelDirName, true);
     }
     catch (ModelException mex) {
       // model exceptions cause the whole wurbel run to abort because it doesnt make any sense to clutter the sources
@@ -736,7 +739,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
       if (getModelName().indexOf(File.separatorChar) >= 0) {
         // is a filepath (load it if it's not already loaded)
         try {
-          entity = model.loadByFilePath(new File(getModelName()).getCanonicalPath(), modelDefaults, entityAliases);
+          entity = model.loadFromURL(new File(getModelName()).toURI().toURL(), true).getEntity();
         }
         catch (IOException ex) {
           throw new ModelException("cannot determine canonical path of model " + getModelName(), ex);
