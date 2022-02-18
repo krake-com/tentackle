@@ -44,6 +44,9 @@ import org.tentackle.session.TableName;
  * integrity := $integrity
  *
  * ## attributes
+<#if profile == "masterdata">
+ * [cached]
+</#if>
  *
  * ## indexes
  *
