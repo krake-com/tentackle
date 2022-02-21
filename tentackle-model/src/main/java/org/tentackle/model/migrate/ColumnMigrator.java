@@ -223,7 +223,7 @@ public class ColumnMigrator {
           break;
 
         case TYPE_WARNING:
-          buf.append("-- ").append(alterType());
+          buf.append(backend.getSingleLineComment()).append(' ').append(alterType());
           break;
 
         case NAME_AND_TYPE:

@@ -2297,11 +2297,15 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Asserts that the connection is attached and returns it.
+   * Gets the currently attached connection.
+   * <p>
+   * Throws {@link PersistenceException} if no connection attached.
+   * <p>
+   * WARNING: this method is provided for internal use only and should not be used by applications!
    *
-   * @return the attached connection
+   * @return the attached connection, never null
    */
-  ManagedConnection connection() {
+  public ManagedConnection connection() {
     ManagedConnection c = resources.con;
     if (c == null) {
       throw new PersistenceException(this, "not attached");

@@ -243,7 +243,7 @@ public class CodeFactory {
     StringBuilder buf = new StringBuilder();
 
     if (index.getComment() != null) {
-      buf.append("-- ");
+      buf.append(backend.getSingleLineComment()).append(' ');
       buf.append(index.getComment());
       buf.append('\n');
     }

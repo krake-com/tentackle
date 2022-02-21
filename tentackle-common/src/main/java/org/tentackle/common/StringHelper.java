@@ -1877,6 +1877,57 @@ public final class StringHelper {
 
 
   /**
+   * Same as {@link String#startsWith(String, int)}, but for more multiple prefixes.
+   *
+   * @param str the string to check
+   * @param offset where to begin looking in {@code str}
+   * @param prefixes the prefixes
+   * @return the prefix, null if no match
+   */
+  public static String startsWithAnyOf(String str, int offset, String... prefixes) {
+    if (str != null) {
+      for (String prefix : prefixes) {
+        if (str.startsWith(prefix, offset)) {
+          return prefix;
+        }
+      }
+    }
+    return null;
+  }
+
+
+  /**
+   * Same as {@link String#startsWith(String)}, but for more multiple prefixes.
+   *
+   * @param str the string to check
+   * @param prefixes the prefixes
+   * @return the prefix, null if no match
+   */
+  public static String startsWithAnyOf(String str, String... prefixes) {
+    return startsWithAnyOf(str, 0, prefixes);
+  }
+
+
+  /**
+   * Same as {@link String#endsWith(String)}, but for more multiple suffixes.
+   *
+   * @param str the string to check
+   * @param suffixes the suffixes
+   * @return the suffix, null if no match
+   */
+  public static String endsWithAnyOf(String str, String... suffixes) {
+    if (str != null) {
+      for (String suffix : suffixes) {
+        if (str.endsWith(suffix)) {
+          return suffix;
+        }
+      }
+    }
+    return null;
+  }
+
+
+  /**
    * prevent instantiation.
    */
   private StringHelper() {}

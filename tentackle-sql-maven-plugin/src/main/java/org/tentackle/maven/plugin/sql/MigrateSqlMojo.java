@@ -232,7 +232,8 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
             else {
               DatabaseMetaDataTableHeader oldHeader = otherTablesMap.put(tableName, header);
               if (oldHeader != null) {
-                sqlWarnings.append("-- table '").append(tableName).append("' found in more than one schema: ")
+                sqlWarnings.append(backendInfo.getBackend().getSingleLineComment()).append(" table '").append(tableName)
+                           .append("' found in more than one schema: ")
                            .append(header.getSchema()).append(", ").append(oldHeader.getSchema()).append('\n');
               }
             }
@@ -291,27 +292,30 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   protected void closeResources(BackendInfo backendInfo) throws MojoExecutionException, MojoFailureException {
 
     boolean migrationNecessary = false;
+    String commentLead = backendInfo.getBackend().getSingleLineComment();
 
     try {
       if (generateHeaderComment) {
-        sqlWriter.append(printTableStats(backendInfo.getBackend().getDefaultSchema()));
-        sqlWriter.append("-- entities in model: processed=")
+        sqlWriter.append(printTableStats(backendInfo.getBackend().getDefaultSchema(), commentLead));
+        sqlWriter.append(commentLead).append(" entities in model: processed=")
             .append(Integer.toString(processedEntites))
             .append(", skipped=")
-            .append(Integer.toString(skippedEntites)).append("\n");
+            .append(Integer.toString(skippedEntites)).append('\n');
 
         if (!otherTablesMap.isEmpty()) {
-          sqlWriter.append("\n-- unexpected tables in database not belonging to the model: ").append(Integer.toString(otherTablesMap.size())).append("\n");
+          sqlWriter.append('\n').append(commentLead)
+                   .append(" unexpected tables in database not belonging to the model: ")
+                   .append(Integer.toString(otherTablesMap.size())).append('\n');
           for (DatabaseMetaDataTableHeader header : otherTablesMap.values()) {
             if (failOnUnexpectedTables) {
               sqlWriter.append(backendInfo.getBackend().sqlDropTable(header.getSchema(), header.getName()));
             }
             else {
-              sqlWriter.append("--     ").append(header.toString()).append("\n");
+              sqlWriter.append(commentLead).append("     ").append(header.toString()).append('\n');
             }
           }
           if (!failOnUnexpectedTables) {
-            sqlWriter.append("-- please add to <alienTables> or consider removal\n");
+            sqlWriter.append(commentLead).append(" please add to <alienTables> or consider removal\n");
           }
         }
       }
@@ -319,48 +323,53 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       if (!split) {
         String sql = backendMigrationHints.getAlwaysBefore();
         if (!sql.isEmpty()) {
-          sqlWriter.append("\n-- always before\n").append(sql).append("\n\n--\n");
+          sqlWriter.append('\n').append(commentLead).append(" always before\n")
+                   .append(sql).append("\n\n").append(commentLead).append('\n');
         }
       }
 
       if (sqlCode.length() > 0 || !splittedMigrations.isEmpty()) {
         if (split) {
-          sqlWriter.append("-- migrated entities in subfolders: ").append(String.valueOf(splittedMigrations.size())).append("\n");
+          sqlWriter.append(commentLead).append(" migrated entities in sub-folders: ")
+                   .append(String.valueOf(splittedMigrations.size())).append('\n');
         }
         else {
           String sql = backendMigrationHints.getBeforeAll();
           if (!sql.isEmpty()) {
-            sqlWriter.append("\n-- before all\n").append(sql).append("\n\n--\n");
+            sqlWriter.append('\n').append(commentLead).append(" before all\n")
+                     .append(sql).append("\n\n").append(commentLead).append('\n');
           }
 
           sqlWriter.append(sqlCode.toString());
 
           sql = backendMigrationHints.getAfterAll();
           if (!sql.isEmpty()) {
-            sqlWriter.append("\n\n-- after all\n").append(sql).append("\n\n--\n");
+            sqlWriter.append("\n\n").append(commentLead).append(" after all\n")
+                     .append(sql).append("\n\n").append(commentLead).append('\n');
           }
         }
         migrationNecessary = true;
       }
       else if (generateHeaderComment) {
-        sqlWriter.append("\n-- ").append(STR_NO_CHANGES_DETECTED).append(" -> no migration necessary\n");
+        sqlWriter.append('\n').append(commentLead).append(' ').append(STR_NO_CHANGES_DETECTED).append(" -> no migration necessary\n");
       }
 
       if (!split) {
         String sql = backendMigrationHints.getAlwaysAfter();
         if (!sql.isEmpty()) {
-          sqlWriter.append("\n\n-- always after\n").append(sql).append("\n\n--\n");
+          sqlWriter.append("\n\n").append(commentLead).append(" always after\n")
+                   .append(sql).append("\n\n").append(commentLead).append('\n');
         }
       }
 
       if (sqlDrops.length() > 0) {
-        sqlWriter.append("\n-- tables removed from the model\n");
+        sqlWriter.append('\n').append(commentLead).append(" tables removed from the model\n");
         sqlWriter.append(sqlDrops);
         migrationNecessary = true;
       }
 
       if (sqlWarnings.length() > 0) {
-        sqlWriter.append("\n-- ============================== WARNINGS ==============================\n");
+        sqlWriter.append('\n').append(commentLead).append(" ============================== WARNINGS ==============================\n");
         sqlWriter.append(sqlWarnings);
       }
     }
@@ -442,6 +451,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
     if (backendInfo.isConnectable()) {
 
       int errorCount = 0;
+      String commentLead = backendInfo.getBackend().getSingleLineComment();
 
       if (fileSet.getDirectory() == null) {
         // directory missing: use sourceDir as default
@@ -647,7 +657,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
                 // check if explicit migration code is available
                 String sql = backendMigrationHints.getMigrateTable(tableName);
                 if (sql != null) {
-                  tableSql.append("\n-- manual migration of ");
+                  tableSql.append('\n').append(commentLead).append(" manual migration of ");
                   tableSql.append(tableName);
                   tableSql.append(":\n");
                   tableSql.append(backendInfo.getBackend().sqlComment(migrationResult.getTableSql() + "\n"));
@@ -716,7 +726,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         if (isMigrationPending(backendMigrationHints.getDependencies(pendingTablename), migratedTablenames)) {
           String msg = "dependency loop detected for " + pendingTablename + "! migration order may be not as expected!";
           getLog().error(msg);
-          depErrors.append("-- ");
+          depErrors.append(commentLead).append(' ');
           depErrors.append(msg);
           depErrors.append('\n');
           errorCount++;
@@ -725,7 +735,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       }
 
       if (foreignKeySql.length() > 0) {
-        sqlCode.append("\n");
+        sqlCode.append('\n');
         sqlCode.append(foreignKeySql);
       }
 
@@ -739,7 +749,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       sqlWarnings.append(warningSql);
 
       if (depErrors.length() > 0) {
-        sqlCode.append("\n\n-- ************* CAUTION *************\n");
+        sqlCode.append("\n\n").append(commentLead).append(" ************* CAUTION *************\n");
         sqlCode.append(depErrors);
       }
 
@@ -935,13 +945,13 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
     tableStats.put(schema, ++count);
   }
 
-  private String printTableStats(String defaultSchema) {
+  private String printTableStats(String defaultSchema, String commentLead) {
     StringBuilder buf = new StringBuilder();
     if (tableStats == null) {
-      buf.append("-- no tables found in database!\n");
+      buf.append(commentLead).append(" no tables found in database!\n");
     }
     else {
-      buf.append("-- schemas/tables in database: ");
+      buf.append(commentLead).append(" schemas/tables in database: ");
       boolean needComma = false;
       int total = 0;
       for (Map.Entry<String, Integer> entry : tableStats.entrySet()) {

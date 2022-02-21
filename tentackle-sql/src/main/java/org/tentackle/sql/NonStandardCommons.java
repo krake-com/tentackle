@@ -29,7 +29,7 @@ public class NonStandardCommons {
    * Creates a COMMENT ON TABLE statement.
    *
    * @param backend the backend
-   * @param tableName the tablename with optional schema separated by a dot
+   * @param tableName the table name with optional schema separated by a dot
    * @param comment optional comment, null if none
    * @return the SQL code including the closing semicolon and newline
    */
@@ -37,14 +37,14 @@ public class NonStandardCommons {
     return  "COMMENT ON TABLE " + tableName +
             " IS " +
             backend.toQuotedString(comment) +
-            ";\n";
+            backend.getStatementSeparator() + "\n";
   }
 
   /**
    * Creates a COMMENT ON COLUMN statement.
    *
    * @param backend the backend
-   * @param tableName the tablename with optional schema separated by a dot
+   * @param tableName the table name with optional schema separated by a dot
    * @param columnName the column name
    * @param comment optional comment, null if none
    * @return the SQL code including the closing semicolon and newline
@@ -61,7 +61,7 @@ public class NonStandardCommons {
     else  {
       buf.append(backend.toQuotedString(comment));
     }
-    buf.append(";\n");
+    buf.append(backend.getStatementSeparator()).append('\n');
     return buf.toString();
   }
 
@@ -103,7 +103,7 @@ public class NonStandardCommons {
     else  {
       buf.append(backend.toQuotedString(comment));
     }
-    buf.append(";\n");
+    buf.append(backend.getStatementSeparator()).append('\n');
     return buf.toString();
   }
 

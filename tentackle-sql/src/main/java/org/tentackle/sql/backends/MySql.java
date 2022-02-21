@@ -119,6 +119,11 @@ public class MySql extends AbstractSql92Backend {
   }
 
   @Override
+  public boolean isPosixEscapeSyntaxSupported() {
+    return true;
+  }
+
+  @Override
   public boolean allowsExpressionsReferringToTablesBeingUpdated() {
     return false;
   }

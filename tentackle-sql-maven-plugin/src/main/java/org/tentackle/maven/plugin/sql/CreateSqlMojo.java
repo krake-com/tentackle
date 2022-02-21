@@ -193,7 +193,7 @@ public class CreateSqlMojo extends AbstractSqlMojo {
     try {
       // create referential integrity
       if (foreignKeys != null && !foreignKeys.isEmpty()) {
-        sqlWriter.append("\n-- referential integrity\n");
+        sqlWriter.append('\n').append(backendInfo.getBackend().getSingleLineComment()).append(" referential integrity\n");
         for (ForeignKey foreignKey: foreignKeys) {
           sqlWriter.append(foreignKey.sqlCreateForeignKey(backendInfo.getBackend()));
         }
@@ -253,24 +253,24 @@ public class CreateSqlMojo extends AbstractSqlMojo {
         if (backend.supportsSequences()) {
           for (SequenceParameter sequence : sequences) {
             if (sequence.name != null) {
-              sqlWriter.append("\n").append(backend.sqlCreateSequence(sequence.name, sequence.start, sequence.increment)).append(";");
+              sqlWriter.append('\n').append(backend.sqlCreateSequence(sequence.name, sequence.start, sequence.increment)).append(backend.getStatementSeparator());
               if (!StringHelper.isAllWhitespace(sequence.comment)) {
                 String sqlComment = backend.sqlCreateSequenceComment(sequence.name, sequence.comment);
                 if (!StringHelper.isAllWhitespace(sqlComment)) {
-                  sqlWriter.append("\n").append(sqlComment);
+                  sqlWriter.append('\n').append(sqlComment);
                 }
                 else {
-                  sqlWriter.append(" -- ").append(sequence.comment).append("\n");
+                  sqlWriter.append(' ').append(backend.getSingleLineComment()).append(' ').append(sequence.comment).append('\n');
                 }
               }
               else {
-                sqlWriter.append("\n");
+                sqlWriter.append('\n');
               }
             }
           }
         }
         else {
-          sqlWriter.append("\n\n-- sequences not supported by backend " + backend + "\n");
+          sqlWriter.append("\n\n").append(backend.getSingleLineComment()).append(" sequences not supported by backend " + backend + "\n");
         }
       }
     }

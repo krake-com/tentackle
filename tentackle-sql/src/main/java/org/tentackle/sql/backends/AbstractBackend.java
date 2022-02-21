@@ -20,11 +20,14 @@
 package org.tentackle.sql.backends;
 
 import org.tentackle.common.Cryptor;
+import org.tentackle.common.StringHelper;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendInfo;
+import org.tentackle.sql.DefaultScriptRunner;
 import org.tentackle.sql.JoinType;
 import org.tentackle.sql.MigrationStrategy;
+import org.tentackle.sql.ScriptRunner;
 import org.tentackle.sql.SqlNameType;
 import org.tentackle.sql.SqlType;
 import org.tentackle.sql.metadata.ColumnMetaData;
@@ -102,7 +105,18 @@ public abstract class AbstractBackend implements Backend {
   protected static final String TYPE_UUID = "UUID";
 
 
-  /** use DROP IF EXISTS if supported. */
+  private static final String STATEMENT_SEPARATOR = ";";
+  private static final String SINGLE_LINE_COMMENT = "--";
+  private static final String BLOCK_COMMENT_BEGIN = "/*";
+  private static final String BLOCK_COMMENT_END   = "*/";
+
+  private static final String[] STATEMENT_SEPARATORS = { ";" };
+  private static final String[] SINGLE_LINE_COMMENTS = { "--" };
+  private static final String[] BLOCK_COMMENT_BEGINS = { "/*" };
+  private static final String[] BLOCK_COMMENT_ENDS   = { "*/" };
+
+
+  /** use DROP IF EXISTS, if supported. */
   private boolean dropIfExistsEnabled;
 
 
@@ -200,11 +214,11 @@ public abstract class AbstractBackend implements Backend {
       StringBuilder buf = new StringBuilder();
       while (stok.hasMoreTokens()) {
         String line = stok.nextToken();
-        if (!line.startsWith("-- ")) {
-          buf.append("-- ");
+        if (StringHelper.startsWithAnyOf(line, getSingleLineComments()) == null) {
+          buf.append(getSingleLineComment()).append(' ');
         }
         buf.append(line);
-        buf.append("\n");
+        buf.append('\n');
       }
       return buf.toString();
     }
@@ -392,8 +406,7 @@ public abstract class AbstractBackend implements Backend {
   public String sqlCreateTableIntro(String tableName, String comment) {
     StringBuilder buf = new StringBuilder(sqlCreateTableIntroWithoutComment(tableName));
     if (comment != null) {
-      buf.append(" -- ");
-      buf.append(comment);
+      buf.append(' ').append(getSingleLineComment()).append(' ').append(comment);
     }
     buf.append('\n');
     return buf.toString();
@@ -401,7 +414,7 @@ public abstract class AbstractBackend implements Backend {
 
   @Override
   public String sqlCreateTableClosing(String tableName, String comment) {
-    return ");\n";
+    return ")" + getStatementSeparator() + "\n";
   }
 
   @Override
@@ -465,13 +478,52 @@ public abstract class AbstractBackend implements Backend {
   }
 
   @Override
+  public String[] getStatementSeparators() {
+    return STATEMENT_SEPARATORS;
+  }
+
+  @Override
+  public String getStatementSeparator() {
+    return STATEMENT_SEPARATOR;
+  }
+
+  @Override
+  public String[] getSingleLineComments() {
+    return SINGLE_LINE_COMMENTS;
+  }
+
+  @Override
+  public String getSingleLineComment() {
+    return SINGLE_LINE_COMMENT;
+  }
+
+  @Override
+  public String[] getBlockCommentBegins() {
+    return BLOCK_COMMENT_BEGINS;
+  }
+
+  @Override
+  public String getBlockCommentBegin() {
+    return BLOCK_COMMENT_BEGIN;
+  }
+
+  @Override
+  public String[] getBlockCommentEnds() {
+    return BLOCK_COMMENT_ENDS;
+  }
+
+  @Override
+  public String getBlockCommentEnd() {
+    return BLOCK_COMMENT_END;
+  }
+
+  @Override
   public String sqlCreateColumn(String columnName, String comment, SqlType sqlType, int size, int scale,
                                         boolean nullable, Object defaultValue, boolean primaryKey, boolean withTrailingComma) {
     StringBuilder buf = new StringBuilder(sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale,
             nullable, defaultValue, primaryKey, withTrailingComma));
     if (comment != null) {
-      buf.append(" -- ");
-      buf.append(comment);
+      buf.append(' ').append(getSingleLineComment()).append(' ').append(comment);
     }
     buf.append('\n');
     return buf.toString();
@@ -539,7 +591,7 @@ public abstract class AbstractBackend implements Backend {
     return SQL_ALTER_TABLE + tableName +
            " RENAME TO " +
            newTableName +
-           ";\n";
+           getStatementSeparator() + "\n";
   }
 
   @Override
@@ -549,7 +601,7 @@ public abstract class AbstractBackend implements Backend {
             oldColumnName +
             " TO " +
             newColumnName +
-            ";\n";
+            getStatementSeparator() + "\n";
   }
 
   @Override
@@ -557,7 +609,7 @@ public abstract class AbstractBackend implements Backend {
     return  SQL_ALTER_INDEX + oldIndexName +
             " RENAME TO " +
             newIndexName +
-            ";\n";
+            getStatementSeparator() + "\n";
   }
 
   @Override
@@ -572,7 +624,7 @@ public abstract class AbstractBackend implements Backend {
     return  SQL_ALTER_TABLE + tableName +
             " ADD COLUMN " +
             sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false) +
-            ";\n";
+            getStatementSeparator() + "\n";
   }
 
   @Override
@@ -582,7 +634,7 @@ public abstract class AbstractBackend implements Backend {
     if (isDropIfExistsEnabled()) {
       buf.append(SQL_IF_EXISTS);
     }
-    buf.append(columnName).append(";\n");
+    buf.append(columnName).append(getStatementSeparator()).append('\n');
     return buf.toString();
   }
 
@@ -594,7 +646,7 @@ public abstract class AbstractBackend implements Backend {
             columnName +
             " " +
             columnTypeNullDefaultToString(columnName, sqlType, size, scale, nullable, defaultValue) +
-            ";\n";
+            getStatementSeparator() + "\n";
   }
 
   @Override
@@ -611,7 +663,7 @@ public abstract class AbstractBackend implements Backend {
             valueToLiteral(sqlType, defaultValue != null ? defaultValue : sqlType.getDefaultValue()) +
             SQL_WHERE +
             columnName +
-            " IS NULL;\n";
+            " IS NULL" + getStatementSeparator() + "\n";
   }
 
   @Override
@@ -628,7 +680,7 @@ public abstract class AbstractBackend implements Backend {
       buf.append("SET DEFAULT ");
       buf.append(valueToLiteral(sqlType, defaultValue));
     }
-    buf.append(";\n");
+    buf.append(getStatementSeparator()).append('\n');
     return buf.toString();
   }
 
@@ -679,7 +731,7 @@ public abstract class AbstractBackend implements Backend {
       // isFilteredIndexSupported already checked in model (IndexImpl)
       buf.append(SQL_WHERE).append(filterCondition);
     }
-    buf.append(";\n");
+    buf.append(getStatementSeparator()).append('\n');
     return buf.toString();
   }
 
@@ -694,7 +746,7 @@ public abstract class AbstractBackend implements Backend {
       buf.append(".");
     }
     buf.append(indexName);
-    buf.append(";\n");
+    buf.append(getStatementSeparator()).append('\n');
     return buf.toString();
   }
 
@@ -709,7 +761,7 @@ public abstract class AbstractBackend implements Backend {
       buf.append(".");
     }
     buf.append(tableNameWithoutSchema);
-    buf.append(";\n");
+    buf.append(getStatementSeparator()).append('\n');
     return buf.toString();
   }
 
@@ -992,6 +1044,15 @@ public abstract class AbstractBackend implements Backend {
     statement.setArray(pos, jdbcArray);
   }
 
+  @Override
+  public boolean isPosixEscapeSyntaxSupported() {
+    return false;
+  }
+
+  @Override
+  public ScriptRunner createScriptRunner(Connection connection) {
+    return new DefaultScriptRunner(this, connection);
+  }
 
   /**
    * Generates the first line of a CREATE TABLE statement.
