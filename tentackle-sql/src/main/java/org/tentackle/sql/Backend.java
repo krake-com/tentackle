@@ -713,6 +713,63 @@ public interface Backend {
    */
   String valueToLiteral(SqlType sqlType, Object value);
 
+
+  /**
+   * The all SQL statement separators.
+   *
+   * @return the separators, usually {@code ";"}
+   */
+  String[] getStatementSeparators();
+
+  /**
+   * The SQL statement separator used in generated code.
+   *
+   * @return the separator, usually {@code ";"}
+   */
+  String getStatementSeparator();
+
+  /**
+   * Gets all strings that begin a single line comment.
+   *
+   * @return the single line comment strings, usually {@code "--"}
+   */
+  String[] getSingleLineComments();
+
+  /**
+   * Gets the string to begin a single line comment in generated code.
+   *
+   * @return the single line comment string, usually {@code "--"}
+   */
+  String getSingleLineComment();
+
+  /**
+   * Gets all strings that begin a block comment.
+   *
+   * @return the strings to begin a block comment, usually {@code "/*"}
+   */
+  String[] getBlockCommentBegins();
+
+  /**
+   * Gets the string to begin a block comment in generated code.
+   *
+   * @return the string to begin a block comment, usually {@code "/*"}
+   */
+  String getBlockCommentBegin();
+
+  /**
+   * Gets all strings that end a block comment.
+   *
+   * @return the strings to end a block comment, usually {@code "*&#47;"}
+   */
+  String[] getBlockCommentEnds();
+
+  /**
+   * Gets the string to end a block comment in generated code.
+   *
+   * @return the string to end a block comment, usually {@code "*&#47;"}
+   */
+  String getBlockCommentEnd();
+
   /**
    * Generates the first line of a CREATE TABLE statement.
    *
@@ -807,7 +864,7 @@ public interface Backend {
    * @param tableName the tablename
    * @param oldColumnName the old column name
    * @param newColumnName the new column name
-   * @return the SQL code, null if need full spec sqlRenameAndAlterColumnType below
+   * @return the SQL code, null if full spec sqlRenameAndAlterColumnType below is necessary
    */
   String sqlRenameColumn(String tableName, String oldColumnName, String newColumnName);
 
@@ -817,7 +874,7 @@ public interface Backend {
    * @param tableName the tablename
    * @param oldIndexName the old column name
    * @param newIndexName the new column name
-   * @return the SQL code, null if not supported by the backend and we need to drop and create
+   * @return the SQL code, null if not supported by the backend, and we need to drop and create
    */
   String sqlRenameIndex(String tableName, String oldIndexName, String newIndexName);
 
@@ -981,12 +1038,12 @@ public interface Backend {
    * @param tableName the table name
    * @param columnName the column name
    * @param comment optional comment, null to clear
-   * @return the SQL code, null if use {@link #sqlRenameAndAlterColumnType} instead
+   * @return the SQL code, null if {@link #sqlRenameAndAlterColumnType} must be used instead
    */
   String sqlAlterColumnComment(String tableName, String columnName, String comment);
 
   /**
-   * Generate SQL code for joining a table to an existing select.
+   * Generate SQL-code for joining a table to an existing select.
    *
    * @param type the join type
    * @param addColumns true if columns of joined table should be added to the result set
@@ -1000,7 +1057,7 @@ public interface Backend {
                       String joinSelect, String joinSelectIdAlias, String joinAlias, String join);
 
   /**
-   * Generate SQL code for joining a table to an existing select.
+   * Generate SQL-code for joining a table to an existing select.
    *
    * @param type the join type
    * @param addColumns true if columns of joined table should be added to the result set
@@ -1093,20 +1150,20 @@ public interface Backend {
   boolean isFilteredIndexSupported();
 
   /**
-   * Some database support drop index/constraint/column IF EXISTS.<br>
+   * Some database support drop index/constraint/column {@code IF EXISTS}.<br>
    * This may be useful if migration scripts are generated against non-production databases
    * that contain test indexes etc...<br>
-   * Notice, that those temporary DDL changes should better use the temporary prefix (see {@link #isTemporaryName(String)} in
+   * Notice, that those temporary DDL changes should better use the temporary prefix (see {@link #isTemporaryName(String)}) in
    * order to be ignored by the migrator.
    *
-   * @param dropIfExists true if use IF EXISTS if the backend supports it
+   * @param dropIfExists true if {@code IF EXISTS} should be used
    */
   void setDropIfExistsEnabled(boolean dropIfExists);
 
   /**
-   * Returns whether backend should add IF EXISTS for generated DROPs.
+   * Returns whether backend should add {@code IF EXISTS} for generated DROPs.
    *
-   * @return true if IF EXISTS is turned on and supported, false if not supported or turned off
+   * @return true if {@code IF EXISTS} is turned on and supported, false if not supported or turned off
    */
   boolean isDropIfExistsEnabled();
 
@@ -1136,5 +1193,19 @@ public interface Backend {
    * @param operator the array operator
    */
   void setArray(PreparedStatement statement, int pos, SqlType type, Collection<?> elements, String operator) throws SQLException;
+
+  /**
+   * Returns whether the backend supports posix-style escapes via backslash.
+   *
+   * @return true if supported
+   */
+  boolean isPosixEscapeSyntaxSupported();
+
+  /**
+   * Creates a script runner instance.
+   *
+   * @param connection the SQL-connection
+   */
+  ScriptRunner createScriptRunner(Connection connection);
 
 }

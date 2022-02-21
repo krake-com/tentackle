@@ -44,7 +44,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
  * Handles the migration of tables.
@@ -176,7 +175,7 @@ public class TableMigrator {
    *
    * @param hints hints to control the created output
    * @param columnMigrations explicit column migrations, null if none
-   * @param renameColumns  explict column rename hints, null if none
+   * @param renameColumns  explicit column rename hints, null if none
    * @return the migration result
    * @throws ModelException if migration failed
    */
@@ -297,7 +296,7 @@ public class TableMigrator {
    *
    * @param hints the migration hints
    * @param columnMigrations explicit column migrations, null if none
-   * @param renameColumns  explict column rename hints, null if none
+   * @param renameColumns  explicit column rename hints, null if none
    * @return the sql
    * @throws ModelException if failed
    */
@@ -311,7 +310,7 @@ public class TableMigrator {
     Set<Attribute> attributesToAdd = new HashSet<>();                     // attributes to create in database
     Map<Attribute,Collection<ColumnMetaData>> attributesToMigrate = new HashMap<>();  // attributes to migrate in database
 
-    // add all old columns to the droplist first
+    // add all old columns to the drop list first
     for (ColumnMetaData column: table.getColumns()) {
       columnsToDrop.put(column.getColumnName(), column);
     }
@@ -341,7 +340,7 @@ public class TableMigrator {
               }
             }
           }
-          if (matchingColumns.size() == dataType.getColumnCount()) {    // all hints must match for multi column types
+          if (matchingColumns.size() == dataType.getColumnCount()) {    // all hints must match for multi-column types
             attributesToMigrate.put(attribute, matchingColumns);
             for (ColumnMetaData column : matchingColumns) {
               columnsToDrop.remove(column.getColumnName());
@@ -389,7 +388,7 @@ public class TableMigrator {
       Collection<ColumnMetaData> matchingColumns = new ArrayList<>();
 
       if (typeMatchingColumn != null) {
-        // check multicolumn exists with same name
+        // check multi-column exists with same name
         for (int columnIndex = 0; columnIndex < addDataType.getColumnCount(); columnIndex++) {
           String columnName = typeMatchingColumn.getColumnName() + addDataType.getColumnSuffix(columnIndex).orElse("");
           ColumnMetaData dropColumn = columnsToDrop.get(columnName);
@@ -427,7 +426,7 @@ public class TableMigrator {
           // no rename hint
           if (addHint != null || dropHint != null) {
             sqlBuf.append(backend.sqlComment(renameSql));
-            sqlBuf.append("-- disabled by hint '");
+            sqlBuf.append(backend.getSingleLineComment()).append(" disabled by hint '");
             if (addHint != null) {
               sqlBuf.append(addHint);
             }
@@ -465,7 +464,7 @@ public class TableMigrator {
         DataType<?> addDataType = addAttribute.getEffectiveDataType();
         for (ColumnMetaData dropColumn: new ArrayList<>(columnsToDrop.values())) {
           Collection<ColumnMetaData> columns = new ArrayList<>();
-          // check multicolumn exists with same name
+          // check multi-column exists with same name
           for (int columnIndex = 0; columnIndex < addDataType.getColumnCount(); columnIndex++) {
             String columnName = dropColumn.getColumnName() + addDataType.getColumnSuffix(columnIndex).orElse("");
             ColumnMetaData column = columnsToDrop.get(columnName);
@@ -494,8 +493,9 @@ public class TableMigrator {
     // last round: find the best match among same types with string distance calculations.
     // rename goes before drop/add to avoid data loss!
     for (Attribute addAttribute :
-      // start with the longest names: they have the highest number of distance combinations and thus compare best when first
-        attributesToAdd.stream().sorted((o1, o2) -> o2.getColumnName().length() - o1.getColumnName().length()).collect(Collectors.toList())) {
+         // start with the longest names: they have the highest number of distance combinations and thus compare best when first
+         attributesToAdd.stream().sorted((o1, o2) -> o2.getColumnName().length() - o1.getColumnName().length()).toList()) {
+
       String addSql = new ColumnMigrator(entity, addAttribute, backend).migrate();
       Pattern addHint = sqlMatchesHint(addSql, hints);
       if (addHint == null) {
@@ -555,7 +555,7 @@ public class TableMigrator {
         }
       }
       else {
-        if (migrationCode.startsWith("-- ")) {
+        if (StringHelper.startsWithAnyOf(migrationCode, backend.getSingleLineComments()) != null) {
           warnBuf.append(migrationCode);
         }
         else {
@@ -572,20 +572,15 @@ public class TableMigrator {
     // add explicit migrations (if there is anything to migrate at all)
     if (sqlBuf.length() > 0 && columnMigrations != null) {
       for (ColumnMigration migration: columnMigrations) {
-        sqlBuf.append(migration.getSql());
-        sqlBuf.append('\n');
+        sqlBuf.append(migration.getSql()).append('\n');
       }
     }
 
     if (sqlBuf.length() > 0 && hints != null && !hints.isEmpty()) {
       StringBuilder hintsBuf = new StringBuilder();
-      hintsBuf.append("-- hints for ");
-      hintsBuf.append(entity);
-      hintsBuf.append('\n');
+      hintsBuf.append(backend.getSingleLineComment()).append(" hints for ").append(entity).append('\n');
       for (Pattern hint: hints) {
-        hintsBuf.append("-- ");
-        hintsBuf.append(hint);
-        hintsBuf.append('\n');
+        hintsBuf.append(backend.getSingleLineComment()).append(' ').append(hint).append('\n');
       }
       sqlBuf.insert(0, hintsBuf);
     }
@@ -637,13 +632,13 @@ public class TableMigrator {
           found = true;
           break;
         }
-        else if (!IndexMigrator.isLogicallyDifferent(index, existingIndex, null)) {
+        else if (!IndexMigrator.isLogicallyDifferent(backend, index, existingIndex, null)) {
           // different name, but logically equivalent: rename if backend supports that.
           // however, check that this is the only equivalent (special case if
           // duplicate indexes already exist in the database)
           int count = 0;
           for (IndexMetaData exNdx: existingIndexes) {
-            if (!IndexMigrator.isLogicallyDifferent(index, exNdx, null)) {
+            if (!IndexMigrator.isLogicallyDifferent(backend, index, exNdx, null)) {
               count++;
             }
           }
@@ -744,7 +739,7 @@ public class TableMigrator {
 
     boolean mapSchemas = Model.getInstance().isSchemaNameMapped();
 
-    return existingForeignKey.getForeignKeyColumns().size() == 1 && // TT-model uses only foreignkeys on object-ID columns -> cannot match
+    return existingForeignKey.getForeignKeyColumns().size() == 1 && // TT-model uses only foreign keys on object-ID columns -> cannot match
 
            (existingForeignKey.getDeleteRule() == ForeignKeyAction.CASCADE) == foreignKey.isComposite() &&
 

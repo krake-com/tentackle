@@ -769,7 +769,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
   protected void writeModelIntroComment(BackendInfo backendInfo, String modelDirName) throws MojoExecutionException {
     if (generateHeaderComment) {
       try {
-        sqlWriter.append("\n-- created from ");
+        sqlWriter.append('\n').append(backendInfo.getBackend().getSingleLineComment()).append(" created from ");
         sqlWriter.append(getPathRelativeToBasedir(modelDirName));
         sqlWriter.append(" at ");
         sqlWriter.append(new Date().toString());
@@ -777,7 +777,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
         sqlWriter.append(System.getProperty("user.name"));
         sqlWriter.append(" on ");
         sqlWriter.append(getHostName());
-        sqlWriter.append("\n-- backend is ");
+        sqlWriter.append('\n').append(backendInfo.getBackend().getSingleLineComment()).append(" backend is ");
         sqlWriter.append(backendInfo.toString());
         sqlWriter.append('\n');
       }

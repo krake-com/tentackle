@@ -150,7 +150,7 @@ public class IndexMigrator {
     else {
       // check if index has changed in its configuration. If so -> drop and re-create
       StringBuilder buf = new StringBuilder();
-      if (isLogicallyDifferent(index, indexMetaData, buf)) {
+      if (isLogicallyDifferent(backend, index, indexMetaData, buf)) {
         dropSql.append(buf);
         dropSql.append(dropIndex());
         createSql.append(createIndex());
@@ -164,12 +164,13 @@ public class IndexMigrator {
   /**
    * Compares an model index with an existing database index.
    *
+   * @param backend the backend
    * @param modelIndex the index as defined in the model
    * @param dbIndex the index existing in the database
    * @param commentBuf comment buffer to show the difference, null if none
    * @return true if they are different, false if logically equal
    */
-  public static boolean isLogicallyDifferent(Index modelIndex, IndexMetaData dbIndex, StringBuilder commentBuf) {
+  public static boolean isLogicallyDifferent(Backend backend, Index modelIndex, IndexMetaData dbIndex, StringBuilder commentBuf) {
     boolean different = modelIndex.isUnique() != dbIndex.isUnique();
     if (!different) {
       // check filter condition
@@ -189,9 +190,9 @@ public class IndexMigrator {
       }
       different = !equalsIgnoreMatchingParenthesis(modelFilter, currentFilter);
       if (different && commentBuf != null) {
-        commentBuf.append("-- filter in database = ").append(encloseInParenthesis(currentFilter))
-                  .append("\n--        in model    = ")
-                  .append(encloseInParenthesis(modelFilter)).append("\n");
+        commentBuf.append(backend.getSingleLineComment()).append(" filter in database = ").append(encloseInParenthesis(currentFilter))
+                  .append('\n').append(backend.getSingleLineComment()).append("        in model    = ")
+                  .append(encloseInParenthesis(modelFilter)).append('\n');
       }
     }
     if (!different) {

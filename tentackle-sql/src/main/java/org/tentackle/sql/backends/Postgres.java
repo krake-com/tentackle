@@ -25,6 +25,7 @@ import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendPreparedStatement;
 import org.tentackle.sql.MigrationStrategy;
 import org.tentackle.sql.NonStandardCommons;
+import org.tentackle.sql.ScriptRunner;
 import org.tentackle.sql.SqlType;
 import org.tentackle.sql.metadata.ColumnMetaData;
 import org.tentackle.sql.metadata.IndexColumnMetaData;
@@ -397,6 +398,11 @@ public class Postgres extends AbstractSql92Backend {
     }
 
     return strategies.toArray(new MigrationStrategy[0]);
+  }
+
+  @Override
+  public ScriptRunner createScriptRunner(Connection connection) {
+    return new PostgresScriptRunner(this, connection);
   }
 
   @Override

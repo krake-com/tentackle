@@ -139,7 +139,7 @@ public abstract class AbstractSql92Backend extends AbstractBackend {
     if (composite) {
       buf.append(" ON DELETE CASCADE");
     }
-    buf.append(";\n");
+    buf.append(getStatementSeparator()).append('\n');
     return buf.toString();
   }
 
@@ -150,7 +150,7 @@ public abstract class AbstractSql92Backend extends AbstractBackend {
     if (isDropIfExistsEnabled()) {
       buf.append(SQL_IF_EXISTS);
     }
-    buf.append(foreignKeyName).append(";\n");
+    buf.append(foreignKeyName).append(getStatementSeparator()).append('\n');
     return buf.toString();
   }
 

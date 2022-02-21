@@ -281,7 +281,7 @@ public class ColumnMetaData {
       buf.append(defaultValue);
     }
     if (comment != null) {
-      buf.append(" -- ").append(comment);
+      buf.append(' ').append(tableMetaData.getModelMetaData().getBackend().getSingleLineComment()).append(' ').append(comment);
     }
     return buf.toString();
   }
