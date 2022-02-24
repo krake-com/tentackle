@@ -72,7 +72,8 @@ import java.util.regex.PatternSyntaxException;
  * <li>migrate &lt;tablename&gt;: explicit SQL code to migrate given table</li>
  * <li>migrate &lt;tablename&gt;#&lt;columnname&gt;[/&lt;newcolumnname&gt;]: explicit SQL code to migrate given column</li>
  * <li>rename &lt;tablename&gt;: &lt;newtablename&gt;. Rename table hint. If <em>newtablename</em> does not exist and belongs to the model and
- * <em>tablename</em> exists, but does not belong to the model, then rename <em>tablename</em> to <em>newtablename</em> and continue with migration.</li>
+ * <em>tablename</em> exists, but does not belong to the model, then rename <em>tablename</em> to <em>newtablename</em> and continue with migration.
+ * Notice: newtablename must be given without schema since tables can only be renamed within the same schema.</li>
  * <li>rename &lt;tablename&gt;#&lt;columnname&gt;: &lt;newcolumnname&gt;. Rename column hint. If <em>newcolumn</em> does not exist and belongs to the model and
  * <em>columnname</em> exists, but does not belong to the model, then rename <em>columnname</em> to <em>newcolumnname</em> and continue with migration.</li>
  * <li>drop &lt;tablename&gt;: <em>comment</em>. Drop table hint. If <em>tablename</em> exists in the database, but does not belong to

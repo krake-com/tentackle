@@ -426,7 +426,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
 
   @Override
   protected void processBackend(BackendInfoParameter backendParameter, BackendInfo backendInfo) throws MojoExecutionException {
-    MigrationHints hints = backendParameter.loadMigrationHints(backendInfo, this, verbosityLevel.isDebug(), getResourceDirs());
+    MigrationHints hints = backendParameter.loadMigrationHints(backendInfo, this, verbosityLevel.isDebug(), getResourceDirs(false));
     migrationHints.put(backendInfo.getUrl(), hints);
     getLog().info("backend: " + backendInfo);
     getLog().info("version: " + backendParameter.minVersion);
@@ -560,7 +560,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
               if (table != null) {
                 // verify that this is a user-defined table we can migrate and that we picked the correct table
                 try {
-                  List<DatabaseMetaDataTableHeader> tableHeaders = modelMetaData.getTableInDatabase(plainTableName);
+                  List<DatabaseMetaDataTableHeader> tableHeaders = modelMetaData.getTableInDatabase(plainOldTableName != null ? plainOldTableName : plainTableName);
                   if (tableHeaders != null) {
                     boolean conflicts = false;
                     int schemaCount = 0;
