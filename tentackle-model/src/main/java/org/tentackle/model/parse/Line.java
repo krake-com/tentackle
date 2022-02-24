@@ -150,7 +150,7 @@ public abstract class Line {
   @Override
   public String toString() {
     SourceInfo info = getSourceInfo();
-    return info == null ? "?" : info.toString();
+    return info == null ? ("[offset " + offset + "]") : info.toString();
   }
 
   /**

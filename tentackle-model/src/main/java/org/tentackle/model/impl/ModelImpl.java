@@ -209,18 +209,6 @@ public class ModelImpl implements Model {
       updateRelations();
     }
 
-    // indexes are parsed when the model is complete
-    for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
-      EntityImpl entity = (EntityImpl) entityInfo.getEntity();
-      for (Index idx: entity.getIndexes()) {
-        IndexImpl index = (IndexImpl) idx;
-        if (!index.isParsed()) {
-          index.parse(entity);
-        }
-      }
-      entity.validate();  // validate again
-    }
-
     if (modelChanged) {
       // run the application-specific validators
       for (CustomModelValidator validator : customModelValidators) {
@@ -335,6 +323,18 @@ public class ModelImpl implements Model {
   @Override
   public void updateRelations() throws ModelException {
     updateRelations(null);
+
+    // indexes are parsed when the model is complete
+    for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
+      EntityImpl entity = (EntityImpl) entityInfo.getEntity();
+      for (Index idx: entity.getIndexes()) {
+        IndexImpl index = (IndexImpl) idx;
+        if (!index.isParsed()) {
+          index.parse(entity);
+        }
+      }
+      entity.validate();  // validate again
+    }
   }
 
   @Override

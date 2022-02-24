@@ -88,6 +88,7 @@
     <groovy.version>3.0.9</groovy.version>
     <maven.version>3.6.3</maven.version>
     <postgresql.version>42.3.2</postgresql.version>
+    <h2.version>2.1.210</h2.version>
     <testng.version>7.4.0</testng.version>
     <slf4j.version>1.7.32</slf4j.version>
     <logback.version>1.2.10</logback.version>
@@ -259,6 +260,13 @@
       </dependency>
 
       <dependency>
+        <groupId>com.h2database</groupId>
+        <artifactId>h2</artifactId>
+        <version>${h2.version}</version>
+        <scope>test</scope>
+      </dependency>
+
+      <dependency>
         <groupId>ch.qos.logback</groupId>
         <artifactId>logback-classic</artifactId>
         <version>${logback.version}</version>
@@ -309,11 +317,6 @@
     <dependency>
       <groupId>org.testng</groupId>
       <artifactId>testng</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.postgresql</groupId>
-      <artifactId>postgresql</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

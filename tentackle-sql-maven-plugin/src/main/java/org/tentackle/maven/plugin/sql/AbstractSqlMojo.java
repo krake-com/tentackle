@@ -445,7 +445,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
           FileSetManager fileSetManager = new FileSetManager(getLog(), verbosityLevel.isDebug());
           List<String> propertiesDirNames;
           if (fileset.getDirectory() == null) {
-            propertiesDirNames = getResourceDirs();  // try all resource directories
+            propertiesDirNames = getResourceDirs(false);  // try all resource directories
             if (propertiesDirNames == null || propertiesDirNames.isEmpty()) {
               throw new MojoExecutionException(
               "no <directory> given in <fileset> of <backendProperties> and no resource directories found");
@@ -638,7 +638,10 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
                            new FileOutputStream(dumpModelIndex), Settings.getEncodingCharset()))) {
             for (File dumpedFile : dumpedFiles) {
               String dumpedName;
-              File resourceDir = getResourceDir(dumpedFile);
+              File resourceDir = getResourceDir(dumpedFile, false);
+              if (resourceDir == null) {
+                resourceDir = getResourceDir(dumpedFile, true);   // look in test resources as well!
+              }
               if (resourceDir != null) {
                 String resourcePath = getCanonicalPath(resourceDir);
                 String dumpedFilePath = getCanonicalPath(dumpedFile);

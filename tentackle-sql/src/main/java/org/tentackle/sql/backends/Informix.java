@@ -162,8 +162,14 @@ public class Informix extends AbstractSql92Backend {
   }
 
   @Override
-  public boolean supportsSequences() {
+  public boolean isSequenceSupported() {
     return true;
+  }
+
+  @Override
+  public boolean isSchemaSupported() {
+    // there is a CREATE SCHEMA, but this is a different beast
+    return false;
   }
 
   @Override

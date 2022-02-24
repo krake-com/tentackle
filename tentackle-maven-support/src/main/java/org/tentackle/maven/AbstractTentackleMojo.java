@@ -167,6 +167,11 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   private List<String> resourceDirs;
 
   /**
+   * List of test resource dirs.
+   */
+  private List<String> testResourceDirs;
+
+  /**
    * The toolfinder.
    */
   private JavaToolFinder toolFinder;
@@ -430,12 +435,14 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   /**
    * Gets the names of all resource directories.
    *
+   * @param test true if load test resource directories
    * @return the names provided by the maven project model, never null
    */
-  public List<String> getResourceDirs() {
-    if (resourceDirs == null) {
+  public List<String> getResourceDirs(boolean test) {
+    if (test && testResourceDirs == null || !test && resourceDirs == null) {
       List<String> dirs = new ArrayList<>();
-      for (Resource resource : mavenProject.getBuild().getResources()) {
+      List<Resource> resources = test ? mavenProject.getBuild().getTestResources() : mavenProject.getBuild().getResources();
+      for (Resource resource : resources) {
         if (resource != null) {
           String name = resource.getDirectory();
           if (name != null) {
@@ -444,21 +451,27 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
           }
         }
       }
-      resourceDirs = dirs;
+      if (test) {
+        testResourceDirs = dirs;
+      }
+      else {
+        resourceDirs = dirs;
+      }
     }
-    return resourceDirs;
+    return test ? testResourceDirs : resourceDirs;
   }
 
   /**
    * Checks if given file resides in a resource directory.
    *
    * @param file the file
+   * @param test true if load test resource directories
    * @return the resource dir, null if not a resource
    * @throws MojoExecutionException if calculating a canonical pathname failed
    */
-  public File getResourceDir(File file) throws MojoExecutionException {
+  public File getResourceDir(File file, boolean test) throws MojoExecutionException {
     String filePath = getCanonicalPath(file);
-    for (String resourceDirName: getResourceDirs()) {
+    for (String resourceDirName: getResourceDirs(test)) {
       File resourceDir = new File(resourceDirName);
       String resourceDirPath = getCanonicalPath(resourceDir);
       if (filePath.startsWith(resourceDirPath)) {

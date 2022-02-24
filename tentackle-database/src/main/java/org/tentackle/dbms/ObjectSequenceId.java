@@ -42,6 +42,11 @@ import java.util.Map;
 public class ObjectSequenceId extends AbstractIdSource {
 
   /**
+   * Default name of the object sequence id.
+   */
+  public static final String DEFAULT_NAME = "object_sequence_id";
+
+  /**
    * Default global multiplier to allow application-specific offsets.
    */
   public static final int GLOBAL_MULTIPLIER = 1;

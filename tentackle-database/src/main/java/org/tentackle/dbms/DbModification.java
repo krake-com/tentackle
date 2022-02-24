@@ -284,7 +284,7 @@ public class DbModification extends AbstractDbObject<DbModification> {
       int count;
       if (tableExists) {
         count = st.executeUpdate (
-            getBackend().allowsExpressionsReferringToTablesBeingUpdated() ?
+            getBackend().isExpressionReferringToTableBeingUpdatedSupported() ?
             // ordinary dbms
             (
                 "INSERT INTO " + getTableName() + " (" + CN_TRACKEDNAME + "," +
@@ -297,7 +297,7 @@ public class DbModification extends AbstractDbObject<DbModification> {
                 ")"
             )
 
-                                                                          :
+                                                                             :
 
             // some databases such as MySQL do not allow updates with expressions referring to the table being updated.
             // This does the trick though ;-)
@@ -314,7 +314,7 @@ public class DbModification extends AbstractDbObject<DbModification> {
       else  {
         // just a name, not related to any PDO or database table
         count = st.executeUpdate (
-            getSession().getBackend().allowsExpressionsReferringToTablesBeingUpdated() ?
+            getSession().getBackend().isExpressionReferringToTableBeingUpdatedSupported() ?
             // ordinary dbms
             (
                 "INSERT INTO " + getTableName() + " (" + CN_TRACKEDNAME + "," +
@@ -324,7 +324,7 @@ public class DbModification extends AbstractDbObject<DbModification> {
                 "',(SELECT MAX(" + CN_ID + ")+1 FROM " + getTableName() + "),0)"
             )
 
-                                                                                       :
+                                                                                          :
 
             // some databases such as MySQL do not allow updates with expressions referring to the table being updated.
             // This does the trick though ;-)
