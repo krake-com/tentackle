@@ -549,7 +549,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
               if (table != null) {
                 // verify that this is a user-defined table we can migrate and that we picked the correct table
                 try {
-                  List<DatabaseMetaDataTableHeader> tableHeaders = modelMetaData.getTableInDatabase(plainTableName);
+                  List<DatabaseMetaDataTableHeader> tableHeaders = modelMetaData.getTableInDatabase(plainOldTableName != null ? plainOldTableName : plainTableName);
                   if (tableHeaders != null) {
                     boolean conflicts = false;
                     int schemaCount = 0;
