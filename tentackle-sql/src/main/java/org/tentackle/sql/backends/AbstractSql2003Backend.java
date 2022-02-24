@@ -108,7 +108,7 @@ public abstract class AbstractSql2003Backend extends AbstractSql92Backend {
   }
 
   @Override
-  public boolean supportsSequences() {
+  public boolean isSequenceSupported() {
     return true;
   }
 

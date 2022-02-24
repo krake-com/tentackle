@@ -77,6 +77,7 @@ public abstract class AbstractBackend implements Backend {
   protected static final String TYPE_DECIMAL = "DECIMAL";
   protected static final String TYPE_DECIMAL_19 = "DECIMAL(19)";
   protected static final String TYPE_DOUBLE = "DOUBLE";
+  protected static final String TYPE_DOUBLE_PRECISION = "DOUBLE PRECISION";
   protected static final String TYPE_FLOAT = "FLOAT";
   protected static final String TYPE_FLOAT4 = "FLOAT4";
   protected static final String TYPE_FLOAT8 = "FLOAT8";
@@ -172,14 +173,24 @@ public abstract class AbstractBackend implements Backend {
     return name != null && name.startsWith("_");
   }
 
+  /**
+   * Checks whether given string is a reserved word.
+   *
+   * @param word the word
+   * @return true if reserved word
+   */
+  public boolean isReservedWord(String word) {
+    return getReservedWords().contains(word.toUpperCase());
+  }
+
   @Override
   public boolean isReservedTableName(String name) {
-    return false;
+    return isReservedWord(name);
   }
 
   @Override
   public boolean isReservedSchemaName(String name) {
-    return false;
+    return isReservedWord(name);
   }
 
   @Override
@@ -254,7 +265,7 @@ public abstract class AbstractBackend implements Backend {
   }
 
   @Override
-  public boolean allowsExpressionsReferringToTablesBeingUpdated() {
+  public boolean isExpressionReferringToTableBeingUpdatedSupported() {
     return true;
   }
 
@@ -1045,6 +1056,19 @@ public abstract class AbstractBackend implements Backend {
   }
 
   @Override
+  public boolean isSchemaSupported() {
+    return true;
+  }
+
+  @Override
+  public String sqlCreateSchema(String name) {
+    if (isSchemaSupported()) {
+      return "CREATE SCHEMA " + name;
+    }
+    throw new BackendException("schemas are not supported by backend " + this);
+  }
+
+  @Override
   public boolean isPosixEscapeSyntaxSupported() {
     return false;
   }
@@ -1052,6 +1076,11 @@ public abstract class AbstractBackend implements Backend {
   @Override
   public ScriptRunner createScriptRunner(Connection connection) {
     return new DefaultScriptRunner(this, connection);
+  }
+
+  @Override
+  public boolean isDatabaseInMemory(String url) {
+    return false;
   }
 
   /**

@@ -229,6 +229,11 @@ public class Oracle extends AbstractSql2003Backend {
   }
 
   @Override
+  public boolean isSchemaSupported() {
+    return false;
+  }
+
+  @Override
   public boolean isTemporaryName(String name) {
     // oracle does not allow identifiers to start with an underscore -> we use "tmp_" instead.
     return name != null && (name.startsWith("tmp_") || name.startsWith("TMP_"));
@@ -247,7 +252,7 @@ public class Oracle extends AbstractSql2003Backend {
         return true;
       }
     }
-    return false;
+    return super.isReservedSchemaName(name);
   }
 
   @Override

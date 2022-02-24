@@ -140,7 +140,7 @@ public class Postgres extends AbstractSql92Backend {
         return true;
       }
     }
-    return false;
+    return super.isReservedSchemaName(name);
   }
 
   @Override
@@ -281,7 +281,7 @@ public class Postgres extends AbstractSql92Backend {
 
 
   @Override
-  public boolean supportsSequences() {
+  public boolean isSequenceSupported() {
     return true;
   }
 

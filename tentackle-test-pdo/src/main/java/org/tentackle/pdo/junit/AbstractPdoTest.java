@@ -26,12 +26,17 @@ import org.junit.platform.commons.logging.Logger;
 import org.junit.platform.commons.logging.LoggerFactory;
 import org.opentest4j.AssertionFailedError;
 
+import org.tentackle.dbms.Db;
+import org.tentackle.model.Model;
+import org.tentackle.model.ModelException;
+import org.tentackle.pdo.test.DbTestUtilities;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
+import org.tentackle.sql.Backend;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -105,9 +110,11 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
 
 
   /**
-   * Opens the sessions and starts the modification tracker exactly once.
+   * Opens the sessions and starts the modification tracker exactly once.<br>
+   * If the database is in-memory, it will be populated before the tracker is started.
    *
    * @throws Exception if failed
+   * @see #populateDatabase(Db)
    */
   public boolean openSessionsAndStartModificationTracker() {
     synchronized (AbstractPdoTest.class) {
@@ -118,6 +125,13 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
       if (session == null) {
         session = openSession();
         context = createDomainContext();
+
+        if (session instanceof Db db) {
+          Backend backend = db.getBackend();
+          if (backend.isDatabaseInMemory(session.getUrl())) {
+            populateDatabase(db);
+          }
+        }
 
         ModificationTracker tracker = ModificationTracker.getInstance();
         tracker.setSession(session.clone(null));
@@ -233,6 +247,24 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
     }
     s.makeCurrent();
     return s;
+  }
+
+  /**
+   * Populates the database.<br>
+   * The default implementation loads the model from the classpath.
+   * Override this method to provide additional model sources.
+   *
+   * @param db the low-level database session
+   * @see Model#loadFromResources(boolean)
+   */
+  protected void populateDatabase(Db db) {
+    try {
+      String script = DbTestUtilities.getInstance().createPopulateScript(db);
+      DbTestUtilities.getInstance().runScript(db, script);
+    }
+    catch (ModelException e) {
+      throw new AssertionFailedError("populating the database failed", e);
+    }
   }
 
   /**

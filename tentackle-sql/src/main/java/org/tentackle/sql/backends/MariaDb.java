@@ -51,7 +51,7 @@ public class MariaDb extends MySql {
   }
 
   @Override
-  public boolean supportsSequences() {
+  public boolean isSequenceSupported() {
     return true;
   }
 

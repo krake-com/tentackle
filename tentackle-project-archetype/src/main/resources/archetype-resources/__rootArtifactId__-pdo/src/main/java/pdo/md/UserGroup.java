@@ -17,7 +17,7 @@ import org.tentackle.session.TableName;
 
 /*
  * @{
- * tablename = md.usergroup
+ * tablename = md.usergroups
  * classid   = 1002
  * mapping   = ${symbol_dollar}model/${symbol_dollar}tablename.map
  * @}

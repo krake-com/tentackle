@@ -86,20 +86,17 @@ public class SqlScriptTest extends AbstractPdoTest {
 
   @Test(groups = "local")
   public void runScript() {
-    if (getSession() instanceof Db) {
-      Db db = (Db) getSession();    // this is really low level...
+    if (getSession() instanceof Db db) {
       try (StatementWrapper statement = db.createStatement()) {
         // in case test failed in the middle before
         statement.executeUpdate("DROP TABLE IF EXISTS blah");
       }
-      // we're within a transaction -> connection is attached
-      ScriptRunner scriptRunner = db.getBackend().createScriptRunner(db.connection().getConnection());
-      List<ScriptRunnerResult> results = scriptRunner.run(SCRIPT);
+      List<ScriptRunnerResult> results = db.runScript("sqlScriptTest", SCRIPT);
       assertEquals(results.size(), 12);
       int ndx = 1;
       StringBuilder buf = new StringBuilder();
       for (ScriptRunnerResult result : results) {
-        Reporter.log(ndx++ + ": " + result + " <br>");
+        Reporter.log(ndx++ + ": " + result + " <br>", true);
         buf.append(result).append('\n');
       }
       assertEquals(buf.toString(), OUTPUT);

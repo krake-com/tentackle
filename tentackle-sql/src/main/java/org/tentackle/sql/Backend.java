@@ -257,7 +257,6 @@ public interface Backend {
    */
   boolean isMatchingUrl(String url);
 
-
   /**
    * Checks whether the backend belongs to the given name.
    *
@@ -265,7 +264,6 @@ public interface Backend {
    * @return true if matches
    */
   boolean isMatchingName(String name);
-
 
   /**
    * Gets the name of the backend.<br>
@@ -436,14 +434,15 @@ public interface Backend {
    *
    * @return true if allowed
    */
-  boolean allowsExpressionsReferringToTablesBeingUpdated();
+  boolean isExpressionReferringToTableBeingUpdatedSupported();
 
   /**
-   * True if backend provides transactionless sequences.
+   * True if backend provides locking-free sequences.<br>
+   * Sequences must not take part in transactions, i.e. no read- or write-locks!
    *
    * @return true if database supports sequences
    */
-  boolean supportsSequences();
+  boolean isSequenceSupported();
 
   /**
    * Gets the string before the table alias.<br>
@@ -487,6 +486,15 @@ public interface Backend {
    * @return the SQL code
    */
   String sqlNextFromSequence(String name);
+
+  /**
+   * Creates the SQL string to create a schema.
+   *
+   * @param name the schema name
+   * @return the SQL code
+   * @see #isSchemaSupported()
+   */
+  String sqlCreateSchema(String name);
 
   /**
    * Create comment sql code that is interpreted as a comment by the backend.
@@ -1195,6 +1203,14 @@ public interface Backend {
   void setArray(PreparedStatement statement, int pos, SqlType type, Collection<?> elements, String operator) throws SQLException;
 
   /**
+   * Returns whether the backend supports schemas.
+   *
+   * @return true if supported
+   * @see #sqlCreateSchema(String)
+   */
+  boolean isSchemaSupported();
+
+  /**
    * Returns whether the backend supports posix-style escapes via backslash.
    *
    * @return true if supported
@@ -1207,5 +1223,14 @@ public interface Backend {
    * @param connection the SQL-connection
    */
   ScriptRunner createScriptRunner(Connection connection);
+
+  /**
+   * Returns whether the URL denotes an in-memory database.<br>
+   * Used by test suites to decide whether to populate the database before running the tests.
+   *
+   * @param url the JDBC url
+   * @return true if in-memory
+   */
+  boolean isDatabaseInMemory(String url);
 
 }

@@ -20,10 +20,11 @@
 
 package org.tentackle.dbms;
 
-import java.util.StringTokenizer;
 import org.tentackle.common.Service;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.Backend;
+
+import java.util.StringTokenizer;
 
 
 /**
@@ -52,7 +53,7 @@ public class DefaultIdSourceConfigurator implements IdSourceConfigurator {
     if (idConfig == null) {
       // default from backend
       Backend backend = db.getBackend();
-      if (backend.supportsSequences()) {
+      if (backend.isSequenceSupported()) {
         idConfig = SEQUENCE_BASED + ":object_sequence_id";
       }
       else  {

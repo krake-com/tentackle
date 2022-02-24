@@ -53,6 +53,7 @@ import org.tentackle.session.VersionIncompatibleException;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendInfo;
+import org.tentackle.sql.ScriptRunnerResult;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -214,8 +215,6 @@ import java.util.function.Supplier;
  * @author harald
  */
 public class Db implements Session, Cloneable {
-
-
 
   /**
    * property key for IdSource.
@@ -964,6 +963,21 @@ public class Db implements Session, Cloneable {
    */
   public RemoteDbSession getRemoteDbSession() {
     return resources.rses;
+  }
+
+
+  /**
+   * Runs an SQL script.
+   *
+   * @param txName the transaction name
+   * @param script the SQL script
+   * @return the results
+   */
+  public List<ScriptRunnerResult> runScript(String txName, String script) {
+    return transaction(txName, () -> {
+      // connection is safely attached only within a transaction
+      return getBackend().createScriptRunner(connection().getConnection()).run(script);
+    });
   }
 
 

@@ -250,7 +250,7 @@ public class CreateSqlMojo extends AbstractSqlMojo {
   protected void createSequences(Backend backend) throws MojoExecutionException {
     try {
       if (sequences != null && !sequences.isEmpty()) {
-        if (backend.supportsSequences()) {
+        if (backend.isSequenceSupported()) {
           for (SequenceParameter sequence : sequences) {
             if (sequence.name != null) {
               sqlWriter.append('\n').append(backend.sqlCreateSequence(sequence.name, sequence.start, sequence.increment)).append(backend.getStatementSeparator());

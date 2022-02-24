@@ -99,13 +99,18 @@ public class MySql extends AbstractSql92Backend {
   }
 
   @Override
+  public boolean isSchemaSupported() {
+    return false;
+  }
+
+  @Override
   public boolean isReservedSchemaName(String name) {
     for (String reserved_schema: RESERVED_SCHEMAS) {
       if (reserved_schema.equalsIgnoreCase(name)) {
         return true;
       }
     }
-    return false;
+    return super.isReservedSchemaName(name);
   }
 
   @Override
@@ -124,7 +129,7 @@ public class MySql extends AbstractSql92Backend {
   }
 
   @Override
-  public boolean allowsExpressionsReferringToTablesBeingUpdated() {
+  public boolean isExpressionReferringToTableBeingUpdatedSupported() {
     return false;
   }
 

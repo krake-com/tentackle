@@ -51,12 +51,23 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>tentackle-persistence</artifactId>
       <version>${project.version}</version>
-      <scope>test</scope>
+      <optional>true</optional>   <!-- don't mix up classpath order -->
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tentackle-domain</artifactId>
       <version>${project.version}</version>
+      <optional>true</optional>   <!-- don't mix up classpath order -->
+    </dependency>
+
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
       <scope>test</scope>
     </dependency>
 
@@ -77,9 +88,37 @@
         <directory>src/test/filtered-resources</directory>
         <filtering>true</filtering>
       </testResource>
+      <testResource>
+        <directory>src/test/resources</directory>
+      </testResource>
     </testResources>
 
     <plugins>
+
+      <plugin>
+        <groupId>org.tentackle</groupId>
+        <artifactId>tentackle-maven-plugin</artifactId>
+        <version>${project.version}</version>
+        <executions>
+          <execution>
+            <id>analyze</id>
+            <goals>
+              <goal>analyze</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>test-analyze</id>
+            <goals>
+              <goal>test-analyze</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <verbosity>info</verbosity>
+          <showCompileOutput>true</showCompileOutput>
+          <index>META-INF/RESOURCE-INDEX.LIST</index>
+        </configuration>
+      </plugin>
 
       <plugin>
         <!-- create the SQL-files -->
