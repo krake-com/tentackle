@@ -114,7 +114,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
    * If the database is in-memory, it will be populated before the tracker is started.
    *
    * @throws Exception if failed
-   * @see #populateDatabase(Db)
+   * @see #createDatabaseTables(Db)
    */
   public boolean openSessionsAndStartModificationTracker() {
     synchronized (AbstractPdoTest.class) {
@@ -126,10 +126,12 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
         session = openSession();
         context = createDomainContext();
 
+        boolean populate = false;
         if (session instanceof Db db) {
           Backend backend = db.getBackend();
           if (backend.isDatabaseInMemory(session.getUrl())) {
-            populateDatabase(db);
+            createDatabaseTables(db);
+            populate = true;
           }
         }
 
@@ -137,6 +139,11 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
         tracker.setSession(session.clone(null));
         tracker.setSleepInterval(500);   // fast polling for tests
         tracker.start();
+
+        if (populate) {
+          populateDatabase();
+        }
+
         return true;
       }
       return false;
@@ -250,14 +257,14 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   }
 
   /**
-   * Populates the database.<br>
+   * Creates the database tables.<br>
    * The default implementation loads the model from the classpath.
    * Override this method to provide additional model sources.
    *
    * @param db the low-level database session
    * @see Model#loadFromResources(boolean)
    */
-  protected void populateDatabase(Db db) {
+  protected void createDatabaseTables(Db db) {
     try {
       String script = DbTestUtilities.getInstance().createPopulateScript(db);
       DbTestUtilities.getInstance().runScript(db, script);
@@ -265,6 +272,13 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
     catch (ModelException e) {
       throw new AssertionFailedError("populating the database failed", e);
     }
+  }
+
+  /**
+   * Populates the database with test data.
+   */
+  protected void populateDatabase() {
+    // default does nothing
   }
 
   /**
