@@ -22,8 +22,8 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.shared.model.fileset.FileSet;
-import org.wurbelizer.misc.Settings;
 
+import org.tentackle.common.Settings;
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendInfo;
 import org.tentackle.sql.ScriptRunnerResult;

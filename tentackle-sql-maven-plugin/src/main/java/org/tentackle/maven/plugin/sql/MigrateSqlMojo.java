@@ -24,8 +24,8 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
-import org.wurbelizer.misc.Settings;
 
+import org.tentackle.common.Settings;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.Entity;
 import org.tentackle.model.EntityAliases;
@@ -904,8 +904,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
 
     File file = new File(dir, asTemplate ? fileName.replace('.', '-') + ".ftl" : fileName);
     try (Writer writer = Files.newBufferedWriter(file.toPath(), Settings.getEncodingCharset(),
-                                                                StandardOpenOption.CREATE,
-                                                                StandardOpenOption.TRUNCATE_EXISTING)) {
+                                                 StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
       writer.write(sql);
     }
     catch (IOException e) {

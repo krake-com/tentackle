@@ -20,9 +20,9 @@ package org.tentackle.maven.plugin.wizard;
 
 import freemarker.template.Configuration;
 import freemarker.template.TemplateException;
-import org.wurbelizer.misc.Settings;
 
 import org.tentackle.bind.Bindable;
+import org.tentackle.common.Settings;
 import org.tentackle.fx.Fx;
 import org.tentackle.maven.GeneratedFile;
 import org.tentackle.model.Entity;

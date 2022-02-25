@@ -19,7 +19,8 @@ package org.tentackle.maven;
 
 import freemarker.template.Configuration;
 import freemarker.template.TemplateException;
-import org.wurbelizer.misc.Settings;
+
+import org.tentackle.common.Settings;
 
 import java.io.File;
 import java.io.FileWriter;
