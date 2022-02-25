@@ -15,6 +15,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
 package org.tentackle.maven.plugin.wizard;
 
 import javafx.application.Platform;
@@ -49,7 +50,7 @@ import java.util.concurrent.CountDownLatch;
  * <p>
  * Best invoked from within the directory of the maven parent of the project.
  */
-@Mojo(name = "pdo", inheritByDefault = false, aggregator = true)
+@Mojo(name = "pdo", aggregator = true)
 public class PdoMojo extends AbstractWizardMojo {
 
   private List<PdoProfile> pdoProfiles;

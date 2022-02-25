@@ -26,7 +26,7 @@ import org.apache.maven.plugins.annotations.Mojo;
  * Copies the default templates to the configured templateDir.<br>
  * Needs to be executed only to restore the templates to their defaults.
  */
-@Mojo(name = "init", inheritByDefault = false, aggregator = true)
+@Mojo(name = "init", aggregator = true)
 public class InitMojo extends AbstractWizardMojo {
 
   @Override
