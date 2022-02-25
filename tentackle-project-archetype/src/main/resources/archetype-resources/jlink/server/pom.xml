@@ -74,6 +74,7 @@
         </executions>
         <configuration>
           <sqlDir>${symbol_dollar}{project.build.directory}/sql</sqlDir>
+          <createSchemas>false</createSchemas> <!-- use provided sql script instead -->
           <prependFilesets>
             <prependFileset>
               <directory>${symbol_dollar}{project.basedir}/src/sql</directory>

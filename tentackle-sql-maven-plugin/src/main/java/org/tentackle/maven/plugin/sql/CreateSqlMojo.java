@@ -43,7 +43,9 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Generates an SQL-script to create the database tables according to the model.
@@ -61,23 +63,36 @@ public class CreateSqlMojo extends AbstractSqlMojo {
   private String sqlFileName;
 
   /**
+   * Generate SQL to create schemas.<br>
+   * If the model contains table definitions with schemas and the database doesn't support it,
+   * the {@link #mapSchemas} flag must be set.
+   */
+  @Parameter(defaultValue = "true")
+  private boolean createSchemas;
+
+  /**
    * Optional list of sequences to create.
    */
   @Parameter
-  protected List<SequenceParameter> sequences;
+  private List<SequenceParameter> sequences;
 
   /**
    * Optional filesets to prepend to the generated sql file.
    */
   @Parameter
-  protected List<FileSet> prependFilesets;
+  private List<FileSet> prependFilesets;
 
   /**
    * Optional filesets to append to the generated sql file.
    */
   @Parameter
-  protected List<FileSet> appendFilesets;
+  private List<FileSet> appendFilesets;
 
+
+  /**
+   * Set of created schemas so far.
+   */
+  private Set<String> createdSchemas = new HashSet<>();
 
   @Override
   protected String getSqlFileName() {
@@ -165,17 +180,28 @@ public class CreateSqlMojo extends AbstractSqlMojo {
               if (checkReservedTables && checkAndLogReservedTable(entity)) {
                 errorCount++;
               }
-              if (entity.getSchemaName() != null && backendInfo.getBackend().isReservedSchemaName(entity.getSchemaName())) {
-                getLog().error("schema '" + entity.getSchemaName() + "' is a reserved word for backend " + backendInfo.getBackend());
+
+              Backend backend = backendInfo.getBackend();
+
+              if (entity.getSchemaName() != null && backend.isReservedSchemaName(entity.getSchemaName())) {
+                getLog().error("schema '" + entity.getSchemaName() + "' is a reserved word for backend " + backend);
                 errorCount++;
               }
+
+              if (createSchemas) {
+                String schemaName = entity.getSchemaName();
+                if (!StringHelper.isAllWhitespace(schemaName) && createdSchemas.add(schemaName)) {
+                  sqlWriter.append('\n').append(backend.sqlCreateSchema(schemaName)).append(backend.getStatementSeparator()).append('\n');
+                }
+              }
+
               // create table
               sqlWriter.append('\n');
-              sqlWriter.append(entity.sqlCreateTable(backendInfo.getBackend()));
+              sqlWriter.append(entity.sqlCreateTable(backend));
 
               // create indexes
               for (Index index : entity.getTableIndexes()) {
-                sqlWriter.append(index.sqlCreateIndex(backendInfo.getBackend(), entity));
+                sqlWriter.append(index.sqlCreateIndex(backend, entity));
               }
             }
           }
