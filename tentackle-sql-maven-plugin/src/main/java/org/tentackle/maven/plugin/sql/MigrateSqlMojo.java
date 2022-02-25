@@ -103,7 +103,13 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
    * Any after-all SQL will go into the folder with the highest number.
    */
   @Parameter
-  protected boolean split;
+  private boolean split;
+
+  /**
+   * Fail if unexpected tables are found in the database.
+   */
+  @Parameter(defaultValue = "false")
+  private boolean failOnUnexpectedTables;
 
   /**
    * Fail if the model differs from the database meta data.<br>
@@ -112,13 +118,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
    * Same as {@code validate} goal.
    */
   @Parameter
-  protected boolean validate;
-
-  /**
-   * Fail if unexpected tables are found in the database.
-   */
-  @Parameter(defaultValue = "false")
-  protected boolean failOnUnexpectedTables;
+  private boolean validate;
 
 
   /**
@@ -185,6 +185,15 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
    * Found alien tables.
    */
   private Map<String, DatabaseMetaDataTableHeader> alienTablesMap;
+
+
+
+  /**
+   * Enables the meta data validation.
+   */
+  protected void enableValidation() {
+    validate = true;
+  }
 
   @Override
   protected void openResources(BackendInfo backendInfo) throws MojoExecutionException {

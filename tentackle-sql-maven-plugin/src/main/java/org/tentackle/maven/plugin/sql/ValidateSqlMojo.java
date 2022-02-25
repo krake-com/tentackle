@@ -31,7 +31,7 @@ public class ValidateSqlMojo extends MigrateSqlMojo {
 
   @Override
   protected boolean validate() throws MojoExecutionException {
-    validate = true;    // turn on validate option
+    enableValidation();
     return super.validate();
   }
 }
