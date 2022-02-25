@@ -34,7 +34,7 @@ import java.util.List;
  * The mojo fails if missing translations in the database would raise a {@link java.util.MissingResourceException}.<br>
  * Notice: the application's resource bundles are verified via the <code>tentackle-check-maven-plugin</code> during the build process.
  */
-@Mojo(name = "verify", aggregator = true, inheritByDefault = false,
+@Mojo(name = "verify", aggregator = true,
       requiresDependencyResolution = ResolutionScope.COMPILE)
 public class VerifyMojo extends AbstractVerifyMojo {
 
