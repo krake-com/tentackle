@@ -39,6 +39,9 @@ public record ScriptRunnerResult(String sql, int offset, String warnings, int co
       int[] width = new int[columnCount];
       int r = 0;
       for (Object result : results) {
+        if (result == null) {
+          result = "null";
+        }
         int colWidth = result.toString().length();
         int colNdx = r++ % columnCount;
         if (width[colNdx] < colWidth) {

@@ -26,6 +26,7 @@ import org.apache.maven.settings.crypto.SettingsDecryptionResult;
 import org.apache.maven.shared.model.fileset.FileSet;
 
 import org.tentackle.common.StringHelper;
+import org.tentackle.maven.AbstractTentackleMojo;
 import org.tentackle.sql.BackendInfo;
 
 import java.lang.reflect.InvocationTargetException;
@@ -111,11 +112,11 @@ public class BackendInfoParameter {
   /**
    * Creates a backend info from this parameter.
    *
-   * @param mojo the sql mojo
+   * @param mojo the mojo
    * @return the backend info
    * @throws MojoExecutionException if credentials could not be determined from server ID
    */
-  public BackendInfo createBackendInfo(AbstractSqlMojo mojo) throws MojoExecutionException {
+  public BackendInfo createBackendInfo(AbstractTentackleMojo mojo) throws MojoExecutionException {
     if (schemaNames != null) {
       schemas = new ArrayList<>();
       StringTokenizer stok = new StringTokenizer(schemaNames, ",");
