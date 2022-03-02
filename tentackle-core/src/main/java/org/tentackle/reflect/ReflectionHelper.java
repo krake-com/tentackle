@@ -366,8 +366,8 @@ public final class ReflectionHelper {
   @SuppressWarnings("unchecked")
   public static <T> Class<T> extractGenericInnerTypeClass(Type type) {
     Class<T> clazz = null;
-    if (type instanceof ParameterizedType parameterizedType) {
-      Type[] typeArguments = parameterizedType.getActualTypeArguments();
+    if (type instanceof ParameterizedType) {
+      Type[] typeArguments = ((ParameterizedType) type).getActualTypeArguments();
       if (typeArguments != null && typeArguments.length == 1) {
         Type typeArgument = typeArguments[0];
         if (typeArgument instanceof Class) {
