@@ -35,6 +35,8 @@ import org.tentackle.common.Constants;
  */
 public class FxControllerBundleAnalyzeHandler extends BundleAnalyzeHandler {
 
+  private static final String NONE_LITERAL = "\"" + Constants.NAME_NONE + "\"";
+
   @Override
   protected String getBundleName(Element element, String annotationName) {
 
@@ -47,7 +49,8 @@ public class FxControllerBundleAnalyzeHandler extends BundleAnalyzeHandler {
         for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : annoMirror.getElementValues().entrySet()) {
           if ("resources".equals(entry.getKey().getSimpleName().toString())) {
             bundleName = entry.getValue().toString();
-            if (Constants.NAME_NONE.equals(bundleName)) {
+            if (NONE_LITERAL.equals(bundleName) ||    // written as a string
+                bundleName.endsWith("_NONE")) {       // no deps to fx here, hence not FxControllerService.RESOURCES_NONE
               bundleName = null; // explicitly no bundle
             }
             else {
