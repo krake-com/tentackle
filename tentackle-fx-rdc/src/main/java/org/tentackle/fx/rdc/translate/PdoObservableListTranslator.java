@@ -20,6 +20,7 @@ package org.tentackle.fx.rdc.translate;
 
 import javafx.collections.ObservableList;
 
+import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.ValueTranslatorService;
 import org.tentackle.fx.component.FxTableView;
@@ -29,6 +30,7 @@ import org.tentackle.fx.rdc.Rdc;
 import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.fx.translate.ObservableListTranslator;
 import org.tentackle.pdo.Pdo;
+import org.tentackle.pdo.PdoRuntimeException;
 import org.tentackle.pdo.PersistentDomainObject;
 
 import java.util.List;
@@ -57,15 +59,37 @@ public class PdoObservableListTranslator<T extends PersistentDomainObject<T>, C 
 
   @Override
   protected void configureTableView(FxTableView<T> tableView, Class<T> elemClass) {
+
+    PdoRuntimeException pdoRuntimeException = null;   // != null if elemClass leads to a non-existing mapping
+
     if (PersistentDomainObject.class.isAssignableFrom(elemClass)) {
       // is a PDO: get table configuration from gui provider
-      T pdo = Pdo.create(elemClass);
-      GuiProvider<T> provider = Rdc.createGuiProvider(pdo);
-      TableConfiguration<T> configuration = createTableConfiguration(provider);
-      configuration.configure(tableView);
+      T pdo;
+      try {
+        pdo = Pdo.create(elemClass);
+      }
+      catch (PdoRuntimeException px) {
+        // no such mapping: may be an abstract type such as PersistentDomainObject
+        pdoRuntimeException = px;
+        pdo = null;
+      }
+      if (pdo != null) {
+        GuiProvider<T> provider = Rdc.createGuiProvider(pdo);
+        TableConfiguration<T> configuration = createTableConfiguration(provider);
+        configuration.configure(tableView);
+        return;
+      }
+      // else try super method and if that fails, throw the original exception
     }
-    else {
+
+    try {
       super.configureTableView(tableView, elemClass);
+    }
+    catch (TentackleRuntimeException tx) {
+      if (pdoRuntimeException != null) {
+        throw pdoRuntimeException;
+      }
+      throw tx;
     }
   }
 

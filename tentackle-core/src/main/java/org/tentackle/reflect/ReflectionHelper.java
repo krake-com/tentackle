@@ -350,12 +350,14 @@ public final class ReflectionHelper {
    * The type must be a parameterized generic type (usually determined by the binding)
    * for a single type argument.<br>
    * Works for wildcard types as well.<br>
-   * For example:
+   * Examples:
    * <pre>
-   *   &#64;Bindable
-   *   List&lt;? extends Bundle&gt;
+   *   &#64;Bindable List&lt;OrgUnit&gt;
+   *   &#64;Bindable List&lt;OrgUnit&lt;?&gt;&gt;
+   *   &#64;Bindable List&lt;? extends OrgUnit&gt;
+   *   &#64;Bindable List&lt;? extends OrgUnit&lt;?&gt;&gt;
    * </pre>
-   * Will return <code>Bundle.class</code>.
+   * Will return <code>OrgUnit.class</code>.
    *
    * @param type the type
    * @param <T> the inner type
@@ -364,8 +366,8 @@ public final class ReflectionHelper {
   @SuppressWarnings("unchecked")
   public static <T> Class<T> extractGenericInnerTypeClass(Type type) {
     Class<T> clazz = null;
-    if (type instanceof ParameterizedType) {
-      Type[] typeArguments = ((ParameterizedType) type).getActualTypeArguments();
+    if (type instanceof ParameterizedType parameterizedType) {
+      Type[] typeArguments = parameterizedType.getActualTypeArguments();
       if (typeArguments != null && typeArguments.length == 1) {
         Type typeArgument = typeArguments[0];
         if (typeArgument instanceof Class) {
@@ -382,6 +384,18 @@ public final class ReflectionHelper {
             if (typeArgument instanceof Class) {
               clazz = (Class<T>) typeArgument;
             }
+            else if (typeArgument instanceof ParameterizedType) {
+              Type rawType = ((ParameterizedType) typeArgument).getRawType();
+              if (rawType instanceof Class) {
+                clazz = (Class<T>) rawType;
+              }
+            }
+          }
+        }
+        else if (typeArgument instanceof ParameterizedType) {
+          Type rawType = ((ParameterizedType) typeArgument).getRawType();
+          if (rawType instanceof Class) {
+            clazz = (Class<T>) rawType;     // something like OrgUnit<?>
           }
         }
       }
