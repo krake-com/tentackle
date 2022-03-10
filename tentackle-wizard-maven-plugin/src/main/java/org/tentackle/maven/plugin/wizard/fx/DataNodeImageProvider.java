@@ -16,11 +16,20 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.maven.plugin.wizard.browser;
+package org.tentackle.maven.plugin.wizard.fx;
 
-import org.tentackle.fx.table.TableConfigurationProviderService;
+import org.tentackle.fx.DefaultImageProvider;
+import org.tentackle.fx.ImageProviderService;
 
-@TableConfigurationProviderService(value = DataDiff.class, noBundle = true)
-public class DataDiffTableConfigurationProvider extends DataNodeTableConfigurationProvider<DataDiff> {
+/**
+ * PDO browser image provider.
+ */
+@ImageProviderService(DataNodeImageProvider.REALM)
+public class DataNodeImageProvider extends DefaultImageProvider {
+
+  /**
+   * The admin image realm.
+   */
+  public static final String REALM = "data";
 
 }

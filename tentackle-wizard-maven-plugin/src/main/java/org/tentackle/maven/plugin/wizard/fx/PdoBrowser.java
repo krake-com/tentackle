@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.maven.plugin.wizard.browser;
+package org.tentackle.maven.plugin.wizard.fx;
 
 import javafx.application.Platform;
 import javafx.event.Event;
@@ -61,7 +61,7 @@ import java.util.List;
  * Dialog to browse PDOs and generate test code.
  */
 @FxControllerService(resources = FxControllerService.RESOURCES_NONE)
-public class DataDialog extends AbstractFxController implements DomainContextProvider {
+public class PdoBrowser extends AbstractFxController implements DomainContextProvider {
 
   /**
    * Shows the modal dialog.
@@ -71,7 +71,7 @@ public class DataDialog extends AbstractFxController implements DomainContextPro
    */
   public static Stage show(BrowseMojo mojo, DomainContext context) throws MojoExecutionException {
     Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
-    DataDialog diffDialog = Fx.load(DataDialog.class);
+    PdoBrowser diffDialog = Fx.load(PdoBrowser.class);
     Scene scene = Fx.createScene(diffDialog.getView());
     stage.setScene(scene);
     stage.setTitle("PDO Browser");
@@ -107,14 +107,14 @@ public class DataDialog extends AbstractFxController implements DomainContextPro
   private TablePopup<PdoWrapper> pdosTablePopup;
   private DataObject dataObject;
   private DataObject oldDataObject;
-  private DataView dataView;
+  private PdoView pdoView;
   @SuppressWarnings("rawtypes")
   private PdoFinder finder;
 
   @FXML
   private void initialize() {
-    dataView = Fx.load(DataView.class);
-    splitPane.getItems().add(dataView.getView());
+    pdoView = Fx.load(PdoView.class);
+    splitPane.getItems().add(pdoView.getView());
 
     profileField.addViewToModelListener(this::updateEntityFieldProperties);
     rootOnlyField.addViewToModelListener(this::updateEntityFieldProperties);
@@ -165,7 +165,7 @@ public class DataDialog extends AbstractFxController implements DomainContextPro
     pdosTablePopup.setColumnMenuEnabled(false);
     pdosTablePopup.loadPreferences();
     double leftWidth = pdosTableView.getPrefWidth();
-    double totalWidth = pdosTableView.getPrefWidth() + dataView.getPrefWidth();
+    double totalWidth = pdosTableView.getPrefWidth() + pdoView.getPrefWidth();
     if (leftWidth >= 1.0 && totalWidth > leftWidth) {
       splitPane.setDividerPosition(0,  leftWidth / totalWidth);
     }
@@ -193,10 +193,10 @@ public class DataDialog extends AbstractFxController implements DomainContextPro
 
   private void showDiff() {
     if (dataObject != null) {
-      dataView.setDiff(DataDiff.compare(getDomainContext(), dataObject, oldDataObject), "current", oldDataObject != null ? "memorized" : "");
+      pdoView.setDiff(DataDiff.compare(dataObject, oldDataObject), "current", oldDataObject != null ? "memorized" : "");
     }
     else {
-      dataView.setDiff(null, "", "");
+      pdoView.setDiff(null, "", "");
     }
   }
 
