@@ -16,15 +16,31 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.maven.plugin.wizard.browser;
+package org.tentackle.maven.plugin.wizard.fx;
+
+import javafx.scene.control.TreeItem;
 
 import org.tentackle.fx.table.DefaultTableConfigurationProvider;
+import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.fx.table.TableConfigurationProviderService;
 
 /**
- * Table configuration provider for the PDO table in {@link DataDialog}.
+ * Configuration provider for DataNode tables and tree tables.
+ *
+ * @param <T> the node type
  */
-@TableConfigurationProviderService(value = PdoWrapper.class, noBundle = true)
-public class PdoWrapperTableConfigurationProvider extends DefaultTableConfigurationProvider<PdoWrapper> {
+@TableConfigurationProviderService(value = DataNode.class, noBundle = true)
+public class DataNodeTableConfigurationProvider<T extends DataNode> extends DefaultTableConfigurationProvider<T> {
+
+  @Override
+  protected TableConfiguration<T> createTableConfiguration(Class<T> clazz, String name) {
+    return new DataNodeTableConfiguration<>(clazz, name) {
+      @Override
+      @SuppressWarnings({ "unchecked", "rawtypes" })
+      public TreeItem<T> createTreeItem(T object) {
+        return new DataNodeTreeItem(object, getPredicate());
+      }
+    };
+  }
 
 }

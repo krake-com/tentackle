@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.maven.plugin.wizard.browser;
+package org.tentackle.maven.plugin.wizard.fx;
 
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
@@ -39,7 +39,7 @@ import org.tentackle.fx.rdc.table.TablePopup;
  * Shows the contents of a PDO with optional diff to a savepoint.
  */
 @FxControllerService(url = FxControllerService.FXML_NONE, resources = FxControllerService.RESOURCES_NONE)
-public class DataView extends AbstractFxController {
+public class PdoView extends AbstractFxController {
 
   private static final String STYLE_MISMATCH = "diff-mismatch";     // css style for differences
 
@@ -53,7 +53,7 @@ public class DataView extends AbstractFxController {
   /**
    * Creates an object diff view.
    */
-  public DataView() {
+  public PdoView() {
     diffNode = Fx.createNode(TreeTableView.class);
     diffNode.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
     FxBorderPane pane = Fx.createNode(BorderPane.class);    // must be an FxContainer (otherwise binding doesnt work)

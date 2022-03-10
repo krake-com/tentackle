@@ -16,10 +16,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.maven.plugin.wizard.browser;
+package org.tentackle.maven.plugin.wizard.fx;
 
 import org.tentackle.bind.Bindable;
-import org.tentackle.pdo.DomainContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -181,13 +180,12 @@ public class DataDiff implements DataNode {
   /**
    * Compares the data of a PDO between two locations.
    *
-   * @param context the domain context
    * @param left the data of the left location, must not be null
    * @param right the data of the right location, null if just show the data and don't compare
    * @return the comparison
    */
-  public static DataDiff compare(DomainContext context, DataObject left, DataObject right) {
-    return compareImpl(context, Objects.requireNonNull(left), right, right == null);
+  public static DataDiff compare(DataObject left, DataObject right) {
+    return compareImpl(Objects.requireNonNull(left), right, right == null);
   }
 
 
@@ -195,7 +193,7 @@ public class DataDiff implements DataNode {
   // --- all static private below ---
 
   @SuppressWarnings("unchecked")
-  private static DataDiff compareImpl(DomainContext context, DataNode left, DataNode right, boolean rightMissing) {
+  private static DataDiff compareImpl(DataNode left, DataNode right, boolean rightMissing) {
 
     if (left != null && right != null && left.getClass() != right.getClass()) {
       throw new IllegalArgumentException("cannot compare " + left.getClass() + " with " + right.getClass());
@@ -231,12 +229,12 @@ public class DataDiff implements DataNode {
         for (int i=0; i < size; i++) {
           DataNode leftNode = i < leftSize ? leftNodes.get(i) : null;
           DataNode rightNode = i < rightSize ? rightNodes.get(i) : null;
-          DataDiff node = compareImpl(context, leftNode, rightNode, rightMissing);
+          DataDiff node = compareImpl(leftNode, rightNode, rightMissing);
           nodes.add(node);
           different |= !rightMissing && node.different;
         }
       }
-      else {    // DataListDTO
+      else {    // DataList
         different = false;
         // we must sort by ID because collections may be returned in any order
         List<DataObject> leftObjects = (List<DataObject>) leftNodes;
@@ -259,27 +257,27 @@ public class DataDiff implements DataNode {
             break;
           }
           else if (nextLeft == null) {
-            node = compareImpl(context, null, nextRight, rightMissing);
+            node = compareImpl(null, nextRight, rightMissing);
             nextRight = null;
           }
           else if (nextRight == null) {
-            node = compareImpl(context, nextLeft, null, rightMissing);
+            node = compareImpl(nextLeft, null, rightMissing);
             nextLeft = null;
           }
           else {
             if (nextLeft.getId() < nextRight.getId()) {
               // gap in right list
-              node = compareImpl(context, nextLeft, null, rightMissing);
+              node = compareImpl(nextLeft, null, rightMissing);
               nextLeft = null;
             }
             else if (nextLeft.getId() > nextRight.getId()) {
               // gap in left list
-              node = compareImpl(context, null, nextRight, rightMissing);
+              node = compareImpl(null, nextRight, rightMissing);
               nextRight = null;
             }
             else {
               // same ID
-              node = compareImpl(context, nextLeft, nextRight, rightMissing);
+              node = compareImpl(nextLeft, nextRight, rightMissing);
               nextLeft = null;
               nextRight = null;
             }

@@ -16,13 +16,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.maven.plugin.wizard.browser;
+package org.tentackle.maven.plugin.wizard.fx;
 
 import org.tentackle.common.StringHelper;
 import org.tentackle.pdo.PersistentDomainObject;
 
 /**
- * The PDO type used by the entity combobox of the {@link DataDialog}.
+ * The PDO type used by the entity combobox of the {@link org.tentackle.maven.plugin.wizard.fx.PdoBrowser}.
  */
 public class PdoType {
 

@@ -16,8 +16,7 @@
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
-
-<BorderPane fx:id="borderPane" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.tentackle.maven.plugin.wizard.browser.DataDialog">
+<BorderPane fx:id="borderPane" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.tentackle.maven.plugin.wizard.fx.PdoBrowser">
    <top>
       <GridPane hgap="5.0" vgap="5.0" BorderPane.alignment="CENTER">
          <columnConstraints>

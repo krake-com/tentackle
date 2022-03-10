@@ -27,7 +27,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 
 import org.tentackle.common.Constants;
 import org.tentackle.common.InterruptedRuntimeException;
-import org.tentackle.maven.plugin.wizard.browser.DataDialog;
+import org.tentackle.maven.plugin.wizard.fx.PdoBrowser;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.session.ModificationTracker;
@@ -84,7 +84,7 @@ public class BrowseMojo extends AbstractWizardMojo {
       Platform.startup(() -> {
         try {
           registerUncaughtExceptionHandler();
-          Stage stage = DataDialog.show(this, context);
+          Stage stage = PdoBrowser.show(this, context);
           stage.setOnHidden(event -> latch.countDown());
         }
         catch (Throwable t) {
