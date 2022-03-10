@@ -433,6 +433,27 @@ public class FxChoiceBox<T> extends ChoiceBox<T> implements FxComponent {
   public FxTreeTableCell<?,?> getTreeTableCell() {
     return getDelegate().getTreeTableCell();
   }
+
+  @Override
+  public boolean isListenerSuppressedIfModelUnchanged() {
+    return getDelegate().isListenerSuppressedIfModelUnchanged();
+  }
+
+  @Override
+  public void setListenerSuppressedIfModelUnchanged(boolean listenerSuppressedIfModelUnchanged) {
+    getDelegate().setListenerSuppressedIfModelUnchanged(listenerSuppressedIfModelUnchanged);
+  }
+
+  @Override
+  public boolean isListenerSuppressedIfViewUnchanged() {
+    return getDelegate().isListenerSuppressedIfViewUnchanged();
+  }
+
+  @Override
+  public void setListenerSuppressedIfViewUnchanged(boolean listenerSuppressedIfViewUnchanged) {
+    getDelegate().setListenerSuppressedIfViewUnchanged(listenerSuppressedIfViewUnchanged);
+  }
+
   //</editor-fold>//GEN-END:component
 
 }

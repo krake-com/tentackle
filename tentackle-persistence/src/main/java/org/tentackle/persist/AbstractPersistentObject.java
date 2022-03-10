@@ -2498,6 +2498,71 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
 
+  @Override
+  public List<T> selectLatest(long greaterId, int limit) {
+    if (getSession().isRemote())  {
+      try {
+        DomainContext context = getDomainContext();
+        List<T> list = getRemoteDelegate().selectLatest(context, greaterId, limit);
+        configureRemoteObjects(context, list);
+        return list;
+      }
+      catch (RemoteException e) {
+        throw PersistenceException.createFromRemoteException(this, e);
+      }
+    }
+
+    getSession().assertNotRemote();
+    assertRootContextIsAccepted();
+
+    JoinedSelect<T> js = getEagerJoinedSelect();
+
+    PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectLatestStatementId,
+         () -> {
+           StringBuilder sql = new StringBuilder(createSelectAllInnerSql());
+           String condition = getSqlClassIdCondition();
+           if (condition != null) {
+             sql.append(condition);
+           }
+           condition = getSqlContextCondition();
+           if (condition != null) {
+             sql.append(condition);
+           }
+           sql.append(Backend.SQL_AND);
+           sql.append(getColumnName(CN_ID));
+           sql.append(Backend.SQL_GREATER_PAR);
+           sql.append(Backend.SQL_ORDERBY)
+              .append(getColumnName(CN_ID)).append(Backend.SQL_SORTDESC);
+           getBackend().buildSelectSql(sql, false, limit, 0);
+           if (js != null) {
+             js.createJoinedSql(pdo, sql);
+           }
+           return sql.toString();
+         }
+    );
+
+    int ndx = getBackend().setLeadingSelectParameters(st, limit, 0);
+    if (js != null) {
+      ndx = setClassIdsInStatement(js, st, ndx);
+    }
+    if (isClassIdRequiredInWhereClause()) {
+      st.setInt(ndx++, getClassId());
+    }
+    long contextId = getContextId();
+    if (contextId >= 0) {
+      st.setLong(ndx++, contextId);
+    }
+    st.setLong(ndx++, greaterId);
+    getBackend().setTrailingSelectParameters(st, ndx, limit, 0);
+
+    try (ResultSetWrapper rs = st.executeQuery()) {
+      List<T> list = new ArrayList<>();
+      executeQueryToList(rs, js, list);
+      return list;
+    }
+  }
+
+
   /**
    * Gets the cache.
    * The default implementation returns null.

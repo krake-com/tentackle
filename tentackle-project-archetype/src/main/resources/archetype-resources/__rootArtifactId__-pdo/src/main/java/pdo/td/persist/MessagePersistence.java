@@ -46,15 +46,6 @@ public interface MessagePersistence extends PersistentObject<Message> {
 
 
   /**
-   * Finds the latest messages.
-   *
-   * @param limit the max. number of messages to retrieve, 0 if no limit
-   * @param id the exlusive lower bound
-   * @return the messages
-   */
-  TrackedList<Message> findLatest(int limit, long id);
-
-  /**
    * Finds messages.
    *
    * @param messageNumber the message number

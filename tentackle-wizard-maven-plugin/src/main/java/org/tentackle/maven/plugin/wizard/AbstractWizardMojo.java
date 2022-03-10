@@ -19,11 +19,13 @@
 
 package org.tentackle.maven.plugin.wizard;
 
+import javafx.application.Platform;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.shared.model.fileset.FileSet;
 
+import org.tentackle.fx.Fx;
 import org.tentackle.maven.AbstractTentackleMojo;
 import org.tentackle.model.EntityAliases;
 import org.tentackle.model.Model;
@@ -307,4 +309,23 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
       throw new MojoExecutionException("cannot install template " + path, e);
     }
   }
+
+
+  /**
+   * Registers a handler for uncaught exceptions.
+   */
+  protected void registerUncaughtExceptionHandler() {
+    Thread.setDefaultUncaughtExceptionHandler(getUncaughtExceptionHandler());             // all threads
+    Thread.currentThread().setUncaughtExceptionHandler(getUncaughtExceptionHandler());    // overwrite existing handler for fx thread
+  }
+
+  private Thread.UncaughtExceptionHandler getUncaughtExceptionHandler() {
+    return (t, e) -> {
+      getLog().error("unhandled exception detected", e);
+      Platform.runLater(() -> {
+        Fx.error(e.getMessage(), e, "UNEXPECTED EXCEPTION");
+      });
+    };
+  }
+
 }

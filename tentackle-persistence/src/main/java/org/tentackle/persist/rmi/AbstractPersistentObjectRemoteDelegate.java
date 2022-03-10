@@ -57,6 +57,8 @@ public interface AbstractPersistentObjectRemoteDelegate<T extends PersistentDoma
 
   RemoteResultSetCursor<T> selectByNormTextAsCursor(DomainContext cb, String normText) throws RemoteException;
 
+  List<T> selectLatest(DomainContext cb, long greaterId, int limit) throws RemoteException;
+
   List<T> selectAllForCache(DomainContext cb) throws RemoteException;
 
   T selectForCache(DomainContext cb, long id) throws RemoteException;

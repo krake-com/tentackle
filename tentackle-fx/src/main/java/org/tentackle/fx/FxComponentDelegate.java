@@ -173,6 +173,16 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
    */
   private FxTreeTableCell<?,?> treeTableCell;
 
+  /**
+   * true if suppress invocation of listeners if view model did not change.
+   */
+  private boolean listenerSuppressedIfModelUnchanged;
+
+  /**
+   * true if suppress invocation of listeners, if view will not change at all
+   */
+  private boolean listenerSuppressedIfViewUnchanged;
+
 
   @Override
   public FxComponentDelegate getDelegate() {
@@ -291,9 +301,19 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
       try {
         updatingView = true;
         modelUpdated = false;
-        fireModelToViewListeners();
         if (binding != null) {
-          binding.setViewValue(binding.getModelValue());
+          boolean fireListeners = true;
+          Object modelValue = binding.getModelValue();
+          if (isListenerSuppressedIfViewUnchanged() && Objects.equals(binding.getViewValue(), modelValue)) {
+            fireListeners = false;
+          }
+          if (fireListeners) {
+            fireModelToViewListeners();
+          }
+          binding.setViewValue(modelValue);
+        }
+        else {
+          fireModelToViewListeners();
         }
       }
       finally {
@@ -310,14 +330,21 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
         if (!getNode().isDisabled()) {
           try {
             String oldError = getError();
+            boolean fireListeners = true;
             if (binding != null) {
-              binding.setModelValue(binding.getViewValue());
+              Object viewValue = binding.getViewValue();
+              if (isListenerSuppressedIfModelUnchanged() && Objects.equals(binding.getModelValue(), viewValue)) {
+                fireListeners = false;
+              }
+              binding.setModelValue(viewValue);
               List<ValidationResult> results = binding.validate();
               if (!results.isEmpty()) {
                 throw new ValidationFailedException(results);
               }
             }
-            fireViewToModelListeners();
+            if (fireListeners) {
+              fireViewToModelListeners();
+            }
             modelUpdated = true;
             if (getError() != null && !getError().equals(oldError)) {
               handleInputFailure(getError());
@@ -683,5 +710,25 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
   @Override
   public void setTreeTableCell(FxTreeTableCell<?, ?> treeTableCell) {
     this.treeTableCell = treeTableCell;
+  }
+
+  @Override
+  public boolean isListenerSuppressedIfModelUnchanged() {
+    return listenerSuppressedIfModelUnchanged;
+  }
+
+  @Override
+  public void setListenerSuppressedIfModelUnchanged(boolean listenerSuppressedIfModelUnchanged) {
+    this.listenerSuppressedIfModelUnchanged = listenerSuppressedIfModelUnchanged;
+  }
+
+  @Override
+  public boolean isListenerSuppressedIfViewUnchanged() {
+    return listenerSuppressedIfViewUnchanged;
+  }
+
+  @Override
+  public void setListenerSuppressedIfViewUnchanged(boolean listenerSuppressedIfViewUnchanged) {
+    this.listenerSuppressedIfViewUnchanged = listenerSuppressedIfViewUnchanged;
   }
 }

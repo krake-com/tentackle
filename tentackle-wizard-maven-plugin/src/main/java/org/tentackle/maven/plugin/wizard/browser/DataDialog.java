@@ -1,0 +1,283 @@
+/*
+ * Tentackle - https://tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+package org.tentackle.maven.plugin.wizard.browser;
+
+import javafx.application.Platform;
+import javafx.event.Event;
+import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import org.apache.maven.plugin.MojoExecutionException;
+
+import org.tentackle.bind.Bindable;
+import org.tentackle.fx.AbstractFxController;
+import org.tentackle.fx.Fx;
+import org.tentackle.fx.FxControllerService;
+import org.tentackle.fx.component.FxButton;
+import org.tentackle.fx.component.FxCheckBox;
+import org.tentackle.fx.component.FxChoiceBox;
+import org.tentackle.fx.component.FxComboBox;
+import org.tentackle.fx.component.FxTableView;
+import org.tentackle.fx.component.FxTextField;
+import org.tentackle.fx.container.FxBorderPane;
+import org.tentackle.fx.container.FxHBox;
+import org.tentackle.fx.container.FxSplitPane;
+import org.tentackle.fx.rdc.GuiProvider;
+import org.tentackle.fx.rdc.PdoFinder;
+import org.tentackle.fx.rdc.Rdc;
+import org.tentackle.fx.rdc.table.TablePopup;
+import org.tentackle.maven.plugin.wizard.BrowseMojo;
+import org.tentackle.maven.plugin.wizard.PdoProfile;
+import org.tentackle.pdo.DomainContext;
+import org.tentackle.pdo.DomainContextProvider;
+import org.tentackle.pdo.PersistentDomainObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Dialog to browse PDOs and generate test code.
+ */
+@FxControllerService(resources = FxControllerService.RESOURCES_NONE)
+public class DataDialog extends AbstractFxController implements DomainContextProvider {
+
+  /**
+   * Shows the modal dialog.
+   *
+   * @param mojo the browser mojo
+   * @param context the domain context
+   */
+  public static Stage show(BrowseMojo mojo, DomainContext context) throws MojoExecutionException {
+    Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
+    DataDialog diffDialog = Fx.load(DataDialog.class);
+    Scene scene = Fx.createScene(diffDialog.getView());
+    stage.setScene(scene);
+    stage.setTitle("PDO Browser");
+    diffDialog.setContext(mojo, context);
+    diffDialog.getContainer().updateView();
+    stage.show();
+    return stage;
+  }
+
+
+
+  private static final int LATEST_DEFAULT = 100;      // number of latest to show initially
+
+  @Bindable private int latest = LATEST_DEFAULT;
+  @Bindable private PdoProfile profile;
+  @Bindable private boolean rootOnly;
+  @Bindable private PdoType entity;
+  @Bindable private List<PdoWrapper> pdos;
+
+  @FXML private FxSplitPane splitPane;
+  @FXML private FxChoiceBox<PdoProfile> profileField;
+  @FXML private FxCheckBox rootOnlyField;
+  @FXML private FxComboBox<PdoType> entityField;
+  @FXML private FxTableView<PdoWrapper> pdosTableView;
+  @FXML private FxTextField latestField;
+  @FXML private FxButton refreshButton;
+  @FXML private FxButton finderButton;
+  @FXML private FxButton generateButton;
+  @FXML private FxButton memorizeButton;
+  @FXML private FxButton closeButton;
+
+  private DomainContext context;
+  private TablePopup<PdoWrapper> pdosTablePopup;
+  private DataObject dataObject;
+  private DataObject oldDataObject;
+  private DataView dataView;
+  @SuppressWarnings("rawtypes")
+  private PdoFinder finder;
+
+  @FXML
+  private void initialize() {
+    dataView = Fx.load(DataView.class);
+    splitPane.getItems().add(dataView.getView());
+
+    profileField.addViewToModelListener(this::updateEntityFieldProperties);
+    rootOnlyField.addViewToModelListener(this::updateEntityFieldProperties);
+    entityField.setListenerSuppressedIfModelUnchanged(true);
+    entityField.addViewToModelListener(this::run);
+    latestField.addViewToModelListener(() -> {
+      finder = null;
+      run();
+    });
+
+    refreshButton.setGraphic(Fx.createImageView("reload"));
+    refreshButton.setDisable(true);
+    refreshButton.setOnAction(e -> run());
+    finderButton.setGraphic(Fx.createImageView("search"));
+    finderButton.setDisable(true);
+    finderButton.setFocusTraversable(true); // trigger focus lost
+    memorizeButton.setGraphic(Fx.createImageView("copy"));
+    memorizeButton.setDisable(true);
+    memorizeButton.setOnAction(event -> {
+      oldDataObject = dataObject;
+      showDiff();
+    });
+    generateButton.setGraphic(Fx.createImageView("edit"));
+    generateButton.setDisable(true);
+    closeButton.setGraphic(Fx.createImageView("close"));
+    closeButton.setOnAction(this::close);
+
+    pdosTableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+      if (newValue != null) {
+        dataObject = DataNodeFactory.create(newValue.getPdo(), true);
+        memorizeButton.setDisable(false);
+        generateButton.setDisable(false);
+        showDiff();
+      }
+      else {
+        dataObject = null;
+        oldDataObject = null;
+        generateButton.setDisable(true);
+        memorizeButton.setDisable(true);
+        showDiff();
+      }
+    });
+  }
+
+  @Override
+  public void configure() {
+    pdosTablePopup = Rdc.createTablePopup(pdosTableView, "pdoView", "PDOs");
+    pdosTablePopup.setColumnMenuEnabled(false);
+    pdosTablePopup.loadPreferences();
+    double leftWidth = pdosTableView.getPrefWidth();
+    double totalWidth = pdosTableView.getPrefWidth() + dataView.getPrefWidth();
+    if (leftWidth >= 1.0 && totalWidth > leftWidth) {
+      splitPane.setDividerPosition(0,  leftWidth / totalWidth);
+    }
+  }
+
+  @Override
+  public DomainContext getDomainContext() {
+    return context;
+  }
+
+  /**
+   * Sets the context.
+   *
+   * @param mojo the browser mojo
+   * @param context the domain context
+   * @throws MojoExecutionException if loading the profiles failed
+   */
+  public void setContext(BrowseMojo mojo, DomainContext context) throws MojoExecutionException {
+    this.context = context;
+    profileField.getItems().setAll(mojo.getProfiles(PdoProfile.class));
+    updateEntityFieldProperties();
+    entityField.requestFocus();
+  }
+
+
+  private void showDiff() {
+    if (dataObject != null) {
+      dataView.setDiff(DataDiff.compare(getDomainContext(), dataObject, oldDataObject), "current", oldDataObject != null ? "memorized" : "");
+    }
+    else {
+      dataView.setDiff(null, "", "");
+    }
+  }
+
+  private void updateEntityFieldProperties() {
+    entityField.getProperties().put(PdoTypeStringTranslator.ROOT_ONLY, rootOnly);
+    entityField.getProperties().put(PdoTypeStringTranslator.PROFILE, profile);
+    Platform.runLater(entityField.getValueTranslator()::bindingPropertiesUpdated);
+  }
+
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  private void run() {
+    PdoWrapper selectedItem = pdosTableView.getSelectionModel().getSelectedItem();
+    pdosTableView.getSelectionModel().clearSelection();
+
+    if (entity != null) {
+      PersistentDomainObject<?> proxy = on((Class) entity.getClazz());
+      if (finder != null && finder.getPdo().getEffectiveClass() != entity.getClazz()) {
+        finder = null;
+      }
+      if (finder == null) {
+        pdos = proxy.selectLatest(0, latest).stream().map(PdoWrapper::new).toList();
+      }
+      refreshButton.setDisable(false);
+      GuiProvider<?> guiProvider = DataNodeFactory.getGuiProvider(proxy);
+      if (guiProvider != null && guiProvider.finderExists()) {
+        finderButton.setDisable(false);
+        finderButton.setOnAction(event -> {
+          finder = guiProvider.createFinder();
+          finder.setPdo(proxy);
+          Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
+          FxBorderPane borderPane = Fx.createNode(BorderPane.class);
+          borderPane.setPadding(new Insets(10));
+          borderPane.setCenter(finder.getView());
+          FxHBox hBox = Fx.createNode(HBox.class);
+          hBox.setSpacing(10);
+          hBox.setPadding(new Insets(20, 0, 0, 0));
+          hBox.setAlignment(Pos.BASELINE_RIGHT);
+          FxButton cancelButton = Fx.createNode(Button.class);
+          cancelButton.setText("cancel");
+          cancelButton.setGraphic(Fx.createImageView("cancel"));
+          cancelButton.setOnAction(e -> {
+            stage.close();
+            finder = null;
+            run();
+          });
+          FxButton findButton = Fx.createNode(Button.class);
+          findButton.setText("find");
+          findButton.setGraphic(Fx.createImageView("search"));
+          findButton.setOnAction(e -> {
+            pdos = finder.runSearch().stream().map(pdo -> new PdoWrapper((PersistentDomainObject<?>) pdo)).toList();
+            pdosTableView.updateView();
+            stage.close();
+          });
+          hBox.getChildren().addAll(findButton, cancelButton);
+          borderPane.setBottom(hBox);
+          Scene scene = Fx.createScene(borderPane);
+          stage.setScene(scene);
+          stage.setTitle("Find " + proxy.getPlural());
+          borderPane.updateView();
+          stage.show();
+        });
+      }
+      else {
+        finderButton.setDisable(true);
+      }
+    }
+    else {
+      pdos = new ArrayList<>();
+      refreshButton.setDisable(true);
+      finderButton.setDisable(true);
+      finder = null;
+    }
+
+    pdosTableView.updateView();
+    if (selectedItem != null && pdos.contains(selectedItem)) {
+      pdosTableView.getSelectionModel().select(selectedItem);
+    }
+  }
+
+  private void close(Event event) {
+    getStage().hide();
+  }
+
+}

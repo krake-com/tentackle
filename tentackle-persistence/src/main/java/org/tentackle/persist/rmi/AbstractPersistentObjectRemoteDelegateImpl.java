@@ -343,6 +343,18 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
   }
 
   @Override
+  public List<T> selectLatest(DomainContext cb, long greaterId, int limit) throws RemoteException {
+    try {
+      setDomainContext(cb);
+      dbObject.assertRootEntity();
+      return dbObject.selectLatest(greaterId, limit);
+    }
+    catch (RuntimeException e) {
+      throw createException(e);
+    }
+  }
+
+  @Override
   public List<T> selectAllForCache(DomainContext cb) throws RemoteException {
     try {
       setDomainContext(cb);

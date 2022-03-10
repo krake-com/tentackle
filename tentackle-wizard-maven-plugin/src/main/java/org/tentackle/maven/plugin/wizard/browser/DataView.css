@@ -1,0 +1,8 @@
+
+.diff-mismatch {
+    -fx-background-color: #dfdfff;
+}
+
+.diff-mismatch:selected {
+    -fx-background-color: #9191ff;
+}

@@ -374,7 +374,7 @@ public abstract class DesktopApplication<C extends FxController>
    */
   public void registerUncaughtExceptionHandler() {
     Thread.setDefaultUncaughtExceptionHandler(getUncaughtExceptionHandler());             // all threads
-    Thread.currentThread().setUncaughtExceptionHandler(getUncaughtExceptionHandler());    // fx thread
+    Thread.currentThread().setUncaughtExceptionHandler(getUncaughtExceptionHandler());    // overwrite existing handler for fx thread
   }
 
 

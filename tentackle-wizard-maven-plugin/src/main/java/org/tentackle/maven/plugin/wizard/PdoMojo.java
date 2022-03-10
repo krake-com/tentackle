@@ -68,6 +68,7 @@ public class PdoMojo extends AbstractWizardMojo {
 
     Platform.startup(() -> {
       try {
+        registerUncaughtExceptionHandler();
         PdoWizard wizard = Fx.load(PdoWizard.class);
         wizard.applyMojo(this);
         Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
