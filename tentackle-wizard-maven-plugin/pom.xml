@@ -22,7 +22,7 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tentackle-fx</artifactId>
+      <artifactId>tentackle-fx-rdc</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -63,6 +63,25 @@
     </resources>
 
     <plugins>
+      <plugin>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tentackle-maven-plugin</artifactId>
+        <version>${project.version}</version>
+        <executions>
+          <execution>
+            <id>analyze</id>
+            <goals>
+              <goal>analyze</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <verbosity>info</verbosity>
+          <showCompileOutput>true</showCompileOutput>
+          <index>META-INF/RESOURCE-INDEX.LIST</index>
+        </configuration>
+      </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-plugin-plugin</artifactId>

@@ -113,10 +113,6 @@ public class MessagePersistenceImpl extends AbstractPersistentTransactionData<Me
   }
 
 
-  // @wurblet findLatest PdoSelectList --limit id:>
-
-
-
   @Override
   @RemoteMethod
   public TrackedList<Message> findBy(

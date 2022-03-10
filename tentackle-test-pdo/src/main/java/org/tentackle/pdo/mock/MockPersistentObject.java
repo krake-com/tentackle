@@ -386,6 +386,11 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
   }
 
   @Override
+  public List<T> selectLatest(long greaterId, int limit) {
+    throw new UnsupportedOperationException(UNSUPPORTED);
+  }
+
+  @Override
   public T selectCached(long id) {
     throw new UnsupportedOperationException(UNSUPPORTED);
   }

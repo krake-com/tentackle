@@ -1,0 +1,184 @@
+/*
+ * Tentackle - https://tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+package org.tentackle.maven.plugin.wizard.browser;
+
+import javafx.scene.Group;
+import javafx.scene.Node;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontSmoothingType;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
+import javafx.util.Callback;
+
+import org.tentackle.fx.FxTextComponent;
+import org.tentackle.fx.NavigationLetterStringConverter;
+import org.tentackle.fx.ValueTranslatorService;
+import org.tentackle.fx.component.FxComboBox;
+import org.tentackle.fx.translate.ValueStringTranslator;
+import org.tentackle.maven.plugin.wizard.PdoProfile;
+import org.tentackle.pdo.PdoFactory;
+import org.tentackle.pdo.PersistentDomainObject;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
+
+/**
+ * Translator for PdoType.<br>
+ * Implements camel-case keyboard navigation for entity names in comboboxes.
+ */
+@ValueTranslatorService(modelClass = PdoType.class, viewClass = String.class)
+public class PdoTypeStringTranslator extends ValueStringTranslator<PdoType> {
+
+  /** only root entities. */
+  public static final String ROOT_ONLY = "rootOnly";
+
+  /** wizard profile. */
+  public static final String PROFILE = "profile";
+
+
+  private Map<String, PdoType> pdoTypes;
+  private NavigationLetterStringConverter<PdoType> converter;
+
+  /**
+   * Creates a translator.
+   *
+   * @param component the text component
+   */
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  public PdoTypeStringTranslator(FxTextComponent component) {
+    super(component);
+
+    if (component instanceof FxComboBox comboBox) {
+
+      configureConverter(comboBox);
+
+      Font font = Font.getDefault();
+      Font boldFont = Font.font(font.getFamily(), FontWeight.BOLD, font.getSize());
+
+      Callback<ListView<PdoType>, ListCell<PdoType>> cellFactory = new Callback<>() {
+        @Override
+        public ListCell<PdoType> call(ListView<PdoType> l) {
+          return new ListCell<>() {
+
+            @Override
+            protected void updateItem(PdoType item, boolean empty) {
+              super.updateItem(item, empty);
+              if (item == null || empty) {
+                setGraphic(null);
+              }
+              else {
+                // render uppercase characters in bold
+                TextFlow textFlow = new TextFlow();
+                String name = item.getName();
+                StringBuilder buf = new StringBuilder();
+                for (int i=0; i < name.length(); i++) {
+                  char c = name.charAt(i);
+                  if (Character.isUpperCase(c)) {
+                    if (!buf.isEmpty()) {
+                      addText(textFlow, buf.toString(), font);
+                      buf.setLength(0);
+                    }
+                    addText(textFlow, String.valueOf(c), boldFont);
+                  }
+                  else {
+                    buf.append(c);
+                  }
+                }
+                if (!buf.isEmpty()) {
+                  addText(textFlow, buf.toString(), font);
+                }
+                Group group = new Group(textFlow);
+                setGraphic(group);
+              }
+            }
+          };
+        }
+      };
+      comboBox.setCellFactory(cellFactory);
+      comboBox.setButtonCell(cellFactory.call(null));
+    }
+  }
+
+  @Override
+  public Function<PdoType, String> toViewFunction() {
+    return v -> v == null ? null : v.getName();
+  }
+
+  @Override
+  public Function<String, PdoType> toModelFunction() {
+    return s -> s == null ? null : getPdoTypes().get(s);
+  }
+
+  @Override
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  public void bindingPropertiesUpdated() {
+    if (getComponent() instanceof FxComboBox comboBox) {
+      pdoTypes = null;
+      configureConverter(comboBox);
+    }
+  }
+
+  private void configureConverter(FxComboBox<PdoType> comboBox) {
+    converter = new NavigationLetterStringConverter<>(getPdoTypes().values()) {
+      @Override
+      public String getNavigationLetters(PdoType object) {
+        return object.getCamelCaseLetters();
+      }
+
+      @Override
+      public String getName(PdoType object) {
+        return object.getName();
+      }
+    };
+    comboBox.getSelectionModel().clearSelection();
+    comboBox.setConverter(converter);
+    comboBox.getItems().setAll(converter.getSortedObjects());
+  }
+
+  private Map<String, PdoType> getPdoTypes() {
+    if (pdoTypes == null) {
+      boolean rootOnly = Boolean.TRUE.equals(((Node) getComponent()).getProperties().get(ROOT_ONLY));
+      PdoProfile profile = (PdoProfile) ((Node) getComponent()).getProperties().get(PROFILE);
+      Map<String, PdoType> pdoTypeMap = new HashMap<>();
+      for (String pdoName: PdoFactory.getInstance().getPersistenceMapper().getMap().keySet()) {
+        PersistentDomainObject<?> pdo = PdoFactory.getInstance().create(pdoName);
+        Class<? extends PersistentDomainObject<?>> effectiveClass = pdo.getEffectiveClass();
+        if ((!rootOnly || pdo.isRootEntity()) &&
+            (profile == null || profile.getPdoPackage().equals(effectiveClass.getPackageName()))) {
+          PdoType pdoType = new PdoType(effectiveClass.getSimpleName(), effectiveClass);
+          pdoTypeMap.put(pdoType.getName(), pdoType);
+        }
+      }
+      pdoTypes = pdoTypeMap;
+    }
+    return pdoTypes;
+  }
+
+  private void addText(TextFlow textFlow, String str, Font font) {
+    Text text = new Text(str);
+    text.setFont(font);
+    text.setFontSmoothingType(FontSmoothingType.LCD);
+    textFlow.getChildren().add(text);
+  }
+
+}

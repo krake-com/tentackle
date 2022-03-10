@@ -251,7 +251,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   /**
    * Checks whether this object is already persistent in the database or only residing in memory.<br>
    * If an object {@code isNew()}, it means that it can be persisted (inserted).
-   * This does not mean, that the object never has been stored in the database,
+   * This does not mean, that the object has never been stored in the database,
    * i.e. it is possible that the object just has been deleted.
    *
    * @return true if object is not in database, i.e. new (or deleted)
@@ -393,7 +393,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
 
   /**
    * Determines the objects with a tableSerial starting at a given serial.
-   * Useful to cleanup caches for example.
+   * Useful to clean up caches for example.
    *
    * @param oldSerial non-inclusive lower bound for tableSerial (&gt; oldSerial)
    * @return pairs of longs, the first being the ID, the second the tableserial, never null
@@ -402,7 +402,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
 
   /**
    * Determines the objects with their tableSerial within a given range.
-   * Useful to cleanup caches.
+   * Useful to clean up caches.
    *
    * @param oldSerial non-inclusive lower bound for tableSerial (&gt; oldSerial)
    * @param maxSerial inclusive upper bound for tableSerial (&le; maxSerial)
@@ -582,7 +582,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
 
   /**
    * Transfers the token lock to another user.<br>
-   * Necessary to hand-over a token without releasing it.<br>
+   * Necessary to hand over a token without releasing it.<br>
    * Eliminates the time-gap when object is token-free.<br>
    * Allows taking over the token WITHOUT possessing it!
    * This method should be used with great care as it does not check
@@ -630,7 +630,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   T reload();
 
   /**
-   * Reloads the object with a write lock.<br>
+   * Reloads the object with a write-lock.<br>
    * Requires that a transaction is running.
    *
    * @return the object if reloaded, else null (never <em>this</em>)
@@ -654,10 +654,20 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   ScrollableResource<T> selectAllAsCursor();
 
   /**
+   * Selects the latest PDOs.<br>
+   * Returns an optionally limited list of PDOs sorted by ID descending.
+   *
+   * @param greaterId the lower excluding ID
+   * @param limit the optional limit, 0 if unlimited
+   * @return the list of objects, never null
+   */
+  List<T> selectLatest(long greaterId, int limit);
+
+  /**
    * Gets the object via cache.<br>
    * If there is no cache, the default implementation just loads from the database.
    *
-   * @param id the uniue object ID
+   * @param id the unique object ID
    * @return the object, null if no such object
    * @see #select(long)
    */
@@ -667,7 +677,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * Gets the object via cache only.<br>
    * If there is no cache, the default implementation just loads from the database.
    *
-   * @param id the uniue object ID
+   * @param id the unique object ID
    * @return the object, null if no such object
    * @see #select(long)
    */
@@ -727,7 +737,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   /**
    * Saves this object.<br>
    * If this object is new, a new ID is obtained and this object inserted.
-   * Otherwise this object is updated.
+   * Otherwise, this object is updated.
    * <p>
    * A saved object is no more persistable.
    * It must be reload()ed to persist it again.
@@ -805,7 +815,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   /**
    * Selects all objects containing a normalized text.<br>
    * The given text will be normalized via {@link org.tentackle.common.StringHelper#normalize(String)}
-   * and selected via an sql {@code LIKE} expression.
+   * and selected via a sql {@code LIKE} expression.
    * If the text begins with an exclamation mark or a minus-sign (! or -), {@code NOT LIKE} will be used.
    *
    * @param text the text to search for

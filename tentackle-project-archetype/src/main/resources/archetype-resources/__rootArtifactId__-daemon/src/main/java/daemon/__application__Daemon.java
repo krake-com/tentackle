@@ -59,7 +59,7 @@ public class ${application}Daemon extends ConsoleApplication {
   }
 
   private void logMessages() {
-    for (Message message : on(Message.class).findLatest(0, latestMessageId)) {
+    for (Message message : on(Message.class).selectLatest(latestMessageId, 0)) {
       LOGGER.info("{0}: [{1}|{2}] {3}", message.getWhen(), message.getMessageType(), message.getRefersToText(), message.getText());
       latestMessageId = message.getId();
     }

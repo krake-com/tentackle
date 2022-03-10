@@ -92,11 +92,6 @@ public class MessagePersistenceMock extends MockPersistentObject<Message, Messag
   }
 
   @Override
-  public TrackedList<Message> findLatest(int limit, long id) {
-    return new TrackedArrayList<>();
-  }
-
-  @Override
   public TrackedList<Message> findBy(
       String messageNumber,
       Timestamp from, Timestamp until,

@@ -58,6 +58,7 @@ public class OperationMojo extends AbstractWizardMojo {
 
     Platform.startup(() -> {
       try {
+        registerUncaughtExceptionHandler();
         OperationWizard wizard = Fx.load(OperationWizard.class);
         wizard.applyMojo(this);
         Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);

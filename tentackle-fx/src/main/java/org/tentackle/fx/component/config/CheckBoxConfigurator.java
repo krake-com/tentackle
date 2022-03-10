@@ -36,9 +36,9 @@ public class CheckBoxConfigurator<T extends CheckBox> extends ButtonBaseConfigur
   @Override
   public void configure(T control) {
     super.configure(control);
-    if (control instanceof FxControl) {
-      // make change visible immediately (not only after focus lost)
-      control.setOnAction(e -> updateModelAndView((FxControl) control));
+    // make change visible immediately (not only after focus lost)
+    if (control instanceof FxControl fxControl) {
+      control.setOnAction(e -> updateModelAndView(fxControl));
     }
   }
 

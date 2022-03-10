@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+
+<BorderPane fx:id="borderPane" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.tentackle.maven.plugin.wizard.browser.DataDialog">
+   <top>
+      <GridPane hgap="5.0" vgap="5.0" BorderPane.alignment="CENTER">
+         <columnConstraints>
+            <ColumnConstraints minWidth="10.0" />
+            <ColumnConstraints minWidth="10.0" />
+            <ColumnConstraints minWidth="10.0" />
+            <ColumnConstraints minWidth="10.0" />
+            <ColumnConstraints hgrow="ALWAYS" minWidth="10.0" />
+         </columnConstraints>
+         <rowConstraints>
+            <RowConstraints minHeight="10.0" />
+         </rowConstraints>
+         <children>
+            <Label text="profile:" GridPane.halignment="RIGHT" />
+            <ChoiceBox fx:id="profileField" prefWidth="150.0" GridPane.columnIndex="1" />
+            <CheckBox fx:id="rootOnlyField" mnemonicParsing="false" text="only root entities" GridPane.columnIndex="2">
+               <GridPane.margin>
+                  <Insets left="20.0" right="20.0" />
+               </GridPane.margin>
+            </CheckBox>
+            <Label text="entity:" GridPane.columnIndex="3" GridPane.halignment="RIGHT" />
+            <ComboBox fx:id="entityField" GridPane.columnIndex="4" />
+         </children>
+         <BorderPane.margin>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+         </BorderPane.margin>
+      </GridPane>
+   </top>
+   <bottom>
+      <HBox alignment="CENTER_RIGHT" spacing="5.0" BorderPane.alignment="CENTER">
+         <children>
+            <Label text="latest:" />
+            <TextField fx:id="latestField" prefColumnCount="5" />
+            <Button fx:id="refreshButton" mnemonicParsing="false" text="refresh" />
+            <Button fx:id="finderButton" mnemonicParsing="false" text="use finder" />
+            <Separator maxWidth="1.7976931348623157E308" orientation="VERTICAL" HBox.hgrow="ALWAYS" />
+            <Button fx:id="generateButton" mnemonicParsing="false" text="generate code" />
+            <Button fx:id="memorizeButton" mnemonicParsing="false" text="memorize" />
+            <Button fx:id="closeButton" mnemonicParsing="false" text="close" />
+         </children>
+         <padding>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+         </padding>
+      </HBox>
+   </bottom>
+   <center>
+      <SplitPane fx:id="splitPane" BorderPane.alignment="CENTER">
+        <items>
+            <TableView fx:id="pdosTableView">
+              <columns>
+                <TableColumn prefWidth="75.0" text="C1" />
+                <TableColumn prefWidth="75.0" text="C2" />
+              </columns>
+            </TableView>
+        </items>
+      </SplitPane>
+   </center>
+</BorderPane>

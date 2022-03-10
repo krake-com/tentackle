@@ -153,7 +153,7 @@ public interface FxComponent extends FxControl, ErrorPopupSupported, InfoPopupSu
 
 
 
-  // ------------------- binding -------------------------------------
+  // ------------------- related to binding -------------------------------------
 
   /**
    * Sets the path to bind this component to.
@@ -252,5 +252,35 @@ public interface FxComponent extends FxControl, ErrorPopupSupported, InfoPopupSu
   default boolean isCellEditor() {
     return getTableCell() != null || getTreeTableCell() != null;
   }
+
+  /**
+   * Returns whether the {@link ViewToModelListener}s should be invoked even if the model's value did not change at all.<br>
+   * By default, the listener will always be invoked.
+   *
+   * @return true if suppress invocation
+   */
+  boolean isListenerSuppressedIfModelUnchanged();
+
+  /**
+   * Sets whether the {@link ViewToModelListener}s should be invoked even if the model's value did not change at all.
+   *
+   * @param listenerSuppressedIfModelUnchanged true if suppress invocation
+   */
+  void setListenerSuppressedIfModelUnchanged(boolean listenerSuppressedIfModelUnchanged);
+
+  /**
+   * Returns whether the {@link ModelToViewListener}s should be invoked even if the view's value will not change at all.<br>
+   * By default, the listener will always be invoked.
+   *
+   * @return true if suppress invocation
+   */
+  boolean isListenerSuppressedIfViewUnchanged();
+
+  /**
+   * Sets whether the {@link ModelToViewListener}s should be invoked even if the view's value will not change at all.
+   *
+   * @param listenerSuppressedIfViewUnchanged true if suppress invocation
+   */
+  void setListenerSuppressedIfViewUnchanged(boolean listenerSuppressedIfViewUnchanged);
 
 }
