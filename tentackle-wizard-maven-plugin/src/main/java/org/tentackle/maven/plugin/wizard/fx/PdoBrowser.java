@@ -113,6 +113,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
   @FXML private FxButton memorizeButton;
   @FXML private FxButton closeButton;
 
+  private BrowseMojo mojo;
   private DomainContext context;
   private TablePopup<PdoWrapper> pdosTablePopup;
   private DataObject dataObject;
@@ -199,6 +200,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
    * @throws MojoExecutionException if loading the profiles failed
    */
   public void setContext(BrowseMojo mojo, DomainContext context) throws MojoExecutionException {
+    this.mojo = mojo;
     this.context = context;
     profileField.getItems().setAll(mojo.getProfiles(PdoProfile.class));
     updateEntityFieldProperties();
@@ -303,8 +305,16 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
   private void generateCode() {
     if (dataObject != null) {
       String text = JavaCodeFactory.generateCode(dataObject);
+      StringBuilder buf = new StringBuilder();
+      buf.append("// generated from ").append(dataObject).append(" at ").append(FormatHelper.formatShortTimestampFast(new Timestamp())).append(" by ")
+         .append(System.getProperty("user.name"))
+         .append(" on ")
+         .append(mojo.getHostName()).append('\n')
+         .append("// connected to ").append(getDomainContext().getSession()).append("\n\n")
+         .append(text);
+
       ClipboardContent cbc = new ClipboardContent();
-      cbc.putString(text);
+      cbc.putString(buf.toString());
       Clipboard.getSystemClipboard().setContent(cbc);
 
       // show some feedback

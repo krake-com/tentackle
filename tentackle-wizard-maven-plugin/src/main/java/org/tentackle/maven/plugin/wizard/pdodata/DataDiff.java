@@ -34,7 +34,7 @@ import java.util.Objects;
  */
 public class DataDiff implements DataNode {
 
-  private final DataNode left;           // the left data
+  private final DataNode left;           // the left data, null if no such data in right object
   private final DataNode right;          // the right data, null if no such data in right object
   private final boolean different;       // true if this node or a sub node differs
   private final List<DataDiff> nodes;    // the sub nodes
@@ -42,7 +42,7 @@ public class DataDiff implements DataNode {
   /**
    * Creates a DataDiff.
    *
-   * @param left the left data
+   * @param left the left data, null if no such data in right object
    * @param right the right data, null if no such data in right object
    * @param different true if this node or a sub node differs
    * @param nodes the sub nodes
@@ -193,7 +193,8 @@ public class DataDiff implements DataNode {
    * @return the comparison
    */
   public static DataDiff compare(DataObject left, DataObject right) {
-    return compareImpl(Objects.requireNonNull(left), right, right == null);
+    boolean rootIdDiffers = left != null && right != null && left.getId() != right.getId();
+    return compareImpl(Objects.requireNonNull(left), right, right == null, rootIdDiffers);
   }
 
 
@@ -201,7 +202,7 @@ public class DataDiff implements DataNode {
   // --- all static private below ---
 
   @SuppressWarnings("unchecked")
-  private static DataDiff compareImpl(DataNode left, DataNode right, boolean rightMissing) {
+  private static DataDiff compareImpl(DataNode left, DataNode right, boolean rightMissing, boolean rootIdDiffers) {
 
     if (left != null && right != null && left.getClass() != right.getClass()) {
       throw new IllegalArgumentException("cannot compare " + left.getClass() + " with " + right.getClass());
@@ -216,9 +217,21 @@ public class DataDiff implements DataNode {
     }
     else if (left instanceof DataItem || right instanceof DataItem) {
       nodes = null;
-      String leftValue = left == null ? null : left.getValue();
-      String rightValue = right == null ? null : right.getValue();
-      different = left != null && right != null && !Objects.equals(leftValue, rightValue);
+      if (left != null && right != null) {
+        DataItem leftItem = (DataItem) left;
+        DataItem rightItem = (DataItem) right;
+        if (leftItem.isIdOfCompositeRelation() && rightItem.isIdOfCompositeRelation() ||
+            leftItem.getAttribute() != null && leftItem.getAttribute().isImplicit() &&
+            rightItem.getAttribute() != null && rightItem.getAttribute().isImplicit()) {
+          different = false;
+        }
+        else {
+          different = !Objects.equals(left.getValue(), right.getValue());
+        }
+      }
+      else {
+        different = false;
+      }
     }
     else {    // DataObject or DataList
       nodes = new ArrayList<>();
@@ -237,7 +250,7 @@ public class DataDiff implements DataNode {
         for (int i=0; i < size; i++) {
           DataNode leftNode = i < leftSize ? leftNodes.get(i) : null;
           DataNode rightNode = i < rightSize ? rightNodes.get(i) : null;
-          DataDiff node = compareImpl(leftNode, rightNode, rightMissing);
+          DataDiff node = compareImpl(leftNode, rightNode, rightMissing, rootIdDiffers);
           nodes.add(node);
           different |= !rightMissing && node.different;
         }
@@ -265,27 +278,27 @@ public class DataDiff implements DataNode {
             break;
           }
           else if (nextLeft == null) {
-            node = compareImpl(null, nextRight, rightMissing);
+            node = compareImpl(null, nextRight, rightMissing, rootIdDiffers);
             nextRight = null;
           }
           else if (nextRight == null) {
-            node = compareImpl(nextLeft, null, rightMissing);
+            node = compareImpl(nextLeft, null, rightMissing, rootIdDiffers);
             nextLeft = null;
           }
           else {
-            if (nextLeft.getId() < nextRight.getId()) {
+            if (!rootIdDiffers && nextLeft.getId() < nextRight.getId()) {
               // gap in right list
-              node = compareImpl(nextLeft, null, rightMissing);
+              node = compareImpl(nextLeft, null, rightMissing, rootIdDiffers);
               nextLeft = null;
             }
-            else if (nextLeft.getId() > nextRight.getId()) {
+            else if (!rootIdDiffers && nextLeft.getId() > nextRight.getId()) {
               // gap in left list
-              node = compareImpl(null, nextRight, rightMissing);
+              node = compareImpl(null, nextRight, rightMissing, rootIdDiffers);
               nextRight = null;
             }
             else {
-              // same ID
-              node = compareImpl(nextLeft, nextRight, rightMissing);
+              // same ID or root ID differs
+              node = compareImpl(nextLeft, nextRight, rightMissing, rootIdDiffers);
               nextLeft = null;
               nextRight = null;
             }
