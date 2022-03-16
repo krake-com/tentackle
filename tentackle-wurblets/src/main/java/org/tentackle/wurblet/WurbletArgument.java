@@ -128,7 +128,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
   /** array operator (IN, ANY, ALL relops). */
   private String arrayOperator;
 
-  /** predefined value replacing the ? in prepared statements. */
+  /** predefined value replacing the '?' in prepared statements. */
   private String value;
 
   /** fixed value inserted literally into sql-statement. */
@@ -466,7 +466,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
           }
           value = dataType.toLiteral(value, columnIndex);
         }
-        else if (value != null) {
+        else if (value != null && !value.isEmpty() && value.charAt(0) == '"') {
           value = dataType.valueOfLiteralToCode(value, columnIndex);
         }
       }
@@ -686,7 +686,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
    * This is ether the optionally defined {@code [name]} or the name of the {@link Attribute}.
    *
    * @return the method argument name, never null
-   * @throws WurbelException if arhument type provides no argument name
+   * @throws WurbelException if argument type provides no argument name
    */
   public String getMethodArgumentName() throws WurbelException {
     if (attribute == null) {

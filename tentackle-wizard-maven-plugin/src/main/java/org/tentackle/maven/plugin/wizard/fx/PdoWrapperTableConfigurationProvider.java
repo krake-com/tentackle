@@ -20,6 +20,7 @@ package org.tentackle.maven.plugin.wizard.fx;
 
 import org.tentackle.fx.table.DefaultTableConfigurationProvider;
 import org.tentackle.fx.table.TableConfigurationProviderService;
+import org.tentackle.maven.plugin.wizard.pdodata.PdoWrapper;
 
 /**
  * Table configuration provider for the PDO table in {@link PdoBrowser}.

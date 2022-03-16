@@ -19,6 +19,9 @@
 
 package org.tentackle.fx.component;
 
+import javafx.animation.FadeTransition;
+import javafx.animation.PauseTransition;
+import javafx.animation.SequentialTransition;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.Node;
@@ -26,16 +29,19 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PopupControl;
 import javafx.scene.control.Skin;
 import javafx.scene.layout.StackPane;
+import javafx.util.Duration;
 
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.component.skin.NoteSkin;
+
+import java.net.URL;
 
 /**
  * A note control.<br>
  * Notes display information related to another linkedNode. Tentackle uses notes to display errors due to bad user input
  * in a linkedNode, e.g. after a ParseException.
  * <p>
- * A note is displayed "near by" its linkedNode. The default position is to the right side of the linkedNode. However,
+ * A note is displayed "nearby" its linkedNode. The default position is to the right side of the linkedNode. However,
  * if there is not enough space left on the screen, the note may be displayed below, left or on top of its
  * linkedNode.<p>
  * The link between the note and its linkedNode is visualized by a straight line and a circle above the linkedNode's
@@ -134,6 +140,8 @@ public class Note extends PopupControl {
 
   }
 
+  private static final String CSS_NAME = "note.css";
+
 
   private final Position position;
   private final Type type;
@@ -141,6 +149,38 @@ public class Note extends PopupControl {
 
   private Node contentNode;
   private ObjectProperty<Node> contentNodeProperty;
+
+  private class FadeEffect {
+
+    private final double fadeIn;
+    private final double pause;
+    private final double fadeOut;
+
+    private FadeEffect(double fadeIn, double pause, double fadeOut) {
+      this.fadeIn = fadeIn;
+      this.pause = pause;
+      this.fadeOut = fadeOut;
+    }
+
+    private void play() {
+      FadeTransition inTransition = new FadeTransition(new Duration(fadeIn), getRootPane());
+      inTransition.setFromValue(0.0);
+      inTransition.setToValue(1.0);
+
+      PauseTransition pauseTransition = new PauseTransition(new Duration(pause));
+
+      FadeTransition outTransition = new FadeTransition(new Duration(fadeOut), getRootPane());
+      outTransition.setFromValue(1.0);
+      outTransition.setToValue(0.0);
+
+      SequentialTransition mainTransition = new SequentialTransition(inTransition, pauseTransition, outTransition);
+      mainTransition.setOnFinished(ae -> hide());
+      mainTransition.play();
+    }
+  }
+
+  private FadeEffect fadeEffect;
+
 
 
   /**
@@ -155,13 +195,33 @@ public class Note extends PopupControl {
 
     getStyleClass().add("note");
     rootPane = new StackPane();
-    rootPane.getStylesheets().add(Note.class.getResource("note.css").toExternalForm());
+    URL noteCSS = Note.class.getResource(CSS_NAME);
+    if (noteCSS != null) {
+      rootPane.getStylesheets().add(noteCSS.toExternalForm());
+    }
     getStyleClass().add(type.getCssClass());
     getStyleClass().add(position.getCssClass());
 
     contentNode = new Label("???");   // just to have a non-null default
   }
 
+  /**
+   * Configures an animation to fade-in, pause showing and fade-out again.
+   *
+   * @param fadeIn time to fade-in in [ms]
+   * @param pause time to pause showing in [ms]
+   * @param fadeOut time to fade-out in [ms]
+   */
+  public void setFadeEffect(double fadeIn, double pause, double fadeOut) {
+    fadeEffect = new FadeEffect(fadeIn, pause, fadeOut);
+  }
+
+  /**
+   * Clears the fade effect.
+   */
+  public void clearFadeEffect() {
+    fadeEffect = null;
+  }
 
   @Override
   protected Skin<?> createDefaultSkin() {
@@ -199,7 +259,7 @@ public class Note extends PopupControl {
   }
 
   /**
-   * Returns the content shown by the pop over.
+   * Returns the content shown by the pop-over.
    * <p>
    * @return the content linkedNode property
    */
@@ -243,6 +303,9 @@ public class Note extends PopupControl {
    */
   public void show(Node ownerNode) {
     if (ownerNode != null && Fx.getStage(ownerNode) != null) {
+      if (fadeEffect != null) {
+        fadeEffect.play();
+      }
       super.show(ownerNode, 0.0, 0.0);
     }
   }
@@ -256,6 +319,16 @@ public class Note extends PopupControl {
     Label label = new Label(text);
     label.getStyleClass().add("text");
     setContentNode(label);
+  }
+
+  /**
+   * Gets the text shown.
+   *
+   * @return the text
+   */
+  public String getText() {
+    Node contentNode = getContentNode();
+    return contentNode instanceof Label label ? label.getText() : null;
   }
 
 }

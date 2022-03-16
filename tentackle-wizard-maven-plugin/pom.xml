@@ -22,12 +22,12 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tentackle-fx-rdc</artifactId>
+      <artifactId>tentackle-maven-support</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tentackle-maven-support</artifactId>
+      <artifactId>tentackle-fx-rdc</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>

@@ -23,6 +23,7 @@ import javafx.scene.control.TreeItem;
 import org.tentackle.fx.table.DefaultTableConfigurationProvider;
 import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.fx.table.TableConfigurationProviderService;
+import org.tentackle.maven.plugin.wizard.pdodata.DataNode;
 
 /**
  * Configuration provider for DataNode tables and tree tables.

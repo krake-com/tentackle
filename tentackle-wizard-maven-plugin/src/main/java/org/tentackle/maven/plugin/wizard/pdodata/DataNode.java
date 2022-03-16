@@ -16,12 +16,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.maven.plugin.wizard.fx;
-
-import javafx.scene.image.ImageView;
+package org.tentackle.maven.plugin.wizard.pdodata;
 
 import org.tentackle.bind.Bindable;
-import org.tentackle.fx.Fx;
 
 import java.util.List;
 
@@ -60,6 +57,13 @@ public interface DataNode {
   String getValue();
 
   /**
+   * The optional comment.
+   *
+   * @return the comment, null if none
+   */
+  String getComment();
+
+  /**
    * Gets the optional subnodes of this node.
    *
    * @return the nodes, null if this node has no subnodes
@@ -74,15 +78,6 @@ public interface DataNode {
    */
   default String getNodeType() {
     return getClass().getSimpleName();
-  }
-
-  /**
-   * Creates the image icon for this node.
-   *
-   * @return the icon
-   */
-  default ImageView createIcon() {
-    return Fx.createImageView(DataNodeImageProvider.REALM, getNodeType());
   }
 
 }

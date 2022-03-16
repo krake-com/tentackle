@@ -35,7 +35,7 @@ public abstract class AbstractDateTimeType<T> extends AbstractDataType<T> {
     if ("null".equals(str)) {
       return str;
     }
-    if (index == null && str.length() > 0 && Character.isDigit(str.charAt(0))) {
+    if (index == null && !str.isEmpty() && Character.isDigit(str.charAt(0))) {
       str = "\"" + str + "\"";
     }
     return (isPredefined() ? getJavaType() : getDataTypeConstant()) + ".valueOf(" + str + ")";

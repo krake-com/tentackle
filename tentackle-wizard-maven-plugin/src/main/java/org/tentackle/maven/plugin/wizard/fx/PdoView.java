@@ -34,6 +34,7 @@ import org.tentackle.fx.component.FxTreeTableView;
 import org.tentackle.fx.container.FxBorderPane;
 import org.tentackle.fx.rdc.Rdc;
 import org.tentackle.fx.rdc.table.TablePopup;
+import org.tentackle.maven.plugin.wizard.pdodata.DataDiff;
 
 /**
  * Shows the contents of a PDO with optional diff to a savepoint.
@@ -56,7 +57,7 @@ public class PdoView extends AbstractFxController {
   public PdoView() {
     diffNode = Fx.createNode(TreeTableView.class);
     diffNode.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-    FxBorderPane pane = Fx.createNode(BorderPane.class);    // must be an FxContainer (otherwise binding doesnt work)
+    FxBorderPane pane = Fx.createNode(BorderPane.class);    // must be an FxContainer (otherwise binding doesn't work)
     pane.setCenter(diffNode);
     setView(pane);
   }

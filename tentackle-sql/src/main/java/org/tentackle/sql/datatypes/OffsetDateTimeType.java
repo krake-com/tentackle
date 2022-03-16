@@ -179,7 +179,7 @@ public class OffsetDateTimeType extends AbstractDateTimeType<OffsetDateTime> {
           if ("null".equals(str)) {
             yield str;
           }
-          if (str.length() > 0 && Character.isDigit(str.charAt(0))) {
+          if (!str.isEmpty() && Character.isDigit(str.charAt(0))) {
             str = "\"" + str + "\"";
           }
           yield "Timestamp.valueOf(" + str + ")";
@@ -188,7 +188,7 @@ public class OffsetDateTimeType extends AbstractDateTimeType<OffsetDateTime> {
         default -> throw new IndexOutOfBoundsException(index);
       };
     }
-    if (str.length() > 0 && Character.isDigit(str.charAt(0))) {
+    if (!str.isEmpty() && Character.isDigit(str.charAt(0))) {
       str = "\"" + str + "\"";
     }
     return "OffsetDateTime.parse(" + str + ")";

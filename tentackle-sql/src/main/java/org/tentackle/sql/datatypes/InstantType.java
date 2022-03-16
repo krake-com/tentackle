@@ -153,7 +153,7 @@ public class InstantType extends AbstractDateTimeType<Instant> {
     if (index != null) {
       return str;
     }
-    if (str.length() > 0 && Character.isDigit(str.charAt(0))) {
+    if (!str.isEmpty() && Character.isDigit(str.charAt(0))) {
       str = "\"" + str + "\"";
     }
     return "Instant.parse(" + str + ")";

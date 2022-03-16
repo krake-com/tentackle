@@ -82,6 +82,16 @@ public class Timestamp extends java.sql.Timestamp implements Freezable {
     }
   }
 
+  /**
+   * Converts a string into a timestamp.
+   *
+   * @param str the string
+   * @return the timestamp
+   */
+  public static Timestamp valueOf(String str) {
+    return new Timestamp(java.sql.Timestamp.valueOf(str).getTime());
+  }
+
 
   private boolean utc;                  // true if timestamp is always UTC
   private boolean frozen;               // true if timestamp cannot be modified anymore

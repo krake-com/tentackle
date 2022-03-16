@@ -19,7 +19,11 @@
 package org.tentackle.maven.plugin.wizard.fx;
 
 import org.tentackle.fx.table.TableConfigurationProviderService;
+import org.tentackle.maven.plugin.wizard.pdodata.DataDiff;
 
+/**
+ * Configuration provider for the {@link PdoView}.
+ */
 @TableConfigurationProviderService(value = DataDiff.class, noBundle = true)
 public class DataDiffTableConfigurationProvider extends DataNodeTableConfigurationProvider<DataDiff> {
 

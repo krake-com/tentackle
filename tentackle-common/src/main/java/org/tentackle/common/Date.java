@@ -63,6 +63,16 @@ public class Date extends java.sql.Date implements Freezable {
     return date;
   }
 
+  /**
+   * Converts a string into a date.
+   *
+   * @param str the string
+   * @return the date
+   */
+  public static Date valueOf(String str) {
+    return new Date(java.sql.Date.valueOf(str).getTime());
+  }
+
 
   private boolean frozen;               // true if date cannot be modified anymore
 

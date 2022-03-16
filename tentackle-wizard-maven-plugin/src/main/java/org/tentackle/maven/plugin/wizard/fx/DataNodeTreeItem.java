@@ -21,6 +21,8 @@ package org.tentackle.maven.plugin.wizard.fx;
 import javafx.collections.ObservableList;
 import javafx.scene.control.TreeItem;
 
+import org.tentackle.maven.plugin.wizard.pdodata.DataNode;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
