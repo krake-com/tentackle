@@ -89,7 +89,7 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
   private BooleanProperty mandatoryProperty;
 
   /**
-   * the field path to bind, null if autobinding
+   * the field path to bind, null if auto-binding
    */
   private String bindingPath;
 
@@ -169,7 +169,7 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
   private FxTableCell<?,?> tableCell;
 
   /**
-   * The treetable cell, if this is used as a cell editor in a treetable.
+   * The tree-table cell, if this is used as a cell editor in a tree-table.
    */
   private FxTreeTableCell<?,?> treeTableCell;
 
@@ -330,6 +330,9 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
         if (!getNode().isDisabled()) {
           try {
             String oldError = getError();
+            if (oldError != null && isErrorTemporary()) {
+              setError(null);
+            }
             boolean fireListeners = true;
             if (binding != null) {
               Object viewValue = binding.getViewValue();
@@ -651,7 +654,7 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
   protected void updateMandatoryStyle(boolean mandatory) {
     if (mandatory && !getNode().isDisabled()) {
       // node must be editable by the user to
-      // show the mandator color.
+      // show the mandatory color.
       if (!getNode().getStyleClass().contains(MANDATORY_STYLE)) {
         getNode().getStyleClass().add(MANDATORY_STYLE);
       }
