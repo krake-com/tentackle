@@ -16,11 +16,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.maven.plugin.wizard.fx;
+package org.tentackle.maven.plugin.wizard.pdodata;
 
-import javafx.scene.image.ImageView;
-
-import org.tentackle.fx.rdc.GuiProvider;
+import org.tentackle.model.Relation;
+import org.tentackle.pdo.PersistentDomainObject;
 
 import java.util.List;
 
@@ -30,33 +29,41 @@ import java.util.List;
  */
 public class DataObject implements DataNode {
 
-  private final String type;                  // the object type basename
-  private final String name;                  // the object name, null if root entity or list member
-  private final long id;                      // the object ID
-  private final long serial;                  // the object serial
-  private final boolean rootEntity;           // true if PDO is a root entity
-  private final GuiProvider<?> guiProvider;   // optional GUI Provider
-  private final List<DataNode> nodes;         // the items of the object, null if reference is null
+  private final PersistentDomainObject<?> pdo;          // the PDO
+  private final String type;                            // the object type basename
+  private final String name;                            // the object name, null if root entity or list member
+  private final List<DataNode> nodes;                   // the items of the object, null if reference is null
+  private final String comment;                         // the optional comment
+  private final Relation relation;                      // composite object 1:1 relation
+  private final NonCompositeRelation nmRelation;        // the optional N:M relation
 
   /**
    * Creates a DataObject.
    *
-   * @param type the object type basename
+   * @param pdo the PDO
    * @param name the object name, null if root entity or list member
-   * @param id the object ID
-   * @param serial the object serial
-   * @param rootEntity true if PDO is a root entity
-   * @param guiProvider the optional GUI provider
+   * @param comment the optional comment
    * @param nodes the items of the object, null if reference is null
+   * @param relation the composite object 1:1 relation
+   * @param nmRelation optional N:M relation
    */
-  public DataObject(String type, String name, long id, long serial, boolean rootEntity, GuiProvider<?> guiProvider, List<DataNode> nodes) {
-    this.type = type;
+  public DataObject(PersistentDomainObject<?> pdo, String name, String comment, List<DataNode> nodes, Relation relation, NonCompositeRelation nmRelation) {
+    this.pdo = pdo;
+    this.type = pdo.getEffectiveClass().getSimpleName();
     this.name = name;
-    this.id = id;
-    this.serial = serial;
-    this.rootEntity = rootEntity;
-    this.guiProvider = guiProvider;
+    this.comment = comment;
     this.nodes = nodes;
+    this.relation = relation;
+    this.nmRelation = nmRelation;
+  }
+
+  /**
+   * Gets the PDO.
+   *
+   * @return the PDO
+   */
+  public PersistentDomainObject<?> getPdo() {
+    return pdo;
   }
 
   /**
@@ -79,13 +86,18 @@ public class DataObject implements DataNode {
     return name;
   }
 
+  @Override
+  public String getComment() {
+    return comment;
+  }
+
   /**
    * Gets the object ID.
    *
    * @return the object ID
    */
   public long getId() {
-    return id;
+    return pdo.getId();
   }
 
   /**
@@ -94,25 +106,7 @@ public class DataObject implements DataNode {
    * @return the object serial
    */
   public long getSerial() {
-    return serial;
-  }
-
-  /**
-   * Gets true if PDO is a root entity (transaction- or masterdata).
-   *
-   * @return true if PDO is a root entity (transaction- or masterdata)
-   */
-  public boolean isRootEntity() {
-    return rootEntity;
-  }
-
-  @Override
-  public ImageView createIcon() {
-    return guiProvider != null ? guiProvider.createIcon() : DataNode.super.createIcon();
-  }
-
-  public GuiProvider<?> getGuiProvider() {
-    return guiProvider;
+    return pdo.getSerial();
   }
 
   /**
@@ -125,6 +119,24 @@ public class DataObject implements DataNode {
     return nodes;
   }
 
+  /**
+   * Gets the 1:1 composite object relation.
+   *
+   * @return the relation
+   */
+  public Relation getRelation() {
+    return relation;
+  }
+
+  /**
+   * Gets the optional N:M relation.
+   *
+   * @return the relation, null if none
+   */
+  public NonCompositeRelation getNmRelation() {
+    return nmRelation;
+  }
+
   @Override
   public String getValue() {
     StringBuilder buf = new StringBuilder();
@@ -132,7 +144,10 @@ public class DataObject implements DataNode {
       buf.append("<null>");
     }
     else {
-      buf.append('[').append(id).append('/').append(serial).append(']');
+      buf.append('[').append(getId()).append('/').append(getSerial()).append(']');
+      if (nmRelation != null) {
+        buf.append(" -> ").append(nmRelation);
+      }
     }
     return buf.toString();
   }

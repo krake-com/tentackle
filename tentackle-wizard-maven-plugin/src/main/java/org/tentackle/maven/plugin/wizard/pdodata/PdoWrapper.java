@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.maven.plugin.wizard.fx;
+package org.tentackle.maven.plugin.wizard.pdodata;
 
 import org.tentackle.bind.Bindable;
 import org.tentackle.misc.ShortLongText;
@@ -28,34 +28,72 @@ import org.tentackle.pdo.PersistentDomainObject;
  */
 public class PdoWrapper {
 
-  private final PersistentDomainObject<?> pdo;
+  private final PersistentDomainObject<?> pdo;      // the PDO
+  private String udk;                               // lazily created UDK
+  private DataObject dataObject;                    // lazily created object tree
 
+  /**
+   * Creates a wrapper.
+   *
+   * @param pdo the PDO
+   */
   public PdoWrapper(PersistentDomainObject<?> pdo) {
     this.pdo = pdo;
   }
 
+  /**
+   * Gets the wrapped PDO.
+   *
+   * @return the PDO
+   */
   public PersistentDomainObject<?> getPdo() {
     return pdo;
   }
 
+  /**
+   * Gets the data object tree.
+   *
+   * @return the tree
+   */
+  public DataObject getDataObject() {
+    if (dataObject == null) {
+      dataObject = DataNodeFactory.create(pdo);
+    }
+    return dataObject;
+  }
+
+  /**
+   * Gets the object ID.
+   *
+   * @return the ID
+   */
   @Bindable
   public long getId() {
     return pdo.getId();
   }
 
+  /**
+   * Gets the unique domain key string.<br>
+   * If the PDO implements {@link ShortLongText}, the long description is added in parentheses.
+   *
+   * @return the UDK, empty string if none
+   */
   @Bindable
   public String getUDK() {
-    String udkStr = null;
-    if (pdo instanceof ShortLongText shortLongText) {
-      udkStr = shortLongText.getShortText() + " (" + shortLongText.getLongText() + ")";
-    }
-    else if (pdo.isUniqueDomainKeyProvided()) {
-      Object uniqueDomainKey = pdo.getUniqueDomainKey();
-      if (uniqueDomainKey != null) {
-        udkStr = uniqueDomainKey.toString();
+    if (udk == null) {
+      String udkStr = "";
+      if (pdo instanceof ShortLongText shortLongText) {
+        udkStr = shortLongText.getShortText() + " (" + shortLongText.getLongText() + ")";
       }
+      else if (pdo.isUniqueDomainKeyProvided()) {
+        Object uniqueDomainKey = pdo.getUniqueDomainKey();
+        if (uniqueDomainKey != null) {
+          udkStr = uniqueDomainKey.toString();
+        }
+      }
+      udk = udkStr;
     }
-    return udkStr;
+    return udk;
   }
 
   @Override

@@ -66,6 +66,16 @@ public class Time extends java.sql.Time implements Freezable {
     return time;
   }
 
+  /**
+   * Converts a string into a time.
+   *
+   * @param str the string
+   * @return the time
+   */
+  public static Time valueOf(String str) {
+    return new Time(java.sql.Time.valueOf(str).getTime());
+  }
+
 
   /**
    * Constructs a

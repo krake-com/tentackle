@@ -71,6 +71,23 @@ public class CharacterType extends AbstractDataType<Character> {
   }
 
   @Override
+  public String valueOfLiteralToCode(String str, Integer index) {
+    if ("'".equals(str)) {
+      return "'\\''";      // single quote
+    }
+    if ("\\".equals(str)) {
+      return "'\\\\'";    // single backslash
+    }
+    if (str.isEmpty()) {
+      return "0";         // numeric 0
+    }
+    if (str.length() == 1 || str.length() == 2 && str.charAt(0) == '\\') {
+      return "'" + str + "'";   // standard character (not a single quote and not a backslash) or a quoted char such as "\n"
+    }
+    return str;
+  }
+
+  @Override
   public Object[] set(Backend backend, PreparedStatement statement, int pos, Character object, boolean mapNull, Integer size) throws SQLException {
     if (object == null && mapNull) {
       object = ' ';

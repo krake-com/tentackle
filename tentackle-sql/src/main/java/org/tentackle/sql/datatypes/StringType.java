@@ -62,8 +62,25 @@ public class StringType extends AbstractDataType<String> {
 
   @Override
   public String valueOfLiteralToCode(String str, Integer index) {
-    if (str.length() > 0 && str.charAt(0) != '"') {
-      str = "\"" + str + "\"";
+    if (!str.isEmpty() && str.charAt(0) != '"') {
+      if (str.contains("\n")) {   // multi-line string
+        StringBuilder buf = new StringBuilder();
+        buf.append("\"\"\"\n");
+        str.lines().forEach(line -> {
+          if (line.endsWith(" ")) {
+            buf.append(line, 0, line.length() - 1).append("\\s");
+          }
+          else {
+            buf.append(line);
+          }
+          buf.append('\n');
+        });
+        buf.append("\"\"\"");
+        str = buf.toString();
+      }
+      else {
+        str = "\"" + str + "\"";
+      }
     }
     return str;
   }

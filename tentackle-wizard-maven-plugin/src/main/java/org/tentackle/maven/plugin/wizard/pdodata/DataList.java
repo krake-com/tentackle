@@ -16,7 +16,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.maven.plugin.wizard.fx;
+package org.tentackle.maven.plugin.wizard.pdodata;
+
+import org.tentackle.model.Relation;
 
 import java.util.List;
 
@@ -28,19 +30,25 @@ public class DataList implements DataNode {
 
   private final String genericType;         // the inner generic type
   private final String name;                // the name of the list property
+  private final String comment;             // the optional comment
   private final List<DataObject> nodes;     // the items of the list sorted by ID
+  private final Relation relation;          // composite list relation
 
   /**
    * Creates a DataList.
    *
    * @param genericType the inner generic type
    * @param name the name of the list property
+   * @param comment the optional comment
    * @param nodes the items of the list sorted by ID
+   * @param relation the composite list relation
    */
-  public DataList(String genericType, String name, List<DataObject> nodes) {
+  public DataList(String genericType, String name, String comment, List<DataObject> nodes, Relation relation) {
     this.genericType = genericType;
     this.name = name;
+    this.comment = comment;
     this.nodes = nodes;
+    this.relation = relation;
   }
 
   /**
@@ -62,6 +70,11 @@ public class DataList implements DataNode {
     return name;
   }
 
+  @Override
+  public String getComment() {
+    return comment;
+  }
+
   /**
    * Gets the items of the list sorted by ID.
    *
@@ -72,6 +85,14 @@ public class DataList implements DataNode {
     return nodes;
   }
 
+  /**
+   * Gets the composite list relation.
+   *
+   * @return the relation
+   */
+  public Relation getRelation() {
+    return relation;
+  }
 
   @Override
   public String getType() {

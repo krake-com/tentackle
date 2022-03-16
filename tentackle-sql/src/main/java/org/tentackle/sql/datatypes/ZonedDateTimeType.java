@@ -196,7 +196,7 @@ public class ZonedDateTimeType extends AbstractDateTimeType<ZonedDateTime> {
       if ("null".equals(str)) {
         return str;
       }
-      if (str.length() > 0 && Character.isDigit(str.charAt(0))) {
+      if (!str.isEmpty() && Character.isDigit(str.charAt(0))) {
         str = "\"" + str + "\"";
       }
       return switch (index) {
@@ -205,7 +205,7 @@ public class ZonedDateTimeType extends AbstractDateTimeType<ZonedDateTime> {
         default -> throw new IndexOutOfBoundsException(index);
       };
     }
-    if (str.length() > 0 && Character.isDigit(str.charAt(0))) {
+    if (!str.isEmpty() && Character.isDigit(str.charAt(0))) {
       str = "\"" + str + "\"";
     }
     return "ZonedDateTime.parse(" + str + ")";

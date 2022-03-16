@@ -25,6 +25,8 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.Modality;
@@ -32,6 +34,7 @@ import javafx.stage.Stage;
 import org.apache.maven.plugin.MojoExecutionException;
 
 import org.tentackle.bind.Bindable;
+import org.tentackle.common.Timestamp;
 import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxControllerService;
@@ -41,15 +44,22 @@ import org.tentackle.fx.component.FxChoiceBox;
 import org.tentackle.fx.component.FxComboBox;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.component.FxTextField;
+import org.tentackle.fx.component.Note;
 import org.tentackle.fx.container.FxBorderPane;
 import org.tentackle.fx.container.FxHBox;
 import org.tentackle.fx.container.FxSplitPane;
 import org.tentackle.fx.rdc.GuiProvider;
+import org.tentackle.fx.rdc.GuiProviderFactory;
 import org.tentackle.fx.rdc.PdoFinder;
 import org.tentackle.fx.rdc.Rdc;
 import org.tentackle.fx.rdc.table.TablePopup;
 import org.tentackle.maven.plugin.wizard.BrowseMojo;
 import org.tentackle.maven.plugin.wizard.PdoProfile;
+import org.tentackle.maven.plugin.wizard.pdodata.DataDiff;
+import org.tentackle.maven.plugin.wizard.pdodata.DataObject;
+import org.tentackle.maven.plugin.wizard.pdodata.JavaCodeFactory;
+import org.tentackle.maven.plugin.wizard.pdodata.PdoWrapper;
+import org.tentackle.misc.FormatHelper;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.PersistentDomainObject;
@@ -108,6 +118,8 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
   private DataObject dataObject;
   private DataObject oldDataObject;
   private PdoView pdoView;
+  private Timestamp loadingTime;
+  private Timestamp memorizeTime;
   @SuppressWarnings("rawtypes")
   private PdoFinder finder;
 
@@ -135,16 +147,18 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     memorizeButton.setDisable(true);
     memorizeButton.setOnAction(event -> {
       oldDataObject = dataObject;
+      memorizeTime = new Timestamp();
       showDiff();
     });
     generateButton.setGraphic(Fx.createImageView("edit"));
     generateButton.setDisable(true);
+    generateButton.setOnAction(e -> generateCode());
     closeButton.setGraphic(Fx.createImageView("close"));
     closeButton.setOnAction(this::close);
 
     pdosTableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
       if (newValue != null) {
-        dataObject = DataNodeFactory.create(newValue.getPdo(), true);
+        dataObject = newValue.getDataObject();
         memorizeButton.setDisable(false);
         generateButton.setDisable(false);
         showDiff();
@@ -152,6 +166,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
       else {
         dataObject = null;
         oldDataObject = null;
+        memorizeTime = null;
         generateButton.setDisable(true);
         memorizeButton.setDisable(true);
         showDiff();
@@ -188,15 +203,18 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     profileField.getItems().setAll(mojo.getProfiles(PdoProfile.class));
     updateEntityFieldProperties();
     entityField.requestFocus();
+    showDiff();
   }
 
 
   private void showDiff() {
     if (dataObject != null) {
-      pdoView.setDiff(DataDiff.compare(dataObject, oldDataObject), "current", oldDataObject != null ? "memorized" : "");
+      pdoView.setDiff(DataDiff.compare(dataObject, oldDataObject),
+                      loadingTime == null ? "Value" : FormatHelper.formatTimestampFast(loadingTime),
+                      memorizeTime == null ? "" : FormatHelper.formatTimestampFast(memorizeTime));
     }
     else {
-      pdoView.setDiff(null, "", "");
+      pdoView.setDiff(null, "Value", "");
     }
   }
 
@@ -209,7 +227,11 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
   @SuppressWarnings({ "unchecked", "rawtypes" })
   private void run() {
     PdoWrapper selectedItem = pdosTableView.getSelectionModel().getSelectedItem();
+    DataObject savedOldDataObject = oldDataObject;
+    Timestamp savedMemorizedTime = memorizeTime;
+
     pdosTableView.getSelectionModel().clearSelection();
+    loadingTime = new Timestamp();
 
     if (entity != null) {
       PersistentDomainObject<?> proxy = on((Class) entity.getClazz());
@@ -220,7 +242,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
         pdos = proxy.selectLatest(0, latest).stream().map(PdoWrapper::new).toList();
       }
       refreshButton.setDisable(false);
-      GuiProvider<?> guiProvider = DataNodeFactory.getGuiProvider(proxy);
+      GuiProvider<?> guiProvider = getGuiProvider(proxy);
       if (guiProvider != null && guiProvider.finderExists()) {
         finderButton.setDisable(false);
         finderButton.setOnAction(event -> {
@@ -272,8 +294,33 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
 
     pdosTableView.updateView();
     if (selectedItem != null && pdos.contains(selectedItem)) {
+      oldDataObject = savedOldDataObject;
+      memorizeTime = savedMemorizedTime;
       pdosTableView.getSelectionModel().select(selectedItem);
     }
+  }
+
+  private void generateCode() {
+    if (dataObject != null) {
+      String text = JavaCodeFactory.generateCode(dataObject);
+      ClipboardContent cbc = new ClipboardContent();
+      cbc.putString(text);
+      Clipboard.getSystemClipboard().setContent(cbc);
+
+      // show some feedback
+      Note infoNote = new Note(Note.Position.TOP, Note.Type.INFO);
+      infoNote.setText("Java code for " + dataObject + " copied to clipboard");
+      infoNote.setFadeEffect(500, 2000, 1000);
+      infoNote.show(generateButton);
+    }
+  }
+
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  private GuiProvider<?> getGuiProvider(PersistentDomainObject proxy) {
+    if (GuiProviderFactory.getInstance().isGuiProviderAvailable(proxy.getEffectiveClass())) {
+      return GuiProviderFactory.getInstance().createGuiProvider(proxy);
+    }
+    return null;
   }
 
   private void close(Event event) {

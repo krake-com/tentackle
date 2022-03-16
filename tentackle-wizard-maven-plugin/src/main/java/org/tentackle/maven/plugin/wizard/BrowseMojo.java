@@ -67,6 +67,7 @@ public class BrowseMojo extends AbstractWizardMojo {
 
   @Override
   public void executeImpl() throws MojoExecutionException, MojoFailureException {
+    super.executeImpl();
     Properties props = new Properties();
     props.setProperty(org.tentackle.common.Constants.BACKEND_URL, url);
     props.setProperty(org.tentackle.common.Constants.BACKEND_USER, user);

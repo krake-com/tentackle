@@ -94,7 +94,7 @@ public class UUIDType extends AbstractDataType<UUID> {
 
   @Override
   public String valueOfLiteralToCode(String str, Integer index) {
-    if (str.length() > 0 && str.charAt(0) != '"') {
+    if (!str.isEmpty() && str.charAt(0) != '"') {
       str = "\"" + str + "\"";
     }
     return "UUID.fromString(" + str + ")";

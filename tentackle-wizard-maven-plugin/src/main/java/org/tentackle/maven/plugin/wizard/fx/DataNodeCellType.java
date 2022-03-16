@@ -19,13 +19,20 @@
 package org.tentackle.maven.plugin.wizard.fx;
 
 import javafx.geometry.Pos;
+import javafx.scene.control.Tooltip;
+import javafx.scene.image.ImageView;
 
 import org.tentackle.common.StringHelper;
+import org.tentackle.fx.Fx;
+import org.tentackle.fx.rdc.GuiProvider;
+import org.tentackle.fx.rdc.GuiProviderFactory;
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
 import org.tentackle.fx.table.type.AbstractTableCellType;
-
+import org.tentackle.maven.plugin.wizard.pdodata.DataNode;
+import org.tentackle.maven.plugin.wizard.pdodata.DataObject;
+import org.tentackle.pdo.PersistentDomainObject;
 
 /**
  * Cell type to decorate the name field of a DataNode in a (tree)table.<br>
@@ -37,14 +44,15 @@ public class DataNodeCellType extends AbstractTableCellType<DataNode> {
   @Override
   public void updateItem(FxTableCell<?, DataNode> tableCell, DataNode item) {
     tableCell.setText(getName(item));
-    tableCell.setGraphic(item.createIcon());
+    tableCell.setGraphic(createIcon(item));
     updateAlignment(tableCell, Pos.BASELINE_LEFT);
   }
 
   @Override
   public void updateItem(FxTreeTableCell<?, DataNode> treeTableCell, DataNode item) {
     treeTableCell.setText(getName(item));
-    treeTableCell.setGraphic(item.createIcon());
+    treeTableCell.setGraphic(createIcon(item));
+    treeTableCell.setTooltip(item.getComment() == null ? null : new Tooltip(item.getComment()));
     updateAlignment(treeTableCell, Pos.BASELINE_LEFT);
   }
 
@@ -54,6 +62,20 @@ public class DataNodeCellType extends AbstractTableCellType<DataNode> {
       name = StringHelper.firstToLower(item.getType());
     }
     return name;
+  }
+
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  private ImageView createIcon(DataNode item) {
+    if (item instanceof DataObject) {
+      PersistentDomainObject pdo = ((DataObject) item).getPdo();
+      if (GuiProviderFactory.getInstance().isGuiProviderAvailable(pdo.getEffectiveClass())) {
+        GuiProvider<?> guiProvider = GuiProviderFactory.getInstance().createGuiProvider(pdo);
+        if (guiProvider != null) {
+          return guiProvider.createIcon();
+        }
+      }
+    }
+    return Fx.createImageView(DataNodeImageProvider.REALM, item.getClass().getSimpleName());
   }
 
 }

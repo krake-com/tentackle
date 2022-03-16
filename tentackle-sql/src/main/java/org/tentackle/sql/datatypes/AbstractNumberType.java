@@ -29,4 +29,14 @@ public abstract class AbstractNumberType<T extends Number> extends AbstractDataT
     return true;
   }
 
+  @Override
+  public String valueOfLiteralToCode(String str, Integer index) {
+    if (!str.isEmpty() && str.charAt(0) == '"') {   // provided as a string
+      if (isPrimitive()) {
+        return getJavaType() + ".parse" + toNonPrimitive().getJavaType() + "(" + str + ")";
+      }
+      return getJavaType() + ".valueOf(" + str + ")";
+    }
+    return super.valueOfLiteralToCode(str, index);
+  }
 }

@@ -46,12 +46,24 @@ public interface GuiProviderFactory {
   /**
    * Creates a service object that provides methods related to the rdc gui.
    * <p>
-   * Throws a {@link org.tentackle.pdo.PdoRuntimeException} if provider could not be created.
+   * Throws a {@link org.tentackle.pdo.PdoRuntimeException} if provider could not be created,
+   * or no {@link GuiProviderService} found at all.
    *
-   * @param <T> the PDO's class
+   * @param <T> the PDO type
    * @param pdo the PDO
    * @return the GUI provider, never null
    */
   <T extends PersistentDomainObject<T>> GuiProvider<T> createGuiProvider(T pdo);
+
+  /**
+   * Returns whether a {@link GuiProviderService} is present for the given PDO class.
+   * <p>
+   * Throws a {@link org.tentackle.pdo.PdoRuntimeException} if provider could not be created.
+   *
+   * @param pdoClass the PDO class
+   * @param <T> the PDO type
+   * @return true if provider exists, false if no {@link GuiProviderService} found
+   */
+  <T extends PersistentDomainObject<T>> boolean isGuiProviderAvailable(Class<T> pdoClass);
 
 }

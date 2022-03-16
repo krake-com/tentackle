@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.maven.plugin.wizard.fx;
+package org.tentackle.maven.plugin.wizard.pdodata;
 
 import org.tentackle.bind.Bindable;
 
@@ -25,23 +25,27 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Comparison of some data in different locations.<br>
- * At least left or right node must be given.
+ * Datanode to be displayed in a tree table.<br>
+ * The node can be used in 2 modes:
+ * <ol>
+ *   <li>to display the pdo tree</li>
+ *   <li>to compare two pdo trees</li>
+ * </ol>
  */
 public class DataDiff implements DataNode {
 
-  private final DataNode left;           // the left data, null if no such data in left object
+  private final DataNode left;           // the left data
   private final DataNode right;          // the right data, null if no such data in right object
-  private final boolean different;       // true if this node or a subnode differs
-  private final List<DataDiff> nodes;    // the subnodes
+  private final boolean different;       // true if this node or a sub node differs
+  private final List<DataDiff> nodes;    // the sub nodes
 
   /**
    * Creates a DataDiff.
    *
-   * @param left the left data, null if no such data in left object
+   * @param left the left data
    * @param right the right data, null if no such data in right object
-   * @param different true if this node or a subnode differs
-   * @param nodes the subnodes
+   * @param different true if this node or a sub node differs
+   * @param nodes the sub nodes
    */
   public DataDiff(DataNode left, DataNode right, boolean different, List<DataDiff> nodes) {
     this.left = left;
@@ -87,6 +91,10 @@ public class DataDiff implements DataNode {
     return nodes;
   }
 
+  @Override
+  public String getComment() {
+    return null;
+  }
 
   @Override
   @Bindable(ordinal = 2)
@@ -212,7 +220,7 @@ public class DataDiff implements DataNode {
       String rightValue = right == null ? null : right.getValue();
       different = left != null && right != null && !Objects.equals(leftValue, rightValue);
     }
-    else {    // DataObjectDTO or DataListDTO
+    else {    // DataObject or DataList
       nodes = new ArrayList<>();
       List<? extends DataNode> leftNodes = left == null ? null : left.getNodes();
       List<? extends DataNode> rightNodes = right == null ? null : right.getNodes();

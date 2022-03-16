@@ -194,7 +194,7 @@ public abstract class AbstractDataType<T> implements DataType<T> {
     if (isLiteralSupported(index)) {
       return str;
     }
-    if (index == null && str.length() > 0 && str.charAt(0) != '"') {
+    if (index == null && !str.isEmpty() && str.charAt(0) != '"') {
       str = "\"" + str + "\"";
     }
     return (isPredefined() ? getJavaType() : getDataTypeConstant()) + ".valueOf(" + str + ")";

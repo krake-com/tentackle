@@ -61,6 +61,19 @@ public class LongType extends AbstractNumberType<Long> {
   }
 
   @Override
+  public String valueOfLiteralToCode(String str, Integer index) {
+    if (!str.isEmpty()) {
+      if (str.charAt(0) == '"') {
+        return super.valueOfLiteralToCode(str, index);
+      }
+      if (Character.isDigit(str.charAt(str.length() - 1))) {
+        return str + "L";
+      }
+    }
+    return str;
+  }
+
+  @Override
   public Object[] set(Backend backend, PreparedStatement statement, int pos, Long object, boolean mapNull, Integer size) throws SQLException {
     if (object == null) {
       statement.setNull(pos, Types.BIGINT);

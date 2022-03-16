@@ -19,6 +19,7 @@
 package org.tentackle.maven.plugin.wizard.fx;
 
 import org.tentackle.fx.table.DefaultTableConfiguration;
+import org.tentackle.maven.plugin.wizard.pdodata.DataNode;
 
 import java.util.function.Predicate;
 

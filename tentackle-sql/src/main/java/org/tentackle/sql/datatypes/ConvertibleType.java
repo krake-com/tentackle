@@ -56,17 +56,17 @@ public class ConvertibleType extends AbstractDataType<Object> {
 
   @Override
   public Object valueOf(String str) {
-    throw new UnsupportedOperationException();    // never called from TT (instead invoked on the wraooed type)
+    throw new UnsupportedOperationException();    // never called from TT (instead invoked on the wrapped type)
   }
 
   @Override
   public Object[] set(Backend backend, PreparedStatement statement, int pos, Object object, boolean mapNull, Integer size) throws SQLException {
-    throw new UnsupportedOperationException();    // never called from TT (instead invoked on the wraooed type)
+    throw new UnsupportedOperationException();    // never called from TT (instead invoked on the wrapped type)
   }
 
   @Override
   public Object get(Backend backend, ResultSet resultSet, int[] pos, boolean mapNull, Integer size) throws SQLException {
-    throw new UnsupportedOperationException();    // never called from TT (instead invoked on the wraooed type)
+    throw new UnsupportedOperationException();    // never called from TT (instead invoked on the wrapped type)
   }
 
 }

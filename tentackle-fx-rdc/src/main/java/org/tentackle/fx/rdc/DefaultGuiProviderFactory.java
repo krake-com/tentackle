@@ -25,6 +25,7 @@ import org.tentackle.reflect.ClassMapper;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -39,7 +40,7 @@ public class DefaultGuiProviderFactory implements GuiProviderFactory {
    * maps PDO-classes to the constructors of the provider classes.
    */
   @SuppressWarnings("rawtypes")
-  private final ConcurrentHashMap<Class, Constructor> serviceMap = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<Class, Optional<Constructor>> serviceMap = new ConcurrentHashMap<>();
 
   /**
    * maps PDO-classes to providers.
@@ -58,35 +59,48 @@ public class DefaultGuiProviderFactory implements GuiProviderFactory {
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public <T extends PersistentDomainObject<T>> GuiProvider<T> createGuiProvider(T pdo) {
     Class<T> pdoClass = pdo.getEffectiveClass();
-    Constructor<GuiProvider<T>> constructor = serviceMap.get(pdoClass);
-    if (constructor == null) {
-      // no harm if replaced by concurrent threads...
+    Optional<Constructor> constructor = serviceMap.computeIfAbsent(pdoClass, this::getConstructor);
+    if (constructor.isPresent()) {
       try {
-        Class serviceClass = guiClassMapper.mapLenient(pdoClass);
-        // find matching constructor
-        for (Constructor<GuiProvider<T>> con : serviceClass.getConstructors()) {
-          Class<?>[] params = con.getParameterTypes();
-          if (params.length == 1 && pdoClass.isAssignableFrom(params[0])) {
-            constructor = con;
-            serviceMap.put(pdoClass, constructor);
-            break;
-          }
-        }
-        if (constructor == null) {
-          throw new PdoRuntimeException("no matching constructor found for " + serviceClass.getName() +
-                                        "(" + pdoClass.getName() + ")");
-        }
+        return (GuiProvider<T>) constructor.get().newInstance(pdo);
       }
-      catch (ClassNotFoundException ex) {
-        throw new PdoRuntimeException("cannot load GUI service class for " + pdoClass.getName(), ex);
+      catch (IllegalAccessException | IllegalArgumentException | InstantiationException | InvocationTargetException e) {
+        throw new PdoRuntimeException("cannot instantiate GUI service object for " + pdoClass.getName(), e);
       }
     }
+    throw new PdoRuntimeException("no @GuiProviderService for " + pdoClass.getName());
+  }
 
+  @Override
+  @SuppressWarnings("unchecked")
+  public <T extends PersistentDomainObject<T>> boolean isGuiProviderAvailable(Class<T> pdoClass) {
+    return serviceMap.computeIfAbsent(pdoClass, this::getConstructor).isPresent();
+  }
+
+  /**
+   * Creates the {@link GuiProvider}'s constructor for a PDO class.
+   * <p>
+   * Throws {@link PdoRuntimeException} if no matching constructor found.
+   *
+   * @param pdoClass the PDO class
+   * @param <T> the PDO type
+   * @return the constructor's optional, empty if no such {@link GuiProviderService} found at all
+   */
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  protected <T extends PersistentDomainObject<T>> Optional<Constructor> getConstructor(Class<T> pdoClass) {
     try {
-      return constructor.newInstance(pdo);
+      Class serviceClass = guiClassMapper.mapLenient(pdoClass);
+      for (Constructor<GuiProvider<T>> con : serviceClass.getConstructors()) {
+        Class<?>[] params = con.getParameterTypes();
+        if (params.length == 1 && pdoClass.isAssignableFrom(params[0])) {
+          return Optional.of(con);
+        }
+      }
+      throw new PdoRuntimeException("no matching constructor found for " + serviceClass.getName() +
+                                    "(" + pdoClass.getName() + ")");
     }
-    catch (IllegalAccessException | IllegalArgumentException | InstantiationException | InvocationTargetException e) {
-      throw new PdoRuntimeException("cannot instantiate GUI service object for " + pdoClass.getName(), e);
+    catch (ClassNotFoundException ex) {
+      return Optional.empty();
     }
   }
 
