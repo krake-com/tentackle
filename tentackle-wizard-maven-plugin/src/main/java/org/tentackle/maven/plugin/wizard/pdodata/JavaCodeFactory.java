@@ -53,13 +53,16 @@ public class JavaCodeFactory {
   private final DataObject dataObject;
   private final Map<String, Holder<Integer>> nameMap;
 
-  public JavaCodeFactory(DataObject dataObject) {
+  private JavaCodeFactory(DataObject dataObject) {
     this.dataObject = dataObject;
     nameMap = new HashMap<>();
   }
 
-
-
+  /**
+   * Generates the Java code.
+   *
+   * @return the code
+   */
   public String generate() {
     return createComponentCode(createVarName(dataObject.getType()), dataObject);
   }
@@ -75,7 +78,6 @@ public class JavaCodeFactory {
     holder.accept(count + 1);
     return varName;
   }
-
 
   private String createNodeCode(String varName, DataNode node) {
     String code;
