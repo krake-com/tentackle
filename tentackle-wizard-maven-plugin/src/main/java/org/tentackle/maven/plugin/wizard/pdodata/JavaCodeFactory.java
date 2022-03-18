@@ -41,20 +41,19 @@ public class JavaCodeFactory {
   /**
    * Generates code from a data object template.
    *
-   * @param dataObject the data object
+   * @param dataObjects the data objects
    * @return the Java code
    */
-  public static String generateCode(DataObject dataObject) {
-    return new JavaCodeFactory(dataObject).generate();
+  public static String generateCode(DataObject... dataObjects) {
+    return new JavaCodeFactory(dataObjects).generate();
   }
 
 
-
-  private final DataObject dataObject;
+  private final DataObject[] dataObjects;
   private final Map<String, Holder<Integer>> nameMap;
 
-  private JavaCodeFactory(DataObject dataObject) {
-    this.dataObject = dataObject;
+  private JavaCodeFactory(DataObject... dataObjects) {
+    this.dataObjects = dataObjects;
     nameMap = new HashMap<>();
   }
 
@@ -64,7 +63,16 @@ public class JavaCodeFactory {
    * @return the code
    */
   public String generate() {
-    return createComponentCode(createVarName(dataObject.getType()), dataObject);
+    StringBuilder buf = new StringBuilder();
+    for (DataObject dataObject : dataObjects) {
+      if (!buf.isEmpty()) {
+        buf.append('\n');
+      }
+      String varName = createVarName(dataObject.getType());
+      buf.append(createComponentCode(varName, dataObject))
+         .append(varName).append(" = ").append(varName).append(".persist();\n");
+    }
+    return buf.toString();
   }
 
 
@@ -112,8 +120,9 @@ public class JavaCodeFactory {
       if (nonCompositeRelation != null) {
         Relation relation = nonCompositeRelation.getRelation();
         buf.append(varName).append('.').append(relation.getSetterName()).append("(Objects.requireNonNull(on(")
-            .append(relation.getForeignEntity()).append(".class).selectByUniqueDomainKey(")
-           .append(extractUdkLiteral(nonCompositeRelation.getRelatedPdo())).append(")));\n");
+           .append(relation.getForeignEntity()).append(".class).selectByUniqueDomainKey(")
+           .append(extractUdkLiteral(nonCompositeRelation.getRelatedPdo())).append(")));")
+           .append(toIdComment(nonCompositeRelation.getRelatedPdo())).append('\n');
       }
       else if (isSettingNecessary(orgValue, attribute)) {
         if (orgValue != null) {
@@ -150,7 +159,8 @@ public class JavaCodeFactory {
   private String createComponentCode(String varName, DataObject component) {
     StringBuilder buf = new StringBuilder();
     buf.append(component.getType()).append(' ').append(varName)
-       .append(" = on(").append(component.getType()).append(".class);\n");
+       .append(" = on(").append(component.getType()).append(".class);")
+       .append(toIdComment(component.getPdo())).append('\n');
     for (DataNode node : component.getNodes()) {
       buf.append(createNodeCode(varName, node));
     }
@@ -167,7 +177,8 @@ public class JavaCodeFactory {
         Relation nmRelation = relation.getNmRelation();
         buf.append(varName).append(".get").append(relation.getNmMethodName()).append("().add(Objects.requireNonNull(on(")
            .append(nmRelation.getForeignEntity()).append(".class).selectByUniqueDomainKey(")
-           .append(extractUdkLiteral(listRelation.getRelatedPdo())).append(")));\n");
+           .append(extractUdkLiteral(listRelation.getRelatedPdo())).append(")));")
+           .append(toIdComment(listRelation.getRelatedPdo())).append('\n');
       }
       else {
         buf.append(createComponentCode(objectName, object))
@@ -215,6 +226,13 @@ public class JavaCodeFactory {
     }
     // composite UDK
     return uniqueDomainKeyType.getSimpleName() + ".valueOf(\"" + pdo.getUniqueDomainKey() + "\")";
+  }
+
+  private String toIdComment(PersistentDomainObject<?> pdo) {
+    if (pdo != null) {
+      return "    // [" + pdo.getId() + "/" + pdo.getSerial() + "]";
+    }
+    return "";
   }
 
 }
