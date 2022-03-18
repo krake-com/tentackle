@@ -19,12 +19,14 @@
 package org.tentackle.maven.plugin.wizard.fx;
 
 import javafx.application.Platform;
+import javafx.collections.ObservableList;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.BorderPane;
@@ -157,6 +159,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     closeButton.setGraphic(Fx.createImageView("close"));
     closeButton.setOnAction(this::close);
 
+    pdosTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
     pdosTableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
       if (newValue != null) {
         dataObject = newValue.getDataObject();
@@ -303,15 +306,22 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
   }
 
   private void generateCode() {
-    if (dataObject != null) {
-      String text = JavaCodeFactory.generateCode(dataObject);
+    ObservableList<PdoWrapper> selectedItems = pdosTableView.getSelectionModel().getSelectedItems();
+    if (!selectedItems.isEmpty()) {
       StringBuilder buf = new StringBuilder();
-      buf.append("// generated from ").append(dataObject).append(" at ").append(FormatHelper.formatShortTimestampFast(new Timestamp())).append(" by ")
+      buf.append("// generated at ").append(FormatHelper.formatShortTimestampFast(new Timestamp())).append(" by ")
          .append(System.getProperty("user.name"))
          .append(" on ")
          .append(mojo.getHostName()).append('\n')
-         .append("// connected to ").append(getDomainContext().getSession()).append("\n\n")
-         .append(text);
+         .append("// from ").append(getDomainContext().getSession()).append("\n\n");
+
+      DataObject[] dataObjects = new DataObject[selectedItems.size()];
+      int i = 0;
+      for (PdoWrapper pdoWrapper : selectedItems) {
+        dataObjects[i++] = pdoWrapper.getDataObject();
+      }
+      String text = JavaCodeFactory.generateCode(dataObjects);
+      buf.append(text);
 
       ClipboardContent cbc = new ClipboardContent();
       cbc.putString(buf.toString());
@@ -319,7 +329,8 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
 
       // show some feedback
       Note infoNote = new Note(Note.Position.TOP, Note.Type.INFO);
-      infoNote.setText("Java code for " + dataObject + " copied to clipboard");
+      String topic = selectedItems.size() > 1 ? (selectedItems.size() + " " + dataObject.getPdo().getPlural()) : dataObject.toString();
+      infoNote.setText("Java code for " + topic + " copied to clipboard");
       infoNote.setFadeEffect(500, 2000, 1000);
       infoNote.show(generateButton);
     }
