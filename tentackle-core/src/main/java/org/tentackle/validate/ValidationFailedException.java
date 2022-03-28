@@ -62,6 +62,7 @@ public class ValidationFailedException extends RuntimeException implements Logga
   @Serial
   private static final long serialVersionUID = 1L;
 
+  @SuppressWarnings("serial")
   private final List<ValidationResult> results;   // the validation results
   private transient String resultsMessage;        // cached results message
 

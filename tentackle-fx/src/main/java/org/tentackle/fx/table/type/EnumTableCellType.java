@@ -54,7 +54,7 @@ public class EnumTableCellType extends AbstractTableCellType<Enum> {
   @Override
   public FxComponent getEditor() {
     if (editor == null) {
-      editor = Fx.createNode(ComboBox.class);
+      editor = Fx.create(ComboBox.class);
     }
     return editor;
   }

@@ -22,7 +22,6 @@ package org.tentackle.fx.container;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.collections.ObservableList;
-import javafx.scene.Node;
 import javafx.scene.layout.HBox;
 
 import org.tentackle.fx.FxContainer;
@@ -37,42 +36,6 @@ import org.tentackle.fx.container.delegate.FxHBoxDelegate;
  * @author harald
  */
 public class FxHBox extends HBox implements FxContainer {
-
-  /**
-   * Creates an HBox layout with spacing = 0.
-   */
-  public FxHBox() {
-    super();
-  }
-
-  /**
-   * Creates an HBox layout with the specified spacing between children.
-   * <p>
-   * @param spacing the amount of horizontal space between each child
-   */
-  public FxHBox(double spacing) {
-    super(spacing);
-  }
-
-  /**
-   * Creates an HBox layout with spacing = 0.
-   * <p>
-   * @param children The initial set of children for this pane.
-   */
-  public FxHBox(Node... children) {
-    super(children);
-  }
-
-  /**
-   * Creates an HBox layout with the specified spacing between children.
-   * <p>
-   * @param spacing  the amount of horizontal space between each child
-   * @param children The initial set of children for this pane.
-   */
-  public FxHBox(double spacing, Node... children) {
-    super(spacing, children);
-  }
-
 
   // @wurblet delegate Include $currentDir/fxcontainer.include
 
@@ -123,8 +86,8 @@ public class FxHBox extends HBox implements FxContainer {
   }
 
   @Override
-  public void setContainerChangableIgnored(boolean containerChangeableIgnored) {
-    getDelegate().setContainerChangableIgnored(containerChangeableIgnored);
+  public void setContainerChangeableIgnored(boolean containerChangeableIgnored) {
+    getDelegate().setContainerChangeableIgnored(containerChangeableIgnored);
   }
 
   @Override

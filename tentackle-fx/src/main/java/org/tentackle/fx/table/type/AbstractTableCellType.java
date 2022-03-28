@@ -69,7 +69,7 @@ public abstract class AbstractTableCellType<T> implements TableCellType<T> {
   @Override
   public FxComponent getEditor() {
     if (editor == null) {
-      editor = Fx.createNode(TextField.class);
+      editor = Fx.create(TextField.class);
     }
     return editor;
   }

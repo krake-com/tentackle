@@ -35,7 +35,7 @@ import java.util.Properties;
  * Where name must be a valid name according to the Java convention for variables.
  * The values are any kind of strings enclosed in single quotes.
  * If the value contains a single quote, it must be encoded as two consecutive single quotes.
- * The parameters are are separated by comma.
+ * The parameters are separated by comma.
  * The empty string is encoded as nameX instead of nameX='' as a convenience to denote
  * just the presence of a name (e.g. for booleans).
  *
@@ -47,11 +47,12 @@ public class ParameterString implements Serializable {
   private static final long serialVersionUID = 1L;
 
   // the name/value pairs
+  @SuppressWarnings("serial")
   private final Map<String,String> parameters;
 
 
   /**
-   * Creates an emoty parameter string.
+   * Creates an empty parameter string.
    */
   public ParameterString() {
     parameters = new LinkedHashMap<>();

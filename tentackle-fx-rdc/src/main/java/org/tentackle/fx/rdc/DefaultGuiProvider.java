@@ -30,6 +30,7 @@ import javafx.util.Callback;
 
 import org.tentackle.common.BundleFactory;
 import org.tentackle.fx.Fx;
+import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.rdc.search.DefaultPdoFinder;
@@ -190,8 +191,8 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
   }
 
   @Override
-  public void dropDragboard(Dragboard dragbord) {
-    PersistentDomainObject<?> pdoToDrop = RdcUtilities.getInstance().getPdoFromDragboard(dragbord, pdo.getDomainContext());
+  public void dropDragboard(Dragboard dragboard) {
+    PersistentDomainObject<?> pdoToDrop = RdcUtilities.getInstance().getPdoFromDragboard(dragboard, pdo.getDomainContext());
     if (pdoToDrop != null) {
       dropPdo(pdoToDrop);
     }
@@ -206,10 +207,47 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
     throw new FxRuntimeException("dropPdo is not implemented for " + pdo.getEffectiveClass().getName());
   }
 
+
+  /**
+   * Creates an empty table configuration.<br>
+   * Utility method for subclasses of {@link DefaultGuiProvider}.
+   *
+   * @param name the table's name, null if basename from effective class of template
+   * @return the table configuration
+   */
+  protected TableConfiguration<T> createEmptyTableConfiguration(String name) {
+    TableConfiguration<T> configuration = FxFactory.getInstance().createTableConfiguration(getPdo(), name);
+    if (isBundleProvided()) {
+      configuration.setBaseBundleName(getClass().getName());
+    }
+    return configuration;
+  }
+
+  /**
+   * Creates an empty table configuration.<br>
+   * Utility method for subclasses of {@link DefaultGuiProvider}.
+   *
+   * @return the table configuration
+   */
+  protected final TableConfiguration<T> createEmptyTableConfiguration() {
+    return createEmptyTableConfiguration(null);
+  }
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * The default implementation creates the column configurations by analyzing the PDO class via reflection.<br>
+   * Application specific subclasses overriding this method should consider using {@link #createEmptyTableConfiguration(String)} or
+   * {@link #createEmptyTableConfiguration()} to create the empty configuration first.
+   */
   @Override
   public TableConfiguration<T> createTableConfiguration() {
-    return TableUtilities.getInstance().createTableConfiguration(
+    TableConfiguration<T> configuration = TableUtilities.getInstance().createTableConfiguration(
                   getPdo().getEffectiveClass(), isBundleProvided() ? getBundle() : null);
+    if (isBundleProvided()) {
+      configuration.setBaseBundleName(getClass().getName());
+    }
+    return configuration;
   }
 
   @Override
@@ -224,7 +262,7 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
     if (config.getBindingType() != TableConfiguration.BINDING.NO) {
       config.getBinder().assertAllBound();
     }
-    FxTableView<T> tableView = Fx.createNode(TableView.class);
+    FxTableView<T> tableView = Fx.create(TableView.class);
     config.configure(tableView);
     return tableView;
   }

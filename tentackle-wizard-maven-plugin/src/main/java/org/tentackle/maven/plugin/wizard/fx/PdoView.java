@@ -55,9 +55,9 @@ public class PdoView extends AbstractFxController {
    * Creates an object diff view.
    */
   public PdoView() {
-    diffNode = Fx.createNode(TreeTableView.class);
+    diffNode = Fx.create(TreeTableView.class);
     diffNode.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-    FxBorderPane pane = Fx.createNode(BorderPane.class);    // must be an FxContainer (otherwise binding doesn't work)
+    FxBorderPane pane = Fx.create(BorderPane.class);    // must be an FxContainer (otherwise binding doesn't work)
     pane.setCenter(diffNode);
     setView(pane);
   }
@@ -120,7 +120,7 @@ public class PdoView extends AbstractFxController {
 
   private void configureContextMenu() {
     ContextMenu contextMenu = diffNode.getContextMenu();
-    MenuItem diffOnlyItem = new MenuItem();
+    MenuItem diffOnlyItem = Fx.create(MenuItem.class);
     diffOnlyItem.setOnAction(e -> toggleDiffOnly());
     contextMenu.getItems().add(0, diffOnlyItem);
     contextMenu.addEventHandler(WindowEvent.WINDOW_SHOWING, event -> diffOnlyItem.setText(

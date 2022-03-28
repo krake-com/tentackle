@@ -40,6 +40,7 @@ public class IgnoreDuplicatesPersistenceVisitor extends PersistenceVisitor {
   private static final Logger LOGGER = Logger.get(IgnoreDuplicatesPersistenceVisitor.class);
 
 
+  @SuppressWarnings("serial")
   private final Set<AbstractDbObject<?>> objectSet;   // all persisted objects so far
   private boolean persistenceOperationAllowed;        // true if allowed
 

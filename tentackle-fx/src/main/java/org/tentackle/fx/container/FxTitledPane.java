@@ -22,7 +22,6 @@ package org.tentackle.fx.container;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.collections.ObservableList;
-import javafx.scene.Node;
 import javafx.scene.control.TitledPane;
 
 import org.tentackle.fx.FxContainer;
@@ -37,24 +36,6 @@ import org.tentackle.fx.container.delegate.FxTitledPaneDelegate;
  * @author harald
  */
 public class FxTitledPane extends TitledPane implements FxContainer {
-
-  /**
-   * Creates a new TitledPane with no title or content.
-   */
-  public FxTitledPane() {
-    super();
-  }
-
-  /**
-   * Creates a new TitledPane with a title and content.
-   * <p>
-   * @param title   The title of the TitledPane.
-   * @param content The content of the TitledPane.
-   */
-  public FxTitledPane(String title, Node content) {
-    super(title, content);
-  }
-
 
   // @wurblet delegate Include $currentDir/fxcontainer.include
 
@@ -105,8 +86,8 @@ public class FxTitledPane extends TitledPane implements FxContainer {
   }
 
   @Override
-  public void setContainerChangableIgnored(boolean containerChangeableIgnored) {
-    getDelegate().setContainerChangableIgnored(containerChangeableIgnored);
+  public void setContainerChangeableIgnored(boolean containerChangeableIgnored) {
+    getDelegate().setContainerChangeableIgnored(containerChangeableIgnored);
   }
 
   @Override

@@ -31,19 +31,21 @@ import org.testng.annotations.BeforeSuite;
 import org.tentackle.dbms.Db;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelException;
-import org.tentackle.pdo.test.DbTestUtilities;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.Pdo;
+import org.tentackle.pdo.test.DbTestUtilities;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.sql.Backend;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.Arrays;
 
 import static org.testng.Assert.fail;
 
@@ -208,7 +210,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   }
 
   /**
-   * Returns whether the transaction should be commit or rolled back.
+   * Returns whether the transaction should be committed or rolled back.
    *
    * @return true if commit, false if rollback (default for regular tests)
    */
@@ -228,7 +230,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
 
   /**
    * Runs the given class in another JVM.<br>
-   * The testclass must have a main method.
+   * The test class must have a main method.
    *
    * @param testClass the test class
    * @return the exit value
@@ -320,7 +322,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
 
   /**
    * Runs the given class in another JVM and waits for termination.<br>
-   * The testclass must have a main method.
+   * The test class must have a main method.
    *
    * @param testClass the test class
    * @param args optional arguments
@@ -338,16 +340,19 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
       }
       classPath += modulePath;    // just append the module path to the classpath
     }
-    StringBuilder cmd = new StringBuilder();
-    cmd.append(javaHome).append("/bin/java -cp ")
-       .append(classPath).append(' ').append(testClass.getName());
-    if (args != null) {
-      for (String arg: args) {
-        cmd.append(' ').append(arg);
-      }
+    String[] cmd = {
+        javaHome + File.separator + "bin" + File.separator + "java",
+        "-cp",
+        classPath,
+        testClass.getName()
+    };
+    if (args != null && args.length > 0) {
+      String[] aCmd = Arrays.copyOf(cmd, cmd.length + args.length);
+      System.arraycopy(args, 0, aCmd, cmd.length, args.length);
+      cmd = aCmd;
     }
-    Reporter.log("running: " + cmd + "<br>");
-    return Runtime.getRuntime().exec(cmd.toString());
+    Reporter.log("running: " + Arrays.toString(cmd) + "<br>");
+    return Runtime.getRuntime().exec(cmd);
   }
 
   /**

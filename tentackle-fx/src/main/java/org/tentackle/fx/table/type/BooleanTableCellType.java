@@ -63,7 +63,7 @@ public class BooleanTableCellType extends AbstractTableCellType<Boolean> {
   @Override
   public FxComponent getEditor() {
     if (editor == null) {
-      editor = Fx.createNode(CheckBox.class);
+      editor = Fx.create(CheckBox.class);
     }
     return editor;
   }

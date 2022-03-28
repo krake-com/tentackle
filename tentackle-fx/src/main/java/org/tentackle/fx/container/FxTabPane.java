@@ -22,7 +22,6 @@ package org.tentackle.fx.container;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.collections.ObservableList;
-import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 
 import org.tentackle.fx.FxContainer;
@@ -37,23 +36,6 @@ import org.tentackle.fx.container.delegate.FxTabPaneDelegate;
  * @author harald
  */
 public class FxTabPane extends TabPane implements FxContainer {
-
-  /**
-   * Constructs a new TabPane.
-   */
-  public FxTabPane() {
-    super();
-  }
-
-  /**
-   * Constructs a new TabPane with the given tabs set to show.
-   * <p>
-   * @param tabs The {@link Tab tabs} to display inside the TabPane.
-   */
-  public FxTabPane(Tab... tabs) {
-    super(tabs);
-  }
-
 
   // @wurblet delegate Include $currentDir/fxcontainer.include
 
@@ -104,8 +86,8 @@ public class FxTabPane extends TabPane implements FxContainer {
   }
 
   @Override
-  public void setContainerChangableIgnored(boolean containerChangeableIgnored) {
-    getDelegate().setContainerChangableIgnored(containerChangeableIgnored);
+  public void setContainerChangeableIgnored(boolean containerChangeableIgnored) {
+    getDelegate().setContainerChangeableIgnored(containerChangeableIgnored);
   }
 
   @Override

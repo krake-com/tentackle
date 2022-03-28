@@ -27,6 +27,7 @@ import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 
+import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxUtilities;
@@ -96,7 +97,7 @@ public class FxListView<T> extends ListView<T> implements FxComponent {
 
 
   /**
-   * Configures the table to copy a cell via Crtl-C to the clipboard.
+   * Configures the table to copy a cell via Ctrl-C to the clipboard.
    *
    * @param copyToClipboardEnabled true to enable
    */
@@ -156,7 +157,7 @@ public class FxListView<T> extends ListView<T> implements FxComponent {
         String text = copyToClipboard(event.isShiftDown());   // shift+ctrl -> comma separated
         if (text != null) {
           // display copied text for as long as the control button is held down (see setOnKeyReleased below)
-          Note infoNote = new Note(Note.Position.CENTER, Note.Type.INFO);
+          Note infoNote = Fx.create(Note.class);
           infoNote.setText(text);
           infoNote.show(this);
           if (infoNotes == null) {
@@ -368,8 +369,8 @@ public class FxListView<T> extends ListView<T> implements FxComponent {
   }
 
   @Override
-  public void setContainerChangableIgnored(boolean containerChangeableIgnored) {
-    getDelegate().setContainerChangableIgnored(containerChangeableIgnored);
+  public void setContainerChangeableIgnored(boolean containerChangeableIgnored) {
+    getDelegate().setContainerChangeableIgnored(containerChangeableIgnored);
   }
 
   @Override

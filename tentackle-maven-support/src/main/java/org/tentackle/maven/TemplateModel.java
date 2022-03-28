@@ -35,6 +35,7 @@ public class TemplateModel extends HashMap<String, Object> {
   @Serial
   private static final long serialVersionUID = 1L;
 
+  @SuppressWarnings("serial")
   private final Log logger;   // the maven logger
 
   /**

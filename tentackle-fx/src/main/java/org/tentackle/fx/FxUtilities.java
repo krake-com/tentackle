@@ -72,11 +72,13 @@ import org.tentackle.bind.Binding;
 import org.tentackle.bind.BindingException;
 import org.tentackle.bind.BindingMember;
 import org.tentackle.common.Constants;
+import org.tentackle.common.LocaleProvider;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.component.FxTextArea;
+import org.tentackle.fx.component.FxTreeTableView;
 import org.tentackle.fx.component.Note;
 import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
@@ -175,7 +177,7 @@ public class FxUtilities {
   }
 
   /**
-   * Gets the timeout for the prefix selection in dropdown lists such as in comboboxes.
+   * Gets the timeout for the prefix selection in dropdown lists such as in combo boxes.
    *
    * @return the timeout in milliseconds (default is 500)
    */
@@ -354,7 +356,11 @@ public class FxUtilities {
   @SuppressWarnings("rawtypes")
   public String dumpComponentHierarchy(Node node) {
     StringBuilder buf = new StringBuilder();
-    buf.append(">>> component hierarchy within ");
+    buf.append(">>> ")
+       .append(BundleMonkeyHelper.LOCALE_PREFIX)
+       .append(LocaleProvider.getInstance().getLocale())
+       .append(BundleMonkeyHelper.LOCALE_POSTFIX)
+       .append(" component hierarchy within ");
     Stage stage = getStage(node);
     if (stage != null) {
       buf.append("stage '").append(stage.getTitle()).append("'");
@@ -364,16 +370,50 @@ public class FxUtilities {
       if (node instanceof FxContainer) {
         FxController controller = ((FxContainer) node).getController();
         if (controller != null) {
-          buf.append(controller.getClass().getSimpleName()).append(": ");
+
+          FxControllerService annotation = controller.getClass().getAnnotation(FxControllerService.class);
+          String bundleName = null;
+          if (annotation != null) {
+            if (annotation.resources().isEmpty()) {
+              bundleName = controller.getClass().getName();
+            }
+            else if (!annotation.resources().equals(FxControllerService.RESOURCES_NONE)) {
+              bundleName = annotation.resources();
+            }
+          }
+          if (bundleName != null) {
+            buf.append(BundleMonkeyHelper.createNavigationString(bundleName));
+          }
+          if (!controller.getClass().getName().equals(bundleName)) {
+            if (bundleName != null) {
+              buf.append(' ');
+            }
+            buf.append(controller.getClass().getSimpleName());
+          }
+          buf.append(": ");
         }
       }
       else if (node instanceof FxTableView) {
-        TableConfiguration tableConfiguration = ((FxTableView) node).getConfiguration();
-        if (tableConfiguration != null) {
-          buf.append(tableConfiguration.getName()).append(": ");
+        TableConfiguration configuration = ((FxTableView) node).getConfiguration();
+        if (configuration != null) {
+          if (configuration.getBaseBundleName() != null) {
+            buf.append(BundleMonkeyHelper.createNavigationString(configuration.getBaseBundleName())).append(' ');
+          }
+          buf.append(configuration.getName()).append(": ");
         }
       }
+      else if (node instanceof FxTreeTableView) {
+        TableConfiguration configuration = ((FxTreeTableView) node).getConfiguration();
+        if (configuration != null) {
+          if (configuration.getBaseBundleName() != null) {
+            buf.append(BundleMonkeyHelper.createNavigationString(configuration.getBaseBundleName())).append(' ');
+          }
+          buf.append(configuration.getName()).append(": ");
+        }
+      }
+
       buf.append(node).append(" @ [").append(node.getLayoutX()).append("/").append(node.getLayoutY()).append(']');
+
       if (node instanceof FxComponent fxComponent) {
         Binding binding = fxComponent.getBinding();
         if (binding != null) {
@@ -404,6 +444,7 @@ public class FxUtilities {
           }
         }
       }
+
       node = node.getParent();
     }
     buf.append("\n<<<");
@@ -587,7 +628,9 @@ public class FxUtilities {
     PopupWindow popup = null;
     String errorMessage = component.getError();
     if (!StringHelper.isAllWhitespace(errorMessage)) {
-      Note note = new Note(Note.Position.RIGHT, Note.Type.ERROR);
+      Note note = Fx.create(Note.class);
+      note.setPosition(Note.Position.RIGHT);
+      note.setType(Note.Type.ERROR);
       note.setText(errorMessage);
       note.show((Node) component);
       popup = note;
@@ -599,13 +642,15 @@ public class FxUtilities {
    * Shows an info popup for a component.
    *
    * @param component the component
-   * @return the popup, null if no infomessage in component
+   * @return the popup, null if no info-message in component
    */
   public PopupWindow showInfoPopup(InfoPopupSupported component) {
     PopupWindow popup = null;
     String infoMessage = component.getInfo();
     if (!StringHelper.isAllWhitespace(infoMessage)) {
-      Note note = new Note(Note.Position.RIGHT, Note.Type.INFO);
+      Note note = Fx.create(Note.class);
+      note.setPosition(Note.Position.RIGHT);
+      note.setType(Note.Type.INFO);
       note.setText(infoMessage);
       note.show((Node) component);
       popup = note;
@@ -752,10 +797,10 @@ public class FxUtilities {
     if (component.getError() == null) {  // don't override view if there is a parsing error
       component.updateView();
       if (component.isChangeable() && component instanceof FxTextComponent) {
-        // By default, FX autoselects a field if on re-focus.
-        // This cannot be configured and is hard wired (for whatever reason).
+        // By default, FX auto-selects a field if on re-focus.
+        // This cannot be configured and is hard-wired (for whatever reason).
         // In TT, this is configurable via the autoSelect feature.
-        // in FX components are autoselected if the field is focused by TAB (or ENTER in TT).
+        // in FX components are auto-selected if the field is focused by TAB (or ENTER in TT).
         // If by mouse, the cursor is positioned where the mouse points to and nothing is selected.
         // For numeric fields, however, (and where desired) this behaviour leads to unexpected data entry.
         Platform.runLater(((FxTextComponent) component)::autoSelect);
@@ -808,14 +853,14 @@ public class FxUtilities {
 
       private KeyEvent remap(KeyEvent event, KeyCode code) {
         KeyEvent newEvent = new KeyEvent(
-        event.getEventType(),
-        event.getCharacter(),
-        event.getText(),
-        code,
-        event.isShiftDown(),
-        event.isControlDown(),
-        event.isAltDown(),
-        event.isMetaDown());
+            event.getEventType(),
+            event.getCharacter(),
+            event.getText(),
+            code,
+            event.isShiftDown(),
+            event.isControlDown(),
+            event.isAltDown(),
+            event.isMetaDown());
 
         return newEvent.copyFor(event.getSource(), event.getTarget());
       }
@@ -881,11 +926,14 @@ public class FxUtilities {
     window.addEventFilter(MouseEvent.ANY, event -> {
       if (event.isShiftDown() && event.isControlDown() && !event.isMetaDown() && !event.isAltDown() &&
           event.isPopupTrigger()) {
+        event.consume();    // ctrl + shift + right mouse button should not trigger anything at all
         PickResult pickResult = event.getPickResult();
         if (pickResult != null) {
           Node node = pickResult.getIntersectedNode();
           if (node != null) {
-            LOGGER.info(() -> "\n" + dumpComponentHierarchy(node));
+            String componentHierarchy = dumpComponentHierarchy(node);
+            LOGGER.info(() -> "\n" + componentHierarchy);
+            BundleMonkeyHelper.navigateTo(componentHierarchy);
           }
         }
       }
@@ -903,7 +951,6 @@ public class FxUtilities {
    */
   public <T> void expandAll(TreeItem<T> treeItem) {
     if (treeItem != null && !treeItem.isLeaf()) {
-      T value = treeItem.getValue();
       if (!isValueInParentPath(treeItem)) {
         treeItem.setExpanded(true);
         ObservableList<TreeItem<T>> children = treeItem.getChildren();
@@ -1399,7 +1446,7 @@ public class FxUtilities {
     Point2D location = new Point2D(stage.getX(), stage.getY());
 
     if (location.getX() == 0.0 && location.getY() == 0.0) {   // if no position yet
-      // place in the middle of the owner if possibe
+      // place in the middle of the owner if possible
       Window owner = stage.getOwner();
       if (owner != null) {
         location = new Point2D(owner.getX() + (owner.getWidth() - stage.getWidth()) / 2.0,
@@ -1484,7 +1531,7 @@ public class FxUtilities {
   /**
    * Computes the row number to scrollTo in order to position the given row in the middle of the viewport.
    *
-   * @param control the control, usually a table- or treeview
+   * @param control the control, usually a table- or tree-view
    * @param row the row to position in the middle of the viewport, if possible
    * @return the row number to pass to the scrollTo method
    */
@@ -1521,7 +1568,7 @@ public class FxUtilities {
   /**
    * Update the maximum column width.
    *
-   * @param maxWidth the current max witdh
+   * @param maxWidth the current max width
    * @param cell the cell
    * @param tableSkin the skin
    * @return the updates width
@@ -1540,7 +1587,7 @@ public class FxUtilities {
   /**
    * Update the maximum column width.
    *
-   * @param maxWidth the current max witdh
+   * @param maxWidth the current max width
    * @param cell the cell
    * @param treeTableSkin the skin
    * @return the updates width
@@ -1569,7 +1616,7 @@ public class FxUtilities {
    */
   private Point2D determineFreeStageLocation(Stage stage, Point2D startLocation)  {
 
-    // get screensize
+    // get screen-size
     Rectangle2D screenSize = Screen.getPrimary().getVisualBounds();
 
     final double stepX = screenSize.getWidth() / XY_STEP_DIVISOR;

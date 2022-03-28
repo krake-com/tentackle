@@ -49,7 +49,7 @@ import java.util.function.Function;
  * The StringBuilder holding the text input is replaced with blanks when getPassword() is invoked.
  * The application is responsible to clear the returned char-array as well.<br>
  * Needs "--add-opens javafx.controls/javafx.scene.control=org.tentackle.fx", if application runs in modular mode.
- * Falls back to a less secure mode and logs a warning, if javafx.controls is not open.
+ * Falls back to a less secure mode and logs a warning, if {@code javafx.controls} is not open.
  * <p>
  * Important: if you use the password character array methods, you must not use standard FX bindings,
  * listeners, etc... as they all work with regular strings. Furthermore, all text processing like
@@ -331,8 +331,8 @@ public class FxPasswordField extends PasswordField implements FxTextComponent {
   }
 
   @Override
-  public void setContainerChangableIgnored(boolean containerChangeableIgnored) {
-    getDelegate().setContainerChangableIgnored(containerChangeableIgnored);
+  public void setContainerChangeableIgnored(boolean containerChangeableIgnored) {
+    getDelegate().setContainerChangeableIgnored(containerChangeableIgnored);
   }
 
   @Override

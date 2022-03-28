@@ -121,7 +121,7 @@ public class SecurityEditor extends PdoEditor<Security> {
 
     for (Class<? extends Permission> permissionIf: SecurityFactory.getInstance().getPermissionInterfaces()) {
       Permission permission = SecurityFactory.getInstance().getPermission(permissionIf);
-      FxCheckBox checkBox = Fx.createNode(CheckBox.class);
+      FxCheckBox checkBox = Fx.create(CheckBox.class);
       String description = permission.getDecription();
       if (description != null) {
         checkBox.setTooltip(new Tooltip(description));
@@ -130,7 +130,7 @@ public class SecurityEditor extends PdoEditor<Security> {
       checkBox.setBindable(false);
       checkBox.addViewToModelListener(this::handleSelectionEvent);
       permissionCheckBoxes.put(permission, checkBox);
-      FxRadioButton effectiveRadioButton = Fx.createNode(RadioButton.class);
+      FxRadioButton effectiveRadioButton = Fx.create(RadioButton.class);
       effectiveRadioButton.setBindable(false);
       effectiveRadioButton.setChangeable(false);
       permissionRadioButtons.put(permission, effectiveRadioButton);

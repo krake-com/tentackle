@@ -36,7 +36,6 @@ import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.FxTreeTableCell;
 
 import java.lang.reflect.Type;
-import java.time.LocalDate;
 import java.util.function.Function;
 
 /**
@@ -48,23 +47,6 @@ import java.util.function.Function;
  * @author harald
  */
 public class FxDatePicker extends DatePicker implements FxTextComponent {
-
-  /**
-   * Creates a default DatePicker instance with a <code>null</code> date value set.
-   */
-  public FxDatePicker() {
-    super();
-  }
-
-  /**
-   * Creates a DatePicker instance and sets the {@link #valueProperty() value} to the given date.
-   * <p>
-   * @param localDate to be set as the currently selected date in the DatePicker. Can be null.
-   */
-  public FxDatePicker(LocalDate localDate) {
-    super(localDate);
-  }
-
 
   // @wurblet delegate Include $currentDir/fxtextcomponent.include
 
@@ -421,8 +403,8 @@ public class FxDatePicker extends DatePicker implements FxTextComponent {
   }
 
   @Override
-  public void setContainerChangableIgnored(boolean containerChangeableIgnored) {
-    getDelegate().setContainerChangableIgnored(containerChangeableIgnored);
+  public void setContainerChangeableIgnored(boolean containerChangeableIgnored) {
+    getDelegate().setContainerChangeableIgnored(containerChangeableIgnored);
   }
 
   @Override

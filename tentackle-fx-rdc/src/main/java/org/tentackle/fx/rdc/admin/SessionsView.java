@@ -141,6 +141,7 @@ public class SessionsView extends AbstractFxController {
    */
   protected TableConfiguration<SessionData> createTableConfiguration() {
     TableConfiguration<SessionData> config = FxFactory.getInstance().createTableConfiguration(SessionData.class, null);
+    config.setBaseBundleName(getClass().getName());
     config.addColumn("userId", resources.getString("user-ID"));
     config.addColumn("userName", resources.getString("user"));
     config.addColumn("applicationName", resources.getString("application"));

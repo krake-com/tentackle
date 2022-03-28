@@ -42,11 +42,13 @@ public class RemoteServerObject extends UnicastRemoteObject {
   /**
    * @serial client-side socket factory (if any)
    */
+  @SuppressWarnings("serial")
   private final RMIClientSocketFactory csf;
 
   /**
    * @serial server-side socket factory (if any) to use when exporting object
    */
+  @SuppressWarnings("serial")
   private final RMIServerSocketFactory ssf;
 
   /**

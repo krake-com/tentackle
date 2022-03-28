@@ -19,7 +19,6 @@
 
 package org.tentackle.fx.component;
 
-import javafx.scene.Node;
 import javafx.scene.control.Label;
 
 /**
@@ -28,31 +27,5 @@ import javafx.scene.control.Label;
  * @author harald
  */
 public class FxLabel extends Label {
-
-  /**
-   * Creates an empty label
-   */
-  public FxLabel() {
-    super();
-  }
-
-  /**
-   * Creates Label with supplied text.
-   * <p>
-   * @param text null text is treated as the empty string
-   */
-  public FxLabel(String text) {
-    super(text);
-  }
-
-  /**
-   * Creates a Label with the supplied text and graphic.
-   * <p>
-   * @param text    null text is treated as the empty string
-   * @param graphic a null graphic is acceptable
-   */
-  public FxLabel(String text, Node graphic) {
-    super(text, graphic);
-  }
 
 }

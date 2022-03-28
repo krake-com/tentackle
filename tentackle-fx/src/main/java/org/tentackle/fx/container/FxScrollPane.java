@@ -22,7 +22,6 @@ package org.tentackle.fx.container;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.collections.ObservableList;
-import javafx.scene.Node;
 import javafx.scene.control.ScrollPane;
 
 import org.tentackle.fx.FxContainer;
@@ -37,23 +36,6 @@ import org.tentackle.fx.container.delegate.FxScrollPaneDelegate;
  * @author harald
  */
 public class FxScrollPane extends ScrollPane implements FxContainer {
-
-  /**
-   * Creates a new ScrollPane.
-   */
-  public FxScrollPane() {
-    super();
-  }
-
-  /**
-   * Creates a new ScrollPane.
-   * <p>
-   * @param content the initial content for the ScrollPane
-   */
-  public FxScrollPane(Node content) {
-    super(content);
-  }
-
 
   // @wurblet delegate Include $currentDir/fxcontainer.include
 
@@ -104,8 +86,8 @@ public class FxScrollPane extends ScrollPane implements FxContainer {
   }
 
   @Override
-  public void setContainerChangableIgnored(boolean containerChangeableIgnored) {
-    getDelegate().setContainerChangableIgnored(containerChangeableIgnored);
+  public void setContainerChangeableIgnored(boolean containerChangeableIgnored) {
+    getDelegate().setContainerChangeableIgnored(containerChangeableIgnored);
   }
 
   @Override

@@ -18,6 +18,8 @@
 
 package org.tentackle.misc;
 
+import org.tentackle.common.TentackleRuntimeException;
+
 import java.io.Serial;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
@@ -25,7 +27,6 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.function.Consumer;
-import org.tentackle.common.TentackleRuntimeException;
 
 /**
  * A copy-on-write wrapper for collections.<br>
@@ -52,6 +53,7 @@ public class CopyOnWriteCollection<E> implements Collection<E>, Serializable {
   /**
    * The wrapped or cloned collection.
    */
+  @SuppressWarnings("serial")
   private Collection<E> collection;
 
   /**

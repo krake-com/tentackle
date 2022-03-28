@@ -60,7 +60,7 @@ public interface FxControl {
   boolean isChangeable();
 
   /**
-   * Gets the changaeble property.
+   * Gets the changeable property.
    *
    * @return the property
    */
@@ -78,7 +78,7 @@ public interface FxControl {
    *
    * @param containerChangeableIgnored true if ignore, default is false
    */
-  void setContainerChangableIgnored(boolean containerChangeableIgnored);
+  void setContainerChangeableIgnored(boolean containerChangeableIgnored);
 
   /**
    * Returns whether setContainerChangeable is ignored by this control.

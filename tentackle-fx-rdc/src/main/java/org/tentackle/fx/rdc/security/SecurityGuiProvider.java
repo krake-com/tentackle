@@ -21,7 +21,6 @@ package org.tentackle.fx.rdc.security;
 import javafx.scene.image.ImageView;
 
 import org.tentackle.fx.Fx;
-import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.rdc.DefaultGuiProvider;
 import org.tentackle.fx.rdc.GuiProviderService;
 import org.tentackle.fx.table.TableConfiguration;
@@ -61,7 +60,7 @@ public class SecurityGuiProvider extends DefaultGuiProvider<Security> {
 
   @Override
   public TableConfiguration<Security> createTableConfiguration() {
-    TableConfiguration<Security> config = FxFactory.getInstance().createTableConfiguration(getPdo(), null);
+    TableConfiguration<Security> config = createEmptyTableConfiguration();
     config.addColumn("granteeToString", getBundle().getString("grantee"));
     config.addColumn("contextToString", getBundle().getString("context"));
     // priority not displayed because it corresponds to the sorting order

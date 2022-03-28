@@ -22,7 +22,6 @@ package org.tentackle.fx.container;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.collections.ObservableList;
-import javafx.scene.Node;
 import javafx.scene.control.ToolBar;
 
 import org.tentackle.fx.FxContainer;
@@ -37,23 +36,6 @@ import org.tentackle.fx.container.delegate.FxToolBarDelegate;
  * @author harald
  */
 public class FxToolBar extends ToolBar implements FxContainer {
-
-  /**
-   * Creates an empty tool bar.
-   */
-  public FxToolBar() {
-    super();
-  }
-
-  /**
-   * Creates a tool bar populated with the specified nodes. None of the items can be null.
-   * <p>
-   * @param items the items to add
-   */
-  public FxToolBar(Node... items) {
-    super(items);
-  }
-
 
   // @wurblet delegate Include $currentDir/fxcontainer.include
 
@@ -104,8 +86,8 @@ public class FxToolBar extends ToolBar implements FxContainer {
   }
 
   @Override
-  public void setContainerChangableIgnored(boolean containerChangeableIgnored) {
-    getDelegate().setContainerChangableIgnored(containerChangeableIgnored);
+  public void setContainerChangeableIgnored(boolean containerChangeableIgnored) {
+    getDelegate().setContainerChangeableIgnored(containerChangeableIgnored);
   }
 
   @Override

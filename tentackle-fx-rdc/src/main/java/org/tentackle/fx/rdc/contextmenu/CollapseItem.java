@@ -31,7 +31,7 @@ import org.tentackle.fx.rdc.RdcFxRdcBundle;
 import org.tentackle.pdo.PersistentDomainObject;
 
 /**
- * Menu item to collapse this and all childnodes of a PDO.
+ * Menu item to collapse this and all child nodes of a PDO.
  *
  * @author harald
  * @param <T> the PDO type
@@ -45,7 +45,8 @@ public class CollapseItem<T extends PersistentDomainObject<T>> extends MenuItem 
    * @param cell the tree cell
    */
   public CollapseItem(PdoTreeCell<T> cell) {
-    super(RdcFxRdcBundle.getString("COLLAPSE"), Fx.createImageView("collapse"));
+    setText(RdcFxRdcBundle.getString("COLLAPSE"));
+    setGraphic(Fx.createImageView("collapse"));
     TreeItem<T> treeItem = cell.getTreeItem();
     if (treeItem != null && treeItem.isExpanded()) {
       setOnAction(e -> FxUtilities.getInstance().collapseAll(treeItem));

@@ -32,9 +32,11 @@ import org.tentackle.session.SessionFactory;
 import org.tentackle.session.SessionInfoFactory;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.Arrays;
 
 import static org.testng.Assert.fail;
 
@@ -177,8 +179,13 @@ public abstract class AbstractDbTest {
       }
       classPath += modulePath;    // just append the module path to the classpath
     }
-    String cmd = javaHome + "/bin/java -cp " + classPath + " " + testClass.getName();
-    Reporter.log("running: " + cmd + "<br>");
+    String[] cmd = {
+        javaHome + File.separator + "bin" + File.separator + "java",
+        "-cp",
+        classPath,
+        testClass.getName()
+    };
+    Reporter.log("running: " + Arrays.toString(cmd) + "<br>");
     return Runtime.getRuntime().exec(cmd);
   }
 

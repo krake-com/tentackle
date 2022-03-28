@@ -56,4 +56,8 @@ public class Holder<T> implements Consumer<T>, Supplier<T> {
     return object;
   }
 
+  @Override
+  public String toString() {
+    return object == null ? "<null>" : object.toString();
+  }
 }

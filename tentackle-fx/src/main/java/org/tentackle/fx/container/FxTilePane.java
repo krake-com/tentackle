@@ -22,8 +22,6 @@ package org.tentackle.fx.container;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.collections.ObservableList;
-import javafx.geometry.Orientation;
-import javafx.scene.Node;
 import javafx.scene.layout.TilePane;
 
 import org.tentackle.fx.FxContainer;
@@ -38,86 +36,6 @@ import org.tentackle.fx.container.delegate.FxTilePaneDelegate;
  * @author harald
  */
 public class FxTilePane extends TilePane implements FxContainer {
-
-  /**
-   * Creates a horizontal TilePane layout with prefColumn = 5 and hgap/vgap = 0.
-   */
-  public FxTilePane() {
-    super();
-  }
-
-  /**
-   * Creates a TilePane layout with the specified orientation, prefColumn/prefRows = 5 and hgap/vgap = 0.
-   * <p>
-   * @param orientation the direction the tiles should flow and wrap
-   */
-  public FxTilePane(Orientation orientation) {
-    super(orientation);
-  }
-
-  /**
-   * Creates a horizontal TilePane layout with prefColumn = 5 and the specified hgap/vgap.
-   * <p>
-   * @param hgap the amount of horizontal space between each tile
-   * @param vgap the amount of vertical space between each tile
-   */
-  public FxTilePane(double hgap, double vgap) {
-    super(hgap, vgap);
-  }
-
-  /**
-   * Creates a TilePane layout with the specified orientation, hgap/vgap, and prefRows/prefColumns = 5.
-   * <p>
-   * @param orientation the direction the tiles should flow and wrap
-   * @param hgap        the amount of horizontal space between each tile
-   * @param vgap        the amount of vertical space between each tile
-   */
-  public FxTilePane(Orientation orientation, double hgap, double vgap) {
-    super(orientation, hgap, vgap);
-  }
-
-  /**
-   * Creates a horizontal TilePane layout with prefColumn = 5 and hgap/vgap = 0.
-   * <p>
-   * @param children The initial set of children for this pane.
-   */
-  public FxTilePane(Node... children) {
-    super(children);
-  }
-
-  /**
-   * Creates a TilePane layout with the specified orientation, prefColumn/prefRows = 5 and hgap/vgap = 0.
-   * <p>
-   * @param orientation the direction the tiles should flow and wrap
-   * @param children    The initial set of children for this pane.
-   */
-  public FxTilePane(Orientation orientation, Node... children) {
-    super(orientation, children);
-  }
-
-  /**
-   * Creates a horizontal TilePane layout with prefColumn = 5 and the specified hgap/vgap.
-   * <p>
-   * @param hgap     the amount of horizontal space between each tile
-   * @param vgap     the amount of vertical space between each tile
-   * @param children The initial set of children for this pane.
-   */
-  public FxTilePane(double hgap, double vgap, Node... children) {
-    super(hgap, vgap, children);
-  }
-
-  /**
-   * Creates a TilePane layout with the specified orientation, hgap/vgap, and prefRows/prefColumns = 5.
-   * <p>
-   * @param orientation the direction the tiles should flow and wrap
-   * @param hgap        the amount of horizontal space between each tile
-   * @param vgap        the amount of vertical space between each tile
-   * @param children    The initial set of children for this pane.
-   */
-  public FxTilePane(Orientation orientation, double hgap, double vgap, Node... children) {
-    super(orientation, hgap, vgap, children);
-  }
-
 
   // @wurblet delegate Include $currentDir/fxcontainer.include
 
@@ -168,8 +86,8 @@ public class FxTilePane extends TilePane implements FxContainer {
   }
 
   @Override
-  public void setContainerChangableIgnored(boolean containerChangeableIgnored) {
-    getDelegate().setContainerChangableIgnored(containerChangeableIgnored);
+  public void setContainerChangeableIgnored(boolean containerChangeableIgnored) {
+    getDelegate().setContainerChangeableIgnored(containerChangeableIgnored);
   }
 
   @Override

@@ -19,6 +19,7 @@ import javafx.scene.control.TableRow;
 import javafx.stage.Modality;
 
 import org.tentackle.bind.Bindable;
+import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.component.FxButton;
 import org.tentackle.fx.component.FxCheckBox;
@@ -122,8 +123,9 @@ public class UserEditor extends PdoEditor<User> {
   private ContextMenu createContextMenu(TableRow<UserGroup> row) {
     ContextMenu contextMenu = null;
     if (user != null && user.isEditAllowed()) {
-      contextMenu = new ContextMenu();
-      MenuItem addMenuItem = new MenuItem(resources.getString("add group to user"));
+      contextMenu = Fx.create(ContextMenu.class);
+      MenuItem addMenuItem = Fx.create(MenuItem.class);
+      addMenuItem.setText(resources.getString("add group to user"));
       addMenuItem.setOnAction(e -> Rdc.displaySearchStage(
           Pdo.create(UserGroup.class, getBinder().getBindingProperty(DomainContext.class)),
           Modality.APPLICATION_MODAL, getStage(), true, groups -> {
@@ -138,7 +140,8 @@ public class UserEditor extends PdoEditor<User> {
       contextMenu.getItems().add(addMenuItem);
 
       if (row != null) {
-        MenuItem removeMenuItem = new MenuItem(resources.getString("remove group from user"));
+        MenuItem removeMenuItem = Fx.create(MenuItem.class);
+        removeMenuItem.setText(resources.getString("remove group from user"));
         removeMenuItem.disableProperty().bind(row.emptyProperty());
         removeMenuItem.setOnAction(e -> {
           ((SortedList<UserGroup>) userUserGroupsNode.getItems()).getSource().remove(row.getItem());

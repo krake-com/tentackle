@@ -28,6 +28,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.stream.Stream;
 
 /**
  * Datatype for {@link String}.
@@ -36,6 +37,13 @@ import java.sql.Types;
  */
 @Service(DataType.class)
 public class StringType extends AbstractDataType<String> {
+
+  /**
+   * Maximum number of lines in literal.<br>
+   * 0 if unlimited.
+   */
+  public static int maxLinesInLiteral = -1;
+
 
   @Override
   public String getJavaType() {
@@ -66,7 +74,16 @@ public class StringType extends AbstractDataType<String> {
       if (str.contains("\n")) {   // multi-line string
         StringBuilder buf = new StringBuilder();
         buf.append("\"\"\"\n");
-        str.lines().forEach(line -> {
+        long numLines = str.lines().count();
+        Stream<String> lines;
+        boolean truncated = (maxLinesInLiteral > 0 && numLines > maxLinesInLiteral);
+        if (truncated) {
+          lines = str.lines().limit(maxLinesInLiteral);
+        }
+        else {
+          lines = str.lines();
+        }
+        lines.forEach(line -> {
           if (line.endsWith(" ")) {
             buf.append(line, 0, line.length() - 1).append("\\s");
           }
@@ -75,6 +92,9 @@ public class StringType extends AbstractDataType<String> {
           }
           buf.append('\n');
         });
+        if (truncated) {
+          buf.append("... <").append(maxLinesInLiteral).append('/').append(numLines).append("> ...\n");
+        }
         buf.append("\"\"\"");
         str = buf.toString();
       }

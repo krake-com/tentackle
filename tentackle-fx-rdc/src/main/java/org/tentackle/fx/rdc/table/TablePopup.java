@@ -228,16 +228,16 @@ public class TablePopup<S> {
    */
   public ContextMenu createContextMenu() {
 
-    ContextMenu menu = new ContextMenu();
+    ContextMenu menu = Fx.create(ContextMenu.class);
 
     MenuItem expandItem;
     MenuItem collapseItem;
     if (treeTable != null) {
-      expandItem = new MenuItem();
+      expandItem = Fx.create(MenuItem.class);
       menu.getItems().add(expandItem);
-      collapseItem = new MenuItem();
+      collapseItem = Fx.create(MenuItem.class);
       menu.getItems().add(collapseItem);
-      menu.getItems().add(new SeparatorMenuItem());
+      menu.getItems().add(Fx.create(SeparatorMenuItem.class));
     }
     else {
       expandItem = null;
@@ -247,74 +247,76 @@ public class TablePopup<S> {
     ObservableList<TableColumn<S,?>> tableColumns = table == null ? null : table.getColumns();
     ObservableList<TreeTableColumn<S,?>> treeTableColumns = treeTable == null ? null : treeTable.getColumns();
 
-    final Menu columnMenu = new Menu();
+    final Menu columnMenu = Fx.create(Menu.class);
     columnMenu.setText(RdcFxRdcBundle.getString("COLUMNS..."));
     menu.getItems().add(columnMenu);
 
-    MenuItem autoWidthItem = new MenuItem();
+    MenuItem autoWidthItem = Fx.create(MenuItem.class);
     autoWidthItem.setText(RdcFxRdcBundle.getString("AUTO ADJUST"));
     autoWidthItem.setOnAction(e -> autoWidth());
     menu.getItems().add(autoWidthItem);
 
-    MenuItem printItem = new MenuItem();
+    MenuItem printItem = Fx.create(MenuItem.class);
     printItem.setText(RdcFxRdcBundle.getString("PRINT"));
     printItem.setOnAction(e -> print());
     menu.getItems().add(printItem);
 
-    MenuItem excelItem = new MenuItem();
+    MenuItem excelItem = Fx.create(MenuItem.class);
     excelItem.setText(RdcFxRdcBundle.getString("EXPORT TO SPREADSHEET"));
     excelItem.setOnAction(e -> toSpreadsheet(false));
     menu.getItems().add(excelItem);
 
-    MenuItem selectedExcelItem = new MenuItem();
+    MenuItem selectedExcelItem = Fx.create(MenuItem.class);
     selectedExcelItem.setText(RdcFxRdcBundle.getString("EXPORT TO SPREADSHEET (SELECTED)"));
     selectedExcelItem.setOnAction(e -> toSpreadsheet(true));
     menu.getItems().add(selectedExcelItem);
 
-    MenuItem xmlItem = new MenuItem();
+    MenuItem xmlItem = Fx.create(MenuItem.class);
     xmlItem.setText(RdcFxRdcBundle.getString("EXPORT TO XML"));
     xmlItem.setOnAction(e -> toXml(false));
     menu.getItems().add(xmlItem);
 
-    MenuItem selectedXmlItem = new MenuItem();
+    MenuItem selectedXmlItem = Fx.create(MenuItem.class);
     selectedXmlItem.setText(RdcFxRdcBundle.getString("EXPORT TO XML (SELECTED)"));
     selectedXmlItem.setOnAction(e -> toXml(true));
     menu.getItems().add(selectedXmlItem);
 
     if (PersistedPreferencesFactory.getInstance().isSystemOnly()) {
       if (!PersistedPreferencesFactory.getInstance().isReadOnly())  {
-        MenuItem saveItem = new MenuItem();
+        MenuItem saveItem = Fx.create(MenuItem.class);
         saveItem.setText(RdcFxRdcBundle.getString("SAVE SYSTEM PREFERENCES"));
         saveItem.setOnAction(e -> savePreferences(true));
         menu.getItems().add(saveItem);
       }
 
-      MenuItem restoreItem = new MenuItem();
+      MenuItem restoreItem = Fx.create(MenuItem.class);
       restoreItem.setText(RdcFxRdcBundle.getString("LOAD SYSTEM PREFERENCES"));
       restoreItem.setOnAction(e -> loadPreferences(true));
       menu.getItems().add(restoreItem);
     }
     else  {
       if (!PersistedPreferencesFactory.getInstance().isReadOnly())  {
-        MenuItem saveItem = new MenuItem();
+        MenuItem saveItem = Fx.create(MenuItem.class);
         saveItem.setText(RdcFxRdcBundle.getString("SAVE USER PREFERENCES"));
         saveItem.setOnAction(e -> savePreferences(false));
         menu.getItems().add(saveItem);
       }
 
-      MenuItem restoreItem = new MenuItem();
+      MenuItem restoreItem = Fx.create(MenuItem.class);
       restoreItem.setText(RdcFxRdcBundle.getString("LOAD USER PREFERENCES"));
       restoreItem.setOnAction(e -> loadPreferences(false));
       menu.getItems().add(restoreItem);
 
-      MenuItem restoreSysItem = new MenuItem();
+      MenuItem restoreSysItem = Fx.create(MenuItem.class);
       restoreSysItem.setText(RdcFxRdcBundle.getString("LOAD SYSTEM PREFERENCES"));
       restoreSysItem.setOnAction(e -> loadPreferences(true));
       menu.getItems().add(restoreSysItem);
     }
-    menu.getItems().add(new SeparatorMenuItem());
+    menu.getItems().add(Fx.create(SeparatorMenuItem.class));
     final Label countLabel = new Label();
-    MenuItem labelItem = new CustomMenuItem(countLabel, false);
+    CustomMenuItem labelItem = Fx.create(CustomMenuItem.class);
+    labelItem.setContent(countLabel);
+    labelItem.setHideOnClick(false);
     labelItem.setDisable(true);
     menu.getItems().add(labelItem);
 
@@ -344,7 +346,8 @@ public class TablePopup<S> {
         boolean allInvisible = true;
         if (tableColumns != null) {
           for (TableColumn<S, ?> column : tableColumns) {
-            CheckMenuItem item = new CheckMenuItem(column.getText());
+            CheckMenuItem item = Fx.create(CheckMenuItem.class);
+            item.setText(column.getText());
             item.setSelected(column.isVisible());
             if (column.isVisible()) {
               allInvisible = false;
@@ -356,7 +359,8 @@ public class TablePopup<S> {
             columnMenu.getItems().add(item);
           }
           if (!allVisible) {
-            MenuItem showAllItem = new MenuItem(RdcFxRdcBundle.getString("SHOW ALL"));
+            MenuItem showAllItem = Fx.create(MenuItem.class);
+            showAllItem.setText(RdcFxRdcBundle.getString("SHOW ALL"));
             showAllItem.setOnAction(e -> {
               for (TableColumn<S, ?> column : tableColumns) {
                 column.setVisible(true);
@@ -365,7 +369,8 @@ public class TablePopup<S> {
             columnMenu.getItems().add(showAllItem);
           }
           if (!allInvisible) {
-            MenuItem hideAllItem = new MenuItem(RdcFxRdcBundle.getString("HIDE ALL"));
+            MenuItem hideAllItem = Fx.create(MenuItem.class);
+            hideAllItem.setText(RdcFxRdcBundle.getString("HIDE ALL"));
             hideAllItem.setOnAction(e -> {
               for (TableColumn<S, ?> column : tableColumns) {
                 column.setVisible(false);
@@ -376,7 +381,8 @@ public class TablePopup<S> {
         }
         else if (treeTableColumns != null) {
           for (TreeTableColumn<S, ?> column : treeTableColumns) {
-            CheckMenuItem item = new CheckMenuItem(column.getText());
+            CheckMenuItem item = Fx.create(CheckMenuItem.class);
+            item.setText(column.getText());
             item.setSelected(column.isVisible());
             if (column.isVisible()) {
               allInvisible = false;
@@ -388,7 +394,8 @@ public class TablePopup<S> {
             columnMenu.getItems().add(item);
           }
           if (!allVisible) {
-            MenuItem showAllItem = new MenuItem(RdcFxRdcBundle.getString("SHOW ALL"));
+            MenuItem showAllItem = Fx.create(MenuItem.class);
+            showAllItem.setText(RdcFxRdcBundle.getString("SHOW ALL"));
             showAllItem.setOnAction(e -> {
               for (TreeTableColumn<S, ?> column : treeTableColumns) {
                 column.setVisible(true);
@@ -397,7 +404,8 @@ public class TablePopup<S> {
             columnMenu.getItems().add(showAllItem);
           }
           if (!allInvisible) {
-            MenuItem hideAllItem = new MenuItem(RdcFxRdcBundle.getString("HIDE ALL"));
+            MenuItem hideAllItem = Fx.create(MenuItem.class);
+            hideAllItem.setText(RdcFxRdcBundle.getString("HIDE ALL"));
             hideAllItem.setOnAction(e -> {
               for (TreeTableColumn<S, ?> column : treeTableColumns) {
                 column.setVisible(false);

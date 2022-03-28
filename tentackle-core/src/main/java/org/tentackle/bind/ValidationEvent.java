@@ -36,6 +36,7 @@ public class ValidationEvent extends EventObject {
   @Serial
   private static final long serialVersionUID = 1L;
 
+  @SuppressWarnings("serial")
   private final List<ValidationResult> results;
 
 

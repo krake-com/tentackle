@@ -84,7 +84,7 @@ public class PreferencesDialog extends AbstractFxController {
    */
   private <T extends FxController> Node createTab(Class<T> controllerClass) {
     Parent view = Fx.load(controllerClass).getView();
-    BorderPane pane = Fx.createNode(BorderPane.class);
+    BorderPane pane = Fx.create(BorderPane.class);
     pane.setCenter(view);
     BorderPane.setMargin(view, new Insets(5));
     return pane;

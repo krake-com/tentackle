@@ -22,7 +22,6 @@ package org.tentackle.fx.container;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.collections.ObservableList;
-import javafx.scene.Node;
 import javafx.scene.layout.VBox;
 
 import org.tentackle.fx.FxContainer;
@@ -37,42 +36,6 @@ import org.tentackle.fx.container.delegate.FxVBoxDelegate;
  * @author harald
  */
 public class FxVBox extends VBox implements FxContainer {
-
-  /**
-   * Creates a VBox layout with spacing = 0 and alignment at TOP_LEFT.
-   */
-  public FxVBox() {
-    super();
-  }
-
-  /**
-   * Creates a VBox layout with the specified spacing between children.
-   * <p>
-   * @param spacing the amount of vertical space between each child
-   */
-  public FxVBox(double spacing) {
-    super(spacing);
-  }
-
-  /**
-   * Creates an VBox layout with spacing = 0.
-   * <p>
-   * @param children The initial set of children for this pane.
-   */
-  public FxVBox(Node... children) {
-    super(children);
-  }
-
-  /**
-   * Creates an VBox layout with the specified spacing between children.
-   * <p>
-   * @param spacing  the amount of horizontal space between each child
-   * @param children The initial set of children for this pane.
-   */
-  public FxVBox(double spacing, Node... children) {
-    super(spacing, children);
-  }
-
 
   // @wurblet delegate Include $currentDir/fxcontainer.include
 
@@ -123,8 +86,8 @@ public class FxVBox extends VBox implements FxContainer {
   }
 
   @Override
-  public void setContainerChangableIgnored(boolean containerChangeableIgnored) {
-    getDelegate().setContainerChangableIgnored(containerChangeableIgnored);
+  public void setContainerChangeableIgnored(boolean containerChangeableIgnored) {
+    getDelegate().setContainerChangeableIgnored(containerChangeableIgnored);
   }
 
   @Override

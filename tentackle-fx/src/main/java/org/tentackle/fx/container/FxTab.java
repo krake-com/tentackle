@@ -22,7 +22,6 @@ package org.tentackle.fx.container;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.collections.ObservableList;
-import javafx.scene.Node;
 import javafx.scene.control.Tab;
 
 import org.tentackle.fx.FxContainer;
@@ -37,33 +36,6 @@ import org.tentackle.fx.container.delegate.FxTabDelegate;
  * @author harald
  */
 public class FxTab extends Tab implements FxContainer {
-
-  /**
-   * Creates a tab with no title.
-   */
-  public FxTab() {
-    super();
-  }
-
-  /**
-   * Creates a tab with a text title.
-   * <p>
-   * @param text The title of the tab.
-   */
-  public FxTab(String text) {
-    super(text);
-  }
-
-  /**
-   * Creates a tab with a text title and the specified content node.
-   * <p>
-   * @param text    The title of the tab.
-   * @param content The content of the tab.
-   */
-  public FxTab(String text, Node content) {
-    super(text, content);
-  }
-
 
   // @wurblet delegate Include $currentDir/fxcontainer.include
 
@@ -114,8 +86,8 @@ public class FxTab extends Tab implements FxContainer {
   }
 
   @Override
-  public void setContainerChangableIgnored(boolean containerChangeableIgnored) {
-    getDelegate().setContainerChangableIgnored(containerChangeableIgnored);
+  public void setContainerChangeableIgnored(boolean containerChangeableIgnored) {
+    getDelegate().setContainerChangeableIgnored(containerChangeableIgnored);
   }
 
   @Override

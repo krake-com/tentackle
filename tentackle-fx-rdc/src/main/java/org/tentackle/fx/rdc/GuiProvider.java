@@ -136,9 +136,9 @@ public interface GuiProvider<T extends PersistentDomainObject<T>>
   /**
    * Drops the dragboard on the pdo.
    *
-   * @param dragbord the dragboard
+   * @param dragboard the dragboard
    */
-  void dropDragboard(Dragboard dragbord);
+  void dropDragboard(Dragboard dragboard);
 
   /**
    * Gets the object to be displayed in trees in place of this object.<br>
@@ -175,16 +175,16 @@ public interface GuiProvider<T extends PersistentDomainObject<T>>
   TreeItem<T> createTreeItem();
 
   /**
-   * Creates a tree cell factory for a treeview.
+   * Creates a tree cell factory for a tree-view.
    *
    * @return the tree cell factory, never null
    */
   Callback<TreeView<T>, TreeCell<T>> getTreeCellFactory();
 
   /**
-   * Determines whether tree explansion should stop at this object.<br>
-   * Sometimes treechilds should not be expanded if in a recursive "expand all".
-   * However they should expand if the user explicitly wants to.
+   * Determines whether tree expansion should stop at this object.<br>
+   * Sometimes the child-nodes should not be expanded if in a recursive "expand all".
+   * However, they should expand if the user explicitly wants to.
    * If this method returns true, the tree will not further expand this node
    * automatically (only on demand).
    *
@@ -194,24 +194,24 @@ public interface GuiProvider<T extends PersistentDomainObject<T>>
 
   /**
    * Determines whether this object may have child objects that should
-   * be visible in a navigatable tree.
+   * be visible in a navigable tree.
    *
-   * @return true if object may have childs
+   * @return true if object may have children
    */
   boolean providesTreeChildObjects();
 
   /**
-   * Gets the childs with respect to the parent object this
+   * Gets the children with respect to the parent object this
    * object is displayed in the current tree.
    *
    * @param <P> the parent PDO type
    * @param parent the parent object of this object in the tree, null = no parent
-   * @return the childs
+   * @return the children
    */
   <P extends PersistentDomainObject<P>> Collection<? extends PersistentDomainObject<?>> getTreeChildObjects(P parent);
 
   /**
-   * Gets the maximum level of expansion allowed in a navigatable object tree.<br>
+   * Gets the maximum level of expansion allowed in a navigable object tree.<br>
    * The default is 0, i.e. no limit.
    *
    * @return the maximum depth of a subtree of this object, 0 = no limit (default)
@@ -219,9 +219,9 @@ public interface GuiProvider<T extends PersistentDomainObject<T>>
   int getTreeExpandMaxDepth();
 
   /**
-   * Determines whether the navigatable object tree should show the
+   * Determines whether the navigable object tree should show the
    * parents of this object.<br>
-   * Objects may be childs of different parents in terms of "being referenced from"
+   * Objects may be children of different parents in terms of "being referenced from"
    * or any other relation, for example: the warehouses this customer
    * visited.
    * Trees may provide a button to make these parents visible.

@@ -25,6 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.platform.commons.logging.Logger;
 import org.junit.platform.commons.logging.LoggerFactory;
 import org.opentest4j.AssertionFailedError;
+import org.testng.Reporter;
 
 import org.tentackle.dbms.Db;
 import org.tentackle.model.Model;
@@ -39,9 +40,11 @@ import org.tentackle.session.Session;
 import org.tentackle.sql.Backend;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.Arrays;
 
 
 /**
@@ -206,7 +209,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   }
 
   /**
-   * Returns whether the transaction should be commit or rolled back.
+   * Returns whether the transaction should be committed or rolled back.
    *
    * @return true if commit, false if rollback (default for regular tests)
    */
@@ -336,16 +339,19 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
       }
       classPath += modulePath;    // just append the module path to the classpath
     }
-    StringBuilder cmd = new StringBuilder();
-    cmd.append(javaHome).append("/bin/java -cp ")
-       .append(classPath).append(' ').append(testClass.getName());
-    if (args != null) {
-      for (String arg: args) {
-        cmd.append(' ').append(arg);
-      }
+    String[] cmd = {
+        javaHome + File.separator + "bin" + File.separator + "java",
+        "-cp",
+        classPath,
+        testClass.getName()
+    };
+    if (args != null && args.length > 0) {
+      String[] aCmd = Arrays.copyOf(cmd, cmd.length + args.length);
+      System.arraycopy(args, 0, aCmd, cmd.length, args.length);
+      cmd = aCmd;
     }
-    LOGGER.info(() -> "running: " + cmd);
-    return Runtime.getRuntime().exec(cmd.toString());
+    Reporter.log("running: " + Arrays.toString(cmd) + "<br>");
+    return Runtime.getRuntime().exec(cmd);
   }
 
   /**

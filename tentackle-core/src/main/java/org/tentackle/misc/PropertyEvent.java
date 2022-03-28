@@ -36,7 +36,9 @@ public class PropertyEvent extends EventObject {
   private static final long serialVersionUID = 1L;
 
   private final String propertyName;    // name of the property
+  @SuppressWarnings("serial")
   private final Object newValue;        // the new value
+  @SuppressWarnings("serial")
   private final Object oldValue;        // the old value
 
   /**
@@ -56,7 +58,7 @@ public class PropertyEvent extends EventObject {
   }
 
   /**
-   * Gets the the property name.
+   * Gets the property name.
    *
    * @return the name
    */

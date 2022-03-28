@@ -31,7 +31,7 @@ import org.tentackle.fx.rdc.RdcFxRdcBundle;
 import org.tentackle.pdo.PersistentDomainObject;
 
 /**
- * Menu item to expand this and all childnodes of a PDO.
+ * Menu item to expand this and all child-nodes of a PDO.
  *
  * @author harald
  * @param <T> the PDO type
@@ -45,9 +45,8 @@ public class ExpandItem<T extends PersistentDomainObject<T>> extends MenuItem im
    * @param cell the tree cell
    */
   public ExpandItem(PdoTreeCell<T> cell) {
-    super(cell.getTreeItem().isExpanded() ? RdcFxRdcBundle.getString("EXPAND_AGAIN") : RdcFxRdcBundle.getString("EXPAND"),
-          Fx.createImageView("expand"));
-
+    setText(cell.getTreeItem().isExpanded() ? RdcFxRdcBundle.getString("EXPAND_AGAIN") : RdcFxRdcBundle.getString("EXPAND"));
+    setGraphic(Fx.createImageView("expand"));
     TreeItem<T> treeItem = cell.getTreeItem();
     if (treeItem != null && !treeItem.isLeaf()) {
       setOnAction(e -> FxUtilities.getInstance().expandAll(treeItem));

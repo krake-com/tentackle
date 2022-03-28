@@ -155,7 +155,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
 
   private boolean autoSync;                 // autosync flag
   private boolean readOnly;                 // readonly flag
-  private boolean systemOnly;               // systemonly flagc
+  private boolean systemOnly;               // systemonly flag
 
   private final Map<String,Root> roots;     // loaded roots, key is username ("" for system)
 
@@ -408,7 +408,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   }
 
   /**
-   * Flushes a node and all of its subnodes to the backing store.
+   * Flushes a node and all of its sub-nodes to the backing store.
    *
    * @param node the preferences node
    * @param sync true if load modifications from storage before flush
@@ -441,9 +441,9 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   }
 
   /**
-   * Gets the root node for given user and all of its subnodes and keys at once.
+   * Gets the root node for given user and all of its sub-nodes and keys at once.
    *
-   * @param db the oprional db, null if request a db temporarily
+   * @param db the optional db, null if request a db temporarily
    * @param user the username, null or empty if system user
    * @return the root node, never null
    */
@@ -494,7 +494,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
         LOGGER.severe("orphan node found: {0}", node);
       }
       for (DbPreferencesKey key: allKeys) {
-        LOGGER.severe("oprhan key found: {0}", key);
+        LOGGER.severe("orphan key found: {0}", key);
       }
       return null;
     });
@@ -518,7 +518,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   /**
    * Removes a root node of given node from the repository.
    *
-   * @param node the root node or one of its subnodes
+   * @param node the root node or one of its sub-nodes
    */
   protected synchronized void removeRoot(DbPreferences node) {
     String user = node.getUser();
@@ -534,7 +534,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    *
    * @param db the session
    * @param nodeMaxSerial the new table serial for prefnodes
-   * @param keyMaxSerial the nore table serial for prefkeys
+   * @param keyMaxSerial the new table serial for prefkeys
    */
   protected synchronized void updateRepository(Db db, long nodeMaxSerial, long keyMaxSerial) {
     if (nodeMaxSerial != nodeTableSerial || keyMaxSerial != keyTableSerial) {
@@ -563,7 +563,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
         }
 
         Set<String> usersModified = new HashSet<>();  // roots affected, "" is system
-        // TreeSet to sort by id (because childs are always added _after_ their parents, see flushImpl)
+        // TreeSet to sort by id (because children are always added _after_ their parents, see flushImpl)
         Set<DbPreferencesNode> changedNodes = new TreeSet<>();
         Set<DbPreferencesKey> changedKeys = new TreeSet<>();
 
@@ -677,7 +677,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   }
 
   /**
-   * Gets the current user name.
+   * Gets the current username.
    *
    * @return the username
    */
@@ -801,7 +801,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    *
    * @param root the root preferences node
    * @param changedNodes the changed nodes
-   * @param changedKeys the changes keys
+   * @param changedKeys the set of changes keys
    */
   private void updateRoot(Root root,
                           Set<DbPreferencesNode> changedNodes,
@@ -861,7 +861,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
           }
         }
         else {
-          LOGGER.warning("node ID=" + prefKey.getNodeId() + " valinished for key " + prefKey);
+          LOGGER.warning("node ID=" + prefKey.getNodeId() + " vanished for key " + prefKey);
         }
       }
     }
@@ -870,7 +870,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   }
 
   /**
-   * Adds all subnodes and keys of a node to given maps.
+   * Adds all sub-nodes and keys of a node to given maps.
    *
    * @param node the node
    * @param idNodeMap the nodes mapped by ID
@@ -892,13 +892,13 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
         idKeyMap.put(key.getId(), key);
       }
     }
-    for (DbPreferences child: node.getChilds()) {
+    for (DbPreferences child: node.getChildren()) {
       addNodeToMaps(child, idNodeMap, pathNodeMap, idKeyMap);
     }
   }
 
   /**
-   * Adds all subnodes of a node to given maps.
+   * Adds all sub-nodes of a node to given maps.
    *
    * @param node the node
    * @param idNodeMap the nodes mapped by ID
@@ -913,7 +913,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     }
     pathNodeMap.put(node.absolutePath(), node);
 
-    for (DbPreferences child: node.getChilds()) {
+    for (DbPreferences child: node.getChildren()) {
       addNodeToMaps(child, idNodeMap, pathNodeMap);
     }
   }
@@ -937,7 +937,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
           LOGGER.severe("missing root for node {0}", node.getId());
         }
         else {
-          // go down all subnodes and keys and set the rootNodeId if missing
+          // go down all sub-nodes and keys and set the rootNodeId if missing
           processNode(processedNodes, nodeMap.values(), allKeys, root);
         }
       }
@@ -954,7 +954,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
           LOGGER.info("fixed rootNodeId of key {0} to {1}", key, key.getRootNodeId());
         }
       }
-      for (DbPreferencesNode child: findChilds(allNodes, node)) {
+      for (DbPreferencesNode child: findChildren(allNodes, node)) {
         if (child.getRootNodeId() != node.getRootNodeId()) {
           child.setRootNodeId(node.getRootNodeId());
           child.saveObject();
@@ -973,14 +973,14 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     return node;
   }
 
-  private Collection<DbPreferencesNode> findChilds(Collection<DbPreferencesNode> allNodes, DbPreferencesNode node) {
-    Collection<DbPreferencesNode> childs = new ArrayList<>();
+  private Collection<DbPreferencesNode> findChildren(Collection<DbPreferencesNode> allNodes, DbPreferencesNode node) {
+    Collection<DbPreferencesNode> children = new ArrayList<>();
     for (DbPreferencesNode child: allNodes) {
       if (child.getParentId() == node.getId()) {
-        childs.add(child);
+        children.add(child);
       }
     }
-    return childs;
+    return children;
   }
 
   private Collection<DbPreferencesKey> findKeys(Collection<DbPreferencesKey> allKeys, DbPreferencesNode node) {
