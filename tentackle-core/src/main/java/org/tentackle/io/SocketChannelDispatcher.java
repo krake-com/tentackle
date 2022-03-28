@@ -122,6 +122,7 @@ public class SocketChannelDispatcher {
   private final SocketAddress socketAddress;
   private final Supplier<Consumer<SocketChannel>> handlerFactory;
   private final StandardProtocolFamily protocolFamily;
+  private volatile boolean shutdownRequested;
 
 
   /**
@@ -160,8 +161,18 @@ public class SocketChannelDispatcher {
    * Shutdown the dispatcher.
    */
   public void shutdown() {
+    shutdownRequested = true;
     resources.me = this;      // programmatic close, not a GC cleanup
     cleanable.clean();
+  }
+
+  /**
+   * Returns whether {@link #shutdown()} was invoked.
+   *
+   * @return true if shutdown completed or in progress
+   */
+  public boolean isShutdown() {
+    return shutdownRequested;
   }
 
 
@@ -180,7 +191,10 @@ public class SocketChannelDispatcher {
             executorService.execute(() -> handlerFactory.get().accept(channel));
           }
           catch (AsynchronousCloseException ax) {
-            LOGGER.warning("channel closed by client", ax);
+            if (isShutdown()) {
+              break;
+            }
+            LOGGER.warning("channel closed by client unexpectedly", ax);
           }
         }
         LOGGER.info("{0} shutdown", name);
