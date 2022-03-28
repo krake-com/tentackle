@@ -40,7 +40,7 @@ import static org.tentackle.fx.FxComponentDelegate.INFO_STYLE;
 public class FxButton extends Button implements InfoPopupSupported {
 
   /**
-   * Presstime in ms for doClick().
+   * Press-time in ms for doClick().
    */
   public static double doClickPressTime = 200.0;
 
@@ -61,28 +61,6 @@ public class FxButton extends Button implements InfoPopupSupported {
    * Creates a button with an empty string for its label.
    */
   public FxButton() {
-    super();
-    configure();
-  }
-
-  /**
-   * Creates a button with the specified text as its label.
-   * <p>
-   * @param text A text string for its label.
-   */
-  public FxButton(String text) {
-    super(text);
-    configure();
-  }
-
-  /**
-   * Creates a button with the specified text and icon for its label.
-   * <p>
-   * @param text    A text string for its label.
-   * @param graphic the icon for its label.
-   */
-  public FxButton(String text, Node graphic) {
-    super(text, graphic);
     configure();
   }
 
@@ -124,7 +102,7 @@ public class FxButton extends Button implements InfoPopupSupported {
        * As a consequence, an opposite FxComponent will not lose its focus which in turn
        * means, that the model is not updated. If the action handler of this button
        * depends on it, it will not see the last user's input.
-       * In such cases we must perform the model update explicitly before firering the event.
+       * In such cases we must perform the model update explicitly before the event gets fired.
        */
       Node node = getScene().getFocusOwner();
       if (node instanceof FxComponent) {

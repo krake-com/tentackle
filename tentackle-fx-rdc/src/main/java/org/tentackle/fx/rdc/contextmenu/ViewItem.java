@@ -40,8 +40,7 @@ import org.tentackle.pdo.PersistentDomainObject;
  */
 @PdoTreeContextMenuItemService(value = PersistentDomainObject.class, ordinal = 140)
 @PdoTableContextMenuItemService(value = PersistentDomainObject.class, ordinal = 140)
-public class ViewItem<T extends PersistentDomainObject<T>> extends MenuItem
-    implements PdoTreeContextMenuItem<T>, PdoTableContextMenuItem<T> {
+public class ViewItem<T extends PersistentDomainObject<T>> extends MenuItem implements PdoTreeContextMenuItem<T>, PdoTableContextMenuItem<T> {
 
   /**
    * Creates a menu item.
@@ -49,7 +48,8 @@ public class ViewItem<T extends PersistentDomainObject<T>> extends MenuItem
    * @param cell the tree cell
    */
   public ViewItem(PdoTreeCell<T> cell) {
-    super(RdcFxRdcBundle.getString("VIEW"), Fx.createImageView("view"));
+    setText(RdcFxRdcBundle.getString("VIEW"));
+    setGraphic(Fx.createImageView("view"));
     T pdo = cell.getItem();
     if (cell.getPdoTreeItem().getGuiProvider().isViewAllowed()) {
       T pDo = pdo.isImmutable() ? pdo.reload() : pdo;   // from cache?
@@ -61,7 +61,8 @@ public class ViewItem<T extends PersistentDomainObject<T>> extends MenuItem
   }
 
   public ViewItem(PdoTableCell<?,T> cell) {
-    super(RdcFxRdcBundle.getString("VIEW"), Fx.createImageView("view"));
+    setText(RdcFxRdcBundle.getString("VIEW"));
+    setGraphic(Fx.createImageView("view"));
     T pdo = cell.getItem();
     if (pdo != null && Rdc.createGuiProvider(pdo).isViewAllowed()) {
       T pDo = pdo.isImmutable() ? pdo.reload() : pdo;   // from cache?

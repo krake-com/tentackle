@@ -190,22 +190,22 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
         PersistentDomainObject object = Pdo.create((Class<PersistentDomainObject>) type);
         PdoCache cache = object.getCache();
         if (cache != null && cache.isPreloading()) {
-          node = Fx.createNode(ComboBox.class);
+          node = Fx.create(ComboBox.class);
         }
         else {
-          node = Fx.createNode(TextField.class);
+          node = Fx.create(TextField.class);
         }
       }
       else {
         if (Boolean.class.equals(type) || Boolean.TYPE.equals(type)) {
-          node = Fx.createNode(CheckBox.class);
+          node = Fx.create(CheckBox.class);
         }
         else if (Enum.class.isAssignableFrom(type)) {
-          node = Fx.createNode(ChoiceBox.class);
+          node = Fx.create(ChoiceBox.class);
         }
         else {
           int ndx = bindingOptions.indexOf(Constants.BIND_LINES + "=");
-          node = ndx >= 0 ? Fx.createNode(TextArea.class) : Fx.createNode(TextField.class);
+          node = ndx >= 0 ? Fx.create(TextArea.class) : Fx.create(TextField.class);
         }
       }
       bind(pdoMember, attribute, node, bindingOptions);
@@ -282,7 +282,7 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
    * @return the view
    */
   protected Parent createView(Map<PdoMember, FxComponent> nodes) {
-    GridPane grid = Fx.createNode(GridPane.class);
+    GridPane grid = Fx.create(GridPane.class);
     grid.setVgap(5.0);
     grid.setHgap(5.0);
 
@@ -322,7 +322,7 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
     if (!text.endsWith(":")) {
       text += ":";
     }
-    Label label = Fx.createNode(Label.class);
+    Label label = Fx.create(Label.class);
     label.setText(text);
     return label;
   }

@@ -194,7 +194,7 @@ public class MainController extends AbstractFxController implements DomainContex
   private void manageSessions() {
     Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
     SessionsView controller = Fx.load(SessionsView.class);
-    FxButton closeButton = Fx.createNode(Button.class);
+    FxButton closeButton = Fx.create(Button.class);
     closeButton.setText(resources.getString("close"));
     closeButton.setGraphic(Fx.createImageView("close"));
     closeButton.setOnAction(e -> stage.close());

@@ -126,7 +126,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   private PdoEditor<T> editor;                      // the editor
   private ObservableList<T> pdoList;                // optional list of PDOs
   private int pdoListIndex;                         // index in list
-  private boolean editable;                         // editability requested by the application
+  private boolean editable;                         // editable requested by the application
   private boolean modal;                            // true if dialog is modal
   private EventListenerProxy<PdoEvent> eventProxy;  // event proxy to maintain PdoEvents registered on the View
 
@@ -378,7 +378,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   public void tree() {
     Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
     stage.initOwner(getStage());
-    TreeView<T> tree = Fx.createNode(TreeView.class);
+    TreeView<T> tree = Fx.create(TreeView.class);
     GuiProvider<T> guiProvider = Rdc.createGuiProvider(getPdo());
     tree.setCellFactory(guiProvider.getTreeCellFactory());
     TreeItem<T> item = guiProvider.createTreeItem();
@@ -615,7 +615,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
 
   /**
    * Removes all PDO-event handlers and filters.<br>
-   * The method is provided to avoid memleaks.
+   * The method is provided to avoid memory leaks.
    */
   public void removeAllPdoEventListeners() {
     eventProxy.removeAllEventFilters();

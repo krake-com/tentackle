@@ -22,8 +22,6 @@ package org.tentackle.fx.container;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.collections.ObservableList;
-import javafx.geometry.Orientation;
-import javafx.scene.Node;
 import javafx.scene.layout.FlowPane;
 
 import org.tentackle.fx.FxContainer;
@@ -38,86 +36,6 @@ import org.tentackle.fx.container.delegate.FxFlowPaneDelegate;
  * @author harald
  */
 public class FxFlowPane extends FlowPane implements FxContainer {
-
-  /**
-   * Creates a horizontal FlowPane layout with hgap/vgap = 0.
-   */
-  public FxFlowPane() {
-    super();
-  }
-
-  /**
-   * Creates a FlowPane layout with the specified orientation and hgap/vgap = 0.
-   * <p>
-   * @param orientation the direction the tiles should flow and wrap
-   */
-  public FxFlowPane(Orientation orientation) {
-    super(orientation);
-  }
-
-  /**
-   * Creates a horizontal FlowPane layout with the specified hgap/vgap.
-   * <p>
-   * @param hgap the amount of horizontal space between each tile
-   * @param vgap the amount of vertical space between each tile
-   */
-  public FxFlowPane(double hgap, double vgap) {
-    super(hgap, vgap);
-  }
-
-  /**
-   * Creates a FlowPane layout with the specified orientation and hgap/vgap.
-   * <p>
-   * @param orientation the direction the tiles should flow and wrap
-   * @param hgap        the amount of horizontal space between each tile
-   * @param vgap        the amount of vertical space between each tile
-   */
-  public FxFlowPane(Orientation orientation, double hgap, double vgap) {
-    super(orientation, hgap, vgap);
-  }
-
-  /**
-   * Creates a horizontal FlowPane layout with hgap/vgap = 0.
-   * <p>
-   * @param children The initial set of children for this pane.
-   */
-  public FxFlowPane(Node... children) {
-    super(children);
-  }
-
-  /**
-   * Creates a FlowPane layout with the specified orientation and hgap/vgap = 0.
-   * <p>
-   * @param orientation the direction the tiles should flow and wrap
-   * @param children    The initial set of children for this pane.
-   */
-  public FxFlowPane(Orientation orientation, Node... children) {
-    super(orientation, children);
-  }
-
-  /**
-   * Creates a horizontal FlowPane layout with the specified hgap/vgap.
-   * <p>
-   * @param hgap     the amount of horizontal space between each tile
-   * @param vgap     the amount of vertical space between each tile
-   * @param children The initial set of children for this pane.
-   */
-  public FxFlowPane(double hgap, double vgap, Node... children) {
-    super(hgap, vgap, children);
-  }
-
-  /**
-   * Creates a FlowPane layout with the specified orientation and hgap/vgap.
-   * <p>
-   * @param orientation the direction the tiles should flow and wrap
-   * @param hgap        the amount of horizontal space between each tile
-   * @param vgap        the amount of vertical space between each tile
-   * @param children    The initial set of children for this pane.
-   */
-  public FxFlowPane(Orientation orientation, double hgap, double vgap, Node... children) {
-    super(orientation, hgap, vgap, children);
-  }
-
 
   // @wurblet delegate Include $currentDir/fxcontainer.include
 
@@ -168,8 +86,8 @@ public class FxFlowPane extends FlowPane implements FxContainer {
   }
 
   @Override
-  public void setContainerChangableIgnored(boolean containerChangeableIgnored) {
-    getDelegate().setContainerChangableIgnored(containerChangeableIgnored);
+  public void setContainerChangeableIgnored(boolean containerChangeableIgnored) {
+    getDelegate().setContainerChangeableIgnored(containerChangeableIgnored);
   }
 
   @Override

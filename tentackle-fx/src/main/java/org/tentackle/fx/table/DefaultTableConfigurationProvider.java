@@ -51,7 +51,7 @@ import java.util.ResourceBundle;
  */
 public class DefaultTableConfigurationProvider<T> implements TableConfigurationProvider<T> {
 
-  private final Class<T> clazz;                             // the table elements class
+  private final Class<T> clazz;                             // the table element's class
   private final boolean bundleProvided;                     // true if resource bundle is provided
   private final TableConfiguration.BINDING bindingType;     // the table binding type
 
@@ -78,6 +78,15 @@ public class DefaultTableConfigurationProvider<T> implements TableConfigurationP
       bundleProvided = !annotation.noBundle();
       bindingType = annotation.binding();
     }
+  }
+
+  /**
+   * Gets the table element's class.
+   *
+   * @return the class
+   */
+  public Class<T> getElementClass() {
+    return clazz;
   }
 
   /**
@@ -112,7 +121,7 @@ public class DefaultTableConfigurationProvider<T> implements TableConfigurationP
    */
   @Override
   public TableConfiguration<T> createTableConfiguration() {
-    TableConfiguration<T> configuration = createTableConfiguration(clazz, null);
+    TableConfiguration<T> configuration = createEmptyTableConfiguration();
     addBindableColumns(configuration);
     if (bindingType != null) {
       configuration.setBindingType(bindingType);
@@ -122,16 +131,30 @@ public class DefaultTableConfigurationProvider<T> implements TableConfigurationP
 
 
   /**
-   * Creates only the instance of a table configuration.<br>
-   * Override this method to create application-specific configurations.
+   * Creates only the instance of a table configuration w/o column configs.<br>
+   * Override this method to create application-specific implementations.
    *
-   * @param clazz the table's element class
    * @param name the table's name, null if basename of element class
    * @return the table configuration
    */
-  protected TableConfiguration<T> createTableConfiguration(Class<T> clazz, String name) {
-    return FxFactory.getInstance().createTableConfiguration(clazz, name);
+  protected TableConfiguration<T> createEmptyTableConfiguration(String name) {
+    TableConfiguration<T> configuration = FxFactory.getInstance().createTableConfiguration(getElementClass(), name);
+    if (isBundleProvided()) {
+      configuration.setBaseBundleName(getClass().getName());
+    }
+    return configuration;
   }
+
+  /**
+   * Creates only the instance of a table configuration w/o column configs.<br>
+   * Override this method to create application-specific implementations.
+   *
+   * @return the table configuration
+   */
+  protected final TableConfiguration<T> createEmptyTableConfiguration() {
+    return createEmptyTableConfiguration(null);
+  }
+
 
   /**
    * Adds all bindable columns.<br>

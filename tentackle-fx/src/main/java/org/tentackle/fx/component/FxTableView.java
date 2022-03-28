@@ -31,6 +31,7 @@ import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 
+import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxRuntimeException;
@@ -138,7 +139,7 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
 
 
   /**
-   * Saves the column sizes, visability, view size and sorting to the preferences.
+   * Saves the column sizes, visibility, view size and sorting to the preferences.
    *
    * @param suffix the configuration suffix, null if none
    * @param system true if save to system prefs, else user prefs
@@ -150,7 +151,7 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
   }
 
   /**
-   * Loads the column sizes, visability, view size and sorting from the preferences.
+   * Loads the column sizes, visibility, view size and sorting from the preferences.
    *
    * @param suffix the configuration suffix, null if none
    * @param system true if load from system prefs only, else user prefs first
@@ -187,7 +188,7 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
 
 
   /**
-   * Configures the table to copy a cell via Crtl-C to the clipboard.
+   * Configures the table to copy a cell via Ctrl-C to the clipboard.
    *
    * @param copyToClipboardEnabled true to enable
    */
@@ -243,7 +244,7 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
           Object item = tableColumn.getCellData(row);
           if (item != null) {
             String text = null;
-            // try to lookup the rendered text
+            // try to look up the rendered text
             for (Node c : lookupAll(".table-cell")) {    // all visible cells only
               TableCell<?, ?> tc = (TableCell<?, ?>) c;
               if (tc.getItem() == item) {   // == is ok here, must be the same instance!
@@ -334,7 +335,7 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
         String text = copyToClipboard(event.isShiftDown());
         if (text != null) {
           // display copied text for as long as the control button is held down (see setOnKeyReleased below)
-          Note infoNote = new Note(Note.Position.CENTER, Note.Type.INFO);
+          Note infoNote = Fx.create(Note.class);
           infoNote.setText(text);
           infoNote.show(this);
           if (infoNotes == null) {
@@ -546,8 +547,8 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
   }
 
   @Override
-  public void setContainerChangableIgnored(boolean containerChangeableIgnored) {
-    getDelegate().setContainerChangableIgnored(containerChangeableIgnored);
+  public void setContainerChangeableIgnored(boolean containerChangeableIgnored) {
+    getDelegate().setContainerChangeableIgnored(containerChangeableIgnored);
   }
 
   @Override

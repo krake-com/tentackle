@@ -60,7 +60,7 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
   private static final String CACHE_FILE_EXTENSION = ".ser";  // extension for cache files
 
 
-  private transient PdoCache<T> cache;    // the cache to backup
+  private transient PdoCache<T> cache;    // the cache to back up
 
   // persisted data
   private final String applicationName;   // the application name (null if file-backup disabled, i.e. not a client application)
@@ -68,6 +68,7 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
   private final String fileName;          // the filename
 
   private long tableSerial;               // the serial version of the table
+  @SuppressWarnings("serial")
   private List<T> objects;                // the objects in the cache
 
 
@@ -97,7 +98,7 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
    * Writes the cache to persistent storage.<br>
    * Throws PdoRuntimeException if writing failed.
    *
-   * @return true if cache has been persited, false if cache isn't persistable (application is not a client)
+   * @return true if cache has been persisted, false if cache isn't persistable (application is not a client)
    */
   public synchronized boolean writeToFile() {
 
@@ -230,7 +231,7 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
       object.setSession(session);   // this is transient
       cache.add(object);
     }
-    // setup the context db list and set the selectAll-lists if cache is preloading
+    // set up the context db list and set the selectAll-lists if cache is preloading
     cache.updateContextInfo();
     // check if cache is expired by asking the server
     long currentTableSerial = getTableSerial();
@@ -264,7 +265,7 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
     File dir;
     File cacheDir = new File(UserHomeJavaDir.getDirectory("cache", "pdo"), applicationName);
     if (!cacheDir.exists()) {
-      // make application directory if it doesnt exist
+      // make application directory if it doesn't exist
       cacheDir.mkdir();
       LOGGER.info(() -> "created cache application directory " + cacheDir.getAbsolutePath());
     }

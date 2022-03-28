@@ -34,8 +34,8 @@ import org.tentackle.maven.plugin.wizard.pdodata.DataNode;
 public class DataNodeTableConfigurationProvider<T extends DataNode> extends DefaultTableConfigurationProvider<T> {
 
   @Override
-  protected TableConfiguration<T> createTableConfiguration(Class<T> clazz, String name) {
-    return new DataNodeTableConfiguration<>(clazz, name) {
+  protected TableConfiguration<T> createEmptyTableConfiguration(String name) {
+    return new DataNodeTableConfiguration<>(getElementClass(), name) {
       @Override
       @SuppressWarnings({ "unchecked", "rawtypes" })
       public TreeItem<T> createTreeItem(T object) {

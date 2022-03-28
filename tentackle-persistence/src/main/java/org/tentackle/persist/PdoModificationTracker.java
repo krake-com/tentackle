@@ -58,7 +58,7 @@ public class PdoModificationTracker extends DbModificationTracker {
 
     // enable local client mode if this is a non-server application with a local jdbc url.
     // in all other cases use optimized mode.
-    setLocalClientMode(!session.isRemote() && !AbstractApplication.isServer());
+    setLocalClientMode(!session.isRemote() && AbstractApplication.getRunningApplication() != null && !AbstractApplication.isServer());
   }
 
 }

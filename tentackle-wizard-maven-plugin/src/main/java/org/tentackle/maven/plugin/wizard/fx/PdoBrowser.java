@@ -134,6 +134,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     profileField.addViewToModelListener(this::updateEntityFieldProperties);
     rootOnlyField.addViewToModelListener(this::updateEntityFieldProperties);
     entityField.setListenerSuppressedIfModelUnchanged(true);
+    entityField.setVisibleRowCount(25);
     entityField.addViewToModelListener(this::run);
     latestField.addViewToModelListener(() -> {
       finder = null;
@@ -254,14 +255,14 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
           finder = guiProvider.createFinder();
           finder.setPdo(proxy);
           Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
-          FxBorderPane borderPane = Fx.createNode(BorderPane.class);
+          FxBorderPane borderPane = Fx.create(BorderPane.class);
           borderPane.setPadding(new Insets(10));
           borderPane.setCenter(finder.getView());
-          FxHBox hBox = Fx.createNode(HBox.class);
+          FxHBox hBox = Fx.create(HBox.class);
           hBox.setSpacing(10);
           hBox.setPadding(new Insets(20, 0, 0, 0));
           hBox.setAlignment(Pos.BASELINE_RIGHT);
-          FxButton cancelButton = Fx.createNode(Button.class);
+          FxButton cancelButton = Fx.create(Button.class);
           cancelButton.setText("cancel");
           cancelButton.setGraphic(Fx.createImageView("cancel"));
           cancelButton.setOnAction(e -> {
@@ -269,7 +270,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
             finder = null;
             run();
           });
-          FxButton findButton = Fx.createNode(Button.class);
+          FxButton findButton = Fx.create(Button.class);
           findButton.setText("find");
           findButton.setGraphic(Fx.createImageView("search"));
           findButton.setOnAction(e -> {
@@ -312,8 +313,9 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
       buf.append("// generated at ").append(FormatHelper.formatShortTimestampFast(new Timestamp())).append(" by ")
          .append(System.getProperty("user.name"))
          .append(" on ")
-         .append(mojo.getHostName()).append('\n')
-         .append("// from ").append(getDomainContext().getSession()).append("\n\n");
+         .append(mojo.getHostName())
+         .append(" from ")
+         .append(getDomainContext().getSession()).append("\n\n");
 
       DataObject[] dataObjects = new DataObject[selectedItems.size()];
       int i = 0;
@@ -328,7 +330,8 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
       Clipboard.getSystemClipboard().setContent(cbc);
 
       // show some feedback
-      Note infoNote = new Note(Note.Position.TOP, Note.Type.INFO);
+      Note infoNote = Fx.create(Note.class);
+      infoNote.setPosition(Note.Position.TOP);
       String topic = selectedItems.size() > 1 ? (selectedItems.size() + " " + dataObject.getPdo().getPlural()) : dataObject.toString();
       infoNote.setText("Java code for " + topic + " copied to clipboard");
       infoNote.setFadeEffect(500, 2000, 1000);

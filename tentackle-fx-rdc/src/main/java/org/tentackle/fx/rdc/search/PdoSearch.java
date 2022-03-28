@@ -138,7 +138,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   private boolean treeShown;                    // true if tree shown, else table
   private TreeItem<T> rootItem;                 // root item to detect top level nodes
   private boolean tableViewInvalid;             // true if tableview is invalid
-  private boolean treeViewInvalid;              // true if treeview is invalid
+  private boolean treeViewInvalid;              // true if tree-view is invalid
   private boolean singleSelectMode;             // true if in (modal) single selection mode
   private BooleanProperty wrongTypeSelected;    // true if wrong type in selected tree cell
   private T createdPdo;                         // != null if new PDO has been created in modal mode
@@ -146,7 +146,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   private String noDataMessage;                 // optional message to be displayed when there is no data in the table
   private ImageView searchImage;                // replacing search
   private ImageView searchPlusImage;            // adding search
-  private boolean shiftdown;                    // true if shift key is down
+  private boolean shiftDown;                    // true if shift key is down
   private boolean mouseOverFindButton;          // true if mouse over findButton
 
 
@@ -178,7 +178,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   }
 
   /**
-   * Sets the double-click handler.<br>
+   * Sets the double click handler.<br>
    * If the search dialog is non-modal and the user double-clicks on a row of the table view,
    * this handler will be invoked instead of the default (showing the PDO editor, if any provided).
    *
@@ -263,7 +263,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
               else {
                 Rdc.displayCrudStage(firstPdo.reload(), items, true, Modality.NONE, getStage(), null, crud -> {
                   pdoCrud = crud;
-                  // event filter will removed when stage is hidden (see RdcUtilities)
+                  // event filter will be removed when stage is hidden (see RdcUtilities)
                   crud.addPdoEventFilter(PdoEvent.ANY, e -> {
                     if (e.getEventType() == PdoEvent.UPDATE) {    // INSERT or DELETE doesn't happen in this config
                       T updatedPdo = firstPdo.reload();
@@ -272,7 +272,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
                         int i = 0;
                         for (TreeItem<T> item : treeItems) {
                           if (updatedPdo.equals(item.getValue())) {
-                            // need new TreeItem in case childs have changed as well
+                            // need new TreeItem in case children have changed as well
                             TreeItem<T> updatedItem =
                                 Rdc.createGuiProvider(updatedPdo).createTreeItem();
                             treeItems.set(i, updatedItem);
@@ -290,7 +290,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
                     }
                     else if (e.getEventType() == PdoEvent.READ) { // up/down button pressed
                       // do fast checks first (assumed the user did not change the selection)
-                      int ndx = treeViewInvalid ? tableView.getSelectionModel().getSelectedIndex() : -1;  // treeview needs full search (may contain expanded items)
+                      int ndx = treeViewInvalid ? tableView.getSelectionModel().getSelectedIndex() : -1;  // tree-view needs full search (may contain expanded items)
                       if (ndx > 0 && e.getPdo().equals(items.get(ndx - 1))) {
                         ndx--;
                       }
@@ -311,7 +311,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
                           treeView.getSelectionModel().clearSelection();
                           TreeItem<T> selectedItem = rootItem.getChildren().get(ndx);
                           treeView.getSelectionModel().select(selectedItem);
-                          ndx = treeView.getSelectionModel().getSelectedIndex();    // index in tree lines (including expanded childs!)
+                          ndx = treeView.getSelectionModel().getSelectedIndex();    // index in tree lines (including expanded children!)
                           if (ndx >= 0) {
                             treeView.scrollToCentered(ndx);
                           }
@@ -330,14 +330,14 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     TablePopup<T> tablePopup = Rdc.createTablePopup(tableView, null, pdo.getPlural());
     tablePopup.loadPreferences();
 
-    treeView = Fx.createNode(TreeView.class);
+    treeView = Fx.create(TreeView.class);
     treeView.setCellFactory(guiProvider.getTreeCellFactory());
     wrongTypeSelected = new SimpleBooleanProperty();
     treeView.getSelectionModel().selectedItemProperty().addListener((obs, ov, nv) ->
             wrongTypeSelected.set(nv == null || nv.getValue() == null ||
                                   !pdo.getClass().isAssignableFrom(nv.getValue().getClass())));
 
-    StackPane stackPane = Fx.createNode(StackPane.class);
+    StackPane stackPane = Fx.create(StackPane.class);
     if (treeShown) {
       stackPane.getChildren().addAll(tablePane, treeView);
     }
@@ -537,7 +537,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    */
   public void setItems(List<T> pdos) {
     ObservableList<T> viewablePdos = filterViewablePdos(pdos);
-    if (shiftdown && items != null && !items.isEmpty() && !viewablePdos.isEmpty()) {
+    if (shiftDown && items != null && !items.isEmpty() && !viewablePdos.isEmpty()) {
       // append to the item list if not already in the list
       Set<T> itemSet = new HashSet<>(items);
       ObservableList<T> unsortedItems = FXCollections.observableArrayList(items.getSource());
@@ -822,7 +822,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     findButton.setOnAction(e -> find());
     findButton.setOnMousePressed(event -> {
       // onAction will not be triggered if shift-key is down during mouse click
-      if (shiftdown) {
+      if (shiftDown) {
         findButton.doClick();
       }
     });
@@ -837,7 +837,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     cancelButton.setOnAction(e -> cancel());
     cancelButton.setCancelButton(true);
 
-    tablePane = Fx.createNode(BorderPane.class);
+    tablePane = Fx.create(BorderPane.class);
   }
 
   @Override
@@ -890,18 +890,12 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   /**
    * Creates the placeholder node for the empty search result in table view.
    *
-   * @return the node, null if use tableview's default placeholder
+   * @return the node, null to use table-view's default placeholder
    */
   protected Node createPlaceHolder() {
-    Label placeHolder = Fx.createNode(Label.class);   // default impl always returns a placeholder
-    String text;
-    if (noDataMessage != null) {
-      text = noDataMessage;
-    }
-    else {
-      // create default according to PDO type
-      text = MessageFormat.format(resources.getString("no {0} found"), getPdo().getPlural());
-    }
+    Label placeHolder = Fx.create(Label.class);   // default impl always returns a placeholder
+    // create default according to PDO type
+    String text = Objects.requireNonNullElseGet(noDataMessage, () -> MessageFormat.format(resources.getString("no {0} found"), getPdo().getPlural()));
     placeHolder.setText(text);
     return placeHolder;
   }
@@ -913,17 +907,17 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     treeView.getSelectionModel().setSelectionMode(selectionMode);
   }
 
-  private void toggleShiftKey(boolean shiftdown) {
-    if (this.shiftdown != shiftdown) {
-      this.shiftdown = shiftdown;
-      if (mouseOverFindButton || !shiftdown) {
+  private void toggleShiftKey(boolean shiftDown) {
+    if (this.shiftDown != shiftDown) {
+      this.shiftDown = shiftDown;
+      if (mouseOverFindButton || !shiftDown) {
         updateFindButton();
       }
     }
   }
 
   private void updateFindButton() {
-    ImageView image = shiftdown ? searchPlusImage : searchImage;
+    ImageView image = shiftDown ? searchPlusImage : searchImage;
     if (image != findButton.getGraphic()) {
       findButton.setGraphic(image);
     }

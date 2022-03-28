@@ -28,8 +28,10 @@ import javafx.scene.image.ImageView;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.util.Builder;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
@@ -125,19 +127,31 @@ public class Fx {
   }
 
   /**
-   * Creates a node.<br>
-   * Nodes should not be created via the builder factory and not
-   * the tradional way by invoking a constructor.
+   * Creates an object.<br>
+   * FX objects should not be created via the builder factory and not
+   * the traditional way by invoking a constructor.
    * Only the builder factory guarantees TT-compliant instances.
+   * <p>
+   * Throws {@link FxRuntimeException} if no builder for this type and/or
+   * the type does not provide a no-arg constructor.
    *
-   * @param <T> the requested FX standard node type
-   * @param <R> the expected type of the returned node
-   * @param clazz the node's class
-   * @return the node instance
+   * @param <T> the requested FX standard type
+   * @param <R> the expected type of the returned object
+   * @param clazz the object's class
+   * @return the created object
    */
   @SuppressWarnings("unchecked")
-  public static <T, R extends T> R createNode(Class<T> clazz) {
-    return (R) FxFactory.getInstance().getBuilderFactory().getBuilder(clazz).build();
+  public static <T, R extends T> R create(Class<T> clazz) {
+    Builder<R> builder = (Builder<R>) FxFactory.getInstance().getBuilderFactory().getBuilder(clazz);
+    if (builder != null) {
+      return builder.build();
+    }
+    try {
+      return (R) clazz.getDeclaredConstructor().newInstance();
+    }
+    catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+      throw new FxRuntimeException("cannot create " + clazz.getName());
+    }
   }
 
   /**
@@ -188,7 +202,7 @@ public class Fx {
    * @param message the message
    * @param defaultYes true if yes is the default button
    * @param title optional title
-   * @param answer the user's answer (invoked with Boolean.TRUE or Boolean.FALSE, never null)
+   * @param answer the user's answer (invoked with {@link Boolean#TRUE} or {@link Boolean#FALSE}, never null)
    * @return the alert dialog
    */
   public static Alert question(String message, boolean defaultYes, String title, Consumer<Boolean> answer) {

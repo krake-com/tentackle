@@ -49,6 +49,7 @@ public class ModificationEvent implements Serializable {
   private final transient Session session;
 
   /** the modification details. */
+  @SuppressWarnings("serial")
   private final Map<String,ModificationEventDetail> details;    //  null if master event
 
   /** the modification serial, master or first of details. */

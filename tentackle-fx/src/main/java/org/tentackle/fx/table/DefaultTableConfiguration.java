@@ -51,8 +51,8 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   /*
    * TableView and TreeTableView don't inherit from each other and thus
    * each spawn their own related types such as TableColum, TreeTableColumn, etc...
-   * As a result, since {@link TableConfiguration} and {@link TableColumnConfiguration} apply
-   * to both tables and treetables, a lot of semantically identical code is necessary.
+   * As a result, since TableConfiguration and TableColumnConfiguration apply
+   * to both tables and tree-tables, a lot of semantically identical code is necessary.
    * However, it is not really duplicate code. There's not much we can do to reduce it.
    */
 
@@ -130,6 +130,12 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
    * The binding type.
    */
   private BINDING bindingType = BINDING.YES;
+
+  /**
+   * Optional resource bundle name for BundleMonkey navigation.
+   */
+  private String bundleName;
+
 
   /**
    * Creates a configuration.
@@ -553,6 +559,16 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   @Override
   public void setEditMode(EDITMODE editMode) {
     this.editMode = editMode == null ? EDITMODE.NO : editMode;
+  }
+
+  @Override
+  public String getBaseBundleName() {
+    return bundleName;
+  }
+
+  @Override
+  public void setBaseBundleName(String bundleName) {
+    this.bundleName = bundleName;
   }
 
   @Override

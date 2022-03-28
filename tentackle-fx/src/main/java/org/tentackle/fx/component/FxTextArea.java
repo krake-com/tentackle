@@ -52,23 +52,6 @@ public class FxTextArea extends TextArea implements FxTextComponent {
 
 
   /**
-   * Creates a {@code FxTextArea} with empty text content.
-   */
-  public FxTextArea() {
-    super();
-  }
-
-  /**
-   * Creates a {@code FxTextArea} with initial text content.
-   * <p>
-   * @param text A string for text content.
-   */
-  public FxTextArea(String text) {
-    super(text);
-  }
-
-
-  /**
    * Returns whether enter/tab is treated the Tentackle way.
    *
    * @return true if tentackle, false if standard FX
@@ -280,8 +263,8 @@ public class FxTextArea extends TextArea implements FxTextComponent {
   }
 
   @Override
-  public void setContainerChangableIgnored(boolean containerChangeableIgnored) {
-    getDelegate().setContainerChangableIgnored(containerChangeableIgnored);
+  public void setContainerChangeableIgnored(boolean containerChangeableIgnored) {
+    getDelegate().setContainerChangeableIgnored(containerChangeableIgnored);
   }
 
   @Override

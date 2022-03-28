@@ -159,7 +159,7 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
       ContextMenu menu;
 
       if (control.getContextMenu() == null) {
-        menu = new ContextMenu();
+        menu = Fx.create(ContextMenu.class);
         // this replaces the default context menu in TextFields, but that's ok.
         // otherwise we would have to quirk TextFieldBehaviour which is still private API
         control.setContextMenu(menu);
@@ -167,14 +167,16 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
       }
       else {
         // append to existing menu
-        separatorItem = new SeparatorMenuItem();
+        separatorItem = Fx.create(SeparatorMenuItem.class);
         menu = control.getContextMenu();
         menu.getItems().add(separatorItem);
       }
-      MenuItem editItem = new MenuItem(RdcFxRdcBundle.getString("EDIT"));
+      MenuItem editItem = Fx.create(MenuItem.class);
+      editItem.setText(RdcFxRdcBundle.getString("EDIT"));
       editItem.setAccelerator(new KeyCodeCombination(KeyCode.F2));
       editItem.setOnAction(event -> edit());
-      MenuItem searchItem = new MenuItem(RdcFxRdcBundle.getString("SEARCH"));
+      MenuItem searchItem = Fx.create(MenuItem.class);
+      searchItem.setText(RdcFxRdcBundle.getString("SEARCH"));
       searchItem.setAccelerator(new KeyCodeCombination(KeyCode.F3));
       searchItem.setOnAction(event -> search());
       menu.getItems().addAll(editItem, searchItem);

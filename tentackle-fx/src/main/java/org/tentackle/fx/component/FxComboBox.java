@@ -71,7 +71,7 @@ public class FxComboBox<T> extends ComboBox<T> implements FxTextComponent {
    * Returns whether deselect is allowed via delete or backspace key.<br>
    * If null, it is determined according to type and/or mandatory property.
    * If the type is a primitive or the component is mandatory, deselect is not allowed.
-   * Otherwise it is allowed by default.
+   * Otherwise, it is allowed by default.
    *
    * @return true if allowed, null if determined from type and/or mandatory property
    */
@@ -126,7 +126,7 @@ public class FxComboBox<T> extends ComboBox<T> implements FxTextComponent {
         }
       }
       else {
-        // deselect by DELETE- or BACKSPACE-key (with or without shift) in non-editable comboboxes
+        // deselect by DELETE- or BACKSPACE-key (with or without shift) in non-editable combo boxes
         if (getDelegate().isDeselectAllowed() &&
             !event.isAltDown() && !event.isControlDown() && !event.isMetaDown() && !event.isShortcutDown() &&
             (event.getCode() == KeyCode.DELETE || event.getCode() == KeyCode.BACK_SPACE)) {
@@ -537,8 +537,8 @@ public class FxComboBox<T> extends ComboBox<T> implements FxTextComponent {
   }
 
   @Override
-  public void setContainerChangableIgnored(boolean containerChangeableIgnored) {
-    getDelegate().setContainerChangableIgnored(containerChangeableIgnored);
+  public void setContainerChangeableIgnored(boolean containerChangeableIgnored) {
+    getDelegate().setContainerChangeableIgnored(containerChangeableIgnored);
   }
 
   @Override

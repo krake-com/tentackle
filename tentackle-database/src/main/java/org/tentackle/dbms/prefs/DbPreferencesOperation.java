@@ -61,8 +61,10 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
     /** the serial version of the preferences tree. */
     public final long serial;
     /** all prefnodes. */
+    @SuppressWarnings("serial")
     public final Collection<DbPreferencesNode> prefNodes;
     /** all prefkeys. */
+    @SuppressWarnings("serial")
     public final Collection<DbPreferencesKey> prefKeys;
 
     /**
@@ -108,7 +110,7 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
 
 
   /**
-   * Loads the root preferences node with all its subnodes and keys.
+   * Loads the root preferences node with all its sub-nodes and keys.
    *
    * @param user the username, "" if system user
    * @param forced true always load from storage, false if try repository first
@@ -219,7 +221,7 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
 
 
   /**
-   * Loads a root node and all its subnodes from database.<br>
+   * Loads a root node and all its sub-nodes from database.<br>
    * If the node is new, a new instance will be created, but not persisted yet.
    *
    * @param user the username, null if system root
@@ -234,11 +236,11 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
       rootNode.setName("/");
     }
 
-    Map<Long,DbPreferences> childs = new HashMap<>();
+    Map<Long,DbPreferences> children = new HashMap<>();
     List<DbPreferencesKey> keys = new ArrayList<>();
 
-    DbPreferences root = new DbPreferences(null, rootNode, childs.values(), keys);
-    childs.put(rootNode.getId(), root);   // add root to simplify buildChild below
+    DbPreferences root = new DbPreferences(null, rootNode, children.values(), keys);
+    children.put(rootNode.getId(), root);   // add root to simplify buildChild below
 
     if (!rootNode.isNew()) {
       // build whole subtree
@@ -253,14 +255,14 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
 
       // build node hierarchy
       for (DbPreferencesNode subNode: subNodes.values()) {
-        buildChild(subNode, subNodes, childs);
+        buildChild(subNode, subNodes, children);
       }
 
-      // add childs to their parents
-      for (DbPreferences child: childs.values()) {
+      // add children to their parents
+      for (DbPreferences child: children.values()) {
         long parentId = child.getPersistentNode().getParentId();
         if (parentId != 0) {
-          DbPreferences parent = childs.get(parentId);
+          DbPreferences parent = children.get(parentId);
           if (parent != null) {
             parent.addChild(child);
           }
@@ -273,7 +275,7 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
       // add keys
       for (DbPreferencesKey prefKey : new DbPreferencesKey(db).selectByRootNodeId(rootNode.getId())) {
         prefKey.setSession(null);   // clear the reference!
-        DbPreferences parent = childs.get(prefKey.getNodeId());
+        DbPreferences parent = children.get(prefKey.getNodeId());
         if (parent != null) {
           parent.putPersistentKey(prefKey);
         }
@@ -293,25 +295,25 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
    *
    * @param prefNode the current node
    * @param subNodes the map of child prefnode
-   * @param childs the map of child preferences node
+   * @param children the map of child preferences node
    * @return the created preferences node
    */
   private DbPreferences buildChild(DbPreferencesNode prefNode,
                                    Map<Long,DbPreferencesNode> subNodes,
-                                   Map<Long,DbPreferences> childs) {
+                                   Map<Long,DbPreferences> children) {
     long parentId = prefNode.getParentId();
-    DbPreferences parent = childs.get(parentId);
+    DbPreferences parent = children.get(parentId);
     if (parent == null) {
       // parent missing: build recursively
-      parent = buildChild(subNodes.get(prefNode.getParentId()), subNodes, childs);
+      parent = buildChild(subNodes.get(prefNode.getParentId()), subNodes, children);
     }
     DbPreferences child = new DbPreferences(parent, prefNode, null, null);
-    childs.put(prefNode.getId(), child);
+    children.put(prefNode.getId(), child);
     return child;
   }
 
   /**
-   * Adds all subnodes and keys of a node to given lists.<br>
+   * Adds all sub-nodes and keys of a node to given lists.<br>
    * Only persisted nodes and keys are added.
    *
    * @param node the node
@@ -331,7 +333,7 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
         prefKeys.add(key);
       }
     }
-    for (DbPreferences child: node.getChilds()) {
+    for (DbPreferences child: node.getChildren()) {
       if (!child.getPersistentNode().isNew() && !child.getPersistentNode().isRemoved()) {
         addNodeToLists(child, prefNodes, prefKeys);
       }

@@ -374,8 +374,8 @@ public class FxTreeView<T> extends TreeView<T> implements FxComponent {
   }
 
   @Override
-  public void setContainerChangableIgnored(boolean containerChangeableIgnored) {
-    getDelegate().setContainerChangableIgnored(containerChangeableIgnored);
+  public void setContainerChangeableIgnored(boolean containerChangeableIgnored) {
+    getDelegate().setContainerChangeableIgnored(containerChangeableIgnored);
   }
 
   @Override

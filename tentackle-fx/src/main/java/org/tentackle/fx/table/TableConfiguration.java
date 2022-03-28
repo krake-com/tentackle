@@ -33,7 +33,7 @@ import java.util.Collection;
  * Configuration for table and treetable views.<br>
  * The main purpose is to provide a single object to configure the component.
  *
- * @param <S> the type of the objects contained within the table's or treetable's items list
+ * @param <S> the type of the objects contained within the table's or tree-table's items list
  * @author harald
  */
 public interface TableConfiguration<S> {
@@ -144,7 +144,7 @@ public interface TableConfiguration<S> {
   void addColumnConfiguration(TableColumnConfiguration<S, ?> columnConfiguration);
 
   /**
-   * Saves the column sizes, visability, view size and sorting to the preferences.
+   * Saves the column sizes, visibility, view size and sorting to the preferences.
    *
    * @param table the table
    * @param suffix the configuration suffix, null if none
@@ -153,7 +153,7 @@ public interface TableConfiguration<S> {
   void savePreferences(FxTableView<S> table, String suffix, boolean system);
 
   /**
-   * Loads the column sizes, visability, view size and sorting from the preferences.
+   * Loads the column sizes, visibility, view size and sorting from the preferences.
    *
    * @param table the table
    * @param suffix the configuration suffix, null if none
@@ -162,7 +162,7 @@ public interface TableConfiguration<S> {
   void loadPreferences(FxTableView<S> table, String suffix, boolean system);
 
   /**
-   * Saves the column sizes, visability, view size and sorting to the preferences.
+   * Saves the column sizes, visibility, view size and sorting to the preferences.
    *
    * @param treeTable the treetable
    * @param suffix the configuration suffix, null if none
@@ -171,7 +171,7 @@ public interface TableConfiguration<S> {
   void savePreferences(FxTreeTableView<S> treeTable, String suffix, boolean system);
 
   /**
-   * Loads the column sizes, visability, view size and sorting from the preferences.
+   * Loads the column sizes, visibility, view size and sorting from the preferences.
    *
    * @param treeTable the table
    * @param suffix the configuration suffix, null if none
@@ -277,5 +277,20 @@ public interface TableConfiguration<S> {
    * @return the tree item
    */
   TreeItem<S> createTreeItem(S object);
+
+  /**
+   * Gets the optional resource bundle name.<br>
+   * Used for BundleMonkey navigation only.
+   *
+   * @return the bundle name, null if unknown
+   */
+  String getBaseBundleName();
+
+  /**
+   * Sets the optional resource bundle name.
+   *
+   * @param bundleName the bundle name, null if none
+   */
+  void setBaseBundleName(String bundleName);
 
 }

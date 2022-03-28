@@ -18,6 +18,15 @@
 
 package org.tentackle.dbms.prefs;
 
+import org.tentackle.dbms.Db;
+import org.tentackle.log.Logger;
+import org.tentackle.prefs.PersistedPreferences;
+import org.tentackle.prefs.PersistedPreferencesFactory;
+import org.tentackle.session.ConstraintException;
+import org.tentackle.session.NotFoundException;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.SavepointHandle;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serial;
@@ -35,14 +44,6 @@ import java.util.prefs.BackingStoreException;
 import java.util.prefs.NodeChangeListener;
 import java.util.prefs.PreferenceChangeListener;
 import java.util.prefs.Preferences;
-import org.tentackle.dbms.Db;
-import org.tentackle.log.Logger;
-import org.tentackle.prefs.PersistedPreferences;
-import org.tentackle.prefs.PersistedPreferencesFactory;
-import org.tentackle.session.ConstraintException;
-import org.tentackle.session.NotFoundException;
-import org.tentackle.session.PersistenceException;
-import org.tentackle.session.SavepointHandle;
 
 /**
  * Persisted preferences implementation.
@@ -71,13 +72,15 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
 
   private static final Logger LOGGER = Logger.get(DbPreferences.class);
 
-  private final DbPreferences root;                     // the root of thos nodd ("this" if this is a root)
+  private final DbPreferences root;                     // the root of this node ("this" if this is a root)
   private final DbPreferences parent;                   // the parent node, null if this is a root
   private final String absolutePath;                    // the absolute path
   private final String name;                            // the name relative to the parent
   private final DbPreferencesNode prefNode;             // the persistent node
 
-  private final Map<String,DbPreferences> childMap;     // childs of this node <subname:node>
+  @SuppressWarnings("serial")
+  private final Map<String,DbPreferences> childMap;     // children of this node <subname:node>
+  @SuppressWarnings("serial")
   private final Map<String,DbPreferencesKey> keyMap;    // keys of this node <key:value>
 
 
@@ -86,11 +89,11 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
    *
    * @param parent the parent node, null if this is a root node
    * @param prefNode the persistent node
-   * @param childs the child preferences nodes
+   * @param children the child preferences nodes
    * @param keys the persistent keys
    */
   public DbPreferences(DbPreferences parent, DbPreferencesNode prefNode,
-                       Collection<DbPreferences> childs, Collection<DbPreferencesKey> keys) {
+                       Collection<DbPreferences> children, Collection<DbPreferencesKey> keys) {
 
     this.root = parent == null ? this : parent.getRoot();
     this.parent = parent;
@@ -110,8 +113,8 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
     }
 
     childMap = new HashMap<>();
-    if (childs != null) {
-      for (DbPreferences child : childs) {
+    if (children != null) {
+      for (DbPreferences child : children) {
         addChild(child);
       }
     }
@@ -151,7 +154,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
   }
 
   /**
-   * Returns the string represenation of this node.
+   * Returns the string representation of this node.
    *
    * <ul>
    * <li>user node: "user:absolutePath"</li>
@@ -509,7 +512,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
   }
 
   /**
-   * Gets the peristent keys.
+   * Gets the persistent keys.
    *
    * @return the keys, never null
    */
@@ -522,7 +525,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
    *
    * @return the child nodes, never null
    */
-  public Collection<DbPreferences> getChilds() {
+  public Collection<DbPreferences> getChildren() {
     return childMap.values();
   }
 
@@ -624,9 +627,9 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
   }
 
   /**
-   * Gets the user name.
+   * Gets the username.
    *
-   * @return the user name, null if system user
+   * @return the username, null if system user
    */
   public String getUser() {
     return prefNode.getUser();
@@ -677,7 +680,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
     try {
       if (prefNode.isRemoved()) {
         if (!prefNode.isNew()) {
-          // remove this and all subnodes and keys
+          // remove this and all sub-nodes and keys
           for (DbPreferencesKey prefKey: keyMap.values()) {
             prefKey.setRemoved(true);
             if (!prefKey.isNew()) {

@@ -21,6 +21,8 @@ package org.tentackle.dbms;
 import org.tentackle.misc.Convertible;
 import org.tentackle.session.PersistenceException;
 
+import java.io.Serializable;
+
 /**
  * The modification type.<br>
  * The default types are defined in {@link DbModificationType}, which is an enum.
@@ -33,7 +35,7 @@ import org.tentackle.session.PersistenceException;
  *   and override the create method.</li>
  * </ul>
  */
-public interface ModificationType extends Convertible<Character> {
+public interface ModificationType extends Convertible<Character>, Serializable {
 
   /**
    * Converts an external character value to a {@link ModificationType}.

@@ -155,7 +155,7 @@ public abstract class FxControlDelegate implements FxControl {
   }
 
   @Override
-  public void setContainerChangableIgnored(boolean containerChangeableIgnored) {
+  public void setContainerChangeableIgnored(boolean containerChangeableIgnored) {
     this.containerChangeableIgnored = containerChangeableIgnored;
   }
 

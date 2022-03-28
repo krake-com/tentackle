@@ -55,6 +55,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   private boolean modified;                         // initial modification parameter or from setModified(true)
   private boolean removed;                          // some object has been removed
   private boolean added;                            // some object has been added
+  @SuppressWarnings("serial")
   private Set<E> removedObjects;                    // set of removed objects
   private boolean removedObjectsFiltered;           // true if removed objects filtered
 
@@ -91,8 +92,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   /**
    * Creates a tracked ArrayList.<br>
    * Notice that the list is initially marked 'modified'!
-   * Thus replacing a list with an empty one will still treated as
-   * a modification.
+   * Thus replacing a list with an empty one will still be treated as a modification.
    */
   public TrackedArrayList() {
     this(true);
@@ -137,12 +137,12 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   /**
    * Creates a new snapshot.<br>
    * The snapshot is a copy of the list. If the objects maintained by the list
-   * are {@link Snapshotable}, they will be snaphotted as well. If not, their reference
+   * are {@link Snapshotable}, they will be snapshot'd as well. If not, their reference
    * will be copied.<br>
    * Creating a snapshot is useful, for example, to temporarily add an object
    * and return to the state before the addition without changing the
    * modification state of the list.<br>
-   * Notice that snaphots cannot be taken from copies or snapshots!
+   * Notice that snapshots cannot be taken from copies or snapshots!
    *
    * @return the new snapshot
    */
@@ -186,7 +186,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   /**
    * Reverts to the given snapshot.<br>
    * If this is a copy, the copies of the objects in the snapshot will be stored in this list.
-   * Otherwise the state of the list will be reverted to the snapshot's state.
+   * Otherwise, the state of the list will be reverted to the snapshot's state.
    *
    * @param snapshot the snapshot created by {@link #createSnapshot()}, null if noop
    * @throws TentackleRuntimeException if not a snapshot or not my snapshot and this is not a copy
@@ -587,7 +587,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
 
   /**
-   * Appends all of the elements in the specified collection to the end of
+   * Appends all the elements in the specified collection to the end of
    * this list, in the order that they are returned by the
    * specified collection's Iterator.<br>
    * The behavior of this operation is
@@ -619,7 +619,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
 
   /**
-   * Inserts all of the elements in the specified collection into this
+   * Inserts all the elements in the specified collection into this
    * list, starting at the specified position.<br>
    * Shifts the element currently at that position (if any) and any subsequent elements to
    * the right (increases their indices).  The new elements will appear
@@ -651,7 +651,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
 
   /**
-   * Removes all of the elements from this list.<br>
+   * Removes all elements from this list.<br>
    * The list will be empty after this call returns. All objects in the list
    * will be added to the list of removed objects.
    */
@@ -762,7 +762,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
 
   /**
-   * Removes from this list all of the elements whose index is between
+   * Removes from this list all elements whose index is between
    * <code>fromIndex</code>, inclusive, and <code>toIndex</code>, exclusive.<br>
    * Shifts any succeeding elements to the left (reduces their index).
    * This call shortens the list by <code>(toIndex - fromIndex)</code> elements.
@@ -842,7 +842,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    * the specified element.<br>
    * The new element will replace the existing one <em>without</em> affecting the modification state
    * of the list!
-   * Futhermore, no event will be fired.<br>
+   * Furthermore, no event will be fired.<br>
    * Useful if parts of an object tree are reloaded (for example from the
    * database backend) and should not change the modification state
    * of the whole object tree.
@@ -955,7 +955,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   /**
    * Filter removed objects.<br>
    * set and add/remove operations may leave removed objects
-   * in removedObjects although they are still contained in the list.
+   * in removedObjects, although they are still contained in the list.
    * (see {@link java.util.Collections#sort(java.util.List)}).
    */
   private void filterRemovedObjects() {

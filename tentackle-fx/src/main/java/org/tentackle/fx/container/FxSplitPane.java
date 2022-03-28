@@ -22,7 +22,6 @@ package org.tentackle.fx.container;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.collections.ObservableList;
-import javafx.scene.Node;
 import javafx.scene.control.SplitPane;
 
 import org.tentackle.fx.FxContainer;
@@ -37,23 +36,6 @@ import org.tentackle.fx.container.delegate.FxSplitPaneDelegate;
  * @author harald
  */
 public class FxSplitPane extends SplitPane implements FxContainer {
-
-  /**
-   * Creates a new SplitPane with no content.
-   */
-  public FxSplitPane() {
-    super();
-  }
-
-  /**
-   * Creates a new SplitPane with the given items set as the content to split between one or more dividers.
-   * <p>
-   * @param items The items to place inside the SplitPane.
-   */
-  public FxSplitPane(Node... items) {
-    super(items);
-  }
-
 
   // @wurblet delegate Include $currentDir/fxcontainer.include
 
@@ -104,8 +86,8 @@ public class FxSplitPane extends SplitPane implements FxContainer {
   }
 
   @Override
-  public void setContainerChangableIgnored(boolean containerChangeableIgnored) {
-    getDelegate().setContainerChangableIgnored(containerChangeableIgnored);
+  public void setContainerChangeableIgnored(boolean containerChangeableIgnored) {
+    getDelegate().setContainerChangeableIgnored(containerChangeableIgnored);
   }
 
   @Override

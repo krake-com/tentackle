@@ -24,6 +24,7 @@ import javafx.scene.control.SeparatorMenuItem;
 
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
+import org.tentackle.fx.Fx;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.reflect.ClassToServicesMapper;
 
@@ -174,12 +175,12 @@ public class DefaultPdoContextMenuFactory implements PdoContextMenuFactory {
   private ContextMenu createMenu(Set<ItemConfig> items) {
     if (!items.isEmpty()) {
       // create context menu
-      ContextMenu menu = new ContextMenu();
+      ContextMenu menu = Fx.create(ContextMenu.class);
       String group = "";    // current group
       for (ItemConfig item : items) {
         if (item.menuItem.isVisible()) {
           if (!Objects.equals(group, item.group)) {
-            menu.getItems().add(new SeparatorMenuItem());
+            menu.getItems().add(Fx.create(SeparatorMenuItem.class));
             group = item.group;
           }
           menu.getItems().add(item.menuItem);

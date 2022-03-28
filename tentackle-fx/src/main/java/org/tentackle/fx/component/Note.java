@@ -143,10 +143,9 @@ public class Note extends PopupControl {
   private static final String CSS_NAME = "note.css";
 
 
-  private final Position position;
-  private final Type type;
   private final StackPane rootPane;
-
+  private Position position;
+  private Type type;
   private Node contentNode;
   private ObjectProperty<Node> contentNodeProperty;
 
@@ -184,14 +183,12 @@ public class Note extends PopupControl {
 
 
   /**
-   * Creates a note.
-   *
-   * @param position the position
-   * @param type the note type
+   * Creates a note.<br>
+   * With {@link Position#CENTER} and {@link Type#INFO}.
    */
-  public Note(Position position, Type type) {
-    this.position = position;
-    this.type = type;
+  public Note() {
+    this.position = Position.CENTER;
+    this.type = Type.INFO;
 
     getStyleClass().add("note");
     rootPane = new StackPane();
@@ -204,6 +201,7 @@ public class Note extends PopupControl {
 
     contentNode = new Label("???");   // just to have a non-null default
   }
+
 
   /**
    * Configures an animation to fade-in, pause showing and fade-out again.
@@ -230,6 +228,15 @@ public class Note extends PopupControl {
 
 
   /**
+   * Sets the position related to the content node.
+   *
+   * @param position the position
+   */
+  public void setPosition(Position position) {
+    this.position = position;
+  }
+
+  /**
    * Gets the position.
    *
    * @return the position
@@ -238,6 +245,15 @@ public class Note extends PopupControl {
     return position;
   }
 
+
+  /**
+   * Sets the note type.
+   *
+   * @param type the type
+   */
+  public void setType(Type type) {
+    this.type = type;
+  }
 
   /**
    * Gets the note type.

@@ -1,6 +1,6 @@
 
 # Quickstart
-The steps below will create a mininum viable Tentackle project, 
+The steps below will create a minimum viable Tentackle project, 
 that serves as a starting point for a larger project.
 It contains a middle-tier server, a desktop FX client and a daemon client.
 The numerous modules are the bare minimum to separate the different
@@ -13,8 +13,8 @@ By default, the server connects to a PostgreSQL database, but in principle
 you can use any relational database (see the [Tentackle docs](https://tentackle.org) for more info).
 
 ## Prerequisites
-* Java (JDK) >= 17
-* Maven >= 3.6.3
+* Java (JDK) >= 18
+* Maven >= 3.8.5
 * PostgreSQL >= 9
 
 Verify with:

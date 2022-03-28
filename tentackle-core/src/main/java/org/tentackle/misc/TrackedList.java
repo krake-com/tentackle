@@ -18,6 +18,7 @@
 
 package org.tentackle.misc;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 
@@ -40,7 +41,7 @@ import java.util.List;
  * as needed. Reverting to a snapshot restores the complete state
  * at the time the snapshot was taken and invalidates all later snapshots.
  * Snapshots also save the state of the objects contained in the list
- * if they implement {@link Snapshotable}. Otherwise only the references
+ * if they implement {@link Snapshotable}. Otherwise, only the references
  * to those objects are copied to the snapshot. Snapshots are immutable.
  * <p>
  * {@code TrackedList} may be configured to throw a {@link NullPointerException} when trying
@@ -50,7 +51,7 @@ import java.util.List;
  *
  * @param <E> the element type
  */
-public interface TrackedList<E> extends List<E>, ImmutableCollection<E>, Snapshotable<TrackedList<E>> {
+public interface TrackedList<E> extends List<E>, ImmutableCollection<E>, Snapshotable<TrackedList<E>>, Serializable {
 
   /**
    * Creates a snapshot from a list.
@@ -64,7 +65,7 @@ public interface TrackedList<E> extends List<E>, ImmutableCollection<E>, Snapsho
   }
 
   /**
-   * Reverts a list to a snapshotted state of the list.<br>
+   * Reverts a list to a snapshot'd state of the list.<br>
    * If the original list is null, a new list is created as a copy of the snapshot.
    *
    * @param list the original list to be reverted, null if copy
@@ -102,9 +103,9 @@ public interface TrackedList<E> extends List<E>, ImmutableCollection<E>, Snapsho
   boolean isModified();
 
   /**
-   * Returns whether some of the elements are modified.<br>
-   * The elements must implement {@link Modifiable}. Otherwise
-   * the method returns false.
+   * Returns whether some elements are modified.<br>
+   * The elements must implement {@link Modifiable}.
+   * Otherwise, the method returns false.
    *
    * @return true if at least one {@link Modifiable} element is modified
    */
@@ -203,7 +204,7 @@ public interface TrackedList<E> extends List<E>, ImmutableCollection<E>, Snapsho
   /**
    * Configures the list whether to allow adding null values.<br>
    * By default, {@code TrackedList}s can be used as a drop-in replacement for {@link java.util.ArrayList} and
-   * allow nulls. Otherwise any attempt to add a null-value will result in a {@link NullPointerException}.
+   * allow nulls. Otherwise, any attempt to add a null-value will result in a {@link NullPointerException}.
    *
    * @param nullAllowed true if allowed, false if throw NPE
    */

@@ -23,7 +23,6 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.collections.ObservableList;
 import javafx.scene.control.Accordion;
-import javafx.scene.control.TitledPane;
 
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxController;
@@ -37,23 +36,6 @@ import org.tentackle.fx.container.delegate.FxAccordionDelegate;
  * @author harald
  */
 public class FxAccordion extends Accordion implements FxContainer {
-
-  /**
-   * Creates a new Accordion with no TitledPanes.
-   */
-  public FxAccordion() {
-    super();
-  }
-
-  /**
-   * Creates a new Accordion with the given TitledPanes showing within it.
-   * <p>
-   * @param titledPanes The TitledPanes to show inside the Accordion.
-   */
-  public FxAccordion(TitledPane... titledPanes) {
-    super(titledPanes);
-  }
-
 
   // @wurblet delegate Include $currentDir/fxcontainer.include
 
@@ -104,8 +86,8 @@ public class FxAccordion extends Accordion implements FxContainer {
   }
 
   @Override
-  public void setContainerChangableIgnored(boolean containerChangeableIgnored) {
-    getDelegate().setContainerChangableIgnored(containerChangeableIgnored);
+  public void setContainerChangeableIgnored(boolean containerChangeableIgnored) {
+    getDelegate().setContainerChangeableIgnored(containerChangeableIgnored);
   }
 
   @Override

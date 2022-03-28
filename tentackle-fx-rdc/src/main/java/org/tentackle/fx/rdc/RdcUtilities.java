@@ -124,7 +124,7 @@ public class RdcUtilities {
           Consumer<PdoCrud<T>> configurator) {
 
     PdoCrud<T> crud = getCrud(pdo, pdoList, editable, modality, owner);
-    if (crud != null) {   // if not aleady being edited
+    if (crud != null) {   // if not already being edited
       Stage stage = crud.getStage();
       if (stage == null && Fx.getStage(crud.getView()) == null) {
         // not bound to its own stage so far and not part of some other stage: create new stage
@@ -148,7 +148,7 @@ public class RdcUtilities {
           }
         }));
         stage.addEventFilter(WindowEvent.WINDOW_HIDDEN, e -> {
-          // clear all references to avoid memleaks and side effects
+          // clear all references to avoid memory leaks and side effects
           crud.setPdoList(null);
           crud.removeAllPdoEventListeners();
         });
@@ -212,7 +212,7 @@ public class RdcUtilities {
       }
       if (!stage.isShowing() && stage.getModality() == modality && stage.getOwner() != owner &&
           stage.getOwner() != null && !stage.getOwner().isShowing()) {
-        // just the wrong owner, which isnt showing:
+        // just the wrong owner, which isn't showing:
         // remove from cache to avoid pollution
         iter.remove();
       }
@@ -279,7 +279,7 @@ public class RdcUtilities {
         search.getFinder().requestInitialFocus();
       }));
       stage.addEventFilter(WindowEvent.WINDOW_HIDDEN,
-              // runlater to avoid clearing the modal return value
+              // run later to avoid clearing the modal return value
               e -> Platform.runLater(() -> search.setItems(null)));
     } // else: re-use stage
 
@@ -379,7 +379,7 @@ public class RdcUtilities {
    */
   public <T extends PersistentDomainObject<T>> void showTree(T pdo) {
     Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
-    TreeView<T> tree = Fx.createNode(TreeView.class);
+    TreeView<T> tree = Fx.create(TreeView.class);
     GuiProvider<T> guiProvider = GuiProviderFactory.getInstance().createGuiProvider(pdo);
     tree.setCellFactory(guiProvider.getTreeCellFactory());
     TreeItem<T> item = guiProvider.createTreeItem();
@@ -448,7 +448,7 @@ public class RdcUtilities {
    *
    * @param node the drag source
    * @param pdo the pdo
-   * @return the dragboard, enull if PDO is not a DnD source
+   * @return the dragboard, null if PDO is not a DnD source
    */
   public Dragboard createDragboard(Node node, PersistentDomainObject<?> pdo) {
     if (pdo.getClassId() != 0 && !pdo.isNew()) {
@@ -489,7 +489,7 @@ public class RdcUtilities {
 
 
   /**
-   * Selects a file via filechooser dialog and remembers the decision in the user preferences.
+   * Selects a file via file chooser dialog and remembers the decision in the user preferences.
    *
    * @param prefName the preferences name
    * @param prefKey the preferences key

@@ -22,7 +22,6 @@ package org.tentackle.fx.container;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.collections.ObservableList;
-import javafx.scene.Node;
 import javafx.scene.layout.Pane;
 
 import org.tentackle.fx.FxContainer;
@@ -37,23 +36,6 @@ import org.tentackle.fx.container.delegate.FxPaneDelegate;
  * @author harald
  */
 public class FxPane extends Pane implements FxContainer {
-
-  /**
-   * Creates a Pane layout.
-   */
-  public FxPane() {
-    super();
-  }
-
-  /**
-   * Creates a Pane layout.
-   * <p>
-   * @param children The initial set of children for this pane.
-   */
-  public FxPane(Node... children) {
-    super(children);
-  }
-
 
   // @wurblet delegate Include $currentDir/fxcontainer.include
 
@@ -104,8 +86,8 @@ public class FxPane extends Pane implements FxContainer {
   }
 
   @Override
-  public void setContainerChangableIgnored(boolean containerChangeableIgnored) {
-    getDelegate().setContainerChangableIgnored(containerChangeableIgnored);
+  public void setContainerChangeableIgnored(boolean containerChangeableIgnored) {
+    getDelegate().setContainerChangeableIgnored(containerChangeableIgnored);
   }
 
   @Override

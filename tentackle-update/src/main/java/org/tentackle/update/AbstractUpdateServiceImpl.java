@@ -47,7 +47,9 @@ public abstract class AbstractUpdateServiceImpl extends UnicastRemoteObject impl
   @Serial
   private static final long serialVersionUID = 1L;
 
+  @SuppressWarnings("serial")
   private final Map<URL, Long> downloadSizes = new ConcurrentHashMap<>();       // size in bytes of the download ZIPs
+  @SuppressWarnings("serial")
   private final Map<URL, String> checksumHashes = new ConcurrentHashMap<>();    // checksum hashes of the download ZIPs
 
   private String updateURL;

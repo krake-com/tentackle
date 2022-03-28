@@ -30,7 +30,7 @@ import java.util.TreeMap;
 /**
  * A map of {@link Identifiable}s.
  * <p>
- * By default the map uses a hashing key composed by the class and object id.
+ * By default, the map uses a hashing key composed by the class and object id.
  * The first invocation of one of the methods getAllSorted changes the
  * map to treemap (which is a bit slower).
  *
@@ -43,7 +43,9 @@ public class IdentifiableMap<T extends Identifiable> implements Serializable {
   private static final long serialVersionUID = 1L;
 
 
+  @SuppressWarnings("serial")
   private final Map<IdentifiableKey<T>, T> objectMap;  // the object map (fast)
+  @SuppressWarnings("serial")
   private Map<IdentifiableKey<T>, T> sortedObjectMap;  // the sorted object map (slow)
 
 

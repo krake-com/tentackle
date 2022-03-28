@@ -22,7 +22,6 @@ package org.tentackle.fx.component;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.scene.control.ColorPicker;
-import javafx.scene.paint.Color;
 
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxContainer;
@@ -42,23 +41,6 @@ import java.lang.reflect.Type;
  * @author harald
  */
 public class FxColorPicker extends ColorPicker implements FxComponent {
-
-  /**
-   * Creates a default ColorPicker instance with a selected color set to white.
-   */
-  public FxColorPicker() {
-    super();
-  }
-
-  /**
-   * Creates a ColorPicker instance and sets the selected color to the given color.
-   * <p>
-   * @param color to be set as the currently selected color of the ColorPicker.
-   */
-  public FxColorPicker(Color color) {
-    super(color);
-  }
-
 
   // @wurblet delegate Include $currentDir/fxcomponent.include
 
@@ -250,8 +232,8 @@ public class FxColorPicker extends ColorPicker implements FxComponent {
   }
 
   @Override
-  public void setContainerChangableIgnored(boolean containerChangeableIgnored) {
-    getDelegate().setContainerChangableIgnored(containerChangeableIgnored);
+  public void setContainerChangeableIgnored(boolean containerChangeableIgnored) {
+    getDelegate().setContainerChangeableIgnored(containerChangeableIgnored);
   }
 
   @Override

@@ -72,7 +72,7 @@ public class FxChoiceBox<T> extends ChoiceBox<T> implements FxComponent {
    * Returns whether deselect is allowed via delete or backspace key.<br>
    * If null, it is determined according to type and/or mandatory property.
    * If the type is a primitive or the component is mandatory, deselect is not allowed.
-   * Otherwise it is allowed by default.
+   * Otherwise, it is allowed by default.
    *
    * @return true if allowed, null if determined from type and/or mandatory property
    */
@@ -280,8 +280,8 @@ public class FxChoiceBox<T> extends ChoiceBox<T> implements FxComponent {
   }
 
   @Override
-  public void setContainerChangableIgnored(boolean containerChangeableIgnored) {
-    getDelegate().setContainerChangableIgnored(containerChangeableIgnored);
+  public void setContainerChangeableIgnored(boolean containerChangeableIgnored) {
+    getDelegate().setContainerChangeableIgnored(containerChangeableIgnored);
   }
 
   @Override

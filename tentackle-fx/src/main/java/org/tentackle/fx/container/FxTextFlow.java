@@ -22,7 +22,6 @@ package org.tentackle.fx.container;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.collections.ObservableList;
-import javafx.scene.Node;
 import javafx.scene.text.TextFlow;
 
 import org.tentackle.fx.FxContainer;
@@ -37,23 +36,6 @@ import org.tentackle.fx.container.delegate.FxTextFlowDelegate;
  * @author harald
  */
 public class FxTextFlow extends TextFlow implements FxContainer {
-
-  /**
-   * Creates an empty TextFlow layout.
-   */
-  public FxTextFlow() {
-    super();
-  }
-
-  /**
-   * Creates a TextFlow layout with the given children.
-   * <p>
-   * @param children children.
-   */
-  public FxTextFlow(Node... children) {
-    super(children);
-  }
-
 
   // @wurblet delegate Include $currentDir/fxcontainer.include
 
@@ -104,8 +86,8 @@ public class FxTextFlow extends TextFlow implements FxContainer {
   }
 
   @Override
-  public void setContainerChangableIgnored(boolean containerChangeableIgnored) {
-    getDelegate().setContainerChangableIgnored(containerChangeableIgnored);
+  public void setContainerChangeableIgnored(boolean containerChangeableIgnored) {
+    getDelegate().setContainerChangeableIgnored(containerChangeableIgnored);
   }
 
   @Override

@@ -22,7 +22,6 @@ package org.tentackle.fx.container;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.collections.ObservableList;
-import javafx.scene.Node;
 import javafx.scene.layout.BorderPane;
 
 import org.tentackle.fx.FxContainer;
@@ -37,37 +36,6 @@ import org.tentackle.fx.container.delegate.FxBorderPaneDelegate;
  * @author harald
  */
 public class FxBorderPane extends BorderPane implements FxContainer {
-
-  /**
-   * Creates a BorderPane layout.
-   */
-  public FxBorderPane() {
-    super();
-  }
-
-  /**
-   * Creates an BorderPane layout with the given Node as the center of the BorderPane.
-   * <p>
-   * @param center The node to set as the center of the BorderPane.
-   */
-  public FxBorderPane(Node center) {
-    super(center);
-  }
-
-  /**
-   * Creates an BorderPane layout with the given Nodes to use for each of the main layout areas of the Border Pane. The
-   * top, right, bottom, and left nodes are listed in clockwise order.
-   * <p>
-   * @param center The node to set as the center of the BorderPane.
-   * @param top    The node to set as the top of the BorderPane.
-   * @param right  The node to set as the right of the BorderPane.
-   * @param bottom The node to set as the bottom of the BorderPane.
-   * @param left   The node to set as the left of the BorderPane.
-   */
-  public FxBorderPane(Node center, Node top, Node right, Node bottom, Node left) {
-    super(center, top, right, bottom, left);
-  }
-
 
   // @wurblet delegate Include $currentDir/fxcontainer.include
 
@@ -118,8 +86,8 @@ public class FxBorderPane extends BorderPane implements FxContainer {
   }
 
   @Override
-  public void setContainerChangableIgnored(boolean containerChangeableIgnored) {
-    getDelegate().setContainerChangableIgnored(containerChangeableIgnored);
+  public void setContainerChangeableIgnored(boolean containerChangeableIgnored) {
+    getDelegate().setContainerChangeableIgnored(containerChangeableIgnored);
   }
 
   @Override
