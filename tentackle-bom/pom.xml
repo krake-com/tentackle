@@ -119,7 +119,7 @@
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-model</artifactId>
-        <version>18.0-SNAPSHOT</version>
+        <version>17.10.0.0-SNAPSHOT</version>
       </dependency>
 
       <!-- test dependencies -->

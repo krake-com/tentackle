@@ -6,14 +6,14 @@ It contains a middle-tier server, a desktop FX client and a daemon client.
 The numerous modules are the bare minimum to separate the different
 abstraction layers like domain logic, persistence model, UI and so on.
 Tentackle applications are full-fledged modular JPMS ([Jigsaw](https://openjdk.java.net/projects/jigsaw/quick-start)) projects,
-including [Jlink](https://docs.oracle.com/en/java/javase/15/docs/specs/man/jlink.html) or 
-[JPackage](https://docs.oracle.com/en/java/javase/15/docs/specs/man/jpackage.html) images and 
+including [Jlink](https://docs.oracle.com/en/java/javase/17/docs/specs/man/jlink.html) or 
+[JPackage](https://docs.oracle.com/en/java/javase/17/docs/specs/man/jpackage.html) images and 
 an auto-update feature for the clients.
 By default, the server connects to a PostgreSQL database, but in principle
 you can use any relational database (see the [Tentackle docs](https://tentackle.org) for more info).
 
 ## Prerequisites
-* Java (JDK) >= 18
+* Java (JDK) >= 17
 * Maven >= 3.8.5
 * PostgreSQL >= 9
 
