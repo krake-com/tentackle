@@ -39,6 +39,8 @@ public abstract class FxApplication extends Application {
 
   private static final String FATAL = "runtime or configuration error";
 
+  private int exitValue;              // delayed exit code (usually due to a failed login)
+  private Throwable exitThrowable;    // and optional reason
 
   @Override
   public void start(Stage stage) throws Exception {
@@ -59,12 +61,23 @@ public abstract class FxApplication extends Application {
     }
   }
 
+  /**
+   * Sets the exit value and throwable to be picked up by the stop-method when the last window is closed
+   * and stop is not invoked explicitly from within the application with a non-zero exit value.
+   *
+   * @param exitValue the exit value
+   * @param exitThrowable the exit throwable
+   */
+  public void setStopReason(int exitValue, Throwable exitThrowable) {
+    this.exitValue = exitValue;
+    this.exitThrowable = exitThrowable;
+  }
+
   @Override
   public void stop() throws Exception {
     DesktopApplication<?> application = (DesktopApplication<?>) AbstractApplication.getRunningApplication();
-    application.stop();
+    application.stop(exitValue, exitThrowable);
   }
-
 
   /**
    * The main entry point for all Tentackle JavaFX applications.

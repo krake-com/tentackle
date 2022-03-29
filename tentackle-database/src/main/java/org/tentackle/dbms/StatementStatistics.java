@@ -165,6 +165,9 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
           buf.append("\n    ");
           buf.append(stat);
         }
+        if (clear) {
+          buf.append("\n    (cleared)");
+        }
         return buf.toString();
       });
     }

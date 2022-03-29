@@ -730,34 +730,50 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
 
 
   /**
-   * Terminates the application.
+   * Gracefully terminates the application.
+   */
+  public void stop() {
+    stop(0, null);
+  }
+
+
+  /**
+   * Terminates the application with optional error handling.
    *
    * @param exitValue the stop value for System.exit()
-   * @param t an exception causing the termination, null if none
+   * @param exitThrowable an exception causing the termination, null if none
    */
-  public void stop(int exitValue, Throwable t) {
-
-    synchronized(this) {
-      if (stopping) {
-        return;
-      }
-      stopping = true;
-    }
-
-    LOGGER.info("terminating {0} with exit value {1} ...", getName(), exitValue);
-    if (t != null) {
-      LOGGER.logStacktrace(t);
-    }
-
+  public void stop(int exitValue, Throwable exitThrowable) {
     try {
-      cleanup();
-    }
-    catch (Exception anyEx) {
-      LOGGER.severe(getName() + " stopped ungracefully", anyEx);
-    }
+      synchronized (this) {
+        if (stopping) {
+          return;
+        }
+        stopping = true;
+      }
 
-    if (isSystemExitNecessaryToStop()) {
-      System.exit(exitValue);
+      LOGGER.info("terminating {0} with exit value {1} ...", getName(), exitValue);
+      if (exitThrowable != null) {
+        LOGGER.logStacktrace(exitThrowable);
+      }
+
+      try {
+        cleanup();
+      }
+      catch (Exception anyEx) {
+        LOGGER.severe(getName() + " stopped ungracefully", anyEx);
+      }
+    }
+    finally {
+      try {
+        unregister();
+      }
+      catch (RuntimeException ex) {
+        LOGGER.logStacktrace(ex);
+      }
+      if (isSystemExitNecessaryToStop()) {
+        System.exit(exitValue);
+      }
     }
   }
 
@@ -770,28 +786,6 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
   protected boolean isSystemExitNecessaryToStop() {
     return true;
   }
-
-
-  /**
-   * Gracefully terminates the application server.
-   */
-  public void stop() {
-    try {
-      stop(0, null);
-    }
-    catch (RuntimeException rx) {
-      LOGGER.logStacktrace(rx);
-    }
-    finally {
-      try {
-        unregister();
-      }
-      catch (RuntimeException ex) {
-        LOGGER.logStacktrace(ex);
-      }
-    }
-  }
-
 
   /**
    * Cleans up resources.<br>

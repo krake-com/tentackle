@@ -132,8 +132,11 @@ public class LoginFailedHandler {
     else {
       LOGGER.severe("login failed", ex);
       Platform.runLater(() -> {
+        if (application.getFxApplication() != null) {
+          application.getFxApplication().setStopReason(98, ex);
+        }
         Fx.error(AppFxRdcBundle.getString("LOGIN FAILED!"), ex);
-        view.getScene().getWindow().hide();
+        view.getScene().getWindow().hide();   // application terminates when error window is closed
       });
     }
 

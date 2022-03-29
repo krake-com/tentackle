@@ -374,9 +374,17 @@ public abstract class AbstractServerApplication extends AbstractApplication
 
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
       LOGGER.warning("*** server killed ***");
-      PdoInvocationHandler.INVOKER.logStatistics(Logger.Level.INFO, false);
-      OperationInvocationHandler.INVOKER.logStatistics(Logger.Level.INFO, false);
-      StatementStatistics.log(LOGGER, Logger.Level.INFO, false);
+      logStatistics();
     }));
   }
+
+  /**
+   * Logs and clears the statistics.
+   */
+  public void logStatistics() {
+    PdoInvocationHandler.INVOKER.logStatistics(Logger.Level.INFO, true);
+    OperationInvocationHandler.INVOKER.logStatistics(Logger.Level.INFO, true);
+    StatementStatistics.log(LOGGER, Logger.Level.INFO, true);
+  }
+
 }
