@@ -7,6 +7,7 @@
 
 package ${package}.client;
 
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class RunClient {
@@ -21,12 +22,25 @@ public class RunClient {
     run(new String[] {"--statistics", "--locale=de_DE"});
   }
 
+
   private synchronized void run(String[] args) {
-    new ${application}FxClient().start(args);
-    try {
-      wait();   // keep it running...
-    }
-    catch (InterruptedException e) {}
+    @SuppressWarnings("unchecked")
+    ${application}FxClient client = new ${application}FxClient() {
+
+      @Override
+      protected boolean isSystemExitNecessaryToStop() {
+        return false;   // no System.exit() within the test container
+      }
+
+      @Override
+      public void stop(int exitValue, Throwable exitThrowable) {
+        super.stop(exitValue, exitThrowable);
+        if (exitValue != 0) {
+          Assert.fail("abnormally terminated with exit code = " + exitValue, exitThrowable);
+        }
+      }
+    };
+    client.start(args);
   }
 
 }

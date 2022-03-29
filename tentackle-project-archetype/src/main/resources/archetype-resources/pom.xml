@@ -111,6 +111,11 @@
           <artifactId>tentackle-wizard-maven-plugin</artifactId>
           <version>\${symbol_dollar}{tentackle.version}</version>
           <configuration>
+            <verbosity>info</verbosity>
+            <url>\${symbol_dollar}{dbUrl}</url>
+            <user>\${symbol_dollar}{dbUser}</user>
+            <password>\${symbol_dollar}{dbPasswd}</password>
+            <maxLinesInStringLiteral>10</maxLinesInStringLiteral>
             <profiles>
               <PdoProfile>
                 <name>masterdata</name>
@@ -146,6 +151,28 @@
               </OperationProfile>
             </profiles>
           </configuration>
+          <dependencies>
+            <dependency>
+              <groupId>${groupId}</groupId>
+              <artifactId>${rootArtifactId}-gui</artifactId>
+              <version>${symbol_dollar}{project.version}</version>
+            </dependency>
+            <dependency>
+              <groupId>${groupId}</groupId>
+              <artifactId>${rootArtifactId}-persistence</artifactId>
+              <version>${symbol_dollar}{project.version}</version>
+            </dependency>
+            <dependency>
+              <groupId>${groupId}</groupId>
+              <artifactId>${rootArtifactId}-domain</artifactId>
+              <version>${symbol_dollar}{project.version}</version>
+            </dependency>
+            <dependency>
+              <groupId>org.postgresql</groupId>
+              <artifactId>postgresql</artifactId>
+              <version>\${symbol_dollar}{postgres.version}</version>
+            </dependency>
+          </dependencies>
         </plugin>
 
         <plugin>
@@ -309,7 +336,7 @@
               <mapSchema>false</mapSchema>
               <tablePrefix />
               <model>\${symbol_dollar}{tentackle.modelDir}</model>
-              <backends>oracle, postgresql</backends>
+              <backends>postgresql, h2</backends>
               <integrity>full</integrity>
               <modelDefaults>\${symbol_dollar}{tentackle.modelDefaults}</modelDefaults>
 
