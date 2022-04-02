@@ -74,7 +74,7 @@ CREATE DATABASE myapp OWNER myapp;
 ```
 Back on the shell, run the SQL script to create the database tables:
 ```
-psql -U myapp myapp < jlink/server/target/sql/PostgreSQL/createmodel.sql
+psql -h localhost -U myapp myapp < jlink/server/target/sql/PostgreSQL/createmodel.sql
 ```
 Next, change to the server directory and populate the database:
 ```
