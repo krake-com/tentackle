@@ -39,6 +39,13 @@ import java.util.Objects;
 public class JavaCodeFactory {
 
   /**
+   * Stereotype for attributes and relations to skip test code generation.
+   */
+  public static final String NOTEST_STEREOTYPE = "NOTEST";
+
+
+
+  /**
    * Generates code from a data object template.
    *
    * @param dataObjects the data objects
@@ -94,11 +101,13 @@ public class JavaCodeFactory {
     }
     else if (node instanceof DataObject component) {
       StringBuilder buf = new StringBuilder();
-      String componentName = createVarName(component.getType());
-      buf.append(createComponentCode(componentName, component));
       Relation relation = component.getRelation();
-      if (relation != null) {
-        buf.append(varName).append('.').append(relation.getSetterName()).append('(').append(componentName).append(");\n");
+      if (relation == null || !relation.getStereotypes().contains(NOTEST_STEREOTYPE)) {
+        String componentName = createVarName(component.getType());
+        buf.append(createComponentCode(componentName, component));
+        if (relation != null) {
+          buf.append(varName).append('.').append(relation.getSetterName()).append('(').append(componentName).append(");\n");
+        }
       }
       code = buf.toString();
     }
@@ -114,7 +123,8 @@ public class JavaCodeFactory {
   private String createItemCode(String varName, DataItem item) {
     StringBuilder buf = new StringBuilder();
     Attribute attribute = item.getAttribute();
-    if (!item.isIdOfCompositeRelation() && attribute != null && !attribute.isImplicit()) {
+    if (!item.isIdOfCompositeRelation() && attribute != null &&
+        !attribute.isImplicit() && !attribute.getOptions().getStereotypes().contains(NOTEST_STEREOTYPE)) {
       Object orgValue = item.getOrgValue();
       NonCompositeRelation nonCompositeRelation = item.getNonCompositeRelation();
       if (nonCompositeRelation != null) {
