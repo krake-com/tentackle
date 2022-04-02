@@ -179,21 +179,23 @@ public class JavaCodeFactory {
 
   private String createListCode(String varName, DataList list) {
     StringBuilder buf = new StringBuilder();
-    for (DataObject object : list.getNodes()) {
-      String objectName = createVarName(object.getType());
-      NonCompositeRelation listRelation = object.getNmRelation();
-      if (listRelation != null) {
-        Relation relation = listRelation.getRelation();
-        Relation nmRelation = relation.getNmRelation();
-        buf.append(varName).append(".get").append(relation.getNmMethodName()).append("().add(Objects.requireNonNull(on(")
-           .append(nmRelation.getForeignEntity()).append(".class).selectByUniqueDomainKey(")
-           .append(extractUdkLiteral(listRelation.getRelatedPdo())).append(")));")
-           .append(toIdComment(listRelation.getRelatedPdo())).append('\n');
-      }
-      else {
-        buf.append(createComponentCode(objectName, object))
-           .append(varName).append('.').append(list.getRelation().getGetterName())
-           .append("().add(").append(objectName).append(");\n");
+    if (list.getRelation() != null && !list.getRelation().getStereotypes().contains(NOTEST_STEREOTYPE)) {
+      for (DataObject object : list.getNodes()) {
+        String objectName = createVarName(object.getType());
+        NonCompositeRelation listRelation = object.getNmRelation();
+        if (listRelation != null) {
+          Relation relation = listRelation.getRelation();
+          Relation nmRelation = relation.getNmRelation();
+          buf.append(varName).append(".get").append(relation.getNmMethodName()).append("().add(Objects.requireNonNull(on(")
+             .append(nmRelation.getForeignEntity()).append(".class).selectByUniqueDomainKey(")
+             .append(extractUdkLiteral(listRelation.getRelatedPdo())).append(")));")
+             .append(toIdComment(listRelation.getRelatedPdo())).append('\n');
+        }
+        else {
+          buf.append(createComponentCode(objectName, object))
+             .append(varName).append('.').append(list.getRelation().getGetterName())
+             .append("().add(").append(objectName).append(");\n");
+        }
       }
     }
     return buf.toString();
