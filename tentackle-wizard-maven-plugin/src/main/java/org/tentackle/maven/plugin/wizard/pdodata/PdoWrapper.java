@@ -22,6 +22,8 @@ import org.tentackle.bind.Bindable;
 import org.tentackle.misc.ShortLongText;
 import org.tentackle.pdo.PersistentDomainObject;
 
+import java.util.Map;
+
 /**
  * Wrapper for a PDO.<br>
  * Adds the UDK property.
@@ -31,6 +33,7 @@ public class PdoWrapper {
   private final PersistentDomainObject<?> pdo;      // the PDO
   private String udk;                               // lazily created UDK
   private DataObject dataObject;                    // lazily created object tree
+  private Map<String, Boolean> codeConfiguration;   // lazily created code configuration
 
   /**
    * Creates a wrapper.
@@ -60,6 +63,18 @@ public class PdoWrapper {
       dataObject = DataNodeFactory.create(pdo);
     }
     return dataObject;
+  }
+
+  /**
+   * Gets the code configuration.
+   *
+   * @return the config map, empty if no configuration available
+   */
+  public Map<String, Boolean> getCodeConfiguration() {
+    if (codeConfiguration == null) {
+      codeConfiguration = CodeConfigurationFactory.createConfig(getDataObject());
+    }
+    return codeConfiguration;
   }
 
   /**

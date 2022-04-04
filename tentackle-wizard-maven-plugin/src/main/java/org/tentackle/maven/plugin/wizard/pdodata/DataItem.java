@@ -36,6 +36,7 @@ public class DataItem implements DataNode {
   private final boolean idOfCompositeRelation;                // true if this is an ID of a composite object relation
   private final NonCompositeRelation nonCompositeRelation;    // the optional non-composite relation
   private String displayValue;                                // formatted value displayed
+  private String configurationPath;                           // the optional configuration path
 
   /**
    * Creates a DataItem.
@@ -146,6 +147,16 @@ public class DataItem implements DataNode {
    */
   public NonCompositeRelation getNonCompositeRelation() {
     return nonCompositeRelation;
+  }
+
+  @Override
+  public void setConfigurationPath(String configurationPath) {
+    this.configurationPath = configurationPath;
+  }
+
+  @Override
+  public String getConfigurationPath() {
+    return configurationPath;
   }
 
   @Override

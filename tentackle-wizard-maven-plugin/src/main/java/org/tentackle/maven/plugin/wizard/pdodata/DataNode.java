@@ -80,4 +80,18 @@ public interface DataNode {
     return getClass().getSimpleName();
   }
 
+  /**
+   * Sets the optional configuration path.
+   *
+   * @param configurationPath the path
+   */
+  void setConfigurationPath(String configurationPath);
+
+  /**
+   * Gets the optional configuration path.
+   *
+   * @return the path, null if none
+   */
+  String getConfigurationPath();
+
 }

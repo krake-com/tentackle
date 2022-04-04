@@ -19,6 +19,7 @@
 package org.tentackle.maven.plugin.wizard.fx;
 
 import javafx.application.Platform;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.Event;
 import javafx.fxml.FXML;
@@ -26,11 +27,14 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -67,7 +71,9 @@ import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.PersistentDomainObject;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Dialog to browse PDOs and generate test code.
@@ -111,6 +117,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
   @FXML private FxTextField latestField;
   @FXML private FxButton refreshButton;
   @FXML private FxButton finderButton;
+  @FXML private FxButton configButton;
   @FXML private FxButton generateButton;
   @FXML private FxButton memorizeButton;
   @FXML private FxButton closeButton;
@@ -125,6 +132,8 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
   private Timestamp memorizeTime;
   @SuppressWarnings("rawtypes")
   private PdoFinder finder;
+  private Map<String, Boolean> codeConfiguration;
+
 
   @FXML
   private void initialize() {
@@ -154,6 +163,9 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
       memorizeTime = new Timestamp();
       showDiff();
     });
+    configButton.setGraphic(Fx.createImageView("preferences"));
+    configButton.setOnAction(e -> showCodeConfigurationDialog());
+    configButton.setDisable(true);
     generateButton.setGraphic(Fx.createImageView("edit"));
     generateButton.setDisable(true);
     generateButton.setOnAction(e -> generateCode());
@@ -161,19 +173,23 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     closeButton.setOnAction(this::close);
 
     pdosTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-    pdosTableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-      if (newValue != null) {
-        dataObject = newValue.getDataObject();
-        memorizeButton.setDisable(false);
-        generateButton.setDisable(false);
-        showDiff();
-      }
-      else {
+    pdosTableView.getSelectionModel().getSelectedItems().addListener((ListChangeListener<PdoWrapper>) c -> {
+      ObservableList<? extends PdoWrapper> selectedItems = c.getList();
+      if (selectedItems.isEmpty()) {
         dataObject = null;
         oldDataObject = null;
         memorizeTime = null;
+        codeConfiguration = null;
+        configButton.setDisable(true);
         generateButton.setDisable(true);
         memorizeButton.setDisable(true);
+        showDiff();
+      }
+      else {
+        dataObject = selectedItems.get(0).getDataObject();
+        memorizeButton.setDisable(false);
+        generateButton.setDisable(false);
+        updateCodeConfiguration(selectedItems);
         showDiff();
       }
     });
@@ -212,6 +228,14 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     showDiff();
   }
 
+
+  private void updateCodeConfiguration(List<? extends PdoWrapper> selectedItems) {
+    codeConfiguration = new LinkedHashMap<>();
+    for (PdoWrapper selectedItem : selectedItems) {
+      codeConfiguration.putAll(selectedItem.getCodeConfiguration());
+    }
+    configButton.setDisable(codeConfiguration.isEmpty());
+  }
 
   private void showDiff() {
     if (dataObject != null) {
@@ -306,6 +330,42 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     }
   }
 
+  private void showCodeConfigurationDialog() {
+    if (codeConfiguration != null) {
+      Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
+      stage.initOwner(getStage());
+      BorderPane borderPane = Fx.create(BorderPane.class);
+      ScrollPane scrollPane = Fx.create(ScrollPane.class);
+      VBox vBox = Fx.create(VBox.class);
+      vBox.setPadding(new Insets(10.0));
+      vBox.setSpacing(5.0);
+      scrollPane.setMinWidth(300);
+      scrollPane.setMinHeight(150);
+      for (Map.Entry<String, Boolean> entry : codeConfiguration.entrySet()) {
+        CheckBox checkBox = Fx.create(CheckBox.class);
+        checkBox.setText(entry.getKey());
+        checkBox.setSelected(entry.getValue());
+        checkBox.setOnAction(e -> entry.setValue(checkBox.isSelected()));
+        vBox.getChildren().add(checkBox);
+      }
+      scrollPane.setContent(vBox);
+      borderPane.setCenter(scrollPane);
+      HBox hBox = Fx.create(HBox.class);
+      Button closeButton = Fx.create(Button.class);
+      closeButton.setText("close");
+      closeButton.setGraphic(Fx.createImageView("close"));
+      closeButton.setOnAction(event -> stage.close());
+      hBox.getChildren().add(closeButton);
+      hBox.setPadding(new Insets(10.0));
+      hBox.setAlignment(Pos.BASELINE_RIGHT);
+      borderPane.setBottom(hBox);
+      Scene scene = Fx.createScene(borderPane);
+      stage.setScene(scene);
+      stage.setTitle("Code Configuration");
+      stage.show();
+    }
+  }
+
   private void generateCode() {
     ObservableList<PdoWrapper> selectedItems = pdosTableView.getSelectionModel().getSelectedItems();
     if (!selectedItems.isEmpty()) {
@@ -322,7 +382,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
       for (PdoWrapper pdoWrapper : selectedItems) {
         dataObjects[i++] = pdoWrapper.getDataObject();
       }
-      String text = JavaCodeFactory.generateCode(dataObjects);
+      String text = JavaCodeFactory.generateCode(codeConfiguration, dataObjects);
       buf.append(text);
 
       ClipboardContent cbc = new ClipboardContent();

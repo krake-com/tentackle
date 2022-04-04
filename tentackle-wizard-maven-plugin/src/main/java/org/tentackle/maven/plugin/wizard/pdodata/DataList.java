@@ -33,6 +33,7 @@ public class DataList implements DataNode {
   private final String comment;             // the optional comment
   private final List<DataObject> nodes;     // the items of the list sorted by ID
   private final Relation relation;          // composite list relation
+  private String configurationPath;         // the optional configuration path
 
   /**
    * Creates a DataList.
@@ -102,6 +103,16 @@ public class DataList implements DataNode {
   @Override
   public String getValue() {
     return nodes == null ? null : Integer.toString(nodes.size());
+  }
+
+  @Override
+  public void setConfigurationPath(String configurationPath) {
+    this.configurationPath = configurationPath;
+  }
+
+  @Override
+  public String getConfigurationPath() {
+    return configurationPath;
   }
 
   @Override

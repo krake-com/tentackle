@@ -184,6 +184,15 @@ public class DataDiff implements DataNode {
     return right != null;
   }
 
+  @Override
+  public void setConfigurationPath(String configurationPath) {
+    throw new UnsupportedOperationException("no applicable to diffs");
+  }
+
+  @Override
+  public String getConfigurationPath() {
+    return null;
+  }
 
   /**
    * Compares the data of a PDO between two locations.

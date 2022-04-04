@@ -40,7 +40,7 @@ public class StringType extends AbstractDataType<String> {
 
   /**
    * Maximum number of lines in literal.<br>
-   * 0 if unlimited.
+   * &gt; 0 if unlimited.
    */
   public static int maxLinesInLiteral = -1;
 
