@@ -36,6 +36,7 @@ public class DataObject implements DataNode {
   private final String comment;                         // the optional comment
   private final Relation relation;                      // composite object 1:1 relation
   private final NonCompositeRelation nmRelation;        // the optional N:M relation
+  private String configurationPath;                     // the optional configuration path
 
   /**
    * Creates a DataObject.
@@ -150,6 +151,16 @@ public class DataObject implements DataNode {
       }
     }
     return buf.toString();
+  }
+
+  @Override
+  public void setConfigurationPath(String configurationPath) {
+    this.configurationPath = configurationPath;
+  }
+
+  @Override
+  public String getConfigurationPath() {
+    return configurationPath;
   }
 
   @Override

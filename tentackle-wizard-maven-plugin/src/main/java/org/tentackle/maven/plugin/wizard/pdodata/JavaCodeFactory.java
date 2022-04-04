@@ -38,28 +38,32 @@ import java.util.Objects;
  */
 public class JavaCodeFactory {
 
+
   /**
    * Stereotype for attributes and relations to skip test code generation.
    */
   public static final String NOTEST_STEREOTYPE = "NOTEST";
-
-
+  
 
   /**
    * Generates code from a data object template.
    *
+   * @param configuration optional configuration map
    * @param dataObjects the data objects
    * @return the Java code
    */
-  public static String generateCode(DataObject... dataObjects) {
-    return new JavaCodeFactory(dataObjects).generate();
+  public static String generateCode(Map<String, Boolean> configuration, DataObject... dataObjects) {
+    return new JavaCodeFactory(configuration, dataObjects).generate();
   }
 
 
+
+  private final Map<String, Boolean> configuration;
   private final DataObject[] dataObjects;
   private final Map<String, Holder<Integer>> nameMap;
 
-  private JavaCodeFactory(DataObject... dataObjects) {
+  private JavaCodeFactory(Map<String, Boolean> configuration, DataObject... dataObjects) {
+    this.configuration = configuration;
     this.dataObjects = dataObjects;
     nameMap = new HashMap<>();
   }
@@ -102,7 +106,7 @@ public class JavaCodeFactory {
     else if (node instanceof DataObject component) {
       StringBuilder buf = new StringBuilder();
       Relation relation = component.getRelation();
-      if (relation == null || !relation.getStereotypes().contains(NOTEST_STEREOTYPE)) {
+      if (relation == null || isGenerating(!relation.getStereotypes().contains(NOTEST_STEREOTYPE), node)) {
         String componentName = createVarName(component.getType());
         buf.append(createComponentCode(componentName, component));
         if (relation != null) {
@@ -124,7 +128,7 @@ public class JavaCodeFactory {
     StringBuilder buf = new StringBuilder();
     Attribute attribute = item.getAttribute();
     if (!item.isIdOfCompositeRelation() && attribute != null &&
-        !attribute.isImplicit() && !attribute.getOptions().getStereotypes().contains(NOTEST_STEREOTYPE)) {
+        !attribute.isImplicit() && isGenerating(!attribute.getOptions().getStereotypes().contains(NOTEST_STEREOTYPE), item)) {
       Object orgValue = item.getOrgValue();
       NonCompositeRelation nonCompositeRelation = item.getNonCompositeRelation();
       if (nonCompositeRelation != null) {
@@ -179,11 +183,11 @@ public class JavaCodeFactory {
 
   private String createListCode(String varName, DataList list) {
     StringBuilder buf = new StringBuilder();
-    if (list.getRelation() != null && !list.getRelation().getStereotypes().contains(NOTEST_STEREOTYPE)) {
+    if (list.getRelation() != null && isGenerating(!list.getRelation().getStereotypes().contains(NOTEST_STEREOTYPE), list)) {
       for (DataObject object : list.getNodes()) {
         String objectName = createVarName(object.getType());
         NonCompositeRelation listRelation = object.getNmRelation();
-        if (listRelation != null) {
+        if (listRelation != null && isGenerating(true, list)) {
           Relation relation = listRelation.getRelation();
           Relation nmRelation = relation.getNmRelation();
           buf.append(varName).append(".get").append(relation.getNmMethodName()).append("().add(Objects.requireNonNull(on(")
@@ -245,6 +249,19 @@ public class JavaCodeFactory {
       return "    // [" + pdo.getId() + "/" + pdo.getSerial() + "]";
     }
     return "";
+  }
+
+  private boolean isGenerating(boolean generating, DataNode node) {
+    if (configuration != null) {
+      String configurationPath = node.getConfigurationPath();
+      if (configurationPath != null) {
+        Boolean toggle = configuration.get(configurationPath);
+        if (toggle != null) {
+          generating = toggle;
+        }
+      }
+    }
+    return generating;
   }
 
 }
