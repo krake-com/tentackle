@@ -23,15 +23,22 @@ import org.opentest4j.AssertionFailedError;
 import org.opentest4j.TestAbortedException;
 
 import org.tentackle.app.AbstractApplication;
+import org.tentackle.dbms.Db;
+import org.tentackle.model.Model;
+import org.tentackle.model.ModelException;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.pdo.test.DbTestUtilities;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
+import org.tentackle.sql.Backend;
 
 import java.util.Properties;
+
+import static org.testng.Assert.fail;
 
 /**
  * Base class for Junit5 tests that must run as an application.
@@ -57,6 +64,7 @@ public abstract class TestApplication extends AbstractApplication {
 
   private Session session;
   private DomainContext context;
+  private boolean populate;
 
   /**
    * Creates a test application.
@@ -86,6 +94,14 @@ public abstract class TestApplication extends AbstractApplication {
     }
     Session.setCurrentSession(session);
 
+    if (session instanceof Db db) {
+      Backend backend = db.getBackend();
+      if (backend.isDatabaseInMemory(session.getUrl())) {
+        createDatabaseTables(db);
+        populate = true;
+      }
+    }
+
     if (getProperties() == null) {
       setProperties(new Properties());
     }
@@ -96,6 +112,14 @@ public abstract class TestApplication extends AbstractApplication {
 
     context = Pdo.createDomainContext(session);
     register();
+  }
+
+  @Override
+  protected void finishStartup() {
+    super.finishStartup();
+    if (populate) {
+      populateDatabase();
+    }
   }
 
   @Override
@@ -111,6 +135,31 @@ public abstract class TestApplication extends AbstractApplication {
   @Override
   public <U extends PersistentDomainObject<U>> U getUser(DomainContext context, long userId) {
     return null;
+  }
+
+  /**
+   * Creates the database tables.<br>
+   * The default implementation loads the model from the classpath.
+   * Override this method to provide additional model sources.
+   *
+   * @param db the low-level database session
+   * @see Model#loadFromResources(boolean)
+   */
+  protected void createDatabaseTables(Db db) {
+    try {
+      String script = DbTestUtilities.getInstance().createPopulateScript(db);
+      DbTestUtilities.getInstance().runScript(db, script);
+    }
+    catch (ModelException e) {
+      fail("populating the database failed", e);
+    }
+  }
+
+  /**
+   * Populates the database with test data.
+   */
+  protected void populateDatabase() {
+    // default does nothing
   }
 
 }

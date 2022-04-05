@@ -15,7 +15,7 @@ public class RunServer {
 
   @Test
   public void runServer() {
-    run(new String[] {"--statistics"});
+    run(new String[] {"--statistics", "--backend=server"});
   }
 
 

@@ -46,6 +46,7 @@
     <tentackle.modelDefaults>remote, bind, size, autoselect, tracked, root, rootid, rootclassid</tentackle.modelDefaults>
 
     <postgres.version>${postgresql.version}</postgres.version>
+    <h2.version>${h2.version}</h2.version>
     <dbUrl>jdbc:postgresql://localhost/\${artifactId}</dbUrl>
     <dbUser>\${artifactId}</dbUser>
     <dbPasswd>\${artifactId}</dbPasswd>
@@ -72,25 +73,25 @@
         <version>${logback.version}</version>
         <scope>runtime</scope>
       </dependency>
-
-      <!-- test dependencies -->
       <dependency>
         <groupId>org.postgresql</groupId>
         <artifactId>postgresql</artifactId>
         <version>\${symbol_dollar}{postgres.version}</version>
-        <scope>test</scope>
+        <scope>runtime</scope>
       </dependency>
+
+      <!-- test dependencies -->
       <dependency>
         <groupId>org.testng</groupId>
         <artifactId>testng</artifactId>
         <version>${testng.version}</version>
         <scope>test</scope>
-        <exclusions>
-          <exclusion>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-          </exclusion>
-        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>com.h2database</groupId>
+        <artifactId>h2</artifactId>
+        <version>\${symbol_dollar}{h2.version}</version>
+        <scope>test</scope>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -99,6 +100,10 @@
     <dependency>
       <groupId>org.testng</groupId>
       <artifactId>testng</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
     </dependency>
   </dependencies>
 
