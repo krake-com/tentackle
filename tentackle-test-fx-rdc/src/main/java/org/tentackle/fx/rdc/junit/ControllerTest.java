@@ -53,7 +53,7 @@ public abstract class ControllerTest extends FxRdcTestApplication {
    * @param packagePrefix optional package prefix, null or empty if all
    */
   public ControllerTest(String packagePrefix) {
-    super("fx-rdc-conroller-test", Version.RELEASE);
+    super("fx-rdc-controller-test", Version.RELEASE);
     this.packagePrefix = packagePrefix;
   }
 
