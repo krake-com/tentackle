@@ -47,10 +47,6 @@ import static org.testng.Assert.fail;
  */
 public abstract class TestApplication extends AbstractApplication {
 
-  private Session session;
-  private DomainContext context;
-  private boolean populate;
-
   /**
    * Creates a test application.
    *
@@ -65,6 +61,7 @@ public abstract class TestApplication extends AbstractApplication {
   public void setUpClass() throws Exception {
     SessionInfo sessionInfo = Pdo.createSessionInfo();
     sessionInfo.applyProperties();
+    Session session;
     try {
       session = Pdo.createSession(sessionInfo);
     }
@@ -74,6 +71,7 @@ public abstract class TestApplication extends AbstractApplication {
     }
     Session.setCurrentSession(session);
 
+    boolean populate = false;
     if (session instanceof Db db) {
       Backend backend = db.getBackend();
       if (backend.isDatabaseInMemory(session.getUrl())) {
@@ -90,13 +88,11 @@ public abstract class TestApplication extends AbstractApplication {
       ModificationTracker.getInstance().setSession(session);
     }
 
-    context = Pdo.createDomainContext(session);
+    setDomainContext(Pdo.createDomainContext(session));
     register();
-  }
 
-  @Override
-  protected void finishStartup() {
-    super.finishStartup();
+    initializeScripting();
+
     if (populate) {
       populateDatabase();
     }
@@ -104,16 +100,12 @@ public abstract class TestApplication extends AbstractApplication {
 
   @AfterClass(alwaysRun = true)
   public void tearDownClass() throws Exception {
+    Session session = getSession();
     if (session != null) {
       session.close();
       Session.setCurrentSession(null);
       unregister();
     }
-  }
-
-  @Override
-  public DomainContext getDomainContext() {
-    return context;
   }
 
   @Override

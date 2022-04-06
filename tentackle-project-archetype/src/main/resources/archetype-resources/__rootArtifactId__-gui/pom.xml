@@ -38,6 +38,11 @@
       <artifactId>tentackle-test-fx-rdc</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.tentackle</groupId>
+      <artifactId>tentackle-script-groovy</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>${groupId}</groupId>
       <artifactId>${rootArtifactId}-persistence</artifactId>
       <version>${symbol_dollar}{project.version}</version>
