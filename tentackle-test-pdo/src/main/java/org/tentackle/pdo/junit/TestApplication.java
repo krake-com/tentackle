@@ -52,8 +52,9 @@ public abstract class TestApplication extends AbstractApplication {
   @AfterAll
   public static synchronized void tearDownClass() {
     if (application != null) {
-      if (application.session != null) {
-        application.session.close();
+      Session session = application.getSession();
+      if (session != null) {
+        session.close();
         Session.setCurrentSession(null);
         application.unregister();
       }
@@ -62,9 +63,6 @@ public abstract class TestApplication extends AbstractApplication {
   }
 
 
-  private Session session;
-  private DomainContext context;
-  private boolean populate;
 
   /**
    * Creates a test application.
@@ -85,6 +83,7 @@ public abstract class TestApplication extends AbstractApplication {
 
     SessionInfo sessionInfo = Pdo.createSessionInfo();
     sessionInfo.applyProperties();
+    Session session;
     try {
       session = Pdo.createSession(sessionInfo);
     }
@@ -94,6 +93,7 @@ public abstract class TestApplication extends AbstractApplication {
     }
     Session.setCurrentSession(session);
 
+    boolean populate = false;
     if (session instanceof Db db) {
       Backend backend = db.getBackend();
       if (backend.isDatabaseInMemory(session.getUrl())) {
@@ -110,21 +110,14 @@ public abstract class TestApplication extends AbstractApplication {
       ModificationTracker.getInstance().setSession(session);
     }
 
-    context = Pdo.createDomainContext(session);
+    setDomainContext(Pdo.createDomainContext(session));
     register();
-  }
 
-  @Override
-  protected void finishStartup() {
-    super.finishStartup();
+    initializeScripting();
+
     if (populate) {
       populateDatabase();
     }
-  }
-
-  @Override
-  public DomainContext getDomainContext() {
-    return context;
   }
 
   @Override

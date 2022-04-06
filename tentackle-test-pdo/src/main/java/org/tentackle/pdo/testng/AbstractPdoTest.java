@@ -35,6 +35,8 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.test.DbTestUtilities;
+import org.tentackle.script.ScriptFactory;
+import org.tentackle.script.ScriptingLanguage;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
@@ -46,6 +48,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Arrays;
+import java.util.Set;
 
 import static org.testng.Assert.fail;
 
@@ -125,6 +128,14 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
       if (backend.isDatabaseInMemory(session.getUrl())) {
         createDatabaseTables(db);
         populate = true;
+      }
+    }
+
+    // set the default scripting language, if not already set and exactly one provided
+    if (ScriptFactory.getInstance().getDefaultLanguage() == null) {
+      Set<ScriptingLanguage> languages = ScriptFactory.getInstance().getLanguages();
+      if (languages.size() == 1) {
+        ScriptFactory.getInstance().setDefaultLanguage(languages.iterator().next());
       }
     }
 

@@ -13,18 +13,10 @@ import ${package}.pdo.td.Message;
 import org.tentackle.ns.pdo.NumberPool;
 import org.tentackle.ns.pdo.NumberRange;
 import org.tentackle.pdo.testng.AbstractPdoTest;
-import org.tentackle.script.ScriptFactory;
 import org.tentackle.session.Session;
 
 
 public abstract class ${application}TestBase extends AbstractPdoTest {
-
-  @Override
-  protected Session openSession() {
-    Session session = super.openSession();
-    ScriptFactory.getInstance().setDefaultLanguage("groovy");
-    return session;
-  }
 
   @Override
   protected void populateDatabase() {
