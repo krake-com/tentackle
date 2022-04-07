@@ -37,11 +37,18 @@ public interface EntityInfo {
   Entity getEntity();
 
   /**
-   * Gets the URL of the model file.
+   * Gets the URL of the model source.
    *
    * @return the URL
    */
   URL getURL();
+
+  /**
+   * Returns true if the URL points to a file.
+   *
+   * @return true if URL is a file, else some other URL
+   */
+  boolean isFile();
 
   /**
    * Gets the model file.

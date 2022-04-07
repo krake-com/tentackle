@@ -71,6 +71,21 @@ public class CreateSqlMojo extends AbstractSqlMojo {
   private boolean createSchemas;
 
   /**
+   * Prepends the SQL-code for the model found in the resources of the classpath.<br>
+   * Useful to create the database tables for dependencies, for example the Tentackle model.<br>
+   * Requires that the plugin dependencies contain the model resources
+   * (see {@link #dumpModelIndex}) amd {@link #dumpModelSource}).
+   */
+  @Parameter
+  private boolean prependModelFromClassPath;
+
+  /**
+   * Same as {@link #prependModelFromClassPath}, but appends the SQL to the generated script.
+   */
+  @Parameter
+  private boolean appendModelFromClassPath;
+
+  /**
    * Optional list of sequences to create.
    */
   @Parameter
@@ -94,6 +109,13 @@ public class CreateSqlMojo extends AbstractSqlMojo {
    */
   private Set<String> createdSchemas = new HashSet<>();
 
+  /**
+   * Set of backends processed so far.
+   * Used if {@link #prependModelFromClassPath} is true to generate classpath model only once per backend.
+   */
+  private Set<BackendInfo> processedBackendInfos = new HashSet<>();
+
+
   @Override
   protected String getSqlFileName() {
     return sqlFileName;
@@ -108,11 +130,11 @@ public class CreateSqlMojo extends AbstractSqlMojo {
   protected void createSqlFile(BackendInfo backendInfo) throws MojoExecutionException {
     super.createSqlFile(backendInfo);
     copyFileSets(prependFilesets);
-    createSequences(backendInfo.getBackend());
   }
 
   @Override
   protected void closeResources(BackendInfo backendInfo) throws MojoExecutionException, MojoFailureException {
+    createSequences(backendInfo.getBackend());
     copyFileSets(appendFilesets);
     super.closeResources(backendInfo);
   }
@@ -121,6 +143,13 @@ public class CreateSqlMojo extends AbstractSqlMojo {
   protected void processFileSet(BackendInfo backendInfo, FileSet fileSet) throws MojoExecutionException {
 
     int errorCount = 0;
+    Backend backend = backendInfo.getBackend();
+
+    if (prependModelFromClassPath && processedBackendInfos.add(backendInfo)) {
+      if (createSqlForClassPath(backendInfo)) {
+        errorCount++;
+      }
+    }
 
     if (fileSet.getDirectory() == null) {
       // directory missing: use modelDir as default
@@ -135,6 +164,7 @@ public class CreateSqlMojo extends AbstractSqlMojo {
 
     writeModelIntroComment(backendInfo, modelDirName);
 
+    Set<Entity> generatedEntities = new HashSet<>();    // entities code was generated for
     Collection<ForeignKey> foreignKeys = null;
     try {
       Model model = Model.getInstance();
@@ -181,28 +211,13 @@ public class CreateSqlMojo extends AbstractSqlMojo {
                 errorCount++;
               }
 
-              Backend backend = backendInfo.getBackend();
-
               if (entity.getSchemaName() != null && backend.isReservedSchemaName(entity.getSchemaName())) {
                 getLog().error("schema '" + entity.getSchemaName() + "' is a reserved word for backend " + backend);
                 errorCount++;
               }
 
-              if (createSchemas) {
-                String schemaName = entity.getSchemaName();
-                if (!StringHelper.isAllWhitespace(schemaName) && createdSchemas.add(schemaName)) {
-                  sqlWriter.append('\n').append(backend.sqlCreateSchema(schemaName)).append(backend.getStatementSeparator()).append('\n');
-                }
-              }
-
-              // create table
-              sqlWriter.append('\n');
-              sqlWriter.append(entity.sqlCreateTable(backend));
-
-              // create indexes
-              for (Index index : entity.getTableIndexes()) {
-                sqlWriter.append(index.sqlCreateIndex(backend, entity));
-              }
+              generatedEntities.add(entity);    // for foreign key filtering below
+              createTableSql(entity, backend);
             }
           }
           catch (IOException iox) {
@@ -218,15 +233,22 @@ public class CreateSqlMojo extends AbstractSqlMojo {
 
     try {
       // create referential integrity
-      if (foreignKeys != null && !foreignKeys.isEmpty()) {
-        sqlWriter.append('\n').append(backendInfo.getBackend().getSingleLineComment()).append(" referential integrity\n");
-        for (ForeignKey foreignKey: foreignKeys) {
-          sqlWriter.append(foreignKey.sqlCreateForeignKey(backendInfo.getBackend()));
-        }
+      if (foreignKeys != null) {
+        createForeignKeySql(
+            // only for generated entities
+            foreignKeys.stream().filter(fk -> generatedEntities.contains(fk.getReferencingEntity()) ||
+                                              generatedEntities.contains(fk.getReferencedEntity())).toList(),
+            backend);
       }
     }
     catch (IOException iox) {
       throw new MojoExecutionException("cannot write constraints to sql file " + sqlFile.getAbsolutePath(), iox);
+    }
+
+    if (appendModelFromClassPath && processedBackendInfos.add(backendInfo)) {
+      if (createSqlForClassPath(backendInfo)) {
+        errorCount++;
+      }
     }
 
     getLog().info(getPathRelativeToBasedir(modelDirName) + ": " +
@@ -277,9 +299,10 @@ public class CreateSqlMojo extends AbstractSqlMojo {
     try {
       if (sequences != null && !sequences.isEmpty()) {
         if (backend.isSequenceSupported()) {
+          sqlWriter.append('\n').append(backend.getSingleLineComment()).append(" sequences\n");
           for (SequenceParameter sequence : sequences) {
             if (sequence.name != null) {
-              sqlWriter.append('\n').append(backend.sqlCreateSequence(sequence.name, sequence.start, sequence.increment)).append(backend.getStatementSeparator());
+              sqlWriter.append(backend.sqlCreateSequence(sequence.name, sequence.start, sequence.increment)).append(backend.getStatementSeparator());
               if (!StringHelper.isAllWhitespace(sequence.comment)) {
                 String sqlComment = backend.sqlCreateSequenceComment(sequence.name, sequence.comment);
                 if (!StringHelper.isAllWhitespace(sqlComment)) {
@@ -296,12 +319,67 @@ public class CreateSqlMojo extends AbstractSqlMojo {
           }
         }
         else {
-          sqlWriter.append("\n\n").append(backend.getSingleLineComment()).append(" sequences not supported by backend " + backend + "\n");
+          sqlWriter.append('\n').append(backend.getSingleLineComment()).append(" sequences not supported by backend " + backend + "!\n");
         }
       }
     }
     catch (IOException e) {
       throw new MojoExecutionException("cannot create sequence", e);
+    }
+  }
+
+
+  private boolean createSqlForClassPath(BackendInfo backendInfo) throws MojoExecutionException {
+    boolean failed = false;
+    Backend backend = backendInfo.getBackend();
+    try {
+      Model model = Model.getInstance();
+      model.clearModel();
+      model.loadFromResources(true);
+      Collection<Entity> allEntities = model.getAllEntities();
+      if (!allEntities.isEmpty()) {
+        writeModelIntroComment(backendInfo, "<classpath>");
+        for (Entity entity : allEntities) {
+          createTableSql(entity, backend);
+        }
+        createForeignKeySql(Model.getInstance().getForeignKeys(), backend);
+      }
+      model.clearModel();
+    }
+    catch (IOException iox) {
+      throw new MojoExecutionException("cannot write classpath model's table definitions to sql file " + sqlFile.getAbsolutePath(), iox);
+    }
+    catch (ModelException mex) {
+      getLog().error("parsing model from classpath failed:\n" + mex.getMessage());
+      failed = true;
+    }
+    return failed;
+  }
+
+  private void createTableSql(Entity entity, Backend backend) throws IOException, ModelException {
+    if (createSchemas) {
+      String schemaName = entity.getSchemaName();
+      if (!StringHelper.isAllWhitespace(schemaName) && createdSchemas.add(schemaName)) {
+        sqlWriter.append('\n').append(backend.sqlCreateSchema(schemaName)).append(backend.getStatementSeparator()).append('\n');
+      }
+    }
+
+    // create table
+    sqlWriter.append('\n');
+    sqlWriter.append(entity.sqlCreateTable(backend));
+
+    // create indexes
+    for (Index index : entity.getTableIndexes()) {
+      sqlWriter.append(index.sqlCreateIndex(backend, entity));
+    }
+  }
+
+  private void createForeignKeySql(Collection<ForeignKey> foreignKeys, Backend backend) throws IOException {
+    if (!foreignKeys.isEmpty()) {
+      sqlWriter.append('\n').append(backend.getSingleLineComment()).append(" referential integrity\n");
+      for (ForeignKey foreignKey : foreignKeys) {
+        sqlWriter.append(foreignKey.sqlCreateForeignKey(backend));
+      }
     }
   }
 

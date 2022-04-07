@@ -36,31 +36,6 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>basesql</id>
-            <phase>generate-resources</phase>
-            <goals>
-              <goal>unpack</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <artifactItems>
-            <artifactItem>
-              <groupId>org.tentackle</groupId>
-              <artifactId>tentackle-test-pdo</artifactId>
-              <version>${symbol_dollar}{tentackle.version}</version>
-              <type>jar</type>
-              <outputDirectory>${symbol_dollar}{rootBasedir}/target/tmp</outputDirectory>
-              <includes>**/PostgreSQL/*.sql</includes>
-            </artifactItem>
-          </artifactItems>
-        </configuration>
-      </plugin>
-      <plugin>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-sql-maven-plugin</artifactId>
         <executions>
@@ -74,24 +49,30 @@
         </executions>
         <configuration>
           <sqlDir>${symbol_dollar}{project.build.directory}/sql</sqlDir>
-          <createSchemas>false</createSchemas> <!-- use provided sql script instead -->
-          <prependFilesets>
-            <prependFileset>
-              <directory>${symbol_dollar}{project.basedir}/src/sql</directory>
-              <includes>
-                <include>*.sql</include>
-              </includes>
-            </prependFileset>
-          </prependFilesets>
+          <appendModelFromClassPath>true</appendModelFromClassPath>
+          <createSchemas>true</createSchemas>
+          <sequences>
+            <sequence>
+              <name>object_sequence_id</name>
+              <comment>to generate the ID of PDOs</comment>
+            </sequence>
+          </sequences>
           <appendFilesets>
             <appendFileset>
-              <directory>${symbol_dollar}{rootBasedir}/target/tmp/META-INF/sql/PostgreSQL</directory>
+              <directory>${symbol_dollar}{project.basedir}/src/sql</directory>
               <includes>
                 <include>*.sql</include>
               </includes>
             </appendFileset>
           </appendFilesets>
         </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>org.tentackle</groupId>
+            <artifactId>tentackle-test-pdo</artifactId>
+            <version>${symbol_dollar}{tentackle.version}</version>
+          </dependency>
+        </dependencies>
       </plugin>
       <plugin>
         <groupId>org.tentackle</groupId>
