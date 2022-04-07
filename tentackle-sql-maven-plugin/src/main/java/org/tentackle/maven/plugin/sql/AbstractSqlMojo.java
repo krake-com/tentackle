@@ -232,14 +232,14 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
   protected int totalErrors;
 
   /**
-   * The backends to create SQL code for.
+   * The backends to create SQL-code for.
    * <p>
    * Maps the backend-name to the backend.
    */
   protected Map<String, BackendInfo> backendInfos;
 
   /**
-   * Connectable backends to create SQL code for.
+   * Connectable backends to create SQL-code for.
    * <p>
    * Maps the jdbc-Url to the backend.
    */
@@ -596,26 +596,28 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
 
           if (dumpModelSource) {
             EntityInfo entityInfo = Model.getInstance().getEntityInfo(entity);
-            File dumpFile = new File(dumpDir, entityInfo.getFile().getName());
-            dumpedFiles.add(dumpFile);
-            try (BufferedWriter writer =
-                     new BufferedWriter(
-                         new OutputStreamWriter(
-                             new FileOutputStream(dumpFile), Settings.getEncodingCharset()))) {
-              String modelSource = entityInfo.getModelSource();
-              if (modelSource.startsWith(Document.ORIGIN_INFO_LEAD)) {
-                // cut source info, makes no sense outside the project
-                int ndx = modelSource.indexOf('\n');
-                if (ndx >= 0) {
-                  modelSource = modelSource.substring(ndx + 1);
+            if (entityInfo.isFile()) {
+              File dumpFile = new File(dumpDir, entityInfo.getFile().getName());
+              dumpedFiles.add(dumpFile);
+              try (BufferedWriter writer =
+                       new BufferedWriter(
+                           new OutputStreamWriter(
+                               new FileOutputStream(dumpFile), Settings.getEncodingCharset()))) {
+                String modelSource = entityInfo.getModelSource();
+                if (modelSource.startsWith(Document.ORIGIN_INFO_LEAD)) {
+                  // cut source info, makes no sense outside the project
+                  int ndx = modelSource.indexOf('\n');
+                  if (ndx >= 0) {
+                    modelSource = modelSource.substring(ndx + 1);
+                  }
                 }
+                // add model defaults
+                ModelDefaults modelDefaults = entityInfo.getModelDefaults();
+                if (modelDefaults != null) {
+                  modelSource = Document.DEFAULTS_INFO_LEAD + modelDefaults + "]\n" + modelSource;
+                }
+                writer.write(modelSource);
               }
-              // add model defaults
-              ModelDefaults modelDefaults = entityInfo.getModelDefaults();
-              if (modelDefaults != null) {
-                modelSource = Document.DEFAULTS_INFO_LEAD + modelDefaults + "]\n" + modelSource;
-              }
-              writer.write(modelSource);
             }
           }
           else {
@@ -765,7 +767,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
   /**
    * Writes the intro for a model to the SQL file.
    *
-   * @param backendInfo the backend infor
+   * @param backendInfo the backend info
    * @param modelDirName the model directory name
    * @throws MojoExecutionException if writing to SQL file failed
    */

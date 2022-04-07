@@ -38,7 +38,7 @@ public class EntityInfoImpl implements EntityInfo {
   private final URL url;                  // the model source URL
   private final String modelSource;       // the model source text
   private final ModelDefaults defaults;   // the model defaults
-  private final File file;                // its source file
+  private final File file;                // its source file, null if not a file
   private final long lastModified;        // the last modification time
 
 
@@ -88,11 +88,16 @@ public class EntityInfoImpl implements EntityInfo {
   }
 
   @Override
+  public boolean isFile() {
+    return file != null;
+  }
+
+  @Override
   public File getFile() throws ModelException {
-    if (file == null) {
-      throw new ModelException(url + " is not a file");
+    if (isFile()) {
+      return file;
     }
-    return file;
+    throw new ModelException(url + " is not a file");
   }
 
   @Override

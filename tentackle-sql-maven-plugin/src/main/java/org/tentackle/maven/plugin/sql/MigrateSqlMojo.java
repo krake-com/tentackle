@@ -92,13 +92,13 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   private boolean asTemplate;
 
   /**
-   * The generated SQL file can be splitted into one file per entity.<br>
+   * The generated SQL file can be split into one file per entity.<br>
    * This is especially useful if the migrations are processed any further,
    * for example by shell scripts.
    * <p>
    * The main migration file will just contain statistic comments.<br>
    * Each migrated table gets its own directory which is a number starting at 1
-   * and as much leading zeros as necessary to keep the directory names in numberic order.<br>
+   * and as much leading zeros as necessary to keep the directory names in numeric order.<br>
    * If there is a before-all SQL, it will go into the folder zero, i.e. 0 or 00, etc...<br>
    * Any after-all SQL will go into the folder with the highest number.
    */
@@ -122,7 +122,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
 
 
   /**
-   * The database meta data retrieved from the backend.
+   * The database metadata retrieved from the backend.
    */
   private ModelMetaData modelMetaData;
 
@@ -137,7 +137,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   private StringBuilder sqlCode;
 
   /**
-   * Generated warnings as optional SQL code in comments.
+   * Generated warnings as optional SQL-code in comments.
    */
   private StringBuilder sqlWarnings;
 
@@ -154,17 +154,17 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   /**
    * Number of processed entities.
    */
-  private int processedEntites;
+  private int processedEntities;
 
   /**
    * Number of skipped entities.
    */
-  private int skippedEntites;
+  private int skippedEntities;
 
   /**
-   * Map of splitted migrations.
+   * Map of split migrations.
    */
-  private Map<String, String> splittedMigrations;   // <tablename:SQL-code>
+  private Map<String, String> splitMigrations;   // <tablename:SQL-code>
 
   /**
    * Migration hints per jdbc-Url.
@@ -203,7 +203,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       sqlCode = new StringBuilder();
       sqlWarnings = new StringBuilder();
       sqlDrops = new StringBuilder();
-      splittedMigrations = new LinkedHashMap<>();
+      splitMigrations = new LinkedHashMap<>();
       migratedEntitiesMap = new HashMap<>();
       otherTablesMap = new TreeMap<>();
       alienTablesMap = new HashMap<>();
@@ -307,9 +307,9 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       if (generateHeaderComment) {
         sqlWriter.append(printTableStats(backendInfo.getBackend().getDefaultSchema(), commentLead));
         sqlWriter.append(commentLead).append(" entities in model: processed=")
-            .append(Integer.toString(processedEntites))
-            .append(", skipped=")
-            .append(Integer.toString(skippedEntites)).append('\n');
+                 .append(Integer.toString(processedEntities))
+                 .append(", skipped=")
+                 .append(Integer.toString(skippedEntities)).append('\n');
 
         if (!otherTablesMap.isEmpty()) {
           sqlWriter.append('\n').append(commentLead)
@@ -337,10 +337,10 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         }
       }
 
-      if (sqlCode.length() > 0 || !splittedMigrations.isEmpty()) {
+      if (sqlCode.length() > 0 || !splitMigrations.isEmpty()) {
         if (split) {
           sqlWriter.append(commentLead).append(" migrated entities in sub-folders: ")
-                   .append(String.valueOf(splittedMigrations.size())).append('\n');
+                   .append(String.valueOf(splitMigrations.size())).append('\n');
         }
         else {
           String sql = backendMigrationHints.getBeforeAll();
@@ -547,12 +547,12 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
                 }
                 if (!add) {
                   getLog().debug(entity + " skipped because of wrong schema " + entity.getSchemaName());
-                  skippedEntites++;
+                  skippedEntities++;
                   continue;   // skip
                 }
               }
 
-              processedEntites++;
+              processedEntities++;
               StringBuilder tableSql = new StringBuilder();
               String tableName = entity.getTableName();
               String plainTableName = entity.getTableNameWithoutSchema();
@@ -628,7 +628,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
                   tableSql.append('\n').append(backendInfo.getBackend().sqlRenameTable(oldTableName, plainTableName));
                 }
 
-                // migrate foreign key metadata (since RENAME TABLE migrates the FK as well and we don't need explicit migrations)
+                // migrate foreign key metadata (since RENAME TABLE migrates the FK as well, and we don't need explicit migrations)
                 for (ForeignKeyMetaData foreignKeyMetaData : table.getForeignKeys()) {
                   // FKs to other entities, which are renamed
                   String oldPrimaryKeyTable = revRenamedTables.get(foreignKeyMetaData.getPrimaryKeyTable());
@@ -763,7 +763,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       }
 
       if (split) {
-        writeSplittedMigrations(backendInfo);
+        writeSplitMigrations(backendInfo);
       }
 
       getLog().info(getPathRelativeToBasedir(modelDirName) + ": " +
@@ -833,7 +833,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   private void flushSqlForTable(String tableName, String sql) {
     if (!StringHelper.isAllWhitespace(sql)) {
       if (split) {
-        splittedMigrations.put(tableName + ".sql", sql);
+        splitMigrations.put(tableName + ".sql", sql);
       }
       else {
         sqlCode.append(sql);
@@ -842,45 +842,45 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   }
 
   /**
-   * Creates the splitted migrations.
+   * Creates the split migrations.
    *
    * @param backendInfo the backend info
    * @throws MojoExecutionException if IO error
    */
-  private void writeSplittedMigrations(BackendInfo backendInfo) throws MojoExecutionException {
+  private void writeSplitMigrations(BackendInfo backendInfo) throws MojoExecutionException {
 
     int digits = 1;
 
     String sql = backendMigrationHints.getAlwaysBefore();
     if (!sql.isEmpty()) {
-      writeSplittedMigration(0, digits, "_always_before.sql", sql, backendInfo);
+      writeSplitMigration(0, digits, "_always_before.sql", sql, backendInfo);
     }
 
-    if (!splittedMigrations.isEmpty()) {
+    if (!splitMigrations.isEmpty()) {
       sql = backendMigrationHints.getAfterAll();
       if (!sql.isEmpty()) {
-        splittedMigrations.put("_after_all.sql", sql);
+        splitMigrations.put("_after_all.sql", sql);
       }
 
-      int tableCount = splittedMigrations.size() + (backendMigrationHints.getAlwaysAfter().isEmpty() ? 0 : 1);
+      int tableCount = splitMigrations.size() + (backendMigrationHints.getAlwaysAfter().isEmpty() ? 0 : 1);
       while ((tableCount /= 10) > 0) {
         digits++;
       }
 
       int splitCounter = 1;
-      for (Map.Entry<String, String> entry : splittedMigrations.entrySet()) {
-        writeSplittedMigration(splitCounter++, digits, entry.getKey(), entry.getValue(), backendInfo);
+      for (Map.Entry<String, String> entry : splitMigrations.entrySet()) {
+        writeSplitMigration(splitCounter++, digits, entry.getKey(), entry.getValue(), backendInfo);
       }
 
       sql = backendMigrationHints.getBeforeAll();
       if (!sql.isEmpty()) {
-        writeSplittedMigration(0, digits, "_before_all.sql", sql, backendInfo);
+        writeSplitMigration(0, digits, "_before_all.sql", sql, backendInfo);
       }
     }
 
     sql = backendMigrationHints.getAlwaysAfter();
     if (!sql.isEmpty()) {
-      writeSplittedMigration(splittedMigrations.size() + 1, digits, "_always_after.sql", sql, backendInfo);
+      writeSplitMigration(splitMigrations.size() + 1, digits, "_always_after.sql", sql, backendInfo);
     }
   }
 
@@ -894,7 +894,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
    * @param backendInfo the backend info
    * @throws MojoExecutionException if IO error
    */
-  private void writeSplittedMigration(int subDirCount, int digits, String fileName, String sql, BackendInfo backendInfo) throws MojoExecutionException {
+  private void writeSplitMigration(int subDirCount, int digits, String fileName, String sql, BackendInfo backendInfo) throws MojoExecutionException {
     StringBuilder subDirName = new StringBuilder(Integer.toString(subDirCount));
     while (subDirName.length() < digits) {
       subDirName.insert(0, '0');
