@@ -492,6 +492,14 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    */
   public void find() {
     filterField.clear();
+    if (tableView != null) {
+      tableView.getSelectionModel().clearSelection();
+      tableView.scrollTo(0);
+    }
+    if (treeView != null) {
+      treeView.getSelectionModel().clearSelection();
+      treeView.scrollTo(0);
+    }
     if (finder.isSearchRunningInBackground()) {
       getView().setCursor(Cursor.WAIT);
       Rdc.bg(finder::runSearch,
@@ -698,6 +706,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   public void showTree() {
     if (!treeShown) {
       treeView.toFront();
+      treeView.requestFocus();
       treeShown = true;
       treeButton.setGraphic(Fx.createImageView("table"));
       if (treeViewInvalid) {
@@ -725,6 +734,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   public void showTable() {
     if (treeShown) {
       tablePane.toFront();
+      tableView.requestFocus();
       treeShown = false;
       treeButton.setGraphic(Fx.createImageView("tree"));
       if (tableViewInvalid && treeView.getRoot() != null) {   // root becomes null if stage closed

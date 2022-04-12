@@ -114,7 +114,7 @@ public class FxTreeView<T> extends TreeView<T> implements FxComponent {
    * @param row the model row index
    */
   public void scrollToCentered(int row) {
-    scrollTo(FxUtilities.getInstance().computeScrollToCentered(this, row));
+    scrollTo(FxUtilities.getInstance().computeScrollToCentered(this, row, getItems().size()));
   }
 
 
