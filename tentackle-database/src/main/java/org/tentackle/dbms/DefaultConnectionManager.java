@@ -25,16 +25,21 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.TransactionIsolation;
 import org.tentackle.session.TransactionWritability;
+import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendInfo;
 
 import java.lang.ref.WeakReference;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -102,6 +107,14 @@ public class DefaultConnectionManager implements ConnectionManager {
   private volatile boolean shutdownRequested;   // true if connection manager and timeout thread should shut down
   private Thread timeoutThread;                 // thread to check for connections attached too long (default null)
 
+  private record VersionInfo(int majorVersion, int minorVersion) {
+    @Override
+    public String toString() {
+      return majorVersion + "." + minorVersion;
+    }
+  };
+  private final Map<String,VersionInfo> versionInfoMap;   // version info per URL
+
 
   /**
    * Creates a new connection manager.
@@ -151,6 +164,8 @@ public class DefaultConnectionManager implements ConnectionManager {
       freeConList[freeConCount++] = i;
       conList[i] = null;
     }
+
+    versionInfoMap = new ConcurrentHashMap<>();
   }
 
   /**
@@ -568,29 +583,45 @@ public class DefaultConnectionManager implements ConnectionManager {
       throw new PersistenceException(this + ": backend info " + backendInfo + " is not connectable");
     }
 
-    ManagedConnection con;
+    ManagedConnection mc;
+    VersionInfo versionInfo;
+
     try {
-      con = new ManagedConnection(this, backendInfo.getBackend(), backendInfo.connect());
+      Connection con = backendInfo.connect();
+      versionInfo = versionInfoMap.computeIfAbsent(backendInfo.getUrl(), url -> {
+        try {
+          DatabaseMetaData metaData = con.getMetaData();    // may be a lengthy operation -> cached per URL
+          return new VersionInfo(metaData.getDatabaseMajorVersion(), metaData.getDatabaseMinorVersion());
+        }
+        catch (SQLException sx) {
+          throw new PersistenceException(this + ": connection metadata could not be retrieved", sx);
+        }
+      });
+      Backend backend = backendInfo.getBackend();
+      backend.validateVersion(versionInfo.majorVersion, versionInfo.minorVersion);
+      mc = new ManagedConnection(this, backend, con);
     }
     catch (SQLException e) {
       throw new PersistenceException(this + ": connection to '" + backendInfo + "' failed", e);
     }
 
-    if (!con.getAutoCommit()) {
-      con.close();
-      throw new PersistenceException(this + ": connection " + con + " is not in autoCommit mode");
+    if (!mc.getAutoCommit()) {
+      mc.close();
+      throw new PersistenceException(this + ": connection " + mc + " is not in autoCommit mode");
     }
 
-    con.setMaxCountForClearWarnings(maxCountForClearWarnings);
+    mc.setMaxCountForClearWarnings(maxCountForClearWarnings);
     if (minMinutes > 0) {
-      con.setExpireAt(con.getEstablishedSince() +
+      mc.setExpireAt(mc.getEstablishedSince() +
                       (minMinutes * 60L + random.nextInt((maxMinutes - minMinutes) * 60)) * 1000L);
     }
-    LOGGER.info(() -> MessageFormat.format("{0}: open connection {1}, {2}, {3}, valid until {4}",
-                this, con, TransactionIsolation.valueOf(con.getTransactionIsolation()),
-                TransactionWritability.valueOf(!con.isReadOnly()),
-                FormatHelper.formatTimestampFast(new Date(con.getExpireAt()))));
-    return con;
+
+    LOGGER.info(() -> MessageFormat.format("{0}: open connection {1}, {2} {3}, {4}, {5}, valid until {6}",
+                                           this, mc, backendInfo.getBackend().getName(), versionInfo,
+                                           TransactionIsolation.valueOf(mc.getTransactionIsolation()),
+                                           TransactionWritability.valueOf(!mc.isReadOnly()),
+                                           FormatHelper.formatTimestampFast(new Date(mc.getExpireAt()))));
+    return mc;
   }
 
 

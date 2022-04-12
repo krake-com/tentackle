@@ -127,6 +127,11 @@ public abstract class AbstractBackend implements Backend {
   }
 
   @Override
+  public void validateVersion(int databaseMajorVersion, int databaseMinorVersion) {
+    // ok, by default
+  }
+
+  @Override
   public String toString() {
     return getName();
   }
