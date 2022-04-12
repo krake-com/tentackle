@@ -78,7 +78,7 @@ public class FxListView<T> extends ListView<T> implements FxComponent {
    * @param row the model row index
    */
   public void scrollToCentered(int row) {
-    scrollTo(FxUtilities.getInstance().computeScrollToCentered(this, row));
+    scrollTo(FxUtilities.getInstance().computeScrollToCentered(this, row, getItems().size()));
   }
 
   /**

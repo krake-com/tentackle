@@ -1533,20 +1533,23 @@ public class FxUtilities {
    *
    * @param control the control, usually a table- or tree-view
    * @param row the row to position in the middle of the viewport, if possible
+   * @param numRow the total number of rows
    * @return the row number to pass to the scrollTo method
    */
   @SuppressWarnings("rawtypes")
-  public int computeScrollToCentered(Skinnable control, int row) {
+  public int computeScrollToCentered(Skinnable control, int row, int numRow) {
     VirtualFlow flow = getVirtualFlow(control);
     if (flow != null) {
       IndexedCell firstVisibleCell = flow.getFirstVisibleCell();
       IndexedCell lastVisibleCell = flow.getLastVisibleCell();
       if (firstVisibleCell != null && lastVisibleCell != null) {
-        int firstRow = firstVisibleCell.getIndex();
-        int lastRow = lastVisibleCell.getIndex();
-        row -= (lastRow - firstRow) / 2;
+        int viewSize = lastVisibleCell.getIndex() - firstVisibleCell.getIndex() + 1;
+        row -= viewSize / 2;
         if (row < 0) {
           row = 0;
+        }
+        else if (row + viewSize > numRow) {
+          row = numRow - viewSize;
         }
       }
     }
