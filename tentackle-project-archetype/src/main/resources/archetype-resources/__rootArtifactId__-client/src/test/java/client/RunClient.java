@@ -29,14 +29,14 @@ public class RunClient {
 
       @Override
       protected boolean isSystemExitNecessaryToStop() {
-        return false;   // no System.exit() within the test container
+        return false;   // no System.exit() by default within the test container
       }
 
       @Override
       public void stop(int exitValue, Throwable exitThrowable) {
         super.stop(exitValue, exitThrowable);
         if (exitValue != 0) {
-          Assert.fail("abnormally terminated with exit code = " + exitValue, exitThrowable);
+          System.exit(exitValue);   // system exit only if error
         }
       }
     };

@@ -266,6 +266,22 @@ public interface Backend {
   boolean isMatchingName(String name);
 
   /**
+   * Verifies that the major and minor version of the connection's metadata is compatible with this backend.<br>
+   * If the latest backend is not compatible, the URL may be post-fixed with a backend type for an older version, for example:
+   * <pre>
+   *   jdbc:oracle:thin:@//localhost:1521/xe|Oracle8
+   * </pre>
+   *
+   * <p>
+   * Throws {@link BackendException} if incompatible.
+   *
+   * @param databaseMajorVersion the major version
+   * @param databaseMinorVersion the minor version
+   * @see BackendInfo#BackendInfo(String, String, char[], String[])
+   */
+  void validateVersion(int databaseMajorVersion, int databaseMinorVersion);
+
+  /**
    * Gets the name of the backend.<br>
    *
    * @return the name

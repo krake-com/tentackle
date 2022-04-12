@@ -16,14 +16,17 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.sql;
+
+import org.tentackle.common.Service;
+import org.tentackle.common.ServiceFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
-import org.tentackle.common.Service;
-import org.tentackle.common.ServiceFactory;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 /**
  * Default implementation of a backend factory.
@@ -33,12 +36,11 @@ import org.tentackle.common.ServiceFactory;
 @Service(BackendFactory.class)
 public class DefaultBackendFactory implements BackendFactory {
 
-
   /**
    * All backend singletons.
    * One per backend type.
    */
-  private final Collection<Backend> backends;
+  private final List<Backend> backends;
 
 
   /**
@@ -51,6 +53,8 @@ public class DefaultBackendFactory implements BackendFactory {
       for (Class<Backend> backendClass: ServiceFactory.getServiceFinder().findServiceProviders(Backend.class)) {
         backends.add(backendClass.getDeclaredConstructor().newInstance());
       }
+      // we need a predictable evaluation order (backends sorted by name)
+      Collections.sort(backends, Comparator.comparing(backend -> backend.getName()));
     }
     catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
            InvocationTargetException | NoSuchMethodException nfe) {

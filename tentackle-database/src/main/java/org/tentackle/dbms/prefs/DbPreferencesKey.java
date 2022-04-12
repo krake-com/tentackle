@@ -51,7 +51,7 @@ import java.util.Objects;
  * long           nodeId          nodeid          ID of the preferences node
  * long           rootNodeId      rootnodeid      ID of the root node
  * String(128)    key             pkey            name of the key
- * String(255)    value           pvalue          value of the key
+ * String         value           pvalue          value of the key
  *
  * ## indexes
  * unique index path := nodeid, pkey
