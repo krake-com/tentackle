@@ -1488,11 +1488,11 @@ public class FxUtilities {
       if (firstVisibleCell != null && lastVisibleCell != null) {
         int viewSize = lastVisibleCell.getIndex() - firstVisibleCell.getIndex() + 1;
         row -= viewSize / 2;
+        if (row + viewSize > numRow) {
+          row = numRow - viewSize;
+        }
         if (row < 0) {
           row = 0;
-        }
-        else if (row + viewSize > numRow) {
-          row = numRow - viewSize;
         }
       }
     }
