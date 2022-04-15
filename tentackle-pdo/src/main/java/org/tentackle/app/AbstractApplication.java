@@ -95,7 +95,6 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    * <p>
    * Notice: the method is not synchronized because no serious application
    * will invoke getAbstractApplication() before getting itself up and running.
-   * So, we leave off these singleton maniac codings here.
    *
    * @return the application, null if no application started
    */
@@ -367,7 +366,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    *
    * @param <U> the pdo type
    * @param context the domain context
-   * @return the logged in user object, null if unknown
+   * @return the logged-in user object, null if unknown
    */
   public <U extends PersistentDomainObject<U>> U getUser(DomainContext context) {
     return getUser(context, sessionInfo == null ? 0 : sessionInfo.getUserId());
@@ -377,7 +376,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
 
   /**
    * Creates the sessionInfo.<br>
-   * Presets attributes like locale, timezone, vm-, os- and host-info.
+   * Presets the attributes like locale, timezone, vm-, os- and host-info.
    *
    * @param username is the name of the user
    * @param password is the password, null if none
@@ -661,6 +660,10 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    */
   protected void finishStartup() {
 
+    if (getProperties().containsKey(ENABLE_STATISTICS)) {
+      activateStatistics();
+    }
+
     // start the modification thread
     if (!getProperties().containsKey(DISABLE_MODIFICATION_TRACKER)) {
       ModificationTracker.getInstance().start();
@@ -674,10 +677,6 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
     }
     else  {
       PdoCache.setAllEnabled(false);    // disable caching globally
-    }
-
-    if (getProperties().containsKey(ENABLE_STATISTICS)) {
-      activateStatistics();
     }
   }
 
@@ -697,7 +696,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
 
 
   /**
-   * Invokes all steps to startup the application.<br>
+   * Invokes all steps to start up the application.<br>
    * Invoked from {@link #start(java.lang.String[])}.
    */
   protected abstract void startup();
