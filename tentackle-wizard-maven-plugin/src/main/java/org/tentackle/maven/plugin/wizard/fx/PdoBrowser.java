@@ -273,7 +273,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
       }
       refreshButton.setDisable(false);
       GuiProvider<?> guiProvider = getGuiProvider(proxy);
-      if (guiProvider != null && guiProvider.finderExists()) {
+      if (guiProvider != null && guiProvider.isFinderAvailable()) {
         finderButton.setDisable(false);
         finderButton.setOnAction(event -> {
           finder = guiProvider.createFinder();

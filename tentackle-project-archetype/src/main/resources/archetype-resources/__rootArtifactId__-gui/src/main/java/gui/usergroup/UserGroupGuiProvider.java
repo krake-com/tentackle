@@ -51,12 +51,12 @@ public class UserGroupGuiProvider extends DefaultGuiProvider<UserGroup> {
   }
 
   @Override
-  public boolean editorExists() {
+  public boolean isEditorAvailable() {
     return true;
   }
 
   @Override
-  public boolean finderExists() {
+  public boolean isFinderAvailable() {
     return true;
   }
 

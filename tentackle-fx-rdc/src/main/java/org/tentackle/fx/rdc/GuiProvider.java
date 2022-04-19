@@ -73,12 +73,12 @@ public interface GuiProvider<T extends PersistentDomainObject<T>>
   ImageView createIcon();
 
   /**
-   * Returns whether a controller exists to edit or view this object.
+   * Returns whether a controller is available to edit or view this object.
    *
-   * @return true if a controller exists
+   * @return true if a controller exists, false by default
    * @see #createEditor()
    */
-  boolean editorExists();
+  boolean isEditorAvailable();
 
   /**
    * Returns whether the editor allows editing of the current pdo.
@@ -98,22 +98,23 @@ public interface GuiProvider<T extends PersistentDomainObject<T>>
    * Creates a controller to edit or view this object.
    *
    * @return the controller
-   * @throws FxRuntimeException if {@link #editorExists()} == false
+   * @throws FxRuntimeException if {@link #isEditorAvailable()} == false
    */
   PdoEditor<T> createEditor();
 
   /**
-   * Returns whether a finder exists to search for PDOs.
+   * Returns whether a finder is available to search for PDOs.
    *
-   * @return true if controller exists
+   * @return true if controller exists, false by default
+   * @see #createFinder()
    */
-  boolean finderExists();
+  boolean isFinderAvailable();
 
   /**
    * Creates a controller to search PDOs.
    *
    * @return the controller
-   * @throws FxRuntimeException if {@link #editorExists()} == false
+   * @throws FxRuntimeException if {@link #isFinderAvailable()} == false
    */
   PdoFinder<T> createFinder();
 
