@@ -54,7 +54,7 @@ public class SecurityGuiProvider extends DefaultGuiProvider<Security> {
   }
 
   @Override
-  public boolean editorExists() {
+  public boolean isEditorAvailable() {
     return true;
   }
 

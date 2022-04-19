@@ -132,37 +132,37 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
   }
 
   @Override
-  public boolean editorExists() {
+  public boolean isEditorAvailable() {
     return false;
   }
 
   @Override
   public boolean isEditAllowed() {
-    return editorExists() && pdo.isEditAllowed();
+    return isEditorAvailable() && pdo.isEditAllowed();
   }
 
   @Override
   public boolean isViewAllowed() {
-    return editorExists() && pdo.isViewAllowed();
+    return isEditorAvailable() && pdo.isViewAllowed();
   }
 
   @Override
   public PdoEditor<T> createEditor() {
-    if (editorExists()) {
+    if (isEditorAvailable()) {
       return new DefaultPdoEditor<>(getPdo().getEffectiveClass(), isBundleProvided() ? getBundle() : null);
     }
     throw new FxRuntimeException("no controller for " + pdo.getEffectiveClass().getName());
   }
 
   @Override
-  public boolean finderExists() {
+  public boolean isFinderAvailable() {
     return false;
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public PdoFinder<T> createFinder() {
-    if (finderExists()) {
+    if (isFinderAvailable()) {
       return Fx.load(DefaultPdoFinder.class);
     }
     throw new FxRuntimeException("no finder for " + pdo.getEffectiveClass().getName());

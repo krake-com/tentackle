@@ -56,7 +56,7 @@ public class MessageGuiProvider extends DefaultGuiProvider<Message> {
   }
 
   @Override
-  public boolean finderExists() {
+  public boolean isFinderAvailable() {
     return true;
   }
 

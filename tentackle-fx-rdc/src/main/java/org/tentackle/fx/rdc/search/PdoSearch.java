@@ -252,7 +252,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
             if (doubleClickHandler != null) {
               doubleClickHandler.accept(firstPdo);
             }
-            else if (Rdc.createGuiProvider(firstPdo).editorExists()) {
+            else if (Rdc.createGuiProvider(firstPdo).isEditorAvailable()) {
               if (isCrudShown()) {
                 pdoCrud.releasePdo(released -> {
                   if (released) {

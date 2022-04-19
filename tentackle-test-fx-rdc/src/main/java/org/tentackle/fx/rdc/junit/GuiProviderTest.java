@@ -81,10 +81,10 @@ public abstract class GuiProviderTest extends FxRdcTestApplication {
           GuiProviderService anno = provider.getClass().getAnnotation(GuiProviderService.class);
           if (anno == null || anno.test()) {
             LOGGER.info(() -> "testing gui provider " + provider.getClass().getName());
-            if (provider.editorExists()) {
+            if (provider.isEditorAvailable()) {
               provider.createEditor();
             }
-            if (provider.finderExists()) {
+            if (provider.isFinderAvailable()) {
               provider.createFinder();
             }
             provider.createIcon();
