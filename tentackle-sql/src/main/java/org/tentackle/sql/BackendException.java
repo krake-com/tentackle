@@ -28,7 +28,7 @@ package org.tentackle.sql;
  */
 public class BackendException extends RuntimeException {
 
-  private static final long serialVersionUID = -7122397723020544671L;
+  private static final long serialVersionUID = 1L;
 
 
  /**

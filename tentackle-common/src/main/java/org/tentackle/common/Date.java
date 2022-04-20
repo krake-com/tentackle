@@ -47,7 +47,7 @@ import static java.util.Calendar.YEAR;
 @SuppressWarnings("deprecation")
 public class Date extends java.sql.Date implements Freezable {
 
-  private static final long serialVersionUID = 1511598038487230101L;
+  private static final long serialVersionUID = 1L;
 
   /**
    * Creates a frozen date.

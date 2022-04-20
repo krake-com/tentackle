@@ -31,7 +31,7 @@ import java.util.Objects;
  */
 public class SslClientSocketFactory extends SslRMIClientSocketFactory implements SocketConfiguratorHolder {
 
-  private static final long serialVersionUID = 2357672465175511279L;
+  private static final long serialVersionUID = 1L;
 
   private volatile SocketConfigurator socketConfigurator;   // the optional socket configurator
 

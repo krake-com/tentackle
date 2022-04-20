@@ -164,7 +164,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   private static final Logger LOGGER = Logger.get(AbstractDbObject.class);
 
-  private static final long serialVersionUID = 3452560056309085969L;
+  private static final long serialVersionUID = 1L;
 
 
 

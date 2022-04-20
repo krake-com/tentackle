@@ -19,9 +19,10 @@
 
 package org.tentackle.session;
 
+import org.tentackle.misc.FormatHelper;
+
 import java.text.MessageFormat;
 import java.util.Date;
-import org.tentackle.misc.FormatHelper;
 
 
 /**
@@ -32,7 +33,7 @@ import org.tentackle.misc.FormatHelper;
  */
 public class AlreadyLoggedInException extends LoginFailedException {
 
-  private static final long serialVersionUID = -3703843403789342728L;
+  private static final long serialVersionUID = 1L;
 
   private final SessionInfo loginInfo;    // the application user info
 

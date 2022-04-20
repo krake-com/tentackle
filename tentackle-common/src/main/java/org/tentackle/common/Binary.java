@@ -46,7 +46,7 @@ import java.util.Arrays;
 
 public class Binary<T extends Serializable> implements Serializable, Cloneable, Freezable {
 
-  private static final long serialVersionUID = 5853122168291704220L;
+  private static final long serialVersionUID = 1L;
 
   /**
    * initial default buffersize when reading from the database.

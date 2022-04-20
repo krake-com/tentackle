@@ -27,7 +27,7 @@ package org.tentackle.session;
  */
 public class VersionIncompatibleException extends LoginFailedException {
 
-  private static final long serialVersionUID = -9655629806960356L;
+  private static final long serialVersionUID = 1L;
 
   private final String clientVersion;
   private final String serverVersion;

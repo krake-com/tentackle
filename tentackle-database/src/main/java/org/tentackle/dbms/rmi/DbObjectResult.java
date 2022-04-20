@@ -20,8 +20,9 @@
 
 package org.tentackle.dbms.rmi;
 
-import java.io.Serializable;
 import org.tentackle.dbms.AbstractDbObject;
+
+import java.io.Serializable;
 
 /**
  * Result used to return the possibly new objectid, changed serial and a
@@ -31,7 +32,7 @@ import org.tentackle.dbms.AbstractDbObject;
  */
 public class DbObjectResult implements Serializable {
 
-  private static final long serialVersionUID = 3143529012167549556L;
+  private static final long serialVersionUID = 1L;
 
   /** the object ID. */
   private final long id;

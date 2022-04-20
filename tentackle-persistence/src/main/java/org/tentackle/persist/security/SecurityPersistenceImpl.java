@@ -54,7 +54,7 @@ import java.util.Objects;
 @PersistentObjectService(Security.class)
 public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, SecurityPersistenceImpl> implements SecurityPersistence {
 
-  private static final long serialVersionUID = -1178387730540795339L;
+  private static final long serialVersionUID = 1L;
 
   private static final Logger LOGGER = Logger.get(SecurityPersistenceImpl.class);
 

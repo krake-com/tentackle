@@ -29,7 +29,7 @@ import org.tentackle.misc.Identifiable;
  */
 public class SessionClosedException extends PersistenceException {
 
-  private static final long serialVersionUID = -5355906838551059054L;
+  private static final long serialVersionUID = 1L;
 
  /**
    * Constructs a new database session closed exception for a given session

@@ -27,7 +27,7 @@ package org.tentackle.session;
  */
 public class ThreadLocalSessionHolder implements SessionHolder {
 
-  private static final long serialVersionUID = 6201552901046919635L;
+  private static final long serialVersionUID = 1L;
 
   private boolean sessionImmutable;
 

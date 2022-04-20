@@ -33,7 +33,7 @@ import org.tentackle.misc.Identifiable;
  */
 public class LoginFailedException extends PersistenceException implements Loggable {
 
-  private static final long serialVersionUID = -6175651458048862623L;
+  private static final long serialVersionUID = 1L;
 
  /**
    * Constructs a new login failed exception for a given session

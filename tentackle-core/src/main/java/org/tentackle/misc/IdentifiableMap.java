@@ -38,7 +38,7 @@ import java.util.TreeMap;
  */
 public class IdentifiableMap<T extends Identifiable> implements Serializable {
 
-  private static final long serialVersionUID = -6365221025824797487L;
+  private static final long serialVersionUID = 1L;
 
 
   private final Map<IdentifiableKey<T>, T> objectMap;  // the object map (fast)

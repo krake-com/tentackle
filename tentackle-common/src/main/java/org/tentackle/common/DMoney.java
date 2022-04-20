@@ -33,7 +33,7 @@ import java.math.BigInteger;
  */
 public class DMoney extends BMoney {
 
-  private static final long serialVersionUID = -7253450602162675490L;
+  private static final long serialVersionUID = 1L;
 
   /**
    * Creates a DMoney value.

@@ -45,7 +45,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
   private static final String MSG_NOT_MY_SNAPSHOT = "not my snapshot";
 
-  private static final long serialVersionUID = 5820724718467532237L;
+  private static final long serialVersionUID = 1L;
 
   private static final Logger LOGGER = Logger.get(TrackedArrayList.class);
 

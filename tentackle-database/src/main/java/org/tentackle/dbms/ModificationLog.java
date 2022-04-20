@@ -18,6 +18,7 @@
 
 package org.tentackle.dbms;
 
+import org.tentackle.common.DateHelper;
 import org.tentackle.common.Freezable;
 import org.tentackle.common.RemoteMethod;
 import org.tentackle.common.StringHelper;
@@ -25,7 +26,6 @@ import org.tentackle.common.Timestamp;
 import org.tentackle.dbms.rmi.ModificationLogRemoteDelegate;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.Canonicalizer;
-import org.tentackle.common.DateHelper;
 import org.tentackle.misc.ParameterString;
 import org.tentackle.session.ClassId;
 import org.tentackle.session.PersistenceException;
@@ -92,7 +92,7 @@ import java.util.List;
 @TableName(/**/"modlog"/**/)      // @wurblet < Inject --string $tablename
 public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
-  private static final long serialVersionUID = 7997968053729155282L;
+  private static final long serialVersionUID = 1L;
 
   private static final Logger LOGGER = Logger.get(ModificationLog.class);
 

@@ -29,7 +29,7 @@ import org.tentackle.misc.Identifiable;
  */
 public class NotFoundException extends PersistenceException {
 
-  private static final long serialVersionUID = -5355906838551059054L;
+  private static final long serialVersionUID = 1L;
 
   private long persistedSerial;     // 0 if unknown, -1 if object not in database, else the object's serial in db
 

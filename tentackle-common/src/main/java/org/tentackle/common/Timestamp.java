@@ -50,7 +50,7 @@ import static java.util.Calendar.YEAR;
 @SuppressWarnings("deprecation")
 public class Timestamp extends java.sql.Timestamp implements Freezable {
 
-  private static final long serialVersionUID = 2745179027874758503L;
+  private static final long serialVersionUID = 1L;
 
 
   /**

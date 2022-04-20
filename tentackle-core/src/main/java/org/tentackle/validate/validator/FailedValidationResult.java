@@ -31,7 +31,7 @@ import java.util.Objects;
  */
 public class FailedValidationResult extends AbstractValidationResult {
 
-  private static final long serialVersionUID = 7944890568191272731L;
+  private static final long serialVersionUID = 1L;
 
   /**
    * Creates a validation result.

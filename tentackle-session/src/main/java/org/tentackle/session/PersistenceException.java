@@ -30,7 +30,7 @@ import java.rmi.RemoteException;
  */
 public class PersistenceException extends TentackleRuntimeException {
 
-  private static final long serialVersionUID = -5355906838551059053L;
+  private static final long serialVersionUID = 1L;
 
 
   /**

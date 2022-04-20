@@ -28,7 +28,7 @@ import org.tentackle.common.TentackleRuntimeException;
  */
 public class ImmutableException extends TentackleRuntimeException {
 
-  private static final long serialVersionUID = 3230153472140695051L;
+  private static final long serialVersionUID = 1L;
 
   /**
    * Constructs a new immutable exception

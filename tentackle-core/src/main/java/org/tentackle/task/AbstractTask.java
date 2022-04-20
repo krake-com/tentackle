@@ -29,7 +29,7 @@ import java.util.List;
  */
 public abstract class AbstractTask implements Task {
 
-  private static final long serialVersionUID = 6759258472780726126L;
+  private static final long serialVersionUID = 1L;
 
   private Throwable cause;                            // an exception thrown in a runnable
   private Serializable result;                        // the result (return value) of the task

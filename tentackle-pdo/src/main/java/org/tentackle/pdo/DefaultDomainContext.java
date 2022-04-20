@@ -38,7 +38,7 @@ import java.io.ObjectStreamException;
  */
 public class DefaultDomainContext implements DomainContext {
 
-  private static final long serialVersionUID = 1326690682129400506L;
+  private static final long serialVersionUID = 1L;
 
   // attributes are transient because session could be remote (is serializable)
 

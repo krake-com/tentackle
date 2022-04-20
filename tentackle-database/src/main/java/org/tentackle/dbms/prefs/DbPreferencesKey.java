@@ -71,7 +71,7 @@ import java.util.Objects;
 @TableName(/**/"prefkey"/**/)     // @wurblet < Inject --string $tablename
 public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
 
-  private static final long serialVersionUID = 5733105489734329678L;
+  private static final long serialVersionUID = 1L;
 
   /** Variables common to all instances of {@link DbPreferencesKey}. */
   public static final DbObjectClassVariables<DbPreferencesKey> CLASSVARIABLES =

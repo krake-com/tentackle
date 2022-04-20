@@ -37,8 +37,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class GroovyScript extends AbstractScript {
 
-  private static final long serialVersionUID = -2854720758013476291L;
-
   private static final Logger LOGGER = Logger.get(GroovyScript.class);
 
   private static final Map<String, CompiledGroovyScript> SCRIPT_CACHE = new ConcurrentHashMap<>();    // <code>:<script>

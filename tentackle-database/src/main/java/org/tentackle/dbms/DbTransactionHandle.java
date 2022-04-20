@@ -30,7 +30,7 @@ import java.io.Serializable;
  */
 public class DbTransactionHandle implements Serializable {
 
-  private static final long serialVersionUID = -1632629938313090092L;
+  private static final long serialVersionUID = 1L;
 
 
   private final long txId;    // the transaction id

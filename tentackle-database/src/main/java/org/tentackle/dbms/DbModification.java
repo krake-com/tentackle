@@ -57,7 +57,7 @@ import org.tentackle.sql.Backend;
 @TableName(/**/"modification"/**/)    // @wurblet < Inject --string $tablename
 public class DbModification extends AbstractDbObject<DbModification> {
 
-  private static final long serialVersionUID = -1723181864077614924L;
+  private static final long serialVersionUID = 1L;
 
   private static final Logger LOGGER = Logger.get(DbModification.class);
 

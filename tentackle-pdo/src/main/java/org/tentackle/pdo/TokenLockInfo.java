@@ -30,7 +30,7 @@ import java.io.Serializable;
  */
 public class TokenLockInfo implements Serializable {
 
-  private static final long serialVersionUID = 438202973417850958L;
+  private static final long serialVersionUID = 1L;
 
 
   /** object ID of the user holding the token, 0 = unlocked. */

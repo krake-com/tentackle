@@ -28,7 +28,7 @@ package org.tentackle.bind;
  */
 public class BindingVetoException extends Exception {
 
-  private static final long serialVersionUID = -2817529018969629515L;
+  private static final long serialVersionUID = 1L;
 
 
   private final boolean rethrowEnabled;       // true if rethrowEnabled as Binding(Runtime)Exception

@@ -47,7 +47,7 @@ import java.rmi.RemoteException;
 @PersistentObjectService(NumberRange.class)
 public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberRange, NumberRangePersistenceImpl> implements NumberRangePersistence {
 
-  private static final long serialVersionUID = -1178387730540795339L;
+  private static final long serialVersionUID = 1L;
 
 
   // @wurblet classVariables ClassVariables
