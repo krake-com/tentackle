@@ -37,9 +37,6 @@ import static org.tentackle.common.Constants.CN_ID;
  */
 public class ObjectId extends AbstractIdSource {
 
-  private static final long serialVersionUID = 1L;
-
-
   private static final StatementId SELECT_ID = new StatementId();
   private static final StatementId INCREMENT_ID = new StatementId();
   private static final StatementId UPDATE_ID = new StatementId();

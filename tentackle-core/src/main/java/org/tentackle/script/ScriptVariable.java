@@ -46,9 +46,6 @@ public class ScriptVariable {
   public static final String VAR_CLASS = "clazz";
 
 
-  private static final long serialVersionUID = 1L;
-
-
   private final String name;      // the variable name (never null)
   private Object value;           // the value
 
