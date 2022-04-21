@@ -16,8 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-
 package org.tentackle.dbms;
 
 import org.tentackle.common.BMoney;
@@ -28,6 +26,7 @@ import org.tentackle.common.DateHelper;
 import org.tentackle.common.Time;
 import org.tentackle.common.Timestamp;
 import org.tentackle.log.Logger;
+import org.tentackle.misc.TimeKeeper;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.DataType;
 import org.tentackle.sql.datatypes.ZonedDateTimeType;
@@ -65,6 +64,15 @@ import java.util.Map;
  */
 public class ResultSetWrapper implements AutoCloseable {
 
+  /**
+   * Enables a warning logging if result sets are longer open than given milliseconds.<br>
+   * 0 to disable (default).<br>
+   * Useful to detect programming errors when result sets are kept open for a long time (consuming an attached connection),
+   * for example due to expensive processing while reading the result set.
+   */
+  public static long warnOpenMillis = 0L;
+
+
   private static final Logger LOGGER = Logger.get(ResultSetWrapper.class);
 
   /**
@@ -90,6 +98,7 @@ public class ResultSetWrapper implements AutoCloseable {
     private List<ResultSetSkipBlock> skipBlocks;    // list of skip blocks (null if not in skipmode)
     private boolean closeStatementOnClose;          // true = close the statement after resultset is closed
     private ResultSetWrapper me;                    // != null if normal close, else cleanup
+    private TimeKeeper duration;                    // != null if duration until close measured
 
     Resources(StatementWrapper stmt, ResultSet rs) {
       this.stmt = stmt;
@@ -99,9 +108,12 @@ public class ResultSetWrapper implements AutoCloseable {
         stmt.consume();
         throw new PersistenceException("connection already closed for " + this);
       }
-      // enable statement-autoclosing if the statement is a non-prepared statement or a prepared one-shot
+      // enable statement-auto-closing if the statement is a non-prepared statement or a prepared one-shot
       closeStatementOnClose = !(stmt instanceof PreparedStatementWrapper) ||
                               ((PreparedStatementWrapper) stmt).getStatementKey() == null;
+      if (warnOpenMillis > 0) {
+        duration = new TimeKeeper();
+      }
     }
 
     @Override
@@ -128,10 +140,32 @@ public class ResultSetWrapper implements AutoCloseable {
                 commitOnCloseVoucherValid = false;
               }
             }
+
             rset.close();   // this is ok even if already closed (according to the API)
+
+            TimeKeeper openDuration = duration;
+            if (openDuration != null) {
+              duration = null;
+              double millis = openDuration.end().millis();
+              if (millis > warnOpenMillis) {
+                if (me != null) {
+                  // log with stacktrace of closing caller
+                  LOGGER.warning("result set wrapper " + me + " open for " + millis + "ms", new PersistenceException());
+                }
+                else {
+                  // closed by cleanup (stacktrace makes no sense)
+                  LOGGER.warning("unreferenced result set wrapper open for {0}ms, statement {1}", millis, st);
+                }
+              }
+            }
           }
           catch (SQLException | RuntimeException ex) {
-            LOGGER.severe("closing result set wrapper " + this + " failed", ex);
+            if (me != null) {
+              LOGGER.severe("closing result set wrapper " + me + " failed", ex);
+            }
+            else {
+              LOGGER.severe("closing unreferenced result set wrapper failed for statement " + stmt, ex);
+            }
           }
           finally {
             db = null;
@@ -200,7 +234,8 @@ public class ResultSetWrapper implements AutoCloseable {
 
   @Override
   public String toString() {
-    return resources.stmt == null ? "<closed resultset>" : resources.stmt.toString();
+    StatementWrapper stmt = resources.stmt;
+    return stmt == null ? "<closed result set>" : stmt.toString();
   }
 
 
