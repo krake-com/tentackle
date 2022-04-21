@@ -39,7 +39,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
-import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
@@ -144,8 +143,8 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   private T createdPdo;                         // != null if new PDO has been created in modal mode
   private Consumer<T> doubleClickHandler;       // handler to be invoked on double-click in non-modal mode
   private String noDataMessage;                 // optional message to be displayed when there is no data in the table
-  private ImageView searchImage;                // replacing search
-  private ImageView searchPlusImage;            // adding search
+  private Node searchIcon;                      // replacing search
+  private Node searchPlusIcon;                  // adding search
   private boolean shiftDown;                    // true if shift key is down
   private boolean mouseOverFindButton;          // true if mouse over findButton
 
@@ -708,7 +707,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
       treeView.toFront();
       treeView.requestFocus();
       treeShown = true;
-      treeButton.setGraphic(Fx.createImageView("table"));
+      treeButton.setGraphic(Fx.createGraphic("table"));
       if (treeViewInvalid) {
         setItems(getItems());
       }
@@ -736,7 +735,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
       tablePane.toFront();
       tableView.requestFocus();
       treeShown = false;
-      treeButton.setGraphic(Fx.createImageView("tree"));
+      treeButton.setGraphic(Fx.createGraphic("tree"));
       if (tableViewInvalid && treeView.getRoot() != null) {   // root becomes null if stage closed
         int index = 0;
         for (TreeItem<T> item: treeView.getRoot().getChildren()) {
@@ -804,7 +803,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
 
   @FXML
   private void initialize() {
-    treeButton.setGraphic(Fx.createImageView("tree"));
+    treeButton.setGraphic(Fx.createGraphic("tree"));
     treeButton.setOnAction(e -> {
       if (treeShown) {
         showTable();
@@ -814,13 +813,13 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
       }
     });
 
-    filterButton.setGraphic(Fx.createImageView("search"));
+    filterButton.setGraphic(Fx.createGraphic("search"));
     filterButton.setOnAction(e -> filterResult());
     filterField.setOnAction(e -> filterButton.doClick());
 
-    searchImage = Fx.createImageView("search");
-    searchPlusImage = Fx.createImageView("add");
-    findButton.setGraphic(searchImage);
+    searchIcon = Fx.createGraphic("search");
+    searchPlusIcon = Fx.createGraphic("add");
+    findButton.setGraphic(searchIcon);
     findButton.setOnMouseEntered(event -> {
       mouseOverFindButton = true;
       updateFindButton();
@@ -837,13 +836,13 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
       }
     });
 
-    newButton.setGraphic(Fx.createImageView("new"));
+    newButton.setGraphic(Fx.createGraphic("new"));
     newButton.setOnAction(e -> createPdo());
 
-    okButton.setGraphic(Fx.createImageView("ok"));
+    okButton.setGraphic(Fx.createGraphic("ok"));
     okButton.setOnAction(e -> close());
 
-    cancelButton.setGraphic(Fx.createImageView("close"));
+    cancelButton.setGraphic(Fx.createGraphic("close"));
     cancelButton.setOnAction(e -> cancel());
     cancelButton.setCancelButton(true);
 
@@ -927,9 +926,9 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   }
 
   private void updateFindButton() {
-    ImageView image = shiftDown ? searchPlusImage : searchImage;
-    if (image != findButton.getGraphic()) {
-      findButton.setGraphic(image);
+    Node icon = shiftDown ? searchPlusIcon : searchIcon;
+    if (icon != findButton.getGraphic()) {
+      findButton.setGraphic(icon);
     }
   }
 

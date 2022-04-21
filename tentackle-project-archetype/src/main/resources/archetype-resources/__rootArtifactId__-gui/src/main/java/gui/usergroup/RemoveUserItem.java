@@ -32,7 +32,7 @@ public class RemoveUserItem extends MenuItem implements PdoTreeContextMenuItem<U
    * @param cell the tree cell
    */
   public RemoveUserItem(PdoTreeCell<User> cell) {
-    super(GuiBundle.getString("remove from group"), Fx.createImageView("cut"));
+    super(GuiBundle.getString("remove from group"), Fx.createGraphic("cut"));
     User user = cell.getItem();
     boolean disabled = true;
     if (user.isEditAllowed()) {

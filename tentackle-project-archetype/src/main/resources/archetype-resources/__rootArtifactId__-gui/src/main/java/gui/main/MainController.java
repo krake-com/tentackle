@@ -8,7 +8,7 @@
 package ${package}.gui.main;
 
 import ${package}.common.${application}DomainContext;
-import ${package}.gui.${application}ImageProvider;
+import ${package}.gui.${application}GraphicProvider;
 import ${package}.gui.about.AboutView;
 import ${package}.gui.password.ChangePasswordView;
 import ${package}.gui.prefs.PreferencesDialog;
@@ -20,7 +20,7 @@ import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.MenuItem;
-import javafx.scene.image.ImageView;
+import javafx.scene.Node;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -102,51 +102,51 @@ public class MainController extends AbstractFxController implements DomainContex
   @FXML
   public void initialize() {
 
-    ImageView centerImage = Fx.createImageView(${application}ImageProvider.REALM, "tentackle");
+    Node centerImage = Fx.createGraphic(${application}GraphicProvider.REALM, "tentackle");
     borderPane.setCenter(centerImage);
 
-    securityManagerItem.setGraphic(Fx.createImageView("security"));
+    securityManagerItem.setGraphic(Fx.createGraphic("security"));
     securityManagerItem.setDisable(!SecurityDialogFactory.getInstance().isDialogAllowed(getDomainContext()));
     securityManagerItem.setOnAction(e ->
             SecurityDialogFactory.getInstance().showDialog(on(Security.class).getClassId(), getDomainContext()));
 
-    sessionsItem.setGraphic(Fx.createImageView("modem"));
+    sessionsItem.setGraphic(Fx.createGraphic("modem"));
     sessionsItem.setDisable(!SecurityFactory.getInstance().getSecurityManager().evaluate(
         getDomainContext(), SecurityFactory.getInstance().getExecutePermission(), AdminExtension.class).isAccepted());
     sessionsItem.setOnAction(e -> manageSessions());
 
-    preferencesItem.setGraphic(Fx.createImageView("preferences"));
+    preferencesItem.setGraphic(Fx.createGraphic("preferences"));
     preferencesItem.setDisable(
             !PersistedPreferencesFactory.getInstance().isSystemOnly() ||
             !SecurityFactory.getInstance().getSecurityManager().evaluate(
                 getDomainContext(), SecurityFactory.getInstance().getExecutePermission(), PreferencesDialog.class).isAccepted());
     preferencesItem.setOnAction(e -> PreferencesDialog.show());
 
-    passwordItem.setGraphic(Fx.createImageView("password"));
+    passwordItem.setGraphic(Fx.createGraphic("password"));
     passwordItem.setOnAction(e -> ChangePasswordView.showDialog(DesktopApplication.getDesktopApplication().getUser(getDomainContext()), false));
 
-    exitItem.setGraphic(Fx.createImageView("exit"));
+    exitItem.setGraphic(Fx.createGraphic("exit"));
     exitItem.setOnAction(e -> exit());
 
-    editUserItem.setGraphic(Fx.createImageView(${application}ImageProvider.REALM, "user"));
+    editUserItem.setGraphic(Fx.createGraphic(${application}GraphicProvider.REALM, "user"));
     editUserItem.setOnAction(e -> edit(User.class));
 
-    editUserGroupItem.setGraphic(Fx.createImageView(${application}ImageProvider.REALM, "usergroup"));
+    editUserGroupItem.setGraphic(Fx.createGraphic(${application}GraphicProvider.REALM, "usergroup"));
     editUserGroupItem.setOnAction(e -> edit(UserGroup.class));
 
-    searchUserItem.setGraphic(Fx.createImageView(${application}ImageProvider.REALM, "user"));
+    searchUserItem.setGraphic(Fx.createGraphic(${application}GraphicProvider.REALM, "user"));
     searchUserItem.setOnAction(e -> search(User.class));
 
-    searchUserGroupItem.setGraphic(Fx.createImageView(${application}ImageProvider.REALM, "usergroup"));
+    searchUserGroupItem.setGraphic(Fx.createGraphic(${application}GraphicProvider.REALM, "usergroup"));
     searchUserGroupItem.setOnAction(e -> search(UserGroup.class));
 
-    searchMessageItem.setGraphic(Fx.createImageView(${application}ImageProvider.REALM, "message"));
+    searchMessageItem.setGraphic(Fx.createGraphic(${application}GraphicProvider.REALM, "message"));
     searchMessageItem.setOnAction(e -> search(Message.class));
 
-    helpItem.setGraphic(Fx.createImageView("help"));
+    helpItem.setGraphic(Fx.createGraphic("help"));
     helpItem.setOnAction(e -> help());
 
-    aboutItem.setGraphic(Fx.createImageView("about"));
+    aboutItem.setGraphic(Fx.createGraphic("about"));
     aboutItem.setOnAction(e -> AboutView.showDialog());
   }
 
@@ -196,7 +196,7 @@ public class MainController extends AbstractFxController implements DomainContex
     SessionsView controller = Fx.load(SessionsView.class);
     FxButton closeButton = Fx.create(Button.class);
     closeButton.setText(resources.getString("close"));
-    closeButton.setGraphic(Fx.createImageView("close"));
+    closeButton.setGraphic(Fx.createGraphic("close"));
     closeButton.setOnAction(e -> stage.close());
     controller.getButtonBox().getChildren().add(closeButton);
     Scene scene = Fx.createScene(controller.getView());

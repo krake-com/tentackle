@@ -87,7 +87,7 @@ public abstract class GuiProviderTest extends FxRdcTestApplication {
             if (provider.isFinderAvailable()) {
               provider.createFinder();
             }
-            provider.createIcon();
+            provider.createGraphic();
             provider.createTableView();
             provider.createTreeItem();
           }

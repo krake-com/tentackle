@@ -23,7 +23,6 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
-import javafx.scene.image.ImageView;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.util.Callback;
@@ -127,8 +126,8 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
   }
 
   @Override
-  public ImageView createIcon()  {
-    return Fx.createImageView("unknown");
+  public Node createGraphic()  {
+    return Fx.createGraphic("unknown");
   }
 
   @Override

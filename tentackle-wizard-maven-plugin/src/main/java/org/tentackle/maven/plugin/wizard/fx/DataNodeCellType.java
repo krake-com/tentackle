@@ -19,8 +19,8 @@
 package org.tentackle.maven.plugin.wizard.fx;
 
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.Tooltip;
-import javafx.scene.image.ImageView;
 
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.Fx;
@@ -44,14 +44,14 @@ public class DataNodeCellType extends AbstractTableCellType<DataNode> {
   @Override
   public void updateItem(FxTableCell<?, DataNode> tableCell, DataNode item) {
     tableCell.setText(getName(item));
-    tableCell.setGraphic(createIcon(item));
+    tableCell.setGraphic(getIcon(item));
     updateAlignment(tableCell, Pos.BASELINE_LEFT);
   }
 
   @Override
   public void updateItem(FxTreeTableCell<?, DataNode> treeTableCell, DataNode item) {
     treeTableCell.setText(getName(item));
-    treeTableCell.setGraphic(createIcon(item));
+    treeTableCell.setGraphic(getIcon(item));
     treeTableCell.setTooltip(item.getComment() == null ? null : new Tooltip(item.getComment()));
     updateAlignment(treeTableCell, Pos.BASELINE_LEFT);
   }
@@ -65,17 +65,17 @@ public class DataNodeCellType extends AbstractTableCellType<DataNode> {
   }
 
   @SuppressWarnings({ "unchecked", "rawtypes" })
-  private ImageView createIcon(DataNode item) {
+  private Node getIcon(DataNode item) {
     if (item instanceof DataObject) {
       PersistentDomainObject pdo = ((DataObject) item).getPdo();
       if (GuiProviderFactory.getInstance().isGuiProviderAvailable(pdo.getEffectiveClass())) {
         GuiProvider<?> guiProvider = GuiProviderFactory.getInstance().createGuiProvider(pdo);
         if (guiProvider != null) {
-          return guiProvider.createIcon();
+          return guiProvider.createGraphic();
         }
       }
     }
-    return Fx.createImageView(DataNodeImageProvider.REALM, item.getClass().getSimpleName());
+    return Fx.createGraphic(DataNodeGraphicProvider.REALM, item.getClass().getSimpleName());
   }
 
 }

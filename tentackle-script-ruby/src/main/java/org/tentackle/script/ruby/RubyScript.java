@@ -41,8 +41,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class RubyScript extends AbstractScript {
 
-  private static final long serialVersionUID = -7188401350915879268L;
-
   private static final Logger LOGGER = Logger.get(RubyScript.class);
 
   /** map of code:scripts. */

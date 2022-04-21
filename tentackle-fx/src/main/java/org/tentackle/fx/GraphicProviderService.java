@@ -29,14 +29,18 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation to for image providers.
+ * Annotation to for {@link GraphicProvider}s.
+ * <p>
+ * The annotated providers are picked up by the {@link FxFactory} and an instance
+ * is created for each realm. If more than one provider is found for the same realm,
+ * the first along the classpath (or module-path) is taken (overriding/replacing the others).
  */
 @Documented
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-@Service(ImageProvider.class)
-public @interface ImageProviderService {
+@Service(GraphicProvider.class)
+public @interface GraphicProviderService {
 
   /**
    * The realm.<br>

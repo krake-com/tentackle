@@ -49,7 +49,7 @@ public class ViewItem<T extends PersistentDomainObject<T>> extends MenuItem impl
    */
   public ViewItem(PdoTreeCell<T> cell) {
     setText(RdcFxRdcBundle.getString("VIEW"));
-    setGraphic(Fx.createImageView("view"));
+    setGraphic(Fx.createGraphic("view"));
     T pdo = cell.getItem();
     if (cell.getPdoTreeItem().getGuiProvider().isViewAllowed()) {
       T pDo = pdo.isImmutable() ? pdo.reload() : pdo;   // from cache?
@@ -62,7 +62,7 @@ public class ViewItem<T extends PersistentDomainObject<T>> extends MenuItem impl
 
   public ViewItem(PdoTableCell<?,T> cell) {
     setText(RdcFxRdcBundle.getString("VIEW"));
-    setGraphic(Fx.createImageView("view"));
+    setGraphic(Fx.createGraphic("view"));
     T pdo = cell.getItem();
     if (pdo != null && Rdc.createGuiProvider(pdo).isViewAllowed()) {
       T pDo = pdo.isImmutable() ? pdo.reload() : pdo;   // from cache?
