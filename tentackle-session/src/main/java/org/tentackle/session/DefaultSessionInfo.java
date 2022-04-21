@@ -29,6 +29,7 @@ import org.tentackle.misc.ImmutableException;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Objects;
@@ -44,6 +45,7 @@ import java.util.TimeZone;
  */
 public class DefaultSessionInfo implements SessionInfo, Cloneable {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
   private static final Logger LOGGER = Logger.get(DefaultSessionInfo.class);
