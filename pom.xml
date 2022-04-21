@@ -83,7 +83,7 @@
     <javac.lint>auxiliaryclass,cast,classfile,deprecation,dep-ann,divzero,empty,fallthrough,finally,opens,overloads,options,overrides,path,rawtypes,removal,requires-transitive-automatic,requires-automatic,serial,static,try,varargs,unchecked</javac.lint>
     <javac.version>18</javac.version>
 
-    <javafx.version>18</javafx.version>
+    <javafx.version>18.0.1</javafx.version>
     <ow2.asm.version>9.2</ow2.asm.version>
     <groovy.version>3.0.10</groovy.version>
     <maven.version>3.8.5</maven.version>
@@ -216,7 +216,7 @@
       <dependency>
         <groupId>org.jruby</groupId>
         <artifactId>jruby</artifactId>
-        <version>9.3.2.0</version>
+        <version>9.3.4.0</version>
       </dependency>
 
       <dependency>
