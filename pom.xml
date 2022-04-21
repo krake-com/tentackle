@@ -88,7 +88,7 @@
     <javac.lint>unchecked,deprecation</javac.lint>
     <maven.version>3.6.0</maven.version>
     <groovy.version>2.5.16</groovy.version>
-    <postgresql.version>42.3.3</postgresql.version>
+    <postgresql.version>42.3.4</postgresql.version>
     <graalvm.version>20.1.0</graalvm.version>
 
     <!-- for tentackle-fx+rdc: java 9 multi-release jars via antrun because not supported by maven yet -->
