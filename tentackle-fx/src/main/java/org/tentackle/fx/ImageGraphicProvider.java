@@ -20,6 +20,7 @@
 package org.tentackle.fx;
 
 import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 
 import org.tentackle.log.Logger;
 import org.tentackle.reflect.ReflectionHelper;
@@ -30,14 +31,13 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * The default image provider for framework-related images.
+ * Implementation of a graphic provider based on image files.
  *
  * @author harald
  */
-@ImageProviderService
-public class DefaultImageProvider implements ImageProvider {
+public class ImageGraphicProvider implements GraphicProvider {
 
-  private static final Logger LOGGER = Logger.get(DefaultImageProvider.class);
+  private static final Logger LOGGER = Logger.get(ImageGraphicProvider.class);
 
   /**
    * File type EXTENSIONS to try.
@@ -59,18 +59,27 @@ public class DefaultImageProvider implements ImageProvider {
 
   /**
    * Creates an image provider.
+   *
+   * @param imagePath the image path, null if {@code "<package>/images/"}.
    */
-  public DefaultImageProvider() {
+  public ImageGraphicProvider(String imagePath) {
     imageMap = new ConcurrentHashMap<>();
     String pkgPath = ReflectionHelper.getPackagePathName(getClass());
-    imagePath = ("/".equals(pkgPath) ? "" : pkgPath) + "/images/";
+    this.imagePath = imagePath == null ? (("/".equals(pkgPath) ? "" : pkgPath) + "/images/") : imagePath;
+  }
+
+  /**
+   * Creates an image provider for {@code "<package>/images/"}.
+   */
+  public ImageGraphicProvider() {
+    this(null);
   }
 
 
   /**
-   * Gets the file EXTENSIONS supported by this image provider.
+   * Gets the file extensions supported by this image provider.
    *
-   * @return the EXTENSIONS
+   * @return the extensions
    */
   public String[] getExtensions() {
     return EXTENSIONS;
@@ -78,7 +87,17 @@ public class DefaultImageProvider implements ImageProvider {
 
 
   @Override
-  public Image getImage(String name) {
+  public ImageView createGraphic(String name) {
+    return new ImageView(getImage(name));
+  }
+
+  /**
+   * Returns the cached image.
+   *
+   * @param name the image name
+   * @return the image
+   */
+  protected Image getImage(String name) {
     // cut path, if any
     int ndx = name.lastIndexOf('/');
     if (ndx >= 0) {
@@ -94,7 +113,7 @@ public class DefaultImageProvider implements ImageProvider {
     if (image == null) {
       for (String type: getExtensions()) {
         String url = imagePath + name + type;
-        // with JPMS we must load the inputstream in our own module.
+        // with JPMS we must load the input stream in our own module.
         try (InputStream is = getClass().getResourceAsStream(url)) {
           if (is != null) {
             image = new Image(is);

@@ -150,26 +150,26 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
       run();
     });
 
-    refreshButton.setGraphic(Fx.createImageView("reload"));
+    refreshButton.setGraphic(Fx.createGraphic("reload"));
     refreshButton.setDisable(true);
     refreshButton.setOnAction(e -> run());
-    finderButton.setGraphic(Fx.createImageView("search"));
+    finderButton.setGraphic(Fx.createGraphic("search"));
     finderButton.setDisable(true);
     finderButton.setFocusTraversable(true); // trigger focus lost
-    memorizeButton.setGraphic(Fx.createImageView("copy"));
+    memorizeButton.setGraphic(Fx.createGraphic("copy"));
     memorizeButton.setDisable(true);
     memorizeButton.setOnAction(event -> {
       oldDataObject = dataObject;
       memorizeTime = new Timestamp();
       showDiff();
     });
-    configButton.setGraphic(Fx.createImageView("preferences"));
+    configButton.setGraphic(Fx.createGraphic("preferences"));
     configButton.setOnAction(e -> showCodeConfigurationDialog());
     configButton.setDisable(true);
-    generateButton.setGraphic(Fx.createImageView("edit"));
+    generateButton.setGraphic(Fx.createGraphic("edit"));
     generateButton.setDisable(true);
     generateButton.setOnAction(e -> generateCode());
-    closeButton.setGraphic(Fx.createImageView("close"));
+    closeButton.setGraphic(Fx.createGraphic("close"));
     closeButton.setOnAction(this::close);
 
     pdosTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
@@ -288,7 +288,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
           hBox.setAlignment(Pos.BASELINE_RIGHT);
           FxButton cancelButton = Fx.create(Button.class);
           cancelButton.setText("cancel");
-          cancelButton.setGraphic(Fx.createImageView("cancel"));
+          cancelButton.setGraphic(Fx.createGraphic("cancel"));
           cancelButton.setOnAction(e -> {
             stage.close();
             finder = null;
@@ -296,7 +296,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
           });
           FxButton findButton = Fx.create(Button.class);
           findButton.setText("find");
-          findButton.setGraphic(Fx.createImageView("search"));
+          findButton.setGraphic(Fx.createGraphic("search"));
           findButton.setOnAction(e -> {
             pdos = finder.runSearch().stream().map(pdo -> new PdoWrapper((PersistentDomainObject<?>) pdo)).toList();
             pdosTableView.updateView();
@@ -353,7 +353,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
       HBox hBox = Fx.create(HBox.class);
       Button closeButton = Fx.create(Button.class);
       closeButton.setText("close");
-      closeButton.setGraphic(Fx.createImageView("close"));
+      closeButton.setGraphic(Fx.createGraphic("close"));
       closeButton.setOnAction(event -> stage.close());
       hBox.getChildren().add(closeButton);
       hBox.setPadding(new Insets(10.0));

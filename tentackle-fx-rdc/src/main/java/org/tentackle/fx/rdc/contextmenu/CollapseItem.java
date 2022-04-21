@@ -46,7 +46,7 @@ public class CollapseItem<T extends PersistentDomainObject<T>> extends MenuItem 
    */
   public CollapseItem(PdoTreeCell<T> cell) {
     setText(RdcFxRdcBundle.getString("COLLAPSE"));
-    setGraphic(Fx.createImageView("collapse"));
+    setGraphic(Fx.createGraphic("collapse"));
     TreeItem<T> treeItem = cell.getTreeItem();
     if (treeItem != null && treeItem.isExpanded()) {
       setOnAction(e -> FxUtilities.getInstance().collapseAll(treeItem));

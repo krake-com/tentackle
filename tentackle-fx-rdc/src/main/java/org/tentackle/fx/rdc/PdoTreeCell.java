@@ -78,7 +78,7 @@ public class PdoTreeCell<T extends PersistentDomainObject<T>> extends TreeCell<T
           tooltipText = null; // empty or same as treetext -> no tooltip (default)
         }
         setTooltip(tooltipText == null ? null : new Tooltip(tooltipText));
-        setGraphic(provider.createIcon());
+        setGraphic(provider.createGraphic());
       }
     }
   }

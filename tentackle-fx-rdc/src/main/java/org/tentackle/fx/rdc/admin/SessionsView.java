@@ -75,13 +75,13 @@ public class SessionsView extends AbstractFxController {
 
   @FXML
   private void initialize() {
-    securityButton.setGraphic(Fx.createImageView("security"));
+    securityButton.setGraphic(Fx.createGraphic("security"));
     securityButton.setOnAction(e -> showSecurityDialog());
 
-    refreshButton.setGraphic(Fx.createImageView("reload"));
+    refreshButton.setGraphic(Fx.createGraphic("reload"));
     refreshButton.setOnAction(e -> refresh());
 
-    killButton.setGraphic(Fx.createImageView("cancel"));
+    killButton.setGraphic(Fx.createGraphic("cancel"));
     killButton.setOnAction(e -> killSessions());
     killButton.disableProperty().bind(sessionsNode.getSelectionModel().selectedItemProperty().isNull());
 

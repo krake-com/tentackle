@@ -56,7 +56,7 @@ public class AboutView extends AbstractFxController {
     applicationVersion.setText(${package}.common.Version.RELEASE + " (" + ${package}.common.Version.DATE + ")");
     tentackleVersion.setText(org.tentackle.common.Version.RELEASE + " (" + org.tentackle.common.Version.DATE + ")");
     javaVersion.setText(Runtime.version().toString());
-    closeButton.setGraphic(Fx.createImageView("close"));
+    closeButton.setGraphic(Fx.createGraphic("close"));
     closeButton.setOnAction(e -> getStage().close());
   }
 }

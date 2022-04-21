@@ -166,22 +166,22 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
       }
     });
 
-    moveUpButton.setGraphic(Fx.createImageView("up"));
+    moveUpButton.setGraphic(Fx.createGraphic("up"));
     moveUpButton.setOnAction(e -> moveUp());
 
-    moveDownButton.setGraphic(Fx.createImageView("down"));
+    moveDownButton.setGraphic(Fx.createGraphic("down"));
     moveDownButton.setOnAction(e -> moveDown());
 
-    addButton.setGraphic(Fx.createImageView("add"));
+    addButton.setGraphic(Fx.createGraphic("add"));
     addButton.setOnAction(e -> add());
 
-    removeButton.setGraphic(Fx.createImageView("delete"));
+    removeButton.setGraphic(Fx.createGraphic("delete"));
     removeButton.setOnAction(e -> remove());
 
-    saveButton.setGraphic(Fx.createImageView("save"));
+    saveButton.setGraphic(Fx.createGraphic("save"));
     saveButton.setOnAction(e -> save());
 
-    cancelButton.setGraphic(Fx.createImageView("cancel"));
+    cancelButton.setGraphic(Fx.createGraphic("cancel"));
     cancelButton.setOnAction(e -> cancel(null));
 
     splitPane.setDividerPositions(0.3);   // works in most cases

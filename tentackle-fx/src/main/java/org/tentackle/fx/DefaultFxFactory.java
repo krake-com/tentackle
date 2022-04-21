@@ -21,10 +21,10 @@ package org.tentackle.fx;
 
 import javafx.concurrent.Task;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
-import javafx.scene.image.Image;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -95,9 +95,9 @@ public class DefaultFxFactory implements FxFactory {
   private final Map<Class<? extends FxController>, FxController> controllers;
 
   /**
-   * Map of realm to image providers.
+   * Map of realm to graphic providers.
    */
-  private final Map<String, ImageProvider> imageProviders;
+  private final Map<String, GraphicProvider> graphicProviders;
 
 
 
@@ -132,12 +132,12 @@ public class DefaultFxFactory implements FxFactory {
     }
     fxToConfiguratorMap = new HashMap<>();
 
-    imageProviders = new HashMap<>();
+    graphicProviders = new HashMap<>();
     try {
-      for (Class<ImageProvider> clazz: ServiceFactory.getServiceFinder().findServiceProviders(ImageProvider.class)) {
-        ImageProviderService svc = clazz.getAnnotation(ImageProviderService.class);
+      for (Class<GraphicProvider> clazz: ServiceFactory.getServiceFinder().findServiceProviders(GraphicProvider.class)) {
+        GraphicProviderService svc = clazz.getAnnotation(GraphicProviderService.class);
         if (svc != null) {
-          imageProviders.putIfAbsent(svc.value(), clazz.getDeclaredConstructor().newInstance());
+          graphicProviders.putIfAbsent(svc.value(), clazz.getDeclaredConstructor().newInstance());
         }
         else {
           LOGGER.severe("{0} not annotated with @ImageProviderService", clazz);
@@ -440,15 +440,15 @@ public class DefaultFxFactory implements FxFactory {
   }
 
   @Override
-  public Image getImage(String realm, String name) {
+  public Node createGraphic(String realm, String name) {
     if (realm == null) {
       realm = "";
     }
-    ImageProvider provider = imageProviders.get(realm);
+    GraphicProvider provider = graphicProviders.get(realm);
     if (provider == null) {
-      throw new IllegalArgumentException("no image provider for realm '" + realm + "'");
+      throw new IllegalArgumentException("no graphic provider for realm '" + realm + "'");
     }
-    return provider.getImage(name);
+    return provider.createGraphic(name);
   }
 
   @Override

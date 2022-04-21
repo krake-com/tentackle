@@ -23,7 +23,6 @@ import javafx.scene.Node;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
-import javafx.scene.image.ImageView;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.util.Callback;
@@ -65,12 +64,12 @@ public interface GuiProvider<T extends PersistentDomainObject<T>>
   ResourceBundle getBundle();
 
   /**
-   * Gets the PDO's icon.<br>
+   * Creates the PDO's icon.<br>
    * The icon is displayed in trees, for example.
    *
    * @return the icon
    */
-  ImageView createIcon();
+  Node createGraphic();
 
   /**
    * Returns whether a controller is available to edit or view this object.

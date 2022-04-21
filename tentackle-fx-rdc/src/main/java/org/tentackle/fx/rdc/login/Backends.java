@@ -171,14 +171,14 @@ public class Backends extends AbstractFxController {
       backendPane.updateView();
     });
 
-    addBackendButton.setGraphic(Fx.createImageView("add"));
+    addBackendButton.setGraphic(Fx.createGraphic("add"));
     addBackendButton.setOnAction(event -> {
       backends.getItems().add(new BackendConfiguration(application, null, null, null,null, null, null));
       backends.getSelectionModel().selectLast();
       backendName.requestFocus();
     });
 
-    removeBackendButton.setGraphic(Fx.createImageView("delete"));
+    removeBackendButton.setGraphic(Fx.createGraphic("delete"));
     removeBackendButton.setOnAction(event -> {
       BackendConfiguration current = backends.getSelectionModel().getSelectedItem();
       if (current != null) {
@@ -213,14 +213,14 @@ public class Backends extends AbstractFxController {
     driverPane.setChangeable(false);
     driverButton.setDisable(true);
 
-    addDriverButton.setGraphic(Fx.createImageView("add"));
+    addDriverButton.setGraphic(Fx.createGraphic("add"));
     addDriverButton.setOnAction(event -> {
       drivers.getItems().add(new DriverConfiguration(null, null, null));
       drivers.getSelectionModel().selectLast();
       driverName.requestFocus();
     });
 
-    removeDriverButton.setGraphic(Fx.createImageView("delete"));
+    removeDriverButton.setGraphic(Fx.createGraphic("delete"));
     removeDriverButton.setOnAction(event -> {
       DriverConfiguration current = drivers.getSelectionModel().getSelectedItem();
       if (current != null) {
@@ -233,7 +233,7 @@ public class Backends extends AbstractFxController {
       }
     });
 
-    driverButton.setGraphic(Fx.createImageView("file"));
+    driverButton.setGraphic(Fx.createGraphic("file"));
     driverButton.setOnAction(event -> {
       FileChooser fileChooser = new FileChooser();
       fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Java JAR File", "*.jar"));

@@ -19,10 +19,10 @@
 
 package org.tentackle.fx;
 
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
-import javafx.scene.image.Image;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -145,14 +145,14 @@ public interface FxFactory {
 
 
   /**
-   * Gets the given image.<br>
-   * Throws IllegalArgumentException if no such image and/or realm.
+   * Creates the graphic node for a given realm and name.<br>
+   * Throws IllegalArgumentException if no such icon and/or realm.
    *
-   * @param realm the realm, null of empty if tentackle images
-   * @param name the image name
-   * @return the image
+   * @param realm the realm, null of empty if default tentackle realm
+   * @param name the graphic name
+   * @return the graphic node
    */
-  Image getImage(String realm, String name);
+  Node createGraphic(String realm, String name);
 
 
   /**

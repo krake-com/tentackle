@@ -19,27 +19,24 @@
 
 package org.tentackle.fx;
 
-import javafx.scene.image.Image;
+import javafx.scene.Node;
 
 /**
- * Provider and cache for images.
+ * Provider for icons, images and nodes with graphical content in general.
  * <p>
- * All images are cached.
+ * Graphics are categorized in realms. The default realm is used by the framework.
+ * Applications should use their own realm.
  *
- * @author harald
+ * @see GraphicProviderService
  */
-public interface ImageProvider {
+public interface GraphicProvider {
 
   /**
-   * Gets an image.<br>
-   * There is only one image instance per name.<br>
-   * The name is a plain name, not a path and no type extension.
-   * <p>
-   * Throws IllegalArgumentException if image not found.
+   * Creates a graphic node.
    *
-   * @param name the image's name
-   * @return the image
+   * @param name the graphic's name
+   * @return the graphic node
    */
-  Image getImage(String name);
+  Node createGraphic(String name);
 
 }

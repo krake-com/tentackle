@@ -24,7 +24,6 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
-import javafx.scene.image.ImageView;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -290,24 +289,26 @@ public class Fx {
 
 
   /**
-   * Creates an image view for an image.
+   * Creates the graphic node for a given realm and name.<br>
+   * Throws IllegalArgumentException if no such icon and/or realm.
    *
-   * @param realm the realm, null or empty if tentackle images
-   * @param name the image's name
-   * @return the view
+   * @param realm the realm, null of empty if default tentackle realm
+   * @param name the graphic name
+   * @return the graphic node
    */
-  public static ImageView createImageView(String realm, String name) {
-    return new ImageView(FxFactory.getInstance().getImage(realm, name));
+  public static Node createGraphic(String realm, String name) {
+    return FxFactory.getInstance().createGraphic(realm, name);
   }
 
   /**
-   * Creates an image view for a tentackle image.
+   * Creates the graphic node for a given name and the default realm.<br>
+   * Throws IllegalArgumentException if no such icon.
    *
-   * @param name the image's name
-   * @return the view
+   * @param name the graphic name
+   * @return the graphic node
    */
-  public static ImageView createImageView(String name) {
-    return createImageView("", name);
+  public static Node createGraphic(String name) {
+    return createGraphic("", name);
   }
 
 

@@ -48,7 +48,7 @@ public class EditItem<T extends PersistentDomainObject<T>> extends MenuItem impl
    */
   public EditItem(PdoTreeCell<T> cell) {
     setText(RdcFxRdcBundle.getString("EDIT"));
-    setGraphic(Fx.createImageView("edit"));
+    setGraphic(Fx.createGraphic("edit"));
     T pdo = cell.getItem();
     if (cell.getPdoTreeItem().getGuiProvider().isEditAllowed()) {
       T pDo = pdo.reload();

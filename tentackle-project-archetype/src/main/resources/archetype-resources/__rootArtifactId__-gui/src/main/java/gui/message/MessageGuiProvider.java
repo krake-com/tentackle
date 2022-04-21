@@ -7,9 +7,9 @@
 
 package ${package}.gui.message;
 
-import ${package}.gui.${application}ImageProvider;
+import ${package}.gui.${application}GraphicProvider;
 import ${package}.pdo.td.Message;
-import javafx.scene.image.ImageView;
+import javafx.scene.Node;
 
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.Fx;
@@ -39,8 +39,8 @@ public class MessageGuiProvider extends DefaultGuiProvider<Message> {
   }
 
   @Override
-  public ImageView createIcon() {
-    return Fx.createImageView(${application}ImageProvider.REALM, "message");
+  public Node createGraphic() {
+    return Fx.createGraphic(${application}GraphicProvider.REALM, "message");
   }
 
   @Override

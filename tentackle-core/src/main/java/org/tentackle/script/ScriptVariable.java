@@ -30,9 +30,6 @@ import java.util.Set;
  */
 public class ScriptVariable {
 
-  private static final long serialVersionUID = 7698497385959487231L;
-
-
   private final String name;      // the variable name (never null)
   private Object value;           // the value
 

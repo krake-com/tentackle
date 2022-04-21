@@ -18,7 +18,7 @@
 
 package org.tentackle.fx.rdc.security;
 
-import javafx.scene.image.ImageView;
+import javafx.scene.Node;
 
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.rdc.DefaultGuiProvider;
@@ -44,8 +44,8 @@ public class SecurityGuiProvider extends DefaultGuiProvider<Security> {
   }
 
   @Override
-  public ImageView createIcon() {
-    return Fx.createImageView("security");
+  public Node createGraphic() {
+    return Fx.createGraphic("security");
   }
 
   @Override

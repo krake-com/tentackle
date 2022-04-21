@@ -302,35 +302,35 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
 
   @FXML
   private void initialize() {
-    securityButton.setGraphic(Fx.createImageView("security"));
+    securityButton.setGraphic(Fx.createGraphic("security"));
     securityButton.setOnAction(e -> security());
 
-    previousButton.setGraphic(Fx.createImageView("up"));
+    previousButton.setGraphic(Fx.createGraphic("up"));
     previousButton.setOnAction(e -> previous());
 
-    nextButton.setGraphic(Fx.createImageView("down"));
+    nextButton.setGraphic(Fx.createGraphic("down"));
     nextButton.setOnAction(e -> next());
     setPdoList(null);
 
-    treeButton.setGraphic(Fx.createImageView("browser"));
+    treeButton.setGraphic(Fx.createGraphic("browser"));
     treeButton.setOnAction(e -> tree());
 
-    findButton.setGraphic(Fx.createImageView("search"));
+    findButton.setGraphic(Fx.createGraphic("search"));
     findButton.setOnAction(e -> find());
 
-    newButton.setGraphic(Fx.createImageView("new"));
+    newButton.setGraphic(Fx.createGraphic("new"));
     newButton.setOnAction(e -> newPdo());
 
-    saveButton.setGraphic(Fx.createImageView("save"));
+    saveButton.setGraphic(Fx.createGraphic("save"));
     saveButton.setOnAction(e -> save());
 
-    deleteButton.setGraphic(Fx.createImageView("delete"));
+    deleteButton.setGraphic(Fx.createGraphic("delete"));
     deleteButton.setOnAction(e -> delete());
 
-    printButton.setGraphic(Fx.createImageView("print"));
+    printButton.setGraphic(Fx.createGraphic("print"));
     printButton.setOnAction(e -> print());
 
-    cancelButton.setGraphic(Fx.createImageView("close"));
+    cancelButton.setGraphic(Fx.createGraphic("close"));
     cancelButton.setOnAction(e -> cancel());
     cancelButton.setCancelButton(true);
   }

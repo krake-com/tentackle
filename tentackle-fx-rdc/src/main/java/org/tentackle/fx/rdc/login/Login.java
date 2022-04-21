@@ -104,16 +104,16 @@ public class Login extends AbstractFxController {
     progressBar.setVisible(false);
     setCapsLockMessage(isCapsLock());
     cancelButton.setOnAction(e -> cancel());
-    cancelButton.setGraphic(Fx.createImageView("close"));
+    cancelButton.setGraphic(Fx.createGraphic("close"));
     loginButton.setOnAction(e -> login());
-    loginButton.setGraphic(Fx.createImageView("ok"));
+    loginButton.setGraphic(Fx.createGraphic("ok"));
     usernameField.setAutoSelect(true);
     passwordField.setOnAction(e -> login());
     passwordField.setAutoSelect(true);
     // password needs listeners since it wouldn't work in unbound mode with character buffers
     passwordField.addViewToModelListener(() -> password = passwordField.getPassword());   // this clears the password in the component!
     passwordField.addModelToViewListener(() -> passwordField.setPassword(password));
-    backendButton.setGraphic(Fx.createImageView("edit"));
+    backendButton.setGraphic(Fx.createGraphic("edit"));
     backendButton.setOnAction(e -> Backends.editBackends(sessionInfo.getApplicationName(), backendFromSystemPrefs, this::loadBackendConfigurations));
     backendField.setOnAction(event -> presetUserAndPassword(backendField.getValue()));
   }

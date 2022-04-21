@@ -87,10 +87,10 @@ public class ChangePasswordView extends AbstractFxController implements DomainCo
 
   @FXML
   private void initialize() {
-    saveButton.setGraphic(Fx.createImageView("save"));
+    saveButton.setGraphic(Fx.createGraphic("save"));
     saveButton.setOnAction(e -> save());
 
-    cancelButton.setGraphic(Fx.createImageView("close"));
+    cancelButton.setGraphic(Fx.createGraphic("close"));
     cancelButton.setOnAction(e -> close());
   }
 

@@ -40,10 +40,10 @@ public class BooleanTableCellType extends AbstractTableCellType<Boolean> {
   public void updateItem(FxTableCell<?, Boolean> tableCell, Boolean item) {
     tableCell.setText(null);
     if (item) {
-      tableCell.setGraphic(Fx.createImageView("ok_mini"));
+      tableCell.setGraphic(Fx.createGraphic("ok_mini"));
     }
     else {
-      tableCell.setGraphic(Fx.createImageView("cancel_mini"));
+      tableCell.setGraphic(Fx.createGraphic("cancel_mini"));
     }
     updateAlignment(tableCell, Pos.BASELINE_CENTER);
   }
@@ -52,10 +52,10 @@ public class BooleanTableCellType extends AbstractTableCellType<Boolean> {
   public void updateItem(FxTreeTableCell<?, Boolean> tableCell, Boolean item) {
     tableCell.setText(null);
     if (item) {
-      tableCell.setGraphic(Fx.createImageView("ok_mini"));
+      tableCell.setGraphic(Fx.createGraphic("ok_mini"));
     }
     else {
-      tableCell.setGraphic(Fx.createImageView("cancel_mini"));
+      tableCell.setGraphic(Fx.createGraphic("cancel_mini"));
     }
     updateAlignment(tableCell, Pos.BASELINE_CENTER);
   }

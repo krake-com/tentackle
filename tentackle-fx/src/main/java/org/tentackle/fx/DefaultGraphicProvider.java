@@ -1,5 +1,5 @@
 /*
- * Tentackle - https://tentackle.org
+ * Tentackle - https://tentackle.org.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,22 +14,17 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
  */
 
-package org.tentackle.maven.plugin.wizard.fx;
-
-import org.tentackle.fx.DefaultImageProvider;
-import org.tentackle.fx.ImageProviderService;
+package org.tentackle.fx;
 
 /**
- * PDO browser image provider.
+ * The default graphic provider for framework-related icons.
+ *
+ * @author harald
  */
-@ImageProviderService(DataNodeImageProvider.REALM)
-public class DataNodeImageProvider extends DefaultImageProvider {
-
-  /**
-   * The admin image realm.
-   */
-  public static final String REALM = "data";
+@GraphicProviderService
+public class DefaultGraphicProvider extends ImageGraphicProvider {
 
 }

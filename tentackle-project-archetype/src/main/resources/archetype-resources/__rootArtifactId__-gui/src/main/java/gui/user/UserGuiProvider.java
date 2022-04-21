@@ -7,10 +7,10 @@
 
 package ${package}.gui.user;
 
-import ${package}.gui.${application}ImageProvider;
+import ${package}.gui.${application}GraphicProvider;
 import ${package}.pdo.md.User;
 import ${package}.pdo.md.UserGroup;
-import javafx.scene.image.ImageView;
+import javafx.scene.Node;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.TransferMode;
 
@@ -40,8 +40,8 @@ public class UserGuiProvider extends DefaultGuiProvider<User> {
   }
 
   @Override
-  public ImageView createIcon() {
-    return Fx.createImageView(${application}ImageProvider.REALM, "user");
+  public Node createGraphic() {
+    return Fx.createGraphic(${application}GraphicProvider.REALM, "user");
   }
 
   @Override
