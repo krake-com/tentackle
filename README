@@ -1,7 +1,0 @@
-
-This is the Java 8 branch.
-TT 8.x.y.z builds against Java 8, but runs on 8, 9 and 10 thanks to
-multirelease jars.
-
-The branches develop and master are for Java 11 and above.
-

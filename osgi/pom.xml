@@ -8,7 +8,7 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>8.3.0.1-SNAPSHOT</version>
+    <version>8.3.0.1</version>
   </parent>
 
   <groupId>org.tentackle</groupId>
@@ -18,7 +18,7 @@
   <packaging>pom</packaging>
 
   <properties>
-    <tentackle.version>8.3.0.1-SNAPSHOT</tentackle.version>
+    <tentackle.version>8.3.0.1</tentackle.version>
   </properties>
 
   <name>Tentackle OSGi Parent</name>
