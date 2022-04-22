@@ -84,7 +84,7 @@ public class MethodStatistics {
         try {
           StringBuilder buf = new StringBuilder();
           if (title == null) {
-            title = "Invocation statistics:";
+            title = "Invocation Statistics:";
           }
           buf.append(title);
           for (Map.Entry<MethodStatisticsKey, StatisticsResult> entry : stats.entrySet()) {

@@ -612,7 +612,7 @@ public class ManagedConnection {
       if (collectStatistics) {
         if (logStatisticsMillis > 0 && detachedSince - StatementStatistics.getSince() > logStatisticsMillis) {
           // log and clear statistics
-          StatementStatistics.log(LOGGER, Logger.Level.INFO, true);
+          StatementStatistics.log(Logger.Level.INFO, true);
         }
         // collect all statements
         if (isMDCValid()) {
