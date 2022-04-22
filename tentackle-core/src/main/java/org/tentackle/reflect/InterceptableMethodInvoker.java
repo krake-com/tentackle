@@ -98,12 +98,12 @@ public class InterceptableMethodInvoker extends MethodStatistics {
 
   @Override
   public String toString() {
-    return getName();
+    return name + " Invocations Statistics:";
   }
 
 
   /**
-   * Retuns whether statictics should be collected.
+   * Returns whether statistics should be collected.
    *
    * @return true if method invocations are counted and measured per method
    */
@@ -112,7 +112,7 @@ public class InterceptableMethodInvoker extends MethodStatistics {
   }
 
   /**
-   * Sets whether statictics should be collected.
+   * Sets whether statistics should be collected.
    *
    * @param collectStatistics true if method invocations are counted and measured per method
    */

@@ -153,13 +153,12 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
   /**
    * Logs the statics.
    *
-   * @param logger the logger
    * @param level the logging level
    * @param clear true if clear after log
    */
-  public static void log(Logger logger, Level level, boolean clear) {
+  public static void log(Level level, boolean clear) {
     try {
-      logger.log(level, null, () -> {
+      LOGGER.log(level, null, () -> {
         StringBuilder buf = new StringBuilder("SQL Statement Statistics:");
         for (StatementStatistics stat : getStatistics(clear)) {
           buf.append("\n    ");

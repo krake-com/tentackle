@@ -384,7 +384,7 @@ public abstract class AbstractServerApplication extends AbstractApplication
   public void logStatistics() {
     PdoInvocationHandler.INVOKER.logStatistics(Logger.Level.INFO, true);
     OperationInvocationHandler.INVOKER.logStatistics(Logger.Level.INFO, true);
-    StatementStatistics.log(LOGGER, Logger.Level.INFO, true);
+    StatementStatistics.log(Logger.Level.INFO, true);
   }
 
 }
