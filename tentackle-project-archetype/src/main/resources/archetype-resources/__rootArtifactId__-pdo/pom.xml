@@ -26,6 +26,12 @@
       <artifactId>${rootArtifactId}-common</artifactId>
       <version>${symbol_dollar}{project.version}</version>
     </dependency>
+
+    <dependency>
+      <!-- logger binder for testng -->
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+    </dependency>
   </dependencies>
 
   <build>

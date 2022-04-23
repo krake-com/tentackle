@@ -88,6 +88,13 @@
         <scope>test</scope>
       </dependency>
       <dependency>
+        <!-- logger binder for testng -->
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-simple</artifactId>
+        <version>${slf4j.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
         <groupId>com.h2database</groupId>
         <artifactId>h2</artifactId>
         <version>\${symbol_dollar}{h2.version}</version>
