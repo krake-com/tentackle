@@ -196,7 +196,7 @@ public class JLinkResolver {
       }
 
       if (!modulePath.isEmpty()) {
-        buf.append("\nmodulepath passed to bin/java: ");
+        buf.append("\nmodule-path passed to bin/java: ");
         boolean needComma = false;
         for (ModularArtifact artifact: modulePath) {
           if (needComma) {
@@ -302,7 +302,7 @@ public class JLinkResolver {
     /**
      * Returns whether the module path is not empty.
      *
-     * @return true if modulepath must be configured
+     * @return true if module-path must be configured
      */
     public boolean isModulePathRequired() {
       return modular && !modulePath.isEmpty();
@@ -436,7 +436,6 @@ public class JLinkResolver {
 
     for (Map.Entry<Artifact, JavaModuleDescriptor> entry: loadArtifacts().entrySet()) {
       Artifact artifact = entry.getKey();
-      File artifactFile = artifact.getFile();
       JavaModuleDescriptor moduleDescriptor = entry.getValue();
       String moduleName = moduleDescriptor.name();
 
@@ -460,8 +459,10 @@ public class JLinkResolver {
         modules.put(moduleName, new ModularArtifact(artifact, moduleDescriptor));
         addRequired(moduleName);
         for (JavaModuleDescriptor.JavaRequires requires : moduleDescriptor.requires()) {
-          addRequired(requires.name());
-          mojo.getLog().debug(moduleName + " requires " + requires.name());
+          if (requires.modifiers() == null || !requires.modifiers().contains(JavaModuleDescriptor.JavaRequires.JavaModifier.STATIC)) {
+            addRequired(requires.name());
+            mojo.getLog().debug(moduleName + " requires " + requires.name());
+          }
         }
       }
     }
@@ -570,7 +571,7 @@ public class JLinkResolver {
             name = name.substring(0, ndx); // cut extension .jar
           }
           ndx = name.lastIndexOf('-');
-          if (ndx > 0 && name.length() > ndx && Character.isDigit(name.charAt(ndx + 1))) {
+          if (ndx > 0 && name.length() > ndx + 1 && Character.isDigit(name.charAt(ndx + 1))) {
             name = name.substring(0, ndx);    // cut version
           }
           mojo.getLog().warn("missing descriptor for " + entry.getKey() + " -> creating default descriptor '" + name + "'");
