@@ -330,7 +330,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
     printButton.setGraphic(Fx.createGraphic("print"));
     printButton.setOnAction(e -> print());
 
-    cancelButton.setGraphic(Fx.createGraphic("close"));
+    cancelButton.setGraphic(Fx.createGraphic("cancel"));
     cancelButton.setOnAction(e -> cancel());
     cancelButton.setCancelButton(true);
   }

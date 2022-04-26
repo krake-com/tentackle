@@ -32,10 +32,11 @@ import javafx.scene.Node;
 public interface GraphicProvider {
 
   /**
-   * Creates a graphic node.
+   * Creates a graphic node.<br>
+   * Throws {@link FxRuntimeException}, if loading the image failed or no such image found.
    *
    * @param name the graphic's name
-   * @return the graphic node
+   * @return the graphic node, never null
    */
   Node createGraphic(String name);
 

@@ -90,4 +90,6 @@
   -fx-opacity: -tt-disabled-opacity;
 }
 
-
+.ikonli-font-icon {
+  -fx-icon-size: 16;
+}

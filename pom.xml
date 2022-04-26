@@ -84,6 +84,7 @@
     <javac.version>17</javac.version>
 
     <javafx.version>18.0.1</javafx.version>
+    <ikonli.version>12.3.1</ikonli.version>
     <ow2.asm.version>9.3</ow2.asm.version>
     <groovy.version>3.0.10</groovy.version>
     <maven.version>3.8.5</maven.version>
@@ -168,6 +169,17 @@
         <groupId>org.openjfx</groupId>
         <artifactId>javafx-fxml</artifactId>
         <version>${javafx.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.kordamp.ikonli</groupId>
+        <artifactId>ikonli-javafx</artifactId>
+        <version>${ikonli.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.kordamp.ikonli</groupId>
+        <artifactId>ikonli-materialdesign-pack</artifactId>
+        <version>${ikonli.version}</version>
       </dependency>
 
       <dependency>

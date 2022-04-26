@@ -18,18 +18,47 @@
 
 package org.tentackle.maven.plugin.wizard.fx;
 
-import org.tentackle.fx.DefaultGraphicProvider;
 import org.tentackle.fx.GraphicProviderService;
+import org.tentackle.fx.IkonliGraphicProvider;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * PDO browser image provider.
+ * PDO browser image provider.<br>
+ * Bases on ikonli materialdesign pack, which is used by tentackle-fx.
  */
 @GraphicProviderService(DataNodeGraphicProvider.REALM)
-public class DataNodeGraphicProvider extends DefaultGraphicProvider {
+public class DataNodeGraphicProvider extends IkonliGraphicProvider {
 
   /**
    * The admin image realm.
    */
   public static final String REALM = "data";
+
+
+  /**
+   * Maps Tentackle symbolic names to icon font names.
+   */
+  private Map<String, String> nameMap;
+
+  @Override
+  protected String translateName(String name) {
+    String transName = getNameMap().get(name);
+    return transName != null ? transName : name;
+  }
+
+  private Map<String, String> getNameMap() {
+    if (nameMap == null) {
+      Map<String, String> nm = new HashMap<>();
+
+      nm.put("DataItem", "mdi-brightness-auto");
+      nm.put("DataList", "mdi-format-list-bulleted");
+      nm.put("DataObject", "mdi-file-tree");
+
+      nameMap = nm;
+    }
+    return nameMap;
+  }
 
 }
