@@ -39,9 +39,9 @@ public class ${application}GraphicProvider extends IkonliGraphicProvider {
     if (nameMap == null) {
       Map<String, String> nm = new HashMap<>();
 
-      nm.put("message", "mdi-message-outline");
-      nm.put("user", "mdi-account");
-      nm.put("usergroup", "mdi-account-multiple");
+      nm.put("message", "mdi2m-message-outline");
+      nm.put("user", "mdi2a-account");
+      nm.put("usergroup", "mdi2a-account-multiple");
 
       nameMap = nm;
     }
