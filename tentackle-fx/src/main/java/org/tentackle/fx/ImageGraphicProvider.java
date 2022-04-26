@@ -19,10 +19,11 @@
 
 package org.tentackle.fx;
 
+import javafx.scene.Node;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
-import org.tentackle.log.Logger;
+import org.tentackle.misc.Holder;
 import org.tentackle.reflect.ReflectionHelper;
 
 import java.io.IOException;
@@ -37,8 +38,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ImageGraphicProvider implements GraphicProvider {
 
-  private static final Logger LOGGER = Logger.get(ImageGraphicProvider.class);
-
   /**
    * File type EXTENSIONS to try.
    */
@@ -49,7 +48,7 @@ public class ImageGraphicProvider implements GraphicProvider {
   /**
    * The image cache.
    */
-  private final Map<String, Image> imageMap;
+  private final Map<String, Holder<Image>> imageMap;
 
   /**
    * Path leading to resources.
@@ -87,15 +86,19 @@ public class ImageGraphicProvider implements GraphicProvider {
 
 
   @Override
-  public ImageView createGraphic(String name) {
-    return new ImageView(getImage(name));
+  public Node createGraphic(String name) {
+    Image image = getImage(name);
+    if (image == null) {
+      throw new FxRuntimeException("no such image '" + name + "'");
+    }
+    return new ImageView(image);
   }
 
   /**
    * Returns the cached image.
    *
    * @param name the image name
-   * @return the image
+   * @return the image, null if no such image found
    */
   protected Image getImage(String name) {
     // cut path, if any
@@ -109,27 +112,27 @@ public class ImageGraphicProvider implements GraphicProvider {
       name = name.substring(0, ndx);
     }
 
-    Image image = imageMap.get(name);
-    if (image == null) {
-      for (String type: getExtensions()) {
+    Holder<Image> imageHolder = imageMap.get(name);
+
+    if (imageHolder == null) {
+      imageHolder = new Holder<>();
+      for (String type : getExtensions()) {
         String url = imagePath + name + type;
         // with JPMS we must load the input stream in our own module.
         try (InputStream is = getClass().getResourceAsStream(url)) {
           if (is != null) {
-            image = new Image(is);
-            imageMap.put(name, image);
+            imageHolder.accept(new Image(is));
             break;
           }
         }
         catch (IOException ix) {
-          LOGGER.warning("closing input stream failed for " + url, ix);
+          throw new FxRuntimeException("loading image failed for " + url, ix);
         }
       }
-      if (image == null) {
-        throw new IllegalArgumentException("no such image '" + name + "'");
-      }
+      imageMap.put(name, imageHolder);
     }
-    return image;
+
+    return imageHolder.get();
   }
 
 }

@@ -21,6 +21,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.MenuItem;
 import javafx.scene.Node;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -29,6 +31,7 @@ import org.tentackle.app.AbstractApplication;
 import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxControllerService;
+import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.component.FxButton;
 import org.tentackle.fx.rdc.Rdc;
@@ -42,6 +45,8 @@ import org.tentackle.prefs.PersistedPreferencesFactory;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.pdo.Security;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ResourceBundle;
 
 /**
@@ -93,7 +98,6 @@ public class MainController extends AbstractFxController implements DomainContex
   private ResourceBundle resources;
 
 
-
   @Override
   public ${application}DomainContext getDomainContext() {
     return (${application}DomainContext) AbstractApplication.getRunningApplication().getDomainContext();
@@ -102,15 +106,14 @@ public class MainController extends AbstractFxController implements DomainContex
   @FXML
   public void initialize() {
 
-    Node centerImage = Fx.createGraphic(${application}GraphicProvider.REALM, "tentackle");
-    borderPane.setCenter(centerImage);
+    borderPane.setCenter(createCenterNode());
 
     securityManagerItem.setGraphic(Fx.createGraphic("security"));
     securityManagerItem.setDisable(!SecurityDialogFactory.getInstance().isDialogAllowed(getDomainContext()));
     securityManagerItem.setOnAction(e ->
             SecurityDialogFactory.getInstance().showDialog(on(Security.class).getClassId(), getDomainContext()));
 
-    sessionsItem.setGraphic(Fx.createGraphic("modem"));
+    sessionsItem.setGraphic(Fx.createGraphic("session"));
     sessionsItem.setDisable(!SecurityFactory.getInstance().getSecurityManager().evaluate(
         getDomainContext(), SecurityFactory.getInstance().getExecutePermission(), AdminExtension.class).isAccepted());
     sessionsItem.setOnAction(e -> manageSessions());
@@ -150,7 +153,6 @@ public class MainController extends AbstractFxController implements DomainContex
     aboutItem.setOnAction(e -> AboutView.showDialog());
   }
 
-
   /**
    * Asks the user whether to exit the application and does so if yes.
    */
@@ -179,14 +181,12 @@ public class MainController extends AbstractFxController implements DomainContex
     Rdc.displaySearchStage(on(clazz), Fx.getStage(getView()), false);
   }
 
-
   /**
    * Shows the help browser.
    */
   private void help() {
     FxUtilities.getInstance().showHelp(null);
   }
-
 
   /**
    * Manages server sessions.
@@ -203,6 +203,16 @@ public class MainController extends AbstractFxController implements DomainContex
     stage.setScene(scene);
     stage.setTitle(resources.getString("Sessions"));
     stage.show();
+  }
+
+  private Node createCenterNode() {
+    // just to show something nice (to be replaced by some application relevant stuff)
+    try (InputStream is = getClass().getResourceAsStream("/${packageInPathFormat}/gui/images/tentackle.png")) {
+      return new ImageView(new Image(is));
+    }
+    catch (IOException iox) {
+      throw new FxRuntimeException("loading center image failed", iox);
+    }
   }
 
 }

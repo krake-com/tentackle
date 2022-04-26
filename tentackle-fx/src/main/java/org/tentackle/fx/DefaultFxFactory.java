@@ -350,6 +350,11 @@ public class DefaultFxFactory implements FxFactory {
         ((FxContainer) view).setController(controller);
       }
 
+      if (view.getId() == null) {
+        // set the FX-ID to allow CSS styling
+        view.setId(controller.getClass().getSimpleName());
+      }
+
       if (singleton) {
         controllers.put(controllerClass, controller);
         LOGGER.info("controller {0} added to singletons", () -> controllerClass.getSimpleName());

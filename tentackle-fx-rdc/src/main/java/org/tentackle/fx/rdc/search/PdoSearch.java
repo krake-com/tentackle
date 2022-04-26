@@ -813,7 +813,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
       }
     });
 
-    filterButton.setGraphic(Fx.createGraphic("search"));
+    filterButton.setGraphic(Fx.createGraphic("filter"));
     filterButton.setOnAction(e -> filterResult());
     filterField.setOnAction(e -> filterButton.doClick());
 

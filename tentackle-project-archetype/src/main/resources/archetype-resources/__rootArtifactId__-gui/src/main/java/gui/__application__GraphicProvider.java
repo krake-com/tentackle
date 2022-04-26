@@ -7,18 +7,45 @@
 
 package ${package}.gui;
 
-import org.tentackle.fx.DefaultGraphicProvider;
+import org.tentackle.fx.IkonliGraphicProvider;
 import org.tentackle.fx.GraphicProviderService;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Application specific icon provider.
  */
 @GraphicProviderService(${application}GraphicProvider.REALM)
-public class ${application}GraphicProvider extends DefaultGraphicProvider {
+public class ${application}GraphicProvider extends IkonliGraphicProvider {
 
   /**
    * The application's realm.
    */
   public static final String REALM = "${application}";
+
+
+
+  @Override
+  protected String translateName(String name) {
+    String transName = getNameMap().get(name);
+    return transName != null ? transName : name;
+  }
+
+
+  private Map<String, String> nameMap;
+
+  private Map<String, String> getNameMap() {
+    if (nameMap == null) {
+      Map<String, String> nm = new HashMap<>();
+
+      nm.put("message", "mdi-message-outline");
+      nm.put("user", "mdi-account");
+      nm.put("usergroup", "mdi-account-multiple");
+
+      nameMap = nm;
+    }
+    return nameMap;
+  }
 
 }
