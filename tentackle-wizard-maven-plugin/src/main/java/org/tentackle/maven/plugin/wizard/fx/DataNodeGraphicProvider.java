@@ -42,23 +42,30 @@ public class DataNodeGraphicProvider extends IkonliGraphicProvider {
    */
   private Map<String, String> nameMap;
 
+  /**
+   * Gets the symbolic name map.
+   *
+   * @return the map of symbolic to icon pack names
+   */
+  protected Map<String, String> getNameMap() {
+    if (nameMap == null) {
+      Map<String, String> nm = new HashMap<>();
+
+      nm.put("DataItem", "mdi2b-brightness-auto");
+      nm.put("DataList", "mdi2f-format-list-bulleted");
+      nm.put("DataObject", "mdi2f-file-tree");
+
+      nameMap = nm;
+    }
+    return nameMap;
+  }
+
   @Override
   protected String translateName(String name) {
     String transName = getNameMap().get(name);
     return transName != null ? transName : name;
   }
 
-  private Map<String, String> getNameMap() {
-    if (nameMap == null) {
-      Map<String, String> nm = new HashMap<>();
 
-      nm.put("DataItem", "mdi-brightness-auto");
-      nm.put("DataList", "mdi-format-list-bulleted");
-      nm.put("DataObject", "mdi-file-tree");
-
-      nameMap = nm;
-    }
-    return nameMap;
-  }
 
 }

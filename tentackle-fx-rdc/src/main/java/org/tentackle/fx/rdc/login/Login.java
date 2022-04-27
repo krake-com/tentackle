@@ -104,9 +104,9 @@ public class Login extends AbstractFxController {
     progressBar.setVisible(false);
     setCapsLockMessage(isCapsLock());
     cancelButton.setOnAction(e -> cancel());
-    cancelButton.setGraphic(Fx.createGraphic("close"));
+    cancelButton.setGraphic(Fx.createGraphic("cancel"));
     loginButton.setOnAction(e -> login());
-    loginButton.setGraphic(Fx.createGraphic("ok"));
+    loginButton.setGraphic(Fx.createGraphic("login"));
     usernameField.setAutoSelect(true);
     passwordField.setOnAction(e -> login());
     passwordField.setAutoSelect(true);
