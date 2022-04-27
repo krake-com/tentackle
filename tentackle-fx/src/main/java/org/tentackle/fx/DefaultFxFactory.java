@@ -140,7 +140,7 @@ public class DefaultFxFactory implements FxFactory {
           graphicProviders.putIfAbsent(svc.value(), clazz.getDeclaredConstructor().newInstance());
         }
         else {
-          LOGGER.severe("{0} not annotated with @ImageProviderService", clazz);
+          LOGGER.severe("{0} not annotated with @GraphicProviderService", clazz);
         }
       }
     }

@@ -20,12 +20,14 @@ package org.tentackle.fx;
 
 import org.testng.annotations.Test;
 
-public class DefaultGraphicProviderTest extends DefaultGraphicProvider {
+public class DefaultGraphicProviderTest {
+
+  private final DefaultGraphicProvider provider = new DefaultGraphicProvider();
 
   @Test
   public void testIcons() {
-    for (String name : createNameMap().keySet()) {
-      createGraphic(name);
+    for (String name : provider.createNameMap().keySet()) {
+      provider.createGraphic(name);
     }
   }
 }

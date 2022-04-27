@@ -37,6 +37,18 @@ public class DefaultGraphicProvider extends IkonliGraphicProvider {
    */
   private Map<String, String> nameMap;
 
+  /**
+   * Gets the symbolic name map.
+   *
+   * @return the map of symbolic to icon pack names
+   */
+  protected Map<String, String> getNameMap() {
+    if (nameMap == null) {
+      nameMap = createNameMap();
+    }
+    return nameMap;
+  }
+
   @Override
   protected String translateName(String name) {
     String transName = getNameMap().get(name);
@@ -54,20 +66,21 @@ public class DefaultGraphicProvider extends IkonliGraphicProvider {
     nm.put("about", "mdi2i-information-outline");
     nm.put("add", "mdi2p-plus");
     nm.put("browser", "mdi2i-information-outline");
-    nm.put("cancel", "mdi2c-close");
-    nm.put("checked", "mdi2c-checkbox-marked-outline");
-    nm.put("close", "mdi2c-close-circle-outline");
-    nm.put("collapse", "mdi2a-arrow-collapse");
+    nm.put("cancel", "mdi2c-cancel");
+    nm.put("checked", "mdi2c-checkbox-marked");
+    nm.put("close", "mdi2c-close");
+    nm.put("collapse", "mdi2a-arrow-collapse-vertical");
     nm.put("copy", "mdi2c-content-copy");
     nm.put("cut", "mdi2c-content-cut");
     nm.put("delete", "mdi2d-delete");
     nm.put("down", "mdi2c-chevron-down");
-    nm.put("edit", "mdi2t-table-edit");
+    nm.put("edit", "mdi2f-file-document-edit-outline");
     nm.put("exit", "mdi2p-power");
-    nm.put("expand", "mdi2a-arrow-expand");
+    nm.put("expand", "mdi2a-arrow-expand-vertical");
     nm.put("file", "mdi2f-file-outline");
     nm.put("filter", "mdi2f-filter-outline");
     nm.put("help", "mdi2h-help");
+    nm.put("login", "mdi2l-login");
     nm.put("new", "mdi2s-shape-rectangle-plus");
     nm.put("ok", "mdi2c-check");
     nm.put("password", "mdi2k-key");
@@ -87,13 +100,6 @@ public class DefaultGraphicProvider extends IkonliGraphicProvider {
     nm.put("up", "mdi2c-chevron-up");
 
     return nm;
-  }
-
-  private Map<String, String> getNameMap() {
-    if (nameMap == null) {
-      nameMap = createNameMap();
-    }
-    return nameMap;
   }
 
 }
