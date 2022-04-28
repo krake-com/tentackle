@@ -75,7 +75,7 @@ public class DefaultGraphicProvider extends IkonliGraphicProvider {
     nm.put("delete", "mdi2d-delete");
     nm.put("down", "mdi2c-chevron-down");
     nm.put("edit", "mdi2f-file-document-edit-outline");
-    nm.put("exit", "mdi2p-power");
+    nm.put("exit", "mdi2l-logout");
     nm.put("expand", "mdi2a-arrow-expand-vertical");
     nm.put("file", "mdi2f-file-outline");
     nm.put("filter", "mdi2f-filter-outline");
