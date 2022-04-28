@@ -27,7 +27,7 @@ import org.kordamp.ikonli.javafx.FontIcon;
  *
  * @author harald
  */
-public class IkonliGraphicProvider implements GraphicProvider {
+public abstract class IkonliGraphicProvider implements GraphicProvider {
 
   @Override
   public Node createGraphic(String name) {
@@ -48,8 +48,6 @@ public class IkonliGraphicProvider implements GraphicProvider {
    * @param name the symbolic name
    * @return the possibly translated name
    */
-  protected String translateName(String name) {
-    return name;
-  }
+  protected abstract String translateName(String name);
 
 }

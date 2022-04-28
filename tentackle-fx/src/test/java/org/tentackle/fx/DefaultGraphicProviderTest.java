@@ -26,7 +26,7 @@ public class DefaultGraphicProviderTest {
 
   @Test
   public void testIcons() {
-    for (String name : provider.createNameMap().keySet()) {
+    for (String name : provider.getNameMap().keySet()) {
       provider.createGraphic(name);
     }
   }

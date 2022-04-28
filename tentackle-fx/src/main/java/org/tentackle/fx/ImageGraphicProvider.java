@@ -32,11 +32,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Implementation of a graphic provider based on image files.
+ * Base implementation of a graphic provider based on image files.
  *
  * @author harald
  */
-public class ImageGraphicProvider implements GraphicProvider {
+public abstract class ImageGraphicProvider implements GraphicProvider {
 
   /**
    * File type EXTENSIONS to try.
