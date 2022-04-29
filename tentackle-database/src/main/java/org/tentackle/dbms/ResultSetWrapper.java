@@ -67,8 +67,8 @@ public class ResultSetWrapper implements AutoCloseable {
   /**
    * Enables a warning logging if result sets are longer open than given milliseconds.<br>
    * 0 to disable (default).<br>
-   * Useful to detect programming errors when result sets are kept open for a long time (consuming an attached connection),
-   * for example due to expensive processing while reading the result set.
+   * Useful to detect unexpected database write locks or programming errors when result sets are kept open
+   * for a long time (consuming an attached connection), for example, due to expensive processing while reading the result set.
    */
   public static long warnOpenMillis = 0L;
 
@@ -150,7 +150,7 @@ public class ResultSetWrapper implements AutoCloseable {
               if (millis > warnOpenMillis) {
                 if (me != null) {
                   // log with stacktrace of closing caller
-                  LOGGER.warning("result set wrapper " + me + " open for " + millis + "ms", new PersistenceException());
+                  LOGGER.warning("result set wrapper " + me + " open for " + millis + "ms", new PersistenceException(db, "late closing"));
                 }
                 else {
                   // closed by cleanup (stacktrace makes no sense)
