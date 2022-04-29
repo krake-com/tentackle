@@ -202,7 +202,6 @@ public class DateTimeUtilitiesTest {
     localDateTime = DateTimeUtilities.parseLocalDateTime("+2d0h");
     LocalDateTime localDateTimeNow = LocalDateTime.now();
     assertEquals(localDateTime.getYear(), localDateTimeNow.getYear());
-    assertEquals(localDateTime.getMonthValue(), localDateTimeNow.getMonthValue());
     assertEquals(localDateTime.minusDays(2).getDayOfMonth(), localDateTimeNow.getDayOfMonth());
     assertEquals(localDateTime.getHour(), 0);
     assertEquals(localDateTime.getMinute(), 0);
@@ -210,7 +209,6 @@ public class DateTimeUtilitiesTest {
     assertEquals(localDateTime.getNano(), 0);
     localDateTime = DateTimeUtilities.parseLocalDateTime("+2d0");   // h can be omitted
     assertEquals(localDateTime.getYear(), localDateTimeNow.getYear());
-    assertEquals(localDateTime.getMonthValue(), localDateTimeNow.getMonthValue());
     assertEquals(localDateTime.minusDays(2).getDayOfMonth(), localDateTimeNow.getDayOfMonth());
     assertEquals(localDateTime.getHour(), 0);
     assertEquals(localDateTime.getMinute(), 0);
@@ -218,7 +216,6 @@ public class DateTimeUtilitiesTest {
     assertEquals(localDateTime.getNano(), 0);
     localDateTime = DateTimeUtilities.parseLocalDateTime("+2d0m");
     assertEquals(localDateTime.getYear(), localDateTimeNow.getYear());
-    assertEquals(localDateTime.getMonthValue(), localDateTimeNow.getMonthValue());
     assertEquals(localDateTime.minusDays(2).getDayOfMonth(), localDateTimeNow.getDayOfMonth());
     assertEquals(localDateTime.getHour(), localDateTimeNow.getHour());
     assertEquals(localDateTime.getMinute(), 0);
@@ -226,7 +223,6 @@ public class DateTimeUtilitiesTest {
     assertEquals(localDateTime.getNano(), 0);
     localDateTime = DateTimeUtilities.parseLocalDateTime("+2d30s");
     assertEquals(localDateTime.getYear(), localDateTimeNow.getYear());
-    assertEquals(localDateTime.getMonthValue(), localDateTimeNow.getMonthValue());
     assertEquals(localDateTime.minusDays(2).getDayOfMonth(), localDateTimeNow.getDayOfMonth());
     assertEquals(localDateTime.getHour(), localDateTimeNow.getHour());
     assertEquals(localDateTime.getMinute(), localDateTimeNow.getMinute());
