@@ -21,43 +21,43 @@ package org.tentackle.log;
 import org.tentackle.misc.TimeKeeper;
 
 /**
- * Method statistics result.
+ * Statistics result for execution count and durations.
  *
  * @author harald
  */
 public class StatisticsResult {
 
-  private long count;               // invocation count
-  private TimeKeeper minTimeKeeper;     // the shorted duration
-  private TimeKeeper maxTimeKeeper;     // the longest duration
-  private TimeKeeper totalTimeKeeper;   // total duration
+  private long count;                 // invocation count
+  private TimeKeeper minDuration;     // the shortest duration
+  private TimeKeeper maxDuration;     // the longest duration
+  private TimeKeeper totalDuration;   // total duration
 
 
   /**
    * Count invocations.
    *
+   * @param duration the duration
    * @param count the number of invocations
-   * @param timeKeeper the duration
    */
-  public void count(TimeKeeper timeKeeper, int count) {
+  public void count(TimeKeeper duration, int count) {
     if (count <= 1) {
-      count(timeKeeper);
+      count(duration);
     }
     else {
-      TimeKeeper singleTimeKeeper = timeKeeper.clone().divide(count);
+      TimeKeeper singleTimeKeeper = duration.clone().divide(count);
       long nanos = singleTimeKeeper.nanos() / count;
-      if (minTimeKeeper == null || minTimeKeeper.nanos() > nanos) {
-        minTimeKeeper = singleTimeKeeper;
+      if (minDuration == null || minDuration.nanos() > nanos) {
+        minDuration = singleTimeKeeper;
       }
-      if (maxTimeKeeper == null || maxTimeKeeper.nanos() < nanos) {
-        maxTimeKeeper = singleTimeKeeper;
+      if (maxDuration == null || maxDuration.nanos() < nanos) {
+        maxDuration = singleTimeKeeper;
       }
       this.count += count;
-      if (totalTimeKeeper == null) {
-        totalTimeKeeper = timeKeeper.clone();
+      if (totalDuration == null) {
+        totalDuration = duration.clone();
       }
       else {
-        totalTimeKeeper.add(timeKeeper);
+        totalDuration.add(duration);
       }
     }
   }
@@ -65,22 +65,22 @@ public class StatisticsResult {
   /**
    * Count an invocation.
    *
-   * @param timeKeeper the duration
+   * @param duration the duration
    */
-  public void count(TimeKeeper timeKeeper) {
-    long nanos = timeKeeper.nanos();
-    if (minTimeKeeper == null || minTimeKeeper.nanos() > nanos) {
-      minTimeKeeper = timeKeeper.clone();
+  public void count(TimeKeeper duration) {
+    long nanos = duration.nanos();
+    if (minDuration == null || minDuration.nanos() > nanos) {
+      minDuration = duration.clone();
     }
-    if (maxTimeKeeper == null || maxTimeKeeper.nanos() < nanos) {
-      maxTimeKeeper = timeKeeper.clone();
+    if (maxDuration == null || maxDuration.nanos() < nanos) {
+      maxDuration = duration.clone();
     }
     count++;
-    if (totalTimeKeeper == null) {
-      totalTimeKeeper = timeKeeper.clone();
+    if (totalDuration == null) {
+      totalDuration = duration.clone();
     }
     else {
-      totalTimeKeeper.add(timeKeeper);
+      totalDuration.add(duration);
     }
   }
 
@@ -90,16 +90,16 @@ public class StatisticsResult {
    * @return the minimum duration.
    */
   public TimeKeeper getMinDuration() {
-    return minTimeKeeper;
+    return minDuration;
   }
 
   /**
-   * Gets the maximum durations.
+   * Gets the maximum duration.
    *
-   * @return the maximum durations
+   * @return the maximum duration
    */
   public TimeKeeper getMaxDuration() {
-    return maxTimeKeeper;
+    return maxDuration;
   }
 
   /**
@@ -108,7 +108,7 @@ public class StatisticsResult {
    * @return the total duration
    */
   public TimeKeeper getTotalDuration() {
-    return totalTimeKeeper;
+    return totalDuration;
   }
 
   /**
@@ -118,6 +118,25 @@ public class StatisticsResult {
    */
   public long getCount() {
     return count;
+  }
+
+  /**
+   * Returns whether the result is valid.
+   *
+   * @return true if valid result
+   */
+  public boolean isValid() {
+    return count > 0;
+  }
+
+
+  @Override
+  public String toString() {
+    return isValid() ?
+           getMinDuration().millisToString() + " " + getMaxDuration().millisToString() + " " +
+           getTotalDuration().millisToString() + " ms / " + getCount()
+                     :
+           "<invalid>";
   }
 
 }

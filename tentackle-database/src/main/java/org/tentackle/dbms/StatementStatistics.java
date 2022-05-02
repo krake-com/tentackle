@@ -21,7 +21,6 @@ package org.tentackle.dbms;
 import org.tentackle.common.Compare;
 import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;
-import org.tentackle.log.StatisticsResult;
 import org.tentackle.misc.TimeKeeper;
 
 import java.util.HashMap;
@@ -85,21 +84,21 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
     List<Map<Integer, Object>> batchParameters = history.getBatchParameters();
     if (withParameters) {
       if (batchParameters != null && !batchParameters.isEmpty()) {    // size must be > 0!
-        TimeKeeper timeKeeper = history.getDuration().clone().divide(batchParameters.size());
+        TimeKeeper singleDuration = history.getExecutionDuration().clone().divide(batchParameters.size());
         for (Map<Integer, Object> parameters : batchParameters) {
-          collect(new StatementStatistics(history.getSql(), history.getTxName(), parameters), timeKeeper);
+          collect(new StatementStatistics(history.getSql(), history.getTxName(), parameters), singleDuration);
         }
       }
       else {
-        collect(new StatementStatistics(history.getSql(), history.getTxName(), history.getParameters()), history.getDuration());
+        collect(new StatementStatistics(history.getSql(), history.getTxName(), history.getParameters()), history);
       }
     }
     else {
       if (batchParameters != null && !batchParameters.isEmpty()) {
-        collect(new StatementStatistics(history.getSql(), history.getTxName(), null), history.getDuration(), batchParameters.size());
+        collect(new StatementStatistics(history.getSql(), history.getTxName(), null), history.getExecutionDuration(), batchParameters.size());
       }
       else {
-        collect(new StatementStatistics(history.getSql(), history.getTxName(), null), history.getDuration());
+        collect(new StatementStatistics(history.getSql(), history.getTxName(), null), history);
       }
     }
   }
@@ -110,6 +109,10 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
 
   private static void collect(StatementStatistics key, TimeKeeper timeKeeper) {
     STAT_MAP.computeIfAbsent(key, k -> k).countInvocation(timeKeeper);
+  }
+
+  private static void collect(StatementStatistics key, StatementHistory history) {
+    STAT_MAP.computeIfAbsent(key, k -> k).countInvocation(history);
   }
 
 
@@ -179,11 +182,11 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
   // ----------------- end static section ---------------------------------
 
 
-  private final int instanceNumber;               // the unique instance number
-  private final String sql;                       // the SQL statement
-  private final String txName;                    // transaction name
-  private final Map<Integer,Object> parameters;   // execution parameters
-  private final StatisticsResult statResult;      // statistics result
+  private final int instanceNumber;                     // the unique instance number
+  private final String sql;                             // the SQL statement
+  private final String txName;                          // transaction name
+  private final Map<Integer,Object> parameters;         // execution parameters
+  private final StatementStatisticsResult statResult;   // statistics result
 
 
   /**
@@ -198,7 +201,7 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
     this.sql = sql;
     this.txName = txName;
     this.parameters = parameters;
-    this.statResult = new StatisticsResult();
+    this.statResult = new StatementStatisticsResult();
   }
 
 
@@ -206,22 +209,38 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
    * Count invocations and duration of a statement.
    *
    * @param count the number of invocations
-   * @param timeKeeper the execution time in milliseconds
+   * @param duration the execution time in milliseconds
    */
-  public void countInvocation(TimeKeeper timeKeeper, int count) {
-    if (timeKeeper != null && timeKeeper.isValid()) {
-      statResult.count(timeKeeper, count);
+  public void countInvocation(TimeKeeper duration, int count) {
+    if (duration != null && duration.isValid()) {
+      statResult.count(duration, count);
     }
   }
 
   /**
-   * Count an invocation.
+   * Count a statement execution duration.
    *
-   * @param timeKeeper the execution time in milliseconds
+   * @param duration the statement duration
    */
-  public void countInvocation(TimeKeeper timeKeeper) {
-    if (timeKeeper != null && timeKeeper.isValid()) {
-      statResult.count(timeKeeper);
+  public void countInvocation(TimeKeeper duration) {
+    if (duration != null && duration.isValid()) {
+      statResult.count(duration);
+    }
+  }
+
+  /**
+   * Counts an invocation with optional fetch statistics.
+   *
+   * @param history the statement
+   */
+  public void countInvocation(StatementHistory history) {
+    TimeKeeper duration = history.getExecutionDuration();
+    if (duration != null && duration.isValid()) {
+      statResult.count(duration);
+      TimeKeeper fetchDuration = history.getFetchDuration();
+      if (fetchDuration != null) {    // if query
+        statResult.countFetch(fetchDuration, history.getFetchCount());
+      }
     }
   }
 
@@ -231,7 +250,7 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
    *
    * @return the statistic result
    */
-  public StatisticsResult getStatistics() {
+  public StatementStatisticsResult getStatistics() {
     return statResult;
   }
 
@@ -310,36 +329,31 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
   @Override
   public String toString() {
     StringBuilder buf = new StringBuilder();
-    if (statResult.getMinDuration() != null &&
-        statResult.getMaxDuration() != null &&
-        statResult.getTotalDuration() != null) {
-
-      buf.append(">SQL-Stats: ").
-          append(statResult.getMinDuration().millisToString()).
-          append(' ').
-          append(statResult.getMaxDuration().millisToString()).
-          append(' ').
-          append(statResult.getTotalDuration().millisToString()).
-          append(" ms / ").
-          append(statResult.getCount()).
-          append(" x ").
-          append(sql == null ? "<null>" : sql);
+    if (statResult.isValid()) {
+      buf.append(">SQL-Stats: ").append(statResult).append(" x ");
+      if (sql == null) {
+        buf.append("<null>");
+      }
+      else {
+        buf.append(sql);
+      }
 
       if (parameters != null && !parameters.isEmpty()) {
         for (Integer pos : new TreeSet<>(parameters.keySet())) {
-          buf.append(", ").
-              append(pos).
-              append("='");
+          buf.append(", ").append(pos).append("='");
           Object value = parameters.get(pos);
-          buf.append(value == null ? "<null>" : value.toString()).
-              append("'");
+          if (value == null) {
+            buf.append("<null>");
+          }
+          else {
+            buf.append(value);
+          }
+          buf.append("'");
         }
       }
 
       if (txName != null) {
-        buf.append(" [").
-            append(txName).
-            append(']');
+        buf.append(" [").append(txName).append(']');
       }
     }
     return buf.toString();

@@ -89,15 +89,14 @@ public class MethodStatistics {
           buf.append(title);
           for (Map.Entry<MethodStatisticsKey, StatisticsResult> entry : stats.entrySet()) {
             StatisticsResult result = entry.getValue();
-            MethodStatisticsKey key = entry.getKey();
-            buf.append('\n').append(tag).
-                append(result.getMinDuration().millisToString()).append(' ').
-                append(result.getMaxDuration().millisToString()).append(' ').
-                append(result.getTotalDuration().millisToString()).
-                append(" ms / ").append(result.getCount()).append(" x ").
-                append(ReflectionHelper.methodToString(key.getMethod()));
-            if (!key.getServicedClass().equals(key.getMethod().getDeclaringClass())) {
-              buf.append(" for ").append(key.getServicedClass().getSimpleName());
+            if (result.isValid()) {
+              MethodStatisticsKey key = entry.getKey();
+              buf.append('\n').append(tag)
+                 .append(result).append(" x ")
+                 .append(ReflectionHelper.methodToString(key.getMethod()));
+              if (!key.getServicedClass().equals(key.getMethod().getDeclaringClass())) {
+                buf.append(" for ").append(key.getServicedClass().getSimpleName());
+              }
             }
           }
           if (clear) {

@@ -105,7 +105,7 @@ public class StatementWrapper implements AutoCloseable {
   /**
    * Returns whether parallel execution on same connection should be logged.
    *
-   * @see ManagedConnection#logLevelForParallelOpenResultSets
+   * @see ManagedConnection#getLogLevelForParallelOpenResultSets()
    * @return true if parallel is select ok
    */
   public boolean isParallelOk() {
@@ -410,11 +410,12 @@ public class StatementWrapper implements AutoCloseable {
   /**
    * Creates a result set wrapper from a result set.
    *
+   * @param history the statement history
    * @param jdbcResultSet the low-level jdbc result set
    * @return the wrapper
    */
-  ResultSetWrapper createResultSetWrapper(ResultSet jdbcResultSet) {
-    ResultSetWrapper rs = new ResultSetWrapper(this, jdbcResultSet);
+  ResultSetWrapper createResultSetWrapper(StatementHistory history, ResultSet jdbcResultSet) {
+    ResultSetWrapper rs = new ResultSetWrapper(this, history, jdbcResultSet);
     con.addResultSet(rs);
     openResultSet = new WeakReference<>(rs);
     return rs;
@@ -458,7 +459,7 @@ public class StatementWrapper implements AutoCloseable {
         // returns true if autocommit on, i.e. we were not within a tx and begin() started a new one.
       }
       StatementHistory history = con.logStatementHistory(this, sql);
-      ResultSetWrapper resultSet = createResultSetWrapper(executeQueryImpl(sql));
+      ResultSetWrapper resultSet = createResultSetWrapper(history, executeQueryImpl(sql));
       history.end();
       if (withinTx) {
         resultSet.setCommitOnCloseVoucher(true, txVoucher);  // commit tx on closing the resultset
