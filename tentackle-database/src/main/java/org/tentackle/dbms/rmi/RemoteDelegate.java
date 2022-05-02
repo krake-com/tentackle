@@ -16,8 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Created on November 22, 2003, 12:53 PM
-
 package org.tentackle.dbms.rmi;
 
 import java.rmi.Remote;

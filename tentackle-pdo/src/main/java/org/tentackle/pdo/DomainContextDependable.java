@@ -16,8 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Created on September 6, 2002, 2:06 PM
-
 package org.tentackle.pdo;
 
 

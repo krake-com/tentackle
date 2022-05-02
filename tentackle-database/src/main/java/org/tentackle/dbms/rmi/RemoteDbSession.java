@@ -16,8 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Created on November 14, 2003, 2:35 PM
-
 package org.tentackle.dbms.rmi;
 
 import org.tentackle.log.Logger.Level;
@@ -40,7 +38,7 @@ public interface RemoteDbSession extends Remote {
    * Gets the client user info.
    * <p>
    * The server may set certain values in the session info that may be
-   * of interest by the client application, for example the userId.
+   * of interest to the client application, for example the userId.
    *
    * @return the session info
    * @throws RemoteException if failed

@@ -16,9 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-// Created on January 31, 2003, 11:30 AM
-
 package org.tentackle.fx.rdc.table;
 
 import javafx.collections.ObservableList;

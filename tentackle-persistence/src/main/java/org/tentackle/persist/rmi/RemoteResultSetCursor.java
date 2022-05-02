@@ -16,14 +16,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Created on November 21, 2003, 12:25 PM
-
 package org.tentackle.persist.rmi;
+
+import org.tentackle.dbms.rmi.RemoteDelegate;
+import org.tentackle.persist.ResultSetCursor.FetchList;
 
 import java.rmi.RemoteException;
 import java.util.List;
-import org.tentackle.dbms.rmi.RemoteDelegate;
-import org.tentackle.persist.ResultSetCursor.FetchList;
 
 /**
  * Remote delegate interface for {@link org.tentackle.persist.ResultSetCursor}.

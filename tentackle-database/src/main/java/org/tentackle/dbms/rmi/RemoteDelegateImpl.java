@@ -16,16 +16,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Created on November 22, 2003, 12:53 PM
-
-
 package org.tentackle.dbms.rmi;
+
+import org.tentackle.dbms.Db;
 
 import java.lang.reflect.InvocationTargetException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
-import org.tentackle.dbms.Db;
-
 
 
 /**

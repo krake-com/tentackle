@@ -16,8 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Created on September 12, 2002, 2:38 PM
-
 package org.tentackle.security;
 
 import org.tentackle.pdo.DomainContext;
@@ -86,7 +84,7 @@ public interface SecurityManager {
   /**
    * Determines whether this manager accepts by default.<br>
    *
-   * @return true if accept if no matching rule is found
+   * @return true to accept if no matching rule is found
    */
   boolean isAcceptByDefault();
 
