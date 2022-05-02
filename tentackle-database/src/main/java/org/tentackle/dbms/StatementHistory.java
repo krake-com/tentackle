@@ -59,10 +59,12 @@ public class StatementHistory {
 
   private final String txName;                                // transaction name if tx was running, else null
   private final long executionStart;                          // start of execution in epochal milliseconds
-  private final TimeKeeper timeKeeper;                            // duration in nanoseconds
+  private final TimeKeeper executionDuration;                 // SQL statement execution duration in nanoseconds
   private final String sql;                                   // the SQL statement
   private final Map<Integer,Object> parameters;               // execution parameters if prepared statement, else null
   private final List<Map<Integer,Object>> batchParameters;    // batched execution parameters
+  private TimeKeeper fetchDuration;                           // if query: duration to fetch the results from the result set
+  private int fetchCount;                                     // if query: number of rows fetched
 
   /**
     * Creates a statement execution history.
@@ -75,7 +77,7 @@ public class StatementHistory {
     this.batchParameters = statement instanceof PreparedStatementWrapper ? ((PreparedStatementWrapper) statement).getBatchParameters() : null;
     this.txName = statement.getAttachedSession().getTxName();
     this.executionStart = System.currentTimeMillis();
-    this.timeKeeper = new TimeKeeper();
+    this.executionDuration = new TimeKeeper();
     if (sql != null) {
       this.sql = sql;
     }
@@ -89,8 +91,8 @@ public class StatementHistory {
    * Sets the execution end.
    */
   public void end() {
-    timeKeeper.end();
-    if (logMinDurationMillis > 0 && timeKeeper.millis() > logMinDurationMillis) {
+    executionDuration.end();
+    if (logMinDurationMillis > 0 && executionDuration.millis() > logMinDurationMillis) {
       LOGGER.warning(">>> duration >>> " + this);
     }
     else {
@@ -108,12 +110,42 @@ public class StatementHistory {
   }
 
   /**
-   * Gets the duration.
+   * Gets the duration of the statement execution.
    *
    * @return the duration, never null
    */
-  public TimeKeeper getDuration() {
-    return timeKeeper;
+  public TimeKeeper getExecutionDuration() {
+    return executionDuration;
+  }
+
+  /**
+   * Applies the fetch duration and number of rows fetched if statement is a query.
+   *
+   * @param fetchDuration the fetch duration
+   * @param fetchCount the number of rows fetched
+   */
+  public void applyFetch(TimeKeeper fetchDuration, int fetchCount) {
+    this.fetchDuration = fetchDuration;
+    this.fetchCount = fetchCount;
+  }
+
+  /**
+   * Gets the duration to fetch the result from a query statement.
+   *
+   * @return the duration, null if not a query
+   */
+  public TimeKeeper getFetchDuration() {
+    return fetchDuration;
+  }
+
+  /**
+   * Gets the number of rows fetched from the result set.
+   *
+   * @return the fetched rows (only valid if statement was a query)
+   * @see #getFetchDuration()
+   */
+  public int getFetchCount() {
+    return fetchCount;
   }
 
   /**
@@ -157,9 +189,13 @@ public class StatementHistory {
     StringBuilder buf = new StringBuilder();
     buf.append(new Timestamp(getExecutionStart()));
     buf.append('(');
-    if (timeKeeper.isValid()) {
-      buf.append(timeKeeper.millisToString());
-      buf.append("ms): ");
+    if (executionDuration.isValid()) {
+      buf.append(executionDuration.millisToString());
+      buf.append("ms");
+      if (fetchDuration != null) {
+        buf.append('/').append(fetchDuration.millisToString()).append("ms/").append(fetchCount).append('r');
+      }
+      buf.append("): ");
     }
     else  {
       buf.append("running): ");

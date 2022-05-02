@@ -90,6 +90,7 @@ public class ResultSetWrapper implements AutoCloseable {
   private static class Resources implements Runnable {
 
     private StatementWrapper stmt;                  // the statement wrapper
+    private StatementHistory history;               // statement history to log duration and number of rows fetched
     private ResultSet rs;                           // the wrapped result set, null if closed
     private Db db;                                  // db from statement
     private ResultSetSkipBlock skipBlock;           // current skip block
@@ -98,10 +99,12 @@ public class ResultSetWrapper implements AutoCloseable {
     private List<ResultSetSkipBlock> skipBlocks;    // list of skip blocks (null if not in skipmode)
     private boolean closeStatementOnClose;          // true = close the statement after resultset is closed
     private ResultSetWrapper me;                    // != null if normal close, else cleanup
-    private TimeKeeper duration;                    // != null if duration until close measured
+    private TimeKeeper duration;                    // duration until closed
+    private int rowCount;                           // number of rows fetched
 
-    Resources(StatementWrapper stmt, ResultSet rs) {
+    Resources(StatementWrapper stmt, StatementHistory history, ResultSet rs) {
       this.stmt = stmt;
+      this.history = history;
       this.rs = rs;
       db = stmt.getSession();
       if (db == null) {
@@ -111,9 +114,7 @@ public class ResultSetWrapper implements AutoCloseable {
       // enable statement-auto-closing if the statement is a non-prepared statement or a prepared one-shot
       closeStatementOnClose = !(stmt instanceof PreparedStatementWrapper) ||
                               ((PreparedStatementWrapper) stmt).getStatementKey() == null;
-      if (warnOpenMillis > 0) {
-        duration = new TimeKeeper();
-      }
+      duration = new TimeKeeper();
     }
 
     @Override
@@ -143,10 +144,10 @@ public class ResultSetWrapper implements AutoCloseable {
 
             rset.close();   // this is ok even if already closed (according to the API)
 
-            TimeKeeper openDuration = duration;
-            if (openDuration != null) {
-              duration = null;
-              double millis = openDuration.end().millis();
+            history.applyFetch(duration.end(), rowCount);
+
+            if (warnOpenMillis > 0) {
+              double millis = duration.millis();
               if (millis > warnOpenMillis) {
                 if (me != null) {
                   // log with stacktrace of closing caller
@@ -204,11 +205,12 @@ public class ResultSetWrapper implements AutoCloseable {
   /**
    * Creates a wrapper for the given result set.
    *
-   * @param stmt is the prepared statement wrapper that created this resultset
+   * @param stmt is the prepared statement wrapper that created this result set
+   * @param history the statement history
    * @param rs the original result-set
    */
-  public ResultSetWrapper (StatementWrapper stmt, ResultSet rs) {
-    resources = new Resources(stmt, rs);
+  public ResultSetWrapper (StatementWrapper stmt, StatementHistory history, ResultSet rs) {
+    resources = new Resources(stmt, history, rs);
     columnCount = -1;
     cleanable = CLEANER.register(this, resources);
   }
@@ -738,7 +740,11 @@ public class ResultSetWrapper implements AutoCloseable {
   public boolean next()  {
     try {
       clearSection();
-      return resources.rs.next();
+      boolean valid = resources.rs.next();
+      if (valid) {
+        resources.rowCount++;
+      }
+      return valid;
     }
     catch (SQLException e)  {
       throw new PersistenceException(resources.db, e);
