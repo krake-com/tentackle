@@ -16,14 +16,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Created on September 10, 2004, 2:57 PM
-
 package org.tentackle.dbms;
 
 /**
  * Source of ID numbers.<p>
  *
- * Id sources are unique instances per Db.
+ * ID-sources are unique instances per Db.<br>
  * For example, by default there is one ObjectId instance per Db.
  * However, implementations _may_ be able to be shared among Dbs,
  * so it's up to the implementation whether it tolerates different
@@ -44,9 +42,9 @@ public interface IdSource {
 
 
   /**
-   * Returns whether retrieving an id is a lock-free operation.<br>
+   * Returns whether retrieving an id is a lock-free operation.
    *
-   * @return true if lockfree
+   * @return true if lock-free
    */
   boolean isLockFree();
 

@@ -16,8 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Created on November 14, 2003, 2:31 PM
-
 package org.tentackle.dbms.rmi;
 
 import org.tentackle.session.SessionInfo;
@@ -54,7 +52,7 @@ public interface RemoteDbConnection extends Remote {
    *
    * @param clientInfo the user information
    * @return the session
-   * @throws RemoteException if some error, for example wrong passord
+   * @throws RemoteException if some error, for example wrong password
    * @see RemoteDbSession#close()
    */
   RemoteDbSession login(SessionInfo clientInfo) throws RemoteException;

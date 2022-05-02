@@ -16,13 +16,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Created on September 16, 2003, 2:43 PM
-
 package org.tentackle.log;
+
+import org.tentackle.log.Logger.Level;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import org.tentackle.log.Logger.Level;
 
 /**
  * Output stream for a logger.<br>

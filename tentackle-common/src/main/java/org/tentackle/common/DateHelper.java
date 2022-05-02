@@ -16,8 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Created on September 19, 2002, 10:44 AM
-
 package org.tentackle.common;
 
 import java.util.Calendar;

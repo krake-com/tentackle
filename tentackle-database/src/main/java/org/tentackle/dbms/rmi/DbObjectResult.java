@@ -16,8 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Created on November 19, 2003, 5:46 PM
-
 package org.tentackle.dbms.rmi;
 
 import org.tentackle.dbms.AbstractDbObject;
