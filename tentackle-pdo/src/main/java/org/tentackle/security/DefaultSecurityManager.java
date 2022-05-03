@@ -685,7 +685,6 @@ public class DefaultSecurityManager implements SecurityManager {
    */
   protected synchronized void initialize(Session session) {
     if (invalid) {
-      invalid = false;
       // new instances to allow walking along the subMap after synced block (see evaluateImpl above)
       classMap = new TreeMap<>();
       pdoMap = new TreeMap<>();
@@ -715,6 +714,7 @@ public class DefaultSecurityManager implements SecurityManager {
       }
 
       LOGGER.fine("security manager initialized");
+      invalid = false;
     }
   }
 
