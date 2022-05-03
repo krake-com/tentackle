@@ -49,7 +49,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * The list of rules is interpreted as an ACL (access control list).
  * Whenever a permission is checked, the list is processed
  * until a rule fires. If no rule fires, the default result is returned,
- * which is ether granted or denied.<br>
+ * which is either granted or denied.
  *
  * @author harald
  */
@@ -684,36 +684,38 @@ public class DefaultSecurityManager implements SecurityManager {
    * @param session the session to load the security rules
    */
   protected synchronized void initialize(Session session) {
+    if (invalid) {
+      // new instances to allow walking along the subMap after synced block (see evaluateImpl above)
+      classMap = new TreeMap<>();
+      pdoMap = new TreeMap<>();
+      pdoClassMap = new TreeMap<>();
+      invalid = false;
 
-    classMap = new TreeMap<>();
-    pdoMap = new TreeMap<>();
-    pdoClassMap = new TreeMap<>();
-    invalid = false;
-
-    // add all rules
-    Collection<? extends Security> secRules = createSecurityInstance(Pdo.createDomainContext(session)).selectAllCached();
-    for (Security sec : secRules) {
-      Rule rule = new Rule(sec);
-      if (sec.getObjectClassId() == 0) {
-        classMap.put(new ClassKey(sec), rule);
-      }
-      else {
-        if (sec.getObjectId() == 0) {
-          pdoClassMap.put(new PdoClassKey(sec), rule);
+      // add all rules
+      Collection<? extends Security> secRules = createSecurityInstance(Pdo.createDomainContext(session)).selectAllCached();
+      for (Security sec : secRules) {
+        Rule rule = new Rule(sec);
+        if (sec.getObjectClassId() == 0) {
+          classMap.put(new ClassKey(sec), rule);
         }
         else {
-          pdoMap.put(new PdoKey(sec), rule);
+          if (sec.getObjectId() == 0) {
+            pdoClassMap.put(new PdoClassKey(sec), rule);
+          }
+          else {
+            pdoMap.put(new PdoKey(sec), rule);
+          }
         }
       }
-    }
 
-    if (securityListener == null) {
-      // register listener once
-      securityListener = createModificationListener();
-      ModificationTracker.getInstance().addModificationListener(securityListener);
-    }
+      if (securityListener == null) {
+        // register listener once
+        securityListener = createModificationListener();
+        ModificationTracker.getInstance().addModificationListener(securityListener);
+      }
 
-    LOGGER.fine("security manager initialized");
+      LOGGER.fine("security manager initialized");
+    }
   }
 
 
