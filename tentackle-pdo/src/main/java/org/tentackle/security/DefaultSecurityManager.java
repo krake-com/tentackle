@@ -685,11 +685,11 @@ public class DefaultSecurityManager implements SecurityManager {
    */
   protected synchronized void initialize(Session session) {
     if (invalid) {
+      invalid = false;
       // new instances to allow walking along the subMap after synced block (see evaluateImpl above)
       classMap = new TreeMap<>();
       pdoMap = new TreeMap<>();
       pdoClassMap = new TreeMap<>();
-      invalid = false;
 
       // add all rules
       Collection<? extends Security> secRules = createSecurityInstance(Pdo.createDomainContext(session)).selectAllCached();
