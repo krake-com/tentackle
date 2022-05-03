@@ -86,14 +86,14 @@ fgrep "$PATTERN" $FILE | grep "$EXPR" | cut -c 17- | awk $LOCALEOPT '{
             if (minRows[operation] == "" || minRows[operation] > $4) {
               minRows[operation] = $4
             }
-            if (maxRows[operation] == "" || maxRows[operation] > $5) {
+            if (maxRows[operation] == "" || maxRows[operation] < $5) {
               maxRows[operation] = $5
             }
             totRows[operation] += $6
             if (minFetch[operation] == "" || minFetch[operation] > $7) {
               minFetch[operation] = $7
             }
-            if (maxFetch[operation] == "" || maxFetch[operation] > $8) {
+            if (maxFetch[operation] == "" || maxFetch[operation] < $8) {
               maxFetch[operation] = $8
             }
             totFetch[operation] += $9;
