@@ -128,6 +128,8 @@ public class PdoWizard extends AbstractFxController {
 
   @Override
   public void configure() {
+    cancel.setGraphic(Fx.createGraphic("cancel"));
+    generate.setGraphic(Fx.createGraphic("generate"));
     try {
       for (Entity entity: Model.getInstance().getAllEntities()) {
         if (entity.isAbstract()) {

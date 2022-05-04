@@ -14,13 +14,15 @@ import org.tentackle.session.TableName;
 
 /*
  * @{
-<#if pdoTablename != "">
- * tablename = ${pdoTablename}
-</#if>
 <#if pdoClassId != "">
  * classid   = ${pdoClassId}
 </#if>
+<#if pdoTablename != "">
+ * tablename = ${pdoTablename}
  * mapping   = $model/$tablename.map
+<#else>
+ * mapping   = $model/$classname.map
+</#if>
  * @}
  */
 
