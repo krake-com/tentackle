@@ -66,12 +66,6 @@ public interface FxFactory {
 
 
   /**
-   * Loads all controllers marked with {@link FxControllerService.CACHING#PRELOAD}.
-   */
-  void preloadControllers();
-
-
-  /**
    * Gets the builder factory.
    *
    * @return the FX builder factory
@@ -170,7 +164,7 @@ public interface FxFactory {
    *
    * @param <S> the type of the objects contained within the table's items list
    * @param objectClass the object class
-   * @param name the table's name, null if basename of objectclass
+   * @param name the table's name, null if basename of object class
    * @return the table configuration
    */
   <S> TableConfiguration<S> createTableConfiguration(Class<S> objectClass, String name);

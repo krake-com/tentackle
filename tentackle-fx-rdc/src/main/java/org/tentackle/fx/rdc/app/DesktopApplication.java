@@ -35,7 +35,6 @@ import org.tentackle.common.StringHelper;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxController;
-import org.tentackle.fx.FxFactory;
 import org.tentackle.log.Logger;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PdoFactory;
@@ -179,7 +178,7 @@ public abstract class DesktopApplication<C extends FxController>
         return new Task<>() {
 
           @Override
-          protected Void call() throws Exception {
+          protected Void call() {
             try {
               if (StringHelper.isAllWhitespace(sessionInfo.getUserName())) {
                 showApplicationStatus(AppFxRdcBundle.getString("PLEASE ENTER THE USERNAME"), 0.0);
@@ -228,17 +227,17 @@ public abstract class DesktopApplication<C extends FxController>
               }
 
               showApplicationStatus(AppFxRdcBundle.getString("LOADING GUI..."), 0.5);
-              final C mainCtrlr = Fx.load(getMainControllerClass());
+              final C controller = Fx.load(getMainControllerClass());
 
               showApplicationStatus(AppFxRdcBundle.getString("LAUNCH MAIN WINDOW..."), 0.99);
               showApplicationStatus("", 1.0);   // time to read last message
               Platform.runLater(() -> {
                 try {
                   session.makeCurrent();
-                  setMainController(mainCtrlr);
+                  setMainController(controller);
                   Stage stage = Fx.createStage(Modality.NONE);
                   configureMainStage(stage);
-                  Scene scene = Fx.createScene(mainCtrlr.getView());
+                  Scene scene = Fx.createScene(controller.getView());
                   stage.setScene(scene);
                   stage.addEventHandler(WindowEvent.WINDOW_SHOWN, e -> {
                     // all is fine, close the login scene, application keeps running since main window is shown
@@ -251,8 +250,6 @@ public abstract class DesktopApplication<C extends FxController>
                     }
                   });
                   stage.show();
-                  // if all is shown: preload other controller singletons
-                  Platform.runLater(() -> FxFactory.getInstance().preloadControllers());
                 }
                 catch (RuntimeException rex) {
                   String msg = MessageFormat.format(AppFxRdcBundle.getString("LAUNCHING {0} FAILED"),
@@ -287,7 +284,7 @@ public abstract class DesktopApplication<C extends FxController>
   /**
    * Gets the FX application instance.<br>
    * This is the instance of the class provided by {@link #getApplicationClass()}.<br>
-   * The FX-application ususally provides a login-view and is responsible
+   * The FX-application usually provides a login-view and is responsible
    * to spawn the main view after successful login.
    *
    * @return the FX application
@@ -403,7 +400,7 @@ public abstract class DesktopApplication<C extends FxController>
    * <p>
    * Overridden to create a DomainContext with a thread-local session.
    * <p>
-   * In deskop client apps there are 2 threads using their own session:
+   * In desktop client apps there are 2 threads using their own session:
    * <ol>
    * <li>the FX thread</li>
    * <li>the ModificationTracker thread</li>

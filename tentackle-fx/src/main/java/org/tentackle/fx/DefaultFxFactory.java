@@ -19,7 +19,6 @@
 
 package org.tentackle.fx;
 
-import javafx.concurrent.Task;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
@@ -46,15 +45,15 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
 /**
- * Default implementation of an fx factory.
+ * Default implementation of {@link FxFactory}.
  *
  * @author harald
  */
@@ -75,7 +74,7 @@ public class DefaultFxFactory implements FxFactory {
   private final Map<String, Configurator<?>> configurators;
 
   /**
-   * Map of view's class to classmapper of value-translators.
+   * Map of view's class to class mapper of value-translators.
    */
   private final Map<Class<?>, DefaultClassMapper> viewTranslatorMap;
 
@@ -88,11 +87,6 @@ public class DefaultFxFactory implements FxFactory {
    * all FX controller classes.
    */
   private final Collection<Class<FxController>> controllerClasses;
-
-  /**
-   * FX controller singletons.
-   */
-  private final Map<Class<? extends FxController>, FxController> controllers;
 
   /**
    * Map of realm to graphic providers.
@@ -115,7 +109,6 @@ public class DefaultFxFactory implements FxFactory {
     catch (ClassNotFoundException ex) {
       throw new FxRuntimeException("loading FX controller classes failed", ex);
     }
-    controllers = new HashMap<>();
 
     configurators = new HashMap<>();
     Map<String,String> serviceMap = ServiceFactory.getServiceFinder().createNameMap(Configurator.class.getName());
@@ -265,17 +258,8 @@ public class DefaultFxFactory implements FxFactory {
   public synchronized <T extends FxController> T createController(
           Class<T> controllerClass, URL fxmlUrl, ResourceBundle resources, URL cssUrl) {
 
-    @SuppressWarnings("unchecked")
-    T controller = (T) controllers.get(controllerClass);
-    if (controller != null) {
-      if (controller.getView().isVisible()) {
-        throw new FxRuntimeException(controllerClass + " is a singleton and already visible");
-      }
-      return controller;
-    }
-
     FxControllerService service = null;
-    Class<? super T> annotatedClass = controllerClass;
+    Class<? super T> annotatedClass = Objects.requireNonNull(controllerClass, "controllerClass");
     while (annotatedClass != null) {
       service = annotatedClass.getDeclaredAnnotation(FxControllerService.class);
       if (service != null) {
@@ -287,8 +271,6 @@ public class DefaultFxFactory implements FxFactory {
     if (service == null) {
       throw new FxRuntimeException("missing annotation @FxControllerService for controller " + controllerClass.getName());
     }
-
-    boolean singleton = service.caching() != FxControllerService.CACHING.NO;
 
     if (fxmlUrl == null) {
       String urlStr = service.url();
@@ -320,6 +302,8 @@ public class DefaultFxFactory implements FxFactory {
         resources = BundleFactory.getBundle(resourcesStr, LocaleProvider.getInstance().getLocale());
       }
     }
+
+    T controller;
 
     try {
       Parent view;
@@ -355,11 +339,6 @@ public class DefaultFxFactory implements FxFactory {
         view.setId(controller.getClass().getSimpleName());
       }
 
-      if (singleton) {
-        controllers.put(controllerClass, controller);
-        LOGGER.info("controller {0} added to singletons", () -> controllerClass.getSimpleName());
-      }
-
       if (cssUrl == null) {
         String cssName = service.css();
         if (cssName.isEmpty()) {
@@ -372,26 +351,10 @@ public class DefaultFxFactory implements FxFactory {
       }
 
       switch (service.binding()) {
-
-        case YES:
-          controller.getBinder().bind();
-          break;
-
-        case COMPONENT_INHERITED:
-          controller.getBinder().bindWithInheritedComponents();
-          break;
-
-        case BINDABLE_INHERITED:
-          controller.getBinder().bindWithInheritedBindables();
-          break;
-
-        case ALL_INHERITED:
-          controller.getBinder().bindAllInherited();
-          break;
-
-        default:
-          // NO
-
+        case YES -> controller.getBinder().bind();
+        case COMPONENT_INHERITED -> controller.getBinder().bindWithInheritedComponents();
+        case BINDABLE_INHERITED -> controller.getBinder().bindWithInheritedBindables();
+        case ALL_INHERITED -> controller.getBinder().bindAllInherited();
       }
 
       controller.configure();
@@ -413,35 +376,6 @@ public class DefaultFxFactory implements FxFactory {
   @Override
   public Collection<Class<FxController>> getControllerClasses() {
     return controllerClasses;
-  }
-
-  @Override
-  public void preloadControllers() {
-    Collection<Class<FxController>> preloadClasses = new ArrayList<>();
-    for (Class<FxController> clazz: getControllerClasses()) {
-      FxControllerService service = clazz.getAnnotation(FxControllerService.class);   // cannot be null!
-      if (service.caching() == FxControllerService.CACHING.PRELOAD) {
-        preloadClasses.add(clazz);
-      }
-    }
-    javafx.concurrent.Service<Void> preloadSvc = new javafx.concurrent.Service<>() {
-
-      @Override
-      protected Task<Void> createTask() {
-        return new Task<>() {
-
-          @Override
-          protected Void call() throws Exception {
-            for (Class<FxController> clazz : preloadClasses) {
-              createController(clazz, null, null, null);
-            }
-            return null;
-          }
-        };
-      }
-    };
-
-    preloadSvc.start();
   }
 
   @Override
