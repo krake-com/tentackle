@@ -134,6 +134,11 @@ For more options, see {\@link DbModelWurblet}.
   \@SuppressWarnings("unchecked")
   public T selectCached(long id) {
 @[
+      if (leafs.isEmpty()) {
+]@
+    T pdo = null;   // no concrete subclasses so far
+@[
+      }
       boolean first = true;
       for (Entity leaf: leafs) {
         if (first)  {
@@ -158,6 +163,11 @@ For more options, see {\@link DbModelWurblet}.
   \@SuppressWarnings("unchecked")
   public T selectCachedOnly(long id) {
 @[
+      if (leafs.isEmpty()) {
+]@
+    T pdo = null;   // no concrete subclasses so far
+@[
+      }
       first = true;
       for (Entity leaf: leafs) {
         if (first)  {
@@ -187,6 +197,11 @@ For more options, see {\@link DbModelWurblet}.
   public List<T> selectAllCached() {
     List<T> pdos = new ArrayList<>();
 @[
+      if (leafs.isEmpty()) {
+]@
+    // no concrete subclasses so far
+@[
+      }
         for (Entity leaf: leafs) {
 ]@
     pdos.addAll((Collection<? extends T>) Pdo.create(@(leaf)@.class, getDomainContext()).selectAllCached());
