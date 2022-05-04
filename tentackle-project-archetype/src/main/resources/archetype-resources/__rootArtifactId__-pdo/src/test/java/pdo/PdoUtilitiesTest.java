@@ -11,7 +11,6 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import org.tentackle.pdo.PdoUtilities;
-import org.tentackle.session.SessionUtilities;
 
 import java.util.MissingResourceException;
 
@@ -23,8 +22,8 @@ import java.util.MissingResourceException;
 public class PdoUtilitiesTest {
 
   @Test
-  public void testSingular() {
-    for (String pdoName: SessionUtilities.getInstance().getClassNames()) {
+  public void testNames() {
+    for (String pdoName: PdoUtilities.getInstance().getClassNames()) {
       try {
         Class<?> clazz = Class.forName(pdoName);
         String name = PdoUtilities.getInstance().getSingular(clazz);
