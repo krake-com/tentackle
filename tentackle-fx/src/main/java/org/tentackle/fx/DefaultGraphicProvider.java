@@ -79,6 +79,7 @@ public class DefaultGraphicProvider extends IkonliGraphicProvider {
     nm.put("expand", "mdi2a-arrow-expand-vertical");
     nm.put("file", "mdi2f-file-outline");
     nm.put("filter", "mdi2f-filter-outline");
+    nm.put("generate", "mdi2c-cog");
     nm.put("help", "mdi2h-help");
     nm.put("login", "mdi2l-login");
     nm.put("new", "mdi2s-shape-rectangle-plus");

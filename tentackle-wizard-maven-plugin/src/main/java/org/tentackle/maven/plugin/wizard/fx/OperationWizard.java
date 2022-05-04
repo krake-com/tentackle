@@ -115,6 +115,8 @@ public class OperationWizard extends AbstractFxController {
 
   @Override
   public void configure() {
+    cancel.setGraphic(Fx.createGraphic("cancel"));
+    generate.setGraphic(Fx.createGraphic("generate"));
 
     genProfile.setDeselectAllowed(false);
 
