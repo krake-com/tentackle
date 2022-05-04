@@ -38,15 +38,13 @@ public class PdoUtilitiesTest {
 
   @Test(groups = "local")
   public void testSingular() {
-    for (String pdoName: SessionUtilities.getInstance().getClassNames()) {
+    for (String pdoName: PdoUtilities.getInstance().getClassNames()) {
       try {
         Class<?> clazz = Class.forName(pdoName);
-        if (PersistentDomainObject.class.isAssignableFrom(clazz)) {   // singular/plural does not apply to AbstractDbObjects
-          String name = PdoUtilities.getInstance().getSingular(clazz);
-          Assert.assertNotNull(name, "no @Singular for " + clazz.getName());
-          name = PdoUtilities.getInstance().getPlural(clazz);
-          Assert.assertNotNull(name, "no @Plural for " + clazz.getName());
-        }
+        String name = PdoUtilities.getInstance().getSingular(clazz);
+        Assert.assertNotNull(name, "no @Singular for " + clazz.getName());
+        name = PdoUtilities.getInstance().getPlural(clazz);
+        Assert.assertNotNull(name, "no @Plural for " + clazz.getName());
       }
       catch (MissingResourceException mx) {
         Assert.fail("in PDO class " + pdoName + ": " + mx.getMessage());

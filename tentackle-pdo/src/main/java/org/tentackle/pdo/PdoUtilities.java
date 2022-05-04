@@ -42,7 +42,9 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
@@ -107,21 +109,31 @@ public class PdoUtilities {
   private final Map<String, TransactionRetryPolicy> transactionRetryPolicyMap;
 
   /**
+   * List of all class names.
+   */
+  private final Collection<String> classNames;
+
+
+  /**
    * Creates a utility instance.
    */
   public PdoUtilities() {
     ServiceFinder finder = ServiceFactory.getServiceFinder();
 
+    Set<String> sortedNames = new TreeSet<>();
+
     singularMap = new HashMap<>();
     for (Map.Entry<String,String> entry: finder.createNameMap(Singular.class.getName()).entrySet()) {
       String singleName = StringHelper.stripEnclosingDoubleQuotes(entry.getKey());
       singularMap.put(entry.getValue(), singleName);
+      sortedNames.add(entry.getValue());
     }
 
     pluralMap = new HashMap<>();
     for (Map.Entry<String,String> entry: finder.createNameMap(Plural.class.getName()).entrySet()) {
       String multiName = StringHelper.stripEnclosingDoubleQuotes(entry.getKey());
       pluralMap.put(entry.getValue(), multiName);
+      sortedNames.add(entry.getValue());
     }
 
     transactionRetryPolicyMap = new HashMap<>();
@@ -142,6 +154,7 @@ public class PdoUtilities {
       }
     }
 
+    classNames = new ArrayList<>(sortedNames);
   }
 
 
@@ -169,7 +182,18 @@ public class PdoUtilities {
   }
 
 
-    /**
+  /**
+   * Gets a list of all class names.<br>
+   * Sorted by name.
+   *
+   * @return the class names
+   */
+  public Collection<String> getClassNames() {
+    return classNames;
+  }
+
+
+  /**
    * Gets the table name of given class.
    *
    * @param <T> the pdo type
@@ -267,7 +291,6 @@ public class PdoUtilities {
     }
     return null;
   }
-
 
 
   /**
@@ -387,7 +410,7 @@ public class PdoUtilities {
 
 
   /**
-   * Checks whether some of the objects in the list are modified.
+   * Checks whether some objects in the list are modified.<br>
    * Useful for recursive optimizations.
    *
    * @param pdos the objects
@@ -413,9 +436,9 @@ public class PdoUtilities {
 
   /**
    * Saves a list of PDOs.<br>
-   * All objects with isSaveable() == true will be saved.
+   * All objects with isPersistable() == true will be saved.
    * If modifiedOnly is true only isModified() objects will be saved.
-   * All objects with isSaveable() == false and isNew() == false
+   * All objects with isPersistable() == false and isNew() == false
    * are removed!
    * By definition, a {@link TrackedList} must *NOT* contain untracked objects.
    * The errorhandler will be invoked if such an object
@@ -611,7 +634,7 @@ public class PdoUtilities {
    */
   public <T extends PersistentDomainObject<T>> List<PdoMember> getAttributes(Class<T> clazz, boolean withRelations) {
 
-    // build a name map to check agains relations
+    // build a name map to check against relations
     Map<String, PdoMember> memberMap = new LinkedHashMap<>();
     for (PdoMember member: getMembers(clazz)) {
       memberMap.put(member.getName(), member);
