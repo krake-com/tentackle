@@ -69,22 +69,6 @@ public @interface FxControllerService {
    */
   String FXML_NONE = Constants.NAME_NONE;
 
-  /**
-   * Type of controller caching.
-   */
-  enum CACHING {
-
-    /** no caching. */
-    NO,
-
-    /** controller is a singleton and cached. */
-    YES,
-
-    /** controller is a singleton, cached and preloaded in background. */
-    PRELOAD
-
-  }
-
 
   /**
    * Type of binding.
@@ -118,7 +102,7 @@ public @interface FxControllerService {
   String url() default "";
 
   /**
-   * Gets the resources bundle for annotated controller.
+   * Gets the resource bundle for annotated controller.
    *
    * @return the bundle url, empty string if <code>&lt;controller-classname&gt;.properties</code>, no resources if {@link #RESOURCES_NONE}
    */
@@ -137,13 +121,6 @@ public @interface FxControllerService {
    * @return true if create and bind for test (default), false if no test
    */
   boolean test() default true;
-
-  /**
-   * Returns whether controller should be cached.
-   *
-   * @return the caching mode, CACHING.NO is default.
-   */
-  CACHING caching() default CACHING.NO;
 
   /**
    * Returns whether controller should be bound to the model.
