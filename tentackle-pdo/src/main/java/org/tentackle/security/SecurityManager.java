@@ -23,7 +23,7 @@ import org.tentackle.session.Session;
 
 /**
  * The SecurityManager applies security rules to {@link org.tentackle.pdo.PersistentDomainObject}s
- * and grants or denies permissions.<br>
+ * or classes and grants or denies permissions.
  *
  * @author harald
  */
@@ -35,13 +35,13 @@ public interface SecurityManager {
    * @param context the domain context
    * @param permission the requested permission
    * @param objectClassId the object class id
-   * @param objectId the identifiable id, 0 for all pdos of that class
+   * @param objectId the identifiable id, 0 for all PDOs of that class
    * @return the SecurityResult
    */
   SecurityResult evaluate(DomainContext context, Permission permission, int objectClassId, long objectId);
 
   /**
-   * Checks a permission for a non-pdo class.
+   * Checks a permission for a non-PDO class.
    *
    * @param context the domain context
    * @param permission the requested permission
@@ -82,7 +82,7 @@ public interface SecurityManager {
   void setEnabled(boolean enabled);
 
   /**
-   * Determines whether this manager accepts by default.<br>
+   * Determines whether this manager accepts by default.
    *
    * @return true to accept if no matching rule is found
    */

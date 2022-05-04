@@ -39,8 +39,6 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
-
-
 /**
  * An ACL-based SecurityManager.
  * <p>
@@ -340,10 +338,10 @@ public class DefaultSecurityManager implements SecurityManager {
   private static final String NO_GRANTEE_MESSAGE = "no grantee";
 
 
-  private TreeMap<ClassKey,Rule> classMap;                    // non-pdo class rules
-  private TreeMap<PdoKey,Rule> pdoMap;                        // object rules
-  private TreeMap<PdoClassKey,Rule> pdoClassMap;              // pdo class-only rules
   private final Map<GranteeDescriptor, Collection<GranteeDescriptor>> granteeMap;   // maps root grantee to grantee descriptors
+  private volatile TreeMap<ClassKey,Rule> classMap;           // non-pdo class rules (immutable map once created)
+  private volatile TreeMap<PdoKey,Rule> pdoMap;               // object rules (immutable map once created)
+  private volatile TreeMap<PdoClassKey,Rule> pdoClassMap;     // pdo class-only rules (immutable map once created)
 
   private volatile boolean invalid;                           // true if cache needs initialization
   private boolean enabled;                                    // true if security manager is enabled
@@ -378,64 +376,30 @@ public class DefaultSecurityManager implements SecurityManager {
   }
 
 
-  /**
-   * Invalidates this manager.
-   */
   @Override
   public void invalidate() {
     invalid = true;
   }
 
-
-  /**
-   * Determines whether this manager is enabled.
-   *
-   * @return true if enabled
-   */
   @Override
   public boolean isEnabled() {
     return enabled;
   }
 
-  /**
-   * Enables/disables this security manager.<br>
-   * If disabled, all requests are accepted.
-   *
-   * @param enabled true to enable
-   * @see #setAcceptByDefault(boolean)
-   */
   @Override
   public void setEnabled(boolean enabled) {
     this.enabled = enabled;
   }
 
-
-  /**
-   * Determines whether this manager accepts by default,
-   * i.e. if no matching rule is found for a permission.
-   *
-   * @return true if accept by default
-   */
   @Override
   public boolean isAcceptByDefault() {
     return acceptByDefault;
   }
 
-  /**
-   * Sets the default behaviour for "no rules found" for the
-   * {@link SecurityResult} to "accepted".
-   * This is the default.
-   * <p>
-   * Notice: setting both acceptByDefault and denyByDefault to false will
-   * return "neither accepted nor denied" security results if no rules fire.
-   *
-   * @param acceptByDefault true if {@link SecurityResult#isAccepted} returns true if no rules found.
-   */
   @Override
   public void setAcceptByDefault(boolean acceptByDefault) {
     this.acceptByDefault = acceptByDefault;
   }
-
 
   @Override
   public SecurityResult evaluate(DomainContext context, Permission permission, int objectClassId, long objectId) {
@@ -450,7 +414,6 @@ public class DefaultSecurityManager implements SecurityManager {
     return result;
   }
 
-
   @Override
   public SecurityResult evaluate(DomainContext context, Permission permission, Class<?> clazz) {
     SecurityResult result = evaluateImpl(context, permission, 0, 0, clazz);
@@ -460,7 +423,6 @@ public class DefaultSecurityManager implements SecurityManager {
     return result;
   }
 
-
   @Override
   public void removeObsoleteRules(Session session) {
     long txVoucher = session.begin("removeObsoleteRules");
@@ -469,12 +431,12 @@ public class DefaultSecurityManager implements SecurityManager {
         if (rule.getObjectId() != 0 &&
             // pdo vanished
             Pdo.create(SessionUtilities.getInstance().getClassName(
-                    rule.getObjectClassId()), session).selectSerial(rule.getObjectId()) == -1
-                ||
+                rule.getObjectClassId()), session).selectSerial(rule.getObjectId()) == -1
+            ||
             rule.getGranteeId() != 0 &&
             // grantee vanished
             Pdo.create(SessionUtilities.getInstance().getClassName(
-                    rule.getGranteeClassId()), session).selectSerial(rule.getGranteeId()) == -1) {
+                rule.getGranteeClassId()), session).selectSerial(rule.getGranteeId()) == -1) {
 
           rule.delete();
         }
@@ -489,17 +451,40 @@ public class DefaultSecurityManager implements SecurityManager {
 
 
   /**
-   * Creates a default security result.<br>
-   * This result is returned, if no matching rules were found.
+   * Determines the session grantee.
+   * <p>
+   * If the grantee is null (for example a system user) all permissions will be granted.
    *
-   * @param message the message
-   * @return the result
+   * @param context the domain context
+   * @return the grantee, null if accept all permissions
    */
-  protected SecurityResult createDefaultSecurityResult(String message) {
-    if (acceptByDefault) {
-      return createAcceptedSecurityResult(message, true);
+  protected GranteeDescriptor determineGrantee(DomainContext context) {
+    long granteeId = context.getSessionInfo().getUserId();
+    if (granteeId <= 0) {
+      return null;    // system user -> always ok
     }
-    return createDeniedSecurityResult(message, true);
+    int granteeClassId = context.getSessionInfo().getUserClassId();
+    if (granteeClassId == 0) {
+      throw new SecurityException("missing grantee's class id");
+    }
+    return new GranteeDescriptor(granteeClassId, granteeId);
+  }
+
+  /**
+   * Determines the grantees to check.<p>
+   * Override this method to implement user groups, for example.
+   *
+   * @param context the domain context
+   * @param grantee the session's grantee
+   * @return the grantee descriptors
+   */
+  protected Collection<GranteeDescriptor> determineGranteesToCheck(DomainContext context, GranteeDescriptor grantee) {
+    Collection<GranteeDescriptor> grantees = new ArrayList<>();
+    // check rules for grantee
+    grantees.add(grantee);
+    // check rules for all
+    grantees.add(new GranteeDescriptor(0, 0));
+    return grantees;
   }
 
   /**
@@ -523,46 +508,6 @@ public class DefaultSecurityManager implements SecurityManager {
   protected SecurityResult createDeniedSecurityResult(String message, boolean byDefault) {
     return new DefaultSecurityResult(message, false, byDefault);
   }
-
-
-  /**
-   * Determines the session grantee.
-   * <p>
-   * If the grantee is null (for example a system user) all permissions will be granted.
-   *
-   * @param context the domain context
-   * @return the grantee, null if accept all permissions
-   */
-  public GranteeDescriptor determineGrantee(DomainContext context) {
-    long granteeId = context.getSessionInfo().getUserId();
-    if (granteeId <= 0) {
-      return null;    // system user -> always ok
-    }
-    int granteeClassId = context.getSessionInfo().getUserClassId();
-    if (granteeClassId == 0) {
-      throw new SecurityException("missing grantee's class id");
-    }
-    return new GranteeDescriptor(granteeClassId, granteeId);
-  }
-
-
-  /**
-   * Determines the grantees to check.<p>
-   * Override this method to implement user groups, for example.
-   *
-   * @param context the domain context
-   * @param grantee the session's grantee
-   * @return the grantee descriptors
-   */
-  public Collection<GranteeDescriptor> determineGranteesToCheck(DomainContext context, GranteeDescriptor grantee) {
-    Collection<GranteeDescriptor> grantees = new ArrayList<>();
-    // check rules for grantee
-    grantees.add(grantee);
-    // check rules for all
-    grantees.add(new GranteeDescriptor(0, 0));
-    return grantees;
-  }
-
 
   /**
    * Evaluates a permission for a pdo or regular class.
@@ -595,22 +540,51 @@ public class DefaultSecurityManager implements SecurityManager {
         throw new SecurityException("no class or classId given");
       }
 
-      boolean fineLoggable = LOGGER.isFineLoggable();   // little speedup
-
-      if (invalid) {
-        if (context.getSession().isRemote()) {
-          createSecurityInstance(context).assertRemoteSecurityManagerInitialized(); // outside synchronized!
-        }
-        initialize(context.getSession());   // synchronized
-      }
-
       GranteeDescriptor sessionGrantee = determineGrantee(context);
       if (sessionGrantee == null) {
         return noGranteeResult;
       }
 
-      Collection<GranteeDescriptor> granteesToCheck = granteeMap.computeIfAbsent(sessionGrantee,
-              g -> determineGranteesToCheck(context, g));
+      if (invalid) {
+        if (context.getSession().isRemote()) {
+          createSecurityInstance(context).assertRemoteSecurityManagerInitialized();
+        }
+        initialize(context.getSession());
+      }
+
+      // determine source map only once (must not change during loop below)
+      TreeMap<PdoKey, Rule> localPdoMap;
+      TreeMap<ClassKey, Rule> localClassMap;
+      TreeMap<PdoClassKey, Rule> localPdoClassMap;
+      if (clazz != null) {
+        localClassMap = classMap;
+        if (localClassMap.isEmpty()) {
+          return null;
+        }
+        localPdoMap = null;
+        localPdoClassMap = null;
+      }
+      else if (objectId == 0) {
+        localPdoClassMap = pdoClassMap;
+        if (localPdoClassMap.isEmpty()) {
+          return null;
+        }
+        localPdoMap = null;
+        localClassMap = null;
+      }
+      else {
+        localPdoMap = pdoMap;
+        if (localPdoMap.isEmpty()) {
+          return null;
+        }
+        localClassMap = null;
+        localPdoClassMap = null;
+      }
+
+      boolean fineLoggable = LOGGER.isFineLoggable();   // a little speedup
+
+      Collection<GranteeDescriptor> granteesToCheck =
+          granteeMap.computeIfAbsent(sessionGrantee, g -> determineGranteesToCheck(context, g));
 
       for (GranteeDescriptor grantee : granteesToCheck) {
 
@@ -623,21 +597,17 @@ public class DefaultSecurityManager implements SecurityManager {
         // the map of applicable security rules
         SortedMap<?, Rule> map;
 
-        synchronized (this) {
-          if (clazz != null) {
-            map = classMap.subMap(new ClassKey(grantee, clazz.getName(), 0),
-                    new ClassKey(grantee, clazz.getName(), Integer.MAX_VALUE));
-          }
-          else {
-            if (objectId == 0) {
-              map = pdoClassMap.subMap(new PdoClassKey(grantee, objectClassId, 0),
-                      new PdoClassKey(grantee, objectClassId, Integer.MAX_VALUE));
-            }
-            else {
-              map = pdoMap.subMap(new PdoKey(grantee, objectClassId, objectId, 0),
-                      new PdoKey(grantee, objectClassId, objectId, Integer.MAX_VALUE));
-            }
-          }
+        if (localClassMap != null) {
+          map = localClassMap.subMap(new ClassKey(grantee, clazz.getName(), 0),
+                                     new ClassKey(grantee, clazz.getName(), Integer.MAX_VALUE));
+        }
+        else if (localPdoClassMap != null) {
+          map = localPdoClassMap.subMap(new PdoClassKey(grantee, objectClassId, 0),
+                                        new PdoClassKey(grantee, objectClassId, Integer.MAX_VALUE));
+        }
+        else {
+          map = localPdoMap.subMap(new PdoKey(grantee, objectClassId, objectId, 0),
+                                   new PdoKey(grantee, objectClassId, objectId, Integer.MAX_VALUE));
         }
 
         // walk through the security settings of the map
@@ -657,26 +627,11 @@ public class DefaultSecurityManager implements SecurityManager {
         }
       }
 
-      if (fineLoggable) {
-        LOGGER.fine("no rule matched");
-      }
       return null;
     }
 
     return disabledResult;
   }
-
-
-  /**
-   * Creates the domain context to load security rules.
-   *
-   * @param evaluationContext the domain context used in evaluation
-   * @return the domain context that can be used to initialize the manager
-   */
-  protected DomainContext createInitializationContext(DomainContext evaluationContext) {
-    return Pdo.createDomainContext(evaluationContext.getSession());
-  }
-
 
   /**
    * Initializes the security manager.
@@ -684,25 +639,26 @@ public class DefaultSecurityManager implements SecurityManager {
    * @param session the session to load the security rules
    */
   protected synchronized void initialize(Session session) {
-    if (invalid) {
-      // new instances to allow walking along the subMap after synced block (see evaluateImpl above)
-      classMap = new TreeMap<>();
-      pdoMap = new TreeMap<>();
-      pdoClassMap = new TreeMap<>();
+    if (invalid) {    // double check (invalid is volatile)
+
+      // new instances to allow walking along the subMap during init (see evaluateImpl above)
+      TreeMap<ClassKey, Rule> newClassMap = new TreeMap<>();
+      TreeMap<PdoKey, Rule> newPdoMap = new TreeMap<>();
+      TreeMap<PdoClassKey, Rule> newPdoClassMap = new TreeMap<>();
 
       // add all rules
       Collection<? extends Security> secRules = createSecurityInstance(Pdo.createDomainContext(session)).selectAllCached();
       for (Security sec : secRules) {
         Rule rule = new Rule(sec);
         if (sec.getObjectClassId() == 0) {
-          classMap.put(new ClassKey(sec), rule);
+          newClassMap.put(new ClassKey(sec), rule);
         }
         else {
           if (sec.getObjectId() == 0) {
-            pdoClassMap.put(new PdoClassKey(sec), rule);
+            newPdoClassMap.put(new PdoClassKey(sec), rule);
           }
           else {
-            pdoMap.put(new PdoKey(sec), rule);
+            newPdoMap.put(new PdoKey(sec), rule);
           }
         }
       }
@@ -713,11 +669,16 @@ public class DefaultSecurityManager implements SecurityManager {
         ModificationTracker.getInstance().addModificationListener(securityListener);
       }
 
-      LOGGER.fine("security manager initialized");
+      // switch to new maps, "invalid" flag cleared below!
+      classMap = newClassMap;
+      pdoMap = newPdoMap;
+      pdoClassMap = newPdoClassMap;
+
       invalid = false;
+
+      LOGGER.fine("security manager initialized");
     }
   }
-
 
   /**
    * Creates the modification listener.
@@ -733,7 +694,6 @@ public class DefaultSecurityManager implements SecurityManager {
       }
     };
   }
-
 
   /**
    * Creates a security instance.
