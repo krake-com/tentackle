@@ -863,25 +863,10 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Gets the SQL code for the context condition.
    *
-   * @return null if no condition (default)
+   * @return empty if no condition (default)
    */
   public String getSqlContextCondition() {
-    return null;
-  }
-
-  /**
-   * Gets the additional condition to be used in the WHERE clause for the classid.
-   * <pre>
-   * Example: return " AND " + CN_CLASSID + "=?";
-   * </pre>
-   *
-   * @return the condition, null if none necessary
-   */
-  public String getSqlClassIdCondition() {
-    if (isClassIdRequiredInWhereClause()) {
-      return Backend.SQL_AND + getTopSuperTableAlias() + '.' + CN_CLASSID + Backend.SQL_EQUAL_PAR;
-    }
-    return null;
+    return "";
   }
 
   /**
@@ -957,6 +942,34 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
   /**
+   * Gets the comma-separated list of column names for single table inheritance selects.
+   *
+   * @param columnNamesSupplier the supplier for the list of column names
+   * @return the partial SQL string
+   */
+  public String getSqlColumnNames(Supplier<List<String>> columnNamesSupplier) {
+    return getClassVariables().getSqlColumnNames(columnNamesSupplier);
+  }
+
+  /**
+   * Gets the valid classids for single table inheritance where clauses.
+   *
+   * @return the class IDs
+   */
+  public int[] getValidClassIds() {
+    return null;
+  }
+
+  /**
+   * Gets the SQL string used in WHERE-clauses for single table inheritance entities.
+   *
+   * @return the SQL string, empty if no such condition necessary
+   */
+  public String getSqlClassIdCondition() {
+    return getClassVariables().getSqlClassIdCondition(getValidClassIds());
+  }
+
+  /**
    * Gets the alias for the topmost super class.
    *
    * @return the alias
@@ -1003,28 +1016,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     if (isAbstract()) {
       throw new PersistenceException(this, "operation not allowed for abstract entities");
     }
-  }
-
-  /**
-   * Gets the classid.
-   *
-   * @return the classid
-   * @throws PersistenceException if not valid
-   */
-  public int getValidClassId() {
-    assertNotAbstract();
-    return super.getClassId();
-  }
-
-
-  /**
-   * Returns whether the classid needs to be inluded in the WHERE-clause.<br>
-   * Applies only to leafs with SINGLE inheritance.
-   *
-   * @return true if include classid
-   */
-  public boolean isClassIdRequiredInWhereClause() {
-    return false;
   }
 
   /**
@@ -1676,50 +1667,18 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
         PreparedStatementWrapper st = getPreparedStatement(stmtId,
                 () -> {
                   StringBuilder sql = new StringBuilder(createSelectSql(forUpdate));
+                  sql.append(getSqlClassIdCondition());
                   if (js != null) {
                     js.createJoinedSql(pdo, sql);
                   }
                   return sql.toString();
                 }
         );
-
-        int ndx = 1;
-        if (js != null) {
-          ndx = setClassIdsInStatement(js, st, ndx);
-        }
-        st.setLong(ndx, id);
-
+        st.setLong(1, id);
         obj = executeFirstPdoQuery(st, js);
       }
     }
     return obj;
-  }
-
-
-  /**
-   * Sets the class-ID parameters if required for the joins.<br>
-   * Notice that this method only works for joins with no subjoins and
-   * is used only for eager joins, i.e.the default selects.<br>
-   * All code for non-eager joins is generated via the DbModelWurblet.
-   *
-   * @param js the join configuration
-   * @param st the statement
-   * @param ndx the next parameter ndx
-   * @return the next parameter index
-   */
-  @SuppressWarnings("rawtypes")
-  protected int setClassIdsInStatement(JoinedSelect<T> js, PreparedStatementWrapper st, int ndx) {
-    for (Join<? super T,?> join: js.getJoins()) {
-      if (!join.getJoins().isEmpty()) {   // just to make sure...
-        throw new PersistenceException(this, "eager relations cannot be cascaded");
-      }
-      PersistentDomainObject<?> joinedPdo = Pdo.create(join.getJoinedClass());
-      AbstractPersistentObject joinPD = (AbstractPersistentObject) joinedPdo.getPersistenceDelegate();
-      if (joinPD.isClassIdRequiredInWhereClause()) {
-        st.setInt(ndx++, joinPD.getClassId());
-      }
-    }
-    return ndx;
   }
 
 
@@ -1972,14 +1931,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   public String createSelectByNormTextSql(boolean not) {
     StringBuilder sql = new StringBuilder(SQL_SELECT);
     sql.append(createSelectAllInnerSql());
-    String condition = getSqlClassIdCondition();
-    if (condition != null) {
-      sql.append(condition);
-    }
-    condition = getSqlContextCondition();
-    if (condition != null) {
-      sql.append(condition);
-    }
+    sql.append(getSqlClassIdCondition());
+    sql.append(getSqlContextCondition());
     sql.append(SQL_AND)
        .append(getTopSuperTableAlias()).append('.').append(CN_NORMTEXT);
     if (not) {
@@ -2124,12 +2077,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     );
 
     int ndx = 1;
-    if (js != null) {
-      ndx = setClassIdsInStatement(js, st, ndx);
-    }
-    if (isClassIdRequiredInWhereClause()) {
-      st.setInt(ndx++, getClassId());
-    }
     long contextId = getContextId();
     if (contextId >= 0) {
       st.setLong(ndx++, contextId);
@@ -2177,12 +2124,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     );
 
     int ndx = 1;
-    if (js != null) {
-      ndx = setClassIdsInStatement(js, st, ndx);
-    }
-    if (isClassIdRequiredInWhereClause()) {
-      st.setInt(ndx++, getClassId());
-    }
     long contextId = getContextId();
     if (contextId >= 0) {
       st.setLong(ndx++, contextId);
@@ -2249,7 +2190,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Creates SQL code for select all.<br>
+   * Creates SQL-code for select all.<br>
    * Appends context condition and order by clause if configured.
    *
    * @return the sql code
@@ -2257,14 +2198,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   public String createSelectAllSql() {
     StringBuilder sql = new StringBuilder(SQL_SELECT);
     sql.append(createSelectAllInnerSql());
-    String condition = getSqlClassIdCondition();
-    if (condition != null) {
-      sql.append(condition);
-    }
-    condition = getSqlContextCondition();
-    if (condition != null) {
-      sql.append(condition);
-    }
+    sql.append(getSqlClassIdCondition());
+    sql.append(getSqlContextCondition());
     String orderSuffix = orderBy();
     if (orderSuffix != null)  {
       sql.append(SQL_ORDERBY);
@@ -2274,7 +2209,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
   /**
-   * Creates SQL code for {@link #selectAllWithExpiredTableSerials}.<br>
+   * Creates SQL-code for {@link #selectAllWithExpiredTableSerials}.<br>
    * Appends context condition and order by clause if configured.<br>
    * By default, the result is sorted by tableserial + id.
    *
@@ -2285,14 +2220,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     sql.append(createSelectAllInnerSql());
     sql.append(SQL_AND).
         append(CN_TABLESERIAL).append(">?");
-    String condition = getSqlClassIdCondition();
-    if (condition != null) {
-      sql.append(condition);
-    }
-    condition = getSqlContextCondition();
-    if (condition != null) {
-      sql.append(condition);
-    }
+    sql.append(getSqlClassIdCondition());
+    sql.append(getSqlContextCondition());
     sql.append(SQL_ORDERBY);
     String orderSuffix = orderBy();
     if (orderSuffix != null)  {
@@ -2328,12 +2257,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     );
 
     int ndx = 1;
-    if (js != null) {
-      ndx = setClassIdsInStatement(js, st, ndx);
-    }
-    if (isClassIdRequiredInWhereClause()) {
-      st.setInt(ndx++, getClassId());
-    }
     long contextId = getContextId();
     if (contextId >= 0) {
       st.setLong(ndx, contextId);
@@ -2367,12 +2290,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
     st.setLong(1, oldSerial);
     int ndx = 2;
-    if (js != null) {
-      ndx = setClassIdsInStatement(js, st, ndx);
-    }
-    if (isClassIdRequiredInWhereClause()) {
-      st.setInt(ndx++, getClassId());
-    }
     long contextId = getContextId();
     if (contextId >= 0) {
       st.setLong(ndx, contextId);
@@ -2410,12 +2327,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     );
 
     int ndx = 1;
-    if (js != null) {
-      ndx = setClassIdsInStatement(js, st, ndx);
-    }
-    if (isClassIdRequiredInWhereClause()) {
-      st.setInt(ndx++, getClassId());
-    }
     long contextId = getContextId();
     if (contextId >= 0) {
       st.setLong(ndx, contextId);
@@ -2520,14 +2431,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectLatestStatementId,
          () -> {
            StringBuilder sql = new StringBuilder(createSelectAllInnerSql());
-           String condition = getSqlClassIdCondition();
-           if (condition != null) {
-             sql.append(condition);
-           }
-           condition = getSqlContextCondition();
-           if (condition != null) {
-             sql.append(condition);
-           }
+           sql.append(getSqlClassIdCondition());
+           sql.append(getSqlContextCondition());
            sql.append(Backend.SQL_AND);
            sql.append(getColumnName(CN_ID));
            sql.append(Backend.SQL_GREATER_PAR);
@@ -2542,12 +2447,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     );
 
     int ndx = getBackend().setLeadingSelectParameters(st, limit, 0);
-    if (js != null) {
-      ndx = setClassIdsInStatement(js, st, ndx);
-    }
-    if (isClassIdRequiredInWhereClause()) {
-      st.setInt(ndx++, getClassId());
-    }
     long contextId = getContextId();
     if (contextId >= 0) {
       st.setLong(ndx++, contextId);

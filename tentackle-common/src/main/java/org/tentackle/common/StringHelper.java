@@ -1100,7 +1100,7 @@ public final class StringHelper {
 
 
   /**
-   * Converts a camelCase string to strings with delimiters.
+   * Converts a camelCase string to a string with delimiters.
    * <p>
    * Example:<br>
    * {@code "alphaBetaGamma"} is converted to {@code "alpha.beta.gamma"}, with delimiter {@code "."}.
@@ -1517,8 +1517,10 @@ public final class StringHelper {
         if (addSeparator) {
           buf.append(separator);
         }
+        else {
+          addSeparator = true;
+        }
         buf.append(objectToLoggableString(obj));
-        addSeparator = true;
       }
     }
     return buf.toString();
@@ -1604,7 +1606,7 @@ public final class StringHelper {
   /**
    * Converts to string containing only the letters A-z or digits.<br>
    * All other characters will be converted to an underscore.
-   * All diacrits will be converted first (see {@link #unDiacrit}.
+   * All diacrits will be converted first (see {@link #unDiacrit}).
    * The resulting string will not contain more than one underscore in a row.
    * <p>
    * Nice to create filenames.

@@ -9,13 +9,31 @@ For more options, see {\@link ModelWurblet}.
 }@
 @[
   private void wurbel() throws WurbelException {
+
+    List<String> allColConst = null;
+    boolean isSingleTableInheritance = getEntity().getTopSuperEntity().getInheritanceType() == InheritanceType.SINGLE;
+    if (isSingleTableInheritance) {
+      allColConst = new ArrayList<>();
+      if (getEntity().getSuperEntity() == null) {
+        for (Attribute attr: getEntity().getAllAttributes())  {
+          if (attr.isImplicit()) {
+            allColConst.add(getColumnNameConstant(attr, 0));
+          }
+        }
+      }
+    }
+
     for (Attribute attr: getEntity().getAttributes())  {
       if (!attr.getOptions().isNoConstant() && !attr.getOptions().isFromSuper()) {
         if (!attr.getOptions().isNoDeclare() || attr.getOptions().isFromSuper())    {
           int columnCount = getEffectiveDataType(attr).getColumnCount();
           String baseColConst = getColumnNameConstant(attr, -1);
+
           for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
             String colConst = getColumnNameConstant(attr, columnIndex);
+            if (allColConst != null) {
+              allColConst.add(colConst);
+            }
             if (colConst.equals(baseColConst)) {
               baseColConst = null;
             }
@@ -34,6 +52,23 @@ For more options, see {\@link ModelWurblet}.
           }
         }
       }
+    }
+
+    if (allColConst != null) {
+]@
+
+  /** single table inheritance mapped columns for '@(getEntity())@'. */
+  public static final List<String> CNS_@(getEntity().getName().toUpperCase())@ = List.of(
+@[
+      int i = 0;
+      for (String colConst : allColConst) {
+]@
+    @(colConst)@@(++i<allColConst.size()?",":"")@
+@[
+      }
+]@
+  );
+@[
     }
   }
 ]@

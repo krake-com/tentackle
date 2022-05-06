@@ -32,11 +32,12 @@ import org.tentackle.persist.security.SecurityPersistenceImpl;
 import org.tentackle.security.Permission;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.session.SessionUtilities;
+import org.tentackle.sql.Backend;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.function.Supplier;
 
 
 /**
@@ -223,6 +224,16 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   private Method revertComponentsToSnapshotMethod;
 
 
+  /**
+   * Columns for single table inheritance select clause.
+   */
+  private String sqlColumnNames;
+
+  /**
+   * SQL string " AND xx.classId IN (...)" for single table inheritance.
+   */
+  private String sqlClassIdCondition;
+
 
   /**
    * Constructs a classvariable.<p>
@@ -260,6 +271,65 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   public PersistentObjectClassVariables(Class<T> pdoClass, Class<P> poClass, String tableAlias)  {
     this(pdoClass, poClass, tableAlias, null, null);
   }
+
+
+  /**
+   * Gets the comma-separated list of column names for single table inheritance selects.
+   *
+   * @param columnNamesSupplier the supplier for the list of column names
+   * @return the partial SQL string
+   */
+  public String getSqlColumnNames(Supplier<List<String>> columnNamesSupplier) {
+    if (sqlColumnNames == null) {
+      StringBuilder buf = new StringBuilder();
+      for (String name : columnNamesSupplier.get()) {
+        if (!buf.isEmpty()) {
+          buf.append(',');
+        }
+        buf.append(getColumnName(name));
+      }
+      sqlColumnNames = buf.toString();
+    }
+    return sqlColumnNames;
+  }
+
+
+  /**
+   * Gets the SQL string used in WHERE-clauses for single table inheritance entities.
+   *
+   * @param classIds the valid class IDs, null or empty if none
+   * @return the SQL string, empty if no such condition necessary
+   */
+  public String getSqlClassIdCondition(int[] classIds) {
+    if (sqlClassIdCondition == null) {
+      StringBuilder buf = new StringBuilder();
+      if (superClassVariables != null && classIds != null && classIds.length > 0) {
+        buf.append(Backend.SQL_AND).append(getColumnName(AbstractPersistentObject.CN_CLASSID));
+        if (classIds.length == 1) {
+          buf.append('=');
+        }
+        else {
+          buf.append(" IN(");
+        }
+        boolean needComma = false;
+        for (int classId : classIds) {
+          if (needComma) {
+            buf.append(',');
+          }
+          else {
+            needComma = true;
+          }
+          buf.append(classId);
+        }
+        if (classIds.length > 1) {
+          buf.append(')');
+        }
+      }
+      sqlClassIdCondition = buf.toString();
+    }
+    return sqlClassIdCondition;
+  }
+
 
   /**
    * Gets the effective eager joins.
@@ -447,7 +517,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
 
   /**
-   * Check the write security for this class.
+   * Check the write-security for this class.
    * The implementation checks that the class rules will accept
    * and that no object rule denies.
    *
@@ -459,7 +529,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   }
 
   /**
-   * Check the write security for this class in all contexts.
+   * Check the write-security for this class in all contexts.
    *
    * @return false if operation (delete, update or insert) is denied.
    */
@@ -492,7 +562,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   }
 
   /**
-   * Check the write permission for a PDO.
+   * Check the write-permission for a PDO.
    * <p>
    * Only root-entities are writable.
    * Components are not writable by default (because only the root can be persisted).

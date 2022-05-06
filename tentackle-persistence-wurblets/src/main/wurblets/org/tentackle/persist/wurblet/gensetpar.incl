@@ -2,13 +2,7 @@
     if (isWithJoins()) {
       out.print(createJoinSetPars());
     }
-    if (getEntity().getHierarchyInheritanceType() == InheritanceType.SINGLE) {
-]@
-    if (isClassIdRequiredInWhereClause()) {
-      st.setInt(ndx++, getValidClassId());
-    }
-@[
-    }
+
     if (getContextAttribute() != null) {
 ]@
     st.@(createJdbcSetterName(getContextAttribute().getDataType()))@(ndx++, @(getContextAttribute().getName())@);
