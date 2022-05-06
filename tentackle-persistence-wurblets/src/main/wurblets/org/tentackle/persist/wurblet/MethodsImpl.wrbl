@@ -89,13 +89,32 @@ For more options, see {\@link DbModelWurblet}.
 @[
         }
       }
-      else {
-        if (getEntity().getHierarchyInheritanceType() == InheritanceType.SINGLE) {
+
+      if (getEntity().getHierarchyInheritanceType() == InheritanceType.SINGLE) {
+        List<Entity> leafs = getEntity().getLeafEntities();
+        if (!leafs.isEmpty()) {
+          int[] classIds = new int[leafs.size()];
+          int ndx = 0;
+          for (Entity leaf : leafs) {
+            classIds[ndx++] = leaf.getClassId();
+          }
+          Arrays.sort(classIds);    // predictable order
+          StringBuilder buf = new StringBuilder();
+          boolean needComma = false;
+          for (int classId : classIds) {
+            if (needComma) {
+              buf.append(", ");
+            }
+            else {
+              needComma = true;
+            }
+            buf.append(classId);
+          }
 ]@
 
   \@Override
-  public boolean isClassIdRequiredInWhereClause() {
-    return true;
+  public int[] getValidClassIds() {
+    return new int[] { @(buf)@ };
   }
 @[
         }
@@ -645,6 +664,42 @@ For more options, see {\@link DbModelWurblet}.
   }
 @[
         }
+      }
+
+      if (getEntity().getHierarchyInheritanceType() == InheritanceType.SINGLE && getEntity().getSuperEntity() != null) {
+        // for all single table inherited subclasses (not the top one)
+]@
+
+  \@Override
+  public StringBuilder createSelectAllInnerSql() {
+    StringBuilder sql = new StringBuilder();
+    sql.append(getSqlColumnNames(() -> {
+         List<String> names = new ArrayList<>();
+@[
+        // part 1: all entities starting from topmost to me
+        Entity topEntity = getEntity().getTopSuperEntity();
+        List<Entity> superEntities = topEntity.getInheritanceChain(getEntity());
+        for (Entity superEntity : superEntities) {
+]@
+         names.addAll(@(deriveClassNameForEntity(superEntity))@.CNS_@(superEntity.getName().toUpperCase())@);
+@[
+        }
+        // part 2: all sub entities of me
+        List<Entity> subEntities = getEntity().getAllSubEntities();
+        for (Entity subEntity : subEntities) {
+]@
+         names.addAll(@(deriveClassNameForEntity(subEntity))@.CNS_@(subEntity.getName().toUpperCase())@);
+@[
+        }
+]@
+         return names;
+       }))
+       .append(Backend.SQL_FROM)
+       .append(getTableName()).append(getBackend().sqlAsBeforeTableAlias()).append(getTableAlias())
+       .append(Backend.SQL_WHEREALL);
+    return sql;
+  }
+@[
       }
 
       if (multiInheritance) {

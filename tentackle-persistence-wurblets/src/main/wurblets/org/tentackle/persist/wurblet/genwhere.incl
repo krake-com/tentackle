@@ -1,12 +1,7 @@
 @[
-    if (getEntity().getHierarchyInheritanceType() == InheritanceType.SINGLE) {
+    if (getEntity().getSuperEntity() != null && getEntity().getHierarchyInheritanceType() == InheritanceType.SINGLE) {
 ]@
-        boolean classIdRequired = isClassIdRequiredInWhereClause();
-        if (classIdRequired) {
-          sql.append(Backend.SQL_AND);
-          sql.append(getTopSuperTableAlias()).append('.').append(CN_CLASSID);
-          sql.append(Backend.SQL_EQUAL_PAR);
-        }
+        sql.append(getSqlClassIdCondition());
 @[
     }
     boolean andPrepended = false;

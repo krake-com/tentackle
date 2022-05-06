@@ -223,28 +223,6 @@ public class DbModelWurblet extends ModelWurblet {
 
 
   /**
-   * Returns whether the classid needs to be inluded in the WHERE-clause.
-   *
-   * @param entity the entity
-   * @return true if include classid
-   */
-  public boolean isClassIdRequiredInWhereClause(Entity entity) {
-    return !entity.isAbstract() &&   // only leafs
-           entity.getSuperEntity() != null &&    // with inheritance
-           entity.getHierarchyInheritanceType().isMappingToSuperTable(); // SINGE table inheritance
-  }
-
-  /**
-   * Returns whether the classid needs to be inluded in the WHERE-clause.
-   *
-   * @return true if include classid
-   */
-  public boolean isClassIdRequiredInWhereClause() {
-    return isClassIdRequiredInWhereClause(getEntity());
-  }
-
-
-  /**
    * Returns whether SQL statements can be executed for that entity.
    *
    * @return true if persistable
@@ -838,7 +816,7 @@ public class DbModelWurblet extends ModelWurblet {
       else {
         buf.append(")");
       }
-      // for multi column types, such as BMoney (not application specific types)
+      // for multi-column types, such as BMoney (not application specific types)
       int diff = dataType.getColumnCount() - 1;
       if (diff == 1) {
         buf.append(";\n    ndx++");
@@ -880,9 +858,6 @@ public class DbModelWurblet extends ModelWurblet {
     if (!path.getElements().isEmpty()) {
       Join join = path.getElements().get(0);    // normalized, i.e. only one (see above)
       Relation relation = join.getRelation();
-      if (isClassIdRequiredInWhereClause(relation.getForeignEntity())) {
-        buf.append("    st.setInt(ndx++, ").append(relation.getForeignEntity().getClassId()).append(");\n");
-      }
       List<MethodArgument> methodArgs = relation.getMethodArgs();
       if (methodArgs.size() > 1) {
         for (MethodArgument methodArg: methodArgs.subList(1, methodArgs.size())) {
@@ -1165,7 +1140,7 @@ public class DbModelWurblet extends ModelWurblet {
   /**
    * Creates java code applicable to the application model from JDBC variable access code.<br>
    * Applies .toInternal() if attribute is an application specific type.
-   * Otherwise jdbcCode is returned unchanged.
+   * Otherwise, jdbcCode is returned unchanged.
    *
    * @param attribute the attribute
    * @param jdbcCode the jdbc code
@@ -1189,7 +1164,7 @@ public class DbModelWurblet extends ModelWurblet {
   /**
    * Creates java code applicable to the JDBC layer from model variable access code.<br>
    * Applies .toExternal() if attribute is an application specific type.
-   * Otherwise modelCode is returned unchanged.
+   * Otherwise, modelCode is returned unchanged.
    *
    * @param attribute the attribute
    * @param modelCode the jdbc code
@@ -1236,7 +1211,7 @@ public class DbModelWurblet extends ModelWurblet {
 
 
   /**
-   * Creates the argument string for select- or delete statement of a relation.
+   * Creates the argument string for select or delete statement of a relation.
    *
    * @param relation the relation.
    * @return the arg string
@@ -1261,7 +1236,7 @@ public class DbModelWurblet extends ModelWurblet {
 
 
   /**
-   * Creates the wurblet argument string for select- or delete statement of a relation.
+   * Creates the wurblet argument string for select or delete statement of a relation.
    *
    * @param relation the relation.
    * @return the arg string
@@ -1408,14 +1383,14 @@ public class DbModelWurblet extends ModelWurblet {
   /**
    * The TT persistence layer provides an optimized select for a single eager relations via a LeftJoin.
    *
-   * @return the eager relations, empty list if no optimization possible or no eagers at all
+   * @return the eager relations, empty list if no optimization possible or no eager relations at all
    */
   public List<Relation> getEagerRelations() {
     List<Relation> eagerRelations = new ArrayList<>();
     outer:
     for (Relation relation: getEntity().getRelations()) {
       if (relation.getSelectionType() == SelectionType.EAGER) {
-        // verify that no sub class has an eager relation
+        // verify that no subclass has an eager relation
         for (Relation rel: getEntity().getSubEntityRelations()) {
           if (rel.getSelectionType() == SelectionType.EAGER) {
             break outer;
