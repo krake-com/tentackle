@@ -1207,7 +1207,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
       Entity entity = this;
       while (entity != null) {
         for (Relation relation: entity.getRelations()) {
-          if (name.equalsIgnoreCase(relation.getVariableName())) {
+          if (name.equalsIgnoreCase(relation.getName()) || name.equalsIgnoreCase(relation.getVariableName())) {
             return relation;
           }
         }
