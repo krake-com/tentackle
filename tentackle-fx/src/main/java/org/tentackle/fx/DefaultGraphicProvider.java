@@ -83,6 +83,7 @@ public class DefaultGraphicProvider extends IkonliGraphicProvider {
     nm.put("help", "mdi2h-help");
     nm.put("login", "mdi2l-login");
     nm.put("new", "mdi2s-shape-rectangle-plus");
+    nm.put("object", "mdi2a-alpha-o-box");
     nm.put("ok", "mdi2c-check");
     nm.put("password", "mdi2k-key");
     nm.put("preferences", "mdi2w-wrench");

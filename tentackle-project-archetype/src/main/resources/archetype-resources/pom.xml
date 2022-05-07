@@ -180,6 +180,11 @@
               <version>${symbol_dollar}{project.version}</version>
             </dependency>
             <dependency>
+              <groupId>org.tentackle</groupId>
+              <artifactId>tentackle-test-pdo</artifactId>
+              <version>\${symbol_dollar}{tentackle.version}</version>
+            </dependency>
+            <dependency>
               <groupId>org.postgresql</groupId>
               <artifactId>postgresql</artifactId>
               <version>\${symbol_dollar}{postgres.version}</version>

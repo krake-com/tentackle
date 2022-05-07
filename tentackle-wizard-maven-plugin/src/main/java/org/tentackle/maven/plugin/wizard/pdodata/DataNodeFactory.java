@@ -19,6 +19,7 @@
 package org.tentackle.maven.plugin.wizard.pdodata;
 
 import org.tentackle.common.StringHelper;
+import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
@@ -335,14 +336,16 @@ public class DataNodeFactory {
   }
 
   private static Entity lookupEntity(String typeName) {
-    Entity entity = null;
     try {
-      entity = Model.getInstance().getByEntityName(typeName);
+      Entity entity = Model.getInstance().getByEntityName(typeName);
+      if (entity == null) {
+        throw new ModelException("entity " + typeName + " missing in model");
+      }
+      return entity;
     }
     catch (ModelException e) {
-      LOGGER.severe("cannot determine entity for " + typeName, e);
+      throw new TentackleRuntimeException(e.getMessage(), e);
     }
-    return entity;
   }
 
 }

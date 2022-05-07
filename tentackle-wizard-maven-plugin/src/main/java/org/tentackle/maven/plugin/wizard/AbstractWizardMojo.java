@@ -88,12 +88,17 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
   @Parameter(required = true)
   private List<Profile> profiles;
 
-
   /**
    * The directory holding the templates.
    */
   @Parameter(defaultValue = "${project.basedir}/templates")
   private File templateDir;
+
+  /**
+   * Load the model from the plugin dependencies on the classpath.
+   */
+  @Parameter(defaultValue = "true")
+  private boolean loadModelFromDependencies;
 
 
   /**
@@ -190,6 +195,15 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
    */
   protected void loadModel() throws MojoFailureException, MojoExecutionException {
     int errors = 0;
+
+    if (loadModelFromDependencies) {
+      try {
+        Model.getInstance().loadFromResources(true);
+      }
+      catch (ModelException e) {
+        throw new MojoFailureException(e);
+      }
+    }
 
     if (filesets != null && !filesets.isEmpty()) {
       // explicit filesets given instead of model dir
