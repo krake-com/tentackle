@@ -127,7 +127,7 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
 
   @Override
   public Node createGraphic()  {
-    return Fx.createGraphic("unknown");
+    return Fx.createGraphic("object");
   }
 
   @Override

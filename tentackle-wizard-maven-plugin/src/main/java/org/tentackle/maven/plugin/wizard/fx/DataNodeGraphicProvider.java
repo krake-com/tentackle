@@ -53,7 +53,7 @@ public class DataNodeGraphicProvider extends IkonliGraphicProvider {
 
       nm.put("DataItem", "mdi2b-brightness-auto");
       nm.put("DataList", "mdi2f-format-list-bulleted");
-      nm.put("DataObject", "mdi2f-file-tree");
+      nm.put("DataObject", "mdi2a-alpha-o-box");
 
       nameMap = nm;
     }

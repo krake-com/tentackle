@@ -166,7 +166,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     configButton.setGraphic(Fx.createGraphic("preferences"));
     configButton.setOnAction(e -> showCodeConfigurationDialog());
     configButton.setDisable(true);
-    generateButton.setGraphic(Fx.createGraphic("edit"));
+    generateButton.setGraphic(Fx.createGraphic("generate"));
     generateButton.setDisable(true);
     generateButton.setOnAction(e -> generateCode());
     closeButton.setGraphic(Fx.createGraphic("close"));
