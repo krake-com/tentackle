@@ -952,11 +952,12 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
   /**
-   * Gets the valid classids for single table inheritance where clauses.
+   * Gets the valid class-IDs for the concrete types of this type.<br>
+   * Applies only to entities of single- or multi-table inheritance hierarchies, except the topmost entity.
    *
-   * @return the class IDs
+   * @return the class IDs, null if no restrictions
    */
-  public int[] getValidClassIds() {
+  public List<Integer> getValidClassIds() {
     return null;
   }
 
@@ -2485,16 +2486,16 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Classes with a cache must override this method!
    * The implementation with the PdoCache should look like this:
    * <pre>
+   *    super.expireCache(maxSerial);   // in case inherited cache overridden
    *    cache.expire(maxSerial);
    * </pre>
-   * while "cache" has been declared by the wurblet PdoCache.
+   * while "cache" has been declared by the wurblet {@code PdoCache}.
    *
    * @param maxSerial is the new tableSerial this object will get
-   * @return true if cache invalidated, false if there is no cache
    * @see PdoCache
    */
-  public boolean expireCache(long maxSerial)  {
-    return false;
+  public void expireCache(long maxSerial)  {
+    // default does nothing
   }
 
 

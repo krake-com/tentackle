@@ -17,7 +17,6 @@ import ${package}.persist.md.rmi.UserRemoteDelegate;
 import org.tentackle.common.RemoteMethod;
 import org.tentackle.dbms.DbModificationType;
 import org.tentackle.dbms.DbObjectClassVariables;
-import org.tentackle.dbms.ModificationType;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.dbms.StatementId;
@@ -27,7 +26,6 @@ import org.tentackle.misc.TrackedList;
 import org.tentackle.misc.TrackedListListener;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.PdoCache;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.PersistentObjectService;
 import org.tentackle.persist.PersistentObjectClassVariables;
@@ -110,10 +108,6 @@ public class UserPersistenceImpl extends OrgUnitPersistenceImpl<User, UserPersis
 
 
   // @wurblet relations PdoRelations
-
-
-  // @wurblet cache PdoCache --preload
-
 
 
   /*

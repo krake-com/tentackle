@@ -90,7 +90,8 @@ For more options, see {\@link DbModelWurblet}.
         }
       }
 
-      if (getEntity().getHierarchyInheritanceType() == InheritanceType.SINGLE) {
+      if (getEntity().getSuperEntity() != null &&
+          (getEntity().getHierarchyInheritanceType() == InheritanceType.SINGLE || getEntity().getHierarchyInheritanceType() == InheritanceType.MULTI)) {
         List<Entity> leafs = getEntity().getLeafEntities();
         if (!leafs.isEmpty()) {
           int[] classIds = new int[leafs.size()];
@@ -112,9 +113,11 @@ For more options, see {\@link DbModelWurblet}.
           }
 ]@
 
+  private static final List<Integer> VALID_CLASS_IDS = List.of(@(buf)@);
+
   \@Override
-  public int[] getValidClassIds() {
-    return new int[] { @(buf)@ };
+  public List<Integer> getValidClassIds() {
+    return VALID_CLASS_IDS;
   }
 @[
         }

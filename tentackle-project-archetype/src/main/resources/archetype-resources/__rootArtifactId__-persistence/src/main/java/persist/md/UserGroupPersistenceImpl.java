@@ -15,7 +15,6 @@ import ${package}.persist.md.rmi.UserGroupRemoteDelegate;
 
 import org.tentackle.dbms.DbModificationType;
 import org.tentackle.dbms.DbObjectClassVariables;
-import org.tentackle.dbms.ModificationType;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.misc.IdentifiableMap;
@@ -24,7 +23,6 @@ import org.tentackle.misc.TrackedList;
 import org.tentackle.misc.TrackedListListener;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.PdoCache;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.PersistentObjectService;
 import org.tentackle.persist.PersistentObjectClassVariables;
@@ -105,9 +103,6 @@ public class UserGroupPersistenceImpl extends OrgUnitPersistenceImpl<UserGroup, 
 
 
   // @wurblet relations PdoRelations
-
-
-  // @wurblet cache PdoCache --preload
 
 
 }
