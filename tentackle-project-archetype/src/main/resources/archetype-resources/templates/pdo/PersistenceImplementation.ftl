@@ -129,7 +129,7 @@ public class ${persistenceImplementation} extends ${superPersistenceImplementati
 
   // @wurblet relations PdoRelations
 
-<#if profile == "masterdata">
+<#if profile == "masterdata" && pdoExtends == "">
   // @wurblet cache PdoCache --preload
 
 </#if>

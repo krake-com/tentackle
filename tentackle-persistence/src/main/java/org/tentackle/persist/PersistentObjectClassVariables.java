@@ -300,12 +300,12 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    * @param classIds the valid class IDs, null or empty if none
    * @return the SQL string, empty if no such condition necessary
    */
-  public String getSqlClassIdCondition(int[] classIds) {
+  public String getSqlClassIdCondition(List<Integer> classIds) {
     if (sqlClassIdCondition == null) {
       StringBuilder buf = new StringBuilder();
-      if (superClassVariables != null && classIds != null && classIds.length > 0) {
+      if (tableName == null && classIds != null && !classIds.isEmpty()) {
         buf.append(Backend.SQL_AND).append(getColumnName(AbstractPersistentObject.CN_CLASSID));
-        if (classIds.length == 1) {
+        if (classIds.size() == 1) {
           buf.append('=');
         }
         else {
@@ -321,7 +321,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
           }
           buf.append(classId);
         }
-        if (classIds.length > 1) {
+        if (classIds.size() > 1) {
           buf.append(')');
         }
       }
