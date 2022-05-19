@@ -88,22 +88,22 @@ public class PdoUtilities {
   private final Map<Class<?>, List<PdoMember>> memberMap = new ConcurrentHashMap<>();
 
   /**
-   * The map of tablenames.
+   * The map of table names.
    */
   private final Map<Class<?>, String> tableNameMap = new ConcurrentHashMap<>();
 
   /**
-   * The map of class ids.
+   * The map of class IDs.
    */
   private final Map<Class<?>, Integer> tableClassIdMap = new ConcurrentHashMap<>();
 
   /**
-   * The map of singlenames (class -> singlename)
+   * The map of singulars (class -> singular)
    */
   private final Map<String, String> singularMap;
 
   /**
-   * The map of multinames (class -> multiname)
+   * The map of plurals (class -> plural)
    */
   private final Map<String, String> pluralMap;
 
@@ -205,19 +205,17 @@ public class PdoUtilities {
    * @return the tablename, null if no tablename
    */
   public <T extends PersistentDomainObject<T>> String getTableName(Class<T> clazz) {
-    String className = clazz.getName();
-    String tableName = tableNameMap.get(clazz);  // try extra list first
-    if (tableName == null) {  // not determined yet
-      tableName = SessionUtilities.getInstance().getTableName(className);
-      if (tableName == null) {  // not annotated with @TableName
+    String tableName = tableNameMap.computeIfAbsent(clazz, cls -> {
+      String tName = SessionUtilities.getInstance().getTableName(cls.getName());
+      if (tName == null) {  // not annotated with @TableName
         // get from pdo instance
-        tableName = Pdo.create(clazz).getTableName();
-        if (tableName == null) {
-          tableName = "";
+        tName = Pdo.create(clazz).getPersistenceDelegate().getTableName();
+        if (tName == null) {
+          tName = "";
         }
-        tableNameMap.put(clazz, tableName);
       }
-    }
+      return tName;
+    });
     return tableName.isEmpty() ? null : tableName;
   }
 
@@ -230,17 +228,14 @@ public class PdoUtilities {
    * @return the class id, 0 if no class id
    */
   public <T extends PersistentDomainObject<T>> int getClassId(Class<T> clazz) {
-    String pdoClassName = clazz.getName();
-    Integer classId = tableClassIdMap.get(clazz);  // try extra list
-    if (classId == null) {   // not determined yet
-      classId = SessionUtilities.getInstance().getClassId(pdoClassName);
-      if (classId == 0) {  // not annotated with @ClassId
+    return tableClassIdMap.computeIfAbsent(clazz, cls -> {
+      int id = SessionUtilities.getInstance().getClassId(cls.getName());
+      if (id == 0) {  // not annotated with @ClassId
         // get from pdo instance
-        classId = Pdo.create(clazz).getPersistenceDelegate().getClassId();
-        tableClassIdMap.put(clazz, classId);
+        id = Pdo.create(clazz).getPersistenceDelegate().getClassId();
       }
-    }
-    return classId;
+      return id;
+    });
   }
 
 
@@ -451,7 +446,7 @@ public class PdoUtilities {
    *
    * @param pdos the list to save
    * @param modifiedOnly is true if only modified objects are saved
-   * @param usePersist true if use persist() instead of save() and replace objects in collection
+   * @param usePersist true to use persist() instead of save() and replace objects in collection
    * @return the number of objects saved, -1 if some error
    */
   @SuppressWarnings("unchecked")
@@ -521,9 +516,9 @@ public class PdoUtilities {
 
   /**
    * Saves a list of PDOs.<br>
-   * All objects with isSaveable() == true will be saved.
+   * All objects with isPersistable() == true will be saved.
    * If modifiedOnly is true only isModified() objects will be saved.
-   * All objects with isSaveable() == false and isNew() == false
+   * All objects with isPersistable() == false and isNew() == false
    * are removed!
    * By definition, a {@link TrackedList} must *NOT* contain untracked objects.
    * The errorhandler will be invoked if such an object

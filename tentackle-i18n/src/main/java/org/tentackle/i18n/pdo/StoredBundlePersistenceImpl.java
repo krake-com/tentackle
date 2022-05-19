@@ -510,7 +510,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
 
     private static PdoCache<StoredBundle> createCache() {
       PdoCache<StoredBundle> cache = Pdo.createPdoCache(StoredBundle.class, true, true, false);
-      Pdo.listen(ev -> cache.expire(ev.getSerial()), StoredBundle.class);
+      Pdo.listen(cache::expire, StoredBundle.class);
       return cache;
     }
 
@@ -546,7 +546,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
   @Override
   public void expireCache(long maxSerial) {
     super.expireCache(maxSerial);
-    getCache().expire(maxSerial);
+    CacheHolder.CACHE.expire(null, getTableName(), maxSerial);
   }
 
   @Override
@@ -560,6 +560,15 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
   }
 
   /**
+   * Gets the index for the unique domain key.
+   *
+   * @return the index for StoredBundle.StoredBundleUDK udk
+   */
+  protected PdoCacheIndex<StoredBundle, StoredBundle.StoredBundleUDK> getCacheIndexUdk() {
+    return CacheHolder.UDK_INDEX;
+  }
+
+  /**
    * Selects from cache by unique domain key but does not load from db if not in cache.
    *
    * @param udk the unique domain key
@@ -567,7 +576,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
    */
   @Override
   public StoredBundle selectCachedOnlyByUniqueDomainKey(StoredBundle.StoredBundleUDK udk)  {
-    return getCache().select(CacheHolder.UDK_INDEX, getDomainContext(), udk, false);
+    return getCache().select(getCacheIndexUdk(), getDomainContext(), udk, false);
   }
 
   /**
@@ -578,7 +587,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
    */
   @Override
   public StoredBundle selectCachedByUniqueDomainKey(StoredBundle.StoredBundleUDK udk)  {
-    return getCache().select(CacheHolder.UDK_INDEX, getDomainContext(), udk);
+    return getCache().select(getCacheIndexUdk(), getDomainContext(), udk);
   }
 
   /**

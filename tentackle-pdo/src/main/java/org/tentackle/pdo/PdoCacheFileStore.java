@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.pdo;
 
 import org.tentackle.app.AbstractApplication;
@@ -37,9 +36,10 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-
 
 /**
  * A file-based backup store for {@link PdoCache}.<br>
@@ -67,9 +67,10 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
   private final String backendName;       // the name of the backend
   private final String fileName;          // the filename
 
-  private long tableSerial;               // the serial version of the table
   @SuppressWarnings("serial")
   private List<T> objects;                // the objects in the cache
+  @SuppressWarnings("serial")
+  private Map<String, Long> tableSerials; // map of table name to table serial
 
 
 
@@ -181,9 +182,12 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
    */
   private void initializeForWrite() {
     // build cache data (no check for key change)
-    objects = cache.getObjects(false);
-    // get current table serial
-    tableSerial = getTableSerial();
+    objects = cache.getObjects(null, false);
+    // get current table serials
+    tableSerials = new HashMap<>();
+    for (T object : objects) {
+      tableSerials.computeIfAbsent(object.getTableName(), tableName -> getTableSerial(tableName));
+    }
   }
 
   /**
@@ -231,13 +235,20 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
       object.setSession(session);   // this is transient
       cache.add(object);
     }
+
     // set up the context db list and set the selectAll-lists if cache is preloading
     cache.updateContextInfo();
+
     // check if cache is expired by asking the server
-    long currentTableSerial = getTableSerial();
-    if (currentTableSerial != tableSerial) {
-      cache.expire(currentTableSerial);
+    for (Map.Entry<String, Long> entry : tableSerials.entrySet()) {
+      String tableName = entry.getKey();
+      long tableSerial = entry.getValue();
+      long currentSerial = getTableSerial(tableName);
+      if (currentSerial != tableSerial) {
+        cache.expire(null, tableName, currentSerial);
+      }
     }
+
     this.cache = cache;
   }
 
@@ -245,11 +256,12 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
   /**
    * Gets the current table serial.
    *
+   * @param tableName the table name
    * @return the serial, 0 if no access made yet
    */
-  private long getTableSerial() {
+  private long getTableSerial(String tableName) {
     if (objects != null && !objects.isEmpty()) {
-      return ModificationTracker.getInstance().getSerial(cache.getObjectClass());
+      return ModificationTracker.getInstance().getSerial(tableName);
     }
     else  {
       return 0;
