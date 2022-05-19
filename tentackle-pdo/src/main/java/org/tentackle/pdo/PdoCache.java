@@ -56,13 +56,14 @@ import java.util.TreeSet;
  * The cache works in 2 main operating modes:
  * <ol>
  *   <li>preloading: all PDOs are loaded at once on the first access or after at least one PDO was modified in the database. This
- *   mode is particularly useful for master-data with a limited number of entities that change rather infrequently.</li>
+ *   mode is particularly useful for master-data with a limited number of entities that change rather infrequently.
+ *   In this mode the limits for the cache size and the keep-quota are ignored.</li>
  *   <li>per-PDO caching strategy: whenever a PDO is changed in the database, it is marked dirty in the cache and
- *   will be reloaded on next access. The following caching strategies are available:
+ *   will be reloaded on next access. When the cache size limit is reached, the following eviction strategies are available:
  *      <ul>
- *        <li><em>forget:</em> the cache is completely invalidated when full</li>
- *        <li><em>lru:</em> the least recently PDO is removed</li>
- *        <li><em>lfu:</em> the least frequently PDO is removed</li>
+ *        <li><em>forget:</em> the cache is completely invalidated (all PDOs removed from the cache).</li>
+ *        <li><em>lru:</em> the least recently PDO is removed.</li>
+ *        <li><em>lfu:</em> the least frequently PDO is removed.</li>
  *      </ul>
  *      PDOs must provides a {@code tableSerial} for non-preloading caches!
  *   </li>
