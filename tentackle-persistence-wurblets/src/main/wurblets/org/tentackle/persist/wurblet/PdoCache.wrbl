@@ -673,7 +673,6 @@ For more options, see {\@link DbModelWurblet}.
 @[
     }
 
-    if (preload)  {
 ]@
 
   \@Override
@@ -681,6 +680,5 @@ For more options, see {\@link DbModelWurblet}.
     return @(filterBegin)@getCache().selectAll(getDomainContext())@(filterEnd)@;
   }
 @[
-    }
   }
 ]@
