@@ -47,7 +47,11 @@ import org.tentackle.session.TableName;
  *
  * ## attributes
 <#if profile == "masterdata">
+  <#if pdoExtends == "">
+ * [cached, tokenlock]
+  <#else>
  * [cached]
+  </#if>
 </#if>
  *
  * ## indexes
