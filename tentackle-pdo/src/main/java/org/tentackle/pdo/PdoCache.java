@@ -111,6 +111,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
 
   private boolean enabled;                            // true if cache enabled
   private int maxSize;                                // maximum size, 0 = unlimited (default)
+  private boolean maxSizeHardLimit;                   // true if selectAll throws an exception if list is larger than maxSize
   private PdoCacheStrategy strategy;                  // caching strategy if maxSize != 0
   private int keepQuota;                              // percentage of entries to keep when applying caching strategy. Default is 50.
   private boolean inToString;                         // avoid recursion in logging
@@ -918,6 +919,9 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
         synchronized (this) {
 
           if (maxSize > 0 && sList.size() > maxSize) {
+            if (maxSizeHardLimit) {
+              throw new PdoCacheException("maxSize=" + maxSize + " is a hard limit, requested list size is " + sList.size());
+            }
             int newMaxSize = sList.size() + sList.size() / 10;    // size + 10%
             LOGGER.warning("maxSize too small in " + this + ": enlarged from " + maxSize + " to " + newMaxSize);
             maxSize = newMaxSize;
@@ -1085,6 +1089,24 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
    */
   public synchronized void setMaxSize(int maxSize) {
     this.maxSize = maxSize;
+  }
+
+  /**
+   * Returns whether {@code maxSize} is a hard limit.
+   *
+   * @return true if selectAll cannot enlarge size
+   */
+  public synchronized boolean isMaxSizeHardLimit() {
+    return maxSizeHardLimit;
+  }
+
+  /**
+   * Sets whether {@code maxSize} is a hard limit.
+   *
+   * @param maxSizeHardLimit true if selectAll cannot enlarge size (default is false)
+   */
+  public synchronized void setMaxSizeHardLimit(boolean maxSizeHardLimit) {
+    this.maxSizeHardLimit = maxSizeHardLimit;
   }
 
   /**
