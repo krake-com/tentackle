@@ -68,12 +68,12 @@ public class SessionUtilities {
   private SessionKeepAliveDaemon keepAliveDaemon;
 
   /**
-   * map of class names to tablenames.
+   * map of class names to table names.
    */
   private final Map<String,String> classTableMap;
 
   /**
-   * map of tablenames to class names.
+   * map of table names to class names.
    */
   private final Map<String,String> tableClassMap;
 
@@ -123,10 +123,10 @@ public class SessionUtilities {
 
 
   /**
-   * Gets the tablename of a pdo class.
+   * Gets the table name of a pdo class.
    *
-   * @param className the classname of the object
-   * @return the tablename, null if no such class
+   * @param className the class name of the object
+   * @return the tablename, null if no such class or not annotated with &#64;{@link TableName}
    */
   public String getTableName(String className) {
     return classTableMap.get(className);
@@ -146,7 +146,7 @@ public class SessionUtilities {
    * Gets the classid of a pdo class.
    *
    * @param pdoClassName the classname of the pdo
-   * @return the classid, 0 if no such class
+   * @return the classid, 0 if no such class or not annotated with &#64;{@link ClassId}.
    */
   public int getClassId(String pdoClassName) {
     Integer classId = classIdMap.get(pdoClassName);
@@ -175,7 +175,7 @@ public class SessionUtilities {
 
 
   /**
-   * Determines the tablename from the @TableName annotation.
+   * Determines the tablename from the &#64;{@link TableName} annotation.
    *
    * @param clazz the class
    * @return the tablename, null if no such annotation
@@ -198,10 +198,10 @@ public class SessionUtilities {
 
 
   /**
-   * Determines the classid from the @ClassId annotation.
+   * Determines the classid from the &#64;{@link ClassId} annotation.
    *
    * @param clazz the class
-   * @return the class ID, 0 if no such annotation (may be an abstract class)
+   * @return the class ID, 0 if no such annotation (maybe an abstract class)
    */
   public int determineClassId(Class<?> clazz) {
     ClassId anno = clazz.getAnnotation(ClassId.class);
@@ -262,7 +262,7 @@ public class SessionUtilities {
       lastSerial = idSer.getSerial();
     }
     if (maxSerial > lastSerial) {
-      someRemoved = true;  // no expired pdos found or gap at end
+      someRemoved = true;  // no expired PDOs found or gap at end
     }
     return someRemoved;
   }
@@ -427,7 +427,7 @@ public class SessionUtilities {
 
 
   /**
-   * Returns whether the exception message will span multiple lines.
+   * Returns whether the exception message spans multiple lines.
    *
    * @param msg the original message
    * @param cause the cause

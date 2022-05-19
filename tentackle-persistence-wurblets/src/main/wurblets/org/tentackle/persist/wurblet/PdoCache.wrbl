@@ -142,7 +142,7 @@ For more options, see {\@link DbModelWurblet}.
     \@SuppressWarnings("unchecked")
     private static <X extends @(pdoName)@<X>> PdoCache<X> createCache() {
       PdoCache<X> cache = (PdoCache<X>) Pdo.createPdoCache(@(pdoName)@.class, @(preload ? "true" : "false")@, @(mutable ? "false" : "true")@, @(secure ? "true" : "false")@);
-      Pdo.listen(ev -> cache.expire(ev.getSerial()), @(listenNames)@);
+      Pdo.listen(cache::expire, @(listenNames)@);
 @[
       if (strategy != null) {
 ]@
@@ -193,8 +193,9 @@ For more options, see {\@link DbModelWurblet}.
 @{to}@
 
     private static <X extends @(pdoName)@<X>> PdoCacheIndex<X, @(type)@> create@(StringHelper.firstToUpper(name))@Index() {
-      return new PdoCacheIndex<X, @(type)@>("@(pdoName)@:@(name)@") {
+      return new PdoCacheIndex<>("@(pdoName)@:@(name)@") {
         \@Override
+        \@SuppressWarnings("unchecked")
         public X select(DomainContext context, @(type)@ @(name)@) {
           return (X) Pdo.create(@(pdoName)@.class, context).selectBy@(suffix)@ForCache(@(name)@);
         }
@@ -210,8 +211,9 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
     private static <X extends @(pdoName)@<X>> PdoCacheIndex<X, @(type)@> create@(StringHelper.firstToUpper(name))@Index() {
-      return new PdoCacheIndex<X, @(type)@>("@(pdoName)@:@(name)@") {
+      return new PdoCacheIndex<>("@(pdoName)@:@(name)@") {
         \@Override
+        \@SuppressWarnings("unchecked")
         public X select(DomainContext context, @(type)@ @(name)@) {
           return (X) Pdo.create(@(pdoName)@.class, context).findBy@(suffix)@(@(name)@);
         }
@@ -229,8 +231,9 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
     private static <X extends @(pdoName)@<X>> PdoCacheIndex<X, @(udkType)@> createUdkIndex() {
-      return new PdoCacheIndex<X, @(udkType)@>("@(pdoName)@:UDK") {
+      return new PdoCacheIndex<>("@(pdoName)@:UDK") {
         \@Override
+        \@SuppressWarnings("unchecked")
         public X select(DomainContext context, @(udkType)@ @(udkName)@) {
 @[
         if (isRemote()) {
@@ -297,7 +300,7 @@ For more options, see {\@link DbModelWurblet}.
 
     private static PdoCache<@(pdoName)@> createCache() {
       PdoCache<@(pdoName)@> cache = Pdo.createPdoCache(@(pdoName)@.class, @(preload ? "true" : "false")@, @(mutable ? "false" : "true")@, @(secure ? "true" : "false")@);
-      Pdo.listen(ev -> cache.expire(ev.getSerial()), @(listenNames)@);
+      Pdo.listen(cache::expire, @(listenNames)@);
 @[
       if (strategy != null) {
 ]@
@@ -441,8 +444,11 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
   private boolean isValidClassId(T pdo) {
-    List<Integer> classIds = getValidClassIds();
-    return classIds == null || classIds.contains(pdo.getPersistenceDelegate().getClassId());
+    if (pdo != null) {
+      List<Integer> classIds = getValidClassIds();
+      return classIds == null || classIds.contains(pdo.getPersistenceDelegate().getClassId());
+    }
+    return false;
   }
 
   private T filterByClassId(T pdo) {
@@ -458,7 +464,7 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
   private boolean isValidClassId(T pdo) {
-    return getValidClassIds().contains(pdo.getPersistenceDelegate().getClassId());
+    return pdo != null && getValidClassIds().contains(pdo.getPersistenceDelegate().getClassId());
   }
 
   private T filterByClassId(T pdo) {
@@ -510,7 +516,7 @@ For more options, see {\@link DbModelWurblet}.
   \@Override
   public void expireCache(long maxSerial) {
     super.expireCache(maxSerial);
-    getCache().expire(maxSerial);
+    CacheHolder.CACHE.expire(null, getTableName(), maxSerial);
   }
 
   \@Override
@@ -529,7 +535,24 @@ For more options, see {\@link DbModelWurblet}.
       String suffix = Character.toUpperCase(name.charAt(0)) + name.substring(1);
       String indexCast = getEntity().isAbstract() ? ("(PdoCacheIndex<T, " + type + ">) ") : "";
       String indexName = "CacheHolder." + name.toUpperCase() + "_INDEX";
+      String indexMethod = "getCacheIndex" + StringHelper.firstToUpper(name);
 ]@
+
+  /**
+   * Gets the index for @(name)@.
+   *
+   * \@return the index for @(type)@ @(name)@
+   */
+@[
+      if (isAbstract) {
+]@
+  \@SuppressWarnings("unchecked")
+@[
+      }
+]@
+  protected PdoCacheIndex<@(pdoType)@, @(type)@> @(indexMethod)@() {
+    return @(indexCast)@@(indexName)@;
+  }
 
   /**
    * Selects from cache by @(name)@ but does not load from db if not in cache.
@@ -538,15 +561,8 @@ For more options, see {\@link DbModelWurblet}.
    * \@return the pdo, null if not in cache
    */
   \@Override
-@[
-      if (isAbstract) {
-]@
-  \@SuppressWarnings("unchecked")
-@[
-      }
-]@
   public @(pdoType)@ selectCachedOnlyBy@(suffix)@(@(type)@ @(name)@)  {
-    return @(filterBegin)@getCache().select(@(indexCast)@@(indexName)@, getDomainContext(), @(name)@, false)@(filterEnd)@;
+    return @(filterBegin)@getCache().select(@(indexMethod)@(), getDomainContext(), @(name)@, false)@(filterEnd)@;
   }
 
   /**
@@ -556,15 +572,8 @@ For more options, see {\@link DbModelWurblet}.
    * \@return the pdo, null if no such object
    */
   \@Override
-@[
-      if (isAbstract) {
-]@
-  \@SuppressWarnings("unchecked")
-@[
-      }
-]@
   public @(pdoType)@ selectCachedBy@(suffix)@(@(type)@ @(name)@)  {
-    return @(filterBegin)@getCache().select(@(indexCast)@@(indexName)@, getDomainContext(), @(name)@)@(filterEnd)@;
+    return @(filterBegin)@getCache().select(@(indexMethod)@(), getDomainContext(), @(name)@)@(filterEnd)@;
   }
 
   /**
@@ -596,7 +605,24 @@ For more options, see {\@link DbModelWurblet}.
 
     if (genudk) {
       String indexCast = isAbstract ? ("(PdoCacheIndex<T, " + udkType + ">) ") : "";
+      String indexMethod = "getCacheIndexUdk";
 ]@
+
+  /**
+   * Gets the index for the unique domain key.
+   *
+   * \@return the index for @(udkType)@ @(udkName)@
+   */
+@[
+      if (isAbstract) {
+]@
+  \@SuppressWarnings("unchecked")
+@[
+      }
+]@
+  protected PdoCacheIndex<@(pdoType)@, @(udkType)@> @(indexMethod)@() {
+    return @(indexCast)@CacheHolder.UDK_INDEX;
+  }
 
   /**
    * Selects from cache by unique domain key but does not load from db if not in cache.
@@ -605,15 +631,8 @@ For more options, see {\@link DbModelWurblet}.
    * \@return the pdo, null if not in cache
    */
   \@Override
-@[
-      if (isAbstract) {
-]@
-  \@SuppressWarnings("unchecked")
-@[
-      }
-]@
   public @(pdoType)@ selectCachedOnlyByUniqueDomainKey(@(udkType)@ @(udkName)@)  {
-    return @(filterBegin)@getCache().select(@(indexCast)@CacheHolder.UDK_INDEX, getDomainContext(), @(udkName)@, false)@(filterEnd)@;
+    return @(filterBegin)@getCache().select(@(indexMethod)@(), getDomainContext(), @(udkName)@, false)@(filterEnd)@;
   }
 
   /**
@@ -623,15 +642,8 @@ For more options, see {\@link DbModelWurblet}.
    * \@return the pdo, null if no such object
    */
   \@Override
-@[
-      if (isAbstract) {
-]@
-  \@SuppressWarnings("unchecked")
-@[
-      }
-]@
   public @(pdoType)@ selectCachedByUniqueDomainKey(@(udkType)@ @(udkName)@)  {
-    return @(filterBegin)@getCache().select(@(indexCast)@CacheHolder.UDK_INDEX, getDomainContext(), @(udkName)@)@(filterEnd)@;
+    return @(filterBegin)@getCache().select(@(indexMethod)@(), getDomainContext(), @(udkName)@)@(filterEnd)@;
   }
 
   /**

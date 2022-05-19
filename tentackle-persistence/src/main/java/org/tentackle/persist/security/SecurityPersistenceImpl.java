@@ -349,7 +349,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
 
     private static PdoCache<Security> createCache() {
       PdoCache<Security> cache = Pdo.createPdoCache(Security.class, true, true, false);
-      Pdo.listen(ev -> cache.expire(ev.getSerial()), Security.class);
+      Pdo.listen(cache::expire, Security.class);
       return cache;
     }
   }
@@ -372,7 +372,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   @Override
   public void expireCache(long maxSerial) {
     super.expireCache(maxSerial);
-    getCache().expire(maxSerial);
+    CacheHolder.CACHE.expire(null, getTableName(), maxSerial);
   }
 
   @Override
