@@ -129,23 +129,29 @@ fgrep "$PATTERN" $FILE | grep "$EXPR" | cut -c 17- | awk $LOCALEOPT '{
 
 END {
     if (extended > 0) {
-        printf("calls\ttotal[ms]\tavg[ms]\tmin[ms]\tmax[ms]\texec[ms]\texec-avg[ms]\texec-min[ms]\texec-max[ms]\trows\trows-avg\trows-min\trows-max\tfetch[ms]\tfetch-avg[ms]\tfetch-min[ms]\tfetch-max[ms]\t  ---\tSQL statement\n");
+        printf("calls\ttotal[ms]\tavg[ms]\tmin[ms]\tmax[ms]\texec[ms]\texec-avg[ms]\texec-min[ms]\texec-max[ms]\trows\trows-avg\trows-min\trows-max\tfetch[ms]\tfetch-avg[ms]\tfetch-min[ms]\tfetch-max[ms]\tfetch-row[ms]\t  ---\tSQL statement\n");
         for (operation in millis) {
             exec = millis[operation]
             calls = invocs[operation]
             fetch = totFetch[operation]
             total = exec + fetch
             if (fetch == "") {
-                printf("%d\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t\t\t\t\t\t\t\t\t\t%s\n",\
+                printf("%d\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t\t\t\t\t\t\t\t\t\t\t%s\n",\
                        calls, total, total/calls, minms[operation], maxms[operation], exec, exec/calls, minms[operation], maxms[operation], operation)
             }
             else {
                 rows = totRows[operation]
-                printf("%d\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%d\t%.3f\t%d\t%d\t%.3f\t%.3f\t%.3f\t%.3f\t\t%s\n",\
+                if (rows > 0) {
+                  rowfetch = fetch/rows
+                }
+                else {
+                  rowfetch = 0;
+                }
+                printf("%d\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%d\t%.3f\t%d\t%d\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t\t%s\n",\
                        calls, total, total/calls, minms[operation]+minFetch[operation], maxms[operation]+maxFetch[operation],\
                        exec, exec/calls, minms[operation], maxms[operation],\
                        rows, rows/calls, minRows[operation], maxRows[operation],\
-                       fetch, fetch/calls, minFetch[operation], maxFetch[operation],\
+                       fetch, fetch/calls, minFetch[operation], maxFetch[operation], rowfetch,\
                        operation)
             }
         }
