@@ -35,6 +35,7 @@ import org.tentackle.fx.Fx;
 import org.tentackle.fx.component.skin.NoteSkin;
 
 import java.net.URL;
+import java.util.List;
 
 /**
  * A note control.<br>
@@ -91,6 +92,24 @@ public class Note extends PopupControl {
     public String getCssClass() {
       return cssClass;
     }
+
+    /**
+     * Applies the CSS style.
+     *
+     * @param styleClass the style class list
+     */
+    public void apply(List<String> styleClass) {
+      for (Type type : values()) {
+        if (type == this) {
+          if (!styleClass.contains(cssClass)) {
+            styleClass.add(cssClass);
+          }
+        }
+        else {
+          styleClass.remove(type.cssClass);
+        }
+      }
+    }
   }
 
 
@@ -138,6 +157,23 @@ public class Note extends PopupControl {
       return cssClass;
     }
 
+    /**
+     * Applies the CSS style.
+     *
+     * @param styleClass the style class list
+     */
+    public void apply(List<String> styleClass) {
+      for (Position position : values()) {
+        if (position == this) {
+          if (!styleClass.contains(cssClass)) {
+            styleClass.add(cssClass);
+          }
+        }
+        else {
+          styleClass.remove(position.cssClass);
+        }
+      }
+    }
   }
 
   private static final String CSS_NAME = "note.css";
@@ -233,7 +269,10 @@ public class Note extends PopupControl {
    * @param position the position
    */
   public void setPosition(Position position) {
-    this.position = position;
+    if (this.position != position) {
+      this.position = position;
+      position.apply(getStyleClass());
+    }
   }
 
   /**
@@ -252,7 +291,10 @@ public class Note extends PopupControl {
    * @param type the type
    */
   public void setType(Type type) {
-    this.type = type;
+    if (this.type != type) {
+      this.type = type;
+      type.apply(getStyleClass());
+    }
   }
 
   /**
