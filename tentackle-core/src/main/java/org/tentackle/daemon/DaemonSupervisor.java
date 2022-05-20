@@ -21,6 +21,7 @@ package org.tentackle.daemon;
 
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
+import org.tentackle.misc.DiagnosticUtilities;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -661,8 +662,13 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
           Daemon daemon = daemons[daemonIndex];
 
           if (daemon.supervisable != null && daemon.supervisable.isDead() && !daemon.supervisable.isKilled()) {
-            LOGGER.warning((daemon.supervisedDaemon != null && !daemon.supervisedDaemon.isAlive() ?
-                           "daemon has terminated: " : "dead daemon detected: ") + daemon.supervisable);
+            if (daemon.supervisedDaemon != null && !daemon.supervisedDaemon.isAlive()) {
+              LOGGER.warning("daemon has terminated: {0}", daemon.supervisable);
+            }
+            else {
+              LOGGER.warning("dead daemon detected: {0}{1}", daemon.supervisable, DiagnosticUtilities.getInstance().createStackDump());
+            }
+
             try {
               daemon.kill();    // mark it killed (even if !alive anymore)
             }
