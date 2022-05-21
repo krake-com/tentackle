@@ -12,7 +12,7 @@ For more options, see {\@link ModelWurblet}.
 
     List<String> allColConst = null;
     boolean isSingleTableInheritance = getEntity().getTopSuperEntity().getInheritanceType() == InheritanceType.SINGLE;
-    if (isSingleTableInheritance) {
+    if (isSingleTableInheritance || isMuteOptionSet(getEntity())) {
       allColConst = new ArrayList<>();
       if (getEntity().getSuperEntity() == null) {
         for (Attribute attr: getEntity().getAllAttributes())  {
@@ -24,32 +24,30 @@ For more options, see {\@link ModelWurblet}.
     }
 
     for (Attribute attr: getEntity().getAttributes())  {
-      if (!attr.getOptions().isNoConstant() && !attr.getOptions().isFromSuper()) {
-        if (!attr.getOptions().isNoDeclare() || attr.getOptions().isFromSuper())    {
-          int columnCount = getEffectiveDataType(attr).getColumnCount();
-          String baseColConst = getColumnNameConstant(attr, -1);
+      if (!attr.getOptions().isNoConstant() && !attr.getOptions().isNoDeclare() && !attr.getOptions().isFromSuper()) {
+        int columnCount = getEffectiveDataType(attr).getColumnCount();
+        String baseColConst = getColumnNameConstant(attr, -1);
 
-          for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
-            String colConst = getColumnNameConstant(attr, columnIndex);
-            if (allColConst != null) {
-              allColConst.add(colConst);
-            }
-            if (colConst.equals(baseColConst)) {
-              baseColConst = null;
-            }
+        for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
+          String colConst = getColumnNameConstant(attr, columnIndex);
+          if (allColConst != null && !attr.getOptions().isMute()) {
+            allColConst.add(colConst);
+          }
+          if (colConst.equals(baseColConst)) {
+            baseColConst = null;
+          }
 ]@
 
   /** database column name for '@(attr)@'@(columnCount > 1 ? (", column " + (columnIndex+1) + " of " + columnCount) : "")@. */
   public static final String @(colConst)@ = @(StringHelper.toDoubleQuotes(getColumnName(attr, columnIndex)))@;
 @[
-          }
-          if (baseColConst != null) {
+        }
+        if (baseColConst != null) {
 ]@
 
   /** database column basename for '@(attr)@'. */
   public static final String @(baseColConst)@ = @(StringHelper.toDoubleQuotes(getColumnName(attr, -1)))@;
 @[
-          }
         }
       }
     }
@@ -57,7 +55,7 @@ For more options, see {\@link ModelWurblet}.
     if (allColConst != null) {
 ]@
 
-  /** single table inheritance mapped columns for '@(getEntity())@'. */
+  /** mapped columns for '@(getEntity())@'. */
   public static final List<String> CNS_@(getEntity().getName().toUpperCase())@ = List.of(
 @[
       int i = 0;
