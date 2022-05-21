@@ -302,32 +302,52 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    */
   public String getSqlClassIdCondition(List<Integer> classIds) {
     if (sqlClassIdCondition == null) {
-      StringBuilder buf = new StringBuilder();
-      if (tableName == null && classIds != null && !classIds.isEmpty()) {
-        buf.append(Backend.SQL_AND).append(getColumnName(AbstractPersistentObject.CN_CLASSID));
-        if (classIds.size() == 1) {
-          buf.append('=');
-        }
-        else {
-          buf.append(" IN(");
-        }
-        boolean needComma = false;
-        for (int classId : classIds) {
-          if (needComma) {
-            buf.append(',');
-          }
-          else {
-            needComma = true;
-          }
-          buf.append(classId);
-        }
-        if (classIds.size() > 1) {
-          buf.append(')');
-        }
-      }
-      sqlClassIdCondition = buf.toString();
+      // tableName is null for all sub-entities within single-table inheritance hierarchies.
+      // multi-table inherited provide their own tablename.
+      sqlClassIdCondition = tableName == null ? createSqlClassIdCondition(classIds, true) : "";
     }
     return sqlClassIdCondition;
+  }
+
+
+  /**
+   * Creates the SQL string used in WHERE-clauses for inherited entities.
+   *
+   * @param classIds the valid class IDs, null or empty if none
+   * @param withAlias prepend classID column name with table alias
+   * @return the SQL string, empty if no such condition necessary
+   */
+  public String createSqlClassIdCondition(List<Integer> classIds, boolean withAlias) {
+    StringBuilder buf = new StringBuilder();
+    if (superClassVariables != null && classIds != null && !classIds.isEmpty()) {
+      buf.append(Backend.SQL_AND);
+      if (withAlias) {
+        buf.append(getColumnName(AbstractPersistentObject.CN_CLASSID));
+      }
+      else {
+        buf.append(AbstractPersistentObject.CN_CLASSID);
+      }
+      if (classIds.size() == 1) {
+        buf.append('=');
+      }
+      else {
+        buf.append(" IN(");
+      }
+      boolean needComma = false;
+      for (int classId : classIds) {
+        if (needComma) {
+          buf.append(',');
+        }
+        else {
+          needComma = true;
+        }
+        buf.append(classId);
+      }
+      if (classIds.size() > 1) {
+        buf.append(')');
+      }
+    }
+    return buf.toString();
   }
 
 

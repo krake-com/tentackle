@@ -2023,7 +2023,10 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   public String createSelectExpiredTableSerials1Sql() {
     // sort by tableserial+id to return pairs in deterministic order for same tableserials
     return SQL_SELECT + CN_ID + SQL_COMMA + CN_TABLESERIAL + SQL_FROM + getTopSuperTableName() + SQL_WHERE +
-           CN_TABLESERIAL + SQL_GREATER_PAR + SQL_ORDERBY + CN_TABLESERIAL + SQL_COMMA + CN_ID;
+           CN_TABLESERIAL + SQL_GREATER_PAR +
+           getClassVariables().createSqlClassIdCondition(getValidClassIds(), false) +   // for multi- and single-table inheritance
+           SQL_ORDERBY + CN_TABLESERIAL + SQL_COMMA + CN_ID;
+
   }
 
   /**
@@ -2036,7 +2039,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     // sort by tableserial+id to return pairs in deterministic order for same tableserials
     return SQL_SELECT + CN_ID + SQL_COMMA + CN_TABLESERIAL + SQL_FROM + getTopSuperTableName() + SQL_WHERE +
            CN_TABLESERIAL + SQL_GREATER_PAR + SQL_AND + CN_TABLESERIAL + Backend.SQL_LESSOREQUAL_PAR +
+           getClassVariables().createSqlClassIdCondition(getValidClassIds(), false) +   // for multi- and single-table inheritance
            SQL_ORDERBY + CN_TABLESERIAL + SQL_COMMA + CN_ID;
+
   }
 
 
