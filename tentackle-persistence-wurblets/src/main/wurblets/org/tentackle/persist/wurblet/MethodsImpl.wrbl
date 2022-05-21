@@ -705,7 +705,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
       }
 
-      if (multiInheritance) {
+      else if (multiInheritance) {
         // create joinable sql selects with table aliases
         Entity topEntity = getEntity().getTopSuperEntity();
         List<Entity> chain = topEntity.getInheritanceChain(getEntity());
@@ -748,16 +748,30 @@ For more options, see {\@link DbModelWurblet}.
         boolean needComma = false;
         for (Entity entity: chain) {
           String implClass = deriveClassNameForEntity(entity);
+          if (isMuteOptionSet(entity)) {
+]@
+    sql.@(needComma ? "append(Backend.SQL_COMMA)." : "")@append(@(implClass)@.CLASSVARIABLES.getSqlColumnNames(() -> @(implClass)@.CNS_@(entity.getName().toUpperCase())@));
+@[
+          }
+          else {
 ]@
     sql.@(needComma ? "append(Backend.SQL_COMMA)." : "")@append(@(implClass)@.CLASSVARIABLES.getColumnName(Backend.SQL_ALLSTAR));
 @[
-        needComma = true;
-        if (entity == topEntity) {
-          for (Entity sub: subs) {
-            implClass = deriveClassNameForEntity(sub);
+          }
+          needComma = true;
+          if (entity == topEntity) {
+            for (Entity sub: subs) {
+              implClass = deriveClassNameForEntity(sub);
+              if (isMuteOptionSet(sub)) {
+]@
+    sql.append(Backend.SQL_COMMA).append(@(implClass)@.CLASSVARIABLES.getSqlColumnNames(() -> @(implClass)@.CNS_@(sub.getName().toUpperCase())@));
+@[
+              }
+              else {
 ]@
     sql.append(Backend.SQL_COMMA).append(@(implClass)@.CLASSVARIABLES.getColumnName(Backend.SQL_ALLSTAR));
 @[
+              }
             }
           }
         }
@@ -766,9 +780,9 @@ For more options, see {\@link DbModelWurblet}.
     sql.append(@(topImplClass)@.CLASSVARIABLES.getTableName()).
         append(getBackend().sqlAsBeforeTableAlias()).append(@(topImplClass)@.CLASSVARIABLES.getTableAlias());
 @[
-      if (chain.size() > 1) {
-        for (Entity entity: chain.subList(1, chain.size())) {
-          String implClass = deriveClassNameForEntity(entity);
+        if (chain.size() > 1) {
+          for (Entity entity: chain.subList(1, chain.size())) {
+            String implClass = deriveClassNameForEntity(entity);
 ]@
     sql.append(getBackend().sqlJoin(JoinType.INNER,
                @(implClass)@.CLASSVARIABLES.getTableName(), @(implClass)@.CLASSVARIABLES.getTableAlias(),
@@ -862,8 +876,24 @@ For more options, see {\@link DbModelWurblet}.
   }
 @[
         }
+      } // end multiinheritance
+
+      else if (isMuteOptionSet(getEntity())) {
+]@
+
+  \@Override
+  public StringBuilder createSelectAllInnerSql() {
+    StringBuilder sql = new StringBuilder();
+    sql.append(getSqlColumnNames(() -> CNS_@(getEntity().getName().toUpperCase())@))
+       .append(Backend.SQL_FROM)
+       .append(getTableName()).append(getBackend().sqlAsBeforeTableAlias()).append(getTableAlias())
+       .append(Backend.SQL_WHEREALL);
+    return sql;
+  }
+@[
       }
-    }
+
+    } // end !mock
 
     for (Attribute attr: getEntity().getAttributes())  {
       if (attr.getOptions().isMute()) {

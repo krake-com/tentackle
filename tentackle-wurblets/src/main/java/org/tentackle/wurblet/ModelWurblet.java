@@ -29,6 +29,7 @@ import org.wurbelizer.wurblet.AbstractWurblet;
 import org.tentackle.common.Constants;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
+import org.tentackle.model.AttributeOptions;
 import org.tentackle.model.Entity;
 import org.tentackle.model.EntityAliases;
 import org.tentackle.model.MethodArgument;
@@ -324,6 +325,25 @@ public class ModelWurblet extends AbstractJavaWurblet {
   public boolean isGenerified() {
     String definition = getContainer().getProperty(Wurbler.PROPSPACE_WURBLET, JavaSourceType.DEFINITION);
     return definition != null && definition.startsWith("<");
+  }
+
+
+  /**
+   * Returns whether at least one of the mapped attributes has the [MUTE]-option set.
+   *
+   * @param entity the entity
+   * @return true if not all attributes mapped to the Java entity
+   */
+  public boolean isMuteOptionSet(Entity entity) {
+    boolean mute = false;
+    for (Attribute attr: entity.getAttributes()) {
+      AttributeOptions options = attr.getOptions();
+      if (options.isMute() && !options.isNoConstant() && !options.isNoDeclare() && !options.isFromSuper()) {
+        mute = true;
+        break;
+      }
+    }
+    return mute;
   }
 
 
