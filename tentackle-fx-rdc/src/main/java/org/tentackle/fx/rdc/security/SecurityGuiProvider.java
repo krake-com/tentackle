@@ -18,12 +18,16 @@
 
 package org.tentackle.fx.rdc.security;
 
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.rdc.DefaultGuiProvider;
 import org.tentackle.fx.rdc.GuiProviderService;
+import org.tentackle.fx.table.FxTableCell;
+import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
+import org.tentackle.fx.table.type.BooleanTableCellType;
 import org.tentackle.security.pdo.Security;
 
 /**
@@ -59,13 +63,37 @@ public class SecurityGuiProvider extends DefaultGuiProvider<Security> {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public TableConfiguration<Security> createTableConfiguration() {
     TableConfiguration<Security> config = createEmptyTableConfiguration();
     config.addColumn("granteeToString", getBundle().getString("grantee"));
     config.addColumn("contextToString", getBundle().getString("context"));
     // priority not displayed because it corresponds to the sorting order
     config.addColumn(Security.AN_PERMISSIONS, getBundle().getString(Security.AN_PERMISSIONS));
-    config.addColumn(Security.AN_ALLOWED, getBundle().getString(Security.AN_ALLOWED));
+    TableColumnConfiguration<Security, Boolean> allowedConfiguration = (TableColumnConfiguration<Security, Boolean>)
+        config.addColumn(Security.AN_ALLOWED, getBundle().getString(Security.AN_ALLOWED));
+    // override default checkbox renderer (style configured in SecurityRulesView.css)
+    allowedConfiguration.setCellType(new BooleanTableCellType() {
+      @Override
+      public void updateItem(FxTableCell<?, Boolean> tableCell, Boolean item) {
+        tableCell.setText(null);
+        if (item) {
+          tableCell.setGraphic(Fx.createGraphic("ok"));
+          tableCell.getStyleClass().remove(SecurityEditor.DENY_STYLE);
+          if (!tableCell.getStyleClass().contains(SecurityEditor.ALLOW_STYLE)) {
+            tableCell.getStyleClass().add(SecurityEditor.ALLOW_STYLE);
+          }
+        }
+        else {
+          tableCell.setGraphic(Fx.createGraphic("cancel"));
+          tableCell.getStyleClass().remove(SecurityEditor.ALLOW_STYLE);
+          if (!tableCell.getStyleClass().contains(SecurityEditor.DENY_STYLE)) {
+            tableCell.getStyleClass().add(SecurityEditor.DENY_STYLE);
+          }
+        }
+        updateAlignment(tableCell, Pos.BASELINE_CENTER);
+      }
+    });
     config.addColumn(Security.AN_MESSAGE, getBundle().getString(Security.AN_MESSAGE));
     return config;
   }

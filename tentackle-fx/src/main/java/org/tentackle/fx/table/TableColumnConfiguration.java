@@ -99,6 +99,21 @@ public interface TableColumnConfiguration<S,T> {
   Type getGenericType();
 
   /**
+   * Gets the specific table cell type.
+   *
+   * @return the cell type, null to determine from column type
+   * @see #getName()
+   */
+  TableCellType<T> getCellType();
+
+  /**
+   * Sets the specific table cell type.
+   *
+   * @param cellType the cell type, null to determine from column type
+   */
+  void setCellType(TableCellType<T> cellType);
+
+  /**
    * Defines the format for numeric or date/time-types.<br>
    * If null is returned a default format will be used according to the column class.
    *

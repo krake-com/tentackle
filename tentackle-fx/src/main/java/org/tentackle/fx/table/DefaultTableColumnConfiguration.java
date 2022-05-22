@@ -90,6 +90,11 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   private Type genericType;
 
   /**
+   * Non-default cell type.
+   */
+  private TableCellType<T> cellType;
+
+  /**
    * The format pattern.
    */
   private String pattern;
@@ -215,6 +220,11 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
+  public Class<T> getType() {
+    return type;
+  }
+
+  @Override
   public void setGenericType(Type genericType) {
     this.genericType = genericType;
   }
@@ -225,8 +235,13 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
-  public Class<T> getType() {
-    return type;
+  public TableCellType<T> getCellType() {
+    return cellType;
+  }
+
+  @Override
+  public void setCellType(TableCellType<T> cellType) {
+    this.cellType = cellType;
   }
 
   @Override

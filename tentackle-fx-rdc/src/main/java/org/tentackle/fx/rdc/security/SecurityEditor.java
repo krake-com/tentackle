@@ -57,9 +57,21 @@ import java.util.TreeMap;
 @FxControllerService
 public class SecurityEditor extends PdoEditor<Security> {
 
-  private static final String DENY_STYLE = "sec-deny";
-  private static final String ALLOW_STYLE = "sec-allow";
-  private static final String NA_STYLE = "sec-na";
+  /**
+   * CSS style for "denied".
+   */
+  public static final String DENY_STYLE = "sec-deny";
+
+  /**
+   * CSS style for "allowed".
+   */
+  public static final String ALLOW_STYLE = "sec-allow";
+
+  /**
+   * CSS style for "not applicable".
+   */
+  public static final String NA_STYLE = "sec-na";
+
 
   @Bindable
   private Security sec;

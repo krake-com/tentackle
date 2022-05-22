@@ -1,0 +1,8 @@
+
+.sec-allow .ikonli-font-icon {
+  -fx-icon-color: green;
+}
+
+.sec-deny .ikonli-font-icon {
+  -fx-icon-color: red;
+}
