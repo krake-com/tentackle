@@ -93,7 +93,8 @@ public class FxTreeTableCell<S,T> extends TreeTableCell<S,T> {
    * @return the cell type, never null
    */
   protected TableCellType<T> getCellType() {
-    return columnConfiguration.getTableConfiguration().getTableCellType(columnConfiguration.getType());
+    TableCellType<T> cellType = columnConfiguration.getCellType();
+    return cellType != null ? cellType : columnConfiguration.getTableConfiguration().getTableCellType(columnConfiguration.getType());
   }
 
 
