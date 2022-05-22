@@ -676,7 +676,7 @@ For more options, see {\@link DbModelWurblet}.
   \@Override
   public StringBuilder createSelectAllInnerSql() {
     StringBuilder sql = new StringBuilder();
-    sql.append(getSqlColumnNames(() -> {
+    sql.append(getColumnNames(() -> {
          List<String> names = new ArrayList<>();
 @[
         // part 1: all entities starting from topmost to me
@@ -750,7 +750,7 @@ For more options, see {\@link DbModelWurblet}.
           String implClass = deriveClassNameForEntity(entity);
           if (isMuteOptionSet(entity)) {
 ]@
-    sql.@(needComma ? "append(Backend.SQL_COMMA)." : "")@append(@(implClass)@.CLASSVARIABLES.getSqlColumnNames(() -> @(implClass)@.CNS_@(entity.getName().toUpperCase())@));
+    sql.@(needComma ? "append(Backend.SQL_COMMA)." : "")@append(@(implClass)@.CLASSVARIABLES.getColumnNames(@(implClass)@.CNS_@(entity.getName().toUpperCase())@));
 @[
           }
           else {
@@ -764,7 +764,7 @@ For more options, see {\@link DbModelWurblet}.
               implClass = deriveClassNameForEntity(sub);
               if (isMuteOptionSet(sub)) {
 ]@
-    sql.append(Backend.SQL_COMMA).append(@(implClass)@.CLASSVARIABLES.getSqlColumnNames(() -> @(implClass)@.CNS_@(sub.getName().toUpperCase())@));
+    sql.append(Backend.SQL_COMMA).append(@(implClass)@.CLASSVARIABLES.getColumnNames(@(implClass)@.CNS_@(sub.getName().toUpperCase())@));
 @[
               }
               else {
@@ -884,7 +884,7 @@ For more options, see {\@link DbModelWurblet}.
   \@Override
   public StringBuilder createSelectAllInnerSql() {
     StringBuilder sql = new StringBuilder();
-    sql.append(getSqlColumnNames(() -> CNS_@(getEntity().getName().toUpperCase())@))
+    sql.append(getColumnNames(CNS_@(getEntity().getName().toUpperCase())@))
        .append(Backend.SQL_FROM)
        .append(getTableName()).append(getBackend().sqlAsBeforeTableAlias()).append(getTableAlias())
        .append(Backend.SQL_WHEREALL);

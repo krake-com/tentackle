@@ -932,7 +932,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
   /**
-   * Gets the full column name with optional table alias.
+   * Gets the full column name with table alias.
    *
    * @param name the short name
    * @return the full name
@@ -942,13 +942,23 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
   /**
-   * Gets the comma-separated list of column names for single table inheritance selects.
+   * Gets the comma-separated list of column names with table alias.
    *
    * @param columnNamesSupplier the supplier for the list of column names
    * @return the partial SQL string
    */
-  public String getSqlColumnNames(Supplier<List<String>> columnNamesSupplier) {
-    return getClassVariables().getSqlColumnNames(columnNamesSupplier);
+  public String getColumnNames(Supplier<List<String>> columnNamesSupplier) {
+    return getClassVariables().getColumnNames(columnNamesSupplier);
+  }
+
+  /**
+   * Gets the comma-separated list of column names with table alias.
+   *
+   * @param columnNames the list of column names
+   * @return the partial SQL string
+   */
+  public String getColumnNames(List<String> columnNames) {
+    return getClassVariables().getColumnNames(columnNames);
   }
 
   /**

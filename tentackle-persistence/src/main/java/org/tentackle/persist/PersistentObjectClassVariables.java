@@ -274,15 +274,25 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
 
   /**
-   * Gets the comma-separated list of column names for single table inheritance selects.
+   * Gets the comma-separated list of column names with table alias.
    *
    * @param columnNamesSupplier the supplier for the list of column names
    * @return the partial SQL string
    */
-  public String getSqlColumnNames(Supplier<List<String>> columnNamesSupplier) {
+  public String getColumnNames(Supplier<List<String>> columnNamesSupplier) {
+    return getColumnNames(columnNamesSupplier.get());
+  }
+
+  /**
+   * Gets the comma-separated list of column names with table alias.
+   *
+   * @param columnNames the list of column names
+   * @return the partial SQL string
+   */
+  public String getColumnNames(List<String> columnNames) {
     if (sqlColumnNames == null) {
       StringBuilder buf = new StringBuilder();
-      for (String name : columnNamesSupplier.get()) {
+      for (String name : columnNames) {
         if (!buf.isEmpty()) {
           buf.append(',');
         }
