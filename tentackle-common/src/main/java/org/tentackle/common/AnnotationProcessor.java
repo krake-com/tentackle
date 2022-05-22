@@ -19,13 +19,12 @@
 
 package org.tentackle.common;
 
+import javax.annotation.processing.Processor;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import javax.annotation.processing.Processor;
 
 
 
@@ -33,7 +32,6 @@ import javax.annotation.processing.Processor;
  * Annotation to express that the annotated class is an annotation processor.
  */
 @Documented
-@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @Service(Processor.class)

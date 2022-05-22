@@ -19,13 +19,13 @@
 
 package org.tentackle.session;
 
+import org.tentackle.common.Analyze;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import org.tentackle.common.Analyze;
 
 
 
@@ -63,7 +63,6 @@ import org.tentackle.common.Analyze;
  * masterdata tables start with md_ and transactiondata with td_.
  */
 @Documented
-@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @Analyze("org.tentackle.buildsupport.TableNameAnalyzeHandler")

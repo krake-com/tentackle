@@ -19,13 +19,13 @@
 
 package org.tentackle.pdo;
 
+import org.tentackle.common.MappedService;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import org.tentackle.common.MappedService;
 
 
 
@@ -33,7 +33,6 @@ import org.tentackle.common.MappedService;
  * Annotation to describe the name of multiple PDOs.
  */
 @Documented
-@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @MappedService(Plural.class)
