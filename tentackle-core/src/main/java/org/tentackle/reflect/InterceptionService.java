@@ -19,13 +19,13 @@
 
 package org.tentackle.reflect;
 
+import org.tentackle.common.MappedService;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import org.tentackle.common.MappedService;
 
 
 
@@ -34,7 +34,6 @@ import org.tentackle.common.MappedService;
  * is a persistence service for PDO.
  */
 @Documented
-@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @MappedService(Interceptable.class)

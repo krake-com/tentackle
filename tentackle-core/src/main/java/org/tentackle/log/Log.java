@@ -19,21 +19,20 @@
 
 package org.tentackle.log;
 
+import org.tentackle.log.Logger.Level;
+import org.tentackle.reflect.Interception;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import org.tentackle.log.Logger.Level;
-import org.tentackle.reflect.Interception;
 
 
 /**
  * Annotation to express that the annotated method should be logged.
  */
 @Documented
-@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 @Interception(implementedBy=LogInterceptor.class)
