@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.persist;
 
 import org.tentackle.dbms.AbstractDbOperation;
@@ -28,20 +27,21 @@ import org.tentackle.pdo.OperationMethodCache;
 import org.tentackle.pdo.OperationMethodCacheProvider;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistenceDelegate;
+import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.PersistentOperation;
 import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 
 import java.io.Serial;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-
 
 /**
  * A {@code AbstractPersistentOperation} provides methods that are not part of {@link PersistentOperation}s
  * and is associated to a {@link DomainContext}. Complex transactions are usually
- * {@code AbstractPersistentOperation}s. {@code AbstractPersistentOperation}s are remote capabable.
+ * {@code AbstractPersistentOperation}s. {@code AbstractPersistentOperation}s are remote capable.
  *
  * @param <T> the PO class (interface)
  * @param <P> the operation implementation class
@@ -123,7 +123,7 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
    * <p>
    * In fact, {@link PersistentOperationClassVariables} is an extension of
    * {@link org.tentackle.dbms.DbOperationClassVariables}.
-   * So this fullfills the requirements for AbstractDbObject
+   * So this fulfills the requirements for AbstractDbObject
    */
   @Override
   public PersistentOperationClassVariables<T,P> getClassVariables() {
@@ -260,6 +260,32 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
   @Override
   public void setDomainContextImmutable(boolean contextImmutable) {
     this.contextImmutable = contextImmutable;
+  }
+
+
+  /**
+   * Configures a within an operation remotely retrieved PDO.
+   *
+   * @param context the local domain context
+   * @param pdo the PDO
+   */
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public <X extends PersistentDomainObject<X>> void configureRemoteObject(DomainContext context, X pdo) {
+    ((AbstractPersistentObject) pdo.getPersistenceDelegate()).configureRemoteObject(context, pdo);
+  }
+
+  /**
+   * Configures a within an operation remotely retrieved collection of PDOs.
+   *
+   * @param context the local domain context
+   * @param pdos the PDOs to configure
+   */
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public <X extends PersistentDomainObject<X>> void configureRemoteObjects(DomainContext context, Collection<X> pdos) {
+    if (pdos != null && !pdos.isEmpty()) {
+      X pdo = pdos.iterator().next();
+      ((AbstractPersistentObject) pdo.getPersistenceDelegate()).configureRemoteObjects(context, pdos);
+    }
   }
 
 
