@@ -37,6 +37,7 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Label;
 import javafx.scene.control.SelectionMode;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.input.KeyCode;
@@ -708,6 +709,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
       treeView.requestFocus();
       treeShown = true;
       treeButton.setGraphic(Fx.createGraphic("table"));
+      treeButton.setTooltip(new Tooltip(resources.getString("table")));
       if (treeViewInvalid) {
         setItems(getItems());
       }
@@ -736,6 +738,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
       tableView.requestFocus();
       treeShown = false;
       treeButton.setGraphic(Fx.createGraphic("tree"));
+      treeButton.setTooltip(new Tooltip(resources.getString("tree")));
       if (tableViewInvalid && treeView.getRoot() != null) {   // root becomes null if stage closed
         int index = 0;
         for (TreeItem<T> item: treeView.getRoot().getChildren()) {
@@ -804,6 +807,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   @FXML
   private void initialize() {
     treeButton.setGraphic(Fx.createGraphic("tree"));
+    treeButton.setTooltip(new Tooltip(resources.getString("tree")));
     treeButton.setOnAction(e -> {
       if (treeShown) {
         showTable();

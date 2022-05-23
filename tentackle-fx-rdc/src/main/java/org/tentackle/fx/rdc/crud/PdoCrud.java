@@ -30,6 +30,7 @@ import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.input.KeyCode;
@@ -303,16 +304,20 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   @FXML
   private void initialize() {
     securityButton.setGraphic(Fx.createGraphic("security"));
+    securityButton.setTooltip(new Tooltip(resources.getString("security")));
     securityButton.setOnAction(e -> security());
 
     previousButton.setGraphic(Fx.createGraphic("up"));
+    previousButton.setTooltip(new Tooltip(resources.getString("up")));
     previousButton.setOnAction(e -> previous());
 
     nextButton.setGraphic(Fx.createGraphic("down"));
+    nextButton.setTooltip(new Tooltip(resources.getString("down")));
     nextButton.setOnAction(e -> next());
     setPdoList(null);
 
-    treeButton.setGraphic(Fx.createGraphic("browser"));
+    treeButton.setGraphic(Fx.createGraphic("tree"));
+    treeButton.setTooltip(new Tooltip(resources.getString("tree")));
     treeButton.setOnAction(e -> tree());
 
     findButton.setGraphic(Fx.createGraphic("search"));

@@ -175,7 +175,7 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
     addButton.setGraphic(Fx.createGraphic("add"));
     addButton.setOnAction(e -> add());
 
-    removeButton.setGraphic(Fx.createGraphic("delete"));
+    removeButton.setGraphic(Fx.createGraphic("subtract"));
     removeButton.setOnAction(e -> remove());
 
     saveButton.setGraphic(Fx.createGraphic("save"));
