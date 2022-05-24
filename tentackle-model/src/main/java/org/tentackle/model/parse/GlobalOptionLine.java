@@ -60,7 +60,7 @@ public class GlobalOptionLine extends SingleLine {
     String optionsText = getText().trim();    // trim because of endsWith below
     String sortingText = null;
     int ndx = optionsText.lastIndexOf('|');   // sorting?
-    if (ndx >= 0 && optionsText.length() > ndx) {
+    if (ndx >= 0 && ndx < optionsText.length() - 1) {
       boolean endsWithBracket = optionsText.endsWith("]");
       sortingText = optionsText.substring(ndx + 1);
       optionsText = optionsText.substring(0, ndx);

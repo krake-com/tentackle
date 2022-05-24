@@ -29,6 +29,7 @@ import org.tentackle.session.Session;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -45,7 +46,7 @@ public class CleanupMojo extends AbstractVerifyMojo {
   protected void processBundles(Session session, List<MavenProject> projects) throws MojoExecutionException {
     super.processBundles(session, projects);
 
-    warnings += resourceBundleMap.entrySet().stream().filter(entry -> entry.getValue().isNew()).map(entry -> entry.getKey()).toList().size();
+    warnings += resourceBundleMap.entrySet().stream().filter(entry -> entry.getValue().isNew()).map(Map.Entry::getKey).toList().size();
     warnings += missingTranslations.stream().filter(translation -> translation.bundle.getLocale() != null).toList().size();
     errors += missingTranslations.stream().filter(translation -> translation.bundle.getLocale() == null).toList().size();
 

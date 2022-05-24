@@ -53,17 +53,20 @@ public class DefaultPdoFinder<T extends PersistentDomainObject<T>> extends PdoFi
 
   @Override
   public List<T> runSearch() {
-    if (pdo != null && pdo.isNormTextProvided()) {
-      String pattern = patternField.getText();
-      if (!StringHelper.isAllWhitespace(pattern)) {
-        return pdo.selectByNormText(pattern);
+    if (pdo != null) {
+      if (pdo.isNormTextProvided()) {
+        String pattern = patternField.getText();
+        if (!StringHelper.isAllWhitespace(pattern)) {
+          return pdo.selectByNormText(pattern);
+        }
       }
+      PdoCache<T> cache = pdo.getCache();
+      if (cache != null && cache.isPreloading()) {
+        return pdo.selectAllCached();
+      }
+      return pdo.selectAll();
     }
-    PdoCache<T> cache = pdo.getCache();
-    if (cache != null && cache.isPreloading()) {
-      return pdo.selectAllCached();
-    }
-    return pdo.selectAll();
+    return List.of();
   }
 
 

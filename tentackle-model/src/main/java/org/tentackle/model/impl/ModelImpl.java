@@ -255,8 +255,7 @@ public class ModelImpl implements Model {
   public Collection<EntityInfo> loadFromJar(File file, boolean updateRelations) throws ModelException {
     Collection<EntityInfo> entityInfos = new ArrayList<>();
     String indexName = Constants.META_INF + MODEL_INDEX_LIST;
-    try {
-      JarFile jarFile = new JarFile(file);
+    try (JarFile jarFile = new JarFile(file)) {
       JarEntry indexEntry = jarFile.getJarEntry(indexName);
       if (indexEntry != null) {
         String urlLead = "jar:file:" + file.getCanonicalPath() + "!/";

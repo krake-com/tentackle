@@ -83,7 +83,6 @@ public enum LineType {
       case ATTRIBUTE_OPTION, RELATION_OPTION -> new OptionLine(document, offset, this);
       case ATTRIBUTE -> new AttributeLine(document, offset, this);
       case RELATION -> new RelationLine(document, offset, this);
-      default -> throw new IllegalArgumentException("unimplemented line type");
     };
   }
 }

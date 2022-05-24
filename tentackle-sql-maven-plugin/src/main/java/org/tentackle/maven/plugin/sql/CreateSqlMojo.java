@@ -319,7 +319,8 @@ public class CreateSqlMojo extends AbstractSqlMojo {
           }
         }
         else {
-          sqlWriter.append('\n').append(backend.getSingleLineComment()).append(" sequences not supported by backend " + backend + "!\n");
+          sqlWriter.append('\n').append(backend.getSingleLineComment()).append(" sequences not supported by backend ")
+                   .append(String.valueOf(backend)).append("!\n");
         }
       }
     }

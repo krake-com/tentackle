@@ -24,7 +24,6 @@ import org.tentackle.common.ServiceFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -54,7 +53,7 @@ public class DefaultBackendFactory implements BackendFactory {
         backends.add(backendClass.getDeclaredConstructor().newInstance());
       }
       // we need a predictable evaluation order (backends sorted by name)
-      Collections.sort(backends, Comparator.comparing(backend -> backend.getName()));
+      backends.sort(Comparator.comparing(Backend::getName));
     }
     catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
            InvocationTargetException | NoSuchMethodException nfe) {

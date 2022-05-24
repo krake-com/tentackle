@@ -336,9 +336,7 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
   private Thread.UncaughtExceptionHandler getUncaughtExceptionHandler() {
     return (t, e) -> {
       getLog().error("unhandled exception detected", e);
-      Platform.runLater(() -> {
-        Fx.error(e.getMessage(), e, "UNEXPECTED EXCEPTION");
-      });
+      Platform.runLater(() -> Fx.error(e.getMessage(), e, "UNEXPECTED EXCEPTION"));
     };
   }
 
