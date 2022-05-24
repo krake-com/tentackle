@@ -38,14 +38,17 @@ import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.rdc.RdcFxRdcBundle;
 import org.tentackle.fx.rdc.RdcUtilities;
+import org.tentackle.log.Logger;
 import org.tentackle.misc.IdentifiableKey;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
+import org.tentackle.pdo.PdoCache;
 import org.tentackle.pdo.PdoRuntimeException;
 import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -55,6 +58,9 @@ import java.util.function.Supplier;
  * @param <T> the PDO type
  */
 public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
+
+  private static final Logger LOGGER = Logger.get(PdoComponentAddon.class);
+
 
   /**
    * The PDO style.<br>
@@ -250,7 +256,14 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
    * @return the collection of all PDOs
    */
   public Collection<T> getAllPdos(T proxy) {
-    return proxy.selectAllCached();
+    PdoCache<T> cache = proxy.getCache();
+    if (cache != null && cache.isPreloading()) {
+      return proxy.selectAllCached();
+    }
+    List<T> pdos = proxy.selectAll();
+    LOGGER.warning("{0} {1} retrieved by selectAll() -> consider caching with preloading!",
+                   pdos.size(), proxy.getEffectiveClass().getName());
+    return pdos;
   }
 
   /**
