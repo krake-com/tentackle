@@ -794,7 +794,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
         }
         // remove all the corresponding preloaded contexts
         if (preloadedContexts != null)  {
-          preloadedContexts.removeAll(sessionContexts);
+          sessionContexts.forEach(preloadedContexts::remove);
         }
       }
     }

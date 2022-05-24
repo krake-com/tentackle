@@ -28,6 +28,7 @@ import org.tentackle.i18n.pdo.StoredBundleKey;
 import org.tentackle.session.Session;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Verifies the bundles stored in the backend against the property resource bundles of the application.<br>
@@ -87,7 +88,7 @@ public class VerifyMojo extends AbstractVerifyMojo {
       getLog().warn(buf);
     }
 
-    List<String> resourceNames = resourceBundleMap.entrySet().stream().filter(entry -> entry.getValue().isNew()).map(entry -> entry.getKey()).toList();
+    List<String> resourceNames = resourceBundleMap.entrySet().stream().filter(entry -> entry.getValue().isNew()).map(Map.Entry::getKey).toList();
     if (!resourceNames.isEmpty()) {
       StringBuilder buf = new StringBuilder();
       appendCount(buf, resourceNames.size(), " missing stored bundle");

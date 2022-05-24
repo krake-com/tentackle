@@ -112,7 +112,8 @@ public class DefaultConnectionManager implements ConnectionManager {
     public String toString() {
       return majorVersion + "." + minorVersion;
     }
-  };
+  }
+  
   private final Map<String,VersionInfo> versionInfoMap;   // version info per URL
 
 

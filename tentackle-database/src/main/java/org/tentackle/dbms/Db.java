@@ -588,7 +588,7 @@ public class Db implements Session, Cloneable {
         if (technicalBackendInfoName.startsWith(Constants.BACKEND_INFO_USER) ||
             technicalBackendInfoName.startsWith(Constants.BACKEND_INFO_SYSTEM)) {
           int ndx = technicalBackendInfoName.indexOf(':');
-          if (ndx >= 0 && ndx < technicalBackendInfoName.length()) {
+          if (ndx >= 0 && ndx < technicalBackendInfoName.length() - 1) {
             String configName = technicalBackendInfoName.substring(ndx + 1);
             boolean systemPrefs = technicalBackendInfoName.startsWith(Constants.BACKEND_INFO_SYSTEM);
             if (sessionInfo.getApplicationName() != null) {

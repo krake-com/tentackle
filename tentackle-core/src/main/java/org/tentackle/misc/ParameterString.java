@@ -176,7 +176,6 @@ public class ParameterString implements Serializable {
                 // end of value: store parameter
                 parameters.put(nameBuf.toString(), "");
                 nameBuf = null;
-                valueBuf = null;
               }
               // else ignore syntactic sugar like '=' or ':' etc...
             }
