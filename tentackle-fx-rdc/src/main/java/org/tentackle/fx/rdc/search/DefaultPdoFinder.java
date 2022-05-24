@@ -24,10 +24,12 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 
+import org.tentackle.common.StringHelper;
 import org.tentackle.fx.CaseConversion;
 import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.component.FxTextField;
 import org.tentackle.fx.rdc.PdoFinder;
+import org.tentackle.pdo.PdoCache;
 import org.tentackle.pdo.PersistentDomainObject;
 
 import java.util.List;
@@ -52,9 +54,16 @@ public class DefaultPdoFinder<T extends PersistentDomainObject<T>> extends PdoFi
   @Override
   public List<T> runSearch() {
     if (pdo != null && pdo.isNormTextProvided()) {
-      return getPdo().selectByNormText(patternField.getText());
+      String pattern = patternField.getText();
+      if (!StringHelper.isAllWhitespace(pattern)) {
+        return pdo.selectByNormText(pattern);
+      }
     }
-    return getPdo().selectAllCached();
+    PdoCache<T> cache = pdo.getCache();
+    if (cache != null && cache.isPreloading()) {
+      return pdo.selectAllCached();
+    }
+    return pdo.selectAll();
   }
 
 
