@@ -165,17 +165,17 @@
           </configuration>
           <dependencies>
             <dependency>
-              <groupId>${groupId}</groupId>
+              <groupId>\${groupId}</groupId>
               <artifactId>${rootArtifactId}-gui</artifactId>
               <version>${symbol_dollar}{project.version}</version>
             </dependency>
             <dependency>
-              <groupId>${groupId}</groupId>
+              <groupId>\${groupId}</groupId>
               <artifactId>${rootArtifactId}-persistence</artifactId>
               <version>${symbol_dollar}{project.version}</version>
             </dependency>
             <dependency>
-              <groupId>${groupId}</groupId>
+              <groupId>\${groupId}</groupId>
               <artifactId>${rootArtifactId}-domain</artifactId>
               <version>${symbol_dollar}{project.version}</version>
             </dependency>
