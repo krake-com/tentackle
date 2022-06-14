@@ -281,6 +281,10 @@ public class ManagedConnection {
             // application lost the reference and did not close it before
             LOGGER.warning("closing unreferenced connection {0}", name);
           }
+          else {
+            LOGGER.info("closing connection {0}", name);
+          }
+
           try {
             c.close();
           }
