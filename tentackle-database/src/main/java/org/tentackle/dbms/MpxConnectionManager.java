@@ -229,7 +229,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
       connectThread.start();
       initialized = true;
     }
-    int id = addDb(session) + idOffset;
+    int id = getSessionIndex() + idOffset;
     LOGGER.fine("{0} logged into {1}, id={2}", session, this, id);
     return id;
   }
@@ -239,7 +239,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   public synchronized void logout(Db session) {
     assertSessionBelongsToMe(session);
     int index = getIndexFromSession(session);
-    removeDb(index);
+    removeSessionIndex(index);
     LOGGER.fine("{0} logged out from {1}, id={2}", session, this, session.getSessionId());
     try {
       // check that connection is not attached, if so, detach it!
@@ -254,7 +254,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   public synchronized void cleanup(int sessionId, ManagedConnection connection) {
     if (sessionId > 0) {
       int index = getIndexFromSessionId(sessionId);
-      removeDb(index);
+      removeSessionIndex(index);
     }
     LOGGER.fine("{0}: session ID {1} cleaned up", this, sessionId);
     freeConnection(connection);

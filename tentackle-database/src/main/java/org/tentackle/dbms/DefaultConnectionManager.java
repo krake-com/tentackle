@@ -121,7 +121,7 @@ public class DefaultConnectionManager implements ConnectionManager {
    * Creates a new connection manager.
    *
    * @param name the name of the connection manager
-   * @param iniSize the initial iniSize of the db table
+   * @param iniSize the initial size of the session table
    * @param maxSize the maximum number of connections, 0 = unlimited (dangerous!)
    * @param idOffset the offset for session ids (&gt; 0)
    * @param minMinutes minimum minutes a connection should be used, 0 if keep connection forever
@@ -175,8 +175,8 @@ public class DefaultConnectionManager implements ConnectionManager {
    * With an initial size of 2, a maximum of 8 concurrent connections and an id offset of 1.
    * This is the default connection manager for 2-tier client applications.
    * The max connections will prevent ill behaving applications from tearing down the RMI server
-   * by opening connections excessively. The usual application holds 2 connections and temporarily
-   * 1 or 2 more. If you need more, change the connection manager in Db.
+   * by opening connections excessively. The usual client application holds 2 connections and temporarily
+   * a few more.<br>
    * Within 12 to 36h (approx. once a day), close and reopen connections
    * (allows updates of the database server's QEPs, prepared statements cache, etc...).
    */
@@ -295,24 +295,38 @@ public class DefaultConnectionManager implements ConnectionManager {
       SessionInfo sessionInfo = session.getSessionInfo();
       backendInfo = new BackendInfo(backendInfo, sessionInfo.getUserName(), sessionInfo.getPassword());
     }
-    ManagedConnection con = createConnection(backendInfo);
 
-    synchronized(this) {
-      int id = addDb(session);
-      /*
-       * because we add the connections in the same order as the db (1:1 mapping), the
-       * index returned after adding the connection must be the same as for the db.
-       */
-      if (addConnection(con) != id) {
-        con.close();
-        removeDb(id);
-        throw new PersistenceException(this + ": db- and connection-list out of sync");
-      }
-
-      id += idOffset;
-      LOGGER.info("{0}: assigned {1} to connection {2}, id={3}", this, session.getName(), con, id);
-      return id;
+    ManagedConnection con = null;
+    int id;
+    synchronized (this) {
+      id = getSessionIndex();   // throws PersistenceException if too many sessions
     }
+
+    try {
+      con = createConnection(backendInfo);    // lengthy operation outside synchronized!
+      synchronized (this) {
+        /*
+         * because we add the connections in the same order as the sessions (1:1 mapping), the
+         * index returned after adding the connection must be the same as for the session.
+         */
+        if (addConnection(con) != id) {
+          throw new PersistenceException(this + ": session- and connection-list out of sync");
+        }
+      }
+    }
+    catch (RuntimeException rx) {
+      synchronized (this) {
+        removeSessionIndex(id);
+      }
+      if (con != null) {
+        con.close();
+      }
+      throw rx;
+    }
+
+    id += idOffset;
+    LOGGER.info("{0}: assigned {1} to connection {2}, id={3}", this, session.getName(), con, id);
+    return id;
   }
 
 
@@ -320,7 +334,7 @@ public class DefaultConnectionManager implements ConnectionManager {
   public synchronized void logout(Db session) {
     assertSessionBelongsToMe(session);
     int index = getIndexFromSession(session);
-    removeDb(index);
+    removeSessionIndex(index);
     try {
       ManagedConnection con = removeConnection(index);
       LOGGER.info("{0}: released {1} from connection {2}, id={3}", this, session.getName(), con, session.getSessionId());
@@ -336,7 +350,7 @@ public class DefaultConnectionManager implements ConnectionManager {
     ManagedConnection con;
     if (sessionId > 0) {
       int index = getIndexFromSessionId(sessionId);
-      removeDb(index);
+      removeSessionIndex(index);
       con = removeConnection(index);
     }
     else {
@@ -427,19 +441,19 @@ public class DefaultConnectionManager implements ConnectionManager {
 
 
   /**
-   * Adds a Db to the list.
+   * Gets the index for a new session.
    *
-   * @param db the db to add
-   * @return the index of db in the list
+   * @return the index of session in the list
    */
-  protected int addDb(Db db) {
+  protected int getSessionIndex() {
     if (freeDbCount == 0) {
       // no more free Db entries: double the list size
       if (maxDbSize > 0 && dbSize >= maxDbSize) {
-        PersistenceException pex = new PersistenceException(db, this + ": max. number of Db instances exceeded (" + maxDbSize + ")");
+        PersistenceException pex = new PersistenceException(this + ": max. number of sessions exceeded (" + maxDbSize + ")");
         pex.setTemporary(true);
         throw pex;
       }
+
       int newSize = dbSize << 1;
       if (maxDbSize > 0 && newSize > maxDbSize) {
         newSize = maxDbSize;
@@ -459,11 +473,11 @@ public class DefaultConnectionManager implements ConnectionManager {
 
 
   /**
-   * Removes a Db from the list.
+   * Removes a session index.
    *
-   * @param index the index of db in the list
+   * @param index the index of session in the list
    */
-  protected void removeDb(int index) {
+  protected void removeSessionIndex(int index) {
     freeDbList[freeDbCount++] = index;
   }
 
@@ -584,11 +598,18 @@ public class DefaultConnectionManager implements ConnectionManager {
       throw new PersistenceException(this + ": backend info " + backendInfo + " is not connectable");
     }
 
+    Connection con;
     ManagedConnection mc;
     VersionInfo versionInfo;
 
     try {
-      Connection con = backendInfo.connect();
+      con = backendInfo.connect();
+    }
+    catch (SQLException sx) {
+      throw new PersistenceException(this + ": connection to '" + backendInfo + "' failed", sx);
+    }
+
+    try {
       versionInfo = versionInfoMap.computeIfAbsent(backendInfo.getUrl(), url -> {
         try {
           DatabaseMetaData metaData = con.getMetaData();    // may be a lengthy operation -> cached per URL
@@ -598,12 +619,19 @@ public class DefaultConnectionManager implements ConnectionManager {
           throw new PersistenceException(this + ": connection metadata could not be retrieved", sx);
         }
       });
+
       Backend backend = backendInfo.getBackend();
       backend.validateVersion(versionInfo.majorVersion, versionInfo.minorVersion);
       mc = new ManagedConnection(this, backend, con);
     }
-    catch (SQLException e) {
-      throw new PersistenceException(this + ": connection to '" + backendInfo + "' failed", e);
+    catch (RuntimeException rx) {
+      try {
+        con.close();
+      }
+      catch (SQLException sx) {
+        LOGGER.severe("closing connection failed -> ignored", sx);
+      }
+      throw rx;
     }
 
     if (!mc.getAutoCommit()) {
@@ -614,7 +642,7 @@ public class DefaultConnectionManager implements ConnectionManager {
     mc.setMaxCountForClearWarnings(maxCountForClearWarnings);
     if (minMinutes > 0) {
       mc.setExpireAt(mc.getEstablishedSince() +
-                      (minMinutes * 60L + random.nextInt((maxMinutes - minMinutes) * 60)) * 1000L);
+                     (minMinutes * 60L + random.nextInt((maxMinutes - minMinutes) * 60)) * 1000L);
     }
 
     LOGGER.info(() -> MessageFormat.format("{0}: open connection {1}, {2} {3}, {4}, {5}, valid until {6}",

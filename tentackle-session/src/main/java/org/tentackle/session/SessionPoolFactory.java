@@ -39,13 +39,13 @@ public interface SessionPoolFactory {
   }
 
   /**
-   * Creates a single user session pool.
+   * Creates a single-user session pool.
    *
    * @param name the name of the pool
    * @param session the lead session to get the configuration from (session info, implementation specific stuff)
-   * @param iniSize the initial poolsize
+   * @param iniSize the initial pool size
    * @param incSize the number of sessions to enlarge the pool if all in use
-   * @param minSize the minimum number of sessions to keep in pool, &lt; 0 to shutdown pool if all sessions closed
+   * @param minSize the minimum number of sessions to keep in pool, &lt; 0 to shut down pool if all sessions closed
    * @param maxSize the maximum number of sessions, 0 = unlimited
    * @param maxIdleMinutes the idle timeout in minutes to close unused sessions, 0 = unlimited
    * @param maxUsageMinutes the max. used time in minutes, 0 = unlimited
@@ -55,7 +55,7 @@ public interface SessionPoolFactory {
                      int iniSize, int incSize, int minSize, int maxSize, long maxIdleMinutes, long maxUsageMinutes);
 
   /**
-   * Creates a multi user session pool.
+   * Creates a multi-user session pool.
    *
    * @param name the name of the pool
    * @param session the lead session to get the low-level configuration from (backend info, implementation specific stuff)
