@@ -28,7 +28,7 @@ import org.tentackle.session.SessionPool;
 import org.tentackle.session.SessionPoolFactory;
 import org.tentackle.session.SessionPooledExecutor;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -134,9 +134,9 @@ public class RdcUtilitiesWithBackgroundPool extends RdcUtilities {
   @Override
   public <V> void runInBackground(Supplier<V> runner, Consumer<V> updateUI, Consumer<RuntimeException> failedUI) {
     if (pooledExecutor != null) {
-      pooledExecutor.execute(runner,
-                             updateUI == null ? null : value -> Platform.runLater(() -> updateUI.accept(value)),
-                             failedUI == null ? null : exception -> Platform.runLater(() -> failedUI.accept(exception)));
+      pooledExecutor.submit(runner,
+                            updateUI == null ? null : value -> Platform.runLater(() -> updateUI.accept(value)),
+                            failedUI == null ? null : exception -> Platform.runLater(() -> failedUI.accept(exception)));
     }
     else {
       super.runInBackground(runner, updateUI, failedUI);
@@ -144,31 +144,31 @@ public class RdcUtilitiesWithBackgroundPool extends RdcUtilities {
   }
 
   /**
-   * Runs a bulk of runners in background in parallel.
+   * Runs a collection of runners in background in parallel.
    *
    * @param runners the runners to invoke
    * @param finishedUI UI updater invoked from within the FX event queue when all runners finished, null if none
    * @param failedUI UI updater invoked from within the FX event queue only if execution of some runner failed, null if log only as error
    * @param <V> the type returned by the runners
    */
-  public <V> void runInBackground(List<Supplier<V>> runners, Consumer<Map<Supplier<V>, V>> finishedUI, Consumer<Map<Supplier<V>, RuntimeException>> failedUI) {
+  public <V> void runInBackground(Collection<Supplier<V>> runners, Consumer<Map<Supplier<V>, V>> finishedUI, Consumer<Map<Supplier<V>, RuntimeException>> failedUI) {
     if (pooledExecutor == null) {
       throw new RdcRuntimeException("unavailable in test mode");
     }
-    pooledExecutor.execute(runners, timeoutMs,
-                           finishedUI == null ? null : successHandlers -> Platform.runLater(() -> finishedUI.accept(successHandlers)),
-                           failedUI == null ? null : failHandlers -> Platform.runLater(() -> failedUI.accept(failHandlers)));
+    pooledExecutor.submit(runners, timeoutMs,
+                          finishedUI == null ? null : successHandlers -> Platform.runLater(() -> finishedUI.accept(successHandlers)),
+                          failedUI == null ? null : failHandlers -> Platform.runLater(() -> failedUI.accept(failHandlers)));
   }
 
   /**
-   * Runs a bulk of runners in background in parallel.<br>
+   * Runs a collection of runners in background in parallel.<br>
    * Failures will be presented to the user in an error dialog.
    *
    * @param runners the runners to invoke
    * @param finishedUI optional UI updater always invoked from within the FX event queue if all runners finished, null if none
    * @param <V> the type returned by the runners
    */
-  public <V> void runInBackground(List<Supplier<V>> runners, Consumer<Map<Supplier<V>, V>> finishedUI) {
+  public <V> void runInBackground(Collection<Supplier<V>> runners, Consumer<Map<Supplier<V>, V>> finishedUI) {
     runInBackground(
         runners,
         finishedUI,
