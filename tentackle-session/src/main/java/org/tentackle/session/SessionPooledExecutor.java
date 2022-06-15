@@ -21,7 +21,7 @@ package org.tentackle.session;
 import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.log.Logger;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -81,16 +81,14 @@ public class SessionPooledExecutor {
   }
 
   /**
-   * Executes a task.<br>
-   * Throws {@link PersistenceException} if the session pool is exhausted. This may happen
-   * if the size of the pool is smaller than the maximum number of threads provided by the executor service.
+   * Submits a task for execution in background by a thread pool.
    *
    * @param task the task to execute
    * @param successHandler the handler to be invoked when the task finished successfully, null if none
    * @param failHandler the handler to be invoked when the task failed with an exception, null if none
    * @param <V> the type returned by the task
    */
-  public <V> void execute(Supplier<V> task, Consumer<V> successHandler, Consumer<RuntimeException> failHandler) {
+  public <V> void submit(Supplier<V> task, Consumer<V> successHandler, Consumer<RuntimeException> failHandler) {
     executorService.submit(() -> {
       Session session = null;
       RuntimeException failEx = null;
@@ -124,12 +122,11 @@ public class SessionPooledExecutor {
           LOGGER.severe("background task failed", failEx);
         }
       }
-
     });
   }
 
   /**
-   * Executes a bulk of tasks in background in parallel and waits for their termination.
+   * Submits a collection of tasks for background execution in multiple threads of a thread pool and waits for their termination.
    *
    * @param tasks the tasks to execute
    * @param timeoutMillis the timeout in milliseconds, &le; 0 if wait infinitely
@@ -137,7 +134,7 @@ public class SessionPooledExecutor {
    * @param failHandlers updater invoked only if execution of some runner failed, null if log only as error
    * @param <V> the type returned by the runners
    */
-  public <V> void execute(List<Supplier<V>> tasks, long timeoutMillis, Consumer<Map<Supplier<V>, V>> successHandlers, Consumer<Map<Supplier<V>, RuntimeException>> failHandlers) {
+  public <V> void submit(Collection<Supplier<V>> tasks, long timeoutMillis, Consumer<Map<Supplier<V>, V>> successHandlers, Consumer<Map<Supplier<V>, RuntimeException>> failHandlers) {
     CountDownLatch latch = new CountDownLatch(tasks.size());
     Map<Supplier<V>, V> results = new ConcurrentHashMap<>();
     Map<Supplier<V>, RuntimeException> failures = new ConcurrentHashMap<>();
@@ -169,15 +166,15 @@ public class SessionPooledExecutor {
     });
 
     for (Supplier<V> task : tasks) {
-      execute(task,
-              result -> {
-                results.put(task, result);
-                latch.countDown();
-              },
-              failure -> {
-                failures.put(task, failure);
-                latch.countDown();
-              });
+      submit(task,
+             result -> {
+               results.put(task, result);
+               latch.countDown();
+             },
+             failure -> {
+               failures.put(task, failure);
+               latch.countDown();
+             });
     }
   }
 

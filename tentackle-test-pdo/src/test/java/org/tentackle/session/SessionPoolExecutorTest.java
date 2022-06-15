@@ -48,7 +48,7 @@ public class SessionPoolExecutorTest extends AbstractPdoTest {
     Set<RuntimeException> failures = ConcurrentHashMap.newKeySet();
 
     for (int i=0; i < TASK_NUM; i++) {
-      executor.execute(this::run, v -> sum.incrementAndGet(), f -> failures.add(f));
+      executor.submit(this::run, v -> sum.incrementAndGet(), f -> failures.add(f));
     }
 
     try {
@@ -79,9 +79,9 @@ public class SessionPoolExecutorTest extends AbstractPdoTest {
     AtomicInteger sum = new AtomicInteger();
     Holder<Collection<RuntimeException>> failures = new Holder<>();
 
-    executor.execute(runners, 0,
-                     successMap -> successMap.values().forEach(v -> sum.incrementAndGet()),
-                     failedMap -> failures.accept(failedMap.values())
+    executor.submit(runners, 0,
+                    successMap -> successMap.values().forEach(v -> sum.incrementAndGet()),
+                    failedMap -> failures.accept(failedMap.values())
     );
 
     try {
