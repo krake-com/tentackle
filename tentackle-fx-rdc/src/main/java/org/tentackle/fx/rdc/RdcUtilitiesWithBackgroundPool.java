@@ -35,129 +35,67 @@ import java.util.function.Supplier;
 
 /**
  * Extended {@link RdcUtilities} with a thread- and session pool for background execution.<br>
- * Simply replace the standard utilities via {@link org.tentackle.common.Service} annotation.
+ * Replace with application specific implementation via {@link org.tentackle.common.Service} annotation.
  * <p>
  * Example:
  * <pre>
  * &#64;Service(RdcUtilities.class)
  * public class MyRdcUtilities extends RdcUtilitiesWithBackgroundPool {
  *
- *   public static MyRdcUtilities getInstance() {
+ *   public static MyRdcUtilities getInstance() {   // to access the extra methods
  *     return (MyRdcUtilities) RdcUtilities.getInstance();
  *   }
  *
- *   public MyRdcUtilities() {
- *     super(10, 300000L, 5);
+ *   &#64;Override
+ *   protected SessionPool createSessionPool(Session session) {
+ *     // 10 sessions max, at least 1 open (default is 3 and none open)
+ *     return SessionPoolFactory.getInstance().create("BG", session, 1, 1, 1, 10, 5, 0);
  *   }
  * }
  * </pre>
  */
 public class RdcUtilitiesWithBackgroundPool extends RdcUtilities {
 
-  private final int maxParallel;
-  private final long timeoutMs;
-  private final long idleMinutes;
-  private final SessionPooledExecutor pooledExecutor;
+  private final SessionPooledExecutor executor;
 
   /**
-   * Creates the RDC utilities.
-   *
-   * @param maxParallel the maximum number of parallel background tasks, must be &gt; 1
-   * @param timeoutMs the timeout in milliseconds for a bulk of tasks to finish, 0 if no timeout
-   * @param idleMinutes the time in minutes to keep idle sessions open, 0 if sessions remain open forever
+   * Creates the extended RDC utilities.
    */
-  public RdcUtilitiesWithBackgroundPool(int maxParallel, long timeoutMs, long idleMinutes) {
-    if (maxParallel < 1) {
-      throw new RdcRuntimeException("maxParallel must be > 1");
-    }
-    this.maxParallel = maxParallel;
-    this.timeoutMs = timeoutMs;
-    this.idleMinutes = idleMinutes;
-
-    Session mainSession = ModificationTracker.getInstance().getSession();
-    if (mainSession.isRemote() && mainSession.getSessionInfo().isCloned()) {    // only in running real remote client, not in unit tests
-      SessionPool sessionPool = SessionPoolFactory.getInstance().create("bg", mainSession, 1, 1, 1, maxParallel, idleMinutes, 0);
-      pooledExecutor = new SessionPooledExecutor(sessionPool);
-      mainSession.registerCloseHandler(new SessionCloseHandler() {
-        @Override
-        public void beforeClose(Session session) {
-          // nothing to do
-        }
-
-        @Override
-        public void afterClose(Session session) {
-          pooledExecutor.shutdown();
-        }
-      });
-    }
-    else {
-      pooledExecutor = null;
-    }
+  public RdcUtilitiesWithBackgroundPool() {
+    executor = createExecutor();
   }
 
-  /**
-   * Gets the maximum number of tasks running in parallel.
-   *
-   * @return the number of tasks
-   */
-  public int getMaxParallel() {
-    return maxParallel;
-  }
-
-  /**
-   * Gets the timeout in milliseconds for a bulk of tasks to finish.
-   *
-   * @return the timeout, 0 if no timeout
-   */
-  public long getTimeoutMs() {
-    return timeoutMs;
-  }
-
-  /**
-   * Gets the time in minutes to keep idle sessions open.
-   *
-   * @return the idle time, 0 if sessions remain open forever
-   */
-  public long getIdleMinutes() {
-    return idleMinutes;
-  }
 
   /**
    * Gets the session pool executor.
    *
    * @return the executor
    */
-  public SessionPooledExecutor getPooledExecutor() {
-    return pooledExecutor;
+  public SessionPooledExecutor getExecutor() {
+    return executor;
   }
+
 
   @Override
   public <V> void runInBackground(Supplier<V> runner, Consumer<V> updateUI, Consumer<RuntimeException> failedUI) {
-    if (pooledExecutor != null) {
-      pooledExecutor.submit(runner,
-                            updateUI == null ? null : value -> Platform.runLater(() -> updateUI.accept(value)),
-                            failedUI == null ? null : exception -> Platform.runLater(() -> failedUI.accept(exception)));
-    }
-    else {
-      super.runInBackground(runner, updateUI, failedUI);
-    }
+    executor.submit(runner,
+                    updateUI == null ? null : value -> Platform.runLater(() -> updateUI.accept(value)),
+                    failedUI == null ? null : exception -> Platform.runLater(() -> failedUI.accept(exception)));
   }
 
   /**
    * Runs a collection of runners in background in parallel.
    *
    * @param runners the runners to invoke
+   * @param timeoutMillis the timeout in milliseconds for all tasks to finish, 0 if no timeout
    * @param finishedUI UI updater invoked from within the FX event queue when all runners finished, null if none
    * @param failedUI UI updater invoked from within the FX event queue only if execution of some runner failed, null if log only as error
    * @param <V> the type returned by the runners
    */
-  public <V> void runInBackground(Collection<Supplier<V>> runners, Consumer<Map<Supplier<V>, V>> finishedUI, Consumer<Map<Supplier<V>, RuntimeException>> failedUI) {
-    if (pooledExecutor == null) {
-      throw new RdcRuntimeException("unavailable in test mode");
-    }
-    pooledExecutor.submit(runners, timeoutMs,
-                          finishedUI == null ? null : successHandlers -> Platform.runLater(() -> finishedUI.accept(successHandlers)),
-                          failedUI == null ? null : failHandlers -> Platform.runLater(() -> failedUI.accept(failHandlers)));
+  public <V> void runInBackground(Collection<Supplier<V>> runners, long timeoutMillis, Consumer<Map<Supplier<V>, V>> finishedUI, Consumer<Map<Supplier<V>, RuntimeException>> failedUI) {
+    executor.submit(runners, timeoutMillis,
+                    finishedUI == null ? null : successHandlers -> Platform.runLater(() -> finishedUI.accept(successHandlers)),
+                    failedUI == null ? null : failHandlers -> Platform.runLater(() -> failedUI.accept(failHandlers)));
   }
 
   /**
@@ -165,12 +103,14 @@ public class RdcUtilitiesWithBackgroundPool extends RdcUtilities {
    * Failures will be presented to the user in an error dialog.
    *
    * @param runners the runners to invoke
+   * @param timeoutMillis the timeout in milliseconds for all tasks to finish, 0 if no timeout
    * @param finishedUI optional UI updater always invoked from within the FX event queue if all runners finished, null if none
    * @param <V> the type returned by the runners
    */
-  public <V> void runInBackground(Collection<Supplier<V>> runners, Consumer<Map<Supplier<V>, V>> finishedUI) {
+  public <V> void runInBackground(Collection<Supplier<V>> runners, long timeoutMillis, Consumer<Map<Supplier<V>, V>> finishedUI) {
     runInBackground(
         runners,
+        timeoutMillis,
         finishedUI,
         failedMap -> {
           StringBuilder buf = new StringBuilder();
@@ -186,6 +126,41 @@ public class RdcUtilitiesWithBackgroundPool extends RdcUtilities {
           String msg = buf.toString();
           Platform.runLater(() -> Fx.warning(msg));
         });
+  }
+
+
+  /**
+   * Creates the executor.
+   *
+   * @return the executor
+   */
+  protected SessionPooledExecutor createExecutor() {
+    Session session = ModificationTracker.getInstance().getSession();
+    SessionPooledExecutor executor = new SessionPooledExecutor(createSessionPool(session));
+    session.registerCloseHandler(new SessionCloseHandler() {
+      @Override
+      public void beforeClose(Session session) {
+        // nothing to do
+      }
+
+      @Override
+      public void afterClose(Session session) {
+        executor.shutdown();
+      }
+    });
+
+    return executor;
+  }
+
+  /**
+   * Creates the session pool.
+   *
+   * @param session the template session
+   * @return the session pool
+   */
+  protected SessionPool createSessionPool(Session session) {
+    return SessionPoolFactory.getInstance().create("BG", session, 0, 1, 0,
+                                                   3, 5, 0);
   }
 
 }
