@@ -18,10 +18,12 @@
 
 package org.tentackle.log;
 
+import org.tentackle.misc.FormatHelper;
 import org.tentackle.misc.TimeKeeper;
 import org.tentackle.reflect.ReflectionHelper;
 
 import java.lang.reflect.Method;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -84,9 +86,9 @@ public class MethodStatistics {
         try {
           StringBuilder buf = new StringBuilder();
           if (title == null) {
-            title = "Invocation Statistics:";
+            title = "Invocation Statistics";
           }
-          buf.append(title);
+          buf.append(title).append(tag).append(FormatHelper.formatLocalDateTime(LocalDateTime.now()));
           for (Map.Entry<MethodStatisticsKey, StatisticsResult> entry : stats.entrySet()) {
             StatisticsResult result = entry.getValue();
             if (result.isValid()) {
