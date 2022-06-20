@@ -21,8 +21,10 @@ package org.tentackle.dbms;
 import org.tentackle.common.Compare;
 import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;
+import org.tentackle.misc.FormatHelper;
 import org.tentackle.misc.TimeKeeper;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +41,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class StatementStatistics implements Comparable<StatementStatistics> {
 
   private static final Logger LOGGER = Logger.get(StatementStatistics.class);
+
+  private static final String LOG_TAG = "    >SQL-Stats: ";
 
   // instance counter
   private static final AtomicInteger INSTANCE_COUNT = new AtomicInteger();
@@ -59,14 +63,14 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
   /**
    * Sets whether statistics should be separated according to the statement parameters.
    *
-   * @param withParms true if with parameter stats
+   * @param withParams true if with parameter stats
    */
-  public static void setWithParameters(boolean withParms) {
-    withParameters = withParms;
+  public static void setWithParameters(boolean withParams) {
+    withParameters = withParams;
   }
 
   /**
-   * Returns hether statistics should be separated according to the statement parameters.
+   * Returns whether statistics should be separated according to the statement parameters.
    *
    * @return rue if with parameter stats
    */
@@ -162,10 +166,10 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
   public static void log(Level level, boolean clear) {
     try {
       LOGGER.log(level, null, () -> {
-        StringBuilder buf = new StringBuilder("SQL Statement Statistics:");
+        StringBuilder buf = new StringBuilder();
+        buf.append("SQL Statement Statistics").append(LOG_TAG).append(FormatHelper.formatLocalDateTime(LocalDateTime.now()));
         for (StatementStatistics stat : getStatistics(clear)) {
-          buf.append("\n    ");
-          buf.append(stat);
+          buf.append('\n').append(stat);
         }
         if (clear) {
           buf.append("\n    (cleared)");
@@ -278,7 +282,7 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
   /**
    * Gets the transaction name.
    *
-   * @return the txname
+   * @return the transaction name
    */
   public String getTxName() {
     return txName;
@@ -330,7 +334,7 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
   public String toString() {
     StringBuilder buf = new StringBuilder();
     if (statResult.isValid()) {
-      buf.append(">SQL-Stats: ").append(statResult).append(" x ");
+      buf.append(LOG_TAG).append(statResult).append(" x ");
       if (sql == null) {
         buf.append("<null>");
       }

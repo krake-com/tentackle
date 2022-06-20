@@ -30,16 +30,16 @@ while getopts "noprsl:u:x:" OPTION
 do
     case $OPTION in
         s)
-        PATTERN="    >SQL-Stats:"
+        PATTERN="    >SQL-Stats: "
         ;;
         r)
-        PATTERN="    >RMI-Stats:"
+        PATTERN="    >RMI-Stats: "
         ;;
         p)
-        PATTERN="    >PDO-Stats:"
+        PATTERN="    >PDO-Stats: "
         ;;
         o)
-        PATTERN="    >OPN-Stats:"
+        PATTERN="    >OPN-Stats: "
         ;;
         n)
         LOCALEOPT="-N"
@@ -70,7 +70,6 @@ shift $(expr $OPTIND - 1 )
 FILE=$1
 
 fgrep "$PATTERN" $FILE | grep "$EXPR" | cut -c 17- | awk $LOCALEOPT '{
-
     ndx = index($0, " x ")
     if (ndx) {
         operation = substr($0, ndx+3)
@@ -125,11 +124,22 @@ fgrep "$PATTERN" $FILE | grep "$EXPR" | cut -c 17- | awk $LOCALEOPT '{
             }
         }
     }
+    else {
+      tndx = index($0, "-Stats: ")
+      if (tndx) {
+        timeStr = substr($0, tndx+8)
+        if (fromTime == "") {
+          fromTime = timeStr
+        }
+        uptoTime = timeStr
+      }
+    }
 }
 
 END {
     if (extended > 0) {
-        printf("calls\ttotal[ms]\tavg[ms]\tmin[ms]\tmax[ms]\texec[ms]\texec-avg[ms]\texec-min[ms]\texec-max[ms]\trows\trows-avg\trows-min\trows-max\tfetch[ms]\tfetch-avg[ms]\tfetch-min[ms]\tfetch-max[ms]\tfetch-row[ms]\t  ---\tSQL statement\n");
+        printf("calls\ttotal[ms]\tavg[ms]\tmin[ms]\tmax[ms]\texec[ms]\texec-avg[ms]\texec-min[ms]\texec-max[ms]\trows\trows-avg\trows-min\trows-max\tfetch[ms]\tfetch-avg[ms]\tfetch-min[ms]\tfetch-max[ms]\tfetch-row[ms]\t  ---\tSQL statement (%s - %s)\n",
+               fromTime, uptoTime)
         for (operation in millis) {
             exec = millis[operation]
             calls = invocs[operation]
@@ -145,7 +155,7 @@ END {
                   rowfetch = fetch/rows
                 }
                 else {
-                  rowfetch = 0;
+                  rowfetch = 0
                 }
                 printf("%d\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%d\t%.3f\t%d\t%d\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t\t%s\n",\
                        calls, total, total/calls, minms[operation]+minFetch[operation], maxms[operation]+maxFetch[operation],\
@@ -157,7 +167,7 @@ END {
         }
     }
     else {
-        printf("calls\ttotal[ms]\tavg[ms]\tmin[ms]\tmax[ms]\t  ---\toperation\n");
+        printf("calls\ttotal[ms]\tavg[ms]\tmin[ms]\tmax[ms]\t  ---\toperation (%s - %s)\n", fromTime, uptoTime)
         for (operation in millis) {
             totalms = millis[operation]
             calls = invocs[operation]
