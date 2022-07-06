@@ -148,7 +148,7 @@ public class H2 extends AbstractSql92Backend {
   }
 
   @Override
-  public boolean needAliasForSubSelect() {
+  public boolean isAliasRequiredForSubSelect() {
     return true;
   }
 

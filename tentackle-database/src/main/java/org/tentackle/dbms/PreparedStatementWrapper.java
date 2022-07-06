@@ -951,23 +951,13 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
 
   @Override
   public void setLong (int p, long l) {
-    if (con.getBackend().needSetLongWorkaround()) {
-      /*
-       * long is translated to varchar in update statements by the Ingres JDBC-driver for some obscure reason.
-       * Insert statements, however, work with long.
-       * So, we simply translate it here to int (which is not ok, but there's no other workaround so far)
-       */
-      setInt (p, (int) l);
+    try {
+      int ep = effectivePosition(p);
+      getStatement().setLong(ep, l);
+      rememberParameter(ep, l);
     }
-    else  {
-      try {
-        int ep = effectivePosition(p);
-        getStatement().setLong(ep, l);
-        rememberParameter(ep, l);
-      }
-      catch (SQLException e)  {
-        throw new PersistenceException(getSession(), this.toString(), e);
-      }
+    catch (SQLException e) {
+      throw new PersistenceException(getSession(), this.toString(), e);
     }
   }
 

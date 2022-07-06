@@ -2722,7 +2722,7 @@ public class Db implements Session, Cloneable {
     boolean autoCommit = txStarter == null;
     if (this.autoCommit != autoCommit) {
       if (autoCommit) {
-        if (getBackend().sqlRequiresExtraCommit()) {
+        if (getBackend().isExtraCommitRequired()) {
           // some dbms need a commit before setAutoCommit(true);
           connection().commit();
         }

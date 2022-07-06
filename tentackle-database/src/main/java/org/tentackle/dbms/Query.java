@@ -237,7 +237,7 @@ public class Query {
     ResultSetWrapper rs = null;
 
     try {
-      if (db.getBackend().needTxForFetchsize() && fetchSize != 0 &&
+      if (db.getBackend().isTxRequiredForFetchsize() && fetchSize != 0 &&
           resultSetType == ResultSet.TYPE_FORWARD_ONLY &&
           resultSetConcurrency == ResultSet.CONCUR_READ_ONLY) {
         rs = st.executeQuery(true);   // true = commit tx when closing resultset
@@ -321,7 +321,7 @@ public class Query {
     StringBuilder buf = buildInnerSql();
     buf.insert(0, "SELECT COUNT(*) FROM (");
     buf.append(')');
-    if (db.getBackend().needAliasForSubSelect()) {
+    if (db.getBackend().isAliasRequiredForSubSelect()) {
       buf.append(" AS F_O_O");
     }
     int count = 0;

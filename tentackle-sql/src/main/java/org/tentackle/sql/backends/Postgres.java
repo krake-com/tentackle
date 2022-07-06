@@ -171,12 +171,12 @@ public class Postgres extends AbstractSql92Backend {
   }
 
   @Override
-  public boolean needTxForFetchsize() {
+  public boolean isTxRequiredForFetchsize() {
     return true;
   }
 
   @Override
-  public boolean needAliasForSubSelect() {
+  public boolean isAliasRequiredForSubSelect() {
     return true;
   }
 

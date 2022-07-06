@@ -209,17 +209,12 @@ public abstract class AbstractBackend implements Backend {
   }
 
   @Override
-  public boolean needAliasForSubSelect() {
+  public boolean isAliasRequiredForSubSelect() {
     return false;
   }
 
   @Override
-  public boolean sqlRequiresExtraCommit() {
-    return false;
-  }
-
-  @Override
-  public boolean sqlResultSetIsClosedSupported() {
+  public boolean isExtraCommitRequired() {
     return false;
   }
 
@@ -275,12 +270,7 @@ public abstract class AbstractBackend implements Backend {
   }
 
   @Override
-  public boolean needSetLongWorkaround() {
-    return false;
-  }
-
-  @Override
-  public boolean needTxForFetchsize() {
+  public boolean isTxRequiredForFetchsize() {
     return false;
   }
 

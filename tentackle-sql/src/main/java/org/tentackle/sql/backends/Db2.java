@@ -60,11 +60,6 @@ public class Db2 extends AbstractSql2003Backend {
   }
 
   @Override
-  public boolean sqlResultSetIsClosedSupported() {
-    return true;
-  }
-
-  @Override
   public int getMaxSize(SqlType sqlType) {
     return switch (sqlType) {
       case DECIMAL -> 31;
