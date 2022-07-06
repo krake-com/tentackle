@@ -315,7 +315,7 @@ public class Oracle8 extends AbstractSql2003Backend {
   }
 
   @Override
-  public boolean sqlRequiresExtraCommit() {
+  public boolean isExtraCommitRequired() {
     return true;
   }
 

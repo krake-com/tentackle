@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.sql;
 
 import org.tentackle.sql.metadata.ColumnMetaData;
@@ -386,7 +385,6 @@ public interface Backend {
    */
   String buildSelectSql(String sql, boolean writeLock, int limit, int offset);
 
-
   /**
    * Sets optional parameters before applying the original parameters.
    *
@@ -408,17 +406,15 @@ public interface Backend {
    */
   int setTrailingSelectParameters(BackendPreparedStatement stmt, int index, int limit, int offset);
 
-
   /**
-   * Gets the empty string.<p>
+   * Gets the empty string.<br>
    * Some dbms (most famous: Oracle) handle empty strings as null.
-   * In such cases the empty string (e.g. Oracle) may consist of a single blank
+   * In such cases the empty string (e.g. Oracle) may consist of a single blank,
    * or whatever.
    *
    * @return the empty string (never null)
    */
   String getEmptyString();
-
 
   /**
    * According to the JDBC-specs {@link java.sql.Connection#setAutoCommit}(true)
@@ -426,16 +422,7 @@ public interface Backend {
    *
    * @return true if the database needs an extra commit
    */
-  boolean sqlRequiresExtraCommit();
-
-
-  /**
-   * Determines whether the jdbc driver supports {@link java.sql.ResultSet#isClosed()}.
-   *
-   * @return true if the driver supports it
-   */
-  boolean sqlResultSetIsClosedSupported();
-
+  boolean isExtraCommitRequired();
 
   /**
    * Gets the keyword for the COALESCE function.
@@ -443,7 +430,6 @@ public interface Backend {
    * @return the keyword
    */
   String getCoalesceKeyword();
-
 
   /**
    * Determines whether backend allows expressions referring to tables being updated.
@@ -470,11 +456,11 @@ public interface Backend {
   String sqlAsBeforeTableAlias();
 
   /**
-   * Returns whether backend needs an alias for a sub-select.
+   * Returns whether backend requires an alias for a sub-select.
    *
    * @return true if sub-select needs an alias.
    */
-  boolean needAliasForSubSelect();
+  boolean isAliasRequiredForSubSelect();
 
   /**
    * Creates the SQL string to create a sequence.
@@ -546,20 +532,11 @@ public interface Backend {
   String sqlFunction(String functionName, String expression);
 
   /**
-   * Checks whether we need a workaround for the (Ingres) setLong-Bug.
-   *
-   * @return true if workaround needed
-   */
-  boolean needSetLongWorkaround();
-
-
-  /**
-   * Checks for the (postgres) bug that fetchsize is ignored if not within a new transaction.
+   * Checks for the (postgres) bug that fetch-size is ignored if not within a new transaction.
    *
    * @return true if start tx
    */
-  boolean needTxForFetchsize();
-
+  boolean isTxRequiredForFetchsize();
 
   /**
    * Determines whether exception is a constraint violation.
@@ -569,7 +546,6 @@ public interface Backend {
    */
   boolean isConstraintException(SQLException ex);
 
-
   /**
    * Determines whether exception is a communication error.
    *
@@ -577,7 +553,6 @@ public interface Backend {
    * @return true if comlink down or alike
    */
   boolean isCommunicationLinkException(SQLException ex);
-
 
   /**
    * Determines whether exception is transient and retrying the transaction may succeed.<br>
@@ -589,7 +564,6 @@ public interface Backend {
    * @return true if retrying the transaction may succeed
    */
   boolean isTransientTransactionException(SQLException ex);
-
 
   /**
    * Returns the maximum size for a given SQL-type.<br>
@@ -640,7 +614,6 @@ public interface Backend {
    */
   void assertValidName(SqlNameType nameType, String name);
 
-
   /**
    * Determines the unique id or name used by the backend for a given connection.
    * <p>
@@ -651,21 +624,20 @@ public interface Backend {
    */
   String getBackendId(Connection connection);
 
-
   /**
    * Retrieves the metadata.<br>
    *
-   * @param metaData the meta data for the whole database
+   * @param metaData the metadata for the whole database
    * @param schemas the optional schemas to filter tables, null if no filter
    * @param tableNames the tables of the model
-   * @return the meta data, null if no such table
+   * @return the metadata, null if no such table
    */
   ModelMetaData getModelMetaData(DatabaseMetaData[] metaData, String[] schemas, String... tableNames);
 
   /**
    * Creates a column meta data instance.
    *
-   * @param tableMetaData the table meta data this column belongs to
+   * @param tableMetaData the table metadata this column belongs to
    * @return the meta data
    */
   ColumnMetaData createColumnMetaData(TableMetaData tableMetaData);
@@ -673,7 +645,7 @@ public interface Backend {
   /**
    * Creates a meta data instance.
    *
-   * @param metaData the whole meta data
+   * @param metaData the whole metadata
    * @param tableName the model's table name
    * @return the meta data
    */
@@ -682,7 +654,7 @@ public interface Backend {
   /**
    * Creates an index meta data instance.
    *
-   * @param tableMetaData the table meta data this index belongs to
+   * @param tableMetaData the table metadata this index belongs to
    * @return the meta data
    */
   IndexMetaData createIndexMetaData(TableMetaData tableMetaData);
@@ -736,7 +708,6 @@ public interface Backend {
    * @return the constant
    */
   String valueToLiteral(SqlType sqlType, Object value);
-
 
   /**
    * The all SQL statement separators.
@@ -1109,7 +1080,7 @@ public interface Backend {
   SqlType[] jdbcTypeToSqlType(int jdbcType, int size, int scale);
 
   /**
-   * Gets the table meta data for a given table name.
+   * Gets the table metadata for a given table name.
    *
    * @param modelMetaData the model the table belongs to
    * @param tableName the model's table name
