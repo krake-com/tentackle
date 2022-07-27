@@ -81,7 +81,7 @@ public interface BackendPreparedStatement {
    *
    * @param p the first parameter is 1, the second is 2, ...
    * @param type the type of the array's elements, or the inner type if elements implement Convertible
-   * @param columnIndex the column index for multi column {@link DataType}s, -1 if type is a Convertible, ignored otherwise
+   * @param columnIndex the column index for multi-column {@link DataType}s, -1 if type is a Convertible, ignored otherwise
    * @param elements the array elements
    * @param operator the array operator
    */

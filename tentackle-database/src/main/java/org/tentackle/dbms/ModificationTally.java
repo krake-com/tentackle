@@ -19,12 +19,13 @@
 
 package org.tentackle.dbms;
 
-import java.util.Map;
-import java.util.WeakHashMap;
 import org.tentackle.log.Logger;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionUtilities;
+
+import java.util.Map;
+import java.util.WeakHashMap;
 
 
 
@@ -61,7 +62,7 @@ public class ModificationTally {
     dbModification = new DbModification(tracker.isLocalClientMode() ? null : tracker.getSession(), trackedName);
     clazzVar = DbObjectClassVariables.getVariables(trackedName);
     if (clazzVar == null) {
-      // try to load the class by its name (may be not referenced so far)
+      // try to load the class by its name (maybe not referenced so far)
       String className = SessionUtilities.getInstance().getClassName(trackedName);
       if (className != null) {
         try {

@@ -314,7 +314,7 @@ public class DbModification extends AbstractDbObject<DbModification> {
       else  {
         // just a name, not related to any PDO or database table
         count = st.executeUpdate (
-            getSession().getBackend().isExpressionReferringToTableBeingUpdatedSupported() ?
+            getBackend().isExpressionReferringToTableBeingUpdatedSupported() ?
             // ordinary dbms
             (
                 "INSERT INTO " + getTableName() + " (" + CN_TRACKEDNAME + "," +

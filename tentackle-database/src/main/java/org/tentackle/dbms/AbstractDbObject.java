@@ -65,7 +65,7 @@ import static org.tentackle.sql.Backend.SQL_WHEREALL;
  * to a logical {@link Session}, which can be either local or remote.
  * The application-specific configuration is achieved by implementing and/or
  * overriding methods (pure OO-approach). These methods are usually generated
- * by wurblets (see https://wurbelizer.org) according to a model.
+ * by wurblets (see <a href="https://wurbelizer.org">wurbelizer.org</a>) according to a model.
  *
  * @param <P> the persistent class type
  */
@@ -171,17 +171,17 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
   // data object attributes are always private
-  private long id;                   // unique Object ID
-  private long serial;               // serial-nummer (version to detect simultaneous updates)
-  private int classId;               // the class id (overrides classvariables classid)
-  private long tableSerial;          // last table serial from countModification (only if isTableSerialProvided() == true)
+  private long id;                                    // unique Object ID
+  private long serial;                                // serial-nummer (version to detect simultaneous updates)
+  private int classId;                                // the class id (overrides classvariables classid)
+  private long tableSerial;                           // last table serial from countModification (only if isTableSerialProvided() == true)
 
   // not persistable (but not transient due to RMI)
-  private boolean modified;          // true if object is modified and not written to db yet
+  private boolean modified;                           // true if object is modified and not written to db yet
 
-  private boolean immutable;            // true if object is immutable
-  private boolean finallyImmutable;     // trye if object is finally immutable
-  private Level immutableLoggingLevel;  // optional logging for immutable violations instead of exception
+  private boolean immutable;                          // true if object is immutable
+  private boolean finallyImmutable;                   // true if object is finally immutable
+  private Level immutableLoggingLevel;                // optional logging for immutable violations instead of exception
 
   // transient (not transferred to/from the application server)
   private transient Db session;                       // database session (transient because it shouldn't be serialized)
@@ -189,12 +189,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   private SessionHolder sessionHolder;                // a redirector to retrieve the session
   private final transient boolean fromThisJVM = true; // true if object created in this JVM, else remote
   private transient boolean overloadable;             // true if object can be loaded more than once from the database
-
-  // if this object is being replayed from a modification log
-  private transient ModificationLog modlog;
-
-  // for PropertyListeners
-  private transient volatile PropertySupport propertySupport;
+  private transient ModificationLog modlog;           // if this object is being replayed from a modification log
+  private transient volatile PropertySupport propertySupport; // for PropertyListeners
 
 
 
@@ -263,7 +259,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
   /**
-   * Gets the some attributes and variables common to all objects of the same class.
+   * Gets some attributes and variables common to all objects of the same class.
    * Class variables for classes derived from AbstractDbObject are kept in an
    * instance of {@link DbObjectClassVariables}.
    *
@@ -298,7 +294,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   /**
    * Sets the class id for this po.
    *
-   * @param classId the class id, 0 if use id from classvariables
+   * @param classId the class id, 0 to use id from class-variables
    */
   public void setClassId(int classId) {
     this.classId = classId;
@@ -480,7 +476,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Support for reporting bound property changes for Object properties.
-   * This method can be called when a bound property has changed and it will
+   * This method can be called when a bound property has changed, and it will
    * send the appropriate PropertyChangeEvent to any registered
    * PropertyChangeListeners.
    *
@@ -787,7 +783,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * Checks whether this object is already persistent in the db
    * or only residing in memory.
    * If an object isNew(), it means that it can be inserted.
-   * This does not mean, that the object never has been stored in the db,
+   * This does not mean, that the object has never been stored in the db,
    * i.e. it is possible that the object just has been deleted.
    *
    * @return true if object is not in database, i.e. new (or deleted)
@@ -835,14 +831,14 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Sets the modified flag.<p>
-   * For optimizations it is possible to skip objects that have not
+   * For optimizations, it is possible to skip objects that have not
    * been modified. The modified-attribute is cleared whenever the
    * object is saved (inserted or updated -- NOT insertPlain and updatePlain!).
    * The application is responsible to set the modified flag!
    * This is usually done in the setter-methods of the db-attributes.
    * The wurblet 'DbMethods' does this for you with option '--tracked'
    * <p>
-   * If invoked with modified=false (which is the case after been loaded
+   * If invoked with modified=false (which is the case after being loaded
    * from storage or after successful delete/update/insert) all property
    * change listeners will also be removed.
    *
@@ -891,7 +887,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   /**
    * Returns whether object is immutable.
    * <p>
-   * By default objects are mutable.
+   * By default, objects are mutable.
    *
    * @return true if immutable
    */
@@ -988,11 +984,11 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Determines whether this object is allowed to be stored in DB.<br>
-   * By default all mutable objects are allowed to be saved.
+   * By default, all mutable objects are allowed to be saved.
    * Objects not allowed to be saved will force saveObject(), insert() and update()
    * to return 'false' and silently skipped in saveCollection().
    *
-   * @return true if saveable
+   * @return true if savable
    */
   public boolean isPersistable() {
     return !isImmutable();
@@ -1174,7 +1170,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
   /**
-   * By default objects don't need to include the tableSerial in the
+   * By default, objects don't need to include the tableSerial in the
    * database table.
    * Override this method if object contains a TABLESERIAL-column.
    *
@@ -1204,7 +1200,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * <p>
    * Objects are identical if their IDs and classes are identical.<br>
    * IDs are *NOT* necessarily unique among all db-tables!
-   * If this or the passed object has an Id of 0, there is no domain identity
+   * If this or the passed object has an ID of 0, there is no domain identity
    * and {@link Object#equals(java.lang.Object)}
    * will be invoked.
    *
@@ -1291,7 +1287,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   public P readFromResultSetWrapper(ResultSetWrapper rs)  {
     assertNotOverloaded();
     Db db = getSession();
-    db.setAlive(true);   // keep the (local) db alive for long running retrievals
+    db.setAlive(true);   // keep the (local) db alive for long-running retrievals
     try {
       getFields(rs);
       setModified(false);
@@ -1385,7 +1381,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
          *
          * Notice that some dbms don't provide a select for update. In this case,
          * the dummyUpdate()-method should be automatically used by tentackle
-         * (allthough it's not really the same, but better than nothing).
+         * (although it's not really the same, but better than nothing).
          * We did not implement it so far, because all tentackle-supported dbms
          * provide a SELECT FOR UPDATE.
          *
@@ -1428,7 +1424,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
   /**
-   * Reloads the object with a write lock.
+   * Reloads the object with a write-lock.
    *
    * @return the object if reloaded, else null (never <em>this</em>)
    */
@@ -1493,8 +1489,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
   /**
-   * Selects the next object from a resultset.
-   * AbstractApplications should close the resultset if null is returned.
+   * Selects the next object from a result-set.
+   * AbstractApplications should close the result-set if null is returned.
    *
    * @param rs the result set
    * @return the next object, null if end of set
@@ -1724,7 +1720,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Insert this object into the database without any further processing
-   * (i.e. prepareSetFields, linked objcets, mod counting, logging, etc...).
+   * (i.e. prepareSetFields, linked objects, mod counting, logging, etc...).
    */
   @SuppressWarnings("unchecked")
   public void insertPlain()  {
@@ -1762,7 +1758,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Deletes this object from the database without any further processing
-   * (i.e. linked objcets, mod counting, logging, etc...).
+   * (i.e. linked objects, mod counting, logging, etc...).
    */
   public void deletePlain()  {
     Db db = getSession();
@@ -1800,7 +1796,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Updates this object to the database without any further processing
-   * (i.e. prepareSetFields, linked objcets, mod counting, logging, etc...).
+   * (i.e. prepareSetFields, linked objects, mod counting, logging, etc...).
    */
   @SuppressWarnings("unchecked")
   public void updatePlain ()  {
@@ -1960,7 +1956,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * Determines whether in updates of composite objects unmodified objects in the
    * update path get at least the serial updated or are not touched at all.
    * The default is to leave unmodified objects untouched.
-   * However, in some applications it is necessary to update the master object if some of its childs are updated (usually
+   * However, in some applications it is necessary to update the master object if some of its children are updated (usually
    * to trigger something, e.g. a cache-update).<p>
    * The default implementation returns false.
    * Override this method to change to 'true'.
@@ -2191,7 +2187,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
           // statements (marked ready) will be consumed.
           // If no rollback, the exception must be caught elsewhere in the path
           // until a valid rollback can be performed.
-          db.rollback(txVoucher);  // rollback if tx was begung
+          db.rollback(txVoucher);  // rollback if tx was begun
           id = oldId;
           serial = oldSerial;
           if (ex instanceof PersistenceException) {
@@ -2213,7 +2209,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * before it is sent to the server (instead of {@link #prepareSetFields()} which is
    * invoked at the JDBC-side only).
    * <p>
-   * Notice that the method is invoked outside of the save-transaction.
+   * Notice that the method is invoked outside the save-transaction.
    *
    * @see #prepareSetFields()
    */
@@ -2273,7 +2269,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
             newId();
           }
           // if id has been reserved it will be made positive in insert or update
-          // dont't use insertObject() bec. insert() OR insertObject()
+          // don't use insertObject() bec. insert() OR insertObject()
           insertObject();
         }
         else {
@@ -2284,7 +2280,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       }
       catch (RuntimeException ex) {
         db.rollback(txVoucher);
-        id = oldId; // set back old Id in case it was changed
+        id = oldId; // set back old ID in case it was changed
         if (ex instanceof PersistenceException) {
           ((PersistenceException) ex).updateDbObject(this);
           throw ex;
@@ -2299,7 +2295,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   /**
    * Persists this object and returns it.
    *
-   * @return the persistet object, null if saveObject failed
+   * @return the persisted object, null if saveObject failed
    */
   @SuppressWarnings("unchecked")
   public P persistObject() {
@@ -2346,8 +2342,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    *   super.prepareDelete();   // IMPORTANT!!!
    * }
    * </pre>
-   * Notice that the method is invoked outside of the transaction and that it
-   * is not invoked if the object is new or not saveable.
+   * Notice that the method is invoked outside the transaction and that it
+   * is not invoked if the object is new or not savable.
    *
    * @see #deleteObject()
    * @see #isNew()
@@ -2364,7 +2360,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * because it {@link #isNew} again.<br>
    * It is also verified that the object {@link #isPersistable} and is not new.
    *
-   * @throws NotFoundException if object is new or not saveable or not in database
+   * @throws NotFoundException if object is new or not savable or not in database
    */
   @SuppressWarnings("unchecked")
   public void deleteObject()  {
@@ -2481,7 +2477,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Determines the objects with a tableSerial starting at a given serial.
-   * Useful to cleanup caches for example.
+   * Useful to clean up caches for example.
    *
    * @param oldSerial non-inclusive lower bound for tableSerial (&gt; oldSerial)
    * @return pairs of longs, the first being the ID, the second the tableserial, never null
@@ -2514,7 +2510,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Determines the objects with their tableSerial within a given range.
-   * Useful to cleanup caches.
+   * Useful to clean up caches.
    *
    * @param oldSerial non-inclusive lower bound for tableSerial (&gt; oldSerial)
    * @param maxSerial inclusive upper bound for tableSerial (&le; maxSerial)
@@ -2573,7 +2569,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   /**
    * Combines {@link #selectExpiredTableSerials} and {@link #getExpirationBacklog}.<br>
    * A physical database query is only done if the requested range is not in the backlog.
-   * Used in RMIservers to reduces db-roundtrips.
+   * Used in RMI-servers to reduces db-roundtrips.
    *
    * @param oldSerial non-inclusive lower bound for tableSerial (&gt; oldSerial)
    * @param maxSerial inclusive upper bound for tableSerial (&le; maxSerial)
@@ -2617,7 +2613,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     Db db = getSession();
     db.assertNotRemote();   // don't log locally if db is remote
     if (db.isLogModificationAllowed()) {
-      db.logBeginTx();      // optionally create the begin log
+      db.logBeginTx();      // optionally create the BEGIN-log
       createModificationLog(modType).saveObject();
     }
   }
@@ -2674,7 +2670,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   /**
    * Prepares the object's attributes before the object is saved to the database.<br>
    * The default implementation does nothing.
-   * Used to setup, check and align values.
+   * Used to set up, check and align values.
    * <p>
    * Notice that this method is invoked at the JDBC-side only, i.e. local sessions,
    * not in remote clients.
@@ -3049,7 +3045,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
   /**
-   * Asserts that this object is saveable.
+   * Asserts that this object is savable.
    */
   protected void assertPersistable() {
     if (!isPersistable()) {
