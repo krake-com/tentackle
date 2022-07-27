@@ -75,7 +75,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
   private Map<Integer,Object> parameters;               // execution parameters
   private boolean executionPending;                     // true if next setXXX(1, ...) will invoke addBatch
   private List<Map<Integer,Object>> batchParameters;    // batched execution parameters
-  private WeakReference<DbBatch> batchRef;       // set if currently batched (weak since object just vanishes after tx)
+  private WeakReference<DbBatch> batchRef;              // set if currently batched (weak since object just vanishes after tx)
 
 
   /**
@@ -201,7 +201,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
   protected void detachSession() {
     super.detachSession();
     // new map because old reference is held in StatementHistory
-    clearParamatersImpl();
+    clearParametersImpl();
   }
 
 
@@ -260,12 +260,12 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
       throw new PersistenceException(getSession(), this.toString(), e);
     }
     finally {
-      clearParamatersImpl();
+      clearParametersImpl();
     }
   }
 
 
-  private void clearParamatersImpl() {
+  private void clearParametersImpl() {
     parameters = new HashMap<>();
     batchParameters = null;
     executionPending = false;
@@ -366,7 +366,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
       super.clearBatch();
     }
     finally {
-      clearParamatersImpl();
+      clearParametersImpl();
     }
   }
 
@@ -382,7 +382,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
       return new int[0];
     }
     finally {
-      clearParamatersImpl();
+      clearParametersImpl();
     }
   }
 
@@ -1227,7 +1227,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
    * will
    * The driver converts this to an SQL <code>BLOB</code> value when it sends it to the
    * database.
-   * The implementation translates the Binary into an Inputstream and invokes
+   * The implementation translates the Binary into an InputStream and invokes
    * {@link PreparedStatement#setBlob(int, java.io.InputStream, long)}.
    *
    * @param p the first parameter is 1, the second is 2, ...

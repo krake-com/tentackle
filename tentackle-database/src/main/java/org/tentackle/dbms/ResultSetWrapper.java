@@ -89,8 +89,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   private static class Resources implements Runnable {
 
+
+    private final StatementHistory history;         // statement history to log duration and number of rows fetched
+    private final TimeKeeper duration;              // duration until closed
     private StatementWrapper stmt;                  // the statement wrapper
-    private StatementHistory history;               // statement history to log duration and number of rows fetched
     private ResultSet rs;                           // the wrapped result set, null if closed
     private Db db;                                  // db from statement
     private ResultSetSkipBlock skipBlock;           // current skip block
@@ -99,7 +101,6 @@ public class ResultSetWrapper implements AutoCloseable {
     private List<ResultSetSkipBlock> skipBlocks;    // list of skip blocks (null if not in skipmode)
     private boolean closeStatementOnClose;          // true = close the statement after resultset is closed
     private ResultSetWrapper me;                    // != null if normal close, else cleanup
-    private TimeKeeper duration;                    // duration until closed
     private int rowCount;                           // number of rows fetched
 
     Resources(StatementWrapper stmt, StatementHistory history, ResultSet rs) {

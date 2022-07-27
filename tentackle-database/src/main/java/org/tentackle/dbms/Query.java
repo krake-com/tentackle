@@ -44,10 +44,10 @@ import java.util.List;
 /**
  * A database query.
  * <p>
- * Combines the generation of an sql-string and parameter set for
+ * Combines the generation of an SQL-string and parameter set for
  * the ResultSetWrapper. Useful for one-time queries entered by the user.<br>
  * Notice that by default the underlying prepared statement is closed
- * when the resultset (or cursor) is closed by the application.
+ * when the result-set (or cursor) is closed by the application.
  * You can change that behaviour, however.
  * <p>
  * Notice further, that the columns returned by the select
@@ -105,7 +105,7 @@ public class Query {
 
   /**
    * Sets an offset, i.e. number of rows to skip in a query.
-   * By default the offset is 0.
+   * By default, the offset is 0.
    * @param offset the offset, 0 to disable
    */
   public void setOffset(int offset) {
@@ -142,7 +142,7 @@ public class Query {
 
 
   /**
-   * Appends an sql-part and corresponding parameters to this query.
+   * Appends an SQL-part and corresponding parameters to this query.
    * <pre>
    * Example: add(" AND CN_ID=?", object.getId());
    *          add(" AND CN_MONEY=?", object.getAmount());
@@ -231,7 +231,7 @@ public class Query {
     }
 
     /*
-     * for postgres: run the query in an extra tx. Otherwise postgres will ignore fetchsize
+     * for postgres: run the query in an extra tx. Otherwise, postgres will ignore fetchsize
      * and load everything into memory.
      */
     ResultSetWrapper rs = null;
@@ -356,7 +356,7 @@ public class Query {
    *
    * @param st the statement
    * @param ndx the starting index
-   * @return the next paramater index
+   * @return the next parameter index
    */
   @SuppressWarnings({ "rawtypes", "unchecked" })
   public int applyParameters(PreparedStatementWrapper st, int ndx) {
@@ -439,7 +439,7 @@ public class Query {
                 throw new PersistenceException(
                     "unsupported type " + data.getClass() + " in '" + item + "' arg[" + dataIndex + "]");
               }
-              // the application must provide the correct number of questionmarks!
+              // the application must provide the correct number of question marks!
               st.set(dataType, ndx, data, false, null);
               ndx += dataType.getColumnCount();
             }

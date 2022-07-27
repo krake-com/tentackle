@@ -307,7 +307,7 @@ public class ManagedConnection {
 
 
   private final Resources resources;                      // resources to be cleaned up
-  private final Cleanable cleanable;                      // to cleanup the connection
+  private final Cleanable cleanable;                      // to clean up the connection
   private final ConnectionManager manager;                // the manager that created this connection
   private final Backend backend;                          // the backend
   private final String backendId;                         // a unique ID to identify the connection at the backend
@@ -1271,7 +1271,7 @@ public class ManagedConnection {
 
 
   /**
-   * Forces a detach of the db connection.<br>
+   * Forces the connection to be detached from the session.<br>
    * The method is used from connection managers only, hence package scope.
    */
   void forceDetached() {
