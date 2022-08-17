@@ -88,7 +88,7 @@ public abstract class AbstractServerApplication extends AbstractApplication
   }
 
   @Override
-  protected boolean isServerImpl() {
+  public boolean isServer() {
     return true;
   }
 

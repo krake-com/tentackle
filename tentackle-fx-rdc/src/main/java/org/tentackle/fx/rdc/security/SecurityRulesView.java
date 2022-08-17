@@ -30,7 +30,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
-import org.tentackle.app.AbstractApplication;
+import org.tentackle.app.Application;
 import org.tentackle.bind.Bindable;
 import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.Fx;
@@ -190,6 +190,7 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
 
   @Override
   public void configure() {
+    context = Application.getInstance().getDomainContext();
     TablePopup<Security> classRulesPopup = Rdc.createTablePopup(
             classRulesNode, "classRules", resources.getString("Class Rules"));
     classRulesPopup.loadPreferences();
@@ -227,8 +228,7 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
     }
     this.classId = classId;
     clazz = null;
-    pdo = Pdo.create(SessionUtilities.getInstance().getClassName(classId),
-                     AbstractApplication.getRunningApplication().getDomainContext());
+    pdo = Pdo.create(SessionUtilities.getInstance().getClassName(classId), getDomainContext());
     setupSecuredObject();
   }
 
@@ -276,7 +276,6 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
       editor.setSecurableClass(pdo.getEffectiveClass());
     }
     else {
-      context = AbstractApplication.getRunningApplication().getDomainContext();
       if (clazz != null) {
         trackedClassRules = on(Security.class).selectByObjectClass(clazz.getName());
         classRules.setAll(trackedClassRules);

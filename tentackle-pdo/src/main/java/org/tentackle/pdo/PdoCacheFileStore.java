@@ -18,7 +18,7 @@
 
 package org.tentackle.pdo;
 
-import org.tentackle.app.AbstractApplication;
+import org.tentackle.app.Application;
 import org.tentackle.common.StringHelper;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.UserHomeJavaDir;
@@ -81,7 +81,7 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
    */
   public PdoCacheFileStore(PdoCache<T> cache) {
     this.cache = cache;
-    AbstractApplication application = AbstractApplication.getRunningApplication();
+    Application application = Application.getInstance();
     if (application != null) {
       Session session = application.getSession();
       applicationName = StringHelper.toAsciiLetterOrDigit(application.getName());
@@ -196,7 +196,7 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
   private void verifyAfterRead() {
     String expectedApplicationName = null;
     String expectedBackendName = null;
-    AbstractApplication application = AbstractApplication.getRunningApplication();
+    Application application = Application.getInstance();
     if (application != null) {
       expectedApplicationName = StringHelper.toAsciiLetterOrDigit(application.getName());
       Session session = application.getSession();

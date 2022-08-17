@@ -21,17 +21,14 @@ package org.tentackle.app;
 import org.tentackle.common.ModuleInfo;
 import org.tentackle.common.ModuleSorter;
 import org.tentackle.common.StringHelper;
-import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.CommandLine;
 import org.tentackle.misc.DiagnosticUtilities;
 import org.tentackle.pdo.DomainContext;
-import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.OperationInvocationHandler;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoCache;
 import org.tentackle.pdo.PdoInvocationHandler;
-import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 import org.tentackle.script.ScriptFactory;
 import org.tentackle.script.ScriptingLanguage;
@@ -39,7 +36,6 @@ import org.tentackle.security.SecurityFactory;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
-import org.tentackle.session.SessionProvider;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -56,7 +52,7 @@ import java.util.function.Function;
  *
  * @author harald
  */
-public abstract class AbstractApplication implements SessionProvider, DomainContextProvider {
+public abstract class AbstractApplication implements Application {
 
   /**
    * Property to disable the modification tracker.
@@ -84,24 +80,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
   public static final String LOCALE = "locale";
 
 
-
-
   private static final Logger LOGGER = Logger.get(AbstractApplication.class);
-
-  private static AbstractApplication running = null;   // != null if an application is running in this JVM (classloader)
-
-  /**
-   * Gets the (singleton) application instance currently running.
-   * <p>
-   * Notice: the method is not synchronized because no serious application
-   * will invoke getAbstractApplication() before getting itself up and running.
-   *
-   * @return the application, null if no application started
-   */
-  public static AbstractApplication getRunningApplication() {
-    return running;
-  }
-
 
 
 
@@ -136,6 +115,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    *
    * @return the name
    */
+  @Override
   public String getName() {
     return name;
   }
@@ -145,6 +125,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    *
    * @return the version
    */
+  @Override
   public String getVersion() {
     return version;
   }
@@ -155,6 +136,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    *
    * @return the creation time of this application
    */
+  @Override
   public long getCreationTime() {
     return creationTime;
   }
@@ -174,6 +156,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    *
    * @return the commandline, null if not started
    */
+  @Override
   public CommandLine getCommandLine() {
     return cmdLine;
   }
@@ -191,21 +174,12 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
 
 
   /**
-   * Returns whether the running application is a server.
-   *
-   * @return true if server, false if not a server or no application running at all
-   */
-  public static boolean isServer() {
-    AbstractApplication application = getRunningApplication();
-    return application != null && application.isServerImpl();
-  }
-
-  /**
    * Returns whether the application is a server.
    *
    * @return true if server, false if a client or nothing of both
    */
-  protected boolean isServerImpl() {
+  @Override
+  public boolean isServer() {
     return false;
   }
 
@@ -214,52 +188,8 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    *
    * @return true if interaction with user, false if server, daemon or whatever
    */
-  public static boolean isInteractive() {
-    AbstractApplication application = getRunningApplication();
-    return application != null && application.isInteractiveImpl();
-  }
-
-  /**
-   * Returns whether the application is interactive.
-   *
-   * @return true if interaction with user, false if server, daemon or whatever
-   */
-  protected boolean isInteractiveImpl() {
+  public boolean isInteractive() {
     return false;
-  }
-
-  /**
-   * Registers the application.<br>
-   * Makes sure that only one application is running at a time.
-   * Should be invoked in the start-method.
-   * <p>
-   * Throws TentackleRuntimeException if an application is already running.
-   */
-  protected void register() {
-    synchronized(AbstractApplication.class) {   // not getClass() because this applies to all kinds of applications!
-      if (running != null) {
-        throw new TentackleRuntimeException("application '" + running + "' already registered");
-      }
-      running = this;
-    }
-  }
-
-  /**
-   * Unregisters the application.<br>
-   * Makes sure that only one application is running at a time.
-   * Should be invoked in the stop-method.
-   * <p>
-   * Throws TentackleRuntimeException if no application is running.
-   */
-  protected void unregister() {
-    synchronized(AbstractApplication.class) {   // not getClass() because this applies to all kinds of applications!
-      if (running != null) {
-        if (running != this) {
-          throw new TentackleRuntimeException("application '" + running + "' not registered");
-        }
-        running = null;
-      }
-    }
   }
 
 
@@ -279,26 +209,127 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    *
    * @return the properties
    */
-  public Properties getProperties() {
+  protected Properties getProperties() {
     return props;
   }
 
   /**
-   * Gets a property.
+   * Applies the given properties.<br>
+   * If the given properties are different from the application properties, they will be copied to
+   * the application properties.
+   * <p>
+   * The default implementation first parses the properties for system properties and replaces
+   * any system properties according to {@link StringHelper#evaluate(String, Function)}.<br>
+   * System properties start with {@code SYSTEM_} or {@code ^} followed by the property name.
+   * <p>
+   * Other well-known properties that can be set:
+   * <p>
+   * {@code scripting=...} sets the default scripting language
+   * <p>
+   * {@code nosecurity} disables the tentackle security manager
+   * <p>
+   * {@code locale=...} sets the default locale.
    *
-   * @param key the property's name
-   * @return the value of the key, null if no such property, the empty string if no value for this property.
+   * @param properties the properties, null if none
    */
+  @Override
+  public void applyProperties(Properties properties) {
+    if (properties != null) {
+      // translate variables, set system properties and copy the rest
+      Function<String, String> systemVariableProvider = System.getProperties()::getProperty;
+      for (String propName : properties.stringPropertyNames()) {
+        String propValue = properties.getProperty(propName);
+        if (propValue != null) {  // null should not happen, but multi threading...
+          String processedValue = StringHelper.evaluate(propValue, systemVariableProvider);
+          if (!propValue.equals(processedValue)) {
+            LOGGER.fine("property {0}: {1} evaluated to {2}", propName, propValue, processedValue);
+            propValue = processedValue;
+            if (properties == props) {
+              props.setProperty(propName, processedValue);
+            }
+            // else override below if not already set via commandline
+          }
+          String sysKey = null;
+          if (propName.startsWith("SYSTEM_")) {
+            sysKey = propName.substring(7);
+          }
+          else if (propName.startsWith("^")) {
+            sysKey = propName.substring(1);
+          }
+          if (sysKey != null) {
+            System.setProperty(sysKey, propValue);
+            if (LOGGER.isFineLoggable()) {
+              LOGGER.fine("system property {0} set to {1}", sysKey, propValue);
+            }
+            else {
+              LOGGER.info("system property {0} set", sysKey);  // don't log the value, could be a password...
+            }
+          }
+          else if (props != null && props != properties && !props.containsKey(propName)) { // cmd props take precedence
+            props.setProperty(propName, propValue);
+            LOGGER.fine("property {0} set to {1}", propName, propValue);
+          }
+        }
+      }
+
+      String scripting = getProperty(SCRIPTING);
+      if (scripting != null) {
+        ScriptFactory.getInstance().setDefaultLanguage(scripting);
+      }
+
+      if (getProperty(DISABLE_SECURITY_MANAGER) != null) {
+        SecurityFactory.getInstance().getSecurityManager().setEnabled(false);
+      }
+
+      // set default locale
+      String localeStr = getProperty(LOCALE);
+      if (localeStr != null && !localeStr.isEmpty()) {
+        String language = null;
+        String country = null;
+        String variant = null;
+        StringTokenizer stok = new StringTokenizer(localeStr, "_");
+        while (stok.hasMoreTokens()) {
+          String token = stok.nextToken();
+          if (language == null) {
+            language = token;
+          }
+          else if (country == null) {
+            country = token;
+          }
+          else if (variant == null) {
+            variant = token;
+          }
+          else {
+            break;
+          }
+        }
+
+        Locale locale = null;
+
+        if (variant != null) {
+          locale = new Locale(language, country, variant);
+        }
+        else if (country != null) {
+          locale = new Locale(language, country);
+        }
+        else if (language != null) {
+          locale = new Locale(language);
+        }
+
+        if (locale != null) {
+          Locale.setDefault(locale);
+          LOGGER.info("default locale set to {0}", locale);
+        }
+      }
+    }
+  }
+
+  @Override
   public String getProperty(String key) {
     return props == null ? null : props.getProperty(key);
   }
 
 
-  /**
-   * Gets the session.
-   *
-   * @return the session, null if not yet configured
-   */
   @Override
   public Session getSession() {
     return context == null ? null : context.getSession();
@@ -331,6 +362,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    *
    * @return the session info
    */
+  @Override
   public SessionInfo getSessionInfo() {
     return sessionInfo;
   }
@@ -343,35 +375,6 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
   protected void setSessionInfo(SessionInfo sessionInfo) {
     this.sessionInfo = sessionInfo;
   }
-
-
-  /**
-   * Gets the AbstractPersistentObject corresponding to the object-ID of a user entity.
-   * <p>
-   * Should be overridden if application provides a user entity.
-   * The default implementation returns null.
-   *
-   * @param <U> the pdo type
-   * @param context the domain context
-   * @param userId the user id
-   * @return the user object, null if unknown
-   */
-  public abstract <U extends PersistentDomainObject<U>> U getUser(DomainContext context, long userId);
-
-
-  /**
-   * Gets the AbstractPersistentObject corresponding to the userId in {@link SessionInfo}.
-   * <p>
-   * The default implementation invokes {@link #getUser(org.tentackle.pdo.DomainContext, long) }.
-   *
-   * @param <U> the pdo type
-   * @param context the domain context
-   * @return the logged-in user object, null if unknown
-   */
-  public <U extends PersistentDomainObject<U>> U getUser(DomainContext context) {
-    return getUser(context, sessionInfo == null ? 0 : sessionInfo.getUserId());
-  }
-
 
 
   /**
@@ -491,117 +494,6 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
 
 
   /**
-   * Applies the given properties.<br>
-   * If the given properties are different from the application properties, they will be copied to
-   * the application properties.
-   * <p>
-   * The default implementation first parses the properties for system properties and replaces
-   * any system properties according to {@link StringHelper#evaluate(String, Function)}.<br>
-   * System properties start with {@code SYSTEM_} or {@code ^} followed by the property name.
-   * <p>
-   * Other well-known properties that can be set:
-   * <p>
-   * {@code scripting=...} sets the default scripting language
-   * <p>
-   * {@code nosecurity} disables the tentackle security manager
-   * <p>
-   * {@code locale=...} sets the default locale.
-   *
-   * @param properties the properties, null if none
-   */
-  public void applyProperties(Properties properties) {
-    if (properties != null) {
-      // translate variables, set system properties and copy the rest
-      Function<String, String> systemVariableProvider = System.getProperties()::getProperty;
-      for (String propName : properties.stringPropertyNames()) {
-        String propValue = properties.getProperty(propName);
-        if (propValue != null) {  // null should not happen, but multi threading...
-          String processedValue = StringHelper.evaluate(propValue, systemVariableProvider);
-          if (!propValue.equals(processedValue)) {
-            LOGGER.fine("property {0}: {1} evaluated to {2}", propName, propValue, processedValue);
-            propValue = processedValue;
-            if (properties == props) {
-              props.setProperty(propName, processedValue);
-            }
-            // else override below if not already set via commandline
-          }
-          String sysKey = null;
-          if (propName.startsWith("SYSTEM_")) {
-            sysKey = propName.substring(7);
-          }
-          else if (propName.startsWith("^")) {
-            sysKey = propName.substring(1);
-          }
-          if (sysKey != null) {
-            System.setProperty(sysKey, propValue);
-            if (LOGGER.isFineLoggable()) {
-              LOGGER.fine("system property {0} set to {1}", sysKey, propValue);
-            }
-            else {
-              LOGGER.info("system property {0} set", sysKey);  // don't log the value, could be a password...
-            }
-          }
-          else if (props != null && props != properties && !props.containsKey(propName)) { // cmd props take precedence
-            props.setProperty(propName, propValue);
-            LOGGER.fine("property {0} set to {1}", propName, propValue);
-          }
-        }
-      }
-
-      String scripting = getProperty(SCRIPTING);
-      if (scripting != null) {
-        ScriptFactory.getInstance().setDefaultLanguage(scripting);
-      }
-
-      if (getProperty(DISABLE_SECURITY_MANAGER) != null) {
-        SecurityFactory.getInstance().getSecurityManager().setEnabled(false);
-      }
-
-      // set default locale
-      String localeStr = getProperty(LOCALE);
-      if (localeStr != null && !localeStr.isEmpty()) {
-        String language = null;
-        String country = null;
-        String variant = null;
-        StringTokenizer stok = new StringTokenizer(localeStr, "_");
-        while (stok.hasMoreTokens()) {
-          String token = stok.nextToken();
-          if (language == null) {
-            language = token;
-          }
-          else if (country == null) {
-            country = token;
-          }
-          else if (variant == null) {
-            variant = token;
-          }
-          else {
-            break;
-          }
-        }
-
-        Locale locale = null;
-
-        if (variant != null) {
-          locale = new Locale(language, country, variant);
-        }
-        else if (country != null) {
-          locale = new Locale(language, country);
-        }
-        else if (language != null) {
-          locale = new Locale(language);
-        }
-
-        if (locale != null) {
-          Locale.setDefault(locale);
-          LOGGER.info("default locale set to {0}", locale);
-        }
-      }
-    }
-  }
-
-
-  /**
    * Initializes the application.<br>
    * This is the first step when an application is launched.
    */
@@ -702,11 +594,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
   protected abstract void startup();
 
 
-  /**
-   * Starts the application.
-   *
-   * @param args the arguments (usually from commandline)
-   */
+  @Override
   public void start(String[] args) {
     cmdLine = new CommandLine(args);
     setProperties(cmdLine.getOptionsAsProperties());
@@ -720,28 +608,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
   }
 
 
-  /**
-   * Starts the application without further arguments.
-   */
-  public void start() {
-    start(null);
-  }
-
-
-  /**
-   * Gracefully terminates the application.
-   */
-  public void stop() {
-    stop(0, null);
-  }
-
-
-  /**
-   * Terminates the application with optional error handling.
-   *
-   * @param exitValue the stop value for System.exit()
-   * @param exitThrowable an exception causing the termination, null if none
-   */
+  @Override
   public void stop(int exitValue, Throwable exitThrowable) {
     try {
       synchronized (this) {

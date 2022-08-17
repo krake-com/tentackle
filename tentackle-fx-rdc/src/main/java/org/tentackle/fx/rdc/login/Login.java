@@ -29,7 +29,7 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.GridPane;
 import javafx.stage.WindowEvent;
 
-import org.tentackle.app.AbstractApplication;
+import org.tentackle.app.Application;
 import org.tentackle.common.Constants;
 import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.Fx;
@@ -377,7 +377,7 @@ public class Login extends AbstractFxController {
         sessionInfo.getProperties().setProperty(Constants.BACKEND_INFO, backendInfo);
       }
       setProgress(0.01);    // login is in progress...
-      ((DesktopApplication) AbstractApplication.getRunningApplication()).login(getView(), sessionInfo);
+      ((DesktopApplication) Application.getInstance()).login(getView(), sessionInfo);
     }
     else {
       LOGGER.warning("login already in progress...");

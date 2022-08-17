@@ -31,7 +31,6 @@ import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.component.FxTreeTableView;
-import org.tentackle.fx.rdc.app.DesktopApplication;
 import org.tentackle.fx.rdc.crud.PdoCrud;
 import org.tentackle.fx.rdc.search.PdoSearch;
 import org.tentackle.fx.rdc.table.TablePopup;
@@ -319,7 +318,7 @@ public class Rdc {
    * @param node the node
    */
   public static void closeStageHierarchy(Node node) {
-    FxUtilities.getInstance().closeStageHierarchy(node, DesktopApplication.getDesktopApplication().getMainStage());
+    FxUtilities.getInstance().closeStageHierarchy(node, RdcUtilities.getInstance().getMainStage());
   }
 
 

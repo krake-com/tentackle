@@ -18,7 +18,7 @@
 
 package org.tentackle.persist;
 
-import org.tentackle.app.AbstractApplication;
+import org.tentackle.app.Application;
 import org.tentackle.common.Service;
 import org.tentackle.dbms.AbstractDbObject;
 import org.tentackle.dbms.ConnectionManager;
@@ -106,9 +106,9 @@ public class PersistenceUtilities extends DbUtilities {
   @Override
   public ConnectionManager getDefaultConnectionManager() {
     ConnectionManager manager = null;
-    AbstractApplication application = AbstractApplication.getRunningApplication();
-    if (application instanceof ConnectionManagerProvider) {
-      manager = ((ConnectionManagerProvider) application).getConnectionManager();
+    Application application = Application.getInstance();
+    if (application instanceof ConnectionManagerProvider connectionManagerProvider) {
+      manager = connectionManagerProvider.getConnectionManager();
     }
     if (manager == null) {
       manager = super.getDefaultConnectionManager();
@@ -118,9 +118,9 @@ public class PersistenceUtilities extends DbUtilities {
 
   @Override
   public SessionPoolProvider getSessionPoolProvider() {
-    AbstractApplication application = AbstractApplication.getRunningApplication();
-    if (application instanceof SessionPoolProvider) {
-      return (SessionPoolProvider) application;
+    Application application = Application.getInstance();
+    if (application instanceof SessionPoolProvider sessionPoolProvider) {
+      return sessionPoolProvider;
     }
     return super.getSessionPoolProvider();
   }

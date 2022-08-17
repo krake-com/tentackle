@@ -245,10 +245,6 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
     throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
-  public void setModified(boolean modified) {
-    throw new UnsupportedOperationException(UNSUPPORTED);
-  }
-
   @Override
   public boolean isTracked() {
     throw new UnsupportedOperationException(UNSUPPORTED);
@@ -410,20 +406,8 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
     throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
-  public Object getTransientData() {
-    throw new UnsupportedOperationException(UNSUPPORTED);
-  }
-
-  public void setTransientData(Object data) {
-    throw new UnsupportedOperationException(UNSUPPORTED);
-  }
-
   @Override
   public long getEditedBy() {
-    throw new UnsupportedOperationException(UNSUPPORTED);
-  }
-
-  public void setEditedBy(long editedBy) {
     throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
@@ -452,25 +436,8 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
     throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
-  public void setEditedSince(Timestamp editedSince) {
-    throw new UnsupportedOperationException(UNSUPPORTED);
-  }
-
   @Override
   public Timestamp getEditedExpiry() {
-    throw new UnsupportedOperationException(UNSUPPORTED);
-  }
-
-  public void setEditedExpiry(Timestamp editedExpiry) {
-    throw new UnsupportedOperationException(UNSUPPORTED);
-  }
-
-  @Override
-  public <U extends PersistentDomainObject<U>> U getTokenLockObject() {
-    throw new UnsupportedOperationException(UNSUPPORTED);
-  }
-
-  public <U extends PersistentDomainObject<U>> void setTokenLockObject(U obj) {
     throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
@@ -602,10 +569,6 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
 
   @Override
   public void discardSnapshots() {
-  }
-
-  public void setNormText(String normText) {
-    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
