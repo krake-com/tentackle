@@ -18,7 +18,7 @@
 
 package org.tentackle.persist.lock;
 
-import org.tentackle.app.AbstractApplication;
+import org.tentackle.app.Application;
 import org.tentackle.common.Service;
 import org.tentackle.dbms.Db;
 import org.tentackle.log.Logger;
@@ -158,7 +158,8 @@ public class DefaultLockManager implements LockManager {
    * Enabled only if running within a server application.
    */
   public DefaultLockManager() {
-    enabled = AbstractApplication.isServer();
+    Application application = Application.getInstance();
+    enabled = application != null && application.isServer() && !application.getSession().isRemote();
     lockMap = new HashMap<>();
     createdLocksInFlight = new HashMap<>();
     updatedLocksInFlight = new HashMap<>();

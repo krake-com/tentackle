@@ -39,13 +39,14 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 
-import org.tentackle.app.AbstractApplication;
+import org.tentackle.app.Application;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.FxUtilities;
+import org.tentackle.fx.rdc.app.DesktopApplication;
 import org.tentackle.fx.rdc.crud.PdoCrud;
 import org.tentackle.fx.rdc.search.PdoSearch;
 import org.tentackle.log.Logger;
@@ -502,7 +503,7 @@ public class RdcUtilities {
     // prefs stored in the database don't make sense in this case.
     // the filename applies to a machine + user only!
     Preferences prefs = Preferences.userRoot();
-    String applicationName = AbstractApplication.getRunningApplication().getName();
+    String applicationName = Application.getInstance().getName();
     if (!StringHelper.isAllWhitespace(applicationName)) {
       prefs = prefs.node(applicationName);
     }
@@ -533,6 +534,16 @@ public class RdcUtilities {
       }
     }
     return selectedFile;
+  }
+
+
+  /**
+   * Gets the main stage of the current application.
+   *
+   * @return the main stage
+   */
+  public Stage getMainStage() {
+    return ((DesktopApplication) Application.getInstance()).getMainStage();
   }
 
 }

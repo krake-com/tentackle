@@ -15,7 +15,7 @@ import ${package}.pdo.td.Message;
 import ${package}.persist.rmi.${application}RemoteDbSession;
 import ${package}.server.ServerBundle;
 
-import org.tentackle.app.AbstractApplication;
+import org.tentackle.app.Application;
 import org.tentackle.common.LocaleProvider;
 import org.tentackle.dbms.Db;
 import org.tentackle.dbms.rmi.RemoteDbConnectionImpl;
@@ -105,7 +105,7 @@ public class ${application}RemoteDbSessionImpl extends RemoteDbSessionImpl imple
         ${application}SessionInfo sessionInfo = (${application}SessionInfo) getClientSessionInfo();
         if (!sessionInfo.isCloned()) {    // if main session and not the finalizer
           DomainContext context = Pdo.createDomainContext(session);
-          User user = AbstractApplication.getRunningApplication().getUser(context, sessionInfo.getUserId());
+          User user = Application.getInstance().getUser(context, sessionInfo.getUserId());
           LocaleProvider.getInstance().setCurrentLocale(sessionInfo.getLocale());
           session.makeCurrent();
           String message = null;

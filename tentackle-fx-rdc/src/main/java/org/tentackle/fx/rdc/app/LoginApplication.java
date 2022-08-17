@@ -24,7 +24,7 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
-import org.tentackle.app.AbstractApplication;
+import org.tentackle.app.Application;
 import org.tentackle.common.Constants;
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.Fx;
@@ -120,7 +120,7 @@ public class LoginApplication extends FxApplication {
    * @return the session info
    */
   public SessionInfo createSessionInfo() {
-    DesktopApplication<?> application = (DesktopApplication<?>) AbstractApplication.getRunningApplication();
+    DesktopApplication<?> application = (DesktopApplication<?>) Application.getInstance();
     String username = application.getCommandLine().getOptionValue(Constants.BACKEND_USER);
     char[] password = StringHelper.toCharArray(application.getCommandLine().getOptionValue(Constants.BACKEND_PASSWORD));
     String sessionPropsName = application.getCommandLine().getOptionValue(Constants.BACKEND_PROPS);
@@ -144,7 +144,7 @@ public class LoginApplication extends FxApplication {
       sessionInfo.setApplicationName(application.getClass().getSimpleName());
     }
 
-    AbstractApplication.getRunningApplication().applyProperties(sessionInfo.getProperties());
+    application.applyProperties(sessionInfo.getProperties());
 
     return sessionInfo;
   }

@@ -22,7 +22,6 @@ package org.tentackle.fx.rdc.app;
 import javafx.application.Application;
 import javafx.stage.Stage;
 
-import org.tentackle.app.AbstractApplication;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.log.Logger;
 
@@ -43,9 +42,9 @@ public abstract class FxApplication extends Application {
   private Throwable exitThrowable;    // and optional reason
 
   @Override
-  public void start(Stage stage) throws Exception {
+  public void start(Stage stage) {
     try {
-      DesktopApplication<?> application = (DesktopApplication<?>) AbstractApplication.getRunningApplication();
+      DesktopApplication<?> application = (DesktopApplication<?>) org.tentackle.app.Application.getInstance();
       application.setFxApplication(this);
       application.registerUncaughtExceptionHandler();
       startApplication(stage);
@@ -74,9 +73,8 @@ public abstract class FxApplication extends Application {
   }
 
   @Override
-  public void stop() throws Exception {
-    DesktopApplication<?> application = (DesktopApplication<?>) AbstractApplication.getRunningApplication();
-    application.stop(exitValue, exitThrowable);
+  public void stop() {
+    org.tentackle.app.Application.getInstance().stop(exitValue, exitThrowable);
   }
 
   /**

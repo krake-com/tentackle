@@ -37,16 +37,6 @@ import java.rmi.RemoteException;
  */
 public abstract class ServerApplication extends AbstractServerApplication {
 
-  /**
-   * Gets the running server application.<br>
-   *
-   * @return the application
-   */
-  public static ServerApplication getServerApplication() {
-    return (ServerApplication) getRunningApplication();
-  }
-
-
   private static final Logger LOGGER = Logger.get(ServerApplication.class);
 
   private final Class<? extends RemoteDbConnectionImpl> connectionClass;    // the connection class

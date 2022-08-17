@@ -572,15 +572,6 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   boolean isTokenLockableByMe();
 
   /**
-   * Gets the object associated to the token lock.<br>
-   * This is usually a PDO implementing the concept of a user, group, role or whatever.
-   *
-   * @param <U> the locking object type
-   * @return the locking object, null if not locked
-   */
-  <U extends PersistentDomainObject<U>> U getTokenLockObject();
-
-  /**
    * Transfers the token lock to another user.<br>
    * Necessary to hand over a token without releasing it.<br>
    * Eliminates the time-gap when object is token-free.<br>

@@ -18,7 +18,7 @@
 
 package org.tentackle.persist;
 
-import org.tentackle.app.AbstractApplication;
+import org.tentackle.app.Application;
 import org.tentackle.common.Service;
 import org.tentackle.dbms.DbModificationTracker;
 import org.tentackle.pdo.PdoUtilities;
@@ -58,7 +58,8 @@ public class PdoModificationTracker extends DbModificationTracker {
 
     // enable local client mode if this is a non-server application with a local jdbc url.
     // in all other cases use optimized mode.
-    setLocalClientMode(!session.isRemote() && AbstractApplication.getRunningApplication() != null && !AbstractApplication.isServer());
+    Application application = Application.getInstance();
+    setLocalClientMode(!session.isRemote() && application != null && !application.isServer());
   }
 
 }

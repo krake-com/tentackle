@@ -19,7 +19,6 @@
 
 package org.tentackle.persist;
 
-import org.tentackle.app.AbstractApplication;
 import org.tentackle.common.Constants;
 import org.tentackle.common.DateHelper;
 import org.tentackle.common.StringHelper;
@@ -3599,38 +3598,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     this.editedExpiry = editedExpiry;
   }
 
-
-  /**
-   * Gets the object associated to the id of the editedBy-attribute.<br>
-   * This is usually the id of a persistent Object implementing the concept
-   * of a user, group, role or whatever. The default implementation
-   * invokes {@link AbstractApplication#getUser}.
-   *
-   * @return the user object, null if no user or id was 0
-   */
-  @Override
-  public <U extends PersistentDomainObject<U>> U getTokenLockObject()  {
-    AbstractApplication application = AbstractApplication.getRunningApplication();
-    return application == null ? null : application.getUser(getDomainContext(), getEditedBy());
-  }
-
-  /**
-   * Sets the locking object.
-   * <p>
-   * CAUTION: the method is provided for rare corner cases like administration tools.
-   * Don't use it for regular locking/unlocking!
-   *
-   * @param <U> the locking object type
-   * @param obj the locking object, null to clear.
-   */
-  public <U extends PersistentDomainObject<U>> void setTokenLockObject(U obj)  {
-    setEditedBy(obj == null ? 0 : obj.getPersistenceDelegate().getId());
-  }
-
-
-  public boolean isCountingModificationForTokenLock() {
-    return false;
-  }
 
   /**
    * Applies the given token lock info.

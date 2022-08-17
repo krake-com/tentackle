@@ -19,8 +19,9 @@
 
 package org.tentackle.session;
 
-import java.util.Properties;
 import org.tentackle.common.ServiceFactory;
+
+import java.util.Properties;
 
 
 interface SessionInfoFactoryHolder {
@@ -51,7 +52,7 @@ public interface SessionInfoFactory {
    *
    * @param username is the name of the user, null if {@code System.getProperty("user.name")}
    * @param password is the password, null if none
-   * @param propertiesName name of additional properties resource, null if default
+   * @param propertiesName name of additional properties resources, null if default
    * @return the created session info
    */
   SessionInfo create(String username, char[] password, String propertiesName);

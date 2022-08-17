@@ -62,16 +62,6 @@ public abstract class DesktopApplication<C extends FxController>
   private static final long MESSAGE_MIN_MILLIS = 100;
 
 
-  /**
-   * Gets the running desktop application.<br>
-   *
-   * @return the application
-   */
-  public static DesktopApplication<?> getDesktopApplication() {
-    return (DesktopApplication<?>) getRunningApplication();
-  }
-
-
   private static final Logger LOGGER = Logger.get(DesktopApplication.class);
 
   private FxApplication fxApplication;        // the FX application instance
@@ -92,7 +82,7 @@ public abstract class DesktopApplication<C extends FxController>
   }
 
   @Override
-  protected boolean isInteractiveImpl() {
+  public boolean isInteractive() {
     return true;
   }
 

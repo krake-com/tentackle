@@ -18,7 +18,6 @@
 
 package org.tentackle.web.app;
 
-import org.tentackle.app.AbstractApplication;
 import org.tentackle.dbms.Db;
 import org.tentackle.persist.app.AbstractServerApplication;
 import org.tentackle.session.MultiUserSessionPool;
@@ -37,20 +36,6 @@ import java.util.Collection;
  * @param <T> the web session key type
  */
 public abstract class WebApplication<T> extends AbstractServerApplication {
-
-  /**
-   * Gets the current web application instance.<p>
-   *
-   * This is just a convenience method to {@link AbstractApplication#getRunningApplication()}.
-   *
-   * @param <T> the web session key type
-   * @return the application, null if not started yet
-   */
-  @SuppressWarnings("unchecked")
-  public static <T> WebApplication<T> getWebApplication() {
-    return (WebApplication<T>) getRunningApplication();
-  }
-
 
   private WebSessionKeyCache<T> sessionInfoCache;   // the web session info cache
 

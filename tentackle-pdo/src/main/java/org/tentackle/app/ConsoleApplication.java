@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.app;
 
 import org.tentackle.common.Constants;
@@ -27,25 +26,14 @@ import org.tentackle.session.SessionInfo;
 
 import java.util.Properties;
 
-
-
 /**
  * Abstract class to handle the application's lifecycle for a console application (no gui).
  * Tentackle applications should extend this class and invoke {@link #start}.
- * To shutdown gracefully, application should invokd {@link #stop}.
+ * To shut down gracefully, application should invoke {@link #stop}.
  *
  * @author harald
  */
 public abstract class ConsoleApplication extends AbstractClientApplication {
-
-  /**
-   * Gets the running console application.<br>
-   *
-   * @return the application
-   */
-  public static ConsoleApplication getConsoleApplication() {
-    return (ConsoleApplication) getRunningApplication();
-  }
 
   private static final Logger LOGGER = Logger.get(ConsoleApplication.class);
 

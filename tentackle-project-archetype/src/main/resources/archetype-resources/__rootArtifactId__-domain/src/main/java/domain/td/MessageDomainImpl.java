@@ -13,7 +13,7 @@ import ${package}.pdo.md.OrgUnit;
 import ${package}.pdo.td.Message;
 import ${package}.pdo.td.domain.MessageDomain;
 
-import org.tentackle.app.AbstractApplication;
+import org.tentackle.app.Application;
 import org.tentackle.common.Timestamp;
 import org.tentackle.domain.AbstractDomainObject;
 import org.tentackle.pdo.DomainObjectService;
@@ -88,7 +88,7 @@ public class MessageDomainImpl extends AbstractDomainObject<Message, MessageDoma
     me().setText(text == null ? "" : text);
 
     if (owner == null) {
-      owner = (OrgUnit<?>) AbstractApplication.getRunningApplication().getUser(me().getDomainContext());
+      owner = (OrgUnit<?>) Application.getInstance().getUser(me().getDomainContext());
       me().setOrgUnit(owner);
     }
     else {
