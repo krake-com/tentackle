@@ -24,11 +24,11 @@ import org.testng.annotations.BeforeClass;
 
 import org.tentackle.app.AbstractApplication;
 import org.tentackle.dbms.Db;
+import org.tentackle.misc.Identifiable;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelException;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.test.DbTestUtilities;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.PersistenceException;
@@ -114,7 +114,7 @@ public abstract class TestApplication extends AbstractApplication {
   }
 
   @Override
-  public <U extends PersistentDomainObject<U>> U getUser(DomainContext context, long userId) {
+  public <U extends Identifiable> U getUser(DomainContext context, long userId) {
     return null;
   }
 

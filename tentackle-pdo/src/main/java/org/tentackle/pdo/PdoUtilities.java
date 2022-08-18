@@ -26,6 +26,7 @@ import org.tentackle.common.StringHelper;
 import org.tentackle.common.Timestamp;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.FormatHelper;
+import org.tentackle.misc.Identifiable;
 import org.tentackle.misc.IdentifiableKey;
 import org.tentackle.misc.TrackedList;
 import org.tentackle.session.ModificationEvent;
@@ -744,7 +745,7 @@ public class PdoUtilities {
     if (lockException.isLockedByAnotherUser()) {
       long userId = lockException.getTokenLockInfo().editedBy();
       Timestamp since = lockException.getTokenLockInfo().editedSince();
-      Object user = Application.getInstance().getUser(pdo.getDomainContext(), userId);
+      Identifiable user = Application.getInstance().getUser(pdo.getDomainContext(), userId);
       String userTxt = user == null ? ("ID=" + userId) : user.toString();
       str = MessageFormat.format(PdoPdoBundle.getString("{0} {1} is being locked by {2} since {3}"),
                                  pdo.getSingular(), pdo.toString(), userTxt,

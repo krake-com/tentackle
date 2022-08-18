@@ -21,9 +21,9 @@ package org.tentackle.app;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.misc.CommandLine;
 import org.tentackle.misc.Holder;
+import org.tentackle.misc.Identifiable;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
-import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionProvider;
 
@@ -141,23 +141,23 @@ public interface Application extends SessionProvider, DomainContextProvider {
   void applyProperties(Properties properties);
 
   /**
-   * Gets the PDO corresponding to the object-ID of a user entity.
+   * Gets the identifiable corresponding to the ID of a user.
    *
-   * @param <U> the pdo type
+   * @param <U> the user type
    * @param context the domain context
    * @param userId the user id
    * @return the user object, null if unknown
    */
-  <U extends PersistentDomainObject<U>> U getUser(DomainContext context, long userId);
+  <U extends Identifiable> U getUser(DomainContext context, long userId);
 
   /**
-   * Gets the PDO corresponding to the userId in {@link SessionInfo}.
+   * Gets the identifiable corresponding to the current user described by a domain context.
    *
-   * @param <U> the pdo type
+   * @param <U> the user type
    * @param context the domain context
    * @return the logged-in user object, null if unknown
    */
-  default <U extends PersistentDomainObject<U>> U getUser(DomainContext context) {
+  default <U extends Identifiable> U getUser(DomainContext context) {
     SessionInfo sessionInfo = getSessionInfo();
     return getUser(context, sessionInfo == null ? 0 : sessionInfo.getUserId());
   }
