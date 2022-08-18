@@ -151,7 +151,7 @@ public interface Application extends SessionProvider, DomainContextProvider {
   <U extends Identifiable> U getUser(DomainContext context, long userId);
 
   /**
-   * Gets the identifiable corresponding to the current user described by a domain context.
+   * Gets the identifiable corresponding to the current user related to the session of a domain context.
    *
    * @param <U> the user type
    * @param context the domain context
