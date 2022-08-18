@@ -29,8 +29,8 @@ import org.tentackle.dbms.rmi.RemoteDbSession;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
 import org.tentackle.dbms.rmi.RmiServer;
 import org.tentackle.log.Logger;
+import org.tentackle.misc.Identifiable;
 import org.tentackle.pdo.DomainContext;
-import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.persist.app.ServerApplication;
 import org.tentackle.session.AbstractSessionTask;
 import org.tentackle.session.LoginFailedException;
@@ -92,7 +92,7 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
   }
 
   @Override
-  public <U extends PersistentDomainObject<U>> U getUser(DomainContext context, long userId) {
+  public <U extends Identifiable> U getUser(DomainContext context, long userId) {
     return null;    // not used
   }
 

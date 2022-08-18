@@ -36,7 +36,7 @@ public interface SessionInfo extends Immutable, Serializable {
   /**
    * Gets the user id.
    *
-   * @return the object Id of the current user
+   * @return the object ID of the current user
    */
   long getUserId();
 
@@ -155,7 +155,7 @@ public interface SessionInfo extends Immutable, Serializable {
   String getSessionName();
 
   /**
-   * Clones a sessioninfo.<br>
+   * Clones a session-info.<br>
    * The password will be copied if not null.
    *
    * @return the cloned session info
@@ -163,9 +163,8 @@ public interface SessionInfo extends Immutable, Serializable {
   SessionInfo clone();
 
   /**
-   * Cleares the cloned flag.
-   *
-   * Useful if the sessioninfo should no longer be treated as cloned.
+   * Clears the cloned flag.<br>
+   * Useful if the session-info should no longer be treated as cloned.
    */
   void clearCloned();
 
@@ -199,12 +198,12 @@ public interface SessionInfo extends Immutable, Serializable {
 
   /**
    * Gets the connection properties.<br>
-   * The the properties are not set so far, the method will load
+   * The properties are not set so far, the method will load
    * the properties file by adding the extension {@code ".properties"}
    * to {@link #getPropertiesName()} (if it does not contain an extension already).<br>
    * If there is no such file, the properties will be read as a resource according
    * to the classpath.<br>
-   * If all failes a {@link PersistenceException} is thrown.
+   * If all fails a {@link PersistenceException} is thrown.
    *
    * @return the connection properties, never null
    */
@@ -227,7 +226,7 @@ public interface SessionInfo extends Immutable, Serializable {
 
   /**
    * Applies the properties to this session info.<br>
-   * Sets user, password and applicationname from properties, if given.
+   * Sets user, password and application-name from properties, if given.
    */
   void applyProperties();
 
@@ -313,7 +312,7 @@ public interface SessionInfo extends Immutable, Serializable {
   void checkServerVersion(String serverVersion);
 
   /**
-   * Determines whether tokenlocks are removed when session is closed.<br>
+   * Determines whether token-locks are removed when session is closed.<br>
    * By default, locks are not removed for cloned sessions.
    *
    * @return true if leave locks untouched, false to remove locks
@@ -321,7 +320,7 @@ public interface SessionInfo extends Immutable, Serializable {
   boolean isLockLingerEnabled();
 
   /**
-   * Sets whether tokenlocks are removed when session is closed.
+   * Sets whether token-locks are removed when session is closed.
    *
    * @param enabled true if leave locks untouched, false to remove locks
    */
