@@ -20,8 +20,8 @@ package org.tentackle.app;
 
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.misc.CommandLine;
-import org.tentackle.misc.Holder;
 import org.tentackle.misc.Identifiable;
+import org.tentackle.misc.VolatileHolder;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.session.SessionInfo;
@@ -30,7 +30,7 @@ import org.tentackle.session.SessionProvider;
 import java.util.Properties;
 
 interface ApplicationHolder {
-  Holder<Application> HOLDER = new Holder<>();
+  VolatileHolder<Application> HOLDER = new VolatileHolder<>();
 }
 
 /**
@@ -44,17 +44,15 @@ public interface Application extends SessionProvider, DomainContextProvider {
    * @return the application singleton, null if no application running yet
    */
   static Application getInstance() {
-    synchronized(ApplicationHolder.class) {
-      return ApplicationHolder.HOLDER.get();
-    }
+    // no synchronized necessary due to VolatileHolder
+    return ApplicationHolder.HOLDER.get();
   }
 
   /**
    * Registers this application.<br>
    * Makes sure that only one application is running at a time.
-   * Should be invoked in the start-method.
    * <p>
-   * Throws TentackleRuntimeException if an application is already running.
+   * Throws TentackleRuntimeException if another application is already running.
    */
   default void register() {
     synchronized(ApplicationHolder.class) {
@@ -67,11 +65,9 @@ public interface Application extends SessionProvider, DomainContextProvider {
   }
 
   /**
-   * Unregisters this application.<br>
-   * Makes sure that only one application is running at a time.
-   * Should be invoked in the stop-method.
+   * Unregisters this application.
    * <p>
-   * Throws TentackleRuntimeException if no application is running at all or another application still running.
+   * Throws TentackleRuntimeException if no application is running at all or another application is still running.
    */
   default void unregister() {
     synchronized(ApplicationHolder.class) {
