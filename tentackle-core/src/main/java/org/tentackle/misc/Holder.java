@@ -27,6 +27,7 @@ import java.util.function.Supplier;
  *
  * @author harald
  * @param <T> the object type
+ * @see VolatileHolder
  */
 public class Holder<T> implements Consumer<T>, Supplier<T> {
 
