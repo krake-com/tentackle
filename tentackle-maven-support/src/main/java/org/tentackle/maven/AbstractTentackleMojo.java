@@ -564,6 +564,44 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
     return buffer.lines().collect(Collectors.joining(System.getProperty("line.separator")));
   }
 
+  /**
+   * Creates a descriptor name from an artifact file.
+   *
+   * @param file the artifact file
+   * @return the descriptor name
+   */
+  public String toDescriptorName(File file) {
+    String name = file.getName();
+    int ndx = name.lastIndexOf('.');
+    if (ndx > 0 && ndx < name.length() - 1 && !Character.isDigit(name.charAt(ndx + 1))) {
+      name = name.substring(0, ndx); // cut extension .jar
+    }
+
+    StringBuilder buf = new StringBuilder();
+    StringTokenizer stok = new StringTokenizer(name, "-");
+    while (stok.hasMoreTokens()) {
+      String token = stok.nextToken();
+      if (!token.isBlank() &&                           // skip "- -" and other pathological tokens
+          !"SNAPSHOT".equals(token)) {                  // skip "-SNAPSHOT"
+        if (!buf.isEmpty()) {
+          if (Character.isDigit(token.charAt(0))) {     // stop at "<version>", rest is classifier for platform, architecture etc...
+            break;
+          }
+          buf.append('-');
+        }
+        buf.append(token);
+      }
+    }
+
+    name = buf.toString();
+    if (name.startsWith(".")) {
+      // pathological case ".hidden"
+      name = name.substring(1);
+    }
+
+    return name;
+  }
+
 
   /**
    * Returns whether reactor execution is recursive.

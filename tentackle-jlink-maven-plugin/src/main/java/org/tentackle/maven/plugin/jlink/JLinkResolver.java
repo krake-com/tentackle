@@ -562,25 +562,18 @@ public class JLinkResolver {
     int maxNameLength = 0;
     try {
       for (Map.Entry<File, JavaModuleDescriptor> entry: mojo.getLocationManager().resolvePaths(request).getPathElements().entrySet()) {
+        File file = entry.getKey();
         JavaModuleDescriptor descriptor = entry.getValue();
         if (descriptor == null) {
           // there are cases that the descriptor is null for old artifacts with Java > 11.0.2
-          String name = entry.getKey().getName();
-          int ndx = name.lastIndexOf('.');
-          if (ndx > 0) {
-            name = name.substring(0, ndx); // cut extension .jar
-          }
-          ndx = name.lastIndexOf('-');
-          if (ndx > 0 && name.length() > ndx + 1 && Character.isDigit(name.charAt(ndx + 1))) {
-            name = name.substring(0, ndx);    // cut version
-          }
-          mojo.getLog().warn("missing descriptor for " + entry.getKey() + " -> creating default descriptor '" + name + "'");
+          String name = mojo.toDescriptorName(file);
+          mojo.getLog().warn("missing descriptor for " + file + " -> creating default descriptor '" + name + "'");
           descriptor = JavaModuleDescriptor.newAutomaticModule(name).build();
         }
         if (descriptor.name() != null && descriptor.name().length() > maxNameLength) {
           maxNameLength = descriptor.name().length();
         }
-        artifactJavaModuleDescriptorMap.put(artifactMap.get(entry.getKey()), descriptor);
+        artifactJavaModuleDescriptorMap.put(artifactMap.get(file), descriptor);
       }
     }
     catch (IOException e) {
