@@ -90,7 +90,7 @@ public class WebSessionKeyCache<T> {
 
   /**
    * Starts the session key cache.<p>
-   * This will start a thread to cleanup crashed sessions.
+   * This will start a thread to clean up crashed sessions.
    * <p>
    * Throws TentackleRuntimeException if the cleanup thread is already running.
    *

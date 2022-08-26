@@ -31,6 +31,7 @@ import org.tentackle.dbms.StatementStatistics;
 import org.tentackle.dbms.rmi.RemoteDelegateInvocationHandler;
 import org.tentackle.log.Logger;
 import org.tentackle.pdo.OperationInvocationHandler;
+import org.tentackle.pdo.PdoFactory;
 import org.tentackle.pdo.PdoInvocationHandler;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 import org.tentackle.session.ModificationTracker;
@@ -40,6 +41,8 @@ import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionPool;
 import org.tentackle.session.SessionPoolFactory;
 import org.tentackle.session.SessionPoolProvider;
+import org.tentackle.validate.Validator;
+import org.tentackle.validate.ValidatorCache;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -117,6 +120,28 @@ public abstract class AbstractServerApplication extends AbstractApplication
   protected void configureModificationTracker() {
     super.configureModificationTracker();
     ModificationTracker.getInstance().setSleepInterval(1000);
+  }
+
+  @Override
+  protected void initializeScripting() {
+    super.initializeScripting();
+    validateValidators();
+  }
+
+  /**
+   * Validates the validators.<br>
+   * The default implementation loads all {@link Validator}s of all PDO classes and
+   * invokes {@link Validator#validate()}. This will load all {@link org.tentackle.misc.CompoundValue}s
+   * and compiles the scripts, if any.
+   */
+  protected void validateValidators() {
+    LOGGER.info("validating validators");
+    for (String pdoName: PdoFactory.getInstance().getPersistenceMapper().getMap().keySet()) {
+      Class<?> pdoClass = PdoFactory.getInstance().create(pdoName).getEffectiveClass();
+      for (Validator validator: ValidatorCache.getInstance().getFieldValidators(pdoClass)) {
+        validator.validate();
+      }
+    }
   }
 
   @Override

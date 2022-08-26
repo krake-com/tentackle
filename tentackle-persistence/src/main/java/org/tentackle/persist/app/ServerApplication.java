@@ -22,10 +22,7 @@ import org.tentackle.dbms.rmi.RemoteDbConnectionImpl;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
 import org.tentackle.dbms.rmi.RmiServer;
 import org.tentackle.log.Logger;
-import org.tentackle.pdo.PdoFactory;
 import org.tentackle.persist.LockManager;
-import org.tentackle.validate.Validator;
-import org.tentackle.validate.ValidatorCache;
 
 import java.rmi.RemoteException;
 
@@ -76,35 +73,12 @@ public abstract class ServerApplication extends AbstractServerApplication {
   }
 
 
-  @Override
-  protected void initializeScripting() {
-    super.initializeScripting();
-    validateValidators();
-  }
-
-  /**
-   * Validates the validators.<br>
-   * The default implementation loads all {@link Validator}s of all PDO classes and
-   * invokes {@link Validator#validate()}. This will load all {@link org.tentackle.misc.CompoundValue}s
-   * and compiles the scripts, if any.
-   */
-  protected void validateValidators() {
-    LOGGER.info("validating validators");
-    for (String pdoName: PdoFactory.getInstance().getPersistenceMapper().getMap().keySet()) {
-      Class<?> pdoClass = PdoFactory.getInstance().create(pdoName).getEffectiveClass();
-      for (Validator validator: ValidatorCache.getInstance().getFieldValidators(pdoClass)) {
-        validator.validate();
-      }
-    }
-  }
-
-
   /**
    * Creates the RMI-server instance (but does not start it).<br>
    * The default implementation creates a {@link RmiServer}.
    *
    * @param connectionClass the class of the connection object to instantiate,
-   *                        null = default or from serverInfo's properties file
+   *                        null = default or from server's properties config
    * @return the created RmiServer
    */
   protected RmiServer createRmiServer(Class<? extends RemoteDbConnectionImpl> connectionClass) {
@@ -116,6 +90,7 @@ public abstract class ServerApplication extends AbstractServerApplication {
   protected void finishStartup() {
     if (!getSession().isRemote()) {
       LockManager.getInstance().initialize(getSession());
+      // see also org.tentackle.dbms.rmi.RemoteDbSessionImpl.cleanup
     }
     super.finishStartup();
     rmiServer = createRmiServer(connectionClass);
