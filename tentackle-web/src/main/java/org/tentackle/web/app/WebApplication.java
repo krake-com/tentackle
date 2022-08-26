@@ -30,7 +30,7 @@ import java.util.Collection;
 /**
  * Web Server Application.
  * <p>
- * Web applications usually run in a container such as glassfish.
+ * Web applications usually run in a web container or application server.
  *
  * @author harald
  * @param <T> the web session key type
@@ -54,10 +54,10 @@ public abstract class WebApplication<T> extends AbstractServerApplication {
   /**
    * Adds a mapping between a web session key and a user's session info.<br>
    * This is usually done in the login controller.
-   * If a session with that key already exists, the user info
+   * If a session with that key already exists, the session info
    * will be replaced.
    *
-   * @param sessionKey the (unique) web session key
+   * @param sessionKey the unique web session key
    * @param sessionInfo the session info
    */
   public void addWebSession(T sessionKey, SessionInfo sessionInfo) {
@@ -128,7 +128,7 @@ public abstract class WebApplication<T> extends AbstractServerApplication {
     /*
      * dereference user info (possible target for the GC).
      * If (due to tight memory or timeout) the userinfo gets garbage
-     * collected the user must login again.
+     * collected the user must log in again.
      */
     ((Db) session).setSessionInfo(null);
     session.getPool().putSession(session);    // always pooled, works also for MultiUserDbPool

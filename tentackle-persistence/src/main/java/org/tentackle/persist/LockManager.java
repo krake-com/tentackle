@@ -40,8 +40,8 @@ interface LockManagerHolder {
  *  <li>If a client session crashes, the locks held by the session's user are removed.</li>
  *  <li>When the server crashes, all locks are removed at server start.</li>
  * </ol>
- * Notice that only servers provide an enabled lock manager. In 2-tier applications the
- * lockmanager is disabled and in remote clients not used at all.
+ * Notice that only non-remote servers provide an enabled lock manager.
+ * In 2-tier and remote applications the lockmanager is disabled.
  *
  * @see DefaultLockManager
  */
