@@ -52,7 +52,7 @@ public class FileHelper {
   /**
    * Creates an input stream from a resource.
    *
-   * @param caller the caller class, null to determine via Stackwalker
+   * @param caller the caller class, null to determine via {@link StackWalker}
    * @param name the resource name
    * @return the input stream
    * @throws IOException if reading the resources failed
