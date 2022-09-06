@@ -16,8 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-
 package org.tentackle.common;
 
 import java.io.BufferedReader;
@@ -33,7 +31,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
-
 
 /**
  * Some handy methods for strings.
@@ -259,7 +256,7 @@ public final class StringHelper {
 
 
   /**
-   * Returns the first index of any of the given characters.
+   * Returns the first index of the given characters.
    *
    * @param str the string
    * @param anyOf the characters
@@ -313,6 +310,50 @@ public final class StringHelper {
 
 
   /**
+   * Converts a character that followed a backslash to an escaped character.<br>
+   * The special escapes are:<p>
+   * \n = new line<br>
+   * \r = carriage return<br>
+   * \t = tab<br>
+   * \f = form feed<br>
+   *
+   * @param c the character following a backslash in a string
+   * @return the converted escape character
+   */
+  public static char charToEscaped(char c) {
+    return switch (c) {
+      case 'n' -> '\n';
+      case 'r' -> '\r';
+      case 't' -> '\t';
+      case 'f' -> '\f';
+      default -> c;
+    };
+  }
+
+
+  /**
+   * Converts an escape character to a parsable string.<br>
+   * The special escapes are:<p>
+   * \n = new line<br>
+   * \r = carriage return<br>
+   * \t = tab<br>
+   * \f = form feed<br>
+   *
+   * @param c the escape character
+   * @return the parsable string
+   */
+  public static String escapedToString(char c) {
+    return switch (c) {
+      case '\n' -> "\\n";
+      case '\r' -> "\\r";
+      case '\t' -> "\\t";
+      case '\f' -> "\\f";
+      default -> String.valueOf(c);
+    };
+  }
+
+
+  /**
    * Parses a string.<br>
    * The string may be enclosed in double- or single quotes which
    * will be removed. Those special characters may be escaped
@@ -347,24 +388,7 @@ public final class StringHelper {
       for (int i=0; i < str.length(); i++) {
         char c = str.charAt(i);
         if (escaped) {
-          // check for special escapes
-          switch (c) {
-            case 'n':
-              buf.append('\n');
-              break;
-            case 'r':
-              buf.append('\r');
-              break;
-            case 't':
-              buf.append('\t');
-              break;
-            case 'f':
-              buf.append('\f');
-              break;
-            default:
-              buf.append(c);
-              break;
-          }
+          buf.append(charToEscaped(c));
           escaped = false;
         }
         else  {
@@ -399,22 +423,7 @@ public final class StringHelper {
       else {
         if (Character.isWhitespace(c)) {
           needQuotes = true;
-          switch(c) {
-            case '\n':
-              buf.append("\\n");
-              break;
-            case '\r':
-              buf.append("\\r");
-              break;
-            case '\t':
-              buf.append("\\t");
-              break;
-            case '\f':
-              buf.append("\\f");
-              break;
-            default:
-              buf.append(c);
-          }
+          buf.append(escapedToString(c));
         }
         else {
           buf.append(c);
@@ -435,10 +444,10 @@ public final class StringHelper {
    * will not be removed. Those special characters may be escaped
    * by a backslash. The backslash itself can be written as a double backslash.
    * Special escapes are:<p>
-   * \n = new line
-   * \r = carriage return
-   * \t = tab
-   * \f = form feed
+   * \n = new line<br>
+   * \r = carriage return<br>
+   * \t = tab<br>
+   * \f = form feed<br>
    *
    * @param str the string
    * @param delimiters the delimiter characters
@@ -453,24 +462,7 @@ public final class StringHelper {
       for (int i = 0; i < str.length(); i++) {
         char c = str.charAt(i);
         if (escaped) {
-          // check for special escapes
-          switch (c) {
-            case 'n':
-              part.append('\n');
-              break;
-            case 'r':
-              part.append('\r');
-              break;
-            case 't':
-              part.append('\t');
-              break;
-            case 'f':
-              part.append('\f');
-              break;
-            default:
-              part.append(c);
-              break;
-          }
+          part.append(charToEscaped(c));
           escaped = false;
         }
         else  {
@@ -579,11 +571,11 @@ public final class StringHelper {
 
 
   /**
-   * Checks that given string is a valid Java packagename.<br>
-   * This is very restrictive verification. Packagenames
+   * Checks that given string is a valid Java package name.<br>
+   * This is very restrictive verification. Package names
    * must be all lowercase alphabetic or digits and must contain only dots and underscores.
    *
-   * @param packageName the packagename
+   * @param packageName the package name
    * @return true if valid
    */
   public static boolean isValidJavaPackageName(String packageName) {
@@ -644,7 +636,7 @@ public final class StringHelper {
    *   String model = StringHelper.readTextFromResource("/org/tentackle/model/TestModel.txt");
    * </pre>
    *
-   * @param caller the caller class, null to determine via Stackwalker
+   * @param caller the caller class, null to determine via {@link StackWalker}
    * @param resourceName the name of the resource
    * @return the loaded text
    * @throws IOException if loading failed
@@ -1006,41 +998,6 @@ public final class StringHelper {
    */
   public static String toFixedLengthLeftFill(String str, int length)  {
     return toFixedLengthLeftFill(str, length, ' ');
-  }
-
-
-
-
-
-  /**
-   * Filters illegal chars for DTA-Files (German "DATENAUSTAUSCH" banking format).
-   *
-   * @param str the string
-   * @return the DTA conform string
-   */
-  public static String toDTA(String str)  {
-    if (str != null)  {
-      str = str.toUpperCase();
-      int len = str.length();
-      StringBuilder sbuf = new StringBuilder();
-      for (int i=0; i < len; i++) {
-        char c = str.charAt(i);
-        if ((c >= '0' && c <= '9') ||
-            (c >= 'A' && c <= 'Z') ||
-            c == ' ' || c == '.' || c == ',' ||
-            c == '&' || c == '-' || c == '/' ||
-            c == '+' || c == '*' || c == '$' ||
-            c == '%' || c == 'Ä' || c == 'Ö' ||
-            c == 'Ü' || c == 'ß') {
-          sbuf.append(c);
-        }
-        else  {
-          sbuf.append(' ');
-        }
-      }
-      str = sbuf.toString();
-    }
-    return str;
   }
 
 
@@ -1747,7 +1704,7 @@ public final class StringHelper {
     StringBuilder buf = new StringBuilder();  // output buffer
     StringBuilder variableName = null;        // holds the name of the variable, null if not parsing a variable
     char varLead = '@';                       // '$' with nesting, '@' without nesting
-    char defLead = '?';                       // '?' empty or missinh, '!' missing only
+    char defLead = '?';                       // '?' empty or missing, '!' missing only
     StringBuilder defaultValue = null;        // holds the default value, null not parsing a default value
     boolean quoted = false;                   // true if next character is quoted
 
