@@ -2659,7 +2659,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * {@inheritDoc}
    * <p>
-   * Overridden because remote method requires a {@link DomainContext} instead of just the db-connection.
+   * Overridden because remote method requires a {@link DomainContext} instead of just the {@link Session}.
    */
   @Override
   public boolean isReferenced() {

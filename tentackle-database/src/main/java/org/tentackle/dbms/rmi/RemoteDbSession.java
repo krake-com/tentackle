@@ -76,7 +76,7 @@ public interface RemoteDbSession extends Remote {
 
 
   /**
-   * Gets the delegate for the remote db-connection.
+   * Gets the delegate for the remote session.
    *
    * @return the delegate
    * @throws RemoteException if failed

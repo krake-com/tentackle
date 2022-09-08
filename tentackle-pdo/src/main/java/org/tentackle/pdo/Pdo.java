@@ -439,8 +439,8 @@ public class Pdo {
 
 
   /**
-   * Removes all objects in ALL caches that refer to a given db.
-   * Useful after having closed a db-connection in an RMI-Server, for example.
+   * Removes all objects in ALL caches that refer to a given session.<br>
+   * Useful after having closed a session in an RMI-Server, for example.
    *
    * @param session the session (probably closed)
    */

@@ -552,7 +552,7 @@ public class ManagedConnection {
 
 
   /**
-   * Checks whether a Db is attached to this connection.
+   * Checks whether a session is attached to this connection.
    *
    * @return true if attached, else false.
    */
@@ -564,7 +564,7 @@ public class ManagedConnection {
   /**
    * Returns whether a transaction is running.
    *
-   * @return true if connection is attached to a Db in transaction
+   * @return true if connection is attached to a session in transaction
    */
   public boolean isTxRunning() {
     return isAttached() && db.isTxRunning();

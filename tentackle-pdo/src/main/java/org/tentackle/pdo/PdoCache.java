@@ -770,7 +770,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
   /**
    * Removes all objects and lists for a given session.
    *
-   * @param session is the db-connection (probably closed)
+   * @param session is the session (probably closed)
    */
   public void removeObjectsForSession(Session session)  {
     if (!isReadOnly()) {

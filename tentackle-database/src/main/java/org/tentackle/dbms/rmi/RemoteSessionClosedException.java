@@ -16,14 +16,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-
 package org.tentackle.dbms.rmi;
 
 import org.tentackle.session.SessionClosedException;
 
 import java.io.Serial;
-
 
 /**
  * RMI servers should throw a RemoteSessionClosedException if the remote session is already closed.
@@ -37,10 +34,8 @@ public class RemoteSessionClosedException extends SessionClosedException {
 
 
   /**
-   * Constructs a new session closed exception without a db connection and
+   * Constructs a new session closed exception without a session and
    * with <code>null</code> as its detail message.
-   * The cause is not initialized, and may subsequently be
-   * initialized by a call to {@link #initCause}.
    */
   public RemoteSessionClosedException() {
     super();
@@ -48,12 +43,9 @@ public class RemoteSessionClosedException extends SessionClosedException {
 
 
   /**
-   * Constructs a new session closed exception without a db connection with the specified detail message.
-   * The cause is not initialized, and may subsequently be initialized by a
-   * call to {@link #initCause}.
+   * Constructs a new session closed exception without a session and with the specified detail message.
    *
-   * @param   message   the detail message. The detail message is saved for
-   *          later retrieval by the {@link #getMessage()} method.
+   * @param   message   the detail message.
    */
   public RemoteSessionClosedException(String message) {
     super(message);
@@ -61,17 +53,11 @@ public class RemoteSessionClosedException extends SessionClosedException {
 
 
   /**
-   * Constructs a new session closed exception without a db connection with the specified detail message and
-   * cause.  <p>Note that the detail message associated with
-   * <code>cause</code> is <i>not</i> automatically incorporated in
-   * this runtime exception's detail message.
+   * Constructs a new session closed exception without a session and with the specified detail message and
+   * cause.
    *
-   * @param  message the detail message (which is saved for later retrieval
-   *         by the {@link #getMessage()} method).
-   * @param  cause the cause (which is saved for later retrieval by the
-   *         {@link #getCause()} method).  (A <code>null</code> value is
-   *         permitted, and indicates that the cause is nonexistent or
-   *         unknown.)
+   * @param  message the detail message
+   * @param  cause the cause
    */
   public RemoteSessionClosedException(String message, Throwable cause) {
     super(message, cause);

@@ -61,7 +61,7 @@ public class DbDiagnosticUtilities extends DiagnosticUtilities {
    * Creates the dump for a connection.
    *
    * @param buf the string buffer
-   * @param connection the managed connection attached to a Db owned by a thread.
+   * @param connection the managed connection attached to a session owned by a thread.
    */
   protected void doCreateConnectionDump(StringBuilder buf, ManagedConnection connection) {
     buf.append(connection.toDiagnosticString());

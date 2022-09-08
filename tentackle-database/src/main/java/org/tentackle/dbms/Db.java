@@ -1057,7 +1057,7 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * asserts that this is not a remote connection
+   * asserts that this is not a remote session
    */
   public void assertNotRemote() {
     if (isRemote()) {
@@ -1066,7 +1066,7 @@ public class Db implements Session, Cloneable {
   }
 
   /**
-   * asserts that this is a remote connection
+   * asserts that this is a remote session
    */
   public void assertRemote() {
     if (!isRemote()) {

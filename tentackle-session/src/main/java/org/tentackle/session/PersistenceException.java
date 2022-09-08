@@ -76,10 +76,8 @@ public class PersistenceException extends TentackleRuntimeException {
 
 
   /**
-   * Constructs a new database runtime exception for a given db connection
+   * Constructs a new database runtime exception for a given session
    * with <code>null</code> as its detail message.
-   * The cause is not initialized, and may subsequently be
-   * initialized by a call to {@link #initCause}.
    *
    * @param session the session
    */
@@ -90,13 +88,10 @@ public class PersistenceException extends TentackleRuntimeException {
 
 
   /**
-   * Constructs a new database runtime exception for a given db connection with the specified detail message.
-   * The cause is not initialized, and may subsequently be initialized by a
-   * call to {@link #initCause}.
+   * Constructs a new database runtime exception for a given session with the specified detail message.
    *
-   * @param   session the session
-   * @param   message   the detail message. The detail message is saved for
-   *          later retrieval by the {@link #getMessage()} method.
+   * @param session the session
+   * @param message the detail message.
    */
   public PersistenceException(Session session, String message) {
     super(message);
@@ -104,18 +99,12 @@ public class PersistenceException extends TentackleRuntimeException {
   }
 
   /**
-   * Constructs a new database runtime exception for a given db connection with the specified detail message and
-   * cause.  <p>Note that the detail message associated with
-   * <code>cause</code> is <i>not</i> automatically incorporated in
-   * this runtime exception's detail message.
+   * Constructs a new database runtime exception for a given session with the specified detail message and
+   * cause.
    *
    * @param  session the session
-   * @param  message the detail message (which is saved for later retrieval
-   *         by the {@link #getMessage()} method).
-   * @param  cause the cause (which is saved for later retrieval by the
-   *         {@link #getCause()} method).  (A <code>null</code> value is
-   *         permitted, and indicates that the cause is nonexistent or
-   *         unknown.)
+   * @param  message the detail message
+   * @param  cause the cause
    */
   public PersistenceException(Session session, String message, Throwable cause) {
     super(message, SessionUtilities.getInstance().alignExceptionCause(cause));
@@ -124,17 +113,11 @@ public class PersistenceException extends TentackleRuntimeException {
   }
 
   /**
-   * Constructs a new database runtime exception for a given db connection with the specified cause and a
-   * detail message of <code>(cause==null ? null : cause.toString())</code>
-   * (which typically contains the class and detail message of
-   * <code>cause</code>).  This constructor is useful for runtime exceptions
-   * that are little more than wrappers for other throwables.
+   * Constructs a new database runtime exception for a given session with the specified cause and a
+   * detail message of <code>(cause==null ? null : cause.toString())</code>.
    *
    * @param  session the session
-   * @param  cause the cause (which is saved for later retrieval by the
-   *         {@link #getCause()} method).  (A <code>null</code> value is
-   *         permitted, and indicates that the cause is nonexistent or
-   *         unknown.)
+   * @param  cause the cause
    */
   public PersistenceException(Session session, Throwable cause) {
     super(SessionUtilities.getInstance().alignExceptionCause(cause));
@@ -143,12 +126,10 @@ public class PersistenceException extends TentackleRuntimeException {
   }
 
   /**
-   * Constructs a new database runtime exception for a given db object
+   * Constructs a new database runtime exception for a given identifiable
    * with <code>null</code> as its detail message.
-   * The cause is not initialized, and may subsequently be
-   * initialized by a call to {@link #initCause}.
    *
-   * @param identifiable the db object
+   * @param identifiable the identifiable object
    */
   public PersistenceException(Identifiable identifiable) {
     super();
@@ -156,13 +137,10 @@ public class PersistenceException extends TentackleRuntimeException {
   }
 
   /**
-   * Constructs a new database runtime exception for a given db connection with the specified detail message.
-   * The cause is not initialized, and may subsequently be initialized by a
-   * call to {@link #initCause}.
+   * Constructs a new database runtime exception for a given identifiable with the specified detail message.
    *
-   * @param   object the object
-   * @param   message   the detail message. The detail message is saved for
-   *          later retrieval by the {@link #getMessage()} method.
+   * @param   object the identifiable
+   * @param   message the detail message.
    */
   public PersistenceException(Identifiable object, String message) {
     super(message);
@@ -170,18 +148,12 @@ public class PersistenceException extends TentackleRuntimeException {
   }
 
   /**
-   * Constructs a new database runtime exception for a given db connection with the specified detail message and
-   * cause.  <p>Note that the detail message associated with
-   * <code>cause</code> is <i>not</i> automatically incorporated in
-   * this runtime exception's detail message.
+   * Constructs a new database runtime exception for a given identifiable with the specified detail message and
+   * cause.
    *
-   * @param  object the object
-   * @param  message the detail message (which is saved for later retrieval
-   *         by the {@link #getMessage()} method).
-   * @param  cause the cause (which is saved for later retrieval by the
-   *         {@link #getCause()} method).  (A <code>null</code> value is
-   *         permitted, and indicates that the cause is nonexistent or
-   *         unknown.)
+   * @param  object the identifiable
+   * @param  message the detail message
+   * @param  cause the cause
    */
   public PersistenceException(Identifiable object, String message, Throwable cause) {
     super(message, SessionUtilities.getInstance().alignExceptionCause(cause));
@@ -190,17 +162,11 @@ public class PersistenceException extends TentackleRuntimeException {
   }
 
   /**
-   * Constructs a new database runtime exception for a given db connection with the specified cause and a
-   * detail message of <code>(cause==null ? null : cause.toString())</code>
-   * (which typically contains the class and detail message of
-   * <code>cause</code>).  This constructor is useful for runtime exceptions
-   * that are little more than wrappers for other throwables.
+   * Constructs a new database runtime exception for a given identifiable with the specified cause and a
+   * detail message of <code>(cause==null ? null : cause.toString())</code>.
    *
-   * @param  object the object
-   * @param  cause the cause (which is saved for later retrieval by the
-   *         {@link #getCause()} method).  (A <code>null</code> value is
-   *         permitted, and indicates that the cause is nonexistent or
-   *         unknown.)
+   * @param  object the identifiable
+   * @param  cause the cause
    */
   public PersistenceException(Identifiable object, Throwable cause) {
     super(SessionUtilities.getInstance().alignExceptionCause(cause));
@@ -209,55 +175,38 @@ public class PersistenceException extends TentackleRuntimeException {
   }
 
   /**
-   * Constructs a new database runtime exception without a db connection and
+   * Constructs a new database runtime exception without a session or identifiable and
    * with <code>null</code> as its detail message.
-   * The cause is not initialized, and may subsequently be
-   * initialized by a call to {@link #initCause}.
    */
   public PersistenceException() {
     super();
   }
 
   /**
-   * Constructs a new database runtime exception without a db connection with the specified detail message.
-   * The cause is not initialized, and may subsequently be initialized by a
-   * call to {@link #initCause}.
+   * Constructs a new database runtime exception without a session or identifiable for the specified detail message.
    *
-   * @param   message   the detail message. The detail message is saved for
-   *          later retrieval by the {@link #getMessage()} method.
+   * @param message the detail message.
    */
   public PersistenceException(String message) {
     super(message);
   }
 
   /**
-   * Constructs a new database runtime exception without a db connection with the specified detail message and
-   * cause.  <p>Note that the detail message associated with
-   * <code>cause</code> is <i>not</i> automatically incorporated in
-   * this runtime exception's detail message.
+   * Constructs a new database runtime exception without a session or identifiable with the specified detail message and
+   * cause.
    *
-   * @param  message the detail message (which is saved for later retrieval
-   *         by the {@link #getMessage()} method).
-   * @param  cause the cause (which is saved for later retrieval by the
-   *         {@link #getCause()} method).  (A <code>null</code> value is
-   *         permitted, and indicates that the cause is nonexistent or
-   *         unknown.)
+   * @param  message the detail message
+   * @param  cause the cause
    */
   public PersistenceException(String message, Throwable cause) {
     super(message, SessionUtilities.getInstance().alignExceptionCause(cause));
   }
 
   /**
-   * Constructs a new database runtime exception without a db connection with the specified cause and a
-   * detail message of <code>(cause==null ? null : cause.toString())</code>
-   * (which typically contains the class and detail message of
-   * <code>cause</code>).  This constructor is useful for runtime exceptions
-   * that are little more than wrappers for other throwables.
+   * Constructs a new database runtime exception without a session or identifiable with the specified cause and a
+   * detail message of <code>(cause==null ? null : cause.toString())</code>.
    *
-   * @param  cause the cause (which is saved for later retrieval by the
-   *         {@link #getCause()} method).  (A <code>null</code> value is
-   *         permitted, and indicates that the cause is nonexistent or
-   *         unknown.)
+   * @param  cause the cause
    */
   public PersistenceException(Throwable cause) {
     super(SessionUtilities.getInstance().alignExceptionCause(cause));

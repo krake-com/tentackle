@@ -16,21 +16,19 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.dbms;
 
 import java.util.Collection;
 
-
 /**
  * Connection Manager for local connections.<br>
  *
- * JDBC connections are never used directly. Instead, Db-instances refer to a ConnectionManager
+ * JDBC-connections are never used directly. Instead, sessions refer to a ConnectionManager
  * in order to use a connection. The usage of a connection is initiated by an attach-operation.
- * After completion of the task (transaction, one-shot, etc...) the Db will be detached.
- * The connection manager as a broker in between the Db and a connection gives the opportunity to
+ * After completion of the task (transaction, one-shot, etc...) the session will be detached.
+ * The connection manager as a broker in between the session and a connection gives the opportunity to
  * multiplex connections. This is especially useful in application servers.
- * Note that connection managers are not used in remote Db instances.
+ * Note that connection managers are not used in remote sessions.
  *
  * @author harald
  */
@@ -46,14 +44,15 @@ public interface ConnectionManager {
 
   /**
    * Logs in a session.<br>
-   * It is up to the manager how to verify whether the session is allowed to open,
+   * It is up to the connection manager how to verify whether the session is allowed to open,
    * a real connection is initiated or just an application level authorization
-   * is performed. Note that the ID may be recycled by the manager after a
+   * is performed. Note that the session-ID may be recycled by the manager after a
    * session is logged out.
+   * <p>
+   * Throws a {@link org.tentackle.session.PersistenceException} if the login failed.
    *
    * @param session the session to login
    * @return the unique ID of the session (&gt; 0)
-   * @throws org.tentackle.session.PersistenceException if login failed.
    */
   int login(Db session);
 
@@ -62,9 +61,10 @@ public interface ConnectionManager {
    * Logs out a session.<br>
    * The session is not allowed to attach anymore. If the session is still attached,
    * a rollback of any pending transaction is done and an exception thrown.
+   * <p>
+   * Throws a {@link org.tentackle.session.PersistenceException} if the logout failed.
    *
    * @param session the session to logout
-   * @throws org.tentackle.session.PersistenceException if logout failed.
    */
   void logout(Db session);
 
@@ -124,9 +124,10 @@ public interface ConnectionManager {
    * the connection to the Db.
    * <p>
    * Upon return the session will reference the connection.
+   * <p>
+   * Throws a {@link org.tentackle.session.PersistenceException} if attach failed.
    *
    * @param session the session
-   * @throws org.tentackle.session.PersistenceException if attach failed.
    */
   void attach(Db session);
 
@@ -138,9 +139,10 @@ public interface ConnectionManager {
    * or after a ResultSet is closed for an executeQuery.
    * Note that attachments can be nested to any depth, i.e. only the last detach really
    * unbinds the connection from the Db.
+   * <p>
+   * Throws a {@link org.tentackle.session.PersistenceException} if detach failed.
    *
    * @param session the session
-   * @throws org.tentackle.session.PersistenceException if detach failed.
    */
   void detach(Db session);
 

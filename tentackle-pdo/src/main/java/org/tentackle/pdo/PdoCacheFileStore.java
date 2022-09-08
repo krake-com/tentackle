@@ -226,7 +226,7 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
   /**
    * Applies the cache data to the cache.
    *
-   * @param session the database connection assumed for loaded objects
+   * @param session the session assumed for loaded objects
    * @param cache the cache
    */
   private void applyCache(Session session, PdoCache<T> cache) {
@@ -236,7 +236,7 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
       cache.add(object);
     }
 
-    // set up the context db list and set the selectAll-lists if cache is preloading
+    // set up the domain context list and set the selectAll-lists if cache is preloading
     cache.updateContextInfo();
 
     // check if cache is expired by asking the server

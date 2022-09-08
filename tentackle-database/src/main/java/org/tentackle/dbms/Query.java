@@ -199,7 +199,7 @@ public class Query {
   /**
    * Executes the query.
    *
-   * @param db is the database connection
+   * @param db is the session
    * @param resultSetType is one of ResultSet.TYPE_...
    * @param resultSetConcurrency is one of ResultSet.CONCUR_..
    *
@@ -286,7 +286,7 @@ public class Query {
   /**
    * Executes the query with ResultSet.CONCUR_READ_ONLY.
    *
-   * @param db is the database connection
+   * @param db is the session
    * @param resultSetType is one of ResultSet.TYPE_...
    *
    * @return the result set
@@ -298,7 +298,7 @@ public class Query {
   /**
    * Executes the query with ResultSet.TYPE_FORWARD_ONLY and ResultSet.CONCUR_READ_ONLY.
    *
-   * @param db is the database connection
+   * @param db is the session
    *
    * @return the result set
    */
@@ -341,7 +341,7 @@ public class Query {
    * Applies the query parameters to the statement.<br>
    * Optionally applies limit, offset as well.
    *
-   * @param db the database connection
+   * @param db the session
    * @param st the prepared statement
    */
   public void apply(Db db, PreparedStatementWrapper st) {

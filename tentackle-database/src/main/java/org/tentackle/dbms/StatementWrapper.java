@@ -252,8 +252,8 @@ public class StatementWrapper implements AutoCloseable {
 
 
   /**
-   * Detach the db from the connection.<br>
-   * Statements detach the db on executeUpdate or
+   * Detach the session from the connection.<br>
+   * Statements detach the session on executeUpdate or
    * on close() in the {@link ResultSetWrapper} after executeQuery.
    */
   protected void detachSession() {

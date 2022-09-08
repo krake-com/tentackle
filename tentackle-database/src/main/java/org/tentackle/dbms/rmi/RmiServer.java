@@ -258,7 +258,7 @@ public class RmiServer {
   /**
    * Creates an instance of an RMI-db-server.
    *
-   * @param sessionInfo the servers db-connection user info
+   * @param sessionInfo the server's session info
    * @param connectionClass the class of the connection object to instantiate, null = default or from serverInfo's properties file
    */
   @SuppressWarnings("unchecked")
@@ -428,7 +428,7 @@ public class RmiServer {
   /**
    * Creates an instance of an RMI-db-server with default connection object.
    *
-   * @param serverInfo the servers db-connection user info
+   * @param serverInfo the server's session info
    */
   public RmiServer(SessionInfo serverInfo) {
     this(serverInfo, null);
@@ -436,9 +436,9 @@ public class RmiServer {
 
 
   /**
-   * Gets the server's user info.
+   * Gets the server's session info.
    *
-   * @return the server info
+   * @return the server's session info
    */
   public SessionInfo getSessionInfo() {
     return sessionInfo;
