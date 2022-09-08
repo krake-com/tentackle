@@ -46,7 +46,7 @@ public class MultiUserDbPool implements MultiUserSessionPool {
   private final AtomicInteger count = new AtomicInteger();      // session pool ID
 
   /**
-   * Creates a multi user session pool.
+   * Creates a multi-user session pool.
    *
    * @param name the name of the pool, null if "default-multi"
    * @param conMgr the connection manager for local sessions, null if remote
@@ -160,7 +160,7 @@ public class MultiUserDbPool implements MultiUserSessionPool {
     public MultiPoolImpl(String name, ConnectionManager conMgr, SessionInfo sessionInfo, int sessionGroupId) {
       // iniSize 0  -> make sure that createDbInstances uses nextSessionInfo
       // minSize -1 -> shutdown sub-pool when all sessions closed
-      // maxSize 0  -> unlimited per sessioninfo (but limited in total for all sub-pools)
+      // maxSize 0  -> unlimited per session info (but limited in total for all sub-pools)
       super(name, conMgr, sessionInfo, sessionGroupId, 0, 1, -1, 0, maxIdleMinutes, maxUsageMinutes);
     }
 
@@ -176,7 +176,7 @@ public class MultiUserDbPool implements MultiUserSessionPool {
         if (sz + num > maxSize) {
           num = maxSize - sz;
           if (num <= 0) {
-            PersistenceException pex = new PersistenceException("cannot create more session instances, max. poolsize " + maxSize + " reached");
+            PersistenceException pex = new PersistenceException("cannot create more session instances, max. pool size " + maxSize + " reached");
             pex.setTemporary(true);
             throw pex;
           }

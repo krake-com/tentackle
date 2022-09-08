@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.reflect;
 
 import java.lang.annotation.Annotation;
@@ -55,7 +54,7 @@ public interface Interceptor extends InvocationHandler {
   void setChainedInterceptor(Interceptor chainedInterceptor);
 
   /**
-   * Gets the chainded interceptor.
+   * Gets the chained interceptor.
    *
    * @return the interceptor, null if end of chain
    */

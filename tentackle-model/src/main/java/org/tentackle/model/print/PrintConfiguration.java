@@ -58,7 +58,7 @@ public class PrintConfiguration {
   /**
    * Returns whether generated output is a comment block.
    *
-   * @return true if comment, else normal output
+   * @return true to print as comment, else normal output
    */
   public boolean isPrintingAsComment() {
     return printingAsComment;

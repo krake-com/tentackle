@@ -103,7 +103,7 @@ public @interface Size {
   int min() default 0;
 
   /**
-   * @return size of the element must be lower or equal to
+   * @return size of the element must be less or equal to
    */
   int max() default Integer.MAX_VALUE;
 

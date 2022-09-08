@@ -22,7 +22,7 @@ package org.tentackle.session;
 
 /**
  * A pool of sessions for multiple session infos.<br>
- * Allows different users to use multiple sessions in porallel.
+ * Allows different users to use multiple sessions in parallel.
  *
  * @see SessionPoolFactory
  * @author harald
@@ -55,7 +55,7 @@ public interface MultiUserSessionPool {
 
 
   /**
-   * Gets the maximum poolsize.
+   * Gets the maximum pool size.
    *
    * @return the max. number of concurrent session instances, 0 = unlimited
    */

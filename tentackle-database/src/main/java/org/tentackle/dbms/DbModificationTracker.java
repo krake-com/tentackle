@@ -611,7 +611,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    *
    * @param session the session persisting the modification, null if threadlocal session
    * @param tableName the table name
-   * @return the (guessed lowest) table serial (may be higher already)
+   * @return the table serial (guessed lowest, could be higher already)
    */
   @Override
   public long countModification (Session session, String tableName) {

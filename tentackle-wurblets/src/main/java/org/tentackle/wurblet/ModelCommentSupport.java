@@ -234,7 +234,7 @@ public class ModelCommentSupport {
    *
    * @param entity the root entity
    * @param relations the outgoing relations
-   * @param rootsFromForeignEntity true if print roots from relation.foreignEntity else relation.entity
+   * @param rootsFromForeignEntity true if print roots from "relation.foreignEntity" else "relation.entity"
    * @param indent the indent string
    * @param out the output stream
    */

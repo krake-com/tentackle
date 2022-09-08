@@ -586,7 +586,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Sets the local persistable flag.
    * <p>
-   * The implementation maintains an additional flag to disable persistabilty.
+   * The implementation maintains an additional flag to disable persistability.
    *
    * @param persistable true if persistable, false if not persistable
    */

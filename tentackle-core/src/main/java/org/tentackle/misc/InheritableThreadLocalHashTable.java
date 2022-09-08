@@ -22,7 +22,7 @@ package org.tentackle.misc;
 import java.util.Hashtable;
 
 /**
- * An thread-inheritable thread-local hashtable.
+ * A thread-inheritable thread-local hashtable.
  * <p>
  * Ensures that each child thread gets its own copy.
  *

@@ -23,8 +23,7 @@ import java.net.Socket;
 import java.net.SocketException;
 
 /**
- * Configures a soeket.<br>
- * Sets socket options, etc...
+ * Configures a socket.
  *
  * @author harald
  */

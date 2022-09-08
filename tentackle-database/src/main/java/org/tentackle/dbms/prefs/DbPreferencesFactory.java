@@ -153,9 +153,9 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   }
 
 
-  private boolean autoSync;                 // autosync flag
+  private boolean autoSync;                 // auto-sync flag
   private boolean readOnly;                 // readonly flag
-  private boolean systemOnly;               // systemonly flag
+  private boolean systemOnly;               // system-only flag
 
   private final Map<String,Root> roots;     // loaded roots, key is username ("" for system)
 
@@ -643,12 +643,11 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   /**
    * Requests for a session to work with.<br>
    * By default, the thread-local session is used.
-   * If there is no default session, the mod tracker's session is used.
+   * If there is no default session, the modification tracker's session is used.
    * <p>
-   * In preparation for replication layers such as poolkeeper,
-   * a requested session must be released after use.
+   * In preparation for replication layers, a requested session must be released after use.
    *
-   * @param forUser true if need a user session (no modtracker fallback)
+   * @param forUser true if a user session is required (no modification tracker fallback)
    * @param forWrite true if the session is used for writing (flush), else read
    * @return the session
    */

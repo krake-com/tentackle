@@ -18,15 +18,16 @@
 
 package org.tentackle.dbms;
 
-import java.lang.management.ThreadInfo;
-import java.util.Collection;
 import org.tentackle.common.Service;
 import org.tentackle.misc.DiagnosticUtilities;
+
+import java.lang.management.ThreadInfo;
+import java.util.Collection;
 
 /**
  * Utilities for diagnostic purposes with persistence extensions.
  * <p>
- * Adds extra information to the thread stackdumps.
+ * Adds extra information to the thread stackdump.
  *
  * @author harald
  */

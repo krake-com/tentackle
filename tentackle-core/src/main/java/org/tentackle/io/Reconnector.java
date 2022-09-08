@@ -69,7 +69,7 @@ public class Reconnector {
   /**
    * Submits a reconnection.<br>
    * If the policy is blocking, submit waits until the resource is reconnected or an exception is thrown.
-   * Otherwise the method returns immediately and reconnection occurs in background.
+   * Otherwise, the method returns immediately and reconnection occurs in background.
    *
    * @param <T> the resource type
    * @param policy the reconnection policy

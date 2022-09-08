@@ -91,12 +91,12 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
 
 
   /**
-   * Extract the Comparable that uniquely identifies the object from that object.
+   * Extracts the {@link Comparable} that uniquely identifies the object from that object.<br>
    * This method needs to be implemented for each index.
    *
    * @param object is the object to extract the key from (never null)
    *
-   * @return the Comparable, null if don't add to the cache
+   * @return the {@link Comparable}, null if the object must not be added to the cache
    *
    */
   public abstract C extract(T object);
@@ -203,7 +203,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
    */
   protected String printStatistics()  {
     int rate = (int)(100L - missCount * 100L / (accessCount == 0 ? 1 : accessCount));
-    return "size=" + size() + ", accesses=" + accessCount + ", misses=" + missCount + ", hitrate=" + rate + "%";
+    return "size=" + size() + ", accesses=" + accessCount + ", misses=" + missCount + ", hit rate=" + rate + "%";
   }
 
 
@@ -320,7 +320,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
    *
    * @param context the domain context
    * @param fromKey the start of range (including)
-   * @param toKey the end of range (exluding)
+   * @param toKey the end of range (excluding)
    * @return the objects with fromKey &le; object &lt; toKey.
    */
   protected List<T> getObjects(DomainContext context, C fromKey, C toKey) {
@@ -352,7 +352,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
       return list;
     }
     else {
-      throw new PdoCacheException("cache must be sorted to support submapping");
+      throw new PdoCacheException("cache must be sorted to support sub-mapping");
     }
   }
 
@@ -421,7 +421,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
    * Adds a unique object to the index.<br>
    * Unique violations usually indicate an error in comparing
    * contexts or that the context of a cached object was changed
-   * accidently.
+   * accidentally.
    *
    * @param object the object to append (never null)
    */
@@ -500,7 +500,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
    * <p>
    * This will also remove objects that have changed their session
    * but were originally stored with given session.
-   * Avoids memleaks if application is misbehaving.
+   * Avoids memory leaks if application is misbehaving.
    *
    * @param session the session
    */
@@ -523,7 +523,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
   public final class CacheKey implements Comparable<CacheKey> {
 
     private final DomainContext context;      // the context the object lives in
-    private final int sessionInstanceNumber;  // to avoid memleaks if application changed the session of an object
+    private final int sessionInstanceNumber;  // to avoid memory leaks if application changed the session of an object
     private final C key;                      // the comparable that uniquely identifies the object
 
     /**

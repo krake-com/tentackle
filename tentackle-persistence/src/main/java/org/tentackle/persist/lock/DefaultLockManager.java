@@ -274,7 +274,7 @@ public class DefaultLockManager implements LockManager {
               LOGGER.warning("{0} is tainted -> within {1}", lock, pdo.getDomainContext().toDiagnosticString());
             }
             else if (!pdo.getDomainContext().isWithinContext(lock.contextName)) {
-              // lock is neither unnamed nor a valid name within the pdo's context
+              // lock is neither unnamed nor a valid name within the PDO's context
               throw new LockException(db, lock.contextName);
             }
             DbTokenLock dbTokenLock = lock.tokenLock;

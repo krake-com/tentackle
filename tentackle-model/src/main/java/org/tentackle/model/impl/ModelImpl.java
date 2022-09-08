@@ -715,7 +715,7 @@ public class ModelImpl implements Model {
               for (Relation fRel: foreignEntity.getRelations()) {
                 if (fRel.getRelationType() == RelationType.OBJECT &&
                     relation.getEntity().getName().equals(fRel.getClassName())) {
-                  // explicit backward relation given: try <namd>Id
+                  // explicit backward relation given: try <name>Id
                   attributeName = StringHelper.firstToLower(fRel.getName() + "Id");
                   foreignAttribute = foreignEntity.getAttributeByJavaName(attributeName, true);
                   break;

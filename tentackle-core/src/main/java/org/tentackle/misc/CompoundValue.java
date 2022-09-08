@@ -35,14 +35,14 @@ import java.util.function.Function;
 /**
  * A compound value.
  * <p>
- * Compount values are used to dynamically create objects from strings. Such objects are often
+ * Compound values are used to dynamically create objects from strings. Such objects are often
  * used as parameters for methods or annotations. They come in three different flavors:
  *
  * <ol>
  * <li>fixed constants: these are simple strings and will be treated as constants.</li>
  * <li>references: they start with a dollar followed by a reference in dot-notation relative to a given object or a
  * static method or field. If the dotted path contains an element with the first character in uppercase, the latter is assumed.
- * Boolean references may be preceeded by <code>"!"</code> to negate the result.</li>
+ * Boolean references may be preceded by <code>"!"</code> to negate the result.</li>
  * <li>a script in a scripting language, for example Groovy or JRuby.</li>
  * </ol>
  *
@@ -111,12 +111,12 @@ public class CompoundValue {
    * For {@link Type#SCRIPT} it is optional and if given, the returned value is
    * converted to the given type, if possible.
    * <p>
-   * The parameters <code>scriptConverterProviderscriptCached</code>, <code>scriptCached</code> and <code>scriptThreadSafe</code>
+   * The parameters <code>scriptConverterProvider</code>, <code>scriptCached</code> and <code>scriptThreadSafe</code>
    * are for {@link Type#SCRIPT} only.
    *
    * @param text the string value
    * @param clazz the class of the value
-   * @param scriptCached true if use caching if possible because script code may used more than once
+   * @param scriptCached true to use caching if possible because script code may be used more than once
    * @param scriptThreadSafe true if the script may be invoked in parallel from different threads
    * @param scriptConverterProvider the optional provider for the script converter
    */
@@ -496,7 +496,7 @@ public class CompoundValue {
   }
 
   /**
-   * Validates the configuration of this compoundvalue.<br>
+   * Validates the configuration of this compound value.<br>
    * Validates the script, if any.
    */
   public void validate() {

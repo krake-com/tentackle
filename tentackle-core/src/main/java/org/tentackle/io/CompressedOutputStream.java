@@ -19,11 +19,12 @@
 
 package org.tentackle.io;
 
+import org.tentackle.log.Logger;
+
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.zip.Deflater;
-import org.tentackle.log.Logger;
 
 
 

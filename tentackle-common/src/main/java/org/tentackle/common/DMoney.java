@@ -89,7 +89,8 @@ public class DMoney extends BMoney {
   }
 
   /**
-   * Creates a DMoney from a BigDecimal (userful for SQL)
+   * Creates a DMoney from a BigDecimal.
+   *
    * @param val the decimal value
    */
   public DMoney (BigDecimal val)  {
@@ -97,7 +98,7 @@ public class DMoney extends BMoney {
   }
 
   /**
-   * Creates a zero DMoney with a scale ccording to
+   * Creates a zero DMoney with a scale according to
    * the currency of the current locale.
    */
   public DMoney ()  {

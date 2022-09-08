@@ -91,7 +91,7 @@ public @interface NotZero {
   String condition() default "";
 
   /**
-   * Replaces the annoted object with an expression.<br>
+   * Replaces the annotated object with an expression.<br>
    * Used in conjunction with scripts.
    *
    * @return value the value

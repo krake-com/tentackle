@@ -30,7 +30,7 @@ import java.util.Objects;
 import java.util.TreeMap;
 
 /**
- * Database meta data for a table that is part of the model.
+ * Database metadata for a table that is part of the model.
  *
  * @author harald
  */
@@ -62,7 +62,7 @@ public class TableMetaData {
 
 
   /**
-   * Sets up the column from the database meta data result.
+   * Sets up the column from the database metadata result.
    *
    * @param metaData the database metadata
    * @param schemas valid schemas to scan, null if all
@@ -132,7 +132,7 @@ public class TableMetaData {
       while (resultSet.next()) {
         String indexName = resultSet.getString("INDEX_NAME");
         if (indexName != null && !modelMetaData.getBackend().isTemporaryName(indexName)) {
-          // find index meta data, if new: create one
+          // find index metadata, if new: create one
           IndexMetaData indexMetaData = indexes.get(indexName);
           if (indexMetaData == null) {
             // new: create it and add to tableMetaData
@@ -242,7 +242,7 @@ public class TableMetaData {
   }
 
   /**
-   * Gets the meta data for columns.
+   * Gets the metadata for columns.
    *
    * @return the columns
    */
@@ -267,7 +267,7 @@ public class TableMetaData {
   }
 
   /**
-   * Gets the meta data for indexes.
+   * Gets the metadata for indexes.
    *
    * @return the indexes
    */
@@ -286,7 +286,7 @@ public class TableMetaData {
 
 
   /**
-   * Validates and postprocesses the table data.
+   * Validates and post-processes the table data.
    */
   public void validate() {
     String defaultSchema = getModelMetaData().getBackend().getDefaultSchema();

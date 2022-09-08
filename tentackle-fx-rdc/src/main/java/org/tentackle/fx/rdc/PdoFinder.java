@@ -75,7 +75,7 @@ public abstract class PdoFinder<T extends PersistentDomainObject<T>> extends Abs
   }
 
   /**
-   * Returns whether the query might block the client for alonger time.
+   * Returns whether the query might block the client for a longer time.
    *
    * @return true if better run in background, false if in event-thread (default)
    */
@@ -84,7 +84,7 @@ public abstract class PdoFinder<T extends PersistentDomainObject<T>> extends Abs
   }
 
   /**
-   * Defines whether the query might block the client for alonger time.
+   * Defines whether the query might block the client for a longer time.
    *
    * @param searchRunningInBackground true if better run in background, false if in event-thread (default)
    */
@@ -94,7 +94,7 @@ public abstract class PdoFinder<T extends PersistentDomainObject<T>> extends Abs
 
 
   /**
-   * Returns whether to run the search immediately without any futher user interaction.
+   * Returns whether to run the search immediately without any further user interaction.
    *
    * @return true if immediate search
    */
@@ -103,7 +103,7 @@ public abstract class PdoFinder<T extends PersistentDomainObject<T>> extends Abs
   }
 
   /**
-   * Defines whether to run the search immediately without any futher user interaction.
+   * Defines whether to run the search immediately without any further user interaction.
    *
    * @param searchRunningImmediately true if immediate search
    */

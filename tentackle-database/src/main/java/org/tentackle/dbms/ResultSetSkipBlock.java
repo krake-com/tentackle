@@ -18,11 +18,12 @@
 
 package org.tentackle.dbms;
 
+import org.tentackle.session.PersistenceException;
+
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
-import org.tentackle.session.PersistenceException;
 
 /**
  * A subset of the columns returned by a {@link ResultSetWrapper}.
@@ -86,7 +87,7 @@ public class ResultSetSkipBlock {
    * <p>
    * If the result set is in skip mode, the first column with that name is found
    * after having skipped some columns according to the last invocation of {@link ResultSetWrapper#skip()}.
-   * Otherwise the standard JDBC-implementation is used.
+   * Otherwise, the standard JDBC-implementation is used.
    *
    * @param name the column name
    * @return the index in the result set
@@ -107,7 +108,7 @@ public class ResultSetSkipBlock {
    * @param ndx the used column index
    */
   public void applyColumnIndex(int ndx) {
-    if (ndx > maxColumnIndex) {   // remember highest configured column
+    if (ndx > maxColumnIndex) {   // remember the highest configured column
       maxColumnIndex = ndx;
     }
   }

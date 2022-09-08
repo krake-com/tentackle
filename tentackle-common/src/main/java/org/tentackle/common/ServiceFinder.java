@@ -47,7 +47,7 @@ public interface ServiceFinder {
   ClassLoader getClassLoader();
 
   /**
-   * Gets the finder' service path it is responsible for.
+   * Gets the finder's service path it is responsible for.
    *
    * @return the service path
    */
@@ -59,7 +59,7 @@ public interface ServiceFinder {
    * first is returned. Useful to override service default implementations.
    *
    * @param serviceName the service name, usually a classname
-   * @return the service configuation entry, never null
+   * @return the service configuration entry, never null
    * @throws TentackleRuntimeException if no such service found
    */
   Map.Entry<String, URL> findFirstServiceConfiguration(String serviceName);
@@ -109,7 +109,7 @@ public interface ServiceFinder {
    * Useful for factories, singletons and alike.
    *
    * @param serviceName the service name, usually a classname
-   * @return the service configuation entry
+   * @return the service configuration entry
    */
   Map.Entry<String, URL> findUniqueServiceConfiguration(String serviceName);
 

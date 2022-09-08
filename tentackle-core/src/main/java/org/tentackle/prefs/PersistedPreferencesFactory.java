@@ -32,7 +32,7 @@ interface PersistedPreferencesFactoryHolder {
  * Factory for {@link PersistedPreferences}.
  * <p>
  * Tentackle does not use the {@link java.util.prefs.Preferences}.
- * Instead it provides an implementation that stores the preferences in the databases.
+ * Instead, it provides an implementation that stores the preferences in the databases.
  * By default, {@link PersistedPreferences} and {@link java.util.prefs.Preferences} co-exist independently.
  * However, the {@link PersistedPreferences} can be used as a drop-in replacement for the {@link java.util.prefs.Preferences},
  * so that 3rd-party software using the preferences-API may use the database backing store as well.
@@ -56,7 +56,7 @@ public interface PersistedPreferencesFactory extends PreferencesFactory {
   void invalidate();
 
   /**
-   * Returns whether the preferences are automatically sync'd
+   * Returns whether the preferences are automatically synchronized
    * with the database backend.<p>
    * The default is autoSync enabled.
    *
@@ -82,7 +82,7 @@ public interface PersistedPreferencesFactory extends PreferencesFactory {
   boolean isReadOnly();
 
   /**
-   * Sets the reaonly feature.
+   * Sets the readonly feature.
    *
    * @param readOnly true if readonly
    */

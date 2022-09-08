@@ -39,7 +39,7 @@ import org.tentackle.common.StringHelper;
  * <ol>
  *   <li>Full-blown modular applications: all module-infos must require real modules only. Jlink creates
  *   an image from those modules. Optional artifacts and runtime modules can still be added.</li>
- *   <li>Modular applications with non-modular dependencies: jlink is used to create an image from the mininum necessary java runtime modules only,
+ *   <li>Modular applications with non-modular dependencies: jlink is used to create an image from the minimum necessary java runtime modules only,
  *   which are determined by the plugin either from the module-infos or via the <code>jdeps</code> tool.
  *   The application's dependencies are placed on the modulepath via the generated run-script.</li>
  *   <li>Non-modular traditional classpath applications: same as 2, but all dependencies are placed on the classpath.</li>

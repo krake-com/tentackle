@@ -16,11 +16,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.ns.pdo;
 
 import org.tentackle.pdo.DomainObject;
-
 
 /**
  * Number pool domain interface.
@@ -31,7 +29,7 @@ public interface NumberPoolDomain extends DomainObject<NumberPool> {
 
   /**
    * Get the current range.<br>
-   * This is the first non-empty range with the lowest begin.
+   * This is the first non-empty range with the lowest "begin".
    *
    * @return the current range
    * @throws org.tentackle.ns.NumberSourceEmptyException if no more non-empty range found

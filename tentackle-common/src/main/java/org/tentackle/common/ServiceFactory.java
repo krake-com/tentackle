@@ -96,9 +96,9 @@ public class ServiceFactory {
 
 
   /**
-   * Sets the classloader to load the service factorty.
+   * Sets the classloader to load the service factory.
    * <p>
-   * If this value is null, the the {@link ServiceFactory} is loaded via a default classloader.
+   * If this value is null, the {@link ServiceFactory} is loaded via a default classloader.
    *
    * @param factoryClassloader the classloader
    */
@@ -107,7 +107,7 @@ public class ServiceFactory {
   }
 
   /**
-   * Gets the classloader to load the service factorty.
+   * Gets the classloader to load the service factory.
    *
    * @return the classloader, default is null
    */
@@ -291,7 +291,7 @@ public class ServiceFactory {
   /**
    * Gets the classloader for a given service path and name.<br>
    * If an explicit classloader is set, the last defined classloader for the given path and name is returned.
-   * Otherwise the default classloader is returned.
+   * Otherwise, the default classloader is returned.
    *
    * @param servicePath the service path
    * @param serviceName the service name
@@ -310,7 +310,7 @@ public class ServiceFactory {
    * @return the classloader, null if no explicit classloader set
    */
   public static ClassLoader getExplicitClassLoader(String servicePath, String serviceName) {
-    if (INSTANCE != null) {   // chicken/egg (may be called during init of ServiceFactory itself)
+    if (INSTANCE != null) {   // chicken/egg (could be called during init of ServiceFactory itself)
       return INSTANCE.getExplicitClassLoaderImpl(servicePath, serviceName);
     }
     return null;
@@ -318,7 +318,7 @@ public class ServiceFactory {
 
 
   /**
-   * Adds an explict classloader for a given service path and name.<br>
+   * Adds an explicit classloader for a given service path and name.<br>
    * Loaders are kept in a linked list for each path and name combination.
    * Setting a classloader performs a push, clearing a pop.
    * Thus, removing a loader activates the previously set loader, if any.
@@ -334,7 +334,7 @@ public class ServiceFactory {
 
 
   /**
-   * Remove]s an explict classloader for a given service path and name.<br>
+   * Removes an explicit classloader for a given service path and name.<br>
    * Loaders are kept in a linked list for each path and name combination.
    * Setting a classloader performs a push, clearing a pop.
    * Thus, removing a loader activates the previously set loader, if any.
@@ -376,7 +376,9 @@ public class ServiceFactory {
 
 
   /**
-   * The service finder (by default finds an instance of iself.<br>
+   * The service finder.<br>
+   * By default, finds an instance of itself.
+   *
    * See @Service annotation in DefaultServiceFinder.
    */
   private Class<? extends ServiceFinder> serviceFinderClass;
@@ -459,7 +461,7 @@ public class ServiceFactory {
   /**
    * Gets the classloader for a given service path and name.<br>
    * If an explicit classloader is set, the last defined classloader for the given path and name is returned.
-   * Otherwise the default classloader is returned.
+   * Otherwise, the default classloader is returned.
    *
    * @param servicePath the service path
    * @param serviceName the service name
@@ -492,7 +494,7 @@ public class ServiceFactory {
 
 
   /**
-   * Adds an explict classloader for a given service path and name.<br>
+   * Adds an explicit classloader for a given service path and name.<br>
    * Loaders are kept in a linked list for each path and name combination.
    * Setting a classloader performs a push, clearing a pop.
    * Thus, removing a loader activates the previously set loader, if any.
@@ -513,7 +515,7 @@ public class ServiceFactory {
 
 
   /**
-   * Remove]s an explict classloader for a given service path and name.<br>
+   * Removes an explicit classloader for a given service path and name.<br>
    * Loaders are kept in a linked list for each path and name combination.
    * Setting a classloader performs a push, clearing a pop.
    * Thus, removing a loader activates the previously set loader, if any.

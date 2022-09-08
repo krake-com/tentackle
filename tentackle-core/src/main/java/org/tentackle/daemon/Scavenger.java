@@ -28,7 +28,7 @@ package org.tentackle.daemon;
 public interface Scavenger {
 
   /**
-   * Returns whether current thread is scavening.
+   * Returns whether current thread is scavenging.
    *
    * @return true if scavenging
    */

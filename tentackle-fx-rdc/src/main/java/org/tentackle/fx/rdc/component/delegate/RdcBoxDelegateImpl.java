@@ -34,7 +34,7 @@ import java.util.function.Supplier;
  */
 public class RdcBoxDelegateImpl {
 
-  private final FxComponent component;                          // the combo- or choicebox
+  private final FxComponent component;                          // the combo- or choice-box
   @SuppressWarnings("rawtypes")
   private final Supplier<ObservableList> itemSupplier;          // component::getItems
   @SuppressWarnings("rawtypes")

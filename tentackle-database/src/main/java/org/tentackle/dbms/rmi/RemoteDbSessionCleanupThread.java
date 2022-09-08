@@ -51,7 +51,7 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
   /** the sessions. */
   private final Set<WeakReference<RemoteDbSessionImpl>> sessions;
 
-  /** map of zombie sessions to cleanup count. */
+  /** map of zombie sessions to clean up count. */
   private final Map<RemoteDbSessionImpl,Integer> zombieSessions;
 
   /** request termination on server shutdown. */
@@ -66,7 +66,7 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
    * would have timed out.
    */
   private static class GroupTimeoutInfo {
-    private int timeout = -1;         // timeout in polling intervals of the cleanupthread (<0 = uninitialized)
+    private int timeout = -1;         // timeout in polling intervals of the cleanup thread (<0 = uninitialized)
     private int timeoutCount = -1;    // consecutive timeouts  (<0 = uninitialized)
 
     private void update(int timeout, int timeoutCount) {
@@ -183,7 +183,7 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
                 LOGGER.info("disconnect dead " + session + ", ungrouped");
                 cleanupSession(session);
                 iter.remove();
-                continue; // don't run into polled() below (would cause a nullp)
+                continue; // don't run into polled() below (would cause a NPE)
               }
               else {
                 if (inTransaction) {

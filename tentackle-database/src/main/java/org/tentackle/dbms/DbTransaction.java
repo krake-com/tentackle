@@ -317,7 +317,7 @@ public class DbTransaction {
 
 
   /**
-   * Unegisters a {@link PersistenceVisitor}.
+   * Unregisters a {@link PersistenceVisitor}.
    *
    * @param handle the visitor's handle to unregister
    * @return the removed visitor, null if not registered

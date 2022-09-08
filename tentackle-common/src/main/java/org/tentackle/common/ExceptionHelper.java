@@ -36,7 +36,7 @@ public final class ExceptionHelper {
    *
    * @param <T> the exception type to search for
    * @param type the exception class to search for
-   * @param first true if finds the first, else the last in chain
+   * @param first true to find the first, else the last in chain
    * @param headOfChain the head of chained exceptions, may be null
    * @return the exception, null if none
    */
@@ -58,7 +58,7 @@ public final class ExceptionHelper {
   /**
    * Extracts any of the given exception types from an exception chain.
    *
-   * @param first true if finds the first, else the last in chain
+   * @param first true to find the first, else the last in chain
    * @param headOfChain the head of chained exceptions, may be null
    * @param types the exception classes to search for
    * @return the exception, null if none
@@ -83,9 +83,9 @@ public final class ExceptionHelper {
 
 
   /**
-   * Extracts the first/last {@link TentackleRuntimeException} marked as temporay in the throwable chain.
+   * Extracts the first/last {@link TentackleRuntimeException} marked as temporary in the throwable chain.
    *
-   * @param first true if finds the first, else the last in chain
+   * @param first true to find the first, else the last in chain
    * @param ex the head of chained exceptions, may be null
    * @return the temporary exception, null if not found
    */
@@ -240,7 +240,7 @@ public final class ExceptionHelper {
 
 
   /**
-   * Checks if the class is a valuable information within a stracktrace.
+   * Checks if the class provides valuable information within a stacktrace.
    *
    * @param className the classname
    * @return true if valuable, else noise

@@ -35,7 +35,7 @@ public interface InfoPopupSupported {
 
   /**
    * Sets the info message.<br>
-   * Notice that an empty string will set the style but dows not show any popup.
+   * Notice that an empty string will set the style but does not show any popup.
    *
    * @param info the info message, null to clear
    */

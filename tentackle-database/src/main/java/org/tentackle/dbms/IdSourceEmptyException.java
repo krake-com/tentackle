@@ -60,9 +60,7 @@ public class IdSourceEmptyException extends IdSourceException {
 
   /**
    * Constructs a new idsource empty exception for a given db connection with the specified detail message and
-   * cause.  <p>Note that the detail message associated with
-   * <code>cause</code> is <i>not</i> automatically incorporated in
-   * this object not found's detail message.
+   * cause.
    *
    * @param  db the db connection
    * @param  message the detail message (which is saved for later retrieval

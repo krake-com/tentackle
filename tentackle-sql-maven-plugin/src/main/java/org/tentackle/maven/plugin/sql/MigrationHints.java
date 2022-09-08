@@ -123,7 +123,7 @@ public class MigrationHints {
   private final Map<String,Map<ColumnKey,String>> migrateColumns; // SQL to execute instead automatic table migration <tablename:<column:sql>>
   private final Map<String,String> renameTable;                   // rename table hint <newtablename:oldtablename>
   private final Set<String> dropTable;                            // drop table hint <oldtablename>
-  private final Map<String, Set<ColumnKey>> renameColumns;        // rename column hint <tablemae:<column>>
+  private final Map<String, Set<ColumnKey>> renameColumns;        // rename column hint <tablename:<column>>
   private final Map<String,Collection<String>> dependencies;      // dependencies <tablename:<tablenames>>
   private final Map<String,Collection<Pattern>> hints;            // hints for the automatic table migrators
 
@@ -355,14 +355,14 @@ public class MigrationHints {
    * Gets the sql code to be executed instead of table migration.
    *
    * @param tableName the tablename
-   * @return the sql code, null if use automatic migration
+   * @return the sql code, null to use automatic migration
    */
   public String getMigrateTable(String tableName) {
     return migrateTable.get(tableName);
   }
 
   /**
-   * Gets the rename table hint.
+   * Gets the "rename" table hint.
    *
    * @param newTableName the new tablename
    * @return the old tablename
@@ -441,7 +441,7 @@ public class MigrationHints {
    * Load the migration hints.
    *
    * @param filesets the filesets to load hints from
-   * @param version the mininum hint file version
+   * @param version the minimum hint file version
    * @param logger the maven logger
    * @param verbose true if verbose
    * @param resourceDirs resource dirs, null if none
@@ -635,7 +635,7 @@ public class MigrationHints {
    * Checks if the given string is a valid tablename.
    *
    * @param str the string
-   * @return true if could be a tablename
+   * @return true if string could be a tablename
    */
   private boolean isValidTableName(String str) {
     boolean lastWasDot = true;

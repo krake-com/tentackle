@@ -22,7 +22,7 @@ package org.tentackle.session;
 /**
  * A handler invoked whenever a Session is closed.
  * <p>
- * Used to cleanup stuff related to the Session.
+ * Used to clean up stuff related to the Session.
  * <p>
  * Important: the close handler MUST NOT invoke any blocking
  * or synchronized methods that could block the closing process!

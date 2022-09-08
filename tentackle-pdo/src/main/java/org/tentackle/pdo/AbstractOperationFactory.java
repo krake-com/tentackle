@@ -54,7 +54,7 @@ public abstract class AbstractOperationFactory implements OperationFactory {
 
 
   /**
-   * Creates a operation invocation handler for given class.<br>
+   * Creates an operation invocation handler for given class.<br>
    * Override this method if you need an application-specific invocation handler.
    *
    * @param <T> the operation type

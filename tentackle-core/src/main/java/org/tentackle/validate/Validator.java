@@ -175,9 +175,9 @@ public interface Validator {
    * <p>
    * If the annotation has the {@link DefaultScope} configured, i.e. no other scopes mentioned in the annotation,
    * the rules defined in the context's parent object apply, if the parent is a {@link ScopeConfigurator}.
-   * Otherwise the annotation's parameter will be returned unchanged.
+   * Otherwise, the annotation's parameter will be returned unchanged.
    *
-   * @param validationContext the validation context (may be null)
+   * @param validationContext the validation context (can be null)
    * @return the configured scopes
    */
   Class<? extends ValidationScope>[] getConfiguredScopes(ValidationContext validationContext);

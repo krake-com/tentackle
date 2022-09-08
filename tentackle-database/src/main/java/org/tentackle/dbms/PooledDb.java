@@ -35,13 +35,13 @@ public class PooledDb {
 
   private final DbPool pool;                // the session pool
   private final int slotNumber;             // the slot number
-  private Db db;                            // the managed db, null if currently lended
+  private Db db;                            // the managed db, null if currently lent
   private final String dbStr;               // the db string (not the reference!)
-  private final WeakReference<Db> refDb;    // weak reference to detect unreferenced lended Db instances
+  private final WeakReference<Db> refDb;    // weak reference to detect unreferenced lent Db instances
   private long usedSince;                   // last lend time, 0 if in pool
   private String usingThreadStr;            // the lending thread string (not the reference!), null if in pool
   private String mdcStr;                    // mapped diagnostic context string
-  private long unusedSince;                 // last return time, 0 if lended
+  private long unusedSince;                 // last return time, 0 if lent
   private long firstUse;                    // epochal time of first use
 
 
@@ -83,7 +83,7 @@ public class PooledDb {
   /**
    * Returns the managed session.
    *
-   * @return the managed session, null if currently lended
+   * @return the managed session, null if currently lent
    */
   public Db getSession() {
     return db;
@@ -109,7 +109,7 @@ public class PooledDb {
   }
 
   /**
-   * Gets the last return time, 0 if lended.
+   * Gets the last return time, 0 if lent.
    *
    * @return time in ms
    */
@@ -145,7 +145,7 @@ public class PooledDb {
    * Closes a pooled db.
    */
   public void close() {
-    Db dbToClose = refDb.get();    // db may be null because currently lended
+    Db dbToClose = refDb.get();    // db may be null because currently lent
     if (dbToClose != null) {       // refDb.db may be null because already garbage collected
       try {
         dbToClose.close();
@@ -192,7 +192,7 @@ public class PooledDb {
     }
     if (this.db != db) {
       this.db = null;
-      throw new PersistenceException("attempt to unuse " + db + " in wrong slot " + dbStr +
+      throw new PersistenceException("attempt to un-use " + db + " in wrong slot " + dbStr +
                                          " (last use by " + usingThreadStr + " since " + new Timestamp(usedSince) + ")");
     }
     unusedSince = System.currentTimeMillis();
@@ -204,7 +204,7 @@ public class PooledDb {
   /**
    * Checks for forgotten puts.
    *
-   * @return true if db has been lended but never returned and is not referenced anymore
+   * @return true if db has been lent but never returned and is not referenced anymore
    */
   public boolean isUnreferenced() {
     return refDb.get() == null;

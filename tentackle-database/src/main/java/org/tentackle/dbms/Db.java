@@ -191,7 +191,7 @@ import java.util.function.Supplier;
  *  <pre>
  *  batchsize=size
  *  </pre>
- *  if the size is &gt; 1. The pesistence layer collects matching statements and executes them within batches.
+ *  if the size is &gt; 1. The persistence layer collects matching statements and executes them within batches.
  *  See {@link DbBatch}.
  *  </li>
  * </ul>
@@ -345,7 +345,7 @@ public class Db implements Session, Cloneable {
   private static final AtomicInteger INSTANCE_COUNTER = new AtomicInteger();  // global session instance counter
 
   // for RMI remote connections
-  private static Class<?>[]         remoteClasses;        // the classes Objects for the delegates provide service for
+  private static Class<?>[]         remoteClasses;        // the classes the delegates provide service for
   private static int                nextDelegateId;       // next handle per class
 
   private static final Cleaner CLEANER = Cleaner.create();        // instead of deprecated finalize()
@@ -564,7 +564,7 @@ public class Db implements Session, Cloneable {
 
   /**
    * Creates an instance of a logical session.<br>
-   * If the login failes due to wrong passwords
+   * If the login fails due to wrong passwords
    * or denied access by the application server,
    * the method {@link #handleConnectException} is invoked.
    *
@@ -1793,7 +1793,7 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Unegisters a {@link PersistenceVisitor}.
+   * Unregisters a {@link PersistenceVisitor}.
    *
    * @param handle the visitor's handle to unregister
    * @return the visitor if removed, null if not registered
@@ -2013,8 +2013,8 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Commits a transaction if the corresponding begin() has started it.
-   * The corresponding begin() is determined by the txVoucher parameter.
+   * Commits a transaction if the corresponding "begin()" has started it.
+   * The corresponding "begin()" is determined by the txVoucher parameter.
    * If it fits to the issued voucher the tx will be committed.
    * If it is 0, nothing will happen.
    * In all other cases an exception will be thrown.
@@ -2106,7 +2106,7 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Rolls back a transaction if the corresponding begin() has started it.
+   * Rolls back a transaction if the corresponding "begin()" has started it.
    *
    * @param txVoucher the transaction voucher, 0 if ignore (nested tx)
    * @param withLog true if log via INFO
@@ -3063,7 +3063,7 @@ public class Db implements Session, Cloneable {
 
   /**
    * Defines whether objects are allowed to count modifications.
-   * Useful to turn off modcount for a special (temporary) session doing
+   * Useful to turn off modification counting for a special (temporary) session doing
    * certain tasks that should not be counted.
    *
    * @param countModificationAllowed true if allowed, false if turned off
@@ -3270,7 +3270,6 @@ public class Db implements Session, Cloneable {
    * Sets the transaction id.
    * Normally the tx-ID is derived from the id of the BEGIN-modlog,
    * so it's not necessary to invoke this method from an application.
-   * (Poolkeeper's replication layer will do so!)
    *
    * @param logModificationTxId the transaction ID
    */

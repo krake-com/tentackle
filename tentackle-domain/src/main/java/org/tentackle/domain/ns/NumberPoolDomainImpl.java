@@ -19,14 +19,15 @@
 
 package org.tentackle.domain.ns;
 
-import java.io.Serial;
-import java.util.Iterator;
-import org.tentackle.ns.NumberSourceEmptyException;
 import org.tentackle.domain.AbstractDomainObject;
+import org.tentackle.ns.NumberSourceEmptyException;
 import org.tentackle.ns.pdo.NumberPool;
 import org.tentackle.ns.pdo.NumberPoolDomain;
 import org.tentackle.ns.pdo.NumberRange;
 import org.tentackle.pdo.DomainObjectService;
+
+import java.io.Serial;
+import java.util.Iterator;
 
 /**
  * NumberPool domain implementation.
@@ -67,7 +68,7 @@ public class NumberPoolDomainImpl extends AbstractDomainObject<NumberPool, Numbe
         iter.remove();
       }
       else  {
-        // find lowest range
+        // find the lowest range
         if (currentRange == null || currentRange.getBegin() > range.getBegin()) {
           currentRange = range;
         }

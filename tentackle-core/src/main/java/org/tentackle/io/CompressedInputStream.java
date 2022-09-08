@@ -67,7 +67,7 @@ public class CompressedInputStream extends FilterInputStream {
     super(in);
     inflater = new Inflater(true);
     byteBuf = new byte[1];
-    LOGGER.finer("compressed input stream ceated for: {0}", in);
+    LOGGER.finer("compressed input stream created for: {0}", in);
   }
 
 

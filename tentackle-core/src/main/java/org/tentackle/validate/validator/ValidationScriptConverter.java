@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.validate.validator;
 
 import org.tentackle.common.MappedService;
@@ -26,8 +25,6 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
-
 
 /**
  * Annotation for a script converter for validation and condition scripts.
@@ -41,9 +38,8 @@ public @interface ValidationScriptConverter {
   /**
    * Determines the scripting language this converter is applicable for.
    *
-   * @return the the language name
+   * @return the language name
    */
   String value();
 
 }
-

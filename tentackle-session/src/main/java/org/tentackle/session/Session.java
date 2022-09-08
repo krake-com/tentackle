@@ -266,7 +266,7 @@ public interface Session extends Comparable<Session>, AutoCloseable {
   long begin();
 
   /**
-   * Commits a transaction if the corresponding begin() has started it.
+   * Commits a transaction if the corresponding {@link #begin()} has started it.
    *
    * @param txVoucher the transaction voucher, 0 if ignore (nested tx)
    *
@@ -275,7 +275,7 @@ public interface Session extends Comparable<Session>, AutoCloseable {
   boolean commit(long txVoucher);
 
   /**
-   * Rolls back a transaction if the corresponding begin() has started it.<br>
+   * Rolls back a transaction if the corresponding {@link #begin()} has started it.<br>
    * The rollback is logged as INFO along with all statements.
    *
    * @param txVoucher the transaction voucher, 0 if ignore (nested tx)
@@ -285,7 +285,7 @@ public interface Session extends Comparable<Session>, AutoCloseable {
   boolean rollback(long txVoucher);
 
   /**
-   * Rolls back a transaction if the corresponding begin() has started it.<br>
+   * Rolls back a transaction if the corresponding {@link #begin()} has started it.<br>
    * Same as {@link #rollback} but without logging. Used for expected rollbacks
    * or rollbacks not related to persistence exceptions.
    *
@@ -404,7 +404,7 @@ public interface Session extends Comparable<Session>, AutoCloseable {
 
   /**
    * Sets the exclusive owner thread. <p> Allows to detect other threads
-   * accidently using this session.
+   * accidentally using this session.
    *
    * @param ownerThread the owner thread, null to clear
    */
@@ -502,8 +502,8 @@ public interface Session extends Comparable<Session>, AutoCloseable {
 
   /**
    * Gets the dispatcher for this session.<br>
-   * The dispatcher can be used to submit asynchroneous tasks in a serial manner.
-   * The returned dispatcher is configured to shutdown if idle for a given timeout.
+   * The dispatcher can be used to submit asynchronous tasks in a serial manner.
+   * The returned dispatcher is configured to shut down if idle for a given timeout.
    *
    * @return the dispatcher
    */

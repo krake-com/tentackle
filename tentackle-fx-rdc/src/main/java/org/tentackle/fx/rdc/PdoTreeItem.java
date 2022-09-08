@@ -87,8 +87,8 @@ public class PdoTreeItem<T extends PersistentDomainObject<T>> extends TreeItem<T
       if (getGuiProvider().providesTreeChildObjects()) {
         List<TreeItem<T>> childItems = new ArrayList<>();
         PersistentDomainObject parentPdo = getParentPdo();
-        Collection<PersistentDomainObject> childs = getGuiProvider().getTreeChildObjects(parentPdo);
-        for (PersistentDomainObject child : childs) {
+        Collection<PersistentDomainObject> children = getGuiProvider().getTreeChildObjects(parentPdo);
+        for (PersistentDomainObject child : children) {
           childItems.add(Rdc.createGuiProvider(child).createTreeItem());
         }
         super.getChildren().setAll(childItems);

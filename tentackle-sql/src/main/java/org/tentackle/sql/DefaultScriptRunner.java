@@ -225,7 +225,7 @@ public class DefaultScriptRunner implements ScriptRunner {
       offset++;
     }
 
-    // if some of the "within..."s are still true at the end of the script,
+    // if some "within..."s are still true at the end of the script,
     // just leave it up to the backend to deal with that and don't throw an exception.
 
     return sql.isEmpty() ? null : new SQLCode(sql.toString(), offset);

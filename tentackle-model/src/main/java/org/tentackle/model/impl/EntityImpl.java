@@ -175,7 +175,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   /**
    * Parses a configuration line.
    *
-   * @param line the configuation line
+   * @param line the configuration line
    * @return true if known configuration processed
    * @throws ModelException if parsing failed
    */
@@ -221,7 +221,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
           setInheritanceType(InheritanceType.valueOf(line.getValue().toUpperCase()));
         }
         catch (IllegalArgumentException ex) {
-          throw line.createModelException("illegal inhertitance type: " + line.getValue());
+          throw line.createModelException("illegal inheritance type: " + line.getValue());
         }
         break;
 
@@ -425,9 +425,9 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
   @Override
   public List<Entity> getAllSubEntities() {
-    List<Entity> childs = new ArrayList<>();
-    collectSubEntities(childs, this);
-    return childs;
+    List<Entity> children = new ArrayList<>();
+    collectSubEntities(children, this);
+    return children;
   }
 
   @Override
@@ -438,7 +438,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   }
 
   /**
-   * Recursivly collects the leaf childs.
+   * Recursively collects the leaf children.
    *
    * @param leafs the list if leafs
    * @param entity the current entity to analyze
@@ -455,7 +455,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   }
 
   /**
-   * Recursivly collects all sub entities.
+   * Recursively collects all sub entities.
    *
    * @param subEntities the list of collected sub entities
    * @param entity the current entity to analyze
@@ -527,7 +527,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
    * @param inheritanceType the inheritance type
    */
   public void setInheritanceType(InheritanceType inheritanceType) {
-    this.inheritanceType = Objects.requireNonNull(inheritanceType, "inhertanceType");
+    this.inheritanceType = Objects.requireNonNull(inheritanceType, "inheritanceType");
   }
 
   /**
@@ -618,7 +618,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   /**
    * Returns whether this entity should provide a root id according to model.
    *
-   * @return true if should provide a root id
+   * @return true if the entity should provide a root id
    */
   @Override
   public boolean isProvidingRootIdAccordingToModel() {
@@ -628,7 +628,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   /**
    * Sets whether this entity should provide a root id according to model.
    *
-   * @param modelRootId  true if should provide a root id
+   * @param modelRootId  true if the entity should provide a root id
    */
   public void setProvidingRootIdAccordingToModel(boolean modelRootId) {
     this.modelRootId = modelRootId;

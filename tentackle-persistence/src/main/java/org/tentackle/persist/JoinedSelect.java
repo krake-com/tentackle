@@ -19,15 +19,16 @@
 
 package org.tentackle.persist;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.JoinType;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * A joined select.
@@ -95,7 +96,7 @@ public class JoinedSelect<T extends PersistentDomainObject<T>> {
    * Creates the SQL-code that does the joined select.
    *
    * @param pdo the pdo proxy
-   * @param selectSql the unjoined select builder
+   * @param selectSql the select builder without joins
    */
   public void createJoinedSql(T pdo, StringBuilder selectSql) {
     AbstractPersistentObject<T,?> pdoPD = (AbstractPersistentObject<T,?>) pdo.getPersistenceDelegate();
@@ -143,7 +144,7 @@ public class JoinedSelect<T extends PersistentDomainObject<T>> {
   }
 
   /**
-   * Gets the currentl retrieved PDO.
+   * Gets the currently retrieved PDO.
    *
    * @return the pdo, null if no query running
    */

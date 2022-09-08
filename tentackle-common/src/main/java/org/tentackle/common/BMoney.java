@@ -92,7 +92,8 @@ public class BMoney extends BigDecimal implements Cloneable {
 
 
   /**
-   * Creates a BMoney from a BigDecimal (userful for SQL)
+   * Creates a BMoney from a BigDecimal.
+   *
    * @param val the decimal value
    */
   public BMoney (BigDecimal val)  {
@@ -233,10 +234,10 @@ public class BMoney extends BigDecimal implements Cloneable {
 
 
   /**
-   * Returns the smalles positive value.<br>
+   * Returns the smallest positive value.<br>
    * Ex.: if scale is 2 --&gt; 0.01 will be returned.
    *
-   * @return the smalles positive value
+   * @return the smallest positive value
    */
   public BMoney smallestPositive()  {
     return new BMoney(new BigDecimal(new BigInteger(new byte[] { 1 })).movePointLeft(scale()));

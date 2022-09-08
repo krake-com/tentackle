@@ -45,7 +45,7 @@ public class LoggerOutputStream extends ByteArrayOutputStream {
    * 
    * @param logger the logger
    * @param level one of {@link Level#SEVERE}, etc...
-   * @param size the buffersize
+   * @param size the buffer size
    */
   public LoggerOutputStream(Logger logger, Level level, int size) {
     super(size);
@@ -54,7 +54,7 @@ public class LoggerOutputStream extends ByteArrayOutputStream {
   }
   
   /**
-   * Creates a logger output stream with a default buffersize.
+   * Creates a logger output stream with a default buffer size.
    * 
    * @param logger the logger
    * @param level one of {@link Level#SEVERE}, etc...
@@ -64,7 +64,7 @@ public class LoggerOutputStream extends ByteArrayOutputStream {
   }
   
   /**
-   * Creates a logger output stream with a default buffersize
+   * Creates a logger output stream with a default buffer size
    * and {@link Level#SEVERE}.
    * 
    * @param logger the logger
@@ -91,7 +91,7 @@ public class LoggerOutputStream extends ByteArrayOutputStream {
    * @param e the exception
    * @param logger the logger
    * @param level the logging level
-   * @param size the buffersize
+   * @param size the buffer size
    */
   public static void logException(Exception e, Logger logger, Level level, int size)  {
     // print exception and stacktrace
@@ -102,7 +102,7 @@ public class LoggerOutputStream extends ByteArrayOutputStream {
   }
   
   /**
-   * Logs an exception stacktrace to the logger with a default buffersize
+   * Logs an exception stacktrace to the logger with a default buffer size
    * and {@link Level#SEVERE}.
    * 
    * @param e the exception
@@ -113,7 +113,7 @@ public class LoggerOutputStream extends ByteArrayOutputStream {
   }
 
   /**
-   * Logs an exception stacktrace to the logger with a default buffersize
+   * Logs an exception stacktrace to the logger with a default buffer size
    * and {@link Level#SEVERE} to
    * the default logger of the util package.
    * 

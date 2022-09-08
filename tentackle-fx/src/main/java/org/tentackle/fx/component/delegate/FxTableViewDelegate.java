@@ -119,7 +119,7 @@ public class FxTableViewDelegate extends FxComponentDelegate {
   protected void updateChangeable(boolean changeable) {
     // doesn't make sense.
     // setEditable() makes the cell editable and setDisable makes
-    // the table view unclickable.
+    // the table view not clickable.
   }
 
   @Override

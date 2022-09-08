@@ -158,7 +158,7 @@ public class DefaultNumberSource implements NumberSource {
       // returned ranges sorted by begin
       Set<Range> ranges = new TreeSet<>(Comparator.comparingLong(Range::begin));
 
-      List<NumberRange> splitRanges = new ArrayList<>();  // splitted ranges (to add)
+      List<NumberRange> splitRanges = new ArrayList<>();  // split ranges to add
       for (Iterator<NumberRange> iter =  pool.getNumberRangeList().iterator(); iter.hasNext(); ) {
         NumberRange range = iter.next();
         if (range.intersects(begin, end)) {
@@ -192,7 +192,7 @@ public class DefaultNumberSource implements NumberSource {
           }
         }
       }
-      // add splitted ranges to pool
+      // add split ranges to pool
       pool.getNumberRangeList().addAll(splitRanges);
       pool = pool.persist();
       return ranges.toArray(new Range[0]);

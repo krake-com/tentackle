@@ -71,8 +71,8 @@ public class SecuredInterceptor extends AbstractInterceptor {
       }
 
       // check permissions
-      List<SecurityException> failedSx = ored ? new ArrayList<>() : null;   // failed permissions (ored mode only)
-      boolean success = false;                                              // true if at least one accepted (ored mode only)
+      List<SecurityException> failedSx = ored ? new ArrayList<>() : null;   // failed permissions (ORed mode only)
+      boolean success = false;                                              // true if at least one accepted (ORed mode only)
 
       for (Class<? extends Permission> clazz: permissions) {
         Permission permission = SecurityFactory.getInstance().getPermission(clazz);

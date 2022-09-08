@@ -335,7 +335,7 @@ public final class DateHelper {
    * @param month the month (0-11)
    * @param currentMonth the current month (0-11)
    * @param currentYear the current year (4 digits)
-   * @param monthWindow the monthwindow, (0-11, any other value returns the current year)
+   * @param monthWindow the month window, (0-11, any other value returns the current year)
    * @return the closest year (4 digits)
    */
   public static int deriveYearFromMonth(int month, int currentMonth, int currentYear, int monthWindow) {

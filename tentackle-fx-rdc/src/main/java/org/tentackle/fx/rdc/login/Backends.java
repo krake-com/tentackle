@@ -284,7 +284,7 @@ public class Backends extends AbstractFxController {
    * Sets the application name and loads the configured backends.
    *
    * @param application the application name
-   * @param system true if use system preferences, else user preferences
+   * @param system true to use system preferences, else user preferences
    */
   public void setApplication(String application, boolean system) {
     this.application = application;

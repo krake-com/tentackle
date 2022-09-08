@@ -258,7 +258,7 @@ public class WurbletArgumentParser {
   /**
    * Parses the source.
    *
-   * @param args the argumenys
+   * @param args the arguments
    * @throws WurbelException if parsing failed
    */
   private void parse(List<String> args) throws WurbelException {

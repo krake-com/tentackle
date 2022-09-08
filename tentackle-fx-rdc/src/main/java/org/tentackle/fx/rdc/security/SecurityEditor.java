@@ -134,7 +134,7 @@ public class SecurityEditor extends PdoEditor<Security> {
     for (Class<? extends Permission> permissionIf: SecurityFactory.getInstance().getPermissionInterfaces()) {
       Permission permission = SecurityFactory.getInstance().getPermission(permissionIf);
       FxCheckBox checkBox = Fx.create(CheckBox.class);
-      String description = permission.getDecription();
+      String description = permission.getDescription();
       if (description != null) {
         checkBox.setTooltip(new Tooltip(description));
       }

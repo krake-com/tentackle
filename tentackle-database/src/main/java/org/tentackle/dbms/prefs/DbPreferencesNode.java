@@ -50,8 +50,8 @@ import java.util.Objects;
  *
  * String(32)     user            username        name of user, null if system [mapnull]
  * String(192)    name            nodename        name of the node
- * long           parentId        parentid        ID of parent node, 0 if rootnode
- * long           rootNodeId      rootnodeid      ID of the root node
+ * long           parentId        parentid        ID of parent-node, 0 if root-node
+ * long           rootNodeId      rootnodeid      ID of the root-node
  *
  * ## indexes
  * unique index nodename := nodename, username
@@ -391,7 +391,7 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
   /**
    * Gets the attribute parentId.
    *
-   * @return ID of parent node, 0 if rootnode
+   * @return ID of parent-node, 0 if root-node
    */
   public long getParentId()    {
     return parentId;
@@ -400,7 +400,7 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
   /**
    * Sets the attribute parentId.
    *
-   * @param parentId ID of parent node, 0 if rootnode
+   * @param parentId ID of parent-node, 0 if root-node
    */
   public void setParentId(long parentId) {
     if (this.parentId != parentId) {
@@ -412,7 +412,7 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
   /**
    * Gets the attribute rootNodeId.
    *
-   * @return ID of the root node
+   * @return ID of the root-node
    */
   public long getRootNodeId()    {
     return rootNodeId;
@@ -421,7 +421,7 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
   /**
    * Sets the attribute rootNodeId.
    *
-   * @param rootNodeId ID of the root node
+   * @param rootNodeId ID of the root-node
    */
   public void setRootNodeId(long rootNodeId) {
     if (this.rootNodeId != rootNodeId) {
@@ -473,10 +473,10 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
   /** name of the node. */
   private String name;
 
-  /** ID of parent node, 0 if rootnode. */
+  /** ID of parent-node, 0 if root-node. */
   private long parentId;
 
-  /** ID of the root node. */
+  /** ID of the root-node. */
   private long rootNodeId;
 
   //</editor-fold>//GEN-END:declare

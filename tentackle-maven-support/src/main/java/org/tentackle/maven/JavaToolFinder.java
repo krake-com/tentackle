@@ -103,7 +103,7 @@ public class JavaToolFinder extends ToolFinder {
    * Locate the directory of the currently running process.
    * This is usually something like .../bin/java.
    *
-   * @return the tooldir, null if could not be determined
+   * @return the tool directory, null if the directory could not be determined
    */
   private File locateJavaToolDir() {
     File toolDir = null;

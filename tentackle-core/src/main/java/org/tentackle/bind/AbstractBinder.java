@@ -247,7 +247,7 @@ public abstract class AbstractBinder implements Binder {
   /**
    * Binds an object to a view.
    * <p>
-   * The object will be scanned for members or submembers
+   * The object will be scanned for members or sub members
    * annotated with the {@link Bindable}-annotation and their
    * corresponding setter- and getter methods.
    * <p>

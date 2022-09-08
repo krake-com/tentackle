@@ -60,7 +60,7 @@ public class DTOWurblet extends AbstractJavaWurblet {
     private final int lineNo;                 // line number in source file
     private final boolean inherited;          // true if inherited
     private final boolean mutable;            // true if with setter instead of final
-    private final boolean unserialized;       // true if transient
+    private final boolean unserialized;       // true if transient (transient is a java keyword, hence "unserialized")
     private final boolean required;           // true if attribute is required (builder mode only)
     private final boolean withFrom;           // true if generate fromX method as well
     private final List<String> annotations;   // optional annotations for getters and setters
@@ -237,7 +237,7 @@ public class DTOWurblet extends AbstractJavaWurblet {
   protected List<Property> properties;  // the DTO properties
   protected boolean needConstructor;    // true if constructor necessary
   protected boolean withBuilder;        // use the builder pattern
-  protected boolean withFrom;           // true if at least one property has the from option set (or --from/--with forced)
+  protected boolean withFrom;           // true if at least one property has the "from"-option set (or --from/--with forced)
   protected boolean asWithers;          // true if withFrom is set and from-methods should be generated as withers
   protected boolean withEquals;         // true if generate equals method
   protected boolean withHashCode;       // true if generate hashCode method

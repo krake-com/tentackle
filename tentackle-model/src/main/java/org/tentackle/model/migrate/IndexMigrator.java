@@ -87,7 +87,7 @@ public class IndexMigrator {
   private final Backend backend;                  // the backend
   private final Entity entity;                    // the entity to migrate the index for
   private final Index index;                      // the index to migrate, null if no such index in model
-  private final IndexMetaData indexMetaData;      // the index meta data, null if key does not exist
+  private final IndexMetaData indexMetaData;      // the index metadata, null if key does not exist
 
 
   /**
@@ -96,7 +96,7 @@ public class IndexMigrator {
    * @param entity the entity
    * @param index the index to migrate, null if no such index in model
    * @param backend the backend
-   * @param indexMetaData the foreign meta data, null if key does not exist
+   * @param indexMetaData the foreign metadata, null if key does not exist
    */
   public IndexMigrator(Entity entity, Index index, Backend backend, IndexMetaData indexMetaData) {
     this.backend = backend;
@@ -162,7 +162,7 @@ public class IndexMigrator {
 
 
   /**
-   * Compares an model index with an existing database index.
+   * Compares a model index with an existing database index.
    *
    * @param backend the backend
    * @param modelIndex the index as defined in the model
@@ -300,7 +300,7 @@ public class IndexMigrator {
   }
 
   /**
-   * Encloses a given string in parenthesis if not already enclosed.
+   * Encloses a given string in parentheses if not already enclosed.
    *
    * @param s the string
    * @return the enclosed string

@@ -53,7 +53,7 @@ public class GroovyScript extends AbstractScript {
    * @param language the language instance
    * @param groovyClassLoader the groovy classloader
    * @param code the scripting code
-   * @param cached true if use code caching
+   * @param cached true to use code caching
    * @param threadSafe true if thread safety required
    */
   public GroovyScript(GroovyLanguage language, GroovyClassLoader groovyClassLoader, String code, boolean cached, boolean threadSafe) {

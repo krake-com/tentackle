@@ -594,7 +594,7 @@ public interface Backend {
    * Gets the default schema name.<br>
    * Some backends store the objects in a default schema, if no explicit schema is given.
    *
-   * @return the defailt schema, null if none
+   * @return the default schema, null if none
    */
   String getDefaultSchema();
 
@@ -701,7 +701,7 @@ public interface Backend {
                                               boolean nullable, Object defaultValue);
 
   /**
-   * Conberts a type and value to a literal string.
+   * Converts a type and value to a literal string.
    *
    * @param sqlType the sql type
    * @param value the value

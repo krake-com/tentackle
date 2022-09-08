@@ -34,9 +34,9 @@ public class ToolFinder {
 
 
   /**
-   * Finds the file of a tool's excecutable.
+   * Finds the file of a tool's executable.
    * <p>
-   * If the toolname does not point to a valid executable,
+   * If the tool name does not point to a valid executable,
    * the environment's PATH variable is consulted.
    * <p>
    * Depending on the OS, it will also try to append well-known suffixes to the toolName.

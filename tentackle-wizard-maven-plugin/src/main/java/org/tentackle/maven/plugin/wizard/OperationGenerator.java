@@ -89,7 +89,7 @@ public class OperationGenerator extends AbstractValidateableGenerator {
                            new File(getProfile().getPersistenceImplPackageInfo().getPath(), getPersistenceImplementation() + Constants.JAVA_EXT)));
       }
 
-      // genetate targets
+      // generate targets
       for (GeneratedFile generatedFile: generatedFiles) {
         generatedFile.generate();
       }

@@ -27,7 +27,7 @@ import java.io.Serial;
 import java.util.Map;
 
 /**
- * Holds the template model for the migrate sql generator.
+ * Holds the template model for the migration sql generator.
  * <p>
  * The model provides the following variables:
  * <ul>
@@ -55,7 +55,7 @@ public class MigrateTemplateModel extends TemplateModel {
    * @param mojo the migrate mojo
    * @param backendInfo the backend info
    * @param migratedEntitiesMap set of migrated tables
-   * @throws MojoExecutionException if module path could not generated
+   * @throws MojoExecutionException if module path could not be generated
    */
   public MigrateTemplateModel(MigrateSqlMojo mojo, BackendInfo backendInfo, Map<String, Boolean> migratedEntitiesMap) throws MojoExecutionException {
     super(mojo.getLog());

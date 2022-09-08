@@ -27,7 +27,7 @@ import java.util.prefs.Preferences;
  * The preferences will then no more be persisted in the database.<br>
  * To activate, extend this class and annotate with <code>@Service(PersistedPreferencesFactory.class)</code>.<br>
  * You may also override the methods isSystemOnly, systemRoot and systemNodeForPackage since system root is usually not writable by normal users.<br>
- * Furthermore, consider to override userRoot/systemRoot as well to prepend a subnode for non-class preferences such as table settings.
+ * Furthermore, consider to override userRoot/systemRoot as well to prepend a sub node for non-class preferences such as table settings.
  * <p>
  * Example:
  * <pre>

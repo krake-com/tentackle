@@ -211,7 +211,7 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate
       // if not already propagated to parents
       super.triggerViewModified();
       // don't trigger again when field is now changed (this is the usual case).
-      // But trigger on next keystroke, if field became unchanged due to this keystoke!
+      // But trigger on next keystroke, if field became unchanged due to this keystroke!
       viewModifiedTriggered = isViewModified();
     }
   }

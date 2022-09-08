@@ -80,7 +80,7 @@ public final class ModuleSorter {
     }
 
     classpathFirstServices = new HashSet<>();
-    // we can't use ServiceLoader because we're in modular mode and we can't use ServiceFinder yet
+    // we can't use ServiceLoader because we're in modular mode, and we can't use ServiceFinder yet
     // because of chicken egg. Hence, we must do that really low level...
     try {
       Enumeration<URL> urls = getClass().getClassLoader().getResources(Constants.META_SERVICE_PATH + ClasspathFirst.class.getName());

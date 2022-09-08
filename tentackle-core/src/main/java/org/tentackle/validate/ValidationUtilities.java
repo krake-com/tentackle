@@ -601,7 +601,7 @@ public class ValidationUtilities {
    * @param mappers the validation mappers
    * @param binder the top level binder
    * @param bindingPath the binding path
-   * @return the mapped binder and bindingpath
+   * @return the mapped binder and binding path
    */
   public MapResult mapValidationPath(NavigableSet<ValidationMapper> mappers, Binder binder, String bindingPath) {
 
@@ -613,7 +613,7 @@ public class ValidationUtilities {
       Set<String> doneSet = new HashSet<>();  // to detect binder/mapper loops
       for (;;) {
         /*
-         * The bindingpath from the results is always longer than the bindingpath of the validation mapper,
+         * The binding path from the results is always longer than the bindingpath of the validation mapper,
          * hence lowerEntry.
          */
         ValidationMapper mapper = mappers.lower(new ValidationMapper(currentPath, currentBinder, null, null));

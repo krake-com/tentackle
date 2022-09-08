@@ -109,7 +109,7 @@ public class GlobalOptionLine extends SingleLine {
   /**
    * Gets the stereotypes.
    *
-   * @return the sterotypes
+   * @return the stereotypes
    * @throws ModelException if not parsed
    */
   public List<String> getStereotypes() throws ModelException {

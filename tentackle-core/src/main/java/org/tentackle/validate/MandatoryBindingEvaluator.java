@@ -31,7 +31,7 @@ public interface MandatoryBindingEvaluator {
    * Determines whether the field's mandatory property is determined
    * dynamically.
    *
-   * @return true if the field is dynamically mandantory.
+   * @return true if the field is dynamically mandatory.
    */
   boolean isMandatoryDynamic();
 

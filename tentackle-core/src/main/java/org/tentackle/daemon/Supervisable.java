@@ -63,7 +63,7 @@ public interface Supervisable extends Killable {
 
   /**
    * Gets the termination cause.<br>
-   * May be a stracktrace or whatever or null.
+   * Could be a stacktrace or whatever or null.
    *
    * @return the termination cause
    */

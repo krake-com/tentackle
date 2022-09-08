@@ -42,7 +42,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * prevent tasks from being executed until the dispatcher is unlocked again.
  * This is particularly useful whenever resources must be shared between the dispatcher and the application.<br>
  * The TaskDispatcher's lock/unlock synchronization may be either mutex- or counter-based.
- * Mutex-based is the preferred method if the lock and its corresponding unlock operation is invoked
+ * Mutex-based is the preferred method if the lock and its corresponding unlock-operation is invoked
  * from the same thread. Any attempt to unlock from a different thread will result
  * in an {@link IllegalMonitorStateException}.<br>
  * If different threads may lock and unlock, counter-based synchronization should be used instead.
@@ -661,7 +661,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   protected void executeTask(Task task) {
 
     lastMillis = System.currentTimeMillis();
-    lastActivity = 0;   // task is pending -> don't timeout
+    lastActivity = 0;   // task is pending -> don't time out
     task.setStarted(lastMillis);
     LOGGER.fine("{0}: task {1} started", this, task);
 
@@ -808,7 +808,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
              * We don't use lock() here because the operation should be interruptable
              * (which is currently the case for termination or when a task has been added).
              * Interrupts will force to check whether the dispatcher is still alive,
-             * which is a must for supervised dispatchers. Otherwise threads waiting
+             * which is a must for supervised dispatchers. Otherwise, threads waiting
              * for a lock on a dispatcher that has been killed in the meantime will wait forever.
              */
             mutex.writeLock().lockInterruptibly();
@@ -872,7 +872,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   /**
    * Sets and checks the locking key.<br>
    * If lockingLevel == 1 the key is just set.
-   * Otherwise it is compared with the current key and if it does
+   * Otherwise, it is compared with the current key and if it does
    * not match, the nested lock is decremented by one and the thread
    * waits for an unlock operation by another thread.
    *
@@ -916,7 +916,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
 
 
   /**
-   * Performs the unlock.
+   * Performs the unlock operation.
    *
    * @param key the unlock key
    * @return true if really unlocked, else just decremented the lock count
@@ -930,7 +930,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
        * We don't need a 'synchronized(this)' here because we can assume
        * that the same thread that locked the dispatcher will also unlock it.
        * If it is not the same thread or there is no lock at all
-       * the unlock() below will fail with an IllegalMonitorStateException.
+       * the "unlock()" below will fail with an IllegalMonitorStateException.
        */
       checkUnlockKey(key);
       try {

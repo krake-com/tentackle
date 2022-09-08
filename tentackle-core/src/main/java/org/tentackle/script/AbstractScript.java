@@ -39,7 +39,7 @@ public abstract class AbstractScript implements Script {
   /** true if execution requested for more than one thread. */
   private final boolean threadSafe;
 
-  /** true if use caching if possible. */
+  /** true to use caching if possible. */
   private final boolean cached;
 
 
@@ -48,8 +48,8 @@ public abstract class AbstractScript implements Script {
    *
    * @param language the language instance
    * @param code the scripting code
-   * @param cached true if use caching, if possible
-   * @param threadSafe true if threadsafety is required
+   * @param cached true to use caching, if possible
+   * @param threadSafe true if thread-safety is required
    */
   public AbstractScript(ScriptingLanguage language, String code, boolean cached, boolean threadSafe) {
     this.language = Objects.requireNonNull(language, "language");

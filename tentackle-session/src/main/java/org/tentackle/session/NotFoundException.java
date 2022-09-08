@@ -65,9 +65,7 @@ public class NotFoundException extends PersistenceException {
 
   /**
    * Constructs a new database object not found exception for a given session with the specified detail message and
-   * cause.  <p>Note that the detail message associated with
-   * <code>cause</code> is <i>not</i> automatically incorporated in
-   * this object not found's detail message.
+   * cause.
    *
    * @param  session the session
    * @param  message the detail message (which is saved for later retrieval
@@ -145,9 +143,7 @@ public class NotFoundException extends PersistenceException {
 
   /**
    * Constructs a new database object not found exception for a given session with the specified detail message and
-   * cause.  <p>Note that the detail message associated with
-   * <code>cause</code> is <i>not</i> automatically incorporated in
-   * this object not found's detail message.
+   * cause.
    *
    * @param  object the persistent object
    * @param  message the detail message (which is saved for later retrieval

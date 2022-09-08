@@ -140,7 +140,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    * For the <code>jlink</code> gaol an extra update script will be generated
    * via the {@link JLinkMojo#updateTemplate}.
    * The update script will be named <code>bin/update.&lt;extension&gt;</code> where
-   * the extension is derived from the platform (<code>cmd</code> on windows,
+   * the extension is derived from the platform (<code>cmd</code> on Windows,
    * otherwise <code>sh</code> for unixes).
    * <p>
    * For the <code>jpackage</code> goal an extra ZIP-file is created holding
@@ -283,7 +283,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    * Defines the precedence of properties and variables.<br>
    * By default, system properties are overridden by maven properties which are overridden by the extra template variables.
    * <p>
-   * The case insensitive keywords are:
+   * The case-insensitive keywords are:
    * <ul>
    *   <li>{@code system, sys}: for system properties</li>
    *   <li>{@code maven, mvn, properties, props, pom}: maven properties</li>
@@ -377,7 +377,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   }
 
   /**
-   * Returns whether given mudule name should go to the module path and
+   * Returns whether given module name should go to the module path and
    * not the jimage file.
    *
    * @param moduleName the name of the full-blown module

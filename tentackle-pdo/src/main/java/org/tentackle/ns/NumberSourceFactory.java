@@ -46,7 +46,7 @@ public interface NumberSourceFactory {
    *
    * @param pool the number source name
    * @param realm the realm
-   * @return the numnber source
+   * @return the number source
    * @throws NumberSourceException if failed
    */
   NumberSource getNumberSource(String pool, String realm);

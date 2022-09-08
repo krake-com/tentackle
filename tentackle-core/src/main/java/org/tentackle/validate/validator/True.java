@@ -37,7 +37,7 @@ import java.lang.annotation.Target;
  * <code>null</code> elements are considered valid.
  * <p>
  * This validator can also be used as an object validator with the value
- * providing a compoundvalue, usually a script that must evaluate to true.
+ * providing a compound value, usually a script that must evaluate to true.
  *
  * @author harald
  */
@@ -94,7 +94,7 @@ public @interface True {
   String condition() default "";
 
   /**
-   * Replaces the annoted object with an expression.<br>
+   * Replaces the annotated object with an expression.<br>
    * Used in conjunction with scripts.
    *
    * @return value the value

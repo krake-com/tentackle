@@ -18,15 +18,16 @@
 
 package org.tentackle.sql.metadata;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Objects;
 import org.tentackle.common.StringHelper;
 import org.tentackle.sql.BackendException;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Objects;
+
 
 /**
- * Meta data for a column of a foreign key.
+ * Metadata for a column of a foreign key.
  *
  * @author harald
  */
@@ -109,7 +110,7 @@ public class ForeignKeyColumnMetaData implements Comparable<ForeignKeyColumnMeta
   }
 
   /**
-   * Sets up the foreign key column from the database meta data result.
+   * Sets up the foreign key column from the database metadata result.
    *
    * @param resultSet the column result set
    * @throws SQLException the processing the result set failed

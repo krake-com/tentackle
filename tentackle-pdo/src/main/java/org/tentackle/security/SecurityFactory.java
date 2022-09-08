@@ -19,8 +19,6 @@
 
 package org.tentackle.security;
 
-import java.util.Collection;
-import java.util.Set;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.security.permissions.AllPermission;
 import org.tentackle.security.permissions.EditPermission;
@@ -28,6 +26,9 @@ import org.tentackle.security.permissions.ExecutePermission;
 import org.tentackle.security.permissions.ReadPermission;
 import org.tentackle.security.permissions.ViewPermission;
 import org.tentackle.security.permissions.WritePermission;
+
+import java.util.Collection;
+import java.util.Set;
 
 
 interface SecurityFactoryHolder {
@@ -122,7 +123,7 @@ public interface SecurityFactory {
    * Gets all configured permission interfaces applicable for a class or instances of it.
    *
    * @param clazz the class to be protected
-   * @return the permissions interfaces applicable
+   * @return the permission interfaces applicable
    */
   Collection<Class<? extends Permission>> getPermissionInterfaces(Class<?> clazz);
 
@@ -130,7 +131,7 @@ public interface SecurityFactory {
    * Gets all configured permission instances applicable for a class or instances of it.
    *
    * @param clazz the class to be protected
-   * @return the permissions instances applicable
+   * @return the permission instances applicable
    */
   Collection<Permission> getPermissions(Class<?> clazz);
 

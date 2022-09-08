@@ -64,7 +64,7 @@ public enum RMISocketFactoryType {
 
 
   /**
-   * Parses the socket factory type according from a string.
+   * Parses the socket factory type from a string.
    * <p>
    * <code>socketfactory=[system|default|plain|ssl|compressed]</code>: the socket factory type:
    * <ul>

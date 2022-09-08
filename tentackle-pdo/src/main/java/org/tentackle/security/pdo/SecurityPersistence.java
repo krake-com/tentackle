@@ -283,7 +283,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
 
 
   /**
-   * Makes sure that the remote security manager is up to date.
+   * Makes sure that the remote security manager is up-to-date.
    * The method is necessary to avoid situations where
    * {@link org.tentackle.security.DefaultSecurityManager#initialize(org.tentackle.session.Session)}
    * at the client side will need some data that in turn is security-checked and

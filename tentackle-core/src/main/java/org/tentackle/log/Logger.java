@@ -41,7 +41,7 @@ public interface Logger {
 
   /**
    * Gets a logger for the invoking class.<br>
-   * The method uses the Stackwalker to determine the caller class.
+   * The method uses the {@link StackWalker} to determine the caller class.
    *
    * @return the logger
    */

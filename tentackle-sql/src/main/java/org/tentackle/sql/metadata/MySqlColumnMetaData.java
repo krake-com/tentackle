@@ -19,16 +19,16 @@
 package org.tentackle.sql.metadata;
 
 /**
- * MySql does not return strings in singlequotes in default values.
+ * MySql does not return strings in single-quotes in default values.
  *
  * @author harald
  */
 public class MySqlColumnMetaData extends ColumnMetaData {
 
   /**
-   * Creates column meta data.
+   * Creates column metadata.
    *
-   * @param tableMetaData the table meta data this column belongs to
+   * @param tableMetaData the table metadata this column belongs to
    */
   public MySqlColumnMetaData(TableMetaData tableMetaData) {
     super(tableMetaData);

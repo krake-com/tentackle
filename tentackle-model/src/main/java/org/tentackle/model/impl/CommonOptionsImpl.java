@@ -134,7 +134,7 @@ public abstract class CommonOptionsImpl implements CommonOptions {
    * Applies given option string.<br>
    *
    * @param option the option string
-   * @param ctrl option control: true if turn option on, false if oprion off, null if on/off missing (defaults to on)
+   * @param ctrl option control: true if turn option on, false if option off, null if on/off missing (defaults to on)
    * @return true if applied, false if unknown option
    * @throws ModelException if applying the option failed
    */
@@ -282,7 +282,7 @@ public abstract class CommonOptionsImpl implements CommonOptions {
    * Processes a bind option.
    *
    * @param option the bind option
-   * @param on true if append, else remove
+   * @param on true to add, else remove the option
    */
   public void processBindOption(String option, boolean on) {
     if (on) {

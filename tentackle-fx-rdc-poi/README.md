@@ -17,7 +17,7 @@ before commons-math3 and SparseBitSet were modularized as well...
 
 If the **tentackle-jlink-maven-plugin** is used to create a jlink or jpackage image,
 make sure to move the poi artifact to the classpath! 
-Otherwise, all depenendencies will be moved to the module path, because POI requires automatic modules. Like so:
+Otherwise, all dependencies will be moved to the module path, because POI requires automatic modules. Like so:
 
     <plugin>
         <groupId>org.tentackle</groupId>

@@ -216,7 +216,7 @@ public class DefaultPreferences extends Preferences implements PersistedPreferen
 
   /**
    * Converts the given pathname if absolute.<br>
-   * For pathname starting with a slash the optional name of the root node will be prependen.
+   * For pathname starting with a slash the optional name of the root node will be prepended.
    * By default, the name of the root node is the empty string, but applications may override
    * {@link DefaultPreferencesFactory#userRoot()} and/or {@link DefaultPreferencesFactory#systemRoot()}
    * to create an extra storage subfolder for the application.

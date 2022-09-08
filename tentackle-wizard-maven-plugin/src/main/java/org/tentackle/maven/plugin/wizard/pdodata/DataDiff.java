@@ -73,18 +73,18 @@ public class DataDiff implements DataNode {
   }
 
   /**
-   * Gets true if this node or a subnode differs.
+   * Gets true if this node or a sub node differs.
    *
-   * @return true if this node or a subnode differs
+   * @return true if this node or a sub node differs
    */
   public boolean isDifferent() {
     return different;
   }
 
   /**
-   * Gets the subnodes.
+   * Gets the sub nodes.
    *
-   * @return the subnodes
+   * @return the sub nodes
    */
   @Override
   public List<DataDiff> getNodes() {

@@ -103,7 +103,7 @@ public class PoiTableUtilities extends TableUtilities {
       HSSFCellStyle dateStyle = wb.createCellStyle();
       dateStyle.setDataFormat(HSSFDataFormat.getBuiltinFormat("m/d/yy"));
 
-      // cellstyles for numbers
+      // cell styles for numbers
       List<HSSFCellStyle> numberStyles = new ArrayList<>();
       HSSFDataFormat format = wb.createDataFormat();
 
@@ -134,7 +134,7 @@ public class PoiTableUtilities extends TableUtilities {
                 // create format
                 short fmtIndex = format.getFormat(fmt);
 
-                // check if there is already a cellstyle with this scale
+                // check if there is already a cell style with this scale
                 Iterator<HSSFCellStyle> iter = numberStyles.iterator();
                 boolean found = false;
                 while (iter.hasNext()) {

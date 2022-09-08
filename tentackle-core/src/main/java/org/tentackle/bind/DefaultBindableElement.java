@@ -41,7 +41,7 @@ public class DefaultBindableElement implements BindableElement {
   private Field field;                  // the field, null if none
   private Method getter;                // the getter, null if none
   private Method setter;                // the setter, null if none
-  private Method from;                  // the from method, null if none
+  private Method from;                  // the "from"-method, null if none
   private Set<String> bindingOptions;   // the binding options
   private Class<?> type;                // the class type of the bound member
   private Type genericType;             // the generic type of the bound member

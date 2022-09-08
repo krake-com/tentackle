@@ -214,7 +214,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
 
   /**
    * Gets the PDO via binding.<br>
-   * For non-editable comboboxes this translator isnt used, but registered,
+   * For non-editable combo-boxes this translator isn't used, but registered,
    * because it could be changed to editable.
    *
    * @return the model value
@@ -250,7 +250,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
        *
        * <UdkClass>.lenientValueOf(String)
        *
-       * If so, create a udk and set it into the proxy.
+       * If so, create a unique domain key and set it into the proxy.
        */
       Method m = udkClass.getDeclaredMethod("lenientValueOf", String.class);
       if (Modifier.isStatic(m.getModifiers()) && udkClass.isAssignableFrom(m.getReturnType())) {

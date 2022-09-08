@@ -28,7 +28,7 @@ public class PostgresColumnMetaData extends ColumnMetaData {
   /**
    * Creates column meta data.
    *
-   * @param tableMetaData the table meta data this column belongs to
+   * @param tableMetaData the table metadata this column belongs to
    */
   public PostgresColumnMetaData(TableMetaData tableMetaData) {
     super(tableMetaData);

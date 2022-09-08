@@ -178,7 +178,7 @@ public class BackendInfo {
   /**
    * Creates a backend info from another one with a different user and password.
    *
-   * @param backendInfo the orginal backend info
+   * @param backendInfo the original backend info
    * @param user the username
    * @param password the password
    */

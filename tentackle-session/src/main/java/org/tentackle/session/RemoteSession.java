@@ -32,7 +32,7 @@ public interface RemoteSession {
    * Gets the client user info.
    * <p>
    * The server may set certain values in the session info that may be
-   * of interest by the client application, for example the userId.
+   * of interest for the client application, for example the user-ID.
    *
    * @return the session info
    */

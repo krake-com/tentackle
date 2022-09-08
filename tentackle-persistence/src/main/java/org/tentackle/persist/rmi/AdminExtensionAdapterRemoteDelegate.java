@@ -18,11 +18,12 @@
 
 package org.tentackle.persist.rmi;
 
-import java.rmi.RemoteException;
-import java.util.List;
+import org.tentackle.dbms.rmi.RemoteDelegate;
 import org.tentackle.pdo.AdminExtension.SessionData;
 import org.tentackle.pdo.DomainContext;
-import org.tentackle.dbms.rmi.RemoteDelegate;
+
+import java.rmi.RemoteException;
+import java.util.List;
 
 /**
  * Admin utility methods.
@@ -32,7 +33,7 @@ import org.tentackle.dbms.rmi.RemoteDelegate;
 public interface AdminExtensionAdapterRemoteDelegate extends RemoteDelegate {
 
   /**
-   * Gets the session data of all sessions currenly logged into the middle tier.
+   * Gets the session data of all sessions currently logged into the middle tier.
    *
    * @param context the domain context
    * @return the session data

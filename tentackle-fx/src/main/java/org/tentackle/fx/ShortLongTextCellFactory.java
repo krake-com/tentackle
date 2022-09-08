@@ -41,7 +41,7 @@ public class ShortLongTextCellFactory <T> implements Callback<ListView<T>, ListC
   private boolean listenerPending = true;       // true if add listener to check if popup closed
   private boolean widthPending;                 // true if (re-)compute widths
   private double shortWidth;                    // width for the short text column
-  private double longWidth;                     // witdh for the long text column
+  private double longWidth;                     // width for the long text column
 
 
   @Override

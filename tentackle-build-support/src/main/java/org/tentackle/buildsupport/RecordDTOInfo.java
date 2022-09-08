@@ -39,7 +39,7 @@ import java.util.StringTokenizer;
 public class RecordDTOInfo {
 
   /**
-   * Fileformat version
+   * File-format version
    */
   public static final String INFO_FILE_VERSION = "1.0";
 
@@ -134,7 +134,7 @@ public class RecordDTOInfo {
   }
 
   /**
-   * Gets the name of the class this analyze info is part of.
+   * Gets the name of the class this analyze-info is part of.
    *
    * @return the classname
    */

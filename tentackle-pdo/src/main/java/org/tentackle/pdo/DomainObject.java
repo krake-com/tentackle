@@ -72,14 +72,14 @@ public interface DomainObject<T extends PersistentDomainObject<T>>
   T findByUniqueDomainKey(Object domainKey);
 
   /**
-   * Gets the human readable name for one (1) object of this class.
+   * Gets the human-readable name for one (1) object of this class.
    *
    * @return the name
    */
   String getSingular();
 
   /**
-   * Gets the human readable name for multiple (&gt; 1) objects of this class.
+   * Gets the human-readable name for multiple (&gt; 1) objects of this class.
    *
    * @return the name
    */

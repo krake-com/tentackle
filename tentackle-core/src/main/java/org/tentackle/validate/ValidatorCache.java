@@ -104,7 +104,8 @@ public class ValidatorCache {
   /**
    * Gets all validators for all annotated fields or methods.<br>
    * If an attribute is annotated both at the field and the (getter-)method level,
-   * the method gets preceedence.
+   * the method gets precedence.
+   *
    * @param clazz the class to inspect
    * @return the validators for this class and scope
    */

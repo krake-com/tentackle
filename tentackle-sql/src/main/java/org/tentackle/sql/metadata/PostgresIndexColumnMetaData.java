@@ -18,7 +18,7 @@
 package org.tentackle.sql.metadata;
 
 /**
- * Index column meta data for postgres.<br>
+ * Index column metadata for postgres.<br>
  * Strips optional typecasts.
  */
 public class PostgresIndexColumnMetaData extends IndexColumnMetaData {

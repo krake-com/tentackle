@@ -96,7 +96,7 @@ public class VersionInfoMojo extends AbstractVersionInfoMojo {
   private String scope;
 
   /**
-   * The default depencency builder.
+   * The default dependency builder.
    */
   @Component(hint = "default" )
   private DependencyGraphBuilder dependencyGraphBuilder;

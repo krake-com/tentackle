@@ -36,7 +36,7 @@ public class PdoCacheException extends PdoRuntimeException {
 
 
   /**
-   * Constructs a new pdo cache exception exception for a given session
+   * Constructs a new pdo cache exception for a given session
    * with <code>null</code> as its detail message.
    * The cause is not initialized, and may subsequently be
    * initialized by a call to {@link #initCause}.
@@ -49,7 +49,7 @@ public class PdoCacheException extends PdoRuntimeException {
 
 
   /**
-   * Constructs a new pdo cache exception exception for a given session with the specified detail message.
+   * Constructs a new pdo cache exception for a given session with the specified detail message.
    * The cause is not initialized, and may subsequently be initialized by a
    * call to {@link #initCause}.
    *
@@ -62,7 +62,7 @@ public class PdoCacheException extends PdoRuntimeException {
   }
 
   /**
-   * Constructs a new pdo cache exception exception for a given session with the specified detail message and
+   * Constructs a new pdo cache exception for a given session with the specified detail message and
    * cause.  <p>Note that the detail message associated with
    * <code>cause</code> is <i>not</i> automatically incorporated in
    * this runtime exception's detail message.
@@ -80,7 +80,7 @@ public class PdoCacheException extends PdoRuntimeException {
   }
 
   /**
-   * Constructs a new pdo cache exception exception for a given session with the specified cause and a
+   * Constructs a new pdo cache exception for a given session with the specified cause and a
    * detail message of <code>(cause==null ? null : cause.toString())</code>
    * (which typically contains the class and detail message of
    * <code>cause</code>).  This constructor is useful for runtime exceptions
@@ -99,7 +99,7 @@ public class PdoCacheException extends PdoRuntimeException {
 
 
   /**
-   * Constructs a new pdo cache exception exception for a given db object
+   * Constructs a new pdo cache exception for a given db object
    * with <code>null</code> as its detail message.
    * The cause is not initialized, and may subsequently be
    * initialized by a call to {@link #initCause}.
@@ -112,7 +112,7 @@ public class PdoCacheException extends PdoRuntimeException {
 
 
   /**
-   * Constructs a new pdo cache exception exception for a given session with the specified detail message.
+   * Constructs a new pdo cache exception for a given session with the specified detail message.
    * The cause is not initialized, and may subsequently be initialized by a
    * call to {@link #initCause}.
    *
@@ -125,7 +125,7 @@ public class PdoCacheException extends PdoRuntimeException {
   }
 
   /**
-   * Constructs a new pdo cache exception exception for a given session with the specified detail message and
+   * Constructs a new pdo cache exception for a given session with the specified detail message and
    * cause.  <p>Note that the detail message associated with
    * <code>cause</code> is <i>not</i> automatically incorporated in
    * this runtime exception's detail message.
@@ -143,7 +143,7 @@ public class PdoCacheException extends PdoRuntimeException {
   }
 
   /**
-   * Constructs a new pdo cache exception exception for a given session with the specified cause and a
+   * Constructs a new pdo cache exception for a given session with the specified cause and a
    * detail message of <code>(cause==null ? null : cause.toString())</code>
    * (which typically contains the class and detail message of
    * <code>cause</code>).  This constructor is useful for runtime exceptions
@@ -162,7 +162,7 @@ public class PdoCacheException extends PdoRuntimeException {
 
 
   /**
-   * Constructs a new pdo cache exception exception without a session and
+   * Constructs a new pdo cache exception without a session and
    * with <code>null</code> as its detail message.
    * The cause is not initialized, and may subsequently be
    * initialized by a call to {@link #initCause}.
@@ -173,7 +173,7 @@ public class PdoCacheException extends PdoRuntimeException {
 
 
   /**
-   * Constructs a new pdo cache exception exception without a session with the specified detail message.
+   * Constructs a new pdo cache exception without a session with the specified detail message.
    * The cause is not initialized, and may subsequently be initialized by a
    * call to {@link #initCause}.
    *
@@ -185,7 +185,7 @@ public class PdoCacheException extends PdoRuntimeException {
   }
 
   /**
-   * Constructs a new pdo cache exception exception without a session with the specified detail message and
+   * Constructs a new pdo cache exception without a session with the specified detail message and
    * cause.  <p>Note that the detail message associated with
    * <code>cause</code> is <i>not</i> automatically incorporated in
    * this runtime exception's detail message.
@@ -202,7 +202,7 @@ public class PdoCacheException extends PdoRuntimeException {
   }
 
   /**
-   * Constructs a new pdo cache exception exception without a session with the specified cause and a
+   * Constructs a new pdo cache exception without a session with the specified cause and a
    * detail message of <code>(cause==null ? null : cause.toString())</code>
    * (which typically contains the class and detail message of
    * <code>cause</code>).  This constructor is useful for runtime exceptions

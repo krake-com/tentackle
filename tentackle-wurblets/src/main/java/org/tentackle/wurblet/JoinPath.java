@@ -144,7 +144,7 @@ public class JoinPath implements Path<JoinPath, Join> {
     }
     if (depth < relations.size()) {
       relations = relations.subList(depth, relations.size()); // remaining relations
-      // perhaps in one of the subpaths
+      // perhaps in one of the sub paths
       for (JoinPath subPath: path.getPaths()) {
         join = findJoinImpl(subPath, relations);
         if (join != null) {

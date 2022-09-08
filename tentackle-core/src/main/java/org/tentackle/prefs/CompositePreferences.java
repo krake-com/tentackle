@@ -66,7 +66,7 @@ public abstract class CompositePreferences {
   }
 
   /**
-   * Gets the user peferences.
+   * Gets the user preferences.
    *
    * @return the user-scope preferences, null if systemOnly
    */
@@ -118,7 +118,7 @@ public abstract class CompositePreferences {
 
   /**
    * Gets the value for a key.
-   * Userspace overwrites systemspace.
+   * Userspace overwrites system space.
    *
    * @param key the preferences key
    * @return the value string or null if no such value
@@ -136,7 +136,7 @@ public abstract class CompositePreferences {
 
   /**
    * Gets the value for a key.
-   * Userspace overwrites systemspace.
+   * Userspace overwrites system space.
    *
    * @param key the preferences key
    * @param def the default value
@@ -149,7 +149,7 @@ public abstract class CompositePreferences {
 
   /**
    * Sets the value for a key.<br>
-   * If the value is the same as in systemspace, the user value is removed.
+   * If the value is the same as in system space, the user value is removed.
    * Null-values also perform a remove.
    *
    * @param key the preferences key
@@ -200,7 +200,7 @@ public abstract class CompositePreferences {
 
   /**
    * Sets an integer.<br>
-   * If the value is the same as in systemspace, the user value is removed.
+   * If the value is the same as in system space, the user value is removed.
    * Null-values also perform a remove.
    *
    * @param key the preferences key
@@ -236,7 +236,7 @@ public abstract class CompositePreferences {
 
   /**
    * Sets a Long.<br>
-   * If the value is the same as in systemspace, the user value is removed.
+   * If the value is the same as in system space, the user value is removed.
    * Null-values also perform a remove.
    *
    * @param key the preferences key
@@ -273,7 +273,7 @@ public abstract class CompositePreferences {
 
   /**
    * Sets a Float.<br>
-   * If the value is the same as in systemspace, the user value is removed.
+   * If the value is the same as in system space, the user value is removed.
    * Null-values also perform a remove.
    *
    * @param key the preferences key
@@ -310,7 +310,7 @@ public abstract class CompositePreferences {
 
   /**
    * Sets a Double.<br>
-   * If the value is the same as in systemspace, the user value is removed.
+   * If the value is the same as in system space, the user value is removed.
    * Null-values also perform a remove.
    *
    * @param key the preferences key
@@ -347,7 +347,7 @@ public abstract class CompositePreferences {
 
   /**
    * Sets a Boolean.<br>
-   * If the value is the same as in systemspace, the user value is removed.
+   * If the value is the same as in system space, the user value is removed.
    * Null-values also perform a remove.
    *
    * @param key the preferences key
@@ -390,7 +390,7 @@ public abstract class CompositePreferences {
 
   /**
    * Sets a bytearray.<br>
-   * If the value is the same as in systemspace, the user value is removed.
+   * If the value is the same as in system space, the user value is removed.
    * Null-values also perform a remove.
    *
    * @param key the preferences key

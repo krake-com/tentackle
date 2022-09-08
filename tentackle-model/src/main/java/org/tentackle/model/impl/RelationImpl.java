@@ -1186,7 +1186,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   }
 
   /**
-   * Gets the suffix to be used in methodnames.
+   * Gets the suffix to be used in method names.
    * <p>
    * Example:
    * <pre>

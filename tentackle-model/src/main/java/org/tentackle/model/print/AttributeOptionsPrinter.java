@@ -46,7 +46,7 @@ public class AttributeOptionsPrinter {
 
 
   /**
-   * Creates an options printer.
+   * Creates a printer.
    *
    * @param attribute the attribute
    * @param configuration the printing configuration

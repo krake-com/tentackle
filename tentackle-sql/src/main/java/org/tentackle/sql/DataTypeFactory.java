@@ -27,7 +27,7 @@ interface DataTypeFactoryHolder {
 }
 
 /**
- * Loads all datatypes and creates singletons of each type.
+ * Loads all data types and creates singletons of each type.
  */
 public interface DataTypeFactory {
 

@@ -35,7 +35,7 @@ public abstract class AbstractPermission implements Permission {
   private Class<? extends Permission> iFace;
 
   @Override
-  public String getDecription() {
+  public String getDescription() {
     return null;
   }
 

@@ -37,7 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Common implemenation of a table binding.
+ * Implementation of a table binding.
  *
  * @param <S> type of the objects contained within the table's items list
  * @param <T> type of the content in all cells in this column

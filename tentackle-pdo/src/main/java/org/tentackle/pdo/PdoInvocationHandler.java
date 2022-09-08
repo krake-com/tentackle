@@ -363,7 +363,7 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
    * Determines the invocation method to be cached by the {@link PdoMethodCache}.
    *
    * @param method the interface method
-   * @return the info necessary to setup the cache entry
+   * @return the info necessary to set up the cache entry
    */
   public PdoMethodCacheInfo determineInvocation(Method method) {
 

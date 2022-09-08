@@ -37,7 +37,7 @@ public class DefaultSocketConfigurator extends SocketConfiguratorBase implements
   /**
    * Gets SO_KEEPALIVE.
    *
-   * @return null if do not configure
+   * @return null to leave unchanged
    */
   public Boolean getKeepAlive() {
     return keepAlive;
@@ -46,7 +46,7 @@ public class DefaultSocketConfigurator extends SocketConfiguratorBase implements
   /**
    * Sets SO_KEEPALIVE.
    *
-   * @param keepAlive null if do not configure
+   * @param keepAlive null to leave unchanged
    */
   public void setKeepAlive(Boolean keepAlive) {
     this.keepAlive = keepAlive;
@@ -55,7 +55,7 @@ public class DefaultSocketConfigurator extends SocketConfiguratorBase implements
   /**
    * Gets SO_OOBINLINE.
    *
-   * @return null if do not configure
+   * @return null to leave unchanged
    */
   public Boolean getOOBInline() {
     return oobInline;
@@ -64,7 +64,7 @@ public class DefaultSocketConfigurator extends SocketConfiguratorBase implements
   /**
    * Sets SO_OOBINLINE.
    *
-   * @param oobInline null if do not configure
+   * @param oobInline null to leave unchanged
    */
   public void setOOBInline(Boolean oobInline) {
     this.oobInline = oobInline;
@@ -74,7 +74,7 @@ public class DefaultSocketConfigurator extends SocketConfiguratorBase implements
   /**
    * Gets TCP_NODELAY.
    *
-   * @return null if do not configure
+   * @return null to leave unchanged
    */
   public Boolean getTcpNoDelay() {
     return tcpNoDelay;
@@ -83,7 +83,7 @@ public class DefaultSocketConfigurator extends SocketConfiguratorBase implements
   /**
    * Sets TCP_NODELAY.
    *
-   * @param tcpNoDelay null if do not configure
+   * @param tcpNoDelay null to leave unchanged
    */
   public void setTcpNoDelay(Boolean tcpNoDelay) {
     this.tcpNoDelay = tcpNoDelay;
@@ -93,7 +93,7 @@ public class DefaultSocketConfigurator extends SocketConfiguratorBase implements
   /**
    * Gets SO_SNDBUF.
    *
-   * @return null if do not configure
+   * @return null to leave unchanged
    */
   public Integer getSendBufferSize() {
     return sendBufferSize;
@@ -102,7 +102,7 @@ public class DefaultSocketConfigurator extends SocketConfiguratorBase implements
   /**
    * Sets SO_SNDBUF.
    *
-   * @param sendBufferSize null if do not configure
+   * @param sendBufferSize null to leave unchanged
    */
   public void setSendBufferSize(Integer sendBufferSize) {
     this.sendBufferSize = sendBufferSize;
@@ -111,7 +111,7 @@ public class DefaultSocketConfigurator extends SocketConfiguratorBase implements
   /**
    * Gets SO_LINGER.
    *
-   * @return null if do not configure, -1 to disable
+   * @return null to leave unchanged, -1 to disable
    */
   public Integer getSoLinger() {
     return soLinger;
@@ -120,7 +120,7 @@ public class DefaultSocketConfigurator extends SocketConfiguratorBase implements
   /**
    * Sets SO_LINGER.
    *
-   * @param soLinger null if do not configure, -1 to disable
+   * @param soLinger null to leave unchanged, -1 to disable
    */
   public void setSoLinger(Integer soLinger) {
     this.soLinger = soLinger;
@@ -130,7 +130,7 @@ public class DefaultSocketConfigurator extends SocketConfiguratorBase implements
   /**
    * Gets IP_TOS.
    *
-   * @return null if do not configure
+   * @return null to leave unchanged
    */
   public Integer getTrafficClass() {
     return trafficClass;
@@ -139,7 +139,7 @@ public class DefaultSocketConfigurator extends SocketConfiguratorBase implements
   /**
    * Sets IP_TOS.
    *
-   * @param trafficClass null if do not configure
+   * @param trafficClass null to leave unchanged
    */
   public void setTrafficClass(Integer trafficClass) {
     this.trafficClass = trafficClass;

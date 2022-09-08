@@ -425,7 +425,7 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
    * @param method the method executed
    * @param args the method args
    * @param retval the method's return value
-   * @param timeKeeper the duration when execution was started, null if don't care
+   * @param timeKeeper the duration when execution was started
    */
   protected void log(Method method, Object[] args, Object retval, TimeKeeper timeKeeper) {
 

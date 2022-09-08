@@ -28,7 +28,7 @@ import java.net.Socket;
 
 /**
  * Socket with compressing streams.
- * Based on tentackles CompressedInput/OutputStream.
+ * Based on Tentackle's CompressedInput/OutputStream.
  *
  * @author harald
  */

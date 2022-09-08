@@ -215,7 +215,7 @@ public enum SqlType {
    * Creates an SQL type.
    *
    * @param defaultValue the default value
-   * @param parser the parser to parse JDBC metadata (e.g. DEFAULTs)
+   * @param parser the parser to parse JDBC metadata
    */
   SqlType(Class<?> clazz, Object defaultValue, Function<String,Object> parser) {
     this.clazz = clazz;

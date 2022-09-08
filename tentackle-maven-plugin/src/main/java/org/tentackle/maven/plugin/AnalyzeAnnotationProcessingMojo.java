@@ -63,7 +63,7 @@ public class AnalyzeAnnotationProcessingMojo extends AbstractAnalyzeAnnotationPr
   protected List<String> classpathElements;
 
   /**
-   * Directory for the analyze results.
+   * Directory for the analyze-results.
    */
   @Parameter(defaultValue = "${project.build.directory}/analyze",
              property = "wurbel.analyzeDir",

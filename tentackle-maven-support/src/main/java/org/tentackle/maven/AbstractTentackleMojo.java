@@ -144,7 +144,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   private Boolean skip;
 
   /**
-   * The encode used to read and write files.
+   * The encoding to read and write files.
    */
   @Parameter(defaultValue = "${project.build.sourceEncoding}")
   protected String charset;   // don't use the name "encoding" as this is handled by maven
@@ -671,11 +671,11 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
       }
       for (String path : paths) {
         for (PackageInfo info : getPackages(project, path)) {
-          boolean infoContaingFiles = info.isContainingFiles();
+          boolean infoContainingFiles = info.isContainingFiles();
           PackageInfo splitPkg = map.get(info.getName());
           if (splitPkg != null) {
             if (splitPkg.isContainingFiles()) {
-              if (infoContaingFiles) {
+              if (infoContainingFiles) {
                 buf.append("\nsplit package detected: ").append(info.getName()).
                     append(" in ").append(project.getName()).
                        append(" and ").append(splitPkg.getProject().getName());
@@ -683,7 +683,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
               // other package is empty: keep existing with java files
               continue;
             }
-            else if (!infoContaingFiles) {
+            else if (!infoContainingFiles) {
               // more than one empty package found: add it to the suspects until we know whether a non-empty exists
               List<PackageInfo> dups = splitPkg.getEmptyDuplicates();
               if (dups == null) {
@@ -702,8 +702,8 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
     }
 
     if (buf.length() > 0) {
-      // at least one split package found
-      // this isnt okay whether used in profiles or not
+      // at least one split package found.
+      // this isn't okay whether used in profiles or not.
       buf.deleteCharAt(0);    // remove leading newline
       throw new MojoExecutionException(buf.toString());
     }

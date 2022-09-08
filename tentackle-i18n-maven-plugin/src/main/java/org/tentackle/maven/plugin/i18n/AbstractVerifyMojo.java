@@ -40,7 +40,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
- * Base class for the verify and cleanup mojos.
+ * Base class for the "verify"- and "cleanup"-mojos.
  *
  * @author harald
  */

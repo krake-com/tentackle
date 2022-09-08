@@ -31,7 +31,7 @@ import java.util.concurrent.TimeoutException;
 
 /**
  * The task to keep a session alive.<br>
- * The task uses the {@link java.util.concurrent.ExecutorService} to spawn asynchroneous pings.
+ * The task uses the {@link java.util.concurrent.ExecutorService} to spawn asynchronous pings.
  * This is necessary because a remote session
  * may block on slow or bad communication lines which should not block the whole task dispatcher.
  */

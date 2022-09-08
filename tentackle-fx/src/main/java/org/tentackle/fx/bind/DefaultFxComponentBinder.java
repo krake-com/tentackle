@@ -548,7 +548,7 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
 
 
   /**
-   * Gets the the component associated with the declared field in a controller.
+   * Gets the component associated with the declared field in a controller.
    *
    * @param controller the controller declaring the field
    * @param field the form field declared in the controller

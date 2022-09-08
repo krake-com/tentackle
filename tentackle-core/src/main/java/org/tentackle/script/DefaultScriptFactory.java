@@ -146,9 +146,9 @@ public class DefaultScriptFactory implements ScriptFactory {
     try {
       for (Class<ScriptingLanguage> clazz: ServiceFactory.getServiceFinder().findServiceProviders(ScriptingLanguage.class)) {
         ScriptingLanguage language = clazz.getDeclaredConstructor().newInstance();
-        for (String abbrv: language.getAbbreviations()) {
-          if (abbrv != null) {
-            String abbrvLC = abbrv.toLowerCase();
+        for (String abbreviation: language.getAbbreviations()) {
+          if (abbreviation != null) {
+            String abbrvLC = abbreviation.toLowerCase();
             if (languages.putIfAbsent(abbrvLC, language) == null) {
               LOGGER.info("added scripting language {0} as {1}", language, abbrvLC);
             }

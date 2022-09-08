@@ -24,7 +24,7 @@ import java.util.List;
 
 /**
  * A directory holding model files.<br>
- * The model dir is capable to detect changes, usually model files added by the wurbelizer.
+ * The model dir is capable to detect changes, usually model files added by the Wurbelizer.
  *
  * @author harald
  */

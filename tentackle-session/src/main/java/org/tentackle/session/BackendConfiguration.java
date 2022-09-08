@@ -31,7 +31,7 @@ import java.util.prefs.Preferences;
 /**
  * Configuration for a database backend.<br>
  * The configuration is stored via the standard {@link Preferences} and provides
- * the paramaters necessary to connect to the database backend.<br>
+ * the parameters necessary to connect to the database backend.<br>
  * The config refers to a {@link DriverConfiguration} that loads the corresponding driver.
  * <p>
  * Whether username and password are optional depends on the use case. If the configuration
@@ -77,7 +77,7 @@ public class BackendConfiguration extends AbstractSessionConfiguration {
           driver = DriverConfiguration.getDriverConfigurations(system).get(driverName);
           if (driver == null) {
             LOGGER.warning("no such driver: {0}", driverName);
-            // dont throw exception to allow the user to fix it
+            // don't throw exception to allow the user to fix it
           }
         }
         String user = backendPrefs.get(USER_KEY, null);
@@ -168,7 +168,7 @@ public class BackendConfiguration extends AbstractSessionConfiguration {
   private String url;                     // the host- or service url
   private String options;                 // other options (multiline!)
   private DriverConfiguration driver;     // the driver, null if remote
-  private String user;                    // the user name
+  private String user;                    // the username
   private String password;                // the user's password (encrypted if a Cryptor is available)
 
   /**

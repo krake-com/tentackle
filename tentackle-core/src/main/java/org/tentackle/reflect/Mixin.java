@@ -92,10 +92,10 @@ public class Mixin<T, M extends Serializable> implements Serializable {
   /**
    * Creates a mixin.
    *
-   * @param mapper the classmapper to find implementation classes, null if this is a dummy mixin
+   * @param mapper the class-mapper to find implementation classes, null if this is a dummy mixin
    * @param clazz the declaring interface class
    * @param superInterface the super interface class the implementation class must implement an extension of,
-   *        null if use the clazz as the declaring class
+   *        null to use the clazz as the declaring class
    *
    * @throws ClassNotFoundException if no implementation found
    */
@@ -138,7 +138,7 @@ public class Mixin<T, M extends Serializable> implements Serializable {
    *
    * @param clazz the declaring interface class
    * @param superInterface the super interface class the implementation class must implement an extension of,
-   *        null if use the clazz as the declaring class
+   *        null to use the clazz as the declaring class
    * @throws ClassNotFoundException if no implementation found
    */
   public Mixin(Class<T> clazz, Class<?> superInterface) throws ClassNotFoundException {

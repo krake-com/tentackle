@@ -76,7 +76,7 @@ import java.util.Map;
  * <ul>
  *    <li>only for composite relations: special method to set the links in composite lists or objects
  *    in saveReferencingRelations. For example: <code>setBlah</code>. <code>set</code> alone will be
- *    replaced by the corresponding methodname according to the model.<br>
+ *    replaced by the corresponding method name according to the model.<br>
  *    The methods arguments are fixed to (this).</li>
  *    <li>
  *    [index] is an integer attribute of the referenced entity.<br>

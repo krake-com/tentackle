@@ -19,13 +19,13 @@
 
 package org.tentackle.buildsupport;
 
-import java.io.PrintWriter;
-import java.util.Set;
-import java.util.StringTokenizer;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
+import java.io.PrintWriter;
+import java.util.Set;
+import java.util.StringTokenizer;
 
 /**
  * Abstraction of a method parameter.
@@ -36,7 +36,7 @@ public class RemoteMethodInfoParameter {
   private final String name;            // the formal parameter name
   private final String type;            // the parameter's type
   private Modifier[] modifiers;         // modifiers like final, etc...
-  private boolean instanceOfSession;    // true if paramater is an instance of a Session
+  private boolean instanceOfSession;    // true if parameter is an instance of a Session
   private boolean instanceOfContext;    // true if parameter is an instance of a DomainContext
   private boolean instanceOfDbObject;   // true if parameter is an instance of an AbstractDbObject
   private boolean instanceOfPdo;        // true if parameter is an instance of a PDO
@@ -59,10 +59,10 @@ public class RemoteMethodInfoParameter {
     Set<Modifier> varModifiers = var.getModifiers();
     modifiers = varModifiers.toArray(new Modifier[0]);
     // determine special types
-    instanceOfSession = AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, info.getNameSession());
-    instanceOfContext = AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, info.getNameContext());
-    instanceOfPdo = AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, info.getNamePdo());
-    instanceOfDbObject = instanceOfPdo || AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, info.getNameDbObject());
+    instanceOfSession = AnnotationProcessingHelper.isTypeInstanceOf(processingEnv, tm, info.getNameSession());
+    instanceOfContext = AnnotationProcessingHelper.isTypeInstanceOf(processingEnv, tm, info.getNameContext());
+    instanceOfPdo = AnnotationProcessingHelper.isTypeInstanceOf(processingEnv, tm, info.getNamePdo());
+    instanceOfDbObject = instanceOfPdo || AnnotationProcessingHelper.isTypeInstanceOf(processingEnv, tm, info.getNameDbObject());
   }
 
   /**

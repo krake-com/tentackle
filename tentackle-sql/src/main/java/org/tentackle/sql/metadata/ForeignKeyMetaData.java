@@ -29,7 +29,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * Meta data for foreign keys.
+ * Metadata for foreign keys.
  * <p>
  * Tentackle uses foreign keys only for simple columns (ID).
  *
@@ -43,15 +43,15 @@ public class ForeignKeyMetaData {
   private String foreignKeyName;                              // the name of the foreign key (all TT-fk are named!)
   private String primaryKeySchema;                            // the schema of the pk
   private String primaryKeyTable;                             // the table of the pk
-  private ForeignKeyAction updateRule;                        // the update rule
-  private ForeignKeyAction deleteRule;                        // the delete rule
+  private ForeignKeyAction updateRule;                        // the update-rule
+  private ForeignKeyAction deleteRule;                        // the delete-rule
   private final Set<ForeignKeyColumnMetaData> columns;        // fk columns
 
 
   /**
    * Creates foreign key meta data.
    *
-   * @param tableMetaData the tablethis fk belongs to
+   * @param tableMetaData the table this foreign key belongs to
    */
   public ForeignKeyMetaData(TableMetaData tableMetaData) {
     this.tableMetaData = tableMetaData;
@@ -60,7 +60,7 @@ public class ForeignKeyMetaData {
 
 
   /**
-   * Adds a column to the fk.
+   * Adds a column to the foreign key.
    *
    * @param column the column
    */
@@ -90,14 +90,14 @@ public class ForeignKeyMetaData {
   /**
    * Gets the name of the foreign key.
    *
-   * @return the fk name
+   * @return the foreign key name
    */
   public String getForeignKeyName() {
     return foreignKeyName;
   }
 
   /**
-   * Geths the schema of the referencing column.
+   * Gets the schema of the referencing column.
    *
    * @return the referencing schema, null if default
    */
@@ -163,18 +163,18 @@ public class ForeignKeyMetaData {
   }
 
   /**
-   * Gets the update rule.
+   * Gets the update-rule.
    *
-   * @return the update rule
+   * @return the update-rule
    */
   public ForeignKeyAction getUpdateRule() {
     return updateRule;
   }
 
   /**
-   * Gets the delete rule.
+   * Gets the delete-rule.
    *
-   * @return the delete rule
+   * @return the delete-rule
    */
   public ForeignKeyAction getDeleteRule() {
     return deleteRule;
@@ -182,7 +182,7 @@ public class ForeignKeyMetaData {
 
 
   /**
-   * Sets up the foreign key from the database meta data result.
+   * Sets up the foreign key from the database metadata result.
    *
    * @param resultSet the foreign key column result set
    * @throws SQLException the processing the result set failed
@@ -207,7 +207,7 @@ public class ForeignKeyMetaData {
 
   /**
    * Updates the primary table name.<br>
-   * This is necessary, if a table was renamed. The meta data then still holds
+   * This is necessary, if a table was renamed. The metadata then still holds
    * the old tablename. However, after a RENAME TABLE the foreign keys will be
    * updated by the database automatically, so there's no need to drop and re-create
    * the FK.
@@ -221,7 +221,7 @@ public class ForeignKeyMetaData {
 
   /**
    * Updates the foreign table name.<br>
-   * This is necessary, if a table was renamed. The meta data then still holds
+   * This is necessary, if a table was renamed. The metadata then still holds
    * the old tablename. However, after a RENAME TABLE the foreign keys will be
    * updated by the database automatically, so there's no need to drop and re-create
    * the FK.
@@ -233,7 +233,7 @@ public class ForeignKeyMetaData {
   }
 
   /**
-   * Validates and postprocesses the foreign key data.
+   * Validates and post-processes the foreign key data.
    */
   public void validate() {
     String defaultSchema = getTableMetaData().getModelMetaData().getBackend().getDefaultSchema();

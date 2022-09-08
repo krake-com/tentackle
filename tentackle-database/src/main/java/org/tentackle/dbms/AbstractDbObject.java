@@ -376,7 +376,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Gets the property support.<br>
-   * Creates it atomtically if it doesn't exist.
+   * Creates it atomically if it doesn't exist.
    *
    * @return the property support, never null
    */

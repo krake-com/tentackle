@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.bind;
 
 import org.tentackle.common.StringHelper;
@@ -37,7 +36,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Common implemenation of a binding.
+ * Common implementation of a binding.
  *
  * @author harald
  */

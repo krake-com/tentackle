@@ -106,7 +106,7 @@ public class DefaultBundleFactory implements BundleFactory {
     baseName = normalizeBasename(baseName);
     BundleSupport support = moduleBundlesMap.get(baseName);
     if (support != null) {
-      // classloaders and bundle controls dont work for named modules --> fallback to bundle support
+      // classloaders and bundle controls don't work for named modules --> fallback to bundle support
       return getBundle(support, locale);
     }
     else {
@@ -127,7 +127,7 @@ public class DefaultBundleFactory implements BundleFactory {
     baseName = normalizeBasename(baseName);
     BundleSupport support = moduleBundlesMap.get(baseName);
     if (support != null) {
-      // classloaders and bundle controls dont work for named modules --> fallback to bundle support
+      // classloaders and bundle controls don't work for named modules --> fallback to bundle support
       return getBundle(support, locale);
     }
     else {
@@ -176,7 +176,7 @@ public class DefaultBundleFactory implements BundleFactory {
 
   /**
    * Normalizes the basename.<br>
-   * The name is usually a dotted classname or a slashed resourcename without a leading slash.
+   * The name is usually a dotted classname or a slashed resource name without a leading slash.
    *
    * @param baseName the name
    * @return the normalized name

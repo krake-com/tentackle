@@ -516,7 +516,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * <P>
    * A skip block is a map of column names to column indexes.
    * The first skip block contains all columns of the result set.
-   * If a columnname appears more than once in the result set,
+   * If a column name appears more than once in the result set,
    * the _first_ column index is used.
    * <p>
    * Subsequent blocks contain all columns not configured by findColumn
@@ -1866,7 +1866,7 @@ public class ResultSetWrapper implements AutoCloseable {
    *
    * @param name the label for the column specified with the SQL AS clause.
    *        If the SQL AS clause was not specified, then the label is the name of the column
-   * @param bufSize the initial buffersize for the Binary
+   * @param bufSize the initial buffer size for the Binary
    * @return the binary read from db
    */
   public <T extends Serializable> Binary<T> getBinary(String name, int bufSize)  {
@@ -2779,7 +2779,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * a {@link Binary} in the Java programming language.
    *
    * @param pos the parameter index in the result set
-   * @param bufSize the initial buffersize for the Binary
+   * @param bufSize the initial buffer size for the Binary
    * @return the binary read from db
    */
   public <T extends Serializable> Binary<T> getBinary(int pos, int bufSize)  {
@@ -3580,7 +3580,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * of this <code>ResultSet</code> object as
    * a {@link Binary} in the Java programming language.
    *
-   * @param bufSize the initial buffersize for the Binary
+   * @param bufSize the initial buffer size for the Binary
    * @return the binary read from db
    */
   public <T extends Serializable> Binary<T> getBinary(int bufSize)  {

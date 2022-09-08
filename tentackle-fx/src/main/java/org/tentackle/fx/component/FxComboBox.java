@@ -160,7 +160,7 @@ public class FxComboBox<T> extends ComboBox<T> implements FxTextComponent {
   }
 
   /**
-   * Returns whether the combobox' type implements {@link ShortLongText}.
+   * Returns whether the combobox type implements {@link ShortLongText}.
    *
    * @return true if implements {@link ShortLongText}
    */

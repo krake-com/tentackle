@@ -21,7 +21,7 @@ package org.tentackle.sql.metadata;
 import java.sql.DatabaseMetaData;
 
 /**
- * Describes the table name and some major properties for am existing database table.
+ * Describes the table name and some major properties for an existing database table.
  */
 public class DatabaseMetaDataTableHeader {
 

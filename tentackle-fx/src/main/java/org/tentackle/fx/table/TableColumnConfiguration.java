@@ -187,28 +187,28 @@ public interface TableColumnConfiguration<S,T> {
   /**
    * Sets allowed characters.
    *
-   * @param validChars the valid characters, null if use default from editor
+   * @param validChars the valid characters, null to use default from editor
    */
   void setValidChars(String validChars);
 
   /**
    * Gets allowed characters.
    *
-   * @return the valid characters, null if use default from editor
+   * @return the valid characters, null to use default from editor
    */
   String getValidChars();
 
   /**
    * Sets invalid characters.
    *
-   * @param invalidChars the invalid characters, null if use default from editor
+   * @param invalidChars the invalid characters, null to use default from editor
    */
   void setInvalidChars(String invalidChars);
 
   /**
    * Gets invalid characters.
    *
-   * @return the invalid characters, null if use default from editor
+   * @return the invalid characters, null to use default from editor
    */
   String getInvalidChars();
 
@@ -313,14 +313,14 @@ public interface TableColumnConfiguration<S,T> {
   /**
    * Gets the editor component.
    *
-   * @return the editor, null if use default from {@link TableCellType#getEditor()}
+   * @return the editor, null to use default from {@link TableCellType#getEditor()}
    */
   FxComponent getEditor();
 
   /**
    * Sets the editor component.
    *
-   * @param editor the editor, null if use default from {@link TableCellType#getEditor()}
+   * @param editor the editor, null to use default from {@link TableCellType#getEditor()}
    */
   void setEditor(FxComponent editor);
 

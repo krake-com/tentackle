@@ -248,7 +248,7 @@ public interface Relation extends ModelElement {
   /**
    * Gets the selection type.
    *
-   * @return the selection tupe
+   * @return the selection type
    */
   SelectionType getSelectionType();
 
@@ -356,7 +356,7 @@ public interface Relation extends ModelElement {
   String getVariableName();
 
   /**
-   * Gets the suffix to be used in methodnames.
+   * Gets the suffix to be used in method names.
    * <p>
    * Example:
    * <pre>

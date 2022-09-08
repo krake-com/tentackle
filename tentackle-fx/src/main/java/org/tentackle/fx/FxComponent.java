@@ -41,7 +41,7 @@ public interface FxComponent extends FxControl, ErrorPopupSupported, InfoPopupSu
    * Sets the type for this component.
    * <p>
    * Notice that the type can be applied only once.
-   * This is because previously installed listeners could cause memleaks.
+   * This is because previously installed listeners could cause memory leaks.
    *
    * @param type the type
    * @throws FxRuntimeException if component cannot handle that type
@@ -159,7 +159,7 @@ public interface FxComponent extends FxControl, ErrorPopupSupported, InfoPopupSu
    * Sets the path to bind this component to.
    * <p>
    * Usually the binding path will be determined from the components declared name.
-   * However, it can be set programatically as well.
+   * However, it can be set programmatically as well.
    *
    * @param bindingPath the binding path, for ex. <code>"invoiceNumber"</code>, null if autobinding
    * @see org.tentackle.bind.Binder
@@ -208,7 +208,7 @@ public interface FxComponent extends FxControl, ErrorPopupSupported, InfoPopupSu
   FxComponentBinding getBinding();
 
   /**
-   * Returns whether model was updated and updateview not invoked since then.<br>
+   * Returns whether model was updated and {@link #updateView()} not invoked since then.<br>
    * Some components, such as FxTableView, never update the model because this
    * is already done by the ObservableList. On those cases, false will be returned.
    *

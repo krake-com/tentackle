@@ -25,7 +25,7 @@ package org.tentackle.common;
  * Whenever the use case requires immutability, such objects cannot be used safely.<br>
  * That's why Tentackle provides extended implementations of those types, that can be made immutable.
  * <p>
- * Once an object is frozen, it cannot be unfrozen anymore. However, its clones are unfrozen (if clonable).<br>
+ * Once an object is frozen, it cannot be unfrozen anymore. However, its clones are unfrozen (if cloneable).<br>
  * Any attempt to modify a frozen object results in a {@link TentackleRuntimeException}.
  */
 public interface Freezable {

@@ -155,7 +155,7 @@ public class FxTreeTableCell<S,T> extends TreeTableCell<S,T> {
           ((Node) editor).setOnKeyPressed(handler);
         }
 
-        // same sh*t as in Swing... hoping 3 loops in eventQ is sufficient, one isnt always :(
+        // same sh*t as in Swing... hoping 3 loops in eventQ is sufficient, one isn't always enough :(
         Platform.runLater(() -> Platform.runLater(() -> Platform.runLater(node::requestFocus)));
       }
     }

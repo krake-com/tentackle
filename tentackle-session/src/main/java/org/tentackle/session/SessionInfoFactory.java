@@ -60,7 +60,7 @@ public interface SessionInfoFactory {
   /**
    * Creates a session info from a property file holding the connection parameters.
    *
-   * @param propertiesName name of additional properties resource, null if default
+   * @param propertiesName name of the property resources, null if default
    * @return the created session info
    */
   SessionInfo create(String propertiesName);
@@ -74,7 +74,7 @@ public interface SessionInfoFactory {
   SessionInfo create(Properties properties);
 
   /**
-   * Creates a session info from the default property file holding the connection parameters.
+   * Creates a session info from the default properties holding the connection parameters.
    *
    * @return the created session info
    */

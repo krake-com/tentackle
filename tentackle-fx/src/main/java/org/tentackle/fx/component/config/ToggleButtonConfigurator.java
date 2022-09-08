@@ -28,7 +28,7 @@ import org.tentackle.fx.FxControl;
  * Configures a ToggleButton.
  *
  * @author harald
- * @param <T> the togglebutton type
+ * @param <T> the toggle button type
  */
 @ConfiguratorService(ToggleButton.class)
 public class ToggleButtonConfigurator<T extends ToggleButton> extends ButtonBaseConfigurator<T> {

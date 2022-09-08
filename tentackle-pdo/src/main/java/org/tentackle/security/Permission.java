@@ -46,7 +46,7 @@ public interface Permission extends Comparable<Permission> {
    *
    * @return the description, null or empty if none
    */
-  String getDecription();
+  String getDescription();
 
   /**
    * Gets the permission interface of this implementation.
