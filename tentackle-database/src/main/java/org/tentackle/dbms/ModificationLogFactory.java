@@ -53,19 +53,19 @@ public interface ModificationLogFactory {
 
 
   /**
-   * Creates an empty modification log for a given db.
+   * Creates an empty modification log for a given session.<br>
    * Useful for reading the log or as an RMI-proxy.
    *
-   * @param db the database connection
+   * @param db the session
    * @return the created modlog
    */
   ModificationLog createModificationLog(Db db);
 
 
   /**
-   * Creates a modification log for a given db and modification type.<br>
+   * Creates a modification log for a given session and modification type.
    *
-   * @param db the database connection
+   * @param db the session
    * @param modType is the modification type (BEGIN or COMMIT)
    * @return the created modlog
    */

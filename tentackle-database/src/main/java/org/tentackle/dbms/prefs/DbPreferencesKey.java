@@ -93,7 +93,7 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
   }
 
   /**
-   * Creates a preferences key (without db connection).
+   * Creates a preferences key without a session.
    */
   public DbPreferencesKey() {
     super();

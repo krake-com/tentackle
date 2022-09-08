@@ -197,7 +197,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   /**
    * Creates a database object.
    *
-   * @param db the logical {@link Db}-connection
+   * @param db the session
    */
   public AbstractDbObject(Db db) {
     setSession(db);
@@ -205,8 +205,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
   /**
-   * Creates a database object not associated to a logical {@link Db}-connection.
-   * The connection must be set via {@link #setSession} in order to use it.
+   * Creates a database object not associated to a session.<br>
+   * The session must be set via {@link #setSession} in order to use it.
    */
   public AbstractDbObject() {
     // nothing to do
@@ -547,7 +547,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Creates a new object of the same class.<br>
-   * The new object belongs to the same persistence connection.
+   * The new object belongs to the same session.
    *
    * @return the new object
    */
@@ -613,9 +613,9 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
   /**
-   * Sets the logical db connection for this object.
+   * Sets the session for this object.
    *
-   * @param session the db session
+   * @param session the session
    */
   @Override
   public void setSession(Session session) {
@@ -634,9 +634,9 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
   /**
-   * Get the logical db connection for this object.
+   * Get the session for this object.
    *
-   * @return the db connection
+   * @return the session
    */
   @Override
   public Db getSession() {
@@ -1393,8 +1393,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
          * ORA-01002 exception is raised.
          * Furthermore, if a transaction that contains a SELECT FOR UPDATE for a given
          * object and the same object is selected IMMEDIATELY after the commit
-         * of the transaction, the db-connection hangs!
-         * @todo: verify whether that's still the case with newer versions of oracle
+         * of the transaction, the JDBC-connection hangs!
+         * @todo: verify whether that's still the case with newer versions of Oracle
          */
         getSession().assertTxRunning();
         PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectForUpdateStatementId,

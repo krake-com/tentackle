@@ -138,7 +138,7 @@ public class DbTokenLock extends AbstractDbObject<DbTokenLock> implements TokenL
   /**
    * Creates an empty modification object.
    *
-   * @param db the database connection
+   * @param db the session
    */
   public DbTokenLock(Db db) {
     super(db);

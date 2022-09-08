@@ -125,7 +125,7 @@ public abstract class AbstractDbOperation<P extends AbstractDbOperation<P>>
 
 
   /**
-   * Sets the logical db connection for this object.
+   * Sets the session for this operation.
    *
    * @param session the session
    */
@@ -146,9 +146,9 @@ public abstract class AbstractDbOperation<P extends AbstractDbOperation<P>>
 
 
   /**
-   * Get the logical db connection for this object.
+   * Get the session for this operation.
    *
-   * @return the db connection
+   * @return the session
    */
   @Override
   public Db getSession() {

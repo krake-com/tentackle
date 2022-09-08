@@ -19,9 +19,10 @@
 
 package org.tentackle.pdo;
 
-import java.util.Collection;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.session.Session;
+
+import java.util.Collection;
 
 
 interface PdoCacheFactoryHolder {
@@ -66,8 +67,8 @@ public interface PdoCacheFactory {
           Class<T> clazz, boolean preload, boolean readOnly, boolean checkSecurity);
 
   /**
-   * Removes all objects in ALL caches that refer to a given db.
-   * Useful after having closed a db-connection in an RMI-Server, for example.
+   * Removes all objects in ALL caches that refer to a given session.<br>
+   * Useful after having closed a session in an RMI-Server, for example.
    *
    * @param session the session (probably closed)
    */

@@ -132,7 +132,7 @@ public class DbModification extends AbstractDbObject<DbModification> {
   /**
    * Creates a modification object for a given tablename.
    *
-   * @param db the database connection, null if thread-local
+   * @param db the session, null if thread-local
    * @param trackedName the tracked name
    */
   public DbModification(Db db, String trackedName) {
@@ -146,7 +146,7 @@ public class DbModification extends AbstractDbObject<DbModification> {
   /**
    * Creates an empty modification object.
    *
-   * @param db the database connection
+   * @param db the session
    */
   public DbModification(Db db) {
     super(db);

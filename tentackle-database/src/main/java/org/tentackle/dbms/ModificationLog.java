@@ -18,6 +18,7 @@
 
 package org.tentackle.dbms;
 
+import org.tentackle.common.DateHelper;
 import org.tentackle.common.Freezable;
 import org.tentackle.common.RemoteMethod;
 import org.tentackle.common.StringHelper;
@@ -25,7 +26,6 @@ import org.tentackle.common.Timestamp;
 import org.tentackle.dbms.rmi.ModificationLogRemoteDelegate;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.Canonicalizer;
-import org.tentackle.common.DateHelper;
 import org.tentackle.misc.ParameterString;
 import org.tentackle.session.ClassId;
 import org.tentackle.session.PersistenceException;
@@ -209,19 +209,19 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
 
   /**
-   * Creates an empty modification log for a given db.
+   * Creates an empty modification log for a given session.
    * Useful for reading the log or as an RMI-proxy.
    *
-   * @param db the database connection
+   * @param db the session
    */
   public ModificationLog(Db db) {
     super(db);
   }
 
   /**
-   * Creates a modification log for a given db and modification type.<br>
+   * Creates a modification log for a given session and modification type.<br>
    *
-   * @param db the database connection
+   * @param db the session
    * @param modType is the modification type (BEGIN or COMMIT)
    */
   public ModificationLog(Db db, ModificationType modType) {

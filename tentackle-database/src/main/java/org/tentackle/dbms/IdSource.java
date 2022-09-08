@@ -21,11 +21,11 @@ package org.tentackle.dbms;
 /**
  * Source of ID numbers.<p>
  *
- * ID-sources are unique instances per Db.<br>
- * For example, by default there is one ObjectId instance per Db.
- * However, implementations _may_ be able to be shared among Dbs,
+ * ID-sources are unique instances per session.<br>
+ * For example, by default there is one ObjectId instance per session.
+ * However, implementations _may_ be able to be shared among sessions,
  * so it's up to the implementation whether it tolerates different
- * Dbs or not.
+ * sessions or not.
  *
  * @author harald
  */
@@ -35,7 +35,7 @@ public interface IdSource {
   /**
    * Get the next unique ID.
    *
-   * @param db the current db connection to be checked against getDb()
+   * @param db the current session
    * @return a free ID.
    */
   long nextId(Db db);

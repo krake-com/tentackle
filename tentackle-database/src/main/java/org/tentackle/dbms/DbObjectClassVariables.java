@@ -469,7 +469,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
   /**
    * Determines whether the class of this variable holder is referenced.
    *
-   * @param db the Db connection
+   * @param db the session
    * @param id the object id to test whether it is referenced by any other objects
    * @return true if referenced
    */
@@ -481,7 +481,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
   /**
    * Determines whether the class of this variable holder is referenced.
    *
-   * @param db the Db connection
+   * @param db the session
    * @param id the object id to test whether it is referenced by any other objects
    * @param foreignReferences the foreign references
    * @return true if referenced

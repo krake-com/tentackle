@@ -16,13 +16,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.dbms;
 
 import java.io.Serial;
 
 /**
- * Runtime exception thrown if an idsource becomes empty.
+ * Runtime exception thrown when an {@link IdSource} becomes empty.
  * 
  * @author harald
  */
@@ -33,10 +32,8 @@ public class IdSourceEmptyException extends IdSourceException {
 
 
  /**
-   * Constructs a new idsource empty exception for a given db connection
+   * Constructs a new idsource empty exception for a given session
    * with <code>null</code> as its detail message.
-   * The cause is not initialized, and may subsequently be
-   * initialized by a call to {@link #initCause}.
    *
    * @param db the session
    */
@@ -46,46 +43,33 @@ public class IdSourceEmptyException extends IdSourceException {
 
 
   /**
-   * Constructs a new idsource empty exception for a given db connection with the specified detail message.
-   * The cause is not initialized, and may subsequently be initialized by a
-   * call to {@link #initCause}.
+   * Constructs a new idsource empty exception for a given session with the specified detail message.
    *
-   * @param   db the db connection
-   * @param   message   the detail message. The detail message is saved for
-   *          later retrieval by the {@link #getMessage()} method.
+   * @param   db the session
+   * @param   message   the detail message.
    */
   public IdSourceEmptyException(Db db, String message) {
     super(db, message);
   }
 
   /**
-   * Constructs a new idsource empty exception for a given db connection with the specified detail message and
+   * Constructs a new idsource empty exception for a given session with the specified detail message and
    * cause.
    *
-   * @param  db the db connection
-   * @param  message the detail message (which is saved for later retrieval
-   *         by the {@link #getMessage()} method).
-   * @param  cause the cause (which is saved for later retrieval by the
-   *         {@link #getCause()} method).  (A <code>null</code> value is
-   *         permitted, and indicates that the cause is nonexistent or
-   *         unknown.)
+   * @param  db the session
+   * @param  message the detail message
+   * @param  cause the cause
    */
   public IdSourceEmptyException(Db db, String message, Throwable cause) {
     super(db, message, cause);
   }
 
   /**
-   * Constructs a new idsource empty exception for a given db connection with the specified cause and a
-   * detail message of <code>(cause==null ? null : cause.toString())</code>
-   * (which typically contains the class and detail message of
-   * <code>cause</code>).  This constructor is useful for runtime exceptions
-   * that are little more than wrappers for other throwables.
+   * Constructs a new idsource empty exception for a given session with the specified cause and a
+   * detail message of <code>(cause==null ? null : cause.toString())</code>.
    *
-   * @param  db the db connection
-   * @param  cause the cause (which is saved for later retrieval by the
-   *         {@link #getCause()} method).  (A <code>null</code> value is
-   *         permitted, and indicates that the cause is nonexistent or
-   *         unknown.)
+   * @param  db the session
+   * @param  cause the cause
    */
   public IdSourceEmptyException(Db db, Throwable cause) {
     super(db, cause);
@@ -93,10 +77,8 @@ public class IdSourceEmptyException extends IdSourceException {
 
 
   /**
-   * Constructs a new idsource empty exception without a db connection and
+   * Constructs a new idsource empty exception without a session and
    * with <code>null</code> as its detail message.
-   * The cause is not initialized, and may subsequently be
-   * initialized by a call to {@link #initCause}.
    */
   public IdSourceEmptyException() {
     super();
@@ -104,29 +86,20 @@ public class IdSourceEmptyException extends IdSourceException {
 
 
   /**
-   * Constructs a new idsource empty exception without a db connection with the specified detail message.
-   * The cause is not initialized, and may subsequently be initialized by a
-   * call to {@link #initCause}.
+   * Constructs a new idsource empty exception without a session and with the specified detail message.
    *
-   * @param   message   the detail message. The detail message is saved for
-   *          later retrieval by the {@link #getMessage()} method.
+   * @param   message   the detail message.
    */
   public IdSourceEmptyException(String message) {
     super(message);
   }
 
   /**
-   * Constructs a new idsource empty exception without a db connection with the specified detail message and
-   * cause.  <p>Note that the detail message associated with
-   * <code>cause</code> is <i>not</i> automatically incorporated in
-   * this runtime exception's detail message.
+   * Constructs a new idsource empty exception without a session, but with the specified detail message and
+   * cause.
    *
-   * @param  message the detail message (which is saved for later retrieval
-   *         by the {@link #getMessage()} method).
-   * @param  cause the cause (which is saved for later retrieval by the
-   *         {@link #getCause()} method).  (A <code>null</code> value is
-   *         permitted, and indicates that the cause is nonexistent or
-   *         unknown.)
+   * @param  message the detail message
+   * @param  cause the cause
    */
   public IdSourceEmptyException(String message, Throwable cause) {
     super(message, cause);

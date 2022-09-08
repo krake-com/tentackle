@@ -466,7 +466,7 @@ public interface Session extends Comparable<Session>, AutoCloseable {
   SessionPool getPool();
 
   /**
-   * Gets the connection state.
+   * Gets the session's state.
    *
    * @return true if session is open, else false
    */

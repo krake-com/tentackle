@@ -71,12 +71,11 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
   }
 
   /**
-   * Creates an operation object without a domain context
-   * for a given connection.<p>
-   * Note: the application must set the context.
+   * Creates an operation object without a domain context for a given session.<br>
+   * Notice: the application must set the domain context.
    *
    * @param operation the operation object this is a delegate for
-   * @param session the session (must be an instance of {@link Session}).
+   * @param session the session (must be an instance of {@link Db}).
    */
   public AbstractPersistentOperation(T operation, Session session) {
     super((Db) session);
