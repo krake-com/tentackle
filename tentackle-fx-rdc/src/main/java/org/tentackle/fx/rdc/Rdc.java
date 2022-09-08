@@ -132,7 +132,7 @@ public class Rdc {
    *   treeView.setCellFactory(Rdc::createTreeCell);
    * </pre>
    *
-   * @param treeView the treeview
+   * @param treeView the tree view
    * @param <T> the pdo type
    * @return the tree cell
    */

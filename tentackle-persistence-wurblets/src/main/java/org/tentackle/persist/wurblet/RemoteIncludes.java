@@ -19,16 +19,18 @@
 
 package org.tentackle.persist.wurblet;
 
+import org.wurbelizer.wurbel.HeapStream;
+import org.wurbelizer.wurbel.WurbelException;
+import org.wurbelizer.wurbel.Wurbler;
+
+import org.tentackle.common.StringHelper;
+import org.tentackle.model.Entity;
+import org.tentackle.wurblet.ModelWurblet;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Date;
-import org.tentackle.common.StringHelper;
-import org.tentackle.model.Entity;
-import org.tentackle.wurblet.ModelWurblet;
-import org.wurbelizer.wurbel.HeapStream;
-import org.wurbelizer.wurbel.WurbelException;
-import org.wurbelizer.wurbel.Wurbler;
 
 
 /**
@@ -54,7 +56,7 @@ public class RemoteIncludes {
   private String pdoPackageName;              // package name of the pdo interface
   private String rmiDirName;                  // directory of rmi-classes
   private String remotePrefix;                // prefix of the remote parent class (usually from ant script)
-  private boolean importSuperDelegate;        // create import for supercass/interface of remote delegate
+  private boolean importSuperDelegate;        // create import for superclass/interface of remote delegate
 
 
 

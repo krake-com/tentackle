@@ -30,7 +30,7 @@ import java.lang.annotation.Target;
 /**
  * Annotation to express that the annotated class is a service implementation.<br>
  * Differs from @{@link Service} that the service can be some arbitrary name.
- * Also useful if the serviced class is not within the scope.
+ * Also useful, if the serviced class is not within the scope.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

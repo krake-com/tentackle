@@ -584,12 +584,12 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * thus preventing any update without reloading the object again!
    * You have to use the returned PDO!
    * <br>
-   * The modtable is updated because the serial is increased and thus all caches must be invalidated.
+   * The modification table is updated because the serial is increased and thus all caches must be invalidated.
    * <p>
    * CAUTION: the method is provided for rare corner cases like administration tools.
    * Don't use it for regular locking/unlocking!
    *
-   * @param userId is the new user Id. (special 0 = free token, even if we are not the owner!)
+   * @param userId is the new user-ID. (special 0 = free token, even if we are not the owner!)
    * @return the updated PDO
    */
   T transferTokenLock(long userId);
@@ -721,32 +721,32 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * A PDO is validated if not modified since the last validation
    * or not modified since loaded from the backend.
    *
-   * @return true if validated, false if needs validation before being persisted
+   * @return true if validated, false if PDO needs validation before being persisted
    */
   boolean isValidated();
 
   /**
-   * Saves this object.<br>
-   * If this object is new, a new ID is obtained and this object inserted.
-   * Otherwise, this object is updated.
+   * Save this PDO.<br>
+   * If the object is new, a new ID is obtained and the object inserted.
+   * Otherwise, the object is updated.
    * <p>
    * A saved object is no more persistable.
-   * It must be reload()ed to persist it again.
-   * Use persist() if the object needs to be persisted again.
+   * It must be {@link #reload()}-ed to make it persistable again.
    * <p>
-   * Notice that the token lock will be cleared.
+   * Any token lock will be removed.
+   * @see #persist()
    */
   void save();
 
   /**
-   * Persists this object.<br>
-   * Same as save() but returns the persisted object.<br>
+   * Persist this PDO.<br>
+   * Same as {@link #save()} but returns the persisted object.<br>
+   * The returned object is persistable.<br>
    * If the session is local, {@code this} is returned. For remote sessions,
    * the returned reference is always another instance.
-   * <p>
-   * Notice that the token lock will be cleared.
    *
    * @return the persisted object, never null
+   * @see #save()
    */
   T persist();
 

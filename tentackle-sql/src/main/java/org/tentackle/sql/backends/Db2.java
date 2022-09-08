@@ -179,7 +179,7 @@ public class Db2 extends AbstractSql2003Backend {
   }
 
   /**
-   * Appends the continuation sequence to an sql statement.
+   * Appends the continuation sequence to a sql statement.
    *
    * @param sql the sql code
    * @return the modified code

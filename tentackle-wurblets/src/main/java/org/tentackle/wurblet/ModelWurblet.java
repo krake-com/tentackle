@@ -307,7 +307,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
   /**
    * Returns whether the entity is part of an inheritance tree.
    *
-   * @return truf if part of an inheritance tree
+   * @return true if part of an inheritance tree
    */
   public boolean isPartOfInheritanceHierarchy() {
     return isPdo() && getEntity().getTopSuperEntity().isAbstract();
@@ -318,7 +318,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
    * <p>
    * Generics are used in abstract inheritable classes.
    * Final concrete PDO classes must not use generics.
-   * Otherwise the generated wurblet code will not compile.
+   * Otherwise, the generated wurblet code will not compile.
    *
    * @return true if class is generified
    */
@@ -580,11 +580,11 @@ public class ModelWurblet extends AbstractJavaWurblet {
 
 
   /**
-   * Gets the columname.
+   * Gets the column name.
    *
    * @param attribute the attribute
    * @param columnIndex the column index, -1 if without suffix
-   * @return the columnname
+   * @return the column name
    * @throws WurbelException if failed
    */
   public String getColumnName(Attribute attribute, int columnIndex) throws WurbelException {
@@ -592,7 +592,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
       return columnIndex < 0 ? attribute.getColumnName() : attribute.getColumnName(columnIndex);
     }
     catch (ModelException e) {
-      throw new WurbelException("cannot determine columnname for " + attribute + ", index " + columnIndex, e);
+      throw new WurbelException("cannot determine column name for " + attribute + ", index " + columnIndex, e);
     }
   }
 
@@ -740,7 +740,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
       model.loadFromDirectory(modelDirName, true);
     }
     catch (ModelException mex) {
-      // model exceptions cause the whole wurbel run to abort because it doesnt make any sense to clutter the sources
+      // model exceptions cause the whole wurbel run to abort because it doesn't make any sense to clutter the sources
       WurbelException wex = new WurbelTerminationException(
               "errors in model loaded from directory '" + modelDirName + "'", true, mex);
       if (model instanceof TentackleWurbletsModel && mex.getElement() != null &&
@@ -803,7 +803,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
       remote = false;
     }
 
-    // Throw delayed wurbel execption if the real cause is related to this entity
+    // Throw delayed wurbel exception if the real cause is related to this entity
     if (model instanceof TentackleWurbletsModel && entity != null) {
       WurbelException wex = ((TentackleWurbletsModel) model).getLoadingException();
       if (wex != null && wex.getCause() instanceof ModelException mex) {

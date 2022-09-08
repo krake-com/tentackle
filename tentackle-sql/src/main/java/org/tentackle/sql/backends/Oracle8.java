@@ -44,7 +44,7 @@ import java.util.Properties;
 
 /**
  * Backend for older Oracle versions 8 to 11.<br>
- * Requires an URL with type postfix {@code "|Oracle8"}.
+ * Requires a URL with type postfix {@code "|Oracle8"}.
  *
  * @author harald
  */
@@ -88,7 +88,7 @@ public class Oracle8 extends AbstractSql2003Backend {
   private static final DateTimeFormatter TIME_FORMAT      = DateTimeFormatter.ofPattern(JAVA_TIME_FORMAT);
   private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern(JAVA_TIMESTAMP_FORMAT);
 
-  // oracle empty string (special because oracle treats "" as NULL)
+  // Oracle empty string (special because Oracle treats it as NULL)
   private static final String ORACLE_EMPTY_STRING = " ";   // one blank
 
   // maximum length for identifiers, names, etc...
@@ -191,7 +191,7 @@ public class Oracle8 extends AbstractSql2003Backend {
     if (password != null) {
       props.put("password", createPassword(password));
     }
-    props.put("remarksReporting","true");   // for migator
+    props.put("remarksReporting","true");   // for migrator
 
     // DriverManager.getConnection() doesn't work in most containers,
     // unless the class is preloaded within the application's classloader.

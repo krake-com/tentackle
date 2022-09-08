@@ -68,7 +68,7 @@ public interface SecurityDialogFactory {
 
   /**
    * Selects a grantee.<br>
-   * This is usually a search dialog for users and/or usergroups.
+   * This is usually a search dialog for users and/or user-groups.
    *
    * @param owner the owner window
    * @param context the domain context

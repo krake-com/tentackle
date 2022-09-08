@@ -96,7 +96,7 @@ public class ClientUpdateUtilities {
   /**
    * Checks whether the application is running in an updatable jlink directory.
    *
-   * @return true if current workling directory contains an updatable jlink image
+   * @return true if current working directory contains an updatable jlink image
    */
   public boolean isUpdateableJlinkApplication() {
     return isUpdatableJlinkDirectory(new File("."));
@@ -219,14 +219,14 @@ public class ClientUpdateUtilities {
 
 
   /**
-   * Downloads the zipfile.
+   * Downloads the zip-file.
    *
    * @param updateInfo the update info
    * @param updateDir the directory to create for the update process
    * @param progressConsumer the consumer receiving the progress from 0.0 to 1.0, null if none
    * @return the downloaded ZIP file in the created update directory
    */
-  public File dowloadZip(UpdateInfo updateInfo, File updateDir, Consumer<Double> progressConsumer) {
+  public File downloadZip(UpdateInfo updateInfo, File updateDir, Consumer<Double> progressConsumer) {
     try {
       // create or re-create update directory (must be empty!)
       if (!updateDir.mkdir()) {

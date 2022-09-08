@@ -39,7 +39,7 @@ public class ColumnMigrator {
   private final Entity entity;                // the entity to migrate
   private final Attribute attribute;          // the model's attribute
   private final Backend backend;              // the backend
-  private final ColumnMetaData[] columns;     // the database's column (more than one if multicolumn attribute)
+  private final ColumnMetaData[] columns;     // the database's column (more than one if multi-column attribute)
 
 
 

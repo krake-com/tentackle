@@ -30,9 +30,9 @@ package org.tentackle.sql.metadata;
 public class OracleColumnMetaData extends ColumnMetaData {
 
   /**
-   * Creates column meta data.
+   * Creates column metadata.
    *
-   * @param tableMetaData the table meta data this column belongs to
+   * @param tableMetaData the table metadata this column belongs to
    */
   public OracleColumnMetaData(TableMetaData tableMetaData) {
     super(tableMetaData);

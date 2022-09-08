@@ -16,12 +16,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.common;
 
 /**
- * Some handy static methods to compare two Comparables even if
- * one or both are null-pointers.
+ * Some handy static null-safe methods to compare two {@link Comparable}s.
  *
  * @author harald
  */

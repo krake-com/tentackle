@@ -36,7 +36,7 @@ public class DefaultSessionTaskDispatcher extends DefaultTaskDispatcher implemen
 
   private boolean sessionClosedOnTermination;   // true if session should be closed
   private boolean sessionKeptAlive;             // true if ping to keep session alive periodically
-  private Session session;                      // the sessipn this thread is attached to
+  private Session session;                      // the session this thread is attached to
 
 
   /**
@@ -92,7 +92,7 @@ public class DefaultSessionTaskDispatcher extends DefaultTaskDispatcher implemen
       session.makeCurrent();
     }
     else {
-      // no change allowed from another thread unless the tracker wasnt started already
+      // no change allowed from another thread unless the tracker wasn't started already
       assertNotAlive();
     }
     this.session = session;

@@ -106,7 +106,7 @@ public class JSR223Language extends AbstractScriptingLanguage {
    * Determines whether the execution of scripts is threadsafe.
    *
    * @param engineFactory the factory
-   * @return true if threadsafe, false if need synchronization
+   * @return true if threadsafe, false if synchronization is required
    */
   protected boolean isEngineThreadSafe(ScriptEngineFactory engineFactory) {
     if (engineFactory.getEngineName().contains(JRUBY_ENGINE_NAME_PART)) {

@@ -32,7 +32,7 @@ import java.util.StringTokenizer;
 public class ModelDefaults {
 
   /**
-   * The default tracktype.
+   * The default track type.
    */
   private TrackType trackType;
 
@@ -226,7 +226,7 @@ public class ModelDefaults {
   }
 
   /**
-   * Gets the tracktype default.
+   * Gets the trac type default.
    *
    * @return the track type
    */

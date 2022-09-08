@@ -28,7 +28,7 @@ import org.tentackle.fx.component.FxTreeTableView;
  * Configures a TreeTableView.
  *
  * @author harald
- * @param <T> the treetableview type
+ * @param <T> the treetable view type
  */
 @ConfiguratorService(TreeTableView.class)
 public class TreeTableViewConfigurator<T extends TreeTableView<?>> extends ComponentConfigurator<T> {

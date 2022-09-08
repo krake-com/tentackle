@@ -38,7 +38,7 @@ import java.util.TreeMap;
 public class ModelMetaData {
 
   private final Backend backend;                      // the backend
-  private final DatabaseMetaData[] metaData;          // the connection's meta data
+  private final DatabaseMetaData[] metaData;          // the connection's metadata
   private final Map<String, TableMetaData> tableMap;  // the tables of the model <modelname : metadata>
   private final String[] schemas;                     // optional schemas
   private final Properties properties;                // migration properties
@@ -151,7 +151,7 @@ public class ModelMetaData {
   }
 
   /**
-   * Gets the JDBC-connection's meta data.<br>
+   * Gets the JDBC-connection's metadata.<br>
    * May be more than one if different schemas and schema-option was given in {@link BackendInfo}.
    *
    * @return the meta data

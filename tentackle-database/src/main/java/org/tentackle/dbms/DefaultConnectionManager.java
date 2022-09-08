@@ -730,11 +730,11 @@ public class DefaultConnectionManager implements ConnectionManager {
         for (ManagedConnection con : connections) {
           if (con != null && con.isAttached() && (curTime - con.getAttachedSince()) > attachTimeout) {
             Db db = con.getSession();
-            if (db != null) {   // still unsyncd..
-              synchronized (mgr) {    // attach/detach is syncd on me
+            if (db != null) {   // still un-synchronized
+              synchronized (mgr) {    // attach/detach is synchronized on me
                 long attachedMillis = curTime - con.getAttachedSince();
                 if (db.getConnection() == con && con.isAttached() &&
-                    attachedMillis > attachTimeout) {   // double check within syncd block
+                    attachedMillis > attachTimeout) {   // double check within synchronized block
                   // timed out
                   try {
                     LOGGER.warning("detaching timed out connection " + con + " from " + db.getName() +

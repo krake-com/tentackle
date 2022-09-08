@@ -64,7 +64,7 @@ public class FxControllerServiceAnnotationProcessor extends AbstractServiceAnnot
     FxControllerService fxControllerService = element.getAnnotation(FxControllerService.class);
     if (!FxControllerService.FXML_NONE.equals(fxControllerService.url()) ||
         FxControllerService.RESOURCES_NONE.equals(fxControllerService.resources())) {
-      // loaded by FXML or instantiated without resourcebundle
+      // loaded by FXML or instantiated without resource bundle
       if (!verifyConstructor(element, noArgsVisitor)) {
         processingEnv.getMessager().printMessage(
             Diagnostic.Kind.ERROR,
@@ -72,7 +72,7 @@ public class FxControllerServiceAnnotationProcessor extends AbstractServiceAnnot
       }
     }
     else {
-      // programmatically instantiated with resourcebundle
+      // programmatically instantiated with resource bundle
       if (!verifyConstructor(element, resourceBundleVisitor)) {
         processingEnv.getMessager().printMessage(
             Diagnostic.Kind.ERROR,

@@ -30,7 +30,7 @@ import java.lang.annotation.Target;
 /**
  * Annotation to mark an annotation to be processed during the analyze-phase.
  * <p>
- * These are usually annotations like @RemoteMethod that gather informations
+ * These are usually annotations like @RemoteMethod that gather information
  * for subsequent wurblet invocations or services like @{@link Service}
  * to be configured for the ServiceLoader.
  */

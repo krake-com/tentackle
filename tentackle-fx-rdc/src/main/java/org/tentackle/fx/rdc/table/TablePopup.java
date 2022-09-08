@@ -48,7 +48,7 @@ import java.util.Objects;
  * Table popup.<br>
  * Provides a context menu with several handy features such as export to excel,
  * save and load table settings, etc...<br>
- * The popup can be used for tables and treetables.
+ * The popup can be used for tables and tree tables.
  *
  * @author harald
  * @param <S> the table element type
@@ -58,7 +58,7 @@ public class TablePopup<S> {
   /*
    * TableView and TreeTableView don't inherit from each other and thus
    * each spawn their own related types such as TableColum, TreeTableColumn, etc...
-   * As a result, since TablePopup applies to both tables and treetables,
+   * As a result, since TablePopup applies to both tables and tree tables,
    * a lot of semantically identical code is necessary.
    * However, it is not really duplicate code. There's not much we can do to reduce it.
    */

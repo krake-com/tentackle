@@ -51,7 +51,7 @@ interface BundleFactoryHolder {
  * are loaded from <em>installed</em> extensions only. This requires either a copy the tentackle-jars in
  * the extensions directory of the JRE installation (which is a bad habit in general, because it applies to all applications)
  * or to set the runtime option -Djava.ext.dirs=... to a directory path containing the jars.
- * The latter may be a workaround for applications started from the shell, but is not feasable for webstart
+ * The latter may be a workaround for applications started from the shell, but is not feasible for webstart
  * applications or applications running within a container.<br>
  * Tentackle's bundle factory uses the same interface {@link java.util.spi.ResourceBundleControlProvider} and semantics
  * to lookup and install providers as the standard JRE, but scans the application classpath instead

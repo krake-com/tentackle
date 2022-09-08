@@ -483,7 +483,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
    *
    * @param db the Db connection
    * @param id the object id to test whether it is referenced by any other objects
-   * @param foreignReferences the foreign rereferences
+   * @param foreignReferences the foreign references
    * @return true if referenced
    */
   protected boolean isReferencedImpl(Db db, long id, Set<ForeignReference> foreignReferences) {

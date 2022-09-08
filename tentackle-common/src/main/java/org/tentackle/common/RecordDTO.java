@@ -27,7 +27,7 @@ import java.lang.annotation.Target;
 /**
  * Annotation for records that must be analyzed for code generation.
  * <p>
- * The analyze handler's result is picked up by the <code>DTO</code> wurblet.
+ * The analyze-handler's result is picked up by the <code>DTO</code> wurblet.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

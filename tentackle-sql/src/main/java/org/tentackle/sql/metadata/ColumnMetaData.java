@@ -48,7 +48,7 @@ public class ColumnMetaData {
   /**
    * Creates column meta data.
    *
-   * @param tableMetaData the table meta data this column belongs to
+   * @param tableMetaData the table metadata this column belongs to
    */
   public ColumnMetaData(TableMetaData tableMetaData) {
     this.tableMetaData = tableMetaData;
@@ -56,7 +56,7 @@ public class ColumnMetaData {
 
 
   /**
-   * Gets the table meta data.
+   * Gets the table metadata.
    *
    * @return the table this column belongs to
    */
@@ -66,7 +66,7 @@ public class ColumnMetaData {
 
 
   /**
-   * Sets up the column from the database meta data result.
+   * Sets up the column from the database metadata result.
    *
    * @param resultSet the column result set
    * @throws SQLException the processing the result set failed
@@ -248,7 +248,7 @@ public class ColumnMetaData {
   }
 
   /**
-   * Validates and postprocesses the column data.
+   * Validates and post-processes the column data.
    */
   public void validate() {
     if (StringHelper.isAllWhitespace(comment)) {

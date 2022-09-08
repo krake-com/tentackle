@@ -52,7 +52,7 @@ public interface ValidatorCompoundValueFactory {
   CompoundValue createValueParameter(String value, Class<?> clazz);
 
   /**
-   * Creates the compound value for the confition parameter.
+   * Creates the compound value for the condition parameter.
    *
    * @param condition the condition text from the annotation
    * @return the created compound value

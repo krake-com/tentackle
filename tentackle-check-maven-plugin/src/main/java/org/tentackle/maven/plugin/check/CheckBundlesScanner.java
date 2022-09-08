@@ -105,7 +105,7 @@ public class CheckBundlesScanner extends TreePathScanner<Object, Trees> {
    * Extracts the bundle key from a string expression.
    *
    * @param stringExpr the expression getString(...)
-   * @return the bundle key string, null if could not be determined
+   * @return the bundle key string, null if it could not be determined
    */
   private String determineBundleKey(ExpressionTree stringExpr) {
     String key = null;

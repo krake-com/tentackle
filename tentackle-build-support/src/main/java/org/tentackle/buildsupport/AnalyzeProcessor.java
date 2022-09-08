@@ -49,7 +49,7 @@ import java.util.Set;
 public class AnalyzeProcessor extends AbstractTentackleProcessor {
 
   /**
-   * Logfile for compilation errors during the analyze phase.<br>
+   * Logfile for compilation errors during the analyze-phase.<br>
    * The logfile is missing, if no errors where detected. Otherwise, analyze info files
    * may be incomplete or missing.
    */

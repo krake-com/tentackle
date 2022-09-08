@@ -79,7 +79,7 @@ public enum WurbletArgumentType {
   /**
    * Returns whether a {@link org.tentackle.model.Relation} path is required.
    *
-   * @return true if must be given, false if not allowed or optional
+   * @return true if required, false if not allowed or optional
    */
   public boolean isPathRequired() {
     return pathRequired;
@@ -106,7 +106,7 @@ public enum WurbletArgumentType {
   /**
    * Returns whether an {@link org.tentackle.model.Attribute} is required.
    *
-   * @return true if must be given, false if none or optional
+   * @return true if required, false if none or optional
    */
   public boolean isAttributeRequired() {
     return attributeRequired;

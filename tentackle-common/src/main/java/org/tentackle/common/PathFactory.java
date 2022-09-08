@@ -118,7 +118,7 @@ public interface PathFactory<P extends Path<P,E>, E> {
               contPaths.addAll(path.getPaths());
             }
             else {
-              // create new continution path
+              // create new continuation path
               contPaths.add(PathFactory.this.create(pathElements, path.getPaths()));
             }
           }
@@ -129,7 +129,7 @@ public interface PathFactory<P extends Path<P,E>, E> {
 
         P leadPath;
         if (contPaths.size() == 1) {
-          // re-combine lead with contination path
+          // re-combine lead with continuation path
           leadPath = create(elements, contPaths.get(0));
         }
         else {

@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.fx.bind;
 
 import org.tentackle.bind.AbstractBinding;
@@ -40,7 +39,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Common implemenation of a binding.
+ * Implementation of a binding for FX components.
  *
  * @author harald
  */
@@ -59,13 +58,13 @@ public class DefaultFxComponentBinding extends AbstractBinding implements FxComp
    * @param binder the binder managing this binding
    * @param component the GUI-component to bind
    * @param componentOptions options to configure the component.<br>
-   *        Currently defined are:
+   *        Defined are:
    *        <ul>
    *          <li>UC: convert to uppercase</li>
    *          <li>LC: convert to lowercase</li>
    *          <li>COLS=n: width in columns</li>
    *          <li>MAXCOLS=n: limit input to max. columns</li>
-   *          <li>LINES=n: number of lines in textareas</li>
+   *          <li>LINES=n: number of lines in text areas</li>
    *          <li>[-]AUTOSELECT: turn autoselect on/off</li>
    *          <li>UTC: utc timestamps</li>
    *          <li>SCALE=n: numeric scale</li>

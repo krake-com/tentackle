@@ -79,13 +79,13 @@ import java.util.List;
  * Logging for object modifications.<br>
  *
  * Modifications of PDOs can be logged to a so-called modification log.<br>
- * Such modlogs can be used for asynchroneous database coupling, higher level replication, etc...
+ * Such modlogs can be used for asynchronous database coupling, higher level replication, etc...
  * <p>
  * Note: the txId is only valid (&gt; 0) if the session has {@link Db#isLogModificationTxEnabled},
  * i.e. begin and commit transaction events are logged as well. If the {@link IdSource} of the modlog is
  * transaction-based, transactions will not overlap in the table because obtaining
- * the id for the modlog is part of the transaction. However, if the idsource is
- * remote (poolkeeper rmi-client, for example), transactions may overlap!
+ * the id for the modlog is part of the transaction. However, if the idSource is
+ * remote, transactions may overlap!
  * In such cases the txid is necessary to separate the modlog sequences into
  * discrete transactions. (see the PoolKeeper project)
  */
@@ -686,7 +686,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     else  {
       if (isLogOfTransaction()) {
         if (db.isLogModificationDeferred()) {
-          newId();                    // obtain an Id to trigger BEGIN only once
+          newId();                    // obtain an ID to trigger BEGIN only once
           setSerial(getSerial() + 1); // increment serial as if it has been saved
         }
         else {
@@ -705,7 +705,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    * Gets the message parameters.
    *
    * @return the parameters, never null
-   * @throws ParseException if paramaters are malformed
+   * @throws ParseException if parameters are malformed
    */
   public ParameterString getMessageParameters() throws ParseException {
     if (messageParameters == null) {
@@ -720,7 +720,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    * <p>
    * Updates the message field as well.
    *
-   * @param messageParameters the message paramaters
+   * @param messageParameters the message parameters
    */
   public void setMessageParameters(ParameterString messageParameters) {
     this.messageParameters = messageParameters;
@@ -1968,7 +1968,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
         throw new PersistenceException(modlog, "illegal modType " + modlog.getModType() + " for replay");
       }
 
-      // perform any post processing
+      // perform any post-processing
       replayFinishModification(modlog, object);
     }
     finally {
@@ -2024,7 +2024,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     try {
       // set the modlog's serial (usually 1), in case multiple updates follow
       object.setModificationLog(modlog);
-      long oldSerial = object.getSerial();    // keep old serial because of Canonilizer
+      long oldSerial = object.getSerial();    // keep old serial because of Canonicalizer
       object.setSerial(modlog.getSerial());
       object.insertPlain();
       object.setSerial(oldSerial);
@@ -2047,7 +2047,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       object.setModificationLog(modlog);
       if (object.getSerial() > modlog.getSerial()) {
         // update only the serial
-        long oldSerial = object.getSerial();    // keep old serial because of Canonilizer
+        long oldSerial = object.getSerial();    // keep old serial because of Canonicalizer
         object.setSerial(modlog.getSerial() - 1);
         object.updateSerial();
         object.setSerial(oldSerial);
@@ -2081,7 +2081,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     try {
       object.setModificationLog(modlog);
       // set the modlog's serial, in case insert and further updates follow
-      long oldSerial = object.getSerial();    // keep old serial because of Canonilizer
+      long oldSerial = object.getSerial();    // keep old serial because of Canonicalizer
       object.setSerial(modlog.getSerial());
       object.deletePlain();
       object.setSerial(oldSerial);
@@ -2129,16 +2129,16 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    * The method is not static to allow overriding (e.g. to extend with more transaction types).
    * <p>
    * There may be several consecutive invocations within the same transaction.
-   * This allows some feedback during long running large modlog-lists.
+   * This allows some feedback during long-running large modlog-lists.
    *
-   * @param state the state of the preceeding invocation, never null
+   * @param state the state of the preceding invocation, never null
    * @param modList the list of log objects from the source db
    * @param copyLog true to copy the logs as well
    * @param toDb the db the logs will be applied to
    *
    * @return the replay state, never null
    *
-   * @throws PersistenceException if replay failed and transacation rolled back
+   * @throws PersistenceException if replay failed and transaction rolled back
    */
   public ReplayState replay(ReplayState state, List<? extends ModificationLog> modList, boolean copyLog, Db toDb) {
 
@@ -2167,7 +2167,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
           Session oldSession = log.getSession();
           log.setSession(toDb);
           log.setId(0);
-          log.newId();                 // force to get a new Id for toDb!
+          log.newId();                 // force to get a new ID for toDb!
           if (state.pendingTxId != 0) {
             log.setTxId(state.pendingTxId);  // set the txId if a BEGIN was found
           }

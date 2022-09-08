@@ -67,7 +67,7 @@ public class DefaultServerSocketConfigurator extends SocketConfiguratorBase impl
   /**
    * Gets SO_RCVBUF.
    *
-   * @return null if do not configure
+   * @return null to leave unchanged
    */
   public Integer getReceiveBufferSize() {
     return receiveBufferSize;
@@ -76,7 +76,7 @@ public class DefaultServerSocketConfigurator extends SocketConfiguratorBase impl
   /**
    * Sets SO_RCVBUF.
    *
-   * @param receiveBufferSize null if do not configure
+   * @param receiveBufferSize null to leave unchanged
    */
   public void setReceiveBufferSize(Integer receiveBufferSize) {
     this.receiveBufferSize = receiveBufferSize;

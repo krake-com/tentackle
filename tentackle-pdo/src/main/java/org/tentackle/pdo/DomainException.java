@@ -56,12 +56,12 @@ public class DomainException extends TentackleRuntimeException {
   }
 
 
-  private transient Session session;        // the db connection this exception belongs to
-  private Identifiable identifiable;        // the db object this execption belongs to
+  private transient Session session;        // the session this exception belongs to
+  private Identifiable identifiable;        // the db object this exception belongs to
 
 
   /**
-   * Constructs a new domain runtime exception for a given db connection
+   * Constructs a new domain runtime exception for a given session
    * with <code>null</code> as its detail message.
    * The cause is not initialized, and may subsequently be
    * initialized by a call to {@link #initCause}.
@@ -75,7 +75,7 @@ public class DomainException extends TentackleRuntimeException {
 
 
   /**
-   * Constructs a new domain runtime exception for a given db connection with the specified detail message.
+   * Constructs a new domain runtime exception for a given session with the specified detail message.
    * The cause is not initialized, and may subsequently be initialized by a
    * call to {@link #initCause}.
    *
@@ -89,7 +89,7 @@ public class DomainException extends TentackleRuntimeException {
   }
 
   /**
-   * Constructs a new domain runtime exception for a given db connection with the specified detail message and
+   * Constructs a new domain runtime exception for a given session with the specified detail message and
    * cause.  <p>Note that the detail message associated with
    * <code>cause</code> is <i>not</i> automatically incorporated in
    * this runtime exception's detail message.
@@ -108,7 +108,7 @@ public class DomainException extends TentackleRuntimeException {
   }
 
   /**
-   * Constructs a new domain runtime exception for a given db connection with the specified cause and a
+   * Constructs a new domain runtime exception for a given session with the specified cause and a
    * detail message of <code>(cause==null ? null : cause.toString())</code>
    * (which typically contains the class and detail message of
    * <code>cause</code>).  This constructor is useful for runtime exceptions
@@ -137,12 +137,12 @@ public class DomainException extends TentackleRuntimeException {
    */
   public DomainException(Identifiable identifiable) {
     super();
-    setsetIdentifiable(identifiable);
+    setIdentifiable(identifiable);
   }
 
 
   /**
-   * Constructs a new domain runtime exception for a given db connection with the specified detail message.
+   * Constructs a new domain runtime exception for a given session with the specified detail message.
    * The cause is not initialized, and may subsequently be initialized by a
    * call to {@link #initCause}.
    *
@@ -152,11 +152,11 @@ public class DomainException extends TentackleRuntimeException {
    */
   public DomainException(Identifiable object, String message) {
     super(message);
-    setsetIdentifiable(object);
+    setIdentifiable(object);
   }
 
   /**
-   * Constructs a new domain runtime exception for a given db connection with the specified detail message and
+   * Constructs a new domain runtime exception for a given session with the specified detail message and
    * cause.  <p>Note that the detail message associated with
    * <code>cause</code> is <i>not</i> automatically incorporated in
    * this runtime exception's detail message.
@@ -171,11 +171,11 @@ public class DomainException extends TentackleRuntimeException {
    */
   public DomainException(Identifiable object, String message, Throwable cause) {
     super(message, cause);
-    setsetIdentifiable(object);
+    setIdentifiable(object);
   }
 
   /**
-   * Constructs a new domain runtime exception for a given db connection with the specified cause and a
+   * Constructs a new domain runtime exception for a given session with the specified cause and a
    * detail message of <code>(cause==null ? null : cause.toString())</code>
    * (which typically contains the class and detail message of
    * <code>cause</code>).  This constructor is useful for runtime exceptions
@@ -189,13 +189,13 @@ public class DomainException extends TentackleRuntimeException {
    */
   public DomainException(Identifiable object, Throwable cause) {
     super(cause);
-    setsetIdentifiable(object);
+    setIdentifiable(object);
   }
 
 
 
   /**
-   * Constructs a new domain runtime exception without a db connection and
+   * Constructs a new domain runtime exception without a session and
    * with <code>null</code> as its detail message.
    * The cause is not initialized, and may subsequently be
    * initialized by a call to {@link #initCause}.
@@ -206,7 +206,7 @@ public class DomainException extends TentackleRuntimeException {
 
 
   /**
-   * Constructs a new domain runtime exception without a db connection with the specified detail message.
+   * Constructs a new domain runtime exception without a session with the specified detail message.
    * The cause is not initialized, and may subsequently be initialized by a
    * call to {@link #initCause}.
    *
@@ -218,7 +218,7 @@ public class DomainException extends TentackleRuntimeException {
   }
 
   /**
-   * Constructs a new domain runtime exception without a db connection with the specified detail message and
+   * Constructs a new domain runtime exception without a session with the specified detail message and
    * cause.  <p>Note that the detail message associated with
    * <code>cause</code> is <i>not</i> automatically incorporated in
    * this runtime exception's detail message.
@@ -235,7 +235,7 @@ public class DomainException extends TentackleRuntimeException {
   }
 
   /**
-   * Constructs a new domain runtime exception without a db connection with the specified cause and a
+   * Constructs a new domain runtime exception without a session with the specified cause and a
    * detail message of <code>(cause==null ? null : cause.toString())</code>
    * (which typically contains the class and detail message of
    * <code>cause</code>).  This constructor is useful for runtime exceptions
@@ -251,8 +251,6 @@ public class DomainException extends TentackleRuntimeException {
   }
 
 
-
-
   /**
    * Gets the session.
    *
@@ -264,9 +262,9 @@ public class DomainException extends TentackleRuntimeException {
 
 
   /**
-   * Gets the persistent object.
+   * Gets the identifiable object.
    *
-   * @return the object, null if exception is not related to an object
+   * @return the object, null if exception is not related to an identifiable
    */
   public Identifiable getIdentifiable() {
     return identifiable;
@@ -277,8 +275,7 @@ public class DomainException extends TentackleRuntimeException {
    * {@inheritDoc}
    * <p>
    * This the classname plus optional message plus the
-   * optional object with the optional db connection
-   * in brackets.
+   * optional object with the optional session in brackets.
    * <p>
    * Example:
    * <pre>
@@ -307,24 +304,25 @@ public class DomainException extends TentackleRuntimeException {
 
 
   /**
-   * Updates the pdo if not set so far.<br>
+   * Updates the identifiable if not set so far.<br>
    * Used to add more info for exceptions thrown in a context where
-   * the pdo isn't known.
+   * the identifiable isn't known.
    *
-   * @param object the persistent object
+   * @param object the identifiable object
    */
   public void updateDbObject(Identifiable object) {
     if (this.identifiable == null) {
-      setsetIdentifiable(object);
+      setIdentifiable(object);
     }
   }
 
 
   /**
-   * Sets the pdo.
-   * @param object the persistent object
+   * Sets the identifiable.
+   *
+   * @param object the identifiable object
    */
-  protected void setsetIdentifiable(Identifiable object) {
+  protected void setIdentifiable(Identifiable object) {
     this.identifiable = object;
     if (object instanceof PersistentObject<?>) {
       setSession(((PersistentObject<?>) object).getSession());
@@ -333,7 +331,7 @@ public class DomainException extends TentackleRuntimeException {
 
 
   /**
-   * Sets the db.<br>
+   * Sets the session.
    *
    * @param session the session
    */

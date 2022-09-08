@@ -64,9 +64,9 @@ public interface DataNode {
   String getComment();
 
   /**
-   * Gets the optional subnodes of this node.
+   * Gets the optional sub nodes of this node.
    *
-   * @return the nodes, null if this node has no subnodes
+   * @return the nodes, null if this node has no sub nodes
    */
   List<? extends DataNode> getNodes();
 

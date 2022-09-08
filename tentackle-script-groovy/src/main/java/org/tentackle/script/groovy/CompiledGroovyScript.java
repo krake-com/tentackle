@@ -38,8 +38,8 @@ public class CompiledGroovyScript {
   private final String code;                            // the effective source code
   private final Class<Script> scriptClass;              // the compiled script
 
-  private Constructor<Script> bindingConstructor;       // != null if use new Script(Binding)
-  private Constructor<Script> defaultConstructor;       // else use new Script() + setBinding(Binding)
+  private Constructor<Script> bindingConstructor;       // != null to use "new Script(Binding)"
+  private Constructor<Script> defaultConstructor;       // else use "new Script()" and "setBinding(Binding)"
 
 
   /**

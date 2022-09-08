@@ -56,7 +56,7 @@ public @interface PdoTableContextMenuItemService {
    * 0 comes first.
    * <p>
    * If the same ordinal is defined more than once, the menu item closest
-   * in the the PDO-inheritance tree will override all others.
+   * in the PDO inheritance tree will override all others.
    *
    * @return the ordinal
    */

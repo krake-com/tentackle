@@ -106,7 +106,7 @@ public class TableNameAnalyzeHandler extends AbstractAnalyzeHandler {
           print(Diagnostic.Kind.ERROR, "no value method in @" + StringHelper.lastAfter(annotationType.getClass().getName(), '.'), element);
         }
         else {
-          // notice: tablename is a string enclosed in doublequotes!
+          // notice: tablename is a string enclosed in double quotes!
 
           if (mapSchema) {
             tableName = tableName.replace('.', '_');

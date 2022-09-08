@@ -31,7 +31,7 @@ import java.io.Serializable;
 /**
  * A {@code AbstractDbOperation} provides methods that are not part of {@link AbstractDbObject}s
  * and is associated to a {@link Db}-session. Complex transactions are usually
- * {@code AbstractDbOperation}s. {@code AbstractDbOperation}s are remoting capabable.
+ * {@code AbstractDbOperation}s. {@code AbstractDbOperation}s are remoting capable.
  *
  * @param <P> the operation class type
  * @author harald
@@ -67,7 +67,7 @@ public abstract class AbstractDbOperation<P extends AbstractDbOperation<P>>
 
 
   /**
-   * Gets the some attributes and variables common to all objects of the same class.
+   * Gets attributes and variables common to all objects of the same class.
    * Class variables for classes derived from {@link AbstractDbOperation} are kept in an
    * instance of {@link DbOperationClassVariables}.
    *

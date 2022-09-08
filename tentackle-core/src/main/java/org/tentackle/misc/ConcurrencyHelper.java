@@ -60,7 +60,7 @@ public class ConcurrencyHelper {
       FutureTask<Void> task = new FutureTask<>(command, null);
       executor.execute(task);
       try {
-        task.get();   // this will block until excecution has finished
+        task.get();   // this will block until execution has finished
       }
       catch (InterruptedException ix) {
         throw new InterruptedRuntimeException(ix);

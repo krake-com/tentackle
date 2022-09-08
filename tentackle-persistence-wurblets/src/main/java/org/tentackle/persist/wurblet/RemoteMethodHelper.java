@@ -19,11 +19,12 @@
 
 package org.tentackle.persist.wurblet;
 
-import java.util.ArrayList;
-import java.util.List;
-import javax.lang.model.element.Modifier;
 import org.tentackle.buildsupport.RemoteMethodInfo;
 import org.tentackle.buildsupport.RemoteMethodInfoParameter;
+
+import javax.lang.model.element.Modifier;
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -33,14 +34,14 @@ import org.tentackle.buildsupport.RemoteMethodInfoParameter;
  */
 public class RemoteMethodHelper {
 
-  private final RemoteMethodInfo info;              // the analyze info
+  private final RemoteMethodInfo info;              // the analyze-info
   private final RemoteMethodInfoParameter[] params; // parameters
   private final boolean staticMethod;               // true if method is static
   private final boolean returningVoid;              // true if method returns void
   private final String pdoClassName;                // the PDO classname, null if not a PDO
-  private final boolean returningObject;            // truf if method returns a [App]DbObject
+  private final boolean returningObject;            // true if method returns a PDO
   private final boolean returningCollection;        // true if method returns a list of PDOs
-  private final boolean returningCursor;            // true if method returns a DbCursor
+  private final boolean returningCursor;            // true if method returns a cursor
 
 
   /**
@@ -119,14 +120,14 @@ public class RemoteMethodHelper {
   }
 
   /**
-   * @return true if method is returning a list of db-bjects
+   * @return true if method is returning a list of objects.
    */
   public boolean isReturningCollection() {
     return returningCollection;
   }
 
   /**
-   * @return true if method is returning a DbCursor
+   * @return true if method is returning a cursor
    */
   public boolean isReturningCursor() {
     return returningCursor;

@@ -66,8 +66,8 @@ public interface FxController {
 
   /**
    * Validate @FXML-annotated fields.<br>
-   * The fxml-loader does not throw an exception if an fx:id does not correspond
-   * to a field annotated with @FXML. This methods verifies that all such fields
+   * The fxml-loader does not throw an exception if a fx:id does not correspond
+   * to a field annotated with @FXML. This method verifies that all such fields
    * provide a non-null value.
    */
   void validateInjections();

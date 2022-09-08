@@ -62,7 +62,7 @@ import java.util.StringTokenizer;
  *  By default, the created registry uses the system-default socket factories.
  *  However, it may be forced to use another one, for example ssl.
  *  If set, the connection and session object will use the same factories as the registry.
- *  All other delegates will be created using the factories given by socketfactory=.. or the systen default.
+ *  All other delegates will be created using the factories given by socketfactory=.. or the system default.
  * </li>
  *
  * <li>
@@ -403,7 +403,7 @@ public class RmiServer {
       checkPort(port);
     }
 
-    // verify port agains fixed ports for sure
+    // verify port against fixed ports for sure
     port = getPort(port, factoryType);
 
     if (loginFactoryType == null || loginFactoryType == factoryType) {

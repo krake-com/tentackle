@@ -53,14 +53,14 @@ import java.lang.annotation.Target;
            prefix=&#47;**&#47;""&#47;**&#47;)       // @wurblet &lt; Inject --string $tablePrefix
   </pre>
  *
- * Means: all schemas get "pls" prepended (for example: td.message becomes plstd.message).
+ * Means: all schemas get "pls" prepended (for example: "td.message" becomes "plstd.message").
  * Non-schema tables from the TT-framework (technical tables) remain in the default schema.
  * This configuration is particularly useful for databases like Oracle that
  * emulate schemas via extra users. As a result, the main user "pls" remains unchanged,
- * transaction data goes to the "schema-user" plstd while the masterdata go to plsmd.
+ * transaction data goes to the "schema-user" plstd while the master data go to plsmd.
  * The model, however, remains unchanged! It's just a configuration in pom.xml.<p>
  * With mapSchema=true and prefix="" all tables go to the default schema, while
- * masterdata tables start with md_ and transactiondata with td_.
+ * master data tables start with md_ and transaction data with td_.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -79,7 +79,7 @@ public @interface TableName {
    * Determines whether schemas are allowed or mapped to simple table names.<br>
    * If true, tablenames like "md.blah" are mapped to "md_blah".
    * This is especially useful for databases that don't support schemas
-   * or provide only quirky workarounds (Oracke, MySQL, for example).
+   * or provide only quirky workarounds (Oracle, MySQL, for example).
    *
    * @return true if map to non-schema name
    */

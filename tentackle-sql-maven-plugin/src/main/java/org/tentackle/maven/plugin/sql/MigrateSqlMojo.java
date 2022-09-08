@@ -510,7 +510,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       Map<String,String> pendingMigrations = new HashMap<>();    // pending migrations <tablename:sql>
 
       StringBuilder warningSql = new StringBuilder();       // collected optional migrations as warnings
-      StringBuilder foreignKeySql = new StringBuilder();    // collected foreignkey migration code
+      StringBuilder foreignKeySql = new StringBuilder();    // collected foreign key migration code
       String[] fileNames = new FileSetManager(getLog(), verbosityLevel.isDebug()).getIncludedFiles(fileSet);
 
       if (fileNames.length > 0) {
@@ -519,7 +519,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
           // check if file exists
           File modelFile = new File(modelDirName, filename);
           if (!modelFile.exists()) {
-            getLog().error("no such modelfile: " + filename);
+            getLog().error("no such model file: " + filename);
             errorCount++;
           }
           else  {
@@ -728,7 +728,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       }
 
       // process any still pending migration just one after the other.
-      // obviously the dependencies are misordered, incomplete or whatever
+      // obviously the dependencies are disordered, incomplete or whatever
       StringBuilder depErrors = new StringBuilder();
       for (Map.Entry<String,String> entry: pendingMigrations.entrySet()) {
         String pendingTablename = entry.getKey();
@@ -776,7 +776,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   }
 
   /**
-   * Applies the rename table hints to determine the renamed tables.
+   * Applies the "rename" table hints to determine the renamed tables.
    *
    * @param hints the migration hints
    * @return the map of tablenames (without schema) mapped to their old names

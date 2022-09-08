@@ -43,7 +43,7 @@ public interface ServerSocketConfiguratorHolder {
   void setSocketConfigurator(ServerSocketConfigurator socketConfigurator);
 
   /**
-   * Creates an unconfigured server socket on the specified port (port 0
+   * Creates an un-configured server socket on the specified port (port 0
    * indicates an anonymous port).
    *
    * @param port the port number

@@ -264,7 +264,7 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
   /**
    * Gets the message parameter.
    *
-   * @return the message parameter, null if annotiation's message text is empty
+   * @return the message parameter, null if the annotation's message text is empty
    * @see #getMessage()
    */
   protected CompoundValue getMessageParameter() {

@@ -42,13 +42,13 @@ import java.util.Optional;
  * <ol>
  *   <li>for the model's attributes that refer to known types</li>
  *   <li>for the wurblets to generate type-specific code</li>
- *   <li>for application-specific types used at runtime by the peristence layer</li>
+ *   <li>for application-specific types used at runtime by the persistence layer</li>
  * </ol>
  * Notes for implementors of application-specific data types:<br>
- * The method {@link #isPredefined()} must return false. Otherwise the wurblets assume that type-specific methods exist
+ * The method {@link #isPredefined()} must return false. Otherwise, the wurblets assume that type-specific methods exist
  * and generate uncompilable code.<br>
  * Furthermore, since <code>DataType</code>s refer to the corresponding Java type,
- * they should reside in a separate module the java type's module does not depend on. Otherwise
+ * they should reside in a separate module the java type's module does not depend on. Otherwise,
  * all application modules would refer to the tentackle-sql module, which is not desired for the PDO module(s).
  * <p>
  * Finally, the <code>DataType</code>'s module must be made known to the following maven plugins:
@@ -276,7 +276,7 @@ public interface DataType<T> {
 
 
   /**
-   * For certain numeric types, downcasts are necessary when assigning literals.
+   * For certain numeric types, a downcast is necessary when assigning literals.
    *
    * @return true if downcast is necessary
    */

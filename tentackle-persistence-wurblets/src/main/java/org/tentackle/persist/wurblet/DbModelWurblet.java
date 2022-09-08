@@ -694,7 +694,7 @@ public class DbModelWurblet extends ModelWurblet {
       }
       List<JoinPath> subPaths = path.getPaths();
       if (!subPaths.isEmpty()) {
-        // all subpaths start with the same entity
+        // all sub paths start with the same entity
         Entity subEntity = subPaths.get(0).getElements().get(0).getRelation().getEntity();
         createJoinsImpl(buf, inset + "  ", subPaths, subEntity.getName(), lastJoinName);
       }
@@ -736,7 +736,7 @@ public class DbModelWurblet extends ModelWurblet {
 
   /**
    * Creates the java code to set a parameter in a PreparedStatementWrapper.<br>
-   * Works for single- and multicolumn datatypes.
+   * Works for single- and multi-column data types.
    *
    * @param arg the wurblet argument
    * @return the java code
@@ -841,7 +841,7 @@ public class DbModelWurblet extends ModelWurblet {
 
 
   /**
-   * Creates optional JDBC-set paramaters code for joins with extra arguments.
+   * Creates optional JDBC-set parameters code for joins with extra arguments.
    *
    * @return the optional code, empty if none
    * @throws WurbelException if failed
@@ -955,7 +955,7 @@ public class DbModelWurblet extends ModelWurblet {
    * Builds the string of method parameters.
    *
    * @return the method parameters
-   * @throws WurbelException if failef
+   * @throws WurbelException if failed
    */
   public String buildMethodParameters() throws WurbelException {
     return buildMethodParameters(false, false);

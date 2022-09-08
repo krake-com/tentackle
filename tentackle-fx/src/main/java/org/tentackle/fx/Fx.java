@@ -213,7 +213,7 @@ public class Fx {
    *
    * @param message the message
    * @param defaultYes true if yes is the default button
-   * @param answer the user's answer (invoked with Boolean.TRUE or Boolean.FALSE, never null)
+   * @param answer the user's answer (invoked with {@link Boolean#TRUE} or {@link Boolean#FALSE}, never null)
    * @return the alert dialog
    */
   public static Alert question(String message, boolean defaultYes, Consumer<Boolean> answer) {

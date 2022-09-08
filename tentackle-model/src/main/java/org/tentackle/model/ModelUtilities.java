@@ -161,7 +161,7 @@ public class ModelUtilities {
    *
    * @param modelName the new name according to the model
    * @param existingNames the existing column names in the database table
-   * @return the best match, null if existingnames is empty
+   * @return the best match, null if existingNames is empty
    */
   public String bestMatch(String modelName, List<String> existingNames) {
     Set<MatchResult> results = new TreeSet<>();

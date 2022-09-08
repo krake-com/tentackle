@@ -59,7 +59,7 @@ public class InterceptionUtilities {
   /**
    * Finds all interceptors of a method.
    *
-   * @param clazz the interface the interface the method is declared in extends
+   * @param clazz the interface which the interface the method is declared in extends
    * @param method the interface method
    * @param implMethod the implementing class method
    * @return the head of interceptors, null if not intercepted
@@ -76,7 +76,7 @@ public class InterceptionUtilities {
       for (Annotation annotation : method.getAnnotations()) {
         /*
          * in dynamic proxies the returned annotations are proxies as well.
-         * Therefore we must load the real annotation by annotationType() and not getClass()!
+         * Therefore, we must load the real annotation by annotationType() and not getClass()!
          */
         // check if annotation is annotated with Interception
         Interception interception = annotation.annotationType().getAnnotation(Interception.class);
@@ -92,11 +92,8 @@ public class InterceptionUtilities {
         clazz.isAssignableFrom(implMethod.getDeclaringClass())) {  // extending a given interface (e.g. Interceptable)
 
       for (Annotation annotation : implMethod.getAnnotations()) {
-        /*
-         * in dynamic proxies the returned annotations are proxies as well.
-         * Therefore we must load the real annotation by annotationType() and not getClass()!
-         */
-        // check if annotation is annotated with Interception
+        // In dynamic proxies the returned annotations are proxies as well.
+        // Therefore, we must load the real annotation by annotationType() and not getClass()!
         Interception interception = annotation.annotationType().getAnnotation(Interception.class);
         if (interception != null) {
           interceptors.add(createInterceptor(interception, annotation));

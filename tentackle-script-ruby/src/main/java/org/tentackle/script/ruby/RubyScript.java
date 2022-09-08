@@ -59,7 +59,7 @@ public class RubyScript extends AbstractScript {
    * @param language the language
    * @param code the scripting code
    * @param cached true if cached
-   * @param threadSafe true if threadsafety required
+   * @param threadSafe true if thread-safety required
    */
   public RubyScript(RubyLanguage language, ScriptingContainer container, String code, boolean cached, boolean threadSafe) {
     super(language, code, cached, threadSafe);

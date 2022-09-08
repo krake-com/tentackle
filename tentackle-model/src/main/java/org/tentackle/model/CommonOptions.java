@@ -59,14 +59,14 @@ public interface CommonOptions {
   /**
    * No getter and setter methods.
    *
-   * @return true if don't generate accessor methods
+   * @return true if no accessor methods must be generated
    */
   boolean isNoMethod();
 
   /**
    * No constant strings.
    *
-   * @return true if don't generate constants for names
+   * @return true if no name constants must be generated
    */
   boolean isNoConstant();
 
@@ -85,16 +85,16 @@ public interface CommonOptions {
   boolean isFromSuper();
 
   /**
-   * Element is readonly.
+   * Element is read-only.
    *
-   * @return true if cannot be modified
+   * @return true if element cannot be modified
    */
   boolean isReadOnly();
 
   /**
-   * Element is writeonly.
+   * Element is write-only.
    *
-   * @return true if cannot be read by application
+   * @return true if element cannot be read by application
    */
   boolean isWriteOnly();
 

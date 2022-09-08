@@ -49,7 +49,7 @@ public class DataNodeFactory {
   private static final Logger LOGGER = Logger.get(DataNodeFactory.class);
 
   /**
-   * Creates the data object with its subnodes.
+   * Creates the data object with its sub nodes.
    *
    * @param pdo the PDO
    * @return the PDO's data, never null

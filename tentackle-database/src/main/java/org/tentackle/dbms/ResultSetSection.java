@@ -17,9 +17,10 @@
  */
 package org.tentackle.dbms;
 
+import org.tentackle.session.PersistenceException;
+
 import java.util.HashSet;
 import java.util.Set;
-import org.tentackle.session.PersistenceException;
 
 /**
  * A section of columns within the result set.
@@ -51,7 +52,7 @@ public class ResultSetSection {
   /**
    * Gets the key of this section.
    *
-   * @return the secion key
+   * @return the section key
    */
   public Object getKey() {
     return key;

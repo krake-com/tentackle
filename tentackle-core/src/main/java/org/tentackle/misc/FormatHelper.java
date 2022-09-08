@@ -332,7 +332,7 @@ public class FormatHelper {
   }
 
 
-  /** formattings by locale. */
+  /** {@link Formatting}s by {@link Locale}. */
   private static final Map<Locale, Formatting> FORMATTING_MAP = new ConcurrentHashMap<>();
 
 
@@ -1579,7 +1579,7 @@ public class FormatHelper {
    * accounting applications.
    *
    * @param money the amount of money
-   * @param debit true if the amount is debit
+   * @param debit true if the amount is debit, else credit
    * @return the formatted value
    */
   public static String debitCreditToString(BMoney money, boolean debit) {

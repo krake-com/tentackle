@@ -27,7 +27,7 @@ import java.lang.annotation.Target;
 /**
  * Annotation for manually written methods that must be remoting capable.
  * <p>
- * The analyze handler's result is picked up by the <code>RemoteMethod</code> wurblet.
+ * The analyze-handler's result is picked up by the <code>RemoteMethod</code> wurblet.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -43,7 +43,7 @@ public @interface RemoteMethod {
 
   /**
    * If methods with the same name exist in the same class, the wurblet
-   * can identify it by a special tag. By default the tag is the method's name.
+   * can identify it by a special tag. By default, the tag is the method's name.
    *
    * @return the tag
    */

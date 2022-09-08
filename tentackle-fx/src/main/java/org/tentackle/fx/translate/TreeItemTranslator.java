@@ -123,7 +123,7 @@ public class TreeItemTranslator<T> extends AbstractValueTranslator<T, TreeItem<T
    * Uses the {@link TableConfigurationProvider} if available.
    *
    * @param object the object
-   * @return the treeitem
+   * @return the tree item
    */
   protected TreeItem<T> createTreeItem(T object) {
     TableConfiguration<T> configuration = getTableConfiguration();  // if available, this will also work for FxTreeView
@@ -131,9 +131,9 @@ public class TreeItemTranslator<T> extends AbstractValueTranslator<T, TreeItem<T
   }
 
   /**
-   * Configures the treetableview.
+   * Configures the treetable view.
    *
-   * @param treeTableView the treetableview
+   * @param treeTableView the treetable view
    * @param configuration the table configuration, null if none
    */
   protected void configureTreeTableView(FxTreeTableView<T> treeTableView, TableConfiguration<T> configuration) {

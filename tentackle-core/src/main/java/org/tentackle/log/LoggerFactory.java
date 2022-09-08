@@ -76,13 +76,13 @@ public interface LoggerFactory {
    * <p>
    * The implementation first tries to invoke the static method <code>"clazz.getLogger(name)"</code>.
    * If there is no such method, <code>"new clazz(name)"</code> will be invoked.
-   * If all else failes, it returns a new {@link DefaultLogger} for the given <code>name</code>.
+   * If all else fails, it returns a new {@link DefaultLogger} for the given <code>name</code>.
    * <p>
    * If <code>clazz</code> is <code>null</code> the default logger will be used.
    *
    * @param name the logger name
    * @param loggerClass the class implementing {@link Logger},
-   *        null if use default class specified by {@code @Service} annotation in classpath.
+   *        null to use default class specified by {@code @Service} annotation in classpath
    * @return the logger
    */
   Logger getLogger(String name, Class<? extends Logger> loggerClass);

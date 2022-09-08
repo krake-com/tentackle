@@ -31,15 +31,15 @@ public class InterceptableMethod {
   // see note below...
   // private static final MethodHandles.Lookup lookup = MethodHandles.lookup();
 
-  private final Method method;                // the orginal method of the interface
+  private final Method method;                // the original method of the interface
   private final Method delegateMethod;        // the delegate method
   private final Interceptor interceptor;      // the head of interceptors, null if none
   // private final MethodHandle delegateHandle;  // the delegate method handle
 
   /**
-   * Creates a interceptable method.
+   * Creates an interceptable method.
    *
-   * @param method the orginal method of the interface
+   * @param method the original method of the interface
    * @param delegateMethod the delegate's method
    * @param interceptor the head of interceptors, null if none
    */
@@ -92,8 +92,8 @@ public class InterceptableMethod {
       }
       else {
         // we stick to old reflection because the new MethodHandles are a lot slower, at least when using invokeWithArguments.
-        // The opposite should be true, since the security is checked only once when creating the methodhandle,
-        // but in realily it shows a significant performance degration -- for whatever reason.
+        // The opposite should be true, since the security is checked only once when creating the method handle,
+        // but in reality it shows a significant performance degradation -- for whatever reason.
         //
         //        return delegateHandle.bindTo(delegate).invokeWithArguments(args);
         //

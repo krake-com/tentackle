@@ -117,7 +117,7 @@ public abstract class Line {
    * Sets the line's length.<br>
    * Invoked from within {@link #parse()}.
    *
-   * @param length the lines length, -1 means to end of file
+   * @param length the line's length, -1 means to end of file
    */
   protected void setLength(int length) {
     this.length = length < 0 ? getDocument().getText().length() - offset : length;

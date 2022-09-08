@@ -122,7 +122,7 @@ public interface ScriptFactory {
    * @param abbreviation the scripting language abbreviation, null or empty for default language
    * @param code the scripting code
    * @param cached the same code should refer to the same compiled script object
-   * @param threadSafe true if script may used by more than one thread in parallel
+   * @param threadSafe true if script may be used by more than one thread in parallel
    * @param converterProvider the optional script converter provider
    * @return the script, never null
    */

@@ -28,7 +28,7 @@ import java.util.Date;
 
 /**
  * Exception thrown if the user is already logged in.<br>
- * Usually for appservers that don't allow a user logged in more than once.
+ * Usually for application servers that don't allow a user logged in more than once.
  *
  * @author harald
  */

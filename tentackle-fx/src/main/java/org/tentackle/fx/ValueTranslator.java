@@ -70,7 +70,7 @@ public interface ValueTranslator<M,V> {
    * <li>after formatting and updateView, the view contains 1.21 but the model still contains 1.211111</li>
    * <li>after second updateModel the model contains the correct value 1.21</li>
    * </ul>
-   * @return true if needs a second translation roundtrip
+   * @return true to force a second translation roundtrip
    */
   default boolean needsToModelTwice() {
     return false;

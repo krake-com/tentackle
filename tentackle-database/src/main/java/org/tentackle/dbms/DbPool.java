@@ -95,7 +95,7 @@ public class DbPool implements SessionPool {
     this.maxIdleMinutes = maxIdleMinutes;
     this.maxUsageMinutes = maxUsageMinutes;
 
-    // setup the pool
+    // set up the pool
     pooledSessions = new PooledDb[iniSize];
     freeList = new int[iniSize];
     unusedList = new int[iniSize];
@@ -484,7 +484,7 @@ public class DbPool implements SessionPool {
    * @param index the pool index
    */
   protected void removeDbInstance(Db dbToRemove, int index) {
-    Db db = pooledSessions[index].getReferencedDb();    // pooledDb.db may be null because currently lended
+    Db db = pooledSessions[index].getReferencedDb();    // pooledDb.db may be null because currently lent
     if (db != null) {
       if (db != dbToRemove && dbToRemove != null) {
         throw new PersistenceException(dbToRemove + " to remove does not match " + db + " in pool '" + this + "' at index " + index);

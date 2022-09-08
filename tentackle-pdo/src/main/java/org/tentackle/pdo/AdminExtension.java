@@ -38,7 +38,7 @@ public interface AdminExtension extends DomainContextDependable {
     /**
      * Gets the user id.
      *
-     * @return the object Id of the current user
+     * @return the object ID of the current user
      */
     @Bindable
     long getUserId();
@@ -167,7 +167,7 @@ public interface AdminExtension extends DomainContextDependable {
 
 
   /**
-   * Gets the session data of all sessions currenly logged into the middle tier.
+   * Gets the session data of all sessions currently logged into the middle tier.
    *
    * @return the session data
    */

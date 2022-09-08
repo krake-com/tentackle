@@ -69,7 +69,7 @@ import java.io.Serial;
  * The serial is not related to the PDO, starts at 1 and is incremented whenever lockedBy,
  * lockedSince or lockExpiry changes.<br>
  * Notice the [NOPKEY] to suppress the generation of the default primary key on id.
- * Instead the index is unique on (id, pdoclassid). Thus, it is still allowed that
+ * Instead, the index is unique on (id, pdoclassid). Thus, it is still allowed that
  * objects of different classes share the same id.
  * <p>
  * Notice, that this table is only used in servers, never in remote clients or simple 2-tier applications.

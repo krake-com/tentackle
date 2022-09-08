@@ -107,7 +107,7 @@ public class ObservableListTranslator<T, C extends List<T>> extends AbstractValu
    * Configures the tableview.
    *
    * @param tableView the tableview
-   * @param elemClass the list's elememt class
+   * @param elemClass the list's element class
    */
   protected void configureTableView(FxTableView<T> tableView, Class<T> elemClass) {
     // determine optional table configuration provider for elemClass
@@ -121,10 +121,10 @@ public class ObservableListTranslator<T, C extends List<T>> extends AbstractValu
   }
 
   /**
-   * Configures the treetableview.
+   * Configures the treetable view.
    *
-   * @param treeTableView the treetableview
-   * @param elemClass the list's elememt class
+   * @param treeTableView the treetable view
+   * @param elemClass the list's element class
    */
   protected void configureTreeTableView(FxTreeTableView<T> treeTableView, Class<T> elemClass) {
     // determine optional table configuration provider for elemClass

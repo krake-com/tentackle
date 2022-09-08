@@ -41,7 +41,7 @@ public @interface MessageScriptConverter {
   /**
    * Determines the scripting language this converter is applicable for.
    *
-   * @return the the language name
+   * @return the language name
    */
   String value();
 

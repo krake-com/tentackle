@@ -27,7 +27,7 @@ import org.tentackle.fx.ConfiguratorService;
  * Configures an HTMLEditor.
  *
  * @author harald
- * @param <T> the editpor type
+ * @param <T> the editor type
  */
 @ConfiguratorService(HTMLEditor.class)
 public class HTMLEditorConfigurator<T extends HTMLEditor> extends ComponentConfigurator<T> {

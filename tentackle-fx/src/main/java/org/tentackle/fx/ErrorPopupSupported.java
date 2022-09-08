@@ -35,7 +35,7 @@ public interface ErrorPopupSupported {
 
   /**
    * Sets the error message.<br>
-   * Notice that an empty string will set the style but dows not show any popup.
+   * Notice that an empty string will set the style but does not show any popup.
    *
    * @param error the error message, null to clear
    */

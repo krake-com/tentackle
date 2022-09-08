@@ -125,7 +125,7 @@ public class Query {
   /**
    * Sets the maximum number of rows to retrieve for this query.
    *e
-   * @param limit the maximum number of rows, 0 if ulimited (default)
+   * @param limit the maximum number of rows, 0 if unlimited (default)
    */
   public void setLimit(int limit) {
     this.limit = limit;
@@ -134,7 +134,7 @@ public class Query {
   /**
    * Gets the maximum number of rows for this query.
    *
-   * @return the maximum number of rows, 0 if ulimited (default)
+   * @return the maximum number of rows, 0 if unlimited (default)
    */
   public int getLimit() {
     return limit;

@@ -54,7 +54,7 @@ public class AbstractValidateableFxController extends AbstractFxController imple
    */
   protected void prepareValidation() {
     getContainer().clearErrors();
-    getContainer().saveView();    // necessary to clear the errors as soon a the control is changed by the user after validation
+    getContainer().saveView();    // necessary to clear the errors as soon as the control is changed by the user after validation
   }
 
   /**

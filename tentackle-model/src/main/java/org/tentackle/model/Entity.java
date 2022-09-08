@@ -170,7 +170,7 @@ public interface Entity extends ModelElement {
   /**
    * Gets an attribute by its database column name.
    * <p>
-   * Notice that upper/lowercase doesnt matter.
+   * Notice that upper/lowercase doesn't matter.
    *
    * @param columnName the database column name
    * @param all true if include inherited attributes
@@ -426,7 +426,7 @@ public interface Entity extends ModelElement {
   Set<Entity> getRootEntities();
 
   /**
-   * Returns the single root entity if there is exactly one and it is not abstract.
+   * Returns the single root entity, if there is exactly one, and it is not abstract.
    *
    * @return the root entity, null if none or abstract or more than one
    */
@@ -540,7 +540,7 @@ public interface Entity extends ModelElement {
 
   /**
    * Gets the paths of composite relations to this entity.<br>
-   * Notice that this inludes paths to sub-entities as well.
+   * Notice that this includes paths to sub-entities as well.
    *
    * @return the paths, empty list if this is not a component of any other entity
    */
@@ -548,7 +548,7 @@ public interface Entity extends ModelElement {
 
   /**
    * Gets the paths of composite relations to this entity.<br>
-   * Notice that this inludes paths to sub-entities and super-entities as well.
+   * Notice that this includes paths to sub-entities and super-entities as well.
    *
    * @return the paths, empty list if this is not a component of any other entity
    */
@@ -585,7 +585,7 @@ public interface Entity extends ModelElement {
   /**
    * Returns whether this entity should provide a root id according to model.
    *
-   * @return true if should provide a root id
+   * @return true if the entity should provide a root id
    */
   boolean isProvidingRootIdAccordingToModel();
 
@@ -612,7 +612,7 @@ public interface Entity extends ModelElement {
 
   /**
    * Gets the deep references to components of this root entity.<br>
-   * Will contain all deep references to all components, not only the direct childs.
+   * Will contain all deep references to all components, not only the direct children.
    *
    * @return the deep references, empty if this is not a root entity or there are no deep references
    */

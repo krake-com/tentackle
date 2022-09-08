@@ -438,7 +438,7 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
    * Terminates the supervisor.<br>
    * Waits until supervisor has terminated.<br>
    * If the running thread is a {@link Supervisable} the thread
-   * will be kill()ed.
+   * will be "kill()"ed.
    */
   public void terminate() {
     requestTermination();

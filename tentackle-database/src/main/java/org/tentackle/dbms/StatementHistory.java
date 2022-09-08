@@ -63,8 +63,8 @@ public class StatementHistory {
   private final String sql;                                   // the SQL statement
   private final Map<Integer,Object> parameters;               // execution parameters if prepared statement, else null
   private final List<Map<Integer,Object>> batchParameters;    // batched execution parameters
-  private TimeKeeper fetchDuration;                           // if query: duration to fetch the results from the result set
-  private int fetchCount;                                     // if query: number of rows fetched
+  private TimeKeeper fetchDuration;                           // query only: duration to fetch the results from the result set
+  private int fetchCount;                                     // query only: number of rows fetched
 
   /**
     * Creates a statement execution history.
@@ -167,7 +167,7 @@ public class StatementHistory {
   }
 
   /**
-   * Gets the batched paramater map.
+   * Gets the batched parameter map.
    *
    * @return the batched parameter, null if not batched or not a prepared statement
    */

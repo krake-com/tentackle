@@ -29,7 +29,7 @@ import java.util.prefs.Preferences;
 /**
  * Configuration for a backend driver.<br>
  * The configuration is stored via the standard {@link Preferences} and provides
- * the paramaters necessary to load the a driver.
+ * the parameters necessary to load the driver.
  * <p>
  * Notice that the implementation does not depend on the tentackle-database or tentackle-sql module!
  */

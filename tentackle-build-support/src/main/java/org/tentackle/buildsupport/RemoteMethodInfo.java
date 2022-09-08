@@ -19,6 +19,15 @@
 
 package org.tentackle.buildsupport;
 
+import org.tentackle.common.Settings;
+
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.TypeMirror;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -32,21 +41,13 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.TypeMirror;
-import org.tentackle.common.Settings;
 
 
 
 /**
- * Holds information gathered by the Analyze annotation.
+ * Holds information gathered by the {@link org.tentackle.common.Analyze}-annotation.
  * <p>
- * The AnalyzeProcessor creates an info file in an apt run and
+ * The {@link AnalyzeProcessor} creates an info file in an apt run and
  * wurblets pick up this information to generate code.
  *
  * @author harald
@@ -54,7 +55,7 @@ import org.tentackle.common.Settings;
 public class RemoteMethodInfo {
 
   /**
-   * Fileformat version
+   * File-format version
    */
   public static final String INFO_FILE_VERSION = "2.0";
 
@@ -89,7 +90,7 @@ public class RemoteMethodInfo {
 
 
   /**
-   * Reads info from an file.
+   * Reads info from a file.
    *
    * @param infoFile the file to read from
    * @return an RemoteMethodInfo object, null if file is empty or does not contain an RemoteMethodInfo-text
@@ -107,7 +108,7 @@ public class RemoteMethodInfo {
 
 
   /**
-   * Reads info from an line reader.
+   * Reads info from a line reader.
    *
    * @param reader is the LineNumberReader
    * @return an RemoteMethodInfo object, null if file is empty or does not contain an RemoteMethodInfo-text
@@ -252,28 +253,28 @@ public class RemoteMethodInfo {
       }
     }
 
-    setReturningPdo(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, namePdo));
-    setReturningPdoCollection(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, nameCollection, namePdo));
-    setReturningPdoCursor(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, nameCursor, namePdo));
+    setReturningPdo(AnnotationProcessingHelper.isTypeInstanceOf(processingEnv, tm, namePdo));
+    setReturningPdoCollection(AnnotationProcessingHelper.isTypeInstanceOf(processingEnv, tm, nameCollection, namePdo));
+    setReturningPdoCursor(AnnotationProcessingHelper.isTypeInstanceOf(processingEnv, tm, nameCursor, namePdo));
 
     if (isReturningPdo()) {
       setReturningDbObject(true);
     }
     else  {
-      setReturningDbObject(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, nameDbObject));
+      setReturningDbObject(AnnotationProcessingHelper.isTypeInstanceOf(processingEnv, tm, nameDbObject));
     }
 
     if (isReturningPdoCollection()) {
       setReturningDbObjectCollection(true);
     }
     else  {
-      setReturningDbObjectCollection(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, nameCollection, nameDbObject));
+      setReturningDbObjectCollection(AnnotationProcessingHelper.isTypeInstanceOf(processingEnv, tm, nameCollection, nameDbObject));
     }
     if (isReturningPdoCursor()) {
       setReturningCursor(true);
     }
     else  {
-      setReturningCursor(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, nameCursor));
+      setReturningCursor(AnnotationProcessingHelper.isTypeInstanceOf(processingEnv, tm, nameCursor));
     }
 
     Set<Modifier> methodElementModifiers = methodElement.getModifiers();
@@ -354,7 +355,7 @@ public class RemoteMethodInfo {
 
 
   /**
-   * Gets the name of the class this analyze info is part of.
+   * Gets the name of the class this analyze-info is part of.
    *
    * @return the classname
    */
@@ -373,7 +374,7 @@ public class RemoteMethodInfo {
 
 
   /**
-   * Gets the name of the superclass this analyze info is part of.
+   * Gets the name of the superclass this analyze-info is part of.
    *
    * @return the classname
    */

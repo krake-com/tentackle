@@ -139,7 +139,7 @@ public interface TaskDispatcher extends Terminatable {
   boolean addTask(Task task);
 
   /**
-   * Checks whether a tasks is still pending.<br>
+   * Checks whether a task is still pending.<br>
    * Tasks are pending as long as they are not completed.
    *
    * @param task the task
@@ -182,10 +182,11 @@ public interface TaskDispatcher extends Terminatable {
 
   /**
    * Adds a task to the queue.<br>
-   * Throws a {@link TaskException} if the wait times out (see {@link #getDeadInterval()}.
+   * Throws a {@link TaskException} if the wait times out.
    *
    * @param task the task to add
    * @return true if added, false if already in queue
+   * @see #getDeadInterval()
    */
   boolean addTaskAndWait(Task task);
 
@@ -231,12 +232,12 @@ public interface TaskDispatcher extends Terminatable {
    * Returns a diagnostic string.<br>
    * This is an extended version of {@link Object#toString()}.
    *
-   * @return the disgnostic string
+   * @return the diagnostic string
    */
   String toDiagnosticString();
 
   /**
-   * Sets a timeout to shutdown this thread if idle for a given timeout.
+   * Sets a timeout to shut down this thread if idle for a given timeout.
    *
    * @param shutdownIdleTimeout idle timeout in milliseconds, 0 if no shutdown
    */

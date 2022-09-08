@@ -54,7 +54,7 @@ public interface Binder extends Comparable<Binder> {
   /**
    * Binds objects.
    * <p>
-   * The controller will be scanned for members or submembers
+   * The controller will be scanned for members or sub members
    * annotated with the {@link Bindable}-annotation.
    *
    * @return number of members bound
@@ -64,7 +64,7 @@ public interface Binder extends Comparable<Binder> {
   /**
    * Binds objects with inheritance.
    * <p>
-   * The controller will be scanned for members or submembers
+   * The controller will be scanned for members or sub members
    * annotated with the {@link Bindable}-annotation.
    * Inherited bindables and components will be included as well.
    * <p>

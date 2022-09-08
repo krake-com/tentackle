@@ -35,7 +35,7 @@ public class FxTableColumn<S, T> extends TableColumn<S, T> {
   /**
    * Creates a table column.
    *
-   * @param configuration the column configutation
+   * @param configuration the column configuration
    */
   public FxTableColumn(TableColumnConfiguration<S, T> configuration) {
     this.configuration = configuration;
@@ -44,7 +44,7 @@ public class FxTableColumn<S, T> extends TableColumn<S, T> {
   /**
    * Creates a table column.
    *
-   * @param configuration the column configutation
+   * @param configuration the column configuration
    * @param text the string to show when the TableColumn is placed within the TableView
    */
   public FxTableColumn(TableColumnConfiguration<S, T> configuration, String text) {

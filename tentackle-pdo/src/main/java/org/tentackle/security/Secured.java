@@ -56,12 +56,12 @@ public @interface Secured {
   boolean explicit() default false;
 
   /**
-   * Determines whether multiple permissions should be ored.
+   * Determines whether multiple permissions should be ORed.
    * <p>
    * If true, at least one permission must be accepted.<br>
    * If false (default), all permissions must be accepted.
    *
-   * @return true if ored, false if logically anded (default)
+   * @return true if ored, false if logically ANDed (default)
    */
   boolean ored() default false;
 

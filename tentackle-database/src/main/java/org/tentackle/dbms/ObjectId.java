@@ -63,7 +63,7 @@ public class ObjectId extends AbstractIdSource {
 
   @Override
   public boolean isLockFree() {
-    // becomes part of transaction and therefore is not lockfree
+    // becomes part of transaction and therefore is not lock-free
     return false;
   }
 
@@ -92,7 +92,7 @@ public class ObjectId extends AbstractIdSource {
         );
 
         /*
-         * Note: this will get the write-lock on objectid. Further nextId() will only increment the id without any
+         * Note: this will get the write-lock on object-id. Further nextId() will only increment the id without any
          * db-operation until the transaction gets closed and the final update is done.
          */
         assertOneRowAffected(db, incrementStatement.executeUpdate());

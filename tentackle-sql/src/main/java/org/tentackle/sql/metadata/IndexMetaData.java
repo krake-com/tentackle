@@ -55,7 +55,7 @@ public class IndexMetaData {
 
 
   /**
-   * Sets up the index from the database meta data result.
+   * Sets up the index from the database metadata result.
    *
    * @param resultSet the column result set
    * @throws SQLException the processing the result set failed
@@ -75,7 +75,7 @@ public class IndexMetaData {
 
 
   /**
-   * Adds an index column from the database meta data result.
+   * Adds an index column from the database metadata result.
    *
    * @param resultSet the column result set
    * @throws SQLException the processing the result set failed
@@ -170,7 +170,7 @@ public class IndexMetaData {
 
 
   /**
-   * Validates and postprocesses the index data.
+   * Validates and post-processes the index data.
    */
   public void validate() {
     if (StringHelper.isAllWhitespace(filterCondition)) {

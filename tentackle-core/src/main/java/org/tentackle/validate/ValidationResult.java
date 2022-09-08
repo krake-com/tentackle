@@ -44,7 +44,7 @@ public interface ValidationResult extends Serializable {
    * The error code is optional and provided to identify
    * an error by a unique code rather than some text message.
    *
-   * @return the errorcode
+   * @return the error code
    */
   String getErrorCode();
 
@@ -129,7 +129,7 @@ public interface ValidationResult extends Serializable {
    *   { 3, "invoice.invoiceLineList", "referenceList[0].text" },
    *   { 0, "invoice.invoiceLineList[3].referenceList", "text" }
    * </pre>
-   * @return the indexes, empty array if validationpath without indexes
+   * @return the indexes, empty array if validation path without indexes
    */
   CollectionIndex[] getValidationCollectionIndexes();
 

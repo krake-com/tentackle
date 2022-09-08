@@ -322,7 +322,7 @@ public class IndexImpl implements Index {
    * Sets the index to be parsed.<br>
    * Only necessary for model converters if the properties are set explicitly to prevent parsing.
    *
-   * @param parsed true if don't parse anymore
+   * @param parsed true if already parsed
    */
   public void setParsed(boolean parsed) {
     this.parsed = parsed;

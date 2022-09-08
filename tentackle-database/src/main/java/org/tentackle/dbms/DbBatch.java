@@ -71,7 +71,7 @@ public class DbBatch {
     this.batchSize = batchSize;
 
     statements = new LinkedHashMap<>();                     // linked map to keep statements in the order they were added
-    objects = new HashSet<>();                              // to force flush as soon as the an object is affected more than once
+    objects = new HashSet<>();                              // to force flush as soon as the object is affected more than once
   }
 
   /**

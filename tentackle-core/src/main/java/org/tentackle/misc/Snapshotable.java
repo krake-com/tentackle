@@ -46,7 +46,7 @@ public interface Snapshotable<T> {
   /**
    * Reverts the state of this object to given snapshot.
    *
-   * @param snapshot the snapshot to revert to, null if do nothing
+   * @param snapshot the snapshot to revert to
    */
   void revertToSnapshot(T snapshot);
 

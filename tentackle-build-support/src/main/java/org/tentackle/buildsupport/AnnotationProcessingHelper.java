@@ -19,13 +19,13 @@
 
 package org.tentackle.buildsupport;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.StringTokenizer;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringTokenizer;
 
 
 
@@ -106,15 +106,15 @@ public final class AnnotationProcessingHelper {
 
 
   /**
-   * Checks whether a type is an instance of of a given classname and optional generics type.
+   * Checks whether a type is an instance of a given classname and optional generics type.
    *
    * @param processingEnv the annotation processing environment
    * @param typeMirror the element type
    * @param className the class to check
    * @param genType the generic type
-   * @return true if type is an instance of of a given classname
+   * @return true if type is an instance of a given classname
    */
-  public static boolean isTypeInstanceoOf(ProcessingEnvironment processingEnv, TypeMirror typeMirror, String className, String genType) {
+  public static boolean isTypeInstanceOf(ProcessingEnvironment processingEnv, TypeMirror typeMirror, String className, String genType) {
 
     String typeName;
 
@@ -123,10 +123,10 @@ public final class AnnotationProcessingHelper {
     if (typeMirror instanceof DeclaredType) {
       typeName = ((DeclaredType) typeMirror).asElement().toString();
       if (genType != null) {
-        // check type paramaters
+        // check type parameters
         genTypeOk = false;
         for (TypeMirror tm: ((DeclaredType) typeMirror).getTypeArguments()) {
-          if (isTypeInstanceoOf(processingEnv, tm, genType)) {
+          if (isTypeInstanceOf(processingEnv, tm, genType)) {
             genTypeOk = true;
             break;
           }
@@ -143,7 +143,7 @@ public final class AnnotationProcessingHelper {
     }
 
     for (TypeMirror tm: processingEnv.getTypeUtils().directSupertypes(typeMirror)) {
-      if (isTypeInstanceoOf(processingEnv, tm, className, genType)) {
+      if (isTypeInstanceOf(processingEnv, tm, className, genType)) {
         return true;
       }
     }
@@ -159,8 +159,8 @@ public final class AnnotationProcessingHelper {
    * @param className the class to check
    * @return true if the typeMirror represents an instance of className
    */
-  public static boolean isTypeInstanceoOf(ProcessingEnvironment processingEnv, TypeMirror typeMirror, String className) {
-    return isTypeInstanceoOf(processingEnv, typeMirror, className, null);
+  public static boolean isTypeInstanceOf(ProcessingEnvironment processingEnv, TypeMirror typeMirror, String className) {
+    return isTypeInstanceOf(processingEnv, typeMirror, className, null);
   }
 
 

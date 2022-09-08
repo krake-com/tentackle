@@ -555,7 +555,7 @@ public class FxUtilities {
    * @param message the message
    * @param defaultYes true if yes is the default button
    * @param title optional title
-   * @param answer the user's answer (invoked with Boolean.TRUE or Boolean.FALSE, never null)
+   * @param answer the user's answer (invoked with {@link Boolean#TRUE} or {@link Boolean#FALSE}, never null)
    * @return the alert dialog
    * @see Consumer
    * @see org.tentackle.misc.Holder
@@ -1022,7 +1022,7 @@ public class FxUtilities {
 
   /**
    * Prints a node.<br>
-   * The user selects the printer and the node is scaled down if too large for the paper.
+   * The user selects the printer, and the node is scaled down if too large for the paper.
    *
    * @param node the node to print
    */

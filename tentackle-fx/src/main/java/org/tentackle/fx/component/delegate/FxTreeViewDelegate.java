@@ -108,7 +108,7 @@ public class FxTreeViewDelegate extends FxComponentDelegate {
 
   @Override
   public void updateModel() {
-    // no conversion back to model because the object is/are updated in the treeitem,
+    // no conversion back to model because the object is/are updated in the tree item,
     // which holds only the references.
   }
 

@@ -172,7 +172,7 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
   }
 
   /**
-   * Returne whether an extra ID-alias must be added to the joined select statement.
+   * Returns whether an extra ID-alias must be added to the joined select statement.
    * This is true for multi-table inherited object relations.
    *
    * @return true if ID alias necessary

@@ -80,12 +80,12 @@ public interface BindingMember {
   Method getSetter();
 
   /**
-   * Gets the from method.<br>
+   * Gets the "from"-method.<br>
    * Members of immutable objects may provide a from method that
    * takes the new member value as its argument and returns a
    * new immutable object that will be set as the parent member's value.
    *
-   * @return the from method, null if none
+   * @return the "from"-method, null if none
    */
   Method getFrom();
 

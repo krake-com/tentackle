@@ -25,7 +25,7 @@ import java.sql.SQLException;
 
 
 /**
- * Meta data for a column of an index.
+ * Metadata for a column of an index.
  *
  * @author harald
  */
@@ -48,7 +48,7 @@ public class IndexColumnMetaData implements Comparable<IndexColumnMetaData> {
   }
 
   /**
-   * Sets up the index column from the database meta data result.
+   * Sets up the index column from the database metadata result.
    *
    * @param resultSet the column result set
    * @throws SQLException the processing the result set failed
@@ -122,7 +122,7 @@ public class IndexColumnMetaData implements Comparable<IndexColumnMetaData> {
   }
 
   /**
-   * Validates and postprocesses the index column data.
+   * Validates and post-processes the index column data.
    */
   public void validate() {
     // nothing to do

@@ -38,7 +38,7 @@ import java.util.spi.ResourceBundleProvider;
  *
  * Notice: it must be implemented in the hook and not an abstract super class because
  * it is used by the BundleFactory to access the bundles from within the framework
- * and ResourceBundle uses the callerclass to determine the caller module.
+ * and ResourceBundle uses the caller class to determine the caller module.
  *
  * @author harald
  */

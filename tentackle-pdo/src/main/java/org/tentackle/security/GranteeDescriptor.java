@@ -64,7 +64,7 @@ public class GranteeDescriptor {
   /**
    * Gets the grantee's object id.
    *
-   * @return the object id, 0 if all of grantee class
+   * @return the object id, 0 if all
    */
   public long getGranteeId() {
     return granteeId;

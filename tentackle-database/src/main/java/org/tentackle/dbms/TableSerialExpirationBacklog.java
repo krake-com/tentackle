@@ -70,7 +70,7 @@ public class TableSerialExpirationBacklog {
 
   // the backlog
   private final ExpirationSet[] expirations;      // array of expirations
-  private int nextNdx;                            // round robin index
+  private int nextNdx;                            // round-robin index
 
   // synchronization lock
   private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
@@ -121,7 +121,7 @@ public class TableSerialExpirationBacklog {
 
 
   /**
-   * Gets the expiration backlog for a given range of tableserials.
+   * Gets the expiration backlog for a given range of table-serials.
    *
    * @param minSerial the lower serial bound of the query (minSerial &lt; tableSerial)
    * @param maxSerial the upper serial bound of the query (tableSerial &le; maxSerial)

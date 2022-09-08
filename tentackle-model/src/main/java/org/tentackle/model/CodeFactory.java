@@ -136,7 +136,7 @@ public class CodeFactory {
   }
 
   /**
-   * Creates the declared type of a relation.
+   * Creates the declared type of relation.
    *
    * @param relation the relation
    * @param withinForeignEntity true if we need the type from within the foreign entity,
@@ -162,7 +162,7 @@ public class CodeFactory {
   }
 
   /**
-   * Creates the java type of a relation.
+   * Creates the java type of relation.
    *
    * @param relation the relation
    * @return the java type

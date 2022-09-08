@@ -75,7 +75,7 @@ public class MethodArgument {
   /**
    * Returns whether the method argument is a fixed value.
    *
-   * @return true if value, else attribute
+   * @return true if fixed value, else attribute
    */
   public boolean isValue() {
     return attribute == null;

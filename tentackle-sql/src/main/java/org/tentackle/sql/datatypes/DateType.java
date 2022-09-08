@@ -100,7 +100,7 @@ public class DateType extends AbstractDateTimeType<Date> {
   public Date get(Backend backend, ResultSet resultSet, int[] pos, boolean mapNull, Integer size) throws SQLException {
     Date date = resultSet.getDate(pos[0]);
     if (date == null || (mapNull && date.equals(DateHelper.MIN_DATE)))  {
-      // mindate is translated back to null
+      // minimum date is translated back to null
       return null;
     }
     return org.tentackle.common.Date.createFrozen(date.getTime());    // upgrade to org.tentackle.common.Date

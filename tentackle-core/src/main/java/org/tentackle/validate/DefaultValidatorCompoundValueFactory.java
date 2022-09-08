@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * Default compoundvalue factory for validators.
+ * Default compound value factory for validators.
  */
 @Service(ValidatorCompoundValueFactory.class)
 public class DefaultValidatorCompoundValueFactory implements ValidatorCompoundValueFactory {

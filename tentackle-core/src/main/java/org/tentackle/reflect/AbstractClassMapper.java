@@ -197,8 +197,8 @@ public abstract class AbstractClassMapper<S> {
         throw new ClassNotFoundException("no " + name + " mapping for '" + className +
                                          (lenient ? "' in packages " + getPackageNamesAsString() : "'"));
       }
-      // this is ok unsynchronized cause of ConcurrentHashMap.
-      // putting a key/value pair more than once in a multi-threaded application is ok as well.
+      // not synchronized is ok cause of ConcurrentHashMap.
+      // putting a key/value pair more than once in a multithreaded application is ok as well.
       if (classMap.put(className, mappedClazz) == null) {
         // we log only if really added. This is because a class may be added twice
         // if mapNameWithPackages instantiates a class that itself invokes mapping again

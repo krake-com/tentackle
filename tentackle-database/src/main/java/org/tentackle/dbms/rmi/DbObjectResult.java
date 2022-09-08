@@ -24,7 +24,7 @@ import java.io.Serial;
 import java.io.Serializable;
 
 /**
- * Result used to return the possibly new objectid, changed serial and a
+ * Result used to return the possibly new object-ID, changed serial and a
  * result code for success or failure.
  *
  * @param id the object ID

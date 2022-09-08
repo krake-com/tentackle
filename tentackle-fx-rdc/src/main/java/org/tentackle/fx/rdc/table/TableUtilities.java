@@ -75,7 +75,7 @@ public class TableUtilities {
   /*
    * TableView and TreeTableView don't inherit from each other and thus
    * each spawn their own related types such as TableColum, TreeTableColumn, etc...
-   * As a result, since TableUtilities apply to both tables and treetables,
+   * As a result, since TableUtilities apply to both tables and tree tables,
    * a lot of semantically identical code is necessary.
    * However, it is not really duplicate code. There's not much we can do to reduce it.
    */
@@ -116,7 +116,7 @@ public class TableUtilities {
     for (PdoMember member: PdoUtilities.getInstance().getAttributes(config.getObjectClass(), true)) {
       Bindable bindable = member.getGetter().getAnnotation(Bindable.class);
       if (bindable != null) {   // skip non-bindables
-        // columnname corresponds to the binding path
+        // column name corresponds to the binding path
         String displayName = bundle != null ? bundle.getString(member.getName()) : StringHelper.firstToUpper(member.getName());
         config.addColumn(member.getName(), displayName);
       }
@@ -191,7 +191,8 @@ public class TableUtilities {
 
   /**
    * Converts the column configurations to a spreadsheet file.
-   * @param columnConfigurations the column configurerations
+   *
+   * @param columnConfigurations the column configurations
    * @param file the output file
    * @param items the items to export
    * @param <S> the row type
@@ -330,7 +331,7 @@ public class TableUtilities {
    * Tables need a special handling for multiple pages.
    *
    * @param table the table to print
-   * @param title the optional title, null if take from table's configuration
+   * @param title the optional title, null to take from table's configuration
    */
   public void print(FxTableView<?> table, String title) {
     PrinterJob job = PrinterJob.createPrinterJob();
@@ -350,7 +351,7 @@ public class TableUtilities {
    * Tables need a special handling for multiple pages.
    *
    * @param treeTable the treetable to print
-   * @param title the optional title, null if take from treetable's configuration
+   * @param title the optional title, null to take from treetable's configuration
    */
   public void print(FxTreeTableView<?> treeTable, String title) {
     PrinterJob job = PrinterJob.createPrinterJob();

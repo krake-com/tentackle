@@ -400,7 +400,7 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
    * Determines the invocation method to be cached by the {@link OperationMethodCache}.
    *
    * @param method the interface method
-   * @return the info necessary to setup the cache entry
+   * @return the info necessary to set up the cache entry
    */
   public OperationMethodCacheInfo determineInvocation(Method method) {
 

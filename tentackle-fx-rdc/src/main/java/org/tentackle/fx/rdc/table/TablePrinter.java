@@ -75,7 +75,7 @@ public class TablePrinter extends AbstractFxController {
   /*
    * TableView and TreeTableView don't inherit from each other and thus
    * each spawn their own related types such as TableColum, TreeTableColumn, etc...
-   * As a result, since TablePrinter applies to both tables and treetables,
+   * As a result, since TablePrinter applies to both tables and tree tables,
    * a lot of semantically identical code is necessary.
    * However, it is not really duplicate code. There's not much we can do to reduce it.
    */
@@ -399,7 +399,7 @@ public class TablePrinter extends AbstractFxController {
         });
         FxUtilities.getInstance().runAndWait(() -> setPrintableRows(getVisibleRowCount()));
         if (printableRows <= 0) {
-          // no space to print (may be renedering problem, whatsoever....)
+          // no space to print (could be a rendering problem, whatsoever....)
           Platform.runLater(() -> {
             job.cancelJob();
             Fx.error(resources.getString("no printable area"));

@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>
  * Closes pooled db instances when not used for maxMinutes time.
  * This is to release resources, if any, and improves memory consumption
- * for long running servers.
+ * for long-running servers.
  */
 public class DbPoolTimeoutThread extends Thread implements Scavenger {
 
@@ -101,7 +101,7 @@ public class DbPoolTimeoutThread extends Thread implements Scavenger {
               }
               else {
                 // bring down timed out unused Db instances
-                int i = 0;    // start with oldest unused
+                int i = 0;    // start with the oldest unused
                 while (i < pool.getUnusedCount()) {
                   int index = pool.getUnusedSessionIndex(i);
                   PooledDb pooledDb = pool.getPooledSessions()[index];  // pooledDb.db != null because unused

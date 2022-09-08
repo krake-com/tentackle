@@ -180,7 +180,7 @@ public class IdentifiableMap<T extends Identifiable> implements Serializable {
   /**
    * Gets all objects in map.
    * <p>
-   * The objects are returned in the order they were appended.
+   * The returned objects are in the order they were appended.
    *
    * @return all objects
    */

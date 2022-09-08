@@ -61,7 +61,7 @@ public class DefaultValidationSeverityFactory implements ValidationSeverityFacto
         }
       }
 
-      // check that all essential severitys were found
+      // check that all essential severities were found
       if (defaultSeverity == null) {
         throw new ValidationRuntimeException("no DefaultSeverity configured");
       }

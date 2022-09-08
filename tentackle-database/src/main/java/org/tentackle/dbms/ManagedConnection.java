@@ -353,7 +353,7 @@ public class ManagedConnection {
     index = -1;
     statementHistory = new ArrayList<>();
     preparedStatements = new ConcurrentHashMap<>();
-    // use a threadsafe set due to concurrent cleanup of weakreferences in getOpenResultSets and cancelRunningStatements
+    // use a threadsafe set due to concurrent cleanup of weak references in getOpenResultSets and cancelRunningStatements
     openResultSets = ConcurrentHashMap.newKeySet();
     runningStatements = ConcurrentHashMap.newKeySet();
 
@@ -441,7 +441,7 @@ public class ManagedConnection {
   /**
    * Gets the epochal time when this connection was detached.
    * <p>
-   * Note that newly created conntections get their detach time initialized
+   * Note that newly created connections get their detach time initialized
    * from the current system time.
    *
    * @return the epochal time of last detach, 0 if attached
@@ -996,7 +996,7 @@ public class ManagedConnection {
    * <p>
    * Restores the default transaction isolation level and read-only mode, if set to true and isolation or read-only mode was changed.
    *
-   * @param autoCommit true to enable autocomit, false to disable.
+   * @param autoCommit true to enable autocommit, false to disable.
    */
   public void setAutoCommit(boolean autoCommit) {
     assertAttached();

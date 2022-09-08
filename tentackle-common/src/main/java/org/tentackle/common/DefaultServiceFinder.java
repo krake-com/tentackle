@@ -119,7 +119,7 @@ public class DefaultServiceFinder implements ServiceFinder {
   }
 
   /**
-   * Gets the finder' service path it is responsible for.
+   * Gets the service path the finder is responsible for.
    *
    * @return the service path
    */
@@ -170,7 +170,7 @@ public class DefaultServiceFinder implements ServiceFinder {
    * first is returned. Useful to override service default implementations.
    *
    * @param serviceName the service name, usually a classname
-   * @return the service configuation entry
+   * @return the service configuration entry
    */
   @Override
   public synchronized Map.Entry<String,URL> findFirstServiceConfiguration(String serviceName) {
@@ -188,7 +188,7 @@ public class DefaultServiceFinder implements ServiceFinder {
    * Useful for factories, singletons and alike.
    *
    * @param serviceName the service name, usually a classname
-   * @return the service configuation entry
+   * @return the service configuration entry
    */
   @Override
   public synchronized Map.Entry<String,URL> findUniqueServiceConfiguration(String serviceName) {

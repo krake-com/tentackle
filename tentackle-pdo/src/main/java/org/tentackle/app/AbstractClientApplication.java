@@ -44,7 +44,7 @@ public abstract class AbstractClientApplication extends AbstractApplication {
 
 
   /**
-   * Updates the session info after sucessful login.
+   * Updates the session info after successful login.
    */
   protected void updateSessionInfoAfterLogin() {
     DomainContext context = getDomainContext();

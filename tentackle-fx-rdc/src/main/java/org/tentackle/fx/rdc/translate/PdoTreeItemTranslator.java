@@ -31,7 +31,7 @@ import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
 
 /**
- * PDO-awqre TreeItem translator for {@link org.tentackle.fx.component.FxTreeView} and
+ * PDO-aware TreeItem translator for {@link org.tentackle.fx.component.FxTreeView} and
  * {@link org.tentackle.fx.component.FxTreeTableView}.
  *
  * @author harald

@@ -23,7 +23,7 @@ import org.tentackle.bind.Binding;
 import org.tentackle.fx.FxComponent;
 
 /**
- * Binding between a class member and an fx component.
+ * Binding between a class member and a fx-component.
  *
  * @author harald
  */

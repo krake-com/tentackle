@@ -56,7 +56,7 @@ public class Profile {
   private String domainImplementation;
 
   /**
-   * The super pseristence implemenation, null if default.
+   * The super persistence implementation, null if default.
    */
   @Parameter
   private String persistenceImplementation;

@@ -41,7 +41,7 @@ public final class StringHelper {
 
   /**
    * Limit size of collection to be logged.<br>
-   * If an object is logged and it is a collection
+   * If an object is logged, and it is a collection
    * and the size exceeds {@code maxLogCollectionSize}, only the number
    * of items is logged in {@link #objectToLoggableString}
    * instead of each item.
@@ -50,7 +50,7 @@ public final class StringHelper {
 
   /**
    * Sets the size limit of collections to be logged.<br>
-   * If an object is logged and it is a collection
+   * If an object is logged, and it is a collection
    * and the size exceeds {@code maxLogCollectionSize}, only the number
    * of items is logged in {@link #objectToLoggableString}
    * instead of each item.
@@ -780,10 +780,10 @@ public final class StringHelper {
    */
   public static String unDiacrit(String str, boolean keepLength)  {
 
-    // build maptable if not yet done
+    // build map table if not yet done
     int mapLen;
     try {
-      mapLen = critMap.length >> 1;    // causes Nullp if not prepared
+      mapLen = critMap.length >> 1;    // causes NPE if not prepared
     }
     catch (NullPointerException e)  {
       // prepare fast map
@@ -1063,7 +1063,7 @@ public final class StringHelper {
    * {@code "alphaBetaGamma"} is converted to {@code "alpha.beta.gamma"}, with delimiter {@code "."}.
    *
    * @param str the camelcase string
-   * @param delimiter the delimter to insert between parts, null or empty if none
+   * @param delimiter the delimiter to insert between parts, null or empty if none
    * @return the converted string
    */
   public static String camelCaseToDelimited(String str, String delimiter) {
@@ -1121,8 +1121,8 @@ public final class StringHelper {
 
 
   /**
-   * Trims a string.
-   * The method is nullpointer safe.
+   * Trims a string.<br>
+   * The method is null-safe.
    *
    * @param s the string, may be null
    * @param max the maximum number of characters, 0 = minimum length
@@ -1140,8 +1140,8 @@ public final class StringHelper {
 
 
   /**
-   * Trims a string.
-   * The method is nullpointer safe.
+   * Trims a string.<br>
+   * The method is null-safe.
    *
    * @param s the string, may be null
    * @return the trimmed string, null if s == null
@@ -1681,7 +1681,7 @@ public final class StringHelper {
    *    &#64;{user.home!/tmp}/somedir
    * </pre>
    * Notice that <code>${...}</code> may lead to unexpected results, if the variable's value contains backslashes,
-   * as with windows pathnames, for example.
+   * as with windows path names, for example.
    *
    * @param str the string
    * @param variableProvider the variables as properties

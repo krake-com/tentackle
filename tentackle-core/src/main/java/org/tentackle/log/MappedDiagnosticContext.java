@@ -61,7 +61,7 @@ public interface MappedDiagnosticContext {
 
 
   /**
-   * Remove the the context identified by the <code>key</code> parameter using
+   * Removes the context identified by the <code>key</code> parameter using
    * the underlying system's MDC implementation. The  <code>key</code> parameter
    * cannot be null. This method does nothing if there is no previous value
    * associated with <code>key</code>.

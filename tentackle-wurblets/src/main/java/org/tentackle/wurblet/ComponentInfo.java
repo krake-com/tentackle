@@ -33,9 +33,9 @@ import org.tentackle.model.InheritanceType;
 public class ComponentInfo {
 
   private final Entity joinedEntity;      // the right side of the join
-  private final String rootIdColumnName;  // the CN_... name of the rootid
-  private final String rootIdClassName;   // the impl class name holding the rootid (and optional rootclassid)
-  private final String extraClassName;    // != null if need an extra join to the rootid's table
+  private final String rootIdColumnName;  // the CN_... name of the rootId
+  private final String rootIdClassName;   // the impl class name holding the rootId (and optional rootClassId)
+  private final String extraClassName;    // != null if an extra join is necessary to the rootId's table
 
 
   /**

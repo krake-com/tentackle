@@ -147,7 +147,7 @@ public interface Attribute extends ModelElement {
    * If this is an application specific type, the inner type will be returned.
    *
    * @return the effective data type
-   * @throws ModelException if model garbeled
+   * @throws ModelException if model garbled
    */
   DataType<?> getEffectiveDataType() throws ModelException;
 
@@ -222,8 +222,8 @@ public interface Attribute extends ModelElement {
   String getBindableAnnotation();
 
   /**
-   * Conberts a given value string to a valid java method argument.<br>
-   * Adds downcasts, if necessary.
+   * Converts a given value string to a valid java method argument.<br>
+   * Adds a downcast, if necessary.
    *
    * @param value the value string
    * @return the method argument string

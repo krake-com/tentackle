@@ -132,7 +132,7 @@ public class EntityFactoryImpl implements EntityFactory {
       }
     }
 
-    // add id, serial for processing (may be removed or moved later)
+    // add id, serial for processing (could be removed or moved later)
     AttributeImpl idAttribute = createAttribute(entity, document.getSourceInfo(), true);
     idAttribute.setDataType(DataTypeFactory.getInstance().get(Long.TYPE));
     idAttribute.setColumnName(Constants.CN_ID);
@@ -195,7 +195,7 @@ public class EntityFactoryImpl implements EntityFactory {
           processRelationOption(entity, (OptionLine) line);
           break;
 
-        default: throw new ModelException("unknown linetype " + line.getLineType() + ModelException.AT_ELEMENT +
+        default: throw new ModelException("unknown line type " + line.getLineType() + ModelException.AT_ELEMENT +
                                           document.getSourceInfo().add(line.getLineNumber() - 1, 0));
       }
     }

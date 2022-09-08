@@ -70,10 +70,8 @@ public class InterruptedRuntimeException extends RuntimeException {
    * @param message            the detail message.
    * @param cause              the cause.  (A {@code null} value is permitted,
    *                           and indicates that the cause is nonexistent or unknown.)
-   * @param enableSuppression  whether or not suppression is enabled
-   *                           or disabled
-   * @param writableStackTrace whether or not the stack trace should
-   *                           be writable
+   * @param enableSuppression  whether suppression is enabled or disabled
+   * @param writableStackTrace whether the stack trace should be writable
    */
   public InterruptedRuntimeException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
     super(message, cause, enableSuppression, writableStackTrace);

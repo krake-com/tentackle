@@ -61,14 +61,14 @@ public interface SessionTaskDispatcher extends TaskDispatcher {
   /**
    * Returns whether the session should be closed on termination.
    *
-   * @return true if should be closed, false if remains open
+   * @return true to close, false to leave it open
    */
   boolean isSessionClosedOnTermination();
 
   /**
    * Sets whether the session should be closed on termination.
    *
-   * @param sessionClosedOnTermination true if should be closed, false if remains open
+   * @param sessionClosedOnTermination true to close, false to leave it open
    */
   void setSessionClosedOnTermination(boolean sessionClosedOnTermination);
 

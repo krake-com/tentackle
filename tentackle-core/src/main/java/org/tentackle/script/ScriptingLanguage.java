@@ -58,7 +58,7 @@ public interface ScriptingLanguage {
    * Throws {@link ScriptRuntimeException} if script cannot be created.
    *
    * @param code the scripting code
-   * @param cached true if use caching if possible because script code may used more than once
+   * @param cached true to use caching if possible because script code may be used more than once
    * @param threadSafe true if the script may be invoked in parallel from different threads
    * @param converterProvider the optional script converter provider
    * @return the created script object

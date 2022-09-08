@@ -142,7 +142,7 @@ public class PropertyMapping<T> {
     this.name = Objects.requireNonNull(name);
     this.getter = Objects.requireNonNull(getter);
     this.setter = setter;
-    // returntype may be supertype of the setter's parameter -> setter takes precedence
+    // return type may be supertype of the setter's parameter -> setter takes precedence
     this.valueType = setter != null ? setter.getParameterTypes()[0] : getter.getReturnType();
   }
 

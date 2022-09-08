@@ -64,7 +64,7 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
   /**
    * Sets whether properties should be tried if no stored bundle found.
    *
-   * @param fallbackToProperties true if use resources from properties, false to throw {@link java.util.MissingResourceException}
+   * @param fallbackToProperties true to use resources from properties, false to throw {@link java.util.MissingResourceException}
    */
   public static void setFallbackToProperties(boolean fallbackToProperties) {
     StoredBundleControl.fallbackToProperties = fallbackToProperties;
@@ -151,7 +151,7 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
         context = Pdo.createDomainContext();    // thread-local domain context
 
         if (!listenerRegistered) {
-          // we cannot do that in the constructor of StoredBundleFactory because the modtracker isnt running at
+          // we cannot do that in the constructor of StoredBundleFactory because the modification tracker isn't running at
           // application start
           ModificationTracker.getInstance().addModificationListener(new PdoListener(StoredBundle.class) {
             @Override

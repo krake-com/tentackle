@@ -21,7 +21,7 @@ package org.tentackle.validate.severity;
 import org.tentackle.validate.ValidationSeverity;
 
 /**
- * A mqjor severity.
+ * A major severity.
  * <p>
  * Used by the application to express a major error.
  */

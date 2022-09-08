@@ -39,7 +39,7 @@ public class PropertyDescriptor {
   /**
    * The converter.
    *
-   * @return the FQCN of the converter, or the META-INF service if beginning wirh {@code @}
+   * @return the FQCN of the converter, or the META-INF service if beginning with {@code @}
    */
   public String getConverter() {
     return converter;

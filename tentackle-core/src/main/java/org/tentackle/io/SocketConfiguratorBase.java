@@ -18,14 +18,15 @@
 
 package org.tentackle.io;
 
+import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.misc.ParameterString;
+
 import java.io.Serial;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.StringTokenizer;
-import org.tentackle.common.TentackleRuntimeException;
-import org.tentackle.misc.ParameterString;
 
 
 /**
@@ -111,7 +112,7 @@ public abstract class SocketConfiguratorBase implements Serializable {
   /**
    * Gets SO_REUSEADDR.
    *
-   * @return null if do not configure
+   * @return null to leave unchanged
    */
   public Boolean getReuseAddress() {
     return reuseAddress;
@@ -120,7 +121,7 @@ public abstract class SocketConfiguratorBase implements Serializable {
   /**
    * Sets SO_REUSEADDR.
    *
-   * @param reuseAddress null if do not configure
+   * @param reuseAddress null to leave unchanged
    */
   public void setReuseAddress(Boolean reuseAddress) {
     this.reuseAddress = reuseAddress;
@@ -130,7 +131,7 @@ public abstract class SocketConfiguratorBase implements Serializable {
   /**
    * Gets SO_TIMEOUT.
    *
-   * @return null if do not configure
+   * @return null to leave unchanged
    */
   public Integer getSoTimeout() {
     return soTimeout;
@@ -139,7 +140,7 @@ public abstract class SocketConfiguratorBase implements Serializable {
   /**
    * Sets SO_TIMEOUT.
    *
-   * @param timeout null if do not configure
+   * @param timeout null to leave unchanged
    */
   public void setSoTimeout(Integer timeout) {
     this.soTimeout = timeout;
@@ -149,16 +150,16 @@ public abstract class SocketConfiguratorBase implements Serializable {
   /**
    * Sets the performance preferences.
    *
-   * @return null if do not configure
+   * @return null to leave unchanged
    */
   public SocketPerformancePreferences getPerformancePreferences() {
     return performancePreferences;
   }
 
   /**
-   * Gets the performance preferences.'
+   * Gets the performance preferences.
    *
-   * @param performancePreferences null if do not configure
+   * @param performancePreferences null to leave unchanged
    */
   public void setPerformancePreferences(SocketPerformancePreferences performancePreferences) {
     this.performancePreferences = performancePreferences;

@@ -32,7 +32,7 @@ public class ForeignKeyMigrator {
 
   private final Backend backend;                          // the backend
   private final ForeignKey foreignKey;                    // the foreign key to migrate, null if no such fk in model
-  private final ForeignKeyMetaData foreignKeyMetaData;    // the foreign key meta data, null if key does not exist
+  private final ForeignKeyMetaData foreignKeyMetaData;    // the foreign key metadata, null if key does not exist
 
 
   /**
@@ -40,7 +40,7 @@ public class ForeignKeyMigrator {
    *
    * @param backend the backend
    * @param foreignKey the foreign key to migrate, null if no such fk in model
-   * @param foreignKeyMetaData the foreign key meta data, null if key does not exist
+   * @param foreignKeyMetaData the foreign key metadata, null if key does not exist
    */
   public ForeignKeyMigrator(Backend backend, ForeignKey foreignKey, ForeignKeyMetaData foreignKeyMetaData) {
     this.backend = backend;
