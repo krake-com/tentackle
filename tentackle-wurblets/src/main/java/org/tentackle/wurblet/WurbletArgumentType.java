@@ -19,7 +19,7 @@
 package org.tentackle.wurblet;
 
 /**
- * The type of a {@link WurbletArgument}.
+ * The {@link WurbletArgument} type.
  *
  * @author harald
  */

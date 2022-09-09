@@ -60,7 +60,8 @@ public interface Session extends Comparable<Session>, AutoCloseable {
   }
 
   /**
-   * Asserts that a thread local session is set.<br>
+   * Asserts that a thread-local session is set.<br>
+   *
    * @throws PersistenceException if thread-local session is null
    */
   static void assertCurrentSessionValid() {
@@ -68,14 +69,15 @@ public interface Session extends Comparable<Session>, AutoCloseable {
   }
 
   /**
-   * Gets the thread local session.<br>
+   * Gets the thread-local session.<br>
+   *
    * @return the session, never null
    * @throws PersistenceException if thread-local session is null
    */
   static Session getSession() {
     Session session = getCurrentSession();
     if (session == null) {
-      throw new PersistenceException("no thread local session for " + Thread.currentThread());
+      throw new PersistenceException("no thread-local session for " + Thread.currentThread());
     }
     return session;
   }
@@ -226,9 +228,9 @@ public interface Session extends Comparable<Session>, AutoCloseable {
   void reOpen();
 
   /**
-   * Gets the current user info.
+   * Gets the current session info.
    *
-   * @return the SessionInfo
+   * @return the session info
    */
   SessionInfo getSessionInfo();
 

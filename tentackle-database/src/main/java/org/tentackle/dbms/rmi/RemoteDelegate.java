@@ -21,13 +21,13 @@ package org.tentackle.dbms.rmi;
 import java.rmi.Remote;
 
 /**
- * Tag interface for Remote delegates provided by getRemoteDelegate() in Db.<br>
+ * Tag interface for Remote delegates.<br>
  * The implementation of a RemoteDelegate must provide a constructor as follows:
  * <pre>
  * public RemoteDelegateImpl(RemoteDbSessionImpl session, Class clazz)
  * </pre>
  *
- * while session is the remote DB-session and clazz is the Class the delegate implements
+ * while session is the remote session and clazz is the Class the delegate implements
  * the remote methods.
  *
  * @author harald

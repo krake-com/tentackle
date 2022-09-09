@@ -27,7 +27,7 @@ import java.util.Map;
  * Support to locate bundle services.<br>
  * For annotations providing bundle support, a META-INF/service entry must be created
  * manually in order to be processed by the BundleFactory at runtime as well as the
- * analyze-, checker and i18n maven plugins at build time.
+ * analyze-, checker- and i18n-maven-plugins at build time.
  *
  * @see Bundle
  * @see BundleFactory

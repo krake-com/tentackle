@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.dbms;
 
 import org.tentackle.dbms.rmi.AbstractDbOperationRemoteDelegate;
@@ -42,9 +41,9 @@ public abstract class AbstractDbOperation<P extends AbstractDbOperation<P>>
   @Serial
   private static final long serialVersionUID = 1L;
 
-  private transient Db db;                                // the bound db connection
-  private transient boolean sessionImmutable;             // true if Db is immutable
-  private transient SessionHolder sessionHolder;          // a redirector to retrieve the Db
+  private transient Db db;                                // the bound session
+  private transient boolean sessionImmutable;             // true if session is immutable
+  private transient SessionHolder sessionHolder;          // a redirector to retrieve the session
 
 
   /**

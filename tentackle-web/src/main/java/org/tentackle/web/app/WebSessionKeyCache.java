@@ -140,7 +140,7 @@ public class WebSessionKeyCache<T> {
   /**
    * Adds a mapping between a session and a session info.<br>
    * This is usually done in the login controller.
-   * If a session with that key already exists, the user info
+   * If a session with that key already exists, the session info
    * will be replaced.
    *
    * @param sessionKey the (unique) session key
@@ -172,10 +172,10 @@ public class WebSessionKeyCache<T> {
   public SessionInfo getSessionInfo(T sessionKey) {
     SoftReference<SessionInfo> sessionInfoRef = sessionInfoMap.get(sessionKey);
     if (sessionInfoRef != null) {
-      SessionInfo userInfo = sessionInfoRef.get();
-      if (userInfo != null) {
+      SessionInfo sessionInfo = sessionInfoRef.get();
+      if (sessionInfo != null) {
         // not cleared so far: we can use it
-        return userInfo;
+        return sessionInfo;
       }
       removeSessionInfo(sessionKey);
     }
@@ -186,7 +186,7 @@ public class WebSessionKeyCache<T> {
   /**
    * Gets the session keys for a user session info.
    *
-   * @param sessionInfo the user info
+   * @param sessionInfo the session info
    * @return the session keys, never null
    */
   public Collection<T> getSessionKeys(SessionInfo sessionInfo) {

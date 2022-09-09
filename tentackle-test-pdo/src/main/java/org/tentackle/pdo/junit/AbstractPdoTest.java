@@ -298,7 +298,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
    * @return the context (usually thread-local)
    */
   protected DomainContext createDomainContext() {
-    return Pdo.createDomainContext();   // thread local
+    return Pdo.createDomainContext();   // thread-local
   }
 
   /**

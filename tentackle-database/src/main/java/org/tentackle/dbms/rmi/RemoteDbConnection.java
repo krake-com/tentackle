@@ -23,7 +23,6 @@ import org.tentackle.session.SessionInfo;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
-
 /**
  * RMI remote connection.<br>
  * This is the first remote object passed to the client when it connects
@@ -35,11 +34,10 @@ import java.rmi.RemoteException;
  *
  * @author harald
  */
-
 public interface RemoteDbConnection extends Remote {
 
   /**
-   * Gets the application-specific version of the server.<br>
+   * Gets the application-specific version of the server.
    *
    * @return the server version
    * @throws RemoteException if failed
@@ -50,7 +48,7 @@ public interface RemoteDbConnection extends Remote {
   /**
    * Login to remote RMI-server.
    *
-   * @param clientInfo the user information
+   * @param clientInfo the session information
    * @return the session
    * @throws RemoteException if some error, for example wrong password
    * @see RemoteDbSession#close()

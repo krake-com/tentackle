@@ -74,7 +74,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * We keep an internal set of all sessions via WeakReferences, so the
    * sessions still will be finalized when the session isn't used anymore.
    * The set of sessions is used to determine stale sessions, i.e. ones
-   * with timed out db-connections. These are typically caused by clients
+   * with timed out sessions. These are typically caused by clients
    * not properly closing the rmi-session.
    */
   private static final Set<WeakReference<RemoteDbSessionImpl>> SESSIONS = ConcurrentHashMap.newKeySet();
@@ -88,7 +88,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
 
   /**
    * Starts the optional cleanup thread that will
-   * monitor the sessions for db-activity.
+   * monitor the sessions for database activity.
    *
    * @param checkInterval is the interval in ms
    */
@@ -133,13 +133,13 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   /**
    * Checks if the user is already logged in.
    *
-   * @param userInfo the user's info
-   * @return the userinfo if already logged in, null if not logged in
+   * @param sessionInfo the user's session info
+   * @return the session info if already logged in, null if not logged in
    */
-  public static SessionInfo isUserLoggedIn(SessionInfo userInfo) {
+  public static SessionInfo isUserLoggedIn(SessionInfo sessionInfo) {
     for (RemoteDbSessionImpl session: getOpenSessions()) {
       SessionInfo sessionSessionInfo = session.getClientSessionInfo();
-      if (userInfo != sessionSessionInfo && sessionSessionInfo.equals(userInfo)) {
+      if (sessionInfo != sessionSessionInfo && sessionSessionInfo.equals(sessionInfo)) {
         return sessionSessionInfo;
       }
     }
@@ -269,7 +269,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
             db.close();
           }
           else if (db.isOpen()) {
-            // reset the user info for this db for sure (the application may have changed it to clientInfo)
+            // reset the session info for this Db for sure (the application may have changed it to clientInfo)
             db.setSessionInfo(serverInfo);
             db.setExportedSessionGroupId(0);      // remove from session group
           }
@@ -297,7 +297,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   private final Resources resources;                  // resources to be cleaned up
   private final Cleanable cleanable;                  // to clean up the connection
   private final SessionInfo clientInfo;               // saved client info
-  private final SessionInfo serverInfo;               // the server info for creating a new Db connection
+  private final SessionInfo serverInfo;               // the server info for creating a new session
   private final long sessionNumber;                   // unique session number
   private final String clientHost;                    // the client host string
   private int timeout;                                // timeout in polling intervals of the RemoteDbSessionCleanupThread
@@ -481,9 +481,9 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
 
 
   /**
-   * Gets the client user info.
+   * Gets the client session info.
    *
-   * @return the client user info
+   * @return the client session info
    */
   @Override
   public SessionInfo getClientSessionInfo() {
@@ -492,9 +492,9 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
 
 
   /**
-   * Gets the server user info.
+   * Gets the server session info.
    *
-   * @return the server user info
+   * @return the server session info
    */
   public SessionInfo getServerSessionInfo() {
     return serverInfo;
@@ -586,8 +586,8 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * The default implementation returns {@link RmiServer#getPort()}.
    *
    * @param session the session attached to the {@link RemoteDbSession}
-   * @param clientInfo the UserInfo from the client
-   * @param serverInfo the UserInfo to establish the connection to the database rmiServer
+   * @param clientInfo the session info from the client
+   * @param serverInfo the session info to establish the connection to the database rmiServer
    * @return the tcp-port for this connection, 0 = system default
    */
   protected int determinePort(Session session, SessionInfo clientInfo, SessionInfo serverInfo) {
@@ -599,8 +599,8 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * The default implementation returns {@link RmiServer#getClientSocketFactory()}.
    *
    * @param session the session attached to the {@link RemoteDbSession}
-   * @param clientInfo the UserInfo from the client
-   * @param serverInfo the UserInfo to establish the connection to the database rmiServer
+   * @param clientInfo the session info from the client
+   * @param serverInfo the session info to establish the connection to the database rmiServer
    * @return the client socket factory for this connection, null = system default
    */
   protected RMIClientSocketFactory determineClientSocketFactory(Session session, SessionInfo clientInfo, SessionInfo serverInfo) {
@@ -612,8 +612,8 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * The default implementation returns {@link RmiServer#getServerSocketFactory()}.
    *
    * @param session the session attached to the {@link RemoteDbSession}
-   * @param clientInfo the UserInfo from the client
-   * @param serverInfo the UserInfo to establish the connection to the database rmiServer
+   * @param clientInfo the session info from the client
+   * @param serverInfo the session info to establish the connection to the database rmiServer
    * @return the rmiServer socket factory for this connection, null = system default
    */
   protected RMIServerSocketFactory determineServerSocketFactory(Session session, SessionInfo clientInfo, SessionInfo serverInfo) {
@@ -625,8 +625,8 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * The default implementation returns {@link RmiServer#getSessionTimeout()}.
    *
    * @param session the session attached to the {@link RemoteDbSession}
-   * @param clientInfo the UserInfo from the client
-   * @param serverInfo the UserInfo to establish the connection to the database rmiServer
+   * @param clientInfo the session info from the client
+   * @param serverInfo the session info to establish the connection to the database rmiServer
    * @return the timeout
    */
   protected int determineTimeout(Session session, SessionInfo clientInfo, SessionInfo serverInfo) {

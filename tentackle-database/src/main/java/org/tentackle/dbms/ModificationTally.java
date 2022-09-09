@@ -106,7 +106,7 @@ public class ModificationTally {
   /**
    * Adds a pending count.
    *
-   * @param session the session persisting the modification, null if threadlocal session
+   * @param session the session persisting the modification, null if thread-local session
    */
   public synchronized void countPending(Session session) {
     if (session == null) {

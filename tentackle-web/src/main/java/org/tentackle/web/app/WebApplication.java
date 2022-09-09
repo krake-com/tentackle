@@ -110,7 +110,7 @@ public abstract class WebApplication<T> extends AbstractServerApplication {
         }
       }
       if (session != null) {
-        session.setSessionInfo(sessionInfo); // attach userinfo
+        session.setSessionInfo(sessionInfo); // attach session info
         return session;
       }
     }
@@ -126,8 +126,8 @@ public abstract class WebApplication<T> extends AbstractServerApplication {
    */
   public void putSession(Session session) {
     /*
-     * dereference user info (possible target for the GC).
-     * If (due to tight memory or timeout) the userinfo gets garbage
+     * dereference session info (possible target for the GC).
+     * If (due to tight memory or timeout) the session info gets garbage
      * collected the user must log in again.
      */
     ((Db) session).setSessionInfo(null);

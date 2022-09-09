@@ -500,7 +500,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * i.e. directly talking to the database.<p>
    * In servers, however, modifications will be persisted delayed,
    * when no transactions are running that refer to the modified tables.<p>
-   * Important: in local client mode, the thread local session must be valid,
+   * Important: in local client mode, the thread-local session must be valid,
    * because the session used to persist the modification count must be the
    * same as the current transaction, if any.
    *
@@ -609,7 +609,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * Counts the modification for a table.<br>
    * Used by the persistence layer to update the modification table.
    *
-   * @param session the session persisting the modification, null if threadlocal session
+   * @param session the session persisting the modification, null if thread-local session
    * @param tableName the table name
    * @return the table serial (guessed lowest, could be higher already)
    */

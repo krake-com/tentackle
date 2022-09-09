@@ -835,8 +835,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * been modified. The modified-attribute is cleared whenever the
    * object is saved (inserted or updated -- NOT insertPlain and updatePlain!).
    * The application is responsible to set the modified flag!
-   * This is usually done in the setter-methods of the db-attributes.
-   * The wurblet 'DbMethods' does this for you with option '--tracked'
+   * This is usually done in the setter-methods of the attributes.
    * <p>
    * If invoked with modified=false (which is the case after being loaded
    * from storage or after successful delete/update/insert) all property
@@ -1199,7 +1198,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * Method is final!<br>
    * <p>
    * Objects are identical if their IDs and classes are identical.<br>
-   * IDs are *NOT* necessarily unique among all db-tables!
+   * IDs are *NOT* necessarily unique among all database tables!
    * If this or the passed object has an ID of 0, there is no domain identity
    * and {@link Object#equals(java.lang.Object)}
    * will be invoked.
@@ -1308,7 +1307,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Loads an object from the database by its unique ID.<p>
-   * For local db connections the current object's attributes will be
+   * For local sessions the current object's attributes will be
    * replaced by the database values (i.e. <em>this</em> object is returned).
    * For remote connections, a copy of the object in the server is returned.
    * Hence, applications should always create a new object and invoke
@@ -2569,7 +2568,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   /**
    * Combines {@link #selectExpiredTableSerials} and {@link #getExpirationBacklog}.<br>
    * A physical database query is only done if the requested range is not in the backlog.
-   * Used in RMI-servers to reduces db-roundtrips.
+   * Used in RMI-servers to reduces database roundtrips.
    *
    * @param oldSerial non-inclusive lower bound for tableSerial (&gt; oldSerial)
    * @param maxSerial inclusive upper bound for tableSerial (&le; maxSerial)

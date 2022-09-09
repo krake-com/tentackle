@@ -563,7 +563,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
           String msg = this + ": increasing number of connections by " + count + " to " + (conSize + count) + " of " +
                        maxConSize + " (unattached=" + unConCount + ")";
           if (conSize + count > getWarnLogSize()) {
-            // Half of the connections concurrently in use in most cases tells us that the db-server
+            // Half of the connections concurrently in use in most cases tells us that the database server
             // is reaching its limits, i.e. the operations take too long. Or maxConSize is simply too low.
             // Log attached connections.
             StringBuilder buf = new StringBuilder(msg).append("\n\n  attached connections:");

@@ -29,7 +29,7 @@ import org.tentackle.log.Logger;
 public interface RemoteSession {
 
   /**
-   * Gets the client user info.
+   * Gets the client session info.
    * <p>
    * The server may set certain values in the session info that may be
    * of interest for the client application, for example the user-ID.

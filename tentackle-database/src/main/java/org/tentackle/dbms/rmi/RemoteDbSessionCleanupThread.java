@@ -141,12 +141,12 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
   /**
    * Verifies and cleans up the sessions.
    * <p>
-   * Finds all db-groups or non-grouped db that are not alive anymore
+   * Finds all session-groups or non-grouped session that are not alive anymore
    * and closes their sessions.
-   * If _all_ dbs of a group have timed out, the whole group is closed.
-   * Usually the ModificationThread of a client sessions will keep up
-   * a db-group alive. If the application uses only a single db-session,
-   * it must set the db-alive manually.
+   * If _all_ sessions of a group have timed out, the whole group is closed.
+   * Usually the modification tracker of a client sessions will keep up
+   * a session-group alive. If the application uses only a single session,
+   * it must set the alive flag manually.
    */
   protected void verifySessions() {
 

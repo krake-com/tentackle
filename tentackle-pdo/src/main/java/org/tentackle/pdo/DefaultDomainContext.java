@@ -87,7 +87,7 @@ public class DefaultDomainContext implements DomainContext {
   private int rootClassId;
 
   /**
-   * thread local session clonePdo of this domain context.
+   * thread-local session clonePdo of this domain context.
    */
   private transient DefaultDomainContext tlsContext;
 

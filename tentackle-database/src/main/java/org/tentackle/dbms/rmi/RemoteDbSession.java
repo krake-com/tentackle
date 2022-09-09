@@ -24,8 +24,6 @@ import org.tentackle.session.SessionInfo;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
-
-
 /**
  * Application server session.<br>
  * The session will create all other delegates for the client.
@@ -35,7 +33,7 @@ import java.rmi.RemoteException;
 public interface RemoteDbSession extends Remote {
 
   /**
-   * Gets the client user info.
+   * Gets the client session info.
    * <p>
    * The server may set certain values in the session info that may be
    * of interest to the client application, for example the userId.

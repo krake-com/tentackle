@@ -34,9 +34,8 @@ import java.util.Objects;
  * The pool can be used with any ConnectionManager.
  * If used with the {@link DefaultConnectionManager}, each {@link Db} instance corresponds to a
  * physical JDBC-connection. If used with an {@link MpxConnectionManager}, the {@link Db} instances
- * map to virtual connections that will be attached temporarily during db-operations.
+ * map to virtual connections that will be attached temporarily during database operations.
  * This is the preferred configuration in server applications with a lot of clients.
- * In order to clear the PdoCache on db-close, you have to override the closeDb method.
  */
 public class DbPool implements SessionPool {
 
@@ -116,10 +115,10 @@ public class DbPool implements SessionPool {
    * Idle timeout 1 hour, usage timeout 1 day.
    *
    * @param conMgr the connection manager
-   * @param ui the userinfo for the created Db
+   * @param sessionInfo the session info for the created Db
    */
-  public DbPool(ConnectionManager conMgr, SessionInfo ui) {
-    this("default-pool", conMgr, ui, 0, 8, 2, 4, conMgr.getMaxSessions(), 60L, 24*60L);
+  public DbPool(ConnectionManager conMgr, SessionInfo sessionInfo) {
+    this("default-pool", conMgr, sessionInfo, 0, 8, 2, 4, conMgr.getMaxSessions(), 60L, 24*60L);
   }
 
 

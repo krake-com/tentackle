@@ -44,8 +44,8 @@ public class ${application}RemoteDbSessionImpl extends RemoteDbSessionImpl imple
    * Creates a session on a given connection.
    *
    * @param con the connection
-   * @param clientInfo the UserInfo from the client
-   * @param serverInfo the UserInfo to establish the connection to the database server
+   * @param clientInfo the session info from the client
+   * @param serverInfo the session info to establish the connection to the database server
    */
   public ${application}RemoteDbSessionImpl(RemoteDbConnectionImpl con, SessionInfo clientInfo, SessionInfo serverInfo) {
     super(con, clientInfo, serverInfo);

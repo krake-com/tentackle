@@ -170,8 +170,8 @@ public abstract class AbstractServerApplication extends AbstractApplication
       @Override
       public Db getSession() {
         Db db = super.getSession();
-        // get a fresh copy of a user info.
-        // wipe out old userinfo, i.e. force application to set the correct info
+        // get a fresh copy of a session info.
+        // wipe out old session info, i.e. force application to set the correct info
         SessionInfo sessionInfo = getSessionInfo().clone();
         db.setSessionInfo(sessionInfo);
         sessionInfo.setUserId(0);
