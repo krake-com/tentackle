@@ -28,8 +28,6 @@ import org.tentackle.persist.ResultSetCursor.FetchList;
 import java.rmi.RemoteException;
 import java.util.List;
 
-
-
 /**
  * Remote delegate implementation for {@link ResultSetCursor}.
  *
@@ -50,8 +48,8 @@ public class RemoteResultSetCursorImpl<T extends PersistentDomainObject<T>>
   /**
    * Creates a remote cursor delegate.
    *
-   * @param session is the RMI session
-   * @param clazz is the subclass of DbObject
+   * @param session the RMI session
+   * @param clazz the PDO interface class
    */
   public RemoteResultSetCursorImpl(RemoteDbSessionImpl session, Class<T> clazz) {
     super(session, clazz);

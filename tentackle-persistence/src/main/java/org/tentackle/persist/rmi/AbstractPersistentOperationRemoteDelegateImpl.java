@@ -16,17 +16,14 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.persist.rmi;
 
 import org.tentackle.dbms.rmi.AbstractDbOperationRemoteDelegateImpl;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
-import org.tentackle.persist.AbstractPersistentOperation;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Operation;
 import org.tentackle.pdo.Pdo;
-
-
+import org.tentackle.persist.AbstractPersistentOperation;
 
 /**
  * Implementation of the remote delegate for {@link AbstractPersistentOperation}.<br>
@@ -82,7 +79,7 @@ public class AbstractPersistentOperationRemoteDelegateImpl<T extends Operation<T
     catch (RuntimeException e) {
       /*
        * Application requires an extended domain context.
-       * Leave the dbObject as it is for simple methods.
+       * Use the local operation object as it is for simple methods.
        * In all other cases, the application must pass the context via the remote method
        * and set the context explicitly.
        */

@@ -16,8 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-
 package org.tentackle.dbms;
 
 import org.tentackle.common.FileHelper;
@@ -38,10 +36,8 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * Holds static class variables for classes derived from DbObject.
+ * Holds static class variables for classes derived from AbstractDbObject.<br>
  * This is a "singleton per class".
- * All classvariables register to a static {@link Map} that can be queried by apps
- * by tablename.
  *
  * @param <P> the persistence type
  * @author harald
@@ -285,10 +281,10 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
 
 
   /**
-   * constructs a classvariable.<br>
+   * Constructs a class variable.<br>
    * Throws IllegalStateException if already constructed.
    *
-   * @param clazz is the class of the derived DbObject
+   * @param clazz is the class of the derived AbstractDbObject
    * @param classId the unique class id, 0 if abstract
    * @param tableName is the SQL tablename
    */
@@ -307,11 +303,11 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
 
 
   /**
-   * constructs a classvariable.<br>
+   * Constructs a class variable.<br>
    * Throws IllegalStateException if already constructed.
    * Classid and tablename are derived from META-INF.
    *
-   * @param clazz is the class of the derived DbObject
+   * @param clazz is the class of the derived AbstractDbObject
    */
   public DbObjectClassVariables(Class<P> clazz) {
     this(clazz,
@@ -504,11 +500,11 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
 
 
   /**
-   * Gets the delegateId of the class, i.e. subclass of DbObject.
+   * Gets the delegateId of the class, i.e. subclass of AbstractDbObject.<br>
    * If the remoteDelegateId is 0, it will be prepared
    * The delegateId is unique for each class. It is valid only in remote connections and
-   * is the same for all remote Db's.
-   * The RMI-server creates a delegate for each subclass of DbObject (DbObjectRemoteDelegateImpl resp.)
+   * is the same for all remote sessions.
+   * The RMI-server creates a delegate for each subclass of AbstractDbObject (DbObjectRemoteDelegateImpl resp.)
    *
    * @return the delegate id
    */
@@ -520,7 +516,8 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
   }
 
   /**
-   * Gets the RemoteDelegate for the class and db.
+   * Gets the RemoteDelegate for the class and session.
+   *
    * @param db the session
    * @return the delegate
    */

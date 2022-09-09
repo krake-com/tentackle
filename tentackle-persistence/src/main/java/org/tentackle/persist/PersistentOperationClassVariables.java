@@ -16,14 +16,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.persist;
 
 import org.tentackle.dbms.DbObjectClassVariables;
 import org.tentackle.dbms.DbOperationClassVariables;
 import org.tentackle.pdo.Operation;
 import org.tentackle.pdo.OperationMethodCache;
-
 
 /**
  * Extends {@link DbObjectClassVariables} for {@link AbstractPersistentOperation}s.
@@ -35,7 +33,7 @@ import org.tentackle.pdo.OperationMethodCache;
 public class PersistentOperationClassVariables<T extends Operation<T>, P extends AbstractPersistentOperation<T,P>> extends DbOperationClassVariables<P> {
 
   /**
-   * Creates an operation classvariable.
+   * Creates an operation class variable.
    *
    * @param operationClass the operation's class (i.e. interface)
    * @param clazz the class of the derived operation

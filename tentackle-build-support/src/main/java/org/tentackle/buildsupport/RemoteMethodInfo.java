@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.buildsupport;
 
 import org.tentackle.common.Settings;
@@ -41,8 +40,6 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-
 
 /**
  * Holds information gathered by the {@link org.tentackle.common.Analyze}-annotation.
@@ -519,7 +516,8 @@ public class RemoteMethodInfo {
 
   /**
    * Checks whether the method is returning a low-level db object.
-   * @return true if method returns a DbObject.
+   *
+   * @return true if method returns an AbstractDbObject
    */
   public boolean isReturningDbObject() {
     return returningDbObject;
@@ -527,7 +525,8 @@ public class RemoteMethodInfo {
 
   /**
    * Sets whether the method is returning a low-level db object.
-   * @param returningDbObject true if method returns a DbObject.
+   *
+   * @param returningDbObject true if method returns an AbstractDbObject
    */
   public void setReturningDbObject(boolean returningDbObject) {
     this.returningDbObject = returningDbObject;
@@ -535,7 +534,8 @@ public class RemoteMethodInfo {
 
   /**
    * Checks whether the method is returning a collection of low-level db objects.
-   * @return true if method returns a collection of DbObjects.
+   *
+   * @return true if method returns a collection of AbstractDbObjects
    */
   public boolean isReturningDbObjectCollection() {
     return returningDbObjectCollection;
@@ -543,7 +543,8 @@ public class RemoteMethodInfo {
 
   /**
    * Sets whether the method is returning a collection of low-level db objects.
-   * @param returningDbObjectCollection true if method returns a collection of DbObjects.
+   *
+   * @param returningDbObjectCollection true if method returns a collection of AbstractDbObjects
    */
   public void setReturningDbObjectCollection(boolean returningDbObjectCollection) {
     this.returningDbObjectCollection = returningDbObjectCollection;
@@ -551,6 +552,7 @@ public class RemoteMethodInfo {
 
   /**
    * Checks whether the method is returning a cursor.
+   *
    * @return true if method returns a cursor
    */
   public boolean isReturningCursor() {
