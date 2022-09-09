@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.persist.rmi;
 
 import org.tentackle.common.Timestamp;
@@ -36,7 +35,6 @@ import org.tentackle.session.NotFoundException;
 import java.lang.reflect.InvocationTargetException;
 import java.rmi.RemoteException;
 import java.util.List;
-
 
 /**
  * Implementation of the remote delegate for {@link PersistentDomainObject}.<br>
@@ -91,7 +89,7 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
     catch (RuntimeException e) {
       /*
        * Application requires an extended domain context.
-       * Leave the dbObject as it is for simple methods.
+       * Use the local pdo object as it is for simple methods.
        * In all other cases, the application must pass the context via the remote method
        * and set the context explicitly.
        */

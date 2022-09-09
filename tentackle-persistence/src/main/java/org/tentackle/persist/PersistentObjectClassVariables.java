@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.persist;
 
 import org.tentackle.dbms.AbstractDbObject;
@@ -38,7 +37,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
-
 
 /**
  * Extends {@link DbObjectClassVariables} for {@link AbstractPersistentObject}s.
@@ -78,7 +76,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   }
 
   /**
-   * Creates a PDO classvariable.
+   * Creates a PDO class variable.
    *
    * @param pdoClass the PDO's class (i.e. interface)
    * @param poClass the class of the persistence implementation
