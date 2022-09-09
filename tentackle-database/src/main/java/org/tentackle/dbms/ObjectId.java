@@ -93,7 +93,7 @@ public class ObjectId extends AbstractIdSource {
 
         /*
          * Note: this will get the write-lock on object-id. Further nextId() will only increment the id without any
-         * db-operation until the transaction gets closed and the final update is done.
+         * database operation until the transaction gets closed and the final update is done.
          */
         assertOneRowAffected(db, incrementStatement.executeUpdate());
 

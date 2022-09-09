@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.session;
 
 import org.tentackle.misc.FormatHelper;
@@ -24,7 +23,6 @@ import org.tentackle.misc.FormatHelper;
 import java.io.Serial;
 import java.text.MessageFormat;
 import java.util.Date;
-
 
 /**
  * Exception thrown if the user is already logged in.<br>
@@ -37,13 +35,13 @@ public class AlreadyLoggedInException extends LoginFailedException {
   @Serial
   private static final long serialVersionUID = 1L;
 
-  private final SessionInfo loginInfo;    // the application user info
+  private final SessionInfo loginInfo;    // the application session info
 
   /**
    * Creates an {@code AlreadyLoggedInException}.
    *
    * @param session the session
-   * @param loginInfo the application user info
+   * @param loginInfo the login session info
    */
   public AlreadyLoggedInException(Session session, SessionInfo loginInfo) {
     super(session);
@@ -52,9 +50,9 @@ public class AlreadyLoggedInException extends LoginFailedException {
 
 
   /**
-   * Gets the application user info.
+   * Gets the application session info.
    *
-   * @return the user info
+   * @return the session info
    */
   public SessionInfo getLoginInfo() {
     return loginInfo;

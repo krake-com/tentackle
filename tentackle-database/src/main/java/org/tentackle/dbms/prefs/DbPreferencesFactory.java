@@ -49,7 +49,6 @@ import java.util.prefs.NodeChangeListener;
 import java.util.prefs.PreferenceChangeEvent;
 import java.util.prefs.PreferenceChangeListener;
 
-
 /**
  * Repository and factory for database backed preferences.
  * <p>
@@ -655,7 +654,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     Db db = (Db) Session.getCurrentSession();
     if (db == null) {
       if (forUser) {
-        throw new PersistenceException("no thread local session for " + Thread.currentThread());
+        throw new PersistenceException("no thread-local session for " + Thread.currentThread());
       }
       // no thread-local session: use the one from the mod tracker
       db = (Db) ModificationTracker.getInstance().getSession();

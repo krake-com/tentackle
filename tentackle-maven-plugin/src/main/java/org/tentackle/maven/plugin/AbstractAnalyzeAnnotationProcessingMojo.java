@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.maven.plugin;
 
 import org.apache.maven.plugin.MojoExecutionException;
@@ -36,7 +35,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-
 /**
  * Generates code and meta-information prior to wurbeling and compiling the sources.
  * <p>
@@ -50,7 +48,7 @@ import java.util.TreeSet;
 public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTentackleAnnotationProcessingMojo {
 
   /**
-   * Directory holding the analyze results.
+   * Directory holding the analyze-results.
    */
   private File analyzeDir;
 
@@ -72,7 +70,7 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
   private Set<String> generatedServices;
 
   /**
-   * Epochal time in ms when mojo was started. Used to detect which of the analyze directories
+   * Epochal time in ms when mojo was started. Used to detect which of the analyze-directories
    * are just created within this run.
    */
   private final long startedMillis;
@@ -89,7 +87,7 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
    * Sets the mojo parameters.
    *
    * @param sourceDir the directory holding the sources to be processed
-   * @param analyzeDir the directory holding the analyze results
+   * @param analyzeDir the directory holding the analyze-results
    * @param servicesDir the directory holding the generated services
    * @param classpathElements the mavenProject classpath
    * @throws MojoFailureException if classloader could not be created
@@ -198,7 +196,7 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
         // sub-package with the same name as a class (within the same package)
       }
       else  {
-        outputDir.mkdirs();   // create dir if it doesnt
+        outputDir.mkdirs();   // create dir if it doesn't exist
       }
 
       if (minOutputLastModified < sourceLastModified) {
@@ -227,7 +225,7 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
 
     if (getTotalCompileErrors() > 0) {
       // create a file that tells subsequent build phases that there were compilation errors
-      // and the analyze info may be incomplete
+      // and the analyze-info may be incomplete
       try (PrintWriter writer = new ResourceManager(analyzeDir).getWriter(AnalyzeProcessor.COMPILE_ERROR_LOG)) {
         writer.print(getCompileErrorLog());
         writer.print(getTotalCompileErrors());

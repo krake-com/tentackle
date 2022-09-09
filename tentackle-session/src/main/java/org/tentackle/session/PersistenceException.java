@@ -70,7 +70,7 @@ public class PersistenceException extends TentackleRuntimeException {
   }
 
 
-  private transient Session session;        // the db connection this exception belongs to
+  private transient Session session;        // the session this exception belongs to
   private Identifiable identifiable;        // the db object this exception belongs to
   private String lazyMessage;               // null if messsage not computed yet
 

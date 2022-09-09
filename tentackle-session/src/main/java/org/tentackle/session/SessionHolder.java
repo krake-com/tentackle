@@ -29,7 +29,7 @@ public interface SessionHolder extends Serializable {
 
   /**
    * Gets the session.<br>
-   * The threadlocal session is returned if the session is null.
+   * The thread-local session is returned if the session is null.
    *
    * @return the session.
    */
@@ -38,14 +38,14 @@ public interface SessionHolder extends Serializable {
   /**
    * Sets the session.
    *
-   * @param session the session, null if threadlocal
+   * @param session the session, null if thread-local
    */
   void setSession(Session session);
 
   /**
-   * Returns whether the session is thread local.
+   * Returns whether the session is thread-local.
    *
-   * @return true if threadlocal
+   * @return true if thread-local
    */
   boolean isSessionThreadLocal();
 
@@ -64,9 +64,9 @@ public interface SessionHolder extends Serializable {
   boolean isSessionImmutable();
 
   /**
-   * The SessionInfo extends the UserInfo by a SecurityManager.
+   * Gets the session info associated to the session.
    *
-   * @return the SessionInfo associated to the Db.
+   * @return the session info
    */
   SessionInfo getSessionInfo();
 

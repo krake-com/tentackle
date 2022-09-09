@@ -91,7 +91,7 @@ public abstract class AbstractApplication implements Application {
   private Properties props;                   // the application's properties
   private CommandLine cmdLine;                // command line
   private DomainContext context;              // the server's connection context
-  private SessionInfo sessionInfo;            // server's user info
+  private SessionInfo sessionInfo;            // server's session info
   private boolean stopping;                   // true if application is stopping
 
 
@@ -368,7 +368,7 @@ public abstract class AbstractApplication implements Application {
   }
 
   /**
-   * Sets the user info.
+   * Sets the session info.
    *
    * @param sessionInfo the session info
    */
@@ -442,7 +442,7 @@ public abstract class AbstractApplication implements Application {
    */
   public DomainContext createDomainContext(Session session) {
     DomainContext ctx = Pdo.createDomainContext(session, true);
-    session = ctx.getSession();   // replace by thread local if session was null
+    session = ctx.getSession();   // replace by thread-local if session was null
     if (session.isRemote()) {
       SessionInfo remoteInfo = session.getRemoteSession().getClientSessionInfo();
       // set the user's object and class id determined by the remote server
@@ -535,7 +535,7 @@ public abstract class AbstractApplication implements Application {
 
   /**
    * Do anything what's necessary after the connection has been established.<br>
-   * The default creates the modification thread (but does not start it),
+   * The default creates the modification tracker (but does not start it),
    * and configures the preferences and security manager.
    */
   protected void configure() {
@@ -556,10 +556,10 @@ public abstract class AbstractApplication implements Application {
       activateStatistics();
     }
 
-    // start the modification thread
+    // start the modification tracker
     if (!getProperties().containsKey(DISABLE_MODIFICATION_TRACKER)) {
       ModificationTracker.getInstance().start();
-      // add a shutdown handler in case the modthread terminates unexpectedly
+      // add a shutdown handler in case the modification tracker terminates unexpectedly
       ModificationTracker.getInstance().addShutdownRunnable(() -> {
         if (!ModificationTracker.getInstance().isTerminationRequested()) {
           LOGGER.severe("*** emergency shutdown ***");

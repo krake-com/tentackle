@@ -16,8 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-
 package org.tentackle.dbms;
 
 import org.tentackle.log.Logger;
@@ -29,7 +27,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-
 /**
  * A wrapper for sql statements.<br>
  * Will catch and report SQLExceptions and
@@ -37,7 +34,6 @@ import java.sql.Statement;
  *
  * @author harald
  */
-
 public class StatementWrapper implements AutoCloseable {
 
   private static final Logger LOGGER = Logger.get(StatementWrapper.class);
@@ -171,8 +167,8 @@ public class StatementWrapper implements AutoCloseable {
    * ResultSet object if an open one exists.
    * </pre>
    * Without this additional measure a "ResultSet closed" exception will be thrown by the
-   * JDBC-driver on the next usage of the first result set and you wouldn't have any clue which
-   * resultset forced the closing.
+   * JDBC-driver on the next usage of the first result set, and you wouldn't have any clue which
+   * result set forced the closing.
    */
   public synchronized void markReady() {
     if (isMarkedReady()) {

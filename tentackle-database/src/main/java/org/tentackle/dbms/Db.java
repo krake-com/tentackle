@@ -92,7 +92,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-
 /**
  * A persistence session.
  * <p>
@@ -530,13 +529,13 @@ public class Db implements Session, Cloneable {
   private int exportedSessionGroupId;                         // session group exported to the remote client, 0 = none
   private SessionPool dbPool;                                 // != null if this Db is managed by a SessionPool
   private int poolId;                                         // the poolid if dbPool != null
-  private SessionInfo sessionInfo;                            // user information
+  private SessionInfo sessionInfo;                            // session information
   private Db clonedFromDb;                                    // the original session if this is a cloned one
   private volatile boolean autoCommit;                        // true if autocommit on, else false
   private boolean countModificationAllowed = true;            // allow modification count
   private boolean logModificationAllowed = true;              // allow modification log
   private boolean readOnly;                                   // true if database is readonly
-  private IdSource defaultIdSource;                           // default ID-Source for db-connection (if not overridden in derivates)
+  private IdSource defaultIdSource;                           // default ID-Source (if not overridden in derivates)
   private int fetchSize;                                      // default fetchsize, 0 = drivers default
   private int maxRows;                                        // maximum rows per resultset, 0 = no limit
   private boolean logModificationTxEnabled;                   // true if log transaction begin/commit in modification log
@@ -569,7 +568,7 @@ public class Db implements Session, Cloneable {
    * the method {@link #handleConnectException} is invoked.
    *
    * @param conMgr the connection manager if local connection (ignored if remote)
-   * @param sessionInfo user information
+   * @param sessionInfo session information
    */
   public Db(ConnectionManager conMgr, SessionInfo sessionInfo) {
 
@@ -2359,13 +2358,13 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Sets the group number for this db.<br>
+   * Sets the group number for this session.<br>
    *
-   * This is an optional number describing groups of db-connections,
-   * which is particularly useful in rmi-servers: if one connection
+   * This is an optional number describing groups of sessions,
+   * which is particularly useful in RMI-servers: if one connection
    * fails, all others should be closed as well.
-   * Groups are only meaningful for local db-connections, i.e.
-   * for remote dbs the group instance refers to that of the rmi-server.
+   * Groups are only meaningful for local sessions, i.e.
+   * for remote sessions the group instance refers to that of the RMI-server.
    *
    * @param groupId is the group number, 0 = no group
    */
@@ -2760,9 +2759,9 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Gets the current user info.
+   * Gets the current session info.
    *
-   * @return the UserInfo
+   * @return the session info
    */
   @Override
   public SessionInfo getSessionInfo() {
@@ -2771,7 +2770,7 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Sets the userInfo.
+   * Sets the session info.<br>
    * This will *NOT* send the session to the remote server
    * if this is a remote session.
    *
@@ -2846,7 +2845,7 @@ public class Db implements Session, Cloneable {
 
       Db newDb = (Db) super.clone();
 
-      if (sessionInfo != null) { // we need a new UserInfo cause some things may be stored here!
+      if (sessionInfo != null) { // we need a new session info cause some things may be stored here!
         SessionInfo clonedInfo = sessionInfo.clone();
         if (sessionName != null) {
           clonedInfo.setSessionName(sessionName);

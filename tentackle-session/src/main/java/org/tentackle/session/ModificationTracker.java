@@ -16,17 +16,14 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.session;
 
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.task.AbstractTask;
 
-
 interface ModificationTrackerHolder {
   ModificationTracker INSTANCE = ServiceFactory.createService(ModificationTracker.class);
 }
-
 
 /**
  * Tracks global PDO changes.
@@ -113,7 +110,7 @@ public interface ModificationTracker extends SessionTaskDispatcher, ExclusiveSes
    * Counts the modification for a given name.<br>
    * Used to trigger modification events.
    *
-   * @param session the session persisting the modification, null if threadlocal session
+   * @param session the session persisting the modification, null if thread-local session
    * @param name a unique name to track modifications
    * @return the modification serial
    */

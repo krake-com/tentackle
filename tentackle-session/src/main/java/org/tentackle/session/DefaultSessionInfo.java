@@ -365,7 +365,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
 
 
   /**
-   * Clones a userinfo.<br>
+   * Clones a session info.<br>
    * The password is copied, if not null.<br>
    * The properties are cloned as well.<br>
    * Cloned session infos are mutable by default.

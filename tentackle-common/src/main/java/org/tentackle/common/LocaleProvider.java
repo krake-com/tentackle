@@ -81,12 +81,13 @@ public class LocaleProvider {
   }
 
   /**
-   * Asserts that a thread local Locale is set.<br>
+   * Asserts that a thread-local Locale is set.
+   *
    * @throws TentackleRuntimeException if thread-local locale is null
    */
   public void assertCurrentLocaleValid() {
     if (getCurrentLocale() == null) {
-      throw new TentackleRuntimeException("no thread local Locale");
+      throw new TentackleRuntimeException("no thread-local Locale");
     }
   }
 

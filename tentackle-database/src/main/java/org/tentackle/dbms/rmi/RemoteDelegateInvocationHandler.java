@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.dbms.rmi;
 
 import org.tentackle.common.ExceptionHelper;
@@ -37,7 +36,6 @@ import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.regex.Pattern;
-
 
 /**
  * Invocation handler to capture RMI method invocations.
@@ -279,7 +277,7 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
   }
 
   /**
-   * Updates the thread local memory.
+   * Updates the thread-local memory.
    */
   protected void updateThreadLocal() {
     delegate.getSession().makeCurrent();
@@ -531,7 +529,7 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
         delegate.getSession().setAlive(true);
 
         try {
-          // update thread local memory
+          // update thread-local memory
           updateThreadLocal();
 
           // set the MDC for logging

@@ -1138,7 +1138,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
             }
             else if (obj.getSession() != session) {
               // must be the same instance of Db!
-              throw new PersistenceException(obj, "unexpected db connection: " + obj.getSession() + ", expected: " + session);
+              throw new PersistenceException(obj, "unexpected session: " + obj.getSession() + ", expected: " + session);
             }
             ((AbstractPersistentObject<?, ?>) obj.getPersistenceDelegate()).deletePlainWithComponents();
             count++;
@@ -1198,7 +1198,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
             }
             else if(obj.getSession() != session) {
               // must be the same instance of Db!
-              throw new PersistenceException(obj, "unexpected db connection: " + obj.getSession() + ", expected: " + session);
+              throw new PersistenceException(obj, "unexpected session: " + obj.getSession() + ", expected: " + session);
             }
             ((AbstractPersistentObject<?,?>) obj.getPersistenceDelegate()).insertPlainWithComponents();
             count++;
@@ -2762,7 +2762,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Gets the user id from the current context, i.e. userinfo.
+   * Gets the user id from the current domain context.<br>
+   * The ID is derived from the session info of the session associated with the domain context.
    * <p>
    * Note: invokes the errorhandler if some exception or userId is 0.
    *
@@ -3613,7 +3614,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
   /**
-   * Updates token lock columns in db-record.<br>
+   * Updates the token lock columns in the database record.<br>
    * Will *NOT* log modification and *NOT* update the serial-counter!
    * Must be called from within application where appropriate.
    * <p>
@@ -3720,9 +3721,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Updates editing info in db-record (if feature enabled).<br>
+   * Updates the token lock columns in the database record.<br>
    * Will *NOT* log modification and *NOT* update the serial-counter!
-   * Must be called from within application where appropriate. See PdoEditDialog.
+   * Must be called from within application where appropriate.
    * <p>
    * 2 cases:
    * <p>

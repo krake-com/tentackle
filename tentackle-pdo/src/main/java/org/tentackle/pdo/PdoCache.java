@@ -448,7 +448,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
    * it will be invalidated (i.e. all objects removed).
    * Otherwise, no objects are removed and those that were changed
    * in the persistence layer will be marked expired.
-   * This is done by obtaining the IDs of all objects in the db-table with a
+   * This is done by obtaining the IDs of all objects in the database table with a
    * tableSerial &gt; cache.tableSerial.
    *
    * @param session the session to use, null if delay expiration check until next select
@@ -1377,8 +1377,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
   }
 
   /**
-   * Assigns an index to this cache.<br>
-   * Note: if already added to another cache the db-errorhandler is invoked.
+   * Assigns an index to this cache.
    */
   private void assignIndex(PdoCacheIndex<T,?> index)  {
     index.assignCache(this);
@@ -1386,7 +1385,6 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
 
   /**
    * Resigns an index from this cache.
-   * If not assigned to this cache: invoke errorhandler
    */
   private void resignIndex(PdoCacheIndex<T,?> index)  {
     // notice that idIndex is private and cannot be removed!

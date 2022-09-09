@@ -253,7 +253,7 @@ public class RmiServer {
 
 
   /**
-   * Creates an instance of an RMI-db-server.
+   * Creates an instance of an RMI-server.
    *
    * @param sessionInfo the server's session info
    * @param connectionClass the class of the connection object to instantiate, null = default or from serverInfo's properties file
@@ -423,7 +423,7 @@ public class RmiServer {
 
 
   /**
-   * Creates an instance of an RMI-db-server with default connection object.
+   * Creates an instance of an RMI-server with default connection object.
    *
    * @param serverInfo the server's session info
    */
