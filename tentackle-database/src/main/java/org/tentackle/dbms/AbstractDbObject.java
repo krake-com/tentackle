@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.dbms;
 
 import org.tentackle.dbms.rmi.AbstractDbObjectRemoteDelegate;
@@ -56,11 +55,10 @@ import static org.tentackle.sql.Backend.SQL_UPDATE;
 import static org.tentackle.sql.Backend.SQL_WHERE;
 import static org.tentackle.sql.Backend.SQL_WHEREALL;
 
-
 /**
  * A persistent low-level database object.
  * <p>
- * All persistent objects must extend {@code AbstractDbObject}, which provides the generic
+ * All persistence implementations must extend {@code AbstractDbObject}, which provides the generic
  * functionality of persistent objects. Every {@code AbstractDbObject} is associated
  * to a logical {@link Session}, which can be either local or remote.
  * The application-specific configuration is achieved by implementing and/or
@@ -71,7 +69,6 @@ import static org.tentackle.sql.Backend.SQL_WHEREALL;
  */
 public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
        implements Immutable, ModificationLoggable, Comparable<P> {
-
 
 
   /**
@@ -912,8 +909,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
   /**
-   * Checks if modification of this object are tracked, i.e. setModified()
-   * is called properly. By default, DbObjects are *NOT* tracked!
+   * Checks if modification of this object are tracked.<br>
+   * By default, AbstractDbObjects are *NOT* tracked!
    * This is quality measure to ensure that isModified() returns
    * false if and only if it hasn't been modified, i.e. the setters
    * check for modification. See the wurblet DbMethods.

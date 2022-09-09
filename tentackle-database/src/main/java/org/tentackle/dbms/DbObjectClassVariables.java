@@ -395,7 +395,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
    * @return the priority
    */
   protected int determineReferencePriority(Class<? extends AbstractDbObject<?>> clazz) {
-    // DbObjects all get the same priority
+    // all objects get the same priority by default
     return 0;
   }
 
