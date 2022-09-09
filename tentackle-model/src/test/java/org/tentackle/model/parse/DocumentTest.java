@@ -48,7 +48,7 @@ public class DocumentTest {
 "index ${tablename}_date := invoice_date\n" +
 "\n" +
 "# attributes\n" +
-"[bind, autoselect, tracked, editedby, tableserial, generated]\n" +
+"[bind, autoselect, tracked, tokenlock, tableserial, generated]\n" +
 "\n" +
 "long             subsidiaryId    subsidiary_id     subsidiary ID [contextid]\n" +
 "String(10)       invoiceNo       invoice_no        the unique invoice number [uc]\n" +
@@ -138,7 +138,7 @@ public class DocumentTest {
       line = iter.next();
       assertEquals(line.getLineType(), LineType.COMMENT);
 
-      //  "[bind, autoselect, tracked, editedby, tableserial, generated]\n" +
+      //  "[bind, autoselect, tracked, tokenlock, tableserial, generated]\n" +
       line = iter.next();
       assertEquals(line.getLineType(), LineType.GLOBAL_OPTION);
       List<String> options = ((GlobalOptionLine) line).getOptions();

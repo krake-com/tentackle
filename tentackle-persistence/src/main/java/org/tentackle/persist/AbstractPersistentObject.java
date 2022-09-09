@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.persist;
 
 import org.tentackle.common.Constants;
@@ -107,7 +106,6 @@ import static org.tentackle.sql.Backend.SQL_UPDATE;
 import static org.tentackle.sql.Backend.SQL_WHERE;
 import static org.tentackle.sql.Backend.SQL_WHEREALL;
 
-
 /**
  * Base persistent implementation of a PDO.
  *
@@ -158,9 +156,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   private transient boolean expired;              // true = object is expired in all caches it belongs to
 
   // snapshot
-  private transient List<WeakReference<T>> snapshots;    // taken snapshots, null if none
-  private transient boolean objectIsCopy;         // true if this is a deep copy
-  private transient boolean objectIsSnapshot;     // true if this is a snapshot
+  private transient List<WeakReference<T>> snapshots;   // taken snapshots, null if none
+  private transient boolean objectIsCopy;               // true if this is a deep copy
+  private transient boolean objectIsSnapshot;           // true if this is a snapshot
 
 
   /** name of the editedBy column. */
@@ -3754,7 +3752,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Update the editedBy-attributes to persistent storage.<br>
+   * Update the token-lock attributes to persistent storage.<br>
    * No check is done whether locked or not and there is no serial
    * update and no modlog. Used by daemons to clean up.
    */

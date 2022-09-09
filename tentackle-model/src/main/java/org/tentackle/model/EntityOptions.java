@@ -63,9 +63,9 @@ public interface EntityOptions extends CommonOptions {
   boolean isTableSerialProvided();
 
   /**
-   * true if [EDITEDBY]-option set.
+   * true if [TOKENLOCK]-option set.
    *
-   * @return true if editedby token columns provided
+   * @return true if token-lock columns provided
    */
   boolean isTokenLockProvided();
 

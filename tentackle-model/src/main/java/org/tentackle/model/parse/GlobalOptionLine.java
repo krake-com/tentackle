@@ -30,7 +30,7 @@ import java.util.StringTokenizer;
  * <p>
  * Example:
  * <pre>
- * [bind, autoselect, tracked, editedby, tableserial, generated]
+ * [tokenlock, tableserial]
  * </pre>
  *
  * @author harald
