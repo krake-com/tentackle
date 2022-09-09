@@ -27,7 +27,7 @@ public interface MessagePersistence extends PersistentObject<Message> {
   // @wurblet attributeNames AttributeNames
 
 
-  // @wurblet columnLenghts ColumnLengths
+  // @wurblet columnLengths ColumnLengths
 
 
   // @wurblet methods Methods

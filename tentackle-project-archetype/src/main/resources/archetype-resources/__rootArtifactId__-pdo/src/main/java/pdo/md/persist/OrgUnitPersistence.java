@@ -27,7 +27,7 @@ public interface OrgUnitPersistence<T extends OrgUnit<T>> extends PersistentObje
   // @wurblet attributeNames AttributeNames
 
 
-  // @wurblet columnLenghts ColumnLengths
+  // @wurblet columnLengths ColumnLengths
 
 
   // @wurblet methods Methods

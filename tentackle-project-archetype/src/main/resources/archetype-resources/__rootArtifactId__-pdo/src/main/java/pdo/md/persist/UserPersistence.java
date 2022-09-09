@@ -23,7 +23,7 @@ public interface UserPersistence extends OrgUnitPersistence<User> {
   // @wurblet attributeNames AttributeNames
 
 
-  // @wurblet columnLenghts ColumnLengths
+  // @wurblet columnLengths ColumnLengths
 
 
   // @wurblet methods Methods

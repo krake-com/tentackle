@@ -24,7 +24,7 @@ public interface User2GroupPersistence extends PersistentObject<User2Group> {
   // @wurblet attributeNames AttributeNames
 
 
-  // @wurblet columnLenghts ColumnLengths
+  // @wurblet columnLengths ColumnLengths
 
 
   // @wurblet methods Methods
