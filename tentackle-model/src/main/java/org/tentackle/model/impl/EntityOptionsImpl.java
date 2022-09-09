@@ -165,7 +165,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
           break;
 
         case OPTION_TOKENLOCK:
-          setEditedByProvided(on);
+          setTokenLockProvided(on);
           break;
 
         case OPTION_NORMTEXT:
@@ -297,7 +297,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
     this.trackType = trackType;
   }
 
-  public void setEditedByProvided(boolean tokenLockProvided) {
+  public void setTokenLockProvided(boolean tokenLockProvided) {
     this.tokenLockProvided = tokenLockProvided;
     AttributeImpl editedByAttribute = (AttributeImpl) entity.getAttributeByJavaName(Constants.AN_EDITEDBY, false);
     AttributeImpl editedSinceAttribute = (AttributeImpl) entity.getAttributeByJavaName(Constants.AN_EDITEDSINCE, false);

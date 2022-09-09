@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
 /**
  * Default implementation of {@link LockManager}.
  * <p>
- * The token locks are persisted in an extra table of {@link DbTokenLock}s in parallel to the editedBy-tokens
+ * The token locks are persisted in an extra table of {@link DbTokenLock}s in parallel to the token-lock columns
  * of the PDOs.
  */
 @Service(LockManager.class)

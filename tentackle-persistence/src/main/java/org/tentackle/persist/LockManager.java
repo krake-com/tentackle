@@ -32,7 +32,7 @@ interface LockManagerHolder {
 /**
  * Manager for token locks.
  * <p>
- * The lock manager maintains the state of all token locks in parallel to the editedBy-tokens of the PDOs.<br>
+ * The lock manager maintains the state of all token locks in parallel to the token-lock attributes of the PDOs.<br>
  * This allows to know all locks without the need to scan the PDO tables.
  * <p>
  * The lock manager is used for 2 purposes:

@@ -228,10 +228,10 @@ public class EntityFactoryImpl implements EntityFactory {
           Constants.AN_EDITEDEXPIRY.equalsIgnoreCase(attribute.getName()) ||
           Constants.CN_EDITEDEXPIRY.equalsIgnoreCase(attribute.getColumnName())) {
         if (!attribute.isImplicit()) {
-          throw new ModelException("use [EDITEDBY] option instead of explicit attribute", entity);
+          throw new ModelException("use [TOKENLOCK] option instead of explicit attribute", entity);
         }
         if (entity.getSuperEntityName() != null) {
-          throw new ModelException("[EDITEDBY] option not allowed in subclasses", entity);
+          throw new ModelException("[TOKENLOCK] option not allowed in subclasses", entity);
         }
       }
     }
