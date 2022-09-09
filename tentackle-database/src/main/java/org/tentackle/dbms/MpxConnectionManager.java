@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.dbms;
 
 import org.tentackle.log.Logger;
@@ -26,8 +25,6 @@ import org.tentackle.sql.BackendInfo;
 
 import java.lang.ref.WeakReference;
 import java.util.Date;
-
-
 
 /**
  * Multiplexing connection manager.<br>
@@ -131,7 +128,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
   /**
    * Creates a connection manager with reasonable values for most servers.
-   *
+   * <p>
    * Maximum of 1000 Db instances (500 clients).
    * Start with 8 connections.
    * Add 2 connections at a time if all connections are in use.
