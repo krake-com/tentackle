@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.dbms.rmi;
 
 import org.tentackle.common.TentackleRuntimeException;
@@ -43,7 +42,6 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.StringTokenizer;
-
 
 /**
  * A generic RMI server.<br>
@@ -113,8 +111,7 @@ import java.util.StringTokenizer;
  *
  *  If both <code>ssl</code> and <code>compressed</code> is given, the factories used are
  *              {@link org.tentackle.io.CompressedSslClientSocketFactory} and
- *              {@link org.tentackle.io.CompressedSslServerSocketFactory}.
- *
+ *              {@link org.tentackle.io.CompressedSslServerSocketFactory}.<br>
  *  Notice that {@code createregistry=...} can be used to define a different socket factory exclusively for the login phase,
  *  and that the server may select a different factory type programmatically after the login phase (for each delegate).
  *  If {@code ports=...} is missing, the login port defaults to the one defined by the service url and an optionally

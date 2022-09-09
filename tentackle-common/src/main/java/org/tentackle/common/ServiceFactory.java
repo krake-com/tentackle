@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.common;
 
 import java.io.BufferedReader;
@@ -377,9 +376,8 @@ public class ServiceFactory {
 
   /**
    * The service finder.<br>
-   * By default, finds an instance of itself.
-   *
-   * See @Service annotation in DefaultServiceFinder.
+   * By default, finds an instance of itself.<br>
+   * See also &#64;{@link Service} annotation in {@link DefaultServiceFinder}.
    */
   private Class<? extends ServiceFinder> serviceFinderClass;
 
