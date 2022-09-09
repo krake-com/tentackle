@@ -23,7 +23,7 @@ public interface UserGroupPersistence extends OrgUnitPersistence<UserGroup> {
   // @wurblet attributeNames AttributeNames
 
 
-  // @wurblet columnLenghts ColumnLengths
+  // @wurblet columnLengths ColumnLengths
 
 
   // @wurblet methods Methods

@@ -32,7 +32,7 @@ public interface ${persistenceInterface} extends ${superPersistenceInterface}<${
 
   // @wurblet attributeNames AttributeNames
 
-  // @wurblet columnLenghts ColumnLengths
+  // @wurblet columnLengths ColumnLengths
 
   // @wurblet methods Methods
 
