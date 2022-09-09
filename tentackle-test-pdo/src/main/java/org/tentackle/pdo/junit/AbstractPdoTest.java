@@ -119,7 +119,6 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
    * Opens the sessions and starts the modification tracker exactly once.<br>
    * If the database is in-memory, it will be populated before the tracker is started.
    *
-   * @throws Exception if failed
    * @see #createDatabaseTables(Db)
    */
   public boolean openSessionsAndStartModificationTracker() {
@@ -166,8 +165,6 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
 
   /**
    * Terminates the modification tracker and closes the sessions.
-   *
-   * @throws Exception if failed
    */
   @AfterAll
   public static synchronized void closeSessionsAndTerminateModificationTracker() {

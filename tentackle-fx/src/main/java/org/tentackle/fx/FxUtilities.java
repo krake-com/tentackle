@@ -136,7 +136,7 @@ public class FxUtilities {
   private final Executor blockingFxExecutor = ConcurrencyHelper.createBlockingExecutor(Platform::runLater);
 
   /**
-   * The help url.
+   * The help url.<br>
    * Prefix for online help, e.g.: http://localhost/manual/index.html
    */
   private String helpURL;
