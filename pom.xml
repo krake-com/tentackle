@@ -83,17 +83,17 @@
     <javac.lint>auxiliaryclass,cast,classfile,deprecation,dep-ann,divzero,empty,fallthrough,finally,opens,overloads,options,overrides,path,rawtypes,removal,requires-transitive-automatic,requires-automatic,serial,static,try,varargs,unchecked</javac.lint>
     <javac.version>19</javac.version>
 
-    <javafx.version>18.0.2</javafx.version>
+    <javafx.version>19</javafx.version>
     <ikonli.version>12.3.1</ikonli.version>
     <ow2.asm.version>9.3</ow2.asm.version>
     <groovy.version>4.0.4</groovy.version>
     <maven.version>3.8.5</maven.version>
-    <postgresql.version>42.4.2</postgresql.version>
+    <postgresql.version>42.5.0</postgresql.version>
     <h2.version>2.1.214</h2.version>
     <testng.version>7.6.1</testng.version>
     <slf4j.version>1.7.36</slf4j.version>
     <logback.version>1.2.11</logback.version>
-    <log4j2.version>2.18.0</log4j2.version>
+    <log4j2.version>2.19.0</log4j2.version>
 
     <maven.archetype.plugin.version>3.2.1</maven.archetype.plugin.version>
     <maven.compiler.plugin.version>3.10.1</maven.compiler.plugin.version>
