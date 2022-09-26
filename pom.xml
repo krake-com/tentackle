@@ -7,7 +7,7 @@
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-parent</artifactId>
-  <version>18.0-SNAPSHOT</version>
+  <version>19.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Tentackle Parent</name>
@@ -81,7 +81,7 @@
     <dependency.locations.enabled>false</dependency.locations.enabled>
     <!-- "all,-exports,-module,-processing" does not work, despite the docs -->
     <javac.lint>auxiliaryclass,cast,classfile,deprecation,dep-ann,divzero,empty,fallthrough,finally,opens,overloads,options,overrides,path,rawtypes,removal,requires-transitive-automatic,requires-automatic,serial,static,try,varargs,unchecked</javac.lint>
-    <javac.version>18</javac.version>
+    <javac.version>19</javac.version>
 
     <javafx.version>18.0.2</javafx.version>
     <ikonli.version>12.3.1</ikonli.version>
@@ -112,7 +112,7 @@
     <tentackle.manifestDirectory>${project.build.directory}/generated-resources/manifest</tentackle.manifestDirectory>
     <netbeans.hint.license>tentackle</netbeans.hint.license>
 
-    <wurbelizer.version>18.0-SNAPSHOT</wurbelizer.version>
+    <wurbelizer.version>19.0-SNAPSHOT</wurbelizer.version>
     <!-- override the default wurbelDir for multi-module project -->
     <wurbel.wurbelDir>${rootBasedir}/target/wurbel</wurbel.wurbelDir>
 
