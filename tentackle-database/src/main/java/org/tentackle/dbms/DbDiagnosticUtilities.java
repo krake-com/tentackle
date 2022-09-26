@@ -45,7 +45,7 @@ public class DbDiagnosticUtilities extends DiagnosticUtilities {
       if (db != null) {
         // still attached
         Thread ownerThread = db.getOwnerThread();
-        if (ownerThread != null && ownerThread.getId() == info.getThreadId()) {
+        if (ownerThread != null && ownerThread.threadId() == info.getThreadId()) {
           // this thread belongs to the connection
           buf.append("    connection: ");
           doCreateConnectionDump(buf, connection);

@@ -307,13 +307,13 @@ public abstract class AbstractApplication implements Application {
         Locale locale = null;
 
         if (variant != null) {
-          locale = new Locale(language, country, variant);
+          locale = Locale.of(language, country, variant);
         }
         else if (country != null) {
-          locale = new Locale(language, country);
+          locale = Locale.of(language, country);
         }
         else if (language != null) {
-          locale = new Locale(language);
+          locale = Locale.of(language);
         }
 
         if (locale != null) {

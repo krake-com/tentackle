@@ -17,11 +17,12 @@
  */
 package org.tentackle.misc;
 
+import org.testng.Assert;
+import org.testng.annotations.Test;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
-import org.testng.Assert;
-import org.testng.annotations.Test;
 
 /**
  * Figures out what happens when locales are created with illegal language/country combinations.
@@ -32,19 +33,19 @@ public class LocaleTest {
 
   @Test
   public void testLocale() {
-    Locale locale = new Locale("en", "US");
+    Locale locale = Locale.of("en", "US");
     SimpleDateFormat format = (SimpleDateFormat) SimpleDateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, locale);
     Assert.assertEquals(format.toPattern(), "MMM d, y, h:mm:ss a");
     Assert.assertEquals(format.toLocalizedPattern(), "MMM d, y, h:mm:ss a");
-    locale = new Locale("en", "DE");
+    locale = Locale.of("en", "DE");
     format = (SimpleDateFormat) SimpleDateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, locale);
     Assert.assertEquals(format.toPattern(), "d MMM y, HH:mm:ss");
     Assert.assertEquals(format.toLocalizedPattern(), "d MMM y, HH:mm:ss");
-    locale = new Locale("de", "US");
+    locale = Locale.of("de", "US");
     format = (SimpleDateFormat) SimpleDateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, locale);
     Assert.assertEquals(format.toPattern(), "dd.MM.y, HH:mm:ss");
     Assert.assertEquals(format.toLocalizedPattern(), "dd.MM.y, HH:mm:ss");
-    locale = new Locale("de", "DE");
+    locale = Locale.of("de", "DE");
     format = (SimpleDateFormat) SimpleDateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, locale);
     Assert.assertEquals(format.toPattern(), "dd.MM.y, HH:mm:ss");
     Assert.assertEquals(format.toLocalizedPattern(), "dd.MM.y, HH:mm:ss");
