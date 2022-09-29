@@ -154,10 +154,10 @@ public class DbPoolTimeoutThread extends Thread implements Scavenger {
                     LOGGER.warning("unreferenced " + pooledDb +
                                    " last used by " + pooledDb.getUsingThreadStr() +
                                    " in MDC{" + pooledDb.getMdcStr() +
-                                   "} since " + new Timestamp(pooledDb.getUnusedSince()) +
-                                   " -> removed from pool!");
+                                   "} since " + new Timestamp(pooledDb.getUsedSince()) +
+                                   " -> removed from pool");
                     pool.removeDbIndex(i);
-                    // note: the finalizer will close the Db physically
+                    // the cleaner already closed or will close the session physically
                   }
                   i++;
                 }

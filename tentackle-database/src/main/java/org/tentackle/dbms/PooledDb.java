@@ -102,16 +102,25 @@ public class PooledDb {
   /**
    * Get epochal time of first use.
    *
-   * @return time in ms
+   * @return the epochal time
    */
   public long getFirstUse() {
     return firstUse;
   }
 
   /**
-   * Gets the last return time, 0 if lent.
+   * Gets the time lent.
    *
-   * @return time in ms
+   * @return the epochal time since in use, 0 if not lent
+   */
+  public long getUsedSince() {
+    return usedSince;
+  }
+
+  /**
+   * Gets the last return time.
+   *
+   * @return the epochal time last returned, 0 if lent
    */
   public long getUnusedSince() {
     return unusedSince;
