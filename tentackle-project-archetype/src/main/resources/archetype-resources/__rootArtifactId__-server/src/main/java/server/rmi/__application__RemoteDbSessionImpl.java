@@ -103,7 +103,7 @@ public class ${application}RemoteDbSessionImpl extends RemoteDbSessionImpl imple
     if (session != null && !session.isRemote()) {
       try {
         ${application}SessionInfo sessionInfo = (${application}SessionInfo) getClientSessionInfo();
-        if (!sessionInfo.isCloned()) {    // if main session and not the finalizer
+        if (!sessionInfo.isCloned()) {    // if main session
           DomainContext context = Pdo.createDomainContext(session);
           User user = Application.getInstance().getUser(context, sessionInfo.getUserId());
           LocaleProvider.getInstance().setCurrentLocale(sessionInfo.getLocale());
