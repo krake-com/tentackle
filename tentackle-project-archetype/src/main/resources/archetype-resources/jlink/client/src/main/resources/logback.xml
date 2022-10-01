@@ -17,8 +17,7 @@
     </rollingPolicy>
   </appender>
 
-  <root>
-    <level value="INFO" />
+  <root level="INFO">
     <appender-ref ref="FILE" />
   </root>
 </configuration>
