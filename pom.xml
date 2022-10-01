@@ -79,8 +79,7 @@
     <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <dependency.locations.enabled>false</dependency.locations.enabled>
-    <!-- "all,-exports,-module,-processing" does not work, despite the docs -->
-    <javac.lint>auxiliaryclass,cast,classfile,deprecation,dep-ann,divzero,empty,fallthrough,finally,opens,overloads,options,overrides,path,rawtypes,removal,requires-transitive-automatic,requires-automatic,serial,static,try,varargs,unchecked</javac.lint>
+    <javac.lint>all,-exports,-module,-processing,-missing-explicit-ctor</javac.lint>
     <javac.version>19</javac.version>
 
     <javafx.version>19</javafx.version>
