@@ -45,6 +45,7 @@ public abstract class PdoFinder<T extends PersistentDomainObject<T>> extends Abs
 
   private boolean searchRunningInBackground;
   private boolean searchRunningImmediately;
+  private boolean scrollingToEnd;
   private boolean visible = true;
 
 
@@ -73,6 +74,7 @@ public abstract class PdoFinder<T extends PersistentDomainObject<T>> extends Abs
     T pdo = getPdo();
     return pdo == null ? null : pdo.getDomainContext();
   }
+
 
   /**
    * Returns whether the query might block the client for a longer time.
@@ -109,6 +111,25 @@ public abstract class PdoFinder<T extends PersistentDomainObject<T>> extends Abs
    */
   public void setSearchRunningImmediately(boolean searchRunningImmediately) {
     this.searchRunningImmediately = searchRunningImmediately;
+  }
+
+
+  /**
+   * Returns whether the view should be scrolled to the last item when displaying the search results.
+   *
+   * @return true if scroll to end, false if scroll to top (default)
+   */
+  public boolean isScrollingToEnd() {
+    return scrollingToEnd;
+  }
+
+  /**
+   * Sets whether the view should be scrolled to the last item when displaying the search results.
+   *
+   * @param scrollingToEnd true if scroll to end, false if scroll to top
+   */
+  public void setScrollingToEnd(boolean scrollingToEnd) {
+    this.scrollingToEnd = scrollingToEnd;
   }
 
 
