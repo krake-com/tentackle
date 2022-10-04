@@ -492,20 +492,13 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    */
   public void find() {
     filterField.clear();
-    if (tableView != null) {
-      tableView.getSelectionModel().clearSelection();
-      tableView.scrollTo(0);
-    }
-    if (treeView != null) {
-      treeView.getSelectionModel().clearSelection();
-      treeView.scrollTo(0);
-    }
     if (finder.isSearchRunningInBackground()) {
       getView().setCursor(Cursor.WAIT);
       Rdc.bg(finder::runSearch,
              result -> {
                getView().setCursor(Cursor.DEFAULT);
                setItems(result);
+               presetScrolling();
              },
              ex -> {
                getView().setCursor(Cursor.DEFAULT);
@@ -513,9 +506,29 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
              });
     }
     else {
-      Platform.runLater(() -> setItems(finder.runSearch()));
+      Platform.runLater(() -> {
+        setItems(finder.runSearch());
+        presetScrolling();
+      });
     }
     cancelButton.setText(resources.getString(Fx.isModal(getStage()) ? "cancel" : "close"));
+  }
+
+
+  /**
+   * Presets the scrolling according to the finder's configuration.<br>
+   * Scrolls to the end of the table- or tree-view, if {@link PdoFinder#isScrollingToEnd()} == true,
+   * otherwise scroll to the beginning.
+   */
+  protected void presetScrolling() {
+    if (tableView != null) {
+      tableView.getSelectionModel().clearSelection();
+      tableView.scrollTo(finder.isScrollingToEnd() ? tableView.getItems().size() - 1 : 0);
+    }
+    if (treeView != null) {
+      treeView.getSelectionModel().clearSelection();
+      treeView.scrollTo(finder.isScrollingToEnd() ? treeView.getItems().size() - 1 : 0);
+    }
   }
 
 
