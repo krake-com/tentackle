@@ -137,10 +137,12 @@ public class FxTreeView<T> extends TreeView<T> implements FxComponent {
   }
 
   private void getItems(List<T> items, TreeItem<T> treeItem) {
-    items.add(treeItem.getValue());
-    if (treeItem.isExpanded()) {
-      for (TreeItem<T> child : treeItem.getChildren()) {
-        getItems(items, child);
+    if (treeItem != null) {
+      items.add(treeItem.getValue());
+      if (treeItem.isExpanded()) {
+        for (TreeItem<T> child : treeItem.getChildren()) {
+          getItems(items, child);
+        }
       }
     }
   }
@@ -164,9 +166,11 @@ public class FxTreeView<T> extends TreeView<T> implements FxComponent {
   }
 
   private void getTreeItems(List<TreeItem<T>> items, TreeItem<T> treeItem) {
-    items.add(treeItem);
-    for (TreeItem<T> child : treeItem.getChildren()) {
-      getTreeItems(items, child);
+    if (treeItem != null) {
+      items.add(treeItem);
+      for (TreeItem<T> child : treeItem.getChildren()) {
+        getTreeItems(items, child);
+      }
     }
   }
 

@@ -324,7 +324,12 @@ public class RdcUtilities {
       if (stage == null || (!stage.isShowing() && stage.getModality() == modality && stage.getOwner() == owner)) {
         search.setItems(null);
         search.setPdo(pdo);
-        search.showTable();
+        if (search.getFinder().isTreeShowingInitially()) {
+          search.showTree();
+        }
+        else {
+          search.showTable();
+        }
         return search;
       }
       if (!stage.isShowing() && stage.getModality() == modality && stage.getOwner() != owner &&

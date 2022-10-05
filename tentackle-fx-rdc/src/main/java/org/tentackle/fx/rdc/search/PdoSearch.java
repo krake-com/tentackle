@@ -130,6 +130,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
 
   private InvalidationListener itemsListener;   // listener for items totals change
   private PdoFinder<T> finder;                  // the finder
+  private boolean viewSelectionPending;         // true if initial tree- or table view selection pending
   private PdoCrud<T> pdoCrud;                   // the CRUD view
   private FxBorderPane tablePane;               // the border pane holding the table view
   private FxTableView<T> tableView;             // the table showing the results
@@ -209,6 +210,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
       throw new RdcRuntimeException("finder already set");
     }
     this.finder = finder;
+    viewSelectionPending = true;
     Parent finderView = finder.getView();
     borderPane.setTop(finderView);
     BorderPane.setMargin(finderView, new Insets(5));
@@ -358,6 +360,16 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     ObjectProperty<EventHandler<ActionEvent>> searchActionProperty = finder.getSearchActionProperty();
     if (searchActionProperty != null) {
       searchActionProperty.set(e -> findButton.doClick());
+    }
+
+    if (viewSelectionPending) {
+      viewSelectionPending = false;
+      if (finder.isTreeShowingInitially()) {
+        showTree();
+      }
+      else {
+        showTable();
+      }
     }
   }
 
@@ -521,13 +533,30 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    * otherwise scroll to the beginning.
    */
   protected void presetScrolling() {
-    if (tableView != null) {
-      tableView.getSelectionModel().clearSelection();
-      tableView.scrollTo(finder.isScrollingToEnd() ? tableView.getItems().size() - 1 : 0);
-    }
-    if (treeView != null) {
-      treeView.getSelectionModel().clearSelection();
-      treeView.scrollTo(finder.isScrollingToEnd() ? treeView.getItems().size() - 1 : 0);
+    if (items != null && !items.isEmpty()) {
+      if (isTreeShown()) {
+        treeView.getSelectionModel().clearSelection();
+        if (finder.isScrollingToEnd()) {
+          // Unfortunately, there is no scrollToEnd which aligns the view to _fully_ display the last line.
+          // Therefore, we must calculate the _first_ line shown and hope the last line is fully visible (which is
+          // usually not the case and the user must scroll the missing pixels down manually).
+          // Same applies to tableView down below.
+          // @TODO find a better solution
+          treeView.scrollToCentered(treeView.getItems().size() - 1);
+        }
+        else {
+          treeView.scrollTo(0);
+        }
+      }
+      else {
+        tableView.getSelectionModel().clearSelection();
+        if (finder.isScrollingToEnd()) {
+          tableView.scrollToCentered(tableView.getItems().size() - 1);
+        }
+        else {
+          tableView.scrollTo(0);
+        }
+      }
     }
   }
 
