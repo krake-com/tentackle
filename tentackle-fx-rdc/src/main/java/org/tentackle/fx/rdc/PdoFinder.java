@@ -46,6 +46,7 @@ public abstract class PdoFinder<T extends PersistentDomainObject<T>> extends Abs
   private boolean searchRunningInBackground;
   private boolean searchRunningImmediately;
   private boolean scrollingToEnd;
+  private boolean treeShowingInitially;
   private boolean visible = true;
 
 
@@ -130,6 +131,25 @@ public abstract class PdoFinder<T extends PersistentDomainObject<T>> extends Abs
    */
   public void setScrollingToEnd(boolean scrollingToEnd) {
     this.scrollingToEnd = scrollingToEnd;
+  }
+
+
+  /**
+   * Returns whether the search dialog should display the initial search result as a tree instead of a table view.
+   *
+   * @return true if tree view, else table view (default)
+   */
+  public boolean isTreeShowingInitially() {
+    return treeShowingInitially;
+  }
+
+  /**
+   * Sets whether the search dialog should display the initial search result as a tree instead of a table view.
+   *
+   * @param treeShowingInitially true if tree view, else table view
+   */
+  public void setTreeShowingInitially(boolean treeShowingInitially) {
+    this.treeShowingInitially = treeShowingInitially;
   }
 
 
