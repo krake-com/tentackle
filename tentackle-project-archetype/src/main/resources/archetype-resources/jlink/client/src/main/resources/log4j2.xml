@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="INFO">
+  <Properties>
+    <Property name="baseDir">logs</Property>
+    <Property name="logName">client</Property>
+  </Properties>
+  <Appenders>
+    <RollingFile name="daily"
+                 fileName="${baseDir}/${logName}.log"
+                 filePattern="${baseDir}/${logName}-%d{yyyy-MM-dd}.log.zip"
+                 ignoreExceptions="false">
+      <PatternLayout>
+        <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5p %c{1.}#%M:%L - %m%n</Pattern>
+      </PatternLayout>
+      <Policies>
+        <OnStartupTriggeringPolicy/>
+        <TimeBasedTriggeringPolicy/>
+      </Policies>
+      <DefaultRolloverStrategy>
+        <Delete basePath="${baseDir}" maxDepth="1">
+          <IfFileName glob="${logName}-*.log.zip"/>
+          <IfLastModified age="14d"/>
+        </Delete>
+      </DefaultRolloverStrategy>
+    </RollingFile>
+  </Appenders>
+  <Loggers>
+    <Root level="info">
+      <AppenderRef ref="daily"/>
+    </Root>
+  </Loggers>
+</Configuration>
