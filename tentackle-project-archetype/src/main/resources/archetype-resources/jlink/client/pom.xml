@@ -70,10 +70,6 @@
             <addModule>jdk.charsets</addModule>
             <addModule>jdk.localedata</addModule>
           </addModules>
-          <excludeModules>
-            <!-- SLF4J: unsupported reference since java 12 -->
-            <excludeModule>jdk8internals</excludeModule>
-          </excludeModules>
         </configuration>
       </plugin>
     </plugins>
