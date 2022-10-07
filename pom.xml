@@ -91,7 +91,6 @@
     <h2.version>2.1.214</h2.version>
     <testng.version>7.6.1</testng.version>
     <slf4j.version>2.0.3</slf4j.version>
-    <logback.version>1.4.1</logback.version>
     <log4j2.version>2.19.0</log4j2.version>
 
     <maven.archetype.plugin.version>3.2.1</maven.archetype.plugin.version>
@@ -218,13 +217,7 @@
         <version>${slf4j.version}</version>
       </dependency>
       <dependency>
-        <!-- used by POI since version 5.x -->
-        <groupId>org.slf4j</groupId>
-        <artifactId>jcl-over-slf4j</artifactId>
-        <version>${slf4j.version}</version>
-      </dependency>
-      <dependency>
-        <!-- logger binder for testng -->
+        <!-- logger binder for testng only -->
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-simple</artifactId>
         <version>${slf4j.version}</version>
@@ -279,13 +272,6 @@
         <groupId>com.h2database</groupId>
         <artifactId>h2</artifactId>
         <version>${h2.version}</version>
-        <scope>test</scope>
-      </dependency>
-
-      <dependency>
-        <groupId>ch.qos.logback</groupId>
-        <artifactId>logback-classic</artifactId>
-        <version>${logback.version}</version>
         <scope>test</scope>
       </dependency>
 
