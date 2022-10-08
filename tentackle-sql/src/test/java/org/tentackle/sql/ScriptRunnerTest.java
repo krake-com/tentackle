@@ -56,8 +56,8 @@ public class ScriptRunnerTest {
       
       /* blank lines
       with
-          /* embedded garbage 'kjhsdfkd 
-          
+          /* embedded garbage 'kjhsdfkd
+      
           "kljsdfskld
       
       */
