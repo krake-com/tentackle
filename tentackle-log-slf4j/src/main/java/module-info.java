@@ -16,12 +16,15 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * tentackle-log-slf4j module.
+ */
 module org.tentackle.log.slf4j {
 
   exports org.tentackle.log.slf4j;
 
-  requires org.tentackle.common;
-  requires org.tentackle.core;
+  requires transitive org.tentackle.core;
+
   requires org.slf4j;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.log.slf4j.service.Hook;

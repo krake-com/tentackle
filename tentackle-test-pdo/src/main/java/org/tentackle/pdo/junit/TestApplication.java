@@ -38,7 +38,6 @@ import org.tentackle.sql.Backend;
 
 import java.util.Properties;
 
-import static org.testng.Assert.fail;
 
 /**
  * Base class for Junit5 tests that must run as an application.
@@ -144,7 +143,7 @@ public abstract class TestApplication extends AbstractApplication {
       DbTestUtilities.getInstance().runScript(db, script);
     }
     catch (ModelException e) {
-      fail("populating the database failed", e);
+      throw new AssertionFailedError("populating the database failed", e);
     }
   }
 

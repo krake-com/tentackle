@@ -16,7 +16,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * tentackle-model module.
+ */
 module org.tentackle.model {
+
   exports org.tentackle.model;
   exports org.tentackle.model.impl;
   exports org.tentackle.model.migrate;
@@ -26,4 +30,5 @@ module org.tentackle.model {
   requires transitive org.tentackle.sql;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.model.service.Hook;
+
 }

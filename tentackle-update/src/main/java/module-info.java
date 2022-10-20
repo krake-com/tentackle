@@ -16,12 +16,18 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * tentackle-update module.
+ */
 module org.tentackle.update {
+
   exports org.tentackle.update;
 
-  requires java.rmi;
+  requires transitive org.tentackle.common;
+
+  requires transitive java.rmi;
   requires java.net.http;
-  requires org.tentackle.common;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.update.service.Hook;
+
 }

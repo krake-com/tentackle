@@ -11,10 +11,8 @@
 module ${package}.daemon {
   exports ${package}.daemon;
 
-  requires ${package}.persist;
+  requires transitive ${package}.persist;
   requires ${package}.domain;
-
-  requires java.rmi;
 
   provides org.tentackle.common.ModuleHook with ${package}.daemon.service.Hook;
 }

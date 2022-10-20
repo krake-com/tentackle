@@ -12,13 +12,9 @@ module ${package}.server {
   exports ${package}.server;
   exports ${package}.server.rmi;
 
-  requires ${package}.persist;
+  requires transitive ${package}.persist;
   requires ${package}.domain;
-
-  requires java.rmi;
-  requires java.prefs;
-
-  requires org.tentackle.update;
+  requires transitive org.tentackle.update;
 
   provides org.tentackle.common.ModuleHook with ${package}.server.service.Hook;
 }

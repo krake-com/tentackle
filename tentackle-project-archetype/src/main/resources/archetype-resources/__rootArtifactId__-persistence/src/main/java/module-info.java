@@ -17,10 +17,7 @@ module ${package}.persist {
   exports ${package}.persist.td.rmi;
 
   requires transitive ${package}.pdo;
-
   requires transitive org.tentackle.persistence;
-
-  requires java.rmi;
 
   provides org.tentackle.common.ModuleHook with ${package}.persist.service.Hook;
 }

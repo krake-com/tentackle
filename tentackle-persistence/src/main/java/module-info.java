@@ -16,7 +16,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * tentackle-persistence module.
+ */
 module org.tentackle.persistence {
+
   exports org.tentackle.persist;
   exports org.tentackle.persist.app;
   exports org.tentackle.persist.lock;
@@ -29,9 +33,8 @@ module org.tentackle.persistence {
   requires transitive org.tentackle.pdo;
   requires transitive org.tentackle.database;
 
-  requires java.rmi;
-  requires java.sql;
   requires java.naming;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.persist.service.Hook;
+
 }

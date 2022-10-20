@@ -16,12 +16,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * tentackle-fx-rdc-update module.
+ */
 module org.tentackle.fx.rdc.update {
 
   exports org.tentackle.fx.rdc.update;
 
-  requires org.tentackle.fx.rdc;
-  requires org.tentackle.update;
+  requires transitive org.tentackle.fx.rdc;
+  requires transitive org.tentackle.update;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.fx.rdc.update.service.Hook;
+
 }

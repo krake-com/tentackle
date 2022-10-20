@@ -16,16 +16,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * tentackle-core module.
+ */
 module org.tentackle.core {
-
-  requires transitive org.tentackle.common;
-
-  requires java.prefs;
-  requires java.logging;
-  requires java.management;
-  requires java.rmi;
-  requires java.compiler;
-  requires java.sql;
 
   exports org.tentackle.apt;
   exports org.tentackle.apt.visitor;
@@ -43,6 +37,13 @@ module org.tentackle.core {
   exports org.tentackle.validate.scope;
   exports org.tentackle.validate.validator;
   exports org.tentackle.validate.severity;
+
+  requires transitive org.tentackle.common;
+
+  requires transitive java.prefs;
+  requires transitive java.management;
+  requires transitive java.rmi;
+  requires java.logging;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.service.Hook;
 

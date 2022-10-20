@@ -310,24 +310,6 @@ public class Log4J2Logger implements Logger {
   }
 
 
-
-  /**
-   * Translates the tentackle logging level to a LOG4J level.
-   *
-   * @param level the tt level
-   * @return the LOG4J level
-   */
-  protected org.apache.logging.log4j.Level translateLevel(Level level) {
-    return switch (level) {
-      case FINER -> org.apache.logging.log4j.Level.TRACE;
-      case FINE -> org.apache.logging.log4j.Level.DEBUG;
-      case INFO -> org.apache.logging.log4j.Level.INFO;
-      case WARNING -> org.apache.logging.log4j.Level.WARN;
-      default -> org.apache.logging.log4j.Level.ERROR;
-    };
-  }
-
-
   /**
    * Logging workhorse.
    *
@@ -373,6 +355,23 @@ public class Log4J2Logger implements Logger {
     logger.logIfEnabled(FQCN, translateLevel(level), null,
                         () -> new SimpleMessage(messageSupplier != null ? messageSupplier.get() : message),
                         cause);
+  }
+
+
+  /**
+   * Translates the tentackle logging level to a LOG4J level.
+   *
+   * @param level the tt level
+   * @return the LOG4J level
+   */
+  private org.apache.logging.log4j.Level translateLevel(Level level) {
+    return switch (level) {
+      case FINER -> org.apache.logging.log4j.Level.TRACE;
+      case FINE -> org.apache.logging.log4j.Level.DEBUG;
+      case INFO -> org.apache.logging.log4j.Level.INFO;
+      case WARNING -> org.apache.logging.log4j.Level.WARN;
+      default -> org.apache.logging.log4j.Level.ERROR;
+    };
   }
 
 }
