@@ -25,15 +25,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.platform.commons.logging.Logger;
 import org.junit.platform.commons.logging.LoggerFactory;
 import org.opentest4j.AssertionFailedError;
-import org.testng.Reporter;
 
 import org.tentackle.dbms.Db;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelException;
-import org.tentackle.pdo.test.DbTestUtilities;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.Pdo;
+import org.tentackle.pdo.test.DbTestUtilities;
 import org.tentackle.script.ScriptFactory;
 import org.tentackle.script.ScriptingLanguage;
 import org.tentackle.session.ModificationTracker;
@@ -358,7 +357,8 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
       System.arraycopy(args, 0, aCmd, cmd.length, args.length);
       cmd = aCmd;
     }
-    Reporter.log("running: " + Arrays.toString(cmd) + "<br>");
+    String msg = "running: " + Arrays.toString(cmd);
+    LOGGER.info(() -> msg);
     return Runtime.getRuntime().exec(cmd);
   }
 

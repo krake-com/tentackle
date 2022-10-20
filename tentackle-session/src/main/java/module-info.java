@@ -16,13 +16,15 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * tentackle-session module.
+ */
 module org.tentackle.session {
+
   exports org.tentackle.session;
 
   requires transitive org.tentackle.core;
 
-  requires java.rmi;
-  requires java.prefs;
-
   provides org.tentackle.common.ModuleHook with org.tentackle.session.service.Hook;
+
 }

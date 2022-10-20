@@ -15,7 +15,12 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
+/**
+ * tentackle-pdo module.
+ */
 module org.tentackle.pdo {
+
   exports org.tentackle.app;
   exports org.tentackle.apt.pdo;
   exports org.tentackle.ns;
@@ -27,7 +32,6 @@ module org.tentackle.pdo {
 
   requires transitive org.tentackle.session;
 
-  requires java.compiler;
-
   provides org.tentackle.common.ModuleHook with org.tentackle.pdo.service.Hook;
+
 }

@@ -16,10 +16,15 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * tentackle-web module.
+ */
 module org.tentackle.web {
+
   exports org.tentackle.web.app;
 
   requires transitive org.tentackle.persistence;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.web.app.service.Hook;
+
 }

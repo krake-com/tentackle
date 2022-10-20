@@ -11,15 +11,10 @@
 module ${package}.client {
   exports ${package}.client;
 
-  requires ${package}.gui;
+  requires transitive ${package}.gui;
   requires ${package}.persist;
   requires ${package}.domain;
-
-  requires org.tentackle.fx.rdc;
-  requires org.tentackle.fx.rdc.update;
-
-  requires javafx.graphics;
-  requires java.prefs;
+  requires transitive org.tentackle.fx.rdc.update;
 
   provides org.tentackle.common.ModuleHook with ${package}.client.service.Hook;
 }

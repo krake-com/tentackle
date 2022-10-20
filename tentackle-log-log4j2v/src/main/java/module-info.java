@@ -16,12 +16,17 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * tentackle-log-log4j2v module.
+ */
 module org.tentackle.log.log4j2v {
+
   exports org.tentackle.log.log4j2v;
 
+  requires transitive org.tentackle.core;
+
   requires org.apache.logging.log4j;
-  requires org.tentackle.common;
-  requires org.tentackle.core;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.log.log4j2v.service.Hook;
+
 }

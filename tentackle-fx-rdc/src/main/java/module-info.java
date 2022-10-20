@@ -16,7 +16,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * tentackle-fx-rdc module.
+ */
 module org.tentackle.fx.rdc {
+
   exports org.tentackle.fx.rdc;
   exports org.tentackle.fx.rdc.admin;
   exports org.tentackle.fx.rdc.app;
@@ -43,9 +47,8 @@ module org.tentackle.fx.rdc {
   requires transitive org.tentackle.fx;
   requires transitive org.tentackle.pdo;
 
-  requires java.compiler;
   requires java.desktop;
-  requires java.prefs;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.fx.rdc.service.Hook;
+
 }

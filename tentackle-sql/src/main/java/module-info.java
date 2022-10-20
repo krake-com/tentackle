@@ -16,7 +16,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * tentackle-sql module.
+ */
 module org.tentackle.sql {
+
   exports org.tentackle.sql;
   exports org.tentackle.sql.metadata;
   exports org.tentackle.sql.backends;
@@ -24,8 +28,8 @@ module org.tentackle.sql {
 
   requires transitive org.tentackle.common;
 
-  requires java.sql;
   requires java.naming;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.sql.service.Hook;
+
 }

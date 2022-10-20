@@ -16,19 +16,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * tentackle-fx module.
+ */
 module org.tentackle.fx {
-  requires transitive org.tentackle.core;
-
-  requires transitive javafx.fxml;
-  requires transitive javafx.web;   // transitive java.xml, javafx.base, javafx.controls, javafx.graphics
-
-  requires org.kordamp.ikonli.javafx;
-  requires org.kordamp.ikonli.materialdesign2;
-
-  requires java.sql;
-  requires java.desktop;
-  requires java.prefs;
-  requires java.compiler;
 
   exports org.tentackle.fx;
   exports org.tentackle.fx.apt;
@@ -48,5 +39,16 @@ module org.tentackle.fx {
 
   opens org.tentackle.fx;   // to access tentackle.css from StyleManager
 
+  requires transitive org.tentackle.core;
+
+  requires transitive javafx.fxml;
+  requires transitive javafx.web;   // transitive java.xml, javafx.base, javafx.controls, javafx.graphics
+
+  requires org.kordamp.ikonli.javafx;
+  requires org.kordamp.ikonli.materialdesign2;
+
+  requires java.desktop;
+
   provides org.tentackle.common.ModuleHook with org.tentackle.fx.service.Hook;
+
 }

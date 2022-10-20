@@ -16,7 +16,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * tentackle-i18n module.
+ */
 module org.tentackle.i18n {
+
   exports org.tentackle.i18n;
   exports org.tentackle.i18n.pdo;
   exports org.tentackle.i18n.pdo.rmi;
@@ -24,7 +28,6 @@ module org.tentackle.i18n {
   requires transitive org.tentackle.persistence;
   requires transitive org.tentackle.domain;
 
-  requires java.rmi;
-
   provides org.tentackle.common.ModuleHook with org.tentackle.i18n.service.Hook;
+
 }

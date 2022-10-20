@@ -16,13 +16,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * tentackle-script-jsr module.
+ */
 module org.tentackle.script.jsr {
 
   exports org.tentackle.script.jsr;
 
-  requires org.tentackle.core;
+  requires transitive org.tentackle.core;
 
-  requires java.scripting;
+  requires transitive java.scripting;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.script.jsr.service.Hook;
 

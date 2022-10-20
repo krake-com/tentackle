@@ -16,12 +16,15 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * tentackle-common module.
+ */
 module org.tentackle.common {
 
-  requires java.sql;
-  requires java.compiler;
-
   exports org.tentackle.common;
+
+  requires transitive java.sql;
+  requires transitive java.compiler;
 
   // to get hold of other module's META-INF/xxxxx
   uses org.tentackle.common.ModuleHook;

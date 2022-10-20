@@ -16,7 +16,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * tentackle-database module.
+ */
 module org.tentackle.database {
+
   exports org.tentackle.dbms;
   exports org.tentackle.dbms.prefs;
   exports org.tentackle.dbms.prefs.rmi;
@@ -25,10 +29,6 @@ module org.tentackle.database {
   requires transitive org.tentackle.session;
   requires transitive org.tentackle.sql;
 
-  requires java.prefs;
-  requires java.sql;
-  requires java.rmi;
-  requires java.management;
-
   provides org.tentackle.common.ModuleHook with org.tentackle.dbms.service.Hook;
+
 }
