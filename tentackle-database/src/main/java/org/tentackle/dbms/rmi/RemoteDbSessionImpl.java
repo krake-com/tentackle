@@ -27,6 +27,7 @@ import org.tentackle.io.SocketConfigurator;
 import org.tentackle.io.SocketConfiguratorHolder;
 import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;
+import org.tentackle.log.LoggerFactory;
 import org.tentackle.log.MethodStatistics;
 import org.tentackle.misc.DiagnosticUtilities;
 import org.tentackle.misc.TimeKeeper;
@@ -55,6 +56,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -300,6 +302,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   private final SessionInfo serverInfo;               // the server info for creating a new session
   private final long sessionNumber;                   // unique session number
   private final String clientHost;                    // the client host string
+  private final Map<String, Logger> loggers;          // logger-name :: logger
   private int timeout;                                // timeout in polling intervals of the RemoteDbSessionCleanupThread
   private int port;                                   // port for all delegates
   private RMIClientSocketFactory csf;                 // client socket factory for all delegates
@@ -358,6 +361,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
     csf = determineClientSocketFactory(db, clientInfo, serverInfo);
     ssf = determineServerSocketFactory(db, clientInfo, serverInfo);
     timeout = determineTimeout(db, clientInfo, serverInfo);
+    loggers = new ConcurrentHashMap<>();
 
     resources.name = toString();    // chicken egg...
     cleanable = CLEANER.register(this, resources);
@@ -691,7 +695,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
 
 
   /**
-   * Logs the statistics.
+   * Logs the RMI-statistics.
    *
    * @param level the logging level
    * @param clear true if clear statistics after dump
@@ -862,9 +866,10 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
 
 
   @Override
-  public void log(Level level, String message) throws RemoteException {
+  public void log(String name, Level level, String message) throws RemoteException {
     try {
-      LOGGER.log(level, message, null);
+      Logger logger = name == null ? LOGGER : loggers.computeIfAbsent(name, LoggerFactory::getLogger);
+      logger.log(level, message, null);
     }
     catch (RuntimeException ex)  {
       throw new RemoteException("log() failed", ex);
@@ -968,7 +973,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * Creates the classname of the remote delegate interface from the
    * serviced classname.<br>
    * The default implementation returns:
-   * <code>packagename + ".rmi." + classbasename + "RemoteDelegate"</code>
+   * <code>package-name + ".rmi." + class-basename + "RemoteDelegate"</code>
    *
    * @param className the name of the class to look for a delegate
    * @return the classname of the remote delegate for given class
