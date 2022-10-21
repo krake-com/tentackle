@@ -55,20 +55,20 @@ public interface RemoteDbSession extends Remote {
   /**
    * Sends text based logging infos to the RMI-Server.
    *
+   * @param name the logger name, null if predefined
    * @param level the logging level
    * @param message the message
    * @throws RemoteException if failed
    */
-  void log(Level level, String message) throws RemoteException;
+  void log(String name, Level level, String message) throws RemoteException;
 
 
   /**
-   * Logs the statistics.<br>
+   * Logs the RMI-statistics.
    *
    * @param level the logging level
    * @param clear true if clear statistics after dump
    * @throws RemoteException if logging failed
-   * @see RemoteDelegateInvocationHandler#collectStatistics
    */
   void logStatistics(Level level, boolean clear) throws RemoteException;
 

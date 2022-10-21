@@ -18,12 +18,13 @@
 
 package org.tentackle.dbms;
 
-import java.rmi.RemoteException;
 import org.tentackle.dbms.rmi.RemoteDbSession;
 import org.tentackle.log.Logger;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.RemoteSession;
 import org.tentackle.session.SessionInfo;
+
+import java.rmi.RemoteException;
 
 /**
  * Adapter for a remote session.<br>
@@ -69,7 +70,17 @@ public class RemoteSessionAdapter implements RemoteSession {
   @Override
   public void log(Logger.Level level, String message) {
     try {
-      rs.log(level, message);
+      rs.log(null, level, message);
+    }
+    catch (RemoteException rex) {
+      throw PersistenceException.createFromRemoteException(this, rex);
+    }
+  }
+
+  @Override
+  public void log(String name, Logger.Level level, String message) {
+    try {
+      rs.log(name, level, message);
     }
     catch (RemoteException rex) {
       throw PersistenceException.createFromRemoteException(this, rex);

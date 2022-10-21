@@ -40,16 +40,26 @@ public interface RemoteSession {
 
 
   /**
-   * Logs at the server-side.
+   * Logs a message at the server-side.<br>
+   * Uses the static logger of the remote session implementation class.
    *
    * @param level the log level
    * @param message the log message
    */
   void log(Logger.Level level, String message);
 
+  /**
+   * Logs a message at the server-side.
+   *
+   * @param name the logger name
+   * @param level the log level
+   * @param message the log message
+   */
+  void log(String name, Logger.Level level, String message);
 
   /**
-   * Logs the statistics at the server-side.<br>
+   * Logs the RMI-statistics at the server-side.<br>
+   * Uses the static logger of the remote session implementation class.
    *
    * @param level the logging level
    * @param clear true if clear statistics after dump
