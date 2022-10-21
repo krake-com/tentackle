@@ -38,6 +38,16 @@
     <module>tentackle-fx-rdc-osgi-activator</module>
   </modules>
 
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tentackle-common</artifactId>
+        <version>${tentackle.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
   <build>
     <plugins>
       <plugin>
