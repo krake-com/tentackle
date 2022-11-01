@@ -24,6 +24,7 @@ import org.testng.annotations.Test;
 /**
  * Tests for en- and decryption.
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class CryptorTest {
 
   private static final String MSG = "a hollow voice says plugh";

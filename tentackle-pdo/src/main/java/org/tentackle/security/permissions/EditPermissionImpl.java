@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.security.permissions;
 
 import org.tentackle.security.PermissionService;
@@ -27,7 +26,14 @@ import org.tentackle.security.PermissionService;
  * @author harald
  */
 @PermissionService(EditPermission.class)
-public class EditPermissionImpl extends AbstractPdoPermission implements EditPermission {
+public final class EditPermissionImpl extends AbstractPdoPermission implements EditPermission {
+
+  /**
+   * Creates the edit permission.
+   */
+  public EditPermissionImpl() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getName() {

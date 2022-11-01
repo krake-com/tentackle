@@ -26,12 +26,19 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 
 /**
- * Instant cell type.
+ * {@link Instant} cell type.
  *
  * @author harald
  */
 @TableCellTypeService(Instant.class)
 public class InstantTableCellType extends AbstractDateTimeTableCellType<Instant> {
+
+  /**
+   * Creates the cell type for {@link Instant}.
+   */
+  public InstantTableCellType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   protected String formatItem(DateTimeFormatter fmt, Instant item) {

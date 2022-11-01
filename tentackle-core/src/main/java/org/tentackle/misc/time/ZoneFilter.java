@@ -36,6 +36,14 @@ public class ZoneFilter implements SmartDateTimeParser.TextFilter {
    */
   private static final Pattern pattern = Pattern.compile("\\S+\\s+([\\w]+$)");
 
+
+  /**
+   * Creates a zone filter.
+   */
+  public ZoneFilter() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public String apply(SmartDateTimeParser<?> parser, String text) {
     if (parser.isWithTimeZone()) {

@@ -26,13 +26,20 @@ import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 /**
- * Date cell type.<br>
+ * {@link Date} cell type.<br>
  * Applies to java.util.Date, java.sql.Date and org.tentackle.common.Date.
  *
  * @author harald
  */
 @TableCellTypeService(Date.class)
 public class DateTableCellType<T extends Date> extends AbstractDateTimeTableCellType<T> {
+
+  /**
+   * Creates the cell type for {@link Date}.
+   */
+  public DateTableCellType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   protected String formatItem(DateTimeFormatter fmt, T item) {

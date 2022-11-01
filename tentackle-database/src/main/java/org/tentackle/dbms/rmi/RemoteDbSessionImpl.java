@@ -169,8 +169,8 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
 
     private DelegateClasses(Class<?> effectiveClass, Class<?> clazz, RemoteDelegateLocator.Result delegates) {
       this(clazz,
-           effectiveClass == null ? delegates.getEffectiveClass() : effectiveClass,
-           delegates.getRemoteDelegate(), delegates.getRemoteDelegateImpl());
+           effectiveClass == null ? delegates.effectiveClass() : effectiveClass,
+           delegates.remoteDelegate(), delegates.remoteDelegateImpl());
     }
 
     @Override

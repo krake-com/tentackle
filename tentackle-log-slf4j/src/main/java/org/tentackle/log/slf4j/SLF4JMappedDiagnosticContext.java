@@ -16,8 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-
 package org.tentackle.log.slf4j;
 
 import org.slf4j.MDC;
@@ -53,6 +51,13 @@ public class SLF4JMappedDiagnosticContext extends AbstractMappedDiagnosticContex
     return SLF4JMappedDiagnosticContextHolder.INSTANCE;
   }
 
+
+  /**
+   * Creates the MDC for SLF4J.
+   */
+  public SLF4JMappedDiagnosticContext() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void put(String key, String val) {

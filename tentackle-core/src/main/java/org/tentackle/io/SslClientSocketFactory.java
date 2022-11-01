@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.io;
 
 import javax.rmi.ssl.SslRMIClientSocketFactory;
@@ -37,6 +36,13 @@ public class SslClientSocketFactory extends SslRMIClientSocketFactory implements
 
   private volatile SocketConfigurator socketConfigurator;   // the optional socket configurator
 
+
+  /**
+   * Creates an SSL client socket factory.
+   */
+  public SslClientSocketFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public Socket createSocket(String host, int port) throws IOException {

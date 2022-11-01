@@ -16,12 +16,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.validate.validator;
 
-import java.lang.annotation.Annotation;
 import org.tentackle.validate.RepeatableValidator;
 
+import java.lang.annotation.Annotation;
 
 /**
  * An abstract repeatable validator.
@@ -32,6 +31,13 @@ import org.tentackle.validate.RepeatableValidator;
 public abstract class AbstractRepeatableValidator<T extends Annotation> implements RepeatableValidator {
 
   protected T annotation;                       // the container annotation
+
+  /**
+   * Parent constructor.
+   */
+  public AbstractRepeatableValidator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String toString() {

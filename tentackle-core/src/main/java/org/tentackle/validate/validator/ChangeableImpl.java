@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.validate.validator;
 
 import org.tentackle.validate.ChangeableBindingEvaluator;
@@ -34,9 +33,16 @@ import java.util.List;
  *
  * @author harald
  */
-public class ChangeableImpl extends AbstractValidator<Changeable> implements ChangeableBindingEvaluator {
+public final class ChangeableImpl extends AbstractValidator<Changeable> implements ChangeableBindingEvaluator {
 
   private Changeable annotation;
+
+  /**
+   * Creates a {@link Changeable}-validator.
+   */
+  public ChangeableImpl() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void setAnnotation(Annotation annotation) {

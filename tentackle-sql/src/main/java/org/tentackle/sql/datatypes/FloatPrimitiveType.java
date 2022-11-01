@@ -26,7 +26,14 @@ import org.tentackle.sql.DataTypeFactory;
  * Datatype for the primitive type <code>float</code>.
  */
 @Service(DataType.class)
-public class FloatPrimitiveType extends FloatType {
+public final class FloatPrimitiveType extends FloatType {
+
+  /**
+   * Creates the datatype for the primitive type <code>float</code>.
+   */
+  public FloatPrimitiveType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getJavaType() {

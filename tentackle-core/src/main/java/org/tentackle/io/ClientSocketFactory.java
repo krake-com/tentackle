@@ -39,6 +39,13 @@ public class ClientSocketFactory implements RMIClientSocketFactory, SocketConfig
   protected volatile SocketConfigurator socketConfigurator;   // the optional socket configurator
 
 
+  /**
+   * Creates the client socket factory.
+   */
+  public ClientSocketFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public Socket createSocket(String host, int port) throws IOException {
     Socket socket = new Socket(host, port);

@@ -69,6 +69,14 @@ public class DefaultPreferencesFactory implements PersistedPreferencesFactory {
   private DefaultPreferences systemRoot;
   private DefaultPreferences userRoot;
 
+
+  /**
+   * Creates the preferences factory.
+   */
+  public DefaultPreferencesFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public void invalidate() {
     // nothing to do

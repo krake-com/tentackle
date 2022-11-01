@@ -31,6 +31,7 @@ import java.time.LocalTime;
 /**
  * Tests related to {@code java.util}-API.
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class DateTimeTest {
 
   @Test

@@ -20,11 +20,13 @@
 package org.tentackle.fx.component.config;
 
 import javafx.scene.control.ListView;
+import javafx.scene.input.KeyEvent;
 
 import org.tentackle.fx.ConfiguratorService;
+import org.tentackle.fx.component.FxListView;
 
 /**
- * Configures a ListView.
+ * Configures a {@link ListView}.
  *
  * @author harald
  * @param <T> the listview type
@@ -32,9 +34,18 @@ import org.tentackle.fx.ConfiguratorService;
 @ConfiguratorService(ListView.class)
 public class ListViewConfigurator<T extends ListView<?>> extends ComponentConfigurator<T> {
 
+  /**
+   * Creates the configurator for a {@link ListView}.
+   */
+  public ListViewConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public void configure(T control) {
-    // do nothing, no key remapping
+    if (control instanceof FxListView<?> listView) {
+      listView.addEventHandler(KeyEvent.ANY, listView::handleKeyEvent);
+    }
   }
 
 }

@@ -30,6 +30,13 @@ import org.tentackle.sql.NonStandardCommons;
 @Service(Backend.class)
 public class MariaDb extends MySql {
 
+  /**
+   * Creates the MariaDb backend.
+   */
+  public MariaDb() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public boolean isMatchingUrl(String url) {
     return url.contains(":mariadb");

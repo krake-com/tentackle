@@ -74,6 +74,13 @@ public class DbUtilities {
 
 
   /**
+   * Creates the db utitities.
+   */
+  public DbUtilities() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  /**
    * Creates a session-less object for given class.
    *
    * @param <T> the object type

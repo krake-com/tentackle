@@ -35,7 +35,14 @@ import java.util.Optional;
  * Datatype for {@link Float}.
  */
 @Service(DataType.class)
-public class FloatType extends AbstractNumberType<Float> {
+public sealed class FloatType extends AbstractNumberType<Float> permits FloatPrimitiveType {
+
+  /**
+   * Creates the datatype for {@link Float}.
+   */
+  public FloatType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getJavaType() {

@@ -34,6 +34,7 @@ import org.tentackle.validate.validator.True;
  * @author harald
  */
 @TestObjectValidator
+@SuppressWarnings("missing-explicit-ctor")
 public class TestObject {
 
   @NotZero

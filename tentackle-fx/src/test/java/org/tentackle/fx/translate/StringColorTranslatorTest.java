@@ -28,6 +28,7 @@ import static org.testng.Assert.assertEquals;
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class StringColorTranslatorTest {
 
   @Test

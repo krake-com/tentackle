@@ -29,7 +29,14 @@ import org.tentackle.fx.Configurator;
  * @author harald
  * @param <T> the control type
  */
-public class ContainerConfigurator<T extends Control> implements Configurator<T> {
+public abstract class ContainerConfigurator<T extends Control> implements Configurator<T> {
+
+  /**
+   * Parent constructor.
+   */
+  public ContainerConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   /**
    * Configures the control.

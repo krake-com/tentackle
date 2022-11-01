@@ -26,7 +26,14 @@ import org.tentackle.sql.DataTypeFactory;
  * Datatype for the primitive type <code>char</code>.
  */
 @Service(DataType.class)
-public class CharacterPrimitiveType extends CharacterType {
+public final class CharacterPrimitiveType extends CharacterType {
+
+  /**
+   * Creates the datatype for the primitive type <code>char</code>.
+   */
+  public CharacterPrimitiveType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getJavaType() {

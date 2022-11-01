@@ -34,6 +34,13 @@ import java.util.Collection;
 @Service(DiagnosticUtilities.class)
 public class DbDiagnosticUtilities extends DiagnosticUtilities {
 
+  /**
+   * Creates the diagnostic utilities.
+   */
+  public DbDiagnosticUtilities() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   protected void doCreateStackDump(StringBuilder buf, ThreadInfo info, Thread thread) {
 

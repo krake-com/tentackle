@@ -26,12 +26,19 @@ import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
- * OffsetDateTime cell type.
+ * {@link OffsetDateTime} cell type.
  *
  * @author harald
  */
 @TableCellTypeService(OffsetDateTime.class)
 public class OffsetDateTimeTableCellType extends AbstractDateTimeTableCellType<OffsetDateTime> {
+
+  /**
+   * Creates the cell type for {@link OffsetDateTime}.
+   */
+  public OffsetDateTimeTableCellType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   protected String formatItem(DateTimeFormatter fmt, OffsetDateTime item) {

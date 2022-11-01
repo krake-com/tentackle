@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class TaskDispatcherTest {
 
   private static final int THREAD_NUM = 10;         // number of concurrent threads

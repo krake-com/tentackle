@@ -31,6 +31,13 @@ import org.tentackle.pdo.PersistentDomainObject;
 @Service(DomainDelegateLinker.class)
 public class DefaultDomainDelegateLinker implements DomainDelegateLinker {
 
+  /**
+   * Creates a linker.
+   */
+  public DefaultDomainDelegateLinker() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   @SuppressWarnings({ "rawtypes", "unchecked" })
   public <T extends PersistentDomainObject<T>> void linkDomainObject(T pdo, DomainObject<T> delegate) {

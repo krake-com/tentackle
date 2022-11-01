@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.sql.backends;
 
 import org.tentackle.common.Service;
@@ -31,7 +30,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 
-
 /**
  * Backend for MicrosoftSQL.
  *
@@ -45,6 +43,14 @@ public class MsSql extends AbstractSql2003Backend {
 
   /** TOP string. */
   public static final String SQL_TOP_PAR = SQL_TOP + "? ";
+
+
+  /**
+   * Creates the MS-Sql backend.
+   */
+  public MsSql() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public boolean isFilteredIndexSupported() {

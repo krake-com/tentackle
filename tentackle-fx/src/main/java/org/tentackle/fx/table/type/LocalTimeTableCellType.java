@@ -26,12 +26,19 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
 /**
- * LocalTime cell type.
+ * {@link LocalTime} cell type.
  *
  * @author harald
  */
 @TableCellTypeService(LocalTime.class)
 public class LocalTimeTableCellType extends AbstractDateTimeTableCellType<LocalTime> {
+
+  /**
+   * Creates the cell type for {@link LocalTime}.
+   */
+  public LocalTimeTableCellType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   protected String formatItem(DateTimeFormatter fmt, LocalTime item) {

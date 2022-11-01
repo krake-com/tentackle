@@ -33,6 +33,7 @@ import static org.testng.Assert.fail;
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class DocumentTest {
 
   private static final String MODEL_TEXT =

@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.validate.validator;
 
 import org.tentackle.validate.ValidationContext;
@@ -34,9 +33,16 @@ import java.util.List;
  *
  * @author harald
  */
-public class LessImpl extends AbstractValidator<Less> {
+public final class LessImpl extends AbstractValidator<Less> {
 
   private Less annotation;
+
+  /**
+   * Creates a {@link Less}-validator.
+   */
+  public LessImpl() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void setAnnotation(Annotation annotation) {

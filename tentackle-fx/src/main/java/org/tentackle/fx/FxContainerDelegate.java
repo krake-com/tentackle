@@ -33,6 +33,12 @@ public abstract class FxContainerDelegate extends FxControlDelegate implements F
 
   private FxController controller;
 
+  /**
+   * Parent constructor.
+   */
+  public FxContainerDelegate() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   /**
    * Gets the container of this delegate.

@@ -31,6 +31,13 @@ import org.tentackle.pdo.PersistentDomainObject;
 @Service(FxUtilities.class)
 public class RdcFxUtilities extends FxUtilities {
 
+  /**
+   * Creates the RDC FX utilities.
+   */
+  public RdcFxUtilities() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public void applyStylesheets(Scene scene) {
     super.applyStylesheets(scene);

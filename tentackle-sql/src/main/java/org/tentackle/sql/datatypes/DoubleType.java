@@ -35,7 +35,14 @@ import java.util.Optional;
  * Datatype for {@link Double}.
  */
 @Service(DataType.class)
-public class DoubleType extends AbstractNumberType<Double> {
+public sealed class DoubleType extends AbstractNumberType<Double> permits DoublePrimitiveType {
+
+  /**
+   * Creates the datatype for {@link Double}.
+   */
+  public DoubleType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getJavaType() {

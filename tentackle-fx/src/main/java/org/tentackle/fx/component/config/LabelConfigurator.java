@@ -24,13 +24,20 @@ import javafx.scene.control.Label;
 import org.tentackle.fx.ConfiguratorService;
 
 /**
- * Configures a Label.
+ * Configures a {@link Label}.
  *
  * @author harald
  * @param <T> the label type
  */
 @ConfiguratorService(Label.class)
 public class LabelConfigurator<T extends Label> extends ComponentConfigurator<T> {
+
+  /**
+   * Creates the configurator for a {@link Label}.
+   */
+  public LabelConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void configure(T label) {

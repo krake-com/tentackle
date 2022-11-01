@@ -18,14 +18,16 @@
 
 package org.tentackle.log.log4j2v;
 
-import org.tentackle.log.Logger;
 import org.testng.annotations.Test;
+
+import org.tentackle.log.Logger;
 
 /**
  * Tests some logging.
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class LogTest {
 
   private static final Logger LOGGER = Logger.get();

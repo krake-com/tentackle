@@ -18,15 +18,17 @@
 
 package org.tentackle.misc;
 
-import java.text.ParseException;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+
+import java.text.ParseException;
 
 /**
  * Tests the ParameterString.
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class ParameterStringTest {
 
   @Test

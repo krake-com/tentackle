@@ -44,7 +44,6 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.Set;
 
-
 /**
  * View showing all sessions logged in to the middle tier.<br>
  * Allows killing sessions as well.
@@ -72,6 +71,13 @@ public class SessionsView extends AbstractFxController {
 
   private AdminExtension adminExt;
   private TablePopup<SessionData> popup;
+
+  /**
+   * Creates a session view controller.
+   */
+  public SessionsView() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @FXML
   private void initialize() {

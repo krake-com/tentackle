@@ -44,6 +44,12 @@ public class PersistentClassVariablesFactory extends DbClassVariablesFactory {
   }
 
 
+  /**
+   * Creates the class variables factory.
+   */
+  public PersistentClassVariablesFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   /**
    * Creates a PDO classvariable.

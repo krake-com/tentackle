@@ -30,6 +30,13 @@ import org.tentackle.validate.Validator;
 @ValidationSeverityService(MinorSeverity.class)
 public class MinorSeverityImpl implements MinorSeverity {
 
+  /**
+   * Creates the minor severity.
+   */
+  public MinorSeverityImpl() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public ValidationResult createValidationResult(Validator validator, ValidationContext validationContext, String message) {
     return new InfoValidationResult(validator, validationContext, message);

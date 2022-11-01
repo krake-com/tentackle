@@ -145,23 +145,23 @@ public abstract class AbstractValidationResult implements ValidationResult {
     for (int i=0; i < count; i++) {
       ndx = validationPath.indexOf('[', ndx + 1);
       if (ndx > 0) {
-        CollectionIndex colIndex = new CollectionIndex();
-        indexes[i] = colIndex;
-        colIndex.pathPrefix = validationPath.substring(0, ndx);
+        String pathPrefix = validationPath.substring(0, ndx);
         int ndx2 = validationPath.indexOf("].", ndx);
         if (ndx2 < 0) {
           throw new ValidationRuntimeException(
-                  "no closing bracket after '" + colIndex.pathPrefix + "' in validation path '" + validationPath + "'");
+                  "no closing bracket after '" + pathPrefix + "' in validation path '" + validationPath + "'");
         }
-        colIndex.pathPostfix = validationPath.substring(ndx2 + 2);
+        String pathPostfix = validationPath.substring(ndx2 + 2);
+        int index;
         try {
-          colIndex.index = Integer.parseInt(validationPath.substring(ndx + 1, ndx2));
+          index = Integer.parseInt(validationPath.substring(ndx + 1, ndx2));
           ndx = ndx2 + 2;
         }
         catch (RuntimeException ex) {
           throw new ValidationRuntimeException(
-                  "cannot decode index in validation path '" + validationPath + "' after '" + colIndex.pathPrefix + "'");
+                  "cannot decode index in validation path '" + validationPath + "' after '" + pathPrefix + "'");
         }
+        indexes[i] = new CollectionIndex(index, pathPrefix, pathPostfix);
       }
       else  {
         throw new ValidationRuntimeException(

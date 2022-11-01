@@ -18,25 +18,28 @@
 
 package org.tentackle.misc;
 
+import org.testng.Assert;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+import org.tentackle.common.Date;
+import org.tentackle.common.Time;
+import org.tentackle.common.Timestamp;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.TimeZone;
-import org.tentackle.common.Date;
-import org.tentackle.common.Time;
-import org.tentackle.common.Timestamp;
-import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 
 /**
  * Tests the date and time serialization.
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class DateSerialization {
 
   private static final TimeZone TZ1 = TimeZone.getTimeZone("Europe/Berlin");

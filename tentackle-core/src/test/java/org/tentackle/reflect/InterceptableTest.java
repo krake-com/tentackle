@@ -28,6 +28,7 @@ import org.tentackle.reflect.interceptable.Calculator;
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class InterceptableTest {
 
   @Test

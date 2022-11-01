@@ -34,6 +34,13 @@ import java.time.format.DateTimeFormatter;
  */
 public abstract class AbstractDateTimeTableCellType<T> extends AbstractTableCellType<T> {
 
+  /**
+   * Parent constructor.
+   */
+  public AbstractDateTimeTableCellType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public void updateItem(FxTableCell<?, T> tableCell, T item) {
     tableCell.setGraphic(null);

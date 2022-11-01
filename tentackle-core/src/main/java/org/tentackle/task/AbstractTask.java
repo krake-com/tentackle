@@ -45,6 +45,13 @@ public abstract class AbstractTask implements Task {
 
 
   /**
+   * Parent constructor.
+   */
+  public AbstractTask() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  /**
    * {@inheritDoc}
    * <p>
    * Tasks are sorted by scheduled time + id.

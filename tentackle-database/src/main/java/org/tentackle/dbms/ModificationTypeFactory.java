@@ -42,6 +42,14 @@ public class ModificationTypeFactory {
     return ModificationTypeFactoryHolder.INSTANCE;
   }
 
+
+  /**
+   * Creates a modification type factory.
+   */
+  public ModificationTypeFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   /**
    * Maps an external character value to a modification type.<br>
    * Throws a {@link PersistenceException} if unknown external value.

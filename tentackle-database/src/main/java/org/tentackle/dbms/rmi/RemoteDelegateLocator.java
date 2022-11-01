@@ -54,21 +54,21 @@ public interface RemoteDelegateLocator {
      *
      * @return the serviced class
      */
-    Class<?> getEffectiveClass();
+    Class<?> effectiveClass();
 
     /**
      * Gets the remote delegate interface for a class.
      *
      * @return the remote delegate interface
      */
-    Class<RemoteDelegate> getRemoteDelegate();
+    Class<RemoteDelegate> remoteDelegate();
 
     /**
      * Gets the remote delegate implementation for a class.
      *
      * @return the remote delegate class
      */
-    Class<RemoteDelegateImpl<?>> getRemoteDelegateImpl();
+    Class<RemoteDelegateImpl<?>> remoteDelegateImpl();
 
   }
 

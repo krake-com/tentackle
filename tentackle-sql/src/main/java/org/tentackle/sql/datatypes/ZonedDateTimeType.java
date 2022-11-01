@@ -50,7 +50,7 @@ import java.util.Optional;
  * It is sortable only within the same timezone.
  */
 @Service(DataType.class)
-public class ZonedDateTimeType extends AbstractDateTimeType<ZonedDateTime> {
+public final class ZonedDateTimeType extends AbstractDateTimeType<ZonedDateTime> {
 
   /** GMT timezone name. */
   public static final String GMT = "GMT";
@@ -89,6 +89,13 @@ public class ZonedDateTimeType extends AbstractDateTimeType<ZonedDateTime> {
   private static final DateTimeFormatter TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss VV");
   private static final DateTimeFormatter MS_TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS VV");
 
+
+  /**
+   * Creates the datatype for {@link ZonedDateTime}.
+   */
+  public ZonedDateTimeType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getJavaType() {

@@ -26,7 +26,14 @@ import org.tentackle.sql.DataTypeFactory;
  * Datatype for the primitive type <code>int</code>.
  */
 @Service(DataType.class)
-public class IntegerPrimitiveType extends IntegerType {
+public final class IntegerPrimitiveType extends IntegerType {
+
+  /**
+   * Creates the datatype for the primitive type <code>int</code>.
+   */
+  public IntegerPrimitiveType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getJavaType() {

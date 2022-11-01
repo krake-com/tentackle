@@ -39,6 +39,13 @@ import org.tentackle.pdo.PersistentDomainObject;
 @Service(RdcFactory.class)
 public class DefaultRdcFactory implements RdcFactory {
 
+  /**
+   * Creates the RDC factory.
+   */
+  public DefaultRdcFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public <T extends PersistentDomainObject<T>> PdoCrud<T> createPdoCrud(T pdo, boolean editable, boolean modal) {
     GuiProvider<T> provider = GuiProviderFactory.getInstance().createGuiProvider(pdo);

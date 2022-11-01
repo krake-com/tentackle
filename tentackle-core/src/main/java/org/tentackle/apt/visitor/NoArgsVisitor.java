@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.apt.visitor;
 
 import javax.lang.model.type.ExecutableType;
@@ -28,6 +27,13 @@ import javax.lang.model.util.SimpleTypeVisitor8;
  * @author harald
  */
 public class NoArgsVisitor extends SimpleTypeVisitor8<Boolean, Void> {
+
+  /**
+   * Creates a no-args visitor.
+   */
+  public NoArgsVisitor() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public Boolean visitExecutable(ExecutableType t, Void v) {

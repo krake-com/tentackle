@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.validate.validator;
 
 import org.tentackle.validate.MandatoryBindingEvaluator;
@@ -35,9 +34,16 @@ import java.util.List;
  *
  * @author harald
  */
-public class NotNullImpl extends AbstractValidator<NotNull> implements MandatoryBindingEvaluator {
+public final class NotNullImpl extends AbstractValidator<NotNull> implements MandatoryBindingEvaluator {
 
   private NotNull annotation;
+
+  /**
+   * Creates a {@link NotNull}-validator.
+   */
+  public NotNullImpl() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void setAnnotation(Annotation annotation) {

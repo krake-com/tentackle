@@ -52,6 +52,13 @@ public class NamedCounter {
 
 
   /**
+   * Creates a named counter.
+   */
+  public NamedCounter() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  /**
    * Returns the next number for given name.
    *
    * @param name the counter's name

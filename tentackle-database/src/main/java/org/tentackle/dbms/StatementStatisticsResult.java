@@ -34,6 +34,13 @@ public class StatementStatisticsResult extends StatisticsResult {
 
 
   /**
+   * Creates a statement statistics result.
+   */
+  public StatementStatisticsResult() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  /**
    * Counts the fetch statistics.
    *
    * @param duration the duration fetching the result from the database

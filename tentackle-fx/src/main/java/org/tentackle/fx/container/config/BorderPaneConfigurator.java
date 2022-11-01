@@ -24,7 +24,7 @@ import javafx.scene.layout.BorderPane;
 import org.tentackle.fx.ConfiguratorService;
 
 /**
- * Configures a BorderPane.
+ * Configures a {@link BorderPane}.
  *
  * @author harald
  * @param <T> the container type
@@ -32,5 +32,11 @@ import org.tentackle.fx.ConfiguratorService;
 @ConfiguratorService(BorderPane.class)
 public class BorderPaneConfigurator<T extends BorderPane> extends PaneConfigurator<T> {
 
+  /**
+   * Creates the configurator for a {@link BorderPane}.
+   */
+  public BorderPaneConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
 }

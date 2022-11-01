@@ -29,7 +29,7 @@ import org.tentackle.fx.table.TableColumnConfiguration;
 import java.text.DecimalFormat;
 
 /**
- * A number cell type.<br>
+ * The {@link Number} cell type.<br>
  * Provided as a fallback to application specific types that don't provide t
  *
  * @param <T> the item type
@@ -37,6 +37,13 @@ import java.text.DecimalFormat;
  */
 @TableCellTypeService(Number.class)
 public class NumberTableCellType<T extends Number> extends AbstractTableCellType<T> {
+
+  /**
+   * Creates the cell type for {@link Number}.
+   */
+  public NumberTableCellType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void updateItem(FxTableCell<?, T> tableCell, T item) {

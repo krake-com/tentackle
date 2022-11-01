@@ -22,6 +22,7 @@ import org.tentackle.common.Service;
 import org.tentackle.session.PersistenceException;
 
 @Service(ModificationTypeFactory.class)
+@SuppressWarnings("missing-explicit-ctor")
 public class ExtendedModificationTypeFactory extends ModificationTypeFactory {
 
   @Override

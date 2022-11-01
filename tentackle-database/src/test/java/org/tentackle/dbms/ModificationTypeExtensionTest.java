@@ -21,6 +21,7 @@ package org.tentackle.dbms;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+@SuppressWarnings("missing-explicit-ctor")
 public class ModificationTypeExtensionTest {
 
   @Test

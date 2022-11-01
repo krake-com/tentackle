@@ -34,6 +34,7 @@ import static org.testng.Assert.assertTrue;
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class CopyOnWriteListTest {
 
   @Test

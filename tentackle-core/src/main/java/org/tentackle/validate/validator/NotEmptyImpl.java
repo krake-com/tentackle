@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.validate.validator;
 
 import org.tentackle.validate.MandatoryBindingEvaluator;
@@ -39,9 +38,16 @@ import java.util.Map;
  *
  * @author harald
  */
-public class NotEmptyImpl extends AbstractValidator<NotEmpty> implements MandatoryBindingEvaluator {
+public final class NotEmptyImpl extends AbstractValidator<NotEmpty> implements MandatoryBindingEvaluator {
 
   private NotEmpty annotation;
+
+  /**
+   * Creates a {@link NotEmpty}-validator.
+   */
+  public NotEmptyImpl() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void setAnnotation(Annotation annotation) {

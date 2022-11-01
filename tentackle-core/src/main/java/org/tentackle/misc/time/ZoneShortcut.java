@@ -36,6 +36,14 @@ public class ZoneShortcut implements SmartDateTimeParser.Shortcut {
 
   private static final Pattern pattern = Pattern.compile("^[=]?\\w+$");
 
+
+  /**
+   * Creates the zone shortcut.
+   */
+  public ZoneShortcut() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public SmartDateTimeParser.TextRange test(SmartDateTimeParser<? extends Temporal> parser, String text) {
     if (parser.isWithTimeZone()) {

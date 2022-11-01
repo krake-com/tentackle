@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.log;
 
 import org.tentackle.log.Logger.Level;
@@ -31,7 +30,7 @@ import java.lang.reflect.Method;
  *
  * @author harald
  */
-public class LogInterceptor extends AbstractInterceptor {
+public final class LogInterceptor extends AbstractInterceptor {
 
   /**
    * logger for this class.
@@ -39,6 +38,13 @@ public class LogInterceptor extends AbstractInterceptor {
   private static final Logger LOGGER = Logger.get(LogInterceptor.class);
 
   private Level level;   // the logging level
+
+  /**
+   * Creates the {@link Log} interceptor.
+   */
+  public LogInterceptor() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void setAnnotation(Annotation annotation) {

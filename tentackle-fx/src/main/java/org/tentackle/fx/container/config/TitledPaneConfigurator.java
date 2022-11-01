@@ -24,7 +24,7 @@ import javafx.scene.control.TitledPane;
 import org.tentackle.fx.ConfiguratorService;
 
 /**
- * Configures a TitledPane.
+ * Configures a {@link TitledPane}.
  *
  * @author harald
  * @param <T> the container type
@@ -32,5 +32,11 @@ import org.tentackle.fx.ConfiguratorService;
 @ConfiguratorService(TitledPane.class)
 public class TitledPaneConfigurator<T extends TitledPane> extends ContainerConfigurator<T> {
 
+  /**
+   * Creates the configurator for a {@link TitledPane}.
+   */
+  public TitledPaneConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
 }

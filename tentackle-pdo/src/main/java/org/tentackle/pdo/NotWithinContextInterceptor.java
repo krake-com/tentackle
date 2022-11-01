@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.pdo;
 
 import org.tentackle.misc.Identifiable;
@@ -31,9 +30,16 @@ import java.lang.reflect.Method;
  *
  * @author harald
  */
-public class NotWithinContextInterceptor extends AbstractInterceptor {
+public final class NotWithinContextInterceptor extends AbstractInterceptor {
 
   private String[] names;    // the context names
+
+  /**
+   * Creates a {@link NotWithinContext} interceptor.
+   */
+  public NotWithinContextInterceptor() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void setAnnotation(Annotation annotation) {

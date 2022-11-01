@@ -24,7 +24,7 @@ import javafx.scene.control.ButtonBar;
 import org.tentackle.fx.ConfiguratorService;
 
 /**
- * Configures a ButtonBar.
+ * Configures a {@link ButtonBar}.
  *
  * @author harald
  * @param <T> the container type
@@ -32,5 +32,11 @@ import org.tentackle.fx.ConfiguratorService;
 @ConfiguratorService(ButtonBar.class)
 public class ButtonBarConfigurator<T extends ButtonBar> extends ContainerConfigurator<T> {
 
+  /**
+   * Creates the configurator for a {@link ButtonBar}.
+   */
+  public ButtonBarConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
 }

@@ -74,6 +74,13 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
 
   private DomainContext context;    // session local domain context
 
+  /**
+   * Creates a stored bundle control object.
+   */
+  public StoredBundleControl() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public DomainContext getDomainContext() {
     return context;

@@ -29,6 +29,13 @@ import java.time.temporal.Temporal;
  */
 public class NowShortcut implements SmartDateTimeParser.Shortcut {
 
+  /**
+   * Creates the "now" shortcut.
+   */
+  public NowShortcut() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public SmartDateTimeParser.TextRange test(SmartDateTimeParser<? extends Temporal> parser, String text) {
     if (!text.isEmpty()) {

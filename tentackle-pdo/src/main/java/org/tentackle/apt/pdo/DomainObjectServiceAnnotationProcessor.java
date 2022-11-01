@@ -42,9 +42,15 @@ import javax.tools.Diagnostic;
 @AnnotationProcessor
 public class DomainObjectServiceAnnotationProcessor extends AbstractDomainServiceAnnotationProcessor {
 
-
   private final ClassArgConstructorVisitor pdoVisitor = new ClassArgConstructorVisitor(this, PersistentDomainObject.class);
 
+
+  /**
+   * Creates the processor.
+   */
+  public DomainObjectServiceAnnotationProcessor() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   protected void processClass(Element element) {

@@ -16,38 +16,37 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.misc;
+package org.tentackle.fx.component.config;
 
-import java.util.function.Function;
+import javafx.scene.control.TreeView;
+import javafx.scene.input.KeyEvent;
+
+import org.tentackle.fx.ConfiguratorService;
+import org.tentackle.fx.component.FxTreeView;
 
 /**
- * A string converter that allows only latin unicode characters.
- * <p>
- * Removes all characters not in:
- * <ul>
- * <li>Basic Latin</li>
- * <li>Latin-1 Supplement</li>
- * <li>Latin Extended-A</li>
- * <li>Latin Extended-B</li>
- * </ul>
+ * Configures a {@link TreeView}.
  *
  * @author harald
+ * @param <T> the treetable view type
  */
-public class LatinStringConverter implements Function<String,String> {
+@ConfiguratorService(TreeView.class)
+public class TreeViewConfigurator<T extends TreeView<?>> extends ComponentConfigurator<T> {
+
+  /**
+   * Creates the configurator for a {@link TreeView}.
+   */
+  public TreeViewConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
-  public String apply(String str) {
-    if (str != null) {
-      StringBuilder buf = new StringBuilder();
-      for (char c: str.toCharArray()) {
-        if (c <= 0x24f) {
-          // basic-latin + latin-1-supplement + latin-extended-a + latin-extended-b
-          buf.append(c);
-        }
-      }
-      str = buf.toString();
+  public void configure(T control) {
+    // no super.configure()... -> no key remapping!
+
+    if (control instanceof FxTreeView<?> treeView) {
+      treeView.addEventFilter(KeyEvent.ANY, treeView::filterDangerousKeys);
     }
-    return str;
   }
 
 }

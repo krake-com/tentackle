@@ -29,6 +29,13 @@ import org.tentackle.pdo.PersistentDomainObject;
  */
 public abstract class AbstractNonPdoPermission extends AbstractPermission {
 
+  /**
+   * Parent constructor.
+   */
+  public AbstractNonPdoPermission() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public boolean appliesTo(Class<?> clazz) {
     return clazz != null && !PersistentDomainObject.class.isAssignableFrom(clazz);

@@ -51,6 +51,13 @@ public abstract class PdoFinder<T extends PersistentDomainObject<T>> extends Abs
 
 
   /**
+   * Parent constructor.
+   */
+  public PdoFinder() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  /**
    * Runs the search.
    *
    * @return the search result, null is allowed and treated as empty

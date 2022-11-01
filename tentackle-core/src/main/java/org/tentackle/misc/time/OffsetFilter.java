@@ -33,6 +33,13 @@ public class OffsetFilter implements SmartDateTimeParser.TextFilter {
    */
   private static final Pattern pattern = Pattern.compile("\\S+\\s+([+-][0-9]{1,2}[:]?[\\d]{0,2}$)");
 
+  /**
+   * Creates an offset filter.
+   */
+  public OffsetFilter() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public String apply(SmartDateTimeParser<?> parser, String text) {
     if (parser.isWithOffset()) {

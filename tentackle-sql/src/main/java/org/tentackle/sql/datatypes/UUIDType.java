@@ -37,7 +37,7 @@ import java.util.UUID;
  * but manually written SQL queries may become rather tricky.
  */
 @Service(DataType.class)
-public class UUIDType extends AbstractDataType<UUID> {
+public final class UUIDType extends AbstractDataType<UUID> {
 
   /** the NIL value. */
   public static final UUID NIL = new UUID(0, 0);
@@ -47,6 +47,13 @@ public class UUIDType extends AbstractDataType<UUID> {
 
   private static final int VARCHAR_LEN = 36;
 
+
+  /**
+   * Creates the datatype for {@link UUID}.
+   */
+  public UUIDType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getJavaType() {

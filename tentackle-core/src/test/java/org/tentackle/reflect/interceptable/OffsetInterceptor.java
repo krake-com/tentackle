@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.reflect.interceptable;
 
 import org.tentackle.reflect.AbstractInterceptor;
@@ -29,6 +28,7 @@ import java.lang.reflect.Method;
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class OffsetInterceptor extends AbstractInterceptor {
 
   private int offset;
@@ -40,7 +40,6 @@ public class OffsetInterceptor extends AbstractInterceptor {
       offset = ((Offset) annotation).value();
     }
   }
-
 
   @Override
   public Object proceed(Object proxy, Method method, Object[] args, Object orgProxy, Method orgMethod, Object[] orgArgs) throws Throwable {

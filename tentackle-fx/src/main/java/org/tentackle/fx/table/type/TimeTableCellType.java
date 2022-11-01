@@ -26,13 +26,20 @@ import java.sql.Time;
 import java.time.format.DateTimeFormatter;
 
 /**
- * Time cell type.<br>
+ * {@link Time} cell type.<br>
  * Applies to java.sql.Time and org.tentackle.common.Time.
  *
  * @author harald
  */
 @TableCellTypeService(Time.class)
 public class TimeTableCellType extends AbstractDateTimeTableCellType<Time> {
+
+  /**
+   * Creates the cell type for {@link Time}.
+   */
+  public TimeTableCellType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   protected String formatItem(DateTimeFormatter fmt, Time item) {

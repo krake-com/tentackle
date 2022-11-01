@@ -18,10 +18,11 @@
 
 package org.tentackle.reflect;
 
+import org.tentackle.common.TentackleRuntimeException;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import org.tentackle.common.TentackleRuntimeException;
 
 /**
  * An abstract interceptor.
@@ -34,6 +35,13 @@ public abstract class AbstractInterceptor implements Interceptor {
   private Method chainedMethod;             // the proceed method of the chained interceptor
   private Annotation annotation;            // the optional annotation
 
+
+  /**
+   * Parent constructor.
+   */
+  public AbstractInterceptor() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void setAnnotation(Annotation annotation) {

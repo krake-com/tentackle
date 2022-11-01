@@ -40,6 +40,13 @@ public abstract class PdoEditor<T extends PersistentDomainObject<T>> extends Abs
                 implements PdoController<T>, DomainContextProvider {
 
   /**
+   * Parent constructor.
+   */
+  public PdoEditor() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  /**
    * Requests the initial focus after stage is shown.
    */
   public abstract void requestInitialFocus();

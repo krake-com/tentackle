@@ -30,6 +30,13 @@ import org.tentackle.session.SessionPoolFactory;
 @Service(SessionPoolFactory.class)
 public class DbPoolFactory implements SessionPoolFactory {
 
+  /**
+   * Creates the session pool factory.
+   */
+  public DbPoolFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public SessionPool create(String name, Session session,
                             int iniSize, int incSize, int minSize, int maxSize, long maxIdleMinutes, long maxUsageMinutes) {

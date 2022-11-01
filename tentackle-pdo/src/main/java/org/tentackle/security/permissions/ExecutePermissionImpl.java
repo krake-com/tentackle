@@ -16,20 +16,26 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.security.permissions;
 
 import org.tentackle.security.PermissionService;
 
 /**
- * Execute permission.
+ * Execution permission.
  * <p>
  * Allows usage of classes, for example.
  *
  * @author harald
  */
 @PermissionService(ExecutePermission.class)
-public class ExecutePermissionImpl extends AbstractNonPdoPermission implements ExecutePermission {
+public final class ExecutePermissionImpl extends AbstractNonPdoPermission implements ExecutePermission {
+
+  /**
+   * Creates the execution permission.
+   */
+  public ExecutePermissionImpl() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getName() {

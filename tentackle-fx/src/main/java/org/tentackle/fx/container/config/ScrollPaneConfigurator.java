@@ -24,7 +24,7 @@ import javafx.scene.control.ScrollPane;
 import org.tentackle.fx.ConfiguratorService;
 
 /**
- * Configures a ScrollPane.
+ * Configures a {@link ScrollPane}.
  *
  * @author harald
  * @param <T> the container type
@@ -32,5 +32,11 @@ import org.tentackle.fx.ConfiguratorService;
 @ConfiguratorService(ScrollPane.class)
 public class ScrollPaneConfigurator<T extends ScrollPane> extends ContainerConfigurator<T> {
 
+  /**
+   * Creates the configurator for a {@link ScrollPane}.
+   */
+  public ScrollPaneConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
 }

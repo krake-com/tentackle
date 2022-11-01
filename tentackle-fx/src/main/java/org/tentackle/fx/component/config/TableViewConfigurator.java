@@ -20,12 +20,13 @@
 package org.tentackle.fx.component.config;
 
 import javafx.scene.control.TableView;
+import javafx.scene.input.KeyEvent;
 
 import org.tentackle.fx.ConfiguratorService;
 import org.tentackle.fx.component.FxTableView;
 
 /**
- * Configures a TableView.
+ * Configures a {@link TableView}.
  *
  * @author harald
  * @param <T> the tableview type
@@ -33,12 +34,20 @@ import org.tentackle.fx.component.FxTableView;
 @ConfiguratorService(TableView.class)
 public class TableViewConfigurator<T extends TableView<?>> extends ComponentConfigurator<T> {
 
+  /**
+   * Creates the configurator for a {@link TableView}.
+   */
+  public TableViewConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public void configure(T control) {
     // no super.configure()... -> no key remapping!
 
-    if (control instanceof FxTableView) {
-      ((FxTableView<?>) control).setCopyToClipboardEnabled(true);
+    if (control instanceof FxTableView<?> tableView) {
+      tableView.setCopyToClipboardEnabled(true);
+      tableView.addEventHandler(KeyEvent.ANY, tableView::handleKeyEvent);
     }
   }
 

@@ -42,7 +42,14 @@ import java.util.Optional;
  * This type is sortable by the first column.
  */
 @Service(DataType.class)
-public class BMoneyType extends AbstractDataType<BMoney> {
+public final class BMoneyType extends AbstractDataType<BMoney> {
+
+  /**
+   * Creates the datatype for {@link BMoney}.
+   */
+  public BMoneyType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getJavaType() {

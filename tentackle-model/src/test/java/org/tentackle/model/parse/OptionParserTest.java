@@ -26,6 +26,7 @@ import static org.testng.Assert.assertNull;
 /**
  * Option parser test.
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class OptionParserTest {
 
   @Test

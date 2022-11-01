@@ -47,7 +47,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-
 /**
  * The default entity model factory.
  *
@@ -60,6 +59,14 @@ public class EntityFactoryImpl implements EntityFactory {
 
   /** list of backends to validate against. */
   private Collection<Backend> backends;
+
+
+  /**
+   * Creates the entity factory.
+   */
+  public EntityFactoryImpl() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public Collection<Backend> getBackends() {

@@ -15,6 +15,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
 package org.tentackle.session;
 
 import org.tentackle.bind.Bindable;
@@ -33,6 +34,14 @@ public abstract class AbstractSessionConfiguration implements Validateable, Scop
 
   private boolean persisted;      // loaded from preferences
   private String name;            // the config name
+
+
+  /**
+   * Parent constructor.
+   */
+  public AbstractSessionConfiguration() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   /**
    * Gets the symbolic name.

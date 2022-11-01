@@ -24,13 +24,20 @@ import javafx.scene.control.Button;
 import org.tentackle.fx.ConfiguratorService;
 
 /**
- * Configures a Button.
+ * Configures a {@link Button}.
  *
  * @author harald
  * @param <T> the button type
  */
 @ConfiguratorService(Button.class)
 public class ButtonConfigurator<T extends Button> extends ButtonBaseConfigurator<T> {
+
+  /**
+   * Creates the configurator for a {@link Button}.
+   */
+  public ButtonConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void configure(T button) {

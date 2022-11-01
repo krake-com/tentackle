@@ -39,10 +39,18 @@ import java.time.format.DateTimeParseException;
  * Datatype for {@link Date}.
  */
 @Service(DataType.class)
-public class DateType extends AbstractDateTimeType<Date> {
+public final class DateType extends AbstractDateTimeType<Date> {
 
   private static final String DATE_PATTERN = "yyyy-MM-dd";
   private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern(DATE_PATTERN);
+
+
+  /**
+   * Creates the datatype for {@link Date}.
+   */
+  public DateType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public boolean isTimezoneApplicable() {

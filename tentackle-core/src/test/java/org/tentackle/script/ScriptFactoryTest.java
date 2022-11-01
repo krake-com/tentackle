@@ -22,6 +22,7 @@ import org.testng.Assert;
 import org.testng.Reporter;
 import org.testng.annotations.Test;
 
+@SuppressWarnings("missing-explicit-ctor")
 public class ScriptFactoryTest {
 
   @Test

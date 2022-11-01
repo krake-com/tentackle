@@ -24,12 +24,19 @@ import javafx.scene.control.PasswordField;
 import org.tentackle.fx.ConfiguratorService;
 
 /**
- * Configures a PasswordField.
+ * Configures a {@link PasswordField}.
  *
  * @author harald
  * @param <T> the password field type
  */
 @ConfiguratorService(PasswordField.class)
 public class PasswordFieldConfigurator<T extends PasswordField> extends TextInputControlConfigurator<T> {
+
+  /**
+   * Creates the configurator for a {@link PasswordField}.
+   */
+  public PasswordFieldConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
 }

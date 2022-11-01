@@ -57,6 +57,13 @@ public class ModelUtilities {
 
 
   /**
+   * Creates the model utilities.
+   */
+  public ModelUtilities() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  /**
    * Returns whether the character should be treated as a vowel.
    *
    * @param c the character

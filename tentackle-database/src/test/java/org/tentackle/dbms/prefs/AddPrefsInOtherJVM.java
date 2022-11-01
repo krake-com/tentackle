@@ -29,6 +29,7 @@ import org.tentackle.session.SessionFactory;
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class AddPrefsInOtherJVM {
 
   // not annotated with @Test because invoked from shell!

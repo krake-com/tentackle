@@ -42,7 +42,14 @@ import java.util.Optional;
  * This type is not sortable by the database in a meaningful manner.
  */
 @Service(DataType.class)
-public class DMoneyType extends AbstractDataType<DMoney> {
+public final class DMoneyType extends AbstractDataType<DMoney> {
+
+  /**
+   * Creates the datatype for {@link DMoney}.
+   */
+  public DMoneyType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getJavaType() {

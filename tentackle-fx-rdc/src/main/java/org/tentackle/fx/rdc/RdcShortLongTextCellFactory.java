@@ -29,6 +29,13 @@ import org.tentackle.pdo.PersistentDomainObject;
  */
 public class RdcShortLongTextCellFactory<T> extends ShortLongTextCellFactory<T> {
 
+  /**
+   * Creates the RDC cell factory for short/long texts.
+   */
+  public RdcShortLongTextCellFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   protected ShortLongText getShortLongText(T item) {
     ShortLongText slItem = super.getShortLongText(item);

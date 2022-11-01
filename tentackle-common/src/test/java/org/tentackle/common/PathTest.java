@@ -18,17 +18,19 @@
 
 package org.tentackle.common;
 
+import org.testng.annotations.Test;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import org.testng.annotations.Test;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
 
 /**
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class PathTest {
 
   private static class StringPath implements Path<StringPath, String> {

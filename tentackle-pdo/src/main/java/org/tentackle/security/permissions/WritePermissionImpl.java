@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.security.permissions;
 
 import org.tentackle.security.PermissionService;
@@ -27,7 +26,14 @@ import org.tentackle.security.PermissionService;
  * @author harald
  */
 @PermissionService(WritePermission.class)
-public class WritePermissionImpl extends AbstractPdoPermission implements WritePermission {
+public final class WritePermissionImpl extends AbstractPdoPermission implements WritePermission {
+
+  /**
+   * Creates the write-permission.
+   */
+  public WritePermissionImpl() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getName() {

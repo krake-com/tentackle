@@ -24,7 +24,7 @@ import javafx.scene.layout.StackPane;
 import org.tentackle.fx.ConfiguratorService;
 
 /**
- * Configures a StackPane.
+ * Configures a {@link StackPane}.
  *
  * @author harald
  * @param <T> the container type
@@ -32,5 +32,11 @@ import org.tentackle.fx.ConfiguratorService;
 @ConfiguratorService(StackPane.class)
 public class StackPaneConfigurator<T extends StackPane> extends PaneConfigurator<T> {
 
+  /**
+   * Creates the configurator for a {@link StackPane}.
+   */
+  public StackPaneConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
 }

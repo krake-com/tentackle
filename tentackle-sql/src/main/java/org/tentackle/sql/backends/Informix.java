@@ -55,6 +55,13 @@ public class Informix extends AbstractSql92Backend {
   public static final String SQL_SKIP_PAR = SQL_SKIP + "? ";
 
 
+  /**
+   * Creates the Informix backend.
+   */
+  public Informix() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public boolean isMatchingUrl(String url) {
     return url.contains(":informix");

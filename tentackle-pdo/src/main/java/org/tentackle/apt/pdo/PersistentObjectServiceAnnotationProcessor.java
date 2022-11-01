@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.apt.pdo;
 
 import org.tentackle.apt.AbstractServiceAnnotationProcessor;
@@ -56,6 +55,13 @@ import java.util.Set;
 public class PersistentObjectServiceAnnotationProcessor extends AbstractServiceAnnotationProcessor {
 
   private final ClassArgConstructorVisitor pdoVisitor = new ClassArgConstructorVisitor(this, PersistentDomainObject.class);
+
+  /**
+   * Creates the processor.
+   */
+  public PersistentObjectServiceAnnotationProcessor() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {

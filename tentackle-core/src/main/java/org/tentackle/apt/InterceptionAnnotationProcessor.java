@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.apt;
 
 import org.tentackle.common.AnnotationProcessor;
@@ -37,7 +36,6 @@ import javax.tools.Diagnostic.Kind;
 import java.util.Map;
 import java.util.Set;
 
-
 /**
  * Processor for the {@code @Interception} annotation.<br>
  * Provides annotation checking during compilation and IDE editing.
@@ -50,6 +48,13 @@ public class InterceptionAnnotationProcessor extends AbstractProcessor {
 
   private static final String ANNO_NAME = Interception.class.getName();
 
+
+  /**
+   * Creates the processor for the {@code @Interception} annotation.
+   */
+  public InterceptionAnnotationProcessor() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {

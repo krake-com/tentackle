@@ -34,7 +34,14 @@ import java.sql.Types;
  * Datatype for {@link BigDecimal}.
  */
 @Service(DataType.class)
-public class BigDecimalType extends AbstractNumberType<BigDecimal> {
+public final class BigDecimalType extends AbstractNumberType<BigDecimal> {
+
+  /**
+   * Creates the datatype for {@link BigDecimal}.
+   */
+  public BigDecimalType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getJavaType() {

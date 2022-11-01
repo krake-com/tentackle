@@ -31,6 +31,7 @@ import static org.tentackle.misc.convertibles.SomeConvertible.TWO;
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class ConvertibleTest {
 
   @Test

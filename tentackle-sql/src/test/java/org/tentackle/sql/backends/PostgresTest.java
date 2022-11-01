@@ -27,6 +27,7 @@ import org.tentackle.sql.JoinType;
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class PostgresTest {
 
   @Test

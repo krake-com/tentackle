@@ -36,7 +36,7 @@ import java.util.stream.Stream;
  * Notice that there are two types of strings. This one is for the SQL type <code>VARCHAR</code>.
  */
 @Service(DataType.class)
-public class StringType extends AbstractDataType<String> {
+public sealed class StringType extends AbstractDataType<String> permits LargeStringType {
 
   /**
    * Maximum number of lines in literal.<br>
@@ -44,6 +44,10 @@ public class StringType extends AbstractDataType<String> {
    */
   public static int maxLinesInLiteral = -1;
 
+
+  public StringType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getJavaType() {

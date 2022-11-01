@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.sql.backends;
 
 import org.tentackle.common.Service;
@@ -41,7 +40,6 @@ import java.sql.Types;
 import java.time.format.DateTimeFormatter;
 import java.util.Properties;
 
-
 /**
  * Backend for older Oracle versions 8 to 11.<br>
  * Requires a URL with type postfix {@code "|Oracle8"}.
@@ -50,7 +48,6 @@ import java.util.Properties;
  */
 @Service(Backend.class)
 public class Oracle8 extends AbstractSql2003Backend {
-
 
   /** window function part 1. */
   public static final String SQL_NESTED_SELECT_1 = "/*+ FIRST_ROWS */ * FROM (SELECT ";
@@ -66,7 +63,6 @@ public class Oracle8 extends AbstractSql2003Backend {
 
   /** condition for limit and offset. */
   public static final String SQL_NESTED_SELECT_OFFSET = SQL_NESTED_SELECT_ROWNUM + SQL_GREATER_PAR;
-
 
 
   // oracle format strings
@@ -177,6 +173,14 @@ public class Oracle8 extends AbstractSql2003Backend {
            ORA_TO_DATE_SEP +
            ORA_TIMESTAMP_FORMAT +
            ORA_TO_DATE_TAIL;
+  }
+
+
+  /**
+   * Creates the backend for Oracle 8.
+   */
+  public Oracle8() {
+    // see -Xlint:missing-explicit-ctor since Java 16
   }
 
   @Override

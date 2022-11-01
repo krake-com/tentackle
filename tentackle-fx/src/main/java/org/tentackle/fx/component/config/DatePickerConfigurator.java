@@ -27,13 +27,20 @@ import org.tentackle.fx.ConfiguratorService;
 import org.tentackle.fx.FxComponent;
 
 /**
- * Configures a DatePicker.
+ * Configures a {@link DatePicker}.
  *
  * @author harald
  * @param <T> the datepicker type
  */
 @ConfiguratorService(DatePicker.class)
 public class DatePickerConfigurator<T extends DatePicker> extends ComponentConfigurator<T> {
+
+  /**
+   * Creates the configurator for a {@link DatePicker}.
+   */
+  public DatePickerConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void configure(T control) {

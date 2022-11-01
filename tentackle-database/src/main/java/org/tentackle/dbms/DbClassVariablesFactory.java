@@ -42,6 +42,13 @@ public class DbClassVariablesFactory {
 
 
   /**
+   * Creates the class variables factory.
+   */
+  public DbClassVariablesFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  /**
    * Creates a classvariable for a db object.
    *
    * @param clazz is the class of the derived AbstractDbObject

@@ -59,7 +59,6 @@ import java.util.List;
 @FxControllerService(binding = FxControllerService.BINDING.BINDABLE_INHERITED)
 public class Backends extends AbstractFxController {
 
-
   /**
    * Opens a dialog to edit the backend- and driver configurations.
    *
@@ -152,6 +151,13 @@ public class Backends extends AbstractFxController {
 
   private String defaultBackendName;
 
+
+  /**
+   * Creates the backends-controller.
+   */
+  public Backends() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @FXML
   private void initialize() {

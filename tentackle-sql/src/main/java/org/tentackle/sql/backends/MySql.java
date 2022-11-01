@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.sql.backends;
 
 import org.tentackle.common.Service;
@@ -39,7 +38,6 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-
 
 /**
  * Backend for MySQL.
@@ -68,6 +66,13 @@ public class MySql extends AbstractSql92Backend {
       "sys"
   };
 
+
+  /**
+   * Creates the MySql backend.
+   */
+  public MySql() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public boolean isMatchingUrl(String url) {

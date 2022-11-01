@@ -27,7 +27,7 @@ import org.tentackle.fx.FxUtilities;
 
 
 /**
- * Configures a Window.
+ * Configures a {@link Window}.
  * <p>
  * The implementation allows overriding the base methods for a single configurator
  * or all configurators via {@link FxUtilities}.
@@ -37,6 +37,13 @@ import org.tentackle.fx.FxUtilities;
  */
 @ConfiguratorService(Window.class)
 public class WindowConfigurator<T extends Window> implements Configurator<T> {
+
+  /**
+   * Creates the configurator for {@link Window}.
+   */
+  public WindowConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void configure(T window) {

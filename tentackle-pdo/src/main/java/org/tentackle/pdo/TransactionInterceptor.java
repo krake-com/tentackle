@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.pdo;
 
 import org.tentackle.common.Constants;
@@ -36,11 +35,9 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
 /**
- * Implementation of the transaction interception.
- *
- * @see Transaction
+ * Implementation of the {@link Transaction} interception.
  */
-public class TransactionInterceptor extends AbstractInterceptor {
+public final class TransactionInterceptor extends AbstractInterceptor {
 
   private static final Logger LOGGER = Logger.get(TransactionInterceptor.class);
 
@@ -53,6 +50,14 @@ public class TransactionInterceptor extends AbstractInterceptor {
   private boolean transactionRetry;                       // whether to retry the transaction after a transient exception
   private String transactionRetryPolicy;                  // the policy name
   private Logger.Level transactionRetryLogLevel;          // the retry log level
+
+
+  /**
+   * Creates a {@link Transaction} interceptor.
+   */
+  public TransactionInterceptor() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void setAnnotation(Annotation annotation) {

@@ -27,13 +27,19 @@ import org.tentackle.misc.FormatHelper;
 import java.text.DecimalFormat;
 
 /**
- * A money cell type.<br>
- * Provided as a fallback to application specific types that don't provide t
+ * A {@link BMoney} cell type.
  *
  * @author harald
  */
 @TableCellTypeService(BMoney.class)
 public class BMoneyTableCellType extends NumberTableCellType<BMoney> {
+
+  /**
+   * Creates the cell type for {@link BMoney}.
+   */
+  public BMoneyTableCellType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   protected DecimalFormat getFormat(TableColumnConfiguration<?, BMoney> config, BMoney item) {

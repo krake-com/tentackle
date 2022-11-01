@@ -18,12 +18,13 @@
 
 package org.tentackle.ns;
 
-import java.util.HashMap;
-import java.util.Map;
 import org.tentackle.common.Service;
 import org.tentackle.ns.pdo.NumberPool;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * The default number source factory based on {@link DefaultNumberSource}.
@@ -38,6 +39,12 @@ public class DefaultNumberSourceFactory implements NumberSourceFactory {
    */
   private final Map<String,DefaultNumberSource> nsMap = new HashMap<>();
 
+  /**
+   * Creates the number source factory.
+   */
+  public DefaultNumberSourceFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public synchronized NumberSource getNumberSource(String pool, String realm) {

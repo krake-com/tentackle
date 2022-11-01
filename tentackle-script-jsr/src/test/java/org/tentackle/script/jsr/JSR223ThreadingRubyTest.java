@@ -25,6 +25,7 @@ import org.tentackle.script.ScriptFactory;
 /**
  * Multithreading penetration test for JRuby.
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class JSR223ThreadingRubyTest {
 
   private static final String LANG = "ruby";

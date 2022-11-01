@@ -25,13 +25,20 @@ import org.tentackle.fx.Configurator;
 import org.tentackle.fx.ConfiguratorService;
 
 /**
- * Configures a Pane.
+ * Configures a {@link Pane}.
  *
  * @author harald
  * @param <T> the pane type
  */
 @ConfiguratorService(Pane.class)    // Pane can be instantiated!
 public class PaneConfigurator<T extends Pane> implements Configurator<T> {
+
+  /**
+   * Creates the configurator for a {@link Pane}.
+   */
+  public PaneConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void configure(T object) {

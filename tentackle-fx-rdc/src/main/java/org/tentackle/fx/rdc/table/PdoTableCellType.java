@@ -37,6 +37,13 @@ import org.tentackle.pdo.PersistentDomainObject;
 @TableCellTypeService(PersistentDomainObject.class)
 public class PdoTableCellType<T extends PersistentDomainObject<T>> extends AbstractTableCellType<T> {
 
+  /**
+   * Creates the cell type for PDOs.
+   */
+  public PdoTableCellType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public void updateItem(FxTableCell<?, T> tableCell, T pdo) {
     tableCell.setText(pdo.toString());

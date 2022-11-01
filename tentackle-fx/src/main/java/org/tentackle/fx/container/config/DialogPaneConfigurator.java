@@ -24,7 +24,7 @@ import javafx.scene.control.DialogPane;
 import org.tentackle.fx.ConfiguratorService;
 
 /**
- * Configures a DialogPane.
+ * Configures a {@link DialogPane}.
  *
  * @author harald
  * @param <T> the container type
@@ -32,5 +32,11 @@ import org.tentackle.fx.ConfiguratorService;
 @ConfiguratorService(DialogPane.class)
 public class DialogPaneConfigurator<T extends DialogPane> extends PaneConfigurator<T> {
 
+  /**
+   * Creates the configurator for a {@link DialogPane}.
+   */
+  public DialogPaneConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
 }

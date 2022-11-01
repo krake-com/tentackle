@@ -89,6 +89,14 @@ public class Postgres extends AbstractSql92Backend {
   /** set of reserved words (built only once). */
   private static Set<String> reservedWords;
 
+
+  /**
+   * Creates the postgres backend.
+   */
+  public Postgres() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public synchronized Set<String> getReservedWords() {
     if (reservedWords == null) {

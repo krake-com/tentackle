@@ -33,6 +33,14 @@ public abstract class AbstractDataType<T> implements DataType<T> {
 
   private static final int[] SORTABLE_COLUMNS = { 0 };
 
+
+  /**
+   * Parent constructor.
+   */
+  public AbstractDataType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public boolean isPredefined() {
     return true;

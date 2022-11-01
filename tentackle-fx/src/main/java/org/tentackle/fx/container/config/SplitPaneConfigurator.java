@@ -32,5 +32,11 @@ import org.tentackle.fx.ConfiguratorService;
 @ConfiguratorService(SplitPane.class)
 public class SplitPaneConfigurator<T extends SplitPane> extends ContainerConfigurator<T> {
 
+  /**
+   * Creates the configurator for a {@link SplitPane}.
+   */
+  public SplitPaneConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
 }

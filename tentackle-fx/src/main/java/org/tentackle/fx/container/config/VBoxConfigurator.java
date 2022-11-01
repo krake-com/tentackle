@@ -24,7 +24,7 @@ import javafx.scene.layout.VBox;
 import org.tentackle.fx.ConfiguratorService;
 
 /**
- * Configures a VBox.
+ * Configures a {@link VBox}.
  *
  * @author harald
  * @param <T> the container type
@@ -32,5 +32,11 @@ import org.tentackle.fx.ConfiguratorService;
 @ConfiguratorService(VBox.class)
 public class VBoxConfigurator<T extends VBox> extends PaneConfigurator<T> {
 
+  /**
+   * Creates the configurator for a {@link VBox}.
+   */
+  public VBoxConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
 }

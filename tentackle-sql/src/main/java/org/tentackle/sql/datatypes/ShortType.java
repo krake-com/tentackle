@@ -35,7 +35,14 @@ import java.util.Optional;
  * Datatype for {@link Short}.
  */
 @Service(DataType.class)
-public class ShortType extends AbstractNumberType<Short> {
+public sealed class ShortType extends AbstractNumberType<Short> permits ShortPrimitiveType {
+
+  /**
+   * Creates the dDatatype for {@link Short}.
+   */
+  public ShortType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getJavaType() {

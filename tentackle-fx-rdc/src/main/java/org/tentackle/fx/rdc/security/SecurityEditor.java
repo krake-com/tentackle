@@ -47,8 +47,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-
-
 /**
  * Security permissions editor.
  *
@@ -103,6 +101,12 @@ public class SecurityEditor extends PdoEditor<Security> {
   private Set<Permission> inheritedPermissions;   // selected permissions that are inherited by other selected permissions
 
 
+  /**
+   * Creates the security editor.
+   */
+  public SecurityEditor() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @FXML
   private void initialize() {

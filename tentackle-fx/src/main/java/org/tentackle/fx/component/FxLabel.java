@@ -28,4 +28,11 @@ import javafx.scene.control.Label;
  */
 public class FxLabel extends Label {
 
+  /**
+   * Creates a label.
+   */
+  public FxLabel() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
 }

@@ -98,6 +98,12 @@ public class Login extends AbstractFxController {
   private FxButton cancelButton;
 
 
+  /**
+   * Creates the login controller.
+   */
+  public Login() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @FXML
   private void initialize() {

@@ -26,6 +26,7 @@ import java.util.Collection;
 /**
  * Tests driver preferences config.
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class BackendDriverConfigurationTest {
 
   private static final String APPLICATION_NAME = "BackendConfigurationTest";

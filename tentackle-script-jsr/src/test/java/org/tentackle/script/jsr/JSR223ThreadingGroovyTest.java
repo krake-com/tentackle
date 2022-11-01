@@ -25,6 +25,7 @@ import org.tentackle.script.ScriptFactory;
 /**
  * Multithreading penetration test for Groovy.
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class JSR223ThreadingGroovyTest {
 
   private static final String LANG = "groovy";

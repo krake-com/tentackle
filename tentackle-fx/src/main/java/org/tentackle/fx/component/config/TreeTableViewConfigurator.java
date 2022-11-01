@@ -20,12 +20,13 @@
 package org.tentackle.fx.component.config;
 
 import javafx.scene.control.TreeTableView;
+import javafx.scene.input.KeyEvent;
 
 import org.tentackle.fx.ConfiguratorService;
 import org.tentackle.fx.component.FxTreeTableView;
 
 /**
- * Configures a TreeTableView.
+ * Configures a {@link TreeTableView}.
  *
  * @author harald
  * @param <T> the treetable view type
@@ -33,13 +34,21 @@ import org.tentackle.fx.component.FxTreeTableView;
 @ConfiguratorService(TreeTableView.class)
 public class TreeTableViewConfigurator<T extends TreeTableView<?>> extends ComponentConfigurator<T> {
 
+  /**
+   * Creates the configurator for a {@link TreeTableView}.
+   */
+  public TreeTableViewConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
-  @SuppressWarnings("rawtypes")
   public void configure(T control) {
     // no super.configure()... -> no key remapping!
 
-    if (control instanceof FxTreeTableView) {
-      ((FxTreeTableView) control).setCopyToClipboardEnabled(true);
+    if (control instanceof FxTreeTableView<?> treeTableView) {
+      treeTableView.setCopyToClipboardEnabled(true);
+      treeTableView.addEventFilter(KeyEvent.ANY, treeTableView::filterDangerousKeys);
+      treeTableView.addEventHandler(KeyEvent.ANY, treeTableView::handleKeyEvent);
     }
   }
 

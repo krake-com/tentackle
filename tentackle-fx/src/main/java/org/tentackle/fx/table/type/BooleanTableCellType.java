@@ -29,12 +29,19 @@ import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
 
 /**
- * A boolean cell type.
+ * A {@link Boolean} cell type.
  *
  * @author harald
  */
 @TableCellTypeService(Boolean.class)
 public class BooleanTableCellType extends AbstractTableCellType<Boolean> {
+
+  /**
+   * Creates the cell type for {@link Boolean}.
+   */
+  public BooleanTableCellType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void updateItem(FxTableCell<?, Boolean> tableCell, Boolean item) {

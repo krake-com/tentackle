@@ -29,6 +29,13 @@ import org.tentackle.validate.validator.MessageScriptConverter;
 @MessageScriptConverter(ECMAScriptValidationMessageConverter.NAME)
 public class ECMAScriptValidationMessageConverter extends AbstractScriptValidationMessageConverter {
 
+  /**
+   * Creates the converter.
+   */
+  public ECMAScriptValidationMessageConverter() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   /** the primary language name. */
   public static final String NAME = "ECMAScript";
 

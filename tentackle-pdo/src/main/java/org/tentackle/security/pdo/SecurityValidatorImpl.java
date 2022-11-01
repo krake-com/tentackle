@@ -34,9 +34,16 @@ import java.util.List;
  *
  * @author harald
  */
-public class SecurityValidatorImpl extends AbstractObjectValidator<SecurityValidator> {
+public final class SecurityValidatorImpl extends AbstractObjectValidator<SecurityValidator> {
 
   private SecurityValidator annotation;
+
+  /**
+   * Creates a security object validator.
+   */
+  public SecurityValidatorImpl() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   @SuppressWarnings("unchecked")

@@ -37,6 +37,14 @@ public class DefaultTransactionRetryPolicy implements TransactionRetryPolicy {
   private static final int RANGE_WAIT_MS = 500;     // ... and 750
   private static final int MAX_RETRIES = 7;
 
+
+  /**
+   * Creates the retry policy.
+   */
+  public DefaultTransactionRetryPolicy() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public long waitMillis(String txName, int count) {
     return count > MAX_RETRIES ? 0 : (OFFSET_WAIT_MS + rand.nextInt(RANGE_WAIT_MS)) * (1L << (count - 1));    // double time each invocation

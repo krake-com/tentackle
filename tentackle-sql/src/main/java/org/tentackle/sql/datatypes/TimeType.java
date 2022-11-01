@@ -38,10 +38,18 @@ import java.time.format.DateTimeParseException;
  * Datatype for {@link Time}.
  */
 @Service(DataType.class)
-public class TimeType extends AbstractDateTimeType<Time> {
+public final class TimeType extends AbstractDateTimeType<Time> {
 
   private static final String TIME_PATTERN = "HH:mm:ss";
   private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern(TIME_PATTERN);
+
+
+  /**
+   * Creates the datatype for {@link Time}.
+   */
+  public TimeType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public boolean isTimezoneApplicable() {

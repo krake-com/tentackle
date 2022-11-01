@@ -35,11 +35,19 @@ import java.util.List;
  *
  * @author harald
  */
-public class SecuredInterceptor extends AbstractInterceptor {
+public final class SecuredInterceptor extends AbstractInterceptor {
 
   private Class<? extends Permission>[] permissions;    // the permissions from the annotation
   private boolean explicit;                             // whether to check for explicit acceptance
   private boolean ored;                                 // true if or multiple permissions
+
+
+  /**
+   * Creates a {@link Secured} interceptor.
+   */
+  public SecuredInterceptor() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void setAnnotation(Annotation annotation) {

@@ -32,6 +32,13 @@ import java.util.Map;
 public class DefaultGraphicProvider extends IkonliGraphicProvider {
 
   /**
+   * Creates the graphic provider.
+   */
+  public DefaultGraphicProvider() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  /**
    * Maps Tentackle symbolic names to icon font names.<br>
    * Symbolic names allows to replace the icon pack by the application without changing the framework's code.
    */

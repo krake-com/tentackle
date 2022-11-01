@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.pdo;
 
 import org.tentackle.session.Session;
@@ -33,6 +32,12 @@ public abstract class AbstractPdoFactory implements PdoFactory {
 
   private static final String CANNOT_CREATE_PDO_FOR = "cannot create PDO for ";
 
+  /**
+   * Parent constructor.
+   */
+  public AbstractPdoFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   /**
    * Creates a PDO invocation handler for given class.<br>

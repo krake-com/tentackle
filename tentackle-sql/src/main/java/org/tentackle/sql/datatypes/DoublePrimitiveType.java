@@ -26,7 +26,14 @@ import org.tentackle.sql.DataTypeFactory;
  * Datatype for the primitive type <code>double</code>.
  */
 @Service(DataType.class)
-public class DoublePrimitiveType extends DoubleType {
+public final class DoublePrimitiveType extends DoubleType {
+
+  /**
+   * Creates the datatype for the primitive type <code>double</code>.
+   */
+  public DoublePrimitiveType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getJavaType() {

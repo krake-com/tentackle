@@ -73,6 +73,14 @@ public abstract class AbstractSql92Backend extends AbstractBackend {
 
   private Set<String> reservedWords;      // set of reserved words (built only once)
 
+
+  /**
+   * Parent constructor.
+   */
+  public AbstractSql92Backend() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public synchronized Set<String> getReservedWords() {
     if (reservedWords == null) {

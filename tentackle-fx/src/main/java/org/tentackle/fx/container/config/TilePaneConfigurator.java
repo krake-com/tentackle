@@ -24,7 +24,7 @@ import javafx.scene.layout.TilePane;
 import org.tentackle.fx.ConfiguratorService;
 
 /**
- * Configures a TilePane.
+ * Configures a {@link TilePane}.
  *
  * @author harald
  * @param <T> the container type
@@ -32,5 +32,11 @@ import org.tentackle.fx.ConfiguratorService;
 @ConfiguratorService(TilePane.class)
 public class TilePaneConfigurator<T extends TilePane> extends PaneConfigurator<T> {
 
+  /**
+   * Creates the configurator for a {@link TilePane}.
+   */
+  public TilePaneConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
 }

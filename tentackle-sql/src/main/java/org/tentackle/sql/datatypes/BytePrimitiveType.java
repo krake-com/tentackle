@@ -26,7 +26,14 @@ import org.tentackle.sql.DataTypeFactory;
  * Datatype for the primitive type <code>byte</code>.
  */
 @Service(DataType.class)
-public class BytePrimitiveType extends ByteType {
+public final class BytePrimitiveType extends ByteType {
+
+  /**
+   * Creates the datatype for the primitive type <code>byte</code>.
+   */
+  public BytePrimitiveType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getJavaType() {

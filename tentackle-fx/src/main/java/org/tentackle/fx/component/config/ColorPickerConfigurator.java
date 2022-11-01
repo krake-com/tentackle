@@ -24,12 +24,19 @@ import javafx.scene.control.ColorPicker;
 import org.tentackle.fx.ConfiguratorService;
 
 /**
- * Configures a ColorPicker.
+ * Configures a {@link ColorPicker}.
  *
  * @author harald
  * @param <T> the colorpicker type
  */
 @ConfiguratorService(ColorPicker.class)
 public class ColorPickerConfigurator<T extends ColorPicker> extends ComboBoxBaseConfigurator<T> {
+
+  /**
+   * Creates the configurator for a {@link ColorPicker}.
+   */
+  public ColorPickerConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
 }

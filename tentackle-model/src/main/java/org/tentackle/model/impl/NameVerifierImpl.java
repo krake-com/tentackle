@@ -38,6 +38,14 @@ public class NameVerifierImpl implements NameVerifier {
   private static final String MIXED_UC_LC = "' contains mixed upper- and lowercase characters";
   private static final String QUOTED = "' is quoted, which is only allowed for [PROVIDED] entities";
 
+
+  /**
+   * Creates the name verifier.
+   */
+  public NameVerifierImpl() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public String verifyEntityName(Entity entity) {
     String name = entity.getName();

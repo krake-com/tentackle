@@ -34,6 +34,13 @@ public class ToolFinder {
 
 
   /**
+   * Creates a tool finder.
+   */
+  public ToolFinder() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  /**
    * Finds the file of a tool's executable.
    * <p>
    * If the tool name does not point to a valid executable,

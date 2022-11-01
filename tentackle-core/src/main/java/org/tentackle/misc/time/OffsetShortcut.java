@@ -37,6 +37,14 @@ public class OffsetShortcut implements SmartDateTimeParser.Shortcut {
 
   private static final Pattern pattern = Pattern.compile("^[=]?[+-]{1}[\\d]{1,2}[:]?[\\d]{0,2}$");
 
+
+  /**
+   * Creates the offset shortcut.
+   */
+  public OffsetShortcut() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public SmartDateTimeParser.TextRange test(SmartDateTimeParser<? extends Temporal> parser, String text) {
     if (parser.isWithOffset()) {

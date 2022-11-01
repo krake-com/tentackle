@@ -47,7 +47,7 @@ import java.util.Optional;
  * This type is sortable by the first column followed by the second.
  */
 @Service(DataType.class)
-public class InstantType extends AbstractDateTimeType<Instant> {
+public final class InstantType extends AbstractDateTimeType<Instant> {
 
   private static final int[] SORTABLE_COLUMNS = { 0, 1 };
 
@@ -55,6 +55,14 @@ public class InstantType extends AbstractDateTimeType<Instant> {
   private static final DateTimeFormatter TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault());
   private static final DateTimeFormatter MS_TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS").withZone(ZoneId.systemDefault());
   private static final DateTimeFormatter NANO_TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.nnnnnnnnn").withZone(ZoneId.systemDefault());
+
+
+  /**
+   * Creates the datatype for {@link Instant}.
+   */
+  public InstantType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getJavaType() {

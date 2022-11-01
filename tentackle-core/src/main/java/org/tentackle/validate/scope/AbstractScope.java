@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.validate.scope;
 
 import org.tentackle.reflect.ReflectionHelper;
@@ -32,6 +31,14 @@ public abstract class AbstractScope implements ValidationScope {
 
   // the extracted permission interface
   private Class<?> iFace;
+
+
+  /**
+   * Parent constructor.
+   */
+  public AbstractScope() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   /**
    * Gets the scope interface of this request scope.

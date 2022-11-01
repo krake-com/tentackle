@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.misc;
 
 import java.util.Hashtable;
@@ -32,6 +31,13 @@ import java.util.Hashtable;
  * @author harald
  */
 public class InheritableThreadLocalHashTable<K, V> extends InheritableThreadLocal<Hashtable<K, V>> {
+
+  /**
+   * Creates a thread-inheritable thread-local hashtable.
+   */
+  public InheritableThreadLocalHashTable() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   @SuppressWarnings("unchecked")

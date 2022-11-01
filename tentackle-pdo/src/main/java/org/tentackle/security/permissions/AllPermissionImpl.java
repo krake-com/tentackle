@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.security.permissions;
 
 import org.tentackle.security.PermissionService;
@@ -27,7 +26,14 @@ import org.tentackle.security.PermissionService;
  * @author harald
  */
 @PermissionService(AllPermission.class)
-public class AllPermissionImpl extends AbstractPermission implements AllPermission {
+public final class AllPermissionImpl extends AbstractPermission implements AllPermission {
+
+  /**
+   * Creates the "all" permission.
+   */
+  public AllPermissionImpl() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getName() {

@@ -36,7 +36,14 @@ import java.util.Optional;
  * Datatype for {@link Boolean}.
  */
 @Service(DataType.class)
-public class BooleanType extends AbstractDataType<Boolean> {
+public sealed class BooleanType extends AbstractDataType<Boolean> permits BooleanPrimitiveType {
+
+  /**
+   * Creates the datatype for {@link Boolean}.
+   */
+  public BooleanType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getJavaType() {

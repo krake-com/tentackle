@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.fx.apt;
 
 import org.tentackle.apt.AbstractServiceAnnotationProcessor;
@@ -50,6 +49,12 @@ import java.util.Set;
 @AnnotationProcessor
 public class ValueTranslatorServiceAnnotationProcessor extends AbstractServiceAnnotationProcessor {
 
+  /**
+   * Creates the annotation processor.
+   */
+  public ValueTranslatorServiceAnnotationProcessor() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {

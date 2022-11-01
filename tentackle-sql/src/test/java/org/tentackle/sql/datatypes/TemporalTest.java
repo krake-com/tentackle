@@ -34,6 +34,7 @@ import java.time.temporal.ChronoUnit;
 /**
  * Tests related to {@code java.time}-API.
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class TemporalTest {
 
   @Test

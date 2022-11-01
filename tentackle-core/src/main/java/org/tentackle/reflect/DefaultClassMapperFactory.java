@@ -21,12 +21,19 @@ package org.tentackle.reflect;
 import org.tentackle.common.Service;
 
 /**
- * The default classmapper factory.
+ * The default class mapper factory.
  *
  * @author harald
  */
 @Service(ClassMapperFactory.class)
 public class DefaultClassMapperFactory implements ClassMapperFactory {
+
+  /**
+   * Creates the class mapper factory.
+   */
+  public DefaultClassMapperFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public ClassMapper create(String name, Class<?> mappedClass) {

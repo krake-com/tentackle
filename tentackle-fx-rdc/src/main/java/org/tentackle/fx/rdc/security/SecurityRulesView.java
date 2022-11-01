@@ -131,6 +131,14 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
   private SecurityEditor editor;                    // the editor for a rule
   private boolean withinSetupSecuredObject;         // true if selection changes must not trigger setRule
 
+
+  /**
+   * Creates the security rules controller.
+   */
+  public SecurityRulesView() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public DomainContext getDomainContext() {
     return context;

@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.io;
 
 import java.io.IOException;
@@ -33,6 +32,12 @@ public class ServerSocketFactory implements RMIServerSocketFactory, ServerSocket
 
   protected volatile ServerSocketConfigurator socketConfigurator;   // the optional socket configurator
 
+  /**
+   * Creates the server socket factory.
+   */
+  public ServerSocketFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public ServerSocket createUnconfiguredServerSocket(int port) throws IOException {

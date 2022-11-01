@@ -37,6 +37,12 @@ public class JSR223ScriptFactory extends DefaultScriptFactory {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JSR223ScriptFactory.class);
 
+  /**
+   * Creates the script factory.
+   */
+  public JSR223ScriptFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   protected void loadLanguages() {

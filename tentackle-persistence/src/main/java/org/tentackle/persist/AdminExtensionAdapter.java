@@ -18,13 +18,14 @@
 
 package org.tentackle.persist;
 
-import java.rmi.RemoteException;
-import java.util.List;
 import org.tentackle.common.Service;
 import org.tentackle.pdo.AdminExtension;
 import org.tentackle.pdo.DomainContext;
-import org.tentackle.session.PersistenceException;
 import org.tentackle.persist.rmi.AdminExtensionAdapterRemoteDelegate;
+import org.tentackle.session.PersistenceException;
+
+import java.rmi.RemoteException;
+import java.util.List;
 
 /**
  * Adapter hiding the rmi-stuff for the admin session extension.
@@ -36,6 +37,13 @@ public class AdminExtensionAdapter implements AdminExtension {
 
   private DomainContext context;
   private AdminExtensionAdapterRemoteDelegate adminExt;
+
+  /**
+   * Creates the adapter.
+   */
+  public AdminExtensionAdapter() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   /**
    * {@inheritDoc}

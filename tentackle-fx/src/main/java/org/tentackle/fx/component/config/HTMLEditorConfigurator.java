@@ -24,7 +24,7 @@ import javafx.scene.web.HTMLEditor;
 import org.tentackle.fx.ConfiguratorService;
 
 /**
- * Configures an HTMLEditor.
+ * Configures an {@link HTMLEditor}.
  *
  * @author harald
  * @param <T> the editor type
@@ -32,4 +32,10 @@ import org.tentackle.fx.ConfiguratorService;
 @ConfiguratorService(HTMLEditor.class)
 public class HTMLEditorConfigurator<T extends HTMLEditor> extends ComponentConfigurator<T> {
 
+  /**
+   * Creates the configurator for a {@link HTMLEditor}.
+   */
+  public HTMLEditorConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 }

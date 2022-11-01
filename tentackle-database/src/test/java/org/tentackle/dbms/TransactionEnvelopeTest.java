@@ -18,10 +18,11 @@
 
 package org.tentackle.dbms;
 
+import org.testng.annotations.Test;
+
 import org.tentackle.misc.Provider;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionFactory;
-import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
@@ -31,6 +32,7 @@ import static org.testng.Assert.fail;
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class TransactionEnvelopeTest {
 
   @SuppressWarnings("serial")

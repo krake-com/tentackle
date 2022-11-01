@@ -114,6 +114,12 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate
   private Integer errorOffset;
 
 
+  /**
+   * Creates a text component delegate.
+   */
+  public FxTextComponentDelegate() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   /**
    * Gets the text component.

@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.pdo;
 
 import org.tentackle.reflect.Interception;
@@ -27,14 +26,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-
 /**
  * Annotation to express that the annotated method must not be within a given named context.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-@Interception(implementedBy= NotWithinContextInterceptor.class, type = Interception.Type.PUBLIC)
+@Interception(implementedBy = NotWithinContextInterceptor.class, type = Interception.Type.PUBLIC)
 public @interface NotWithinContext {
 
   /**

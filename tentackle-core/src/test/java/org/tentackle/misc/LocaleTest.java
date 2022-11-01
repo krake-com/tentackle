@@ -29,6 +29,7 @@ import java.util.Locale;
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class LocaleTest {
 
   @Test
