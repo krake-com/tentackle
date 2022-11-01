@@ -16,11 +16,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.validate.scope;
 
 import org.tentackle.validate.ValidationScopeService;
-
 
 /**
  * Changeable scope default implementation.
@@ -28,7 +26,14 @@ import org.tentackle.validate.ValidationScopeService;
  * @author harald
  */
 @ValidationScopeService(ChangeableScope.class)
-public class ChangeableScopeImpl extends AbstractScope implements ChangeableScope {
+public final class ChangeableScopeImpl extends AbstractScope implements ChangeableScope {
+
+  /**
+   * Creates the changeable scope.
+   */
+  public ChangeableScopeImpl() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getName() {

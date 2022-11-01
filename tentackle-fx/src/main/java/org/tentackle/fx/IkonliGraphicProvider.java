@@ -29,6 +29,13 @@ import org.kordamp.ikonli.javafx.FontIcon;
  */
 public abstract class IkonliGraphicProvider implements GraphicProvider {
 
+  /**
+   * Parent constructor.
+   */
+  public IkonliGraphicProvider() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public Node createGraphic(String name) {
     try {

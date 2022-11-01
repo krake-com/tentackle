@@ -71,6 +71,13 @@ public class ClientUpdateUtilities {
 
 
   /**
+   * Creates a client update utilities instance.
+   */
+  public ClientUpdateUtilities() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  /**
    * Checks whether given directory an updatable jlink image.
    *
    * @param dir the directory to check

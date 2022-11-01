@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.io;
 
 import javax.rmi.ssl.SslRMIClientSocketFactory;
@@ -24,7 +23,6 @@ import java.io.IOException;
 import java.io.Serial;
 import java.net.Socket;
 import java.util.Objects;
-
 
 /**
  * ZIP-compressed client socket factory
@@ -38,6 +36,13 @@ public class CompressedSslClientSocketFactory extends SslRMIClientSocketFactory 
 
   private volatile SocketConfigurator socketConfigurator;   // the optional socket configurator
 
+
+  /**
+   * Creates a compressed SSL client socket factory.
+   */
+  public CompressedSslClientSocketFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public Socket createSocket(String host, int port) throws IOException {

@@ -41,7 +41,14 @@ import java.time.format.DateTimeParseException;
  * Mapped to {@link Date}-related JDBC methods.
  */
 @Service(DataType.class)
-public class LocalDateType extends AbstractDateTimeType<LocalDate> {
+public final class LocalDateType extends AbstractDateTimeType<LocalDate> {
+
+  /**
+   * Creates the datatype for {@link LocalDate}.
+   */
+  public LocalDateType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getJavaType() {

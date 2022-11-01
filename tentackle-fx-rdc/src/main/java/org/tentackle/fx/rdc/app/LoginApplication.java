@@ -65,6 +65,13 @@ public class LoginApplication extends FxApplication {
   private Login controller;       // the login controller
 
 
+  /**
+   * Creates the login application.
+   */
+  public LoginApplication() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public void startApplication(Stage stage) {
     try {

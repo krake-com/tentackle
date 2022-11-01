@@ -16,8 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-
 package org.tentackle.dbms;
 
 import org.tentackle.common.Service;
@@ -25,7 +23,6 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.Backend;
 
 import java.util.StringTokenizer;
-
 
 /**
  * Default {@link IdSourceConfigurator}.
@@ -47,6 +44,13 @@ public class DefaultIdSourceConfigurator implements IdSourceConfigurator {
   /** sequence-based id source. */
   public static final String SEQUENCE_BASED = "sequence";
 
+
+  /**
+   * Creates an IdSource configurator.
+   */
+  public DefaultIdSourceConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public IdSource configure(Db db, String idConfig) {

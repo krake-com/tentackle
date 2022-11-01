@@ -22,10 +22,9 @@ package org.tentackle.fx.component.config;
 import javafx.scene.control.ToggleButton;
 
 import org.tentackle.fx.ConfiguratorService;
-import org.tentackle.fx.FxControl;
 
 /**
- * Configures a ToggleButton.
+ * Configures a {@link ToggleButton}.
  *
  * @author harald
  * @param <T> the toggle button type
@@ -33,25 +32,11 @@ import org.tentackle.fx.FxControl;
 @ConfiguratorService(ToggleButton.class)
 public class ToggleButtonConfigurator<T extends ToggleButton> extends ButtonBaseConfigurator<T> {
 
-  @Override
-  public void configure(T control) {
-    super.configure(control);
-    // make change visible immediately (not only after focus lost)
-    if (control instanceof FxControl fxControl) {
-      control.setOnAction(e -> updateModelAndView(fxControl));
-    }
-  }
-
-
   /**
-   * Updates the model and the view.
-   * The view update will also trigger dynamic rendering such as mandatory/changeable.
-   *
-   * @param control the toggle button
+   * Creates the configurator for a {@link ToggleButton}.
    */
-  protected void updateModelAndView(FxControl control) {
-    control.updateModel();
-    control.updateView();
+  public ToggleButtonConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
   }
 
 }

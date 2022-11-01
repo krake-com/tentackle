@@ -35,7 +35,14 @@ import java.util.Optional;
  * Datatype for {@link Long}.
  */
 @Service(DataType.class)
-public class LongType extends AbstractNumberType<Long> {
+public sealed class LongType extends AbstractNumberType<Long> permits LongPrimitiveType {
+
+  /**
+   * Creates the datatype for {@link Long}.
+   */
+  public LongType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getJavaType() {

@@ -20,13 +20,16 @@ package org.tentackle.io;
 
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotEquals;
+import static org.testng.Assert.assertNotNull;
 
 /**
  * Tests for socket configurators.
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class SocketConfiguratorTest {
 
   private static final String CONFIG =

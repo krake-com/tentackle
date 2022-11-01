@@ -33,6 +33,13 @@ import java.util.List;
 @Service(ValidationUtilities.class)
 public class SessionValidationUtilities extends ValidationUtilities {
 
+  /**
+   * Creates the validation utilities.
+   */
+  public SessionValidationUtilities() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   protected void sortValidators(List<Validator> validators) {
     int maxValidationIndex = 0;

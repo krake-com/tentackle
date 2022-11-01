@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.validate.scope;
 
 import org.tentackle.validate.ValidationScopeService;
@@ -27,7 +26,14 @@ import org.tentackle.validate.ValidationScopeService;
  * @author harald
  */
 @ValidationScopeService(AllScope.class)
-public class AllScopeImpl extends AbstractScope implements AllScope {
+public final class AllScopeImpl extends AbstractScope implements AllScope {
+
+  /**
+   * Creates the "all"-scope.
+   */
+  public AllScopeImpl() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public boolean appliesTo(Class<?>... scopes) {

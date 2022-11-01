@@ -28,6 +28,7 @@ import org.testng.annotations.Test;
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class LocaleTest {
 
   @Test

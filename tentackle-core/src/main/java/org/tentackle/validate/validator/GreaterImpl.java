@@ -34,9 +34,16 @@ import java.util.List;
  *
  * @author harald
  */
-public class GreaterImpl extends AbstractValidator<Greater> {
+public final class GreaterImpl extends AbstractValidator<Greater> {
 
   private Greater annotation;
+
+  /**
+   * Creates a {@link Greater}-validator.
+   */
+  public GreaterImpl() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void setAnnotation(Annotation annotation) {

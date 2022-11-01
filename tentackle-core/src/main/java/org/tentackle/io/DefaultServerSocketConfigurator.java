@@ -33,6 +33,12 @@ public class DefaultServerSocketConfigurator extends SocketConfiguratorBase impl
   @Serial
   private static final long serialVersionUID = 1L;
 
+  /**
+   * Creates a server socket configurator.
+   */
+  public DefaultServerSocketConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public int getPort() {

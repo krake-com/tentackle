@@ -108,6 +108,13 @@ public class RdcUtilities {
 
 
   /**
+   * Creates the RDC utilities.
+   */
+  public RdcUtilities() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  /**
    * CRUD of a PDO in a separate window.
    *
    * @param <T> the pdo type

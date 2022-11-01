@@ -32,6 +32,7 @@ import static org.testng.Assert.assertEquals;
  * Testing the text processing of the script runner.<br>
  * For a JDBC-related test see SqlScriptTest in tentackle-test-pdo.
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class ScriptRunnerTest {
 
   private static final String SCRIPT_1 = """

@@ -30,6 +30,7 @@ import org.tentackle.session.SessionInfoFactory;
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class RemovePrefsInOtherJVM {
 
   // not annotated with @Test because invoked from shell!

@@ -28,7 +28,6 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
-
 /**
  * Common methods for {@link SocketConfigurator} and {@link ServerSocketConfigurator}.
  * <p>
@@ -108,6 +107,13 @@ public abstract class SocketConfiguratorBase implements Serializable {
   protected int port;                 // fixed port
   protected int portRange;            // automatic port increase if already bound
 
+
+  /**
+   * Parent constructor.
+   */
+  public SocketConfiguratorBase() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   /**
    * Gets SO_REUSEADDR.

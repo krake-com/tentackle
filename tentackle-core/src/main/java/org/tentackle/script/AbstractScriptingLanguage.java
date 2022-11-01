@@ -28,6 +28,13 @@ import java.util.function.Function;
  */
 public abstract class AbstractScriptingLanguage implements ScriptingLanguage {
 
+  /**
+   * Parent constructor.
+   */
+  public AbstractScriptingLanguage() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public String createLocalVariableReference(String name) {
     return name;

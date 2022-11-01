@@ -2095,7 +2095,8 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
 
   /**
-   * Replay state shared between consecutive invocations of {@link #replay}.
+   * Replay state shared between consecutive invocations of {@link #replay}.<br>
+   * This is just a DTO. No further logic.
    */
   public static class ReplayState implements Serializable {
 
@@ -2119,6 +2120,13 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
     /** true if this is the last block. */
     public boolean last;
+
+    /**
+     * Creates an initial state.
+     */
+    public ReplayState() {
+      first = true;
+    }
 
   }
 

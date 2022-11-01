@@ -21,13 +21,30 @@ package org.tentackle.fx.component.config;
 
 import javafx.scene.control.ButtonBase;
 
+import org.tentackle.fx.FxControl;
+
 /**
- * Configures a ButtonBase.
+ * Configures a {@link ButtonBase}.
  *
  * @author harald
  * @param <T> the button type
  */
-public class ButtonBaseConfigurator<T extends ButtonBase> extends ComponentConfigurator<T> {
+public abstract class ButtonBaseConfigurator<T extends ButtonBase> extends ComponentConfigurator<T> {
 
+  /**
+   * Parent constructor.
+   */
+  public ButtonBaseConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  @Override
+  public void configure(T control) {
+    super.configure(control);
+    // make change visible immediately (not only after focus lost)
+    if (control instanceof FxControl fxControl) {
+      control.setOnAction(e -> updateModelAndView(fxControl));
+    }
+  }
 
 }

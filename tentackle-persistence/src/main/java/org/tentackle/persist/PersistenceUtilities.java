@@ -43,6 +43,13 @@ import org.tentackle.session.SessionPoolProvider;
 @Service(DbUtilities.class)
 public class PersistenceUtilities extends DbUtilities {
 
+  /**
+   * Creates the persistence utilities.
+   */
+  public PersistenceUtilities() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   @SuppressWarnings({ "rawtypes", "unchecked" })
   public <T> T createObject(Class<T> clazz) {

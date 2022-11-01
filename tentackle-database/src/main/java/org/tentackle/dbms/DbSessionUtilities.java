@@ -34,6 +34,13 @@ import java.sql.SQLException;
 @Service(SessionUtilities.class)
 public class DbSessionUtilities extends SessionUtilities {
 
+  /**
+   * Creates the session utilities.
+   */
+  public DbSessionUtilities() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public Throwable alignExceptionCause(Throwable t) {
     if (t instanceof SQLException sx && !"java.sql".equals(ReflectionHelper.getPackageName(t.getClass().getName()))) {

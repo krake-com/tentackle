@@ -26,12 +26,19 @@ import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxControl;
 
 /**
- * Configures a ComboBoxBase.
+ * Configures a {@link ComboBoxBase}.
  *
  * @author harald
  * @param <T> the combobox type
  */
-public class ComboBoxBaseConfigurator<T extends ComboBoxBase<?>> extends ComponentConfigurator<T> {
+public abstract class ComboBoxBaseConfigurator<T extends ComboBoxBase<?>> extends ComponentConfigurator<T> {
+
+  /**
+   * Parent constructor.
+   */
+  public ComboBoxBaseConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void configure(T control) {
@@ -42,17 +49,6 @@ public class ComboBoxBaseConfigurator<T extends ComboBoxBase<?>> extends Compone
     }
   }
 
-
-  /**
-   * Updates the model and the view.
-   * The view update will also trigger dynamic rendering such as mandatory/changeable.
-   *
-   * @param control the control
-   */
-  protected void updateModelAndView(FxControl control) {
-    control.updateModel();
-    control.updateView();
-  }
 
   @Override
   protected void filterKeys(T control) {

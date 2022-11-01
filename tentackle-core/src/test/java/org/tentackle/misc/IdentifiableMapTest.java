@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.misc;
 
 import org.testng.Assert;
@@ -30,6 +29,7 @@ import java.util.Iterator;
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class IdentifiableMapTest {
 
   private abstract static class NumberIdentifiable implements Identifiable {

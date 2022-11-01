@@ -25,6 +25,13 @@ package org.tentackle.sql.datatypes;
  */
 public abstract class AbstractDateTimeType<T> extends AbstractDataType<T> {
 
+  /**
+   * Parent constructor.
+   */
+  public AbstractDateTimeType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public boolean isDateOrTime() {
     return true;

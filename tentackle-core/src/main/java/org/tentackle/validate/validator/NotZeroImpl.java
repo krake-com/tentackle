@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.validate.validator;
 
 import org.tentackle.misc.ObjectUtilities;
@@ -36,9 +35,16 @@ import java.util.List;
  *
  * @author harald
  */
-public class NotZeroImpl extends AbstractValidator<NotZero> implements MandatoryBindingEvaluator {
+public final class NotZeroImpl extends AbstractValidator<NotZero> implements MandatoryBindingEvaluator {
 
   private NotZero annotation;
+
+  /**
+   * Creates a {@link NotZero}-validator.
+   */
+  public NotZeroImpl() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void setAnnotation(Annotation annotation) {

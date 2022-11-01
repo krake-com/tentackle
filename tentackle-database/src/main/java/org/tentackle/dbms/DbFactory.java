@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.dbms;
 
 import org.tentackle.common.Service;
@@ -34,6 +33,13 @@ import org.tentackle.session.SessionPool;
  */
 @Service(SessionFactory.class)
 public class DbFactory implements SessionFactory {
+
+  /**
+   * Creates the session factory.
+   */
+  public DbFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public Session create() {

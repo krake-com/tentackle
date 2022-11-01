@@ -22,6 +22,10 @@ import org.testng.annotations.Test;
 
 import java.util.List;
 
+/**
+ * Model utilities test.
+ */
+@SuppressWarnings("missing-explicit-ctor")
 public class ModelUtilitiesTest {
 
   private final ModelUtilities mu = ModelUtilities.getInstance();

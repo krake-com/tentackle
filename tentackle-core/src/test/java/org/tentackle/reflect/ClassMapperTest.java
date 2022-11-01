@@ -31,6 +31,7 @@ import java.util.TreeMap;
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class ClassMapperTest {
 
   @Test

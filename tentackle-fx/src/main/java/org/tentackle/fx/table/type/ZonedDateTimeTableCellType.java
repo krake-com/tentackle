@@ -30,12 +30,19 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
- * ZonedDateTime cell type.
+ * {@link ZonedDateTime} cell type.
  *
  * @author harald
  */
 @TableCellTypeService(ZonedDateTime.class)
 public class ZonedDateTimeTableCellType extends AbstractDateTimeTableCellType<ZonedDateTime> {
+
+  /**
+   * Creates the cell type for {@link ZonedDateTime}.
+   */
+  public ZonedDateTimeTableCellType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void updateItem(FxTableCell<?, ZonedDateTime> tableCell, ZonedDateTime item) {

@@ -28,13 +28,19 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-
 /**
  * Virtual type for application-specific wrapper classes implementing <code>org.tentackle.misc.Convertible</code>.
- * This is not real type as it does not describe a concrete Java type.
+ * This is not a real type as it does not describe a concrete Java type.
  */
 @Service(DataType.class)
-public class ConvertibleType extends AbstractDataType<Object> {
+public final class ConvertibleType extends AbstractDataType<Object> {
+
+  /**
+   * Creates the convertible pseudo type.
+   */
+  public ConvertibleType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getJavaType() {

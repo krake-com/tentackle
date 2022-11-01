@@ -54,6 +54,13 @@ public class ServerUpdateUtilities {
 
 
   /**
+   * Creates a server update utilities instance.
+   */
+  public ServerUpdateUtilities() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  /**
    * Creates a registry and exports the update service.
    * <p>
    * Notice: either both csf and ssf must be given or none.

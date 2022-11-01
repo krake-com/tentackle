@@ -29,13 +29,20 @@ import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
 
 /**
- * A boolean cell type.
+ * An {@link Enum} cell type.
  *
  * @author harald
  */
 @TableCellTypeService(Enum.class)
 @SuppressWarnings("rawtypes")
 public class EnumTableCellType extends AbstractTableCellType<Enum> {
+
+  /**
+   * Creates the cell type for {@link Enum}.
+   */
+  public EnumTableCellType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void updateItem(FxTableCell<?, Enum> tableCell, Enum item) {

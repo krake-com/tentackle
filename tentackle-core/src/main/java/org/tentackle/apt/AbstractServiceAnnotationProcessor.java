@@ -47,6 +47,14 @@ public abstract class AbstractServiceAnnotationProcessor extends AbstractProcess
   protected SuperTypeVisitor typeVisitor;
   protected NoArgsVisitor noArgsVisitor;
 
+
+  /**
+   * Parent constructor.
+   */
+  public AbstractServiceAnnotationProcessor() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public SourceVersion getSupportedSourceVersion() {
     return SourceVersion.latest();

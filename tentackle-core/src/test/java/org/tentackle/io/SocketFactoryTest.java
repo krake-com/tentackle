@@ -20,12 +20,14 @@ package org.tentackle.io;
 
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotEquals;
 
 /**
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class SocketFactoryTest {
 
   private static final String CONFIG =

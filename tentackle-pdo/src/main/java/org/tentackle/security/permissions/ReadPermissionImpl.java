@@ -27,7 +27,14 @@ import org.tentackle.security.PermissionService;
  * @author harald
  */
 @PermissionService(ReadPermission.class)
-public class ReadPermissionImpl extends AbstractPdoPermission implements ReadPermission {
+public final class ReadPermissionImpl extends AbstractPdoPermission implements ReadPermission {
+
+  /**
+   * Creates the read permission.
+   */
+  public ReadPermissionImpl() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getName() {

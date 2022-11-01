@@ -16,11 +16,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.dbms;
 
 import org.tentackle.common.Service;
-
 
 /**
  * Default implementation of a modification log factory.
@@ -29,6 +27,13 @@ import org.tentackle.common.Service;
  */
 @Service(ModificationLogFactory.class)
 public class DefaultModificationLogFactory implements ModificationLogFactory {
+
+  /**
+   * Creates the modification log factory.
+   */
+  public DefaultModificationLogFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public ModificationLog createModificationLog() {

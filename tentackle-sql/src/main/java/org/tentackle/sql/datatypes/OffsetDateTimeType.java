@@ -49,7 +49,7 @@ import java.util.Optional;
  * This type is sortable by the first column.
  */
 @Service(DataType.class)
-public class OffsetDateTimeType extends AbstractDateTimeType<OffsetDateTime> {
+public final class OffsetDateTimeType extends AbstractDateTimeType<OffsetDateTime> {
 
   /**
    * Derives the timestamp from an OffsetDateTime value.
@@ -74,6 +74,14 @@ public class OffsetDateTimeType extends AbstractDateTimeType<OffsetDateTime> {
 
   private static final DateTimeFormatter TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss[ ]xxx");
   private static final DateTimeFormatter MS_TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS[ ]xxx");
+
+
+  /**
+   * Creates the datatype for {@link OffsetDateTime}.
+   */
+  public OffsetDateTimeType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getJavaType() {

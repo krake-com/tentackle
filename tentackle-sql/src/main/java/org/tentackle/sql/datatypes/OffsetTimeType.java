@@ -47,7 +47,14 @@ import java.util.Optional;
  * This type is not sortable by the database in a meaningful manner.
  */
 @Service(DataType.class)
-public class OffsetTimeType extends AbstractDateTimeType<OffsetTime> {
+public final class OffsetTimeType extends AbstractDateTimeType<OffsetTime> {
+
+  /**
+   * Creates the datatype for {@link OffsetTime}.
+   */
+  public OffsetTimeType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   /**
    * Derives the time from an OffsetTime value.

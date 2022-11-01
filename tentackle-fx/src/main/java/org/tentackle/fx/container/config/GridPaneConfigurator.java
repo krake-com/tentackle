@@ -24,7 +24,7 @@ import javafx.scene.layout.GridPane;
 import org.tentackle.fx.ConfiguratorService;
 
 /**
- * Configures a GridPane.
+ * Configures a {@link GridPane}.
  *
  * @author harald
  * @param <T> the container type
@@ -32,5 +32,11 @@ import org.tentackle.fx.ConfiguratorService;
 @ConfiguratorService(GridPane.class)
 public class GridPaneConfigurator<T extends GridPane> extends PaneConfigurator<T> {
 
+  /**
+   * Creates the configurator for a {@link GridPane}.
+   */
+  public GridPaneConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
 }

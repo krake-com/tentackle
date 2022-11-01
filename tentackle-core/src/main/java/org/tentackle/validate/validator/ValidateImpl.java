@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.validate.validator;
 
 import org.tentackle.validate.Validateable;
@@ -37,9 +36,16 @@ import java.util.List;
  *
  * @author harald
  */
-public class ValidateImpl extends AbstractValidator<Validate> {
+public final class ValidateImpl extends AbstractValidator<Validate> {
 
   private Validate annotation;
+
+  /**
+   * Creates a {@link Validate}-validator.
+   */
+  public ValidateImpl() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void setAnnotation(Annotation annotation) {

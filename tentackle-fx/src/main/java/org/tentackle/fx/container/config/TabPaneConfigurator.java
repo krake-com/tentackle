@@ -24,7 +24,7 @@ import javafx.scene.control.TabPane;
 import org.tentackle.fx.ConfiguratorService;
 
 /**
- * Configures a TabPane.
+ * Configures a {@link TabPane}.
  *
  * @author harald
  * @param <T> the container type
@@ -32,5 +32,11 @@ import org.tentackle.fx.ConfiguratorService;
 @ConfiguratorService(TabPane.class)
 public class TabPaneConfigurator<T extends TabPane> extends ContainerConfigurator<T> {
 
+  /**
+   * Creates the configurator for a {@link TabPane}.
+   */
+  public TabPaneConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
 }

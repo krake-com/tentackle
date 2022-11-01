@@ -19,8 +19,9 @@
 
 package org.tentackle.session;
 
-import java.util.Properties;
 import org.tentackle.common.Service;
+
+import java.util.Properties;
 
 /**
  * Default session info factory.
@@ -29,6 +30,13 @@ import org.tentackle.common.Service;
  */
 @Service(SessionInfoFactory.class)
 public class DefaultSessionInfoFactory implements SessionInfoFactory {
+
+  /**
+   * Creates the session info factory.
+   */
+  public DefaultSessionInfoFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public SessionInfo create(String username, char[] password, String propertiesName) {

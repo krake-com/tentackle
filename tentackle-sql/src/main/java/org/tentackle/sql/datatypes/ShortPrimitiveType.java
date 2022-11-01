@@ -26,7 +26,14 @@ import org.tentackle.sql.DataTypeFactory;
  * Datatype for the primitive type <code>short</code>.
  */
 @Service(DataType.class)
-public class ShortPrimitiveType extends ShortType {
+public final class ShortPrimitiveType extends ShortType {
+
+  /**
+   * Creates the datatype for the primitive type <code>short</code>.
+   */
+  public ShortPrimitiveType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getJavaType() {

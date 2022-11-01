@@ -26,7 +26,14 @@ import org.tentackle.sql.DataTypeFactory;
  * Datatype for the primitive type <code>boolean</code>.
  */
 @Service(DataType.class)
-public class BooleanPrimitiveType extends BooleanType {
+public final class BooleanPrimitiveType extends BooleanType {
+
+  /**
+   * Creates the datatype for the primitive type <code>boolean</code>.
+   */
+  public BooleanPrimitiveType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getJavaType() {

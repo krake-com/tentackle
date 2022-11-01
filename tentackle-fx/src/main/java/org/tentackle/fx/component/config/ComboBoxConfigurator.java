@@ -20,17 +20,26 @@
 package org.tentackle.fx.component.config;
 
 import javafx.scene.control.ComboBox;
+import javafx.scene.input.KeyEvent;
 
 import org.tentackle.fx.ConfiguratorService;
+import org.tentackle.fx.component.FxComboBox;
 
 /**
- * Configures a ComboBox.
+ * Configures a {@link ComboBox}.
  *
  * @author harald
  * @param <T> the combobox type
  */
 @ConfiguratorService(ComboBox.class)
 public class ComboBoxConfigurator<T extends ComboBox<?>> extends ComboBoxBaseConfigurator<T> {
+
+  /**
+   * Creates the configurator for a {@link ComboBox}.
+   */
+  public ComboBoxConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void configure(T control) {
@@ -43,6 +52,10 @@ public class ComboBoxConfigurator<T extends ComboBox<?>> extends ComboBoxBaseCon
                                  control::getConverter,
                                  index -> control.getSelectionModel().select(index))
         .configure();
+
+    if (control instanceof FxComboBox<?> comboBox) {
+      comboBox.addEventFilter(KeyEvent.KEY_PRESSED, comboBox::filterKeyPressed);
+    }
   }
 
 }

@@ -35,7 +35,14 @@ import java.util.Optional;
  * Datatype for {@link Integer}.
  */
 @Service(DataType.class)
-public class IntegerType extends AbstractNumberType<Integer> {
+public sealed class IntegerType extends AbstractNumberType<Integer> permits IntegerPrimitiveType {
+
+  /**
+   * Creates the datatype for {@link Integer}.
+   */
+  public IntegerType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getJavaType() {

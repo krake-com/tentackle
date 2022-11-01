@@ -34,9 +34,16 @@ import java.util.List;
  *
  * @author harald
  */
-public class MandatoryImpl extends AbstractValidator<Mandatory> implements MandatoryBindingEvaluator {
+public final class MandatoryImpl extends AbstractValidator<Mandatory> implements MandatoryBindingEvaluator {
 
   private Mandatory annotation;
+
+  /**
+   * Creates a {@link Mandatory}-validator.
+   */
+  public MandatoryImpl() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void setAnnotation(Annotation annotation) {

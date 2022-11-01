@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.validate.validator;
 
 import org.tentackle.validate.ValidationContext;
@@ -38,9 +37,16 @@ import java.util.Map;
  *
  * @author harald
  */
-public class SizeImpl extends AbstractValidator<Size> {
+public final class SizeImpl extends AbstractValidator<Size> {
 
   private Size annotation;
+
+  /**
+   * Creates a {@link Size}-validator.
+   */
+  public SizeImpl() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void setAnnotation(Annotation annotation) {

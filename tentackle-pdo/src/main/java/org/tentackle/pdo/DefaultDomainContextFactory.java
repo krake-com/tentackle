@@ -29,6 +29,13 @@ import org.tentackle.session.Session;
 @Service(DomainContextFactory.class)
 public class DefaultDomainContextFactory implements DomainContextFactory {
 
+  /**
+   * Creates the domain context factory.
+   */
+  public DefaultDomainContextFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public DomainContext create(Session session) {
     return new DefaultDomainContext(session);

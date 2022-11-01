@@ -36,6 +36,7 @@ import java.util.List;
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class TrackedArrayListTest {
 
 

@@ -22,25 +22,36 @@ import java.io.Serial;
 import java.io.Serializable;
 
 /**
- * Holds the master serial and optional application-specific data.
+ * Holds the master serial.
  * <p>
- * This is just a DTO without further logic.
+ * This is just a DTO without further logic.<br>
+ * It can be extended to provide additional application-specific data.
  *
- * @author harald
+ * @see org.tentackle.dbms.rmi.DbModificationTrackerRemoteDelegateImpl#createMasterSerial(long)
  */
 public class MasterSerial implements Serializable {
 
   @Serial
   private static final long serialVersionUID = 1L;
 
-  /**
-   * The master serial.
-   */
-  public long serial;
+  private final long serial;
 
   /**
-   * Optional application data returned to the client.
+   * Creates a master serial object.
+   *
+   * @param serial the master serial
    */
-  public Serializable applicationData;
+  public MasterSerial(long serial) {
+    this.serial = serial;
+  }
+
+  /**
+   * Gets the serial value.
+   *
+   * @return the serial
+   */
+  public long getSerial() {
+    return serial;
+  }
 
 }

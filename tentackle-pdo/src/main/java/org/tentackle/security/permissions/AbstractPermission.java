@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.security.permissions;
 
 import org.tentackle.reflect.ReflectionHelper;
@@ -33,6 +32,13 @@ public abstract class AbstractPermission implements Permission {
 
   // the extracted permission interface
   private Class<? extends Permission> iFace;
+
+  /**
+   * Parent constructor.
+   */
+  public AbstractPermission() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getDescription() {

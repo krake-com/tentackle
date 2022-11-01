@@ -37,6 +37,14 @@ public abstract class AbstractScriptValidationMessageConverter implements Script
 
   private static final String VALIDATION_UTILITIES_NAME = ValidationUtilities.class.getName();
 
+
+  /**
+   * Parent constructor.
+   */
+  public AbstractScriptValidationMessageConverter() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public String convert(String code, ScriptingLanguage language) {
     int ndx = code.indexOf(I18N_INTRO);

@@ -24,7 +24,7 @@ import javafx.scene.text.TextFlow;
 import org.tentackle.fx.ConfiguratorService;
 
 /**
- * Configures a TextFlow.
+ * Configures a {@link TextFlow}.
  *
  * @author harald
  * @param <T> the container type
@@ -32,5 +32,11 @@ import org.tentackle.fx.ConfiguratorService;
 @ConfiguratorService(TextFlow.class)
 public class TextFlowConfigurator<T extends TextFlow> extends PaneConfigurator<T> {
 
+  /**
+   * Creates the configurator for a {@link TextFlow}.
+   */
+  public TextFlowConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
 }

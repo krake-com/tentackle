@@ -41,12 +41,19 @@ import java.time.format.DateTimeParseException;
  * Mapped to {@link Timestamp}-related JDBC methods.
  */
 @Service(DataType.class)
-public class LocalDateTimeType extends AbstractDateTimeType<LocalDateTime> {
+public final class LocalDateTimeType extends AbstractDateTimeType<LocalDateTime> {
 
   // timestamp formats withZone necessary for Instant
   private static final DateTimeFormatter TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
   private static final DateTimeFormatter MS_TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
 
+
+  /**
+   * Creates the datatype for {@link LocalDateTime}.
+   */
+  public LocalDateTimeType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getJavaType() {

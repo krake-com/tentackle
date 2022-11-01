@@ -30,6 +30,7 @@ import java.sql.Timestamp;
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class CompoundValueTest {
 
   private static final String HELLO = "hello!";

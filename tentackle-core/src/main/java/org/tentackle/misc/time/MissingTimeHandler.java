@@ -28,6 +28,13 @@ import java.util.List;
  */
 public class MissingTimeHandler implements SmartDateTimeParser.ErrorHandler {
 
+  /**
+   * Creates a missing time handler.
+   */
+  public MissingTimeHandler() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public String apply(SmartDateTimeParser<? extends Temporal> parser, DateTimeParseException parseException, String text) {
     if (parser.isWithTime()) {

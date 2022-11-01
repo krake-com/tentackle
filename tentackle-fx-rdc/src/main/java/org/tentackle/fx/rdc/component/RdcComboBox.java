@@ -31,6 +31,13 @@ import org.tentackle.fx.rdc.component.delegate.RdcComboBoxDelegate;
  */
 public class RdcComboBox<T> extends FxComboBox<T> {
 
+  /**
+   * Creates a combo box.
+   */
+  public RdcComboBox() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   protected ShortLongTextCellFactory<T> createShortLongTextCellFactory() {
     return new RdcShortLongTextCellFactory<>();

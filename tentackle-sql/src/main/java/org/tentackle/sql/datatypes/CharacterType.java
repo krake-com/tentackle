@@ -36,7 +36,14 @@ import java.util.Optional;
  * Datatype for {@link Character}.
  */
 @Service(DataType.class)
-public class CharacterType extends AbstractDataType<Character> {
+public sealed class CharacterType extends AbstractDataType<Character> permits CharacterPrimitiveType {
+
+  /**
+   * Creates the datatype for {@link Character}.
+   */
+  public CharacterType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getJavaType() {

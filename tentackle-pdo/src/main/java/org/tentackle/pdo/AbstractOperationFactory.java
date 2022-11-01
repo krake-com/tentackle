@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.pdo;
 
 import org.tentackle.reflect.ClassMapper;
@@ -32,6 +31,12 @@ import java.lang.reflect.Proxy;
  */
 public abstract class AbstractOperationFactory implements OperationFactory {
 
+  /**
+   * Parent constructor.
+   */
+  public AbstractOperationFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   /**
    * Gets the persistence class mapper associated to this factory.<br>

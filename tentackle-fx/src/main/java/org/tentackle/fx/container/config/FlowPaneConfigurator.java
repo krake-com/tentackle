@@ -24,7 +24,7 @@ import javafx.scene.layout.FlowPane;
 import org.tentackle.fx.ConfiguratorService;
 
 /**
- * Configures a FlowPane.
+ * Configures a {@link FlowPane}.
  *
  * @author harald
  * @param <T> the container type
@@ -32,5 +32,11 @@ import org.tentackle.fx.ConfiguratorService;
 @ConfiguratorService(FlowPane.class)
 public class FlowPaneConfigurator<T extends FlowPane> extends PaneConfigurator<T> {
 
+  /**
+   * Creates the configurator for a {@link FlowPane}.
+   */
+  public FlowPaneConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
 }

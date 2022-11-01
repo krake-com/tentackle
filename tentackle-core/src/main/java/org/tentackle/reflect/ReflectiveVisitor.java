@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.reflect;
 
 import org.tentackle.common.StringHelper;
@@ -38,16 +37,18 @@ public abstract class ReflectiveVisitor {
 
   private static final Logger LOGGER = Logger.get(ReflectiveVisitor.class);
 
-
   private static final String METHOD_NAME = "visit";    // fixed method name
-
-
 
   // the cached method map
   private static final MethodCache METHOD_CACHE = new MethodCache("methodcache[" + ReflectiveVisitor.class.getName() + "]");
 
 
-
+  /**
+   * Creates a reflective visitor.
+   */
+  public ReflectiveVisitor() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   /**
    * Visits an object.

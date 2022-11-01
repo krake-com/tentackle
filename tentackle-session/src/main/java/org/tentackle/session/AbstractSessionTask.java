@@ -16,13 +16,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.session;
 
 import org.tentackle.task.AbstractTask;
 
 import java.io.Serial;
-
 
 /**
  * A task being executed by the {@link SessionTaskDispatcher}.
@@ -37,6 +35,13 @@ public abstract class AbstractSessionTask extends AbstractTask implements Sessio
   private transient Session session;          // the session to use
   private transient boolean sessionImmutable; // true if session cannot be changed
 
+
+  /**
+   * Parent constructor.
+   */
+  public AbstractSessionTask() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   /**
    * Sets the db.<br>

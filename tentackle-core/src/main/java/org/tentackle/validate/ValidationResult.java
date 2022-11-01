@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.validate;
 
 import java.io.Serializable;
@@ -104,15 +103,12 @@ public interface ValidationResult extends Serializable {
 
   /**
    * A collection index within a validation path
+   *
+   * @param index the index within the collection
+   * @param pathPrefix the leading part of the path
+   * @param pathPostfix the trailing part
    */
-  class CollectionIndex {
-    /** the index within the collection */
-    public int index;
-    /** the leading part of the path */
-    public String pathPrefix;
-    /** the trailing part */
-    public String pathPostfix;
-  }
+  record CollectionIndex(int index, String pathPrefix, String pathPostfix) implements Serializable {};
 
 
   /**

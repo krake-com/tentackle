@@ -152,6 +152,13 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
 
 
   /**
+   * Creates a search controller.
+   */
+  public PdoSearch() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  /**
    * Gets the message displayed in tableview when there was no data found.
    *
    * @return the placeholder message, null if default message, empty if no message at all

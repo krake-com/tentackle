@@ -50,6 +50,12 @@ public class DefaultPdoFinder<T extends PersistentDomainObject<T>> extends PdoFi
   @FXML
   private FxTextField patternField;
 
+  /**
+   * Creates a default PDO finder.
+   */
+  public DefaultPdoFinder() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public List<T> runSearch() {

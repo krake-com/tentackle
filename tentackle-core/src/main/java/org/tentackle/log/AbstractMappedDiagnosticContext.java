@@ -18,11 +18,11 @@
 
 package org.tentackle.log;
 
+import org.tentackle.misc.ParameterString;
+
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
-import org.tentackle.misc.ParameterString;
-
 
 /**
  * Base implementation of a mapped diagnostic context.
@@ -30,6 +30,13 @@ import org.tentackle.misc.ParameterString;
  * @author harald
  */
 public abstract class AbstractMappedDiagnosticContext implements MappedDiagnosticContext {
+
+  /**
+   * Parent constructor.
+   */
+  public AbstractMappedDiagnosticContext() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   /**
    * Gets the map.

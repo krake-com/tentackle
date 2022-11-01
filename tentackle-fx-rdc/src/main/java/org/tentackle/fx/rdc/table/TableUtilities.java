@@ -100,6 +100,13 @@ public class TableUtilities {
 
 
   /**
+   * Creates the table utilities.
+   */
+  public TableUtilities() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  /**
    * Creates a default table configuration for a given PDO class.<br>
    * Each attribute getter (annotated with {@link org.tentackle.session.Persistent}) gets its own column,
    * except the default attributes from {@link PersistentObject} and object ids for object relations.

@@ -1,16 +1,23 @@
-  private /**/delegate/**/ delegate;          // @wurblet < Inject ${classname}Delegate
+  private ${classname}Delegate delegate;
+
+  /**
+   * Creates a ${classname}.
+   */
+  public ${classname}() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   /**
    * Creates the delegate.
    *
    * @return the delegate
    */
-  protected /**/delegate/**/ createDelegate() {  // @wurblet < Inject ${classname}Delegate
-    return new /**/delegate/**/(this);  // @wurblet < Inject ${classname}Delegate
+  protected ${classname}Delegate createDelegate() {
+    return new ${classname}Delegate(this);
   }
 
   @Override
-  public /**/delegate/**/ getDelegate() {  // @wurblet < Inject ${classname}Delegate
+  public ${classname}Delegate getDelegate() {
     if (delegate == null) {
       delegate = createDelegate();
     }

@@ -28,12 +28,18 @@ import org.tentackle.session.SessionProvider;
 import java.lang.reflect.Method;
 
 /**
- * Implementation for the no-transaction interception.
+ * Implementation for the {@link NoTransaction} interception.
  *
  * @author harald
  */
-public class NoTransactionInterceptor extends AbstractInterceptor {
+public final class NoTransactionInterceptor extends AbstractInterceptor {
 
+  /**
+   * Creates a {@link NoTransaction} interceptor.
+   */
+  public NoTransactionInterceptor() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   @SuppressWarnings("rawtypes")

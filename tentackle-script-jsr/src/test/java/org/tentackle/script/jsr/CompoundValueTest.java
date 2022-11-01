@@ -28,6 +28,7 @@ import org.tentackle.script.ScriptFactory;
 /**
  * CompoundValue Test.
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class CompoundValueTest {
 
   /**

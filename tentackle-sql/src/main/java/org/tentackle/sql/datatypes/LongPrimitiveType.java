@@ -26,7 +26,14 @@ import org.tentackle.sql.DataTypeFactory;
  * Datatype for the primitive type <code>long</code>.
  */
 @Service(DataType.class)
-public class LongPrimitiveType extends LongType {
+public final class LongPrimitiveType extends LongType {
+
+  /**
+   * Creates the datatype for the primitive type <code>long</code>.
+   */
+  public LongPrimitiveType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getJavaType() {

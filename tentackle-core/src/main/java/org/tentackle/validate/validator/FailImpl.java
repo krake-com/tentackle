@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.validate.validator;
 
 import org.tentackle.validate.ValidationContext;
@@ -33,13 +32,20 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Implementation of the {@link True}-validator.
+ * Implementation of the {@link Fail}-validator.
  *
  * @author harald
  */
-public class FailImpl extends AbstractValidator<Fail> {
+public final class FailImpl extends AbstractValidator<Fail> {
 
   private Fail annotation;
+
+  /**
+   * Creates a {@link Fail}-validator.
+   */
+  public FailImpl() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void setAnnotation(Annotation annotation) {

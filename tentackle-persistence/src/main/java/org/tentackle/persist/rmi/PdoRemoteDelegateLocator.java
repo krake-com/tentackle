@@ -32,6 +32,13 @@ import org.tentackle.pdo.PdoUtilities;
 public class PdoRemoteDelegateLocator extends DbRemoteDelegateLocator {
 
   /**
+   * Creates the remote delegate locator.
+   */
+  public PdoRemoteDelegateLocator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  /**
    * Gets the effective class.<br>
    *
    * @param clazz the serviced class

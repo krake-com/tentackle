@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.validate.validator;
 
 import org.tentackle.misc.ObjectUtilities;
@@ -35,9 +34,16 @@ import java.util.List;
  *
  * @author harald
  */
-public class ZeroImpl extends AbstractValidator<Zero> {
+public final class ZeroImpl extends AbstractValidator<Zero> {
 
   private Zero annotation;
+
+  /**
+   * Creates a {@link Zero}-validator.
+   */
+  public ZeroImpl() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void setAnnotation(Annotation annotation) {

@@ -29,7 +29,14 @@ import java.util.TreeSet;
  * Base class for controllers that validate themselves.<br>
  * Not applicable to controllers that validate their bindables explicitly.
  */
-public class AbstractValidateableFxController extends AbstractFxController implements Validateable {
+public abstract class AbstractValidateableFxController extends AbstractFxController implements Validateable {
+
+  /**
+   * Parent constructor.
+   */
+  public AbstractValidateableFxController() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   /**
    * Validates the controller.

@@ -27,6 +27,7 @@ import java.util.Arrays;
  * Simple test to check that records don't perform a deep equals and deep hashcode on arrays.<br>
  * Just to ensure that this doesn't change in future releases of Java.
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class RecordTest {
 
   @Test

@@ -39,6 +39,13 @@ public abstract class AbstractTableCellType<T> implements TableCellType<T> {
   protected FxComponent editor;
 
   /**
+   * Parent constructor.
+   */
+  public AbstractTableCellType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  /**
    * Updates the alignment of the table cell's contents.
    *
    * @param tableCell the cell, never null

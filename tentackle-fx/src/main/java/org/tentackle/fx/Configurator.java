@@ -22,7 +22,8 @@ package org.tentackle.fx;
 /**
  * A configurator.
  * <p>
- * The configurator inheritance hierarchy corresponds to the FX-classes hierarchy.
+ * The configurator inheritance hierarchy corresponds to the FX-classes hierarchy.<br>
+ * There is one configurator instance per type. Therefore, configurators must not maintain any state.
  *
  * @author harald
  * @param <T> the type

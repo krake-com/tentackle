@@ -30,6 +30,13 @@ import java.time.temporal.Temporal;
  */
 public class MissingOffsetHandler implements SmartDateTimeParser.ErrorHandler {
 
+  /**
+   * Creates a missing offset handler.
+   */
+  public MissingOffsetHandler() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public String apply(SmartDateTimeParser<? extends Temporal> parser, DateTimeParseException parseException, String text) {
     if (parser.isWithOffset() && parseException.getErrorIndex() == text.length()) {

@@ -19,15 +19,16 @@
 
 package org.tentackle.apt.pdo;
 
-import java.util.Set;
+import org.tentackle.apt.AbstractServiceAnnotationProcessor;
+import org.tentackle.common.Constants;
+
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
-import org.tentackle.apt.AbstractServiceAnnotationProcessor;
-import org.tentackle.common.Constants;
+import java.util.Set;
 
 /**
  * Base class for DomainObjectServiceAnnotationProcessor and DomainOperationServiceAnnotationProcessor.
@@ -35,6 +36,13 @@ import org.tentackle.common.Constants;
  * @author harald
  */
 public class AbstractDomainServiceAnnotationProcessor extends AbstractServiceAnnotationProcessor {
+
+  /**
+   * Creates the processor.
+   */
+  public AbstractDomainServiceAnnotationProcessor() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {

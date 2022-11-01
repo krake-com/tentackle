@@ -35,7 +35,14 @@ import java.util.Optional;
  * Datatype for {@link Byte}.
  */
 @Service(DataType.class)
-public class ByteType extends AbstractNumberType<Byte> {
+public sealed class ByteType extends AbstractNumberType<Byte> permits BytePrimitiveType {
+
+  /**
+   * Creates the datatype for {@link Byte}.
+   */
+  public ByteType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getJavaType() {

@@ -36,6 +36,14 @@ public class AddShortcut implements SmartDateTimeParser.Shortcut {
 
   private static final Pattern pattern = Pattern.compile("^[-+][0-9]+[ymMdhs]?");
 
+
+  /**
+   * Creates an add shortcut.
+   */
+  public AddShortcut() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public SmartDateTimeParser.TextRange test(SmartDateTimeParser<? extends Temporal> parser, String text) {
     Matcher matcher = pattern.matcher(text);

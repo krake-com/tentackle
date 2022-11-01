@@ -29,6 +29,13 @@ import org.tentackle.fx.rdc.component.delegate.RdcChoiceBoxDelegate;
  */
 public class RdcChoiceBox<T> extends FxChoiceBox<T> {
 
+  /**
+   * Creates a choice box.
+   */
+  public RdcChoiceBox() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   protected RdcChoiceBoxDelegate createDelegate() {
     return new RdcChoiceBoxDelegate(this);

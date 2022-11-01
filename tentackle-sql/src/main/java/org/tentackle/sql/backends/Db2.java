@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.sql.backends;
 
 import org.tentackle.common.Service;
@@ -31,7 +30,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 
-
 /**
  * Backend for DB2.
  *
@@ -40,9 +38,15 @@ import java.sql.Types;
 @Service(Backend.class)
 public class Db2 extends AbstractSql2003Backend {
 
-
   private static final String STR_CONTINUATION = " \\";
 
+
+  /**
+   * Creates the DB2 backend.
+   */
+  public Db2() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public boolean isMatchingUrl(String url) {

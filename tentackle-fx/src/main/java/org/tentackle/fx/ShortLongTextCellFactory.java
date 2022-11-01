@@ -43,6 +43,12 @@ public class ShortLongTextCellFactory <T> implements Callback<ListView<T>, ListC
   private double shortWidth;                    // width for the short text column
   private double longWidth;                     // width for the long text column
 
+  /**
+   * Creates the short/long-text cell factory.
+   */
+  public ShortLongTextCellFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public ListCell<T> call(ListView<T> listView) {

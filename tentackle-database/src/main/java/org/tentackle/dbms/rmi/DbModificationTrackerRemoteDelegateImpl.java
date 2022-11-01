@@ -52,9 +52,7 @@ public class DbModificationTrackerRemoteDelegateImpl<T extends DbModificationTra
    * @see DbModificationTracker#extractMasterSerial(MasterSerial)
    */
   protected MasterSerial createMasterSerial(long serial) {
-    MasterSerial ms = new MasterSerial();
-    ms.serial = serial;
-    return ms;
+    return new MasterSerial(serial);
   }
 
   @Override

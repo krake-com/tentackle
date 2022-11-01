@@ -29,6 +29,7 @@ import org.tentackle.script.ScriptVariable;
 
 import java.util.Set;
 
+@SuppressWarnings("missing-explicit-ctor")
 public class JSR223LanguageTest {
 
   private static final int LOOPS_GROOVY = 10000;

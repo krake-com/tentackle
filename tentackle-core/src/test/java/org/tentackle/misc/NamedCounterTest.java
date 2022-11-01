@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 
+@SuppressWarnings("missing-explicit-ctor")
 public class NamedCounterTest {
 
   private static final int THREAD_NUM = 500;

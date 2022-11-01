@@ -47,6 +47,13 @@ public class LocaleProvider {
 
 
   /**
+   * Creates a locale provider.
+   */
+  public LocaleProvider() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  /**
    * Gets the locale used by the current thread.<br>
    *
    * @return the locale, null if no thread-local Locale set

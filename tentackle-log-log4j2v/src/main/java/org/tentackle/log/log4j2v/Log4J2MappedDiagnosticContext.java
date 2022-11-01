@@ -52,6 +52,13 @@ public class Log4J2MappedDiagnosticContext extends AbstractMappedDiagnosticConte
   }
 
 
+  /**
+   * Creates the MDC for Log4J2.
+   */
+  public Log4J2MappedDiagnosticContext() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public void put(String key, String val) {
     ThreadContext.put(key, val);

@@ -249,6 +249,13 @@ public class DateTimeUtilities {
 
 
   /**
+   * Creates the date- and time utilities.
+   */
+  public DateTimeUtilities() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  /**
    * Gets the list of default shortcuts.
    *
    * @return the list of shortcuts

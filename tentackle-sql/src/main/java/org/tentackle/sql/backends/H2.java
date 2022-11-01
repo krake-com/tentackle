@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.sql.backends;
 
 import org.tentackle.common.Service;
@@ -39,7 +38,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-
 
 /**
  * Backend for the H2 Database.
@@ -75,6 +73,14 @@ public class H2 extends AbstractSql92Backend {
 
   /** set of reserved words (built only once). */
   private static Set<String> reservedWords;
+
+
+  /**
+   * Creates the H2 backend.
+   */
+  public H2() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public synchronized Set<String> getReservedWords() {

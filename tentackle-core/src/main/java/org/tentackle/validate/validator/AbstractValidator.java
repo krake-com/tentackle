@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.validate.validator;
 
 import org.tentackle.misc.CompoundValue;
@@ -40,7 +39,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-
 /**
  * An abstract validator.
  *
@@ -58,6 +56,13 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
   private volatile CompoundValue valueParameter;                    // the value given by the annotation (fixed or last varying type)
   private volatile Map<Class<?>, CompoundValue> valueParameterMap;  // value types (varying type only, null if fixed)
 
+
+  /**
+   * Parent constructor.
+   */
+  public AbstractValidator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String toString() {

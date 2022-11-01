@@ -34,6 +34,13 @@ import org.tentackle.fx.table.TableCellTypeService;
 @TableCellTypeService(Object.class)
 public class ObjectTableCellType extends AbstractTableCellType<Object> {
 
+  /**
+   * Creates the fallback object cell type.
+   */
+  public ObjectTableCellType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public void updateItem(FxTableCell<?, Object> tableCell, Object item) {
     tableCell.setText(item.toString());

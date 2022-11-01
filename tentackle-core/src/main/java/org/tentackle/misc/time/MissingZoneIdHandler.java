@@ -29,6 +29,13 @@ import java.time.temporal.Temporal;
  */
 public class MissingZoneIdHandler implements SmartDateTimeParser.ErrorHandler {
 
+  /**
+   * Creates a missing zone handler.
+   */
+  public MissingZoneIdHandler() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public String apply(SmartDateTimeParser<? extends Temporal> parser, DateTimeParseException parseException, String text) {
     if (parser.isWithTimeZone() && parseException.getErrorIndex() == text.length()) {

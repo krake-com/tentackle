@@ -16,12 +16,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.dbms;
+
+import org.tentackle.reflect.ReflectiveVisitor;
 
 import java.io.Serial;
 import java.io.Serializable;
-import org.tentackle.reflect.ReflectiveVisitor;
 
 /**
  * A reflective visitor to add application-specific functionality to persistence operations.
@@ -51,6 +51,13 @@ public abstract class PersistenceVisitor extends ReflectiveVisitor implements Se
 
   @Serial
   private static final long serialVersionUID = 1L;
+
+  /**
+   * Creates a visitor.
+   */
+  public PersistenceVisitor() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   /**
    * Checks if the persistence operation is allowed.

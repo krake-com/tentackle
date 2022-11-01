@@ -18,10 +18,11 @@
 
 package org.tentackle.log;
 
-import java.util.Map;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.misc.InheritableThreadLocalHashTable;
+
+import java.util.Map;
 
 
 interface DefaultMappedDiagnosticContextHolder {
@@ -58,6 +59,12 @@ public class DefaultMappedDiagnosticContext extends AbstractMappedDiagnosticCont
   private final InheritableThreadLocalHashTable<String, String> tlm = new InheritableThreadLocalHashTable<>();
 
 
+  /**
+   * Creates the MDC for java-util logging.
+   */
+  public DefaultMappedDiagnosticContext() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public Map<String, String> getContext() {

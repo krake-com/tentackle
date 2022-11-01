@@ -43,6 +43,7 @@ import static org.testng.Assert.fail;
 /**
  * Tests for {@link ObjectUtilities}.
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class ObjectUtilitiesTest {
 
   private final String MAGIC_WORD = "wave rod";

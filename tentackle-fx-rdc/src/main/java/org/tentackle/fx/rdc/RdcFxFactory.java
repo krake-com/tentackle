@@ -30,6 +30,13 @@ import org.tentackle.fx.table.TableConfiguration;
 @Service(FxFactory.class)
 public class RdcFxFactory extends DefaultFxFactory {
 
+  /**
+   * Creates the RDC FX factory.
+   */
+  public RdcFxFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public <S> TableConfiguration<S> createTableConfiguration(S template, String name) {
     return new RdcTableConfiguration<>(template, name);

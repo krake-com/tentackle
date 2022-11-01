@@ -29,34 +29,16 @@ import org.tentackle.session.PersistenceException;
 @Service(RemoteDelegateLocator.class)
 public class DbRemoteDelegateLocator implements RemoteDelegateLocator {
 
-  private static class DefaultResult implements Result {
+  private record DefaultResult(Class<?> effectiveClass,
+                               Class<RemoteDelegate> remoteDelegate,
+                               Class<RemoteDelegateImpl<?>> remoteDelegateImpl) implements Result {
+  }
 
-    private final Class<?> effectiveClass;
-    private final Class<RemoteDelegate> remoteDelegate;
-    private final Class<RemoteDelegateImpl<?>> remoteDelegateImpl;
-
-    private DefaultResult(Class<?> effectiveClass,
-                          Class<RemoteDelegate> remoteDelegate,
-                          Class<RemoteDelegateImpl<?>> remoteDelegateImpl) {
-      this.effectiveClass = effectiveClass;
-      this.remoteDelegate = remoteDelegate;
-      this.remoteDelegateImpl = remoteDelegateImpl;
-    }
-
-    @Override
-    public Class<?> getEffectiveClass() {
-      return effectiveClass;
-    }
-
-    @Override
-    public Class<RemoteDelegate> getRemoteDelegate() {
-      return remoteDelegate;
-    }
-
-    @Override
-    public Class<RemoteDelegateImpl<?>> getRemoteDelegateImpl() {
-      return remoteDelegateImpl;
-    }
+  /**
+   * Creates a remote delegate locator.
+   */
+  public DbRemoteDelegateLocator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
   }
 
   @Override

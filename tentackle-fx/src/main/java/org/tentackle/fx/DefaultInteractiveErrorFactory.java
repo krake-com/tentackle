@@ -37,6 +37,13 @@ import java.util.NavigableSet;
 @Service(InteractiveErrorFactory.class)
 public class DefaultInteractiveErrorFactory implements InteractiveErrorFactory {
 
+  /**
+   * Creates the interactive error factory.
+   */
+  public DefaultInteractiveErrorFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public InteractiveError createInteractiveError(NavigableSet<ValidationMapper> mappers, Binder binder, ValidationResult validationResult) {
 
@@ -47,7 +54,7 @@ public class DefaultInteractiveErrorFactory implements InteractiveErrorFactory {
     FxControl control = null;
 
     // map the binding path to a control
-    Binding binding = mapResult.getBinder().getBinding(mapResult.getBindingPath());
+    Binding binding = mapResult.binder().getBinding(mapResult.bindingPath());
     if (binding instanceof FxComponentBinding) {
       control = ((FxComponentBinding) binding).getComponent();
     }

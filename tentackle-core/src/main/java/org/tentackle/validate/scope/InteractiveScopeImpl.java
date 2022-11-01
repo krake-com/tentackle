@@ -27,7 +27,14 @@ import org.tentackle.validate.ValidationScopeService;
  * @author harald
  */
 @ValidationScopeService(InteractiveScope.class)
-public class InteractiveScopeImpl extends AbstractScope implements InteractiveScope {
+public final class InteractiveScopeImpl extends AbstractScope implements InteractiveScope {
+
+  /**
+   * Creates the interactive scope.
+   */
+  public InteractiveScopeImpl() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getName() {

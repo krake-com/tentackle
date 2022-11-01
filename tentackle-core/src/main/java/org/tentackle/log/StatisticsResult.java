@@ -34,6 +34,13 @@ public class StatisticsResult {
 
 
   /**
+   * Creates an empty statistics result.
+   */
+  public StatisticsResult() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  /**
    * Count invocations.
    *
    * @param duration the duration

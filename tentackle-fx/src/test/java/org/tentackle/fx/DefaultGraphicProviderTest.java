@@ -20,6 +20,7 @@ package org.tentackle.fx;
 
 import org.testng.annotations.Test;
 
+@SuppressWarnings("missing-explicit-ctor")
 public class DefaultGraphicProviderTest {
 
   private final DefaultGraphicProvider provider = new DefaultGraphicProvider();

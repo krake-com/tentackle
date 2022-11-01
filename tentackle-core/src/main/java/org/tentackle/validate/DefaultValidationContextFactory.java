@@ -29,6 +29,13 @@ import java.util.function.Supplier;
 @Service(ValidationContextFactory.class)
 public class DefaultValidationContextFactory implements ValidationContextFactory {
 
+  /**
+   * Creates the validation context factory.
+   */
+  public DefaultValidationContextFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public ValidationContext create(String validationPath, Class<?> type, Object object, Object parentObject,
                                   ValidationScope effectiveScope, List<ValidationResult> validationResults) {

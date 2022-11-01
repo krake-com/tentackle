@@ -18,9 +18,10 @@
 
 package org.tentackle.common;
 
-import java.util.Locale;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+
+import java.util.Locale;
 
 
 /**
@@ -28,6 +29,7 @@ import org.testng.annotations.Test;
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class LocaleTest {
 
   @Test

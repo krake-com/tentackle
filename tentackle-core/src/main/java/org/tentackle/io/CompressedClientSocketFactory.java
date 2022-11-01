@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.io;
 
 import java.io.IOException;
@@ -33,6 +32,12 @@ public class CompressedClientSocketFactory extends ClientSocketFactory {
   @Serial
   private static final long serialVersionUID = 1L;
 
+  /**
+   * Creates the client socket factory with compression.
+   */
+  public CompressedClientSocketFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public Socket createSocket(String host, int port) throws IOException {

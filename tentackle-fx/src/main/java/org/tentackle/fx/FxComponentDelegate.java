@@ -184,6 +184,13 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
   private boolean listenerSuppressedIfViewUnchanged;
 
 
+  /**
+   * Creates a component delegate.
+   */
+  public FxComponentDelegate() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public FxComponentDelegate getDelegate() {
     return this;

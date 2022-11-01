@@ -36,7 +36,14 @@ import java.sql.Types;
  * Datatype for {@link Binary}.
  */
 @Service(DataType.class)
-public class BinaryType extends AbstractDataType<Binary<? extends Serializable>> {
+public final class BinaryType extends AbstractDataType<Binary<? extends Serializable>> {
+
+  /**
+   * Creates the datatype for {@link Binary}.
+   */
+  public BinaryType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getJavaType() {

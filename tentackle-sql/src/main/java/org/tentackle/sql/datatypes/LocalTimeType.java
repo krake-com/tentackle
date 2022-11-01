@@ -40,7 +40,14 @@ import java.time.format.DateTimeParseException;
  * Mapped to {@link Time}-related JDBC methods.
  */
 @Service(DataType.class)
-public class LocalTimeType extends AbstractDateTimeType<LocalTime> {
+public final class LocalTimeType extends AbstractDateTimeType<LocalTime> {
+
+  /**
+   * Creates the datatype for {@link LocalTime}.
+   */
+  public LocalTimeType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getJavaType() {

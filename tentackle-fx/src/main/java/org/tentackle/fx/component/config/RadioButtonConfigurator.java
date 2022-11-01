@@ -22,10 +22,9 @@ package org.tentackle.fx.component.config;
 import javafx.scene.control.RadioButton;
 
 import org.tentackle.fx.ConfiguratorService;
-import org.tentackle.fx.FxControl;
 
 /**
- * Configures a RadioButton.
+ * Configures a {@link RadioButton}.
  *
  * @author harald
  * @param <T> the radiobutton type
@@ -33,25 +32,11 @@ import org.tentackle.fx.FxControl;
 @ConfiguratorService(RadioButton.class)
 public class RadioButtonConfigurator<T extends RadioButton> extends ButtonBaseConfigurator<T> {
 
-  @Override
-  public void configure(T control) {
-    super.configure(control);
-    // make change visible immediately (not only after focus lost)
-    if (control instanceof FxControl fxControl) {
-      control.setOnAction(e -> updateModelAndView(fxControl));
-    }
-  }
-
-
   /**
-   * Updates the model and the view.
-   * The view update will also trigger dynamic rendering such as mandatory/changeable.
-   *
-   * @param control the radio button
+   * Creates the configurator for a {@link RadioButton}.
    */
-  protected void updateModelAndView(FxControl control) {
-    control.updateModel();
-    control.updateView();
+  public RadioButtonConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
   }
 
 }

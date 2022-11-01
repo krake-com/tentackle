@@ -16,25 +16,31 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.pdo;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
 import org.tentackle.common.Constants;
 import org.tentackle.reflect.AbstractInterceptor;
 import org.tentackle.session.PersistenceException;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+
 /**
- * Implementation for the invoke-in-buddy-delegate interception.
+ * Implementation for the {@link InvokeInBuddyDelegate} interception.
  *
  * @author harald
  */
-public class InvokeInBuddyDelegateInterceptor extends AbstractInterceptor {
-
+public final class InvokeInBuddyDelegateInterceptor extends AbstractInterceptor {
 
   private String methodName;   // the method name from the annotation
 
+
+  /**
+   * Creates a {@link InvokeInBuddyDelegate} interceptor.
+   */
+  public InvokeInBuddyDelegateInterceptor() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void setAnnotation(Annotation annotation) {

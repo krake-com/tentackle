@@ -30,8 +30,10 @@ import org.tentackle.common.TentackleRuntimeException;
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class ReflectionHelperTest {
 
+  @SuppressWarnings("missing-explicit-ctor")
   public static class MyClass {
 
     public int myField = 10;

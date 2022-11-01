@@ -22,6 +22,7 @@ package org.tentackle.fx.component.config;
 import javafx.scene.control.Control;
 
 import org.tentackle.fx.Configurator;
+import org.tentackle.fx.FxControl;
 import org.tentackle.fx.FxUtilities;
 
 /**
@@ -33,7 +34,14 @@ import org.tentackle.fx.FxUtilities;
  * @author harald
  * @param <T> the control type
  */
-public class ComponentConfigurator<T extends Control> implements Configurator<T> {
+public abstract class ComponentConfigurator<T extends Control> implements Configurator<T> {
+
+  /**
+   * Parent constructor.
+   */
+  public ComponentConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   /**
    * Configures the control.
@@ -57,7 +65,6 @@ public class ComponentConfigurator<T extends Control> implements Configurator<T>
     FxUtilities.getInstance().setupFocusHandling(control);
   }
 
-
   /**
    * Remaps certain keys.
    *
@@ -67,7 +74,6 @@ public class ComponentConfigurator<T extends Control> implements Configurator<T>
     FxUtilities.getInstance().remapKeys(control);
   }
 
-
   /**
    * Filters certain keys for special features.
    *
@@ -75,6 +81,17 @@ public class ComponentConfigurator<T extends Control> implements Configurator<T>
    */
   protected void filterKeys(T control) {
     FxUtilities.getInstance().filterKeys(control);
+  }
+
+  /**
+   * Updates the model and the view.<br>
+   * The view update will also trigger dynamic rendering such as mandatory/changeable.
+   *
+   * @param control the control
+   */
+  protected void updateModelAndView(FxControl control) {
+    control.updateModel();
+    control.updateView();
   }
 
 }

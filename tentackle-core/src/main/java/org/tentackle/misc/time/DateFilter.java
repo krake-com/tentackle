@@ -26,6 +26,13 @@ package org.tentackle.misc.time;
  */
 public class DateFilter implements SmartDateTimeParser.TextFilter {
 
+  /**
+   * Creates a date filter.
+   */
+  public DateFilter() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public String apply(SmartDateTimeParser<?> parser, String text) {
     if (parser.isWithDate()) {

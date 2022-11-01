@@ -26,13 +26,20 @@ import java.sql.Timestamp;
 import java.time.format.DateTimeFormatter;
 
 /**
- * Timestamp cell type.<br>
+ * {@link Timestamp} cell type.<br>
  * Applies to java.sql.Timestamp and org.tentackle.common.Timestamp.
  *
  * @author harald
  */
 @TableCellTypeService(Timestamp.class)
 public class TimestampTableCellType extends AbstractDateTimeTableCellType<Timestamp> {
+
+  /**
+   * Creates the cell type for {@link Timestamp}.
+   */
+  public TimestampTableCellType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   protected String formatItem(DateTimeFormatter fmt, Timestamp item) {

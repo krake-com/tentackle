@@ -25,6 +25,7 @@ import org.tentackle.script.ScriptFactory;
 /**
  * Multithreading penetration test for JavaScript (Nashorn, removed with JDK15).
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class JSR223ThreadingJavaScriptTest {
 
   private static final String LANG = "js";

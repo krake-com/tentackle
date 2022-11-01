@@ -30,6 +30,13 @@ import org.tentackle.session.RemoteSession;
 @Service(RemoteSessionFactory.class)
 public class DbRemoteSessionFactory implements RemoteSessionFactory {
 
+  /**
+   * Creates the remote session factory.
+   */
+  public DbRemoteSessionFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public RemoteSession create(RemoteDbSession remoteDbSession) {
     return new RemoteSessionAdapter(remoteDbSession);

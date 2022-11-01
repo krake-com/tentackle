@@ -26,4 +26,10 @@ import org.tentackle.validate.ValidationSeverityService;
 @ValidationSeverityService(DefaultSeverity.class)
 public class DefaultSeverityImpl extends MajorSeverityImpl implements DefaultSeverity {
 
+  /**
+   * Creates the default severity.
+   */
+  public DefaultSeverityImpl() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 }

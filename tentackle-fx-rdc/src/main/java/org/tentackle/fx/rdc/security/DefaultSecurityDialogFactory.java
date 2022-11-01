@@ -39,6 +39,13 @@ import java.util.function.Consumer;
 public class DefaultSecurityDialogFactory implements SecurityDialogFactory {
 
   /**
+   * Creates the security dialog factory.
+   */
+  public DefaultSecurityDialogFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  /**
    * {@inheritDoc}
    * <p>
    * This needs to be implemented by the application!

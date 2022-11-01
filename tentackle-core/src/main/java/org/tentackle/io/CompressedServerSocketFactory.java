@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.io;
 
 import java.io.IOException;
@@ -28,6 +27,13 @@ import java.net.ServerSocket;
  * @author harald
  */
 public class CompressedServerSocketFactory extends ServerSocketFactory {
+
+  /**
+   * Creates the server socket factory with compression.
+   */
+  public CompressedServerSocketFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public ServerSocket createUnconfiguredServerSocket(int port) throws IOException {

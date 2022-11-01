@@ -18,9 +18,10 @@
 
 package org.tentackle.i18n;
 
+import org.tentackle.common.Service;
+
 import java.util.ResourceBundle;
 import java.util.spi.ResourceBundleControlProvider;
-import org.tentackle.common.Service;
 
 /**
  * Bundle control provider to use stored bundles.
@@ -34,6 +35,13 @@ public class StoredBundleControlProvider implements ResourceBundleControlProvide
 
   /** the control instance. */
   private static final ResourceBundle.Control CONTROL = new StoredBundleControl();
+
+  /**
+   * Creates the resource bundle control provider.
+   */
+  public StoredBundleControlProvider() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public ResourceBundle.Control getControl(String baseName) {

@@ -41,6 +41,14 @@ public abstract class FxApplication extends Application {
   private int exitValue;              // delayed exit code (usually due to a failed login)
   private Throwable exitThrowable;    // and optional reason
 
+
+  /**
+   * Parent constructor.
+   */
+  public FxApplication() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public void start(Stage stage) {
     try {

@@ -24,7 +24,7 @@ import javafx.scene.control.ToolBar;
 import org.tentackle.fx.ConfiguratorService;
 
 /**
- * Configures a ToolBar.
+ * Configures a {@link ToolBar}.
  *
  * @author harald
  * @param <T> the container type
@@ -32,5 +32,10 @@ import org.tentackle.fx.ConfiguratorService;
 @ConfiguratorService(ToolBar.class)
 public class ToolBarConfigurator<T extends ToolBar> extends ContainerConfigurator<T> {
 
-
+  /**
+   * Creates the configurator for a {@link ToolBar}.
+   */
+  public ToolBarConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 }

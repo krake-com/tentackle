@@ -28,6 +28,13 @@ import java.lang.annotation.Annotation;
  */
 public abstract class AbstractObjectValidator<T extends Annotation> extends AbstractValidator<T> {
 
+  /**
+   * Parent constructor.
+   */
+  public AbstractObjectValidator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public String getValue() {
     return "";    // does not apply to object validators

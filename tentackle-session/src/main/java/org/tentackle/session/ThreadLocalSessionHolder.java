@@ -15,7 +15,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-// $Id$
 
 package org.tentackle.session;
 
@@ -33,6 +32,14 @@ public class ThreadLocalSessionHolder implements SessionHolder {
   private static final long serialVersionUID = 1L;
 
   private boolean sessionImmutable;
+
+
+  /**
+   * Creates a thread-local session holder.
+   */
+  public ThreadLocalSessionHolder() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public Session getSession() {

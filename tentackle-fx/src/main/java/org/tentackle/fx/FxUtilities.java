@@ -143,6 +143,13 @@ public class FxUtilities {
 
 
   /**
+   * Creates the FX utilities.
+   */
+  public FxUtilities() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  /**
    * Applies the default stylesheets to a scene.<br>
    * Invoked for all newly created scenes.
    *

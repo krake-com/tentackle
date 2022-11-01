@@ -19,11 +19,11 @@
 
 package org.tentackle.io;
 
-import java.rmi.server.RMIClientSocketFactory;
-import java.rmi.server.RMIServerSocketFactory;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 
+import java.rmi.server.RMIClientSocketFactory;
+import java.rmi.server.RMIServerSocketFactory;
 
 interface RMISocketFactoryFactoryHolder {
   RMISocketFactoryFactory INSTANCE = ServiceFactory.createService(RMISocketFactoryFactory.class, RMISocketFactoryFactory.class);
@@ -55,6 +55,13 @@ public class RMISocketFactoryFactory {
   private String[] enabledProtocols;
   private boolean clientAuthenticationRequired;
 
+
+  /**
+   * Creates the RMI socket factory.
+   */
+  public RMISocketFactoryFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   /**
    * Gets the enabled cipher suites.

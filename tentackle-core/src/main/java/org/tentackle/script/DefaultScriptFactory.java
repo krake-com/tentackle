@@ -51,6 +51,13 @@ public class DefaultScriptFactory implements ScriptFactory {
   protected ScriptingLanguage defaultLanguage;
 
 
+  /**
+   * Creates the script factory.
+   */
+  public DefaultScriptFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public void setDefaultLanguage(ScriptingLanguage language) {
     defaultLanguage = language;

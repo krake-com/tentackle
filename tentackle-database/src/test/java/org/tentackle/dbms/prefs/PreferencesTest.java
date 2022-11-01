@@ -18,26 +18,34 @@
 
 package org.tentackle.dbms.prefs;
 
+import org.testng.Reporter;
+import org.testng.annotations.BeforeSuite;
+import org.testng.annotations.Test;
+
+import org.tentackle.dbms.AbstractDbTest;
+import org.tentackle.prefs.PersistedPreferences;
+import org.tentackle.prefs.PersistedPreferencesFactory;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.prefs.NodeChangeEvent;
 import java.util.prefs.NodeChangeListener;
 import java.util.prefs.PreferenceChangeEvent;
 import java.util.prefs.PreferenceChangeListener;
-import org.tentackle.dbms.AbstractDbTest;
-import org.tentackle.prefs.PersistedPreferences;
-import org.tentackle.prefs.PersistedPreferencesFactory;
-import org.testng.Reporter;
-import org.testng.annotations.BeforeSuite;
-import org.testng.annotations.Test;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 /**
  * Tests for persisted preferences.
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class PreferencesTest extends AbstractDbTest implements NodeChangeListener, PreferenceChangeListener {
 
   private static final String KEY_1 = "key1";

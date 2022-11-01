@@ -136,6 +136,13 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
 
 
   /**
+   * Creates a CRUD controller.
+   */
+  public PdoCrud() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  /**
    * Sets whether the user can change the editor's contents.
    *
    * @param editable true if editable

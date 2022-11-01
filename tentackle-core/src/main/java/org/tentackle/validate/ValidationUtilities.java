@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.validate;
 
 import org.tentackle.bind.Binder;
@@ -74,92 +73,38 @@ public class ValidationUtilities {
   }
 
 
-
-
   /**
    * Mapping result from {@link #mapValidationPath}.
+   *
+   * @param binder the binder
+   * @param bindingPath the binding path
    */
-  public static class MapResult {
+  public record MapResult(Binder binder, String bindingPath) {
 
-    private final Binder binder;
-    private final String bindingPath;
-
-    /**
-     * Creates the result.
-     *
-     * @param binder the binder
-     * @param bindingPath the binding path
-     */
-    public MapResult(Binder binder, String bindingPath) {
-      this.binder = Objects.requireNonNull(binder);
-      this.bindingPath = Objects.requireNonNull(bindingPath).startsWith(".") ? bindingPath.substring(1) : bindingPath;
+    public MapResult {
+      binder = Objects.requireNonNull(binder);
+      bindingPath = Objects.requireNonNull(bindingPath).startsWith(".") ? bindingPath.substring(1) : bindingPath;
     }
 
-    /**
-     * Gets the binder.
-     *
-     * @return the binder
-     */
-    public Binder getBinder() {
-      return binder;
-    }
-
-    /**
-     * Gets the binding path.
-     *
-     * @return the binding path
-     */
-    public String getBindingPath() {
-      return bindingPath;
-    }
   }
 
 
   /**
    * Key to override field annotations by method annotations.
+   *
+   * @param elementName  the name of the validated element
+   * @param validatorClass the class of the validator
+   * @param validationIndex the invocation index of the validator
    */
-  public static class ValidatorKey {
-
-    private final String elementName;
-    private final Class<?> validatorClass;
-    private final int validationIndex;
+  public record ValidatorKey(String elementName, Class<?> validatorClass, int validationIndex) {
 
     /**
-     * Creates a validator key.
+     * Creates a validator key from a validator.
      *
      * @param validator the validator
      */
     public ValidatorKey(Validator validator) {
-      this.elementName = validator.getValidatedElementName();
-      this.validatorClass = validator.getClass();
-      this.validationIndex = validator.getValidationIndex();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      if (obj == null) {
-        return false;
-      }
-      if (getClass() != obj.getClass()) {
-        return false;
-      }
-      final ValidatorKey other = (ValidatorKey) obj;
-      if (!Objects.equals(this.elementName, other.elementName)) {
-        return false;
-      }
-      if (this.validatorClass != other.validatorClass) {
-        return false;
-      }
-      return this.validationIndex == other.validationIndex;
-    }
-
-    @Override
-    public int hashCode() {
-      int hash = 7;
-      hash = 53 * hash + (this.elementName != null ? this.elementName.hashCode() : 0);
-      hash = 53 * hash + (this.validatorClass != null ? this.validatorClass.hashCode() : 0);
-      hash = 53 * hash + this.validationIndex;
-      return hash;
+      this(validator.getValidatedElementName(), validator.getClass(), validator.getValidationIndex());
     }
 
   }
@@ -177,6 +122,13 @@ public class ValidationUtilities {
    */
   private Logger.Level testLogLevel;
 
+
+  /**
+   * Creates the validation utilities.
+   */
+  public ValidationUtilities() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   /**
    * Configures test mode.<p>

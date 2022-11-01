@@ -33,6 +33,12 @@ public class DefaultSocketConfigurator extends SocketConfiguratorBase implements
   @Serial
   private static final long serialVersionUID = 1L;
 
+  /**
+   * Creates a socket configurator.
+   */
+  public DefaultSocketConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   /**
    * Gets SO_KEEPALIVE.

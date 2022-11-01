@@ -30,6 +30,13 @@ import org.tentackle.validate.Validator;
 @ValidationSeverityService(MajorSeverity.class)
 public class MajorSeverityImpl implements MajorSeverity {
 
+  /**
+   * Creates the major severity.
+   */
+  public MajorSeverityImpl() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public ValidationResult createValidationResult(Validator validator, ValidationContext validationContext, String message) {
     return new FailedValidationResult(validator, validationContext, message);

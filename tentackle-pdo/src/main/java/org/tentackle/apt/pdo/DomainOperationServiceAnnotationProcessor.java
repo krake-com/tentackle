@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.apt.pdo;
 
 import org.tentackle.apt.visitor.ClassArgConstructorVisitor;
@@ -44,6 +43,12 @@ public class DomainOperationServiceAnnotationProcessor extends AbstractDomainSer
 
   private final ClassArgConstructorVisitor classArgVisitor = new ClassArgConstructorVisitor(this, Operation.class);
 
+  /**
+   * Creates the processor.
+   */
+  public DomainOperationServiceAnnotationProcessor() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   protected void processClass(Element element) {

@@ -121,6 +121,13 @@ public abstract class AbstractBackend implements Backend {
   private boolean dropIfExistsEnabled;
 
 
+  /**
+   * Parent constructor.
+   */
+  public AbstractBackend() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public boolean isMatchingName(String name) {
     return getName().equalsIgnoreCase(name);

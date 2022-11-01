@@ -35,9 +35,9 @@ import static org.tentackle.model.impl.ModelTest.MODEL_FILENAME;
 import static org.testng.Assert.assertEquals;
 
 /**
- *
- * @author harald
+ * Entity printer test.
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class EntityPrinterTest {
 
   private static final String EXPECTED =

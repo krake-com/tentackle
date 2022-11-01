@@ -20,12 +20,13 @@
 package org.tentackle.fx.component.config;
 
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.input.KeyEvent;
 
 import org.tentackle.fx.ConfiguratorService;
-import org.tentackle.fx.FxControl;
+import org.tentackle.fx.component.FxChoiceBox;
 
 /**
- * Configures a ChoiceBox.
+ * Configures a {@link ChoiceBox}.
  *
  * @author harald
  * @param <T> the choicebox type
@@ -33,12 +34,20 @@ import org.tentackle.fx.FxControl;
 @ConfiguratorService(ChoiceBox.class)
 public class ChoiceBoxConfigurator<T extends ChoiceBox<?>> extends ComponentConfigurator<T> {
 
+  /**
+   * Creates the configurator for a {@link ChoiceBox}.
+   */
+  public ChoiceBoxConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public void configure(T control) {
     super.configure(control);
     // make change visible immediately (not only after focus lost)
-    if (control instanceof FxControl fxControl) {
-      control.setOnAction(e -> updateModelAndView(fxControl));
+    if (control instanceof FxChoiceBox<?> choiceBox) {
+      choiceBox.setOnAction(e -> updateModelAndView(choiceBox));
+      choiceBox.addEventFilter(KeyEvent.KEY_PRESSED, choiceBox::filterKeyPressed);
     }
 
     control.getProperties().put(PrefixSelectionFeature.ENABLED, "");
@@ -48,18 +57,6 @@ public class ChoiceBoxConfigurator<T extends ChoiceBox<?>> extends ComponentConf
                                  control::getConverter,
                                  index -> control.getSelectionModel().select(index))
         .configure();
-  }
-
-
-  /**
-   * Updates the model and the view.
-   * The view update will also trigger dynamic rendering such as mandatory/changeable.
-   *
-   * @param control the choicebox
-   */
-  protected void updateModelAndView(FxControl control) {
-    control.updateModel();
-    control.updateView();
   }
 
 }

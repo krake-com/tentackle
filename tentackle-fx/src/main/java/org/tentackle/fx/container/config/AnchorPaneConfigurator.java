@@ -24,7 +24,7 @@ import javafx.scene.layout.AnchorPane;
 import org.tentackle.fx.ConfiguratorService;
 
 /**
- * Configures an AnchorPane.
+ * Configures an {@link AnchorPane}.
  *
  * @author harald
  * @param <T> the container type
@@ -32,5 +32,11 @@ import org.tentackle.fx.ConfiguratorService;
 @ConfiguratorService(AnchorPane.class)
 public class AnchorPaneConfigurator<T extends AnchorPane> extends PaneConfigurator<T> {
 
+  /**
+   * Creates the configurator for a {@link AnchorPane}.
+   */
+  public AnchorPaneConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
 }

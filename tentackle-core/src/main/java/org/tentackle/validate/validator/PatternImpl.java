@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.validate.validator;
 
 import org.tentackle.misc.CompoundValue;
@@ -36,11 +35,18 @@ import java.util.List;
  *
  * @author harald
  */
-public class PatternImpl extends AbstractValidator<Pattern> {
+public final class PatternImpl extends AbstractValidator<Pattern> {
 
   private Pattern annotation;                         // the annotation
   private volatile CompoundValue patternParameter;    // the regular expression
   private volatile java.util.regex.Pattern regex;     // the compiled pattern
+
+  /**
+   * Creates a {@link Pattern}-validator.
+   */
+  public PatternImpl() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void setAnnotation(Annotation annotation) {

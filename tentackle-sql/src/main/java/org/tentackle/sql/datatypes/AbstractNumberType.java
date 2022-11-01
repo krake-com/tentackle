@@ -24,6 +24,13 @@ package org.tentackle.sql.datatypes;
  */
 public abstract class AbstractNumberType<T extends Number> extends AbstractDataType<T> {
 
+  /**
+   * Parent constructor.
+   */
+  public AbstractNumberType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public boolean isNumeric() {
     return true;

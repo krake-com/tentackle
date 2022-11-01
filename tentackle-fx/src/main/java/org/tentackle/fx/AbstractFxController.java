@@ -53,6 +53,14 @@ public abstract class AbstractFxController implements FxController, ScopeConfigu
   private ImmutableArrayList<Field> fxmlFields;       // fields annotated with @FXML
   private ImmutableArrayList<Method> fxmlMethods;     // methods annotated with @FXML
 
+
+  /**
+   * Parent constructor.
+   */
+  public AbstractFxController() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public Parent getView() {
     return view;

@@ -38,6 +38,14 @@ public class Oracle extends Oracle8 {
   private static final String SQL_OFFSET_2 = " ROWS";
   private static final String SQL_OFFSET_PAR = SQL_OFFSET_1 + SQL_PAR + SQL_OFFSET_2;
 
+
+  /**
+   * Creates the Oracle backend.
+   */
+  public Oracle() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public String getName() {
     return "Oracle";

@@ -50,6 +50,7 @@ import static org.testng.Assert.fail;
  * Performance tests show that the new DateTimeFormatter is about twice as fast as old DateFormat,
  * even including additional conversion between java.util- and java.time-types.
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class FormatHelperTest {
 
   private static final int LOOPS = 1000000;

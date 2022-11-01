@@ -25,13 +25,20 @@ import org.tentackle.fx.Configurator;
 import org.tentackle.fx.ConfiguratorService;
 
 /**
- * Configures a Tab.
+ * Configures a {@link Tab}.
  *
  * @author harald
  * @param <T> the container type
  */
 @ConfiguratorService(Tab.class)
 public class TabConfigurator<T extends Tab> implements Configurator<T> {
+
+  /**
+   * Creates the configurator for a {@link Tab}.
+   */
+  public TabConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void configure(T object) {

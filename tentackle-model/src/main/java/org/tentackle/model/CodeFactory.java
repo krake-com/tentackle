@@ -51,6 +51,13 @@ public class CodeFactory {
 
 
   /**
+   * Creates the code factory.
+   */
+  public CodeFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  /**
    * Creates source code for the @Bindable-annotation.
    *
    * @param attribute the attribute

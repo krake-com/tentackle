@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.validate.scope;
 
 import org.tentackle.validate.ValidationScopeService;
@@ -27,7 +26,14 @@ import org.tentackle.validate.ValidationScopeService;
  * @author harald
  */
 @ValidationScopeService(PersistenceScope.class)
-public class PersistenceScopeImpl extends AbstractScope implements PersistenceScope {
+public final class PersistenceScopeImpl extends AbstractScope implements PersistenceScope {
+
+  /**
+   * Creates the persistence scope.
+   */
+  public PersistenceScopeImpl() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getName() {

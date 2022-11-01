@@ -32,6 +32,7 @@ import java.time.ZonedDateTime;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
+@SuppressWarnings("missing-explicit-ctor")
 public class DateTimeUtilitiesTest {
 
   @Test

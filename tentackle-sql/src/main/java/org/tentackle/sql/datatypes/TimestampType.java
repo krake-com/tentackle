@@ -39,12 +39,20 @@ import java.time.format.DateTimeParseException;
  * Datatype for {@link Timestamp}.
  */
 @Service(DataType.class)
-public class TimestampType extends AbstractDateTimeType<Timestamp> {
+public final class TimestampType extends AbstractDateTimeType<Timestamp> {
 
   private static final String TIMESTAMP_PATTERN = "yyyy-MM-dd HH:mm:ss";
   private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern(TIMESTAMP_PATTERN);
   private static final String MS_TIMESTAMP_PATTERN = TIMESTAMP_PATTERN + ".SSS";
   private static final DateTimeFormatter MS_TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern(MS_TIMESTAMP_PATTERN);
+
+
+  /**
+   * Creates the datatype for {@link Timestamp}.
+   */
+  public TimestampType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public boolean isTimezoneApplicable() {

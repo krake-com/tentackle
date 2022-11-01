@@ -56,6 +56,7 @@ import static org.testng.Assert.fail;
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class ModelTest {
 
   /** resource file holding the test model. */

@@ -26,12 +26,19 @@ import javafx.scene.input.KeyEvent;
 import org.tentackle.fx.FxComponent;
 
 /**
- * Configures a TextInputControl.
+ * Configures a {@link TextInputControl}.
  *
  * @author harald
  * @param <T> the text field type
  */
-public class TextInputControlConfigurator<T extends TextInputControl> extends ComponentConfigurator<T> {
+public abstract class TextInputControlConfigurator<T extends TextInputControl> extends ComponentConfigurator<T> {
+
+  /**
+   * Parent constructor.
+   */
+  public TextInputControlConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void configure(T control) {

@@ -24,7 +24,7 @@ import javafx.scene.control.TextField;
 import org.tentackle.fx.ConfiguratorService;
 
 /**
- * Configures a TextField.
+ * Configures a {@link TextField}.
  *
  * @author harald
  * @param <T> the textfield type
@@ -32,4 +32,10 @@ import org.tentackle.fx.ConfiguratorService;
 @ConfiguratorService(TextField.class)
 public class TextFieldConfigurator<T extends TextField> extends TextInputControlConfigurator<T> {
 
+  /**
+   * Creates the configurator for a {@link TextField}.
+   */
+  public TextFieldConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 }

@@ -30,6 +30,7 @@ import java.util.List;
  *
  * @author harald
  */
+@SuppressWarnings("missing-explicit-ctor")
 public class TestObjectValidatorImpl extends AbstractObjectValidator<TestObjectValidator> {
 
   private TestObjectValidator annotation;

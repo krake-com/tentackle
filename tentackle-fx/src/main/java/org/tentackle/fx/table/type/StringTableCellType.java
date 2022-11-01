@@ -34,6 +34,13 @@ import org.tentackle.fx.table.TableCellTypeService;
 @TableCellTypeService(String.class)
 public class StringTableCellType extends AbstractTableCellType<String> {
 
+  /**
+   * Creates the cell type for {@link String}.
+   */
+  public StringTableCellType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public void updateItem(FxTableCell<?, String> tableCell, String text) {
     Boolean caseConversion = tableCell.getColumnConfiguration().getCaseConversion();

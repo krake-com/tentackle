@@ -34,9 +34,16 @@ import java.util.List;
  *
  * @author harald
  */
-public class EqualImpl extends AbstractValidator<Equal> {
+public final class EqualImpl extends AbstractValidator<Equal> {
 
   private Equal annotation;
+
+  /**
+   * Creates a {@link Equal}-validator.
+   */
+  public EqualImpl() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void setAnnotation(Annotation annotation) {

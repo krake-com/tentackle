@@ -167,12 +167,19 @@ public class TablePrinter extends AbstractFxController {
 
 
   private int pageCount;                                          // number of pages
-  private TimeKeeper jobTimeKeeper;                                   // for logging only
+  private TimeKeeper jobTimeKeeper;                               // for logging only
   private int rowCount;                                           // number of rows to print (incl. totals)
   private int totalsRowCount;                                     // number of total rows, 0 = none
   private volatile boolean terminationRequested;                  // true if user closed the printing dialog
   private final AtomicInteger rowOffset = new AtomicInteger();    // offset in model
 
+
+  /**
+   * Creates a table printer controller.
+   */
+  public TablePrinter() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   /**
    * Cell factory to suppress not summable cells in totals.

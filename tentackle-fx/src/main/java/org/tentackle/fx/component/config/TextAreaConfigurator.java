@@ -28,7 +28,7 @@ import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.component.FxTextArea;
 
 /**
- * Configures a TextArea.
+ * Configures a {@link TextArea}.
  *
  * @author harald
  * @param <T> the textarea type
@@ -38,6 +38,13 @@ public class TextAreaConfigurator<T extends TextArea> extends TextInputControlCo
 
   private static final String NEXT = "to_next";
   private static final String PREVIOUS = "to_previous";
+
+  /**
+   * Creates the configurator for a {@link TextArea}.
+   */
+  public TextAreaConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   protected void remapKeys(T control) {

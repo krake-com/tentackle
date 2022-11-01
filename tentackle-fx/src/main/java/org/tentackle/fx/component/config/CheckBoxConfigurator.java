@@ -22,10 +22,9 @@ package org.tentackle.fx.component.config;
 import javafx.scene.control.CheckBox;
 
 import org.tentackle.fx.ConfiguratorService;
-import org.tentackle.fx.FxControl;
 
 /**
- * Configures a CheckBox.
+ * Configures a {@link CheckBox}.
  *
  * @author harald
  * @param <T> the checkbox type
@@ -33,25 +32,11 @@ import org.tentackle.fx.FxControl;
 @ConfiguratorService(CheckBox.class)
 public class CheckBoxConfigurator<T extends CheckBox> extends ButtonBaseConfigurator<T> {
 
-  @Override
-  public void configure(T control) {
-    super.configure(control);
-    // make change visible immediately (not only after focus lost)
-    if (control instanceof FxControl fxControl) {
-      control.setOnAction(e -> updateModelAndView(fxControl));
-    }
-  }
-
-
   /**
-   * Updates the model and the view.
-   * The view update will also trigger dynamic rendering such as mandatory/changeable.
-   *
-   * @param control the checkbox
+   * Creates the configurator for a {@link CheckBox}.
    */
-  protected void updateModelAndView(FxControl control) {
-    control.updateModel();
-    control.updateView();
+  public CheckBoxConfigurator() {
+    // see -Xlint:missing-explicit-ctor since Java 16
   }
 
 }

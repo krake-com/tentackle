@@ -32,6 +32,12 @@ public abstract class AbstractSql2008Backend extends AbstractSql2003Backend {
   public static final String SQL_FETCH_FIRST = " FETCH FIRST ? ROWS ONLY";
 
 
+  /**
+   * Parent constructor.
+   */
+  public AbstractSql2008Backend() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public void buildSelectSql(StringBuilder sqlBuilder, boolean writeLock, int limit, int offset) {

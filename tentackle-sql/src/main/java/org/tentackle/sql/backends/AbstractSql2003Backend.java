@@ -25,7 +25,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-
 /**
  * Common to all SQL2003 backends.
  *
@@ -58,6 +57,14 @@ public abstract class AbstractSql2003Backend extends AbstractSql92Backend {
 
   /** set of reserved words (built only once). */
   private static Set<String> reservedWords;
+
+
+  /**
+   * Parent constructor.
+   */
+  public AbstractSql2003Backend() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public synchronized Set<String> getReservedWords() {

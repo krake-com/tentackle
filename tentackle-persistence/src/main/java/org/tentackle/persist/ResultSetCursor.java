@@ -718,7 +718,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
               firstInvoked = false;
               row--;    // subtract cause row started at 1, not 0
             }
-            if (list.closed) {
+            if (list.isClosed()) {
               resources.remoteCursor = null;    // already closed on remote side
             }
           }
@@ -738,7 +738,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
           // fallback
           list = new FetchList<>();
           toList(list);
-          list.closed = true;
+          list.setClosed(true);
           close();
         }
         else {
@@ -765,7 +765,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
             else {
               // end reached: close cursor
               close();
-              list.closed = true;
+              list.setClosed(true);
               if (list.isEmpty()) {
                 list = null;
               }
@@ -850,8 +850,32 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
     @Serial
     private static final long serialVersionUID = 1L;
 
-    /** true if closed. */
-    boolean closed;
+    private boolean closed;
+
+    /**
+     * Creates an empty non-closed fetch list.
+     */
+    public FetchList() {
+      // see -Xlint:missing-explicit-ctor since Java 16
+    }
+
+    /**
+     * Returns whether list is closed.
+     *
+     * @return true if this is the last fetch
+     */
+    public boolean isClosed() {
+      return closed;
+    }
+
+    /**
+     * Sets the list to be closed.
+     *
+     * @param closed true if this is the last fetch
+     */
+    public void setClosed(boolean closed) {
+      this.closed = closed;
+    }
   }
 
 }

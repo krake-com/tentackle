@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.common;
 
 import java.io.ByteArrayInputStream;
@@ -28,7 +27,6 @@ import java.io.ObjectOutputStream;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Arrays;
-
 
 /**
  * Datatype for storing arbitrary (binary) data in a database.
@@ -44,7 +42,6 @@ import java.util.Arrays;
  *
  * @param <T> the serializable type
  */
-
 public class Binary<T extends Serializable> implements Serializable, Cloneable, Freezable {
 
   @Serial

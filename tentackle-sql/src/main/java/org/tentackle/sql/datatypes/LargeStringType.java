@@ -31,12 +31,19 @@ import java.sql.SQLException;
 import java.sql.Types;
 
 /**
- * Datatype for {@link String}.
+ * Datatype for the large variant of {@link String}.
  * <p>
  * Notice that there are two types of strings. This one is for the SQL type <code>CLOB</code>.
  */
 @Service(DataType.class)
-public class LargeStringType extends StringType {
+public final class LargeStringType extends StringType {
+
+  /**
+   * Creates the datatype for the large variant of {@link String}.
+   */
+  public LargeStringType() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
 
   @Override
   public String getVariant() {
