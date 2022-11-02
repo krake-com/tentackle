@@ -411,7 +411,7 @@
             <showWarnings>true</showWarnings>
             <showDeprecation>true</showDeprecation>
             <compilerArgs>
-              <arg>-Xlint:${javac.lint}</arg>
+              <arg>-Xlint:all,-processing,-exports,-missing-explicit-ctor</arg>
             </compilerArgs>
             <!-- necessary since Java 9, see https://issues.apache.org/jira/browse/MCOMPILER-310 -->
             <annotationProcessorPaths>

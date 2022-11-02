@@ -39,7 +39,7 @@ import java.util.TimeZone;
  *
  * @author harald
  */
-@SuppressWarnings("missing-explicit-ctor")
+@SuppressWarnings({ "exports", "missing-explicit-ctor" })
 public class DateSerialization {
 
   private static final TimeZone TZ1 = TimeZone.getTimeZone("Europe/Berlin");

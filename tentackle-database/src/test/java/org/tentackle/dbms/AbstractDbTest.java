@@ -46,6 +46,7 @@ import static org.testng.Assert.fail;
  *
  * @author harald
  */
+@SuppressWarnings("exports")
 public abstract class AbstractDbTest {
 
   /**
