@@ -45,7 +45,7 @@ import static org.testng.Assert.fail;
  *
  * @author harald
  */
-@SuppressWarnings("missing-explicit-ctor")
+@SuppressWarnings({ "exports", "missing-explicit-ctor" })
 public class PreferencesTest extends AbstractDbTest implements NodeChangeListener, PreferenceChangeListener {
 
   private static final String KEY_1 = "key1";
