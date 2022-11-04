@@ -84,8 +84,8 @@
 
     <javafx.version>19</javafx.version>
     <ikonli.version>12.3.1</ikonli.version>
-    <ow2.asm.version>9.3</ow2.asm.version>
-    <groovy.version>4.0.5</groovy.version>
+    <ow2.asm.version>9.4</ow2.asm.version>
+    <groovy.version>4.0.6</groovy.version>
     <maven.version>3.8.5</maven.version>
     <postgresql.version>42.5.0</postgresql.version>
     <h2.version>2.1.214</h2.version>
@@ -226,7 +226,7 @@
       <dependency>
         <groupId>org.jruby</groupId>
         <artifactId>jruby</artifactId>
-        <version>9.3.7.0</version>
+        <version>9.3.9.0</version>
       </dependency>
 
       <dependency>
@@ -250,7 +250,7 @@
         <!-- for the Junit5 test classes -->
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter-api</artifactId>
-        <version>5.9.0</version>
+        <version>5.9.1</version>
       </dependency>
 
       <!-- test dependencies -->
@@ -278,14 +278,43 @@
       <!-- plugin dependencies -->
       <dependency>
         <groupId>org.apache.maven</groupId>
+        <artifactId>maven-core</artifactId>
+        <version>${maven.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-model</artifactId>
+        <version>${maven.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-artifact</artifactId>
+        <version>${maven.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven</groupId>
         <artifactId>maven-plugin-api</artifactId>
-        <version>3.8.5</version>
+        <version>${maven.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-settings-builder</artifactId>
+        <version>${maven.version}</version>
         <scope>provided</scope>
       </dependency>
       <dependency>
         <groupId>org.apache.maven.shared</groupId>
+        <artifactId>maven-artifact-transfer</artifactId>
+        <version>0.13.1</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.shared</groupId>
         <artifactId>file-management</artifactId>
-        <version>3.0.0</version>
+        <version>3.1.0</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven.plugin-tools</groupId>
@@ -295,12 +324,7 @@
       <dependency>
         <groupId>org.apache.maven.shared</groupId>
         <artifactId>maven-dependency-tree</artifactId>
-        <version>3.1.1</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.maven.shared</groupId>
-        <artifactId>maven-artifact-transfer</artifactId>
-        <version>0.13.1</version>
+        <version>3.2.0</version>
       </dependency>
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
@@ -310,7 +334,7 @@
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-archiver</artifactId>
-        <version>4.4.0</version>
+        <version>4.5.0</version>
       </dependency>
 
     </dependencies>
@@ -362,18 +386,6 @@
             <requirements>
               <maven>${maven.version}</maven>
             </requirements>
-            <expectedProvidedScopeExclusions>
-              <!-- out of our scope: may become obsolete in future versions of maven plugins -->
-              <expectedProvidedScopeExclusion>org.apache.maven:maven-model</expectedProvidedScopeExclusion>
-              <expectedProvidedScopeExclusion>org.apache.maven:maven-artifact</expectedProvidedScopeExclusion>
-              <expectedProvidedScopeExclusion>org.apache.maven:maven-compat</expectedProvidedScopeExclusion>
-              <expectedProvidedScopeExclusion>org.apache.maven:maven-model-builder</expectedProvidedScopeExclusion>
-              <expectedProvidedScopeExclusion>org.apache.maven:maven-settings</expectedProvidedScopeExclusion>
-              <expectedProvidedScopeExclusion>org.apache.maven:maven-core</expectedProvidedScopeExclusion>
-              <expectedProvidedScopeExclusion>org.apache.maven:maven-settings-builder</expectedProvidedScopeExclusion>
-              <expectedProvidedScopeExclusion>org.apache.maven:maven-repository-metadata</expectedProvidedScopeExclusion>
-              <expectedProvidedScopeExclusion>org.apache.maven:maven-aether-provider</expectedProvidedScopeExclusion>
-            </expectedProvidedScopeExclusions>
           </configuration>
           <dependencies>
             <dependency>
@@ -489,7 +501,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
-          <version>3.2.2</version>
+          <version>3.3.0</version>
           <configuration>
             <archive>
               <manifest>
@@ -519,7 +531,7 @@
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>versions-maven-plugin</artifactId>
-          <version>2.11.0</version>
+          <version>2.13.0</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -529,7 +541,7 @@
         <plugin>
           <groupId>org.owasp</groupId>
           <artifactId>dependency-check-maven</artifactId>
-          <version>7.1.2</version>
+          <version>7.3.0</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>

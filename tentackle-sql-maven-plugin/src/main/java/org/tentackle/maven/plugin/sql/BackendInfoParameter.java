@@ -222,7 +222,7 @@ public class BackendInfoParameter {
       mojo.getLog().debug("no version filter");
     }
 
-    hints.load(migrationHints, minVersion, mojo.getLog(), verbose, resourceDirs);
+    hints.load(mojo, verbose, migrationHints, minVersion, resourceDirs);
 
     return hints;
   }

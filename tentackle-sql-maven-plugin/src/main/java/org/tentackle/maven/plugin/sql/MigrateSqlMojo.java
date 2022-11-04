@@ -23,7 +23,6 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.shared.model.fileset.FileSet;
-import org.apache.maven.shared.model.fileset.util.FileSetManager;
 
 import org.tentackle.common.Settings;
 import org.tentackle.common.StringHelper;
@@ -511,7 +510,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
 
       StringBuilder warningSql = new StringBuilder();       // collected optional migrations as warnings
       StringBuilder foreignKeySql = new StringBuilder();    // collected foreign key migration code
-      String[] fileNames = new FileSetManager(getLog(), verbosityLevel.isDebug()).getIncludedFiles(fileSet);
+      String[] fileNames = getIncludedFiles(fileSet);
 
       if (fileNames.length > 0) {
         Arrays.sort(fileNames);
