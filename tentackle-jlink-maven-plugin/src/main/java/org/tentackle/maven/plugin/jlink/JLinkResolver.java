@@ -21,7 +21,6 @@ package org.tentackle.maven.plugin.jlink;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.toolchain.Toolchain;
-import org.apache.maven.toolchain.java.DefaultJavaToolChain;
 import org.codehaus.plexus.languages.java.jpms.JavaModuleDescriptor;
 import org.codehaus.plexus.languages.java.jpms.ResolvePathsRequest;
 
@@ -554,10 +553,18 @@ public class JLinkResolver {
 
     // resolve modules and automatic modules
     ResolvePathsRequest<File> request = ResolvePathsRequest.ofFiles(artifactMap.keySet());
-    Toolchain toolChain = mojo.getToolchain();
-    if (toolChain instanceof DefaultJavaToolChain) {
-      request.setJdkHome(new File(((DefaultJavaToolChain) toolChain).getJavaHome()));
+    Toolchain toolchain = mojo.getToolchain();
+    try {
+      File javaHomeDir = mojo.getJavaHome(toolchain);
+      if (javaHomeDir != null) {
+        request.setJdkHome(javaHomeDir);
+      }
     }
+    catch (MojoExecutionException mx) {
+      // don't abort, just continue with the current JDK and hope the best
+      mojo.getLog().warn(mx.getMessage());
+    }
+
     Map<Artifact, JavaModuleDescriptor> artifactJavaModuleDescriptorMap = new LinkedHashMap<>();    // keep order
     int maxNameLength = 0;
     try {

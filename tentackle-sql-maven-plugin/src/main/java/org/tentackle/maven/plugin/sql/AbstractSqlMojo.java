@@ -442,7 +442,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
       if (backendProperties != null) {
         // determine URL from property file(s)
         for (FileSet fileset : backendProperties) {
-          FileSetManager fileSetManager = new FileSetManager(getLog(), verbosityLevel.isDebug());
+          FileSetManager fileSetManager = createFileSetManager(verbosityLevel.isDebug());
           List<String> propertiesDirNames;
           if (fileset.getDirectory() == null) {
             propertiesDirNames = getResourceDirs(false);  // try all resource directories

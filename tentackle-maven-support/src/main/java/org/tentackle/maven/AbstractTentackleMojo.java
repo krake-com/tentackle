@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.maven;
 
 import org.apache.maven.execution.MavenSession;
@@ -29,8 +28,12 @@ import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.settings.crypto.SettingsDecrypter;
+import org.apache.maven.shared.model.fileset.FileSet;
+import org.apache.maven.shared.model.fileset.util.FileSetManager;
 import org.apache.maven.toolchain.Toolchain;
 import org.apache.maven.toolchain.ToolchainManager;
+import org.apache.maven.toolchain.java.DefaultJavaToolChain;
+import org.slf4j.LoggerFactory;
 import org.wurbelizer.misc.Verbosity;
 
 import org.tentackle.common.Settings;
@@ -54,7 +57,6 @@ import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.stream.Collectors;
-
 
 /**
  * Base tentackle mojo.
@@ -308,6 +310,32 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
     }
 
     return toolchain;
+  }
+
+  /**
+   * Gets the java home directory from a toolchain.
+   *
+   * @param toolchain the toolchain
+   * @return the java home directory, null if not a <code>DefaultJavaToolChain</code> or undefined by the toolchain
+   * @throws MojoExecutionException if the given directory does not exist or is not a directory
+   */
+  @SuppressWarnings("deprecation")    // @TODO DefaultJavaToolChain is deprecated, but there is no alternative yet (JavaToolchainImpl is package scope!)
+  public File getJavaHome(Toolchain toolchain) throws MojoExecutionException {
+    if (toolchain instanceof DefaultJavaToolChain defaultJavaToolChain) {
+      String javaHome = defaultJavaToolChain.getJavaHome();
+      if (javaHome != null && !javaHome.isBlank()) {
+        File javaHomeDir = new File(javaHome);
+        if (javaHomeDir.isDirectory()) {
+          return javaHomeDir;
+        }
+        else {
+          throw new MojoExecutionException("JAVA_HOME=" + javaHomeDir.getAbsolutePath() +
+                                           " given by toolchain " + toolchain.getType() +
+                                           " does not exist or is not a directory");
+        }
+      }
+    }
+    return null;
   }
 
   /**
@@ -602,6 +630,25 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
     return name;
   }
 
+  /**
+   * Creates a fileset manager.
+   *
+   * @return the fileset manager.
+   */
+  public FileSetManager createFileSetManager(boolean verbose) {
+    return new FileSetManager(LoggerFactory.getLogger(FileSetManager.class), verbose);
+  }
+
+  /**
+   * Gets the filenames included by given fileset.
+   *
+   * @param fileSet the fileset
+   * @return the filenames
+   */
+  public String[] getIncludedFiles(FileSet fileSet) {
+    return createFileSetManager(verbosityLevel.isDebug()).getIncludedFiles(fileSet);
+  }
+
 
   /**
    * Returns whether reactor execution is recursive.
@@ -710,6 +757,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
 
     return map;
   }
+
 
   private List<PackageInfo> getPackages(MavenProject project, String dirName) {
     List<PackageInfo> packages = new ArrayList<>();

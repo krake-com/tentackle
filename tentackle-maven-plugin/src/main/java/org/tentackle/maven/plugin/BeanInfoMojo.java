@@ -26,7 +26,6 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.shared.model.fileset.FileSet;
-import org.apache.maven.shared.model.fileset.util.FileSetManager;
 import org.wurbelizer.misc.Constants;
 
 import org.tentackle.maven.AbstractTentackleMojo;
@@ -158,7 +157,7 @@ public class BeanInfoMojo extends AbstractTentackleMojo {
 
     int errorCount = 0;
 
-    String[] fileNames = new FileSetManager(getLog(), verbosityLevel.isDebug()).getIncludedFiles(fileSet);
+    String[] fileNames = getIncludedFiles(fileSet);
 
     if (fileNames.length > 0) {
       for (String fileName : fileNames) {

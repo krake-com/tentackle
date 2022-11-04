@@ -23,7 +23,6 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.shared.model.fileset.FileSet;
-import org.apache.maven.shared.model.fileset.util.FileSetManager;
 
 import org.tentackle.common.Settings;
 import org.tentackle.common.StringHelper;
@@ -179,7 +178,7 @@ public class CreateSqlMojo extends AbstractSqlMojo {
       errorCount++;
     }
 
-    String[] fileNames = new FileSetManager(getLog(), verbosityLevel.isDebug()).getIncludedFiles(fileSet);
+    String[] fileNames = getIncludedFiles(fileSet);
     if (fileNames.length > 0) {
       Arrays.sort(fileNames);
       for (String filename : fileNames) {
@@ -272,7 +271,7 @@ public class CreateSqlMojo extends AbstractSqlMojo {
           // relative to basedir if not given
           fileSet.setDirectory(getMavenProject().getBasedir().getAbsolutePath());
         }
-        for (String filename : new FileSetManager(getLog(), verbosityLevel.isDebug()).getIncludedFiles(fileSet)) {
+        for (String filename : getIncludedFiles(fileSet)) {
           String fullName = fileSet.getDirectory() + File.separator + filename;
           try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(fullName), Settings.getEncodingCharset()))) {
             String line;

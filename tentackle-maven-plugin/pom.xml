@@ -22,11 +22,11 @@
     </dependency>
     <dependency>
       <groupId>org.apache.maven.shared</groupId>
-      <artifactId>maven-dependency-tree</artifactId>
+      <artifactId>maven-artifact-transfer</artifactId>
     </dependency>
     <dependency>
       <groupId>org.apache.maven.shared</groupId>
-      <artifactId>maven-artifact-transfer</artifactId>
+      <artifactId>maven-dependency-tree</artifactId>
     </dependency>
   </dependencies>
 

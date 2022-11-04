@@ -19,7 +19,6 @@
 package org.tentackle.maven.plugin.sql;
 
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
 
@@ -440,17 +439,17 @@ public class MigrationHints {
   /**
    * Load the migration hints.
    *
+   * @param mojo the mojo
+   * @param verbose true if verbose
    * @param filesets the filesets to load hints from
    * @param version the minimum hint file version
-   * @param logger the maven logger
-   * @param verbose true if verbose
    * @param resourceDirs resource dirs, null if none
    * @throws MojoExecutionException if failed
    */
-  public void load(List<FileSet> filesets, String version, Log logger, boolean verbose, List<String> resourceDirs) throws MojoExecutionException {
+  public void load(AbstractSqlMojo mojo, boolean verbose, List<FileSet> filesets, String version, List<String> resourceDirs) throws MojoExecutionException {
     if (filesets != null) {
       for (FileSet fileset: filesets) {
-        FileSetManager fileSetManager = new FileSetManager(logger, verbose);
+        FileSetManager fileSetManager = mojo.createFileSetManager(verbose);
         List<String> hintDirNames;
         if (fileset.getDirectory() == null) {
           hintDirNames = resourceDirs;  // try all resource directories
@@ -469,7 +468,7 @@ public class MigrationHints {
             for (String filename : fileNames) {
               File hintFile = new File(new File(hintDirName), filename);
               if (VersionFileFilter.getInstance().isValid(version, hintFile)) {
-                logger.debug("loading migration hints from " + hintFile);
+                mojo.getLog().debug("loading migration hints from " + hintFile);
                 hintFileNames.add(hintFile.getParentFile().getName() + "/" + hintFile.getName());
                 StringBuilder buf = new StringBuilder();
                 try (BufferedReader reader = new BufferedReader(
@@ -524,7 +523,7 @@ public class MigrationHints {
                 }
               }
               else {
-                logger.debug(hintFile + " skipped");
+                mojo.getLog().debug(hintFile + " skipped");
               }
             }
           }

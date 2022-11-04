@@ -23,7 +23,6 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.shared.model.fileset.FileSet;
-import org.apache.maven.shared.model.fileset.util.FileSetManager;
 import org.wurbelizer.misc.Constants;
 
 import org.tentackle.buildsupport.AbstractTentackleProcessor;
@@ -341,7 +340,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
     int errorCount = 0;           // compiler errors
     int compileErrorCount = 0;    // source compilation errors
 
-    String[] fileNames = new FileSetManager(getLog(), verbosityLevel.isDebug()).getIncludedFiles(fileSet);
+    String[] fileNames = getIncludedFiles(fileSet);
     fileNames = filterFileNames(dirName, fileNames);
 
     if (fileNames.length > 0) {
