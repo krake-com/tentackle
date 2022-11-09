@@ -25,7 +25,8 @@ interface LocaleProviderHolder {
 }
 
 /**
- * A provider for the Locale.
+ * A provider for {@link Locale}s.<br>
+ * Supports thread-local locales and mapping of locales according to the application requirements.
  *
  * @author harald
  */
@@ -121,6 +122,20 @@ public class LocaleProvider {
    */
   public Locale getEffectiveLocale() {
     return getEffectiveLocale(getLocale());
+  }
+
+
+  /**
+   * Returns the fallback locale.<br>
+   * If there is no translation provided for a given locale, the resource bundles eventually
+   * fall back to the "no-locale" translation.<br>
+   * In most cases this corresponds to the "en"-locale ({@link Locale#ENGLISH}),
+   * but applications can change this by overriding this method.
+   *
+   * @return the fallback locale
+   */
+  public Locale getFallbackLocale() {
+    return Locale.ENGLISH;
   }
 
 }
