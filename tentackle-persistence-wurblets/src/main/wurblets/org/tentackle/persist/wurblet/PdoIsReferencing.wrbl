@@ -60,6 +60,7 @@ For more options, see {\@link DbModelWurblet}.
     String params = buildMethodParameters();
     String iparms = buildInvocationParameters();
     String statementId = createStatementId();
+    boolean withJoins = isWithJoins();
 
     Entity selectingEntity = null;
     for (WurbletArgument key : getExpressionArguments()) {

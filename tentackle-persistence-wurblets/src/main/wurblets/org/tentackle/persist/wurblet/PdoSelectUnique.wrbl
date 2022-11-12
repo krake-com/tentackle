@@ -89,6 +89,10 @@ For more options, see {\@link DbModelWurblet}.
     String alias = getEntity().getTopSuperEntity().getTableAlias();
     String poImpl = deriveClassNameForEntity(getEntity());
 
+    List<JoinPath> joinPaths = getJoinPaths();
+    boolean withJoins = !joinPaths.isEmpty();
+    boolean needSuppressWarnings = withJoins && isAbstractJoinPath(joinPaths);
+
 ]@
 
   private static final StatementId @(statementId)@ = new StatementId();
@@ -97,6 +101,11 @@ For more options, see {\@link DbModelWurblet}.
     if (!noif) {
 ]@
   \@Override
+@[
+    }
+    if (needSuppressWarnings) {
+]@
+  \@SuppressWarnings({"unchecked", "rawtypes"})
 @[
     }
 ]@
@@ -168,7 +177,7 @@ For more options, see {\@link DbModelWurblet}.
       }
     } // end if remote
 
-    if (isWithJoins()) {
+    if (withJoins) {
       out.print(createJoins());
     }
     if (lock) {
@@ -197,7 +206,7 @@ For more options, see {\@link DbModelWurblet}.
         sql.append(@(append)@);
 @[
     }
-    if (isWithJoins()) {
+    if (withJoins) {
 ]@
         js.createJoinedSql(me(), sql);
 @[
@@ -226,7 +235,7 @@ For more options, see {\@link DbModelWurblet}.
     getBackend().setTrailingSelectParameters(st, ndx, 1, 0);
 @[
     }
-    if (isWithJoins()) {
+    if (withJoins) {
 ]@
     return executeFirstPdoQuery(st, js);
 @[
