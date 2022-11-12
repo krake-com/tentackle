@@ -93,7 +93,6 @@ For more options, see {\@link DbModelWurblet}.
     String params = buildMethodParameters(limit, offset);
     String iparms = buildInvocationParameters(limit, offset);
     String statementId = createStatementId();
-    boolean withJoins = isWithJoins();
 
     String listType     = resultSet ? "ResultSetWrapper" :
                             ((isTracked() ? "TrackedArrayList" : "List") + "<" + (bounded ? "? extends " : "") + className + ">");
