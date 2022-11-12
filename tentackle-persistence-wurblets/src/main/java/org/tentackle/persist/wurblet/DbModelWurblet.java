@@ -601,6 +601,33 @@ public class DbModelWurblet extends ModelWurblet {
 
 
   /**
+   * Returns whether joins with delegates of abstract classes are used.<br>
+   * The casts of such joins are "unchecked" and need a SuppressWarnings to avoid Xlint warnings.
+   *
+   * @return true if join paths involve delegates of abstract classes
+   * @throws WurbelException if failed
+   */
+  public boolean isAbstractJoinPath(List<JoinPath> paths) throws WurbelException {
+    boolean isAbstract = false;
+    for (JoinPath path: paths) {
+      if (!path.getElements().isEmpty()) {
+        Join join = path.getElements().get(0);  // normalized, i.e. only one (see above)
+        Relation relation = join.getRelation();
+        if (relation.getEntity().isAbstract() || relation.getForeignEntity().isAbstract()) {
+          isAbstract = true;
+          break;
+        }
+      }
+      if (isAbstractJoinPath(path.getPaths())) {
+        isAbstract = true;
+        break;
+      }
+    }
+    return isAbstract;
+  }
+
+
+  /**
    * Creates the java code for {@code JoinedSelect}s.
    *
    * @return the generated java code

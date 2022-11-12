@@ -102,6 +102,10 @@ For more options, see {\@link DbModelWurblet}.
       setRemote(false);     // disable remoting for sure
     }
 
+    List<JoinPath> joinPaths = getJoinPaths();
+    boolean withJoins = !joinPaths.isEmpty();
+    boolean needSuppressWarnings = withJoins && isAbstractJoinPath(joinPaths);
+
     if (cursor != null) {
       if (resultSet) {
         throw new WurbelException("resultset not allowed with cursor");
@@ -109,7 +113,7 @@ For more options, see {\@link DbModelWurblet}.
       if (isTracked()) {
         throw new WurbelException("tracked not available with cursors!");
       }
-      if (isWithJoins()) {
+      if (withJoins) {
         List<WurbletArgument> sortKeys = getSortingArguments();
         if (sortKeys.isEmpty() || !sortKeys.get(0).getAttribute().getColumnName().equals(Constants.CN_ID)) {
           throw new WurbelException("cursors with joins must be sorted by ID");
@@ -140,6 +144,11 @@ For more options, see {\@link DbModelWurblet}.
     if (!noif) {
 ]@
   \@Override
+@[
+    }
+    if (needSuppressWarnings) {
+]@
+  \@SuppressWarnings({"unchecked", "rawtypes"})
 @[
     }
 ]@
@@ -267,7 +276,7 @@ For more options, see {\@link DbModelWurblet}.
       }
     } // end if remote
 
-    if (isWithJoins()) {
+    if (withJoins) {
       out.print(createJoins());
     }
     if (lock) {
@@ -297,7 +306,7 @@ For more options, see {\@link DbModelWurblet}.
         sql.append(@(append)@);
 @[
     }
-    if (isWithJoins()) {
+    if (withJoins) {
 ]@
         js.createJoinedSql(me(), sql);
 @[
@@ -337,7 +346,7 @@ For more options, see {\@link DbModelWurblet}.
 ]@
     ResultSetWrapper rs = st.executeQuery();
 @[
-        if (isWithJoins()) {
+        if (withJoins) {
 ]@
     return new ResultSetCursor<>(me(), rs, js));
 @[
@@ -350,7 +359,7 @@ For more options, see {\@link DbModelWurblet}.
       } // end if cursor
       else  { // list
         if (isTracked())  {
-          if (isWithJoins()) {
+          if (withJoins) {
 ]@
     return executeTrackedListQuery(st, js);
 @[
@@ -362,7 +371,7 @@ For more options, see {\@link DbModelWurblet}.
           }
         }
         else  {
-          if (isWithJoins()) {
+          if (withJoins) {
 ]@
     return executeListQuery(st, js);
 @[

@@ -75,6 +75,7 @@ For more options, see {\@link DbModelWurblet}.
     String statementId = createStatementId();
     boolean needLimit = sort || append != null || createOrderBy() != null;
     String rmiReturnType  = isGenerified() ? "P" : className;
+    boolean withJoins = isWithJoins();
 
 ]@
   @(scope)@ @(className)@ @(methodName)@(@(params)@) {

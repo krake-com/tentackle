@@ -1,5 +1,5 @@
 @[
-    if (isWithJoins()) {
+    if (withJoins) {
       out.print(createJoinSetPars());
     }
 

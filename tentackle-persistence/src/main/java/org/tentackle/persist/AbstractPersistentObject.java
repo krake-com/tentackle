@@ -384,13 +384,24 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
 
+  /**
+   * Creates a deep copy of this PDO.<br>
+   * The copied PDO and its components, if any, are <em>new</em> (<code>id=0</code>).
+   * <p>
+   * Since only loaded components are copied (i.e. the object <em>as is</em>, which
+   * is the contract for {@link org.tentackle.misc.Snapshotable}),
+   * consider to invoke {@link #loadComponents(boolean)} before {@link #copy()}
+   * to get a logically complete copy of the aggregate.
+   *
+   * @return the new copied object
+   */
   @Override
   @SuppressWarnings({"unchecked", "rawtypes"})
   public T copy() {
     T copiedPdo = on();
     AbstractPersistentObject copiedPo = (P) copiedPdo.getPersistenceDelegate();
     DomainContext ctx = copiedPo.getDomainContext();    // may be another root-context
-    copiedPo.objectIsCopy = true;                       // controls how snapshot is applied!
+    copiedPo.objectIsCopy = true;                       // controls how the snapshot is applied!
     copiedPo.applySnapshot(pdo.createSnapshot());
     copiedPo.setModified(true);
     copiedPo.setDomainContext(ctx);                     // restore root context, if reverted from snapshot
