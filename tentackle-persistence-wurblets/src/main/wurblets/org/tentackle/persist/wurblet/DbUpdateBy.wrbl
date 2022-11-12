@@ -50,7 +50,6 @@ For more options, see {\@link DbModelWurblet}.
     String params = buildMethodParameters();
     String iparms = buildInvocationParameters();
     String statementId = createStatementId();
-    boolean withJoins = isWithJoins();
 
 ]@
   @(scope)@ int @(methodName)@(@(params)@) {
