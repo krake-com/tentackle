@@ -576,8 +576,8 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
             released.accept(Boolean.TRUE);
           }
           else if (Boolean.FALSE.equals(answer)) {    // discard changes
-            if (!oldPdo.isNew() && oldPdo.isTokenLockedByMe()) {
-              oldPdo.releaseTokenLock();
+            if (!oldPdo.isNew() && oldPdo.isTokenLockableByMe()) {
+              releaseTokenLock(oldPdo);
             }
             setPdo(oldPdo.on());
             released.accept(Boolean.TRUE);
@@ -588,21 +588,31 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
         });
       }
       else {
-        if (!oldPdo.isNew() && oldPdo.isTokenLockedByMe()) {
-          try {
-            oldPdo.releaseTokenLock();
-          }
-          catch (LockException lx) {
-            // probably locked by another user meanwhile.
-            // just log it and don't bother the user
-            LOGGER.info("token unlock failed (ignored): " + lx.getMessage());
-          }
+        if (!oldPdo.isNew() && oldPdo.isTokenLockableByMe()) {
+          releaseTokenLock(oldPdo);
         }
         released.accept(Boolean.TRUE);
       }
     }
     else {
       released.accept(Boolean.TRUE);
+    }
+  }
+
+
+  /**
+   * Unlocks the given PDO.
+   *
+   * @param pdo the pdo
+   */
+  public void releaseTokenLock(T pdo) {
+    try {
+      pdo.releaseTokenLock();
+    }
+    catch (LockException lx) {
+      // probably locked by another user meanwhile.
+      // just log it and don't bother the user
+      LOGGER.info("token unlock failed (ignored): " + lx.getMessage());
     }
   }
 

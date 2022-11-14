@@ -390,7 +390,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * <p>
    * Since only loaded components are copied (i.e. the object <em>as is</em>, which
    * is the contract for {@link org.tentackle.misc.Snapshotable}),
-   * consider to invoke {@link #loadComponents(boolean)} before {@link #copy()}
+   * consider to invoke {@link #loadComponents(boolean)} before {@code copy()}
    * to get a logically complete copy of the aggregate.
    *
    * @return the new copied object
@@ -3564,7 +3564,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
   @Override
   public boolean isTokenLockableByMe() {
-    return !isTokenLocked() || getEditedBy() == getContextUserId();
+    return isTokenLockProvided() && (!isTokenLocked() || getEditedBy() == getContextUserId());
   }
 
   /**
