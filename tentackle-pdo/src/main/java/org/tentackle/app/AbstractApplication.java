@@ -418,6 +418,10 @@ public abstract class AbstractApplication implements Application {
     }
     info.setHostInfo(str);
 
+    if (info.getApplicationName() == null) {
+      info.setApplicationName(getName());
+    }
+
     return info;
   }
 
