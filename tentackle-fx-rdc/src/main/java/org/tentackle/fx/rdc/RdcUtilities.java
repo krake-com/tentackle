@@ -150,11 +150,20 @@ public class RdcUtilities {
           s.setY(location.getY());
           crud.getEditor().requestInitialFocus();
         }));
+        // explicit close (pressing cancel or closing the window by a mouse click)
         stage.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e -> crud.releasePdo(released -> {
           if (!released) {
             e.consume();    // don't close
           }
         }));
+        stage.addEventFilter(WindowEvent.WINDOW_HIDING, e -> {
+          T oldPdo = crud.getPdo();
+          if (oldPdo != null && oldPdo.getEditedBy() != 0 && oldPdo.isTokenLockableByMe()) { // my token lock still present (even if timed out)
+            // there was no WINDOW_CLOSE_REQUEST, the windows is forced to close by its owner.
+            // just unlock and don't ask the user (hiding event cannot be consumed)
+            crud.releaseTokenLock(oldPdo);
+          }
+        });
         stage.addEventFilter(WindowEvent.WINDOW_HIDDEN, e -> {
           // clear all references to avoid memory leaks and side effects
           crud.setPdoList(null);
@@ -479,7 +488,7 @@ public class RdcUtilities {
    * Gets the PDO key from the dragboard.
    *
    * @param dragboard the dragboard
-   * @return the key, null if dragboard's string is null or empty
+   * @return the key, null if the dragboard's string is null or empty
    */
   public IdentifiableKey<PersistentDomainObject<?>> getPdoKeyFromDragboard(Dragboard dragboard) {
     String idString = dragboard.getString();
@@ -555,7 +564,7 @@ public class RdcUtilities {
    * @return the main stage
    */
   public Stage getMainStage() {
-    return ((DesktopApplication) Application.getInstance()).getMainStage();
+    return ((DesktopApplication<?>) Application.getInstance()).getMainStage();
   }
 
 }
