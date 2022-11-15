@@ -368,7 +368,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
    * Clones a session info.<br>
    * The password is copied, if not null.<br>
    * The properties are cloned as well.<br>
-   * Cloned session infos are mutable by default.
+   * Cloned session infos are mutable by default and have no sessionName.
    */
   @Override
   public DefaultSessionInfo clone() {
@@ -381,7 +381,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
     }
 
     if (password != null) {
-      // physically copy the password (as it might be cleared)
+      // physically copy the password (as it might be cleared later)
       sessionInfo.password = new char[password.length];
       System.arraycopy(password, 0, sessionInfo.password, 0, password.length);
     }
@@ -390,6 +390,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
       sessionInfo.properties = (Properties) properties.clone();
     }
 
+    sessionInfo.sessionName = null;   // session names should be unique, since they identify a session
     sessionInfo.immutable = false;
     sessionInfo.cloned = true;
     sessionInfo.lockLinger = true;    // don't remove locks for cloned sessions
