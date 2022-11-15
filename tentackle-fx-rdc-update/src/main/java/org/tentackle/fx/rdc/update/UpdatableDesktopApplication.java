@@ -55,8 +55,8 @@ public abstract class UpdatableDesktopApplication<C extends FxController> extend
   /**
    * Creates an FX desktop application.
    *
-   * @param name the application name
-   * @param version the application version
+   * @param name the application name, null for default name
+   * @param version the application version, null for default version
    */
   public UpdatableDesktopApplication(String name, String version) {
     super(name, version);

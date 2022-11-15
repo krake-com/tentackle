@@ -41,8 +41,8 @@ public abstract class ConsoleApplication extends AbstractClientApplication {
   /**
    * Creates the console application.
    *
-   * @param name the application's name
-   * @param version the application version
+   * @param name the application name, null for default name
+   * @param version the application version, null for default version
    */
   public ConsoleApplication(String name, String version) {
     super(name, version);
@@ -91,9 +91,6 @@ public abstract class ConsoleApplication extends AbstractClientApplication {
       sessionInfo.setProperties(props);
     }
     sessionInfo.applyProperties();
-    if (sessionInfo.getApplicationName() == null) {
-      sessionInfo.setApplicationName(getClass().getSimpleName());
-    }
     applyProperties(sessionInfo.getProperties());
   }
 

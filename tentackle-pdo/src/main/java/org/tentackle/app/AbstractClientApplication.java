@@ -18,7 +18,6 @@
 
 package org.tentackle.app;
 
-import org.tentackle.log.Logger;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
@@ -30,13 +29,11 @@ import org.tentackle.session.SessionInfo;
  */
 public abstract class AbstractClientApplication extends AbstractApplication {
 
-  private static final Logger LOGGER = Logger.get(AbstractClientApplication.class);
-
   /**
    * Creates a client application.
    *
-   * @param name the application's name
-   * @param version the application version
+   * @param name the application name, null for default name
+   * @param version the application version, null for default version
    */
   public AbstractClientApplication(String name, String version) {
     super(name, version);
