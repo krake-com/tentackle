@@ -147,18 +147,7 @@ public class LoginApplication extends FxApplication {
       }
     }
 
-    if (sessionInfo.getApplicationName() == null) {
-      String simpleName = application.getClass().getSimpleName();
-      if (simpleName.isBlank()) {
-        // anonymous class: may be a unit test -> grab name from enclosing class
-        Class<?> enclosingClass = application.getClass().getEnclosingClass();
-        if (enclosingClass != null) {
-          simpleName = enclosingClass.getSimpleName();
-        }
-      }
-      sessionInfo.setApplicationName(simpleName);
-    }
-
+    sessionInfo.applyProperties();
     application.applyProperties(sessionInfo.getProperties());
 
     return sessionInfo;

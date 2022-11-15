@@ -50,8 +50,8 @@ public abstract class TestApplication extends AbstractApplication {
   /**
    * Creates a test application.
    *
-   * @param name the application name
-   * @param version the application version
+   * @param name the application name, null for default name
+   * @param version the application version, null for default version
    */
   public TestApplication(String name, String version) {
     super(name, version);

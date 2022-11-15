@@ -99,12 +99,15 @@ public abstract class AbstractApplication implements Application {
    * Super constructor for all derived classes.<br>
    * Detects whether application is running within a container or deployed by JNLP (webstart).
    *
-   * @param name the application name
-   * @param version the application version
+   * @param name the application name, null for default name
+   * @param version the application version, null for default version
+   *
+   * @see #filterName(String)
+   * @see #filterVersion(String)
    */
   public AbstractApplication(String name, String version) {
-    this.name = name;
-    this.version = version;
+    this.name = filterName(name);
+    this.version = filterVersion(version);
     creationTime = System.currentTimeMillis();
     Thread.setDefaultUncaughtExceptionHandler((t, e) -> LOGGER.severe("uncaught exception", e));
   }
@@ -113,7 +116,7 @@ public abstract class AbstractApplication implements Application {
   /**
    * Gets the application name.
    *
-   * @return the name
+   * @return the name, never null
    */
   @Override
   public String getName() {
@@ -121,13 +124,41 @@ public abstract class AbstractApplication implements Application {
   }
 
   /**
+   * Filters the application name.
+   *
+   * @param name the name given by the constructor
+   * @return the filtered name, never null
+   */
+  protected String filterName(String name) {
+    if (name == null) {
+      Class<?> applicationClass = getClass();
+      while (applicationClass != null && (name = applicationClass.getSimpleName()).isEmpty()) {
+        // empty name means anonymous inner class (often used in unit tests, for example)
+        applicationClass = applicationClass.getSuperclass();
+      }
+    }
+    return name;
+  }
+
+
+  /**
    * Gets the application version.
    *
-   * @return the version
+   * @return the version, never null
    */
   @Override
   public String getVersion() {
     return version;
+  }
+
+  /**
+   * Filters the application version.
+   *
+   * @param version the version given by the constructor
+   * @return the filtered version, never null
+   */
+  protected String filterVersion(String version) {
+    return version == null ? "1.0.0-SNAPSHOT" : version;
   }
 
 

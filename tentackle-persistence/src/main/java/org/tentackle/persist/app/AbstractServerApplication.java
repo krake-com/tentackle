@@ -72,8 +72,8 @@ public abstract class AbstractServerApplication extends AbstractApplication
   /**
    * Creates a server.
    *
-   * @param name the server's name
-   * @param version the application version
+   * @param name the application name, null for default name
+   * @param version the application version, null for default version
    */
   public AbstractServerApplication(String name, String version) {
     super(name, version);
@@ -250,10 +250,6 @@ public abstract class AbstractServerApplication extends AbstractApplication
         sessionProps.setProperty(key, getProperties().getProperty(key));
       }
       sessionInfo.setProperties(sessionProps);
-    }
-
-    if (sessionInfo.getApplicationName() == null) {
-      sessionInfo.setApplicationName(getClass().getSimpleName());
     }
 
     sessionInfo.applyProperties();
