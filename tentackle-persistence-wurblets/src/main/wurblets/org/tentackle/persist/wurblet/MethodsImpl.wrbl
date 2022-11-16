@@ -1153,7 +1153,8 @@ For more options, see {\@link DbModelWurblet}.
     if (!generateMock) {
       if (isPdo && generateSnapshot) {
 
-        // createAttributesInSnapshot isnt necessary anymore since 2.2.x
+        // createAttributesInSnapshot isnt necessary anymore since 2.2.x, because all attributes are either immutable or frozen
+        // therefore, modifying an attribute requires changing the object reference
 
         boolean needRevertAttributes = false;
         for (Attribute attr: getEntity().getAttributes())  {

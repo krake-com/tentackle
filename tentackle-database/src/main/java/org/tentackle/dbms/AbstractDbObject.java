@@ -308,24 +308,17 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   }
 
 
-  /**
-   * Updates the attributes in snapshot object.<br>
-   * The snapshot object is assumed to be a clone of this object.
-   *
-   * @param snapshot the snapshot
-   */
-  @SuppressWarnings("rawtypes")
-  protected void createAttributesInSnapshot(AbstractDbObject snapshot) {
-    // nothing to do
-  }
-
-
   public boolean isCopy() {
     return false;   // implemented in AbstractPO!
   }
 
+
+  // there is no createAttributesInSnapshot, because all attributes are either immutable or frozen.
+
   /**
    * Copies all attributes from a snapshot object back to this object.
+   * <p>
+   * There is no createAttributesInSnapshot, since the snapshot is cloned and all attributes are either immutable or frozen.
    *
    * @param snapshot the snapshot object
    */

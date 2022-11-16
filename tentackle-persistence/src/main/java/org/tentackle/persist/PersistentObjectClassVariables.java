@@ -216,7 +216,6 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
 
   // cached snapshot methods (determined only once per persistence class)
-  private Method createAttributesInSnapshotMethod;
   private Method revertAttributesToSnapshotMethod;
   private Method createComponentsInSnapshotMethod;
   private Method revertComponentsToSnapshotMethod;
@@ -650,19 +649,6 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
 
   /**
-   * Gets the method createAttributesInSnapshot of the persistence object.
-   *
-   * @return the method
-   * @throws NoSuchMethodException if not found
-   */
-  public Method getCreateAttributesInSnapshotMethod() throws NoSuchMethodException {
-    if (createAttributesInSnapshotMethod == null) {
-      createAttributesInSnapshotMethod = findSnapshotMethod("createAttributesInSnapshot", clazz);
-    }
-    return createAttributesInSnapshotMethod;
-  }
-
-  /**
    * Gets the method revertAttributesToSnapshot of the persistence object.
    *
    * @return the method
@@ -704,12 +690,14 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
   /**
    * Finds a snapshot method.<br>
-   * Snapshot methods ({@link AbstractPersistentObject#createAttributesInSnapshot(AbstractPersistentObject)},
+   * Snapshot methods
    * {@link AbstractPersistentObject#createComponentsInSnapshot(AbstractPersistentObject)},
    * {@link AbstractPersistentObject#revertAttributesToSnapshot(AbstractPersistentObject)} and
    * {@link AbstractPersistentObject#revertComponentsToSnapshot(AbstractPersistentObject)}) take the snapshot
    * object with the correct implementation type and are implemented at some implementation class.
    * This method finds the most specific snapshot-method along the inheritance hierarchy.
+   * <p>
+   * There is no createAttributesInSnapshot, since the snapshot is cloned and all attributes are either immutable or frozen.
    *
    * @param methodName the snapshot method name
    * @param clazz the implementation class
