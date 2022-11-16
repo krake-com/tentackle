@@ -353,7 +353,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   @SuppressWarnings("rawtypes")
   protected void createComponentsInSnapshot(AbstractPersistentObject snapshot) {
-    // default implementation does nothing
+    snapshot.objectIsSnapshot = true;
   }
 
 
