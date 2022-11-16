@@ -322,10 +322,11 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    */
   public RemoteDbSessionImpl(RemoteDbConnectionImpl con, SessionInfo clientInfo, SessionInfo serverInfo) {
 
+    // use copies of the session infos to avoid side effects due to subsequent modifications
     this.clientInfo = clientInfo.clone();
     this.clientInfo.setSessionName(clientInfo.getSessionName());  // sessionName was cleared in clone()
     if (!clientInfo.isCloned()) {
-      this.clientInfo.clearCloned();
+      this.clientInfo.clearCloned();    // un-clone, if original session wasn't
     }
 
     this.serverInfo = serverInfo.clone();

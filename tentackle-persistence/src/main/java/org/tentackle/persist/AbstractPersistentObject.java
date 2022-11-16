@@ -332,7 +332,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     PersistentObject<T> persistentSnapshot = snapshot.getPersistenceDelegate();
     persistentSnapshot.setDomainContext(getDomainContext());
     try {
-      getClassVariables().getCreateAttributesInSnapshotMethod().invoke(this, persistentSnapshot);
       getClassVariables().getCreateComponentsInSnapshotMethod().invoke(this, persistentSnapshot);
       addSnapshot(snapshot);
       snapshot.setCopy(false);
@@ -343,21 +342,12 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     }
   }
 
-  /**
-   * Updates the attributes in snapshot object.<br>
-   * The snapshot object is assumed to be a clone of this object.
-   *
-   * @param snapshot the snapshot
-   */
-  @SuppressWarnings("rawtypes")
-  protected void createAttributesInSnapshot(AbstractPersistentObject snapshot) {
-    super.createAttributesInSnapshot(snapshot);
-    snapshot.objectIsSnapshot = true;
-  }
 
   /**
    * Updates the components in snapshot object.<br>
    * The snapshot object is assumed to be a clone of this object.
+   * <p>
+   * There is no createAttributesInSnapshot, since the snapshot is cloned and all attributes are either immutable or frozen.
    *
    * @param snapshot the snapshot
    */
