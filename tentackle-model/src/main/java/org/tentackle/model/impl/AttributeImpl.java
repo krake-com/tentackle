@@ -348,8 +348,12 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
   }
 
   @Override
-  public String getColumnName(int columnIndex) throws ModelException {
-    return getColumnName() + getEffectiveDataType().getColumnSuffix(columnIndex).orElse("");
+  public String getColumnName(Backend backend, int columnIndex) throws ModelException {
+    DataType<?> effectiveDataType = getEffectiveDataType();
+    if (effectiveDataType.isColumnCountBackendSpecific() && backend == null) {
+      throw new ModelException("backend-specific type " + effectiveDataType + " has no known column names");
+    }
+    return getColumnName() + getEffectiveDataType().getColumnSuffix(backend, columnIndex).orElse("");
   }
 
   @Override

@@ -90,7 +90,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 /**
  * A persistence session.
@@ -1872,9 +1871,8 @@ public class Db implements Session, Cloneable {
     try {
       postCommitsRunning = true;
       if (postCommits != null) {
-        Iterator<Consumer<Session>> iterator = postCommits.iterator();
-        while (iterator.hasNext()) {
-          iterator.next().accept(this);
+        for (Consumer<Session> postCommit : postCommits) {
+          postCommit.accept(this);
         }
         postCommits = null;
       }
@@ -2590,7 +2588,7 @@ public class Db implements Session, Cloneable {
    * @return the prepared statement for this session
    */
   public PreparedStatementWrapper getPreparedStatement(StatementKey stmtKey, boolean alwaysPrepare, int resultSetType,
-                                                       int resultSetConcurrency, Supplier<String> sqlSupplier) {
+                                                       int resultSetConcurrency, SqlSupplier sqlSupplier) {
     assertNotRemote();
     attach();
     try {
@@ -2617,7 +2615,7 @@ public class Db implements Session, Cloneable {
    * @return the prepared statement for this session
    */
   public PreparedStatementWrapper getPreparedStatement(StatementKey stmtKey, boolean alwaysPrepare,
-                                                       Supplier<String> sqlSupplier) {
+                                                       SqlSupplier sqlSupplier) {
     return getPreparedStatement(stmtKey, alwaysPrepare, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, sqlSupplier);
   }
 
@@ -2629,17 +2627,18 @@ public class Db implements Session, Cloneable {
    * The session will be detached after executeUpdate() or executeQuery() when its
    * result set is closed.
    *
-   * @param sql the SQL code
+   * @param sqlSupplier the SQL code supplier
    * @param resultSetType one of ResultSet.TYPE_...
    * @param resultSetConcurrency one of ResultSet.CONCUR_...
    *
    * @return the prepared statement for this session
    */
-  public PreparedStatementWrapper createPreparedStatement(String sql, int resultSetType, int resultSetConcurrency) {
+  public PreparedStatementWrapper createPreparedStatement(SqlSupplier sqlSupplier, int resultSetType, int resultSetConcurrency) {
     assertNotRemote();
     attach();
     try {
-      PreparedStatementWrapper stmt = connection().createPreparedStatement(null, sql, resultSetType, resultSetConcurrency);
+      ManagedConnection c = connection();
+      PreparedStatementWrapper stmt = c.createPreparedStatement(null, sqlSupplier.get(c.getBackend()).toString(), resultSetType, resultSetConcurrency);
       stmt.markReady(); // mark ready for being used once
       return stmt;
     }
@@ -2653,12 +2652,12 @@ public class Db implements Session, Cloneable {
    * Creates a one-shot prepared statement.<br>
    * Uses {@link ResultSet#TYPE_FORWARD_ONLY} and {@link ResultSet#CONCUR_READ_ONLY}.
    *
-   * @param sql the SQL code
+   * @param sqlSupplier the SQL code supplier
    *
    * @return the prepared statement for this session
    */
-  public PreparedStatementWrapper createPreparedStatement(String sql) {
-    return Db.this.createPreparedStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+  public PreparedStatementWrapper createPreparedStatement(SqlSupplier sqlSupplier) {
+    return createPreparedStatement(sqlSupplier, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
   }
 
 

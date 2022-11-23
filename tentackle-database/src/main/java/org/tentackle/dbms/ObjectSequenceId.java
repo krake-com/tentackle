@@ -161,10 +161,10 @@ public class ObjectSequenceId extends AbstractIdSource {
     if (idCount >= sequenceMultiplier) {
       // get new offset from sequence
       try {
-        PreparedStatementWrapper selectStatement = db.getPreparedStatement(new StatementKey(SELECT_ID, getClass()), false,
-                () -> db.getBackend().sqlNextFromSequence(getName())
+        PreparedStatementWrapper stmt = db.getPreparedStatement(new StatementKey(SELECT_ID, getClass()), false,
+                                                                b -> b.sqlNextFromSequence(getName())
         );
-        try (ResultSetWrapper rs = selectStatement.executeQuery()) {
+        try (ResultSetWrapper rs = stmt.executeQuery()) {
           if (rs.next()) {
             sequenceNo = rs.getLong(1);
             idCount = 0;

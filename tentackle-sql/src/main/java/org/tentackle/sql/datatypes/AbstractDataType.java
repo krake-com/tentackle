@@ -20,10 +20,14 @@ package org.tentackle.sql.datatypes;
 
 import org.tentackle.common.StringHelper;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.BackendException;
 import org.tentackle.sql.DataType;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -52,12 +56,19 @@ public abstract class AbstractDataType<T> implements DataType<T> {
   }
 
   @Override
-  public int getColumnCount() {
+  public boolean isColumnCountBackendSpecific() {
+    return false;
+  }
+
+  @Override
+  public int getColumnCount(Backend backend) {
+    assertColumnCountNotBackendSpecific(backend);
     return 1;
   }
 
   @Override
   public int[] getSortableColumns() {
+    assertColumnCountNotBackendSpecific(null);
     return SORTABLE_COLUMNS;
   }
 
@@ -68,16 +79,16 @@ public abstract class AbstractDataType<T> implements DataType<T> {
    * {@inheritDoc}
    */
   @Override
-  public Optional<String> getColumnSuffix(int index) {
-    if (index < 0 || index >= getColumnCount()) {
+  public Optional<String> getColumnSuffix(Backend backend, int index) {
+    if (index < 0 || index >= getColumnCount(backend)) {
       throw new IndexOutOfBoundsException(index);
     }
     return index == 0 ? Optional.empty() : Optional.of("_" + (index + 1));    // none or _2, _3, etc...
   }
 
   @Override
-  public Optional<String> getCommentSuffix(int index) {
-    Optional<String> columnSuffix = getColumnSuffix(index);
+  public Optional<String> getCommentSuffix(Backend backend, int index) {
+    Optional<String> columnSuffix = getColumnSuffix(backend, index);
     if (columnSuffix.isPresent()) {
       String suffix = columnSuffix.get();
       if (suffix.length() > 1 && suffix.startsWith("_")) {
@@ -86,6 +97,33 @@ public abstract class AbstractDataType<T> implements DataType<T> {
       return Optional.of(" (" + suffix + ")");
     }
     return Optional.empty();
+  }
+
+  @Override
+  public List<String> createColumnNames(Backend backend, String columnName) {
+    List<String> columns = new ArrayList<>();
+    int columnCount = getColumnCount(backend);
+    for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
+      columns.add(columnName + getColumnSuffix(backend, columnIndex).orElse(""));
+    }
+    return Collections.unmodifiableList(columns);
+  }
+
+  @Override
+  public String createColumnNamesAsString(Backend backend, String columnName, String separator) {
+    List<String> columnNames = createColumnNames(backend, columnName);
+    StringBuilder buf = new StringBuilder();
+    boolean first = true;
+    for (String name : columnNames) {
+      if (first) {
+        first = false;
+      }
+      else {
+        buf.append(separator);
+      }
+      buf.append(name);
+    }
+    return buf.toString();
   }
 
   @Override
@@ -99,13 +137,14 @@ public abstract class AbstractDataType<T> implements DataType<T> {
   }
 
   @Override
-  public Object getColumnValue(int index, T value) {
+  public Object getColumnValue(Backend backend, int index, T value) {
+    assertColumnCountNotBackendSpecific(backend);
     return value;
   }
 
   @Override
   public String getColumnGetter(int index, String varName) {
-    if (getColumnCount() == 1) {
+    if (getColumnCount(null) == 1) {
       return "";
     }
     throw new UnsupportedOperationException("getColumnGetter not yet implemented for multi-column datatype " + this);
@@ -113,7 +152,7 @@ public abstract class AbstractDataType<T> implements DataType<T> {
 
   @Override
   public String getColumnAlias(int index) {
-    if (getColumnCount() == 1) {
+    if (getColumnCount(null) == 1) {
       return "";
     }
     throw new UnsupportedOperationException("getColumnAlias not yet implemented for multi-column datatype " + this);
@@ -186,7 +225,7 @@ public abstract class AbstractDataType<T> implements DataType<T> {
 
   @Override
   public boolean isLiteralSupported(Integer index) {
-    return getColumnCount() == 1 || index != null;
+    return getColumnCount(null) == 1 || index != null;
   }
 
   @Override
@@ -235,7 +274,7 @@ public abstract class AbstractDataType<T> implements DataType<T> {
 
   @Override
   public Object set(Backend backend, PreparedStatement statement, int pos, T object, int index, boolean mapNull, Integer size) throws SQLException {
-    if (getColumnCount() == 1) {
+    if (getColumnCount(backend) == 1) {
       return set(backend, statement, pos, object, mapNull, size);
     }
     throw new UnsupportedOperationException("not yet implemented for multi-column datatype " + this);
@@ -261,6 +300,17 @@ public abstract class AbstractDataType<T> implements DataType<T> {
     int result = getJavaType().hashCode();
     result = 31 * result + getVariant().hashCode();
     return result;
+  }
+
+
+  /**
+   * Checks that this type has a fixed number of columns or
+   * the backend is specified.
+   */
+  protected void assertColumnCountNotBackendSpecific(Backend backend) {
+    if (backend == null && isColumnCountBackendSpecific()) {
+      throw new BackendException("backend-specific type " + this + " cannot be used in a backend-agnostic context");
+    }
   }
 
 }

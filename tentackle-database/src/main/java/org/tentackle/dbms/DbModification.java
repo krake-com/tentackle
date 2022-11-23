@@ -187,9 +187,6 @@ public class DbModification extends AbstractDbObject<DbModification> {
       rs.configureColumn(CN_ID);
       rs.configureColumn(CN_SERIAL);
     }
-    if (rs.getRow() <= 0) {
-      throw new PersistenceException(getSession(), "no valid row");
-    }
     trackedName = rs.getString();
     setId(rs.getLong());
     setSerial(rs.getLong());
@@ -205,19 +202,18 @@ public class DbModification extends AbstractDbObject<DbModification> {
   }
 
   @Override
-  public String createInsertSql() {
+  public String createInsertSql(Backend backend) {
     return Backend.SQL_INSERT_INTO + getTableName() + Backend.SQL_LEFT_PARENTHESIS +
            CN_TRACKEDNAME + Backend.SQL_COMMA +
            CN_ID + Backend.SQL_COMMA +
            CN_SERIAL +
            Backend.SQL_INSERT_VALUES +
-           Backend.SQL_PAR_COMMA +
-           Backend.SQL_PAR_COMMA +
+           Backend.SQL_PAR_COMMA.repeat(2) +
            Backend.SQL_PAR + Backend.SQL_RIGHT_PARENTHESIS;
   }
 
   @Override
-  public String createUpdateSql() {
+  public String createUpdateSql(Backend backend) {
     return Backend.SQL_UPDATE + getTableName() + Backend.SQL_SET +
            CN_TRACKEDNAME + Backend.SQL_EQUAL_PAR_COMMA +
            CN_SERIAL + Backend.SQL_EQUAL + CN_SERIAL + Backend.SQL_PLUS_ONE +
@@ -256,9 +252,9 @@ public class DbModification extends AbstractDbObject<DbModification> {
    */
   public int countModification(long count) {
     assertNotRemote();
-    PreparedStatementWrapper st = getPreparedStatement(COUNT_MODIFICATION_ID,
-                                                       () -> Backend.SQL_UPDATE + getTableName() + Backend.SQL_SET + CN_SERIAL + Backend.SQL_EQUAL + CN_SERIAL +
-                                                             "+?" + Backend.SQL_WHERE + CN_TRACKEDNAME + Backend.SQL_EQUAL_PAR + Backend.SQL_OR + CN_ID + Backend.SQL_EQUAL_PAR
+    PreparedStatementWrapper st = getPreparedStatement(COUNT_MODIFICATION_ID, b ->
+        Backend.SQL_UPDATE + getTableName() + Backend.SQL_SET + CN_SERIAL + Backend.SQL_EQUAL + CN_SERIAL +
+        "+?" + Backend.SQL_WHERE + CN_TRACKEDNAME + Backend.SQL_EQUAL_PAR + Backend.SQL_OR + CN_ID + Backend.SQL_EQUAL_PAR
     );
     st.setLong(1, count);
     st.setString(2, trackedName);
@@ -352,9 +348,9 @@ public class DbModification extends AbstractDbObject<DbModification> {
    */
   public long refresh() {
     getSession().assertNotRemote();
-    PreparedStatementWrapper st = getPreparedStatement(SELECT_MODIFICATION_ID,
-                                                       () -> Backend.SQL_SELECT + CN_ID + Backend.SQL_COMMA + CN_SERIAL + Backend.SQL_FROM + getTableName() +
-                                                             Backend.SQL_WHERE + CN_TRACKEDNAME + Backend.SQL_EQUAL_PAR
+    PreparedStatementWrapper st = getPreparedStatement(SELECT_MODIFICATION_ID, b ->
+        Backend.SQL_SELECT + CN_ID + Backend.SQL_COMMA + CN_SERIAL + Backend.SQL_FROM + getTableName() +
+        Backend.SQL_WHERE + CN_TRACKEDNAME + Backend.SQL_EQUAL_PAR
     );
     st.setParallelOk(true);
     st.setString(1, trackedName);
@@ -383,10 +379,10 @@ public class DbModification extends AbstractDbObject<DbModification> {
    */
   public IdSerialTuple selectIdSerial(String tableName) {
     getSession().assertNotRemote();
-    PreparedStatementWrapper st = getPreparedStatement(SELECT_ID_ID,
-                                                       () -> Backend.SQL_SELECT + CN_ID + Backend.SQL_COMMA + CN_SERIAL +
-                                                             Backend.SQL_FROM + getTableName() + Backend.SQL_WHERE +
-                                                             CN_TRACKEDNAME + Backend.SQL_EQUAL_PAR
+    PreparedStatementWrapper st = getPreparedStatement(SELECT_ID_ID, b ->
+        Backend.SQL_SELECT + CN_ID + Backend.SQL_COMMA + CN_SERIAL +
+        Backend.SQL_FROM + getTableName() + Backend.SQL_WHERE +
+        CN_TRACKEDNAME + Backend.SQL_EQUAL_PAR
     );
     st.setParallelOk(true);
     st.setString(1, tableName);
@@ -410,9 +406,9 @@ public class DbModification extends AbstractDbObject<DbModification> {
    */
   public String selectTableNameForId(long id) {
     getSession().assertNotRemote();
-    PreparedStatementWrapper st = getPreparedStatement(SELECT_TABLENAME_ID,
-                                                       () -> Backend.SQL_SELECT + CN_TRACKEDNAME + Backend.SQL_FROM + getTableName() +
-                                                             Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR
+    PreparedStatementWrapper st = getPreparedStatement(SELECT_TABLENAME_ID, b ->
+        Backend.SQL_SELECT + CN_TRACKEDNAME + Backend.SQL_FROM + getTableName() +
+        Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR
     );
     st.setParallelOk(true);
     st.setLong(1, id);
@@ -435,9 +431,9 @@ public class DbModification extends AbstractDbObject<DbModification> {
    */
   public long selectMasterSerial() {
     getSession().assertNotRemote();
-    PreparedStatementWrapper st = getPreparedStatement(SELECT_MASTERSERIAL_ID,
-                                                       () -> Backend.SQL_SELECT + CN_SERIAL + Backend.SQL_FROM + getTableName() +
-                                                             Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR
+    PreparedStatementWrapper st = getPreparedStatement(SELECT_MASTERSERIAL_ID, b ->
+        Backend.SQL_SELECT + CN_SERIAL + Backend.SQL_FROM + getTableName() +
+        Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR
     );
     st.setParallelOk(true);
     st.setLong(1, 0);   // ID=0 is the master

@@ -2,6 +2,7 @@
     boolean isFirstSetKey = true;
     for (WurbletArgument key: getExtraArguments())  {
       Attribute attr = key.getAttribute();
+      DataType<?> dataType = getEffectiveDataType(attr);
       if (isFirstSetKey) {
         isFirstSetKey = false;
       }
@@ -10,11 +11,17 @@
         sql.append(Backend.SQL_COMMA);
 @[
       }
-      for (int columnIndex = 0; columnIndex < getEffectiveDataType(attr).getColumnCount(); columnIndex++) {
+      if (dataType.isColumnCountBackendSpecific()) {
 ]@
-        sql.append(@(getColumnNameConstant(attr, columnIndex))@);
-        sql.append(Backend.SQL_EQUAL_PAR);
+        sql.append(@(dataType.getDataTypeConstant())@.createColumnNamesAsString(b, @(getColumnNameConstant(attr, -1))@, Backend.SQL_EQUAL_PAR)).append(Backend.SQL_EQUAL_PAR);
 @[
+      }
+      else {
+        for (int columnIndex = 0; columnIndex < dataType.getColumnCount(null); columnIndex++) {
+]@
+        sql.append(@(getColumnNameConstant(attr, columnIndex))@).append(Backend.SQL_EQUAL_PAR);
+@[
+        }
       }
     }
 ]@

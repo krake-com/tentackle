@@ -405,15 +405,19 @@ public class WurbletArgument implements WurbletArgumentOperand {
         }
         try {
           dataType = attribute.getEffectiveDataType();
+          if (dataType.isColumnCountBackendSpecific()) {
+            throw new WurbelException("backend-specific datatype " + dataType + " cannot be used as a wurblet argument");
+          }
         }
         catch (ModelException mx) {
           throw new WurbelException("cannot determine datatype of " + attribute, mx);
         }
+
         if (!"*".equals(colName)) {
           if (colName != null) {
             // find the column index within the datatype
-            for (int i = 0; i < dataType.getColumnCount(); i++) {
-              String columnSuffix = dataType.getColumnSuffix(i).orElse("");
+            for (int i = 0; i < dataType.getColumnCount(null); i++) {
+              String columnSuffix = dataType.getColumnSuffix(null, i).orElse("");
               String columnAlias = dataType.getColumnAlias(i);
               if (colName.equalsIgnoreCase(columnSuffix) || colName.equals(columnAlias)) {
                 columnIndex = i;
@@ -431,7 +435,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
               throw new WurbelException("datatype " + dataType + " does not map to column suffix '" + colName + "'");
             }
           }
-          else if (dataType.getColumnCount() > 1 && sortType == null) {
+          else if (dataType.getColumnCount(null) > 1 && sortType == null) {
             // no column specified for a multi-column type:
             if (!Backend.SQL_EQUAL.equals(relop) || value != null || literally) {
               int[] sortableColumns = dataType.getSortableColumns();
@@ -454,7 +458,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
           if (value != null) {
             throw new WurbelException("arrays cannot be passed as a simple value");
           }
-          if (dataType.getColumnCount() > 1 && columnIndex == null) {
+          if (dataType.getColumnCount(null) > 1 && columnIndex == null) {
             throw new WurbelException(dataType +
                                       " is a multi column datatype: please specify the column to be used for the array operator '" +
                                       arrayOperator + "'");

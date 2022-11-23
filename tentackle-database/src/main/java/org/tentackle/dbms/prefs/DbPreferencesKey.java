@@ -28,7 +28,6 @@ import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.dbms.StatementId;
 import org.tentackle.misc.TrackedArrayList;
 import org.tentackle.session.ClassId;
-import org.tentackle.session.PersistenceException;
 import org.tentackle.session.TableName;
 import org.tentackle.sql.Backend;
 
@@ -145,14 +144,14 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
   public TrackedArrayList<DbPreferencesKey> selectByRootNodeId(long rootNodeId) {
     Db db = getSession();
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_ROOT_NODE_ID_STMT,
-      () -> {
-        StringBuilder sql = createSelectAllInnerSql();
+      b -> {
+        StringBuilder sql = createSelectAllInnerSql(b);
         sql.append(Backend.SQL_AND);
         sql.append(CN_ROOTNODEID);
         sql.append(Backend.SQL_EQUAL_PAR);
         sql.append(Backend.SQL_ORDERBY)
            .append(CN_ID).append(Backend.SQL_SORTASC);
-        getBackend().buildSelectSql(sql, false, 0, 0);
+        b.buildSelectSql(sql, false, 0, 0);
         return sql.toString();
       }
     );
@@ -190,12 +189,12 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
   public TrackedArrayList<DbPreferencesKey> selectByNodeId(long nodeId) {
     Db db = getSession();
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_NODE_ID_STMT,
-      () -> {
-        StringBuilder sql = createSelectAllInnerSql();
+      b -> {
+        StringBuilder sql = createSelectAllInnerSql(b);
         sql.append(Backend.SQL_AND);
         sql.append(CN_NODEID);
         sql.append(Backend.SQL_EQUAL_PAR);
-        getBackend().buildSelectSql(sql, false, 0, 0);
+        b.buildSelectSql(sql, false, 0, 0);
         return sql.toString();
       }
     );
@@ -232,15 +231,15 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
 
   public DbPreferencesKey selectByNodeIdAndKey(long nodeId, String key) {
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_NODE_ID_AND_KEY_STMT,
-      () -> {
-        StringBuilder sql = createSelectAllInnerSql();
+      b -> {
+        StringBuilder sql = createSelectAllInnerSql(b);
         sql.append(Backend.SQL_AND);
         sql.append(CN_NODEID);
         sql.append(Backend.SQL_EQUAL_PAR);
         sql.append(Backend.SQL_AND);
         sql.append(CN_KEY);
         sql.append(Backend.SQL_EQUAL_PAR);
-        getBackend().buildSelectSql(sql, false, 0, 0);
+        b.buildSelectSql(sql, false, 0, 0);
         return sql.toString();
       }
     );
@@ -288,9 +287,6 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
       rs.configureColumn(CN_ID);
       rs.configureColumn(CN_SERIAL);
     }
-    if (rs.getRow() <= 0) {
-      throw new PersistenceException(getSession(), "no valid row");
-    }
     setTableSerial(rs.getLong());
     nodeId = rs.getLong();
     rootNodeId = rs.getLong();
@@ -314,7 +310,7 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
   }
 
   @Override
-  public String createInsertSql() {
+  public String createInsertSql(Backend backend) {
     return Backend.SQL_INSERT_INTO + getTableName() + Backend.SQL_LEFT_PARENTHESIS +
            CN_TABLESERIAL + Backend.SQL_COMMA +
            CN_NODEID + Backend.SQL_COMMA +
@@ -324,17 +320,12 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
            CN_ID + Backend.SQL_COMMA +
            CN_SERIAL +
            Backend.SQL_INSERT_VALUES +
-           Backend.SQL_PAR_COMMA +
-           Backend.SQL_PAR_COMMA +
-           Backend.SQL_PAR_COMMA +
-           Backend.SQL_PAR_COMMA +
-           Backend.SQL_PAR_COMMA +
-           Backend.SQL_PAR_COMMA +
+           Backend.SQL_PAR_COMMA.repeat(6) +
            Backend.SQL_PAR + Backend.SQL_RIGHT_PARENTHESIS;
   }
 
   @Override
-  public String createUpdateSql() {
+  public String createUpdateSql(Backend backend) {
     return Backend.SQL_UPDATE + getTableName() + Backend.SQL_SET +
            CN_TABLESERIAL + Backend.SQL_EQUAL_PAR_COMMA +
            CN_NODEID + Backend.SQL_EQUAL_PAR_COMMA +

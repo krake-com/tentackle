@@ -128,20 +128,20 @@ public class ColumnMigrator {
        * round 2: migrate the rest
        */
       int migratedColumnIndex = 0;
-      boolean[] migrated = new boolean[dataType.getColumnCount()];
+      boolean[] migrated = new boolean[dataType.getColumnCount(backend)];
 
       for (int round=0; round < 2; round++) {
-        for (int columnIndex = 0; columnIndex < dataType.getColumnCount(); columnIndex++) {
+        for (int columnIndex = 0; columnIndex < dataType.getColumnCount(backend); columnIndex++) {
           if (!migrated[columnIndex]) {
-            columnName = attribute.getColumnName(columnIndex);
+            columnName = attribute.getColumnName(backend, columnIndex);
             sqlType = dataType.getSqlType(backend, columnIndex);
             columnSize = dataType.getSize(backend, columnIndex, attribute.getSize());
             columnScale = dataType.getScale(backend, columnIndex, attribute.getScale());
             comment = attribute.getOptions().getComment();
             if (comment != null && !comment.isEmpty()) {
-              comment += dataType.getCommentSuffix(columnIndex).orElse("");
+              comment += dataType.getCommentSuffix(backend, columnIndex).orElse("");
             }
-            defaultValue = dataType.getColumnValue(columnIndex, attribute.getOptions().getDefaultValue());
+            defaultValue = dataType.getColumnValue(backend, columnIndex, attribute.getOptions().getDefaultValue());
             column = columns == null || migratedColumnIndex >= columns.length ? null : columns[migratedColumnIndex];
             if (column == null) {
               buf.append(addColumn());

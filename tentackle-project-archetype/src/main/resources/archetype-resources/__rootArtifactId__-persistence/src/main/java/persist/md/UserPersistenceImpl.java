@@ -19,6 +19,7 @@ import org.tentackle.dbms.DbModificationType;
 import org.tentackle.dbms.DbObjectClassVariables;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
+import org.tentackle.dbms.SqlSupplier;
 import org.tentackle.dbms.StatementId;
 import org.tentackle.misc.IdentifiableMap;
 import org.tentackle.misc.TrackedArrayList;
@@ -128,7 +129,7 @@ public class UserPersistenceImpl extends OrgUnitPersistenceImpl<User, UserPersis
 
 
     assertPasswordAccessible();
-    PreparedStatementWrapper st = getPreparedStatement(SELECT_PASSWORD_STMT, () ->
+    PreparedStatementWrapper st = getPreparedStatement(SELECT_PASSWORD_STMT, b ->
              "SELECT " + CN_PASSWORD + " FROM " + getTableName() + " WHERE " + CN_ID + "=?");
     st.setLong(1, getId());
     try (ResultSetWrapper rs = st.executeQuery()) {
@@ -150,7 +151,7 @@ public class UserPersistenceImpl extends OrgUnitPersistenceImpl<User, UserPersis
 
 
     assertPasswordAccessible();
-    PreparedStatementWrapper st = getPreparedStatement(UPDATE_PASSWORD_STMT, () ->
+    PreparedStatementWrapper st = getPreparedStatement(UPDATE_PASSWORD_STMT, b ->
         "UPDATE " + getTableName() + " SET " +  CN_PASSWORD + "=? WHERE " + CN_ID + "=?");
     st.setString(1, password);
     st.setLong(2, getId());

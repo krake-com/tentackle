@@ -18,6 +18,7 @@
 
 package org.tentackle.model;
 
+import org.tentackle.sql.Backend;
 import org.tentackle.sql.DataType;
 
 /**
@@ -44,7 +45,7 @@ public interface Attribute extends ModelElement {
    * more than one database column.
    *
    * @return the column name (always in lowercase)
-   * @see #getColumnName(int)
+   * @see #getColumnName(Backend, int)
    * @see #getDataType()
    */
   String getColumnName();
@@ -58,9 +59,8 @@ public interface Attribute extends ModelElement {
    * @return the column name used by the database
    * @see #getColumnName()
    * @see #getDataType()
-   * @throws ModelException if the effective datatype could not be determined
    */
-  String getColumnName(int columnIndex) throws ModelException;
+  String getColumnName(Backend backend, int columnIndex) throws ModelException;
 
 
   /**

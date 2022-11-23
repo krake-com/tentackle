@@ -589,7 +589,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
    */
   public String getColumnName(Attribute attribute, int columnIndex) throws WurbelException {
     try {
-      return columnIndex < 0 ? attribute.getColumnName() : attribute.getColumnName(columnIndex);
+      return columnIndex < 0 ? attribute.getColumnName() : attribute.getColumnName(null, columnIndex);
     }
     catch (ModelException e) {
       throw new WurbelException("cannot determine column name for " + attribute + ", index " + columnIndex, e);
@@ -605,8 +605,12 @@ public class ModelWurblet extends AbstractJavaWurblet {
    * @return the constant CN_...
    */
   public String getColumnNameConstant(Attribute attribute, int columnIndex) throws WurbelException {
+    DataType<?> effectiveDataType = getEffectiveDataType(attribute);
+    if (columnIndex >= 0 && effectiveDataType.isColumnCountBackendSpecific()) {
+      throw new WurbelException("backend-specific type " + effectiveDataType + " has varying number of columns");
+    }
     return "CN_" + (attribute.getName() + (columnIndex < 0 ? "" :
-                                           getEffectiveDataType(attribute).getColumnSuffix(columnIndex).orElse(""))).toUpperCase();
+                                           getEffectiveDataType(attribute).getColumnSuffix(null, columnIndex).orElse(""))).toUpperCase();
   }
 
 

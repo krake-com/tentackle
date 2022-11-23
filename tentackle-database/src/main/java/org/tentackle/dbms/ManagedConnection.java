@@ -50,7 +50,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 /**
@@ -1472,7 +1471,7 @@ public class ManagedConnection {
    */
   public PreparedStatementWrapper getPreparedStatement (StatementKey statementKey, boolean alwaysPrepare,
                                                         int resultSetType, int resultSetConcurrency,
-                                                        Supplier<String> sqlSupplier)  {
+                                                        SqlSupplier sqlSupplier)  {
 
     if (statementKey == null) {
       throw new PersistenceException("statement key required");
@@ -1483,7 +1482,7 @@ public class ManagedConnection {
 
     if (prepStmt == null || prepStmt.isClosed() || alwaysPrepare) {
       // we need to prepare it
-      prepStmt = createPreparedStatement(statementKey, sqlSupplier.get(), resultSetType, resultSetConcurrency);
+      prepStmt = createPreparedStatement(statementKey, sqlSupplier.get(backend).toString(), resultSetType, resultSetConcurrency);
       preparedStatements.put(statementKey, prepStmt);
       LOGGER.finer("statement {0} prepared on {1}", prepStmt, this);
     }

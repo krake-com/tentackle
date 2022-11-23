@@ -94,12 +94,12 @@ public final class OffsetDateTimeType extends AbstractDateTimeType<OffsetDateTim
   }
 
   @Override
-  public int getColumnCount() {
+  public int getColumnCount(Backend backend) {
     return 2;
   }
 
   @Override
-  public Optional<String> getCommentSuffix(int index) {
+  public Optional<String> getCommentSuffix(Backend backend, int index) {
     return switch (index) {
       case 0 -> Optional.empty();
       case 1 -> Optional.of(" [+-s]");
@@ -126,7 +126,7 @@ public final class OffsetDateTimeType extends AbstractDateTimeType<OffsetDateTim
   }
 
   @Override
-  public Object getColumnValue(int index, OffsetDateTime value) {
+  public Object getColumnValue(Backend backend, int index, OffsetDateTime value) {
     if (value != null) {
       int offset = offsetOf(value);
       return switch (index) {

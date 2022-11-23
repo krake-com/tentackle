@@ -62,12 +62,12 @@ public final class BMoneyType extends AbstractDataType<BMoney> {
   }
 
   @Override
-  public int getColumnCount() {
+  public int getColumnCount(Backend backend) {
     return 2;
   }
 
   @Override
-  public Optional<String> getCommentSuffix(int index) {
+  public Optional<String> getCommentSuffix(Backend backend, int index) {
     return switch (index) {
       case 0 -> Optional.empty();
       case 1 -> Optional.of(" (scale)");
@@ -99,7 +99,7 @@ public final class BMoneyType extends AbstractDataType<BMoney> {
   }
 
   @Override
-  public Object getColumnValue(int index, BMoney value) {
+  public Object getColumnValue(Backend backend, int index, BMoney value) {
     if (value != null) {
       return switch (index) {
         case 0 -> value.doubleValue();

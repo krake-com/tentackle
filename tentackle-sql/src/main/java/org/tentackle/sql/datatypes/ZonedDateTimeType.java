@@ -108,7 +108,7 @@ public final class ZonedDateTimeType extends AbstractDateTimeType<ZonedDateTime>
   }
 
   @Override
-  public int getColumnCount() {
+  public int getColumnCount(Backend backend) {
     return 2;
   }
 
@@ -118,7 +118,7 @@ public final class ZonedDateTimeType extends AbstractDateTimeType<ZonedDateTime>
   }
 
   @Override
-  public Optional<String> getCommentSuffix(int index) {
+  public Optional<String> getCommentSuffix(Backend backend, int index) {
     return switch (index) {
       case 0 -> Optional.empty();
       case 1 -> Optional.of(" (TZ)");
@@ -145,7 +145,7 @@ public final class ZonedDateTimeType extends AbstractDateTimeType<ZonedDateTime>
   }
 
   @Override
-  public Object getColumnValue(int index, ZonedDateTime value) {
+  public Object getColumnValue(Backend backend, int index, ZonedDateTime value) {
     if (value != null) {
       return switch (index) {
         case 0 -> timestampOf(value);

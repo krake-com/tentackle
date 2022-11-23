@@ -137,10 +137,10 @@ For more options, see {\@link DbModelWurblet}.
     } // end if remote
 ]@
     PreparedStatementWrapper st = getPreparedStatement(@(classVar)@@(statementId)@,
-      () -> {
-        StringBuilder sql = createSelectAllInnerSql();
+      b -> {
+        StringBuilder sql = createSelectAllInnerSql(b);
 @{include $currentDir/genwhere.incl}@
-        getBackend().buildSelectSql(sql, @(lock ? "true" : "false")@, @(limit ? "limit" : "0")@, @(offset ? "offset" : "0")@);
+        b.buildSelectSql(sql, @(lock ? "true" : "false")@, @(limit ? "limit" : "0")@, @(offset ? "offset" : "0")@);
 @[
     if (sort) {
 ]@
@@ -152,8 +152,7 @@ For more options, see {\@link DbModelWurblet}.
     }
     if (append != null)  {
 ]@
-        sql.append(' ');
-        sql.append(@(append)@);
+        sql.append(' ').append(@(append)@);
 @[
     }
 ]@

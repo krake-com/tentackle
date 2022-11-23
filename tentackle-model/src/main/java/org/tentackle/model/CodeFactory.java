@@ -203,22 +203,22 @@ public class CodeFactory {
 
     for (Attribute attribute: tableAttributes) {
       DataType dataType = attribute.getEffectiveDataType();
-      for (int columnIndex = 0; columnIndex < dataType.getColumnCount(); columnIndex++) {
+      for (int columnIndex = 0; columnIndex < dataType.getColumnCount(backend); columnIndex++) {
         buf.append("    ");
-        String columnName = attribute.getColumnName(columnIndex);
+        String columnName = attribute.getColumnName(backend, columnIndex);
         int size = dataType.getSize(backend, columnIndex, attribute.getSize());
         int scale = dataType.getScale(backend, columnIndex, attribute.getScale());
         SqlType sqlType = dataType.getSqlType(backend, columnIndex);
         String comment = attribute.getOptions().getComment();
         if (comment != null && !comment.isEmpty()) {
-          comment += dataType.getCommentSuffix(columnIndex).orElse("");
+          comment += dataType.getCommentSuffix(backend, columnIndex).orElse("");
         }
-        Object defaultValue = dataType.getColumnValue(columnIndex, attribute.getOptions().getDefaultValue());
+        Object defaultValue = dataType.getColumnValue(backend, columnIndex, attribute.getOptions().getDefaultValue());
         buf.append(backend.sqlCreateColumn(
             columnName, comment, dataType.getSqlType(backend, columnIndex), size, scale,
             attribute.isNullable(), defaultValue,
             attribute.getName().equals(Constants.AN_ID) && !entity.getOptions().isNoPrimaryKey(),
-            attributeCount < attributeNum || columnIndex < dataType.getColumnCount() - 1));
+            attributeCount < attributeNum || columnIndex < dataType.getColumnCount(backend) - 1));
       }
       attributeCount++;
     }
@@ -226,11 +226,11 @@ public class CodeFactory {
     buf.append(backend.sqlCreateTableComment(entity.getTableName(), entity.getOptions().getComment()));
     for (Attribute attribute: tableAttributes) {
       DataType dataType = attribute.getEffectiveDataType();
-      for (int columnIndex = 0; columnIndex < dataType.getColumnCount(); columnIndex++) {
-        String columnName = attribute.getColumnName(columnIndex);
+      for (int columnIndex = 0; columnIndex < dataType.getColumnCount(backend); columnIndex++) {
+        String columnName = attribute.getColumnName(backend, columnIndex);
         String comment = attribute.getOptions().getComment();
         if (comment != null && !comment.isEmpty()) {
-          comment += dataType.getCommentSuffix(columnIndex).orElse("");
+          comment += dataType.getCommentSuffix(backend, columnIndex).orElse("");
         }
         buf.append(backend.sqlCreateColumnComment(entity.getTableName(), columnName, comment));
       }

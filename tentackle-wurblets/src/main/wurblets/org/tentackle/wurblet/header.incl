@@ -5,5 +5,6 @@
 @{import org.tentackle.model.*}@
 @{import org.wurbelizer.wurbel.*}@
 @{import org.wurbelizer.wurblet.*}@
+@{import org.tentackle.sql.*}@
 @{extends ModelWurblet}@
 @{args}@

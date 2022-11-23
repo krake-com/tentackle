@@ -333,10 +333,18 @@ For more options, see {\@link DbModelWurblet}.
 @[
           for (Attribute attr: getEntity().getMappedAttributes())  {
             if (!attr.getOptions().isMute())  {
-              for (int columnIndex = 0; columnIndex < getEffectiveDataType(attr).getColumnCount(); columnIndex++) {
+              DataType<?> effectiveType = getEffectiveDataType(attr);
+              if (effectiveType.isColumnCountBackendSpecific()) {
+]@
+      rs.configureColumns(@(effectiveType.getDataTypeConstant())@, @(getColumnNameConstant(attr, -1))@);
+@[
+              }
+              else {
+                for (int columnIndex = 0; columnIndex < effectiveType.getColumnCount(null); columnIndex++) {
 ]@
       rs.configureColumn(@(getColumnNameConstant(attr, columnIndex))@);
 @[
+                }
               }
             }
           }
@@ -349,11 +357,7 @@ For more options, see {\@link DbModelWurblet}.
     rs.configureSection(CLASSVARIABLES);
 @[
         }
-]@
-    if (rs.getRow() <= 0) {
-      throw new PersistenceException(getSession(), "no valid row");
-    }
-@[
+
         for (Attribute attr: getEntity().getMappedAttributes())  {
           if (!attr.getOptions().isMute())  {
             String name = attr.getName().toUpperCase();
@@ -498,7 +502,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
 
                 // for multi column types, such as BMoney or application specific types
-                int diff = getEffectiveDataType(attr).getColumnCount() - 1;
+                int diff = getEffectiveDataType(attr).getColumnCount(null) - 1;
                 if (diff == 1) {
 ]@
     ndx++;
@@ -542,15 +546,22 @@ For more options, see {\@link DbModelWurblet}.
 
       if (getEntity().getInheritanceType().isMappingToOwnTable()) {
 
-        List<Attribute> attributes = multiInheritance ?
-                                        getEntity().getTableAttributes() : getEntity().getAttributesIncludingInherited();
-        List<String> names = new ArrayList<>();   // column name constants CN_...
-
+        List<Attribute> attributes = multiInheritance ? getEntity().getTableAttributes() :
+                                                        getEntity().getAttributesIncludingInherited();
+        List<String> names = new ArrayList<>();                         // column name constants CN_...
+        Map<Attribute, DataType<?>> bsAttrs = new LinkedHashMap<>();    // backend-specific attributes requires special handling
         if (!readOnly) {
           for (Attribute attr: attributes)  {
+            DataType<?> effectiveType = getEffectiveDataType(attr);
             if (!attr.getOptions().isMute() && !attr.getOptions().isReadOnly()) {
-              for (int columnIndex = 0; columnIndex < getEffectiveDataType(attr).getColumnCount(); columnIndex++) {
-                names.add(getColumnNameConstant(attr, columnIndex));
+              if (effectiveType.isColumnCountBackendSpecific()) {
+                bsAttrs.put(attr, effectiveType);     // remember for later below...
+                names.add(effectiveType.getDataTypeConstant() + ".createColumnNamesAsString(backend, " + getColumnNameConstant(attr, -1) + ", Backend.SQL_COMMA)");
+              }
+              else {
+                for (int columnIndex = 0; columnIndex < effectiveType.getColumnCount(null); columnIndex++) {
+                  names.add(getColumnNameConstant(attr, columnIndex));
+                }
               }
             }
           }
@@ -563,14 +574,14 @@ For more options, see {\@link DbModelWurblet}.
    *
    * \@return the SQL code
    */
-  public String createInsertSql@(pdoClass)@() {
+  public String createInsertSql@(pdoClass)@(Backend backend) {
 @[
           }
           else  {
 ]@
 
   \@Override
-  public String createInsertSql() {
+  public String createInsertSql(Backend backend) {
 @[
           }
 ]@
@@ -588,9 +599,42 @@ For more options, see {\@link DbModelWurblet}.
 ]@
            Backend.SQL_INSERT_VALUES +
 @[
-          while (--count > 0)	{
+          count = names.size() - bsAttrs.size() - 1;
+          if (count == 1) {
 ]@
            Backend.SQL_PAR_COMMA +
+@[
+          }
+          else if (count > 1) {
+]@
+           Backend.SQL_PAR_COMMA.repeat(@(count)@) +
+@[
+          }
+
+          boolean onlyBsAttrs = count < 0;    // only backend-specific datatypes -> subtract 1 from last bs entry
+          Map<DataType<?>, Integer> typeCountMap = new HashMap<>();
+          for (Map.Entry<Attribute, DataType<?>> entry : bsAttrs.entrySet()) {
+            DataType<?> dataType = entry.getValue();
+            Integer typeCount = typeCountMap.get(dataType);
+            if (typeCount == null) {
+              typeCountMap.put(dataType, 1);
+            }
+            else {
+              typeCountMap.put(dataType, typeCount + 1);
+            }
+          }
+
+          count = 0;
+          for (Map.Entry<DataType<?>, Integer> entry : typeCountMap.entrySet()) {
+            count++;
+            DataType<?> dataType = entry.getKey();
+            int typeCount = entry.getValue();
+            String factor = typeCount > 1 ? " * " + typeCount : "";
+            if (onlyBsAttrs && count >= typeCountMap.size()) {
+              factor += " - 1";
+            }
+]@
+           Backend.SQL_PAR_COMMA.repeat(@(dataType.getDataTypeConstant())@.getColumnCount(backend)@(factor)@) +
 @[
           }
 ]@
@@ -600,9 +644,15 @@ For more options, see {\@link DbModelWurblet}.
 
           names.clear();
           for (Attribute attr: attributes)  {
+            DataType<?> effectiveType = getEffectiveDataType(attr);
             if (!attr.getOptions().isMute() && !attr.getOptions().isReadOnly() && !isIdOrSerialAttribute(attr)) {
-              for (int columnIndex = 0; columnIndex < getEffectiveDataType(attr).getColumnCount(); columnIndex++) {
-                names.add(getColumnNameConstant(attr, columnIndex));
+              if (effectiveType.isColumnCountBackendSpecific()) {
+                names.add(effectiveType.getDataTypeConstant() + ".createColumnNamesAsString(backend, " + getColumnNameConstant(attr, -1) + ", Backend.SQL_EQUAL_PAR_COMMA)");
+              }
+              else {
+                for (int columnIndex = 0; columnIndex < effectiveType.getColumnCount(null); columnIndex++) {
+                  names.add(getColumnNameConstant(attr, columnIndex));
+                }
               }
             }
           }
@@ -615,14 +665,14 @@ For more options, see {\@link DbModelWurblet}.
    *
    * \@return the SQL code
    */
-  public String createUpdateSql@(pdoClass)@() {
+  public String createUpdateSql@(pdoClass)@(Backend backend) {
 @[
           }
           else  {
 ]@
 
   \@Override
-  public String createUpdateSql() {
+  public String createUpdateSql(Backend backend) {
 @[
           }
 ]@
@@ -674,7 +724,7 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
   \@Override
-  public StringBuilder createSelectAllInnerSql() {
+  public StringBuilder createSelectAllInnerSql(Backend backend) {
     StringBuilder sql = new StringBuilder();
     sql.append(getColumnNames(() -> {
          List<String> names = new ArrayList<>();
@@ -684,21 +734,21 @@ For more options, see {\@link DbModelWurblet}.
         List<Entity> superEntities = topEntity.getInheritanceChain(getEntity());
         for (Entity superEntity : superEntities) {
 ]@
-         names.addAll(@(deriveClassNameForEntity(superEntity))@.CNS_@(superEntity.getName().toUpperCase())@);
+         names.addAll(@(deriveClassNameForEntity(superEntity))@.mappedColumns(backend));
 @[
         }
         // part 2: all sub entities of me
         List<Entity> subEntities = getEntity().getAllSubEntities();
         for (Entity subEntity : subEntities) {
 ]@
-         names.addAll(@(deriveClassNameForEntity(subEntity))@.CNS_@(subEntity.getName().toUpperCase())@);
+         names.addAll(@(deriveClassNameForEntity(subEntity))@.mappedColumns(backend));
 @[
         }
 ]@
          return names;
        }))
        .append(Backend.SQL_FROM)
-       .append(getTableName()).append(getBackend().sqlAsBeforeTableAlias()).append(getTableAlias())
+       .append(getTableName()).append(backend.sqlAsBeforeTableAlias()).append(getTableAlias())
        .append(Backend.SQL_WHEREALL);
     return sql;
   }
@@ -742,7 +792,7 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
   \@Override
-  public StringBuilder createSelectAllInnerSql() {
+  public StringBuilder createSelectAllInnerSql(Backend backend) {
     StringBuilder sql = new StringBuilder();
 @[
         boolean needComma = false;
@@ -750,7 +800,7 @@ For more options, see {\@link DbModelWurblet}.
           String implClass = deriveClassNameForEntity(entity);
           if (isMuteOptionSet(entity)) {
 ]@
-    sql.@(needComma ? "append(Backend.SQL_COMMA)." : "")@append(@(implClass)@.CLASSVARIABLES.getColumnNames(@(implClass)@.CNS_@(entity.getName().toUpperCase())@));
+    sql.@(needComma ? "append(Backend.SQL_COMMA)." : "")@append(@(implClass)@.CLASSVARIABLES.getColumnNames(@(implClass)@.mappedColumns(backend)));
 @[
           }
           else {
@@ -764,7 +814,7 @@ For more options, see {\@link DbModelWurblet}.
               implClass = deriveClassNameForEntity(sub);
               if (isMuteOptionSet(sub)) {
 ]@
-    sql.append(Backend.SQL_COMMA).append(@(implClass)@.CLASSVARIABLES.getColumnNames(@(implClass)@.CNS_@(sub.getName().toUpperCase())@));
+    sql.append(Backend.SQL_COMMA).append(@(implClass)@.CLASSVARIABLES.getColumnNames(@(implClass)@.mappedColumns(backend)));
 @[
               }
               else {
@@ -778,13 +828,13 @@ For more options, see {\@link DbModelWurblet}.
 ]@
     sql.append(Backend.SQL_FROM);
     sql.append(@(topImplClass)@.CLASSVARIABLES.getTableName()).
-        append(getBackend().sqlAsBeforeTableAlias()).append(@(topImplClass)@.CLASSVARIABLES.getTableAlias());
+        append(backend.sqlAsBeforeTableAlias()).append(@(topImplClass)@.CLASSVARIABLES.getTableAlias());
 @[
         if (chain.size() > 1) {
           for (Entity entity: chain.subList(1, chain.size())) {
             String implClass = deriveClassNameForEntity(entity);
 ]@
-    sql.append(getBackend().sqlJoin(JoinType.INNER,
+    sql.append(backend.sqlJoin(JoinType.INNER,
                @(implClass)@.CLASSVARIABLES.getTableName(), @(implClass)@.CLASSVARIABLES.getTableAlias(),
                @(topImplClass)@.CLASSVARIABLES.getColumnName(CN_ID) + Backend.SQL_EQUAL +
                @(implClass)@.CLASSVARIABLES.getColumnName(CN_ID)));
@@ -795,7 +845,7 @@ For more options, see {\@link DbModelWurblet}.
         for (Entity sub: subs) {
           String implClass = deriveClassNameForEntity(sub);
 ]@
-    sql.append(getBackend().sqlJoin(JoinType.LEFT,
+    sql.append(backend.sqlJoin(JoinType.LEFT,
                @(implClass)@.CLASSVARIABLES.getTableName(), @(implClass)@.CLASSVARIABLES.getTableAlias(),
                @(topImplClass)@.CLASSVARIABLES.getColumnName(CN_ID) + Backend.SQL_EQUAL +
                @(implClass)@.CLASSVARIABLES.getColumnName(CN_ID)));
@@ -810,8 +860,8 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
   \@Override
-  public StringBuilder createSelectAllByIdInnerSql() {
-    StringBuilder sql = createSelectAllInnerSql();
+  public StringBuilder createSelectAllByIdInnerSql(Backend backend) {
+    StringBuilder sql = createSelectAllInnerSql(backend);
     sql.append(Backend.SQL_AND).
         append(@(implClass)@.CLASSVARIABLES.getColumnName(CN_ID)).
         append(Backend.SQL_EQUAL_PAR);
@@ -823,22 +873,22 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
   \@Override
-  protected void updateImpl(DbObjectClassVariables<P> classVariables, Supplier<String> sqlsupplier) {
+  protected void updateImpl(DbObjectClassVariables<P> classVariables, SqlSupplier sqlSupplier) {
     PreparedStatementWrapper st = getBatchablePreparedStatement(DbModificationType.UPDATE, CLASSVARIABLES.updateStatementId, this::createUpdateSql@(pdoClass)@);
     setFields@(pdoClass)@(st);
     assertThisRowAffected(st.executeUpdate());
   }
 
   \@Override
-  protected void insertImpl(DbObjectClassVariables<P> classVariables, Supplier<String> sqlsupplier) {
+  protected void insertImpl(DbObjectClassVariables<P> classVariables, SqlSupplier sqlSupplier) {
     PreparedStatementWrapper st = getBatchablePreparedStatement(DbModificationType.INSERT, CLASSVARIABLES.insertStatementId, this::createInsertSql@(pdoClass)@);
     setFields@(pdoClass)@(st);
     assertThisRowAffected(st.executeUpdate());
   }
 
   \@Override
-  protected void deleteImpl(DbObjectClassVariables<P> classVariables, Supplier<String> sqlsupplier) {
-    PreparedStatementWrapper st = getBatchablePreparedStatement(DbModificationType.DELETE, CLASSVARIABLES.deleteStatementId, this::createDeleteSql@(pdoClass)@);
+  protected void deleteImpl(DbObjectClassVariables<P> classVariables, SqlSupplier sqlSupplier) {
+    PreparedStatementWrapper st = getBatchablePreparedStatement(DbModificationType.DELETE, CLASSVARIABLES.deleteStatementId, b -> createDeleteSql@(pdoClass)@());
     st.setLong(1, getId());
     st.setLong(2, getSerial());
     assertThisRowAffected(st.executeUpdate());
@@ -850,8 +900,8 @@ For more options, see {\@link DbModelWurblet}.
 
   \@Override
   protected void updateImpl(DbObjectClassVariables<@(getEntity().isAbstract()?"P":mainClass)@> classVariables,
-                            Supplier<String> sqlsupplier) {
-    super.updateImpl(classVariables, sqlsupplier);
+                            SqlSupplier sqlSupplier) {
+    super.updateImpl(classVariables, sqlSupplier);
     PreparedStatementWrapper st = getBatchablePreparedStatement(DbModificationType.UPDATE, CLASSVARIABLES.updateStatementId, this::createUpdateSql@(pdoClass)@);
     setFields@(pdoClass)@(st);
     assertThisRowAffected(st.executeUpdate());
@@ -859,8 +909,8 @@ For more options, see {\@link DbModelWurblet}.
 
   \@Override
   protected void insertImpl(DbObjectClassVariables<@(getEntity().isAbstract()?"P":mainClass)@> classVariables,
-                            Supplier<String> sqlsupplier) {
-    super.insertImpl(classVariables, sqlsupplier);
+                            SqlSupplier sqlSupplier) {
+    super.insertImpl(classVariables, sqlSupplier);
     PreparedStatementWrapper st = getBatchablePreparedStatement(DbModificationType.INSERT, CLASSVARIABLES.insertStatementId, this::createInsertSql@(pdoClass)@);
     setFields@(pdoClass)@(st);
     assertThisRowAffected(st.executeUpdate());
@@ -868,11 +918,11 @@ For more options, see {\@link DbModelWurblet}.
 
   \@Override
   protected void deleteImpl(DbObjectClassVariables<@(getEntity().isAbstract()?"P":mainClass)@> classVariables,
-                            Supplier<String> sqlsupplier) {
-    PreparedStatementWrapper st = getBatchablePreparedStatement(DbModificationType.DELETE, CLASSVARIABLES.deleteStatementId, this::createDeleteSql@(pdoClass)@);
+                            SqlSupplier sqlSupplier) {
+    PreparedStatementWrapper st = getBatchablePreparedStatement(DbModificationType.DELETE, CLASSVARIABLES.deleteStatementId, b -> createDeleteSql@(pdoClass)@());
     st.setLong(1, getId());
     assertThisRowAffected(st.executeUpdate());
-    super.deleteImpl(classVariables, sqlsupplier);
+    super.deleteImpl(classVariables, sqlSupplier);
   }
 @[
         }
@@ -882,11 +932,11 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
   \@Override
-  public StringBuilder createSelectAllInnerSql() {
+  public StringBuilder createSelectAllInnerSql(Backend backend) {
     StringBuilder sql = new StringBuilder();
-    sql.append(getColumnNames(CNS_@(getEntity().getName().toUpperCase())@))
+    sql.append(getColumnNames(mappedColumns(backend)))
        .append(Backend.SQL_FROM)
-       .append(getTableName()).append(getBackend().sqlAsBeforeTableAlias()).append(getTableAlias())
+       .append(getTableName()).append(backend.sqlAsBeforeTableAlias()).append(getTableAlias())
        .append(Backend.SQL_WHEREALL);
     return sql;
   }

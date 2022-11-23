@@ -19,6 +19,7 @@
 package org.tentackle.dbms;
 
 import org.tentackle.log.Logger;
+import org.tentackle.session.PersistenceException;
 
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -101,6 +102,9 @@ public class DbBatch {
    * @param rootClassId the root class ID
    */
   public void add(ModificationType modType, PreparedStatementWrapper statement, AbstractDbObject object, int rootClassId) {
+    if (statement.getStatementKey() == null) {
+      throw new PersistenceException(statement.getSession(), "batching not supported for one-shot prepared statements");
+    }
     if (rootClassId != lastRootClassId || !objects.add(object)) {
       execute(true);    // order can change -> flush!
       lastRootClassId = rootClassId;

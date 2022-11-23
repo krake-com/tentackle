@@ -115,7 +115,7 @@ public class JoinedSelect<T extends PersistentDomainObject<T>> {
       String columnName = join.getColumnName();
       String joinedColumnName = join.getJoinedColumnName();
       String joinSelectIdAlias = null;
-      String selectJoinedSql = joinPD.createSelectAllSql();
+      String selectJoinedSql = joinPD.createSelectAllSql(backend);
       if (join.isExplicitIdAliasRequired()) {
         // replace <alias>.id by <alias>_id
         joinSelectIdAlias = joinPD.getTableAlias() + ".id AS " + joinPD.getTableAlias() + "_id";

@@ -32,6 +32,7 @@ import org.tentackle.dbms.DbObjectClassVariables;
 import org.tentackle.dbms.ModificationType;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
+import org.tentackle.dbms.SqlSupplier;
 import org.tentackle.dbms.StatementId;
 import org.tentackle.misc.IdentifiableMap;
 import org.tentackle.misc.TrackedArrayList;

@@ -134,7 +134,7 @@ For more options, see {\@link DbModelWurblet}.
       throw new PersistenceException("@(methodName)@ denied by security rules");
     }
     PreparedStatementWrapper st = getPreparedStatement(@(classVar)@@(statementId)@,
-      () -> {
+      b -> {
         StringBuilder sql = createDeleteAllSql();
 @{include $currentDir/genwhere.incl}@
 @[
