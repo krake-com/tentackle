@@ -135,7 +135,7 @@ For more options, see {\@link DbModelWurblet}.
       throw new PersistenceException("@(methodName)@ denied by security rules");
     }
     PreparedStatementWrapper st = getPreparedStatement(@(classVar)@@(statementId)@,
-      () -> {
+      b -> {
         StringBuilder sql = createSqlUpdate();
 @{include $currentDir/genupdate.incl}@
         sql.append(Backend.SQL_WHEREALL);

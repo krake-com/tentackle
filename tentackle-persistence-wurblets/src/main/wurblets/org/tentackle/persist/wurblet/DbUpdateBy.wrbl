@@ -88,7 +88,7 @@ For more options, see {\@link DbModelWurblet}.
     } // end if remote
 ]@
     PreparedStatementWrapper st = getPreparedStatement(@(classVar)@@(statementId)@,
-      () -> {
+      b -> {
         StringBuilder sql = createSqlUpdate();
 @{include $currentDir/genupdate.incl}@
         sql.append(Backend.SQL_WHEREALL);

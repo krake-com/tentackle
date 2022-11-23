@@ -21,6 +21,7 @@ package org.tentackle.sql;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -152,12 +153,27 @@ public interface DataType<T> {
 
 
   /**
+   * Returns whether the number of columns is backend-specific.<br>
+   * For such types the following restrictions apply:
+   * <ul>
+   *   <li>no <code>CN_...</code> will be generated for the individual columns, just the column basename</li>
+   *   <li>they cannot be used as wurblet arguments (to generate the WHERE-clause)</li>
+   *   <li>the application cannot refer to a column in a backend-agnostic way</li>
+   * </ul>
+   *
+   * @return false if not backend-specific (default), true if varying
+   */
+  boolean isColumnCountBackendSpecific();
+
+
+  /**
    * Gets the number of database columns.<br>
    * A tentackle type may be mapped to more than one column for multi-column types such as {@link org.tentackle.common.BMoney}.
    *
+   * @param backend the backend, ignored if !{@link #isColumnCountBackendSpecific()}
    * @return default is 1
    */
-  int getColumnCount();
+  int getColumnCount(Backend backend);
 
 
   /**
@@ -210,11 +226,12 @@ public interface DataType<T> {
   /**
    * Gets the value of a column.
    *
+   * @param backend the backend, ignored if !{@link #isColumnCountBackendSpecific()}
    * @param index the column index
    * @param value the datatype's value according to the model
    * @return the column's value
    */
-  Object getColumnValue(int index, T value);
+  Object getColumnValue(Backend backend, int index, T value);
 
 
   /**
@@ -240,10 +257,11 @@ public interface DataType<T> {
    * Gets the optional suffix.<br>
    * Suffixes usually begin with an underscore.
    *
-   * @param index the column index
+   * @param backend the backend, ignored if !{@link #isColumnCountBackendSpecific()}
+   * @param index   the column index
    * @return the optional suffix
    */
-  Optional<String> getColumnSuffix(int index);
+  Optional<String> getColumnSuffix(Backend backend, int index);
 
 
   /**
@@ -253,10 +271,31 @@ public interface DataType<T> {
    * Important: for datatypes with more than one column, none or exactly
    * one should be without suffix. See WurbletArgument in tentackle-wurblets.
    *
-   * @param index the column index
+   * @param backend the backend, ignored if !{@link #isColumnCountBackendSpecific()}
+   * @param index   the column index
    * @return the optional suffix
    */
-  Optional<String> getCommentSuffix(int index);
+  Optional<String> getCommentSuffix(Backend backend, int index);
+
+  /**
+   * Creates a list of column names.
+   *
+   * @param backend the backend, ignored if !{@link #isColumnCountBackendSpecific()}
+   * @param columnName the column basename
+   * @return the names as an unmodifiable list
+   */
+  List<String> createColumnNames(Backend backend, String columnName);
+
+  /**
+   * Creates a list of column names as a concatenated string.<br>
+   * The string can be used in SQL INSERT and UPDATE statements.
+   *
+   * @param backend the backend, ignored if !{@link #isColumnCountBackendSpecific()}
+   * @param columnName the column basename
+   * @param separator the separator string between names
+   * @return the names list
+   */
+  String createColumnNamesAsString(Backend backend, String columnName, String separator);
 
 
   /**

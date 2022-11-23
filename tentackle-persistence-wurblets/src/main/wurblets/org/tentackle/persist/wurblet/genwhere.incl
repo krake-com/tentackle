@@ -8,9 +8,9 @@
     if (getContextAttribute() != null) {
         andPrepended = true;
 ]@
-        sql.append(Backend.SQL_AND);
-        sql.append(@(getColumnNameConstant(getContextAttribute(), 0))@);
-        sql.append(Backend.SQL_EQUAL_PAR);
+        sql.append(Backend.SQL_AND)
+           .append(@(getColumnNameConstant(getContextAttribute(), 0))@)
+           .append(Backend.SQL_EQUAL_PAR);
 @[
     }
 
@@ -137,7 +137,7 @@
                        .append(rightClass).append(getColumnNameConstant(mattr, 0)).append("))\n");
                     if (methodArg.isValue()) {
                       buf.append("           .append(Backend.SQL_EQUAL_PAR)\n");
-                      for (int columnIndex = 1; columnIndex < getEffectiveDataType(attr).getColumnCount(); columnIndex++) {
+                      for (int columnIndex = 1; columnIndex < getEffectiveDataType(attr).getColumnCount(null); columnIndex++) {
                         buf.append("           .append(Backend.SQL_AND)\n")
                            .append("           .append(").append(rightClass).append("CLASSVARIABLES.getColumnName(")
                            .append(rightClass).append(getColumnNameConstant(attr, columnIndex)).append("))\n")
@@ -157,7 +157,7 @@
               }
 
               String compKeyClass = deriveClassNameForEntity(attr.getEntity());
-              for (int columnIndex = 0; columnIndex < arg.getDataType().getColumnCount(); columnIndex++) {
+              for (int columnIndex = 0; columnIndex < arg.getDataType().getColumnCount(null); columnIndex++) {
                 if (columnIndex > 0 && arg.getColumnIndex() == null) {
                   buf.append("        sql.append(Backend.SQL_AND);\n");
                 }
@@ -170,7 +170,7 @@
               }
             }
             else {
-              for (int columnIndex = 0; columnIndex < arg.getDataType().getColumnCount(); columnIndex++) {
+              for (int columnIndex = 0; columnIndex < arg.getDataType().getColumnCount(null); columnIndex++) {
                 if (columnIndex > 0 && arg.getColumnIndex() == null) {
                   buf.append("        sql.append(Backend.SQL_AND);\n");
                 }

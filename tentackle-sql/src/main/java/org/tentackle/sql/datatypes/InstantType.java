@@ -75,7 +75,7 @@ public final class InstantType extends AbstractDateTimeType<Instant> {
   }
 
   @Override
-  public int getColumnCount() {
+  public int getColumnCount(Backend backend) {
     return 2;
   }
 
@@ -85,7 +85,7 @@ public final class InstantType extends AbstractDateTimeType<Instant> {
   }
 
   @Override
-  public Optional<String> getCommentSuffix(int index) {
+  public Optional<String> getCommentSuffix(Backend backend, int index) {
     return switch (index) {
       case 0 -> Optional.of(" [s]");
       case 1 -> Optional.of(" [ns]");
@@ -112,7 +112,7 @@ public final class InstantType extends AbstractDateTimeType<Instant> {
   }
 
   @Override
-  public Object getColumnValue(int index, Instant value) {
+  public Object getColumnValue(Backend backend, int index, Instant value) {
     if (value != null) {
       return switch (index) {
         case 0 -> value.getEpochSecond();

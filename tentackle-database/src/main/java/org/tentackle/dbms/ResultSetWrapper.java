@@ -28,6 +28,7 @@ import org.tentackle.common.Timestamp;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.TimeKeeper;
 import org.tentackle.session.PersistenceException;
+import org.tentackle.sql.Backend;
 import org.tentackle.sql.DataType;
 import org.tentackle.sql.datatypes.ZonedDateTimeType;
 
@@ -78,7 +79,7 @@ public class ResultSetWrapper implements AutoCloseable {
   /**
    * Column name suffix for 2nd column in double-column predefined types.
    *
-   * @see org.tentackle.sql.datatypes.AbstractDataType#getColumnSuffix(int)
+   * @see DataType#getColumnSuffix(org.tentackle.sql.Backend, int)
    */
   private static final String COL2_SUFFIX = "_2";
 
@@ -89,12 +90,12 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   private static class Resources implements Runnable {
 
-
     private final StatementHistory history;         // statement history to log duration and number of rows fetched
     private final TimeKeeper duration;              // duration until closed
     private StatementWrapper stmt;                  // the statement wrapper
     private ResultSet rs;                           // the wrapped result set, null if closed
     private Db db;                                  // db from statement
+    private Backend backend;                        // the backend
     private ResultSetSkipBlock skipBlock;           // current skip block
     private boolean commitOnCloseVoucherValid;      // true if commitOnCloseVoucher has been set
     private long commitOnCloseVoucher;              // != 0 if issue a commit() before close()
@@ -112,6 +113,7 @@ public class ResultSetWrapper implements AutoCloseable {
         stmt.consume();
         throw new PersistenceException("connection already closed for " + this);
       }
+      backend = db.getBackend();
       // enable statement-auto-closing if the statement is a non-prepared statement or a prepared one-shot
       closeStatementOnClose = !(stmt instanceof PreparedStatementWrapper) ||
                               ((PreparedStatementWrapper) stmt).getStatementKey() == null;
@@ -172,6 +174,7 @@ public class ResultSetWrapper implements AutoCloseable {
           finally {
             db = null;
             rs = null;
+            backend = null;
             skipBlock = null;
             skipBlocks = null;
             final StatementWrapper st = stmt;
@@ -622,13 +625,29 @@ public class ResultSetWrapper implements AutoCloseable {
 
 
   /**
-   * Configures a column of the current section for automatic retrieval.
+   * Configures a column of the current section for automatic retrieval.<br>
+   * The method can only be used for predefined types!
    *
-   * @param name the column name
+   * @param columnName the column name
    */
-  public void configureColumn(String name) {
+  public void configureColumn(String columnName) {
     assertValidSection();
-    currentSection.configureColumn(name);
+    currentSection.configureColumn(columnName);
+  }
+
+  /**
+   * Configures all columns for the given name and datatype.<br>
+   * The method is mainly provided for backend-specific datatypes, but can be used for any datatype.
+   *
+   * @param dataType the datatype
+   * @param columnName the column name (basename from the model)
+   */
+  public void configureColumns(DataType<?> dataType, String columnName) {
+    assertValidSection();
+    int columnCount = dataType.getColumnCount(resources.backend);
+    for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
+      currentSection.configureColumn(columnName + dataType.getColumnSuffix(resources.backend, columnIndex).orElse(""));
+    }
   }
 
 
@@ -1930,9 +1949,9 @@ public class ResultSetWrapper implements AutoCloseable {
    * @return the object, may be null
    */
   public <T> T get(DataType<T> dataType, int[] pos, boolean mapNull, Integer size) {
-    if (pos.length != dataType.getColumnCount()) {
+    if (pos.length != dataType.getColumnCount(resources.backend)) {
       throw new PersistenceException("position array length does not match column count for " + dataType +
-                                     ", expected " + dataType.getColumnCount() + ", actual " + pos.length);
+                                     ", expected " + dataType.getColumnCount(resources.backend) + ", actual " + pos.length);
     }
     if (columnOffset != 0) {
       int[] oPos = new int[pos.length];
@@ -2842,7 +2861,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * @return the object, may be null
    */
   public <T> T get(DataType<T> dataType, boolean mapNull, Integer size) {
-    int[] pos = new int[dataType.getColumnCount()];
+    int[] pos = new int[dataType.getColumnCount(resources.backend)];
     for (int i=0; i < pos.length; i++) {
       pos[i] = nextConfiguredIndex();
     }

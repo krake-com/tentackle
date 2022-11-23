@@ -125,8 +125,7 @@ public class MessagePersistenceImpl extends AbstractPersistentTransactionData<Me
     // @wurblet findBy RemoteMethod
 
 
-    Query query = new Query();
-    query.add("SELECT " + createSelectAllInnerSql());
+    Query query = createQuery();
 
     if (messageNumber != null) {
       query.add(" AND " + getColumnName(CN_MESSAGENUMBER) + "=?", messageNumber);
@@ -149,10 +148,7 @@ public class MessagePersistenceImpl extends AbstractPersistentTransactionData<Me
     }
     query.add(" ORDER BY " + getTableAlias() + "." + CN_ID);
 
-    try (PreparedStatementWrapper st = createPreparedStatement(query.buildInnerSql().toString())) {
-      query.applyParameters(st, 1);
-      return executeTrackedListQuery(st);
-    }
+    return executeQuery(query);
   }
 
 }

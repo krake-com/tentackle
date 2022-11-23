@@ -29,7 +29,9 @@ import org.tentackle.dbms.DbModificationType;
 import org.tentackle.dbms.DbObjectClassVariables;
 import org.tentackle.dbms.ModificationType;
 import org.tentackle.dbms.PreparedStatementWrapper;
+import org.tentackle.dbms.Query;
 import org.tentackle.dbms.ResultSetWrapper;
+import org.tentackle.dbms.SqlSupplier;
 import org.tentackle.dbms.StatementId;
 import org.tentackle.misc.IdentifiableMap;
 import org.tentackle.misc.ImmutableException;
@@ -1358,38 +1360,38 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Gets a prepared statement and marks it as batchable.<br>
    * If there is a transaction running in batched mode, the statement will be executed via JDBC batching.
-   * Otherwise, the method is equivalent to {@link #getPreparedStatement(StatementId, Supplier)}.
+   * Otherwise, the method is equivalent to {@link #getPreparedStatement(StatementId, SqlSupplier)}.
    * <p>
    * The method must only be used for inserts, updates and delete of a single row!
    *
    * @param modType the modification type
    * @param stmtId the statement ID
-   * @param sqlsupplier the SQL code supplier
+   * @param sqlSupplier the SQL code supplier
    * @return the statement
    */
-  protected PreparedStatementWrapper getBatchablePreparedStatement(ModificationType modType, StatementId stmtId, Supplier<String> sqlsupplier) {
-    PreparedStatementWrapper st = getPreparedStatement(stmtId, sqlsupplier);
+  protected PreparedStatementWrapper getBatchablePreparedStatement(ModificationType modType, StatementId stmtId, SqlSupplier sqlSupplier) {
+    PreparedStatementWrapper st = getPreparedStatement(stmtId, sqlSupplier);
     getSession().addToBatch(modType, st, this, getDomainContext().getRootClassId());
     return st;
   }
 
   @Override
-  protected void insertImpl(DbObjectClassVariables<P> classVariables, Supplier<String> sqlsupplier) {
-    PreparedStatementWrapper st = getBatchablePreparedStatement(DbModificationType.INSERT, classVariables.insertStatementId, sqlsupplier);
+  protected void insertImpl(DbObjectClassVariables<P> classVariables, SqlSupplier sqlSupplier) {
+    PreparedStatementWrapper st = getBatchablePreparedStatement(DbModificationType.INSERT, classVariables.insertStatementId, sqlSupplier);
     setFields(st);
     assertThisRowAffected(st.executeUpdate());
   }
 
   @Override
-  protected void updateImpl(DbObjectClassVariables<P> classVariables, Supplier<String> sqlsupplier) {
-    PreparedStatementWrapper st = getBatchablePreparedStatement(DbModificationType.UPDATE, classVariables.updateStatementId, sqlsupplier);
+  protected void updateImpl(DbObjectClassVariables<P> classVariables, SqlSupplier sqlSupplier) {
+    PreparedStatementWrapper st = getBatchablePreparedStatement(DbModificationType.UPDATE, classVariables.updateStatementId, sqlSupplier);
     setFields(st);
     assertThisRowAffected(st.executeUpdate());
   }
 
   @Override
-  protected void deleteImpl(DbObjectClassVariables<P> classVariables, Supplier<String> sqlsupplier) {
-    PreparedStatementWrapper st = getBatchablePreparedStatement(DbModificationType.DELETE, classVariables.deleteStatementId, sqlsupplier);
+  protected void deleteImpl(DbObjectClassVariables<P> classVariables, SqlSupplier sqlSupplier) {
+    PreparedStatementWrapper st = getBatchablePreparedStatement(DbModificationType.DELETE, classVariables.deleteStatementId, sqlSupplier);
     st.setLong(1, getId());
     st.setLong(2, getSerial());
     assertThisRowAffected(st.executeUpdate());
@@ -1519,6 +1521,92 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   public TrackedList<T> executeTrackedListQuery(PreparedStatementWrapper st) {
     return executeTrackedListQuery(st, null);
+  }
+
+
+  /**
+   * Creates a {@link Query} to retrieve a list of this entity type.
+   *
+   * @param js the joined select configuration, null if no joins
+   * @return the initialized query
+   */
+  public Query createQuery(JoinedSelect<T> js) {
+    Query query;
+    if (js != null) {
+      query = new Query() {
+        @Override
+        public StringBuilder createSql(Backend backend) {
+          StringBuilder sql = super.createSql(backend);
+          js.createJoinedSql(me(), sql);
+          return sql;
+        }
+      };
+    }
+    else {
+     query = new Query();
+    }
+
+    query.add(this::createSelectAllInnerSql);
+    return query;
+  }
+
+  /**
+   * Creates a {@link Query} to retrieve a list of this entity type.
+   *
+   * @return the initialized query
+   */
+  public Query createQuery() {
+    return createQuery(null);
+  }
+
+  /**
+   * Executes a {@link Query} which was built to return a tracked list of this entity type.
+   *
+   * @param query the query object
+   * @param js the joined select configuration, null if no joins
+   * @return the tracked list
+   */
+  public TrackedList<T> executeQuery(Query query, JoinedSelect<T> js) {
+    TrackedList<T> list = new TrackedArrayList<>();
+    try (ResultSetWrapper rs = query.execute(getSession())) {
+      executeQueryToList(rs, js, list);
+    }
+    return list;
+  }
+
+  /**
+   * Executes a {@link Query} which was built to return a tracked list of this entity type.
+   *
+   * @param query the query object
+   * @return the tracked list
+   */
+  public TrackedList<T> executeQuery(Query query) {
+    TrackedList<T> list = new TrackedArrayList<>();
+    try (ResultSetWrapper rs = query.execute(getSession())) {
+      executeQueryToList(rs, null, list);
+    }
+    return list;
+  }
+
+  /**
+   * Executes a {@link Query} which was built to return a tracked list of this entity type.
+   *
+   * @param query the query object
+   * @param js the joined select configuration, null if no joins
+   * @return the scrollable cursor
+   */
+  public ResultSetCursor<T> executeScrollableQuery(Query query, JoinedSelect<T> js) {
+    return new ResultSetCursor<>(me(), query.execute(getSession()), js);
+  }
+
+  /**
+   * Executes a {@link Query} which was built to return a tracked list of this entity type.
+   *
+   * @param query the query object
+   * @return the scrollable cursor
+   */
+  public ResultSetCursor<T> executeScrollableQuery(Query query) {
+    return executeScrollableQuery(query, null);
   }
 
 
@@ -1674,8 +1762,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
         }
         JoinedSelect<T> js = getEagerJoinedSelect();
         PreparedStatementWrapper st = getPreparedStatement(stmtId,
-                () -> {
-                  StringBuilder sql = new StringBuilder(createSelectSql(forUpdate));
+                b -> {
+                  StringBuilder sql = new StringBuilder(createSelectSql(b, forUpdate));
                   sql.append(getSqlClassIdCondition());
                   if (js != null) {
                     js.createJoinedSql(pdo, sql);
@@ -1849,12 +1937,12 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   @Override
-  public StringBuilder createSelectAllInnerSql() {
+  public StringBuilder createSelectAllInnerSql(Backend backend) {
     StringBuilder sql = new StringBuilder();
     String alias = getTableAlias();
     sql.append(alias).append('.').append(SQL_ALLSTAR)
        .append(SQL_FROM)
-       .append(getTableName()).append(getBackend().sqlAsBeforeTableAlias()).append(alias)
+       .append(getTableName()).append(backend.sqlAsBeforeTableAlias()).append(alias)
        .append(SQL_WHEREALL);
     return sql;
   }
@@ -1874,8 +1962,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
   @Override
-  public StringBuilder createSelectAllByIdInnerSql() {
-    StringBuilder sql = createSelectAllInnerSql();
+  public StringBuilder createSelectAllByIdInnerSql(Backend backend) {
+    StringBuilder sql = createSelectAllInnerSql(backend);
     sql.append(SQL_AND)
        .append(getTopSuperTableAlias()).append('.').append(CN_ID)
        .append(SQL_EQUAL_PAR);
@@ -1934,12 +2022,13 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Creates the SQL code for select by normtext.
    *
+   * @param backend the backend
    * @param not true to find all not matching the normtext
    * @return the sql code
    */
-  public String createSelectByNormTextSql(boolean not) {
+  public String createSelectByNormTextSql(Backend backend, boolean not) {
     StringBuilder sql = new StringBuilder(SQL_SELECT);
-    sql.append(createSelectAllInnerSql());
+    sql.append(createSelectAllInnerSql(backend));
     sql.append(getSqlClassIdCondition());
     sql.append(getSqlContextCondition());
     sql.append(SQL_AND)
@@ -2081,8 +2170,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
             getClassVariables().selectByInvertedNormTextStatementId : getClassVariables().selectByNormTextStatementId;
 
     PreparedStatementWrapper st = getPreparedStatement(stmtId,
-            () -> {
-              StringBuilder sql = new StringBuilder(createSelectByNormTextSql(nt.isInverted()));
+            b -> {
+              StringBuilder sql = new StringBuilder(createSelectByNormTextSql(b, nt.isInverted()));
               if (js != null) {
                 js.createJoinedSql(pdo, sql);
               }
@@ -2127,8 +2216,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
     PreparedStatementWrapper st = getPreparedStatement(stmtId,
             ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY,
-            () -> {
-              StringBuilder sql = new StringBuilder(createSelectByNormTextSql(nt.isInverted()));
+            b -> {
+              StringBuilder sql = new StringBuilder(createSelectByNormTextSql(b, nt.isInverted()));
               if (js != null) {
                 js.createJoinedSql(pdo, sql);
                 sql.append(SQL_ORDERBY).append(getColumnName(CN_ID));
@@ -2207,11 +2296,12 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Creates SQL-code for select all.<br>
    * Appends context condition and order by clause if configured.
    *
+   * @param backend the backend
    * @return the sql code
    */
-  public String createSelectAllSql() {
+  public String createSelectAllSql(Backend backend) {
     StringBuilder sql = new StringBuilder(SQL_SELECT);
-    sql.append(createSelectAllInnerSql());
+    sql.append(createSelectAllInnerSql(backend));
     sql.append(getSqlClassIdCondition());
     sql.append(getSqlContextCondition());
     String orderSuffix = orderBy();
@@ -2227,11 +2317,12 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Appends context condition and order by clause if configured.<br>
    * By default, the result is sorted by tableserial + id.
    *
+   * @param backend the backend
    * @return the sql code
    */
-  public String createSelectAllWithExpiredTableSerialsSql() {
+  public String createSelectAllWithExpiredTableSerialsSql(Backend backend) {
     StringBuilder sql = new StringBuilder(SQL_SELECT);
-    sql.append(createSelectAllInnerSql());
+    sql.append(createSelectAllInnerSql(backend));
     sql.append(SQL_AND).
         append(CN_TABLESERIAL).append(">?");
     sql.append(getSqlClassIdCondition());
@@ -2261,8 +2352,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     assertRootContextIsAccepted();
 
     PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectAllStatementId,
-            () -> {
-              StringBuilder sql = new StringBuilder(createSelectAllSql());
+            b -> {
+              StringBuilder sql = new StringBuilder(createSelectAllSql(b));
               if (js != null) {
                 js.createJoinedSql(pdo, sql);
               }
@@ -2293,8 +2384,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     assertRootContextIsAccepted();
 
     PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectAllWithExpiredTableSerialsStatementId,
-            () -> {
-              StringBuilder sql = new StringBuilder(createSelectAllWithExpiredTableSerialsSql());
+            b -> {
+              StringBuilder sql = new StringBuilder(createSelectAllWithExpiredTableSerialsSql(b));
               if (js != null) {
                 js.createJoinedSql(pdo, sql);
               }
@@ -2330,8 +2421,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
     PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectAllCursorStatementId,
             ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY,
-            () -> {
-              StringBuilder sql = new StringBuilder(createSelectAllSql());
+            b -> {
+              StringBuilder sql = new StringBuilder(createSelectAllSql(b));
               if (js != null) {
                 js.createJoinedSql(pdo, sql);
                 sql.append(SQL_ORDERBY).append(getColumnName(CN_ID));
@@ -2443,8 +2534,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     JoinedSelect<T> js = getEagerJoinedSelect();
 
     PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectLatestStatementId,
-         () -> {
-           StringBuilder sql = new StringBuilder(createSelectAllInnerSql());
+         b -> {
+           StringBuilder sql = new StringBuilder(createSelectAllInnerSql(b));
            sql.append(getSqlClassIdCondition());
            sql.append(getSqlContextCondition());
            sql.append(Backend.SQL_AND);
@@ -2452,7 +2543,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
            sql.append(Backend.SQL_GREATER_PAR);
            sql.append(Backend.SQL_ORDERBY)
               .append(getColumnName(CN_ID)).append(Backend.SQL_SORTDESC);
-           getBackend().buildSelectSql(sql, false, limit, 0);
+           b.buildSelectSql(sql, false, limit, 0);
            if (js != null) {
              js.createJoinedSql(pdo, sql);
            }
@@ -3668,7 +3759,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
         long txVoucher = db.begin(TX_UPDATE_TOKENLOCK);
         try {
           PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateTokenLockStatementId,
-                                                             this::createUpdateTokenLockSql);
+                                                             b -> createUpdateTokenLockSql());
           long newUser = tokenExpiry != null ? userId : 0;
 
           st.setLong(1, newUser);
@@ -3688,7 +3779,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
           }
           else {
             // no success: another user is currently holding the token
-            st = getPreparedStatement(getClassVariables().selectTokenLockStatementId, this::createSelectTokenLockSql);
+            st = getPreparedStatement(getClassVariables().selectTokenLockStatementId, b -> createSelectTokenLockSql());
             st.setLong(1, getId());
             try (ResultSetWrapper rs = st.executeQuery()) {
               if (rs.next()) {
@@ -3777,7 +3868,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       try {
         if (db.isPersistenceOperationAllowed(this, DbModificationType.UPDATE)) {
           PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateTokenLockOnlyStatementId,
-              this::createUpdateTokenLockOnlySql);
+                                                             b -> createUpdateTokenLockOnlySql());
           st.setLong(1, getEditedBy());
           st.setTimestamp(2, getEditedSince());
           st.setTimestamp(3, getEditedExpiry());
@@ -3827,7 +3918,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
         try {
           boolean withTableSerial = isTableSerialProvided();
           PreparedStatementWrapper st = getPreparedStatement(getClassVariables().transferTokenLockStatementId,
-                  () -> withTableSerial ? createTransferTokenLockWithTableSerialSql() : createTransferTokenLockSql());
+                  b -> withTableSerial ? createTransferTokenLockWithTableSerialSql() : createTransferTokenLockSql());
           long newTableSerial = countModification();    // this will roll back and terminate on error
           if (withTableSerial) {
             setTableSerial(newTableSerial);

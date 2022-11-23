@@ -413,15 +413,15 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
       }
     }
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_GRANTEE_STMT,
-      () -> {
-        StringBuilder sql = createSelectAllInnerSql();
+      b -> {
+        StringBuilder sql = createSelectAllInnerSql(b);
         sql.append(Backend.SQL_AND);
         sql.append(getColumnName(CN_GRANTEECLASSID));
         sql.append(Backend.SQL_EQUAL_PAR);
         sql.append(Backend.SQL_AND);
         sql.append(getColumnName(CN_GRANTEEID));
         sql.append(Backend.SQL_EQUAL_PAR);
-        getBackend().buildSelectSql(sql, false, 0, 0);
+        b.buildSelectSql(sql, false, 0, 0);
         String orderSuffix = orderBy();
         if (orderSuffix != null && !orderSuffix.isEmpty()) {
           sql.append(Backend.SQL_ORDERBY).append(orderSuffix);
@@ -458,15 +458,15 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
       }
     }
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_OBJECT_STMT,
-      () -> {
-        StringBuilder sql = createSelectAllInnerSql();
+      b -> {
+        StringBuilder sql = createSelectAllInnerSql(b);
         sql.append(Backend.SQL_AND);
         sql.append(getColumnName(CN_OBJECTCLASSID));
         sql.append(Backend.SQL_EQUAL_PAR);
         sql.append(Backend.SQL_AND);
         sql.append(getColumnName(CN_OBJECTID));
         sql.append(Backend.SQL_EQUAL_PAR);
-        getBackend().buildSelectSql(sql, false, 0, 0);
+        b.buildSelectSql(sql, false, 0, 0);
         String orderSuffix = orderBy();
         if (orderSuffix != null && !orderSuffix.isEmpty()) {
           sql.append(Backend.SQL_ORDERBY).append(orderSuffix);
@@ -503,12 +503,12 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
       }
     }
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_OBJECT_CLASS_STMT,
-      () -> {
-        StringBuilder sql = createSelectAllInnerSql();
+      b -> {
+        StringBuilder sql = createSelectAllInnerSql(b);
         sql.append(Backend.SQL_AND);
         sql.append(getColumnName(CN_OBJECTCLASSNAME));
         sql.append(Backend.SQL_EQUAL_PAR);
-        getBackend().buildSelectSql(sql, false, 0, 0);
+        b.buildSelectSql(sql, false, 0, 0);
         String orderSuffix = orderBy();
         if (orderSuffix != null && !orderSuffix.isEmpty()) {
           sql.append(Backend.SQL_ORDERBY).append(orderSuffix);
@@ -544,15 +544,15 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
       }
     }
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_DOMAIN_CONTEXT_STMT,
-      () -> {
-        StringBuilder sql = createSelectAllInnerSql();
+      b -> {
+        StringBuilder sql = createSelectAllInnerSql(b);
         sql.append(Backend.SQL_AND);
         sql.append(getColumnName(CN_DOMAINCONTEXTCLASSID));
         sql.append(Backend.SQL_EQUAL_PAR);
         sql.append(Backend.SQL_AND);
         sql.append(getColumnName(CN_DOMAINCONTEXTID));
         sql.append(Backend.SQL_EQUAL_PAR);
-        getBackend().buildSelectSql(sql, false, 0, 0);
+        b.buildSelectSql(sql, false, 0, 0);
         String orderSuffix = orderBy();
         if (orderSuffix != null && !orderSuffix.isEmpty()) {
           sql.append(Backend.SQL_ORDERBY).append(orderSuffix);
@@ -589,7 +589,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
       throw new PersistenceException("deleteByGrantee denied by security rules");
     }
     PreparedStatementWrapper st = getPreparedStatement(DELETE_BY_GRANTEE_STMT,
-      () -> {
+      b -> {
         StringBuilder sql = createDeleteAllSql();
         sql.append(Backend.SQL_AND);
         sql.append(CN_GRANTEECLASSID);
@@ -632,7 +632,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
       throw new PersistenceException("deleteByObject denied by security rules");
     }
     PreparedStatementWrapper st = getPreparedStatement(DELETE_BY_OBJECT_STMT,
-      () -> {
+      b -> {
         StringBuilder sql = createDeleteAllSql();
         sql.append(Backend.SQL_AND);
         sql.append(CN_OBJECTCLASSNAME);
@@ -678,7 +678,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
       throw new PersistenceException("deleteByObjectClass denied by security rules");
     }
     PreparedStatementWrapper st = getPreparedStatement(DELETE_BY_OBJECT_CLASS_STMT,
-      () -> {
+      b -> {
         StringBuilder sql = createDeleteAllSql();
         sql.append(Backend.SQL_AND);
         sql.append(CN_OBJECTCLASSID);
@@ -721,7 +721,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
       throw new PersistenceException("deleteByDomainContext denied by security rules");
     }
     PreparedStatementWrapper st = getPreparedStatement(DELETE_BY_DOMAIN_CONTEXT_STMT,
-      () -> {
+      b -> {
         StringBuilder sql = createDeleteAllSql();
         sql.append(Backend.SQL_AND);
         sql.append(CN_DOMAINCONTEXTCLASSID);
@@ -790,9 +790,6 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
       rs.configureColumn(CN_ID);
       rs.configureColumn(CN_SERIAL);
     }
-    if (rs.getRow() <= 0) {
-      throw new PersistenceException(getSession(), "no valid row");
-    }
     objectClassName = rs.getString();
     objectClassId = rs.getInt();
     objectId = rs.getLong();
@@ -828,7 +825,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   }
 
   @Override
-  public String createInsertSql() {
+  public String createInsertSql(Backend backend) {
     return Backend.SQL_INSERT_INTO + getTableName() + Backend.SQL_LEFT_PARENTHESIS +
            CN_OBJECTCLASSNAME + Backend.SQL_COMMA +
            CN_OBJECTCLASSID + Backend.SQL_COMMA +
@@ -844,23 +841,12 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
            CN_ID + Backend.SQL_COMMA +
            CN_SERIAL +
            Backend.SQL_INSERT_VALUES +
-           Backend.SQL_PAR_COMMA +
-           Backend.SQL_PAR_COMMA +
-           Backend.SQL_PAR_COMMA +
-           Backend.SQL_PAR_COMMA +
-           Backend.SQL_PAR_COMMA +
-           Backend.SQL_PAR_COMMA +
-           Backend.SQL_PAR_COMMA +
-           Backend.SQL_PAR_COMMA +
-           Backend.SQL_PAR_COMMA +
-           Backend.SQL_PAR_COMMA +
-           Backend.SQL_PAR_COMMA +
-           Backend.SQL_PAR_COMMA +
+           Backend.SQL_PAR_COMMA.repeat(12) +
            Backend.SQL_PAR + Backend.SQL_RIGHT_PARENTHESIS;
   }
 
   @Override
-  public String createUpdateSql() {
+  public String createUpdateSql(Backend backend) {
     return Backend.SQL_UPDATE + getTableName() + Backend.SQL_SET +
            CN_OBJECTCLASSNAME + Backend.SQL_EQUAL_PAR_COMMA +
            CN_OBJECTCLASSID + Backend.SQL_EQUAL_PAR_COMMA +

@@ -89,15 +89,14 @@ For more options, see {\@link DbModelWurblet}.
 
 ]@
     PreparedStatementWrapper st = getPreparedStatement(@(classVar)@@(statementId)@,
-      () -> {
+      b -> {
         StringBuilder sql = createSelectIdInnerSql();
 @{include $currentDir/genwhere.incl}@
-        getBackend().buildSelectSql(sql, false, 1, 0);
+        b.buildSelectSql(sql, false, 1, 0);
 @[
     if (append != null) {
 ]@
-        sql.append(' ');
-        sql.append(@(append)@);
+        sql.append(' ').append(@(append)@);
 @[
     }
 ]@

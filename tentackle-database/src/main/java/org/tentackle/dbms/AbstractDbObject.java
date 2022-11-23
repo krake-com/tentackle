@@ -39,7 +39,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 
 import static org.tentackle.sql.Backend.SQL_ALLSTAR;
 import static org.tentackle.sql.Backend.SQL_AND;
@@ -990,13 +989,13 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * @param stmtId the statement id
    * @param resultSetType the result set type
    * @param resultSetConcurrency the result set concurrency
-   * @param sqlsupplier the sql code supplier
+   * @param sqlSupplier the sql code supplier
    * @return the statement
    */
   public PreparedStatementWrapper getPreparedStatement(
-          StatementId stmtId, int resultSetType, int resultSetConcurrency, Supplier<String> sqlsupplier) {
+          StatementId stmtId, int resultSetType, int resultSetConcurrency, SqlSupplier sqlSupplier) {
     return getSession().getPreparedStatement(new StatementKey(stmtId, getClass()), isStatementAlwaysPrepared(),
-                                             resultSetType, resultSetConcurrency, sqlsupplier);
+                                             resultSetType, resultSetConcurrency, sqlSupplier);
   }
 
   /**
@@ -1004,34 +1003,34 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * Uses {@link java.sql.ResultSet#TYPE_FORWARD_ONLY} and {@link java.sql.ResultSet#CONCUR_READ_ONLY}.
    *
    * @param stmtId the statement id
-   * @param sqlsupplier the sql code supplier
+   * @param sqlSupplier the sql code supplier
    * @return the statement
    */
-  public PreparedStatementWrapper getPreparedStatement(StatementId stmtId, Supplier<String> sqlsupplier) {
-    return getSession().getPreparedStatement(new StatementKey(stmtId, getClass()), isStatementAlwaysPrepared(), sqlsupplier);
+  public PreparedStatementWrapper getPreparedStatement(StatementId stmtId, SqlSupplier sqlSupplier) {
+    return getSession().getPreparedStatement(new StatementKey(stmtId, getClass()), isStatementAlwaysPrepared(), sqlSupplier);
   }
 
   /**
    * Creates a one-shot prepared statement.<br>
    *
-   * @param sql the sql code
+   * @param sqlSupplier the SQL code supplier
    * @param resultSetType the result set type
    * @param resultSetConcurrency the result set concurrency
    * @return the statement
    */
-  public PreparedStatementWrapper createPreparedStatement(String sql, int resultSetType, int resultSetConcurrency) {
-    return getSession().createPreparedStatement(sql, resultSetType, resultSetConcurrency);
+  public PreparedStatementWrapper createPreparedStatement(SqlSupplier sqlSupplier, int resultSetType, int resultSetConcurrency) {
+    return getSession().createPreparedStatement(sqlSupplier, resultSetType, resultSetConcurrency);
   }
 
   /**
    * Creates a one-shot  prepared statement.<br>
    * Uses {@link java.sql.ResultSet#TYPE_FORWARD_ONLY} and {@link java.sql.ResultSet#CONCUR_READ_ONLY}.
    *
-   * @param sql the sql code
+   * @param sqlSupplier the SQL code supplier
    * @return the statement
    */
-  public PreparedStatementWrapper createPreparedStatement(String sql) {
-    return getSession().createPreparedStatement(sql);
+  public PreparedStatementWrapper createPreparedStatement(SqlSupplier sqlSupplier) {
+    return getSession().createPreparedStatement(sqlSupplier);
   }
 
   /**
@@ -1328,7 +1327,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       }
       else {
         PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectObjectStatementId,
-                                                           () -> createSelectSql(false));
+                                                           b -> createSelectSql(b, false));
         st.setLong(1, id);
         try (ResultSetWrapper rs = st.executeQuery()) {
           if (rs.next()) {
@@ -1387,7 +1386,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
          */
         getSession().assertTxRunning();
         PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectForUpdateStatementId,
-                                                           () -> createSelectSql(true));
+                                                           b -> createSelectSql(b, true));
         st.setLong(1, id);
         try (ResultSetWrapper rs = st.executeQuery()) {
           if (rs.next()) {
@@ -1430,9 +1429,9 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   public ResultSetWrapper resultAllObjects() {
     getSession().assertNotRemote();
     PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectAllObjectsStatementId,
-      () -> {
-        StringBuilder sql = createSelectAllInnerSql();
-        getSession().getBackend().buildSelectSql(sql, false, 0, 0);
+      b -> {
+        StringBuilder sql = createSelectAllInnerSql(b);
+        b.buildSelectSql(sql, false, 0, 0);
         return sql.toString();
       }
     );
@@ -1448,9 +1447,9 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   public ResultSetWrapper resultObjectsWithExpiredTableSerials(long oldSerial) {
     getSession().assertNotRemote();
     PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectObjectsWithExpiredTableSerialsStatementId,
-      () -> {
-        StringBuilder sql = createSelectObjectsWithExpiredTableSerialsSql();
-        getSession().getBackend().buildSelectSql(sql, false, 0, 0);
+      b -> {
+        StringBuilder sql = createSelectObjectsWithExpiredTableSerialsSql(b);
+        b.buildSelectSql(sql, false, 0, 0);
         return sql.toString();
       }
     );
@@ -1467,9 +1466,9 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   public ResultSetWrapper resultAllIdSerial() {
     getSession().assertNotRemote();
     PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectAllIdSerialStatementId,
-      () -> {
+       b -> {
         StringBuilder sql = createSelectAllIdSerialInnerSql();
-        getSession().getBackend().buildSelectSql(sql, false, 0, 0);
+        b.buildSelectSql(sql, false, 0, 0);
         return sql.toString();
       }
     );
@@ -1607,7 +1606,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     else  {
       // local
       PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectSerialStatementId,
-                                                         this::createSelectSerialSql);
+                                                         b -> createSelectSerialSql());
       st.setLong(1, id);
       try (ResultSetWrapper rs = st.executeQuery()) {
         if (rs.next()) {
@@ -1638,7 +1637,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     else  {
       // local
       PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectMaxIdStatementId,
-                                                         this::createSelectMaxIdSql);
+                                                         b -> createSelectMaxIdSql());
       try (ResultSetWrapper rs = st.executeQuery()) {
         long maxId = -1;
         if (rs.next()) {
@@ -1670,7 +1669,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     else  {
       // local
       PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectMaxTableSerialStatementId,
-                                                         this::createSelectMaxTableSerialSql);
+                                                         b -> createSelectMaxTableSerialSql());
       try (ResultSetWrapper rs = st.executeQuery()) {
         long maxTableSerial = -1;
         if (rs.next()) {
@@ -1696,7 +1695,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     DbObjectClassVariables<P> classVariables = getClassVariables();
     if (classVariables.columnCount <= 0) {
       // perform a dummy select (this happens only once per class, hence no prepared statement)
-      String sql = getBackend().optimizeSql(Backend.SQL_SELECT + createSelectAllInnerSql() + SQL_AND + "1=0");
+      Backend backend = getBackend();
+      String sql = backend.optimizeSql(Backend.SQL_SELECT + createSelectAllInnerSql(backend) + SQL_AND + "1=0");
       StatementWrapper stmt = getSession().createStatement();
       stmt.setParallelOk(true);   // don't count this as a parallel query
       try (ResultSetWrapper rs = stmt.executeQuery(sql)) {
@@ -1736,10 +1736,10 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * Should not be used by applications. Will be overridden for multi-inheritance.
    *
    * @param classVariables the classvariables
-   * @param sqlsupplier the SQL code supplier
+   * @param sqlSupplier the SQL code supplier
    */
-  protected void insertImpl(DbObjectClassVariables<P> classVariables, Supplier<String> sqlsupplier) {
-    PreparedStatementWrapper st = getPreparedStatement(classVariables.insertStatementId, sqlsupplier);
+  protected void insertImpl(DbObjectClassVariables<P> classVariables, SqlSupplier sqlSupplier) {
+    PreparedStatementWrapper st = getPreparedStatement(classVariables.insertStatementId, sqlSupplier);
     setFields(st);
     assertThisRowAffected(st.executeUpdate());
   }
@@ -1762,7 +1762,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     else  {
       // local
       if (db.isPersistenceOperationAllowed(this, DbModificationType.DELETE)) {
-        deleteImpl(getClassVariables(), this::createDeleteSql);
+        deleteImpl(getClassVariables(), b -> createDeleteSql());
       }
     }
   }
@@ -1773,10 +1773,10 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * Should not be used by applications. Will be overridden for multi-inheritance.
    *
    * @param classVariables the classvariables
-   * @param sqlsupplier the SQL code supplier
+   * @param sqlSupplier the SQL code supplier
    */
-  protected void deleteImpl(DbObjectClassVariables<P> classVariables, Supplier<String> sqlsupplier) {
-    PreparedStatementWrapper st = getPreparedStatement(classVariables.deleteStatementId, sqlsupplier);
+  protected void deleteImpl(DbObjectClassVariables<P> classVariables, SqlSupplier sqlSupplier) {
+    PreparedStatementWrapper st = getPreparedStatement(classVariables.deleteStatementId, sqlSupplier);
     st.setLong(1, id);
     st.setLong(2, serial);
     assertThisRowAffected(st.executeUpdate());
@@ -1812,10 +1812,10 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * Should not be used by applications. Will be overridden for multi-inheritance.
    *
    * @param classVariables the classvariables
-   * @param sqlsupplier the SQL code supplier
+   * @param sqlSupplier the SQL code supplier
    */
-  protected void updateImpl(DbObjectClassVariables<P> classVariables, Supplier<String> sqlsupplier) {
-    PreparedStatementWrapper st = getPreparedStatement(classVariables.updateStatementId, sqlsupplier);
+  protected void updateImpl(DbObjectClassVariables<P> classVariables, SqlSupplier sqlSupplier) {
+    PreparedStatementWrapper st = getPreparedStatement(classVariables.updateStatementId, sqlSupplier);
     setFields(st);
     assertThisRowAffected(st.executeUpdate());
   }
@@ -1839,7 +1839,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     else  {
       // for Oracle notes see selectLocked().
       PreparedStatementWrapper st = getPreparedStatement(getClassVariables().dummyUpdateStatementId,
-                                                         this::createDummyUpdateSql);
+                                                         b -> createDummyUpdateSql());
       st.setLong(1, id);
       assertThisRowAffected(st.executeUpdate());
     }
@@ -1871,7 +1871,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     else  {
       if (db.isPersistenceOperationAllowed(this, DbModificationType.UPDATE)) {
         PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateSerialStatementId,
-                                                           this::createUpdateSerialSql);
+                                                           b -> createUpdateSerialSql());
         st.setLong(1, id);
         st.setLong(2, serial);
         assertThisRowAffected(st.executeUpdate());
@@ -1901,7 +1901,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     else  {
       if (db.isPersistenceOperationAllowed(this, DbModificationType.UPDATE)) {
         PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateAndSetSerialStatementId,
-                                                           this::createUpdateAndSetSerialSql);
+                                                           b -> createUpdateAndSetSerialSql());
         st.setLong(1, serial);
         st.setLong(2, id);
         assertThisRowAffected(st.executeUpdate());
@@ -1930,7 +1930,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     else  {
       if (db.isPersistenceOperationAllowed(this, DbModificationType.UPDATE)) {
         PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateSerialAndTableSerialStatementId,
-                                                           this::createUpdateSerialAndTableSerialSql);
+                                                           b -> createUpdateSerialAndTableSerialSql());
         st.setLong(1, tableSerial);
         st.setLong(2, id);
         st.setLong(3, serial);
@@ -2127,7 +2127,9 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
               initModification(DbModificationType.UPDATE);
               // DON'T USE updateSerial() here! We need the old serial unchanged
               PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateSerialStatementId,
-                  () -> isTableSerialProvided() ? createUpdateSerialAndTableSerialSql() : createUpdateSerialSql());
+                                                                 b -> isTableSerialProvided() ?
+                                                                      createUpdateSerialAndTableSerialSql() :
+                                                                      createUpdateSerialSql());
               saveReferencedRelations(true);
               // id can't be negative cause if isNew() above
               int ndx = 0;
@@ -2381,7 +2383,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
         try {
           initModification(DbModificationType.DELETE);
           deleteReferencingRelations();
-          deleteImpl(getClassVariables(), this::createDeleteSql);
+          deleteImpl(getClassVariables(), b -> createDeleteSql());
           deleteReferencedRelations();
           finishModification(DbModificationType.DELETE);
           db.commit(txVoucher);
@@ -2483,7 +2485,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     else  {
       // local
       PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectExpiredTableSerials1StatementId,
-                                                         this::createSelectExpiredTableSerials1Sql);
+                                                         b -> createSelectExpiredTableSerials1Sql());
       st.setLong(1, oldSerial);
       try (ResultSetWrapper rs = st.executeQuery()) {
         List<IdSerialTuple> expireList = new ArrayList<>();
@@ -2517,7 +2519,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     else  {
       // local
       PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectExpiredTableSerials2StatementId,
-                                                         this::createSelectExpiredTableSerials2Sql);
+                                                         b -> createSelectExpiredTableSerials2Sql());
       st.setLong(1, oldSerial);
       st.setLong(2, maxSerial);
       List<IdSerialTuple> expireList = new ArrayList<>();
@@ -2690,9 +2692,10 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    *  "* FROM xytable WHERE 1=1"
    * </pre>
    *
+   * @param backend the backend
    * @return the sql text
    */
-  public StringBuilder createSelectAllInnerSql() {
+  public StringBuilder createSelectAllInnerSql(Backend backend) {
     StringBuilder sql = new StringBuilder();
     sql.append(SQL_ALLSTAR);
     sql.append(SQL_FROM);
@@ -2732,10 +2735,11 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    *  "* FROM xytable WHERE id=?"
    * </pre>
    *
+   * @param backend the backend
    * @return the sql text
    */
-  public StringBuilder createSelectAllByIdInnerSql() {
-    StringBuilder sql = createSelectAllInnerSql();
+  public StringBuilder createSelectAllByIdInnerSql(Backend backend) {
+    StringBuilder sql = createSelectAllInnerSql(backend);
     sql.append(SQL_AND);
     sql.append(CN_ID);
     sql.append(SQL_EQUAL_PAR);
@@ -2802,9 +2806,10 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   /**
    * Creates the SQL code for the update statement.
    *
+   * @param backend the backend
    * @return the SQL code
    */
-  public String createUpdateSql() {
+  public String createUpdateSql(Backend backend) {
     throw new PersistenceException(this, "method createUpdateSql not implemented in " + getClass());
   }
 
@@ -2812,9 +2817,10 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   /**
    * Creates the SQL code for the insert statement.
    *
+   * @param backend the backend
    * @return the SQL code
    */
-  public String createInsertSql() {
+  public String createInsertSql(Backend backend) {
     throw new PersistenceException(this, "method createInsertSql not implemented in " + getClass());
   }
 
@@ -2822,12 +2828,13 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   /**
    * Creates the SQL code for the select by id statement.
    *
+   * @param backend the backend
    * @param locked true if select locked (FOR UPDATE)
    * @return the sql code
    */
-  public String createSelectSql(boolean locked) {
-    StringBuilder sql = createSelectAllByIdInnerSql();
-    getSession().getBackend().buildSelectSql(sql, locked, 0, 0);
+  public String createSelectSql(Backend backend, boolean locked) {
+    StringBuilder sql = createSelectAllByIdInnerSql(backend);
+    backend.buildSelectSql(sql, locked, 0, 0);
     return sql.toString();
   }
 
@@ -2934,10 +2941,11 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   /**
    * Creates the SQL code for the first statement to select expired table serials.
    *
+   * @param backend the backend
    * @return the sql code
    */
-  public StringBuilder createSelectObjectsWithExpiredTableSerialsSql() {
-    StringBuilder sql = createSelectAllInnerSql();
+  public StringBuilder createSelectObjectsWithExpiredTableSerialsSql(Backend backend) {
+    StringBuilder sql = createSelectAllInnerSql(backend);
     sql.append(SQL_AND).
         append(CN_TABLESERIAL).append(">?").
         append(SQL_ORDERBY).append(CN_TABLESERIAL).append(SQL_COMMA).append(CN_ID);

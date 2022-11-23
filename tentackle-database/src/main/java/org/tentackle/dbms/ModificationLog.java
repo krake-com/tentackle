@@ -330,9 +330,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       rs.configureColumn(CN_ID);
       rs.configureColumn(CN_SERIAL);
     }
-    if (rs.getRow() <= 0) {
-      throw new PersistenceException(getSession(), "no valid row");
-    }
     objectId = rs.getLong();
     objectClassId = rs.getInt();
     objectClassName = rs.getString();
@@ -366,7 +363,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   }
 
   @Override
-  public String createInsertSql() {
+  public String createInsertSql(Backend backend) {
     return Backend.SQL_INSERT_INTO + getTableName() + Backend.SQL_LEFT_PARENTHESIS +
            CN_OBJECTID + Backend.SQL_COMMA +
            CN_OBJECTCLASSID + Backend.SQL_COMMA +
@@ -381,22 +378,12 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
            CN_ID + Backend.SQL_COMMA +
            CN_SERIAL +
            Backend.SQL_INSERT_VALUES +
-           Backend.SQL_PAR_COMMA +
-           Backend.SQL_PAR_COMMA +
-           Backend.SQL_PAR_COMMA +
-           Backend.SQL_PAR_COMMA +
-           Backend.SQL_PAR_COMMA +
-           Backend.SQL_PAR_COMMA +
-           Backend.SQL_PAR_COMMA +
-           Backend.SQL_PAR_COMMA +
-           Backend.SQL_PAR_COMMA +
-           Backend.SQL_PAR_COMMA +
-           Backend.SQL_PAR_COMMA +
+           Backend.SQL_PAR_COMMA.repeat(11) +
            Backend.SQL_PAR + Backend.SQL_RIGHT_PARENTHESIS;
   }
 
   @Override
-  public String createUpdateSql() {
+  public String createUpdateSql(Backend backend) {
     return Backend.SQL_UPDATE + getTableName() + Backend.SQL_SET +
            CN_OBJECTID + Backend.SQL_EQUAL_PAR_COMMA +
            CN_OBJECTCLASSID + Backend.SQL_EQUAL_PAR_COMMA +
@@ -873,14 +860,14 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       }
     }
     PreparedStatementWrapper st = getPreparedStatement(SELECT_FIRST_UNPROCESSED_STMT,
-      () -> {
-        StringBuilder sql = createSelectAllInnerSql();
+      b -> {
+        StringBuilder sql = createSelectAllInnerSql(b);
         sql.append(Backend.SQL_AND);
         sql.append(CN_PROCESSED);
         sql.append(Backend.SQL_EQUAL_PAR);
         sql.append(Backend.SQL_ORDERBY)
            .append(CN_ID).append(Backend.SQL_SORTASC);
-        getBackend().buildSelectSql(sql, false, 1, 0);
+        b.buildSelectSql(sql, false, 1, 0);
         return sql.toString();
       }
     );
@@ -913,14 +900,14 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   public ResultSetWrapper resultSetUnprocessed() {
     Db db = getSession();
     PreparedStatementWrapper st = getPreparedStatement(RESULT_SET_UNPROCESSED_STMT,
-      () -> {
-        StringBuilder sql = createSelectAllInnerSql();
+      b -> {
+        StringBuilder sql = createSelectAllInnerSql(b);
         sql.append(Backend.SQL_AND);
         sql.append(CN_PROCESSED);
         sql.append(Backend.SQL_EQUAL_PAR);
         sql.append(Backend.SQL_ORDERBY)
            .append(CN_ID).append(Backend.SQL_SORTASC);
-        getBackend().buildSelectSql(sql, false, 0, 0);
+        b.buildSelectSql(sql, false, 0, 0);
         return sql.toString();
       }
     );
@@ -959,8 +946,8 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       }
     }
     PreparedStatementWrapper st = getPreparedStatement(SELECT_FIRST_UNPROCESSED_GREATER_STMT,
-      () -> {
-        StringBuilder sql = createSelectAllInnerSql();
+      b -> {
+        StringBuilder sql = createSelectAllInnerSql(b);
         sql.append(Backend.SQL_AND);
         sql.append(CN_ID);
         sql.append(Backend.SQL_GREATER_PAR);
@@ -969,7 +956,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
         sql.append(Backend.SQL_EQUAL_PAR);
         sql.append(Backend.SQL_ORDERBY)
            .append(CN_ID).append(Backend.SQL_SORTASC);
-        getBackend().buildSelectSql(sql, false, 1, 0);
+        b.buildSelectSql(sql, false, 1, 0);
         return sql.toString();
       }
     );
@@ -1005,14 +992,14 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   public ResultSetWrapper resultSetSince(Timestamp when) {
     Db db = getSession();
     PreparedStatementWrapper st = getPreparedStatement(RESULT_SET_SINCE_STMT,
-      () -> {
-        StringBuilder sql = createSelectAllInnerSql();
+      b -> {
+        StringBuilder sql = createSelectAllInnerSql(b);
         sql.append(Backend.SQL_AND);
         sql.append(CN_WHEN);
         sql.append(Backend.SQL_GREATEROREQUAL_PAR);
         sql.append(Backend.SQL_ORDERBY)
            .append(CN_ID).append(Backend.SQL_SORTASC);
-        getBackend().buildSelectSql(sql, false, 0, 0);
+        b.buildSelectSql(sql, false, 0, 0);
         return sql.toString();
       }
     );
@@ -1051,14 +1038,14 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       }
     }
     PreparedStatementWrapper st = getPreparedStatement(SELECT_GREATER_ID_STMT,
-      () -> {
-        StringBuilder sql = createSelectAllInnerSql();
+      b -> {
+        StringBuilder sql = createSelectAllInnerSql(b);
         sql.append(Backend.SQL_AND);
         sql.append(CN_ID);
         sql.append(Backend.SQL_GREATER_PAR);
         sql.append(Backend.SQL_ORDERBY)
            .append(CN_ID).append(Backend.SQL_SORTASC);
-        getBackend().buildSelectSql(sql, false, 1, 0);
+        b.buildSelectSql(sql, false, 1, 0);
         return sql.toString();
       }
     );
@@ -1093,14 +1080,14 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   public ResultSetWrapper resultSetGreaterId(long id) {
     Db db = getSession();
     PreparedStatementWrapper st = getPreparedStatement(RESULT_SET_GREATER_ID_STMT,
-      () -> {
-        StringBuilder sql = createSelectAllInnerSql();
+      b -> {
+        StringBuilder sql = createSelectAllInnerSql(b);
         sql.append(Backend.SQL_AND);
         sql.append(CN_ID);
         sql.append(Backend.SQL_GREATER_PAR);
         sql.append(Backend.SQL_ORDERBY)
            .append(CN_ID).append(Backend.SQL_SORTASC);
-        getBackend().buildSelectSql(sql, false, 0, 0);
+        b.buildSelectSql(sql, false, 0, 0);
         return sql.toString();
       }
     );
@@ -1138,14 +1125,14 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       }
     }
     PreparedStatementWrapper st = getPreparedStatement(SELECT_LAST_PROCESSED_STMT,
-      () -> {
-        StringBuilder sql = createSelectAllInnerSql();
+      b -> {
+        StringBuilder sql = createSelectAllInnerSql(b);
         sql.append(Backend.SQL_AND);
         sql.append(CN_PROCESSED);
         sql.append(Backend.SQL_NOTEQUAL_PAR);
         sql.append(Backend.SQL_ORDERBY)
            .append(CN_ID).append(Backend.SQL_SORTDESC);
-        getBackend().buildSelectSql(sql, false, 1, 0);
+        b.buildSelectSql(sql, false, 1, 0);
         return sql.toString();
       }
     );
@@ -1190,8 +1177,8 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       }
     }
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_OBJECT_STMT,
-      () -> {
-        StringBuilder sql = createSelectAllInnerSql();
+      b -> {
+        StringBuilder sql = createSelectAllInnerSql(b);
         sql.append(Backend.SQL_AND);
         sql.append(CN_PROCESSED);
         sql.append(Backend.SQL_EQUAL_PAR);
@@ -1203,7 +1190,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
         sql.append(Backend.SQL_EQUAL_PAR);
         sql.append(Backend.SQL_ORDERBY)
            .append(CN_ID).append(Backend.SQL_SORTASC);
-        getBackend().buildSelectSql(sql, false, 0, 0);
+        b.buildSelectSql(sql, false, 0, 0);
         return sql.toString();
       }
     );
@@ -1252,8 +1239,8 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       }
     }
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_USER_AND_TYPE_STMT,
-      () -> {
-        StringBuilder sql = createSelectAllInnerSql();
+      b -> {
+        StringBuilder sql = createSelectAllInnerSql(b);
         sql.append(Backend.SQL_AND);
         sql.append(CN_PROCESSED);
         sql.append(Backend.SQL_EQUAL_PAR);
@@ -1263,7 +1250,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
         sql.append(Backend.SQL_AND);
         sql.append(CN_MODTYPE);
         sql.append(Backend.SQL_EQUAL_PAR);
-        getBackend().buildSelectSql(sql, false, 0, 0);
+        b.buildSelectSql(sql, false, 0, 0);
         return sql.toString();
       }
     );
@@ -1308,7 +1295,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       }
     }
     PreparedStatementWrapper st = getPreparedStatement(IS_REFERENCING_USER_STMT,
-      () -> {
+      b -> {
         StringBuilder sql = createSelectIdInnerSql();
         sql.append(Backend.SQL_AND);
         sql.append(CN_PROCESSED);
@@ -1316,7 +1303,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
         sql.append(Backend.SQL_AND);
         sql.append(CN_USERID);
         sql.append(Backend.SQL_EQUAL_PAR);
-        getBackend().buildSelectSql(sql, false, 1, 0);
+        b.buildSelectSql(sql, false, 1, 0);
         return sql.toString();
       }
     );
@@ -1356,7 +1343,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       }
     }
     PreparedStatementWrapper st = getPreparedStatement(IS_REFERENCING_OBJECT_STMT,
-      () -> {
+      b -> {
         StringBuilder sql = createSelectIdInnerSql();
         sql.append(Backend.SQL_AND);
         sql.append(CN_PROCESSED);
@@ -1367,7 +1354,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
         sql.append(Backend.SQL_AND);
         sql.append(CN_OBJECTID);
         sql.append(Backend.SQL_EQUAL_PAR);
-        getBackend().buildSelectSql(sql, false, 1, 0);
+        b.buildSelectSql(sql, false, 1, 0);
         return sql.toString();
       }
     );
@@ -1415,10 +1402,9 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     }
     // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(UPDATE_BY_OBJECT_TYPE_SERIAL_STMT,
-      () -> {
+      b -> {
         StringBuilder sql = createSqlUpdate();
-        sql.append(CN_PROCESSED);
-        sql.append(Backend.SQL_EQUAL_PAR);
+        sql.append(CN_PROCESSED).append(Backend.SQL_EQUAL_PAR);
         sql.append(Backend.SQL_WHEREALL);
         sql.append(Backend.SQL_AND);
         sql.append(CN_PROCESSED);
@@ -1481,7 +1467,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     }
     // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(DELETE_BY_OBJECT_TYPE_SERIAL_STMT,
-      () -> {
+      b -> {
         StringBuilder sql = createDeleteAllSql();
         sql.append(Backend.SQL_AND);
         sql.append(CN_PROCESSED);
@@ -1540,14 +1526,14 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       }
     }
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_TX_ID_STMT,
-      () -> {
-        StringBuilder sql = createSelectAllInnerSql();
+      b -> {
+        StringBuilder sql = createSelectAllInnerSql(b);
         sql.append(Backend.SQL_AND);
         sql.append(CN_TXID);
         sql.append(Backend.SQL_EQUAL_PAR);
         sql.append(Backend.SQL_ORDERBY)
            .append(CN_ID).append(Backend.SQL_SORTASC);
-        getBackend().buildSelectSql(sql, false, 0, 0);
+        b.buildSelectSql(sql, false, 0, 0);
         return sql.toString();
       }
     );
@@ -1593,10 +1579,9 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     }
     // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(UPDATE_UNPROCESSED_BY_TX_ID_STMT,
-      () -> {
+      b -> {
         StringBuilder sql = createSqlUpdate();
-        sql.append(CN_PROCESSED);
-        sql.append(Backend.SQL_EQUAL_PAR);
+        sql.append(CN_PROCESSED).append(Backend.SQL_EQUAL_PAR);
         sql.append(Backend.SQL_WHEREALL);
         sql.append(Backend.SQL_AND);
         sql.append(CN_TXID);
@@ -1642,7 +1627,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     }
     // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(DELETE_BY_TX_ID_STMT,
-      () -> {
+      b -> {
         StringBuilder sql = createDeleteAllSql();
         sql.append(Backend.SQL_AND);
         sql.append(CN_TXID);
@@ -1687,7 +1672,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     }
     // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(DELETE_PROCESSED_STMT,
-      () -> {
+      b -> {
         StringBuilder sql = createDeleteAllSql();
         sql.append(Backend.SQL_AND);
         sql.append(CN_PROCESSED);
@@ -1735,8 +1720,8 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       }
     }
     PreparedStatementWrapper st = getPreparedStatement(SELECT_UP_TO_STMT,
-      () -> {
-        StringBuilder sql = createSelectAllInnerSql();
+      b -> {
+        StringBuilder sql = createSelectAllInnerSql(b);
         sql.append(Backend.SQL_AND).append(Backend.SQL_LEFT_PARENTHESIS);
         sql.append(CN_PROCESSED);
         sql.append(Backend.SQL_EQUAL_PAR);
@@ -1746,7 +1731,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
         sql.append(Backend.SQL_RIGHT_PARENTHESIS);
         sql.append(Backend.SQL_ORDERBY)
            .append(CN_ID).append(Backend.SQL_SORTASC);
-        getBackend().buildSelectSql(sql, false, 0, 0);
+        b.buildSelectSql(sql, false, 0, 0);
         return sql.toString();
       }
     );
@@ -1790,7 +1775,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
 
 
-    PreparedStatementWrapper st = getPreparedStatement(SELECT_TX_IDS_STMT, () ->
+    PreparedStatementWrapper st = getPreparedStatement(SELECT_TX_IDS_STMT, b ->
       Backend.SQL_SELECT + "DISTINCT(" + CN_TXID + ") FROM " + getTableName() +
       Backend.SQL_WHERE + CN_ID + ">=? AND " + CN_ID + "<=?"
     );
@@ -1827,9 +1812,9 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       }
     }
     // else: local mode
-    PreparedStatementWrapper st = getPreparedStatement(UPDATE_PROCESSES_STMTID,
-      () -> Backend.SQL_UPDATE + getTableName() + Backend.SQL_SET + CN_PROCESSED + Backend.SQL_EQUAL_PAR +
-             Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR
+    PreparedStatementWrapper st = getPreparedStatement(UPDATE_PROCESSES_STMTID, b ->
+        Backend.SQL_UPDATE + getTableName() + Backend.SQL_SET + CN_PROCESSED + Backend.SQL_EQUAL_PAR +
+        Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR
     );
     st.setTimestamp(1, processed, true);
     st.setLong(2, getId());
@@ -1873,10 +1858,10 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       }
     }
     // else: local mode
-    PreparedStatementWrapper st = getPreparedStatement(UPDATE_DIAGNOSTICS_STMTID,
-      () -> Backend.SQL_UPDATE + getTableName() + Backend.SQL_SET + CN_PROCESSED +
-             Backend.SQL_EQUAL_PAR_COMMA + CN_MESSAGE + Backend.SQL_EQUAL_PAR +
-             Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR
+    PreparedStatementWrapper st = getPreparedStatement(UPDATE_DIAGNOSTICS_STMTID, b ->
+        Backend.SQL_UPDATE + getTableName() + Backend.SQL_SET + CN_PROCESSED +
+        Backend.SQL_EQUAL_PAR_COMMA + CN_MESSAGE + Backend.SQL_EQUAL_PAR +
+        Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR
     );
     int ndx = 1;
     st.setTimestamp(ndx++, processed, true);
@@ -2116,7 +2101,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     public long[] modlogIDs;
 
     /** true if this is the first block. */
-    public boolean first;
+    public final boolean first;
 
     /** true if this is the last block. */
     public boolean last;

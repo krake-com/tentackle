@@ -24,6 +24,7 @@ import org.tentackle.common.DMoney;
 import org.tentackle.common.DateHelper;
 import org.tentackle.misc.Convertible;
 import org.tentackle.session.PersistenceException;
+import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendPreparedStatement;
 import org.tentackle.sql.DataType;
 import org.tentackle.sql.DataTypeFactory;
@@ -556,7 +557,8 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
     if (dataType == null) {
       throw new PersistenceException("unsupported array type " + type.getName());
     }
-    if (dataType.getColumnCount() == 1) {
+    Backend backend = getSession().getBackend();
+    if (dataType.getColumnCount(backend) == 1) {
       if (columnIndex < 0) {
         // convertible type
         arrayElements = new ArrayList<>();
@@ -575,7 +577,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
       arrayElements = new ArrayList<>();
       for (Object element : elements) {
         if (element != null) {
-          arrayElements.add(dataType.getColumnValue(columnIndex, element));
+          arrayElements.add(dataType.getColumnValue(backend, columnIndex, element));
         }
       }
     }

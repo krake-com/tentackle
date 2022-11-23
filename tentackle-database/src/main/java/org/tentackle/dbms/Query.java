@@ -25,6 +25,7 @@ import org.tentackle.common.DMoney;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.Convertible;
 import org.tentackle.session.PersistenceException;
+import org.tentackle.sql.Backend;
 import org.tentackle.sql.DataType;
 import org.tentackle.sql.DataTypeFactory;
 
@@ -38,7 +39,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-
 
 
 /**
@@ -155,6 +155,40 @@ public class Query {
     items.add(new QueryItem(sql, data));
   }
 
+  /**
+   * Appends a backend-specific SQL-part to this query.
+   *
+   * @param sqlSupplier supplier for backend specific SQL code
+   */
+  public void add(SqlSupplier sqlSupplier) {
+    items.add(new QueryItem(sqlSupplier));
+  }
+
+  /**
+   * Appends an SQL-part and corresponding parameters to this query.
+   * <pre>
+   * Example: add(" AND CN_ID=?", object.getId());
+   *          add(" AND CN_MONEY=?", object.getAmount());
+   * </pre>
+   *
+   * @param index index at which the specified SQL is to be inserted
+   * @param sql is the SQL-string, null or empty if just data
+   * @param data is an array of parameters
+   */
+  public void add(int index, String sql, Object... data) {
+    items.add(index, new QueryItem(sql, data));
+  }
+
+  /**
+   * Appends a backend-specific SQL-part to this query.
+   *
+   * @param index index at which the specified SQL is to be inserted
+   * @param sqlSupplier supplier for backend specific SQL code
+   */
+  public void add(int index, SqlSupplier sqlSupplier) {
+    items.add(index, new QueryItem(sqlSupplier));
+  }
+
 
   /**
    * Sets the optional fetchsize. 0 = drivers default.
@@ -208,15 +242,15 @@ public class Query {
   public ResultSetWrapper execute(Db db, int resultSetType, int resultSetConcurrency) {
 
     PreparedStatementWrapper st;
-    String sql = createSql(db);
 
     if (statementCached) {
-      StatementKey key = createStatementKey(sql);
+      StringBuilder sql = createSql(db.getBackend());
+      StatementKey key = createStatementKey(sql.toString());
       // prepare if new, else re-use
-      st = db.getPreparedStatement(key, false, resultSetType, resultSetConcurrency, () -> sql);
+      st = db.getPreparedStatement(key, false, resultSetType, resultSetConcurrency, b -> sql);
     }
     else {
-      st = db.createPreparedStatement(sql, resultSetType, resultSetConcurrency);
+      st = db.createPreparedStatement(this::createSql, resultSetType, resultSetConcurrency);
     }
 
     // apply parameters to statement
@@ -318,22 +352,25 @@ public class Query {
    * @return the number of rows for this query
    */
   public int getRowCount(Db db) {
-    StringBuilder buf = buildInnerSql();
-    buf.insert(0, "SELECT COUNT(*) FROM (");
-    buf.append(')');
-    if (db.getBackend().isAliasRequiredForSubSelect()) {
-      buf.append(" AS F_O_O");
-    }
-    int count = 0;
-    try (PreparedStatementWrapper st = db.createPreparedStatement(buf.toString())) {
+    try (PreparedStatementWrapper st = db.createPreparedStatement(b -> {
+      StringBuilder buf = new StringBuilder();
+      buf.append(buildInnerSql(b));
+      buf.insert(0, "SELECT COUNT(*) FROM (");
+      buf.append(')');
+      if (db.getBackend().isAliasRequiredForSubSelect()) {
+        buf.append(" AS F_O_O");
+      }
+      return buf.toString();
+    })) {
       applyParameters(st, 1);
+      int count = 0;
       try (ResultSetWrapper rs = st.executeQuery()) {
         if (rs.next()) {
           count = rs.getInt(1);
         }
       }
+      return count;
     }
-    return count;
   }
 
 
@@ -441,7 +478,7 @@ public class Query {
               }
               // the application must provide the correct number of question marks!
               st.set(dataType, ndx, data, false, null);
-              ndx += dataType.getColumnCount();
+              ndx += dataType.getColumnCount(st.getSession().getBackend());
             }
           }
         }
@@ -455,16 +492,17 @@ public class Query {
 
 
   /**
-   * Creates the SQL-String of this query.<br>
-   * Optionally modifies the sql query according to limit and offset.
+   * Creates the SQL-code of this query.<br>
+   * Optionally modifies the query according to limit and offset.
    *
-   * @param db the session
-   * @return the sql string
+   * @param backend the backend
+   * @return the SQL code
    */
-  public String createSql(Db db) {
-    StringBuilder sql = buildInnerSql();
-    db.getBackend().buildSelectSql(sql, false, limit, offset);
-    return sql.toString();
+  public StringBuilder createSql(Backend backend) {
+    StringBuilder sql = new StringBuilder();
+    sql.append(buildInnerSql(backend));
+    backend.buildSelectSql(sql, false, limit, offset);
+    return sql;
   }
 
   /**
@@ -480,12 +518,13 @@ public class Query {
   /**
    * Builds the inner sql query string.
    *
+   * @param backend the backend
    * @return the sql string
    */
-  public StringBuilder buildInnerSql() {
+  public StringBuilder buildInnerSql(Backend backend) {
     StringBuilder buf = new StringBuilder();
     for (QueryItem item : items) {
-      buf.append(item.sql);
+      buf.append(item.createSql(backend));
     }
     return buf;
   }
@@ -497,17 +536,24 @@ public class Query {
    */
   private static class QueryItem {
 
-    private final String sql;         // sql string
-    private final Object[] data;      // data items
+    private final String sql;                 // sql string
+    private final SqlSupplier sqlSupplier;    // or SQL supplier
+    private final Object[] data;              // data items
 
     private QueryItem(String sql, Object... data) {
       this.sql = sql == null ? "" : sql;
+      this.sqlSupplier = null;
       this.data = data;
     }
 
-    @Override
-    public String toString() {
-      return sql;
+    private QueryItem(SqlSupplier sqlSupplier) {
+      this.sqlSupplier = sqlSupplier;
+      this.sql = null;
+      this.data = null;
+    }
+
+    private String createSql(Backend backend) {
+      return sqlSupplier != null ? sqlSupplier.get(backend).toString() : sql;
     }
   }
 }

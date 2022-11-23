@@ -193,9 +193,6 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
       rs.configureColumn(CN_ID);
       rs.configureColumn(CN_SERIAL);
     }
-    if (rs.getRow() <= 0) {
-      throw new PersistenceException(getSession(), "no valid row");
-    }
     setTableSerial(rs.getLong());
     name = rs.getString();
     locale = rs.getString(true);
@@ -215,7 +212,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
   }
 
   @Override
-  public String createInsertSql() {
+  public String createInsertSql(Backend backend) {
     return Backend.SQL_INSERT_INTO + getTableName() + Backend.SQL_LEFT_PARENTHESIS +
            CN_TABLESERIAL + Backend.SQL_COMMA +
            CN_NAME + Backend.SQL_COMMA +
@@ -223,15 +220,12 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
            CN_ID + Backend.SQL_COMMA +
            CN_SERIAL +
            Backend.SQL_INSERT_VALUES +
-           Backend.SQL_PAR_COMMA +
-           Backend.SQL_PAR_COMMA +
-           Backend.SQL_PAR_COMMA +
-           Backend.SQL_PAR_COMMA +
+           Backend.SQL_PAR_COMMA.repeat(4) +
            Backend.SQL_PAR + Backend.SQL_RIGHT_PARENTHESIS;
   }
 
   @Override
-  public String createUpdateSql() {
+  public String createUpdateSql(Backend backend) {
     return Backend.SQL_UPDATE + getTableName() + Backend.SQL_SET +
            CN_TABLESERIAL + Backend.SQL_EQUAL_PAR_COMMA +
            CN_NAME + Backend.SQL_EQUAL_PAR_COMMA +
@@ -301,15 +295,15 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
       }
     }
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_UNIQUE_DOMAIN_KEY_STMT,
-      () -> {
-        StringBuilder sql = createSelectAllInnerSql();
+      b -> {
+        StringBuilder sql = createSelectAllInnerSql(b);
         sql.append(Backend.SQL_AND);
         sql.append(getColumnName(CN_NAME));
         sql.append(Backend.SQL_EQUAL_PAR);
         sql.append(Backend.SQL_AND);
         sql.append(getColumnName(CN_LOCALE));
         sql.append(Backend.SQL_EQUAL_PAR);
-        getBackend().buildSelectSql(sql, false, 0, 0);
+        b.buildSelectSql(sql, false, 0, 0);
         return sql.toString();
       }
     );
@@ -651,12 +645,12 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
         )
       );
     PreparedStatementWrapper st = getPreparedStatement(FIND_BY_NAME_STMT,
-      () -> {
-        StringBuilder sql = createSelectAllInnerSql();
+      b -> {
+        StringBuilder sql = createSelectAllInnerSql(b);
         sql.append(Backend.SQL_AND);
         sql.append(getColumnName(CN_NAME));
         sql.append(Backend.SQL_EQUAL_PAR);
-        getBackend().buildSelectSql(sql, false, 0, 0);
+        b.buildSelectSql(sql, false, 0, 0);
         js.createJoinedSql(me(), sql);
         return sql.toString();
       }
@@ -698,15 +692,15 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
         )
       );
     PreparedStatementWrapper st = getPreparedStatement(FIND_BY_NAME_AND_LOCALE_STMT,
-      () -> {
-        StringBuilder sql = createSelectAllInnerSql();
+      b -> {
+        StringBuilder sql = createSelectAllInnerSql(b);
         sql.append(Backend.SQL_AND);
         sql.append(getColumnName(CN_NAME));
         sql.append(Backend.SQL_EQUAL_PAR);
         sql.append(Backend.SQL_AND);
         sql.append(getColumnName(CN_LOCALE));
         sql.append(Backend.SQL_EQUAL_PAR);
-        getBackend().buildSelectSql(sql, false, 0, 0);
+        b.buildSelectSql(sql, false, 0, 0);
         js.createJoinedSql(me(), sql);
         return sql.toString();
       }

@@ -23,11 +23,19 @@ For more options, see {\@link ModelWurblet}.
       }
     }
 
+    Map<Attribute, DataType<?>> bsAttrs = new LinkedHashMap<>();  // backend-specific attributes requires special handling
     for (Attribute attr: getEntity().getAttributes())  {
       if (!attr.getOptions().isNoConstant() && !attr.getOptions().isNoDeclare() && !attr.getOptions().isFromSuper()) {
-        int columnCount = getEffectiveDataType(attr).getColumnCount();
+        DataType<?> effectiveType = getEffectiveDataType(attr);
         String baseColConst = getColumnNameConstant(attr, -1);
-
+        int columnCount;
+        if (effectiveType.isColumnCountBackendSpecific()) {
+          columnCount = 0;
+          bsAttrs.put(attr, effectiveType);     // remember for later below...
+        }
+        else {
+          columnCount = effectiveType.getColumnCount(null);
+        }
         for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
           String colConst = getColumnNameConstant(attr, columnIndex);
           if (allColConst != null && !attr.getOptions().isMute()) {
@@ -45,7 +53,7 @@ For more options, see {\@link ModelWurblet}.
         if (baseColConst != null) {
 ]@
 
-  /** database column basename for '@(attr)@'. */
+  /** database column basename for @(effectiveType.isColumnCountBackendSpecific() ? "backend-specific " : "")@'@(attr)@'. */
   public static final String @(baseColConst)@ = @(StringHelper.toDoubleQuotes(getColumnName(attr, -1)))@;
 @[
         }
@@ -55,8 +63,8 @@ For more options, see {\@link ModelWurblet}.
     if (allColConst != null) {
 ]@
 
-  /** mapped columns for '@(getEntity())@'. */
-  public static final List<String> CNS_@(getEntity().getName().toUpperCase())@ = List.of(
+  /** backend-agnostic mapped columns. */
+  private static final List<String> MAPPED_COLUMNS = List.of(
 @[
       int i = 0;
       for (String colConst : allColConst) {
@@ -66,6 +74,48 @@ For more options, see {\@link ModelWurblet}.
       }
 ]@
   );
+@[
+      if (!bsAttrs.isEmpty()) {
+]@
+
+  /** backend-specific mapped columns. */
+  private static final Map<Backend, List<String>> BACKEND_COLUMNS_MAP = new ConcurrentHashMap<>();
+@[
+      }
+]@
+
+  /**
+   * Returns all mapped columns for {\@link @(getEntity())@}.
+   *
+   * \@param backend the backend
+   * \@return the unmodifiable list of column names
+   */
+  public static List<String> mappedColumns(Backend backend) {
+@[
+      if (bsAttrs.isEmpty()) {
+]@
+    return MAPPED_COLUMNS;
+@[
+      }
+      else {
+]@
+    return BACKEND_COLUMNS_MAP.computeIfAbsent(backend, b -> {
+      List<String> columnNames = new ArrayList<>();
+      columnNames.addAll(MAPPED_COLUMNS);
+@[
+        for (Map.Entry<Attribute, DataType<?>> entry : bsAttrs.entrySet()) {
+]@
+      columnNames.addAll(@(entry.getValue().getDataTypeConstant())@.createColumnNames(b, @(getColumnNameConstant(entry.getKey(), -1))@));
+@[
+        }
+]@
+      return Collections.unmodifiableList(columnNames);
+    });
+@[
+      }
+]@
+  }
+
 @[
     }
   }

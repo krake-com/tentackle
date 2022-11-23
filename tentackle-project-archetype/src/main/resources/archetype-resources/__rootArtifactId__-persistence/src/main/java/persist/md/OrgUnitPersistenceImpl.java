@@ -21,6 +21,7 @@ import org.tentackle.dbms.DbObjectClassVariables;
 import org.tentackle.dbms.ModificationType;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
+import org.tentackle.dbms.SqlSupplier;
 import org.tentackle.dbms.StatementId;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;

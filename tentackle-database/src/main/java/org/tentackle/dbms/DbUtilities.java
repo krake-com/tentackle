@@ -27,6 +27,7 @@ import org.tentackle.session.BackendConfiguration;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionPoolProvider;
+import org.tentackle.sql.Backend;
 import org.tentackle.sql.DataType;
 import org.tentackle.sql.DataTypeFactory;
 
@@ -416,6 +417,7 @@ public class DbUtilities {
     List<MethodMapping> builderMappings = new ArrayList<>();      // mappings for the builder pattern
     List<MethodMapping> setterMappings = new ArrayList<>();       // mappings for the setters
     List<ColumnMapping> recordMappings = null;                    // != null if mappings for the record pattern were found
+    Backend backend = rs.getSession().getBackend();               // the backend
 
     // build converted column names
     columnNames = new String[columnCount];
@@ -430,7 +432,7 @@ public class DbUtilities {
       for (Constructor<?> constructor : clazz.getDeclaredConstructors()) {
         List<ColumnMapping> mappings = new ArrayList<>();
         for (RecordComponent recordComponent : recordComponents) {
-          ColumnMapping mapping = createColumnMapping(recordComponent.getName(), columnNames, recordComponent.getType());
+          ColumnMapping mapping = createColumnMapping(backend, recordComponent.getName(), columnNames, recordComponent.getType());
           if (mapping != null) {
             mappings.add(mapping);
           }
@@ -450,7 +452,7 @@ public class DbUtilities {
             method.getName().startsWith("set")) {
           String name = method.getName().substring(3);
           if (!name.isEmpty() && Character.isUpperCase(name.charAt(0))) {
-            MethodMapping mapping = createMethodMapping(name, columnNames, method);
+            MethodMapping mapping = createMethodMapping(backend, name, columnNames, method);
             if (mapping != null) {
               setterMappings.add(mapping);
             }
@@ -476,7 +478,7 @@ public class DbUtilities {
           for (Method method : builderClass.getMethods()) {
             if (method.getDeclaringClass() != Object.class &&
                 method.getReturnType() == Void.TYPE && method.getParameterCount() == 1) {
-              MethodMapping mapping = createMethodMapping(method.getName(), columnNames, method);
+              MethodMapping mapping = createMethodMapping(backend, method.getName(), columnNames, method);
               if (mapping != null) {
                 builderMappings.add(mapping);
               }
@@ -546,10 +548,10 @@ public class DbUtilities {
     return name.replace("_", "").toLowerCase(); // remove underscores and convert to lowercase
   }
 
-  private int[] determinePositions(String memberName, String[] columnNames, DataType<?> dataType) {
-    int[] positions = new int[dataType.getColumnCount()];
+  private int[] determinePositions(Backend backend, String memberName, String[] columnNames, DataType<?> dataType) {
+    int[] positions = new int[dataType.getColumnCount(backend)];
     for (int p=0; p < positions.length; p++) {
-      String normalizedColumnName = normalizeColumnName(memberName + dataType.getColumnSuffix(p).orElse(""));
+      String normalizedColumnName = normalizeColumnName(memberName + dataType.getColumnSuffix(backend, p).orElse(""));
       boolean found = false;
       for (int c=0; c < columnNames.length; c++) {
         if (normalizedColumnName.equals(columnNames[c])) {
@@ -566,11 +568,11 @@ public class DbUtilities {
     return positions;
   }
 
-  private ColumnMapping createColumnMapping(String memberName, String[] columnNames, Class<?> type) {
+  private ColumnMapping createColumnMapping(Backend backend, String memberName, String[] columnNames, Class<?> type) {
     ColumnMapping columnMapping = null;
     DataType<?> dataType = DataTypeFactory.getInstance().get(type);
     if (dataType != null) {
-      int[] positions = determinePositions(memberName, columnNames, dataType);
+      int[] positions = determinePositions(backend, memberName, columnNames, dataType);
       if (positions != null) {
         // all columns found in resultset!
         columnMapping = new ColumnMapping(dataType, positions);
@@ -579,9 +581,9 @@ public class DbUtilities {
     return columnMapping;
   }
 
-  private MethodMapping createMethodMapping(String memberName, String[] columnNames, Method method) {
+  private MethodMapping createMethodMapping(Backend backend, String memberName, String[] columnNames, Method method) {
     MethodMapping methodMapping = null;
-    ColumnMapping columnMapping = createColumnMapping(memberName, columnNames, method.getParameterTypes()[0]);
+    ColumnMapping columnMapping = createColumnMapping(backend, memberName, columnNames, method.getParameterTypes()[0]);
     if (columnMapping != null) {
       methodMapping = new MethodMapping(method, columnMapping);
     }

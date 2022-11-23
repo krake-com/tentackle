@@ -187,10 +187,10 @@ For more options, see {\@link DbModelWurblet}.
     }
 ]@
     PreparedStatementWrapper st = getPreparedStatement(@(statementId)@,
-      () -> {
-        StringBuilder sql = createSelectAllInnerSql();
+      b -> {
+        StringBuilder sql = createSelectAllInnerSql(b);
 @{include $currentDir/genwhere.incl}@
-        getBackend().buildSelectSql(sql, @(lock ? "true" : "false")@, @(needLimit ? 1 : 0)@, 0);
+        b.buildSelectSql(sql, @(lock ? "true" : "false")@, @(needLimit ? 1 : 0)@, 0);
 @[
     if (sort) {
 ]@
@@ -202,8 +202,7 @@ For more options, see {\@link DbModelWurblet}.
     }
     if (append != null)  {
 ]@
-        sql.append(' ');
-        sql.append(@(append)@);
+        sql.append(' ').append(@(append)@);
 @[
     }
     if (withJoins) {

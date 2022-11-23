@@ -741,7 +741,11 @@ public class DbModelWurblet extends ModelWurblet {
            .append('=');
         if (methodArg.isValue()) {
           buf.append('?');
-          for (int columnIndex = 1; columnIndex < getEffectiveDataType(attr).getColumnCount(); columnIndex++) {   // for more than one column
+          DataType<?> effectiveDataType = getEffectiveDataType(attr);
+          if (effectiveDataType.isColumnCountBackendSpecific()) {
+            throw new WurbelException("backend-specific datatype " + effectiveDataType + " cannot be used in joins");
+          }
+          for (int columnIndex = 1; columnIndex < effectiveDataType.getColumnCount(null); columnIndex++) {   // for more than one column
             buf.append(" AND ").append(joinName).append('.').append(getColumnName(attr, columnIndex)).append("=?");
           }
           buf.append('"');
@@ -844,7 +848,10 @@ public class DbModelWurblet extends ModelWurblet {
         buf.append(")");
       }
       // for multi-column types, such as BMoney (not application specific types)
-      int diff = dataType.getColumnCount() - 1;
+      if (dataType.isColumnCountBackendSpecific()) {
+        throw new WurbelException("backend-specific datatype " + dataType + " cannot be used in where-clauses");
+      }
+      int diff = dataType.getColumnCount(null) - 1;
       if (diff == 1) {
         buf.append(";\n    ndx++");
       }

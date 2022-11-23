@@ -85,7 +85,7 @@ For more options, see {\@link DbModelWurblet}.
     } // end if remote
 ]@
     PreparedStatementWrapper st = getPreparedStatement(@(classVar)@@(statementId)@,
-      () -> {
+      b -> {
         StringBuilder sql = createDeleteAllSql();
 @{include $currentDir/genwhere.incl}@
 @[

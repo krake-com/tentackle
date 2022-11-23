@@ -62,7 +62,7 @@ public final class DMoneyType extends AbstractDataType<DMoney> {
   }
 
   @Override
-  public int getColumnCount() {
+  public int getColumnCount(Backend backend) {
     return 2;
   }
 
@@ -72,7 +72,7 @@ public final class DMoneyType extends AbstractDataType<DMoney> {
   }
 
   @Override
-  public Optional<String> getCommentSuffix(int index) {
+  public Optional<String> getCommentSuffix(Backend backend, int index) {
     return switch (index) {
       case 0 -> Optional.empty();
       case 1 -> Optional.of(" (scale)");
@@ -104,7 +104,7 @@ public final class DMoneyType extends AbstractDataType<DMoney> {
   }
 
   @Override
-  public Object getColumnValue(int index, DMoney value) {
+  public Object getColumnValue(Backend backend, int index, DMoney value) {
     if (value != null) {
       return switch (index) {
         case 0 -> value.bigDecimalValue();

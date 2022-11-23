@@ -57,7 +57,7 @@ public class BatchingTest extends AbstractPdoTest {
     Db session = (Db) getSession();
     ModificationLog log = new ModificationLog(session, DbModificationType.INSERT);
     log.setSerial(1);
-    PreparedStatementWrapper st = log.getPreparedStatement(log.getClassVariables().insertStatementId, () -> log.createInsertSql());
+    PreparedStatementWrapper st = log.getPreparedStatement(log.getClassVariables().insertStatementId, log::createInsertSql);
     TimeKeeper timeKeeper = new TimeKeeper();
     int batchCount = 0;
     for (int i=1; i <= COUNT; i++) {
