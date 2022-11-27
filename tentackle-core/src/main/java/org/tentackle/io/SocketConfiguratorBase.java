@@ -18,8 +18,8 @@
 
 package org.tentackle.io;
 
+import org.tentackle.common.ParameterString;
 import org.tentackle.common.TentackleRuntimeException;
-import org.tentackle.misc.ParameterString;
 
 import java.io.Serial;
 import java.io.Serializable;

@@ -10,34 +10,50 @@ package ${package}.common;
 import org.tentackle.common.LocaleProvider;
 import org.tentackle.common.Service;
 
+import java.util.List;
 import java.util.Locale;
 
 /**
  * Application specific locale provider.
  * <p>
- * The default language is "en".
- * Secondary supported languages: "de" (currently)
+ * Narrows the locales to their languages.<br>
+ * The default language is "en".<br>
+ * Secondary supported languages: "de" (feel free to change that)
  */
 @Service(LocaleProvider.class)
 public class ${application}LocaleProvider extends LocaleProvider {
 
-  private static final Locale PRIMARY_LOCALE = Locale.ENGLISH;
-
-  private static final Locale[] SECONDARY_LOCALES = {
-    Locale.GERMAN
-  };
+  private static final List<Locale> EFFECTIVE_LOCALES = List.of(Locale.ENGLISH, Locale.GERMAN);
 
   @Override
   public Locale getEffectiveLocale(Locale locale) {
+    Locale effectiveLocale = Locale.ENGLISH;    // fallback locale
     if (locale != null) {
-      String localeStr = locale.toString();
-      for (Locale secondaryLocale : SECONDARY_LOCALES) {
-        if (localeStr.startsWith(secondaryLocale.toString())) {
-          return secondaryLocale;
+      for (Locale secondaryLocale : EFFECTIVE_LOCALES) {
+        if (locale.getLanguage().equals(secondaryLocale.getLanguage())) {
+          effectiveLocale = secondaryLocale;
+          break;
         }
       }
     }
-    return PRIMARY_LOCALE;
+    return effectiveLocale;
+  }
+
+  @Override
+  public List<Locale> getEffectiveLocales() {
+    return EFFECTIVE_LOCALES;
+  }
+
+  @Override
+  public boolean isLocaleSupported(Locale locale) {
+    if (locale != null) {
+      for (Locale secondaryLocale : EFFECTIVE_LOCALES) {
+        if (secondaryLocale.getLanguage().equals(locale.getLanguage())) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
 }

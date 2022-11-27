@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.misc;
+package org.tentackle.common;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -34,8 +34,8 @@ import java.util.Properties;
  * </pre>
  * Where name must be a valid name according to the Java convention for variables.
  * The values are any kind of strings enclosed in single quotes.
- * If the value contains a single quote, it must be encoded as two consecutive single quotes.
- * The parameters are separated by comma.
+ * If the value contains a single quote, it is encoded as two consecutive single quotes.
+ * The parameters are separated by a comma.
  * The empty string is encoded as nameX instead of nameX='' as a convenience to denote
  * just the presence of a name (e.g. for booleans).
  *
@@ -89,7 +89,7 @@ public class ParameterString implements Serializable {
    * Gets the value of a parameter.
    *
    * @param name the parameter name
-   * @return the value
+   * @return the value, null if no such parameter
    */
   public String getParameter(String name) {
     return parameters.get(name);

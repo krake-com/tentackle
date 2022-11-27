@@ -20,13 +20,13 @@ package org.tentackle.dbms;
 
 import org.tentackle.common.DateHelper;
 import org.tentackle.common.Freezable;
+import org.tentackle.common.ParameterString;
 import org.tentackle.common.RemoteMethod;
 import org.tentackle.common.StringHelper;
 import org.tentackle.common.Timestamp;
 import org.tentackle.dbms.rmi.ModificationLogRemoteDelegate;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.Canonicalizer;
-import org.tentackle.misc.ParameterString;
 import org.tentackle.session.ClassId;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Persistent;
