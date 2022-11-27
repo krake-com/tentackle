@@ -18,7 +18,7 @@
 
 package org.tentackle.log;
 
-import org.tentackle.misc.ParameterString;
+import org.tentackle.common.ParameterString;
 
 import java.util.Map;
 import java.util.Set;

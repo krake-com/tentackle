@@ -658,21 +658,11 @@ public final class StringHelper {
   /**
    * Checks if string contains only whitespaces.
    *
-   * @param str the string to check
+   * @param str the string to check, may be null
    * @return true if null, empty or all whitespace, false if at least one non-whitespace-character found
    */
   public static boolean isAllWhitespace(String str) {
-    if (str != null)  {
-      int len = str.length();
-      for (int i=0; i < len; i++) {
-        char c = str.charAt(i);
-        if (!Character.isWhitespace(c)) {
-          return false;
-        }
-      }
-      return true;    // all whitespaces
-    }
-    return true;  // no non-whitespace at all
+    return str == null || str.isBlank();
   }
 
 

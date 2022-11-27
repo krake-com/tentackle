@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.misc;
+package org.tentackle.common;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -32,7 +32,7 @@ import java.text.ParseException;
 public class ParameterStringTest {
 
   @Test
-  public void testParamaterString() {
+  public void testParameterString() {
 
     try {
       String parStr = "user='harald', enabled, offset='10', skipLine";

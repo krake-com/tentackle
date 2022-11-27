@@ -18,7 +18,9 @@
 
 package org.tentackle.common;
 
+import java.util.List;
 import java.util.Locale;
+import java.util.StringTokenizer;
 
 interface LocaleProviderHolder {
   LocaleProvider INSTANCE = ServiceFactory.createService(LocaleProvider.class, LocaleProvider.class);
@@ -44,7 +46,15 @@ public class LocaleProvider {
   }
 
 
+  /**
+   * The thread-local locales.
+   */
   private final ThreadLocal<Locale> tlLocale = new ThreadLocal<>();
+
+  /**
+   * The default supported effective locales.
+   */
+  private final List<Locale> EFFECTIVE_LOCALES = List.of(Locale.ENGLISH);
 
 
   /**
@@ -137,5 +147,97 @@ public class LocaleProvider {
   public Locale getFallbackLocale() {
     return Locale.ENGLISH;
   }
+
+
+  /**
+   * Returns an unmodifiable list of all supported effective locales.
+   *
+   * @return the possible effective locales
+   */
+  public List<Locale> getEffectiveLocales() {
+    return EFFECTIVE_LOCALES;
+  }
+
+  /**
+   * Returns whether given locale is covered by the effective locales.
+   *
+   * @param locale the locale
+   * @return true if locale would map to a valid effective locale
+   */
+  public boolean isLocaleSupported(Locale locale) {
+    for (Locale effectiveLocale : getEffectiveLocales()) {
+      if (effectiveLocale.equals(locale)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+
+  /**
+   * Converts a locale to a tag.<br>
+   * Since there is no guarantee that {@link Locale#toLanguageTag()} and {@link Locale#forLanguageTag(String)} will round-trip,
+   * this method is provided to guarantee that at least for the supported locales.
+   *
+   * @param locale the locale
+   * @return the tag
+   * @see #fromTag(String)
+   */
+  public String toTag(Locale locale) {
+    StringBuilder buf = new StringBuilder();
+    buf.append(locale.getLanguage());
+    String str = locale.getCountry();
+    if (!str.isEmpty()) {
+      buf.append('_').append(str);
+      str = locale.getVariant();
+      if (!str.isEmpty()) {
+        buf.append('_').append(str);
+      }
+    }
+    return buf.toString();
+  }
+
+  /**
+   * Converts a tag to a supported locale.
+   *
+   * @param tag the tag
+   * @return the locale, null if tag is empty or null
+   * @see #toTag(Locale)
+   */
+  public Locale fromTag(String tag) {
+    Locale locale = null;
+    String language = null;
+    String country = null;
+    String variant = null;
+
+    if (tag != null) {
+      StringTokenizer stok = new StringTokenizer(tag, "_");
+      while (stok.hasMoreTokens()) {
+        String token = stok.nextToken();
+        if (language == null) {
+          language = token;
+        }
+        else if (country == null) {
+          country = token;
+        }
+        else if (variant == null) {
+          country = token;
+        }
+      }
+
+      if (variant != null) {
+        locale = Locale.of(language, country, variant);
+      }
+      else if (country != null) {
+        locale = Locale.of(language, country);
+      }
+      else if (language != null) {
+        locale = Locale.of(language);
+      }
+    }
+
+    return locale;
+  }
+
 
 }
