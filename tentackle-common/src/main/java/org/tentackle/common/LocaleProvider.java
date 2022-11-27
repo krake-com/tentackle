@@ -226,13 +226,13 @@ public class LocaleProvider {
       }
 
       if (variant != null) {
-        locale = Locale.of(language, country, variant);
+        locale = new Locale(language, country, variant);
       }
       else if (country != null) {
-        locale = Locale.of(language, country);
+        locale = new Locale(language, country);
       }
       else if (language != null) {
-        locale = Locale.of(language);
+        locale = new Locale(language);
       }
     }
 
