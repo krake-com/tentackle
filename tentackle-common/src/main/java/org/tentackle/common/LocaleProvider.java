@@ -141,6 +141,8 @@ public class LocaleProvider {
    * fall back to the "no-locale" translation.<br>
    * In most cases this corresponds to the "en"-locale ({@link Locale#ENGLISH}),
    * but applications can change this by overriding this method.
+   * <p>
+   * Important: the fallback-locale must be language-only! No country or variant!
    *
    * @return the fallback locale
    */
@@ -221,7 +223,7 @@ public class LocaleProvider {
           country = token;
         }
         else if (variant == null) {
-          country = token;
+          variant = token;
         }
       }
 

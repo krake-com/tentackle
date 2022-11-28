@@ -27,7 +27,8 @@ import java.util.Objects;
 
 /**
  * Multilingual text.<br>
- * This is an immutable object.
+ * This is an immutable object and supported as a regular datatype in entities
+ * via <code>org.tentackle.sql.datatypes.I18NTextType</code>.
  */
 public class I18NText implements Serializable {
 
@@ -142,7 +143,8 @@ public class I18NText implements Serializable {
       throw new TentackleRuntimeException("unsupported locale: " + locale);
     }
 
-    locale = localeProvider.getEffectiveLocale(locale);
+    locale = narrowLocale(localeProvider.getEffectiveLocale(locale));
+
     if (StringHelper.isAllWhitespace(text)) {
       // remove locale
       withTextMap.remove(locale);
@@ -204,7 +206,7 @@ public class I18NText implements Serializable {
    */
   public String get(Locale locale) {
     LocaleProvider localeProvider = LocaleProvider.getInstance();
-    String text = textMap.get(localeProvider.getEffectiveLocale(locale));
+    String text = textMap.get(narrowLocale(localeProvider.getEffectiveLocale(locale)));
     if (text == null) {
       if (defaultLocale != null) {
         text = textMap.get(defaultLocale);
@@ -288,6 +290,27 @@ public class I18NText implements Serializable {
     int result = textMap.hashCode();
     result = 31 * result + (defaultLocale != null ? defaultLocale.hashCode() : 0);
     return result;
+  }
+
+
+  /**
+   * Narrows the effective locale returned by the {@link LocaleProvider} further to language.<br>
+   * The LocaleProvider may allow wider locales for ResourceBundles,
+   * but for I18NText this would complicate things way too much.<br>
+   * In most applications, the LocaleProvider narrows to language anyway.
+   *
+   * @param locale the effective locale
+   * @return the language-only locale
+   */
+  protected Locale narrowLocale(Locale locale) {
+    if (!locale.getVariant().isEmpty() || !locale.getCountry().isEmpty()) {
+      // variant or country given: narrow to language only.
+      // The LocaleProvider may allow wider locales for ResourceBundles,
+      // but for I18NText this would complicate things way too much.
+      // In most applications, the LocaleProvider narrows to language anyway.
+      locale = Locale.of(locale.getLanguage());
+    }
+    return locale;
   }
 
 }

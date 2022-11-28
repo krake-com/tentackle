@@ -554,7 +554,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
   public void setArray(int p, Class<?> type, int columnIndex, Collection<?> elements, String operator) {
     Collection arrayElements;
     DataType dataType = DataTypeFactory.getInstance().get(type);
-    if (dataType == null) {
+    if (dataType == null || dataType.isColumnCountBackendSpecific()) {
       throw new PersistenceException("unsupported array type " + type.getName());
     }
     Backend backend = getSession().getBackend();

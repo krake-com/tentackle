@@ -38,18 +38,20 @@ import java.util.Optional;
  * Datatype for {@link I18NText}.<br>
  * Stored as one or two columns, depending on the backend.
  * <ul>
- *   <li>If the database supports very long strings as an extenstion to <code>VARCHAR</code>, like postgres, a single column is used.</li>
+ *   <li>If the database supports very long strings as an extension to <code>VARCHAR</code>, like <code>TEXT</code> in postgres,
+ *   a single column of the database-specific type is used.</li>
  *   <li>For all other databases, two columns are used:
  *    <ol>
- *      <li><code>VARCHAR(max): a string with maximum supported length</code></li>
- *      <li><code>CLOB: if the string is too large and would not fit into the first column</code></li>
+ *      <li><code>VARCHAR(max)</code>: where <code>max</code> is the maximum supported length by the backend. If an optional size is defined by the
+ *      model, <code>max</code> is further limited by the model's size.</li>
+ *      <li><code>CLOB</code>: if the string is too large to fit into the first column</code></li>
  *    </ol>
  *   </li>
  * </ul>
- * This type is sortable by the first column.
+ * This type is not sortable and as a backend-specific type it cannot be used in wurblet arguments.
  */
 @Service(DataType.class)
-public final class I18NTextType extends AbstractDataType<I18NText> {
+public class I18NTextType extends AbstractDataType<I18NText> {
 
   /**
    * Creates the datatype for {@link I18NText}.
@@ -90,11 +92,10 @@ public final class I18NTextType extends AbstractDataType<I18NText> {
 
   @Override
   public Optional<String> getCommentSuffix(Backend backend, int index) {
-    int maxSize = backend.getMaxSize(SqlType.VARCHAR);
-    if (maxSize > 0) {
+    if (getColumnCount(backend) == 2) {
       return switch (index) {
         case 0 -> Optional.empty();
-        case 1 -> Optional.of(" (L > " + maxSize + ")");
+        case 1 -> Optional.of(" (CLOB)");
         default -> throw new IndexOutOfBoundsException(index);
       };
     }
@@ -118,14 +119,15 @@ public final class I18NTextType extends AbstractDataType<I18NText> {
 
   @Override
   public int getSize(Backend backend, int index, Integer size) {
-    if (getColumnCount(backend) == 2) {
+    int maxSize = getMaxSize(backend, size);
+    if (maxSize > 0) {
       return switch (index) {
-        case 0 -> super.getSize(backend, index, size);
+        case 0 -> maxSize;
         case 1 -> 0;    // CLOB has no size
         default -> throw new IndexOutOfBoundsException(index);
       };
     }
-    return super.getSize(backend, index, size);
+    return 0;
   }
 
   @Override
@@ -135,19 +137,7 @@ public final class I18NTextType extends AbstractDataType<I18NText> {
 
   @Override
   public Object getColumnValue(Backend backend, int index, I18NText value) {
-    if (value != null) {
-      String s = value.toParameterString().toString();
-      int maxSize = backend.getMaxSize(SqlType.VARCHAR);
-      if (maxSize > 0) {
-        return switch (index) {
-          case 0 -> s.length() > maxSize ? null : s;
-          case 1 -> s.length() > maxSize ? s : null;
-          default -> throw new IndexOutOfBoundsException(index);
-        };
-      }
-      return s;
-    }
-    return null;
+    return null;    // only used for the default model value -> makes no sense at all
   }
 
   @Override
@@ -167,7 +157,7 @@ public final class I18NTextType extends AbstractDataType<I18NText> {
 
   @Override
   public Object[] set(Backend backend, PreparedStatement statement, int pos, I18NText object, boolean mapNull, Integer size) throws SQLException {
-    int maxSize = backend.getMaxSize(SqlType.VARCHAR);
+    int maxSize = getMaxSize(backend, size);
     if (object == null) {
       statement.setNull(pos, Types.VARCHAR);
       if (maxSize > 0) {
@@ -217,6 +207,22 @@ public final class I18NTextType extends AbstractDataType<I18NText> {
       }
     }
     return null;
+  }
+
+
+  /**
+   * Calculates the maximum size of the 1st <code>VARCHAR</code> column.
+   *
+   * @param backend the backend
+   * @param size the optional size given by the model
+   * @return the maximum size, 0 if unlimited
+   */
+  protected int getMaxSize(Backend backend, Integer size) {
+    int maxSize = backend.getMaxSize(SqlType.VARCHAR);
+    if (maxSize > 0 && size != null) {
+      maxSize = Math.min(maxSize, size);
+    }
+    return maxSize;
   }
 
 }
