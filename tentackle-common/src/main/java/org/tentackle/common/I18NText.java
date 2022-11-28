@@ -308,7 +308,7 @@ public class I18NText implements Serializable {
       // The LocaleProvider may allow wider locales for ResourceBundles,
       // but for I18NText this would complicate things way too much.
       // In most applications, the LocaleProvider narrows to language anyway.
-      locale = Locale.of(locale.getLanguage());
+      locale = new Locale(locale.getLanguage());
     }
     return locale;
   }
