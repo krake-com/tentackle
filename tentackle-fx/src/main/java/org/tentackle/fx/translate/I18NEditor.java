@@ -115,7 +115,7 @@ public class I18NEditor extends AbstractFxController {
     Locale fallbackLocale = LocaleProvider.getInstance().getFallbackLocale();
     Set<Locale> locales = new LinkedHashSet<>();
     for (Locale effectiveLocale : LocaleProvider.getInstance().getEffectiveLocales()) {
-      locales.add(Locale.of(effectiveLocale.getLanguage()));    // flatten to language only (see I18NText)
+      locales.add(new Locale(effectiveLocale.getLanguage()));    // flatten to language only (see I18NText)
     }
 
     editorMap = new LinkedHashMap<>();    // editors ordered by effective locales from LocaleProvider to provide consistent update order
