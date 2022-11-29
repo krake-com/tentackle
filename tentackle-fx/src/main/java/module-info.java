@@ -37,7 +37,8 @@ module org.tentackle.fx {
   exports org.tentackle.fx.table.type;
   exports org.tentackle.fx.translate;
 
-  opens org.tentackle.fx;   // to access tentackle.css from StyleManager
+  opens org.tentackle.fx;                             // to access tentackle.css from StyleManager
+  opens org.tentackle.fx.translate to javafx.fxml;    // to enable FXML for I18NEditor
 
   requires transitive org.tentackle.core;
 

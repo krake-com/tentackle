@@ -18,10 +18,22 @@
 
 package org.tentackle.fx.translate;
 
+import javafx.application.Platform;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Control;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyEvent;
+
 import org.tentackle.common.I18NText;
+import org.tentackle.fx.Fx;
+import org.tentackle.fx.FxFxBundle;
 import org.tentackle.fx.FxTextComponent;
 import org.tentackle.fx.ValueTranslatorService;
 
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -32,27 +44,110 @@ import java.util.function.Function;
 @ValueTranslatorService(modelClass = I18NText.class, viewClass = String.class)
 public class I18NTextStringTranslator extends ValueStringTranslator<I18NText> {
 
+  private static final String STYLE_I18N = "tt-i18n";
+
+
+  private I18NText savedModelValue;      // saved model value to detect changes in translations that are not displayed
+
   public I18NTextStringTranslator(FxTextComponent component) {
     super(component);
+    Control control = (Control) component;
+    if (!control.getStyleClass().contains(STYLE_I18N)) {
+      control.getStyleClass().add(STYLE_I18N);
+
+      // register function keys:
+      // F2 = edit/view translations
+      control.addEventFilter(KeyEvent.ANY, event -> {
+        if (!event.isAltDown() && !event.isControlDown() && !event.isMetaDown() &&
+            !event.isShiftDown() && !event.isShortcutDown()) {
+
+          if (event.getCode() == KeyCode.F2) {
+            event.consume();
+            if (event.getEventType() == KeyEvent.KEY_PRESSED) {
+              Platform.runLater(this::edit);
+            }
+          }
+        }
+      });
+
+      ContextMenu menu;
+      if (control.getContextMenu() == null) {
+        menu = Fx.create(ContextMenu.class);
+        // this replaces the default context menu in TextFields, but that's ok.
+        // otherwise we would have to quirk TextFieldBehaviour which is still private API
+        control.setContextMenu(menu);
+      }
+      else {
+        // append to existing menu
+        MenuItem separatorItem = Fx.create(SeparatorMenuItem.class);
+        menu = control.getContextMenu();
+        menu.getItems().add(separatorItem);
+      }
+      MenuItem editItem = Fx.create(MenuItem.class);
+      editItem.setText(FxFxBundle.getString("EDIT_I18N"));
+      editItem.setAccelerator(new KeyCodeCombination(KeyCode.F2));
+      editItem.setOnAction(event -> edit());
+      menu.getItems().add(editItem);
+    }
+  }
+
+  @Override
+  public boolean isMappingIncomplete() {
+    return true;
+  }
+
+  @Override
+  public void saveModelValue(I18NText modelValue) {
+    savedModelValue = modelValue;
+  }
+
+  @Override
+  public boolean isModelModified() {
+    // empty I18NText is mapped to null for comparing, since no translations will be treated as null in updateI18NText below
+    I18NText modelValue = null;
+    if (getComponent().getBinding().getModelValue() instanceof I18NText i18NText) {
+      modelValue = i18NText.isEmpty() ? null : i18NText;
+    }
+    I18NText savedValue = savedModelValue;
+    if (savedValue != null && savedValue.isEmpty()) {
+      savedValue = null;
+    }
+    return !Objects.equals(savedValue, modelValue);
   }
 
   @Override
   public Function<I18NText, String> toViewFunction() {
-    return v -> v == null ? null : v.get();   // get text in current locale
+    return v -> v == null ? null : v.get();   // get text for the current locale
   }
 
   @Override
   public Function<String, I18NText> toModelFunction() {
     return s -> {
-      if (s != null) {
-        Object modelValue = getComponent().getBinding().getModelValue();
-        if (modelValue instanceof I18NText i18NText) {
-          return i18NText.with(s);    // with text in current locale
-        }
-        return new I18NText(s);
+      Object modelValue = getComponent().getBinding().getModelValue();
+      if (modelValue instanceof I18NText i18NText) {
+        return Objects.equals(i18NText.get(), s) ?
+               i18NText :             // no "visual" change: avoid copying the default/fallback-locale to the current locale
+               i18NText.with(s);      // add, replace or remove the translation for the current locale
       }
-      return null;
+      return s == null ? null : new I18NText(s);
     };
+  }
+
+
+  /**
+   * Updates the model with a new I18NText object.<br>
+   * Invoked from {@link I18NEditor}.
+   *
+   * @param i18NText the I18N text object
+   */
+  public void updateI18NText(I18NText i18NText) {
+    getComponent().getBinding().setModelValue(i18NText.isEmpty() ? null : i18NText);
+  }
+
+  protected void edit() {
+    I18NEditor.showDialog(getComponent().getBinding().getModelValue() instanceof I18NText i18NText ?
+                          i18NText : new I18NText(),
+                          this);
   }
 
 }

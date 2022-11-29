@@ -62,6 +62,32 @@ public interface ValueTranslator<M,V> {
   boolean isLenient();
 
   /**
+   * Returns whether the model value is only mapped partially to the view.<br>
+   * Such data types may hold more data that could have changed by the translator, but
+   * the view object still looks unchanged.<br>
+   * An example for such a type is {@link org.tentackle.common.I18NText}.
+   *
+   * @return true if view may look unchanged but the model could be modified
+   */
+  boolean isMappingIncomplete();
+
+  /**
+   * Remembers the model value for later check if changed.<br>
+   * Only invoked if {@link #isMappingIncomplete()} is <code>true</code>.
+   *
+   * @param modelValue the model value
+   */
+  void saveModelValue(M modelValue);
+
+  /**
+   * Returns whether the model is modified compared to value saved via {@link #saveModelValue(Object)}.<br>
+   * Only invoked if {@link #isMappingIncomplete()} is <code>true</code>.
+   *
+   * @return true if model is modified
+   */
+  boolean isModelModified();
+
+  /**
    * Returns whether toModel must be invoked twice.<br>
    * An example is a DoubleStringTranslator:<br>
    * let fraction number input be 1.211111 and formatting scale 2.

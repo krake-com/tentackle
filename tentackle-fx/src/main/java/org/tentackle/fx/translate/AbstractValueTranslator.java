@@ -71,4 +71,19 @@ public abstract class AbstractValueTranslator<M,V> implements ValueTranslator<M,
     this.lenient = lenient;
   }
 
+  @Override
+  public boolean isMappingIncomplete() {
+    return false;
+  }
+
+  @Override
+  public void saveModelValue(M modelValue) {
+    // default does nothing
+  }
+
+  @Override
+  public boolean isModelModified() {
+    return false;
+  }
+
 }

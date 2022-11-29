@@ -27,8 +27,16 @@ import java.util.Objects;
 
 /**
  * Multilingual text.<br>
- * This is an immutable object and supported as a regular datatype in entities
+ * This is an immutable object and supported as a regular datatype
  * via <code>org.tentackle.sql.datatypes.I18NTextType</code>.
+ * <p>
+ * Model examples:
+ * <code>
+ *   ...
+ *   I18NText        description   description    internationalized description [COLS=30]
+ *   ...
+ * </code>
+ * Don't forget to add the <code>[COLS=...] option to specify the field-width in FX views.</code>
  */
 public class I18NText implements Serializable {
 
@@ -243,6 +251,15 @@ public class I18NText implements Serializable {
    */
   public Map<Locale, String> getTranslations() {
     return Map.copyOf(textMap);
+  }
+
+  /**
+   * Returns whether this I18NText contains no translations at all.
+   *
+   * @return true if empty
+   */
+  public boolean isEmpty() {
+    return textMap.isEmpty();
   }
 
   /**
