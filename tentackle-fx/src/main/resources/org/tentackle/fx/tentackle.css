@@ -42,6 +42,19 @@
   -fx-base: -tt-error-color;
 }
 
+.tt-i18n {
+  -fx-background-image: url('/org/tentackle/fx/i18n-style.png');
+  -fx-background-repeat: no-repeat;
+  -fx-background-position: right top;
+}
+
+/* for editable comboboxes only */
+.tt-i18n .arrow-button {
+  -fx-background-image: url('/org/tentackle/fx/i18n-style.png');
+  -fx-background-repeat: no-repeat;
+  -fx-background-position: right top;
+}
+
 /**
  * better visualization for non-editable text fields.
  */

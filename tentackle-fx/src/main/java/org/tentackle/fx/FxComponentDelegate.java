@@ -523,7 +523,8 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
   public void triggerViewModified() {
     if (isSavedViewObjectValid()) {
       // application maintains a validation lifecycle
-      boolean viewModified = !Objects.equals(getViewObject(), getSavedViewObject());
+      boolean viewModified = !Objects.equals(getViewObject(), getSavedViewObject()) ||
+                             (valueTranslator != null && valueTranslator.isMappingIncomplete() && valueTranslator.isModelModified());
       setViewModified(viewModified);
       if (getParentContainer() != null) {
         getParentContainer().triggerViewModified();
@@ -554,10 +555,14 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
   }
 
   @Override
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public void saveView() {
     savedViewObject = getViewObject();
     savedViewObjectValid = true;
     setViewModified(false);
+    if (valueTranslator != null && valueTranslator.isMappingIncomplete()) {
+      ((ValueTranslator) valueTranslator).saveModelValue(getBinding().getModelValue());
+    }
   }
 
   @Override
