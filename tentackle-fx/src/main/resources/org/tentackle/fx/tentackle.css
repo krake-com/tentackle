@@ -48,11 +48,8 @@
   -fx-background-position: right top;
 }
 
-/* for editable comboboxes only */
-.tt-i18n .arrow-button {
-  -fx-background-image: url('/org/tentackle/fx/i18n-style.png');
-  -fx-background-repeat: no-repeat;
-  -fx-background-position: right top;
+.tt-i18n.text-area {
+  -fx-padding: 0 13 0 0;
 }
 
 /**

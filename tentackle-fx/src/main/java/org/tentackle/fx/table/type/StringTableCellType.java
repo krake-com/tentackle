@@ -26,8 +26,7 @@ import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
 
 /**
- * The most simple cell type.<br>
- * Fallback if type is not known.
+ * String cell type.
  *
  * @author harald
  */
@@ -43,28 +42,14 @@ public class StringTableCellType extends AbstractTableCellType<String> {
 
   @Override
   public void updateItem(FxTableCell<?, String> tableCell, String text) {
-    Boolean caseConversion = tableCell.getColumnConfiguration().getCaseConversion();
-    if (Boolean.TRUE.equals(caseConversion)) {
-      text = text.toUpperCase();
-    }
-    else if (Boolean.FALSE.equals(caseConversion)) {
-      text = text.toLowerCase();
-    }
-    tableCell.setText(text);
+    tableCell.setText(applyCaseConversion(tableCell.getColumnConfiguration().getCaseConversion(), text));
     tableCell.setGraphic(null);
     updateAlignment(tableCell, Pos.BASELINE_LEFT);
   }
 
   @Override
   public void updateItem(FxTreeTableCell<?, String> treeTableCell, String text) {
-    Boolean caseConversion = treeTableCell.getColumnConfiguration().getCaseConversion();
-    if (Boolean.TRUE.equals(caseConversion)) {
-      text = text.toUpperCase();
-    }
-    else if (Boolean.FALSE.equals(caseConversion)) {
-      text = text.toLowerCase();
-    }
-    treeTableCell.setText(text);
+    treeTableCell.setText(applyCaseConversion(treeTableCell.getColumnConfiguration().getCaseConversion(), text));
     treeTableCell.setGraphic(null);
     updateAlignment(treeTableCell, Pos.BASELINE_LEFT);
   }

@@ -29,12 +29,22 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * Implements some common methods for data types.
  */
 public abstract class AbstractDataType<T> implements DataType<T> {
 
+  /**
+   * Maximum number of lines in literal.<br>
+   * &gt; 0 if unlimited.
+   */
+  public static int maxLinesInLiteral = -1;
+
+  /**
+   * Default sortable columns.
+   */
   private static final int[] SORTABLE_COLUMNS = { 0 };
 
 
@@ -311,6 +321,48 @@ public abstract class AbstractDataType<T> implements DataType<T> {
     if (backend == null && isColumnCountBackendSpecific()) {
       throw new BackendException("backend-specific type " + this + " cannot be used in a backend-agnostic context");
     }
+  }
+
+  /**
+   * Transforms the value string of an object to java code.
+   *
+   * @param str the value string
+   * @return the java code
+   */
+  protected String valueStringToCode(String str) {
+    if (str != null && !str.isEmpty() && str.charAt(0) != '"') {
+      if (str.contains("\n")) {   // multi-line string
+        StringBuilder buf = new StringBuilder();
+        buf.append("\"\"\"\n");
+        long numLines = str.lines().count();
+        Stream<String> lines;
+        boolean truncated = (maxLinesInLiteral > 0 && numLines > maxLinesInLiteral);
+        if (truncated) {
+          lines = str.lines().limit(maxLinesInLiteral);
+        }
+        else {
+          lines = str.lines();
+        }
+        lines.forEach(line -> {
+          if (line.endsWith(" ")) {
+            buf.append(line, 0, line.length() - 1).append("\\s");
+          }
+          else {
+            buf.append(line);
+          }
+          buf.append('\n');
+        });
+        if (truncated) {
+          buf.append("... <").append(maxLinesInLiteral).append('/').append(numLines).append("> ...\n");
+        }
+        buf.append("\"\"\"");
+        str = buf.toString();
+      }
+      else {
+        str = "\"" + str + "\"";
+      }
+    }
+    return str;
   }
 
 }
