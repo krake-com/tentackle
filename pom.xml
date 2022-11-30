@@ -87,10 +87,10 @@
     <ow2.asm.version>9.4</ow2.asm.version>
     <groovy.version>4.0.6</groovy.version>
     <maven.version>3.8.5</maven.version>
-    <postgresql.version>42.5.0</postgresql.version>
+    <postgresql.version>42.5.1</postgresql.version>
     <h2.version>2.1.214</h2.version>
     <testng.version>7.6.1</testng.version>
-    <slf4j.version>2.0.3</slf4j.version>
+    <slf4j.version>2.0.5</slf4j.version>
     <log4j2.version>2.19.0</log4j2.version>
 
     <maven.archetype.plugin.version>3.2.1</maven.archetype.plugin.version>
@@ -226,7 +226,7 @@
       <dependency>
         <groupId>org.jruby</groupId>
         <artifactId>jruby</artifactId>
-        <version>9.3.9.0</version>
+        <version>9.4.0.0</version>
       </dependency>
 
       <dependency>
@@ -324,7 +324,7 @@
       <dependency>
         <groupId>org.apache.maven.shared</groupId>
         <artifactId>maven-dependency-tree</artifactId>
-        <version>3.2.0</version>
+        <version>3.2.1</version>
       </dependency>
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
@@ -334,7 +334,7 @@
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-archiver</artifactId>
-        <version>4.5.0</version>
+        <version>4.6.0</version>
       </dependency>
 
     </dependencies>
@@ -381,7 +381,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-plugin-plugin</artifactId>
-          <version>3.6.4</version>
+          <version>3.7.0</version>
           <configuration>
             <requirements>
               <maven>${maven.version}</maven>
@@ -541,7 +541,7 @@
         <plugin>
           <groupId>org.owasp</groupId>
           <artifactId>dependency-check-maven</artifactId>
-          <version>7.3.0</version>
+          <version>7.3.2</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
