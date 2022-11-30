@@ -86,4 +86,24 @@ public abstract class AbstractTableCellType<T> implements TableCellType<T> {
     return String.class;
   }
 
+
+  /**
+   * Applies the case conversion.
+   *
+   * @param caseConversion true = convert to uppercase, false = lowercase, null = no conversion (default)
+   * @param text the original text
+   * @return the converted text
+   */
+  protected String applyCaseConversion(Boolean caseConversion, String text) {
+    if (text != null) {
+      if (Boolean.TRUE.equals(caseConversion)) {
+        text = text.toUpperCase();
+      }
+      else if (Boolean.FALSE.equals(caseConversion)) {
+        text = text.toLowerCase();
+      }
+    }
+    return text;
+  }
+
 }

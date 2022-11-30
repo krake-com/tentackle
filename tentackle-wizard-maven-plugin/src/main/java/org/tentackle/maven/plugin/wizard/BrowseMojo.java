@@ -34,7 +34,7 @@ import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
-import org.tentackle.sql.datatypes.StringType;
+import org.tentackle.sql.datatypes.AbstractDataType;
 
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
@@ -75,7 +75,7 @@ public class BrowseMojo extends AbstractWizardMojo {
   @Override
   public void executeImpl() throws MojoExecutionException, MojoFailureException {
     super.executeImpl();
-    StringType.maxLinesInLiteral = maxLinesInStringLiteral;
+    AbstractDataType.maxLinesInLiteral = maxLinesInStringLiteral;
     Properties props = new Properties();
     props.setProperty(org.tentackle.common.Constants.BACKEND_URL, url);
     props.setProperty(org.tentackle.common.Constants.BACKEND_USER, user);

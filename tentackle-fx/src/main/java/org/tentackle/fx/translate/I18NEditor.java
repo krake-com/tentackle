@@ -129,8 +129,24 @@ public class I18NEditor extends AbstractFxController {
       vBox.setSpacing(5.0);
       vBox.setPadding(new Insets(5.0));
       Label languageLabel = Fx.create(Label.class);
-      languageLabel.setText(locale.getLanguage() + " = " + locale.getDisplayLanguage() +
-                            (fallbackLocale.equals(locale) ? " (" + resources.getString("default") + ")" : ""));
+      StringBuilder labelText = new StringBuilder();
+      labelText.append(locale.getLanguage()).append(" = ").append(locale.getDisplayLanguage());
+      boolean isFallback = fallbackLocale.getLanguage().equals(locale.getLanguage());
+      boolean isCurrent = LocaleProvider.getInstance().getEffectiveLocale().getLanguage().equals(locale.getLanguage());
+      if (isFallback || isCurrent) {
+        labelText.append(" (");
+        if (isFallback) {
+          labelText.append(resources.getString("default"));
+        }
+        if (isCurrent) {
+          if (isFallback) {
+            labelText.append(", ");
+          }
+          labelText.append(resources.getString("current"));
+        }
+        labelText.append(")");
+      }
+      languageLabel.setText(labelText.toString());
       vBox.getChildren().addAll(languageLabel, editor);
       vBoxMap.put(locale.getLanguage(), vBox);
     }

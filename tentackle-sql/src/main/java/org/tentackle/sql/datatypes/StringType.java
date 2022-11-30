@@ -28,7 +28,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.util.stream.Stream;
 
 /**
  * Datatype for {@link String}.
@@ -37,13 +36,6 @@ import java.util.stream.Stream;
  */
 @Service(DataType.class)
 public sealed class StringType extends AbstractDataType<String> permits LargeStringType {
-
-  /**
-   * Maximum number of lines in literal.<br>
-   * &gt; 0 if unlimited.
-   */
-  public static int maxLinesInLiteral = -1;
-
 
   public StringType() {
     // see -Xlint:missing-explicit-ctor since Java 16
@@ -74,39 +66,7 @@ public sealed class StringType extends AbstractDataType<String> permits LargeStr
 
   @Override
   public String valueOfLiteralToCode(String str, Integer index) {
-    if (!str.isEmpty() && str.charAt(0) != '"') {
-      if (str.contains("\n")) {   // multi-line string
-        StringBuilder buf = new StringBuilder();
-        buf.append("\"\"\"\n");
-        long numLines = str.lines().count();
-        Stream<String> lines;
-        boolean truncated = (maxLinesInLiteral > 0 && numLines > maxLinesInLiteral);
-        if (truncated) {
-          lines = str.lines().limit(maxLinesInLiteral);
-        }
-        else {
-          lines = str.lines();
-        }
-        lines.forEach(line -> {
-          if (line.endsWith(" ")) {
-            buf.append(line, 0, line.length() - 1).append("\\s");
-          }
-          else {
-            buf.append(line);
-          }
-          buf.append('\n');
-        });
-        if (truncated) {
-          buf.append("... <").append(maxLinesInLiteral).append('/').append(numLines).append("> ...\n");
-        }
-        buf.append("\"\"\"");
-        str = buf.toString();
-      }
-      else {
-        str = "\"" + str + "\"";
-      }
-    }
-    return str;
+    return valueStringToCode(str);
   }
 
   @Override

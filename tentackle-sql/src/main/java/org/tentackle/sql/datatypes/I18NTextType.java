@@ -86,6 +86,11 @@ public class I18NTextType extends AbstractDataType<I18NText> {
   }
 
   @Override
+  public String valueOfLiteralToCode(String str, Integer index) {
+    return getDataTypeConstant() + ".valueOf(" + valueStringToCode(str) + ")";
+  }
+
+  @Override
   public int getColumnCount(Backend backend) {
     return backend.getMaxSize(SqlType.VARCHAR) <= 0 ? 1 : 2;
   }
