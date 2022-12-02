@@ -79,12 +79,12 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
    * Creates a session info from an optional username, optional password and
    * a property file holding the connection parameters.
    *
-   * @param username is the name of the user, null if {@code System.getProperty("user.name")}
+   * @param username is the name of the user
    * @param password is the password, null if none
    * @param propertiesName name of the session's properties file, null if {@code "backend"}
    */
   public DefaultSessionInfo(String username, char[] password, String propertiesName)  {
-    setUserName(username == null ? System.getProperty("user.name") : username);
+    setUserName(username);
     setPassword(password);
     setPropertiesName(propertiesName == null ? Constants.BACKEND_PROPS : propertiesName);
   }
