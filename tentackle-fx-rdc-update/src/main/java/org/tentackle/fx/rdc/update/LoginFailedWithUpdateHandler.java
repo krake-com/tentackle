@@ -22,11 +22,15 @@ package org.tentackle.fx.rdc.update;
 import javafx.application.Platform;
 import javafx.scene.Parent;
 
+import org.tentackle.common.Constants;
+import org.tentackle.common.Cryptor;
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.common.FileHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.rdc.app.DesktopApplication;
+import org.tentackle.fx.rdc.app.LoginApplication;
 import org.tentackle.fx.rdc.app.LoginFailedHandler;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.BlockingHolder;
@@ -38,11 +42,12 @@ import org.tentackle.update.InstallationType;
 import org.tentackle.update.UpdateInfo;
 import org.tentackle.update.UpdateService;
 
-import javax.net.ssl.SSLHandshakeException;
 import java.io.File;
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.Map;
 import java.util.Optional;
+import javax.net.ssl.SSLHandshakeException;
 
 /**
  * To handle login failed exceptions.
@@ -211,6 +216,7 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
       else {    // JLink
         builder = new ProcessBuilder(updateScript.getPath(), Long.toString(pid));
       }
+      passSessionInfoViaEnvironment(builder.environment());
       Process process = builder.start();
       LOGGER.info("executing {0} {1} (pid = {2})", updateScript, pid, process.pid());
     }
@@ -229,6 +235,28 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
     System.exit(0);   // terminate in any case...
   }
 
+  /**
+   * Passes the current username and password encrypted to the process environment of the updated application.<br>
+   * This happens only if both the username and password were given and a valid cryptor was found.
+   *
+   * @param environment the process environment
+   * @see LoginApplication#createSessionInfo()
+   */
+  protected void passSessionInfoViaEnvironment(Map<String, String> environment) {
+    Cryptor cryptor = Cryptor.getInstance();
+    if (cryptor != null) {
+      SessionInfo sessionInfo = getApplication().getSessionInfo();
+      String userName = sessionInfo.getUserName();
+      if (userName != null) {
+        String envPrefix = StringHelper.toAsciiLetterOrDigit(getApplication().getName());
+        environment.put((envPrefix + "_" + Constants.BACKEND_USER).toUpperCase(), cryptor.encrypt64(userName));
+        char[] password = sessionInfo.getPassword();
+        if (password != null) {
+          environment.put((envPrefix + "_" + Constants.BACKEND_PASSWORD).toUpperCase(), cryptor.encrypt64(password));
+        }
+      }
+    }
+  }
 
   /**
    * Terminates the application.

@@ -26,6 +26,7 @@ import javafx.stage.StageStyle;
 
 import org.tentackle.app.Application;
 import org.tentackle.common.Constants;
+import org.tentackle.common.Cryptor;
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxRuntimeException;
@@ -148,9 +149,48 @@ public class LoginApplication extends FxApplication {
     }
 
     sessionInfo.applyProperties();
+
+    if (sessionInfo.getUserName() == null) {
+      updateSessionInfoFromEnvironment(sessionInfo);
+    }
+
+    if (sessionInfo.getUserName() == null) {
+      sessionInfo.setUserName(System.getProperty("user.name"));
+    }
+
     application.applyProperties(sessionInfo.getProperties());
 
     return sessionInfo;
+  }
+
+
+  /**
+   * Updates the session with username and password from the process environment.
+   *
+   * @param sessionInfo the session info to update
+   */
+  protected void updateSessionInfoFromEnvironment(SessionInfo sessionInfo) {
+    Cryptor cryptor = Cryptor.getInstance();
+    if (cryptor != null) {
+      // Get user/passwd from environment.
+      // Must be encrypted to provide a minimum level of security.
+      // Used by the auto-update feature when restarting the updated application
+      // (see org.tentackle.fx.rdc.update.LoginFailedWithUpdateHandler.passSessionInfoViaEnvironment)
+      String envPrefix = StringHelper.toAsciiLetterOrDigit(Application.getInstance().getName());
+      try {
+        String encUser = System.getenv((envPrefix + "_" + Constants.BACKEND_USER).toUpperCase());
+        if (encUser != null) {
+          sessionInfo.setUserName(Cryptor.getInstance().decrypt64(encUser));
+          String encPass = System.getenv((envPrefix + "_" + Constants.BACKEND_PASSWORD).toUpperCase());
+          if (encPass != null) {
+            sessionInfo.setPassword(Cryptor.getInstance().decrypt64ToChars(encPass));
+          }
+        }
+      }
+      catch (RuntimeException rx) {
+        LOGGER.warning("decryption of username/password from environment failed", rx);
+      }
+    }
   }
 
 
