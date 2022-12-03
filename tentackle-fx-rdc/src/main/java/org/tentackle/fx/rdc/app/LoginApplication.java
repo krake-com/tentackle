@@ -97,7 +97,10 @@ public class LoginApplication extends FxApplication {
           Platform.runLater(splashScreen::close);
         }
         if (isAutoLogin(sessionInfo)) {
-          controller.autoLogin();
+          controller.autoLogin();   // login w/o option to edit the user and/or password
+        }
+        if (sessionInfo.getUserName() != null && sessionInfo.getPassword() != null) {
+          controller.login();       // perform a login once, allow the user to edit if login fails
         }
       });
       stage.show();
