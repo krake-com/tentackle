@@ -16,9 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.session;
-
 
 /**
  * A pool of sessions for multiple session infos.<br>
@@ -30,7 +28,7 @@ package org.tentackle.session;
 public interface MultiUserSessionPool {
 
   /**
-   * Gets a session from the pool.
+   * Gets a session from the pool for a given session info.
    *
    * @param sessionInfo the session info
    * @return the session, never null
@@ -39,11 +37,22 @@ public interface MultiUserSessionPool {
 
 
   /**
-   * Returns a session back to the pool.
+   * Returns a session back to the pool.<br>
+   * Returning a closed session will remove it from the pool.
    *
    * @param session the session
    */
   void put(Session session);
+
+
+  /**
+   * Closes all sessions currently open for a given session info.<br>
+   * Useful to force logout for a user.<br>
+   * It is not an error, if there were no open sessions for the session info at all.
+   *
+   * @param sessionInfo the session info
+   */
+  void close(SessionInfo sessionInfo);
 
 
   /**

@@ -78,6 +78,14 @@ public class MultiUserDbPool implements MultiUserSessionPool {
   }
 
   @Override
+  public synchronized void close(SessionInfo sessionInfo) {
+    DbPool pool = poolMap.get(sessionInfo);
+    if (pool != null) {
+      pool.shutdown();
+    }
+  }
+
+  @Override
   public String getName() {
     return name;
   }
