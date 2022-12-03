@@ -161,6 +161,7 @@ public class Login extends AbstractFxController {
    * @param password the password
    */
   public void setPassword(char[] password) {
+    this.password = password;
     passwordField.setPassword(password);
   }
 
@@ -235,8 +236,8 @@ public class Login extends AbstractFxController {
    */
   public void setSessionInfo(SessionInfo sessionInfo) {
     this.sessionInfo = sessionInfo;
-    usernameField.setText(sessionInfo.getUserName());
-    passwordField.setPassword(sessionInfo.getPassword());
+    setUsername(sessionInfo.getUserName());
+    setPassword(sessionInfo.getPassword());
     String backendInfo = sessionInfo.getProperties().getProperty(Constants.BACKEND_INFO);
     backendsEditable = false;
     if (Constants.BACKEND_INFO_USER.equals(backendInfo)) {
@@ -372,8 +373,7 @@ public class Login extends AbstractFxController {
   /**
    * Performs the login.
    */
-  @SuppressWarnings("rawtypes")
-  private void login() {
+  public void login() {
     if (progressBar.getProgress() <= 0.0) {
       sessionInfo.setUserName(usernameField.getText());
       sessionInfo.setPassword(password);
@@ -383,7 +383,7 @@ public class Login extends AbstractFxController {
         sessionInfo.getProperties().setProperty(Constants.BACKEND_INFO, backendInfo);
       }
       setProgress(0.01);    // login is in progress...
-      ((DesktopApplication) Application.getInstance()).login(getView(), sessionInfo);
+      ((DesktopApplication<?>) Application.getInstance()).login(getView(), sessionInfo);
     }
     else {
       LOGGER.warning("login already in progress...");
