@@ -179,10 +179,10 @@ public abstract class DesktopApplication<C extends FxController>
               Session session;
 
               try {
+                setSessionInfo(sessionInfo);
                 session = createSession(sessionInfo);
                 // success!
                 session.makeCurrent();        // thread from pool: TL session will be cleared below
-                setSessionInfo(sessionInfo);
                 DomainContext context = createDomainContext(session);
                 if (context == null)  {
                   // next round
