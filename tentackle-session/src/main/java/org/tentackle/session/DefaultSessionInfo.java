@@ -386,6 +386,12 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
       System.arraycopy(password, 0, sessionInfo.password, 0, password.length);
     }
 
+    if (encryptedPassword != null) {
+      // physically copy the password (as it might be cleared later)
+      sessionInfo.encryptedPassword = new byte[encryptedPassword.length];
+      System.arraycopy(encryptedPassword, 0, sessionInfo.encryptedPassword, 0, encryptedPassword.length);
+    }
+
     if (properties != null) {
       sessionInfo.properties = (Properties) properties.clone();
     }
