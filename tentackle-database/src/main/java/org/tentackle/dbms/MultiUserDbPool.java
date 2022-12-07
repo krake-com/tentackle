@@ -18,10 +18,12 @@
 
 package org.tentackle.dbms;
 
+import org.tentackle.common.StringHelper;
 import org.tentackle.session.MultiUserSessionPool;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
+import org.tentackle.session.SessionPool;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -79,7 +81,7 @@ public class MultiUserDbPool implements MultiUserSessionPool {
 
   @Override
   public synchronized void close(SessionInfo sessionInfo) {
-    DbPool pool = poolMap.get(sessionInfo);
+    SessionPool pool = poolMap.get(sessionInfo);
     if (pool != null) {
       pool.shutdown();
     }
@@ -103,7 +105,7 @@ public class MultiUserDbPool implements MultiUserSessionPool {
   @Override
   public synchronized void shutdown() {
     assertNotShutdown();
-    for (DbPool pool : poolMap.values()) {
+    for (SessionPool pool : poolMap.values()) {
       pool.shutdown();
     }
     poolMap = null;
@@ -132,7 +134,7 @@ public class MultiUserDbPool implements MultiUserSessionPool {
    * @param sessionInfo the session info
    * @return the pool, never null
    */
-  private DbPool getPool(SessionInfo sessionInfo) {
+  private SessionPool getPool(SessionInfo sessionInfo) {
     assertNotShutdown();
     MultiPoolImpl pool = poolMap.get(sessionInfo);
     if (pool == null) {
@@ -140,7 +142,7 @@ public class MultiUserDbPool implements MultiUserSessionPool {
       poolMap.put(sessionInfo, pool);
       determineSize();
     }
-    pool.nextSessionInfo = sessionInfo;
+    pool.setNextSessionName(sessionInfo.getSessionName());
     return pool;
   }
 
@@ -151,7 +153,7 @@ public class MultiUserDbPool implements MultiUserSessionPool {
    */
   private void determineSize() {
     int sz = 0;
-    for (DbPool pool : poolMap.values()) {
+    for (SessionPool pool : poolMap.values()) {
       sz += pool.getSize();
     }
     size.set(sz);
@@ -159,22 +161,59 @@ public class MultiUserDbPool implements MultiUserSessionPool {
 
 
   /**
-   * DbPool with total session count updates.
+   * Internal {@link SessionPool} implementation.
    */
   private class MultiPoolImpl extends DbPool {
 
-    private SessionInfo nextSessionInfo;
+    /**
+     * If the pool needs to create a new session, its name is copied from the original session-info
+     * passed to {@link #get(SessionInfo)}. As a result, the session names are the ones when the
+     * sessions were created, but not when a session is re-used by the pool. This is perfectly
+     * ok for fixes sessions such as MT and FX. For pooled sessions, we're providing an internal
+     * counter "faking" a slot number. As a result, the initial session names look exactly the same
+     * as the ones of the client (remote) server.
+     */
+    private String nextSessionName;
 
-    public MultiPoolImpl(String name, ConnectionManager conMgr, SessionInfo sessionInfo, int sessionGroupId) {
-      // iniSize 0  -> make sure that createDbInstances uses nextSessionInfo
+    /**
+     * Counter per pooled session name.<br>
+     * This is just cosmetics, but avoids confused users (see comment above).
+     */
+    private final Map<String, Integer> nameCounterMap = new HashMap<>();
+
+    private MultiPoolImpl(String name, ConnectionManager conMgr, SessionInfo sessionInfo, int sessionGroupId) {
+      // iniSize 0  -> make sure that createSessionInfo uses nextSessionName
       // minSize -1 -> shutdown sub-pool when all sessions closed
       // maxSize 0  -> unlimited per session info (but limited in total for all sub-pools)
       super(name, conMgr, sessionInfo, sessionGroupId, 0, 1, -1, 0, maxIdleMinutes, maxUsageMinutes);
     }
 
     @Override
+    public void shutdown() {
+      int sz = getSize();
+      SessionInfo sessionInfo = getSessionInfo();
+      super.shutdown();
+      size.addAndGet(-sz);
+      synchronized (MultiUserDbPool.this) {
+        poolMap.remove(sessionInfo);
+      }
+    }
+
+    @Override
     protected SessionInfo createSessionInfo(int slotNumber) {
-      return nextSessionInfo;
+      SessionInfo clonedInfo = getSessionInfo().clone();
+      if (nextSessionName != null) {
+        Integer count = nameCounterMap.get(nextSessionName);
+        if (count != null) {
+          // pooled name: use pool name's own slot number
+          String pooledName = nextSessionName + "#" + count;
+          nameCounterMap.put(nextSessionName, count + 1);
+          nextSessionName = pooledName;
+        }
+        clonedInfo.setSessionName(nextSessionName);
+      }
+      // else: no original session name -> cloned session infos are unnamed by default
+      return clonedInfo;
     }
 
     @Override
@@ -201,16 +240,18 @@ public class MultiUserDbPool implements MultiUserSessionPool {
       size.decrementAndGet();
     }
 
-    @Override
-    public void shutdown() {
-      int sz = getSize();
-      SessionInfo sessionInfo = getSessionInfo();
-      super.shutdown();
-      size.addAndGet(-sz);
-      synchronized (MultiUserDbPool.this) {
-        poolMap.remove(sessionInfo);
+    private void setNextSessionName(String nextSessionName) {
+      int ndx = nextSessionName.lastIndexOf('#');
+      if (ndx >= 0 && ndx < nextSessionName.length() - 1) {
+        String slotStr = nextSessionName.substring(ndx + 1);
+        if (StringHelper.isAllDigits(slotStr)) {  // pooled name!
+          nextSessionName = nextSessionName.substring(0, ndx);    // cut original slot number
+          nameCounterMap.putIfAbsent(nextSessionName, 0);
+        }
       }
+      this.nextSessionName = nextSessionName;
     }
+
   }
 
 }
