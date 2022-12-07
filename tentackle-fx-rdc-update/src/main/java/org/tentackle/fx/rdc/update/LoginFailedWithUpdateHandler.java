@@ -245,7 +245,7 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
   protected void passSessionInfoViaEnvironment(Map<String, String> environment) {
     Cryptor cryptor = Cryptor.getInstance();
     if (cryptor != null) {
-      SessionInfo sessionInfo = getApplication().getSessionInfo();
+      SessionInfo sessionInfo = getSessionInfo();
       String userName = sessionInfo.getUserName();
       if (userName != null) {
         String envPrefix = StringHelper.toAsciiLetterOrDigit(getApplication().getName());
