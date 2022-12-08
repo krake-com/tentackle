@@ -142,7 +142,7 @@ public class MultiUserDbPool implements MultiUserSessionPool {
       poolMap.put(sessionInfo, pool);
       determineSize();
     }
-    pool.setNextSessionName(sessionInfo.getSessionName());
+    pool.setNextSessionName(sessionInfo.getSessionName(), sessionInfo.isCloned());
     return pool;
   }
 
@@ -176,6 +176,11 @@ public class MultiUserDbPool implements MultiUserSessionPool {
     private String nextSessionName;
 
     /**
+     * Indicates whether the next session to open should be marked as cloned.
+     */
+    private boolean nextSessionCloned;
+
+    /**
      * Counter per pooled session name.<br>
      * This is just cosmetics, but avoids confused users (see comment above).
      */
@@ -202,6 +207,7 @@ public class MultiUserDbPool implements MultiUserSessionPool {
     @Override
     protected SessionInfo createSessionInfo(int slotNumber) {
       SessionInfo clonedInfo = getSessionInfo().clone();
+
       if (nextSessionName != null) {
         Integer count = nameCounterMap.get(nextSessionName);
         if (count != null) {
@@ -211,8 +217,11 @@ public class MultiUserDbPool implements MultiUserSessionPool {
           nextSessionName = pooledName;
         }
         clonedInfo.setSessionName(nextSessionName);
+      } // else: no original session name -> cloned session infos are unnamed by default
+
+      if (!nextSessionCloned) {
+        clonedInfo.clearCloned();   // main session -> check for already logged in to another server
       }
-      // else: no original session name -> cloned session infos are unnamed by default
       return clonedInfo;
     }
 
@@ -240,7 +249,7 @@ public class MultiUserDbPool implements MultiUserSessionPool {
       size.decrementAndGet();
     }
 
-    private void setNextSessionName(String nextSessionName) {
+    private void setNextSessionName(String nextSessionName, boolean nextSessionCloned) {
       int ndx = nextSessionName.lastIndexOf('#');
       if (ndx >= 0 && ndx < nextSessionName.length() - 1) {
         String slotStr = nextSessionName.substring(ndx + 1);
@@ -250,6 +259,7 @@ public class MultiUserDbPool implements MultiUserSessionPool {
         }
       }
       this.nextSessionName = nextSessionName;
+      this.nextSessionCloned = nextSessionCloned;
     }
 
   }
