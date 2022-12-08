@@ -28,8 +28,8 @@ import javafx.scene.Scene;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
-
 import org.tentackle.app.AbstractClientApplication;
+import org.tentackle.common.Constants;
 import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.common.StringHelper;
 import org.tentackle.common.TentackleRuntimeException;
@@ -70,6 +70,7 @@ public abstract class DesktopApplication<C extends FxController>
   private Stage mainStage;                    // the main stage
   private String lastStatusMessage;           // last status message
   private long lastStatusMillis;              // last epochal millis the status message has changed
+  private boolean autoLogin;                  // user is logged in w/o prompting for username/password
 
   /**
    * Creates an FX desktop application.
@@ -134,6 +135,15 @@ public abstract class DesktopApplication<C extends FxController>
     return mainController;
   }
 
+  /**
+   * Returns the autologin flag.
+   *
+   * @return true if user is logged w/o being asked for username/password, default is false
+   * @see Constants#BACKEND_AUTOLOGIN
+   */
+  public boolean isAutoLogin() {
+    return autoLogin;
+  }
 
   /**
    * Creates the login failed handler.
@@ -146,6 +156,12 @@ public abstract class DesktopApplication<C extends FxController>
     return new LoginFailedHandler(this, view, sessionInfo);
   }
 
+  @Override
+  public SessionInfo createSessionInfo(String username, char[] password, String sessionPropertiesBaseName) {
+    SessionInfo sessionInfo = super.createSessionInfo(username, password, sessionPropertiesBaseName);
+    autoLogin = sessionInfo.getProperties().containsKey(Constants.BACKEND_AUTOLOGIN);
+    return sessionInfo;
+  }
 
   /**
    * Performs the login and final startup of the application.

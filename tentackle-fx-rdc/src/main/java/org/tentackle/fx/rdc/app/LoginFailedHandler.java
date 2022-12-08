@@ -21,7 +21,6 @@ package org.tentackle.fx.rdc.app;
 
 import javafx.application.Platform;
 import javafx.scene.Parent;
-
 import org.tentackle.fx.Fx;
 import org.tentackle.log.Logger;
 import org.tentackle.session.AlreadyLoggedInException;
@@ -107,26 +106,23 @@ public class LoginFailedHandler {
       });
     }
     else if (ex instanceof LoginFailedException){
-      if (LoginApplication.isAutoLogin(sessionInfo)) {
+      if (application.isAutoLogin()) {
         loginCount = 3;
       }
       else {
         loginCount++;
       }
       switch (loginCount) {
-        case 1:
-          application.showApplicationStatus(AppFxRdcBundle.getString("LOGIN FAILED! (2 MORE RETRIES)"), 0.0);
-          break;
-        case 2:
-          application.showApplicationStatus(AppFxRdcBundle.getString("LOGIN FAILED! (LAST RETRY)"), 0.0);
-          break;
-        default:
+        case 1 -> application.showApplicationStatus(AppFxRdcBundle.getString("LOGIN FAILED! (2 MORE RETRIES)"), 0.0);
+        case 2 -> application.showApplicationStatus(AppFxRdcBundle.getString("LOGIN FAILED! (LAST RETRY)"), 0.0);
+        default -> {
           application.showApplicationStatus(AppFxRdcBundle.getString("LOGIN FAILED!"), 0.0);
           // this will close the login scene and terminate the application
           Platform.runLater(() -> {
             Fx.info(AppFxRdcBundle.getString("LOGIN REFUSED! PLEASE CHECK YOUR USERNAME AND PASSWORD"));
             view.getScene().getWindow().hide();
           });
+        }
       }
     }
     else {
