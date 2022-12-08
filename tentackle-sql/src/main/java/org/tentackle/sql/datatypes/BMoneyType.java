@@ -42,7 +42,7 @@ import java.util.Optional;
  * This type is sortable by the first column.
  */
 @Service(DataType.class)
-public final class BMoneyType extends AbstractDataType<BMoney> {
+public class BMoneyType extends AbstractDataType<BMoney> {
 
   /**
    * Creates the datatype for {@link BMoney}.
