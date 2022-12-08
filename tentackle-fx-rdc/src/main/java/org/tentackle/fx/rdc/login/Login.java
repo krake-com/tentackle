@@ -28,7 +28,6 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.GridPane;
 import javafx.stage.WindowEvent;
-
 import org.tentackle.app.Application;
 import org.tentackle.common.Constants;
 import org.tentackle.fx.AbstractFxController;
@@ -40,7 +39,6 @@ import org.tentackle.fx.component.FxLabel;
 import org.tentackle.fx.component.FxPasswordField;
 import org.tentackle.fx.component.FxTextField;
 import org.tentackle.fx.rdc.app.DesktopApplication;
-import org.tentackle.fx.rdc.app.LoginApplication;
 import org.tentackle.log.Logger;
 import org.tentackle.session.BackendConfiguration;
 import org.tentackle.session.SessionInfo;
@@ -295,8 +293,6 @@ public class Login extends AbstractFxController {
 
   /**
    * Logs in automatically.
-   *
-   * @see LoginApplication#isAutoLogin(org.tentackle.session.SessionInfo)
    */
   public void autoLogin() {
     autoLogin = true;
