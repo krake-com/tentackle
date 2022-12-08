@@ -23,7 +23,6 @@ import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-
 import org.tentackle.app.Application;
 import org.tentackle.common.Constants;
 import org.tentackle.common.Cryptor;
@@ -34,8 +33,7 @@ import org.tentackle.fx.rdc.login.Login;
 import org.tentackle.log.Logger;
 import org.tentackle.session.SessionInfo;
 
-import java.awt.Rectangle;
-import java.awt.SplashScreen;
+import java.awt.*;
 import java.util.Properties;
 
 /**
@@ -47,20 +45,7 @@ import java.util.Properties;
  */
 public class LoginApplication extends FxApplication {
 
-  /**
-   * Returns whether the session should be logged in immediately.<br>
-   * Requires <code>autologin</code> property set in session info properties.
-   *
-   * @param sessionInfo the session info
-   * @return true if autologin
-   */
-  public static boolean isAutoLogin(SessionInfo sessionInfo) {
-    return sessionInfo.getProperties().containsKey(Constants.BACKEND_AUTOLOGIN);
-  }
-
-
   private static final Logger LOGGER = Logger.get(LoginApplication.class);
-
 
 
   private Login controller;       // the login controller
@@ -96,10 +81,10 @@ public class LoginApplication extends FxApplication {
         if (splashScreen != null) {
           Platform.runLater(splashScreen::close);
         }
-        if (isAutoLogin(sessionInfo)) {
+        if (((DesktopApplication<?>) Application.getInstance()).isAutoLogin()) {
           controller.autoLogin();   // login w/o option to edit the user and/or password
         }
-        if (sessionInfo.getUserName() != null && sessionInfo.getPassword() != null) {
+        else if (sessionInfo.getUserName() != null && sessionInfo.getPassword() != null) {
           controller.login();       // perform a login once, allow the user to edit if login fails
         }
       });
