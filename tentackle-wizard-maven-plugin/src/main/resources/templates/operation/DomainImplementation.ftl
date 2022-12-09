@@ -12,8 +12,8 @@ import ${domainPackage}.${domainInterface};
 
 import java.io.Serial;
 import org.tentackle.domain.AbstractDomainOperation;
-import org.tentackle.operation.DomainException;
-import org.tentackle.operation.DomainOperationService;
+import org.tentackle.pdo.DomainException;
+import org.tentackle.pdo.DomainOperationService;
 
 /**
  * Domain implementation for ${operationInterface}.
