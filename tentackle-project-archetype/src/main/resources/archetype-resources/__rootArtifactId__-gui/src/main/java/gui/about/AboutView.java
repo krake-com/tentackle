@@ -20,7 +20,7 @@ import org.tentackle.fx.component.FxButton;
 import org.tentackle.fx.component.FxLabel;
 
 /**
- * Controller for showing an about dialog.
+ * Controller for showing an about-dialog.
  */
 @FxControllerService
 public class AboutView extends AbstractFxController {

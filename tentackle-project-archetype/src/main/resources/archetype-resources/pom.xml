@@ -534,10 +534,6 @@
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-check-maven-plugin</artifactId>
       </plugin>
-      <plugin>
-        <groupId>org.tentackle</groupId>
-        <artifactId>tentackle-i18n-maven-plugin</artifactId>
-      </plugin>
     </plugins>
 
   </build>
@@ -572,7 +568,6 @@
                 <configuration>
                   <quiet>true</quiet>
                   <additionalOptions>
-                    <additionalOption>-html5</additionalOption>
                     <!-- don't complain about wurblet args -->
                     <additionalOption>-Xdoclint:none</additionalOption>
                   </additionalOptions>

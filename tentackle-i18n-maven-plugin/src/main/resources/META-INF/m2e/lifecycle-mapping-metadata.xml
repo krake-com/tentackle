@@ -6,6 +6,7 @@
         <goals>
           <goal>push</goal>
           <goal>pull</goal>
+          <goal>verify</goal>
         </goals>
       </pluginExecutionFilter>
       <action>

@@ -6,6 +6,7 @@
         <goals>
           <goal>create</goal>
           <goal>migrate</goal>
+          <goal>validate</goal>
         </goals>
       </pluginExecutionFilter>
       <action>

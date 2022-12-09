@@ -8,6 +8,8 @@
           <goal>test-analyze</goal>
           <goal>beaninfo</goal>
           <goal>properties</goal>
+          <goal>versions</goal>
+          <goal>plugin-versions</goal>
         </goals>
       </pluginExecutionFilter>
       <action>
