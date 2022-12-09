@@ -45,7 +45,6 @@ public class UserGuiProvider extends DefaultGuiProvider<User> {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public UserEditor createEditor() {
     return Fx.load(UserEditor.class);
   }

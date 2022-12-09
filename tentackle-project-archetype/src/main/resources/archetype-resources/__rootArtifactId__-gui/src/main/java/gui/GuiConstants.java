@@ -7,7 +7,6 @@
 
 package ${package}.gui;
 
-
 /**
  * GUI constants.
  */

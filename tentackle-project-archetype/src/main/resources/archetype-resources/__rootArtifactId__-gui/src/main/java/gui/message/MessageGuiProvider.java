@@ -72,12 +72,12 @@ public class MessageGuiProvider extends DefaultGuiProvider<Message> {
 
   @Override
   public <P extends PersistentDomainObject<P>> Collection<PersistentDomainObject<?>> getTreeChildObjects(P parent) {
-    List<PersistentDomainObject<?>> childs = new ArrayList<>();
+    List<PersistentDomainObject<?>> children = new ArrayList<>();
     PersistentDomainObject<?> refersToPdo = getPdo().getRefersToPdo();
     if (refersToPdo != null) {
-      childs.add(refersToPdo);
+      children.add(refersToPdo);
     }
-    return childs;
+    return children;
   }
 
   @Override
