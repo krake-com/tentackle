@@ -36,7 +36,7 @@ import java.sql.Types;
  * Datatype for {@link Binary}.
  */
 @Service(DataType.class)
-public final class BinaryType extends AbstractDataType<Binary<? extends Serializable>> {
+public class BinaryType extends AbstractDataType<Binary<? extends Serializable>> {
 
   /**
    * Creates the datatype for {@link Binary}.
