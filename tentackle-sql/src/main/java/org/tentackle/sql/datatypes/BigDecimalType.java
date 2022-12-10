@@ -34,7 +34,7 @@ import java.sql.Types;
  * Datatype for {@link BigDecimal}.
  */
 @Service(DataType.class)
-public final class BigDecimalType extends AbstractNumberType<BigDecimal> {
+public class BigDecimalType extends AbstractNumberType<BigDecimal> {
 
   /**
    * Creates the datatype for {@link BigDecimal}.

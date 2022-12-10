@@ -39,7 +39,7 @@ import java.time.format.DateTimeParseException;
  * Datatype for {@link Date}.
  */
 @Service(DataType.class)
-public final class DateType extends AbstractDateTimeType<Date> {
+public class DateType extends AbstractDateTimeType<Date> {
 
   private static final String DATE_PATTERN = "yyyy-MM-dd";
   private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern(DATE_PATTERN);

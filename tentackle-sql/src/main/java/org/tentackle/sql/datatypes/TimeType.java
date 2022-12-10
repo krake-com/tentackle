@@ -38,7 +38,7 @@ import java.time.format.DateTimeParseException;
  * Datatype for {@link Time}.
  */
 @Service(DataType.class)
-public final class TimeType extends AbstractDateTimeType<Time> {
+public class TimeType extends AbstractDateTimeType<Time> {
 
   private static final String TIME_PATTERN = "HH:mm:ss";
   private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern(TIME_PATTERN);
