@@ -106,13 +106,13 @@ public class CreateSqlMojo extends AbstractSqlMojo {
   /**
    * Set of created schemas so far.
    */
-  private Set<String> createdSchemas = new HashSet<>();
+  private final Set<String> createdSchemas = new HashSet<>();
 
   /**
    * Set of backends processed so far.
    * Used if {@link #prependModelFromClassPath} is true to generate classpath model only once per backend.
    */
-  private Set<BackendInfo> processedBackendInfos = new HashSet<>();
+  private final Set<BackendInfo> processedBackendInfos = new HashSet<>();
 
 
   @Override

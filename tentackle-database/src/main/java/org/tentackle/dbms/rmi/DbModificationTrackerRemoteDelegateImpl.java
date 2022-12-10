@@ -49,7 +49,6 @@ public class DbModificationTrackerRemoteDelegateImpl<T extends DbModificationTra
    *
    * @param serial the long master serial
    * @return the master serial object
-   * @see DbModificationTracker#extractMasterSerial(MasterSerial)
    */
   protected MasterSerial createMasterSerial(long serial) {
     return new MasterSerial(serial);

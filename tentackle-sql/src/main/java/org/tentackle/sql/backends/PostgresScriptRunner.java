@@ -51,9 +51,7 @@ public class PostgresScriptRunner extends DefaultScriptRunner {
       ResultSet resultSet = statement.executeQuery("SELECT setting FROM pg_settings WHERE name = 'standard_conforming_strings'");
       if (resultSet.next()) {
         String setting = resultSet.getString(1);
-        if ("off".equals(setting)) {
-          return true;
-        }
+        return "off".equals(setting);
       }
       return false;
     }

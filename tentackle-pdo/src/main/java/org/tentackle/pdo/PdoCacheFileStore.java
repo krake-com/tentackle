@@ -186,7 +186,7 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
     // get current table serials
     tableSerials = new HashMap<>();
     for (T object : objects) {
-      tableSerials.computeIfAbsent(object.getTableName(), tableName -> getTableSerial(tableName));
+      tableSerials.computeIfAbsent(object.getTableName(), this::getTableSerial);
     }
   }
 

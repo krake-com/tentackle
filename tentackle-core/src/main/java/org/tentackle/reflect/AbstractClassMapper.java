@@ -59,7 +59,7 @@ public abstract class AbstractClassMapper<S> {
   /**
    * Gets the list of package names.
    *
-   * @return the list of package names, null or empty array if none.
+   * @return the array of package names, null or empty array if none.
    */
   public abstract String[] getPackageNames();
 

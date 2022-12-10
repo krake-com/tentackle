@@ -141,7 +141,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   /** the id of DomainContext's context object, 0 if all instances. */
   private long domainContextId;
 
-  /** the class id of the entity the permissions are granted to, null if all classes. */
+  /** the class id of the entity the permissions are granted to, 0 if all classes. */
   private int granteeClassId;
 
   /** the id of the entity the permissions are granted to, 0 if all grantees. */

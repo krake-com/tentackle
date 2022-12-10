@@ -180,16 +180,16 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   /**
    * Gets the attribute granteeClassId.
    *
-   * @return the class id of the entity the permissions are granted to, null if all classes
+   * @return the class id of the entity the permissions are granted to, 0 if all classes
    */
-  @Persistent(ordinal=5, comment="the class id of the entity the permissions are granted to, null if all classes")
+  @Persistent(ordinal=5, comment="the class id of the entity the permissions are granted to, 0 if all classes")
   @Bindable
   int getGranteeClassId();
 
   /**
    * Sets the attribute granteeClassId.
    *
-   * @param granteeClassId the class id of the entity the permissions are granted to, null if all classes
+   * @param granteeClassId the class id of the entity the permissions are granted to, 0 if all classes
    */
   @Bindable
   void setGranteeClassId(int granteeClassId);
@@ -285,7 +285,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   /**
    * Makes sure that the remote security manager is up-to-date.
    * The method is necessary to avoid situations where
-   * {@link org.tentackle.security.DefaultSecurityManager#initialize(org.tentackle.session.Session)}
+   * {@code DefaultSecurityManager#initialize(Session)}
    * at the client side will need some data that in turn is security-checked and
    * that would trigger the remote SecurityManager to be initialized as well.
    * This could lead to a statement being marked ready twice in the server

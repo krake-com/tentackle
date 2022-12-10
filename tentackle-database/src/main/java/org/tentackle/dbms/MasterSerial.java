@@ -26,8 +26,6 @@ import java.io.Serializable;
  * <p>
  * This is just a DTO without further logic.<br>
  * It can be extended to provide additional application-specific data.
- *
- * @see org.tentackle.dbms.rmi.DbModificationTrackerRemoteDelegateImpl#createMasterSerial(long)
  */
 public class MasterSerial implements Serializable {
 

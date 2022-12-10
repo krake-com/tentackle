@@ -86,7 +86,7 @@ import org.tentackle.common.StringHelper;
  *   <li><code>id</code>: the execution id</li>
  *   <li>all system properties (dots in property names translated to camelCase, e.g. "os.name" becomes "osName"</li>
  *   <li>all maven properties (translated to camelCase as well)</li>
- *   <li>the plugin configuration {@link #variables}</li>
+ *   <li>the plugin configuration {@link AbstractJLinkMojo#getVariables()}</li>
  * </ul>
  *
  * Modules not passed to <code>jlink</code> and automatic modules are copied to the <code>mp</code> folder
@@ -102,7 +102,7 @@ import org.tentackle.common.StringHelper;
  * To do so, provide a plugin dependency that contains a class annotated with {@code @Service(}{@link ArtifactCreator}).
  * <p>
  * Notice that you can create an image for a different java version than the one used for the maven build process
- * by specifying an explicit {@link #jdkToolchain}.
+ * by specifying an explicit {@link AbstractJLinkMojo#getToolchain()}.
  */
 @Mojo(name = "jlink",
       requiresDependencyResolution = ResolutionScope.RUNTIME,

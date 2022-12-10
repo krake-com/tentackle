@@ -159,29 +159,27 @@ public class BeanInfoMojo extends AbstractTentackleMojo {
 
     String[] fileNames = getIncludedFiles(fileSet);
 
-    if (fileNames.length > 0) {
-      for (String fileName : fileNames) {
-        int ndx = fileName.lastIndexOf(BEANINFO_TRAILER); // convention
-        if (ndx < 0) {
-          getLog().error("file " + fileName + " does not end with " + BEANINFO_TRAILER);
-          errorCount++;
-          continue;
-        }
-        String beanInfoName = fileName.substring(0, ndx); // cut trailing BeanInfo.java
-        // check if file exists
-        File beanFile = new File(dir, beanInfoName + Constants.JAVA_SOURCE_EXTENSION);
-        if (!beanFile.exists()) {
-          getLog().error("no matching java-file for " + fileName);
-          errorCount++;
-          continue;
-        }
-        if (!beanInfoName.contains("Abstract")) {
-          // don't add abstract classes even if they provide a BeanInfo-file.
-          // this is just to provide common settings
-          ps.println();
-          ps.println("Name: " + beanInfoName + ".class");
-          ps.println("Java-Bean: True");
-        }
+    for (String fileName : fileNames) {
+      int ndx = fileName.lastIndexOf(BEANINFO_TRAILER); // convention
+      if (ndx < 0) {
+        getLog().error("file " + fileName + " does not end with " + BEANINFO_TRAILER);
+        errorCount++;
+        continue;
+      }
+      String beanInfoName = fileName.substring(0, ndx); // cut trailing BeanInfo.java
+      // check if file exists
+      File beanFile = new File(dir, beanInfoName + Constants.JAVA_SOURCE_EXTENSION);
+      if (!beanFile.exists()) {
+        getLog().error("no matching java-file for " + fileName);
+        errorCount++;
+        continue;
+      }
+      if (!beanInfoName.contains("Abstract")) {
+        // don't add abstract classes even if they provide a BeanInfo-file.
+        // this is just to provide common settings
+        ps.println();
+        ps.println("Name: " + beanInfoName + ".class");
+        ps.println("Java-Bean: True");
       }
     }
 
