@@ -31,6 +31,7 @@ import org.tentackle.common.FileHelper;
 import org.tentackle.common.Settings;
 import org.tentackle.common.StringHelper;
 import org.tentackle.common.ToolRunner;
+import org.tentackle.maven.AbstractTentackleMojo;
 import org.tentackle.maven.JavaToolFinder;
 
 import java.io.BufferedReader;
@@ -94,7 +95,7 @@ import java.util.Map;
  * a regular user.
  * Some platforms, however, also provide per-user installations that can be updated. For Windows, the <code>jpackage</code>
  * tool provides the option <code>--win-per-user-install</code>. MacOS allows the user to decide whether to install
- * system-wide or for the current user only. See {@link #withUpdater} for more details.
+ * system-wide or for the current user only. See {@link AbstractJLinkMojo#isWithUpdater()} for more details.
  * <p>
  * If both jlink zip-files and jpackage installers are required, change the packaging type to <code>jar</code>
  * and add executions, like this:
@@ -118,7 +119,7 @@ import java.util.Map;
  * Important: the <code>jpackage</code> tool is available since Java 14.
  * <p>
  * Notice that you can create an image for a different java version than the one used by the maven build process
- * via {@link #jdkToolchain}. Furthermore, you can select the <code>jpackage</code> tool explicitly from another JDK
+ * via {@link AbstractTentackleMojo#getToolchain()}. Furthermore, you can select the <code>jpackage</code> tool explicitly from another JDK
  * via {@link #jpackageToolchain} or {@link #jpackageTool}.
  */
 @Mojo(name = "jpackage",

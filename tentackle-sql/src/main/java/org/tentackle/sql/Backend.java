@@ -601,7 +601,7 @@ public interface Backend {
   /**
    * Gets the list of reserved words for this backend.
    *
-   * @return the list of reserved words
+   * @return the set of reserved words
    */
   Set<String> getReservedWords();
 

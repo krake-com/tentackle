@@ -458,24 +458,22 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
           for (String propertiesDirName : propertiesDirNames) {
             fileset.setDirectory(propertiesDirName);
             String[] fileNames = fileSetManager.getIncludedFiles(fileset);
-            if (fileNames.length > 0) {
-              for (String filename : fileNames) {
-                File propertiesFile = new File(new File(propertiesDirName), filename);
-                Properties props = new Properties();
-                try (InputStream is = new FileInputStream(propertiesFile)) {
-                  getLog().debug("loading property file " + propertiesFile.getAbsolutePath());
-                  props.load(is);
-                  BackendInfo backendInfo = new BackendInfo(props);
-                  // props infos will replace those loaded by name only
-                  backendInfos.put(backendInfo.getBackend().getName(), backendInfo);
-                  connectableBackendInfos.put(backendInfo.getUrl(), backendInfo);
-                }
-                catch (FileNotFoundException nfe) {
-                  throw new MojoExecutionException("db properties file " + propertiesFile.getAbsolutePath() + " not found", nfe);
-                }
-                catch (IOException iox) {
-                  throw new MojoExecutionException("reading " + propertiesFile.getPath() + " failed", iox);
-                }
+            for (String filename : fileNames) {
+              File propertiesFile = new File(new File(propertiesDirName), filename);
+              Properties props = new Properties();
+              try (InputStream is = new FileInputStream(propertiesFile)) {
+                getLog().debug("loading property file " + propertiesFile.getAbsolutePath());
+                props.load(is);
+                BackendInfo backendInfo = new BackendInfo(props);
+                // props infos will replace those loaded by name only
+                backendInfos.put(backendInfo.getBackend().getName(), backendInfo);
+                connectableBackendInfos.put(backendInfo.getUrl(), backendInfo);
+              }
+              catch (FileNotFoundException nfe) {
+                throw new MojoExecutionException("db properties file " + propertiesFile.getAbsolutePath() + " not found", nfe);
+              }
+              catch (IOException iox) {
+                throw new MojoExecutionException("reading " + propertiesFile.getPath() + " failed", iox);
               }
             }
           }

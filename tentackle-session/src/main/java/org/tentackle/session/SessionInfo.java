@@ -99,14 +99,14 @@ public interface SessionInfo extends Immutable, Serializable {
   /**
    * Gets the epochal time since when logged in.
    *
-   * @return logged in since, null if not logged in
+   * @return logged in since, 0 if not logged in
    */
   long getSince();
 
   /**
    * Sets the epochal time since when logged in.
    *
-   * @param since logged in since, null if not logged in
+   * @param since logged in since, 0 if not logged in
    */
   void setSince(long since);
 

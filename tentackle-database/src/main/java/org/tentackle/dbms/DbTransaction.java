@@ -357,7 +357,7 @@ public class DbTransaction {
    * Unregisters a {@link CommitTxRunnable}.
    *
    * @param handle the runnable's handle to unregister
-   * @return true if removed, else not registered
+   * @return the runnable if removed, null if not registered
    */
   public CommitTxRunnable unregisterCommitTxRunnable(DbTransactionHandle handle) {
     return commitTxRunnables == null ? null : commitTxRunnables.remove(handle);

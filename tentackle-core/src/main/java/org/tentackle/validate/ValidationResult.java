@@ -108,7 +108,7 @@ public interface ValidationResult extends Serializable {
    * @param pathPrefix the leading part of the path
    * @param pathPostfix the trailing part
    */
-  record CollectionIndex(int index, String pathPrefix, String pathPostfix) implements Serializable {};
+  record CollectionIndex(int index, String pathPrefix, String pathPostfix) implements Serializable {}
 
 
   /**

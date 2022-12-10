@@ -114,7 +114,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   /**
    * Explicit path to the <code>jdeps</code> tool.<br>
    * Only if toolchains cannot be used.
-   * @see #jdkToolchain
+   * @see AbstractTentackleMojo#getToolchain()
    */
   @Parameter(property = "jdepsTool")
   private File jdepsTool;
@@ -122,7 +122,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   /**
    * Explicit path to the <code>jlink</code> tool.<br>
    * Only if toolchains cannot be used.
-   * @see #jdkToolchain
+   * @see AbstractTentackleMojo#getToolchain()
    */
   @Parameter(property = "jlinkTool")
   private File jlinkTool;
@@ -138,14 +138,14 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    * Enables the auto update feature.
    * <p>
    * For the <code>jlink</code> gaol an extra update script will be generated
-   * via the {@link JLinkMojo#updateTemplate}.
+   * via the {@link JLinkMojo#getUpdateTemplate()}.
    * The update script will be named <code>bin/update.&lt;extension&gt;</code> where
    * the extension is derived from the platform (<code>cmd</code> on Windows,
    * otherwise <code>sh</code> for unixes).
    * <p>
    * For the <code>jpackage</code> goal an extra ZIP-file is created holding
    * the jpackage image's files and an update script generated via
-   * {@link JPackageMojo#packageUpdateTemplate}.
+   * {@link JPackageMojo#getPackageUpdateTemplate()}.
    * <p>
    * For an implementation of the auto-update feature see the Tentackle modules
    * <code>tentackle-update</code> and <code>tentackle-fx-rdc-update</code>.

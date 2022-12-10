@@ -874,7 +874,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    *
    * @param masterSerial the master serial object
    * @return the long serial
-   * @see org.tentackle.dbms.rmi.DbModificationTrackerRemoteDelegateImpl#createMasterSerial(long)
    */
   protected long extractMasterSerial(MasterSerial masterSerial) {
     return masterSerial.getSerial();
