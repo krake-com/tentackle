@@ -59,7 +59,7 @@ public class MessageDomainImpl extends AbstractDomainObject<Message, MessageDoma
 
 
   /**
-   * The refersToPdo doesnt change once the message is created.
+   * The refersToPdo doesn't change once the message is created.
    * Hence, we can cache it safely.
    */
   @SuppressWarnings("stateful-domain-logic")
@@ -72,8 +72,8 @@ public class MessageDomainImpl extends AbstractDomainObject<Message, MessageDoma
     
     me().setMessageType(messageType);
 
-    if (refersTo instanceof PdoProvider) {
-      refersTo = ((PdoProvider<?>) refersTo).getPdo();
+    if (refersTo instanceof PdoProvider<?> pdoProvider) {
+      refersTo = pdoProvider.getPdo();
     }
 
     if (refersTo instanceof PersistentDomainObject<?> pdo) {
