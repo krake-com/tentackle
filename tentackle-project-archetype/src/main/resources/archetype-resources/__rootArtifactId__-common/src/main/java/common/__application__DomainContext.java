@@ -39,4 +39,9 @@ public class ${application}DomainContext extends DefaultDomainContext {
     super(session);
   }
 
+  @Override
+  public ${application}SessionInfo getSessionInfo() {
+    return (${application}SessionInfo) super.getSessionInfo();
+  }
+
 }
