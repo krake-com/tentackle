@@ -7,7 +7,6 @@
 
 package ${package}.gui.password;
 
-import ${package}.common.${application}Helper;
 import ${package}.gui.GuiBundle;
 import ${package}.pdo.md.User;
 import javafx.fxml.FXML;
@@ -108,7 +107,7 @@ public class ChangePasswordView extends AbstractFxController implements DomainCo
   }
 
   private void save() {
-    if (admin || Objects.equals(${application}Helper.hash(oldPassword), oldPasswordHash)) {
+    if (admin || Objects.equals(user.hash(oldPassword), oldPasswordHash)) {
       if (!Arrays.equals(newPassword, confirmedNewPassword)) {
         Fx.error(resources.getString("new passwords do not match"));
       }
@@ -118,7 +117,7 @@ public class ChangePasswordView extends AbstractFxController implements DomainCo
           Fx.yes(resources.getString("are you sure to disable the password check?"), false, () -> saveAndClose(null));
         }
         else {
-          Fx.yes(resources.getString("save new password?"), false, () -> saveAndClose(${application}Helper.hash(newPassword)));
+          Fx.yes(resources.getString("save new password?"), false, () -> saveAndClose(user.hash(newPassword)));
         }
       }
     }

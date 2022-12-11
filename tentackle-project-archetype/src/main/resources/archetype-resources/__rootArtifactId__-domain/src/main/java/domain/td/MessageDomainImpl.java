@@ -88,7 +88,7 @@ public class MessageDomainImpl extends AbstractDomainObject<Message, MessageDoma
     me().setText(text == null ? "" : text);
 
     if (owner == null) {
-      owner = (OrgUnit<?>) Application.getInstance().getUser(me().getDomainContext());
+      owner = Application.getInstance().getUser(me().getDomainContext());
       me().setOrgUnit(owner);
     }
     else {
