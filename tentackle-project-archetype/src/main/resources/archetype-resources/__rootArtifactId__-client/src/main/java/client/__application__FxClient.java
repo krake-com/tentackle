@@ -65,10 +65,8 @@ public class ${application}FxClient extends UpdatableDesktopApplication<MainCont
     PersistedPreferencesFactory.getInstance().setReadOnly(!user.isChangingPreferencesAllowed());
     ${application}Preferences.getInstance().getSystemPrefs().addPreferenceChangeListener(evt -> {
       switch (evt.getKey()) {
-        case ${application}Preferences.HELP_URL:
-          configureHelpURL();
-          break;
-        // other application specific pref changes go here...
+        case ${application}Preferences.HELP_URL -> configureHelpURL();
+        // other application specific preference changes go here...
       }
     });
     configureHelpURL();

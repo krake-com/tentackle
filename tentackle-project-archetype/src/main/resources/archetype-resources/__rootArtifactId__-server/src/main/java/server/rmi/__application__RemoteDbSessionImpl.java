@@ -7,7 +7,6 @@
 
 package ${package}.server.rmi;
 
-import ${package}.common.${application}Helper;
 import ${package}.common.${application}SessionInfo;
 import ${package}.pdo.MessageType;
 import ${package}.pdo.md.User;
@@ -53,7 +52,6 @@ public class ${application}RemoteDbSessionImpl extends RemoteDbSessionImpl imple
 
   @Override
   public void verifySessionInfo(SessionInfo sessionInfo) {
-    String passwordHash = ${application}Helper.hash(sessionInfo.getPassword());
     DomainContext context = Pdo.createDomainContext(getSession());
     String username = sessionInfo.getUserName();
     User user = Pdo.create(User.class, context).selectByUniqueDomainKey(username);
@@ -61,7 +59,7 @@ public class ${application}RemoteDbSessionImpl extends RemoteDbSessionImpl imple
       LOGGER.warning("attempt to login for unknown user {0}", username);
     }
     else {
-      if (Objects.equals(passwordHash, user.selectPasswordHash())) {
+      if (Objects.equals(user.hash(sessionInfo.getPassword()), user.selectPasswordHash())) {
         if (!user.isLoginAllowed()) {
           LOGGER.warning("attempt to login for disabled user {0} (matching password)", username);
           user = null;

@@ -11,7 +11,7 @@ import org.tentackle.common.Cryptor;
 import org.tentackle.common.Service;
 
 /**
- * Application specific en/decryptor.
+ * Application specific encryption and decryption.
  */
 @Service(Cryptor.class)
 public class ${application}Cryptor extends Cryptor {
@@ -26,8 +26,8 @@ public class ${application}Cryptor extends Cryptor {
     return salt;
   }
 
-  // IMPORTANT: the passphrase should *NOT* be part of the application!
-  // get it from manual input, mounted USB-stick, whatever...
+  // security can be improved significantly, if the passphrase is derived from some external source,
+  // such as manual input, mounted USB-stick, whatever...
   private static char[] getPassphrase() {
     char[] passphrase = new char[10];
     passphrase[1] = 'i';
@@ -44,7 +44,7 @@ public class ${application}Cryptor extends Cryptor {
   }
 
   /**
-   * Creates the application specific password cryptor.
+   * Creates the application specific {@link Cryptor}.
    */
   public ${application}Cryptor() {
     super(getSalt(), getPassphrase());
