@@ -26,7 +26,6 @@ import org.tentackle.misc.TrackedArrayList;
 import org.tentackle.misc.TrackedList;
 import org.tentackle.misc.TrackedListListener;
 import org.tentackle.pdo.DomainContext;
-import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.PersistentObjectService;
 import org.tentackle.persist.PersistentObjectClassVariables;

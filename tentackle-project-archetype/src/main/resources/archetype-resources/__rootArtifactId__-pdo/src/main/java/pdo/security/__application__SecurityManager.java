@@ -24,7 +24,6 @@ import org.tentackle.session.SessionUtilities;
 import java.util.ArrayList;
 import java.util.Collection;
 
-
 /**
  * Application specific security manager.<br>
  * Implements the user to group relationship.

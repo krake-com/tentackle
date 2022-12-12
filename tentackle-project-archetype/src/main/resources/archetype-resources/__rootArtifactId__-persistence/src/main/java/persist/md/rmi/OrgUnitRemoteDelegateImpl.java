@@ -15,7 +15,6 @@ import org.tentackle.pdo.DomainContext;
 
 import java.rmi.RemoteException;
 
-
 /**
  * Remote delegate implementation for {@link OrgUnitPersistenceImpl}.
  *
@@ -25,7 +24,6 @@ import java.rmi.RemoteException;
 public class OrgUnitRemoteDelegateImpl<T extends OrgUnit<T>, P extends OrgUnitPersistenceImpl<T,P>>
        extends AbstractPersistentMasterDataRemoteDelegateImpl<T,P>
        implements OrgUnitRemoteDelegate<T,P>  {
-
 
   /**
    * Creates the remote delegate for {@link OrgUnitPersistenceImpl}.
@@ -39,6 +37,5 @@ public class OrgUnitRemoteDelegateImpl<T extends OrgUnit<T>, P extends OrgUnitPe
   }
 
   // @wurblet inclrmi Include --missingok .${symbol_dollar}classname/methods
-
 
 }

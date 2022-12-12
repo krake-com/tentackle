@@ -12,7 +12,6 @@ import ${package}.persist.md.UserPersistenceImpl;
 
 import java.rmi.RemoteException;
 
-
 /**
  * Remote delegate for {@link UserPersistenceImpl}.
  */
@@ -21,6 +20,5 @@ public interface UserRemoteDelegate
 
 
   // @wurblet inclrmi Include --missingok .${symbol_dollar}classname/methods
-
 
 }

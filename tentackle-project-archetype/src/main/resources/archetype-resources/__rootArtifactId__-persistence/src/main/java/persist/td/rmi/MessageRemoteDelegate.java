@@ -18,7 +18,6 @@ import org.tentackle.pdo.DomainContext;
 
 import java.rmi.RemoteException;
 
-
 /**
  * Remote delegate for {@link MessagePersistenceImpl}.
  */
@@ -26,6 +25,5 @@ public interface MessageRemoteDelegate
        extends AbstractPersistentTransactionDataRemoteDelegate<Message,MessagePersistenceImpl> {
 
   // @wurblet inclrmi Include --missingok .${symbol_dollar}classname/methods
-
 
 }
