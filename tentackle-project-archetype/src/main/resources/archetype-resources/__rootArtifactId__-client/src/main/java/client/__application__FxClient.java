@@ -22,7 +22,6 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 
-
 /**
  * The FX client application.
  */

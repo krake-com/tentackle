@@ -10,7 +10,6 @@ package ${package}.persist.md.rmi;
 import ${package}.pdo.md.UserGroup;
 import ${package}.persist.md.UserGroupPersistenceImpl;
 
-
 /**
  * Remote delegate for {@link UserGroupPersistenceImpl}.
  */
@@ -18,6 +17,5 @@ public interface UserGroupRemoteDelegate
        extends OrgUnitRemoteDelegate<UserGroup,UserGroupPersistenceImpl> {
 
   // @wurblet inclrmi Include --missingok .${symbol_dollar}classname/methods
-
 
 }

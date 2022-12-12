@@ -16,14 +16,12 @@ import org.tentackle.pdo.DomainContext;
 
 import java.rmi.RemoteException;
 
-
 /**
  * Remote delegate implementation for {@link User2GroupPersistenceImpl}.
  */
 public class User2GroupRemoteDelegateImpl
        extends AbstractPersistentMasterDataRemoteDelegateImpl<User2Group,User2GroupPersistenceImpl>
        implements User2GroupRemoteDelegate {
-
 
   /**
    * Creates the remote delegate for {@link User2GroupPersistenceImpl}.
@@ -37,6 +35,5 @@ public class User2GroupRemoteDelegateImpl
   }
 
   // @wurblet inclrmi Include --missingok .${symbol_dollar}classname/methods
-
 
 }

@@ -16,7 +16,6 @@ import org.tentackle.pdo.PersistentObject;
 import org.tentackle.session.Persistent;
 import org.tentackle.validate.validator.NotNull;
 
-
 /**
  * Persistence interface for OrgUnit.
  *

@@ -9,7 +9,6 @@ package ${package}.common;
 
 import java.util.ResourceBundle;
 
-
 /**
  * Holds versioning information.
  */

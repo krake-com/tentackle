@@ -12,14 +12,12 @@ import ${package}.persist.md.UserGroupPersistenceImpl;
 
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
 
-
 /**
  * Remote delegate implementation for {@link UserGroupPersistenceImpl}.
  */
 public class UserGroupRemoteDelegateImpl
        extends OrgUnitRemoteDelegateImpl<UserGroup,UserGroupPersistenceImpl>
        implements UserGroupRemoteDelegate {
-
 
   /**
    * Creates the remote delegate for {@link UserGroupPersistenceImpl}.
@@ -33,6 +31,5 @@ public class UserGroupRemoteDelegateImpl
   }
 
   // @wurblet inclrmi Include --missingok .${symbol_dollar}classname/methods
-
 
 }

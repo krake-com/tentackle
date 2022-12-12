@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.persist.wurblet;
 
 import org.wurbelizer.wurbel.HeapStream;
@@ -31,7 +30,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Date;
-
 
 /**
  * Handles generated .remote and .impl-code.
@@ -57,7 +55,6 @@ public class RemoteIncludes {
   private String rmiDirName;                  // directory of rmi-classes
   private String remotePrefix;                // prefix of the remote parent class (usually from ant script)
   private boolean importSuperDelegate;        // create import for superclass/interface of remote delegate
-
 
 
   /**
@@ -128,7 +125,6 @@ public class RemoteIncludes {
     checkFile(remoteName, true);
   }
 
-
   /**
    * Marks the heapfiles as discarded.<br>
    * Such files should not be used to generate code because their contents are incomplete
@@ -138,186 +134,6 @@ public class RemoteIncludes {
     implStream.discard();
     remoteStream.discard();
   }
-
-
-  /**
-   * Returns whether entity is abstract.<br>
-   *
-   * @return true if abstract, false if concrete or no entity (e.g. operation)
-   */
-  private boolean isAbstract() {
-    return entity != null && entity.isAbstract();
-  }
-
-  /**
-   * Check if remote file exists. If not, create it.
-   */
-  private void checkFile(String name, boolean impl) throws WurbelException {
-    // check directory first
-    new File(rmiDirName).mkdirs();
-    String fileName = name + (impl ? "Impl" : "") + ".java";
-    String pathName = rmiDirName + "/" + fileName;
-    File file = new File(pathName);
-    if (!file.exists()) {
-      if (pdoClassName != null) {
-        // create it
-        try (PrintStream s = new PrintStream(file)) { // this is ok unbuffered for one time
-          s.println(
-                "/*\n" +
-                " * " + fileName + " (generated " + new Date() + ")\n" +
-                " */\n\n" +
-                "package " + packageName + ".rmi;\n\n" +
-                "import " + pdoPackageName + "." + pdoClassName + ";\n" +
-                "import " + packageName + "." + className + ";\n" +
-                "import java.rmi.RemoteException;\n" +
-                "import java.util.List;\n" +
-                "import org.tentackle.common.BMoney;\n" +
-                "import org.tentackle.common.Binary;\n" +
-                "import org.tentackle.common.DMoney;\n" +
-                "import org.tentackle.common.Date;\n" +
-                "import org.tentackle.common.Time;\n" +
-                "import org.tentackle.common.Timestamp;\n" +
-                "import org.tentackle.misc.TrackedList;\n" +
-                "import org.tentackle.persist.rmi.RemoteResultSetCursor;"
-            );
-          s.println("import org.tentackle.pdo.DomainContext;");
-          if (impl) {
-            if (importSuperDelegate) {
-              s.println("import " + remotePrefix + "RemoteDelegateImpl;");
-            }
-            s.println("import org.tentackle.dbms.rmi.RemoteDbSessionImpl;\n\n");
-            s.println("/**");
-            s.println(" * Remote delegate implementation for {@link " + className + "}.");
-            if (isAbstract()) {
-              s.println(" * ");
-              s.println(" * @param <T> the " + type + " interface");
-              s.println(" * @param <P> the persistence implementation");
-            }
-            s.println(" */");
-            if (isAbstract()) {
-              s.println("public class " + name + "Impl<T extends " + pdoClassName + "<T>, P extends " + className + "<T,P>>");
-              s.println("       extends " + remotePrefixBasename + "RemoteDelegateImpl<T,P>");
-              s.println("       implements " + name + "<T,P>  {\n\n");
-            }
-            else  {
-              s.println("public class " + name + "Impl");
-              s.println("       extends " + remotePrefixBasename + "RemoteDelegateImpl<" + pdoClassName + "," + className + ">");
-              s.println("       implements " + name + " {\n\n");
-            }
-            s.println("  /**");
-            s.println("   * Creates the remote delegate for {@link " + className + "}.");
-            s.println("   *");
-            s.println("   * @param session the RMI session");
-            s.println("   * @param persistenceClass the persistence implementation class");
-            s.println("   * @param " + type + "Class the " + type + " interface class");
-            s.println("   */");
-            if (isAbstract()) {
-              s.println("  public " + name + "Impl(RemoteDbSessionImpl session, Class<P> persistenceClass, Class<T> " + type + "Class) {");
-            }
-            else  {
-              s.println("  public " + name + "Impl(RemoteDbSessionImpl session, Class<" + className +
-                        "> persistenceClass, Class<" + pdoClassName + "> " + type + "Class) {");
-            }
-            s.println("    super(session, persistenceClass, " + type + "Class);");
-            s.println("  }");
-          }
-          else  {
-            if (importSuperDelegate) {
-              s.println("import " + remotePrefix + "RemoteDelegate;");
-            }
-            s.println("\n\n/**");
-            s.println(" * Remote delegate for {@link " + className + "}.");
-            if (isAbstract()) {
-              s.println(" * ");
-              s.println(" * @param <T> the " + type + " interface");
-              s.println(" * @param <P> the persistence implementation");
-            }
-            s.println(" */");
-            if (isAbstract()) {
-              s.println("public interface " + name + "<T extends " + pdoClassName + "<T>, P extends " + className + "<T,P>>");
-              s.println("       extends " + remotePrefixBasename + "RemoteDelegate<T,P> {\n");
-            }
-            else  {
-              s.println("public interface " + name);
-              s.println("       extends " + remotePrefixBasename + "RemoteDelegate<" + pdoClassName + "," + className + "> {\n");
-            }
-          }
-          s.println(
-                "\n" +
-                "  // @wurblet inclrmi Include --missingok .$classname/methods\n" +
-                "}"
-          );
-        }
-        catch (IOException ex) {
-          throw new WurbelException("printing to " + pathName + " failed", ex);
-        }
-      }
-      else if (superClassName != null && superClassName.equals("AbstractDbObject")) {
-        // primitive AbstractDbObjects
-        try (PrintStream s = new PrintStream(file)) { // this is ok unbuffered for one time
-          s.println(
-                "/*\n" +
-                " * " + fileName + " (generated " + new Date() + ")\n" +
-                " */\n\n" +
-                "package " + packageName + ".rmi;\n\n" +
-                "import " + packageName + "." + className + ";\n" +
-                "import java.rmi.RemoteException;\n" +
-                "import java.util.List;\n" +
-                "import org.tentackle.persist.AbstractDbObject;\n" +
-                "import org.tentackle.misc.TrackedList;"
-            );
-          if (impl) {
-            if (importSuperDelegate) {
-              s.println("import " + remotePrefix + "RemoteDelegateImpl;");
-            }
-            s.println("import org.tentackle.persist.rmi.RemoteDbSessionImpl;\n\n");
-            s.println("/**");
-            s.println(" * Remote delegate implementation for {@link " + className + "}.");
-            s.println(" * ");
-            s.println(" * @param <P> the persistence implementation");
-            s.println(" */");
-            s.println("public class " + name + "Impl<P extends " + className + ">");
-            s.println("             extends " + remotePrefixBasename + "RemoteDelegateImpl<P>");
-            s.println("             implements " + name + "<P>  {\n\n");
-            s.println("  /**");
-            s.println("   * Creates the remote delegate for {@link " + className + "}.");
-            s.println("   *");
-            s.println("   * @param session the RMI session");
-            s.println("   * @param persistenceClass the persistence implementation class");
-            s.println("   */");
-            s.println("  public " + name + "Impl(RemoteDbSessionImpl session, Class<P> persistenceClass) {");
-            s.println("    super(session, persistenceClass);");
-            s.println("  }");
-          }
-          else  {
-            if (importSuperDelegate) {
-              s.println("import " + remotePrefix + "RemoteDelegate;");
-            }
-            s.println("\n\n/**");
-            s.println(" * Remote delegate for {@link " + className + "}.");
-            s.println(" * ");
-            s.println(" * @param <P> the persistence implementation");
-            s.println(" */");
-            s.println("public interface " + name + "<P extends " + className + ">");
-            s.println("       extends " + remotePrefixBasename + "RemoteDelegate<P> {\n");
-          }
-          s.println(
-                "\n" +
-                "  // @wurblet inclrmi Include --missingok .$classname/methods\n" +
-                "}"
-          );
-        }
-        catch (IOException ex) {
-          throw new WurbelException("printing to " + pathName + " failed", ex);
-        }
-      }
-      else  {
-        container.getLogger().warning(pathName + " cannot be generated because " + type + " class is unknown (missing service annotation?)");
-      }
-    }
-  }
-
-
 
   /**
    * Appends text to remote file.
@@ -349,6 +165,184 @@ public class RemoteIncludes {
    */
   public PrintStream getImplStream()  {
     return implStream.getStream();
+  }
+
+
+  /**
+   * Returns whether entity is abstract.<br>
+   *
+   * @return true if abstract, false if concrete or no entity (e.g. operation)
+   */
+  private boolean isAbstract() {
+    return entity != null && entity.isAbstract();
+  }
+
+  /**
+   * Check if remote file exists. If not, create it.
+   */
+  private void checkFile(String name, boolean impl) throws WurbelException {
+    // check directory first
+    new File(rmiDirName).mkdirs();
+    String fileName = name + (impl ? "Impl" : "") + ".java";
+    String pathName = rmiDirName + "/" + fileName;
+    File file = new File(pathName);
+    if (!file.exists()) {
+      if (pdoClassName != null) {
+        // create it
+        try (PrintStream s = new PrintStream(file)) { // this is ok unbuffered for one time
+          s.println(
+          "/*\n" +
+          " * " + fileName + " (generated " + new Date() + ")\n" +
+          " */\n\n" +
+          "package " + packageName + ".rmi;\n\n" +
+          "import " + pdoPackageName + "." + pdoClassName + ";\n" +
+          "import " + packageName + "." + className + ";\n" +
+          "import java.rmi.RemoteException;\n" +
+          "import java.util.List;\n" +
+          "import org.tentackle.common.BMoney;\n" +
+          "import org.tentackle.common.Binary;\n" +
+          "import org.tentackle.common.DMoney;\n" +
+          "import org.tentackle.common.Date;\n" +
+          "import org.tentackle.common.Time;\n" +
+          "import org.tentackle.common.Timestamp;\n" +
+          "import org.tentackle.misc.TrackedList;\n" +
+          "import org.tentackle.persist.rmi.RemoteResultSetCursor;"
+          );
+          s.println("import org.tentackle.pdo.DomainContext;");
+          if (impl) {
+            if (importSuperDelegate) {
+              s.println("import " + remotePrefix + "RemoteDelegateImpl;");
+            }
+            s.println("import org.tentackle.dbms.rmi.RemoteDbSessionImpl;\n\n");
+            s.println("/**");
+            s.println(" * Remote delegate implementation for {@link " + className + "}.");
+            if (isAbstract()) {
+              s.println(" * ");
+              s.println(" * @param <T> the " + type + " interface");
+              s.println(" * @param <P> the persistence implementation");
+            }
+            s.println(" */");
+            if (isAbstract()) {
+              s.println("public class " + name + "Impl<T extends " + pdoClassName + "<T>, P extends " + className + "<T,P>>");
+              s.println("       extends " + remotePrefixBasename + "RemoteDelegateImpl<T,P>");
+              s.println("       implements " + name + "<T,P>  {\n");
+            }
+            else  {
+              s.println("public class " + name + "Impl");
+              s.println("       extends " + remotePrefixBasename + "RemoteDelegateImpl<" + pdoClassName + "," + className + ">");
+              s.println("       implements " + name + " {\n");
+            }
+            s.println("  /**");
+            s.println("   * Creates the remote delegate for {@link " + className + "}.");
+            s.println("   *");
+            s.println("   * @param session the RMI session");
+            s.println("   * @param persistenceClass the persistence implementation class");
+            s.println("   * @param " + type + "Class the " + type + " interface class");
+            s.println("   */");
+            if (isAbstract()) {
+              s.println("  public " + name + "Impl(RemoteDbSessionImpl session, Class<P> persistenceClass, Class<T> " + type + "Class) {");
+            }
+            else  {
+              s.println("  public " + name + "Impl(RemoteDbSessionImpl session, Class<" + className +
+                        "> persistenceClass, Class<" + pdoClassName + "> " + type + "Class) {");
+            }
+            s.println("    super(session, persistenceClass, " + type + "Class);");
+            s.println("  }");
+          }
+          else  {
+            if (importSuperDelegate) {
+              s.println("import " + remotePrefix + "RemoteDelegate;");
+            }
+            s.println("\n/**");
+            s.println(" * Remote delegate for {@link " + className + "}.");
+            if (isAbstract()) {
+              s.println(" * ");
+              s.println(" * @param <T> the " + type + " interface");
+              s.println(" * @param <P> the persistence implementation");
+            }
+            s.println(" */");
+            if (isAbstract()) {
+              s.println("public interface " + name + "<T extends " + pdoClassName + "<T>, P extends " + className + "<T,P>>");
+              s.println("       extends " + remotePrefixBasename + "RemoteDelegate<T,P> {\n");
+            }
+            else  {
+              s.println("public interface " + name);
+              s.println("       extends " + remotePrefixBasename + "RemoteDelegate<" + pdoClassName + "," + className + "> {\n");
+            }
+          }
+          s.println(
+          "\n" +
+          "  // @wurblet inclrmi Include --missingok .$classname/methods\n" +
+          "}"
+          );
+        }
+        catch (IOException ex) {
+          throw new WurbelException("printing to " + pathName + " failed", ex);
+        }
+      }
+      else if (superClassName != null && superClassName.equals("AbstractDbObject")) {
+        // primitive AbstractDbObjects
+        try (PrintStream s = new PrintStream(file)) { // this is ok unbuffered for one time
+          s.println(
+          "/*\n" +
+          " * " + fileName + " (generated " + new Date() + ")\n" +
+          " */\n\n" +
+          "package " + packageName + ".rmi;\n\n" +
+          "import " + packageName + "." + className + ";\n" +
+          "import java.rmi.RemoteException;\n" +
+          "import java.util.List;\n" +
+          "import org.tentackle.persist.AbstractDbObject;\n" +
+          "import org.tentackle.misc.TrackedList;"
+          );
+          if (impl) {
+            if (importSuperDelegate) {
+              s.println("import " + remotePrefix + "RemoteDelegateImpl;");
+            }
+            s.println("import org.tentackle.persist.rmi.RemoteDbSessionImpl;\n");
+            s.println("/**");
+            s.println(" * Remote delegate implementation for {@link " + className + "}.");
+            s.println(" * ");
+            s.println(" * @param <P> the persistence implementation");
+            s.println(" */");
+            s.println("public class " + name + "Impl<P extends " + className + ">");
+            s.println("             extends " + remotePrefixBasename + "RemoteDelegateImpl<P>");
+            s.println("             implements " + name + "<P>  {\n\n");
+            s.println("  /**");
+            s.println("   * Creates the remote delegate for {@link " + className + "}.");
+            s.println("   *");
+            s.println("   * @param session the RMI session");
+            s.println("   * @param persistenceClass the persistence implementation class");
+            s.println("   */");
+            s.println("  public " + name + "Impl(RemoteDbSessionImpl session, Class<P> persistenceClass) {");
+            s.println("    super(session, persistenceClass);");
+            s.println("  }");
+          }
+          else  {
+            if (importSuperDelegate) {
+              s.println("import " + remotePrefix + "RemoteDelegate;");
+            }
+            s.println("\n/**");
+            s.println(" * Remote delegate for {@link " + className + "}.");
+            s.println(" * ");
+            s.println(" * @param <P> the persistence implementation");
+            s.println(" */");
+            s.println("public interface " + name + "<P extends " + className + ">");
+            s.println("       extends " + remotePrefixBasename + "RemoteDelegate<P> {\n");
+          }
+          s.println(
+          "\n" +
+          "  // @wurblet inclrmi Include --missingok .$classname/methods\n" +
+          "}"
+          );
+        }
+        catch (IOException ex) {
+          throw new WurbelException("printing to " + pathName + " failed", ex);
+        }
+      }
+      else  {
+        container.getLogger().warning(pathName + " cannot be generated because " + type + " class is unknown (missing service annotation?)");
+      }
+    }
   }
 
 }
