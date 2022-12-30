@@ -411,6 +411,17 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
 
   @Override
   protected void cleanup() {
+    if (lastPollTime != 0) {
+      long pollPending = System.currentTimeMillis() - lastPollTime;
+      double pollFactor = (double) pollPending / (double) getSleepInterval();
+      if (pollFactor > 2.0) {
+        // longer running tasks? blocked connection? server closed a crashed session?
+        LOGGER.warning("last poll " + pollPending + " ms ago, " +
+                       String.format("%.2f", pollFactor) + " times the polling interval of " + getSleepInterval() + " ms)");
+      }
+      lastPollTime = 0;   // cleanup is invoked a second time from the main thread for sure
+    }
+
     performPendingCounts();
     super.cleanup();
     invokeShutdownRunnables();
@@ -633,7 +644,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    */
   @Override
   public void invalidate() {
-    @SuppressWarnings("serial")
     AbstractSessionTask task = new AbstractSessionTask() {
       @Override
       public void run() {
@@ -661,7 +671,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   @SuppressWarnings("unchecked")
   protected void lockInternal() {
     long currentTime = System.currentTimeMillis();
-    if (currentTime - lastPollTime > getSleepInterval() / 2) {
+    if (currentTime - lastPollTime > getSleepInterval() >> 1) {
       // don't poll too often, at most each half sleep interval
       lastPollTime = currentTime;
 
@@ -980,7 +990,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * @return the counter
    */
   private ModificationTally configureCounter(String tableName) {
-    @SuppressWarnings("serial")
     Task task = new AbstractSessionTask() {
       @Override
       public void run() {
@@ -1007,7 +1016,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * Configures the master entry.
    */
   private void configureMaster() {
-    @SuppressWarnings("serial")
     Task task = new AbstractSessionTask() {
       @Override
       public void run() {
@@ -1031,7 +1039,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * @param name the name
    */
   private void configureName(String name) {
-    @SuppressWarnings("serial")
     Task task = new AbstractSessionTask() {
       @Override
       public void run() {
