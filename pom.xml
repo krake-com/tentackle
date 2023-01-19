@@ -82,15 +82,15 @@
     <javac.lint>all,-processing</javac.lint>
     <javac.version>19</javac.version>
 
-    <javafx.version>19</javafx.version>
+    <javafx.version>19.0.2</javafx.version>
     <ikonli.version>12.3.1</ikonli.version>
     <ow2.asm.version>9.4</ow2.asm.version>
-    <groovy.version>4.0.6</groovy.version>
+    <groovy.version>4.0.7</groovy.version>
     <maven.version>3.8.5</maven.version>
     <postgresql.version>42.5.1</postgresql.version>
     <h2.version>2.1.214</h2.version>
-    <testng.version>7.7.0</testng.version>
-    <slf4j.version>2.0.5</slf4j.version>
+    <testng.version>7.7.1</testng.version>
+    <slf4j.version>2.0.6</slf4j.version>
     <log4j2.version>2.19.0</log4j2.version>
 
     <maven.archetype.plugin.version>3.2.1</maven.archetype.plugin.version>
@@ -250,7 +250,7 @@
         <!-- for the Junit5 test classes -->
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter-api</artifactId>
-        <version>5.9.1</version>
+        <version>5.9.2</version>
       </dependency>
 
       <!-- test dependencies -->
