@@ -28,6 +28,7 @@ import org.tentackle.model.Entity;
 import org.tentackle.model.MethodArgument;
 import org.tentackle.model.ModelElement;
 import org.tentackle.model.ModelException;
+import org.tentackle.model.NameVerifier;
 import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
 import org.tentackle.model.SelectionType;
@@ -753,6 +754,11 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
       if (entity.getOptions().getTrackType() != TrackType.FULLTRACKED) {
         throw createModelException("entity must be FULLTRACKED to support counter attributes");
       }
+    }
+
+    String diag = NameVerifier.getInstance().verifyRelationName(this);
+    if (diag != null) {
+      throw createModelException(diag);
     }
   }
 

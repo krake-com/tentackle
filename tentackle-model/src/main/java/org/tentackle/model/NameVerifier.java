@@ -72,6 +72,14 @@ public interface NameVerifier {
   String verifyAttributeName(Attribute attribute);
 
   /**
+   * Verifies the Java name of a relation.
+   *
+   * @param relation the relation
+   * @return null if ok, else a diagnostic message
+   */
+  String verifyRelationName(Relation relation);
+
+  /**
    * Verifies the column name of an attribute.
    *
    * @param attribute the attribute
