@@ -18,14 +18,6 @@
 
 package org.tentackle.maven.plugin.wizard.fx;
 
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.SelectionMode;
-import javafx.scene.control.TreeTableRow;
-import javafx.scene.control.TreeTableView;
-import javafx.scene.layout.BorderPane;
-import javafx.stage.WindowEvent;
-
 import org.tentackle.bind.Bindable;
 import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.Fx;
@@ -35,6 +27,21 @@ import org.tentackle.fx.container.FxBorderPane;
 import org.tentackle.fx.rdc.Rdc;
 import org.tentackle.fx.rdc.table.TablePopup;
 import org.tentackle.maven.plugin.wizard.pdodata.DataDiff;
+import org.tentackle.maven.plugin.wizard.pdodata.DataNode;
+import org.tentackle.maven.plugin.wizard.pdodata.DataObject;
+import org.tentackle.pdo.PersistentDomainObject;
+
+import javafx.event.ActionEvent;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SelectionMode;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeTableRow;
+import javafx.scene.control.TreeTableView;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.layout.BorderPane;
+import javafx.stage.WindowEvent;
 
 /**
  * Shows the contents of a PDO with optional diff to a savepoint.
@@ -50,6 +57,8 @@ public class PdoView extends AbstractFxController {
   private final FxTreeTableView<DataDiff> diffNode;
   private TablePopup<DataDiff> diffNodePopup;
   private boolean diffOnly;   // true if show differences only
+
+  private record TypeInfo(String fqcn, String tableName, long classId) {}
 
   /**
    * Creates an object diff view.
@@ -104,12 +113,11 @@ public class PdoView extends AbstractFxController {
    * @param leftSiteName the name of the left site
    * @param rightSiteName the name of the right site
    */
-  @SuppressWarnings({ "unchecked", "rawtypes" })
   public void setDiff(DataDiff diff, String leftSiteName, String rightSiteName) {
     this.diff = diff;
     if (diff == null || !diff.isRightPresent()) {
       diffOnly = false;
-      ((DataNodeTableConfiguration) diffNode.getConfiguration()).setPredicate(null);
+      ((DataNodeTableConfiguration<?>) diffNode.getConfiguration()).setPredicate(null);
     }
     diffNode.updateView();
     diffNode.getColumns().get(2).setText(leftSiteName);   // columns are fixed!
@@ -121,24 +129,51 @@ public class PdoView extends AbstractFxController {
   private void configureContextMenu() {
     ContextMenu contextMenu = diffNode.getContextMenu();
     MenuItem diffOnlyItem = Fx.create(MenuItem.class);
-    diffOnlyItem.setOnAction(e -> toggleDiffOnly());
+    diffOnlyItem.setOnAction(this::toggleDiffOnly);
+    MenuItem copyFQCNItem = Fx.create(MenuItem.class);
+    copyFQCNItem.setOnAction(this::copyFQCN);
+    MenuItem copyTableItem = Fx.create(MenuItem.class);
+    copyTableItem.setOnAction(this::copyTableName);
+    MenuItem copyIdItem = Fx.create(MenuItem.class);
+    copyIdItem.setOnAction(this::copyClassId);
+    contextMenu.getItems().add(0, copyIdItem);
+    contextMenu.getItems().add(0, copyTableItem);
+    contextMenu.getItems().add(0, copyFQCNItem);
     contextMenu.getItems().add(0, diffOnlyItem);
-    contextMenu.addEventHandler(WindowEvent.WINDOW_SHOWING, event -> diffOnlyItem.setText(
-        diffOnly ? "show all lines" : "show differences only"));
+    contextMenu.addEventHandler(WindowEvent.WINDOW_SHOWING, event -> {
+      diffOnlyItem.setText(diffOnly ? "show all lines" : "show differences only");
+      TypeInfo typeInfo = getSelectedTypeInfo();
+      copyFQCNItem.setVisible(false);
+      copyTableItem.setVisible(false);
+      copyIdItem.setVisible(false);
+      if (typeInfo != null) {
+        if (typeInfo.fqcn != null) {
+          copyFQCNItem.setText("copy FQCN \"" + typeInfo.fqcn + "\" to clipboard");
+          copyFQCNItem.setVisible(true);
+        }
+        if (typeInfo.tableName != null) {
+          copyTableItem.setText("copy table name \"" + typeInfo.tableName + "\" to clipboard");
+          copyTableItem.setVisible(true);
+        }
+        if (typeInfo.classId != 0) {
+          copyIdItem.setText("copy class-ID \"" + typeInfo.classId + "\" to clipboard");
+          copyIdItem.setVisible(true);
+        }
+      }
+    });
   }
 
-  private void toggleDiffOnly() {
+  private void toggleDiffOnly(ActionEvent event) {
     diffOnly = !diffOnly;
     updateDiffOnly();
   }
 
-  @SuppressWarnings({ "unchecked", "rawtypes" })
   private void updateDiffOnly() {
     if (diffOnly) {
-      ((DataNodeTableConfiguration) diffNode.getConfiguration()).setPredicate(node -> ((DataDiff) node).isDifferent());
+      ((DataNodeTableConfiguration<?>) diffNode.getConfiguration()).setPredicate(node -> ((DataDiff) node).isDifferent());
     }
     else {
-      ((DataNodeTableConfiguration) diffNode.getConfiguration()).setPredicate(null);
+      ((DataNodeTableConfiguration<?>) diffNode.getConfiguration()).setPredicate(null);
     }
     diffNode.scrollTo(0);
     diffNode.updateView();
@@ -148,6 +183,48 @@ public class PdoView extends AbstractFxController {
     else {
       diffNode.getRoot().setExpanded(true);
     }
+  }
+
+  private void copyFQCN(ActionEvent event) {
+    TypeInfo typeInfo = getSelectedTypeInfo();
+    if (typeInfo != null) {
+      copyToClipboard(typeInfo.fqcn);
+    }
+  }
+
+  private void copyTableName(ActionEvent event) {
+    TypeInfo typeInfo = getSelectedTypeInfo();
+    if (typeInfo != null) {
+      copyToClipboard(typeInfo.tableName);
+    }
+  }
+
+  private void copyClassId(ActionEvent event) {
+    TypeInfo typeInfo = getSelectedTypeInfo();
+    if (typeInfo != null) {
+      copyToClipboard(Long.toString(typeInfo.classId));
+    }
+  }
+
+  private TypeInfo getSelectedTypeInfo() {
+    TreeItem<DataDiff> selectedItem = diffNode.getSelectionModel().getSelectedItem();
+    if (selectedItem != null) {
+      DataDiff diff = selectedItem.getValue();
+      DataNode data = diff.isLeftPresent() ? diff.getLeft() : diff.getRight();
+      if (data instanceof DataObject object) {
+        PersistentDomainObject<?> pdo = object.getPdo();
+        if (pdo != null) {
+          return new TypeInfo(pdo.getEffectiveClass().getName(), pdo.getTableName(), pdo.getClassId());
+        }
+      }
+    }
+    return null;
+  }
+
+  private void copyToClipboard(String text) {
+    ClipboardContent cbc = new ClipboardContent();
+    cbc.putString(text);
+    Clipboard.getSystemClipboard().setContent(cbc);
   }
 
 }
