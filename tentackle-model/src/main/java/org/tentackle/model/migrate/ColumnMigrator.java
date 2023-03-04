@@ -179,8 +179,8 @@ public class ColumnMigrator {
     buf.append(backend.sqlAddColumn(entity.getTableName(), columnName, comment,
                sqlType, columnSize, columnScale, attribute.isNullable() || defaultValue == null, defaultValue));
     if (!attribute.isNullable() && defaultValue == null) {
-      buf.append(updateToNotNull());      // set default value before ...
-      buf.append(alterNull());            // ... change to not nullable
+      buf.append(updateToNotNull(false));     // set default value before ...
+      buf.append(alterNull());                // ... change to not nullable
     }
     if (comment != null) {
       buf.append(backend.sqlCreateColumnComment(entity.getTableName(), columnName, comment));
@@ -233,7 +233,7 @@ public class ColumnMigrator {
         case NULL:
           if (!attribute.isNullable()) {
             // changed to NOT NULL
-            buf.append(updateToNotNull());
+            buf.append(updateToNotNull(true));
           }
           buf.append(alterNull());
           break;
@@ -268,11 +268,12 @@ public class ColumnMigrator {
   /**
    * Updates the current column to a non-null value.
    *
+   * @param migrated true if column is migrated, false if added
    * @return sql code
    */
-  private String updateToNotNull() {
+  private String updateToNotNull(boolean migrated) {
     return toNonNullString(backend.sqlUpdateToNotNull(
-            entity.getTableName(), columnName, sqlType, defaultValue));
+            entity.getTableName(), columnName, sqlType, defaultValue, migrated));
   }
 
   /**

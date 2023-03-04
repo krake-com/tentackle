@@ -668,30 +668,27 @@ public abstract class AbstractBackend implements Backend {
   }
 
   @Override
-  public String sqlUpdateToNotNull(String tableName, String columnName, SqlType sqlType, Object defaultValue) {
-    return  "UPDATE " + tableName +
-            " SET " +
-            columnName +
-            "=" +
-            valueToLiteral(sqlType, defaultValue != null ? defaultValue : sqlType.getDefaultValue()) +
-            SQL_WHERE +
-            columnName +
-            " IS NULL" + getStatementSeparator() + "\n";
+  public String sqlUpdateToNotNull(String tableName, String columnName, SqlType sqlType, Object defaultValue, boolean migrated) {
+    StringBuilder buf = new StringBuilder();
+    buf.append("UPDATE ").append(tableName).append(" SET ").append(columnName).append('=')
+       .append(valueToLiteral(sqlType, defaultValue != null ? defaultValue : sqlType.getDefaultValue()));
+    if (migrated) {
+      buf.append(SQL_WHERE).append(columnName).append(" IS NULL");
+    }
+    buf.append(getStatementSeparator()).append('\n');
+    return buf.toString();
   }
 
   @Override
   public String sqlAlterColumnDefault(String tableName, String columnName, SqlType sqlType, Object defaultValue) {
     StringBuilder buf = new StringBuilder(SQL_ALTER_TABLE);
-    buf.append(tableName);
-    buf.append(SQL_ALTER_COLUMN);
-    buf.append(columnName);
-    buf.append(" ");
+    buf.append(tableName).append(SQL_ALTER_COLUMN).append(columnName).append(' ');
     if (defaultValue == null) {
       buf.append("DROP DEFAULT");
     }
     else  {
-      buf.append("SET DEFAULT ");
-      buf.append(valueToLiteral(sqlType, defaultValue));
+      buf.append("SET DEFAULT ")
+         .append(valueToLiteral(sqlType, defaultValue));
     }
     buf.append(getStatementSeparator()).append('\n');
     return buf.toString();

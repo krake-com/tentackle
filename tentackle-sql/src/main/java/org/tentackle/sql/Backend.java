@@ -937,9 +937,10 @@ public interface Backend {
    * @param columnName the column name
    * @param sqlType the sql type
    * @param defaultValue the optional default value if defined in the model
+   * @param migrated true if column is migrated, false if added
    * @return the SQL code
    */
-  String sqlUpdateToNotNull(String tableName, String columnName, SqlType sqlType, Object defaultValue);
+  String sqlUpdateToNotNull(String tableName, String columnName, SqlType sqlType, Object defaultValue, boolean migrated);
 
   /**
    * Generates sql code to change the null-constraint of a column.
