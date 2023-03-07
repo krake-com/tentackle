@@ -20,18 +20,23 @@
 package org.tentackle.common;
 
 import java.util.Locale;
-import java.util.function.Function;
 
 /**
  * The default normalizer (works sufficiently for most western languages).
  *
  * @author harald
  */
-public class DefaultStringNormalizer implements Function<String,String> {
+// @Service does not work in tentackle-common but it improves readability
+@Service(StringNormalizer.class)    // defaults to self
+public class DefaultStringNormalizer implements StringNormalizer {
+
+  // fixed maps for converting single-char diacrits (both same length!)
+  private static final char[] CRITS = "ÄÀÁÂÃÅÆÇÈÉÊËÌÍÎÏÐÑÖÒÓÔÕ×ØÜÙÚÛÝÞäàáâãåæçèéêëìíîïñöðòóôõøüùúûýþÿß".toCharArray();
+  private static final char[] NORMS = "AAAAAAACEEEEIIIIDNOOOOOXOUUUUYBaaaaaaaceeeeiiiinooooooouuuuybys".toCharArray();
 
 
   /** to separate words during reduction. */
-  private static final char WORD_SEPARATOR = ' ';
+  private final char wordSeparator;
 
 
   /** character to separate text blocks. */
@@ -43,17 +48,91 @@ public class DefaultStringNormalizer implements Function<String,String> {
    * Creates a normalizer.
    *
    * @param fieldSeparator separator between text fields, 0 if none
+   * @param wordSeparator separator between words during reduction
    */
-  public DefaultStringNormalizer(char fieldSeparator) {
+  public DefaultStringNormalizer(char fieldSeparator, char wordSeparator) {
     this.fieldSeparator = fieldSeparator;
+    this.wordSeparator = wordSeparator;
   }
 
   /**
    * Creates normalizer.<br>
-   * With a comma as the field separator.
+   * With a comma as the field separator and space as word separator.
    */
   public DefaultStringNormalizer() {
-    this(',');
+    this(',', ' ');
+  }
+
+
+  @Override
+  public String unDiacrit(String str, boolean keepLength)  {
+
+    if (str != null)  {
+
+      StringBuilder buf = new StringBuilder();
+      int len = str.length();
+
+      for (int i=0; i < len; i++) {
+
+        char c = str.charAt(i);
+
+        if (!keepLength) {
+          // check for german umlauts, ß and alike
+          switch (c) {
+            case 'Ä':
+            case 'Æ':
+              buf.append(i < len-1 && Character.isUpperCase(str.charAt(i+1)) ? "AE" : "Ae");
+              continue;
+
+            case 'Ü':
+              buf.append(i < len-1 && Character.isUpperCase(str.charAt(i+1)) ? "UE" : "Ue");
+              continue;
+
+            case 'Ö':
+              buf.append(i < len-1 && Character.isUpperCase(str.charAt(i+1)) ? "OE" : "Oe");
+              continue;
+
+            case 'ä':
+            case 'æ':
+              buf.append("ae");
+              continue;
+
+            case 'ü':
+              buf.append("ue");
+              continue;
+
+            case 'ö':
+              buf.append("oe");
+              continue;
+
+            case 'ß':
+              buf.append("ss");
+              continue;
+
+            default:
+              break;
+          }
+        }
+
+        // convert possible diacrit (single char)
+        for (int m=0; m < CRITS.length; m++) {
+          if (CRITS[m] == c)  {
+            c = NORMS[m];
+            break;
+          }
+        }
+
+        if (c >= 32 && c <= 127)  {
+          // append legal character
+          buf.append(c);
+        }
+        else if (keepLength) {
+          buf.append('?');
+        }
+      }
+      return buf.toString();
+    }
+    return null;
   }
 
 
@@ -65,9 +144,9 @@ public class DefaultStringNormalizer implements Function<String,String> {
    * @return the normalized string
    */
   @Override
-  public String apply(String str)  {
+  public String normalize(String str)  {
 
-    str = StringHelper.unDiacrit(str, false);     // convert special characters and umlauts
+    str = unDiacrit(str, false);     // convert special characters and umlauts
 
     if (str != null) {
 
@@ -102,7 +181,7 @@ public class DefaultStringNormalizer implements Function<String,String> {
           }
           lastCharWasSpace = true;
           lastCharWasFieldSeparator = false;
-          c = WORD_SEPARATOR;    // keep space to separate words and inhibit reduction below
+          c = wordSeparator;    // keep space to separate words and inhibit reduction below
         }
 
         /*
@@ -224,7 +303,7 @@ public class DefaultStringNormalizer implements Function<String,String> {
         StringBuilder fb = new StringBuilder(len);
         for (int i=0; i < len; i++) {
           char c = sb.charAt(i);
-          if (c != WORD_SEPARATOR) {
+          if (c != wordSeparator) {
             fb.append(c);
           }
         }

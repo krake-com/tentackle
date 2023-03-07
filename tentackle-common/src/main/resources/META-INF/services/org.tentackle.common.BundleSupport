@@ -1,2 +1,3 @@
+# analyze mojo cannot be used in tentackle-common (not built yet)
 # for bundles with jigsaw, tentackle-i18n and tentackle-test maven plugins
 org.tentackle.common.Bundle
