@@ -1019,15 +1019,15 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * The <em>normtext</em> holds the normalized text of columns and relations.
    *
    * @return the normtext
-   * @see org.tentackle.common.StringHelper#normalize(String)
+   * @see org.tentackle.common.StringNormalizer#normalize(String)
    */
   @Persistent("normalized text")
   String getNormText();
 
   /**
    * Selects all objects containing a normalized text.<br>
-   * The given text will be normalized via {@link org.tentackle.common.StringHelper#normalize(String)}
-   * and selected via an sql {@code LIKE} expression.
+   * The given text will be normalized via {@link org.tentackle.common.StringNormalizer#normalize(String)}
+   * and selected via a sql {@code LIKE} expression.
    * If the text begins with an exclamation mark or a minus-sign (! or -), {@code NOT LIKE} will be used.
    *
    * @param normText the normtext

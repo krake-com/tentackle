@@ -21,21 +21,7 @@
 package org.tentackle.swing.rdc;
 
 
-import java.awt.AWTEvent;
-import java.awt.BorderLayout;
-import java.awt.Component;
-import java.awt.FocusTraversalPolicy;
-import java.awt.KeyEventDispatcher;
-import java.awt.KeyboardFocusManager;
-import java.awt.Window;
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.WindowEvent;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.List;
-import javax.swing.tree.TreeSelectionModel;
-import org.tentackle.common.StringHelper;
+import org.tentackle.common.StringNormalizer;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
@@ -45,6 +31,15 @@ import org.tentackle.swing.FormDialog;
 import org.tentackle.swing.FormInfo;
 import org.tentackle.swing.FormPanel;
 import org.tentackle.swing.FormUtilities;
+
+import javax.swing.tree.TreeSelectionModel;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.WindowEvent;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 
 
@@ -477,7 +472,7 @@ public class PdoSearchDialog<T extends PersistentDomainObject<T>> extends FormDi
    */
   protected void doMoreSearch ()  {
     if (naviList != null && morePattern != null && morePattern.length() > 0)  {
-      String thMorePattern = StringHelper.normalize(morePattern);
+      String thMorePattern = StringNormalizer.getInstance().normalize(morePattern);
       List<T> nlist = new ArrayList<>();
       for (T mo: naviList)  {
         if (mo != null && mo.containsPattern(thMorePattern))  {

@@ -19,6 +19,33 @@
 
 package org.tentackle.fx.rdc.search;
 
+import org.tentackle.common.StringHelper;
+import org.tentackle.common.StringNormalizer;
+import org.tentackle.fx.AbstractFxController;
+import org.tentackle.fx.CaseConversion;
+import org.tentackle.fx.Fx;
+import org.tentackle.fx.FxControllerService;
+import org.tentackle.fx.component.FxButton;
+import org.tentackle.fx.component.FxLabel;
+import org.tentackle.fx.component.FxTableView;
+import org.tentackle.fx.component.FxTextField;
+import org.tentackle.fx.component.FxTreeView;
+import org.tentackle.fx.container.FxBorderPane;
+import org.tentackle.fx.container.FxHBox;
+import org.tentackle.fx.rdc.GuiProviderFactory;
+import org.tentackle.fx.rdc.PdoEvent;
+import org.tentackle.fx.rdc.PdoFinder;
+import org.tentackle.fx.rdc.Rdc;
+import org.tentackle.fx.rdc.RdcFactory;
+import org.tentackle.fx.rdc.RdcRuntimeException;
+import org.tentackle.fx.rdc.crud.PdoCrud;
+import org.tentackle.fx.rdc.table.TablePopup;
+import org.tentackle.fx.table.TotalsTableView;
+import org.tentackle.pdo.PdoHolder;
+import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.session.ModificationTracker;
+import org.tentackle.task.AbstractTask;
+
 import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
 import javafx.beans.WeakInvalidationListener;
@@ -45,33 +72,6 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-
-import org.tentackle.common.StringHelper;
-import org.tentackle.fx.AbstractFxController;
-import org.tentackle.fx.CaseConversion;
-import org.tentackle.fx.Fx;
-import org.tentackle.fx.FxControllerService;
-import org.tentackle.fx.component.FxButton;
-import org.tentackle.fx.component.FxLabel;
-import org.tentackle.fx.component.FxTableView;
-import org.tentackle.fx.component.FxTextField;
-import org.tentackle.fx.component.FxTreeView;
-import org.tentackle.fx.container.FxBorderPane;
-import org.tentackle.fx.container.FxHBox;
-import org.tentackle.fx.rdc.GuiProviderFactory;
-import org.tentackle.fx.rdc.PdoEvent;
-import org.tentackle.fx.rdc.PdoFinder;
-import org.tentackle.fx.rdc.Rdc;
-import org.tentackle.fx.rdc.RdcFactory;
-import org.tentackle.fx.rdc.RdcRuntimeException;
-import org.tentackle.fx.rdc.crud.PdoCrud;
-import org.tentackle.fx.rdc.table.TablePopup;
-import org.tentackle.fx.table.TotalsTableView;
-import org.tentackle.pdo.PdoHolder;
-import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.session.ModificationTracker;
-import org.tentackle.task.AbstractTask;
-
 import java.net.URL;
 import java.text.MessageFormat;
 import java.util.List;
@@ -564,7 +564,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    */
   public void filterResult() {
     String text = filterField.getText();
-    String filterText = StringHelper.normalize(text);   // removes leading ! and -
+    String filterText = StringNormalizer.getInstance().normalize(text);   // removes leading ! and -
     if (!StringHelper.isAllWhitespace(filterText)) {
       boolean inverted = text.startsWith("!") || text.startsWith("-");
       List<T> filteredResult = getItems().stream().

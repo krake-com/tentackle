@@ -50,10 +50,7 @@ public final class StringHelper {
    */
   public static int maxLogCollectionSize = 10;
 
-  // fixed maps for converting single-char diacrits
-  private static final String CRITS = "ÄÀÁÂÃÅÆÇÈÉÊËÌÍÎÏÐÑÖÒÓÔÕ×ØÜÙÚÛÝÞäàáâãåæçèéêëìíîïñöðòóôõøüùúûýþÿß";
-  private static final String NORMS = "AAAAAAACEEEEIIIIDNOOOOOXOUUUUYBaaaaaaaceeeeiiiinooooooouuuuybys";
-  private static char[] critMap;    // fast map built once from CRITS and NORMS
+
 
   private static final byte[] EMPTY_BYTES = new byte[0];
 
@@ -719,100 +716,9 @@ public final class StringHelper {
    * @return the converted string
    */
   public static String unDiacrit(String str, boolean keepLength)  {
-
-    // build maptable if not yet done
-    int mapLen;
-    try {
-      mapLen = critMap.length >> 1;    // causes Nullp if not prepared
-    }
-    catch (NullPointerException e)  {
-      // prepare fast map
-      mapLen = CRITS.length();
-      if (mapLen != NORMS.length()) {
-        throw new IllegalStateException();
-      }
-      critMap = new char[mapLen + mapLen];
-      for (int i=0; i < mapLen; i++) {
-        critMap[i]          = CRITS.charAt(i);
-        critMap[i + mapLen] = NORMS.charAt(i);
-      }
-    }
-
-    if (str != null)  {
-
-      StringBuilder buf = new StringBuilder();
-      int len = str.length();
-
-      for (int i=0; i < len; i++) {
-
-        char c = str.charAt(i);
-
-        if (!keepLength) {
-          // check for german umlauts, ß and alike
-          switch (c) {
-            case 'Ä':
-            case 'Æ':
-              buf.append(i < len-1 && Character.isUpperCase(str.charAt(i+1)) ? "AE" : "Ae");
-              continue;
-
-            case 'Ü':
-              buf.append(i < len-1 && Character.isUpperCase(str.charAt(i+1)) ? "UE" : "Ue");
-              continue;
-
-            case 'Ö':
-              buf.append(i < len-1 && Character.isUpperCase(str.charAt(i+1)) ? "OE" : "Oe");
-              continue;
-
-            case 'ä':
-            case 'æ':
-              buf.append("ae");
-              continue;
-
-            case 'ü':
-              buf.append("ue");
-              continue;
-
-            case 'ö':
-              buf.append("oe");
-              continue;
-
-            case 'ß':
-              buf.append("ss");
-              continue;
-
-            default:
-              break;
-          }
-        }
-
-        // convert possible diacrit (single char)
-        for (int m=0; m < mapLen; m++) {
-          if (critMap[m] == c)  {
-            c = critMap[m+mapLen];
-            break;
-          }
-        }
-
-        if (c >= 32 && c <= 127)  {
-          // append legal character
-          buf.append(c);
-        }
-        else if (keepLength) {
-          buf.append('?');
-        }
-      }
-      return buf.toString();
-    }
-    return null;
+    return StringNormalizer.getInstance().unDiacrit(str, keepLength);
   }
 
-
-
-  /**
-   * The default normalizer used within the application.
-   * Defaults to DefaultStringNormalizer.
-   */
-  public static Function<String,String> stringNormalizer = new DefaultStringNormalizer();
 
   /**
    * Normalizes a string (phonetically) for use as PDO.normText.
@@ -822,12 +728,12 @@ public final class StringHelper {
    * @return the normalized string
    */
   public static String normalize (String str, Function<String,String> normalizer)  {
-    return normalizer == null ? stringNormalizer.apply(str) : normalizer.apply(str);
+    return normalizer == null ? StringNormalizer.getInstance().normalize(str) : normalizer.apply(str);
   }
 
   /**
    * Normalizes a string (phonetically) for use as PDO.normText
-   * using {@link #stringNormalizer}.
+   * using {@link StringNormalizer}.
    *
    * @param str the string to be normalized
    * @return the normalized string
@@ -1478,7 +1384,7 @@ public final class StringHelper {
   /**
    * Converts to string containing only the letters A-z or digits.<br>
    * All other characters will be converted to an underscore.
-   * All diacrits will be converted first (see {@link #unDiacrit}.
+   * All diacrits will be converted first (see {@link StringNormalizer#unDiacrit}).
    * The resulting string will not contain more than one underscore in a row.
    * <p>
    * Nice to create filenames.
@@ -1488,7 +1394,7 @@ public final class StringHelper {
    */
   public static String toAsciiLetterOrDigit(String str) {
     if (str != null) {
-      StringBuilder buf = new StringBuilder(unDiacrit(str, false));  // translate all diacrits
+      StringBuilder buf = new StringBuilder(StringNormalizer.getInstance().unDiacrit(str, false));  // translate all diacrits
       // convert everything that is not a digit or [a-z][A-Z] to an underscore
       // avoiding more than one underscore in a row.
       boolean wasUnderscore = false;

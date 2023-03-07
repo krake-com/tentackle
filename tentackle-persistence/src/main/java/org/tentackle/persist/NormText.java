@@ -18,7 +18,7 @@
 
 package org.tentackle.persist;
 
-import org.tentackle.common.StringHelper;
+import org.tentackle.common.StringNormalizer;
 
 /**
  * A helper class to create a normtext like string from a user's input.<br>
@@ -35,7 +35,7 @@ public class NormText {
   /**
    * Creates a normtext from a search string.<br>
    * This is usually a user input.<br>
-   * The input will be normalized via {@link StringHelper#normalize(java.lang.String)}.
+   * The input will be normalized via {@link StringNormalizer#normalize(java.lang.String)}.
    * If the string starts with a "!" or "-" it will be treated as "NOT LIKE".
    *
    * @param str the search string
@@ -43,7 +43,7 @@ public class NormText {
   public NormText(String str) {
     String sqlPattern = str == null ? "" : str;
     inverted = sqlPattern.startsWith("!") || sqlPattern.startsWith("-");
-    sqlPattern = StringHelper.normalize(sqlPattern);    // this removes also leading and trailing !,%,_, whitespaces and alike
+    sqlPattern = StringNormalizer.getInstance().normalize(sqlPattern);    // this removes also leading and trailing !,%,_, whitespaces and alike
     matchingAll = sqlPattern.isEmpty();
     this.pattern = matchingAll ? null : ("%" + sqlPattern + "%");
   }

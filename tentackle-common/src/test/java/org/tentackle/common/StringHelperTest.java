@@ -70,11 +70,6 @@ public class StringHelperTest {
   }
 
   @Test
-  public void testNormalizer() {
-    assertEquals(StringHelper.normalize(" Mülleralia-Intercom & Co.KG   , GREEN"), "MUELERALIAINTERKOMKOK,KREN");
-  }
-
-  @Test
   public void firstLine() {
     assertEquals(StringHelper.firstLine("Blah\nBlue"), "Blah");
   }

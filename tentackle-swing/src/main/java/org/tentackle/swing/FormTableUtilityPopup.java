@@ -21,8 +21,39 @@
 
 package org.tentackle.swing;
 
-import java.awt.Desktop;
-import java.awt.Window;
+import org.apache.poi.hssf.usermodel.HSSFCell;
+import org.apache.poi.hssf.usermodel.HSSFCellStyle;
+import org.apache.poi.hssf.usermodel.HSSFDataFormat;
+import org.apache.poi.hssf.usermodel.HSSFFont;
+import org.apache.poi.hssf.usermodel.HSSFRichTextString;
+import org.apache.poi.hssf.usermodel.HSSFRow;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+
+import org.tentackle.common.BMoney;
+import org.tentackle.common.StringHelper;
+import org.tentackle.common.StringNormalizer;
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerFactory;
+import org.tentackle.prefs.PersistedPreferences;
+import org.tentackle.prefs.PersistedPreferencesFactory;
+
+import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.table.TableColumnModel;
+import javax.swing.table.TableModel;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.sax.SAXTransformerFactory;
+import javax.xml.transform.sax.TransformerHandler;
+import javax.xml.transform.stream.StreamResult;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -40,41 +71,6 @@ import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
 import java.util.prefs.BackingStoreException;
-import javax.swing.AbstractAction;
-import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JFileChooser;
-import javax.swing.JMenu;
-import javax.swing.JMenuItem;
-import javax.swing.JPopupMenu;
-import javax.swing.JRadioButtonMenuItem;
-import javax.swing.filechooser.FileFilter;
-import javax.swing.table.TableColumnModel;
-import javax.swing.table.TableModel;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.sax.SAXTransformerFactory;
-import javax.xml.transform.sax.TransformerHandler;
-import javax.xml.transform.stream.StreamResult;
-import org.apache.poi.hssf.usermodel.HSSFCell;
-import org.apache.poi.hssf.usermodel.HSSFCellStyle;
-import org.apache.poi.hssf.usermodel.HSSFDataFormat;
-import org.apache.poi.hssf.usermodel.HSSFFont;
-import org.apache.poi.hssf.usermodel.HSSFRichTextString;
-import org.apache.poi.hssf.usermodel.HSSFRow;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.HorizontalAlignment;
-import org.apache.poi.ss.usermodel.VerticalAlignment;
-import org.apache.poi.ss.util.CellRangeAddress;
-import org.tentackle.common.BMoney;
-import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
-import org.tentackle.common.StringHelper;
-import org.tentackle.prefs.PersistedPreferences;
-import org.tentackle.prefs.PersistedPreferencesFactory;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
 
 
 
@@ -831,7 +827,7 @@ public class FormTableUtilityPopup implements MouseListener, KeyListener {
       if (rows > 0) {
         for (int i = 0; i < cols; i++) {
           int c = columnModel.getColumn(i).getModelIndex();
-          tags[i] = StringHelper.toVarName(StringHelper.unDiacrit(
+          tags[i] = StringHelper.toVarName(StringNormalizer.getInstance().unDiacrit(
                   isAbstractFormTableModel ?
                           ((AbstractFormTableModel) model).getDisplayedColumnName(c) :
                           model.getColumnName(c), false));
