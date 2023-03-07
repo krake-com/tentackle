@@ -22,6 +22,9 @@ interface StringNormalizerHolder {
   StringNormalizer INSTANCE = ServiceFactory.createService(StringNormalizer.class, StringNormalizer.class);
 }
 
+/**
+ * Translates strings to a reduced char set.
+ */
 public interface StringNormalizer {
 
   /**
