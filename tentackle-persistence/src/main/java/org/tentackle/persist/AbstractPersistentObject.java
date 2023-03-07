@@ -20,7 +20,7 @@ package org.tentackle.persist;
 
 import org.tentackle.common.Constants;
 import org.tentackle.common.DateHelper;
-import org.tentackle.common.StringHelper;
+import org.tentackle.common.StringNormalizer;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.common.Timestamp;
 import org.tentackle.dbms.AbstractDbObject;
@@ -84,29 +84,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-import static org.tentackle.sql.Backend.SQL_ALLSTAR;
-import static org.tentackle.sql.Backend.SQL_AND;
-import static org.tentackle.sql.Backend.SQL_COMMA;
-import static org.tentackle.sql.Backend.SQL_EQUAL;
-import static org.tentackle.sql.Backend.SQL_EQUAL_PAR;
-import static org.tentackle.sql.Backend.SQL_EQUAL_PAR_COMMA;
-import static org.tentackle.sql.Backend.SQL_EQUAL_ZERO;
-import static org.tentackle.sql.Backend.SQL_FROM;
-import static org.tentackle.sql.Backend.SQL_GREATER_PAR;
-import static org.tentackle.sql.Backend.SQL_ISNULL;
-import static org.tentackle.sql.Backend.SQL_LEFT_PARENTHESIS;
-import static org.tentackle.sql.Backend.SQL_LESS_PAR;
-import static org.tentackle.sql.Backend.SQL_LIKE_PAR;
-import static org.tentackle.sql.Backend.SQL_NOTLIKE_PAR;
-import static org.tentackle.sql.Backend.SQL_OR;
-import static org.tentackle.sql.Backend.SQL_ORDERBY;
-import static org.tentackle.sql.Backend.SQL_PLUS_ONE;
-import static org.tentackle.sql.Backend.SQL_RIGHT_PARENTHESIS;
-import static org.tentackle.sql.Backend.SQL_SELECT;
-import static org.tentackle.sql.Backend.SQL_SET;
-import static org.tentackle.sql.Backend.SQL_UPDATE;
-import static org.tentackle.sql.Backend.SQL_WHERE;
-import static org.tentackle.sql.Backend.SQL_WHEREALL;
+import static org.tentackle.sql.Backend.*;
 
 /**
  * Base persistent implementation of a PDO.
@@ -765,7 +743,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       }
       if (ntBuf != null) {
         ntBuf.insert(0, ',');
-        setNormText(StringHelper.normalize(ntBuf.toString()));
+        setNormText(StringNormalizer.getInstance().normalize(ntBuf.toString()));
       }
       else {
         setNormText(null);
