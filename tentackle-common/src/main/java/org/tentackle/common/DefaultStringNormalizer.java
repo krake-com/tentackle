@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.common;
 
 import java.util.Locale;
@@ -26,8 +25,9 @@ import java.util.Locale;
  *
  * @author harald
  */
-// @Service does not work in tentackle-common but it improves readability
-@Service(StringNormalizer.class)    // defaults to self
+// @Service does not work in tentackle-common, since there is no analyze maven plugin available at this build step yet.
+// Needs explicit config in resources/services/META-INF.
+@Service(StringNormalizer.class)
 public class DefaultStringNormalizer implements StringNormalizer {
 
   // fixed maps for converting single-char diacrits (both same length!)

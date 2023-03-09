@@ -32,7 +32,8 @@ interface LocaleProviderHolder {
  *
  * @author harald
  */
-// @Service does not work in tentackle-common but it improves readability
+// @Service does not work in tentackle-common, since there is no analyze maven plugin available at this build step yet.
+// Needs explicit config in resources/services/META-INF.
 @Service(LocaleProvider.class)    // defaults to self
 public class LocaleProvider {
 
