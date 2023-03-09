@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.common;
 
 import java.lang.reflect.InvocationTargetException;
@@ -36,6 +35,9 @@ import java.util.spi.ResourceBundleControlProvider;
  *
  * @author harald
  */
+// @Service does not work in tentackle-common, since there is no analyze maven plugin available at this build step yet.
+// Needs explicit config in resources/services/META-INF.
+@Service(BundleFactory.class)
 public class DefaultBundleFactory implements BundleFactory {
   /**
    * Notice: @Service annotation cannot be used because tentackle-maven-plugin depends

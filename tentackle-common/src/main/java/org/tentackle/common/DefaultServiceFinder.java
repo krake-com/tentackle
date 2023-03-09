@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.common;
 
 import java.io.BufferedReader;
@@ -34,12 +33,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-
 /**
  * Default implementation of a {@link ServiceFinder}.
  *
  * @author harald
  */
+// @Service does not work in tentackle-common, since there is no analyze maven plugin available at this build step yet.
+// Needs explicit config in resources/services/META-INF.
+@Service(ServiceFinder.class)
 public class DefaultServiceFinder implements ServiceFinder {
   /**
    * Notice: @Service annotation cannot be used because tentackle-maven-plugin depends
