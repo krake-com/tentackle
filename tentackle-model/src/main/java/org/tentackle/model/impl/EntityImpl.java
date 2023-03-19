@@ -636,14 +636,82 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
 
   @Override
-  public List<Attribute> getInheritedAttributes() {
+  public List<Attribute> getInheritedAttributes() throws ModelException {
+    return getInheritedAttributes(false);
+  }
+
+  private List<Attribute> getInheritedAttributes(boolean includeEmbedded) throws ModelException {
     List<Attribute> inheritedAttributes = new ArrayList<>();
     Entity se = getSuperEntity();
     while (se != null) {
       inheritedAttributes.addAll(0, se.getAttributes());
+      if (includeEmbedded) {
+        inheritedAttributes.addAll(0, se.getEmbeddedAttributes());
+      }
       se = se.getSuperEntity();
     }
     return inheritedAttributes;
+  }
+
+  @Override
+  public List<Attribute> getEmbeddedAttributes() throws ModelException {
+    List<Attribute> embeddedAttributes = new ArrayList<>();
+    Set<String> recursionSet = new HashSet<>();    // to detect recursions of embedded entities
+    collectEmbeddedAttributes(this, recursionSet, embeddedAttributes,"", "");
+    return embeddedAttributes;
+  }
+
+  private void collectEmbeddedAttributes(Entity embeddingEntity, Set<String> recursionSet, List<Attribute> embeddedAttributes, String pathPrefix, String columnPrefix) throws ModelException {
+    for (Relation relation : getRelations()) {
+      if (relation.isEmbedding()) {
+        EntityImpl embeddedEntity = (EntityImpl) relation.getForeignEntity();
+        if (embeddedEntity != null) {
+          if (recursionSet.add(embeddedEntity.getName() + "." + relation.getName())) {
+            String pPrefix = pathPrefix + StringHelper.firstToLower(relation.getName()) + ".";
+            String cPrefix = columnPrefix + relation.getColumnPrefix();
+            for (Attribute attribute : embeddedEntity.getAttributes()) {
+              embeddedAttributes.add(attribute.createEmbedded(embeddingEntity, pPrefix + attribute.getPathName(), cPrefix + attribute.getColumnName()));
+            }
+            // recursively add embedded PDOs of this embedded PDO, if any
+            embeddedEntity.collectEmbeddedAttributes(embeddingEntity, recursionSet, embeddedAttributes, pPrefix, cPrefix);
+          }
+          else {
+            throw new ModelException("embedded entity " + embeddedEntity + " recursively", relation);
+          }
+        }
+      }
+    }
+  }
+
+  @Override
+  public List<Relation> getEmbeddedRelations(Entity embeddingEntity) throws ModelException {
+    List<Relation> embeddedRelations = new ArrayList<>();
+    Set<String> recursionSet = new HashSet<>();    // to detect recursions of embedded entities
+    collectEmbeddedRelations(embeddingEntity, recursionSet, embeddedRelations, "", "");
+    return embeddedRelations;
+  }
+
+  private void collectEmbeddedRelations(Entity embeddingEntity, Set<String> recursionSet, List<Relation> embeddedRelations, String pathPrefix, String columnPathPrefix) throws ModelException {
+    for (Relation relation : getRelations()) {
+      if (relation.isEmbedding()) {
+        EntityImpl embeddedEntity = (EntityImpl) relation.getForeignEntity();
+        if (embeddedEntity != null) {
+          if (recursionSet.add(embeddedEntity.getName() + "." + relation.getName())) {
+            String pPrefix = pathPrefix + StringHelper.firstToLower(relation.getName()) + ".";
+            String cPrefix = columnPathPrefix + relation.getColumnPrefix();
+            for (Relation embeddedEntityRelation : embeddedEntity.getRelations()) {
+              if (!embeddedEntityRelation.isEmbedding() && embeddedEntityRelation.isEmbedded()) {
+                embeddedRelations.add(embeddedEntityRelation.createEmbedded(embeddingEntity, pPrefix, cPrefix));
+              }
+            }
+            embeddedEntity.collectEmbeddedRelations(embeddingEntity, recursionSet, embeddedRelations, pPrefix, cPrefix);
+          }
+          else {
+            throw new ModelException("embedded entity " + embeddedEntity + " recursively", relation);
+          }
+        }
+      }
+    }
   }
 
   @Override
@@ -662,8 +730,12 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
 
   @Override
-  public List<Attribute> getAttributesIncludingInherited() {
-    List<Attribute> allAttributes = new ArrayList<>(getInheritedAttributes());
+  public List<Attribute> getAttributesIncludingInherited() throws ModelException {
+    return getAttributesIncludingInherited(false);
+  }
+
+  private List<Attribute> getAttributesIncludingInherited(boolean includeEmbedded) throws ModelException {
+    List<Attribute> allAttributes = new ArrayList<>(getInheritedAttributes(includeEmbedded));
     allAttributes.addAll(attributes);
     allAttributes = moveIdSerialToEnd(allAttributes);
     return allAttributes;
@@ -678,7 +750,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   }
 
   @Override
-  public List<Attribute> getAllAttributes() {
+  public List<Attribute> getAllAttributes() throws ModelException {
     List<Attribute> allAttributes = new ArrayList<>(getInheritedAttributes());
     allAttributes.addAll(attributes);
     allAttributes.addAll(getSubEntityAttributes());
@@ -687,11 +759,12 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   }
 
   @Override
-  public List<Attribute> getTableAttributes() {
+  public List<Attribute> getTableAttributes() throws ModelException {
+    List<Attribute> tableAttributes = new ArrayList<>();
     InheritanceType ihType = getHierarchyInheritanceType();
-    List<Attribute> tableAttributes;
+    tableAttributes.addAll(getEmbeddedAttributes());
     if (ihType.isMappingToOwnTable()) {
-      tableAttributes = new ArrayList<>(attributes);
+      tableAttributes.addAll(attributes);
       if (getSuperEntity() != null) {
         // always add the ID for subclasses in MULTI inheritance
         tableAttributes.add(getAttributeByJavaName(Constants.AN_ID, true));
@@ -702,19 +775,20 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
       if (isRootOfInheritanceHierarchy()) {
         tableAttributes.addAll(attributes);
         for (Entity child: getAllSubEntities()) {
+          tableAttributes.addAll(child.getEmbeddedAttributes());
           tableAttributes.addAll(child.getAttributes());
         }
         tableAttributes = moveIdSerialToEnd(tableAttributes);
       }
     }
     else {
-      tableAttributes = getAttributesIncludingInherited();
+      tableAttributes.addAll(getAttributesIncludingInherited(true));
     }
     return tableAttributes;
   }
 
   @Override
-  public List<Attribute> getMappedAttributes() {
+  public List<Attribute> getMappedAttributes() throws ModelException {
     List<Attribute> mappedAttributes;
     if (isAbstract()) {
       if (inheritanceType.isMappingToOwnTable()) {
@@ -894,10 +968,17 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   }
 
   @Override
-  public List<Relation> getInheritedRelations() {
+  public List<Relation> getInheritedRelations() throws ModelException {
+    return getInheritedRelations(null);
+  }
+
+  private List<Relation> getInheritedRelations(Entity parentEntity) throws ModelException {
     List<Relation> allRelations = new ArrayList<>();
     Entity se = getSuperEntity();
     while (se != null) {
+      if (parentEntity != null) {   // if including embedded
+        allRelations.addAll(0, se.getEmbeddedRelations(parentEntity));
+      }
       allRelations.addAll(0, se.getRelations());
       se = se.getSuperEntity();
     }
@@ -914,8 +995,12 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   }
 
   @Override
-  public List<Relation> getRelationsIncludingInherited() {
-    List<Relation> allRelations = new ArrayList<>(getInheritedRelations());
+  public List<Relation> getRelationsIncludingInherited() throws ModelException {
+    return getRelationsIncludingInherited(null);
+  }
+
+  private List<Relation> getRelationsIncludingInherited(Entity parentEntity) throws ModelException {
+    List<Relation> allRelations = new ArrayList<>(getInheritedRelations(parentEntity));
     allRelations.addAll(relations);
     return allRelations;
   }
@@ -928,18 +1013,18 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   }
 
   @Override
-  public List<Relation> getAllRelations() {
+  public List<Relation> getAllRelations() throws ModelException {
     List<Relation> allRelations = getRelationsIncludingInherited();
     allRelations.addAll(getSubEntityRelations());
     return allRelations;
   }
 
   @Override
-  public List<Relation> getTableRelations() {
+  public List<Relation> getTableRelations() throws ModelException {
     InheritanceType ihType = getHierarchyInheritanceType();
-    List<Relation> tableRelations;
+    List<Relation> tableRelations = new ArrayList<>();
     if (ihType.isMappingToOwnTable()) {
-      tableRelations = relations;
+      tableRelations.addAll(relations);
     }
     else if (ihType.isMappingToSuperTable()) {
       tableRelations = new ArrayList<>();
@@ -947,12 +1032,14 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
         tableRelations.addAll(relations);
         for (Entity sub: getAllSubEntities()) {
           tableRelations.addAll(sub.getRelations());
+          tableRelations.addAll(sub.getEmbeddedRelations(this));
         }
       }
     }
     else {
-      tableRelations = getRelationsIncludingInherited();
+      tableRelations.addAll(getRelationsIncludingInherited());
     }
+    tableRelations.addAll(getEmbeddedRelations(this));
     return tableRelations;
   }
 
@@ -975,6 +1062,31 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   }
 
   @Override
+  public Set<List<Relation>> getEmbeddingPaths() {
+    Set<List<Relation>> embeddingPaths = new HashSet<>();
+    // skip non-embedding relations
+    for (List<Relation> compositePath : getCompositePaths()) {
+      List<Relation> embeddingPath = new ArrayList<>();
+      for (Relation relation : compositePath) {
+        if (relation.isEmbedding()) {
+          embeddingPath.add(relation);
+        }
+      }
+      embeddingPaths.add(embeddingPath);
+    }
+    return embeddingPaths;
+  }
+
+  @Override
+  public Set<Entity> getEmbeddingEntities() {
+    Set<Entity> embeddingEntities = new HashSet<>();
+    for (List<Relation> embeddingPath : getEmbeddingPaths()) {
+      embeddingEntities.add(embeddingPath.get(0).getEntity());
+    }
+    return embeddingEntities;
+  }
+
+  @Override
   public Set<Entity> getComponents() {
     Set<Entity> components = new TreeSet<>();
     for (Relation relation: getRelations()) {
@@ -986,7 +1098,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   }
 
   @Override
-  public Set<Entity> getComponentsIncludingInherited() {
+  public Set<Entity> getComponentsIncludingInherited() throws ModelException {
     Set<Entity> components = new TreeSet<>();
     for (Relation relation: getRelationsIncludingInherited()) {
       if (relation.isComposite()) {
@@ -997,7 +1109,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   }
 
   @Override
-  public Set<Entity> getAllComponents() {
+  public Set<Entity> getAllComponents() throws ModelException {
     Set<Entity> components = new TreeSet<>();
     for (Relation relation: getRelationsIncludingInherited()) {
       if (relation.isComposite()) {
@@ -1090,7 +1202,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   }
 
   @Override
-  public List<Attribute> getUniqueDomainKey() {
+  public List<Attribute> getUniqueDomainKey() throws ModelException {
     if (uniqueDomainKey == null) {
       uniqueDomainKey = new ArrayList<>();
       if (isRootEntity()) {
@@ -1106,14 +1218,14 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
    * @param uniqueDomainKeys the unique domain key attributes
    * @param entity the entity to inspect
    */
-  protected void getUniqueDomainKeyImpl(List<Attribute> uniqueDomainKeys, Entity entity) {
+  protected void getUniqueDomainKeyImpl(List<Attribute> uniqueDomainKeys, Entity entity) throws ModelException {
     for (Attribute attribute : entity.getAttributesIncludingInherited()) {
       if (attribute.getOptions().isDomainKey()) {
         uniqueDomainKeys.add(attribute);
       }
     }
     for (Entity component: entity.getComponentsIncludingInherited()) {
-      if (!component.isRootEntity()) {   // stop at sub-roots!
+      if (!component.isRootEntity() && !component.isEmbedded()) {   // stop at sub-roots!
         getUniqueDomainKeyImpl(uniqueDomainKeys, component);
       }
     }
@@ -1268,7 +1380,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
       throw new ModelException(diag, this);
     }
 
-    if (!isAbstract()) {
+    if (!isAbstract() && !isEmbedded()) {
       if (getClassId() == 0) {
         throw new ModelException("configuration 'id = ...' missing", this);
       }
@@ -1276,6 +1388,42 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
     else  {
       if (getClassId() != 0) {
         throw new ModelException("configuration 'id = ...' not allowed", this);
+      }
+    }
+
+    if (isEmbedded()) {
+      if (getSorting() != null) {
+        throw new ModelException("sorting not applicable to embedded entities");
+      }
+      if (getSuperEntityName() != null) {
+        throw new ModelException("embedded entities cannot extend other entities");
+      }
+      if (getOptions().isRoot()) {
+        throw new ModelException("embedded entities cannot be root entities");
+      }
+      if (getOptions().isCached()) {
+        throw new ModelException("embedded entities cannot be cached");
+      }
+      if (getOptions().isProvided()) {
+        throw new ModelException("embedded entities cannot be provided by foreign applications");
+      }
+      if (getOptions().isNoPrimaryKey()) {
+        throw new ModelException("[NOPKEY] option is not applicable to embedded entities");
+      }
+      if (getOptions().isRootIdProvided()) {
+        throw new ModelException("embedded entities cannot provide a rootid column");
+      }
+      if (getOptions().isRootClassIdProvided()) {
+        throw new ModelException("embedded entities cannot provide a rootclassid column");
+      }
+      if (getOptions().isNormTextProvided()) {
+        throw new ModelException("embedded entities cannot provide a normtext");
+      }
+      if (getOptions().isTableSerialProvided()) {
+        throw new ModelException("embedded entities cannot provide a table serial");
+      }
+      if (getOptions().isTokenLockProvided()) {
+        throw new ModelException("embedded entities cannot provide a token lock");
       }
     }
 
@@ -1311,15 +1459,15 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
     Set<String> columnNames = new HashSet<>();
     for (Attribute attribute: getAttributes()) {
       String normalizedColumnName = normalizeName(attribute.getColumnName());
+      if (!columnNames.add(normalizedColumnName)) {
+        throw new ModelException("duplicate column name '" + attribute.getColumnName() + "'", this);
+      }
       Attribute other = javaNames.get(normalizedColumnName);
       if (other != null && !other.equals(attribute)) {
         throw new ModelException("misleading column name '" + attribute.getColumnName() +
                                  "' for Java name '" + attribute.getName() +
                                  "' -> danger of confusion with '" +
                                  other.getName() + " / " + other.getColumnName() + "'", this);
-      }
-      if (!columnNames.add(normalizedColumnName)) {
-        throw new ModelException("duplicate column name '" + attribute.getColumnName() + "'", this);
       }
     }
 
@@ -1418,8 +1566,23 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   }
 
   @Override
+  public boolean isEffectivelyComposite() {
+    for (Relation relation: getRelationsIncludingSubEntities()) {
+      if (relation.isComposite() && !relation.isEmbedding()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  @Override
   public boolean isAbstract() {
     return inheritanceType.isAbstractClass();
+  }
+
+  @Override
+  public boolean isEmbedded() {
+    return InheritanceType.EMBEDDED == inheritanceType;
   }
 
   @Override

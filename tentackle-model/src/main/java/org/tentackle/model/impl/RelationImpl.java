@@ -21,6 +21,7 @@ package org.tentackle.model.impl;
 import org.tentackle.common.Compare;
 import org.tentackle.common.Constants;
 import org.tentackle.common.StringHelper;
+import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.model.AccessScope;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.CodeFactory;
@@ -48,7 +49,7 @@ import java.util.StringTokenizer;
  *
  * @author harald
  */
-public class RelationImpl implements Relation, Comparable<RelationImpl> {
+public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneable {
 
   /** property default (if object non-composite lazy). */
   public static final String DEFAULT = "default";
@@ -76,6 +77,9 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
   /** property name = ... */
   public static final String NAME = "name";
+
+  /** property prefix = ... */
+  public static final String PREFIX = "prefix";
 
   /** property scope = ... */
   public static final String SCOPE = "scope";
@@ -140,6 +144,9 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   private final Entity entity;
   private final SourceInfo sourceInfo;
 
+  private Entity embeddingEntity;
+  private String pathName;
+  private String columnPrefixPath;
   private int ordinal;
   private List<String> annotations;
   private List<String> stereotypes;
@@ -150,6 +157,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   private RelationType relationType;
   private AccessScope accessScope;
   private boolean composite;
+  private String columnPrefix;
   private boolean tracked;
   private boolean referenced;
   private boolean processed;
@@ -203,11 +211,40 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   }
 
 
-  /**
-   * Gets the source info.
-   *
-   * @return the source info
-   */
+  @Override
+  public RelationImpl createEmbedded(Entity embeddingEntity, String pathName, String columnPrefixPath) {
+    RelationImpl relation = clone();
+    relation.embeddingEntity = embeddingEntity;
+    relation.pathName = pathName;
+    relation.columnPrefixPath = columnPrefixPath;
+    if (!relation.methodArgs.isEmpty()) {
+      Attribute attr = relation.methodArgs.get(0).getAttribute();
+      if (attr != null) {
+        relation.methodArgs.set(0, new MethodArgument(relation,
+            attr.createEmbedded(embeddingEntity, pathName + attr.getName(), columnPrefixPath + attr.getColumnName())));
+      }
+    }
+    return relation;
+  }
+
+  @Override
+  protected RelationImpl clone() {    // leave it protected! use withEmbeddingParent instead!
+    try {
+      RelationImpl relation = (RelationImpl) super.clone();
+      relation.annotations = new ArrayList<>(annotations);
+      relation.stereotypes = new ArrayList<>(stereotypes);
+      relation.methodArgs = new ArrayList<>(methodArgs);
+      if (args != null) {
+        relation.args = new ArrayList<>(args);
+      }
+      return relation;
+    }
+    catch (CloneNotSupportedException cnx) {
+      throw new TentackleRuntimeException(cnx);   // should not happen at all, but...
+    }
+  }
+
+
   @Override
   public SourceInfo getSourceInfo() {
     return sourceInfo;
@@ -488,6 +525,11 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
             setName(entry.getValue());
             break;
 
+          // property name = ...
+          case PREFIX:
+            setColumnPrefix(entry.getValue());
+            break;
+
           // property scope = ... *
           case SCOPE:
             try {
@@ -568,10 +610,24 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
     }
   }
 
-
   @Override
   public Entity getEntity() {
     return entity;
+  }
+
+  @Override
+  public Entity getEmbeddingEntity() {
+    return embeddingEntity;
+  }
+
+  @Override
+  public String getPathName() {
+    return pathName == null ? getName() : pathName;
+  }
+
+  @Override
+  public String getColumnPrefixPath() {
+    return columnPrefixPath;
   }
 
   @Override
@@ -601,37 +657,48 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
     return selectionTypeDetermined;
   }
 
+  public void setSelectionTypeDetermined(boolean selectionTypeDetermined) {
+    this.selectionTypeDetermined = selectionTypeDetermined;
+  }
+
   @Override
   public String getGetterSetterComment() {
     StringBuilder buf = new StringBuilder();
-    if (reversed) {
-      buf.append("reversed as 1:1 from ").append(entity);
-    }
-    else {
-      buf.append(getVariableName());
-    }
-    if (deepReference) {
-      buf.append(" deeply");
-    }
-    buf.append(" via ");
-    if (attribute != null || foreignAttribute != null) {
-      if (attribute != null) {
-        buf.append(attribute);
+    if (!isEmbedding()) {
+      if (reversed) {
+        buf.append("reversed as 1:1 from ").append(entity);
       }
-      else  {
-        buf.append(foreignEntity).append('#').append(foreignAttribute);
+      else {
+        buf.append(getVariableName());
       }
-    }
-    else if (!methodArgs.isEmpty()) {
-      buf.append(methodArgs.get(0));
-    }
-    if (methodArgs.size() > 1) {
-      boolean firstSkipped = false;
-      for (MethodArgument methodArg: methodArgs) {
-        if (firstSkipped) {
-          buf.append(" & ").append(methodArg.getForeignAttribute());
+      if (deepReference) {
+        buf.append(" deeply");
+      }
+      if (foreignRelation != null && foreignRelation.isEmbedding()) {
+        buf.append(" as embedding parent");
+      }
+      else {
+        buf.append(" via ");
+        if (attribute != null || foreignAttribute != null) {
+          if (attribute != null) {
+            buf.append(attribute);
+          }
+          else {
+            buf.append(foreignEntity).append('#').append(foreignAttribute);
+          }
         }
-        firstSkipped = true;
+        else if (!methodArgs.isEmpty()) {
+          buf.append(methodArgs.get(0));
+        }
+        if (methodArgs.size() > 1) {
+          boolean firstSkipped = false;
+          for (MethodArgument methodArg : methodArgs) {
+            if (firstSkipped) {
+              buf.append(" & ").append(methodArg.getForeignAttribute());
+            }
+            firstSkipped = true;
+          }
+        }
       }
     }
     return buf.toString();
@@ -640,20 +707,26 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   @Override
   public String toString() {
     StringBuilder buf = new StringBuilder();
-    if (composite) {
+    if (isEmbedding()) {
+      buf.append("embedded ");    // implies composite, but that's not printed
+    }
+    else if (composite) {
       buf.append("composite ");
     }
     if (getRelationType() == RelationType.LIST && !reversed) {
       buf.append("list of ");
     }
     if (foreignEntity != null) {
-      buf.append(foreignEntity).append(" ");
-      buf.append(getGetterSetterComment());
+      buf.append(foreignEntity);
+      String getterSetterComment = getGetterSetterComment();
+      if (!StringHelper.isAllWhitespace(getterSetterComment)) {
+        buf.append(' ').append(getGetterSetterComment());
+      }
     }
     else {
       buf.append('?').append(getName()).append('?');
     }
-    if (comment != null && !comment.isEmpty()) {
+    if (!StringHelper.isAllWhitespace(comment) && (foreignEntity == null || !comment.equals(foreignEntity.toString()))) {
       buf.append(" (").append(comment).append(')');
     }
     return buf.toString();
@@ -662,6 +735,25 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
   @Override
   public void validate() throws ModelException {
+
+    if (foreignEntity != null) {
+      if (foreignEntity.isEmbedded()) {
+        if (foreignEntity.equals(entity)) {
+          throw createModelException("embedded entities cannot embed themselves recursively");
+        }
+        if (relationType != RelationType.OBJECT) {
+          throw createModelException("embedded relations must be 1:1");
+        }
+        relationType = RelationType.OBJECT;
+        selectionCached = false;
+        selectionTypeDetermined = false;    // don't switch to cached, if parent is cached
+        selectionType = SelectionType.EMBEDDED;
+        composite = true;
+      }
+      else if (selectionType == SelectionType.EMBEDDED) {
+        throw createModelException("embedded relations cannot be used with non-embeddable entities");
+      }
+    }
 
     getRelationType();    // force loading of relation type if not set yet
 
@@ -680,79 +772,93 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
     }
 
     // check constraints
+    if (foreignEntity != null) {    // if foreign entity processed
+      if (bluntDeclared) {
+        if (accessScope != AccessScope.PUBLIC) {
+          throw createModelException("access scope must be public to declare blunt method in interface");
+        }
+        if (selectionType != SelectionType.LAZY && selectionType != SelectionType.EAGER) {
+          throw createModelException("blunt methods are only generated for eager or lazy relations");
+        }
+      }
 
-    if (bluntDeclared) {
-      if (accessScope != AccessScope.PUBLIC) {
-        throw createModelException("access scope must be public to declare blunt method in interface");
+      if (getEntity().isEmbedded()) {
+        if (composite) {
+          throw createModelException("composite relations not allowed for embedded entities");
+        }
+        if (reversed) {
+          throw createModelException("reversed relations not allowed for embedded entities");
+        }
+        if (relationType == RelationType.LIST) {
+          throw createModelException("list relations not allowed for embedded entities");
+        }
       }
-      if (selectionType != SelectionType.LAZY && selectionType != SelectionType.EAGER) {
-        throw createModelException("blunt methods are only generated for eager or lazy relations");
-      }
-    }
 
-    if (composite && selectionType != SelectionType.LAZY && selectionType != SelectionType.EAGER) {
-      throw createModelException("composite relations must be eager or lazy");
-    }
+      if (composite && !isEmbedding() && selectionType != SelectionType.LAZY && selectionType != SelectionType.EAGER) {
+        throw createModelException("composite relations must be eager or lazy");
+      }
 
-    if (reversed && (composite || relationType != RelationType.LIST)) {
-      throw createModelException("reversed 1:1 mapping only allowed for non-composite list relations");
-    }
+      if (reversed && (composite || relationType != RelationType.LIST)) {
+        throw createModelException("reversed 1:1 mapping only allowed for non-composite list relations");
+      }
 
-    if (relationType == RelationType.LIST) {
-      if (selectionCached) {
-        throw createModelException("cached select is not allowed for list relations");
+      if (relationType == RelationType.LIST) {
+        if (selectionCached) {
+          throw createModelException("cached select is not allowed for list relations");
+        }
+        if (deletionCascaded && !composite) {
+          throw createModelException("cascaded delete is not allowed for non-composite list relations");
+        }
       }
-      if (deletionCascaded && !composite) {
-        throw createModelException("cascaded delete is not allowed for non-composite list relations");
+      else {
+        if (linkMethodIndex != null) {
+          throw createModelException("indexed link method is not allowed for object relations");
+        }
+        if (deletionCascaded) {
+          throw createModelException("object relations are always deleted cascaded");
+        }
+        if (linkMethodName != null && !referenced) {
+          throw createModelException("object relations with link= option must be referenced");
+        }
+        if (methodArgs.size() > 1) {
+          throw createModelException("object relations cannot have extra args");
+        }
       }
-    }
-    else {
-      if (linkMethodIndex != null) {
-        throw createModelException("indexed link method is not allowed for object relations");
-      }
-      if (deletionCascaded) {
-        throw createModelException("object relations are always deleted cascaded");
-      }
-      if (linkMethodName != null && !referenced) {
-        throw createModelException("object relations with link= option must be referenced");
-      }
-      if (methodArgs.size() > 1) {
-        throw createModelException("object relations cannot have extra args");
-      }
-    }
 
-    if (composite && selectionCached) {
-      throw createModelException("cached select is not allowed for composite relations");
-    }
-    if (processed && !composite) {
-      throw createModelException("processed only allowed for composite relations");
-    }
-    if (serialized) {
-      if (selectionCached) {
-        throw createModelException("cached select is not allowed for serialized relations");
+      if (composite && selectionCached) {
+        throw createModelException("cached select is not allowed for composite relations");
       }
-      if (isComposite() || selectionType != SelectionType.LAZY && selectionType != SelectionType.EAGER) {
-        throw createModelException("serialized is only allowed for lazy or eager non-composite relations");
+      if (processed && !composite) {
+        throw createModelException("processed only allowed for composite relations");
       }
-    }
 
-    if (nmName != null && (!composite || relationType == RelationType.OBJECT)) {
-      throw createModelException("nm-relations must be composite lists");
-    }
+      if (serialized) {
+        if (selectionCached) {
+          throw createModelException("cached select is not allowed for serialized relations");
+        }
+        if (isComposite() || selectionType != SelectionType.LAZY && selectionType != SelectionType.EAGER) {
+          throw createModelException("serialized is only allowed for lazy or eager non-composite relations");
+        }
+      }
 
-    if (selectionWurbletArguments != null && relationType != RelationType.LIST) {
-      throw createModelException(
-              "extra wurblet arguments are only allowed for list relations (in select property): " +
-                      selectionWurbletArguments);
-    }
+      if (nmName != null && (!composite || relationType == RelationType.OBJECT)) {
+        throw createModelException("nm-relations must be composite lists");
+      }
 
-    if (countAttribute != null) {
-      if (relationType != RelationType.LIST || reversed || !composite) {
+      if (selectionWurbletArguments != null && relationType != RelationType.LIST) {
         throw createModelException(
-              "counter attribute only allowed for composite non-reversed list relations");
+        "extra wurblet arguments are only allowed for list relations (in select property): " +
+        selectionWurbletArguments);
       }
-      if (entity.getOptions().getTrackType() != TrackType.FULLTRACKED) {
-        throw createModelException("entity must be FULLTRACKED to support counter attributes");
+
+      if (countAttribute != null) {
+        if (relationType != RelationType.LIST || reversed || !composite) {
+          throw createModelException(
+          "counter attribute only allowed for composite non-reversed list relations");
+        }
+        if (entity.getOptions().getTrackType() != TrackType.FULLTRACKED) {
+          throw createModelException("entity must be FULLTRACKED to support counter attributes");
+        }
       }
     }
 
@@ -894,6 +1000,21 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   @Override
   public boolean isComposite() {
     return composite;
+  }
+
+  @Override
+  public boolean isEmbedding() {
+    return selectionType == SelectionType.EMBEDDED;
+  }
+
+  @Override
+  public boolean isEmbedded() {
+    return entity.isEmbedded();
+  }
+
+  @Override
+  public String getColumnPrefix() {
+    return columnPrefix == null ? StringHelper.toLower(getName()) + "_" : columnPrefix;
   }
 
   @Override
@@ -1067,6 +1188,10 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
   public void setComposite(boolean composite) {
     this.composite = composite;
+  }
+
+  public void setColumnPrefix(String columnPrefix) {
+    this.columnPrefix = StringHelper.toLower(columnPrefix);
   }
 
   public void setLinkMethodName(String linkMethodName) {

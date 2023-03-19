@@ -29,10 +29,13 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.TreeSet;
 
 /**
@@ -119,7 +122,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
   }
 
 
-  protected record ForeignReference(Method method, int priority) implements Comparable<ForeignReference> {
+  protected record ForeignReference(Method[] methods, int priority, String methodPath) implements Comparable<ForeignReference> {
 
     /**
      * Sorted by priority + method.
@@ -128,7 +131,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
     public int compareTo(ForeignReference o) {
       int rv = priority - o.priority;
       if (rv == 0) {
-        rv = method.hashCode() - o.method.hashCode();
+        rv = methodPath.compareTo(o.methodPath);
       }
       return rv;
     }
@@ -405,7 +408,8 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
    * The referencing class must provide a static method <code>isReferencing&lt;ClassBasename&gt;</code>,
    * while <code>ClassBaseName</code> is the {@link #classBaseName} of the referenced class.
    * The method must provide the parameters {@link Db} and objectId as generated
-   * by the *IsReferencing-wurblets.
+   * by the *IsReferencing-wurblets.<br>
+   * The method name can also contain dots to denote a chain of methods that must be invoked.
    *
    * @param clazz the class to add
    * @param methodName a method name, null if default
@@ -437,27 +441,41 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
 
 
 
-  private ForeignReference createForeignReference(Class<? extends AbstractDbObject<?>> clazz, String methodName) {
-    if (methodName == null) {
-      methodName = "isReferencing" + classBaseName;
+  private ForeignReference createForeignReference(Class<? extends AbstractDbObject<?>> clazz, String methodPath) {
+    if (methodPath == null) {
+      methodPath = "isReferencing" + classBaseName;
     }
+
     try {
-      Method method;
-      try {
-        method = clazz.getMethod(methodName, Long.TYPE);
+      StringTokenizer stok = new StringTokenizer(methodPath, ".");
+      List<Method> methods = new ArrayList<>();
+      Class<?> methodClass = clazz;
+      while (stok.hasMoreTokens()) {
+        String methodName = stok.nextToken();
+        Method method;
+        if (stok.hasMoreTokens()) {   // getter method to another object
+          method = methodClass.getMethod(methodName);   // no args
+          methodClass = method.getDeclaringClass();
+        }
+        else {  // isReferencingMethod
+          try {
+            method = methodClass.getMethod(methodName, Long.TYPE);
+          }
+          catch (NoSuchMethodException e1) {
+            // try Long instead of long
+            method = methodClass.getMethod(methodPath, Long.class);
+          }
+        }
+        int modifiers = method.getModifiers();
+        if (Modifier.isStatic(modifiers) || !Modifier.isPublic(modifiers)) {
+          throw new PersistenceException(methodClass.getName() + "." + method.getName() + " must be public and non-static");
+        }
+        methods.add(method);
       }
-      catch (NoSuchMethodException e1) {
-        // try Long instead of long
-        method = clazz.getMethod(methodName, Long.class);
-      }
-      int modifiers = method.getModifiers();
-      if (Modifier.isStatic(modifiers) || !Modifier.isPublic(modifiers)) {
-        throw new PersistenceException(clazz.getName() + "." + method.getName() + " must be public and non-static");
-      }
-      return new ForeignReference(method, determineReferencePriority(clazz));
+      return new ForeignReference(methods.toArray(new Method[0]), determineReferencePriority(clazz), methodPath);
     }
     catch (NoSuchMethodException ex) {
-      throw new PersistenceException("please add an *IsReferencing-wurblet to generate " + clazz.getName() + "." + methodName, ex);
+      throw new PersistenceException("please add an *IsReferencing-wurblet to generate " + clazz.getName() + "." + methodPath, ex);
     }
   }
 
@@ -486,13 +504,18 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
     for (ForeignReference ref : foreignReferences) {
       try {
         @SuppressWarnings("unchecked")
-        AbstractDbObject<?> obj = AbstractDbObject.newInstance(db, (Class<AbstractDbObject<?>>) ref.method.getDeclaringClass());
-        if (Boolean.TRUE.equals(ref.method.invoke(obj, id))) {
-          return true;
+        Object obj = AbstractDbObject.newInstance(db, (Class<AbstractDbObject<?>>) ref.methods[0].getDeclaringClass());
+        for (int methodIndex = 0; methodIndex < ref.methods.length; methodIndex++) {
+          if (methodIndex < ref.methods.length - 1) {
+            obj = ref.methods[methodIndex].invoke(obj);
+          }
+          else if (Boolean.TRUE.equals(ref.methods[methodIndex].invoke(obj, id))) {
+            return true;
+          }
         }
       }
       catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
-        throw new PersistenceException("couldn't invoke " + ref.method, ex);
+        throw new PersistenceException("couldn't invoke " + ref.methodPath, ex);
       }
     }
     return false;

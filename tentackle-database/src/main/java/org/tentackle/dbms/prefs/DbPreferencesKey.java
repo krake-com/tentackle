@@ -272,7 +272,7 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
 
   @Override
   public boolean isTracked() {
-    return true;    // invoking isModified() is ok
+    return true;
   }
 
   @Override

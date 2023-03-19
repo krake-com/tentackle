@@ -19,6 +19,7 @@
 package org.tentackle.model.impl;
 
 import org.tentackle.common.Constants;
+import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.model.AccessScope;
 import org.tentackle.model.CommonOptions;
 import org.tentackle.model.ModelException;
@@ -37,7 +38,7 @@ import static org.tentackle.common.Constants.BIND_SCALE;
  *
  * @author harald
  */
-public abstract class CommonOptionsImpl implements CommonOptions {
+public abstract class CommonOptionsImpl implements CommonOptions, Cloneable {
 
   /** don't generate declaration. */
   public static final String OPTION_NODECLARE = "NODECLARE";
@@ -120,6 +121,22 @@ public abstract class CommonOptionsImpl implements CommonOptions {
     accessScope = AccessScope.PUBLIC;
   }
 
+  @Override
+  public CommonOptionsImpl clone() {
+    try {
+      CommonOptionsImpl options = (CommonOptionsImpl) super.clone();
+      if (stereotypes != null) {
+        options.stereotypes = new ArrayList<>(stereotypes);
+      }
+      if (bindOptions != null) {
+        options.bindOptions = new StringBuilder(bindOptions);
+      }
+      return options;
+    }
+    catch (CloneNotSupportedException cnx) {
+      throw new TentackleRuntimeException(cnx);   // cannot happen, but...
+    }
+  }
 
   /**
    * Gets the source info.

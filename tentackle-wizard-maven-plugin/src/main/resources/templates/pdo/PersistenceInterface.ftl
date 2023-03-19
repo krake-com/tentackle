@@ -24,7 +24,7 @@ import org.tentackle.session.Persistent;
 /**
  * Persistence interface for ${pdoInterface}.
  */
-<#if pdoInheritance != "NONE">
+<#if pdoInheritance != "NONE" && pdoInheritance != "EMBEDDED">
 public interface ${persistenceInterface}<T extends ${pdoInterface}<T>> extends ${superPersistenceInterface}<T> {
 <#else>
 public interface ${persistenceInterface} extends ${superPersistenceInterface}<${pdoInterface}> {

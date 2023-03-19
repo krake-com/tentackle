@@ -243,6 +243,24 @@ public class DbModelWurblet extends ModelWurblet {
     }
   }
 
+  /**
+   * Asserts that entity can be selected from the database.
+   *
+   * @throws WurbelException if not
+   */
+  public void assertEntityNotEmbedded() throws WurbelException {
+    if (getEntity().isEmbedded()) {
+      StringBuilder buf = new StringBuilder();
+      for (Entity embeddingEntity : getEntity().getEmbeddingEntities()) {
+        if (!buf.isEmpty()) {
+          buf.append(", ");
+        }
+        buf.append(embeddingEntity);
+      }
+      throw new WurbelException(getEntity() + " is embedded in " + buf);
+    }
+  }
+
 
   /**
    * Gets the method arguments.
@@ -1365,18 +1383,33 @@ public class DbModelWurblet extends ModelWurblet {
    *
    * @param relation the relation
    * @return the set-method name
-   * @throws WurbelException if unexpected method args
+   * @throws ModelException if unexpected method args
    */
-  public String createRelationSetFirstArgMethodName(Relation relation) throws WurbelException {
+  public String createRelationSetFirstArgMethodName(Relation relation) throws ModelException {
     if (relation.getMethodArgs().size() > 1) {
-      throw new WurbelException("more than one method argument in relation " + relation);
+      throw new ModelException("more than one method argument for relation " + relation, relation);
     }
-    MethodArgument methodArg = relation.getMethodArgs().get(0); // at least 1 element
-    Attribute attribute = methodArg.getAttribute();
+    return "set" + StringHelper.firstToUpper(getFirstMethodAttribute(relation).getName());
+  }
+
+
+  /**
+   * Gets the method attribute for a relation.
+   *
+   * @param relation the relation
+   * @return the attribute
+   * @throws ModelException
+   */
+  public Attribute getFirstMethodAttribute(Relation relation) throws ModelException {
+    List<MethodArgument> methodArgs = relation.getMethodArgs();
+    if (methodArgs.isEmpty()) {
+      throw new ModelException("no method arguments for relation " + relation, relation);
+    }
+    Attribute attribute = methodArgs.get(0).getAttribute();
     if (attribute == null) {
-      throw new WurbelException("missing attribute for method argument " + methodArg + " in relation " + relation);
+      throw new ModelException("missing attribute for relation " + relation, relation);
     }
-    return "set" + StringHelper.firstToUpper(attribute.getName());
+    return attribute;
   }
 
 
@@ -1419,7 +1452,7 @@ public class DbModelWurblet extends ModelWurblet {
    *
    * @return the eager relations, empty list if no optimization possible or no eager relations at all
    */
-  public List<Relation> getEagerRelations() {
+  public List<Relation> getEagerRelations() throws ModelException {
     List<Relation> eagerRelations = new ArrayList<>();
     outer:
     for (Relation relation: getEntity().getRelations()) {

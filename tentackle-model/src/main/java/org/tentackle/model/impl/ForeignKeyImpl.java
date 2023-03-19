@@ -18,13 +18,14 @@
 
 package org.tentackle.model.impl;
 
-import java.util.Objects;
 import org.tentackle.common.Compare;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.CodeFactory;
 import org.tentackle.model.Entity;
 import org.tentackle.model.ForeignKey;
 import org.tentackle.sql.Backend;
+
+import java.util.Objects;
 
 /**
  * Implementation of a foreign key.
@@ -64,6 +65,7 @@ public class ForeignKeyImpl implements ForeignKey, Comparable<ForeignKey> {
   @Override
   public int hashCode() {
     int hash = 7;
+    hash = 89 * hash + Objects.hashCode(this.referencingEntity);
     hash = 89 * hash + Objects.hashCode(this.referencingAttribute);
     hash = 89 * hash + Objects.hashCode(this.referencedAttribute);
     return hash;
@@ -96,7 +98,7 @@ public class ForeignKeyImpl implements ForeignKey, Comparable<ForeignKey> {
     else  {
       rv = Compare.compare(getReferencingEntity().getName(), o.getReferencingEntity().getName());
       if (rv == 0) {
-        rv = Compare.compare(getReferencingAttribute().getName(), o.getReferencingAttribute().getName());
+        rv = Compare.compare(getReferencingAttribute().getPathName(), o.getReferencingAttribute().getPathName());
       }
     }
     return rv;

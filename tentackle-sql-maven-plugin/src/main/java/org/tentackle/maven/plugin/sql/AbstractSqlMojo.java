@@ -696,6 +696,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
             writer.newLine();
           }
         }
+        getLog().info("model dump created in " + getPathRelativeToBasedir(dumpDir.getAbsolutePath()));
       }
       catch (IOException | ModelException ex) {
         throw new MojoFailureException("creating model dump failed", ex);
@@ -723,9 +724,10 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
             }
           }
         }
+        getLog().info("bundle files created in " + getPathRelativeToBasedir(bundleDir.getAbsolutePath()));
       }
       catch (IOException | ModelException ex) {
-        throw new MojoFailureException("creating model dump failed", ex);
+        throw new MojoFailureException("creating bundle dump failed", ex);
       }
     }
 

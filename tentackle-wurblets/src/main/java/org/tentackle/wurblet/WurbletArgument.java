@@ -149,6 +149,9 @@ public class WurbletArgument implements WurbletArgumentOperand {
   /** the relation path to the attribute. */
   private List<Relation> relations;
 
+  /** embedding relation path if attribute is embedded. */
+  private List<Relation> embeddingPath;
+
   /** != null if the first relation points to a component. */
   private Entity component;
 
@@ -368,16 +371,23 @@ public class WurbletArgument implements WurbletArgumentOperand {
     // remaining relations of the path
     Entity currentEntity = component != null ? component : this.entity;
 
+    embeddingPath = new ArrayList<>();
+    Relation predecessorRelation = null;
     while ((ndx = nextSeparatorIndex(str)) > 0) {
       String relationName = str.substring(0, ndx);
       str = str.substring(ndx + 1);
-      currentEntity = addRelation(currentEntity, relationName);
+      Relation relation = addRelation(currentEntity, relationName, predecessorRelation);
+      currentEntity = relation.getForeignEntity();
+      if (relation.isEmbedding()) {
+        embeddingPath.add(relation);
+      }
+      predecessorRelation = relation;
     }
 
     if (argumentType == WurbletArgumentType.JOIN) {
       // rest is relation
       if (!str.isEmpty()) {
-        addRelation(currentEntity, str);
+        addRelation(currentEntity, str, predecessorRelation);
       }
     }
     else {
@@ -398,11 +408,26 @@ public class WurbletArgument implements WurbletArgumentOperand {
           attrName = str.substring(0, ndx3);
           colName = str.substring(ndx3 + 1);
         }
+
         attribute = currentEntity.getAttributeByJavaName(attrName, true);
         if (attribute == null) {
           throw new WurbelException("no such attribute '" + attrName + "' defined for entity " + currentEntity +
                                     " in argument '" + this.text + "'");
         }
+
+        if (!embeddingPath.isEmpty()) {
+          // apply embedding path to attribute
+          StringBuilder pathName = new StringBuilder();
+          StringBuilder columnName = new StringBuilder();
+          for (Relation relation : embeddingPath) {
+            pathName.append(relation.getName()).append('.');
+            columnName.append(relation.getColumnPrefix());
+          }
+          pathName.append(attribute.getName());
+          columnName.append(attribute.getColumnName());
+          attribute = attribute.createEmbedded(embeddingPath.get(0).getEntity(), pathName.toString(), columnName.toString());
+        }
+
         try {
           dataType = attribute.getEffectiveDataType();
           if (dataType.isColumnCountBackendSpecific()) {
@@ -550,6 +575,16 @@ public class WurbletArgument implements WurbletArgumentOperand {
    */
   public List<Relation> getRelations() {
     return relations;
+  }
+
+  /**
+   * Gets the embedding relation path to the attribute.<br>
+   * Starts at the embedding entity.
+   *
+   * @return the relation path, if attribute is embedded, empty list if not
+   */
+  public List<Relation> getEmbeddingPath() {
+    return embeddingPath;
   }
 
   /**
@@ -799,20 +834,43 @@ public class WurbletArgument implements WurbletArgumentOperand {
    *
    * @param currentEntity the entity the relation belongs to
    * @param name the name of the relation
-   * @return the foreign entity, never null
+   * @param predecessorRelation the relation leading to this relation, null if none
+   * @return the relation, never null
    * @throws WurbelException if no such relation
    */
-  private Entity addRelation(Entity currentEntity, String name) throws WurbelException {
+  private Relation addRelation(Entity currentEntity, String name, Relation predecessorRelation) throws WurbelException {
     Relation relation = currentEntity.getRelation(name, true);
     if (relation == null) {
       throw new WurbelException(
               "no such relation '" + name + "' defined for entity " + currentEntity + " in argument '" + this.text + "'");
     }
-    if (relations == null) {
-      relations = new ArrayList<>();
+    if (relation.isEmbedding()) {
+      Entity embeddingEntity = relation.getEmbeddingEntity();   // from parent relation
+      String pathName;
+      String columnPrefix;
+      if (embeddingEntity == null || predecessorRelation == null) {
+        embeddingEntity = currentEntity;    // start of embedding path
+        pathName = relation.getName();
+        columnPrefix = relation.getColumnPrefix();
+      }
+      else {
+        pathName = predecessorRelation.getPathName() + relation.getName();
+        columnPrefix = predecessorRelation.getColumnPrefixPath() + relation.getColumnPrefix();
+      }
+      relation = relation.createEmbedded(embeddingEntity, pathName, columnPrefix);
     }
-    relations.add(relation);
-    return relation.getForeignEntity();
+    else {
+      if (relation.isEmbedded() && predecessorRelation != null && predecessorRelation.isEmbedding()) {
+        relation = relation.createEmbedded(predecessorRelation.getEmbeddingEntity(),
+                                           predecessorRelation.getPathName(),
+                                           predecessorRelation.getColumnPrefixPath());
+      }
+      if (relations == null) {
+        relations = new ArrayList<>();
+      }
+      relations.add(relation);
+    }
+    return relation;
   }
 
 }

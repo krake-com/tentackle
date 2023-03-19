@@ -75,7 +75,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
 
 
   private final EntityFactory factory;
-  private final Entity entity;
+  private EntityImpl entity;
 
   private boolean noModelDefaults;
   private boolean noPrimary;
@@ -103,10 +103,30 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
   public EntityOptionsImpl(EntityFactory factory, Entity entity, SourceInfo sourceInfo) {
     super(sourceInfo);
     this.factory = factory;
-    this.entity = entity;
+    this.entity = (EntityImpl) entity;
     trackType = TrackType.NONE;
   }
 
+  @Override
+  public EntityOptionsImpl clone() {
+    EntityOptionsImpl options = (EntityOptionsImpl) super.clone();
+    if (sorting != null) {
+      options.sorting = new ArrayList<>(sorting);
+    }
+    return options;
+  }
+
+  /**
+   * Clones options for another entity instance.
+   *
+   * @param entity the entity
+   * @return the options
+   */
+  public EntityOptionsImpl clone(EntityImpl entity) {
+    EntityOptionsImpl options = clone();
+    options.entity = entity;
+    return options;
+  }
 
   @Override
   public Entity getEntity() {

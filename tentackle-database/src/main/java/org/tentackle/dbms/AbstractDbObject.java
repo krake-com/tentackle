@@ -984,6 +984,16 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
   /**
+   * Creates a statement key for the corresponding persistence class from a statement id.
+   *
+   * @param stmtId the statement id
+   * @return the statement key
+   */
+  protected StatementKey createStatementKey(StatementId stmtId) {
+    return new StatementKey(stmtId, getClass());
+  }
+
+  /**
    * Gets a prepared statement.
    *
    * @param stmtId the statement id
@@ -994,7 +1004,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    */
   public PreparedStatementWrapper getPreparedStatement(
           StatementId stmtId, int resultSetType, int resultSetConcurrency, SqlSupplier sqlSupplier) {
-    return getSession().getPreparedStatement(new StatementKey(stmtId, getClass()), isStatementAlwaysPrepared(),
+    return getSession().getPreparedStatement(createStatementKey(stmtId), isStatementAlwaysPrepared(),
                                              resultSetType, resultSetConcurrency, sqlSupplier);
   }
 
@@ -1007,7 +1017,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * @return the statement
    */
   public PreparedStatementWrapper getPreparedStatement(StatementId stmtId, SqlSupplier sqlSupplier) {
-    return getSession().getPreparedStatement(new StatementKey(stmtId, getClass()), isStatementAlwaysPrepared(), sqlSupplier);
+    return getSession().getPreparedStatement(createStatementKey(stmtId), isStatementAlwaysPrepared(), sqlSupplier);
   }
 
   /**

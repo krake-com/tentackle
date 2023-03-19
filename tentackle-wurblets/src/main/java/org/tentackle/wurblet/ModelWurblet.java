@@ -638,6 +638,28 @@ public class ModelWurblet extends AbstractJavaWurblet {
 
 
   /**
+   * Determines all embedded attributes for the table of the entity.
+   *
+   * @return the list of embedded attributes, empty if none
+   * @throws WurbelException if failed
+   */
+  public List<Attribute> getEmbeddedTableAttributes() throws WurbelException {
+    List<Attribute> embeddedAttributes = new ArrayList<>();
+    try {
+      for (Attribute attribute : getEntity().getTableAttributes()) {
+        if (attribute.isEmbedded()) {
+          embeddedAttributes.add(attribute);
+        }
+      }
+    }
+    catch (ModelException mx) {
+      throw new WurbelException("cannot determine embedded attributes", mx);
+    }
+    return embeddedAttributes;
+  }
+
+
+  /**
    * {@inheritDoc}
    * <p>
    * Overridden to load the map file.
@@ -747,12 +769,19 @@ public class ModelWurblet extends AbstractJavaWurblet {
       // model exceptions cause the whole wurbel run to abort because it doesn't make any sense to clutter the sources
       WurbelException wex = new WurbelTerminationException(
               "errors in model loaded from directory '" + modelDirName + "'", true, mex);
-      if (model instanceof TentackleWurbletsModel && mex.getElement() != null &&
-          ((TentackleWurbletsModel) model).getLoadingException() == null) {
+      if (model instanceof TentackleWurbletsModel tentackleWurbletsModel && mex.getElement() != null &&
+          tentackleWurbletsModel.getLoadingException() == null) {
         // delay first exception to concrete classes if exception could be associated to entities
-        ((TentackleWurbletsModel) model).setLoadingException(wex);
+        tentackleWurbletsModel.setLoadingException(wex);
       }
       else  {
+        if (model instanceof TentackleWurbletsModel tentackleWurbletsModel) {
+          WurbelException loadingException = tentackleWurbletsModel.getLoadingException();
+          if (loadingException != null) {
+            // prepend initial loading exception
+            wex = new WurbelTerminationException(mex.getMessage(), true, loadingException.getCause());
+          }
+        }
         throw wex;
       }
     }

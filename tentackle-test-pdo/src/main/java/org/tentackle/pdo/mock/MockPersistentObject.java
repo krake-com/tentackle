@@ -521,6 +521,16 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
   }
 
   @Override
+  public boolean isEmbedded() {
+    return false;
+  }
+
+  @Override
+  public <E extends PersistentDomainObject<E>> E getEmbeddingParent() {
+    return null;
+  }
+
+  @Override
   public <C extends PersistentDomainObject<C>> boolean isRootEntityOf(C component) {
     return isRootEntity() &&
            component != null &&

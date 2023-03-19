@@ -20,7 +20,7 @@ import org.tentackle.pdo.DomainObjectService;
  * Domain implementation for ${pdoInterface}.
  */
 @DomainObjectService(${pdoInterface}.class)
-<#if pdoInheritance != "NONE">
+<#if pdoInheritance != "NONE" && pdoInheritance != "EMBEDDED">
 public class ${domainImplementation}<T extends ${pdoInterface}<T>, D extends ${domainImplementation}<T,D>>
        extends ${superDomainImplementation}<T,D> implements ${domainInterface}<T> {
 <#else>
@@ -37,7 +37,7 @@ public class ${domainImplementation} extends ${superDomainImplementation}<${pdoI
    *
    * @param pdo the persistent domain object
    */
-<#if pdoInheritance != "NONE">
+<#if pdoInheritance != "NONE" && pdoInheritance != "EMBEDDED">
   public ${domainImplementation}(T pdo) {
 <#else>
   public ${domainImplementation}(${pdoInterface} pdo) {

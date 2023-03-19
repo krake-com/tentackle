@@ -8,7 +8,7 @@ usage:<br>
 For more options, see {\@link ModelWurblet}.
 }@
 @[
-  private void wurbel() throws WurbelException {
+  private void wurbel() throws ModelException, WurbelException {
 
     List<String> allColConst = null;
     boolean isSingleTableInheritance = getEntity().getTopSuperEntity().getInheritanceType() == InheritanceType.SINGLE;
@@ -24,7 +24,10 @@ For more options, see {\@link ModelWurblet}.
     }
 
     Map<Attribute, DataType<?>> bsAttrs = new LinkedHashMap<>();  // backend-specific attributes requires special handling
-    for (Attribute attr: getEntity().getAttributes())  {
+    List<Attribute> attrs = new ArrayList<>();
+    attrs.addAll(getEntity().getAttributes());
+    attrs.addAll(getEntity().getEmbeddedAttributes());
+    for (Attribute attr: attrs)  {
       if (!attr.getOptions().isNoConstant() && !attr.getOptions().isNoDeclare() && !attr.getOptions().isFromSuper()) {
         DataType<?> effectiveType = getEffectiveDataType(attr);
         String baseColConst = getColumnNameConstant(attr, -1);
@@ -39,18 +42,26 @@ For more options, see {\@link ModelWurblet}.
         for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
           String colConst = getColumnNameConstant(attr, columnIndex);
           if (allColConst != null && !attr.getOptions().isMute()) {
-            allColConst.add(colConst);
+            if (attr.isEmbedded()) {
+              // concatenated strings instead of constants!
+              allColConst.add('"' + attr.getColumnName() + '"');
+            }
+            else {
+              allColConst.add(colConst);
+            }
           }
           if (colConst.equals(baseColConst)) {
             baseColConst = null;
           }
+          if (!attr.isEmbedded() || getEntity().isEmbedded()) {
 ]@
 
   /** database column name for '@(attr)@'@(columnCount > 1 ? (", column " + (columnIndex+1) + " of " + columnCount) : "")@. */
   public static final String @(colConst)@ = @(StringHelper.toDoubleQuotes(getColumnName(attr, columnIndex)))@;
 @[
+          }
         }
-        if (baseColConst != null) {
+        if (baseColConst != null && (!attr.isEmbedded() || getEntity().isEmbedded())) {
 ]@
 
   /** database column basename for @(effectiveType.isColumnCountBackendSpecific() ? "backend-specific " : "")@'@(attr)@'. */
@@ -60,7 +71,7 @@ For more options, see {\@link ModelWurblet}.
       }
     }
 
-    if (allColConst != null) {
+    if (allColConst != null && !getEntity().isEmbedded()) {
 ]@
 
   /** backend-agnostic mapped columns. */
@@ -118,5 +129,16 @@ For more options, see {\@link ModelWurblet}.
 
 @[
     }
+
+    for (Relation rel: getEntity().getRelations()) {
+      if (rel.isEmbedding()) {
+]@
+
+  /** column prefix for relation '@(rel)@'. */
+  public static final String CP_@(rel.getName().toUpperCase())@ = "@(rel.getColumnPrefix())@";
+@[
+      }
+    }
+
   }
 ]@

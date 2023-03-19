@@ -63,6 +63,15 @@ public class ModelError {
   }
 
   /**
+   * Creates a model error from a model exception.
+   *
+   * @param modelException the model exception
+   */
+  public ModelError(ModelException modelException) {
+    this(modelException.getElement(), modelException.getMessage());
+  }
+
+  /**
    * Gets the related element.
    *
    * @return the model element

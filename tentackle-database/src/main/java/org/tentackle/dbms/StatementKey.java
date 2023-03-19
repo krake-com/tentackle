@@ -48,6 +48,11 @@ public class StatementKey {
   private final Class<?> usingClass;
 
   /**
+   * Usage variant for embedded PDOs.
+   */
+  private final String variant;
+
+  /**
    * The SQL string.
    */
   private final String sql;
@@ -58,11 +63,23 @@ public class StatementKey {
    *
    * @param statementId the global statement id
    * @param usingClass the using class
+   * @param variant the optional usage variant, null if none
    */
-  public StatementKey(StatementId statementId, Class<?> usingClass) {
+  public StatementKey(StatementId statementId, Class<?> usingClass, String variant) {
     this.statementId = Objects.requireNonNull(statementId, "statementId");
     this.usingClass = Objects.requireNonNull(usingClass, "usingClass");
+    this.variant = variant;
     this.sql = null;
+  }
+
+  /**
+   * Creates the statement key.
+   *
+   * @param statementId the global statement id
+   * @param usingClass the using class
+   */
+  public StatementKey(StatementId statementId, Class<?> usingClass) {
+    this(statementId, usingClass, null);
   }
 
   /**
@@ -73,6 +90,7 @@ public class StatementKey {
   public StatementKey(String sql) {
     this.statementId = null;
     this.usingClass = null;
+    this.variant = null;
     if (Objects.requireNonNull(sql, "sql").isEmpty()) {
       throw new IllegalArgumentException("empty sql");
     }
@@ -98,6 +116,15 @@ public class StatementKey {
   }
 
   /**
+   * Gets the usage variant.
+   *
+   * @return the variant, null if none
+   */
+  public String getVariant() {
+    return variant;
+  }
+
+  /**
    * Gets the SQL string.
    *
    * @return the SQL, null if statement id key
@@ -114,37 +141,36 @@ public class StatementKey {
       buf.append(sql);
     }
     else {
-      buf.append(usingClass.getSimpleName()).append('#').append(statementId);
+      buf.append(usingClass.getSimpleName());
+      if (variant != null) {
+        buf.append('/').append(variant);
+      }
+      buf.append('#').append(statementId);
     }
     buf.append('>');
     return buf.toString();
   }
 
   @Override
-  public int hashCode() {
-    int hash = 7;
-    hash = 29 * hash + Objects.hashCode(this.statementId);
-    hash = 29 * hash + Objects.hashCode(this.usingClass);
-    hash = 29 * hash + Objects.hashCode(this.sql);
-    return hash;
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    StatementKey that = (StatementKey) o;
+
+    if (!Objects.equals(statementId, that.statementId)) return false;
+    if (!Objects.equals(usingClass, that.usingClass)) return false;
+    if (!Objects.equals(variant, that.variant)) return false;
+    return Objects.equals(sql, that.sql);
   }
 
   @Override
-  public boolean equals(Object obj) {
-    if (obj == null) {
-      return false;
-    }
-    if (getClass() != obj.getClass()) {
-      return false;
-    }
-    final StatementKey other = (StatementKey) obj;
-    if (!Objects.equals(this.statementId, other.statementId)) {
-      return false;
-    }
-    if (!Objects.equals(this.usingClass, other.usingClass)) {
-      return false;
-    }
-    return Objects.equals(this.sql, other.sql);
+  public int hashCode() {
+    int result = statementId != null ? statementId.hashCode() : 0;
+    result = 31 * result + (usingClass != null ? usingClass.hashCode() : 0);
+    result = 31 * result + (variant != null ? variant.hashCode() : 0);
+    result = 31 * result + (sql != null ? sql.hashCode() : 0);
+    return result;
   }
 
 }
