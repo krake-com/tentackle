@@ -105,7 +105,10 @@ public class ModelException extends Exception {
   public String getMessage() {
     String message = super.getMessage();
     if (element != null && (message == null || !message.contains(AT_ELEMENT)) && element.getSourceInfo() != null) {
-      return message + AT_ELEMENT + element.getSourceInfo();
+      String sourceInfo = element.getSourceInfo().toString();
+      if (!message.contains(sourceInfo)) {
+        return message + AT_ELEMENT + element.getSourceInfo();
+      }
     }
     return message;
   }

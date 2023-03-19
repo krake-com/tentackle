@@ -11,7 +11,7 @@ import org.tentackle.pdo.DomainObject;
 /**
  * Domain interface for ${pdoInterface}.
  */
-<#if pdoInheritance != "NONE">
+<#if pdoInheritance != "NONE" && pdoInheritance != "EMBEDDED">
 public interface ${domainInterface}<T extends ${pdoInterface}<T>> extends ${superDomainInterface}<T> {
 <#else>
 public interface ${domainInterface} extends ${superDomainInterface}<${pdoInterface}> {

@@ -57,7 +57,7 @@ import org.tentackle.validate.ValidationUtilities;
  * Persistence implementation for ${pdoInterface}.
  */
 @PersistentObjectService(${pdoInterface}.class)
-<#if pdoInheritance != "NONE">
+<#if pdoInheritance != "NONE" && pdoInheritance != "EMBEDDED">
 public class ${persistenceImplementation}<T extends ${pdoInterface}<T>, P extends ${persistenceImplementation}<T,P>>
        extends ${superPersistenceImplementation}<T,P> implements ${persistenceInterface}<T> {
 <#else>
@@ -67,9 +67,10 @@ public class ${persistenceImplementation} extends ${superPersistenceImplementati
   @Serial
   private static final long serialVersionUID = 1L;
 
-
+<#if pdoInheritance != "EMBEDDED">
   // @wurblet classVariables ClassVariables
 
+</#if>
   // @wurblet columnNames ColumnNames
 
   // @wurblet declare Declare
@@ -82,7 +83,7 @@ public class ${persistenceImplementation} extends ${superPersistenceImplementati
    * @param pdo the persistent domain object
    * @param context the domain context
    */
-<#if pdoInheritance != "NONE">
+<#if pdoInheritance != "NONE" && pdoInheritance != "EMBEDDED">
   public ${persistenceImplementation}(T pdo, DomainContext context) {
 <#else>
   public ${persistenceImplementation}(${pdoInterface} pdo, DomainContext context) {
@@ -96,7 +97,7 @@ public class ${persistenceImplementation} extends ${superPersistenceImplementati
    * @param pdo the persistent domain object
    * @param session the session
    */
-<#if pdoInheritance != "NONE">
+<#if pdoInheritance != "NONE" && pdoInheritance != "EMBEDDED">
   public ${persistenceImplementation}(T pdo, Session session) {
 <#else>
   public ${persistenceImplementation}(${pdoInterface} pdo, Session session) {
@@ -109,7 +110,7 @@ public class ${persistenceImplementation} extends ${superPersistenceImplementati
    *
    * @param pdo the persistent domain object
    */
-<#if pdoInheritance != "NONE">
+<#if pdoInheritance != "NONE" && pdoInheritance != "EMBEDDED">
   public ${persistenceImplementation}(T pdo) {
 <#else>
   public ${persistenceImplementation}(${pdoInterface} pdo) {

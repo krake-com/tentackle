@@ -272,7 +272,7 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
 
   @Override
   public boolean isTracked() {
-    return true;    // invoking isModified() is ok
+    return true;
   }
 
   @Override

@@ -9,7 +9,7 @@ usage:<br>
 For more options, see {\@link ModelWurblet}.
 }@
 @[
-  private void wurbel() {
+  private void wurbel() throws ModelException {
     // create comment for referencing relations
     List<Relation> referencingRelations = getEntity().getReferencingRelationsIncludingInherited();
     List<Entity> subEntities = getEntity().getSubEntities();
@@ -84,7 +84,9 @@ For more options, see {\@link ModelWurblet}.
     }
     for (Entity component: components) {
       for (Relation relation: component.getRelationsIncludingSubEntities()) {
-        if (!relation.isComposite() && !components.contains(relation.getForeignEntity())) {
+        if (!relation.isComposite() &&
+            !components.contains(relation.getForeignEntity()) &&
+            (relation.getForeignRelation() == null || !relation.getForeignRelation().isComposite())) {
           outRels.add(relation);
         }
       }
@@ -161,20 +163,22 @@ For more options, see {\@link ModelWurblet}.
     }
 
 
-    if (subEntities.isEmpty()) {
+    if (!getEntity().isEmbedded()) {
+      if (subEntities.isEmpty()) {
 ]@
    *
    *
    * @(getEntity())@ is not extended
 @[
-    }
-    else {
+      }
+      else {
 ]@
    *
    *
    * @(getEntity())@ is extended by:
 @[
-      ModelCommentSupport.printSubEntities(subEntities, "   *    ", out);
+        ModelCommentSupport.printSubEntities(subEntities, "   *    ", out);
+      }
     }
 ]@
    *

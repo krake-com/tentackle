@@ -153,6 +153,16 @@ For more options, see {\@link DbModelWurblet}.
 @[
         }
 
+        if (getEntity().isEmbedded()) {
+]@
+
+  \@Override
+  public boolean isEmbedded() {
+    return true;
+  }
+@[
+        }
+
         if (getEntity().getOptions().isTableSerialProvided()) {
 ]@
 
@@ -192,7 +202,7 @@ For more options, see {\@link DbModelWurblet}.
   }
 @[
         }
-        else {
+        else if (!getEntity().isEmbedded()) {
           Attribute rootAttribute = getEntity().getRootAttribute();
           if (rootAttribute != null) {
 
@@ -215,7 +225,7 @@ For more options, see {\@link DbModelWurblet}.
   }
 @[
         }
-        else {
+        else if (!getEntity().isEmbedded()) {
           Entity rootEntity = getEntity().getRootEntity();
           if (rootEntity != null) {
 ]@
@@ -233,7 +243,7 @@ For more options, see {\@link DbModelWurblet}.
 
   \@Override
   public boolean isTracked() {
-    return true;    // invoking isModified() is ok
+    return true;
   }
 @[
         }
@@ -301,9 +311,45 @@ For more options, see {\@link DbModelWurblet}.
 @[
       }
 
-      if (!getEntity().getInheritanceType().isMappingToNoTable()) {
-        String orderBy = getEntity().getSorting() != null ? createOrderBy(getDefaultSortKeys()) : null;
-        if (orderBy != null) {
+      if (!getEntity().getInheritanceType().isMappingToNoTable() || getEntity().isEmbedded()) {
+        if (getEntity().isEmbedded()) {
+]@
+
+  \@Override
+  public void configureEmbeddedColumns(ResultSetWrapper rs) {
+@[
+          for (Relation rel: getEntity().getRelations()) {
+            if (rel.isEmbedding()) {
+]@
+    ((AbstractPersistentObject<?,?>) @(rel.getGetterName())@().getPersistenceDelegate()).configureEmbeddedColumns(rs);
+@[
+            }
+          }
+
+          for (Attribute attr: getEntity().getMappedAttributes())  {
+            if (!attr.getOptions().isMute())  {
+              DataType<?> effectiveType = getEffectiveDataType(attr);
+              if (effectiveType.isColumnCountBackendSpecific()) {
+]@
+    rs.configureColumns(@(effectiveType.getDataTypeConstant())@, getColumnPrefix() + @(getColumnNameConstant(attr, -1))@);
+@[
+              }
+              else {
+                for (int columnIndex = 0; columnIndex < effectiveType.getColumnCount(null); columnIndex++) {
+]@
+    rs.configureColumn(getColumnPrefix() + @(getColumnNameConstant(attr, columnIndex))@);
+@[
+                }
+              }
+            }
+          }
+]@
+  }
+@[
+        }
+        else {
+          String orderBy = getEntity().getSorting() != null ? createOrderBy(getDefaultSortKeys()) : null;
+          if (orderBy != null) {
 ]@
 
   \@Override
@@ -313,24 +359,46 @@ For more options, see {\@link DbModelWurblet}.
     return sql.toString();
   }
 @[
+          }
         }
 ]@
 
   \@Override
   public void getFields(ResultSetWrapper rs) {
+@[
+
+        boolean needConfig = false;
+
+        if (!getEntity().isEmbedded()) {
+]@
     super.getFields(rs);
 @[
-        boolean needConfig = false;
-        for (Attribute attr: getEntity().getMappedAttributes())  {
-          if (!attr.getOptions().isMute())  {
-            needConfig = true;
-            break;
+          for (Attribute attr: getEntity().getMappedAttributes())  {
+            if (!attr.getOptions().isMute())  {
+              needConfig = true;
+              break;
+            }
+          }
+          for (Relation rel: getEntity().getRelations()) {
+            if (rel.isEmbedding()) {
+              needConfig = true;
+              break;
+            }
           }
         }
+
         if (needConfig) {
 ]@
     if (rs.configureSection(CLASSVARIABLES)) {
 @[
+          for (Relation rel: getEntity().getRelations()) {
+            if (rel.isEmbedding()) {
+]@
+      ((AbstractPersistentObject<?,?>) @(rel.getGetterName())@().getPersistenceDelegate()).configureEmbeddedColumns(rs);
+@[
+            }
+          }
+
           for (Attribute attr: getEntity().getMappedAttributes())  {
             if (!attr.getOptions().isMute())  {
               DataType<?> effectiveType = getEffectiveDataType(attr);
@@ -352,10 +420,25 @@ For more options, see {\@link DbModelWurblet}.
     }
 @[
         }
-        else {
+        else if (!getEntity().isEmbedded()) {
 ]@
     rs.configureSection(CLASSVARIABLES);
 @[
+          for (Relation rel: getEntity().getRelations()) {
+            if (rel.isEmbedding()) {
+]@
+    ((AbstractPersistentObject<?,?>) @(rel.getGetterName())@().getPersistenceDelegate()).configureEmbeddedColumns(rs);
+@[
+            }
+          }
+        }
+
+        for (Relation rel: getEntity().getRelations()) {
+          if (rel.isEmbedding()) {
+]@
+    ((AbstractPersistentObject<?,?>) @(rel.getGetterName())@().getPersistenceDelegate()).getFields(rs);
+@[
+          }
         }
 
         for (Attribute attr: getEntity().getMappedAttributes())  {
@@ -458,12 +541,29 @@ For more options, see {\@link DbModelWurblet}.
 @[
           }
           else  {
+            if (getEntity().isEmbedded()) {
+]@
+
+  \@Override
+  public int setEmbeddedFields(int ndx, PreparedStatementWrapper st) {
+@[
+            }
+            else {
 ]@
 
   \@Override
   public int setFields(PreparedStatementWrapper st) {
     int ndx = super.setFields(st);
 @[
+            }
+          }
+
+          for (Relation rel: getEntity().getRelations()) {
+            if (rel.isEmbedding()) {
+]@
+    ndx = ((AbstractPersistentObject<?,?>) @(rel.getGetterName())@().getPersistenceDelegate()).setEmbeddedFields(ndx, st);
+@[
+            }
           }
 
           for (Attribute attr: getEntity().getMappedAttributes()) {
@@ -544,9 +644,9 @@ For more options, see {\@link DbModelWurblet}.
         }
       }
 
-      if (getEntity().getInheritanceType().isMappingToOwnTable()) {
+      if (getEntity().getInheritanceType().isMappingToOwnTable() || getEntity().isEmbedded()) {
 
-        List<Attribute> attributes = multiInheritance ? getEntity().getTableAttributes() :
+        List<Attribute> attributes = multiInheritance ? getEntity().getTableAttributes().stream().filter(a -> !a.isEmbedded()).toList() :
                                                         getEntity().getAttributesIncludingInherited();
         List<String> names = new ArrayList<>();                         // column name constants CN_...
         Map<Attribute, DataType<?>> bsAttrs = new LinkedHashMap<>();    // backend-specific attributes requires special handling
@@ -584,61 +684,84 @@ For more options, see {\@link DbModelWurblet}.
   public String createInsertSql(Backend backend) {
 @[
           }
+
+          if (getEntity().isEmbedded()) {
+]@
+    return
+@[
+          }
+          else {
 ]@
     return Backend.SQL_INSERT_INTO + @(multiInheritance ? "CLASSVARIABLES." : "")@getTableName() + Backend.SQL_LEFT_PARENTHESIS +
 @[
+          }
+
+          for (Relation rel: getEntity().getRelations()) {
+            if (rel.isEmbedding()) {
+]@
+           ((AbstractPersistentObject<?,?>) @(rel.getGetterName())@().getPersistenceDelegate()).createInsertSql(backend) +
+@[
+            }
+          }
 
           int count = 0;
+          String prefix = getEntity().isEmbedded() ? "getColumnPrefix() + " : "";
+
           for (String name: names) {
-            String lineSep = count == names.size() - 1 ? " +" : " + Backend.SQL_COMMA +";
+            String lineSep = count == names.size() - 1 ? (getEntity().isEmbedded() ? " + Backend.SQL_COMMA;" : " +") : " + Backend.SQL_COMMA +";
 ]@
-           @(name)@@(lineSep)@
+           @(prefix)@@(name)@@(lineSep)@
 @[
             count++;
           }
+
+          if (!getEntity().isEmbedded()) {
 ]@
            Backend.SQL_INSERT_VALUES +
 @[
-          count = names.size() - bsAttrs.size() - 1;
-          if (count == 1) {
+            count = names.size() - bsAttrs.size() - 1 + getEmbeddedTableAttributes().size();
+            if (count == 1) {
 ]@
            Backend.SQL_PAR_COMMA +
 @[
-          }
-          else if (count > 1) {
+            }
+            else if (count > 1) {
 ]@
            Backend.SQL_PAR_COMMA.repeat(@(count)@) +
 @[
-          }
+            }
 
-          boolean onlyBsAttrs = count < 0;    // only backend-specific datatypes -> subtract 1 from last bs entry
-          Map<DataType<?>, Integer> typeCountMap = new HashMap<>();
-          for (Map.Entry<Attribute, DataType<?>> entry : bsAttrs.entrySet()) {
-            DataType<?> dataType = entry.getValue();
-            Integer typeCount = typeCountMap.get(dataType);
-            if (typeCount == null) {
-              typeCountMap.put(dataType, 1);
+            boolean onlyBsAttrs = count < 0;    // only backend-specific datatypes -> subtract 1 from last bs entry
+            Map<DataType<?>, Integer> typeCountMap = new HashMap<>();
+            for (Map.Entry<Attribute, DataType<?>> entry : bsAttrs.entrySet()) {
+              DataType<?> dataType = entry.getValue();
+              Integer typeCount = typeCountMap.get(dataType);
+              if (typeCount == null) {
+                typeCountMap.put(dataType, 1);
+              }
+              else {
+                typeCountMap.put(dataType, typeCount + 1);
+              }
             }
-            else {
-              typeCountMap.put(dataType, typeCount + 1);
-            }
-          }
 
-          count = 0;
-          for (Map.Entry<DataType<?>, Integer> entry : typeCountMap.entrySet()) {
-            count++;
-            DataType<?> dataType = entry.getKey();
-            int typeCount = entry.getValue();
-            String factor = typeCount > 1 ? " * " + typeCount : "";
-            if (onlyBsAttrs && count >= typeCountMap.size()) {
-              factor += " - 1";
-            }
+            count = 0;
+            for (Map.Entry<DataType<?>, Integer> entry : typeCountMap.entrySet()) {
+              count++;
+              DataType<?> dataType = entry.getKey();
+              int typeCount = entry.getValue();
+              String factor = typeCount > 1 ? " * " + typeCount : "";
+              if (onlyBsAttrs && count >= typeCountMap.size()) {
+                factor += " - 1";
+              }
 ]@
            Backend.SQL_PAR_COMMA.repeat(@(dataType.getDataTypeConstant())@.getColumnCount(backend)@(factor)@) +
 @[
-          }
+            }
 ]@
            Backend.SQL_PAR + Backend.SQL_RIGHT_PARENTHESIS;
+@[
+          }
+]@
   }
 @[
 
@@ -675,43 +798,63 @@ For more options, see {\@link DbModelWurblet}.
   public String createUpdateSql(Backend backend) {
 @[
           }
+
+          if (getEntity().isEmbedded()) {
+]@
+    return
+@[
+          }
+          else {
 ]@
     return Backend.SQL_UPDATE + @(multiInheritance ? "CLASSVARIABLES." : "")@getTableName() + Backend.SQL_SET +
 @[
+          }
+
+          for (Relation rel: getEntity().getRelations()) {
+            if (rel.isEmbedding()) {
+]@
+           ((AbstractPersistentObject<?,?>) @(rel.getGetterName())@().getPersistenceDelegate()).createUpdateSql(backend) +
+@[
+            }
+          }
+
           boolean checkSerial = !multiInheritance || getEntity().getSuperEntity() == null;
           int ncnt = 0;
           for (String name: names) {
             ncnt++;
             if (!checkSerial && ncnt == names.size()) {
 ]@
-           @(name)@ + Backend.SQL_EQUAL_PAR +
+           @(prefix)@@(name)@ + Backend.SQL_EQUAL_PAR +
 @[
             }
             else {
+              String tailStr = getEntity().isEmbedded() && ncnt == names.size() ? ";" : " +";
 ]@
-           @(name)@ + Backend.SQL_EQUAL_PAR_COMMA +
+           @(prefix)@@(name)@ + Backend.SQL_EQUAL_PAR_COMMA@(tailStr)@
 @[
             }
           }
 
-          if (ncnt == 0 && !checkSerial) {
-            // special case: no attributes and no checkserial
+          if (!getEntity().isEmbedded()) {
+            if (ncnt == 0 && !checkSerial) {
+              // special case: no attributes and no checkserial
 ]@
            CN_ID + Backend.SQL_EQUAL + CN_ID +
 @[
-          }
+            }
 
-          if (checkSerial) {
+            if (checkSerial) {
 ]@
            CN_SERIAL + Backend.SQL_EQUAL + CN_SERIAL + Backend.SQL_PLUS_ONE +
            Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR +
            Backend.SQL_AND + CN_SERIAL + Backend.SQL_EQUAL_PAR;
 @[
-          }
-          else  {
+            }
+            else  {
 ]@
            Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR;
 @[
+            }
           }
 ]@
   }
@@ -928,7 +1071,7 @@ For more options, see {\@link DbModelWurblet}.
         }
       } // end multiinheritance
 
-      else if (isMuteOptionSet(getEntity())) {
+      else if (isMuteOptionSet(getEntity()) && !getEntity().isEmbedded()) {
 ]@
 
   \@Override

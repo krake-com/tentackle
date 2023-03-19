@@ -21,6 +21,7 @@ package org.tentackle.model.impl;
 import org.tentackle.common.Compare;
 import org.tentackle.common.Constants;
 import org.tentackle.common.StringHelper;
+import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.model.AccessScope;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.CodeFactory;
@@ -43,17 +44,19 @@ import java.util.Objects;
  *
  * @author harald
  */
-public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
+public class AttributeImpl implements Attribute, Comparable<AttributeImpl>, Cloneable {
 
   private final EntityFactoryImpl factory;
   private final Entity entity;
   private final SourceInfo sourceInfo;
-  private final AttributeOptionsImpl options;
   private final boolean implicit;
 
+  private Entity embeddingEntity;
+  private AttributeOptionsImpl options;
   private AttributeLine sourceLine;
   private int ordinal;
   private String javaName;
+  private String pathName;
   private String columnName;
   private DataType<?> dataType;
   private String applicationTypeName;
@@ -72,13 +75,50 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
    * @param entity the entity this attribute belongs to
    * @param sourceInfo the source info
    * @param implicit true if implicit attribute
+   * @param options the attribute's options, null to create from source info
    */
-  public AttributeImpl(EntityFactoryImpl factory, Entity entity, SourceInfo sourceInfo, boolean implicit) {
+  public AttributeImpl(EntityFactoryImpl factory, Entity entity, SourceInfo sourceInfo, boolean implicit, AttributeOptionsImpl options) {
     this.factory = factory;
     this.entity = entity;
     this.sourceInfo = sourceInfo;
     this.implicit = implicit;
-    options = factory.createAttributeOptions(this, sourceInfo);
+    this.options = options == null ? factory.createAttributeOptions(this, sourceInfo) : options;
+  }
+
+  /**
+   * Creates an attribute.
+   *
+   * @param factory the factory to create the attribute options
+   * @param entity the entity this attribute belongs to
+   * @param sourceInfo the source info
+   * @param implicit true if implicit attribute
+   */
+  public AttributeImpl(EntityFactoryImpl factory, Entity entity, SourceInfo sourceInfo, boolean implicit) {
+    this(factory, entity, sourceInfo, implicit, null);
+  }
+
+  @Override
+  public Attribute createEmbedded(Entity embeddingEntity, String pathName, String columnName) {
+    AttributeImpl attribute = clone();
+    attribute.embeddingEntity = embeddingEntity;
+    attribute.options = options.clone(attribute);
+    attribute.pathName = pathName;
+    attribute.columnName = columnName;
+    return attribute;
+  }
+
+
+  // still protected, since withNames should be used instead
+  @Override
+  protected AttributeImpl clone() {
+    try {
+      AttributeImpl attribute = (AttributeImpl) super.clone();
+
+      return attribute;
+    }
+    catch (CloneNotSupportedException cnx) {
+      throw new TentackleRuntimeException(cnx);   // should not happen, but...
+    }
   }
 
   @Override
@@ -88,15 +128,15 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
 
   @Override
   public ModelElement getParent() {
-    return getEntity();
+    return entity;
   }
 
 
   @Override
   public int hashCode() {
     int hash = 3;
-    hash = 73 * hash + Objects.hashCode(this.entity);
-    hash = 73 * hash + Objects.hashCode(this.javaName);
+    hash = 73 * hash + Objects.hashCode(entity);
+    hash = 73 * hash + Objects.hashCode(getPathName());
     return hash;
   }
 
@@ -112,7 +152,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
     if (!Objects.equals(this.entity, other.entity)) {
       return false;
     }
-    return Objects.equals(this.javaName, other.javaName);
+    return Objects.equals(this.getPathName(), other.getPathName());
   }
 
   @Override
@@ -122,7 +162,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
     }
     int rv = Compare.compare((EntityImpl) entity, (EntityImpl) o.entity);
     if (rv == 0) {
-      rv = Compare.compare(javaName, o.javaName);
+      rv = Compare.compare(getPathName(), o.getPathName());
     }
     return rv;
   }
@@ -242,6 +282,21 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
   @Override
   public boolean isConvertible() {
      return getDataType() == DataTypeFactory.getInstance().getConvertibleType();
+  }
+
+  @Override
+  public boolean isEmbedded() {
+    return entity.isEmbedded();
+  }
+
+  @Override
+  public Entity getEmbeddingEntity() {
+    return embeddingEntity;
+  }
+
+  @Override
+  public String getPathName() {
+    return pathName != null ? pathName : javaName;
   }
 
 
@@ -422,7 +477,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
 
   @Override
   public String toString() {
-    return getName();
+    return getPathName();
   }
 
 
@@ -482,6 +537,18 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
 
     if (getOptions().isMute() && dataType.isPrimitive() && getOptions().getDefaultValue() == null) {
       throw createModelException("MUTE only applicable to nullable columns or columns with a default value");
+    }
+
+    if (isEmbedded()) {
+      if (getOptions().isContextId()) {
+        throw createModelException("CONTEXT option not allowed for embedded attributes");
+      }
+      if (getOptions().isDomainKey()) {
+        throw createModelException("KEY option not allowed for embedded attributes");
+      }
+      if (getOptions().isPartOfNormText()) {
+        throw createModelException("NORMTEXT option not allowed for embedded attributes");
+      }
     }
   }
 

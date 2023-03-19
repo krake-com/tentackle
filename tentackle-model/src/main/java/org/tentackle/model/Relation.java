@@ -143,6 +143,61 @@ public interface Relation extends ModelElement {
   boolean isComposite();
 
   /**
+   * Creates an embedded copy of this relation.
+   *
+   * @param embeddingEntity   the embedding entity
+   * @param pathName          the logical pathname
+   * @param columnPrefixPath  the column prefix path
+   * @return the created relation
+   */
+  Relation createEmbedded(Entity embeddingEntity, String pathName, String columnPrefixPath);
+
+  /**
+   * Gets the embedding entity.
+   *
+   * @return the embedding entity, null if not an embedded attribute
+   */
+  Entity getEmbeddingEntity();
+
+  /**
+   * Gets the pathname.<br>
+   * The pathname is identical to the java name for non-embedded relations.<br>
+   * For embedded entities, the pathname consists of the dotted path from the parent entity to the embedded attribute.
+   *
+   * @return the pathname
+   */
+  String getPathName();
+
+  /**
+   * Gets the column prefix path for embedded relations.
+   *
+   * @return the column path, null if not embedded
+   */
+  String getColumnPrefixPath();
+
+  /**
+   * Returns whether the relation points to an embedded entity.
+   *
+   * @return true if embedded 1:1 relation
+   */
+  boolean isEmbedding();
+
+  /**
+   * Returns whether the relation belongs to an embedded entity.
+   *
+   * @return true if embedded
+   */
+  boolean isEmbedded();
+
+  /**
+   * Gets the prefix for the column names.<br>
+   * Only applicable to embedded entities!
+   *
+   * @return the column name prefix
+   */
+  String getColumnPrefix();
+
+  /**
    * Returns whether the modification state of the relation is available.
    *
    * @return true if tracked object or tracked list

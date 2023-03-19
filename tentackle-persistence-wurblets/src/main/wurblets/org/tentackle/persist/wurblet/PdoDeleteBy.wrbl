@@ -20,6 +20,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
   private void wurbel() throws WurbelException, ModelException {
 
+    assertEntityNotEmbedded();
     assertEntityIsPersistable();
 
     String className  = getClassName();

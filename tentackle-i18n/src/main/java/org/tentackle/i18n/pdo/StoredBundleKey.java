@@ -19,10 +19,10 @@
 
 package org.tentackle.i18n.pdo;
 
-import org.tentackle.session.ClassId;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.Plural;
 import org.tentackle.pdo.Singular;
+import org.tentackle.session.ClassId;
 import org.tentackle.session.TableName;
 
 
@@ -81,12 +81,10 @@ public interface StoredBundleKey
    *
    * StoredBundleKey is referenced by:
    *
-   * StoredBundle via bkey.bundleId as keys [1:N]
+   * StoredBundle composite via bkey.bundleId as keys [1:N]
    *
    *
-   * StoredBundleKey is referencing the following entities:
-   *
-   * StoredBundle via bundleId [1:1]
+   * StoredBundleKey is not referencing other entities
    *
    *
    * StoredBundleKey is a component of: StoredBundle

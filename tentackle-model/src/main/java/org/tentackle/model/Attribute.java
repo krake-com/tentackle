@@ -127,6 +127,39 @@ public interface Attribute extends ModelElement {
   boolean isConvertible();
 
   /**
+   * Creates an embedded copy of this attribute.
+   *
+   * @param embeddingEntity the embedding entity
+   * @param pathName        the logical pathname
+   * @param columnName      the new column name
+   * @return the created attribute
+   */
+  Attribute createEmbedded(Entity embeddingEntity, String pathName, String columnName);
+
+  /**
+   * Gets the embedding entity.
+   *
+   * @return the embedding entity, null if not an embedded attribute
+   */
+  Entity getEmbeddingEntity();
+
+  /**
+   * Gets the pathname.<br>
+   * The pathname is identical to the java name for non-embedded entities.<br>
+   * For embedded entities, the pathname consists of the dotted path from the parent entity to the embedded attribute.
+   *
+   * @return the pathname
+   */
+  String getPathName();
+
+  /**
+   * Returns whether the attribute belongs to an embedded entity.
+   *
+   * @return true if embedded
+   */
+  boolean isEmbedded();
+
+  /**
    * Gets the name of the application specific type, if a Convertible type.
    *
    * @return the application specific type, never null or empty

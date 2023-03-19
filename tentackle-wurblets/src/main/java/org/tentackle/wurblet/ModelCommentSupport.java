@@ -22,6 +22,7 @@ import org.tentackle.common.StringHelper;
 import org.tentackle.model.Entity;
 import org.tentackle.model.MethodArgument;
 import org.tentackle.model.ModelElement;
+import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
 
@@ -47,33 +48,38 @@ public class ModelCommentSupport {
    * @param out the output stream
    */
   public static void printVia(Relation relation, PrintStream out) {
-    out.print(" via ");
-    if (relation.getAttribute() != null) {
-      out.print(relation.getAttribute());
-    }
-    else if (relation.getForeignEntity() != null && relation.getForeignAttribute() != null) {
-      String entityName = relation.getForeignEntity().getName();
-      if (relation.getForeignEntity().getTableAlias() != null) {
-        entityName = relation.getForeignEntity().getTableAlias();   // is shorter and better to read
-      }
-      out.print(entityName);
-      out.print('.');
-      out.print(relation.getForeignAttribute());
-    }
-    else if (!relation.getMethodArgs().isEmpty()) {
-      out.print(relation.getMethodArgs().get(0));
+    if (relation.isEmbedding()) {
+      out.print(" embedded");
     }
     else {
-      out.print("?");
-    }
-    if (relation.getMethodArgs().size() > 1) {
-      boolean firstSkipped = false;
-      for (MethodArgument arg: relation.getMethodArgs()) {
-        if (firstSkipped) {
-          out.print(" & ");
-          out.print(arg);
+      out.print(" via ");
+      if (relation.getAttribute() != null) {
+        out.print(relation.getAttribute());
+      }
+      else if (relation.getForeignEntity() != null && relation.getForeignAttribute() != null) {
+        String entityName = relation.getForeignEntity().getName();
+        if (relation.getForeignEntity().getTableAlias() != null) {
+          entityName = relation.getForeignEntity().getTableAlias();   // is shorter and better to read
         }
-        firstSkipped = true;
+        out.print(entityName);
+        out.print('.');
+        out.print(relation.getForeignAttribute());
+      }
+      else if (!relation.getMethodArgs().isEmpty()) {
+        out.print(relation.getMethodArgs().get(0));
+      }
+      else {
+        out.print("?");
+      }
+      if (relation.getMethodArgs().size() > 1) {
+        boolean firstSkipped = false;
+        for (MethodArgument arg : relation.getMethodArgs()) {
+          if (firstSkipped) {
+            out.print(" & ");
+            out.print(arg);
+          }
+          firstSkipped = true;
+        }
       }
     }
   }
@@ -110,6 +116,9 @@ public class ModelCommentSupport {
         out.println(" [N:M]");
       }
       else  {
+        if (relation.isComposite() && !relation.isEmbedding()) {
+          out.print(" composite");
+        }
         printVia(relation, out);
         if (!relation.getName().equalsIgnoreCase(referencingEntity.toString())) {
           out.print(" as " + relation.getVariableName());
@@ -139,7 +148,7 @@ public class ModelCommentSupport {
    */
   public static void printComponents(Set<Relation> allRelations,
                                      Collection<Relation> compositeRelations, Collection<Entity> subEntities,
-                                     String indent, PrintStream out) {
+                                     String indent, PrintStream out) throws ModelException {
 
     for (Relation relation: compositeRelations) {
 
@@ -172,6 +181,7 @@ public class ModelCommentSupport {
       if (!relation.getName().equalsIgnoreCase(component.toString())) {
         out.print(" as " + StringHelper.firstToLower(relation.getName()));
       }
+
       if (relation.getNmRelation() != null) {
         out.print(" [N:M] to ");
         Entity nmEntity = relation.getNmRelation().getForeignEntity();

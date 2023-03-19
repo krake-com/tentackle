@@ -111,8 +111,15 @@
                 for (Relation rel: existsRels) {
                   String leftAttribute;
                   String rightAttribute;
+                  boolean isEmbeddingRelation = false;
                   if (rel.getRelationType() == RelationType.OBJECT) {
-                    leftAttribute = getColumnNameConstant(rel.getAttribute(), 0);
+                    if (rel.isEmbedded()) {
+                      isEmbeddingRelation = true;
+                      leftAttribute = '"' + rel.getMethodArgs().get(0).getAttribute().getColumnName() + '"';
+                    }
+                    else {
+                      leftAttribute = getColumnNameConstant(rel.getAttribute(), 0);
+                    }
                     rightAttribute = "CN_ID";
                   }
                   else {
@@ -121,7 +128,7 @@
                   }
                   String leftClass = rel.getEntity().equals(getEntity()) ? "" :
                                                 (deriveClassNameForEntity(rel.getEntity()) + ".");
-                  String leftClassVariables = leftClass.isEmpty() ? "" : (leftClass + "CLASSVARIABLES.");
+                  String leftClassVariables = leftClass.isEmpty() || isEmbeddingRelation ? "" : (leftClass + "CLASSVARIABLES.");
                   rightClass = rel.getForeignEntity().equals(getEntity()) ? "" :
                                                 (deriveClassNameForEntity(rel.getForeignEntity()) + ".");
                   buf.append("           .append(").append(leftClassVariables).append("getColumnName(")
@@ -184,7 +191,14 @@
                     }
                     else  {
                       if (isPdo()) {
-                        buf.append("        sql.append(getColumnName(").append(getColumnNameConstant(attr, columnIndex)).append("));\n");
+                        buf.append("        sql.append(getColumnName(");
+                        if (attr.isEmbedded()) {
+                          buf.append('"').append(attr.getColumnName()).append('"');
+                        }
+                        else {
+                          buf.append(getColumnNameConstant(attr, columnIndex));
+                        }
+                        buf.append("));\n");
                       }
                       else  {
                         buf.append("        sql.append(").append(getColumnNameConstant(attr, columnIndex)).append(");\n");
@@ -192,7 +206,11 @@
                     }
                   }
                   else  {
-                    buf.append("        sql.append(").append(getColumnNameConstant(attr, columnIndex)).append(");\n");
+                    buf.append("        sql.append(");
+                    if (attr.isEmbedded()) {
+                      buf.append("getColumnPrefix() + ");
+                    }
+                    buf.append(getColumnNameConstant(attr, columnIndex)).append(");\n");
                   }
                   buf.append("        sql").append(createRelopCode(arg)).append(";\n");
                 }

@@ -64,6 +64,8 @@ For more options, see {\@link DbModelWurblet}.
     boolean generateCreateNormText                  = false;
     boolean generateMock                            = false;
 
+    boolean isEffectivelyComposite = getEntity().isEffectivelyComposite();
+
     for (Relation rel: getEntity().getReferencingRelations()) {
       if (!rel.isComposite() && rel.getRelationType() == RelationType.OBJECT &&
             rel.getForeignEntity() != null && rel.getForeignEntity().getIntegrity().isCheckedByApplication()) {
@@ -126,7 +128,7 @@ For more options, see {\@link DbModelWurblet}.
         generateDeclarations        = true;
         generateIsModified          = true;
         generateSetSession          = true;
-        generateMarkDeleted         = true;
+        generateMarkDeleted         = isEffectivelyComposite;
         generateSnapshot            = true;
         generateSetImmutable        = true;
 
@@ -134,18 +136,20 @@ For more options, see {\@link DbModelWurblet}.
           generateValidate = true;
         }
 
-        if (rel.getRelationType() == RelationType.OBJECT) {
-          generateSaveReferencedRelations = true;
-          generateDeleteReferencedRelations = true;
-          generateLazyDeleteReferencedRelations = true;
-        }
-        else  { // LIST
-          generateSaveReferencingRelations = true;
-          generateDeleteReferencingRelations = true;
-          if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER) {
-            generateLazyDeleteReferencingRelations = true;
-            if (rel.getCountAttribute() != null) {
-              generateAlignComponents = true;
+        if (!rel.isEmbedding()) {
+          if (rel.getRelationType() == RelationType.OBJECT) {
+            generateSaveReferencedRelations = true;
+            generateDeleteReferencedRelations = true;
+            generateLazyDeleteReferencedRelations = true;
+          }
+          else  { // LIST
+            generateSaveReferencingRelations = true;
+            generateDeleteReferencingRelations = true;
+            if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER) {
+              generateLazyDeleteReferencingRelations = true;
+              if (rel.getCountAttribute() != null) {
+                generateAlignComponents = true;
+              }
             }
           }
         }
@@ -159,13 +163,13 @@ For more options, see {\@link DbModelWurblet}.
                                 Boolean.FALSE.equals(getEntity().isDeletionCascaded());
 
     if (generateLoadComponents == null) {
-      generateLoadComponents = generateIsComposite;
+      generateLoadComponents = generateIsComposite && isEffectivelyComposite;
     }
     if (generateInsertComponents == null) {
-      generateInsertComponents = generateIsComposite;
+      generateInsertComponents = generateIsComposite && isEffectivelyComposite;
     }
     if (generateDeleteComponents == null) {
-      generateDeleteComponents = generateIsComposite && (!useDatabaseRefInt || getEntity().isRootEntity());
+      generateDeleteComponents = generateIsComposite && isEffectivelyComposite && (!useDatabaseRefInt || getEntity().isRootEntity());
     }
 
     if (generateDeclarations || generateMock) {
@@ -180,7 +184,8 @@ For more options, see {\@link DbModelWurblet}.
   private @(transientModifier)@@(type)@ @(rel.getVariableName())@;
 @[
           if (!generateMock) {
-            if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER)  {
+            if ((rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER) &&
+                (rel.getForeignRelation() == null || !rel.getForeignRelation().isEmbedding()))  {
 ]@
   private @(transientModifier)@boolean @(rel.getVariableName())@Loaded;
 @[
@@ -191,7 +196,7 @@ For more options, see {\@link DbModelWurblet}.
   private transient @(type)@ @(rel.getVariableName())@Snapshot;
 @[
               }
-              if (rel.getRelationType() == RelationType.OBJECT) {
+              if (rel.getRelationType() == RelationType.OBJECT && !rel.isEmbedding()) {
 ]@
   private long @(rel.getVariableName())@RemovedId;
 @[
@@ -358,7 +363,7 @@ For more options, see {\@link DbModelWurblet}.
     return @(var)@;
 @[
             }
-            else  {
+            else  {   // RelationType.OBJECT
               if (rel.isComposite()) {
 ]@
     @(var)@ = @(checkNull)@ ? null : @(createRelationSelectCode(rel))@;
@@ -396,6 +401,19 @@ For more options, see {\@link DbModelWurblet}.
                 }
               }
             }
+          }
+          else if (rel.isEmbedding() ||
+                   rel.getForeignRelation() != null && rel.getForeignRelation().isEmbedding()) {
+            if (rel.isEmbedding()) {
+]@
+    if (@(var)@ == null) {
+      @(rel.getSetterName())@(on(@(rel.getForeignEntity())@.class));
+    }
+@[
+            }
+]@
+    return @(var)@;
+@[
           }
           else if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER) {
 ]@
@@ -563,7 +581,8 @@ For more options, see {\@link DbModelWurblet}.
   }
 @[
             }
-            else if (rel.getRelationType() == RelationType.OBJECT && rel.isSerialized()) {
+            else if (rel.getRelationType() == RelationType.OBJECT && rel.isSerialized() &&
+                     (rel.getForeignRelation() == null || !rel.getForeignRelation().isEmbedding())) {
               if (rel.isBluntDeclared()) {
 ]@
 
@@ -745,48 +764,72 @@ For more options, see {\@link DbModelWurblet}.
 ]@
     this.@(var)@ = @(var)@;
 @[
+            if (rel.isReferenced()) {
+]@
+    if (@(var)@ != null) {
+      @(var)@.@(createRelationUpdateReferenceCode(rel))@;
+@[
+              if (rel.isEmbedding()) {
+]@
+      ((AbstractPersistentObject<?,?>) @(var)@.getPersistenceDelegate()).setEmbeddingParent(me(), CP_@(rel.getName().toUpperCase())@);
+@[
+              }
+]@
+    }
+@[
+            }
+            else if (rel.isEmbedding()) {
+]@
+    if (@(var)@ != null) {
+      ((AbstractPersistentObject<?,?>) @(var)@.getPersistenceDelegate()).setEmbeddingParent(me(), CP_@(rel.getName().toUpperCase())@);
+    }
+@[
+            }
+
             if (linkMethodIndex != null) {
 ]@
     set@(StringHelper.firstToUpper(linkMethodIndex))@(index);
 @[
             }
           }
-          if (rel.getRelationType() == RelationType.OBJECT) {
-            if (rel.isComposite())  {
-              if (attr != null && !attr.getDataType().isPrimitive()) {
+          if (!getEntity().isEmbedded()) {
+            if (rel.getRelationType() == RelationType.OBJECT && !rel.isEmbedding()) {
+              if (rel.isComposite())  {
+                if (attr != null && !attr.getDataType().isPrimitive()) {
 ]@
     @(attr.getJavaType())@ oldId = @(rel.getMethodArgs().get(0).getMethodArgument())@;
 @[
-              }
-              else {
+                }
+                else {
 ]@
     long oldId = @(rel.getMethodArgs().get(0).getMethodArgument())@;
 @[
+                }
               }
-            }
 ]@
     @(createRelationSetFirstArgMethodName(rel))@(@(var)@ == null ? @(nullVal)@ : @(var)@.getId());
 @[
-          }
-          if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER) {
+            }
+            if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER) {
 ]@
     @(var)@Loaded = true;
 @[
-          }
-          if (rel.getRelationType() == RelationType.OBJECT && rel.isComposite())  {
-            if (attr != null && !attr.getDataType().isPrimitive()) {
+            }
+            if (rel.getRelationType() == RelationType.OBJECT && rel.isComposite())  {
+              if (attr != null && !attr.getDataType().isPrimitive()) {
 ]@
     if (oldId != null && oldId != 0 && @(rel.getVariableName())@RemovedId == 0 && !Objects.equals(@(rel.getMethodArgs().get(0).getMethodArgument())@, oldId)) {
       @(rel.getVariableName())@RemovedId = oldId;
     }
 @[
-            }
-            else {
+              }
+              else if (!rel.isEmbedding()) {
 ]@
     if (oldId != 0 && @(rel.getVariableName())@RemovedId == 0 && @(rel.getMethodArgs().get(0).getMethodArgument())@ != oldId) {
       @(rel.getVariableName())@RemovedId = oldId;
     }
 @[
+              }
             }
           }
 ]@
@@ -794,7 +837,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
         }
 
-        if (rel.getRelationType() == RelationType.OBJECT && rel.isSerialized() &&
+        if (rel.getRelationType() == RelationType.OBJECT && rel.isSerialized() && !getEntity().isEmbedded() &&
             (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER)) {
 ]@
 
@@ -1002,7 +1045,7 @@ For more options, see {\@link DbModelWurblet}.
   public void deleteRemovedReferencedRelations() {
 @[
         for (Relation rel: getEntity().getRelations()) {
-          if (rel.isComposite() && rel.getRelationType() == RelationType.OBJECT) {
+          if (rel.isComposite() && !rel.isEmbedding() && rel.getRelationType() == RelationType.OBJECT) {
             if (!rel.isTracked()) {
               throw new WurbelException("inconsistent model: untracked not allowed with db-integrity");
             }
@@ -1085,7 +1128,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
           for (Relation rel: getEntity().getRelations()) {
             String var = rel.getVariableName();
-            if (rel.isComposite() && rel.getRelationType() == RelationType.OBJECT) {
+            if (rel.isComposite() && !rel.isEmbedding() && rel.getRelationType() == RelationType.OBJECT) {
               if (rel.getSelectionType() == SelectionType.ALWAYS) {
                 throw new WurbelException("internal wurblet logic error");
               }
@@ -1203,7 +1246,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
       for (Relation rel: getEntity().getRelations()) {
         String var = rel.getVariableName();
-        if (rel.isComposite() && rel.getRelationType() == RelationType.OBJECT) {
+        if (rel.isComposite() && !rel.isEmbedding() && rel.getRelationType() == RelationType.OBJECT) {
 ]@
     getDomainContext().applyTo(@(var)@);
 @[
@@ -1573,7 +1616,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
       for (Relation rel: getEntity().getRelations()) {
         String var = rel.getVariableName();
-        if (rel.isComposite()) {
+        if (rel.isComposite() && !rel.isEmbedding()) {
 ]@
     markDeleted(@(var)@);
 @[
@@ -1657,7 +1700,7 @@ For more options, see {\@link DbModelWurblet}.
     @(var)@Loaded = snapshot.@(var)@Loaded;
 @[
           }
-          if (rel.getRelationType() == RelationType.OBJECT) {
+          if (rel.getRelationType() == RelationType.OBJECT && !rel.isEmbedding()) {
 ]@
     @(var)@RemovedId = snapshot.@(var)@RemovedId;
 @[
@@ -1707,18 +1750,28 @@ For more options, see {\@link DbModelWurblet}.
 @[
     }
 
-    if (generateIsReferencing && isEntityPersistable() && !generateMock) {
-      for (Relation rel: getEntity().getTableRelations()) {
-        if (!rel.isComposite() && rel.getRelationType() == RelationType.OBJECT &&
-            (rel.getForeignRelation() == null || !rel.getForeignRelation().isComposite()) &&
-            rel.getForeignEntity() != null && rel.getForeignEntity().getIntegrity().isCheckedByApplication()) {
-          String tagName = "isReferencing" + rel.getClassName() + "By" +
-                           StringHelper.firstToUpper(rel.getMethodArgs().get(0).getAttribute().getName());
+    if (generateIsReferencing && !generateMock) {
+      List<Relation> relations = null;
+      if (isEntityPersistable()) {
+        relations = getEntity().getTableRelations();
+      }
+      else if (getEntity().isEmbedded()) {
+        relations = getEntity().getRelations();
+      }
+      if (relations != null) {
+        for (Relation rel: getEntity().getTableRelations()) {
+          if (!rel.isComposite() && rel.getRelationType() == RelationType.OBJECT && rel.getEmbeddingEntity() == null &&
+              (rel.getForeignRelation() == null || !rel.getForeignRelation().isComposite()) &&
+              rel.getForeignEntity() != null && rel.getForeignEntity().getIntegrity().isCheckedByApplication()) {
+            Attribute attr = getFirstMethodAttribute(rel);
+            String tagName = "isReferencing" + rel.getClassName() + "By" +
+                             StringHelper.firstToUpper(attr.getName());
 ]@
 
   // Determines whether any @(pdoName)@ references given @(rel.getClassName())@
-  // \@wurblet @(tagName)@ PdoIsReferencing @(rel.getMethodArgs().get(0).getAttribute().getName())@
+  // \@wurblet @(tagName)@ PdoIsReferencing @(attr.getName())@
 @[
+          }
         }
       }
     }
@@ -1803,9 +1856,25 @@ For more options, see {\@link DbModelWurblet}.
         if (!rel.isComposite() && rel.getRelationType() == RelationType.OBJECT &&
             (rel.getForeignRelation() == null || !rel.getForeignRelation().isComposite()) &&
             rel.getForeignEntity() != null && rel.getForeignEntity().getIntegrity().isCheckedByApplication()) {
-          refRels.add(rel);
+          if (rel.isEmbedded()) {
+            for (List<Relation> embeddingPath : rel.getEntity().getEmbeddingPaths()) {
+              String pathStr = "";
+              Entity embeddingEntity = null;
+              for (Relation embeddingRel : embeddingPath) {
+                pathStr += embeddingRel.getGetterName() + ".";
+                if (embeddingEntity == null) {
+                  embeddingEntity = embeddingRel.getEntity();   // first entity in chain
+                }
+              }
+              refRels.add(rel.createEmbedded(embeddingEntity, pathStr, ""));
+            }
+          }
+          else {
+            refRels.add(rel);
+          }
         }
       }
+
       if (!refRels.isEmpty()) {
 ]@
 
@@ -1824,11 +1893,19 @@ For more options, see {\@link DbModelWurblet}.
       // register referencing classes and the methods
       for (Relation rel: refRels) {
         String methodName = "isReferencing" + rel.getClassName() + "By" +
-                            StringHelper.firstToUpper(rel.getMethodArgs().get(0).getAttribute().getName());
-        for (Entity leaf: rel.getEntity().getLeafEntities()) {
+                            StringHelper.firstToUpper(getFirstMethodAttribute(rel).getName());
+        if (rel.getEmbeddingEntity() != null) {
+          methodName = rel.getPathName() + methodName;
+]@
+    po.addReferencingClass(@(rel.getEmbeddingEntity().getName())@.class, "@(methodName)@");
+@[
+        }
+        else {
+          for (Entity leaf: rel.getEntity().getLeafEntities()) {
 ]@
     po.addReferencingClass(@(leaf.getName())@.class, "@(methodName)@");
 @[
+          }
         }
       }
 ]@

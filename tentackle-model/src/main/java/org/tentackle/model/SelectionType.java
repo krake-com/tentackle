@@ -32,6 +32,9 @@ public enum SelectionType {
   EAGER,
 
   /** select only once on first access. */
-  LAZY
+  LAZY,
+
+  /** columns embedded in parent object. */
+  EMBEDDED;
 
 }

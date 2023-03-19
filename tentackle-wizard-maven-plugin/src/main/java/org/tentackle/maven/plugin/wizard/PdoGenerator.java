@@ -174,6 +174,19 @@ public class PdoGenerator extends AbstractValidateableGenerator {
   }
 
   /**
+   * Returns whether extending a super entity is allowed.
+   *
+   * @return true if allowed, else no inheritance
+   */
+  public boolean isSuperEntityAllowed() {
+    boolean allowed = InheritanceType.EMBEDDED != inheritanceType;
+    if (!allowed) {
+      superEntity = null;
+    }
+    return allowed;
+  }
+
+  /**
    * Checks whether the tablename is not already used in model.
    *
    * @return true if ok
@@ -344,6 +357,7 @@ public class PdoGenerator extends AbstractValidateableGenerator {
   }
 
   @Bindable
+  @Changeable(condition = "$isSuperEntityAllowed")
   public Entity getSuperEntity() {
     return superEntity;
   }

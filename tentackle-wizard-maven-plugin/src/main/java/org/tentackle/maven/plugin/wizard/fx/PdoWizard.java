@@ -19,8 +19,6 @@
 package org.tentackle.maven.plugin.wizard.fx;
 
 import freemarker.template.TemplateException;
-import javafx.application.Platform;
-import javafx.fxml.FXML;
 
 import org.tentackle.bind.Bindable;
 import org.tentackle.fx.AbstractFxController;
@@ -42,6 +40,8 @@ import org.tentackle.model.ModelException;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationUtilities;
 
+import javafx.application.Platform;
+import javafx.fxml.FXML;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -155,7 +155,7 @@ public class PdoWizard extends AbstractFxController {
       genPersistenceInterface.updateView();
       genPersistenceImplementation.updateView();
     });
-    genInheritanceType.addViewToModelListener(this::updateViewOfClassIdAndTableName);
+    genInheritanceType.addViewToModelListener(this::updateViewOfClassIdAndTableNameAndSuperEntity);
     genSuperEntity.addViewToModelListener(this::updateViewOfClassIdAndTableName);
 
     genTableName.focusedProperty().addListener((observable, oldValue, newValue) -> {
@@ -208,5 +208,10 @@ public class PdoWizard extends AbstractFxController {
   private void updateViewOfClassIdAndTableName() {
     genClassId.updateView();
     genTableName.updateView();
+  }
+
+  private void updateViewOfClassIdAndTableNameAndSuperEntity() {
+    updateViewOfClassIdAndTableName();
+    genSuperEntity.updateView();
   }
 }

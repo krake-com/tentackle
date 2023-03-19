@@ -114,7 +114,24 @@ public interface Entity extends ModelElement {
    *
    * @return the attributes
    */
-  List<Attribute> getInheritedAttributes();
+  List<Attribute> getInheritedAttributes() throws ModelException;
+
+  /**
+   * Gets the attributes of embedded entities.
+   *
+   * @return the embedded attributes
+   */
+  List<Attribute> getEmbeddedAttributes() throws ModelException;
+
+  /**
+   * Gets the relations of all embedded entities.<br>
+   * Due to the restriction of embedded entities, these relations are all non-composite object relations.
+   *
+   * @param embeddingEntity the effectively embedding entity
+   * @return the list of embedded relations
+   * @throws ModelException
+   */
+  List<Relation> getEmbeddedRelations(Entity embeddingEntity) throws ModelException;
 
   /**
    * Gets the attributes from the sub entities.
@@ -128,7 +145,7 @@ public interface Entity extends ModelElement {
    *
    * @return the attributes
    */
-  List<Attribute> getAttributesIncludingInherited();
+  List<Attribute> getAttributesIncludingInherited() throws ModelException;
 
   /**
    * Gets the attributes including the ones from the sub entities.
@@ -142,21 +159,21 @@ public interface Entity extends ModelElement {
    *
    * @return the attributes
    */
-  List<Attribute> getAllAttributes();
+  List<Attribute> getAllAttributes() throws ModelException;
 
   /**
    * Gets the attributes of the table mapped by this entity.
    *
    * @return the attributes, empty if entity does not map to a table or does not provide attributes
    */
-  List<Attribute> getTableAttributes();
+  List<Attribute> getTableAttributes() throws ModelException;
 
   /**
    * Gets the attributes mapped by the persistence layer for this entity.
    *
    * @return the attributes
    */
-  List<Attribute> getMappedAttributes();
+  List<Attribute> getMappedAttributes() throws ModelException;
 
   /**
    * Gets an attribute by its java name.
@@ -190,7 +207,7 @@ public interface Entity extends ModelElement {
    *
    * @return the udk attributes, empty if no udk
    */
-  List<Attribute> getUniqueDomainKey();
+  List<Attribute> getUniqueDomainKey() throws ModelException;
 
   /**
    * Gets the default sorting for this entity.
@@ -211,7 +228,7 @@ public interface Entity extends ModelElement {
    *
    * @return the relations
    */
-  List<Relation> getInheritedRelations();
+  List<Relation> getInheritedRelations() throws ModelException;
 
   /**
    * Gets the relations from the sub entities.
@@ -225,7 +242,7 @@ public interface Entity extends ModelElement {
    *
    * @return the relations
    */
-  List<Relation> getRelationsIncludingInherited();
+  List<Relation> getRelationsIncludingInherited() throws ModelException;
 
   /**
    * Gets all relations including the ones from the sub entities.
@@ -239,14 +256,15 @@ public interface Entity extends ModelElement {
    *
    * @return the relations
    */
-  List<Relation> getAllRelations();
+  List<Relation> getAllRelations() throws ModelException;
 
   /**
-   * Gets the relations of the table mapped by this entity.
+   * Gets the relations of the table mapped by this entity.<br>
+   * Will also contain the relations from embedded entities.
    *
    * @return the relations, empty if entity does not map to a table or provides no relations
    */
-  List<Relation> getTableRelations();
+  List<Relation> getTableRelations() throws ModelException;
 
   /**
    * Gets a relation by its name.
@@ -382,11 +400,30 @@ public interface Entity extends ModelElement {
   boolean isComposite();
 
   /**
+   * Returns whether entity has composite non-embedded relations.
+   *
+   * @return true if not only embedded composite relations
+   */
+  boolean isEffectivelyComposite();
+
+  /**
    * Returns whether class may be instantiated.
    *
    * @return true if class is abstract
    */
   boolean isAbstract();
+
+  /**
+   * Returns whether this is an embedded entity.<br>
+   * Such entities are embedded via embedding relations.
+   * Embedded entities are mapped to their embedding entity, which is always a regular non-embedded entity.
+   * Embedded entities can embed other embedded entities, but cannot have regular components.
+   * However, embedded entities can have non-composite object relations (1:1).
+   *
+   * @return true if embedded
+   * @see SelectionType#EMBEDDED
+   */
+  boolean isEmbedded();
 
   /**
    * Returns whether entity is tracked.
@@ -555,6 +592,20 @@ public interface Entity extends ModelElement {
   Set<List<Relation>> getAllCompositePaths();
 
   /**
+   * Gets the paths of embedding relations to this entity.
+   *
+   * @return the paths, empty list if this is not an embedded entity
+   */
+  Set<List<Relation>> getEmbeddingPaths();
+
+  /**
+   * Gets the embedding entities for this embedded entity.
+   *
+   * @return the embedding entities, empty if this is not an embedded entity
+   */
+  Set<Entity> getEmbeddingEntities();
+
+  /**
    * Gets the direct components of this entity.
    *
    * @return the components
@@ -566,14 +617,14 @@ public interface Entity extends ModelElement {
    *
    * @return the components
    */
-  Set<Entity> getComponentsIncludingInherited();
+  Set<Entity> getComponentsIncludingInherited() throws ModelException;
 
   /**
    * Gets all direct and indirect components of this entity.
    *
    * @return the components
    */
-  Set<Entity> getAllComponents();
+  Set<Entity> getAllComponents() throws ModelException;
 
   /**
    * Returns whether this entity should provide a root class id according to model.

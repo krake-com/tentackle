@@ -65,7 +65,7 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
 
 
 
-  private final AttributeImpl attribute;    // associated attribute (only for diagnostics)
+  private AttributeImpl attribute;    // associated attribute
 
   private List<String> annotations;
   private Object defaultValue;
@@ -94,12 +94,50 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
     annotations = new ArrayList<>();
   }
 
+  @Override
+  public AttributeOptionsImpl clone() {
+    AttributeOptionsImpl options = (AttributeOptionsImpl) super.clone();
+    if (annotations != null) {
+      options.annotations = new ArrayList<>(annotations);
+    }
+    return options;
+  }
+
+  /**
+   * Clones options for another attribute instance.
+   *
+   * @param attribute the attribute
+   * @return the options
+   */
+  public AttributeOptionsImpl clone(AttributeImpl attribute) {
+    AttributeOptionsImpl options = clone();
+    options.attribute = attribute;
+    return options;
+  }
 
   @Override
   public AttributeImpl getAttribute() {
     return attribute;
   }
 
+  @Override
+  public String getComment() {
+    String comment = super.getComment();
+    if (attribute.isEmbedded()) {
+      StringBuilder cmt = new StringBuilder();
+      if (comment != null) {
+        cmt.append(comment).append(' ');
+      }
+      String pathName = attribute.getPathName();
+      int lastDotNdx = pathName.lastIndexOf('.');
+      if (lastDotNdx >= 0) {
+        pathName = pathName.substring(0, lastDotNdx);
+      }
+      cmt.append('<').append(pathName).append('>');
+      comment = cmt.toString();
+    }
+    return comment;
+  }
 
   /**
    * Sets the default from entity options.

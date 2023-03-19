@@ -33,6 +33,7 @@ import org.tentackle.dbms.Query;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.dbms.SqlSupplier;
 import org.tentackle.dbms.StatementId;
+import org.tentackle.dbms.StatementKey;
 import org.tentackle.misc.IdentifiableMap;
 import org.tentackle.misc.ImmutableException;
 import org.tentackle.misc.PropertySupport;
@@ -84,7 +85,29 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-import static org.tentackle.sql.Backend.*;
+import static org.tentackle.sql.Backend.SQL_ALLSTAR;
+import static org.tentackle.sql.Backend.SQL_AND;
+import static org.tentackle.sql.Backend.SQL_COMMA;
+import static org.tentackle.sql.Backend.SQL_EQUAL;
+import static org.tentackle.sql.Backend.SQL_EQUAL_PAR;
+import static org.tentackle.sql.Backend.SQL_EQUAL_PAR_COMMA;
+import static org.tentackle.sql.Backend.SQL_EQUAL_ZERO;
+import static org.tentackle.sql.Backend.SQL_FROM;
+import static org.tentackle.sql.Backend.SQL_GREATER_PAR;
+import static org.tentackle.sql.Backend.SQL_ISNULL;
+import static org.tentackle.sql.Backend.SQL_LEFT_PARENTHESIS;
+import static org.tentackle.sql.Backend.SQL_LESS_PAR;
+import static org.tentackle.sql.Backend.SQL_LIKE_PAR;
+import static org.tentackle.sql.Backend.SQL_NOTLIKE_PAR;
+import static org.tentackle.sql.Backend.SQL_OR;
+import static org.tentackle.sql.Backend.SQL_ORDERBY;
+import static org.tentackle.sql.Backend.SQL_PLUS_ONE;
+import static org.tentackle.sql.Backend.SQL_RIGHT_PARENTHESIS;
+import static org.tentackle.sql.Backend.SQL_SELECT;
+import static org.tentackle.sql.Backend.SQL_SET;
+import static org.tentackle.sql.Backend.SQL_UPDATE;
+import static org.tentackle.sql.Backend.SQL_WHERE;
+import static org.tentackle.sql.Backend.SQL_WHEREALL;
 
 /**
  * Base persistent implementation of a PDO.
@@ -129,6 +152,10 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
   private transient boolean validated;            // true if validated ok (transient because we don't trust remote clients)
   private boolean renewTokenLock;                 // true if renew token lock once(!) upon next persistent operation
+
+  // if embedded
+  private PersistentDomainObject<?> embeddingParent;  // != null if this is an embedded PDO
+  private String columnPrefix;                        // prefix for embedded columns
 
   // for PdoCache
   private transient long cacheAccessCount;        // access counter (if caching strategy is MOU)
@@ -559,7 +586,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   public boolean isPersistable() {
     return persistable && super.isPersistable() &&
            getDomainContext() != null &&   // context may be used in security checks!
-           !isAbstract();
+           !isAbstract() && !isEmbedded();
   }
 
   /**
@@ -614,6 +641,71 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   public boolean isRootEntity() {
     return false;
   }
+
+
+  @Override
+  public boolean isEmbedded() {
+    return false;
+  }
+
+  /**
+   * Asserts that this is an embedded PDO.
+   */
+  protected void assertEmbedded() {
+    if (!isEmbedded()) {
+      throw new PersistenceException(this, "not an embedded PDO");
+    }
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public <E extends PersistentDomainObject<E>> E  getEmbeddingParent() {
+    assertEmbedded();
+    return (E) embeddingParent;
+  }
+
+  /**
+   * Sets the parent PDO for this embedded PDO.<br>
+   * Throws a {@link PersistenceException} if this is not an embedded PDO.
+   *
+   * @param embeddingParent the parent PDO, never null
+   */
+  public void setEmbeddingParent(PersistentDomainObject<?> embeddingParent, String columnPrefix) {
+    assertEmbedded();
+    this.embeddingParent = Objects.requireNonNull(embeddingParent, "embedding parent missing");
+    this.columnPrefix = Objects.requireNonNull(columnPrefix, "column prefix missing");
+  }
+
+  /**
+   * Gets the column prefix for this embedded PDO.
+   *
+   * @return the column prefix
+   */
+  public String getColumnPrefix() {
+    assertEmbedded();
+    return columnPrefix;
+  }
+
+  /**
+   * Configures the columns of an embedded PDO.
+   *
+   * @param rs the result set
+   */
+  public void configureEmbeddedColumns(ResultSetWrapper rs) {
+    throw new PersistenceException(this, "configureEmbeddedColumns not implemented");
+  }
+
+  /**
+   * Sets the fields of an embedded PDO.
+   *
+   * @param ndx the last used column index of the prepared statement
+   * @param st the prepared statement
+   * @return the last used column index
+   */
+  public int setEmbeddedFields(int ndx, PreparedStatementWrapper st) {
+    throw new PersistenceException(this, "setEmbeddedFields not implemented");
+  }
+
 
   @Override
   public boolean isRootIdProvided() {
@@ -890,10 +982,23 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @see AbstractDbObject#getClassVariables
    */
   @Override
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public PersistentObjectClassVariables<T,P> getClassVariables() {
-    throw new PersistenceException(this, "classvariables undefined for " + getClass());
+    if (isEmbedded()) {
+      if (embeddingParent == null) {
+        throw new PersistenceException(this, "parent not set for embedded " + getClass());
+      }
+      return ((AbstractPersistentObject) embeddingParent.getPersistenceDelegate()).getClassVariables();
+    }
+    throw new PersistenceException(this, "getClassVariables() not implemented for " + getClass());
   }
 
+  @Override
+  protected StatementKey createStatementKey(StatementId stmtId) {
+    return isEmbedded() ?
+           new StatementKey(stmtId, embeddingParent.getPersistenceDelegate().getClass(), columnPrefix) :
+           super.createStatementKey(stmtId);
+  }
 
   @Override
   public String getTableName () {
@@ -916,7 +1021,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @return the full name
    */
   public String getColumnName(String name) {
-    return getClassVariables().getColumnName(name);
+    return isEmbedded() ?
+           getClassVariables().getColumnName(columnPrefix, name) :
+           getClassVariables().getColumnName(name);
   }
 
   /**
@@ -926,7 +1033,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @return the partial SQL string
    */
   public String getColumnNames(Supplier<List<String>> columnNamesSupplier) {
-    return getClassVariables().getColumnNames(columnNamesSupplier);
+    return getColumnNames(columnNamesSupplier.get());
   }
 
   /**
@@ -936,7 +1043,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @return the partial SQL string
    */
   public String getColumnNames(List<String> columnNames) {
-    return getClassVariables().getColumnNames(columnNames);
+    return getClassVariables().getColumnNames(columnPrefix, columnNames);
   }
 
   /**

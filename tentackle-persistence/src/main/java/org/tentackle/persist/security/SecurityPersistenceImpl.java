@@ -762,7 +762,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
 
   @Override
   public boolean isTracked() {
-    return true;    // invoking isModified() is ok
+    return true;
   }
 
   @Override

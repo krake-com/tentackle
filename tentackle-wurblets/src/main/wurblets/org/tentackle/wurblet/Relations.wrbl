@@ -118,7 +118,7 @@ For more options, see {\@link ModelWurblet}.
 @[
         }
 
-        if (rel.isComposite() &&
+        if (rel.isComposite() && !rel.isEmbedding() &&
             (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER)) {
 ]@
 

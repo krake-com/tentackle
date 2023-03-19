@@ -62,7 +62,15 @@ public enum InheritanceType {
    * and automatically create instances of the concrete type.<br>
    * The tables are joined by their common id.
    */
-  MULTI(true, true, false);
+  MULTI(true, true, false),
+
+  /**
+   * Embedded in parent object.<br>
+   * Composition sometimes is a good alternative to inheritance. Embedded entities
+   * are treated just like eager 1:1 relations from a Java perspective. However, their
+   * columns are stored in the table of the embedding entity.
+   */
+  EMBEDDED(false, false, false);
 
 
 

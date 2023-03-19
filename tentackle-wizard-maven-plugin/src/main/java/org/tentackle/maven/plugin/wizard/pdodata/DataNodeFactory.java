@@ -242,7 +242,14 @@ public class DataNodeFactory {
           NonCompositeRelation nonCompositeRelation = null;
           if ("long".equals(methodInfo.typeName) || "Long".equals(methodInfo.typeName)) {
             // may be a 1:1 object relation
-            for (Relation relation : classInfo.entity.getAllRelations()) {
+            List<Relation> allRelations;
+            try {
+              allRelations = classInfo.entity.getAllRelations();
+            }
+            catch (ModelException mx) {
+              throw new TentackleRuntimeException(mx);
+            }
+            for (Relation relation : allRelations) {
               if (relation.getRelationType() == RelationType.OBJECT) {
                 Attribute attribute = relation.getAttribute();
                 if (attribute != null && attribute.getName().equals(methodInfo.name)) {

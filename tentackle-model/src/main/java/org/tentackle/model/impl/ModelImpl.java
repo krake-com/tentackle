@@ -470,8 +470,17 @@ public class ModelImpl implements Model {
                 errors.add(new ModelError(relation, "no foreign entity for " + relation));
               }
               else {
-                referencingEntity = relation.getEntity();
-                referencingAttribute = relation.getAttribute();
+                if (relation.getEmbeddingEntity() != null) {
+                  referencingEntity = relation.getEmbeddingEntity();
+                  if (relation.getMethodArgs().isEmpty()) {
+                    errors.add(new ModelError(relation, "broken foreign key relation " + relation + " in embedded " + entity));
+                  }
+                  referencingAttribute = relation.getMethodArgs().get(0).getAttribute();
+                }
+                else {
+                  referencingEntity = relation.getEntity();
+                  referencingAttribute = relation.getAttribute();
+                }
                 referencedEntity = relation.getForeignEntity();
                 referencedAttribute = referencedEntity.getAttributeByJavaName(Constants.AN_ID, true);
               }
@@ -487,8 +496,7 @@ public class ModelImpl implements Model {
               if (!relation.getMethodArgs().isEmpty()) {
                 continue;   // complex relation, classname + id, whatever -> no foreign key possible
               }
-              errors.add(new ModelError(relation,
-                                        "broken foreign key relation " + relation + " in " + entity));
+              errors.add(new ModelError(relation, "broken foreign key relation " + relation + " in " + entity));
             }
 
             List<Entity> referencingEntities;
@@ -616,7 +624,14 @@ public class ModelImpl implements Model {
     for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       Entity entity = entityInfo.getEntity();
       if (entity.getSuperEntityName() != null) {
-        Entity superEntity = getByEntityName(translateAlias(entity.getSuperEntityName()));
+        Entity superEntity;
+        try {
+          superEntity = getByEntityName(translateAlias(entity.getSuperEntityName()));
+        }
+        catch (ModelException mx) {
+          errors.add(new ModelError(mx));
+          continue;
+        }
         if (superEntity == null) {
           if (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity)) {
             errors.add(new ModelError(entity,
@@ -687,8 +702,14 @@ public class ModelImpl implements Model {
       for (Relation relation: entity.getRelations()) {
 
         ((RelationImpl) relation).setForeignRelation(null);
-
-        Entity foreignEntity = getByEntityName(translateAlias(relation.getClassName()));
+        Entity foreignEntity;
+        try {
+          foreignEntity = getByEntityName(translateAlias(relation.getClassName()));
+        }
+        catch (ModelException mx) {
+          errors.add(new ModelError(mx));
+          continue;
+        }
         if (foreignEntity == null) {
           if (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity)) {
             // log error only if class is associated to the updated one
@@ -701,6 +722,7 @@ public class ModelImpl implements Model {
             errors.add(new ModelError(relation,"provided entities cannot have relations to managed entities"));
           }
           ((RelationImpl) relation).setForeignEntity(foreignEntity);
+
           if (relation.getRelationType() == RelationType.LIST) {
             String attributeName;
             if (relation.getMethodName() != null) {
@@ -761,6 +783,14 @@ public class ModelImpl implements Model {
               }
             }
           }
+          else if (relation.getForeignEntity() != null && relation.getForeignEntity().isEmbedded()) {
+            // embedded relations often don't explicitly mention "select = embedded" in their model
+            // -> set it here asap to enable construction of composite paths
+            ((RelationImpl) relation).setComposite(true);
+            ((RelationImpl) relation).setSelectionType(SelectionType.EMBEDDED);
+            ((RelationImpl) relation).setSelectionCached(false);
+            ((RelationImpl) relation).setSelectionTypeDetermined(false);    // don't switch to cached, if entity is cached
+          }
         }
       }
     }
@@ -787,7 +817,8 @@ public class ModelImpl implements Model {
           // find a relation with opposite attributes
           for (Relation otherRelation: relation.getForeignEntity().getTableRelations()) {
             if (Objects.equals(relation.getEntity(), otherRelation.getForeignEntity()) &&
-                Objects.equals(relation.getAttribute(), otherRelation.getForeignAttribute())) {
+                (otherRelation.getForeignAttribute() == null && otherRelation.getRelationType() == RelationType.OBJECT || // referred to ID
+                 Objects.equals(relation.getAttribute(), otherRelation.getForeignAttribute()))) {
               ((RelationImpl) relation).setForeignRelation(otherRelation);
               ((RelationImpl) otherRelation).setForeignRelation(relation);
               break;
@@ -800,11 +831,17 @@ public class ModelImpl implements Model {
     // update composite paths and inspect model for root, rootid and rootclassid
     for (EntityInfo entityInfo : nameToEntityInfoMap.values()) {
       Entity entity = entityInfo.getEntity();
-      boolean isRootEntity = true;
-      for (Relation relation: entity.getAllReferencingRelations()) {
-        if (relation.isComposite() && !entity.equals(relation.getEntity())) {
-          isRootEntity = false;
-          break;
+      boolean isRootEntity;
+      if (entity.isEmbedded()) {
+        isRootEntity = false;
+      }
+      else {
+        isRootEntity = true;
+        for (Relation relation : entity.getAllReferencingRelations()) {
+          if (relation.isComposite() && !entity.equals(relation.getEntity())) {
+            isRootEntity = false;
+            break;
+          }
         }
       }
       ((EntityImpl) entity).setRootEntityAccordingToModel(isRootEntity);
@@ -827,7 +864,7 @@ public class ModelImpl implements Model {
        * and holds exactly one root attribute column (2 means N:M relation, for example).
        */
       Set<Entity> rootEntities = entity.getRootEntities();
-      if (rootEntities.size() > 1 && entity.getRootAttribute() != null) {
+      if (!entity.isEmbedded() && rootEntities.size() > 1 && entity.getRootAttribute() != null) {
         ((EntityImpl) entity).setProvidingRootClassIdAccordingToModel(true);
       }
       // or there is a non-composite reference from an entity which is not one of its root entities (deep reference)
@@ -852,7 +889,7 @@ public class ModelImpl implements Model {
             for (Entity rootEntity: rootEntities) {
               rootEntity.getDeepReferencesToComponents().add(relation);
             }
-            if (entity.getRootEntity() == null) {
+            if (entity.getRootEntity() == null && !entity.isEmbedded()) {
               // need rootclassid column
               ((EntityImpl) entity).setProvidingRootClassIdAccordingToModel(true);
             }
@@ -862,11 +899,13 @@ public class ModelImpl implements Model {
 
       // The entity should provide a rootId if it is a composite with a relation path of more than one hops
       // or an OBJECT-relation
-      for (List<Relation> compositePath: entity.getCompositePaths()) {
-        if (compositePath.size() > 1 ||
-            compositePath.get(compositePath.size() - 1).getRelationType() == RelationType.OBJECT) {
-          ((EntityImpl) entity).setProvidingRootIdAccordingToModel(true);
-          break;
+      if (!entity.isEmbedded()) {
+        for (List<Relation> compositePath : entity.getCompositePaths()) {
+          if (compositePath.size() > 1 ||
+              compositePath.get(compositePath.size() - 1).getRelationType() == RelationType.OBJECT) {
+            ((EntityImpl) entity).setProvidingRootIdAccordingToModel(true);
+            break;
+          }
         }
       }
     }
@@ -905,7 +944,13 @@ public class ModelImpl implements Model {
 
       if (entity.getOptions().isRootClassIdProvided()) {
         if (entity.getAttributeByColumnName(Constants.CN_ROOTCLASSID, true) == null) {
-          ((EntityImpl) entity).getOptions().applyOption(EntityOptionsImpl.OPTION_ROOTCLASSID, Boolean.TRUE);
+          try {
+            ((EntityImpl) entity).getOptions().applyOption(EntityOptionsImpl.OPTION_ROOTCLASSID, Boolean.TRUE);
+          }
+          catch (ModelException mx) {
+            errors.add(new ModelError(mx));
+            continue;
+          }
         }
       }
       else {
@@ -917,7 +962,12 @@ public class ModelImpl implements Model {
 
       if (entity.getOptions().isRootIdProvided()) {
         if (entity.getAttributeByColumnName(Constants.CN_ROOTID, true) == null) {
-          ((EntityImpl) entity).getOptions().applyOption(EntityOptionsImpl.OPTION_ROOTID, Boolean.TRUE);
+          try {
+            ((EntityImpl) entity).getOptions().applyOption(EntityOptionsImpl.OPTION_ROOTID, Boolean.TRUE);
+          }
+          catch (ModelException mx) {
+            errors.add(new ModelError(mx));
+          }
         }
       }
       else  {
@@ -941,25 +991,28 @@ public class ModelImpl implements Model {
         }
         if (relation.getForeignEntity() != null) {
           if (relation.isComposite()) {
-            if (relation.getRelationType() == RelationType.LIST) {
-              // check if there is a lazy object relation back to me
-              Relation parentRelation = relation.getForeignEntity().getRelation(entity.getName(), true);
-              if (parentRelation == null) {
-                // check by entity instead of name (in case relation name was changed)
-                List<Relation> parentRelations = relation.getForeignEntity().getRelations(entity, true);
-                if (parentRelations.size() == 1) {
-                  parentRelation = parentRelations.get(0);
-                }
+            // check if there is a lazy object relation back to me
+            Relation parentRelation = relation.getForeignEntity().getRelation(entity.getName(), true);
+            if (parentRelation == null) {
+              // check by entity instead of name (in case relation name was changed)
+              List<Relation> parentRelations = relation.getForeignEntity().getRelations(entity, true);
+              if (parentRelations.size() == 1) {
+                parentRelation = parentRelations.get(0);
               }
-              if (parentRelation != null && parentRelation.getRelationType() == RelationType.OBJECT &&
-                  parentRelation.getSelectionType() == SelectionType.LAZY) {
-                // 1:N composite lazy relations without a linkMethod don't make sense
-                if (relation.getLinkMethodName() == null || "set".equals(relation.getLinkMethodName())) {
-                  ((RelationImpl) relation).setLinkMethodName("set" + StringHelper.firstToUpper(parentRelation.getName()));
-                }
-                if (parentRelation.getEntity().getOptions().isRemote()) {
-                  ((RelationImpl) parentRelation).setSerialized(true);
-                }
+            }
+            if (parentRelation != null && parentRelation.getRelationType() == RelationType.OBJECT &&
+                (parentRelation.getSelectionType() == SelectionType.LAZY || relation.getForeignEntity().isEmbedded())) {
+              // composite lazy relations without a linkMethod don't make sense
+              if (relation.getLinkMethodName() == null || "set".equals(relation.getLinkMethodName())) {
+                ((RelationImpl) relation).setLinkMethodName("set" + StringHelper.firstToUpper(parentRelation.getName()));
+              }
+              if (parentRelation.getEntity().getOptions().isRemote()) {
+                ((RelationImpl) parentRelation).setSerialized(true);
+              }
+              ((RelationImpl) parentRelation).setSelectionCached(false);            // even if object is cached
+              ((RelationImpl) parentRelation).setSelectionTypeDetermined(false);    // don't switch to cached (see below)
+              if (relation.getForeignEntity().isEmbedded()) {
+                ((RelationImpl) parentRelation).setSelectionType(SelectionType.LAZY);   // set back
               }
             }
             if (relation.getLinkMethodName() != null) {
@@ -1002,17 +1055,21 @@ public class ModelImpl implements Model {
         // check
         Map<String,Attribute> columnMap = new HashMap<>();  // map by column name
         Map<String,Attribute> nameMap = new HashMap<>();    // map by java name
-        List<Attribute> allAttributes = new ArrayList<>(entity.getAttributes());
-        for (Entity child: entity.getAllSubEntities()) {
-          allAttributes.addAll(child.getAttributes());
+        List<Attribute> allAttributes;
+        try {
+          allAttributes = entity.getTableAttributes();
+        }
+        catch (ModelException mx) {
+          errors.add(new ModelError(mx));
+          continue;
         }
         for (Attribute attrib: allAttributes) {
           AttributeImpl attribute = (AttributeImpl) attrib;
-          AttributeImpl oldAttribute = (AttributeImpl) nameMap.put(attribute.getName().toLowerCase(), attribute);
+          AttributeImpl oldAttribute = (AttributeImpl) nameMap.put(attribute.getPathName().toLowerCase(), attribute);
           if (oldAttribute != null && (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity))) {
             StringBuilder exMsg = new StringBuilder();
-            exMsg.append("attribute '").append(attribute.getName()).append("' in ").
-                  append(attribute.getEntity());
+            exMsg.append("attribute '").append(attribute.getPathName()).append("' in ").
+            append(attribute.getEntity());
             exMsg.append(" already defined in ").append(oldAttribute.getEntity());
             if (oldAttribute.getSourceLine() != null) {
               exMsg.append("(").append(oldAttribute.getSourceLine()).append(")");
@@ -1024,7 +1081,7 @@ public class ModelImpl implements Model {
               oldColumn != null && (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity))) {
             StringBuilder exMsg = new StringBuilder();
             exMsg.append("column '").append(attribute.getColumnName()).append("' in ").
-                  append(attribute.getEntity());
+            append(attribute.getEntity());
             exMsg.append(" already defined in ").append(oldColumn.getEntity());
             if (oldColumn.getSourceLine() != null) {
               exMsg.append("(").append(oldColumn.getSourceLine()).append(")");
@@ -1236,7 +1293,7 @@ public class ModelImpl implements Model {
    * @param compositePath the path that leads to given entity so far
    * @param entity the entity
    */
-  protected void updateCompositePath(List<Relation> compositePath, Entity entity) {
+  protected void updateCompositePath(List<Relation> compositePath, Entity entity) throws ModelException {
     Relation lastRelation = compositePath.get(compositePath.size() - 1);
     if (lastRelation.getForeignAttribute() != null) {
       // the attribute actually may belong to a superclass

@@ -264,11 +264,11 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
    * @param obj the PDO, null if ignore
    */
   default void applyTo(DomainContextDependable obj) {
-    if (obj instanceof PersistentDomainObject) {
+    if (obj instanceof PersistentDomainObject<?> pdo) {
       // fast without invocation handler
-      DomainContext otherCtx = ((PersistentDomainObject<?>) obj).getPersistenceDelegate().getDomainContext();
+      DomainContext otherCtx = pdo.getPersistenceDelegate().getDomainContext();
       if (otherCtx != this) {
-        ((PersistentDomainObject<?>) obj).getPersistenceDelegate().setDomainContext(this);
+        pdo.getPersistenceDelegate().setDomainContext(this);
       }
     }
     else if (obj != null && obj.getDomainContext() != this)  {

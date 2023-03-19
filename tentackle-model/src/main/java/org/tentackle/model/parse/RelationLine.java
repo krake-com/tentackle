@@ -39,7 +39,7 @@ import java.util.Map;
  *    <li>object: single object association [1:1]. This is the default.</li>
  *    <li>reversed: non-composite list relation that contains max. one object (reversed 1:1 object relation)</li>
  *    <li>list: list of objects [1:N]. ([N:M] see below nm = ...)</li>
- *    <li>composite: relation points to a component</li>
+ *    <li>composite: relation points to a component (default if related entity's type is embedded)</li>
  *    <li>tracked: modification state of object or list is tracked</li>
  *    <li>referenced: set the parent reference on select and construction</li>
  *    <li>processed: invokes a processXXX-method on initialization, after select and before save</li>
@@ -57,11 +57,12 @@ import java.util.Map;
  * by the attribute.
  * <p>
  *
- * select = &lt;always|eager|lazy&gt; [cached] [| wurbletargs]
+ * select = &lt;always|eager|lazy|embedded&gt; [cached] [| wurbletargs]
  * <ul>
  *    <li>always: fetched on every get (default if cached)</li>
  *    <li>eager: fetched in advance whenever the main class is fetched</li>
  *    <li>lazy: fetched within the first get only (default if not cached)</li>
+ *    <li>embedded: fetched by parent (default if related entity's type is embedded)</li>
  *    <li>cached: use caching select methods if possible (only for objects-relations)</li>
  *    <li>wurbletargs: additional arguments passed to the PdoSelectList-wurblet (only for list-relations)<br>
  *        Example: <code>select = lazy | -pilePosition</code></li>
@@ -100,14 +101,23 @@ import java.util.Map;
  *    [By] is added for lists.</li>
  * </ul>
  *
- * name = &lt;name&gt;
+ * name = &lt;relationname&gt;
  * <ul>
- *    <li>name: name of the relation. Defaults to &lt;class&gt;.<br>
+ *    <li>relationname: name of the relation. Defaults to &lt;class&gt;.<br>
  *    The getter- and setter-names are generated as follows:<br>
  *    get&lt;name&gt; and set&lt;name&gt; (always first letter in uppercase) for object-relations and
  *    get&lt;name&gt;List, set&lt;name&gt;List for list-relations.<br>
  *    If &lt;name&gt; is explicitly set, the methods will be named get&lt;name&gt; and set&lt;name&gt;
  *    regardless of the relation type.
+ *    </li>
+ * </ul>
+ *
+ * prefix = &lt;columnprefix&gt;
+ * <ul>
+ *    <li>columnprefix: the prefix to add to the column names of the related embedded PDO.<br>
+ *    Only applicable to embedded relations!<br>
+ *    Defaults to lowercase of &lt;relationname&gt; plus an underline.<br>
+ *    For nested embedded PDOs, the prefixes are concatenated accordingly.
  *    </li>
  * </ul>
  *

@@ -129,6 +129,23 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   boolean isRootEntity();
 
   /**
+   * Returns whether this is an embedded PDO.<br>
+   * Embedded PDOs are components with their attributes embedded in the parent object's table.
+   *
+   * @return true if embedded entity
+   */
+  boolean isEmbedded();
+
+  /**
+   * Gets the parent PDO if this is an embedded PDO.<br>
+   * Throws a {@link PersistenceException} if this is not an embedded PDO.
+   *
+   * @return the parent PDO, never null
+   * @param <E> the parent's type
+   */
+  <E extends PersistentDomainObject<E>> E getEmbeddingParent();
+
+  /**
    * Returns whether this is a root entity of given component.
    *
    * @param <C> the type of the component

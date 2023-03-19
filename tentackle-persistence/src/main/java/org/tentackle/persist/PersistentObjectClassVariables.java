@@ -36,7 +36,6 @@ import org.tentackle.sql.Backend;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 
 /**
  * Extends {@link DbObjectClassVariables} for {@link AbstractPersistentObject}s.
@@ -273,11 +272,25 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   /**
    * Gets the comma-separated list of column names with table alias.
    *
-   * @param columnNamesSupplier the supplier for the list of column names
+   * @param columnPrefix the optional column name prefix (used for embedded PDOs)
+   * @param columnNames the list of column names
    * @return the partial SQL string
    */
-  public String getColumnNames(Supplier<List<String>> columnNamesSupplier) {
-    return getColumnNames(columnNamesSupplier.get());
+  public String getColumnNames(String columnPrefix, List<String> columnNames) {
+    if (sqlColumnNames == null) {
+      StringBuilder buf = new StringBuilder();
+      for (String name : columnNames) {
+        if (!buf.isEmpty()) {
+          buf.append(',');
+        }
+        if (columnPrefix != null) {
+          buf.append(columnPrefix);
+        }
+        buf.append(getColumnName(name));
+      }
+      sqlColumnNames = buf.toString();
+    }
+    return sqlColumnNames;
   }
 
   /**
@@ -287,17 +300,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    * @return the partial SQL string
    */
   public String getColumnNames(List<String> columnNames) {
-    if (sqlColumnNames == null) {
-      StringBuilder buf = new StringBuilder();
-      for (String name : columnNames) {
-        if (!buf.isEmpty()) {
-          buf.append(',');
-        }
-        buf.append(getColumnName(name));
-      }
-      sqlColumnNames = buf.toString();
-    }
-    return sqlColumnNames;
+    return getColumnNames(null, columnNames);
   }
 
 
@@ -445,10 +448,24 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    * @return the full name
    */
   public String getColumnName(String name) {
+    return getColumnName(null, name);
+  }
+
+  /**
+   * Gets the full column name with optional table alias and prefix.
+   *
+   * @param prefix the column prefix for embedded entities, null if none
+   * @param name the short name
+   * @return the full name
+   */
+  public String getColumnName(String prefix, String name) {
     StringBuilder buf = new StringBuilder();
     String alias = getTableAlias();
     if (alias != null) {
       buf.append(alias).append('.');
+    }
+    if (prefix != null) {
+      buf.append(prefix);
     }
     buf.append(name);
     return buf.toString();
