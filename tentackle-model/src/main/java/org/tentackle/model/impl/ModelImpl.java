@@ -55,6 +55,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -264,7 +266,7 @@ public class ModelImpl implements Model {
           while ((line = indexReader.readLine()) != null) {
             JarEntry modelEntry = jarFile.getJarEntry(line);
             if (modelEntry != null) {
-              URL url = new URL(urlLead + modelEntry.getName());
+              URL url = new URI(urlLead + modelEntry.getName()).toURL();
               entityInfos.add(loadFromURL(url, false));
             }
             else {
@@ -277,7 +279,7 @@ public class ModelImpl implements Model {
         throw new ModelException("missing " + indexName + " in " + file);
       }
     }
-    catch (IOException e) {
+    catch (URISyntaxException | IOException e) {
       throw new ModelException("cannot load model from jar " + file, e);
     }
 
@@ -301,11 +303,11 @@ public class ModelImpl implements Model {
       if (ndx >= 0) {
         urlName = urlName.substring(0, ndx) + entry.getKey();   // "xxx:..../" + "META-INF/model/blah.map"
         try {
-          URL url = new URL(urlName);
+          URL url = new URI(urlName).toURL();
           // order is not important, since we don't update the relations for each loaded entity
           entityInfos.add(loadFromURL(url, false));
         }
-        catch (MalformedURLException e) {
+        catch (URISyntaxException | MalformedURLException e) {
           throw new ModelException("cannot create model URL for " + entry.getKey() + " in " + entry.getValue());
         }
       }

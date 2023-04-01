@@ -20,6 +20,8 @@ package org.tentackle.sql;
 
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.sql.Connection;
@@ -52,14 +54,14 @@ public class DynamicDriver implements Driver {
     if (ndx > 0) {
       try {
         String classname = name.substring(0, ndx);
-        URL url = new URL(name.substring(ndx + 1));
+        URL url = new URI(name.substring(ndx + 1)).toURL();
         URLClassLoader ucl = new URLClassLoader(new URL[]{url});
         Driver driver = new DynamicDriver((Driver) Class.forName(classname, true, ucl).getConstructor().newInstance());
         DriverManager.registerDriver(driver);
         return driver;
       }
       catch (InvocationTargetException | NoSuchMethodException | ClassNotFoundException | SQLException |
-             InstantiationException | IllegalAccessException | MalformedURLException ex) {
+             InstantiationException | IllegalAccessException | URISyntaxException | MalformedURLException ex) {
         throw new BackendException("loading driver '" + name + "' failed", ex);
       }
     }

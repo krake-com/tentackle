@@ -24,6 +24,8 @@ import org.tentackle.common.TentackleRuntimeException;
 import java.io.Serial;
 import java.io.Serializable;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 
 /**
@@ -89,9 +91,9 @@ public class UpdateInfo implements Serializable {
    */
   public URL getUrl() {
     try {
-      return new URL(encrypted ? Cryptor.getInstance().decrypt64(url) : url);
+      return new URI(encrypted ? Cryptor.getInstance().decrypt64(url) : url).toURL();
     }
-    catch (MalformedURLException mx) {
+    catch (URISyntaxException | MalformedURLException mx) {
       throw new TentackleRuntimeException(mx);
     }
   }
