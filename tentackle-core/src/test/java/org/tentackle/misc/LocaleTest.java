@@ -36,8 +36,8 @@ public class LocaleTest {
   public void testLocale() {
     Locale locale = Locale.of("en", "US");
     SimpleDateFormat format = (SimpleDateFormat) SimpleDateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, locale);
-    Assert.assertEquals(format.toPattern(), "MMM d, y, h:mm:ss a");
-    Assert.assertEquals(format.toLocalizedPattern(), "MMM d, y, h:mm:ss a");
+    Assert.assertEquals(format.toPattern(), "MMM d, y, h:mm:ss a");
+    Assert.assertEquals(format.toLocalizedPattern(), "MMM d, y, h:mm:ss a");
     locale = Locale.of("en", "DE");
     format = (SimpleDateFormat) SimpleDateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, locale);
     Assert.assertEquals(format.toPattern(), "d MMM y, HH:mm:ss");
