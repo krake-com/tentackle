@@ -139,13 +139,6 @@ public class JLinkMojo extends AbstractJLinkMojo {
   @Parameter(defaultValue = UPDATE_TEMPLATE)
   private String updateTemplate;
 
-  /**
-   * Disables the generation of a ZIP file and does not add an artifact for installation and deployment.<br>
-   * If {@code true}, no {@link ArtifactCreator} will be invoked.
-   */
-  @Parameter(defaultValue = "false")
-  private boolean noArtifact;
-
 
   /**
    * Gets the name of the name template.
@@ -177,10 +170,7 @@ public class JLinkMojo extends AbstractJLinkMojo {
   @Override
   public void executeImpl() throws MojoExecutionException, MojoFailureException {
     super.executeImpl();
-
-    if (!noArtifact) {
-      ArtifactCreator.getInstance().createAndAttachArtifact(this);
-    }
+    ArtifactCreator.getInstance().createAndAttachArtifact(this);
   }
 
 
