@@ -24,6 +24,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProjectHelper;
+import org.apache.maven.project.artifact.ProjectArtifact;
 import org.codehaus.plexus.archiver.Archiver;
 import org.codehaus.plexus.archiver.ArchiverException;
 import org.codehaus.plexus.archiver.zip.ZipArchiver;
@@ -560,6 +561,10 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
     createImage(result);
     // and the shell scripts
     generateFiles(result);
+
+    // this does the trick for https://issues.apache.org/jira/browse/MINSTALL-151
+    getMavenProject().setArtifact(new ProjectArtifact(getMavenProject()));    // set pom.xml as the main artifact, just as pom packaging would do
+    getMavenProject().setPackaging("pom");                                    // don't install pom.xml twice
   }
 
 
