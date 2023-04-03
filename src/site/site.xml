@@ -6,16 +6,19 @@
     <href>https://tentackle.org</href>
     <title>${project.name}</title>
   </bannerLeft>
+
   <bannerRight>
     <name>Krake Softwaretechnik</name>
     <src>images/krake.png</src>
     <href>https://krake.de</href>
   </bannerRight>
+
   <skin>
     <groupId>org.apache.maven.skins</groupId>
     <artifactId>maven-fluido-skin</artifactId>
-    <version>1.11.1</version>
+    <version>1.11.2</version>
   </skin>
+
   <body>
     <links>
       <item name="Tentackle" href="https://tentackle.org"/>
