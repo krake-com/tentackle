@@ -23,22 +23,35 @@ import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.PrimitiveIterator;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.function.IntConsumer;
+import java.util.stream.IntStream;
+import java.util.stream.StreamSupport;
 
 /**
  * Multilingual text.<br>
- * This is an immutable object and supported as a regular datatype
+ * This is an immutable and serializable object which is supported as a regular datatype
  * via <code>org.tentackle.sql.datatypes.I18NTextType</code>.
  * <p>
- * Model examples:
- * <code>
+ * Model example:<br>
+ * <pre>
  *   ...
  *   I18NText        description   description    internationalized description [COLS=30]
  *   ...
- * </code>
- * Don't forget to add the <code>[COLS=...] option to specify the field-width in FX views.</code>
+ * </pre>
+ * <p>
+ * Don't forget to add the <code>[COLS=...]</code> option if yoy want to use auto-binding for the field width in FX views.
+ * <p>
+ * Please keep in mind, that <code>I18NText</code> implements
+ * {@link CharSequence} and {@link Comparable} only for the current locale (see {@code  LocaleProvider.getInstance().getLocale()}),
+ * but {@link Object#equals(Object)} and {@link Object#hashCode()} cover all translations.
+ * As a consequence, sorted sets of <code>I18NText</code> elements require appropriate attention.
  */
-public class I18NText implements Serializable {
+public class I18NText implements CharSequence, Comparable<I18NText>, Serializable {
 
   @Serial
   private static final long serialVersionUID = 1L;
@@ -48,7 +61,7 @@ public class I18NText implements Serializable {
 
 
   /**
-   * Creates an I18NText from a string in the current locale.
+   * Creates an <code>I18NText</code> from a string in the current locale.
    *
    * @param text the string
    * @return the i18n object
@@ -72,7 +85,7 @@ public class I18NText implements Serializable {
 
 
   /**
-   * Creates an empty I18N object.
+   * Creates a vacant <code>I18NText</code>.
    */
   public I18NText() {
     textMap = new LinkedHashMap<>();
@@ -80,7 +93,7 @@ public class I18NText implements Serializable {
   }
 
   /**
-   * Creates an I18N object from a string in the current locale.
+   * Creates an <code>I18NText</code> from a string in the current locale.
    *
    * @param text the string
    */
@@ -89,7 +102,7 @@ public class I18NText implements Serializable {
   }
 
   /**
-   * Creates an I18N object from a string for the given locale.
+   * Creates an <code>I18NText</code> from a string for the given locale.
    *
    * @param locale the locale
    * @param text the string
@@ -99,10 +112,8 @@ public class I18NText implements Serializable {
     defaultLocale = apply(locale, text, textMap, null);
   }
 
-
-
   /**
-   * Creates an I18N object from a parameter string.
+   * Creates an <code>I18NText</code> from a parameter string.
    *
    * @param parameterString the parameter string
    * @see #toParameterString()
@@ -121,64 +132,6 @@ public class I18NText implements Serializable {
         }
       }
     }
-  }
-
-
-  /**
-   * Protected constructor for internal use.
-   *
-   * @param textMap the translations
-   * @param defaultLocale the default locale
-   */
-  protected I18NText(LinkedHashMap<Locale, String> textMap, Locale defaultLocale) {
-    this.textMap = textMap;
-    this.defaultLocale = defaultLocale;
-  }
-
-  /**
-   * Applies a translation to an existing map and default locale.
-   *
-   * @param locale the locale to apply
-   * @param text the translation to apply
-   * @param withTextMap the current translations
-   * @param withDefaultLocale the current default locale
-   * @return the new default locale
-   */
-  protected Locale apply(Locale locale, String text, LinkedHashMap<Locale, String> withTextMap, Locale withDefaultLocale) {
-    LocaleProvider localeProvider = LocaleProvider.getInstance();
-    if (!localeProvider.isLocaleSupported(locale)) {
-      // avoid overriding the fallback locale by an unsupported locale (see getEffectiveLocale below)
-      throw new TentackleRuntimeException("unsupported locale: " + locale);
-    }
-
-    locale = narrowLocale(localeProvider.getEffectiveLocale(locale));
-
-    if (StringHelper.isAllWhitespace(text)) {
-      // remove locale
-      withTextMap.remove(locale);
-      if (locale.equals(withDefaultLocale)) {   // default overrides fallback
-        withDefaultLocale = null;
-        if (!withTextMap.isEmpty()) {
-          // take the default from the locale that was added next after the old default
-          withDefaultLocale = localeProvider.getEffectiveLocale(withTextMap.keySet().iterator().next());
-        }
-        // else: now empty -> no default anymore
-      }
-    }
-    else {
-      // add locale
-      if (withDefaultLocale == null) {
-        if (withTextMap.isEmpty() && !locale.equals(localeProvider.getFallbackLocale())) {
-          withDefaultLocale = localeProvider.getEffectiveLocale(locale);   // first locale, if not the fallback, determines the temporary default locale
-        }
-      }
-      else if (locale.equals(localeProvider.getFallbackLocale())) {
-        withDefaultLocale = null;   // fallback is now the default
-      }
-      withTextMap.put(locale, text);
-    }
-
-    return withDefaultLocale;
   }
 
 
@@ -254,15 +207,6 @@ public class I18NText implements Serializable {
   }
 
   /**
-   * Returns whether this I18NText contains no translations at all.
-   *
-   * @return true if empty
-   */
-  public boolean isEmpty() {
-    return textMap.isEmpty();
-  }
-
-  /**
    * Creates a parameter string of the current translations.
    *
    * @return the parameter string
@@ -279,6 +223,154 @@ public class I18NText implements Serializable {
     return ps;
   }
 
+  /**
+   * Returns whether there are valid translations at all.
+   *
+   * @return true if the map of translations is empty
+   */
+  public boolean isVacant() {
+    return textMap.isEmpty();
+  }
+
+
+  @Override
+  public int length() {
+    String text = get();
+    return text == null ? 0 : text.length();
+  }
+
+  @Override
+  public boolean isEmpty() {
+    return isVacant() || length() == 0;
+  }
+
+  @Override
+  public char charAt(int index) {
+    String text = get();
+    if (text != null) {
+      return text.charAt(index);
+    }
+    throw new IndexOutOfBoundsException("no translation for the current locale");
+  }
+
+  @Override
+  public CharSequence subSequence(int start, int end) {
+    String text = get();
+    return text == null ? "".subSequence(start, end) : text.subSequence(start, end);
+  }
+
+  @Override
+  public IntStream chars() {
+    String text = get();
+    int length = text == null ? 0 : text.length();
+
+    class CharIterator implements PrimitiveIterator.OfInt {
+      int cur = 0;
+
+      public boolean hasNext() {
+        return cur < length;
+      }
+
+      public int nextInt() {
+        if (hasNext()) {
+          return text.charAt(cur++);
+        }
+        else {
+          throw new NoSuchElementException();
+        }
+      }
+
+      @Override
+      public void forEachRemaining(IntConsumer block) {
+        for (; cur < length; cur++) {
+          block.accept(text.charAt(cur));
+        }
+      }
+    }
+
+    return StreamSupport.intStream(() ->
+                                     Spliterators.spliterator(
+                                       new CharIterator(),
+                                       length,
+                                       Spliterator.ORDERED),
+      Spliterator.SUBSIZED | Spliterator.SIZED | Spliterator.ORDERED,
+      false);
+  }
+
+  @Override
+  public IntStream codePoints() {
+    String text = get();
+    int length = text == null ? 0 : text.length();
+
+    class CodePointIterator implements PrimitiveIterator.OfInt {
+      int cur = 0;
+
+      @Override
+      public void forEachRemaining(IntConsumer block) {
+        int i = cur;
+        try {
+          while (i < length) {
+            char c1 = text.charAt(i++);
+            if (!Character.isHighSurrogate(c1) || i >= length) {
+              block.accept(c1);
+            }
+            else {
+              char c2 = text.charAt(i);
+              if (Character.isLowSurrogate(c2)) {
+                i++;
+                block.accept(Character.toCodePoint(c1, c2));
+              }
+              else {
+                block.accept(c1);
+              }
+            }
+          }
+        }
+        finally {
+          cur = i;
+        }
+      }
+
+      public boolean hasNext() {
+        return cur < length;
+      }
+
+      public int nextInt() {
+        if (cur >= length) {
+          throw new NoSuchElementException();
+        }
+        char c1 = text.charAt(cur++);
+        if (Character.isHighSurrogate(c1) && cur < length) {
+          char c2 = text.charAt(cur);
+          if (Character.isLowSurrogate(c2)) {
+            cur++;
+            return Character.toCodePoint(c1, c2);
+          }
+        }
+        return c1;
+      }
+    }
+
+    return StreamSupport.intStream(() ->
+                                     Spliterators.spliteratorUnknownSize(
+                                       new CodePointIterator(),
+                                       Spliterator.ORDERED),
+      Spliterator.ORDERED,
+      false);
+  }
+
+  @Override
+  public int compareTo(I18NText o) {
+    if (this == o) {
+      return 0;
+    }
+    String text = get();
+    String oText = o.get();
+    if (text == null) {
+      return oText == null ? 0 : -1;
+    }
+    return oText == null ? 1 : text.compareTo(oText);
+  }
 
   @Override
   public String toString() {
@@ -293,7 +385,6 @@ public class I18NText implements Serializable {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-
     I18NText i18NText = (I18NText) o;
 
     if (!textMap.equals(i18NText.textMap)) {
@@ -309,6 +400,63 @@ public class I18NText implements Serializable {
     return result;
   }
 
+
+  /**
+   * Protected constructor for internal use only.
+   *
+   * @param textMap the translations
+   * @param defaultLocale the default locale
+   */
+  protected I18NText(LinkedHashMap<Locale, String> textMap, Locale defaultLocale) {
+    this.textMap = textMap;
+    this.defaultLocale = defaultLocale;
+  }
+
+  /**
+   * Applies a translation to an existing map and default locale.
+   *
+   * @param locale the locale to apply
+   * @param text the translation to apply
+   * @param withTextMap the current translations
+   * @param withDefaultLocale the current default locale
+   * @return the new default locale
+   */
+  protected Locale apply(Locale locale, String text, LinkedHashMap<Locale, String> withTextMap, Locale withDefaultLocale) {
+    LocaleProvider localeProvider = LocaleProvider.getInstance();
+    if (!localeProvider.isLocaleSupported(locale)) {
+      // avoid overriding the fallback locale by an unsupported locale (see getEffectiveLocale below)
+      throw new TentackleRuntimeException("unsupported locale: " + locale);
+    }
+
+    locale = narrowLocale(localeProvider.getEffectiveLocale(locale));
+
+    if (StringHelper.isAllWhitespace(text)) {
+      // remove locale
+      withTextMap.remove(locale);
+      if (locale.equals(withDefaultLocale)) {   // default overrides fallback
+        withDefaultLocale = null;
+        if (!withTextMap.isEmpty()) {
+          // take the default from the locale that was added next after the old default
+          withDefaultLocale = localeProvider.getEffectiveLocale(withTextMap.keySet().iterator().next());
+        }
+        // else: now empty -> no default anymore
+      }
+    }
+    else {
+      // add locale
+      if (withDefaultLocale == null) {
+        if (withTextMap.isEmpty() && !locale.equals(localeProvider.getFallbackLocale())) {
+          withDefaultLocale = localeProvider.getEffectiveLocale(locale);   // first locale, if not the fallback, determines the temporary default locale
+        }
+      }
+      else if (locale.equals(localeProvider.getFallbackLocale())) {
+        withDefaultLocale = null;   // fallback is now the default
+      }
+      withTextMap.put(locale, text);
+    }
+
+    return withDefaultLocale;
+  }
 
   /**
    * Narrows the effective locale returned by the {@link LocaleProvider} further to language.<br>

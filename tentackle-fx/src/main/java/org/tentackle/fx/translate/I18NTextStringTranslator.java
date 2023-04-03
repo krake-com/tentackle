@@ -18,6 +18,12 @@
 
 package org.tentackle.fx.translate;
 
+import org.tentackle.common.I18NText;
+import org.tentackle.fx.Fx;
+import org.tentackle.fx.FxFxBundle;
+import org.tentackle.fx.FxTextComponent;
+import org.tentackle.fx.ValueTranslatorService;
+
 import javafx.application.Platform;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Control;
@@ -26,13 +32,6 @@ import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyEvent;
-
-import org.tentackle.common.I18NText;
-import org.tentackle.fx.Fx;
-import org.tentackle.fx.FxFxBundle;
-import org.tentackle.fx.FxTextComponent;
-import org.tentackle.fx.ValueTranslatorService;
-
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -103,13 +102,13 @@ public class I18NTextStringTranslator extends ValueStringTranslator<I18NText> {
 
   @Override
   public boolean isModelModified() {
-    // empty I18NText is mapped to null for comparing, since no translations will be treated as null in updateI18NText below
+    // vacant I18NText is mapped to null for comparing, since no translations will be treated as null in updateI18NText below
     I18NText modelValue = null;
     if (getComponent().getBinding().getModelValue() instanceof I18NText i18NText) {
-      modelValue = i18NText.isEmpty() ? null : i18NText;
+      modelValue = i18NText.isVacant() ? null : i18NText;
     }
     I18NText savedValue = savedModelValue;
-    if (savedValue != null && savedValue.isEmpty()) {
+    if (savedValue != null && savedValue.isVacant()) {
       savedValue = null;
     }
     return !Objects.equals(savedValue, modelValue);
@@ -141,7 +140,7 @@ public class I18NTextStringTranslator extends ValueStringTranslator<I18NText> {
    * @param i18NText the I18N text object
    */
   public void updateI18NText(I18NText i18NText) {
-    getComponent().getBinding().setModelValue(i18NText.isEmpty() ? null : i18NText);
+    getComponent().getBinding().setModelValue(i18NText.isVacant() ? null : i18NText);
   }
 
   protected void edit() {

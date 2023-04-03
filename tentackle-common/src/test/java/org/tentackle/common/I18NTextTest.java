@@ -22,7 +22,11 @@ import org.testng.annotations.Test;
 
 import java.util.Locale;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotEquals;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 @SuppressWarnings("missing-explicit-ctor")
 public class I18NTextTest {
@@ -55,7 +59,7 @@ public class I18NTextTest {
 
     i18NText = i18NText.with(null);
     assertNull(i18NText.get());
-    assertEquals(i18NText.getTranslations().size(), 0);
+    assertTrue(i18NText.isVacant());
 
     i18NText = i18NText.with(germany, SOME_GERMAN);
     assertEquals(i18NText.get(germany), SOME_GERMAN);
