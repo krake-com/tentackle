@@ -7,10 +7,10 @@
 
 package ${package}.common;
 
+import org.tentackle.common.EncryptedProperties;
 import org.tentackle.session.DefaultSessionInfo;
 
 import java.io.Serial;
-import java.util.Properties;
 
 /**
  * Application specific session info.
@@ -47,7 +47,7 @@ public class ${application}SessionInfo extends DefaultSessionInfo {
    *
    * @param properties the properties
    */
-  public ${application}SessionInfo(Properties properties)  {
+  public ${application}SessionInfo(EncryptedProperties properties)  {
     super(properties);
   }
 

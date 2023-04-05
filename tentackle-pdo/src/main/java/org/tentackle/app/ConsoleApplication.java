@@ -19,12 +19,10 @@
 package org.tentackle.app;
 
 import org.tentackle.common.Constants;
-import org.tentackle.common.StringHelper;
+import org.tentackle.common.EncryptedProperties;
 import org.tentackle.log.Logger;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
-
-import java.util.Properties;
 
 /**
  * Abstract class to handle the application's lifecycle for a console application (no gui).
@@ -84,10 +82,12 @@ public abstract class ConsoleApplication extends AbstractClientApplication {
     String password = getCommandLine().getOptionValue(Constants.BACKEND_PASSWORD);
     if (url != null && user != null) {
       // don't use a properties file: get from command line (password is optional)
-      Properties props = new Properties();
+      EncryptedProperties props = new EncryptedProperties();
       props.setProperty(Constants.BACKEND_URL, url);
       props.setProperty(Constants.BACKEND_USER, user);
-      props.setProperty(Constants.BACKEND_PASSWORD, password);
+      if (password != null) {
+        props.setEncryptedProperty(Constants.BACKEND_PASSWORD, password);
+      }
       sessionInfo.setProperties(props);
     }
     sessionInfo.applyProperties();
@@ -100,7 +100,7 @@ public abstract class ConsoleApplication extends AbstractClientApplication {
    */
   protected void login() {
     String username = getProperty(Constants.BACKEND_USER);
-    char[] password = StringHelper.toCharArray(getProperty(Constants.BACKEND_PASSWORD));
+    char[] password = getPropertyAsChars(Constants.BACKEND_PASSWORD);
     String sessionPropsName = getCommandLine().getOptionValue(Constants.BACKEND_PROPS);
 
     SessionInfo sessionInfo = createSessionInfo(username, password, sessionPropsName);

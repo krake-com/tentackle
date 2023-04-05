@@ -23,6 +23,7 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 
 import org.tentackle.app.AbstractApplication;
+import org.tentackle.common.EncryptedProperties;
 import org.tentackle.dbms.Db;
 import org.tentackle.misc.Identifiable;
 import org.tentackle.model.Model;
@@ -35,8 +36,6 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.sql.Backend;
-
-import java.util.Properties;
 
 import static org.testng.Assert.fail;
 
@@ -81,7 +80,7 @@ public abstract class TestApplication extends AbstractApplication {
     }
 
     if (getProperties() == null) {
-      setProperties(new Properties());
+      setProperties(new EncryptedProperties());
     }
     applyProperties(sessionInfo.getProperties());
     if (!getProperties().containsKey(DISABLE_MODIFICATION_TRACKER)) {

@@ -19,6 +19,7 @@
 package org.tentackle.dbms;
 
 import org.tentackle.common.Constants;
+import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.common.FileHelper;
 import org.tentackle.daemon.Scavenger;
@@ -83,7 +84,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -579,8 +579,8 @@ public class Db implements Session, Cloneable {
     try {
 
       // load configuration settings
-      Properties sessionProperties = sessionInfo.getProperties();
-      Properties backendProperties = sessionProperties;   // backend properties defaults to session properties
+      EncryptedProperties sessionProperties = sessionInfo.getProperties();
+      EncryptedProperties backendProperties = sessionProperties;   // backend properties defaults to session properties
       String technicalBackendInfoName = sessionInfo.getProperties().getProperty(Constants.BACKEND_INFO);
       if (technicalBackendInfoName != null) {
         if (technicalBackendInfoName.startsWith(Constants.BACKEND_INFO_USER) ||
@@ -593,7 +593,7 @@ public class Db implements Session, Cloneable {
               BackendConfiguration backendConfiguration = BackendConfiguration.getBackendConfigurations(
                   sessionInfo.getApplicationName(), systemPrefs).get(configName);
               if (backendConfiguration != null) {
-                backendProperties = new Properties();
+                backendProperties = new EncryptedProperties();
                 DbUtilities.getInstance().applyBackendConfiguration(backendConfiguration, backendProperties);
               }
               else {

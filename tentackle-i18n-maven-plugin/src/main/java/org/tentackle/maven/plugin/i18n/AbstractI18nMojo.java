@@ -25,6 +25,7 @@ import org.apache.maven.project.MavenProject;
 
 import org.tentackle.common.BundleSupport;
 import org.tentackle.common.Constants;
+import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.Settings;
 import org.tentackle.i18n.StoredBundleFactory;
 import org.tentackle.maven.AbstractTentackleMojo;
@@ -142,7 +143,7 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
     }
 
     // open connection to backend
-    Properties props = new Properties();
+    EncryptedProperties props = new EncryptedProperties();
     props.setProperty(Constants.BACKEND_URL, url);
     props.setProperty(Constants.BACKEND_USER, user);
     props.setProperty(Constants.BACKEND_PASSWORD, password);

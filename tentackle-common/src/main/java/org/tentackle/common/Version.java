@@ -30,13 +30,6 @@ import java.util.Properties;
  */
 public class Version {
 
-  /** the artifact version **/
-  public static final String RELEASE = getProperties().getProperty("version", "<no-version>");
-
-  /** the build timestamp **/
-  public static final String DATE = getProperties().getProperty("date", "<no-date>");
-
-
   private static Properties getProperties() {
     try {
       return FileHelper.loadProperties(Version.class.getName().replace('.', '/'));
@@ -45,6 +38,15 @@ public class Version {
       return new Properties();    // avoid NPE
     }
   }
+
+  private static final Properties properties = getProperties();
+
+
+  /** the artifact version **/
+  public static final String RELEASE = properties.getProperty("version", "<no-version>");
+
+  /** the build timestamp **/
+  public static final String DATE = properties.getProperty("date", "<no-date>");
 
 
   /**
@@ -68,7 +70,6 @@ public class Version {
 "License along with this library; if not, write to the Free Software\n" +
 "Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA\n");
   }
-
 
   private Version() {}
 

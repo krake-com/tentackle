@@ -1097,7 +1097,7 @@ public abstract class AbstractBackend implements Backend {
    * Unfortunately, {@link DriverManager#getConnection(String, String, String)} requires the password as a string.
    * This method creates a string from a char array and optionally decrypts it.
    * Encrypted passwords are detected by a leading {@code ~}. If an unencrypted password must begin
-   * with a {@code ~}, a double {@code ~~} must be used.
+   * with a {@code ~}, it must be escaped by a leading backslash {@code \~}.
    *
    * @param password the probably encrypted password
    * @return the cleartext password
@@ -1106,10 +1106,13 @@ public abstract class AbstractBackend implements Backend {
     String pw;
     if (password != null) {
       // encrypted passwords start with a ~.
-      // if a non-encrypted password must start with ~, ~~ must be used
-      if (password.length > 1 && password[0] == '~' && password[1] != '~') {
+      if (password.length > 0 && password[0] == '~') {
         // password is encrypted
-        pw = Cryptor.getInstance().decrypt64(new String(password, 1, password.length - 1));
+        pw = Cryptor.getInstanceSafely().decrypt64(new String(password, 1, password.length - 1));
+      }
+      else if (password.length > 1 && password[0] == '\\' && password[1] == '~') {
+        // unencrypted password with a leading ~
+        pw = new String(password, 1, password.length - 1);
       }
       else {
         pw = new String(password);

@@ -18,6 +18,7 @@
 
 package org.tentackle.app;
 
+import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.ModuleInfo;
 import org.tentackle.common.ModuleSorter;
 import org.tentackle.common.StringHelper;
@@ -88,7 +89,7 @@ public abstract class AbstractApplication implements Application {
   private final String version;               // the application's version
   private final long creationTime;            // creation time in epochal milliseconds
 
-  private Properties props;                   // the application's properties
+  private EncryptedProperties props;          // the application's properties
   private CommandLine cmdLine;                // command line
   private DomainContext context;              // the server's connection context
   private SessionInfo sessionInfo;            // server's session info
@@ -231,7 +232,7 @@ public abstract class AbstractApplication implements Application {
    *
    * @param props the properties to configure the application
    */
-  protected void setProperties(Properties props) {
+  protected void setProperties(EncryptedProperties props) {
     this.props = props;
   }
 
@@ -240,7 +241,7 @@ public abstract class AbstractApplication implements Application {
    *
    * @return the properties
    */
-  protected Properties getProperties() {
+  protected EncryptedProperties getProperties() {
     return props;
   }
 
@@ -360,6 +361,10 @@ public abstract class AbstractApplication implements Application {
     return props == null ? null : props.getProperty(key);
   }
 
+  @Override
+  public char[] getPropertyAsChars(String key) {
+    return props == null ? null : props.getPropertyAsChars(key);
+  }
 
   @Override
   public Session getSession() {

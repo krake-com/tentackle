@@ -25,6 +25,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
 
+import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.Settings;
 import org.tentackle.common.StringHelper;
 import org.tentackle.maven.AbstractTentackleMojo;
@@ -65,7 +66,6 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
@@ -460,7 +460,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
             String[] fileNames = fileSetManager.getIncludedFiles(fileset);
             for (String filename : fileNames) {
               File propertiesFile = new File(new File(propertiesDirName), filename);
-              Properties props = new Properties();
+              EncryptedProperties props = new EncryptedProperties();
               try (InputStream is = new FileInputStream(propertiesFile)) {
                 getLog().debug("loading property file " + propertiesFile.getAbsolutePath());
                 props.load(is);

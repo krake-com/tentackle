@@ -20,7 +20,7 @@ package org.tentackle.persist.app;
 
 import org.tentackle.app.AbstractApplication;
 import org.tentackle.common.Constants;
-import org.tentackle.common.StringHelper;
+import org.tentackle.common.EncryptedProperties;
 import org.tentackle.dbms.ConnectionManager;
 import org.tentackle.dbms.ConnectionManagerProvider;
 import org.tentackle.dbms.Db;
@@ -51,7 +51,6 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Enumeration;
 import java.util.Objects;
-import java.util.Properties;
 
 /**
  * Base class for server applications.
@@ -234,7 +233,7 @@ public abstract class AbstractServerApplication extends AbstractApplication
     sessionInfo.setSessionName("SRV");    // server's main session (will be used by the modtracker)
 
     // load properties
-    Properties sessionProps = null;
+    EncryptedProperties sessionProps = null;
     try {
       // try from filesystem first
       sessionProps = sessionInfo.getProperties();
@@ -286,7 +285,7 @@ public abstract class AbstractServerApplication extends AbstractApplication
    */
   protected void login() {
     String username = getProperty(Constants.BACKEND_USER);
-    char[] password = StringHelper.toCharArray(getProperty(Constants.BACKEND_PASSWORD));
+    char[] password = getPropertyAsChars(Constants.BACKEND_PASSWORD);
     String sessionPropsName = getProperty(Constants.BACKEND_PROPS);
 
     SessionInfo sessionInfo = createSessionInfo(username, password, sessionPropsName);

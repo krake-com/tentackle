@@ -18,14 +18,13 @@
 
 package org.tentackle.maven.plugin.wizard;
 
-import javafx.application.Platform;
-import javafx.stage.Stage;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 import org.tentackle.common.Constants;
+import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.maven.plugin.wizard.fx.PdoBrowser;
 import org.tentackle.pdo.DomainContext;
@@ -36,7 +35,8 @@ import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.sql.datatypes.AbstractDataType;
 
-import java.util.Properties;
+import javafx.application.Platform;
+import javafx.stage.Stage;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -76,7 +76,7 @@ public class BrowseMojo extends AbstractWizardMojo {
   public void executeImpl() throws MojoExecutionException, MojoFailureException {
     super.executeImpl();
     AbstractDataType.maxLinesInLiteral = maxLinesInStringLiteral;
-    Properties props = new Properties();
+    EncryptedProperties props = new EncryptedProperties();
     props.setProperty(org.tentackle.common.Constants.BACKEND_URL, url);
     props.setProperty(org.tentackle.common.Constants.BACKEND_USER, user);
     props.setProperty(Constants.BACKEND_PASSWORD, password);

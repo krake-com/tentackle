@@ -19,11 +19,11 @@
 
 package org.tentackle.session;
 
+import org.tentackle.common.EncryptedProperties;
 import org.tentackle.misc.Immutable;
 
 import java.io.Serializable;
 import java.util.Locale;
-import java.util.Properties;
 import java.util.TimeZone;
 
 /**
@@ -194,7 +194,7 @@ public interface SessionInfo extends Immutable, Serializable {
    *
    * @param properties the connection properties.
    */
-  void setProperties(Properties properties);
+  void setProperties(EncryptedProperties properties);
 
   /**
    * Gets the connection properties.<br>
@@ -207,7 +207,7 @@ public interface SessionInfo extends Immutable, Serializable {
    *
    * @return the connection properties, never null
    */
-  Properties getProperties();
+  EncryptedProperties getProperties();
 
   /**
    * Gets the name of the property file.

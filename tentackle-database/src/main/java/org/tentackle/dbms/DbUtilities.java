@@ -19,6 +19,7 @@
 package org.tentackle.dbms;
 
 import org.tentackle.common.Constants;
+import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
@@ -38,7 +39,6 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.RecordComponent;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -304,12 +304,12 @@ public class DbUtilities {
    * @param backendConfiguration the backend configuration
    * @param properties the session properties.
    */
-  public void applyBackendConfiguration(BackendConfiguration backendConfiguration, Properties properties) {
+  public void applyBackendConfiguration(BackendConfiguration backendConfiguration, EncryptedProperties properties) {
     if (backendConfiguration.getUser() != null) {
       properties.setProperty(Constants.BACKEND_USER, backendConfiguration.getUser());
     }
     if (backendConfiguration.getPassword() != null) {
-      properties.setProperty(Constants.BACKEND_PASSWORD, backendConfiguration.getPassword());
+      properties.setEncryptedProperty(Constants.BACKEND_PASSWORD, backendConfiguration.getPassword());
     }
     properties.setProperty(Constants.BACKEND_URL, backendConfiguration.getUrl());
     if (backendConfiguration.getDriver() != null) {
