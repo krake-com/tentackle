@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.TreeMap;
 
 /**
@@ -37,11 +36,10 @@ import java.util.TreeMap;
  */
 public class ModelMetaData {
 
-  private final Backend backend;                      // the backend
-  private final DatabaseMetaData[] metaData;          // the connection's metadata
-  private final Map<String, TableMetaData> tableMap;  // the tables of the model <modelname : metadata>
-  private final String[] schemas;                     // optional schemas
-  private final Properties properties;                // migration properties
+  private final Backend backend;                                                  // the backend
+  private final DatabaseMetaData[] metaData;                                      // the connection's metadata
+  private final Map<String, TableMetaData> tableMap;                              // the tables of the model <modelname : metadata>
+  private final String[] schemas;                                                 // optional schemas
 
   private List<DatabaseMetaDataTableHeader> metaDataTableHeaderList;              // all table headers (names may be not unique!)
   private Map<String, List<DatabaseMetaDataTableHeader>> metaDataTableHeaderMap;  // table header info mapped by tablename (lazy)
@@ -51,7 +49,7 @@ public class ModelMetaData {
    * Creates a database meta instance.
    *
    * @param backend the backend
-   * @param metaData the connections meta data
+   * @param metaData the connections metadata
    * @param schemas optional schemas, null if no schema check
    */
   public ModelMetaData(Backend backend, DatabaseMetaData[] metaData, String[] schemas) {
@@ -60,18 +58,8 @@ public class ModelMetaData {
     this.schemas = schemas;
 
     tableMap = new TreeMap<>();
-    properties = new Properties();
   }
 
-  /**
-   * Gets the migration properties.<br>
-   * Used to remember settings of the migration process.
-   *
-   * @return the properties
-   */
-  public Properties getProperties() {
-    return properties;
-  }
 
   /**
    * Gets the header info of all tables in the database.

@@ -128,6 +128,15 @@ public interface Application extends SessionProvider, DomainContextProvider {
   String getProperty(String key);
 
   /**
+   * Gets an application property as a character array.<br>
+   * Useful for passwords and alike.
+   *
+   * @param key the property's name
+   * @return the value of the key, null if no such property, the empty array if no value for this property
+   */
+  char[] getPropertyAsChars(String key);
+
+  /**
    * Applies further application properties.<br>
    * If the given properties are different from the application properties, they will be copied to
    * the application properties.

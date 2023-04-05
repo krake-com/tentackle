@@ -19,6 +19,7 @@
 
 package org.tentackle.pdo;
 
+import org.tentackle.common.EncryptedProperties;
 import org.tentackle.session.ModificationEvent;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.Session;
@@ -29,7 +30,6 @@ import org.tentackle.session.SessionInfoFactory;
 import org.tentackle.session.SessionUtilities;
 
 import java.util.Collection;
-import java.util.Properties;
 import java.util.function.Consumer;
 
 /**
@@ -503,7 +503,7 @@ public class Pdo {
    * @param properties the properties
    * @return the created session info
    */
-  public static SessionInfo createSessionInfo(Properties properties) {
+  public static SessionInfo createSessionInfo(EncryptedProperties properties) {
     return SessionInfoFactory.getInstance().create(properties);
   }
 

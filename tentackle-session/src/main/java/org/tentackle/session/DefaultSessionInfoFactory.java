@@ -19,9 +19,8 @@
 
 package org.tentackle.session;
 
+import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.Service;
-
-import java.util.Properties;
 
 /**
  * Default session info factory.
@@ -49,7 +48,7 @@ public class DefaultSessionInfoFactory implements SessionInfoFactory {
   }
 
   @Override
-  public SessionInfo create(Properties properties) {
+  public SessionInfo create(EncryptedProperties properties) {
     return new DefaultSessionInfo(properties);
   }
 

@@ -20,6 +20,7 @@ package org.tentackle.sql;
 
 import org.tentackle.common.Constants;
 import org.tentackle.common.Cryptor;
+import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.StringHelper;
 
 import javax.naming.InitialContext;
@@ -28,7 +29,6 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
-import java.util.Properties;
 import java.util.StringTokenizer;
 
 /**
@@ -163,10 +163,10 @@ public class BackendInfo {
    *
    * @param backendProperties the properties
    */
-  public BackendInfo(Properties backendProperties) {
+  public BackendInfo(EncryptedProperties backendProperties) {
     this(backendProperties.getProperty(Constants.BACKEND_URL),
          backendProperties.getProperty(Constants.BACKEND_USER),
-         parsePassword(backendProperties.getProperty(Constants.BACKEND_PASSWORD)),
+         parsePassword(backendProperties.getPropertyBlunt(Constants.BACKEND_PASSWORD)),
          parseSchemas(backendProperties.getProperty(Constants.BACKEND_SCHEMAS)));
     String driver = backendProperties.getProperty(Constants.BACKEND_DRIVER);
     if (driver != null) {

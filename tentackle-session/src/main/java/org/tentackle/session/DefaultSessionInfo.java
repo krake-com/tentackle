@@ -21,8 +21,8 @@ package org.tentackle.session;
 
 import org.tentackle.common.Constants;
 import org.tentackle.common.Cryptor;
+import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.FileHelper;
-import org.tentackle.common.StringHelper;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.ImmutableException;
@@ -33,7 +33,6 @@ import java.io.Serial;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.TimeZone;
 
 /**
@@ -62,7 +61,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
   private String clientVersion;                 // the version of the client
   private long since;                           // logged in since
   private String propertiesName;                // filename of backend properties
-  private Properties properties;                // db properties (send over via RMI)
+  private EncryptedProperties properties;       // db properties (send over via RMI)
   private boolean immutable;                    // true if session info is immutable
   private boolean finallyImmutable;             // true if finally immutable
   private Logger.Level immutableLoggingLevel;   // optional logging for immutable violations instead of exception
@@ -111,14 +110,11 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
    *
    * @param properties the properties
    */
-  public DefaultSessionInfo(Properties properties)  {
+  public DefaultSessionInfo(EncryptedProperties properties)  {
     setPropertiesName("<internal>");
     setProperties(properties);
     setUserName(properties.getProperty(Constants.BACKEND_USER));
-    String pass = properties.getProperty(Constants.BACKEND_PASSWORD);
-    if (pass != null && !pass.isEmpty()) {
-      setPassword(pass.toCharArray());
-    }
+    setPassword(properties.getPropertyAsChars(Constants.BACKEND_PASSWORD));
   }
 
 
@@ -393,7 +389,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
     }
 
     if (properties != null) {
-      sessionInfo.properties = (Properties) properties.clone();
+      sessionInfo.properties = properties.clone();
     }
 
     sessionInfo.sessionName = null;   // session names should be unique, since they identify a session
@@ -430,7 +426,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
   }
 
   @Override
-  public Properties getProperties() {
+  public EncryptedProperties getProperties() {
     if (properties == null) {
       try {
         try {
@@ -448,7 +444,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
   }
 
   @Override
-  public void setProperties(Properties properties) {
+  public void setProperties(EncryptedProperties properties) {
     assertMutable();
     this.properties = properties;
   }
@@ -459,7 +455,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
     if (name != null) {
       setUserName(name);
     }
-    char[] pwd = StringHelper.toCharArray(getProperties().getProperty(Constants.BACKEND_PASSWORD));
+    char[] pwd = getProperties().getPropertyAsChars(Constants.BACKEND_PASSWORD);
     if (pwd != null) {
       setPassword(pwd);
     }

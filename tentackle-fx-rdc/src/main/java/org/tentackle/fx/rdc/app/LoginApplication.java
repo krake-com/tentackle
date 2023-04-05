@@ -19,13 +19,10 @@
 
 package org.tentackle.fx.rdc.app;
 
-import javafx.application.Platform;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import org.tentackle.app.Application;
 import org.tentackle.common.Constants;
 import org.tentackle.common.Cryptor;
+import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxRuntimeException;
@@ -33,8 +30,12 @@ import org.tentackle.fx.rdc.login.Login;
 import org.tentackle.log.Logger;
 import org.tentackle.session.SessionInfo;
 
-import java.awt.*;
-import java.util.Properties;
+import javafx.application.Platform;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
+import java.awt.Rectangle;
+import java.awt.SplashScreen;
 
 /**
  * The login FX application.
@@ -125,15 +126,12 @@ public class LoginApplication extends FxApplication {
     sessionInfo.setSessionName("FX");
 
     // provide user and password from backend properties, if given
-    Properties props = sessionInfo.getProperties();
+    EncryptedProperties props = sessionInfo.getProperties();
     if (username == null) {   // if not overridden by command line
       sessionInfo.setUserName(props.getProperty(Constants.BACKEND_USER, sessionInfo.getUserName()));
     }
     if (password == null) {   // if not overridden by command line: get from properties, if set
-      String propsPassword = props.getProperty(Constants.BACKEND_PASSWORD);
-      if (propsPassword != null) {
-        sessionInfo.setPassword(propsPassword.toCharArray());
-      }
+      sessionInfo.setPassword(props.getPropertyAsChars(Constants.BACKEND_PASSWORD));
     }
 
     sessionInfo.applyProperties();

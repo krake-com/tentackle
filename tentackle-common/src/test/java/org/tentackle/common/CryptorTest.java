@@ -26,13 +26,11 @@ import org.testng.annotations.Test;
  */
 @SuppressWarnings("missing-explicit-ctor")
 public class CryptorTest {
-
-  private static final String MSG = "a hollow voice says plugh";
-
+  private static final String MSG = "Congratulations! You killed the dragon with your bare hands!";
 
   @Test
   public void doCrypt() {
-    Cryptor cryptor = new Cryptor("cage", "wave rod");
+    Cryptor cryptor = Cryptor.getInstanceSafely();
     String base64 = cryptor.encrypt64(MSG);
     Assert.assertEquals(cryptor.decrypt64(base64), MSG);
 

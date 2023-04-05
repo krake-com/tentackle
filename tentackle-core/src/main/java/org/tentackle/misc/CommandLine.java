@@ -19,10 +19,11 @@
 
 package org.tentackle.misc;
 
+import org.tentackle.common.EncryptedProperties;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.TreeMap;
 
 /**
@@ -151,8 +152,8 @@ public class CommandLine {
    *
    * @return the options, never null
    */
-  public Properties getOptionsAsProperties() {
-    Properties props = new Properties();
+  public EncryptedProperties getOptionsAsProperties() {
+    EncryptedProperties props = new EncryptedProperties();
     for (Map.Entry<String,String> entry: options.entrySet()) {
       String value = entry.getValue();
       if (value == null)  {

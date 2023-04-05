@@ -36,7 +36,6 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashSet;
-import java.util.Properties;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
@@ -90,8 +89,8 @@ public class FileHelper {
    * @throws IOException if reading the property file failed
    * @throws FileNotFoundException if no properties found
    */
-  public static Properties loadProperties(String name, boolean asResource) throws IOException {
-    Properties dbProps = new Properties();
+  public static EncryptedProperties loadProperties(String name, boolean asResource) throws IOException {
+    EncryptedProperties dbProps = new EncryptedProperties();
     if (name != null) {
       if (name.indexOf('.') < 0) {
         name += Constants.PROPS_EXTENSION;
@@ -116,7 +115,7 @@ public class FileHelper {
    * @throws IOException if reading the property file failed
    * @throws FileNotFoundException if no properties found
    */
-  public static Properties loadProperties(String name) throws IOException {
+  public static EncryptedProperties loadProperties(String name) throws IOException {
     try {
       return loadProperties(name, false);
     }

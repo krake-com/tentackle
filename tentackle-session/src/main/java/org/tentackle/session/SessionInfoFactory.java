@@ -19,9 +19,8 @@
 
 package org.tentackle.session;
 
+import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.ServiceFactory;
-
-import java.util.Properties;
 
 
 interface SessionInfoFactoryHolder {
@@ -71,7 +70,7 @@ public interface SessionInfoFactory {
    * @param properties the properties
    * @return the created session info
    */
-  SessionInfo create(Properties properties);
+  SessionInfo create(EncryptedProperties properties);
 
   /**
    * Creates a session info from the default properties holding the connection parameters.
