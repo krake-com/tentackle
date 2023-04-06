@@ -18,10 +18,11 @@
 
 package org.tentackle.pdo;
 
-import org.tentackle.common.StringHelper;
-import org.tentackle.persist.AbstractPersistentObject;
 import org.testng.Reporter;
 import org.testng.annotations.Test;
+
+import org.tentackle.common.StringHelper;
+import org.tentackle.persist.AbstractPersistentObject;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -58,9 +59,9 @@ public class IllegalModelNamesTest {
     }
 
     StringBuilder buf = new StringBuilder();
-    buf.append("  private final Set<String> illegalNames = Set.of(\n");
+    buf.append("  private static final Set<String> ILLEGAL_NAMES = Set.of(\n");
     logNames(illegalNames, buf);
-    buf.append("  );\n\n  private final Set<String> confusingNames = Set.of(\n");
+    buf.append("  );\n\n  private static final Set<String> CONFUSING_NAMES = Set.of(\n");
     logNames(confusingNames, buf);
     buf.append("  );\n");
     Reporter.log(buf.toString(), true);
