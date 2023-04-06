@@ -97,10 +97,23 @@ public abstract class AbstractSql92Backend extends AbstractBackend {
     if (offset > 0) {
       throw new BackendException("backend " + this + " does not support selects with OFFSET clause");
     }
-    sqlBuilder.insert(0, SQL_SELECT);
+    if (isLeadingSelectMissing(sqlBuilder)) {
+      sqlBuilder.insert(0, SQL_SELECT);
+    }
     if (writeLock) {
       sqlBuilder.append(SQL_FOR_UPDATE);
     }
+  }
+
+  /**
+   * Determines whether {@link #buildSelectSql(StringBuilder, boolean, int, int)} must prepend a <code>"SELECT "</code>.
+   *
+   * @param sqlBuilder the sql builder
+   * @return true if leading select keyword is missing
+   */
+  protected boolean isLeadingSelectMissing(StringBuilder sqlBuilder) {
+    // does not start with SELECT or WITH
+    return sqlBuilder.indexOf(SQL_SELECT) != 0 && sqlBuilder.indexOf("WITH ") != 0;
   }
 
   @Override

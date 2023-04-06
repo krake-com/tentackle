@@ -61,7 +61,9 @@ public class Oracle extends Oracle8 {
 
   @Override
   public void buildSelectSql(StringBuilder sqlBuilder, boolean writeLock, int limit, int offset) {
-    sqlBuilder.insert(0, SQL_SELECT);
+    if (isLeadingSelectMissing(sqlBuilder)) {
+      sqlBuilder.insert(0, SQL_SELECT);
+    }
     if (writeLock) {
       sqlBuilder.append(SQL_FOR_UPDATE);
     }

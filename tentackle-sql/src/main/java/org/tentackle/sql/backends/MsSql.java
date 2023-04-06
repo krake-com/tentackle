@@ -90,8 +90,11 @@ public class MsSql extends AbstractSql2003Backend {
   public void buildSelectSql(StringBuilder sqlBuilder, boolean writeLock, int limit, int offset) {
     if (limit > 0 && offset <= 0) {
       // MSSQL supports TOP
+      boolean insertSelect = isLeadingSelectMissing(sqlBuilder);
       sqlBuilder.insert(0, SQL_TOP_PAR);
-      sqlBuilder.insert(0, SQL_SELECT);
+      if (insertSelect) {
+        sqlBuilder.insert(0, SQL_SELECT);
+      }
     }
     else  {
       super.buildSelectSql(sqlBuilder, writeLock, limit, offset);

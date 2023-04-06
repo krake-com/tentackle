@@ -100,13 +100,16 @@ public class Informix extends AbstractSql92Backend {
 
   @Override
   public void buildSelectSql(StringBuilder sqlBuilder, boolean writeLock, int limit, int offset) {
+    boolean insertSelect = isLeadingSelectMissing(sqlBuilder);
     if (limit > 0) {
       sqlBuilder.insert(0, SQL_FIRST_PAR);
     }
     if (offset > 0) {
       sqlBuilder.insert(0, SQL_SKIP_PAR); // SKIP comes before FIRST
     }
-    sqlBuilder.insert(0, SQL_SELECT);
+    if (insertSelect) {
+      sqlBuilder.insert(0, SQL_SELECT);
+    }
     if (writeLock) {
       sqlBuilder.append(SQL_FOR_UPDATE);
     }

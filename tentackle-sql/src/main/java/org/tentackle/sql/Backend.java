@@ -359,8 +359,8 @@ public interface Backend {
   /**
    * Creates a select statement string from an inner sql string.
    * <p>
-   * {@code sqlBuilder} is anything as {@code FROM... WHERE... ORDER BY...}.<br>
-   * It is decorated with a leading {@code SELECT} plus optional clauses
+   * {@code sqlBuilder} is anything as {@code [SELECT] FROM... WHERE... ORDER BY...}.<br>
+   * It is decorated with a leading {@code SELECT}, if missing, plus optional clauses
    * like for the given parameters.
    *
    * @param sqlBuilder the sql builder, initially containing the inner sql without leading {@code SELECT}.
@@ -373,9 +373,7 @@ public interface Backend {
   /**
    * Creates a select statement string from an inner sql string.
    * <p>
-   * {@code sqlBuilder} is anything as {@code FROM... WHERE... ORDER BY...}.<br>
-   * It is decorated with a leading {@code SELECT} plus optional clauses
-   * like for the given parameters.
+   * Same as {@link #buildSelectSql(StringBuilder, boolean, int, int)}, but for strings.
    *
    * @param sql the sql without leading {@code SELECT}.
    * @param writeLock true select should write lock

@@ -66,7 +66,7 @@ public class DynamicDriver implements Driver {
       }
     }
     else {
-      throw new BackendException("malformed jdbc driver name:url");
+      throw new BackendException("malformed jdbc driver name: " + name);
     }
   }
 
