@@ -89,60 +89,6 @@ public final class StringHelper {
 
 
   /**
-   * Null safe {@link  String#compareTo(String)}.
-   *
-   * @param a first string, may be null
-   * @param b second string, may be null
-   * @return the comparison result
-   */
-  public static int compare(String a, String b) {
-    int rv = 0;
-    if (a == null) {
-      if (b != null) {
-        return -1;
-      }
-      // else 0
-    }
-    else {
-      if (b == null) {
-        rv = 1;
-      }
-      else {
-        rv = a.compareTo(b);
-      }
-    }
-    return rv;
-  }
-
-
-  /**
-   * Null safe {@link  String#compareToIgnoreCase(String)}.
-   *
-   * @param a first string, may be null
-   * @param b second string, may be null
-   * @return the comparison result
-   */
-  public static int compareIgnoreCase(String a, String b) {
-    int rv = 0;
-    if (a == null) {
-      if (b != null) {
-        return -1;
-      }
-      // else 0
-    }
-    else {
-      if (b == null) {
-        rv = 1;
-      }
-      else {
-        rv = a.compareToIgnoreCase(b);
-      }
-    }
-    return rv;
-  }
-
-
-  /**
    * Converts a string to uppercase allowing null values.<br>
    * The conversion is done with {@link Locale#ROOT}.
    *
