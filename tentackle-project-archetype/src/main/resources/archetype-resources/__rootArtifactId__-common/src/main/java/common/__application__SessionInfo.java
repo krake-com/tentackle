@@ -11,6 +11,7 @@ import org.tentackle.common.EncryptedProperties;
 import org.tentackle.session.DefaultSessionInfo;
 
 import java.io.Serial;
+import java.util.Locale;
 
 /**
  * Application specific session info.
@@ -60,6 +61,6 @@ public class ${application}SessionInfo extends DefaultSessionInfo {
 
   @Override
   public void setUserName(String userName) {
-    super.setUserName(userName == null ? null : userName.toUpperCase());    // usernames are uppercase only
+    super.setUserName(userName == null ? null : userName.toUpperCase(Locale.ROOT));    // usernames are uppercase only
   }
 }

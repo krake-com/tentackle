@@ -22,6 +22,7 @@ import org.tentackle.common.StringHelper;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Locale;
 
 
 /**
@@ -60,8 +61,8 @@ public class IndexColumnMetaData implements Comparable<IndexColumnMetaData> {
     if (ndx1 >= 0) {
       int ndx2 = columnName.lastIndexOf(')');
       if (ndx2 > ndx1) {
-        functionName = columnName.substring(0, ndx1).trim().toUpperCase();
-        columnName = columnName.substring(ndx1 + 1, ndx2).trim().toLowerCase();
+        functionName = columnName.substring(0, ndx1).trim().toUpperCase(Locale.ROOT);
+        columnName = columnName.substring(ndx1 + 1, ndx2).trim().toLowerCase(Locale.ROOT);
       }
     }
     String ascDesc = resultSet.getString("ASC_OR_DESC");

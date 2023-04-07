@@ -21,6 +21,7 @@ package org.tentackle.maven.plugin.jlink;
 import org.apache.maven.plugin.MojoExecutionException;
 
 import java.io.File;
+import java.util.Locale;
 
 /**
  * Default artifact creator.
@@ -51,7 +52,7 @@ public class DefaultArtifactCreator implements ArtifactCreator {
   public void attachInstallers(JPackageMojo mojo, long minTime) throws MojoExecutionException {
     File targetDir = new File(mojo.getMavenProject().getBuild().getDirectory());
     String[] names = targetDir.list((dir, name) -> {
-      String fileName = name.toLowerCase();
+      String fileName = name.toLowerCase(Locale.ROOT);
       for (String extension : INSTALLER_EXTENSIONS) {
         if (fileName.endsWith(extension)) {
           File file = new File(targetDir, fileName);

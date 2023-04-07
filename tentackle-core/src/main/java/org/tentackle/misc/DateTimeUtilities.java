@@ -50,6 +50,7 @@ import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
@@ -364,9 +365,9 @@ public class DateTimeUtilities {
       }
       catch (DateTimeException ex) {
         // by partial name
-        text = text.toUpperCase();
+        text = text.toUpperCase(Locale.ROOT);
         for (String zoneId : getZoneIds()) {
-          if (zoneId.toUpperCase().contains(text)) {
+          if (zoneId.toUpperCase(Locale.ROOT).contains(text)) {
             return ZoneId.of(zoneId);
           }
         }

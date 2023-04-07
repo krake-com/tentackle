@@ -36,6 +36,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import java.awt.Rectangle;
 import java.awt.SplashScreen;
+import java.util.Locale;
 
 /**
  * The login FX application.
@@ -164,10 +165,10 @@ public class LoginApplication extends FxApplication {
       // (see org.tentackle.fx.rdc.update.LoginFailedWithUpdateHandler.passSessionInfoViaEnvironment)
       String envPrefix = StringHelper.toAsciiLetterOrDigit(Application.getInstance().getName());
       try {
-        String encUser = System.getenv((envPrefix + "_" + Constants.BACKEND_USER).toUpperCase());
+        String encUser = System.getenv((envPrefix + "_" + Constants.BACKEND_USER).toUpperCase(Locale.ROOT));
         if (encUser != null) {
           sessionInfo.setUserName(Cryptor.getInstance().decrypt64(encUser));
-          String encPass = System.getenv((envPrefix + "_" + Constants.BACKEND_PASSWORD).toUpperCase());
+          String encPass = System.getenv((envPrefix + "_" + Constants.BACKEND_PASSWORD).toUpperCase(Locale.ROOT));
           if (encPass != null) {
             sessionInfo.setPassword(Cryptor.getInstance().decrypt64ToChars(encPass));
           }

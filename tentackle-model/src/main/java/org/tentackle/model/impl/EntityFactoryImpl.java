@@ -46,6 +46,7 @@ import org.tentackle.sql.DataTypeFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * The default entity model factory.
@@ -406,7 +407,7 @@ public class EntityFactoryImpl implements EntityFactory {
         }
       }
       else  {
-        if (!attributeOptions.processOption(option.toUpperCase())) {
+        if (!attributeOptions.processOption(option.toUpperCase(Locale.ROOT))) {
           throw line.createModelException("illegal option '" + option + "' for attribute " + attribute);
         }
       }

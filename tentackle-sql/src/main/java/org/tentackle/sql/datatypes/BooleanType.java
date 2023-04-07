@@ -30,6 +30,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -71,7 +72,7 @@ public sealed class BooleanType extends AbstractDataType<Boolean> permits Boolea
   @Override
   public Boolean valueOf(String str) {
     String bstr = StringHelper.parseString(str);
-    return switch (bstr.toLowerCase()) {
+    return switch (bstr.toLowerCase(Locale.ROOT)) {
       case "true", "t", "1" -> Boolean.TRUE;
       case "false", "f", "0" -> Boolean.FALSE;
       default -> throw new BackendException("invalid boolean value: " + bstr);

@@ -45,6 +45,7 @@ import org.tentackle.wurblet.WurbletArgumentParser;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 
@@ -717,7 +718,7 @@ public class DbModelWurblet extends ModelWurblet {
         else {
           buf.append(inset).append("  new Join<>(JoinType.LEFT, ");
           if (parentName == null) {
-            buf.append("getColumnName(CN_").append(relation.getAttribute().getName().toUpperCase()).append("), \"");
+            buf.append("getColumnName(CN_").append(relation.getAttribute().getName().toUpperCase(Locale.ROOT)).append("), \"");
           }
           else {
             buf.append('"').append(parentName).append('.').append(relation.getAttribute().getColumnName()).append("\", \"");

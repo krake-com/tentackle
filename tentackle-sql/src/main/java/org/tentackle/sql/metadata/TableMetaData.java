@@ -25,6 +25,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
@@ -257,7 +258,7 @@ public class TableMetaData {
    * @return the column, null if no such column
    */
   public ColumnMetaData getColumnByName(String columnName) {
-    columnName = columnName.toLowerCase();
+    columnName = columnName.toLowerCase(Locale.ROOT);
     for (ColumnMetaData column: columns) {
       if (column.getColumnName().equals(columnName)) {
         return column;

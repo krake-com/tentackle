@@ -25,6 +25,8 @@ import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
 import org.tentackle.model.InheritanceType;
 
+import java.util.Locale;
+
 /**
  * Describes the join to a component's attribute.
  *
@@ -76,7 +78,7 @@ public class ComponentInfo {
       Entity rootAttributeEntity = rootAttribute.getEntity().getInheritanceType() == InheritanceType.PLAIN ?
               joinedEntity : rootAttribute.getEntity();
       rootIdClassName = wurblet.deriveClassNameForEntity(rootAttributeEntity);
-      rootIdColumnName = rootIdClassName + ".CN_" + rootAttribute.getName().toUpperCase();
+      rootIdColumnName = rootIdClassName + ".CN_" + rootAttribute.getName().toUpperCase(Locale.ROOT);
     }
     else  {
       rootIdClassName = wurblet.deriveClassNameForEntity(joinedEntity);

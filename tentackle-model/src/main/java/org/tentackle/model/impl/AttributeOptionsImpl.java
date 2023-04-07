@@ -28,6 +28,7 @@ import org.tentackle.sql.DataType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Attribute options.
@@ -182,7 +183,7 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
     boolean on = ctrl == null || ctrl;
 
     if (!applied) {
-      String uco = option.toUpperCase();
+      String uco = option.toUpperCase(Locale.ROOT);
       if (uco.startsWith(OPTION_DEFAULT)) {
         if (on) {
           String str = option.substring(OPTION_DEFAULT.length()).trim();

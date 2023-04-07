@@ -61,6 +61,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -387,7 +388,7 @@ public class ModelImpl implements Model {
 
   @Override
   public synchronized Entity getByEntityName(String entityName) throws ModelException {
-    String name = entityName.toLowerCase();
+    String name = entityName.toLowerCase(Locale.ROOT);
     EntityInfo entityInfo = nameToEntityInfoMap.get(name);
     if (entityInfo != null && entityInfo.hasChanged()) {
       refreshModel();
@@ -398,7 +399,7 @@ public class ModelImpl implements Model {
 
   @Override
   public synchronized Entity getByTableName(String tableName) throws ModelException {
-    tableName = tableName.toLowerCase();
+    tableName = tableName.toLowerCase(Locale.ROOT);
     int ndx = tableName.indexOf('.');
     if (ndx >= 0) {
       tableName = tableName.substring(ndx + 1); // skip schema
@@ -423,7 +424,7 @@ public class ModelImpl implements Model {
 
   @Override
   public EntityInfo getEntityInfo(Entity entity) throws ModelException {
-    String name = entity.getName().toLowerCase();
+    String name = entity.getName().toLowerCase(Locale.ROOT);
     EntityInfo entityInfo = nameToEntityInfoMap.get(name);
     if (entityInfo != null && entityInfo.hasChanged()) {
       refreshModel();
@@ -582,7 +583,7 @@ public class ModelImpl implements Model {
       }
     }
 
-    EntityInfo oldEntityInfo = nameToEntityInfoMap.put(entityInfo.getEntity().getName().toLowerCase(), entityInfo);
+    EntityInfo oldEntityInfo = nameToEntityInfoMap.put(entityInfo.getEntity().getName().toLowerCase(Locale.ROOT), entityInfo);
     if (entityInfo.getEntity().getClassId() != 0) {
       if (oldEntityInfo != null && oldEntityInfo.getEntity().getClassId() != entityInfo.getEntity().getClassId()) {
         throw new ModelException("duplicate entity " + entityInfo.getEntity().getName() + " in " + url, entityInfo.getEntity());
@@ -1065,7 +1066,7 @@ public class ModelImpl implements Model {
         }
         for (Attribute attrib: allAttributes) {
           AttributeImpl attribute = (AttributeImpl) attrib;
-          AttributeImpl oldAttribute = (AttributeImpl) nameMap.put(attribute.getPathName().toLowerCase(), attribute);
+          AttributeImpl oldAttribute = (AttributeImpl) nameMap.put(attribute.getPathName().toLowerCase(Locale.ROOT), attribute);
           if (oldAttribute != null && (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity))) {
             StringBuilder exMsg = new StringBuilder();
             exMsg.append("attribute '").append(attribute.getPathName()).append("' in ").
@@ -1076,7 +1077,7 @@ public class ModelImpl implements Model {
             }
             errors.add(new ModelError(attribute, exMsg.toString()));
           }
-          AttributeImpl oldColumn = (AttributeImpl) columnMap.put(attribute.getColumnName().toLowerCase(), attribute);
+          AttributeImpl oldColumn = (AttributeImpl) columnMap.put(attribute.getColumnName().toLowerCase(Locale.ROOT), attribute);
           if (oldAttribute == null && // log same attrib only once
               oldColumn != null && (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity))) {
             StringBuilder exMsg = new StringBuilder();
@@ -1125,7 +1126,7 @@ public class ModelImpl implements Model {
             letters.append(currentChar);
           }
         }
-        applyTableAlias(aliasMap, entity, letters.toString().toLowerCase());
+        applyTableAlias(aliasMap, entity, letters.toString().toLowerCase(Locale.ROOT));
       }
     }
 
@@ -1141,7 +1142,7 @@ public class ModelImpl implements Model {
         if (!syllables.isEmpty()) {
           for (String syllable : syllables) {
             letters.append(syllable.charAt(0));
-            if (applyTableAlias(aliasMap, entity, letters.toString().toLowerCase())) {
+            if (applyTableAlias(aliasMap, entity, letters.toString().toLowerCase(Locale.ROOT))) {
               aliasFound = true;
               break;
             }
@@ -1158,7 +1159,7 @@ public class ModelImpl implements Model {
             if (c != 'a' && c != 'e' && c != 'i' && c != 'o' && c != 'u') {
               letters.append(c);
               if (letters.length() >= 3) {
-                if (applyTableAlias(aliasMap, entity, letters.toString().toLowerCase())) {
+                if (applyTableAlias(aliasMap, entity, letters.toString().toLowerCase(Locale.ROOT))) {
                   aliasFound = true;
                   break;
                 }
@@ -1168,7 +1169,7 @@ public class ModelImpl implements Model {
 
           if (!aliasFound) {
             // just take the first letter and count. This will always work
-            String aliasPrefix = entity.getName().substring(0, 1).toLowerCase();
+            String aliasPrefix = entity.getName().substring(0, 1).toLowerCase(Locale.ROOT);
             int count = 1;
             while (!applyTableAlias(aliasMap, entity, aliasPrefix + count)) {
               count++;

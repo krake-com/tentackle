@@ -135,7 +135,7 @@ For more options, see {\@link ModelWurblet}.
 ]@
 
   /** column prefix for relation '@(rel)@'. */
-  public static final String CP_@(rel.getName().toUpperCase())@ = "@(rel.getColumnPrefix())@";
+  public static final String CP_@(rel.getName().toUpperCase(Locale.ROOT))@ = "@(rel.getColumnPrefix())@";
 @[
       }
     }

@@ -27,6 +27,7 @@ import org.tentackle.model.SourceInfo;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import static org.tentackle.common.Constants.BIND_COLS;
 import static org.tentackle.common.Constants.BIND_LINES;
@@ -157,7 +158,7 @@ public abstract class CommonOptionsImpl implements CommonOptions, Cloneable {
    */
   public boolean applyOption(String option, Boolean ctrl) throws ModelException {
 
-    String uco = option.toUpperCase();
+    String uco = option.toUpperCase(Locale.ROOT);
     String fullopt = uco;
     int ndx = uco.indexOf('=');   // option followed by '=', ex. COLS=5
     if (ndx > 0) {

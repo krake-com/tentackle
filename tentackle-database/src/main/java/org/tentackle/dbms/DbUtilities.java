@@ -39,6 +39,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.RecordComponent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -545,7 +546,7 @@ public class DbUtilities {
   }
 
   private String normalizeColumnName(String name) {
-    return name.replace("_", "").toLowerCase(); // remove underscores and convert to lowercase
+    return name.replace("_", "").toLowerCase(Locale.ROOT); // remove underscores and convert to lowercase
   }
 
   private int[] determinePositions(Backend backend, String memberName, String[] columnNames, DataType<?> dataType) {

@@ -17,6 +17,7 @@
  */
 package org.tentackle.model;
 
+import java.util.Locale;
 import java.util.StringTokenizer;
 
 /**
@@ -104,7 +105,7 @@ public class ModelDefaults {
     clear();
     StringTokenizer stok = new StringTokenizer(str, " ,\t\n\r");
     while (stok.hasMoreTokens()) {
-      String token = stok.nextToken().toLowerCase();
+      String token = stok.nextToken().toLowerCase(Locale.ROOT);
       switch(token) {
         case "tracked":
           trackType = TrackType.TRACKED;

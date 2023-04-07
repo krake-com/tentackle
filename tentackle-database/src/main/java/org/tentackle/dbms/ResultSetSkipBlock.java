@@ -23,6 +23,7 @@ import org.tentackle.session.PersistenceException;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -55,7 +56,7 @@ public class ResultSetSkipBlock {
       try {
         // append only the first occurrence (from the left).
         // lowercase because column names are converted to lowercase in model (see AttributeImpl)
-        columnMap.putIfAbsent(meta.getColumnName(i).toLowerCase(), i);
+        columnMap.putIfAbsent(meta.getColumnName(i).toLowerCase(Locale.ROOT), i);
       }
       catch (SQLException e) {
         throw new PersistenceException(rs.getSession(), e);

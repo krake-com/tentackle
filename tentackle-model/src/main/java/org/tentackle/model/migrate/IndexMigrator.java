@@ -26,6 +26,7 @@ import org.tentackle.sql.Backend;
 import org.tentackle.sql.metadata.IndexColumnMetaData;
 import org.tentackle.sql.metadata.IndexMetaData;
 
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -179,14 +180,14 @@ public class IndexMigrator {
         modelFilter = "";
       }
       else {
-        modelFilter = modelFilter.toUpperCase();
+        modelFilter = modelFilter.toUpperCase(Locale.ROOT);
       }
       String currentFilter = dbIndex.getFilterCondition();
       if (StringHelper.isAllWhitespace(currentFilter)) {
         currentFilter = "";
       }
       else {
-        currentFilter = currentFilter.toUpperCase();
+        currentFilter = currentFilter.toUpperCase(Locale.ROOT);
       }
       different = !equalsIgnoreMatchingParenthesis(modelFilter, currentFilter);
       if (different && commentBuf != null) {

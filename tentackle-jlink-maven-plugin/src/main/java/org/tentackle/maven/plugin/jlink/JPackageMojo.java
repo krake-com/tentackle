@@ -44,6 +44,7 @@ import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -640,7 +641,7 @@ public class JPackageMojo extends AbstractJLinkMojo {
     // the cfg files are located in a subdirectory called "app". Depending on the platform, it can be
     // found in lib, Contents or without a further subdir.
 
-      String[] configNames = configDir.list((d, n) -> n.toLowerCase().endsWith(CONFIG_EXTENSION));
+      String[] configNames = configDir.list((d, n) -> n.toLowerCase(Locale.ROOT).endsWith(CONFIG_EXTENSION));
       if (configNames != null) {
         for (String configName : configNames) {
           configFiles.add(new File(configDir, configName));

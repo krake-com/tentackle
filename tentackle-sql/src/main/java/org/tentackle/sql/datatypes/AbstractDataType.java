@@ -28,6 +28,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -275,9 +276,9 @@ public abstract class AbstractDataType<T> implements DataType<T> {
   @Override
   public String getDataTypeConstant() {
     StringBuilder buf = new StringBuilder();
-    buf.append("DT_").append(getJavaType().toUpperCase());
+    buf.append("DT_").append(getJavaType().toUpperCase(Locale.ROOT));
     if (!getVariant().isEmpty()) {
-      buf.append('_').append(getVariant().toUpperCase());
+      buf.append('_').append(getVariant().toUpperCase(Locale.ROOT));
     }
     return buf.toString();
   }

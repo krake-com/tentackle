@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
@@ -352,7 +353,7 @@ public class Postgres extends AbstractSql92Backend {
 
   @Override
   public String toInternalType(String sqlTypeName) {
-    String typeName = sqlTypeName.toLowerCase();   // postgres is case-sensitive internally and needs lowercase
+    String typeName = sqlTypeName.toLowerCase(Locale.ROOT);   // postgres is case-sensitive internally and needs lowercase
     // char(1) is okay for SQL scripts, but not a valid postgres type
     int ndx = typeName.indexOf('(');
     if (ndx >= 0) {

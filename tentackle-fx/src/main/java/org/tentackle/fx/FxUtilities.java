@@ -19,6 +19,29 @@
 
 package org.tentackle.fx;
 
+import org.tentackle.bind.Bindable;
+import org.tentackle.bind.Binder;
+import org.tentackle.bind.Binding;
+import org.tentackle.bind.BindingException;
+import org.tentackle.bind.BindingMember;
+import org.tentackle.common.Constants;
+import org.tentackle.common.LocaleProvider;
+import org.tentackle.common.Service;
+import org.tentackle.common.ServiceFactory;
+import org.tentackle.common.StringHelper;
+import org.tentackle.fx.component.FxTableView;
+import org.tentackle.fx.component.FxTextArea;
+import org.tentackle.fx.component.FxTreeTableView;
+import org.tentackle.fx.component.Note;
+import org.tentackle.fx.table.TableColumnConfiguration;
+import org.tentackle.fx.table.TableConfiguration;
+import org.tentackle.log.Logger;
+import org.tentackle.misc.ConcurrencyHelper;
+import org.tentackle.reflect.ReflectionHelper;
+import org.tentackle.validate.ValidationFailedException;
+import org.tentackle.validate.ValidationMapper;
+import org.tentackle.validate.ValidationResult;
+
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -65,30 +88,6 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.util.Callback;
-
-import org.tentackle.bind.Bindable;
-import org.tentackle.bind.Binder;
-import org.tentackle.bind.Binding;
-import org.tentackle.bind.BindingException;
-import org.tentackle.bind.BindingMember;
-import org.tentackle.common.Constants;
-import org.tentackle.common.LocaleProvider;
-import org.tentackle.common.Service;
-import org.tentackle.common.ServiceFactory;
-import org.tentackle.common.StringHelper;
-import org.tentackle.fx.component.FxTableView;
-import org.tentackle.fx.component.FxTextArea;
-import org.tentackle.fx.component.FxTreeTableView;
-import org.tentackle.fx.component.Note;
-import org.tentackle.fx.table.TableColumnConfiguration;
-import org.tentackle.fx.table.TableConfiguration;
-import org.tentackle.log.Logger;
-import org.tentackle.misc.ConcurrencyHelper;
-import org.tentackle.reflect.ReflectionHelper;
-import org.tentackle.validate.ValidationFailedException;
-import org.tentackle.validate.ValidationMapper;
-import org.tentackle.validate.ValidationResult;
-
 import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
@@ -100,6 +99,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.NavigableSet;
 import java.util.StringTokenizer;
 import java.util.concurrent.Executor;
@@ -1066,7 +1066,7 @@ public class FxUtilities {
    */
   public String getBindingOption(String options, String key) {
     String option = null;
-    StringTokenizer stok = new StringTokenizer(options.toUpperCase(), ",");
+    StringTokenizer stok = new StringTokenizer(options.toUpperCase(Locale.ROOT), ",");
     while (stok.hasMoreTokens()) {
       String token = stok.nextToken().trim();
       if (token.startsWith(key)) {
@@ -1105,7 +1105,7 @@ public class FxUtilities {
   @SuppressWarnings("rawtypes")
   private void applyBindingOptions(FxTextComponent comp, TableColumnConfiguration columnConfiguration, BindingMember member, String options) {
     if (options != null) {
-      StringTokenizer stok = new StringTokenizer(options.toUpperCase(), ",");
+      StringTokenizer stok = new StringTokenizer(options.toUpperCase(Locale.ROOT), ",");
       while (stok.hasMoreTokens()) {
         String token = stok.nextToken().trim();
         boolean processed;

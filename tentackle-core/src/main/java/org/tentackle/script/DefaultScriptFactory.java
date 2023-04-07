@@ -24,6 +24,7 @@ import org.tentackle.log.Logger;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -115,7 +116,7 @@ public class DefaultScriptFactory implements ScriptFactory {
     ScriptingLanguage language;
 
     if (abbreviation != null && !abbreviation.isEmpty()) {
-      abbreviation = abbreviation.toLowerCase();
+      abbreviation = abbreviation.toLowerCase(Locale.ROOT);
       language = getLanguagesMap().get(abbreviation);
     }
     else  {
@@ -155,7 +156,7 @@ public class DefaultScriptFactory implements ScriptFactory {
         ScriptingLanguage language = clazz.getDeclaredConstructor().newInstance();
         for (String abbreviation: language.getAbbreviations()) {
           if (abbreviation != null) {
-            String abbrvLC = abbreviation.toLowerCase();
+            String abbrvLC = abbreviation.toLowerCase(Locale.ROOT);
             if (languages.putIfAbsent(abbrvLC, language) == null) {
               LOGGER.info("added scripting language {0} as {1}", language, abbrvLC);
             }

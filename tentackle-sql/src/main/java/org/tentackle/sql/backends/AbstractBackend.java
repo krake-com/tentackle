@@ -49,6 +49,7 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.StringTokenizer;
 
@@ -192,7 +193,7 @@ public abstract class AbstractBackend implements Backend {
    * @return true if reserved word
    */
   public boolean isReservedWord(String word) {
-    return getReservedWords().contains(word.toUpperCase());
+    return getReservedWords().contains(word.toUpperCase(Locale.ROOT));
   }
 
   @Override
@@ -258,7 +259,7 @@ public abstract class AbstractBackend implements Backend {
 
   @Override
   public String sqlFunction(String functionName, String expression) {
-    StringBuilder buf = new StringBuilder(functionName.toUpperCase()).append('(');
+    StringBuilder buf = new StringBuilder(functionName.toUpperCase(Locale.ROOT)).append('(');
     if (expression != null) {
       buf.append(expression);
     }
@@ -368,16 +369,16 @@ public abstract class AbstractBackend implements Backend {
         catch (BackendException ex1) {
           try {
             table.setupTableFromMetaData(metaData, modelMetaData.getSchemas(),
-                                         schemaPattern == null ? null : schemaPattern.toUpperCase(),
-                                         tablePattern.toUpperCase());
+                                         schemaPattern == null ? null : schemaPattern.toUpperCase(Locale.ROOT),
+                                         tablePattern.toUpperCase(Locale.ROOT));
             found = true;
             break;
           }
           catch (BackendException ex2) {
             try {
               table.setupTableFromMetaData(metaData, modelMetaData.getSchemas(),
-                                           schemaPattern == null ? null : schemaPattern.toLowerCase(),
-                                           tablePattern.toLowerCase());
+                                           schemaPattern == null ? null : schemaPattern.toLowerCase(Locale.ROOT),
+                                           tablePattern.toLowerCase(Locale.ROOT));
               found = true;
               break;
             }
@@ -827,7 +828,7 @@ public abstract class AbstractBackend implements Backend {
     }
 
     if (joinSelectIdAlias != null) {
-      String joinSelectUC = joinSelect.toUpperCase();
+      String joinSelectUC = joinSelect.toUpperCase(Locale.ROOT);
       int joinFromNdx = joinSelectUC.indexOf(SQL_FROM);
       if (joinFromNdx < 0) {
         throw new BackendException("missing FROM in '" + joinSelect + "'");
@@ -854,7 +855,7 @@ public abstract class AbstractBackend implements Backend {
   @Override
   public void assertValidName(SqlNameType nameType, String name) {
     if (name != null) {
-      if (getReservedWords().contains(name.toUpperCase())) {
+      if (getReservedWords().contains(name.toUpperCase(Locale.ROOT))) {
         throw new BackendException(nameType + " '" + name + "' is a reserved word for backend " + this);
       }
       if (SqlNameType.TABLE_NAME == nameType) {
@@ -1135,7 +1136,7 @@ public abstract class AbstractBackend implements Backend {
       str = "";
     }
     else {
-      str = str.toUpperCase();
+      str = str.toUpperCase(Locale.ROOT);
       if (str.startsWith("'")) {
         str = str.substring(1);
       }

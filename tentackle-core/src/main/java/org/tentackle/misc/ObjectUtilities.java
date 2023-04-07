@@ -42,6 +42,7 @@ import java.time.ZonedDateTime;
 import java.time.temporal.TemporalAccessor;
 import java.util.Currency;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -144,7 +145,7 @@ public class ObjectUtilities {
         String name = value.toString();
         if (!name.isEmpty() && Character.isLowerCase(name.charAt(0))) {
           // lowercase camelcase -> convert oneTwo to ONE_TWO
-          name = StringHelper.camelCaseToDelimited(name, "_").toUpperCase();
+          name = StringHelper.camelCaseToDelimited(name, "_").toUpperCase(Locale.ROOT);
         }
         object = Enum.valueOf((Class<Enum>) clazz, name);
       }

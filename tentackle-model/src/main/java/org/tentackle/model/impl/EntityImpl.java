@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -183,7 +184,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
     boolean parsed = true;
 
-    switch (line.getKey().toUpperCase()) {
+    switch (line.getKey().toUpperCase(Locale.ROOT)) {
 
       case NAME:
         String str = line.getValue();
@@ -209,7 +210,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
       case INTEGRITY:
         try {
-          setIntegrity(Integrity.valueOf(line.getValue().toUpperCase()));
+          setIntegrity(Integrity.valueOf(line.getValue().toUpperCase(Locale.ROOT)));
         }
         catch (IllegalArgumentException ex) {
           throw line.createModelException("illegal integrity level: " + line.getValue());
@@ -218,7 +219,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
       case INHERITANCE:
         try {
-          setInheritanceType(InheritanceType.valueOf(line.getValue().toUpperCase()));
+          setInheritanceType(InheritanceType.valueOf(line.getValue().toUpperCase(Locale.ROOT)));
         }
         catch (IllegalArgumentException ex) {
           throw line.createModelException("illegal inheritance type: " + line.getValue());
@@ -320,7 +321,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
       tableNameWithoutSchema = null;
     }
     else  {
-      this.tableName = tableName.toLowerCase();
+      this.tableName = tableName.toLowerCase(Locale.ROOT);
       int ndx = this.tableName.indexOf('.');
       if (ndx > 0) {
         schemaName = this.tableName.substring(0, ndx);
@@ -339,7 +340,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
    */
   public void setTableAlias(String tableAlias) {
     if (tableAlias != null) {
-      this.tableAlias = tableAlias.toLowerCase();
+      this.tableAlias = tableAlias.toLowerCase(Locale.ROOT);
     }
     else {
       this.tableAlias = null;

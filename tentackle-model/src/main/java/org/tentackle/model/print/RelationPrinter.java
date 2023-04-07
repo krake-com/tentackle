@@ -27,6 +27,7 @@ import org.tentackle.model.SelectionType;
 import org.tentackle.model.impl.RelationImpl;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 
@@ -111,7 +112,7 @@ public class RelationPrinter {
         buf.append(' ').append(RelationImpl.REVERSED);
       }
       else {
-        buf.append(' ').append(relation.getRelationType().toString().toLowerCase());
+        buf.append(' ').append(relation.getRelationType().toString().toLowerCase(Locale.ROOT));
       }
       needComma = true;
     }
@@ -126,18 +127,18 @@ public class RelationPrinter {
       boolean selectionTypePrinted = false;
       if (relation.isSelectionCached()) {
         if (relation.getSelectionType() != SelectionType.ALWAYS) {
-          buf.append(' ').append(relation.getSelectionType().toString().toLowerCase());
+          buf.append(' ').append(relation.getSelectionType().toString().toLowerCase(Locale.ROOT));
           selectionTypePrinted = true;
         }
         buf.append(' ').append(RelationImpl.CACHED);
       }
       else if (relation.getSelectionType() != SelectionType.LAZY) {
-        buf.append(' ').append(relation.getSelectionType().toString().toLowerCase());
+        buf.append(' ').append(relation.getSelectionType().toString().toLowerCase(Locale.ROOT));
         selectionTypePrinted = true;
       }
       if (relation.getSelectionWurbletArguments() != null) {
         if (!selectionTypePrinted) {
-          buf.append(' ').append(relation.getSelectionType().toString().toLowerCase());
+          buf.append(' ').append(relation.getSelectionType().toString().toLowerCase(Locale.ROOT));
         }
         if (relation.getSelectionWurbletArguments().startsWith("|")) {
           buf.append(' ');
@@ -220,7 +221,7 @@ public class RelationPrinter {
       if (needComma) {
         buf.append(",\n");
       }
-      lead(buf).append(RelationImpl.SCOPE).append(" = ").append(relation.getAccessScope().toString().toLowerCase());
+      lead(buf).append(RelationImpl.SCOPE).append(" = ").append(relation.getAccessScope().toString().toLowerCase(Locale.ROOT));
       needComma = true;
     }
 

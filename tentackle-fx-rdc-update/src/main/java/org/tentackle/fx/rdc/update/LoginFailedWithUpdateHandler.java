@@ -19,9 +19,6 @@
 
 package org.tentackle.fx.rdc.update;
 
-import javafx.application.Platform;
-import javafx.scene.Parent;
-
 import org.tentackle.common.Constants;
 import org.tentackle.common.Cryptor;
 import org.tentackle.common.ExceptionHelper;
@@ -42,12 +39,15 @@ import org.tentackle.update.InstallationType;
 import org.tentackle.update.UpdateInfo;
 import org.tentackle.update.UpdateService;
 
+import javafx.application.Platform;
+import javafx.scene.Parent;
+import javax.net.ssl.SSLHandshakeException;
 import java.io.File;
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import javax.net.ssl.SSLHandshakeException;
 
 /**
  * To handle login failed exceptions.
@@ -249,10 +249,10 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
       String userName = sessionInfo.getUserName();
       if (userName != null) {
         String envPrefix = StringHelper.toAsciiLetterOrDigit(getApplication().getName());
-        environment.put((envPrefix + "_" + Constants.BACKEND_USER).toUpperCase(), cryptor.encrypt64(userName));
+        environment.put((envPrefix + "_" + Constants.BACKEND_USER).toUpperCase(Locale.ROOT), cryptor.encrypt64(userName));
         char[] password = sessionInfo.getPassword();
         if (password != null) {
-          environment.put((envPrefix + "_" + Constants.BACKEND_PASSWORD).toUpperCase(), cryptor.encrypt64(password));
+          environment.put((envPrefix + "_" + Constants.BACKEND_PASSWORD).toUpperCase(Locale.ROOT), cryptor.encrypt64(password));
         }
       }
     }

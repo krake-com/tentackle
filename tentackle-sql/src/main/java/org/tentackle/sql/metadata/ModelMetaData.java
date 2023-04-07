@@ -26,6 +26,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -81,7 +82,7 @@ public class ModelMetaData {
    * @throws SQLException if cannot retrieve meta data from database
    */
   public List<DatabaseMetaDataTableHeader> getTableInDatabase(String tableName) throws SQLException {
-    return getMetaDataTableHeaderMap().get(tableName.toLowerCase());
+    return getMetaDataTableHeaderMap().get(tableName.toLowerCase(Locale.ROOT));
   }
 
   /**
@@ -167,7 +168,7 @@ public class ModelMetaData {
         List<DatabaseMetaDataTableHeader> tableHeaders = backend.getTableHeaders(md);
         metaDataTableHeaderList.addAll(tableHeaders);
         for (DatabaseMetaDataTableHeader header : tableHeaders) {
-          List<DatabaseMetaDataTableHeader> headersForName = metaDataTableHeaderMap.computeIfAbsent(header.getName().toLowerCase(), n -> new ArrayList<>());
+          List<DatabaseMetaDataTableHeader> headersForName = metaDataTableHeaderMap.computeIfAbsent(header.getName().toLowerCase(Locale.ROOT), n -> new ArrayList<>());
           headersForName.add(header);
         }
       }

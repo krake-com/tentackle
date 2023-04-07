@@ -18,8 +18,6 @@
 
 package org.tentackle.fx.rdc.update;
 
-import javafx.scene.Parent;
-
 import org.tentackle.common.Settings;
 import org.tentackle.common.StringHelper;
 import org.tentackle.common.TentackleRuntimeException;
@@ -31,6 +29,7 @@ import org.tentackle.session.SessionInfo;
 import org.tentackle.update.ClientUpdateUtilities;
 import org.tentackle.update.InstallationType;
 
+import javafx.scene.Parent;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -39,6 +38,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.Locale;
 
 /**
  * Desktop application with auto update facility.
@@ -128,7 +128,7 @@ public abstract class UpdatableDesktopApplication<C extends FxController> extend
    * @return the lockfile name
    */
   protected String getLockFileName() {
-    return StringHelper.toAsciiLetterOrDigit(getName()).toLowerCase() + ".lck";
+    return StringHelper.toAsciiLetterOrDigit(getName()).toLowerCase(Locale.ROOT) + ".lck";
   }
 
 }

@@ -25,6 +25,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.sql.Types;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 
@@ -109,7 +110,7 @@ public class MetaDataUtilities {
    */
   public boolean isReservedTable(String tableName) {
     if (tableName != null) {
-      tableName = tableName.toLowerCase();
+      tableName = tableName.toLowerCase(Locale.ROOT);
       int ndx = tableName.indexOf('.');
       if (ndx >= 0) {
         tableName = tableName.substring(ndx + 1);

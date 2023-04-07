@@ -24,6 +24,7 @@ import org.tentackle.common.TentackleRuntimeException;
 import java.io.Serial;
 import java.io.Serializable;
 import java.text.ParseException;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.StringTokenizer;
@@ -181,7 +182,7 @@ public abstract class SocketConfiguratorBase implements Serializable {
   public void applyProperties(Properties properties) {
     if (properties != null) {
       for (String key: properties.stringPropertyNames()) {
-        switch (key.toUpperCase()) {
+        switch (key.toUpperCase(Locale.ROOT)) {
 
           case SO_REUSEADDR:
             reuseAddress = Boolean.valueOf(properties.getProperty(key));
