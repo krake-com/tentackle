@@ -40,6 +40,7 @@ import org.tentackle.model.parse.RelationLine;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.StringTokenizer;
@@ -351,7 +352,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
 
         StringTokenizer stok = new StringTokenizer(entry.getValue());
 
-        switch (prop.toLowerCase()) {
+        switch (prop.toLowerCase(Locale.ROOT)) {
 
           case DEFAULT:
             break;    // do nothing, just white noise (looks better ;))
@@ -360,7 +361,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
           case RELATION:
             while (stok.hasMoreTokens()) {
               String token = stok.nextToken();
-              switch (token.toLowerCase()) {
+              switch (token.toLowerCase(Locale.ROOT)) {
                 case COMPOSITE:
                   setComposite(true);
                   break;
@@ -420,7 +421,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
 
                 default:
                   try {
-                    setRelationType(RelationType.valueOf(token.toUpperCase()));
+                    setRelationType(RelationType.valueOf(token.toUpperCase(Locale.ROOT)));
                   }
                   catch (IllegalArgumentException ex) {
                     throw createModelException("illegal keyword in relation property: " + token);
@@ -456,7 +457,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
                 }
                 else {
                   try {
-                    setSelectionType(SelectionType.valueOf(token.toUpperCase()));
+                    setSelectionType(SelectionType.valueOf(token.toUpperCase(Locale.ROOT)));
                   }
                   catch (IllegalArgumentException ex) {
                     throw createModelException("illegal keyword in select property: " + token);
@@ -533,7 +534,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
           // property scope = ... *
           case SCOPE:
             try {
-              setAccessScope(AccessScope.valueOf(entry.getValue().toUpperCase()));
+              setAccessScope(AccessScope.valueOf(entry.getValue().toUpperCase(Locale.ROOT)));
             }
             catch (IllegalArgumentException ex) {
               throw createModelException("illegal keyword in scope property: " + entry.getValue());

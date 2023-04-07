@@ -19,26 +19,6 @@
 
 package org.tentackle.fx.rdc;
 
-import javafx.application.Platform;
-import javafx.collections.ObservableList;
-import javafx.geometry.Point2D;
-import javafx.scene.Node;
-import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonBar.ButtonData;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TreeItem;
-import javafx.scene.control.TreeView;
-import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.Dragboard;
-import javafx.scene.input.TransferMode;
-import javafx.stage.FileChooser;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-import javafx.stage.Window;
-import javafx.stage.WindowEvent;
-
 import org.tentackle.app.Application;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
@@ -59,11 +39,31 @@ import org.tentackle.session.AbstractSessionTask;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.SessionDependable;
 
+import javafx.application.Platform;
+import javafx.collections.ObservableList;
+import javafx.geometry.Point2D;
+import javafx.scene.Node;
+import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar.ButtonData;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.TransferMode;
+import javafx.stage.FileChooser;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import javafx.stage.Window;
+import javafx.stage.WindowEvent;
 import java.io.File;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -538,7 +538,7 @@ public class RdcUtilities {
     fc.getExtensionFilters().addAll(new FileChooser.ExtensionFilter(fileType, fileExtension));
     File selectedFile = fc.showSaveDialog(owner);
     if (selectedFile != null) {
-      if (!selectedFile.getName().toLowerCase().endsWith(fileExtension)) {
+      if (!selectedFile.getName().toLowerCase(Locale.ROOT).endsWith(fileExtension)) {
         selectedFile = new File(selectedFile.getPath() + fileExtension);
       }
       // remember the last filename in userspace

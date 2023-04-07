@@ -18,6 +18,8 @@
 
 package org.tentackle.maven.plugin.check;
 
+import java.util.Locale;
+
 /**
  * Bundle key.
  *
@@ -81,7 +83,7 @@ public class BundleKey {
       if (ndx > 0) {
         String lastName = name.substring(ndx + 1);
         if (Character.isLowerCase(lastName.charAt(0)) ||    // first char lowercase (variable)
-            lastName.toUpperCase().equals(lastName)) {      // or all uppercase (final constant)
+            lastName.toUpperCase(Locale.ROOT).equals(lastName)) {      // or all uppercase (final constant)
           // variable reference such as "resources"
           bundleName = path;    // assume the same as the classname
         }

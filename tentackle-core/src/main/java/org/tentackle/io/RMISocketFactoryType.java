@@ -19,6 +19,7 @@
 
 package org.tentackle.io;
 
+import java.util.Locale;
 import java.util.StringTokenizer;
 
 /**
@@ -90,7 +91,7 @@ public enum RMISocketFactoryType {
       StringTokenizer stok = new StringTokenizer(config, ", \t");
       while (stok.hasMoreTokens()) {
         String token = stok.nextToken();
-        switch(token.toLowerCase()) {
+        switch(token.toLowerCase(Locale.ROOT)) {
 
           case "default":
             type = DEFAULT;

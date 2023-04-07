@@ -19,14 +19,13 @@
 
 package org.tentackle.fx;
 
+import org.tentackle.fx.translate.ValueStringTranslator;
+import org.tentackle.reflect.ReflectionHelper;
+
 import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.geometry.Pos;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.TextInputControl;
-
-import org.tentackle.fx.translate.ValueStringTranslator;
-import org.tentackle.reflect.ReflectionHelper;
-
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 

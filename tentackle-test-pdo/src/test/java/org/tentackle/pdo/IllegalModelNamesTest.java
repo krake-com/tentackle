@@ -26,6 +26,7 @@ import org.tentackle.persist.AbstractPersistentObject;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -54,7 +55,7 @@ public class IllegalModelNamesTest {
           name = StringHelper.firstToLower(name.substring(2));
           illegalNames.add(name);
         }
-        confusingNames.add(name.toUpperCase());
+        confusingNames.add(name.toUpperCase(Locale.ROOT));
       }
     }
 

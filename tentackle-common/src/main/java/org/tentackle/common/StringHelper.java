@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -142,28 +143,30 @@ public final class StringHelper {
 
 
   /**
-   * Converts a string to uppercase allowing null values.
+   * Converts a string to uppercase allowing null values.<br>
+   * The conversion is done with {@link Locale#ROOT}.
    *
    * @param str the string
    * @return the uppercase string or null
    */
   public static String toUpper(String str) {
     if (str != null) {
-      str = str.toUpperCase();
+      str = str.toUpperCase(Locale.ROOT);
     }
     return str;
   }
 
 
   /**
-   * Converts a string to lowercase allowing null values.
+   * Converts a string to lowercase allowing null values.<br>
+   * The conversion is done with {@link Locale#ROOT}.
    *
    * @param str the string
    * @return the lowercase string or null
    */
   public static String toLower(String str) {
     if (str != null) {
-      str = str.toLowerCase();
+      str = str.toLowerCase(Locale.ROOT);
     }
     return str;
   }
@@ -1471,7 +1474,7 @@ public final class StringHelper {
     if (osName == null) {
       throw new TentackleRuntimeException("missing system property 'os.name'");
     }
-    osName = osName.trim().toLowerCase();
+    osName = osName.trim().toLowerCase(Locale.ROOT);
     StringBuilder buf = new StringBuilder();
     boolean isWindows = osName.contains("win");
     for (int i = 0; i < osName.length(); i++) {
@@ -1498,7 +1501,7 @@ public final class StringHelper {
     if (osArch == null) {
       throw new TentackleRuntimeException("missing system property 'os.arch'");
     }
-    return osArch.trim().toLowerCase();
+    return osArch.trim().toLowerCase(Locale.ROOT);
   }
 
 

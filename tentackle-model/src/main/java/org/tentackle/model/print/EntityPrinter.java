@@ -26,6 +26,7 @@ import org.tentackle.model.Relation;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Prints the model of an entity.
@@ -100,10 +101,10 @@ public class EntityPrinter {
       buf.append("$integrity\n");
     }
     else {
-      buf.append(entity.getIntegrity().toString().toLowerCase()).append('\n');
+      buf.append(entity.getIntegrity().toString().toLowerCase(Locale.ROOT)).append('\n');
     }
     if (entity.getInheritanceType() != InheritanceType.NONE) {
-      line("inheritance := ").append(entity.getInheritanceType().toString().toLowerCase()).append('\n');
+      line("inheritance := ").append(entity.getInheritanceType().toString().toLowerCase(Locale.ROOT)).append('\n');
     }
     if (entity.getSuperEntityName() != null) {
       line("extends := ").append(entity.getSuperEntityName()).append('\n');

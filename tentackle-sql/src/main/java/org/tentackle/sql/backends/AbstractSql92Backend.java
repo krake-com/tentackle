@@ -23,6 +23,7 @@ import org.tentackle.sql.BackendPreparedStatement;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 
 
@@ -113,7 +114,8 @@ public abstract class AbstractSql92Backend extends AbstractBackend {
    */
   protected boolean isLeadingSelectMissing(StringBuilder sqlBuilder) {
     // does not start with SELECT or WITH
-    return sqlBuilder.indexOf(SQL_SELECT) != 0 && sqlBuilder.indexOf("WITH ") != 0;
+    String sql = sqlBuilder.toString().toUpperCase(Locale.ROOT);
+    return !sql.startsWith(SQL_SELECT) && !sql.startsWith("WITH ");
   }
 
   @Override

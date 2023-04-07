@@ -31,6 +31,7 @@ import org.tentackle.sql.DataType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -251,7 +252,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
         literally = true;
       }
 
-      String ucRelop = relop.toUpperCase();
+      String ucRelop = relop.toUpperCase(Locale.ROOT);
       if (ucRelop.endsWith("ANY")) {
         if (relop.length() > 3) {
           relop = relop.substring(0, relop.length() - 3);

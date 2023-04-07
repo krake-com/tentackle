@@ -18,6 +18,8 @@
 
 package org.tentackle.model;
 
+import java.util.Locale;
+
 /**
  * Access scope.
  *
@@ -39,7 +41,7 @@ public enum AccessScope {
 
   @Override
   public String toString() {
-    return name().toLowerCase();
+    return name().toLowerCase(Locale.ROOT);
   }
 
 }

@@ -58,7 +58,7 @@ For more options, see {\@link DbModelWurblet}.
         genudk = true;
       }
       else if (arg.startsWith("strategy=")) {
-        strategy = arg.substring(9).toUpperCase();
+        strategy = arg.substring(9).toUpperCase(Locale.ROOT);
       }
       else if (arg.startsWith("maxsize=")) {
         maxSize = Integer.valueOf(arg.substring(8));
@@ -128,7 +128,7 @@ For more options, see {\@link DbModelWurblet}.
         String name = key.getMethodArgumentName();
         String type = key.getAttribute().getJavaType();
 ]@
-    private static final PdoCacheIndex<? extends @(pdoName)@<?>, @(type)@> @(name.toUpperCase() + "_INDEX")@ = create@(StringHelper.firstToUpper(name))@Index();
+    private static final PdoCacheIndex<? extends @(pdoName)@<?>, @(type)@> @(name.toUpperCase(Locale.ROOT) + "_INDEX")@ = create@(StringHelper.firstToUpper(name))@Index();
 @[
       }
 
@@ -287,7 +287,7 @@ For more options, see {\@link DbModelWurblet}.
         String name = key.getMethodArgumentName();
         String type = key.getAttribute().getJavaType();
 ]@
-    private static final PdoCacheIndex<@(pdoName)@, @(type)@> @(name.toUpperCase() + "_INDEX")@ = create@(StringHelper.firstToUpper(name))@Index();
+    private static final PdoCacheIndex<@(pdoName)@, @(type)@> @(name.toUpperCase(Locale.ROOT) + "_INDEX")@ = create@(StringHelper.firstToUpper(name))@Index();
 @[
       }
 
@@ -534,7 +534,7 @@ For more options, see {\@link DbModelWurblet}.
       String type = key.getAttribute().getJavaType();
       String suffix = Character.toUpperCase(name.charAt(0)) + name.substring(1);
       String indexCast = getEntity().isAbstract() ? ("(PdoCacheIndex<T, " + type + ">) ") : "";
-      String indexName = "CacheHolder." + name.toUpperCase() + "_INDEX";
+      String indexName = "CacheHolder." + name.toUpperCase(Locale.ROOT) + "_INDEX";
       String indexMethod = "getCacheIndex" + StringHelper.firstToUpper(name);
 ]@
 

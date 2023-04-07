@@ -37,6 +37,7 @@ import org.tentackle.common.StringHelper;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -156,7 +157,7 @@ public class VersionInfoMojo extends AbstractVersionInfoMojo {
         scope = null;
       }
       else {
-        scope = scope.toLowerCase();
+        scope = scope.toLowerCase(Locale.ROOT);
       }
     }
     return super.validate();
@@ -174,7 +175,7 @@ public class VersionInfoMojo extends AbstractVersionInfoMojo {
       artifactScope = scope;
     }
     else {
-      artifactScope = artifactScope.toLowerCase();
+      artifactScope = artifactScope.toLowerCase(Locale.ROOT);
     }
     if (scope == null || Objects.equals(artifactScope, scope)) {
       if (!modules.contains(artifact)) {

@@ -34,6 +34,7 @@ import org.tentackle.sql.SqlNameType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.StringTokenizer;
 
@@ -139,7 +140,7 @@ public class IndexImpl implements Index {
       boolean uniqueFound = false;
       while (stok.hasMoreTokens()) {
         String token = stok.nextToken();
-        switch (token.toLowerCase()) {
+        switch (token.toLowerCase(Locale.ROOT)) {
 
           case "index":
             setUnique(uniqueFound);
@@ -182,7 +183,7 @@ public class IndexImpl implements Index {
         text = text.substring(0, ndx);
       }
       else {
-        ndx = text.toUpperCase().indexOf("WHERE");
+        ndx = text.toUpperCase(Locale.ROOT).indexOf("WHERE");
         if (ndx > 0) {
           setFilterCondition(text.substring(ndx + 5));
           text = text.substring(0, ndx);
@@ -229,8 +230,8 @@ public class IndexImpl implements Index {
           if (ndx1 >= 0) {
             int ndx2 = token.indexOf(')', ndx1);
             if (ndx2 >= 0) {
-              function = token.substring(0, ndx1).trim().toUpperCase();
-              column = token.substring(ndx1 + 1, ndx2).trim().toLowerCase();
+              function = token.substring(0, ndx1).trim().toUpperCase(Locale.ROOT);
+              column = token.substring(ndx1 + 1, ndx2).trim().toLowerCase(Locale.ROOT);
             }
           }
 

@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.StringTokenizer;
 
@@ -181,7 +182,7 @@ public class DTOWurblet extends AbstractJavaWurblet {
     }
 
     public String getConstant() {
-      return "PN_" + name.toUpperCase();
+      return "PN_" + name.toUpperCase(Locale.ROOT);
     }
 
     public String getComment() {

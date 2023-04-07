@@ -19,14 +19,14 @@
 
 package org.tentackle.fx.table.type;
 
-import javafx.geometry.Pos;
-import javafx.scene.control.TextField;
-
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.fx.table.TableCellType;
+
+import javafx.geometry.Pos;
+import javafx.scene.control.TextField;
 
 /**
  * Base class of a table and treetable cell type.

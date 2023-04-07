@@ -22,6 +22,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 
 import org.tentackle.maven.TemplateModel;
 
+import java.util.Locale;
 import java.util.StringTokenizer;
 
 /**
@@ -39,7 +40,7 @@ public class DefaultTemplateModelFactory implements TemplateModelFactory {
 
     while (stok.hasMoreTokens()) {
       String token = stok.nextToken();
-      switch (token.toUpperCase()) {
+      switch (token.toUpperCase(Locale.ROOT)) {
         case "SYSTEM":
         case "SYS":
           // all system properties in camelCase, e.g. "os.name" converts to "osName"

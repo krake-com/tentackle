@@ -26,6 +26,7 @@ import org.tentackle.model.Index;
 import org.tentackle.model.NameVerifier;
 import org.tentackle.model.Relation;
 
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -492,7 +493,7 @@ public class NameVerifierImpl implements NameVerifier {
    * @return true if ok, false if mixed
    */
   protected boolean isAllUpperOrLowerCase(String name, Entity entity) {
-    return name == null || entity.getOptions().isProvided() || name.equals(name.toLowerCase()) || name.equals(name.toUpperCase());
+    return name == null || entity.getOptions().isProvided() || name.equals(name.toLowerCase(Locale.ROOT)) || name.equals(name.toUpperCase(Locale.ROOT));
   }
 
   /**
@@ -520,7 +521,7 @@ public class NameVerifierImpl implements NameVerifier {
     if (getIllegalNames().contains(name)) {
       return "'" + name + "' conflicts with method in superclasses";
     }
-    if (getConfusingNames().contains(name.toUpperCase())) {
+    if (getConfusingNames().contains(name.toUpperCase(Locale.ROOT))) {
       return "'" + name + "' may be confused with similar method in superclasses";
     }
     return null;

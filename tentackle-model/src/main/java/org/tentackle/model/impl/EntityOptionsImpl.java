@@ -30,6 +30,7 @@ import org.tentackle.sql.DataTypeFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Entity options.
@@ -145,7 +146,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
     boolean on = ctrl == null || ctrl;
 
     if (!applied) {
-      String uco = option.toUpperCase();
+      String uco = option.toUpperCase(Locale.ROOT);
       applied = true;
       switch (uco) {
         case OPTION_NO_MODELDEFAULTS:

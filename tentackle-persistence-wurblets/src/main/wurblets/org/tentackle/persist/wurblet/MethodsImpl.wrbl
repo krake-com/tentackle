@@ -443,7 +443,7 @@ For more options, see {\@link DbModelWurblet}.
 
         for (Attribute attr: getEntity().getMappedAttributes())  {
           if (!attr.getOptions().isMute())  {
-            String name = attr.getName().toUpperCase();
+            String name = attr.getName().toUpperCase(Locale.ROOT);
             boolean useSetter = isAttributeDerived(attr);
             DataType<?> dataType = getEffectiveDataType(attr);
             if (dataType.isPredefined()) {
@@ -1214,7 +1214,7 @@ For more options, see {\@link DbModelWurblet}.
 ]@
     if (this.@(attr.getName())@ != @(attr.getName())@) {
       assertMutable();
-      firePropertyChange(AN_@(attr.getName().toUpperCase())@, this.@(attr.getName())@, @(attr.getName())@);
+      firePropertyChange(AN_@(attr.getName().toUpperCase(Locale.ROOT))@, this.@(attr.getName())@, @(attr.getName())@);
       this.@(attr.getName())@ = @(attr.getName())@;
     }
 @[
@@ -1223,7 +1223,7 @@ For more options, see {\@link DbModelWurblet}.
 ]@
     if (!Objects.equals(this.@(attr.getName())@, @(attr.getName())@)) {
       assertMutable();
-      firePropertyChange(AN_@(attr.getName().toUpperCase())@, this.@(attr.getName())@, @(attr.getName())@);
+      firePropertyChange(AN_@(attr.getName().toUpperCase(Locale.ROOT))@, this.@(attr.getName())@, @(attr.getName())@);
       this.@(attr.getName())@ = @(attr.getName())@;
     }
 @[
@@ -1239,7 +1239,7 @@ For more options, see {\@link DbModelWurblet}.
                   if (isAttracked()) {
 ]@
       @(attr.getName())@Modified = true;
-      firePropertyChange(AN_@(attr.getName().toUpperCase())@, this.@(attr.getName())@, @(attr.getName())@);
+      firePropertyChange(AN_@(attr.getName().toUpperCase(Locale.ROOT))@, this.@(attr.getName())@, @(attr.getName())@);
 @[
                   }
 ]@
@@ -1255,7 +1255,7 @@ For more options, see {\@link DbModelWurblet}.
                   if (isAttracked()) {
 ]@
       @(attr.getName())@Modified = true;
-      firePropertyChange(AN_@(attr.getName().toUpperCase())@, this.@(attr.getName())@, @(attr.getName())@);
+      firePropertyChange(AN_@(attr.getName().toUpperCase(Locale.ROOT))@, this.@(attr.getName())@, @(attr.getName())@);
 @[
                   }
 ]@

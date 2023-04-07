@@ -50,6 +50,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.function.Consumer;
@@ -610,7 +611,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
       throw new WurbelException("backend-specific type " + effectiveDataType + " has varying number of columns");
     }
     return "CN_" + (attribute.getName() + (columnIndex < 0 ? "" :
-                                           getEffectiveDataType(attribute).getColumnSuffix(null, columnIndex).orElse(""))).toUpperCase();
+                                           getEffectiveDataType(attribute).getColumnSuffix(null, columnIndex).orElse(""))).toUpperCase(Locale.ROOT);
   }
 
 

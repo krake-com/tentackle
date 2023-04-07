@@ -35,6 +35,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -254,7 +255,7 @@ public class MigrationHints {
           Collection<String> tables = dependencies.computeIfAbsent(tableName, k -> new ArrayList<>());
           StringTokenizer stok = new StringTokenizer(text.toString(), ",; \t\r\n");
           while (stok.hasMoreTokens()) {
-            tables.add(stok.nextToken().trim().toLowerCase());
+            tables.add(stok.nextToken().trim().toLowerCase(Locale.ROOT));
           }
           break;
       }
@@ -584,7 +585,7 @@ public class MigrationHints {
         section = null;    // no valid section
       }
       else  {
-        section.tableName = line.substring(section.keyword.length(), colonNdx).trim().toLowerCase();
+        section.tableName = line.substring(section.keyword.length(), colonNdx).trim().toLowerCase(Locale.ROOT);
         int dotNdx = section.tableName.indexOf('#');
         if (dotNdx > 0) {
           section.oldColumnName = section.tableName.substring(dotNdx + 1);

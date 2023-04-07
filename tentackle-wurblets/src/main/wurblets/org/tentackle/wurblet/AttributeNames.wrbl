@@ -19,13 +19,13 @@ For more options, see {\@link ModelWurblet}.
 ]@
 
   /** relation name for '@(rel)@'. */
-  @(lead)@String RN_@(var.toUpperCase())@ = "@(var)@";
+  @(lead)@String RN_@(var.toUpperCase(Locale.ROOT))@ = "@(var)@";
 @[
     }
 
     for (Attribute attr: getEntity().getAttributes())  {
       if (!attr.getOptions().isNoConstant() && !attr.getOptions().isFromSuper() && !attr.getOptions().isMute())    {
-          String name = attr.getName().toUpperCase();
+          String name = attr.getName().toUpperCase(Locale.ROOT);
 ]@
 
   /** attribute name for database column '@(attr.getColumnName())@'. */

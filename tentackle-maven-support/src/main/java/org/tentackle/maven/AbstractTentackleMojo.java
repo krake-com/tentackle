@@ -52,6 +52,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
@@ -416,7 +417,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   public void determineVerbosity() {
     if (verbosity != null) {
       try {
-        verbosityLevel = Verbosity.valueOf(verbosity.toUpperCase());
+        verbosityLevel = Verbosity.valueOf(verbosity.toUpperCase(Locale.ROOT));
       }
       catch (RuntimeException ex) {
         verbosityLevel = Verbosity.DEFAULT;

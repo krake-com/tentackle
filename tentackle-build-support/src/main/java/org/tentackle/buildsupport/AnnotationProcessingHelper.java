@@ -25,6 +25,7 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.StringTokenizer;
 
 
@@ -47,7 +48,7 @@ public final class AnnotationProcessingHelper {
     List<Modifier> modList = new ArrayList<>();
     while (stok.hasMoreTokens()) {
       try {
-        modList.add(Modifier.valueOf(stok.nextToken().toUpperCase()));
+        modList.add(Modifier.valueOf(stok.nextToken().toUpperCase(Locale.ROOT)));
       }
       catch (IllegalArgumentException ex) {
         // unknown modifier: ignore

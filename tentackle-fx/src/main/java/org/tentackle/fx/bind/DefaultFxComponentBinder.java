@@ -19,8 +19,6 @@
 
 package org.tentackle.fx.bind;
 
-import javafx.scene.Parent;
-
 import org.tentackle.bind.AbstractBinder;
 import org.tentackle.bind.BindableElement;
 import org.tentackle.bind.Binding;
@@ -41,12 +39,14 @@ import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationScopeFactory;
 import org.tentackle.validate.Validator;
 
+import javafx.scene.Parent;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -497,7 +497,7 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
             omitBuf.append(token);
             omitCount++;
           }
-          else if (token.toLowerCase().startsWith(lastCamelName)) {
+          else if (token.toLowerCase(Locale.ROOT).startsWith(lastCamelName)) {
             omitBuf.append(token.substring(lastCamelName.length()));
             omitCount++;
           }
@@ -507,7 +507,7 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
           }
         }
       }
-      lastCamelName = token.toLowerCase();
+      lastCamelName = token.toLowerCase(Locale.ROOT);
     }
 
     if (omitCount > 1 && omitCount < 4) {

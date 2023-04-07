@@ -19,6 +19,7 @@
 package org.tentackle.sql.metadata;
 
 import java.sql.DatabaseMetaData;
+import java.util.Locale;
 
 /**
  * Describes the table name and some major properties for an existing database table.
@@ -44,10 +45,10 @@ public class DatabaseMetaDataTableHeader {
    */
   public DatabaseMetaDataTableHeader(DatabaseMetaData metaData, String catalog, String schema, String name, String type, String comment) {
     this.metaData = metaData;
-    this.catalog = catalog == null ? null : catalog.toLowerCase();
-    this.schema = schema == null ? null : schema.toLowerCase();
-    this.name = name.toLowerCase();
-    this.type = type == null ? null : type.toUpperCase();
+    this.catalog = catalog == null ? null : catalog.toLowerCase(Locale.ROOT);
+    this.schema = schema == null ? null : schema.toLowerCase(Locale.ROOT);
+    this.name = name.toLowerCase(Locale.ROOT);
+    this.type = type == null ? null : type.toUpperCase(Locale.ROOT);
     this.comment = comment;
   }
 
