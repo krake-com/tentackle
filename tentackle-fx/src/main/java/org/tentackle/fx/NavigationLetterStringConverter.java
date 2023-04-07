@@ -18,10 +18,9 @@
 
 package org.tentackle.fx;
 
+import org.tentackle.common.Compare;
+
 import javafx.util.StringConverter;
-
-import org.tentackle.common.StringHelper;
-
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
@@ -56,9 +55,9 @@ public abstract class NavigationLetterStringConverter<T> extends StringConverter
     @Override
     public int compareTo(Key other) {
       if (other != null) {
-        int rv = StringHelper.compare(navigationLetters, other.navigationLetters);
+        int rv = Compare.compare(navigationLetters, other.navigationLetters);
         if (rv == 0) {
-          rv = StringHelper.compare(name, other.name);
+          rv = Compare.compare(name, other.name);
         }
         return rv;
       }
