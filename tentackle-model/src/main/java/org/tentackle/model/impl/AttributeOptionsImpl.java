@@ -95,8 +95,15 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
     annotations = new ArrayList<>();
   }
 
+  /**
+   * Clones the attribute options.<br>
+   * The method is protected, since {@link #clone(AttributeImpl)}  should be used instead,
+   * which invokes {@link #clone()}.
+   *
+   * @return the cloned options
+   */
   @Override
-  public AttributeOptionsImpl clone() {
+  protected AttributeOptionsImpl clone() {
     AttributeOptionsImpl options = (AttributeOptionsImpl) super.clone();
     if (annotations != null) {
       options.annotations = new ArrayList<>(annotations);

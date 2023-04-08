@@ -101,20 +101,24 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl>, Clon
   public Attribute createEmbedded(Entity embeddingEntity, String pathName, String columnName) {
     AttributeImpl attribute = clone();
     attribute.embeddingEntity = embeddingEntity;
-    attribute.options = options.clone(attribute);
+    attribute.options = options.clone(attribute);   // clone with updated reference to cloned attribute
     attribute.pathName = pathName;
     attribute.columnName = columnName;
     return attribute;
   }
 
 
-  // still protected, since withNames should be used instead
+  /**
+   * Clones an attribute.<br>
+   * The method is protected, since {@link #createEmbedded(Entity, String, String)} should be used instead,
+   * which invokes {@link #clone()}.
+   *
+   * @return the cloned attribute
+   */
   @Override
   protected AttributeImpl clone() {
     try {
-      AttributeImpl attribute = (AttributeImpl) super.clone();
-
-      return attribute;
+      return (AttributeImpl) super.clone();
     }
     catch (CloneNotSupportedException cnx) {
       throw new TentackleRuntimeException(cnx);   // should not happen, but...

@@ -83,8 +83,6 @@ public abstract class CommonOptionsImpl implements CommonOptions, Cloneable {
   public static final String BIND_SIZE = "SIZE";
 
 
-
-
   private final SourceInfo sourceInfo;
 
   private String comment;
@@ -108,8 +106,6 @@ public abstract class CommonOptionsImpl implements CommonOptions, Cloneable {
   private boolean maxCol;
 
 
-
-
   /**
    * Creates options.
    *
@@ -122,8 +118,15 @@ public abstract class CommonOptionsImpl implements CommonOptions, Cloneable {
     accessScope = AccessScope.PUBLIC;
   }
 
+  /**
+   * Clones the options.<br>
+   * Protected since subclasses' clone() methods are protected to enforce invocation via
+   * special clone methods with additional arguments.
+   *
+   * @return the cloned options
+   */
   @Override
-  public CommonOptionsImpl clone() {
+  protected CommonOptionsImpl clone() {
     try {
       CommonOptionsImpl options = (CommonOptionsImpl) super.clone();
       if (stereotypes != null) {
