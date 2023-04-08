@@ -108,8 +108,15 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
     trackType = TrackType.NONE;
   }
 
+  /**
+   * Clones the entity options.<br>
+   * The method is protected, since {@link #clone(EntityImpl)}  should be used instead,
+   * which invokes {@link #clone()}.
+   *
+   * @return the cloned options
+   */
   @Override
-  public EntityOptionsImpl clone() {
+  protected EntityOptionsImpl clone() {
     EntityOptionsImpl options = (EntityOptionsImpl) super.clone();
     if (sorting != null) {
       options.sorting = new ArrayList<>(sorting);

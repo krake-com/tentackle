@@ -76,11 +76,6 @@ public class I18NTextType extends AbstractDataType<I18NText> {
   }
 
   @Override
-  public boolean isMapNullSupported() {
-    return false;
-  }
-
-  @Override
   public boolean isLiteralSupported(Integer index) {
     return false;
   }

@@ -144,11 +144,6 @@ public class H2 extends AbstractSql92Backend {
   }
 
   @Override
-  public boolean isClobSupported() {
-    return true;
-  }
-
-  @Override
   public boolean isUUIDSupported() {
     return true;
   }

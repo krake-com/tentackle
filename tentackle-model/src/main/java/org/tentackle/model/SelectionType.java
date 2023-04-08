@@ -35,6 +35,6 @@ public enum SelectionType {
   LAZY,
 
   /** columns embedded in parent object. */
-  EMBEDDED;
+  EMBEDDED
 
 }
