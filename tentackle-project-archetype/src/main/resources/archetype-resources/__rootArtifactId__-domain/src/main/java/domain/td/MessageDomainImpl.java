@@ -13,7 +13,6 @@ import ${package}.pdo.md.OrgUnit;
 import ${package}.pdo.td.Message;
 import ${package}.pdo.td.domain.MessageDomain;
 
-import org.tentackle.app.Application;
 import org.tentackle.common.Timestamp;
 import org.tentackle.domain.AbstractDomainObject;
 import org.tentackle.pdo.DomainObjectService;
@@ -69,7 +68,7 @@ public class MessageDomainImpl extends AbstractDomainObject<Message, MessageDoma
 
   @Override
   public Message create(MessageType messageType, Object refersTo, String text, OrgUnit<?> owner) {
-    
+
     me().setMessageType(messageType);
 
     if (refersTo instanceof PdoProvider<?> pdoProvider) {
@@ -88,12 +87,9 @@ public class MessageDomainImpl extends AbstractDomainObject<Message, MessageDoma
     me().setText(text == null ? "" : text);
 
     if (owner == null) {
-      owner = Application.getInstance().getUser(me().getDomainContext());
-      me().setOrgUnit(owner);
+      owner = PdoUtilities.getInstance().getUser(getDomainContext());
     }
-    else {
-      me().setOrgUnitId(owner.getId());
-    }
+    me().setOrgUnit(owner);
 
     me().setWhen(new Timestamp());
     me().setMessageNumber(me().nextMessageNumber());

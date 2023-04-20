@@ -20,6 +20,7 @@ import org.tentackle.fx.rdc.app.FxApplication;
 import org.tentackle.fx.rdc.update.UpdatableDesktopApplication;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
+import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 
 /**
@@ -59,7 +60,7 @@ public class ${application}FxClient extends UpdatableDesktopApplication<MainCont
   @Override
   protected void configurePreferences() {
     super.configurePreferences();
-    User user = getUser(getDomainContext());    // must exist!
+    User user = PdoUtilities.getInstance().getUser(getDomainContext());    // must exist!
     PersistedPreferencesFactory.getInstance().setSystemOnly(user.isSystemPreferencesOnly());
     PersistedPreferencesFactory.getInstance().setReadOnly(!user.isChangingPreferencesAllowed());
     ${application}Preferences.getInstance().getSystemPrefs().addPreferenceChangeListener(evt -> {

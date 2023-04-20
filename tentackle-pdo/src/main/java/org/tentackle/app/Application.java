@@ -156,18 +156,6 @@ public interface Application extends SessionProvider, DomainContextProvider {
   <U extends Identifiable> U getUser(DomainContext context, long userId);
 
   /**
-   * Gets the identifiable corresponding to the current user related to the session of a domain context.
-   *
-   * @param <U> the user type
-   * @param context the domain context
-   * @return the logged-in user object, null if unknown
-   */
-  default <U extends Identifiable> U getUser(DomainContext context) {
-    SessionInfo sessionInfo = getSessionInfo();
-    return getUser(context, sessionInfo == null ? 0 : sessionInfo.getUserId());
-  }
-
-  /**
    * Returns whether the running application is a server.
    *
    * @return true if server, false if not a server or no application running at all
