@@ -39,6 +39,7 @@ import org.tentackle.fx.rdc.admin.SessionsView;
 import org.tentackle.fx.rdc.security.SecurityDialogFactory;
 import org.tentackle.pdo.AdminExtension;
 import org.tentackle.pdo.DomainContextProvider;
+import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 import org.tentackle.security.SecurityFactory;
@@ -125,7 +126,7 @@ public class MainController extends AbstractFxController implements DomainContex
     preferencesItem.setOnAction(e -> PreferencesDialog.show());
 
     passwordItem.setGraphic(Fx.createGraphic("password"));
-    passwordItem.setOnAction(e -> ChangePasswordView.showDialog(Application.getInstance().getUser(getDomainContext()), false));
+    passwordItem.setOnAction(e -> ChangePasswordView.showDialog(PdoUtilities.getInstance().getUser(getDomainContext()), false));
 
     exitItem.setGraphic(Fx.createGraphic("exit"));
     exitItem.setOnAction(e -> exit());

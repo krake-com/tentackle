@@ -34,6 +34,7 @@ import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Persistent;
 import org.tentackle.session.Session;
+import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionUtilities;
 
 import java.lang.reflect.InvocationTargetException;
@@ -67,7 +68,7 @@ interface PdoUtilitiesHolder {
 public class PdoUtilities {
 
   private static final Logger LOGGER = Logger.get(PdoUtilities.class);
-  
+
   private static final String NULL_SESSION = "session in PDO is null";
   private static final String UNEXPECTED_SESSION = "unexpected session: ";
   private static final String EXPECTED_SESSION = ", expected: ";
@@ -745,7 +746,7 @@ public class PdoUtilities {
     if (lockException.isLockedByAnotherUser()) {
       long userId = lockException.getTokenLockInfo().editedBy();
       Timestamp since = lockException.getTokenLockInfo().editedSince();
-      Identifiable user = Application.getInstance().getUser(pdo.getDomainContext(), userId);
+      Identifiable user = getUser(pdo.getDomainContext(), userId);
       String userTxt = user == null ? ("ID=" + userId) : user.toString();
       str = MessageFormat.format(PdoPdoBundle.getString("{0} {1} is being locked by {2} since {3}"),
                                  pdo.getSingular(), pdo.toString(), userTxt,
@@ -756,6 +757,36 @@ public class PdoUtilities {
                                  pdo.getSingular(), pdo.toString(), lockException.getContextName());
     }
     return str;
+  }
+
+
+  /**
+   * Gets the identifiable corresponding to the ID of a user.
+   *
+   * @param context the domain context
+   * @param userId the ID of the identifiable (user)
+   * @return the user, null if session not attached to a user (background server thread, for example) or no running {@link Application}
+   */
+  public <U extends Identifiable> U getUser(DomainContext context, long userId) {
+    U user = null;
+    if (userId != 0) {
+      Application application = Application.getInstance();
+      if (application != null) {    // application may be null in unit tests
+        user = application.getUser(context, userId);
+      }
+    }
+    return user;
+  }
+
+  /**
+   * Gets the identifiable corresponding to the current user related to the session of a domain context.
+   *
+   * @param context the domain context
+   * @return the user, null if session not attached to a user (background server thread, for example) or no running {@link Application}
+   */
+  public <U extends Identifiable> U getUser(DomainContext context) {
+    SessionInfo sessionInfo = context.getSessionInfo();
+    return getUser(context, sessionInfo == null ? 0 : sessionInfo.getUserId());
   }
 
 }
