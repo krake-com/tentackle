@@ -39,6 +39,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 
 /**
@@ -83,7 +84,7 @@ public class Query {
    * By default, queries are one-time prepared statements that will be closed
    * when the resultset is closed. However, if a query uses a fixed SQL string
    * and is executed a significant number of times, the prepared statement
-   * can be prepared only once and re-used afterwards. Please notice, that once
+   * can be prepared only once and re-used afterward. Please notice, that once
    * prepared with caching, the statement will remain open until it is closed
    * explicitly.
    *
@@ -151,7 +152,7 @@ public class Query {
    * @param sql is the SQL-string, null or empty if just data
    * @param data is an array of parameters
    */
-  public void add(String sql, Object... data) {
+  public void add(CharSequence sql, Object... data) {
     items.add(new QueryItem(sql, data));
   }
 
@@ -175,7 +176,7 @@ public class Query {
    * @param sql is the SQL-string, null or empty if just data
    * @param data is an array of parameters
    */
-  public void add(int index, String sql, Object... data) {
+  public void add(int index, CharSequence sql, Object... data) {
     items.add(index, new QueryItem(sql, data));
   }
 
@@ -540,14 +541,14 @@ public class Query {
     private final SqlSupplier sqlSupplier;    // or SQL supplier
     private final Object[] data;              // data items
 
-    private QueryItem(String sql, Object... data) {
-      this.sql = sql == null ? "" : sql;
+    private QueryItem(CharSequence sql, Object... data) {
+      this.sql = sql == null ? "" : sql.toString();
       this.sqlSupplier = null;
       this.data = data;
     }
 
     private QueryItem(SqlSupplier sqlSupplier) {
-      this.sqlSupplier = sqlSupplier;
+      this.sqlSupplier = Objects.requireNonNull(sqlSupplier, "SqlSupplier must be provided");
       this.sql = null;
       this.data = null;
     }
