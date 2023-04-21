@@ -82,7 +82,7 @@
     <javac.lint>all,-processing</javac.lint>
     <javac.version>20</javac.version>
 
-    <javafx.version>20</javafx.version>
+    <javafx.version>20.0.1</javafx.version>
     <ikonli.version>12.3.1</ikonli.version>
     <ow2.asm.version>9.5</ow2.asm.version>
     <groovy.version>4.0.11</groovy.version>
