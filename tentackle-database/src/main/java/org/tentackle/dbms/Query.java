@@ -157,6 +157,18 @@ public class Query {
   }
 
   /**
+   * Appends an SQL-part and corresponding parameters to this query.<br>
+   * Same as {@link #add(CharSequence, Object...)} but with a {@link List} of parameters
+   * instead of an array or varargs.
+   *
+   * @param sql is the SQL-string, null or empty if just data
+   * @param data the {@link List} of parameters
+   */
+  public void add(CharSequence sql, List<Object> data) {
+    items.add(new QueryItem(sql, data));
+  }
+
+  /**
    * Appends a backend-specific SQL-part to this query.
    *
    * @param sqlSupplier supplier for backend specific SQL code
@@ -177,6 +189,19 @@ public class Query {
    * @param data is an array of parameters
    */
   public void add(int index, CharSequence sql, Object... data) {
+    items.add(index, new QueryItem(sql, data));
+  }
+
+  /**
+   * Appends an SQL-part and corresponding parameters to this query.<br>
+   * Same as {@link #add(int, CharSequence, Object...)} but with a {@link List} of parameters
+   * instead of an array or varargs.
+   *
+   * @param index index at which the specified SQL is to be inserted
+   * @param sql is the SQL-string, null or empty if just data
+   * @param data the {@link List} of parameters
+   */
+  public void add(int index, CharSequence sql, List<Object> data) {
     items.add(index, new QueryItem(sql, data));
   }
 
@@ -545,6 +570,12 @@ public class Query {
       this.sql = sql == null ? "" : sql.toString();
       this.sqlSupplier = null;
       this.data = data;
+    }
+
+    private QueryItem(CharSequence sql, List<Object> data) {
+      this.sql = sql == null ? "" : sql.toString();
+      this.sqlSupplier = null;
+      this.data = data.toArray();
     }
 
     private QueryItem(SqlSupplier sqlSupplier) {
