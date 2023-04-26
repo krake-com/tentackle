@@ -387,7 +387,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-plugin-plugin</artifactId>
-          <version>3.8.1</version>
+          <version>3.8.2</version>
           <configuration>
             <requirements>
               <maven>${maven.version}</maven>
@@ -650,6 +650,9 @@
         <configuration>
           <doclint>none</doclint>
           <failOnError>false</failOnError>
+          <additionalOptions>
+            <additionalOption>--link-modularity-mismatch=info</additionalOption>
+          </additionalOptions>
           <tags>
             <tag>
               <name>wurblet</name>
@@ -756,6 +759,9 @@
                       <Implementation-Build-Date>${maven.build.timestamp}</Implementation-Build-Date>
                     </manifestEntries>
                   </archive>
+                  <additionalOptions>
+                    <additionalOption>--link-modularity-mismatch=info</additionalOption>
+                  </additionalOptions>
                 </configuration>
               </execution>
             </executions>
