@@ -37,7 +37,7 @@ import java.util.function.Supplier;
  * Useful to run background tasks in parallel, each task with its own session.
  */
 public class SessionPooledExecutor {
-  
+
   private static final Logger LOGGER = Logger.get(SessionPooledExecutor.class);
 
   private final SessionPool sessionPool;
@@ -126,15 +126,16 @@ public class SessionPooledExecutor {
   }
 
   /**
-   * Submits a collection of tasks for background execution in multiple threads of a thread pool and waits for their termination.
+   * Submits a collection of tasks for background execution in multiple threads of a thread pool and waits for their termination.<br>
+   * If there are failures, the fail handler (if any) will be invoked <em>before</em> the success handler.
    *
    * @param tasks the tasks to execute
    * @param timeoutMillis the timeout in milliseconds, &le; 0 if wait infinitely
-   * @param successHandlers updater invoked when all runners finished, null if none
-   * @param failHandlers updater invoked only if execution of some runner failed, null if log only as error
+   * @param successHandler updater invoked when all runners finished, null if none
+   * @param failHandler updater invoked only if execution of some runner failed, null if log only as error
    * @param <V> the type returned by the runners
    */
-  public <V> void submit(Collection<Supplier<V>> tasks, long timeoutMillis, Consumer<Map<Supplier<V>, V>> successHandlers, Consumer<Map<Supplier<V>, RuntimeException>> failHandlers) {
+  public <V> void submit(Collection<Supplier<V>> tasks, long timeoutMillis, Consumer<Map<Supplier<V>, V>> successHandler, Consumer<Map<Supplier<V>, RuntimeException>> failHandler) {
     CountDownLatch latch = new CountDownLatch(tasks.size());
     Map<Supplier<V>, V> results = new ConcurrentHashMap<>();
     Map<Supplier<V>, RuntimeException> failures = new ConcurrentHashMap<>();
@@ -149,13 +150,13 @@ public class SessionPooledExecutor {
           failures.put(() -> null, new PersistenceException("parallel execution timed out"));
         }
         // all finished or timed out
-        if (successHandlers != null) {
-          // always invoked
-          successHandlers.accept(results);
-        }
-        if (failHandlers != null && !failures.isEmpty()) {
+        if (failHandler != null && !failures.isEmpty()) {
           // only invoked if there are failures
-          failHandlers.accept(failures);
+          failHandler.accept(failures);
+        }
+        if (successHandler != null) {
+          // always invoked
+          successHandler.accept(results);
         }
       }
       catch (InterruptedException ix) {
@@ -184,7 +185,7 @@ public class SessionPooledExecutor {
    * For unlimited session pools the thread pool will also be unlimited and
    * the number of threads will be adjusted automatically, i.e. new threads are created when
    * necessary (tasks are not queued) and unused threads are removed when no more used for a certain amount of time.<br>
-   * For limited session pools a fixed size thread pool is used and tasks are queued, if all threads are in use.
+   * For limited session pools a fixed size thread pool is used and tasks queued, if all threads are in use.
    *
    * @return the executor service
    */
