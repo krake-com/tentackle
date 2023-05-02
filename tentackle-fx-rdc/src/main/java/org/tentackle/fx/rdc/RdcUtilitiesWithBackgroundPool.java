@@ -18,8 +18,6 @@
 
 package org.tentackle.fx.rdc;
 
-import javafx.application.Platform;
-
 import org.tentackle.fx.Fx;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.Session;
@@ -28,6 +26,7 @@ import org.tentackle.session.SessionPool;
 import org.tentackle.session.SessionPoolFactory;
 import org.tentackle.session.SessionPooledExecutor;
 
+import javafx.application.Platform;
 import java.util.Collection;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -84,7 +83,8 @@ public class RdcUtilitiesWithBackgroundPool extends RdcUtilities {
   }
 
   /**
-   * Runs a collection of runners in background in parallel.
+   * Runs a collection of runners in background in parallel.<br>
+   * If there are failures, <code>failedUI</code> (if any) will be invoked <em>before</em> <code>finishedUI</code>.
    *
    * @param runners the runners to invoke
    * @param timeoutMillis the timeout in milliseconds for all tasks to finish, 0 if no timeout
@@ -94,8 +94,8 @@ public class RdcUtilitiesWithBackgroundPool extends RdcUtilities {
    */
   public <V> void runInBackground(Collection<Supplier<V>> runners, long timeoutMillis, Consumer<Map<Supplier<V>, V>> finishedUI, Consumer<Map<Supplier<V>, RuntimeException>> failedUI) {
     executor.submit(runners, timeoutMillis,
-                    finishedUI == null ? null : successHandlers -> Platform.runLater(() -> finishedUI.accept(successHandlers)),
-                    failedUI == null ? null : failHandlers -> Platform.runLater(() -> failedUI.accept(failHandlers)));
+                    finishedUI == null ? null : successHandler -> Platform.runLater(() -> finishedUI.accept(successHandler)),
+                    failedUI == null ? null : failHandler -> Platform.runLater(() -> failedUI.accept(failHandler)));
   }
 
   /**
