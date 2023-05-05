@@ -2063,7 +2063,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       if (persistedSerial == -1) {
         LOGGER.severe("replaying update failed for " + modlog +
                         " because " + object.toGenericString() + " does not exist in " + object.getSession(), nfx);
-        if (lenient) {
+        if (lenient || object.isReplayedLeniently(DbModificationType.UPDATE)) {
           LOGGER.info("lenient mode -> insert {0}", object.toGenericString());
           object.insertPlain();
         }
