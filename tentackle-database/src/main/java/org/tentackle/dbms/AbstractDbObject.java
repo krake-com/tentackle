@@ -1180,14 +1180,25 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
   /**
-   * Determines whether each modification of this object (with respect to the database)
-   * should be logged.
+   * Determines whether each database modification of this object should be logged.
    *
    * @param modType the modification type
    * @return true if log modification, false if not.
    * @see ModificationLog
    */
   public boolean isLoggingModification(ModificationType modType)  {
+    return false;
+  }
+
+
+  /**
+   * Determines whether the modification of this object should be replayed in lenient mode.
+   *
+   * @param modType the modification type
+   * @return true if leniently
+   * @see ModificationLog
+   */
+  public boolean isReplayedLeniently(ModificationType modType) {
     return false;
   }
 
