@@ -2075,7 +2075,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
         LOGGER.severe("replaying update failed for " + modlog +
                         " because " + object.toGenericString() + " exists with wrong serial " + persistedSerial +
                         " in " + object.getSession(), nfx);
-        if (lenient) {
+        if (lenient || object.isReplayedLeniently(DbModificationType.UPDATE)) {
           LOGGER.info("lenient mode -> update {0}", object.toGenericString());
           object.setSerial(persistedSerial);
           object.updatePlain();
@@ -2135,7 +2135,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
         LOGGER.severe("replaying delete failed for " + modlog +
                         " because " + object.toGenericString() + " exists with wrong serial " + persistedSerial +
                         " in " + object.getSession(), nfx);
-        if (lenient) {
+        if (lenient || object.isReplayedLeniently(DbModificationType.DELETE)) {
           LOGGER.info("lenient mode -> delete " + object.toGenericString());
           object.setSerial(persistedSerial);
           object.deletePlain();
