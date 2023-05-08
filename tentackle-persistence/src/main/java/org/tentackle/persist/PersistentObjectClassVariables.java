@@ -25,6 +25,7 @@ import org.tentackle.dbms.StatementId;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoCache;
+import org.tentackle.pdo.PdoFactory;
 import org.tentackle.pdo.PdoMethodCache;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.persist.security.SecurityPersistenceImpl;
@@ -499,6 +500,15 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
       securityEnabledPending = false;
     }
     return securityEnabled;
+  }
+
+
+  @Override
+  protected Class<?> determineImplementingClassOfReturnType(Class<?> clazz) {
+    if (clazz.isInterface() && PersistentDomainObject.class.isAssignableFrom(clazz)) {
+      return PdoFactory.getInstance().getPersistenceClass(clazz.getName());
+    }
+    return super.determineImplementingClassOfReturnType(clazz);
   }
 
 

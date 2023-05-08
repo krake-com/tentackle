@@ -40,6 +40,7 @@ import org.tentackle.sql.SqlNameType;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -132,7 +133,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
     relations = new ArrayList<>();
     referencingRelations = new ArrayList<>();
     subEntities = new ArrayList<>();
-    compositePaths = new HashSet<>();
+    compositePaths = new LinkedHashSet<>();
     deepReferences = new ArrayList<>();
     deepReferencesToComponents = new ArrayList<>();
     indexes = new ArrayList<>();
@@ -470,7 +471,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
   @Override
   public Set<Entity> getAssociatedEntities() {
-    Set<Entity> associates = new HashSet<>();
+    Set<Entity> associates = new LinkedHashSet<>();
     collectAssociatedEntities(associates, this, new HashSet<>());
     return associates;
   }
@@ -1052,7 +1053,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   @Override
   public Set<List<Relation>> getAllCompositePaths() {
     if (allCompositePaths == null) {
-      allCompositePaths = new HashSet<>();
+      allCompositePaths = new LinkedHashSet<>();
       Entity currentEntity = this;
       while (currentEntity != null) {
         allCompositePaths.addAll(currentEntity.getCompositePaths());
@@ -1064,7 +1065,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
   @Override
   public Set<List<Relation>> getEmbeddingPaths() {
-    Set<List<Relation>> embeddingPaths = new HashSet<>();
+    Set<List<Relation>> embeddingPaths = new LinkedHashSet<>();
     // skip non-embedding relations
     for (List<Relation> compositePath : getCompositePaths()) {
       List<Relation> embeddingPath = new ArrayList<>();
@@ -1080,7 +1081,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
   @Override
   public Set<Entity> getEmbeddingEntities() {
-    Set<Entity> embeddingEntities = new HashSet<>();
+    Set<Entity> embeddingEntities = new LinkedHashSet<>();
     for (List<Relation> embeddingPath : getEmbeddingPaths()) {
       embeddingEntities.add(embeddingPath.get(0).getEntity());
     }
@@ -1619,7 +1620,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
   @Override
   public Set<Attribute> getRootAttributes() {
-    Set<Attribute> rootAttributes = new HashSet<>();
+    Set<Attribute> rootAttributes = new LinkedHashSet<>();
     for (List<Relation> compositePath: compositePaths) {
       Relation lastRelation = compositePath.get(compositePath.size() - 1);
       if (lastRelation.getForeignAttribute() != null) {
@@ -1637,7 +1638,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
   @Override
   public Set<Entity> getRootEntities() {
-    Set<Entity> rootEntities = new HashSet<>();
+    Set<Entity> rootEntities = new LinkedHashSet<>();
     for (List<Relation> compositePath: compositePaths) {
       Relation firstRelation = compositePath.get(0);
       rootEntities.add(firstRelation.getEntity());

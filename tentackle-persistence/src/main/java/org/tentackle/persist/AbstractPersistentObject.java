@@ -154,7 +154,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   private boolean renewTokenLock;                 // true if renew token lock once(!) upon next persistent operation
 
   // if embedded
-  private PersistentDomainObject<?> embeddingParent;  // != null if this is an embedded PDO
+  private AbstractPersistentObject<?, ?> embeddingParent;  // != null if this is an embedded PDO
   private String columnPrefix;                        // prefix for embedded columns
 
   // for PdoCache
@@ -661,16 +661,19 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   @SuppressWarnings("unchecked")
   public <E extends PersistentDomainObject<E>> E  getEmbeddingParent() {
     assertEmbedded();
-    return (E) embeddingParent;
+    return (E) embeddingParent.me();
   }
 
   /**
-   * Sets the parent PDO for this embedded PDO.<br>
+   * Sets the parent PO for this embedded PDO.<br>
    * Throws a {@link PersistenceException} if this is not an embedded PDO.
+   * <p>
+   * Notice that the parent is set through its persistence object, not the PDO proxy!
+   * This is necessary because the proxy may be unknown while reading from the database result set.
    *
-   * @param embeddingParent the parent PDO, never null
+   * @param embeddingParent the parent PO, never null
    */
-  public void setEmbeddingParent(PersistentDomainObject<?> embeddingParent, String columnPrefix) {
+  public void setEmbeddingParent(AbstractPersistentObject<?,?> embeddingParent, String columnPrefix) {
     assertEmbedded();
     this.embeddingParent = Objects.requireNonNull(embeddingParent, "embedding parent missing");
     this.columnPrefix = Objects.requireNonNull(columnPrefix, "column prefix missing");
@@ -988,7 +991,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       if (embeddingParent == null) {
         throw new PersistenceException(this, "parent not set for embedded " + getClass());
       }
-      return ((AbstractPersistentObject) embeddingParent.getPersistenceDelegate()).getClassVariables();
+      // generic type does not match for embedded PDOs, but that's ok here
+      return (PersistentObjectClassVariables) embeddingParent.getClassVariables();
     }
     throw new PersistenceException(this, "getClassVariables() not implemented for " + getClass());
   }
@@ -996,7 +1000,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   @Override
   protected StatementKey createStatementKey(StatementId stmtId) {
     return isEmbedded() ?
-           new StatementKey(stmtId, embeddingParent.getPersistenceDelegate().getClass(), columnPrefix) :
+           new StatementKey(stmtId, embeddingParent.getClass(), columnPrefix) :
            super.createStatementKey(stmtId);
   }
 
@@ -2785,29 +2789,31 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Adds a PDO class that is referencing this PDO clazz.<br>
+   * Adds a PDO class that is referencing this PDO clazz.
+   * <p>
+   * The method name can also contain dots to denote a chain of methods that must be invoked.
    *
    * @param <R> the PDO type
    * @param clazz the class to add
-   * @param methodName a method name, null if default
+   * @param methodPath the method path name, null if default <code>"isReferencing&lt;ClassBaseName&gt;"</code>
    * @return true if added, false if already in map
    * @see #removeReferencingClass
    */
-  public <R extends PersistentDomainObject<R>> boolean addReferencingClass(Class<R> clazz, String methodName) {
-    return getClassVariables().addReferencingClass(getPersistenceClass(clazz), methodName);
+  public <R extends PersistentDomainObject<R>> boolean addReferencingClass(Class<R> clazz, String methodPath) {
+    return getClassVariables().addReferencingClass(getPersistenceClass(clazz), methodPath);
   }
 
   /**
-   * Removes a PDO class that is referencing this PDO clazz.<br>
+   * Removes a PDO class that is referencing this PDO clazz.
    *
    * @param <R> the PDO type
    * @param clazz the class to add
-   * @param methodName a method name, null if default
+   * @param methodPath the method path name, null if default <code>"isReferencing&lt;ClassBaseName&gt;"</code>
    * @return true if removed, false if not in map
    * @see #removeReferencingClass
    */
-  public <R extends PersistentDomainObject<R>> boolean removeReferencingClass(Class<R> clazz, String methodName) {
-    return getClassVariables().removeReferencingClass(getPersistenceClass(clazz), methodName);
+  public <R extends PersistentDomainObject<R>> boolean removeReferencingClass(Class<R> clazz, String methodPath) {
+    return getClassVariables().removeReferencingClass(getPersistenceClass(clazz), methodPath);
   }
 
 

@@ -767,21 +767,21 @@ For more options, see {\@link DbModelWurblet}.
             if (rel.isReferenced()) {
 ]@
     if (@(var)@ != null) {
-      @(var)@.@(createRelationUpdateReferenceCode(rel))@;
 @[
               if (rel.isEmbedding()) {
 ]@
-      ((AbstractPersistentObject<?,?>) @(var)@.getPersistenceDelegate()).setEmbeddingParent(me(), CP_@(rel.getName().toUpperCase(Locale.ROOT))@);
+      ((AbstractPersistentObject<?,?>) @(var)@.getPersistenceDelegate()).setEmbeddingParent(this, CP_@(rel.getName().toUpperCase(Locale.ROOT))@);
 @[
               }
 ]@
+      @(var)@.@(createRelationUpdateReferenceCode(rel))@;
     }
 @[
             }
             else if (rel.isEmbedding()) {
 ]@
     if (@(var)@ != null) {
-      ((AbstractPersistentObject<?,?>) @(var)@.getPersistenceDelegate()).setEmbeddingParent(me(), CP_@(rel.getName().toUpperCase(Locale.ROOT))@);
+      ((AbstractPersistentObject<?,?>) @(var)@.getPersistenceDelegate()).setEmbeddingParent(this, CP_@(rel.getName().toUpperCase(Locale.ROOT))@);
     }
 @[
             }

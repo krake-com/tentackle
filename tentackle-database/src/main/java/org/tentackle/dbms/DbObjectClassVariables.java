@@ -407,17 +407,17 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
    * <p>
    * The referencing class must provide a static method <code>isReferencing&lt;ClassBasename&gt;</code>,
    * while <code>ClassBaseName</code> is the {@link #classBaseName} of the referenced class.
-   * The method must provide the parameters {@link Db} and objectId as generated
-   * by the *IsReferencing-wurblets.<br>
-   * The method name can also contain dots to denote a chain of methods that must be invoked.
+   * The method must provide the objectId as its only parameter and is usually generated
+   * by the ???IsReferencing-wurblets.<br>
+   * The method name can also contain dots to denote a chain of methods to invoke.
    *
    * @param clazz the class to add
-   * @param methodName a method name, null if default
+   * @param methodPath the method path name, null if default <code>"isReferencing&lt;ClassBaseName&gt;"</code>
    * @return true if added, false if already in map
    * @see #removeReferencingClass
    */
-  public boolean addReferencingClass(Class<? extends AbstractDbObject<?>> clazz, String methodName) {
-    ForeignReference ref = createForeignReference(clazz, methodName);
+  public boolean addReferencingClass(Class<? extends AbstractDbObject<?>> clazz, String methodPath) {
+    ForeignReference ref = createForeignReference(clazz, methodPath);
     synchronized(foreignReferences) {
       return foreignReferences.add(ref);
     }
@@ -428,12 +428,12 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
    * Removes a PDO class that is referencing the class from this class variable holder.
    *
    * @param clazz the class to be removed
-   * @param methodName a method name, null if default
+   * @param methodPath the method path name, null if default
    * @return true if removed, false if not in map
    * @see #addReferencingClass
    */
-  public boolean removeReferencingClass(Class<? extends AbstractDbObject<?>> clazz, String methodName) {
-    ForeignReference ref = createForeignReference(clazz, methodName);
+  public boolean removeReferencingClass(Class<? extends AbstractDbObject<?>> clazz, String methodPath) {
+    ForeignReference ref = createForeignReference(clazz, methodPath);
     synchronized(foreignReferences) {
       return foreignReferences.remove(ref);
     }
@@ -455,7 +455,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
         Method method;
         if (stok.hasMoreTokens()) {   // getter method to another object
           method = methodClass.getMethod(methodName);   // no args
-          methodClass = method.getDeclaringClass();
+          methodClass = determineImplementingClassOfReturnType(method.getReturnType());
         }
         else {  // isReferencingMethod
           try {
@@ -463,7 +463,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
           }
           catch (NoSuchMethodException e1) {
             // try Long instead of long
-            method = methodClass.getMethod(methodPath, Long.class);
+            method = methodClass.getMethod(methodName, Long.class);
           }
         }
         int modifiers = method.getModifiers();
@@ -477,6 +477,17 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
     catch (NoSuchMethodException ex) {
       throw new PersistenceException("please add an *IsReferencing-wurblet to generate " + clazz.getName() + "." + methodPath, ex);
     }
+  }
+
+
+  /**
+   * Determines the implementing class for a type returned by a method.
+   *
+   * @param clazz the method's returned class
+   * @return the implementing class
+   */
+  protected Class<?> determineImplementingClassOfReturnType(Class<?> clazz) {
+    return clazz;   // same in low-level persistence layer
   }
 
 

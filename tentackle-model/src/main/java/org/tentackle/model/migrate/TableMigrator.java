@@ -36,9 +36,9 @@ import org.tentackle.sql.metadata.TableMetaData;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -192,12 +192,13 @@ public class TableMigrator {
     else  {
       IndexMigrator.Result indexResult = migrateIndexes();
       tableSql.append(indexResult.getDropSql());
+      tableSql.append(migrateForeignKeysToDrop());
       Result columnResult = migrateColumns(hints, columnMigrations, renameColumns);
       tableSql.append(columnResult.getTableSql());
       warningSql.append(columnResult.getWarningSql());
       tableSql.append(migrateTable());
       tableSql.append(indexResult.getCreateSql());
-      foreignKeySql.append(migrateForeignKeys());
+      foreignKeySql.append(migrateForeignKeysToAdd());
     }
 
     if (tableSql.length() > 0) {
@@ -306,9 +307,9 @@ public class TableMigrator {
     StringBuilder sqlBuf = new StringBuilder();
     StringBuilder warnBuf = new StringBuilder();
 
-    Map<String, ColumnMetaData> columnsToDrop = new HashMap<>();          // columns to drop in database
-    Set<Attribute> attributesToAdd = new HashSet<>();                     // attributes to create in database
-    Map<Attribute,Collection<ColumnMetaData>> attributesToMigrate = new HashMap<>();  // attributes to migrate in database
+    Map<String, ColumnMetaData> columnsToDrop = new LinkedHashMap<>();                      // columns to drop in database
+    Set<Attribute> attributesToAdd = new LinkedHashSet<>();                                 // attributes to create in database
+    Map<Attribute,Collection<ColumnMetaData>> attributesToMigrate = new LinkedHashMap<>();  // attributes to migrate in database
 
     // add all old columns to the drop list first
     for (ColumnMetaData column: table.getColumns()) {
@@ -684,16 +685,39 @@ public class TableMigrator {
 
 
   /**
-   * Migrates the foreign keys.
+   * Creates the SQL code to add foreign keys constraints.
    *
    * @return the sql
    */
-  private String migrateForeignKeys() throws ModelException {
+  private String migrateForeignKeysToAdd() throws ModelException {
     StringBuilder buf = new StringBuilder();
 
-    Collection<ForeignKeyMetaData> existingForeignKeys = table.getForeignKeys();
+    for (ForeignKey foreignKey: foreignKeys) {
+      boolean found = false;
+      for (ForeignKeyMetaData existingForeignKey: table.getForeignKeys()) {
+        if (foreignKeysMatch(foreignKey, existingForeignKey)) {
+          found = true;   // match -> nothing to do
+          break;
+        }
+      }
+      if (!found) {
+        // create
+        buf.append(new ForeignKeyMigrator(backend, foreignKey, null).migrate());
+      }
+    }
 
-    for (ForeignKeyMetaData existingForeignKey: existingForeignKeys) {
+    return buf.toString();
+  }
+
+  /**
+   * Creates the SQL code to drop foreign keys constraints.
+   *
+   * @return the sql
+   */
+  private String migrateForeignKeysToDrop() throws ModelException {
+    StringBuilder buf = new StringBuilder();
+
+    for (ForeignKeyMetaData existingForeignKey: table.getForeignKeys()) {
       boolean found = false;
       for (ForeignKey foreignKey: foreignKeys) {
         if (foreignKeysMatch(foreignKey, existingForeignKey)) {
@@ -704,20 +728,6 @@ public class TableMigrator {
       if (!found) {
         // drop
         buf.append(new ForeignKeyMigrator(backend, null, existingForeignKey).migrate());
-      }
-    }
-
-    for (ForeignKey foreignKey: foreignKeys) {
-      boolean found = false;
-      for (ForeignKeyMetaData existingForeignKey: existingForeignKeys) {
-        if (foreignKeysMatch(foreignKey, existingForeignKey)) {
-          found = true;   // match -> nothing to do
-          break;
-        }
-      }
-      if (!found) {
-        // create
-        buf.append(new ForeignKeyMigrator(backend, foreignKey, null).migrate());
       }
     }
 
