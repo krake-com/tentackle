@@ -792,44 +792,44 @@ For more options, see {\@link DbModelWurblet}.
 @[
             }
           }
-          if (!getEntity().isEmbedded()) {
-            if (rel.getRelationType() == RelationType.OBJECT && !rel.isEmbedding()) {
-              if (rel.isComposite())  {
-                if (attr != null && !attr.getDataType().isPrimitive()) {
+
+          boolean isEmbeddingFromParent = rel.getForeignRelation() != null && rel.getForeignRelation().isEmbedding();
+          if (rel.getRelationType() == RelationType.OBJECT && !isEmbeddingFromParent && !rel.isEmbedding()) {
+            if (rel.isComposite())  {
+              if (attr != null && !attr.getDataType().isPrimitive()) {
 ]@
     @(attr.getJavaType())@ oldId = @(rel.getMethodArgs().get(0).getMethodArgument())@;
 @[
-                }
-                else {
+              }
+              else {
 ]@
     long oldId = @(rel.getMethodArgs().get(0).getMethodArgument())@;
 @[
-                }
               }
+            }
 ]@
     @(createRelationSetFirstArgMethodName(rel))@(@(var)@ == null ? @(nullVal)@ : @(var)@.getId());
 @[
-            }
-            if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER) {
+          }
+          if ((rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER) && !isEmbeddingFromParent) {
 ]@
     @(var)@Loaded = true;
 @[
-            }
-            if (rel.getRelationType() == RelationType.OBJECT && rel.isComposite())  {
-              if (attr != null && !attr.getDataType().isPrimitive()) {
+          }
+          if (rel.getRelationType() == RelationType.OBJECT && rel.isComposite())  {
+            if (attr != null && !attr.getDataType().isPrimitive()) {
 ]@
     if (oldId != null && oldId != 0 && @(rel.getVariableName())@RemovedId == 0 && !Objects.equals(@(rel.getMethodArgs().get(0).getMethodArgument())@, oldId)) {
       @(rel.getVariableName())@RemovedId = oldId;
     }
 @[
-              }
-              else if (!rel.isEmbedding()) {
+            }
+            else if (!rel.isEmbedding()) {
 ]@
     if (oldId != 0 && @(rel.getVariableName())@RemovedId == 0 && @(rel.getMethodArgs().get(0).getMethodArgument())@ != oldId) {
       @(rel.getVariableName())@RemovedId = oldId;
     }
 @[
-              }
             }
           }
 ]@
