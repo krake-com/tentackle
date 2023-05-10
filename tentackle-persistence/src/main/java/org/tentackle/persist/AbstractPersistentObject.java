@@ -665,7 +665,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
   /**
-   * Sets the parent PO for this embedded PDO.<br>
+   * Sets the embedding PO for this embedded PDO.<br>
    * Throws a {@link PersistenceException} if this is not an embedded PDO.
    * <p>
    * Notice that the parent is set through its persistence object, not the PDO proxy!
@@ -673,7 +673,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    *
    * @param embeddingParent the parent PO, never null
    */
-  public void setEmbeddingParent(AbstractPersistentObject<?,?> embeddingParent, String columnPrefix) {
+  public void setEmbeddingPersistentObject(AbstractPersistentObject<?,?> embeddingParent, String columnPrefix) {
     assertEmbedded();
     this.embeddingParent = Objects.requireNonNull(embeddingParent, "embedding parent missing");
     this.columnPrefix = Objects.requireNonNull(columnPrefix, "column prefix missing");
