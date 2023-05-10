@@ -45,8 +45,8 @@ import org.tentackle.wurblet.WurbletArgumentParser;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
+import java.util.StringTokenizer;
 
 
 /**
@@ -660,12 +660,12 @@ public class DbModelWurblet extends ModelWurblet {
     }
     buf.append("    JoinedSelect<").append(pdoType).append("> js = new JoinedSelect<")
        .append(pdoType).append(">()\n");
-    createJoinsImpl(buf, "      ", getJoinPaths(), pdoType, null);
+    createJoinsImpl(buf, getEntity(), "      ", getJoinPaths(), pdoType, null);
     buf.replace(buf.length() - 1, buf.length(), ";\n");
     return buf.toString();
   }
 
-  private void createJoinsImpl(StringBuilder buf, String inset, List<JoinPath> paths, String pdoType, String parentName)
+  private void createJoinsImpl(StringBuilder buf, Entity lastNonEmbeddedEntity, String inset, List<JoinPath> paths, String pdoType, String parentName)
           throws WurbelException {
     for (JoinPath path: paths) {
       String lastJoinName = null;
@@ -674,8 +674,8 @@ public class DbModelWurblet extends ModelWurblet {
         Relation relation = join.getRelation();
         lastJoinName = join.getName();
         String poImpl = deriveClassNameForEntity(relation.getEntity());
-        String alias = relation.getEntity().getTopSuperEntity().getTableAlias();
-        String leftClass = relation.getEntity().equals(getEntity()) ? pdoType : relation.getEntity().getName();
+        String alias = lastNonEmbeddedEntity.getTopSuperEntity().getTableAlias();
+        String leftClass = relation.getEntity().equals(getEntity()) ? pdoType : lastNonEmbeddedEntity.getName();
         String joinClass = relation.getForeignEntity().getName();
         String joinAlias = relation.getForeignEntity().getTableProvidingEntity().getTableAlias();
         buf.append(inset).append(".addJoin(\n");
@@ -717,18 +717,33 @@ public class DbModelWurblet extends ModelWurblet {
         }
         else {
           buf.append(inset).append("  new Join<>(JoinType.LEFT, ");
+          Attribute attribute = relation.getMethodArgs().get(0).getAttribute();   // not relation.getAttribute!
           if (parentName == null) {
-            buf.append("getColumnName(CN_").append(relation.getAttribute().getName().toUpperCase(Locale.ROOT)).append("), \"");
+            buf.append("getColumnName(");
+            if (attribute.isEmbedded()) {
+              buf.append('"').append(attribute.getColumnName()).append('"');
+            }
+            else {
+              buf.append(getColumnNameConstant(attribute, 0));
+            }
+            buf.append("), \"");
           }
           else {
-            buf.append('"').append(parentName).append('.').append(relation.getAttribute().getColumnName()).append("\", \"");
+            buf.append('"').append(parentName).append('.').append(attribute.getColumnName()).append("\", \"");
           }
           buf.append(join.getName()).append(".id\", ")
              .append(joinClass).append(".class, \"").append(join.getName()).append("\",\n")
              .append(inset).append("    (").append(leftClass).append(" ").append(alias).append(", ")
              .append(joinClass).append(" ").append(joinAlias).append(") -> {\n")
              .append(inset).append("      ((").append(poImpl).append(") ")
-             .append(alias).append(".getPersistenceDelegate()).")
+             .append(alias).append('.');
+          if (relation.getEntity().isEmbedded()) {
+            StringTokenizer stok = new StringTokenizer(relation.getPathName(), ".");
+            while(stok.hasMoreTokens()) {
+              buf.append("get").append(stok.nextToken()).append("().");
+            }
+          }
+          buf.append("getPersistenceDelegate()).")
              .append(relation.getSetterName());
           if (relation.isSerialized()) {
             buf.append("Blunt");
@@ -738,11 +753,13 @@ public class DbModelWurblet extends ModelWurblet {
         buf.append(inset).append("    }\n")
            .append(inset).append("  )\n");
       }
+
       List<JoinPath> subPaths = path.getPaths();
       if (!subPaths.isEmpty()) {
         // all sub paths start with the same entity
-        Entity subEntity = subPaths.get(0).getElements().get(0).getRelation().getEntity();
-        createJoinsImpl(buf, inset + "  ", subPaths, subEntity.getName(), lastJoinName);
+        Relation subRelation = subPaths.get(0).getElements().get(0).getRelation();
+        Entity subEntity = subRelation.getEntity();
+        createJoinsImpl(buf, subEntity.isEmbedded() ? lastNonEmbeddedEntity : subEntity, inset + "  ", subPaths, subEntity.getName(), lastJoinName);
       }
       buf.append(inset).append(")\n");
     }

@@ -252,6 +252,7 @@ For more options, see {\@link DbModelWurblet}.
       String effType = rel.getJavaType();
       String scope = rel.getAccessScope().toString();
       boolean hidden = rel.getAccessScope() != AccessScope.PUBLIC;
+      boolean isEmbeddingFromParent = rel.getForeignRelation() != null && rel.getForeignRelation().isEmbedding();
       boolean createGetter = !rel.isWriteOnly();
       boolean createSetter = !rel.isReadOnly() &&
                              (rel.getSelectionType() != SelectionType.ALWAYS || rel.isSelectionCached()) &&
@@ -402,8 +403,7 @@ For more options, see {\@link DbModelWurblet}.
               }
             }
           }
-          else if (rel.isEmbedding() ||
-                   rel.getForeignRelation() != null && rel.getForeignRelation().isEmbedding()) {
+          else if (rel.isEmbedding() || isEmbeddingFromParent) {
             if (rel.isEmbedding()) {
 ]@
     if (@(var)@ == null) {
@@ -581,8 +581,7 @@ For more options, see {\@link DbModelWurblet}.
   }
 @[
             }
-            else if (rel.getRelationType() == RelationType.OBJECT && rel.isSerialized() &&
-                     (rel.getForeignRelation() == null || !rel.getForeignRelation().isEmbedding())) {
+            else if (rel.getRelationType() == RelationType.OBJECT && rel.isSerialized() && !isEmbeddingFromParent) {
               if (rel.isBluntDeclared()) {
 ]@
 
@@ -770,7 +769,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
               if (rel.isEmbedding()) {
 ]@
-      ((AbstractPersistentObject<?,?>) @(var)@.getPersistenceDelegate()).setEmbeddingParent(this, CP_@(rel.getName().toUpperCase(Locale.ROOT))@);
+      ((AbstractPersistentObject<?,?>) @(var)@.getPersistenceDelegate()).setEmbeddingPersistentObject(this, CP_@(rel.getName().toUpperCase(Locale.ROOT))@);
 @[
               }
 ]@
@@ -781,7 +780,7 @@ For more options, see {\@link DbModelWurblet}.
             else if (rel.isEmbedding()) {
 ]@
     if (@(var)@ != null) {
-      ((AbstractPersistentObject<?,?>) @(var)@.getPersistenceDelegate()).setEmbeddingParent(this, CP_@(rel.getName().toUpperCase(Locale.ROOT))@);
+      ((AbstractPersistentObject<?,?>) @(var)@.getPersistenceDelegate()).setEmbeddingPersistentObject(this, CP_@(rel.getName().toUpperCase(Locale.ROOT))@);
     }
 @[
             }
@@ -793,7 +792,6 @@ For more options, see {\@link DbModelWurblet}.
             }
           }
 
-          boolean isEmbeddingFromParent = rel.getForeignRelation() != null && rel.getForeignRelation().isEmbedding();
           if (rel.getRelationType() == RelationType.OBJECT && !isEmbeddingFromParent && !rel.isEmbedding()) {
             if (rel.isComposite())  {
               if (attr != null && !attr.getDataType().isPrimitive()) {
@@ -837,7 +835,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
         }
 
-        if (rel.getRelationType() == RelationType.OBJECT && rel.isSerialized() && !getEntity().isEmbedded() &&
+        if (rel.getRelationType() == RelationType.OBJECT && rel.isSerialized() && !isEmbeddingFromParent &&
             (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER)) {
 ]@
 
