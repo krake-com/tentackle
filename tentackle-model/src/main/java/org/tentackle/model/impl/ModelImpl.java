@@ -659,7 +659,7 @@ public class ModelImpl implements Model {
       boolean normTextProvided = entity.getOptions().isNormTextProvided();
       if (!normTextProvided) {
         for (Attribute attribute: entity.getAttributes()) {
-          if (attribute.getOptions().isPartOfNormText()) {
+          if (attribute.getOptions().isPartOfNormText() && !entity.isEmbedded()) {
             normTextProvided = true;
             break;
           }

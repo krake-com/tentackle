@@ -61,6 +61,14 @@ For more options, see {\@link DbModelWurblet}.
         generatePresetVirgin = true;
       }
     }
+    if (!generateCreateNormText) {
+      for (Attribute attr: getEntity().getEmbeddedAttributes())  {
+        if (attr.getOptions().isPartOfNormText())  {
+          generateCreateNormText = true;
+          break;
+        }
+      }
+    }
 
     if (!generateMock) {
       if (isRemote()) {
@@ -1409,6 +1417,31 @@ For more options, see {\@link DbModelWurblet}.
 ]@
     buf.append(@(attr.getGetterName())@()).append(',');
 @[
+          }
+        }
+
+        for (Relation rel: getEntity().getRelations()) {
+          if (rel.isEmbedding()) {
+            boolean hasNormText = false;
+            for (Attribute attr: rel.getForeignEntity().getAttributes())  {
+              if (attr.getOptions().isPartOfNormText())  {
+                hasNormText = true;
+                break;
+              }
+            }
+            if (!hasNormText) {
+              for (Attribute attr: rel.getForeignEntity().getEmbeddedAttributes())  {
+                if (attr.getOptions().isPartOfNormText())  {
+                  hasNormText = true;
+                  break;
+                }
+              }
+            }
+            if (hasNormText) {
+]@
+    buf.append(Objects.requireNonNullElse(((AbstractPersistentObject<?,?>) @(rel.getGetterName())@().getPersistenceDelegate()).createAttributesNormText(), ""));
+@[
+            }
           }
         }
 ]@

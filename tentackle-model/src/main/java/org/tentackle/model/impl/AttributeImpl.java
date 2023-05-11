@@ -550,9 +550,6 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl>, Clon
       if (getOptions().isDomainKey()) {
         throw createModelException("KEY option not allowed for embedded attributes");
       }
-      if (getOptions().isPartOfNormText()) {
-        throw createModelException("NORMTEXT option not allowed for embedded attributes");
-      }
     }
   }
 
