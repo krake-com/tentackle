@@ -163,7 +163,7 @@ For more options, see {\@link DbModelWurblet}.
                                 Boolean.FALSE.equals(getEntity().isDeletionCascaded());
 
     if (generateLoadComponents == null) {
-      generateLoadComponents = generateIsComposite && isEffectivelyComposite;
+      generateLoadComponents = generateIsComposite;
     }
     if (generateInsertComponents == null) {
       generateInsertComponents = generateIsComposite && isEffectivelyComposite;
@@ -1507,11 +1507,18 @@ For more options, see {\@link DbModelWurblet}.
 @[
             }
             else  {
+              if (rel.isEmbedding()) {
+]@
+    count += ((AbstractPersistentObject<?,?>) @(rel.getGetterName())@().getPersistenceDelegate()).addComponents(components, onlyLoaded);
+@[
+              }
+              else {
 ]@
     if (@(rel.getGetterName())@() != null) {
       count += ((AbstractPersistentObject<?,?>) @(var)@.getPersistenceDelegate()).addComponents(components, onlyLoaded);
     }
 @[
+              }
             }
           }
         }

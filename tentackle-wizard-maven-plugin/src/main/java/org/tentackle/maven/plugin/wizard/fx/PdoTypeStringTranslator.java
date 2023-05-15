@@ -18,6 +18,15 @@
 
 package org.tentackle.maven.plugin.wizard.fx;
 
+import org.tentackle.fx.FxTextComponent;
+import org.tentackle.fx.NavigationLetterStringConverter;
+import org.tentackle.fx.ValueTranslatorService;
+import org.tentackle.fx.component.FxComboBox;
+import org.tentackle.fx.translate.ValueStringTranslator;
+import org.tentackle.maven.plugin.wizard.PdoProfile;
+import org.tentackle.pdo.PdoFactory;
+import org.tentackle.pdo.PersistentDomainObject;
+
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.ListCell;
@@ -28,16 +37,6 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 import javafx.util.Callback;
-
-import org.tentackle.fx.FxTextComponent;
-import org.tentackle.fx.NavigationLetterStringConverter;
-import org.tentackle.fx.ValueTranslatorService;
-import org.tentackle.fx.component.FxComboBox;
-import org.tentackle.fx.translate.ValueStringTranslator;
-import org.tentackle.maven.plugin.wizard.PdoProfile;
-import org.tentackle.pdo.PdoFactory;
-import org.tentackle.pdo.PersistentDomainObject;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -163,7 +162,7 @@ public class PdoTypeStringTranslator extends ValueStringTranslator<PdoType> {
       for (String pdoName: PdoFactory.getInstance().getPersistenceMapper().getMap().keySet()) {
         PersistentDomainObject<?> pdo = PdoFactory.getInstance().create(pdoName);
         Class<? extends PersistentDomainObject<?>> effectiveClass = pdo.getEffectiveClass();
-        if ((!rootOnly || pdo.isRootEntity()) &&
+        if ((!rootOnly || pdo.isRootEntity()) && !pdo.getPersistenceDelegate().isEmbedded() &&
             (profile == null || profile.getPdoPackage().equals(effectiveClass.getPackageName()))) {
           PdoType pdoType = new PdoType(effectiveClass.getSimpleName(), effectiveClass);
           pdoTypeMap.put(pdoType.getName(), pdoType);

@@ -1,0 +1,23 @@
+@{include $currentDir/header.incl}@
+@{comment
+<strong>({\@code \@wurblet})</strong> Generates the code to setup the method-cache for an embedded entity.
+<p>
+usage:<br>
+&#064;wurblet &lt;tag&gt; MethodCache
+<p>
+For more options, see {\@link DbModelWurblet}.
+}@
+@[
+  private void wurbel() throws WurbelException, ModelException {
+    String pdoName = getPdoClassName();
+]@
+  /** method cache for all instances of @(getClassName())@. */
+  private static final PdoMethodCache<@(pdoName)@> METHOD_CACHE = new PdoMethodCache<>(@(pdoName)@.class);
+
+  \@Override
+  public PdoMethodCache<EmbeddedBlah> getPdoMethodCache() {
+    return METHOD_CACHE;
+  }
+@[
+  }
+]@

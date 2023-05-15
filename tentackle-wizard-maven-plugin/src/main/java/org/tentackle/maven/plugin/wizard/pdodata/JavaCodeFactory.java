@@ -43,7 +43,7 @@ public class JavaCodeFactory {
    * Stereotype for attributes and relations to skip test code generation.
    */
   public static final String NOTEST_STEREOTYPE = "NOTEST";
-  
+
 
   /**
    * Generates code from a data object template.
@@ -245,7 +245,7 @@ public class JavaCodeFactory {
   }
 
   private String toIdComment(PersistentDomainObject<?> pdo) {
-    if (pdo != null) {
+    if (pdo != null && !pdo.isEmbedded()) {
       return "    // [" + pdo.getId() + "/" + pdo.getSerial() + "]";
     }
     return "";
