@@ -67,10 +67,12 @@ public class ${persistenceImplementation} extends ${superPersistenceImplementati
   @Serial
   private static final long serialVersionUID = 1L;
 
-<#if pdoInheritance != "EMBEDDED">
+<#if pdoInheritance == "EMBEDDED">
+  // @wurblet methodCache MethodCache
+<#else>
   // @wurblet classVariables ClassVariables
-
 </#if>
+
   // @wurblet columnNames ColumnNames
 
   // @wurblet declare Declare

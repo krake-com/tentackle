@@ -238,6 +238,12 @@ public class DataNodeFactory {
               "editedExpiry".equals(methodInfo.name) && !pdo.isTokenLockProvided()) {
             continue;
           }
+          if (pdo.isEmbedded() && (
+              "id".equals(methodInfo.name) ||
+              "serial".equals(methodInfo.name) ||
+              "classId".equals(methodInfo.name))) {
+            continue;
+          }
           boolean idOfCompositeRelation = false;
           NonCompositeRelation nonCompositeRelation = null;
           if ("long".equals(methodInfo.typeName) || "Long".equals(methodInfo.typeName)) {

@@ -218,8 +218,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
 
-
-
   /**
    * Creates an application database object.
    *
@@ -230,7 +228,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     this.pdo = pdo;
     setDomainContext(context);
   }
-
 
   /**
    * Creates an application database object without a domain context
@@ -256,13 +253,13 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     this.pdo = pdo;
   }
 
-
   /**
    * Creates an application database object without a database context.
    */
   public AbstractPersistentObject() {
     super();
   }
+
 
   @Override
   public DomainDelegate<T> getDomainDelegate() {
@@ -277,6 +274,14 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   @Override
   public T me() {
     return pdo;
+  }
+
+  @Override
+  public final String toGenericString() {
+    if (isEmbedded()) {
+      return getClass().getName() + "[embedded]";
+    }
+    return super.toGenericString();
   }
 
   /**
@@ -672,6 +677,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * This is necessary because the proxy may be unknown while reading from the database result set.
    *
    * @param embeddingParent the parent PO, never null
+   * @param columnPrefix the column prefix, empty string if none, never null
    */
   public void setEmbeddingPersistentObject(AbstractPersistentObject<?,?> embeddingParent, String columnPrefix) {
     assertEmbedded();
@@ -1157,7 +1163,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     if (isComposite()) {
       throw new PersistenceException("method not implemented");
     }
-    // else: this is not a composite, just return me
+    // else: this is not a composite (or an embedded object) -> just return me
     return new IdentifiableMap<>(this.getPdo());
   }
 

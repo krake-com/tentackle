@@ -231,7 +231,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * @return the string value of this object
    */
   @Override
-  public final String toGenericString() {
+  public String toGenericString() {
     return  getClass().getName() +
             '[' +
             id +
