@@ -15,7 +15,7 @@ For more options, see {\@link DbModelWurblet}.
   private static final PdoMethodCache<@(pdoName)@> METHOD_CACHE = new PdoMethodCache<>(@(pdoName)@.class);
 
   \@Override
-  public PdoMethodCache<EmbeddedBlah> getPdoMethodCache() {
+  public PdoMethodCache<@(pdoName)@> getPdoMethodCache() {
     return METHOD_CACHE;
   }
 @[

@@ -46,7 +46,7 @@ import org.tentackle.session.TableName;
  * integrity := $integrity
  *
  * ## attributes
-<#if profile == "masterdata">
+<#if profile == "masterdata" && pdoInheritance != "EMBEDDED">
   <#if pdoExtends == "">
  * [cached, tokenlock]
   <#else>
@@ -78,11 +78,11 @@ import org.tentackle.session.TableName;
 <#if pdoClassId != "">
 @ClassId(/**/${pdoClassId}/**/) // @wurblet < Inject $classid
 </#if>
-<#if pdoInheritance != "PLAIN">
+<#if pdoInheritance != "PLAIN" && pdoInheritance != "EMBEDDED">
 @Singular("${pdoInterface}")
 @Plural("${pdoInterface}s")
 </#if>
-<#if pdoInheritance != "NONE">
+<#if pdoInheritance != "NONE" && pdoInheritance != "EMBEDDED">
 public interface ${pdoInterface}<T extends ${pdoInterface}<T>> extends ${superPdoInterface}<T>, ${persistenceInterface}<T>, ${domainInterface}<T> {
 <#else>
 public interface ${pdoInterface} extends ${superPdoInterface}<${pdoInterface}>, ${persistenceInterface}, ${domainInterface} {

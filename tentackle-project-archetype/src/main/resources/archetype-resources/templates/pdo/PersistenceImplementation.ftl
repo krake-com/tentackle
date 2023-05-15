@@ -41,6 +41,7 @@ import org.tentackle.persist.PersistentObjectClassVariables;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentObjectService;
 import org.tentackle.pdo.Pdo;
+import org.tentackle.pdo.PdoCache;
 import org.tentackle.session.Persistent;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
@@ -56,7 +57,7 @@ import org.tentackle.validate.ValidationUtilities;
  * Persistence implementation for ${pdoInterface}.
  */
 @PersistentObjectService(${pdoInterface}.class)
-<#if pdoInheritance != "NONE">
+<#if pdoInheritance != "NONE" && pdoInheritance != "EMBEDDED">
 public class ${persistenceImplementation}<T extends ${pdoInterface}<T>, P extends ${persistenceImplementation}<T,P>>
        extends ${superPersistenceImplementation}<T,P> implements ${persistenceInterface}<T> {
 <#else>
@@ -67,7 +68,11 @@ public class ${persistenceImplementation} extends ${superPersistenceImplementati
   private static final long serialVersionUID = 1L;
 
 
+<#if pdoInheritance == "EMBEDDED">
+  // @wurblet methodCache MethodCache
+<#else>
   // @wurblet classVariables ClassVariables
+</#if>
 
   // @wurblet columnNames ColumnNames
 
@@ -81,7 +86,7 @@ public class ${persistenceImplementation} extends ${superPersistenceImplementati
    * @param pdo the persistent domain object
    * @param context the domain context
    */
-<#if pdoInheritance != "NONE">
+<#if pdoInheritance != "NONE" && pdoInheritance != "EMBEDDED">
   public ${persistenceImplementation}(T pdo, DomainContext context) {
 <#else>
   public ${persistenceImplementation}(${pdoInterface} pdo, DomainContext context) {
@@ -95,7 +100,7 @@ public class ${persistenceImplementation} extends ${superPersistenceImplementati
    * @param pdo the persistent domain object
    * @param session the session
    */
-<#if pdoInheritance != "NONE">
+<#if pdoInheritance != "NONE" && pdoInheritance != "EMBEDDED">
   public ${persistenceImplementation}(T pdo, Session session) {
 <#else>
   public ${persistenceImplementation}(${pdoInterface} pdo, Session session) {
@@ -108,7 +113,7 @@ public class ${persistenceImplementation} extends ${superPersistenceImplementati
    *
    * @param pdo the persistent domain object
    */
-<#if pdoInheritance != "NONE">
+<#if pdoInheritance != "NONE" && pdoInheritance != "EMBEDDED">
   public ${persistenceImplementation}(T pdo) {
 <#else>
   public ${persistenceImplementation}(${pdoInterface} pdo) {
@@ -129,7 +134,7 @@ public class ${persistenceImplementation} extends ${superPersistenceImplementati
 
   // @wurblet relations PdoRelations
 
-<#if profile == "masterdata" && pdoExtends == "">
+<#if profile == "masterdata" && pdoExtends == "" && pdoInheritance != "EMBEDDED">
   // @wurblet cache PdoCache --preload
 
 </#if>
