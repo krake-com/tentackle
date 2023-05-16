@@ -58,7 +58,7 @@ public class JoinPathFactory implements PathFactory<JoinPath, Join> {
       if (argument.isPath()) {
         List<Join> joins = new ArrayList<>();
         for (Relation relation: argument.getRelations()) {
-          joins.add(new Join(relation));
+          joins.add(new Join(relation, argument));
         }
         paths.add(new JoinPath(joins, null));
       }

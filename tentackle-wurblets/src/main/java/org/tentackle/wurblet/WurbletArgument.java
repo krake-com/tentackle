@@ -20,6 +20,7 @@ package org.tentackle.wurblet;
 
 import org.wurbelizer.wurbel.WurbelException;
 
+import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
 import org.tentackle.model.Model;
@@ -151,7 +152,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
   private List<Relation> relations;
 
   /** embedding relation path if attribute is embedded. */
-  private List<Relation> embeddingPath;
+  private final List<Relation> embeddingPath;
 
   /** != null if the first relation points to a component. */
   private Entity component;
@@ -379,7 +380,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
       str = str.substring(ndx + 1);
       Relation relation = addRelation(currentEntity, relationName, predecessorRelation);
       currentEntity = relation.getForeignEntity();
-      if (relation.isEmbedding()) {
+      if (relation.isEmbedding() || !embeddingPath.isEmpty()) {
         embeddingPath.add(relation);
       }
       predecessorRelation = relation;
@@ -420,11 +421,18 @@ public class WurbletArgument implements WurbletArgumentOperand {
           // apply embedding path to attribute
           StringBuilder pathName = new StringBuilder();
           StringBuilder columnName = new StringBuilder();
+          boolean lastRelationisEmbedding = true;
           for (Relation relation : embeddingPath) {
             pathName.append(relation.getName()).append('.');
             columnName.append(relation.getColumnPrefix());
+            if (!relation.isEmbedding()) {
+              lastRelationisEmbedding = false;  // non-composite 1:1 link to another PDO
+            }
           }
           pathName.append(attribute.getName());
+          if (!lastRelationisEmbedding) {
+            columnName.setLength(0);
+          }
           columnName.append(attribute.getColumnName());
           attribute = attribute.createEmbedded(embeddingPath.get(0).getEntity(), pathName.toString(), columnName.toString());
         }
@@ -586,6 +594,54 @@ public class WurbletArgument implements WurbletArgumentOperand {
    */
   public List<Relation> getEmbeddingPath() {
     return embeddingPath;
+  }
+
+  /**
+   * Gets the embedding prefix count.<br>
+   * The embedding prefixes are only necessary for chained embedding relations, i.e.
+   * relations from within an embedded entity which is embedded in at least one other embedded entity.
+   * This is used in wurblet joins (and fetch joins) only.
+   *
+   * @return the embedding count, 0 if no prefixing necessary.
+   */
+  public int getEmbeddingPrefixCount() {
+    int count = 0;
+    for (Relation relation : embeddingPath) {
+      if (relation.isEmbedding()) {   // skip the last non-embedding, if this is a 1:1 non-composite
+        count++;
+      }
+    }
+    return count > 0 ? count - 1 : 0;   // except the last (== current) embedding relation!
+  }
+
+  /**
+   * Gets the column prefix for nested embedded relations.
+   *
+   * @return the column prefix, empty string if none
+   * @see #getEmbeddingColumnPrefix()
+   */
+  public String getEmbeddingColumnPrefix() {
+    StringBuilder buf = new StringBuilder();
+    int count = getEmbeddingPrefixCount();
+    for (int i=0; i < count; i++) {
+      buf.append(embeddingPath.get(i).getColumnPrefix());
+    }
+    return buf.toString();
+  }
+
+  /**
+   * Gets the getter prefix for nested embedded relations.
+   *
+   * @return the getter prefix, empty string if none
+   * @see #getEmbeddingColumnPrefix()
+   */
+  public String getEmbeddingGetterPrefix() {
+    StringBuilder buf = new StringBuilder();
+    int count = getEmbeddingPrefixCount();
+    for (int i=0; i < count; i++) {
+      buf.append("get").append(StringHelper.firstToUpper(embeddingPath.get(i).getName())).append("().");
+    }
+    return buf.toString();
   }
 
   /**

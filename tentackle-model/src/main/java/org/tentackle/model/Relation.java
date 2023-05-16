@@ -155,7 +155,7 @@ public interface Relation extends ModelElement {
   /**
    * Gets the embedding entity.
    *
-   * @return the embedding entity, null if not an embedded attribute
+   * @return the embedding entity, null if not an embedded relation
    */
   Entity getEmbeddingEntity();
 

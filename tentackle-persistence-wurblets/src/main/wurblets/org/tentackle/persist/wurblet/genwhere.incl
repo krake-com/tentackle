@@ -115,7 +115,7 @@
                   if (rel.getRelationType() == RelationType.OBJECT) {
                     if (rel.isEmbedded()) {
                       isEmbeddingRelation = true;
-                      leftAttribute = '"' + rel.getMethodArgs().get(0).getAttribute().getColumnName() + '"';
+                      leftAttribute = '"' + arg.getEmbeddingColumnPrefix() + rel.getMethodArgs().get(0).getAttribute().getColumnName() + '"';
                     }
                     else {
                       leftAttribute = getColumnNameConstant(rel.getAttribute(), 0);

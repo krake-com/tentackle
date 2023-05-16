@@ -24,10 +24,7 @@ For more options, see {\@link ModelWurblet}.
     }
 
     Map<Attribute, DataType<?>> bsAttrs = new LinkedHashMap<>();  // backend-specific attributes requires special handling
-    List<Attribute> attrs = new ArrayList<>();
-    attrs.addAll(getEntity().getAttributes());
-    attrs.addAll(getEntity().getEmbeddedAttributes());
-    for (Attribute attr: attrs)  {
+    for (Attribute attr: getEntity().getAttributes())  {
       if (!attr.getOptions().isNoConstant() && !attr.getOptions().isNoDeclare() && !attr.getOptions().isFromSuper()) {
         DataType<?> effectiveType = getEffectiveDataType(attr);
         String baseColConst = getColumnNameConstant(attr, -1);

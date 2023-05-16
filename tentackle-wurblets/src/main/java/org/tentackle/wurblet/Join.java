@@ -30,15 +30,18 @@ import java.util.Objects;
 public class Join {
 
   private final Relation relation;
+  private final WurbletArgument argument;
   private String name;
 
   /**
    * Creates an unnamed join.
    *
    * @param relation the relation
+   * @param argument the wurblet argument
    */
-  public Join(Relation relation) {
+  public Join(Relation relation, WurbletArgument argument) {
     this.relation = relation;
+    this.argument = argument;
   }
 
   /**
@@ -48,6 +51,15 @@ public class Join {
    */
   public Relation getRelation() {
     return relation;
+  }
+
+  /**
+   * Gets the wurblet argument representing this join.
+   *
+   * @return the wurblet argument
+   */
+  public WurbletArgument getArgument() {
+    return argument;
   }
 
   /**

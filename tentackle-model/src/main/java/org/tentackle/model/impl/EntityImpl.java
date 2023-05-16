@@ -675,10 +675,10 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
               embeddedAttributes.add(attribute.createEmbedded(embeddingEntity, pPrefix + attribute.getPathName(), cPrefix + attribute.getColumnName()));
             }
             // recursively add embedded PDOs of this embedded PDO, if any
-            embeddedEntity.collectEmbeddedAttributes(embeddingEntity, recursionSet, embeddedAttributes, pPrefix, cPrefix);
+            embeddedEntity.collectEmbeddedAttributes(embeddingEntity, new HashSet<>(recursionSet), embeddedAttributes, pPrefix, cPrefix);
           }
           else {
-            throw new ModelException("embedded entity " + embeddedEntity + " recursively", relation);
+            throw new ModelException(embeddedEntity + " embedded recursively via '" + pathPrefix + "..'", relation);
           }
         }
       }
@@ -706,10 +706,10 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
                 embeddedRelations.add(embeddedEntityRelation.createEmbedded(embeddingEntity, pPrefix, cPrefix));
               }
             }
-            embeddedEntity.collectEmbeddedRelations(embeddingEntity, recursionSet, embeddedRelations, pPrefix, cPrefix);
+            embeddedEntity.collectEmbeddedRelations(embeddingEntity, new HashSet<>(recursionSet), embeddedRelations, pPrefix, cPrefix);
           }
           else {
-            throw new ModelException("embedded entity " + embeddedEntity + " recursively", relation);
+            throw new ModelException(embeddedEntity + " embedded recursively via '" + pathPrefix + "..'", relation);
           }
         }
       }

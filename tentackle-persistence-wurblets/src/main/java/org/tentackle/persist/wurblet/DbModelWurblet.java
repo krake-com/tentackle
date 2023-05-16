@@ -721,7 +721,7 @@ public class DbModelWurblet extends ModelWurblet {
           if (parentName == null) {
             buf.append("getColumnName(");
             if (attribute.isEmbedded()) {
-              buf.append('"').append(attribute.getColumnName()).append('"');
+              buf.append('"').append(join.getArgument().getEmbeddingColumnPrefix()).append(attribute.getColumnName()).append('"');
             }
             else {
               buf.append(getColumnNameConstant(attribute, 0));
@@ -738,6 +738,7 @@ public class DbModelWurblet extends ModelWurblet {
              .append(inset).append("      ((").append(poImpl).append(") ")
              .append(alias).append('.');
           if (relation.getEntity().isEmbedded()) {
+            buf.append(join.getArgument().getEmbeddingGetterPrefix());
             StringTokenizer stok = new StringTokenizer(relation.getPathName(), ".");
             while(stok.hasMoreTokens()) {
               buf.append("get").append(stok.nextToken()).append("().");
@@ -1416,7 +1417,7 @@ public class DbModelWurblet extends ModelWurblet {
    *
    * @param relation the relation
    * @return the attribute
-   * @throws ModelException
+   * @throws ModelException if no method args found or missing attribute
    */
   public Attribute getFirstMethodAttribute(Relation relation) throws ModelException {
     List<MethodArgument> methodArgs = relation.getMethodArgs();
