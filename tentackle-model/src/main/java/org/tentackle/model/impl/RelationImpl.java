@@ -574,6 +574,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
       else {
         methodArgs.add(new MethodArgument(this, entity.getAttributeByJavaName(getVariableName() + "Id", true)));
       }
+
       if (args != null) {
         for (String arg : args) {
           int ndx = arg.indexOf('[');
@@ -810,6 +811,10 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
         if (deletionCascaded && !composite) {
           throw createModelException("cascaded delete is not allowed for non-composite list relations");
         }
+
+        if (foreignAttribute == null) {
+          throw createModelException("relation " + getName() + " does not map to a foreign attribute in " + foreignEntity);
+        }
       }
       else {
         if (linkMethodIndex != null) {
@@ -823,6 +828,13 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
         }
         if (methodArgs.size() > 1) {
           throw createModelException("object relations cannot have extra args");
+        }
+
+        if (!isReversed() && !isEmbedding() && (getForeignRelation() == null || !getForeignRelation().isEmbedding())) {
+          String aName = getVariableName() + "Id";
+          if (entity.getAttributeByJavaName(aName, true) == null) {
+            throw createModelException("missing attribute '" + aName + "' in entity " + getEntity());
+          }
         }
       }
 
