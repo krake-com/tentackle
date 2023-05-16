@@ -106,6 +106,7 @@ public class DefaultConnectionManager implements ConnectionManager {
   private long attachTimeout;                   // max. attach timeout, 0 to disable check (default)
   private volatile boolean shutdownRequested;   // true if connection manager and timeout thread should shut down
   private Thread timeoutThread;                 // thread to check for connections attached too long (default null)
+  private boolean configurationLogged;          // true if configuration logged (once)
 
   private record VersionInfo(int majorVersion, int minorVersion) {
     @Override
@@ -113,7 +114,7 @@ public class DefaultConnectionManager implements ConnectionManager {
       return majorVersion + "." + minorVersion;
     }
   }
-  
+
   private final Map<String,VersionInfo> versionInfoMap;   // version info per URL
 
 
@@ -299,6 +300,10 @@ public class DefaultConnectionManager implements ConnectionManager {
     ManagedConnection con = null;
     int id;
     synchronized (this) {
+      if (!configurationLogged) {
+        logConfiguration();
+        configurationLogged = true;
+      }
       id = getSessionIndex();   // throws PersistenceException if too many sessions
     }
 
@@ -438,6 +443,15 @@ public class DefaultConnectionManager implements ConnectionManager {
     }
   }
 
+
+
+  /**
+   * Logs the connection managers configuration.
+   */
+  protected void logConfiguration() {
+    LOGGER.info("{0} {1}: iniSize={2}, idOffset={3}, maxSize={4}, minMinutes={5}, maxMinutes={6}",
+      getClass().getSimpleName(), name, iniSize, idOffset, maxDbSize, minMinutes, maxMinutes);
+  }
 
 
   /**
