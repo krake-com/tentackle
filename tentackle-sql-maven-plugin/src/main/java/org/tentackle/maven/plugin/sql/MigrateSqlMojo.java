@@ -32,6 +32,7 @@ import org.tentackle.model.ForeignKey;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
+import org.tentackle.model.migrate.CustomMigrationValidator;
 import org.tentackle.model.migrate.TableMigrator;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
@@ -177,6 +178,11 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   private Map<String, Boolean> migratedEntitiesMap;   // <entity-name>:TRUE|FALSE
 
   /**
+   * Collected migration validation results.
+   */
+  private StringBuilder migrationValidation;
+
+  /**
    * All other remaining tables in the database, except the alien tables.
    */
   private Map<String, DatabaseMetaDataTableHeader> otherTablesMap;
@@ -205,6 +211,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       sqlDrops = new StringBuilder();
       splitMigrations = new LinkedHashMap<>();
       migratedEntitiesMap = new HashMap<>();
+      migrationValidation = new StringBuilder();
       otherTablesMap = new TreeMap<>();
       alienTablesMap = new HashMap<>();
 
@@ -663,6 +670,23 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
               migratedEntitiesMap.put(entity.getName(), migrated);
 
               if (migrated) {
+
+                try {
+                  // first failed validator will skip the rest, if any (same as with model validators).
+                  // there is usually only one, btw.
+                  for (CustomMigrationValidator migrationValidator : CustomMigrationValidator.loadValidators()) {
+                    migrationValidator.validate(tableMigrator, migrationResult);
+                  }
+                }
+                catch (ModelException mx) {
+                  // collect for all tables
+                  if (migrationValidation.isEmpty()) {
+                    migrationValidation.append("migration validation failed:");
+                  }
+                  migrationValidation.append('\n').append(mx.getMessage());
+                  errorCount++;
+                }
+
                 // check if explicit migration code is available
                 String sql = backendMigrationHints.getMigrateTable(tableName);
                 if (sql != null) {
@@ -764,6 +788,10 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
 
       if (split) {
         writeSplitMigrations(backendInfo);
+      }
+
+      if (!migrationValidation.isEmpty()) {
+        getLog().error(migrationValidation);
       }
 
       getLog().info(getPathRelativeToBasedir(modelDirName) + ": " +
