@@ -93,9 +93,18 @@ public class ColumnMigrator {
   }
 
   /**
+   * Gets the migrated entity.
+   *
+   * @return the entity
+   */
+  public Entity getEntity() {
+    return entity;
+  }
+
+  /**
    * Gets the model's attribute.
    *
-   * @return the model's attribute
+   * @return the model's attribute, null if drop columns
    */
   public Attribute getAttribute() {
     return attribute;

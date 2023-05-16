@@ -116,6 +116,15 @@ public class IndexMigrator {
   }
 
   /**
+   * Gets the migrated entity.
+   *
+   * @return the entity
+   */
+  public Entity getEntity() {
+    return entity;
+  }
+
+  /**
    * Gets the index to migrate.
    *
    * @return the index, null if no such index in model
