@@ -784,7 +784,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
       }
 
       if (getEntity().isEmbedded()) {
-        if (composite) {
+        if (composite && !foreignEntity.isEmbedded()) {
           throw createModelException("composite relations not allowed for embedded entities");
         }
         if (reversed) {

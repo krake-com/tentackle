@@ -754,11 +754,21 @@ For more options, see {\@link DbModelWurblet}.
           if ((rel.getRelationType() == RelationType.LIST && !rel.isReversed()) ||
               rel.getSelectionType() != SelectionType.ALWAYS || rel.isComposite()) {
             if (rel.isComposite() && rel.getRelationType() == RelationType.OBJECT) {
+              if (rel.isEmbedding()) {
+                // initial setting (usually via getter) should not mark the embedding object modified!
+]@
+    if (!attributesModified()) {
+      setModified(this.@(var)@ != null && !this.@(var)@.equals(@(var)@));
+    }
+@[
+              }
+              else {
 ]@
     if (!attributesModified()) {
       setModified(!Objects.equals(this.@(var)@, @(var)@));
     }
 @[
+              }
             }
 ]@
     this.@(var)@ = @(var)@;
@@ -768,9 +778,16 @@ For more options, see {\@link DbModelWurblet}.
     if (@(var)@ != null) {
 @[
               if (rel.isEmbedding()) {
+                if (getEntity().isEmbedded()) {
+]@
+      ((AbstractPersistentObject<?,?>) @(var)@.getPersistenceDelegate()).setEmbeddingPersistentObject(this, getColumnPrefix() + CP_@(rel.getName().toUpperCase(Locale.ROOT))@);
+@[
+                }
+                else {
 ]@
       ((AbstractPersistentObject<?,?>) @(var)@.getPersistenceDelegate()).setEmbeddingPersistentObject(this, CP_@(rel.getName().toUpperCase(Locale.ROOT))@);
 @[
+                }
               }
 ]@
       @(var)@.@(createRelationUpdateReferenceCode(rel))@;
@@ -778,11 +795,20 @@ For more options, see {\@link DbModelWurblet}.
 @[
             }
             else if (rel.isEmbedding()) {
+              if (getEntity().isEmbedded()) {
+]@
+    if (@(var)@ != null) {
+      ((AbstractPersistentObject<?,?>) @(var)@.getPersistenceDelegate()).setEmbeddingPersistentObject(this, getColumnPrefix() + CP_@(rel.getName().toUpperCase(Locale.ROOT))@);
+    }
+@[
+              }
+              else {
 ]@
     if (@(var)@ != null) {
       ((AbstractPersistentObject<?,?>) @(var)@.getPersistenceDelegate()).setEmbeddingPersistentObject(this, CP_@(rel.getName().toUpperCase(Locale.ROOT))@);
     }
 @[
+              }
             }
 
             if (linkMethodIndex != null) {
