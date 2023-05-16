@@ -84,7 +84,7 @@ public class DefaultBackendFactory implements BackendFactory {
 
   @Override
   public Collection<Backend> getAllBackends() {
-    return backends;
+    return backends.stream().filter(backend -> !backend.isDeprecated()).toList();
   }
 
 }

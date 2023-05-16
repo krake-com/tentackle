@@ -140,6 +140,11 @@ public abstract class AbstractBackend implements Backend {
   }
 
   @Override
+  public boolean isDeprecated() {
+    return false;
+  }
+
+  @Override
   public String toString() {
     return getName();
   }

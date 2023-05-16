@@ -184,6 +184,11 @@ public class Oracle8 extends AbstractSql2003Backend {
   }
 
   @Override
+  public boolean isDeprecated() {
+    return true;
+  }
+
+  @Override
   public String getDriverClassName() {
     return "oracle.jdbc.driver.OracleDriver";
   }
