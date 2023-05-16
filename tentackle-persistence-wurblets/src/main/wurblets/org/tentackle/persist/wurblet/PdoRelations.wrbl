@@ -444,7 +444,7 @@ For more options, see {\@link DbModelWurblet}.
               }
               else  {
 ]@
-      @(var)@ =  @(checkNull)@ ? null : @(createRelationSelectCode(rel))@;
+      @(var)@ = @(checkNull)@ ? null : @(createRelationSelectCode(rel))@;
 @[
                 if (rel.isReferenced()) {
 ]@
