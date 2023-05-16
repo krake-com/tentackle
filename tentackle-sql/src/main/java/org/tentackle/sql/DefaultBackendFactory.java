@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * Default implementation of a backend factory.
@@ -84,7 +85,7 @@ public class DefaultBackendFactory implements BackendFactory {
 
   @Override
   public Collection<Backend> getAllBackends() {
-    return backends.stream().filter(backend -> !backend.isDeprecated()).toList();
+    return backends.stream().filter(Predicate.not(Backend::isDeprecated)).toList();
   }
 
 }
