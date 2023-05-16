@@ -265,6 +265,14 @@ public interface Backend {
   boolean isMatchingName(String name);
 
   /**
+   * Returns whether this backend is deprecated and superseded by a newer implementation.<br>
+   * Deprecated backends are omitted from {@link BackendFactory#getAllBackends()}.
+   *
+   * @return true if deprecated
+   */
+  boolean isDeprecated();
+
+  /**
    * Verifies that the major and minor version of the connection's metadata is compatible with this backend.<br>
    * If the latest backend is not compatible, the URL may be post-fixed with a backend type for an older version, for example:
    * <pre>
