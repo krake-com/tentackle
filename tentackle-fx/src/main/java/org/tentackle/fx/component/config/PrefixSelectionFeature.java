@@ -243,7 +243,7 @@ public class PrefixSelectionFeature<T extends Control> {
             for (int itemNdx=0; itemNdx < itemTextLength && prefixNdx < prefixLength; itemNdx++) {
               char itemChar = itemText.charAt(itemNdx);
               char prefixChar = prefix.charAt(prefixNdx);
-              if (Character.isUpperCase(itemChar)) {   // next prefix char must match
+              if (!Character.isLowerCase(itemChar)) {   // UC or digit: next prefix char must match
                 if (prefixChar == itemChar) {
                   prefixNdx++;
                 }
@@ -273,7 +273,7 @@ public class PrefixSelectionFeature<T extends Control> {
             int prefixNdx = 0;
             for (int itemNdx=0; itemNdx < itemTextLength && prefixNdx < prefixLength; itemNdx++) {
               char itemChar = itemText.charAt(itemNdx);
-              if (Character.isUpperCase(itemChar)) {
+              if (!Character.isLowerCase(itemChar)) {   // UC or digit
                 if (Character.toUpperCase(prefix.charAt(prefixNdx)) == itemChar) {
                   prefixNdx++;
                 }
