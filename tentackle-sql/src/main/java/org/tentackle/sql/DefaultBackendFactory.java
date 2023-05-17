@@ -26,6 +26,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.function.Predicate;
 
 /**
@@ -86,6 +88,27 @@ public class DefaultBackendFactory implements BackendFactory {
   @Override
   public Collection<Backend> getAllBackends() {
     return backends.stream().filter(Predicate.not(Backend::isDeprecated)).toList();
+  }
+
+  @Override
+  public Collection<Backend> getBackends(String backendNames) {
+    Map<String, Backend> backendMap = new TreeMap<>();    // sorted by name
+    if (backendNames != null) {
+      for (String backendName : backendNames.split(",")) {
+        backendName = backendName.trim();
+        if ("all".equalsIgnoreCase(backendName)) {
+          backends.stream().filter(Predicate.not(Backend::isDeprecated)).forEach(backend -> backendMap.put(backend.getName(), backend));
+        }
+        else if ("deprecated".equalsIgnoreCase(backendName)) {
+          backends.stream().filter(Backend::isDeprecated).forEach(backend -> backendMap.put(backend.getName(), backend));
+        }
+        else if (!"none".equalsIgnoreCase(backendName) && !backendName.isBlank()) {
+          Backend backend = getBackendByName(backendName);
+          backendMap.put(backend.getName(), backend);
+        }
+      }
+    }
+    return backendMap.values();
   }
 
 }

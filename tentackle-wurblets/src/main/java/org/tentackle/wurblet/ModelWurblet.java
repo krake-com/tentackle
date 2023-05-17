@@ -714,20 +714,8 @@ public class ModelWurblet extends AbstractJavaWurblet {
     }
 
     // set the backends to validate the model, if any.
-    // this is a comma separated list of backends, null if none, all for all backends in classpath
-    String backendsProperty = getContainer().getProperty(Wurbler.PROPSPACE_EXTRA, "backends");
-    backends = new ArrayList<>();
-    if (backendsProperty != null) {
-      if ("all".equalsIgnoreCase(backendsProperty)) {
-        backends.addAll(BackendFactory.getInstance().getAllBackends());
-      }
-      else if (!"none".equalsIgnoreCase(backendsProperty)) {
-        for (String backend: backendsProperty.split(",")) {
-          backends.add(BackendFactory.getInstance().getBackendByName(backend.trim()));
-        }
-      }
-      Model.getInstance().getEntityFactory().setBackends(backends);
-    }
+    backends = BackendFactory.getInstance().getBackends(getContainer().getProperty(Wurbler.PROPSPACE_EXTRA, "backends"));
+    Model.getInstance().getEntityFactory().setBackends(backends);
 
     // scan optional model defaults
     modelDefaults = null;

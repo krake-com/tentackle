@@ -357,7 +357,7 @@ public class CreateSqlMojo extends AbstractSqlMojo {
   }
 
   private void createTableSql(Entity entity, Backend backend) throws IOException, ModelException {
-    if (createSchemas) {
+    if (createSchemas && !mapSchemas) {
       String schemaName = entity.getSchemaName();
       if (!StringHelper.isAllWhitespace(schemaName) && createdSchemas.add(schemaName)) {
         sqlWriter.append('\n').append(backend.sqlCreateSchema(schemaName)).append(backend.getStatementSeparator()).append('\n');
