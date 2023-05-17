@@ -125,8 +125,8 @@ public class FxUtilities {
   public static FxUtilities getInstance() {
     return FxUtilitiesHolder.INSTANCE;
   }
-  
-  
+
+
   private static final Logger LOGGER = Logger.get(FxUtilities.class);
 
 
@@ -186,10 +186,10 @@ public class FxUtilities {
   /**
    * Gets the timeout for the prefix selection in dropdown lists such as in combo boxes.
    *
-   * @return the timeout in milliseconds (default is 500)
+   * @return the timeout in milliseconds (default is 750)
    */
   public long getPrefixSelectionTimeout() {
-    return 500;
+    return 750;
   }
 
 
