@@ -50,16 +50,16 @@ import java.util.function.Supplier;
  *
  *   &#64;Override
  *   protected PdoComponentAddon&lt;MyEntity&gt; createPdoAddon() {
- *     return new PdoComponentAddon<>(getComponent(), this::getPdo, this::setPdo) {
+ *     return new PdoComponentAddon&lt;&gt;(getComponent(), this::getPdo, this::setPdo) {
  *
  *       &#64;Override
  *       public Collection&lt;MyEntity&gt; getAllPdos(MyEntity proxy) {
  *         if (sortedEntities == null) {
  *           if (getComponent() instanceof FxComboBox&lt;?&gt; fxComboBox) {
  *             Collection&lt;MyEntity&gt; myEntities = super.getAllPdos(proxy);
- *             TreeMap&lt;String, MyEntity&gt; camelCaseMap = new TreeMap<>();
+ *             TreeMap&lt;String, MyEntity&gt; camelCaseMap = new TreeMap&lt;&gt;();
  *             for (MyEntity myEntity : myEntities) {
- *               camelCaseMap.put(myEntity.getNavigationLetters(), myEntity);
+ *               camelCaseMap.put(StringHelper.filterUpperCase(myEntity.getName()), myEntity);
  *             }
  *             sortedEntities = camelCaseMap.values();
  *             fxComboBox.getProperties().put(PrefixSelectionFeature.ENABLED, PrefixSelectionFeature.CAMEL_CASE);
