@@ -19,7 +19,6 @@
 package org.tentackle.maven.plugin.wizard.fx;
 
 import org.tentackle.fx.FxTextComponent;
-import org.tentackle.fx.NavigationLetterStringConverter;
 import org.tentackle.fx.ValueTranslatorService;
 import org.tentackle.fx.component.FxComboBox;
 import org.tentackle.fx.translate.ValueStringTranslator;
@@ -37,13 +36,15 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 import javafx.util.Callback;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
 /**
  * Translator for PdoType.<br>
- * Implements camel-case keyboard navigation for entity names in comboboxes.
+ * Implements camel-case keyboard navigation for entity names in combo-boxes.
  */
 @ValueTranslatorService(modelClass = PdoType.class, viewClass = String.class)
 public class PdoTypeStringTranslator extends ValueStringTranslator<PdoType> {
@@ -55,8 +56,7 @@ public class PdoTypeStringTranslator extends ValueStringTranslator<PdoType> {
   public static final String PROFILE = "profile";
 
 
-  private Map<String, PdoType> pdoTypes;
-  private NavigationLetterStringConverter<PdoType> converter;
+  private Map<String, PdoType> pdoTypeMap;
 
   /**
    * Creates a translator.
@@ -69,7 +69,7 @@ public class PdoTypeStringTranslator extends ValueStringTranslator<PdoType> {
 
     if (component instanceof FxComboBox comboBox) {
 
-      configureConverter(comboBox);
+      configureComboBox(comboBox);
 
       Font font = Font.getDefault();
       Font boldFont = Font.font(font.getFamily(), FontWeight.BOLD, font.getSize());
@@ -125,37 +125,28 @@ public class PdoTypeStringTranslator extends ValueStringTranslator<PdoType> {
 
   @Override
   public Function<String, PdoType> toModelFunction() {
-    return s -> s == null ? null : getPdoTypes().get(s);
+    return s -> s == null ? null : getPdoTypeMap().get(s);
   }
 
   @Override
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public void bindingPropertiesUpdated() {
     if (getComponent() instanceof FxComboBox comboBox) {
-      pdoTypes = null;
-      configureConverter(comboBox);
+      pdoTypeMap = null;
+      configureComboBox(comboBox);
     }
   }
 
-  private void configureConverter(FxComboBox<PdoType> comboBox) {
-    converter = new NavigationLetterStringConverter<>(getPdoTypes().values()) {
-      @Override
-      public String getNavigationLetters(PdoType object) {
-        return object.getCamelCaseLetters();
-      }
-
-      @Override
-      public String getName(PdoType object) {
-        return object.getName();
-      }
-    };
+  private void configureComboBox(FxComboBox<PdoType> comboBox) {
     comboBox.getSelectionModel().clearSelection();
-    comboBox.setConverter(converter);
-    comboBox.getItems().setAll(converter.getSortedObjects());
+    // sort by camel case
+    ArrayList<PdoType> pdoTypes = new ArrayList<>(getPdoTypeMap().values());
+    pdoTypes.sort(Comparator.comparing(PdoType::getCamelCaseLetters));
+    comboBox.getItems().setAll(pdoTypes);
   }
 
-  private Map<String, PdoType> getPdoTypes() {
-    if (pdoTypes == null) {
+  private Map<String, PdoType> getPdoTypeMap() {
+    if (pdoTypeMap == null) {
       boolean rootOnly = Boolean.TRUE.equals(((Node) getComponent()).getProperties().get(ROOT_ONLY));
       PdoProfile profile = (PdoProfile) ((Node) getComponent()).getProperties().get(PROFILE);
       Map<String, PdoType> pdoTypeMap = new HashMap<>();
@@ -168,9 +159,9 @@ public class PdoTypeStringTranslator extends ValueStringTranslator<PdoType> {
           pdoTypeMap.put(pdoType.getName(), pdoType);
         }
       }
-      pdoTypes = pdoTypeMap;
+      this.pdoTypeMap = pdoTypeMap;
     }
-    return pdoTypes;
+    return pdoTypeMap;
   }
 
   private void addText(TextFlow textFlow, String str, Font font) {

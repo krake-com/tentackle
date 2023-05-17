@@ -40,39 +40,6 @@ import java.util.function.Supplier;
  * Useful for ComboBox and ChoiceBox but can be applied to any control providing a list of items
  * that can be selected.<br>
  * The prefix selection is case-sensitive, if the first typed character is uppercase.
- * <p>
- * Example for camelcase navigation:
- * <pre>
- * &#64;ValueTranslatorService(modelClass = MyEntity.class, viewClass = String.class)
- * public class PdoCatalogStringTranslator extends PdoStringTranslator&lt;MyEntity&gt; {
- *
- *   ...
- *
- *   &#64;Override
- *   protected PdoComponentAddon&lt;MyEntity&gt; createPdoAddon() {
- *     return new PdoComponentAddon&lt;&gt;(getComponent(), this::getPdo, this::setPdo) {
- *
- *       &#64;Override
- *       public Collection&lt;MyEntity&gt; getAllPdos(MyEntity proxy) {
- *         if (sortedEntities == null) {
- *           if (getComponent() instanceof FxComboBox&lt;?&gt; fxComboBox) {
- *             Collection&lt;MyEntity&gt; myEntities = super.getAllPdos(proxy);
- *             TreeMap&lt;String, MyEntity&gt; camelCaseMap = new TreeMap&lt;&gt;();
- *             for (MyEntity myEntity : myEntities) {
- *               camelCaseMap.put(StringHelper.filterUpperCase(myEntity.getName()), myEntity);
- *             }
- *             sortedEntities = camelCaseMap.values();
- *             fxComboBox.getProperties().put(PrefixSelectionFeature.ENABLED, PrefixSelectionFeature.CAMEL_CASE);
- *           }
- *           else {
- *             sortedEntities = List.of();
- *           }
- *         }
- *         return sortedEntities;
- *       }
- *     };
- *   }
- * </pre>
  *
  * @author harald
  * @param <T> the control type
