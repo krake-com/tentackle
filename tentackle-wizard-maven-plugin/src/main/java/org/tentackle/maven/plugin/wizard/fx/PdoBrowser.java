@@ -18,25 +18,6 @@
 
 package org.tentackle.maven.plugin.wizard.fx;
 
-import javafx.application.Platform;
-import javafx.collections.ListChangeListener;
-import javafx.collections.ObservableList;
-import javafx.event.Event;
-import javafx.fxml.FXML;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.SelectionMode;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.ClipboardContent;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
 import org.apache.maven.plugin.MojoExecutionException;
 
 import org.tentackle.bind.Bindable;
@@ -51,6 +32,7 @@ import org.tentackle.fx.component.FxComboBox;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.component.FxTextField;
 import org.tentackle.fx.component.Note;
+import org.tentackle.fx.component.config.PrefixSelectionFeature;
 import org.tentackle.fx.container.FxBorderPane;
 import org.tentackle.fx.container.FxHBox;
 import org.tentackle.fx.container.FxSplitPane;
@@ -70,6 +52,25 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.PersistentDomainObject;
 
+import javafx.application.Platform;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
+import javafx.event.Event;
+import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.SelectionMode;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -251,6 +252,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
   private void updateEntityFieldProperties() {
     entityField.getProperties().put(PdoTypeStringTranslator.ROOT_ONLY, rootOnly);
     entityField.getProperties().put(PdoTypeStringTranslator.PROFILE, profile);
+    entityField.getProperties().put(PrefixSelectionFeature.ENABLED, PrefixSelectionFeature.CAMEL_CASE);
     Platform.runLater(entityField.getValueTranslator()::bindingPropertiesUpdated);
   }
 

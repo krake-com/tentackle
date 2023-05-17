@@ -50,6 +50,11 @@ public class PdoType {
     return name;
   }
 
+  @Override
+  public String toString() {
+    return getName();
+  }
+
   /**
    * The PDO interface class.
    *
