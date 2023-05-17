@@ -251,7 +251,7 @@ public class PrefixSelectionFeature<T extends Control> {
                   break;
                 }
               }
-              else if (Character.isLowerCase(prefixChar)) {  // next item char must match
+              else if (!Character.isUpperCase(prefixChar)) {  // next item char must match
                 if (prefixChar == itemChar) {
                   prefixNdx++;
                 }

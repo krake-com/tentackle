@@ -39,6 +39,7 @@ import javafx.util.Callback;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -140,7 +141,7 @@ public class PdoTypeStringTranslator extends ValueStringTranslator<PdoType> {
   private void configureComboBox(FxComboBox<PdoType> comboBox) {
     comboBox.getSelectionModel().clearSelection();
     // sort by camel case
-    ArrayList<PdoType> pdoTypes = new ArrayList<>(getPdoTypeMap().values());
+    List<PdoType> pdoTypes = new ArrayList<>(getPdoTypeMap().values());
     pdoTypes.sort(Comparator.comparing(PdoType::getCamelCaseLetters));
     comboBox.getItems().setAll(pdoTypes);
   }
