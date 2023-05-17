@@ -47,6 +47,11 @@ public class Oracle extends Oracle8 {
   }
 
   @Override
+  public boolean isDeprecated() {
+    return false;
+  }
+
+  @Override
   public String getName() {
     return "Oracle";
   }

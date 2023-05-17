@@ -125,9 +125,13 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
   protected List<FileSet> backendProperties;
 
   /**
-   * The backend names.<br>
-   * Separated by commas.<br>
-   * "all" means generate code for all backends found in classpath.
+   * Comma-separated list of backend names.<br>
+   * The following special names are recognized:
+   * <ul>
+   *   <li>all: all non-deprecated backends</li>
+   *   <li>none: does not match any backend</li>
+   *   <li>deprecated: all deprecated backends</li>
+   * </ul>
    */
   @Parameter
   protected String backendNames;
@@ -425,19 +429,8 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
       backendInfos = new HashMap<>();
       connectableBackendInfos = new HashMap<>();
 
-      if (backendNames != null) {
-        if ("all".equalsIgnoreCase(backendNames)) {
-          for (Backend backend : BackendFactory.getInstance().getAllBackends()) {
-            backendInfos.put(backend.getName(), new BackendInfo(backend));
-          }
-        }
-        else {
-          for (String backendName : backendNames.split(",")) {
-            BackendInfo backendInfo = new BackendInfo(backendName.trim());
-            backendInfos.put(backendInfo.getBackend().getName(), backendInfo);
-          }
-        }
-      }
+      BackendFactory.getInstance().getBackends(backendNames).
+        forEach(backend -> backendInfos.put(backend.getName(), new BackendInfo(backend)));
 
       if (backendProperties != null) {
         // determine URL from property file(s)
