@@ -18,6 +18,9 @@
 
 package org.tentackle.fx.component.config;
 
+import org.tentackle.common.StringHelper;
+import org.tentackle.fx.FxUtilities;
+
 import javafx.event.EventHandler;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ComboBoxBase;
@@ -27,9 +30,6 @@ import javafx.scene.control.Skin;
 import javafx.scene.control.skin.ComboBoxListViewSkin;
 import javafx.scene.input.KeyEvent;
 import javafx.util.StringConverter;
-
-import org.tentackle.fx.FxUtilities;
-
 import java.util.Collection;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -38,7 +38,41 @@ import java.util.function.Supplier;
 /**
  * Select items according to a prefix.<br>
  * Useful for ComboBox and ChoiceBox but can be applied to any control providing a list of items
- * that can be selected.
+ * that can be selected.<br>
+ * The prefix selection is case-sensitive, if the first typed character is uppercase.
+ * <p>
+ * Example for camelcase navigation:
+ * <pre>
+ * &#64;ValueTranslatorService(modelClass = MyEntity.class, viewClass = String.class)
+ * public class PdoCatalogStringTranslator extends PdoStringTranslator&lt;MyEntity&gt; {
+ *
+ *   ...
+ *
+ *   &#64;Override
+ *   protected PdoComponentAddon&lt;MyEntity&gt; createPdoAddon() {
+ *     return new PdoComponentAddon<>(getComponent(), this::getPdo, this::setPdo) {
+ *
+ *       &#64;Override
+ *       public Collection&lt;MyEntity&gt; getAllPdos(MyEntity proxy) {
+ *         if (sortedEntities == null) {
+ *           if (getComponent() instanceof FxComboBox&lt;?&gt; fxComboBox) {
+ *             Collection&lt;MyEntity&gt; myEntities = super.getAllPdos(proxy);
+ *             TreeMap&lt;String, MyEntity&gt; camelCaseMap = new TreeMap<>();
+ *             for (MyEntity myEntity : myEntities) {
+ *               camelCaseMap.put(myEntity.getNavigationLetters(), myEntity);
+ *             }
+ *             sortedEntities = camelCaseMap.values();
+ *             fxComboBox.getProperties().put(PrefixSelectionFeature.ENABLED, PrefixSelectionFeature.CAMEL_CASE);
+ *           }
+ *           else {
+ *             sortedEntities = List.of();
+ *           }
+ *         }
+ *         return sortedEntities;
+ *       }
+ *     };
+ *   }
+ * </pre>
  *
  * @author harald
  * @param <T> the control type
@@ -53,6 +87,14 @@ public class PrefixSelectionFeature<T extends Control> {
    * </pre>
    */
   public static final String ENABLED = "prefixSelectionEnabled";
+
+  /**
+   * To enable camel case preselection, invoke:<br>
+   * <pre>
+   *   control.getProperties().put(PrefixSelectionFeature.ENABLED, PrefixSelectionFeature.CAMEL_CASE);
+   * </pre>
+   */
+  public static final String CAMEL_CASE = "CamelCase";
 
 
   protected final T control;
@@ -166,6 +208,15 @@ public class PrefixSelectionFeature<T extends Control> {
   }
 
   /**
+   * Returns whether preselection via camelcase is enabled.
+   *
+   * @return true if camelcase
+   */
+  protected boolean isCamelCaseEnabled() {
+    return CAMEL_CASE.equals(control.getProperties().get(ENABLED));
+  }
+
+  /**
    * Returns whether selection by key is enabled.
    *
    * @return true if enabled
@@ -199,7 +250,7 @@ public class PrefixSelectionFeature<T extends Control> {
    * @return the prefix string
    */
   protected String getPrefix() {
-    return prefixBuf.toString().toUpperCase();
+    return prefixBuf.toString();
   }
 
   /**
@@ -211,9 +262,73 @@ public class PrefixSelectionFeature<T extends Control> {
    */
   @SuppressWarnings("unchecked")
   protected boolean isItemMatching(String prefix, Object item) {
-    StringConverter converter = itemConverter == null ? null : itemConverter.get();
-    String itemText = converter == null ? item.toString() : converter.toString(item);
-    return itemText != null && itemText.toUpperCase().startsWith(prefix);
+    boolean matches = false;
+    if (!StringHelper.isAllWhitespace(prefix)) {
+      int prefixLength = prefix.length();
+      StringConverter converter = itemConverter == null ? null : itemConverter.get();
+      String itemText = converter == null ? item.toString() : converter.toString(item);
+      int itemTextLength = itemText.length();
+      if (itemTextLength >= prefixLength) {
+        boolean camelCase = isCamelCaseEnabled();
+        if (Character.isUpperCase(prefix.charAt(0))) {  // case sensitive
+          if (camelCase) {
+            int prefixNdx = 0;
+            for (int itemNdx=0; itemNdx < itemTextLength && prefixNdx < prefixLength; itemNdx++) {
+              char itemChar = itemText.charAt(itemNdx);
+              char prefixChar = prefix.charAt(prefixNdx);
+              if (Character.isUpperCase(itemChar)) {   // next prefix char must match
+                if (prefixChar == itemChar) {
+                  prefixNdx++;
+                }
+                else {
+                  break;
+                }
+              }
+              else if (Character.isLowerCase(prefixChar)) {  // next item char must match
+                if (prefixChar == itemChar) {
+                  prefixNdx++;
+                }
+                else {
+                  break;
+                }
+              }
+              // else: just move on in itemText
+            }
+            matches = prefixNdx == prefixLength;
+          }
+          else {
+            matches = itemText.startsWith(prefix);
+          }
+        }
+        else {  // case insensitive
+          if (camelCase) {
+            // find only uppercase letters in itemText
+            int prefixNdx = 0;
+            for (int itemNdx=0; itemNdx < itemTextLength && prefixNdx < prefixLength; itemNdx++) {
+              char itemChar = itemText.charAt(itemNdx);
+              if (Character.isUpperCase(itemChar)) {
+                if (Character.toUpperCase(prefix.charAt(prefixNdx)) == itemChar) {
+                  prefixNdx++;
+                }
+                else {
+                  break;
+                }
+              }
+            }
+            matches = prefixNdx == prefixLength;
+          }
+          else {
+            for (int prefixNdx = 0; prefixNdx < prefixLength; prefixNdx++) {
+              if (Character.toUpperCase(prefix.charAt(prefixNdx)) != Character.toUpperCase(itemText.charAt(prefixNdx))) {
+                return false;
+              }
+            }
+            matches = true;
+          }
+        }
+      }
+    }
+    return matches;
   }
 
 }

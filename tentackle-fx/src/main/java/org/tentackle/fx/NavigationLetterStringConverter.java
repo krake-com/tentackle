@@ -28,7 +28,8 @@ import java.util.TreeMap;
 
 /**
  * A {@link StringConverter} to navigate within a collection of objects.<br>
- * A common use-case is camelCase navigation in ComboBoxes.<br>
+ * Provides navigation with keystrokes that do not correspond to the text displayed in the UI.
+ * <p>
  * Example:
  * <pre>
  *   converter = new NavigationLetterStringConverter&lt;SomeType&gt;(someCollection) {
@@ -44,8 +45,12 @@ import java.util.TreeMap;
  *   sortedObjects = converter.getSortedObjects();    // for ComboBox.getItems().setAll(sortedObjects)
  *   comboBox.setConverter(converter);
  * </pre>
- * Notice that the ComboBox needs a cell-factory to show the object name as well, otherwise
+ * Notice that the ComboBox needs a cell-factory to show the object name, otherwise
  * the navigation-letters will be shown instead of the object's name.
+ * <p>
+ * Notice further, that enhanced camelcase navigation is also available via the
+ * {@link org.tentackle.fx.component.config.PrefixSelectionFeature#CAMEL_CASE} property,
+ * which is usually much simpler and does not need a {@link NavigationLetterStringConverter} at all.
  *
  * @param <T> the type to convert
  */
