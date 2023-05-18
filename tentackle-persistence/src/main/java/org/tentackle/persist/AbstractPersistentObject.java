@@ -2999,8 +2999,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * <p>
    * By default, the token lock (if set) will be cleared upon insert or update. However, sometimes it is
    * necessary to keep it, renew it respectively.<p>
-   * Setting this flag to true will renew the token upon the next persistence operation. Afterwards the flag will be
-   * cleared.
+   * Setting this flag to true will renew the token upon the next persistence operation. The flag will be
+   * cleared afterward.
    * <p>
    * @param renewTokenLock true to renew the token (once)
    */

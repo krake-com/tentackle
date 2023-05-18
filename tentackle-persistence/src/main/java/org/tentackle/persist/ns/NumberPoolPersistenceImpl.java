@@ -134,12 +134,12 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   /** the last persisted value of online. */
   private boolean onlinePersisted;
 
-  /** minimum number count before request to fill up from uplink, 0 if disable. */
+  /** minimum number count before request to fill up from uplink, 0 to disable. */
   private long lowWaterMark;
   /** the last persisted value of lowWaterMark. */
   private long lowWaterMarkPersisted;
 
-  /** number count to request from uplink, 0 if disable. */
+  /** number count to request from uplink, 0 to disable. */
   private long requestSize;
   /** the last persisted value of requestSize. */
   private long requestSizePersisted;
@@ -788,4 +788,3 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   }
 
 }
-

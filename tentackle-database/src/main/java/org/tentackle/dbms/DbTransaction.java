@@ -394,7 +394,7 @@ public class DbTransaction {
    * Unregisters a {@link RollbackTxRunnable}.
    *
    * @param handle the runnable's handle to unregister
-   * @return true if removed, else not registered
+   * @return the runnable that was removed, null if not registered
    */
   public RollbackTxRunnable unregisterRollbackTxRunnable(DbTransactionHandle handle) {
     return rollbackTxRunnables == null ? null : rollbackTxRunnables.remove(handle);
@@ -474,7 +474,7 @@ public class DbTransaction {
    * @param object the persistence object
    * @param modType the modification type
    * @return true if allowed
-   * @see #registerPersistenceVisitor(org.tentackle.dbms.PersistenceVisitor) 
+   * @see #registerPersistenceVisitor(org.tentackle.dbms.PersistenceVisitor)
    */
   public boolean isPersistenceOperationAllowed(AbstractDbObject<?> object, ModificationType modType) {
     if (visitors != null) {

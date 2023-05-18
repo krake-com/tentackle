@@ -150,7 +150,7 @@ public interface PersistedPreferences {
   void remove(String key);
 
   /**
-   * Removes all of the preferences (key-value associations) in this preference node. This call has no effect on any
+   * Removes all the preferences (key-value associations) in this preference node. This call has no effect on any
    * descendants of this node.
    * <p>
    * If this implementation supports <i>stored defaults</i>, and this node in the preferences hierarchy contains any
@@ -401,7 +401,7 @@ public interface PersistedPreferences {
    * @param value value whose string form is to be associated with key.
    * <p>
    * @throws NullPointerException     if key or value is <code>null</code>.
-   * @throws IllegalArgumentException if key.length() exceeds MAX_KEY_LENGTH or if value.length exceeds
+   * @throws IllegalArgumentException if {@code key.length()} exceeds MAX_KEY_LENGTH or if {@code value.length} exceeds
    *                                  MAX_VALUE_LENGTH*3/4.
    * @throws IllegalStateException    if this node (or an ancestor) has been removed with the {@link #removeNode()}
    *                                  method.
@@ -443,7 +443,7 @@ public interface PersistedPreferences {
   byte[] getByteArray(String key, byte[] def);
 
   /**
-   * Returns all of the keys that have an associated value in this preference node. (The returned array will be of size
+   * Returns all the keys that have an associated value in this preference node. (The returned array will be of size
    * zero if this node has no preferences.)
    * <p>
    * If the implementation supports <i>stored defaults</i> and there are any such defaults at this node that have not
@@ -596,7 +596,7 @@ public interface PersistedPreferences {
 
   /**
    * Ensures that future reads from this preference node and its descendants reflect any changes that were committed to
-   * the persistent store (from any VM) prior to the <code>sync</code> invocation. As a side-effect, forces any changes in
+   * the persistent store (from any VM) prior to the <code>sync</code> invocation. As a side effect, forces any changes in
    * the contents of this preference node and its descendants to the persistent store, as if the <code>flush</code>
    * method had been invoked on this node.
    * <p>

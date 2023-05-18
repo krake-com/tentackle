@@ -24,7 +24,7 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 
 /**
- * Hook for the slf4j module.
+ * Hook for the slf4j-module.
  *
  * @author harald
  */

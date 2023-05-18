@@ -98,7 +98,7 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
   /**
    * Clones the attribute options.<br>
    * The method is protected, since {@link #clone(AttributeImpl)}  should be used instead,
-   * which invokes {@link #clone()}.
+   * which invokes {@code clone()}.
    *
    * @return the cloned options
    */

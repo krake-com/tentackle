@@ -129,7 +129,7 @@ public interface Entity extends ModelElement {
    *
    * @param embeddingEntity the effectively embedding entity
    * @return the list of embedded relations
-   * @throws ModelException
+   * @throws ModelException if failed
    */
   List<Relation> getEmbeddedRelations(Entity embeddingEntity) throws ModelException;
 

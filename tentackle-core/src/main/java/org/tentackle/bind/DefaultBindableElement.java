@@ -203,7 +203,7 @@ public class DefaultBindableElement implements BindableElement {
           value = ' ';
         }
         else  {
-          value = (byte) 0;   // will be upcasted
+          value = (byte) 0;
         }
       }
 

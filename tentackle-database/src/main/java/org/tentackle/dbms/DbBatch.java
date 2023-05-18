@@ -34,7 +34,7 @@ import java.util.Set;
  * <p>
  * Batching is only performed within the same type of root entities, because the execution order is
  * important to ensure referential integrity. Furthermore, the batch is flushed on every savepoint,
- * whenever the same object is persisted again, a non-batchable statement is executed or the transaction is committed.
+ * whenever the same object is persisted again, a non-batchable statement is executed or the transaction committed.
  * <p>
  * By default, batching is enabled via the backend property <code>batchsize=...</code>, if the value is &gt; 1.
  * However, the batchsize can be set for each session programmatically as well. If certain transactions must be

@@ -281,8 +281,14 @@ public final class OffsetDateTimeType extends AbstractDateTimeType<OffsetDateTim
     return OffsetDateTime.of(timestamp.toLocalDateTime().plusSeconds(offset), ZoneOffset.ofTotalSeconds(offset));
   }
 
-
-  protected OffsetDateTime parse(String str) throws BackendException {
+  /**
+   * Converts a string to an offset date time.
+   *
+   * @param str the string
+   * @return the date time
+   * @throws BackendException if parsing failed
+   */
+  public OffsetDateTime parse(String str) throws BackendException {
     str = StringHelper.parseString(str);
     if (str.contains(".")) {
       try {
@@ -302,7 +308,13 @@ public final class OffsetDateTimeType extends AbstractDateTimeType<OffsetDateTim
     }
   }
 
-  protected String format(OffsetDateTime dateTime) {
+  /**
+   * Converts an offset date time object to a string.
+   *
+   * @param dateTime the date time
+   * @return the formatted string
+   */
+  public String format(OffsetDateTime dateTime) {
     int nanos = dateTime.getNano();
     if (nanos != 0) {
       return MS_TIMESTAMP_FORMATTER.format(dateTime);

@@ -111,7 +111,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
   /**
    * Clones the entity options.<br>
    * The method is protected, since {@link #clone(EntityImpl)}  should be used instead,
-   * which invokes {@link #clone()}.
+   * which invokes {@code clone()}.
    *
    * @return the cloned options
    */

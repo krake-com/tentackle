@@ -111,7 +111,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl>, Clon
   /**
    * Clones an attribute.<br>
    * The method is protected, since {@link #createEmbedded(Entity, String, String)} should be used instead,
-   * which invokes {@link #clone()}.
+   * which invokes {@code clone()}.
    *
    * @return the cloned attribute
    */

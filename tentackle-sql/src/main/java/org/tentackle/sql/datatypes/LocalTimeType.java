@@ -89,8 +89,14 @@ public final class LocalTimeType extends AbstractDateTimeType<LocalTime> {
     return time == null ? null : time.toLocalTime();
   }
 
-
-  protected LocalTime parse(String str) throws BackendException {
+  /**
+   * Converts a string to a local time.
+   *
+   * @param str the string
+   * @return the time
+   * @throws BackendException if parsing failed
+   */
+  public LocalTime parse(String str) throws BackendException {
     try {
       return LocalTime.parse(StringHelper.parseString(str), DateTimeFormatter.ISO_LOCAL_TIME);
     }
@@ -99,7 +105,13 @@ public final class LocalTimeType extends AbstractDateTimeType<LocalTime> {
     }
   }
 
-  protected String format(LocalTime time) {
+  /**
+   * Converts a time object to a string.
+   *
+   * @param time the time
+   * @return the formatted string
+   */
+  public String format(LocalTime time) {
     return DateTimeFormatter.ISO_LOCAL_TIME.format(time);
   }
 
