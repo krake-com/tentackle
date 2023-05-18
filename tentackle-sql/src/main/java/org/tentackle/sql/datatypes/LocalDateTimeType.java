@@ -113,8 +113,14 @@ public final class LocalDateTimeType extends AbstractDateTimeType<LocalDateTime>
     return timestamp.toLocalDateTime();
   }
 
-
-  protected LocalDateTime parse(String str) throws BackendException {
+  /**
+   * Converts a string to a local date time.
+   *
+   * @param str the string
+   * @return the date time
+   * @throws BackendException if parsing failed
+   */
+  public LocalDateTime parse(String str) throws BackendException {
     str = StringHelper.parseString(str);
     if (str.contains(".")) {
       try {
@@ -134,7 +140,13 @@ public final class LocalDateTimeType extends AbstractDateTimeType<LocalDateTime>
     }
   }
 
-  protected String format(LocalDateTime dateTime) {
+  /**
+   * Converts a date time object to a string.
+   *
+   * @param dateTime the date time
+   * @return the formatted string
+   */
+  public String format(LocalDateTime dateTime) {
     int nanos = dateTime.getNano();
     if (nanos != 0) {
       return MS_TIMESTAMP_FORMATTER.format(dateTime);

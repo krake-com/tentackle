@@ -44,7 +44,7 @@ public class Profile {
   private String domainInterface;
 
   /**
-   * The super persistence interface, null if default.
+   * The super persistence interface, null for default.
    */
   @Parameter
   private String persistenceInterface;

@@ -114,7 +114,7 @@ public final class PatternImpl extends AbstractValidator<Pattern> {
    * @param validationContext the validation context
    * @return the pattern
    */
-  protected java.util.regex.Pattern getPattern(ValidationContext validationContext) {
+  public java.util.regex.Pattern getPattern(ValidationContext validationContext) {
     CompoundValue localPar = patternParameter;
     if (localPar == null) {
       synchronized (this) {

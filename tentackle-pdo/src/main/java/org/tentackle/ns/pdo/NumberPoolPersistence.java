@@ -203,15 +203,15 @@ public interface NumberPoolPersistence extends PersistentObject<NumberPool> {
   /**
    * Gets the attribute lowWaterMark.
    *
-   * @return minimum number count before request to fill up from uplink, 0 if disable
+   * @return minimum number count before request to fill up from uplink, 0 to disable
    */
-  @Persistent(ordinal=4, comment="minimum number count before request to fill up from uplink, 0 if disable")
+  @Persistent(ordinal=4, comment="minimum number count before request to fill up from uplink, 0 to disable")
   long getLowWaterMark();
 
   /**
    * Sets the attribute lowWaterMark.
    *
-   * @param lowWaterMark minimum number count before request to fill up from uplink, 0 if disable
+   * @param lowWaterMark minimum number count before request to fill up from uplink, 0 to disable
    */
   void setLowWaterMark(long lowWaterMark);
 
@@ -232,15 +232,15 @@ public interface NumberPoolPersistence extends PersistentObject<NumberPool> {
   /**
    * Gets the attribute requestSize.
    *
-   * @return number count to request from uplink, 0 if disable
+   * @return number count to request from uplink, 0 to disable
    */
-  @Persistent(ordinal=5, comment="number count to request from uplink, 0 if disable")
+  @Persistent(ordinal=5, comment="number count to request from uplink, 0 to disable")
   long getRequestSize();
 
   /**
    * Sets the attribute requestSize.
    *
-   * @param requestSize number count to request from uplink, 0 if disable
+   * @param requestSize number count to request from uplink, 0 to disable
    */
   void setRequestSize(long requestSize);
 

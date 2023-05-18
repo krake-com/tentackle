@@ -16,15 +16,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.ns.pdo;
 
-import org.tentackle.session.ClassId;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.Plural;
 import org.tentackle.pdo.Singular;
+import org.tentackle.session.ClassId;
 import org.tentackle.session.TableName;
-
 
 /*
  * @> $mapping
@@ -43,8 +41,8 @@ import org.tentackle.session.TableName;
  * String(80)     realm           realm             pool realm, optional [MAPNULL]
  * String         description     description       short description
  * boolean        online          poolonline        true if online, else offline
- * long           lowWaterMark    lowmark           minimum number count before request to fill up from uplink, 0 if disable
- * long           requestSize     reqsize           number count to request from uplink, 0 if disable
+ * long           lowWaterMark    lowmark           minimum number count before request to fill up from uplink, 0 to disable
+ * long           requestSize     reqsize           number count to request from uplink, 0 to disable
  * String         uplink          uplink            uplink configuration (optional)
  *
  * ## indexes

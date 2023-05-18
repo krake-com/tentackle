@@ -245,8 +245,14 @@ public final class InstantType extends AbstractDateTimeType<Instant> {
     return Instant.ofEpochSecond(seconds, nanos);
   }
 
-
-  protected Instant parse(String str) throws BackendException {
+  /**
+   * Converts a string to an instant.
+   *
+   * @param str the formatted string
+   * @return the instant
+   * @throws BackendException if parsing failed
+   */
+  public Instant parse(String str) throws BackendException {
     str = StringHelper.parseString(str);
     if (str.length() > 9 && str.charAt(str.length() - 10) == '.') {
       try {
@@ -274,7 +280,13 @@ public final class InstantType extends AbstractDateTimeType<Instant> {
     }
   }
 
-  protected String format(Instant instant) {
+  /**
+   * Converts an instant to a string.
+   *
+   * @param instant the instant
+   * @return the formatted instant
+   */
+  public String format(Instant instant) {
     int nanos = instant.getNano();
     if (nanos != 0) {
       if (nanos % 1000000 == 0) {

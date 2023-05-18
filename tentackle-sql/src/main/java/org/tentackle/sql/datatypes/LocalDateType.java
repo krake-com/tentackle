@@ -107,7 +107,14 @@ public final class LocalDateType extends AbstractDateTimeType<LocalDate> {
     return date.toLocalDate();
   }
 
-  protected LocalDate parse(String str) throws BackendException {
+  /**
+   * Converts a string to a local date.
+   *
+   * @param str the string
+   * @return the date
+   * @throws BackendException if parsing failed
+   */
+  public LocalDate parse(String str) throws BackendException {
     try {
       return LocalDate.parse(StringHelper.parseString(str), DateTimeFormatter.ISO_LOCAL_DATE);
     }
@@ -116,7 +123,13 @@ public final class LocalDateType extends AbstractDateTimeType<LocalDate> {
     }
   }
 
-  protected String format(LocalDate date) {
+  /**
+   * Converts a date object to a string.
+   *
+   * @param date the date
+   * @return the formatted string
+   */
+  public String format(LocalDate date) {
     return DateTimeFormatter.ISO_LOCAL_DATE.format(date);
   }
 

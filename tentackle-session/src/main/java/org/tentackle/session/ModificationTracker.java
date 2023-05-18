@@ -30,7 +30,7 @@ interface ModificationTrackerHolder {
  * <p>
  * The pro tracker maintains its own session.
  * The application can request an exclusive use of this session for a
- * (short) period of time and release it afterwards.
+ * (short) period of time and release it afterward.
  *
  * @author harald
  */
