@@ -38,7 +38,6 @@ import java.util.OptionalLong;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 
-
 /**
  * Server side update service implementation.
  */
@@ -48,9 +47,9 @@ public abstract class AbstractUpdateServiceImpl extends UnicastRemoteObject impl
   private static final long serialVersionUID = 1L;
 
   @SuppressWarnings("serial")
-  private final Map<URL, Long> downloadSizes = new ConcurrentHashMap<>();       // size in bytes of the download ZIPs
+  private final Map<String, Long> downloadSizes = new ConcurrentHashMap<>();      // size in bytes of the download ZIPs
   @SuppressWarnings("serial")
-  private final Map<URL, String> checksumHashes = new ConcurrentHashMap<>();    // checksum hashes of the download ZIPs
+  private final Map<String, String> checksumHashes = new ConcurrentHashMap<>();   // checksum hashes of the download ZIPs
 
   private String updateURL;
 
@@ -215,10 +214,11 @@ public abstract class AbstractUpdateServiceImpl extends UnicastRemoteObject impl
    * @throws IOException if failed
    */
   protected String determineChecksumHash(URL checksumURL) throws IOException {
-    String shaHash = checksumHashes.get(checksumURL);
+    String checksumUrlStr = checksumURL.toString();
+    String shaHash = checksumHashes.get(checksumUrlStr);
     if (shaHash == null) {
       shaHash = new StringTokenizer(new String(FileHelper.download(checksumURL))).nextToken();
-      checksumHashes.put(checksumURL, shaHash);
+      checksumHashes.put(checksumUrlStr, shaHash);
     }
     return shaHash;
   }
@@ -231,7 +231,8 @@ public abstract class AbstractUpdateServiceImpl extends UnicastRemoteObject impl
    * @throws IOException if failed
    */
   protected long determineDownloadSize(URL zipURL) throws IOException {
-    Long size = downloadSizes.get(zipURL);
+    String zipUrlStr = zipURL.toString();
+    Long size = downloadSizes.get(zipUrlStr);
     if (size == null) {
       try {
         HttpClient client = HttpClient.newHttpClient();
@@ -242,10 +243,10 @@ public abstract class AbstractUpdateServiceImpl extends UnicastRemoteObject impl
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         OptionalLong contentLength = response.headers().firstValueAsLong("content-length");
         size = contentLength.orElse(-1);
-        downloadSizes.put(zipURL, size);
+        downloadSizes.put(zipUrlStr, size);
       }
       catch (InterruptedException | URISyntaxException ex) {
-        throw new IOException("cannot determine expected download size of " + zipURL, ex);
+        throw new IOException("cannot determine expected download size of " + zipUrlStr, ex);
       }
     }
     return size;
