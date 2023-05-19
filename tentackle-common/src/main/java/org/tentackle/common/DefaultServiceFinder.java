@@ -158,7 +158,7 @@ public class DefaultServiceFinder implements ServiceFinder {
   @Override
   public synchronized Map<String,URL> findServiceConfigurations(String serviceName) {
     return serviceMap.computeIfAbsent(serviceName, sn -> {
-      Map<String,URL> services = new LinkedHashMap<>();   // linked hashmap to preserve order
+      Map<String, URL> services = new LinkedHashMap<>();   // linked hashmap to preserve order
       parseURLs(findServiceURLs(sn), sn, services);
       return services;
     });
@@ -175,7 +175,7 @@ public class DefaultServiceFinder implements ServiceFinder {
    */
   @Override
   public synchronized Map.Entry<String,URL> findFirstServiceConfiguration(String serviceName) {
-    Map<String,URL> services = findServiceConfigurations(serviceName);
+    Map<String, URL> services = findServiceConfigurations(serviceName);
     if (services.isEmpty()) {
       throw new TentackleRuntimeException("service '" + serviceName + "' not found");
     }
@@ -193,7 +193,7 @@ public class DefaultServiceFinder implements ServiceFinder {
    */
   @Override
   public synchronized Map.Entry<String,URL> findUniqueServiceConfiguration(String serviceName) {
-    Map<String,URL> services = findServiceConfigurations(serviceName);
+    Map<String, URL> services = findServiceConfigurations(serviceName);
     if (services.isEmpty()) {
       throw new TentackleRuntimeException("service '" + serviceName + "' not found");
     }

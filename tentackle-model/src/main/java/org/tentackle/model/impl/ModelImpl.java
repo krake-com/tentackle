@@ -80,7 +80,7 @@ import java.util.jar.JarFile;
 public class ModelImpl implements Model {
 
   /** cached entities mapped by URL. */
-  private final Map<URL, EntityInfo> urlToEntityInfoMap;
+  private final Map<String, EntityInfo> urlToEntityInfoMap;
 
   /** cached java source paths mapped to file paths. */
   private final Map<Entity, SourceInfo> entityToSourceInfoMap;
@@ -225,7 +225,7 @@ public class ModelImpl implements Model {
   @Override
   public synchronized EntityInfo loadFromURL(URL url, boolean updateRelations) throws ModelException {
 
-    EntityInfo entityInfo = urlToEntityInfoMap.get(url);
+    EntityInfo entityInfo = urlToEntityInfoMap.get(url.toString());
 
     if (entityInfo != null && entityInfo.hasChanged()) {
       // check modification time
@@ -380,10 +380,11 @@ public class ModelImpl implements Model {
 
   @Override
   public synchronized Entity getByURL(URL url) throws ModelException {
-    EntityInfo entityInfo = urlToEntityInfoMap.get(url);
+    String urlStr = url.toString();
+    EntityInfo entityInfo = urlToEntityInfoMap.get(urlStr);
     if (entityInfo != null && entityInfo.hasChanged()) {
       refreshModel();
-      entityInfo = urlToEntityInfoMap.get(url);
+      entityInfo = urlToEntityInfoMap.get(urlStr);
     }
     return entityInfo == null ? null : entityInfo.getEntity();
   }
@@ -574,7 +575,7 @@ public class ModelImpl implements Model {
     URL url = entityInfo.getURL();
 
     // append to maps
-    urlToEntityInfoMap.put(url, entityInfo);    // must be new...
+    urlToEntityInfoMap.put(url.toString(), entityInfo);    // must be new...
 
     SourceInfo sourceInfo = entityInfo.getEntity().getSourceInfo();
     if (sourceInfo != null) {
