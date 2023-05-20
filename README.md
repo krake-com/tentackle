@@ -100,7 +100,7 @@ Take a look at the other logs in `jlink/server/target/jlink/logs` and
 Notice: on Windows, the scripts are named `server.cmd`, `daemon.cmd` and `client.cmd`.
 
 ## Explore the code with your favorite IDE
-You can use any Java IDE that supports at least Java 15, JPMS (Jigsaw) and Maven. 
+You can use any Java IDE that supports at least Java 20, JPMS (Jigsaw) and Maven. 
 There are no special plugins necessary. However, not all IDEs provide support
 for custom code folding regions, which are pretty nice to automatically collapse generated code.
 [IntelliJ](https://www.jetbrains.com/idea/) and [Netbeans](https://netbeans.apache.org/) work fine out of the box.
