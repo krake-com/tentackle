@@ -1567,7 +1567,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
       for (Relation rel: getEntity().getRelations()) {
         String var = rel.getVariableName();
-        if (rel.isComposite() && rel.getRelationType() == RelationType.OBJECT) {
+        if (rel.isComposite() && !rel.isEmbedding() && rel.getRelationType() == RelationType.OBJECT) {
 ]@
     if (@(rel.getGetterName())@() != null) {
       ((AbstractPersistentObject<?,?>) @(var)@.getPersistenceDelegate()).insertPlainWithComponents();
@@ -1621,7 +1621,7 @@ For more options, see {\@link DbModelWurblet}.
       if (!useDatabaseRefInt) {
         for (Relation rel: getEntity().getRelations()) {
           String var = rel.getVariableName();
-          if (rel.isComposite() && rel.getRelationType() == RelationType.OBJECT) {
+          if (rel.isComposite() && !rel.isEmbedding() && rel.getRelationType() == RelationType.OBJECT) {
 ]@
     if (@(rel.getGetterName())@() != null) {
       ((AbstractPersistentObject<?,?>) @(var)@.getPersistenceDelegate()).deletePlainWithComponents();
