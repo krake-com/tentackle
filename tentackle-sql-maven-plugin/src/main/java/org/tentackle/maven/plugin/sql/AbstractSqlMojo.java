@@ -773,7 +773,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
         sqlWriter.append(new Date().toString());
         sqlWriter.append(" by ");
         sqlWriter.append(System.getProperty("user.name"));
-        sqlWriter.append(" on ");
+        sqlWriter.append('@');
         sqlWriter.append(getHostName());
         sqlWriter.append('\n').append(backendInfo.getBackend().getSingleLineComment()).append(" backend is ");
         sqlWriter.append(backendInfo.toString());

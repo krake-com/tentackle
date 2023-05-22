@@ -374,10 +374,10 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
       StringBuilder buf = new StringBuilder();
       buf.append("// generated at ").append(FormatHelper.formatShortTimestampFast(new Timestamp())).append(" by ")
          .append(System.getProperty("user.name"))
-         .append(" on ")
+         .append('@')
          .append(mojo.getHostName())
          .append(" from ")
-         .append(getDomainContext().getSession()).append("\n\n");
+         .append(getDomainContext().getSession()).append('\n');
 
       DataObject[] dataObjects = new DataObject[selectedItems.size()];
       int i = 0;
