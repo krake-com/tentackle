@@ -53,56 +53,20 @@ import java.util.regex.Pattern;
 public class TableMigrator {
 
   /**
-   * Migration result.
+   * Migration result.<br>
+   * Contains the migration parameters and the resulting SQL code.
+   *
+   * @param hints            hints to control the created output, null or empty if none
+   * @param columnMigrations explicit column migrations, null or empty if none
+   * @param renameColumns    explicit column rename hints, null or empty if none
+   * @param tableSql         the sql code to migrate the table
+   * @param foreignKeySql    the sql code to migrate the foreign keys
+   * @param warningSql       generated SQL as comments
    */
-  public static class Result {
-
-    private final String tableSql;
-    private final String foreignKeySql;
-    private final String warningSql;
-
-    /**
-     * Creates the migration result.
-     *
-     * @param tableSql the sql code to migrate the table
-     * @param foreignKeySql the sql code to migrate the foreign keys
-     * @param warningSql generated SQL as comments
-     */
-    public Result(String tableSql, String foreignKeySql, String warningSql) {
-      this.tableSql = tableSql;
-      this.foreignKeySql = foreignKeySql;
-      this.warningSql = warningSql;
-    }
-
-    /**
-     * Gets the sql code to migrate the table.
-     *
-     * @return the sql code, empty string if nothing to migrate
-     */
-    public String getTableSql() {
-      return tableSql;
-    }
-
-    /**
-     * Gets the sql code to migrate the foreign keys.
-     *
-     * @return the sql code, empty string if nothing to migrate
-     */
-    public String getForeignKeySql() {
-      return foreignKeySql;
-    }
-
-    /**
-     * Gets the optional SQL code as comment.
-     *
-     * @return the warnings containing migrations that are not really necessary to run the application properly
-     */
-    public String getWarningSql() {
-      return warningSql;
-    }
-  }
-
-
+  public record Result(Collection<Pattern> hints,
+                       Collection<ColumnMigration> columnMigrations,
+                       Map<String, String> renameColumns,
+                       String tableSql, String foreignKeySql, String warningSql) {}
 
 
 
@@ -173,9 +137,9 @@ public class TableMigrator {
   /**
    * Create SQL code to migrate the table.
    *
-   * @param hints hints to control the created output
-   * @param columnMigrations explicit column migrations, null if none
-   * @param renameColumns  explicit column rename hints, null if none
+   * @param hints hints to control the created output, null or empty if none
+   * @param columnMigrations explicit column migrations, null or empty if none
+   * @param renameColumns  explicit column rename hints, null or empty if none
    * @return the migration result
    * @throws ModelException if migration failed
    */
@@ -191,13 +155,13 @@ public class TableMigrator {
     }
     else  {
       IndexMigrator.Result indexResult = migrateIndexes();
-      tableSql.append(indexResult.getDropSql());
+      tableSql.append(indexResult.dropSql());
       tableSql.append(migrateForeignKeysToDrop());
-      Result columnResult = migrateColumns(hints, columnMigrations, renameColumns);
-      tableSql.append(columnResult.getTableSql());
-      warningSql.append(columnResult.getWarningSql());
+      ColumnsResult columnsResult = migrateColumns(hints, columnMigrations, renameColumns);
+      tableSql.append(columnsResult.tableSql);
+      warningSql.append(columnsResult.warningSql);
       tableSql.append(migrateTable());
-      tableSql.append(indexResult.getCreateSql());
+      tableSql.append(indexResult.createSql());
       foreignKeySql.append(migrateForeignKeysToAdd());
     }
 
@@ -206,7 +170,7 @@ public class TableMigrator {
       tableSql.insert(0, '\n');
     }
 
-    return new Result(tableSql.toString(), foreignKeySql.toString(), warningSql.toString());
+    return new Result(hints, columnMigrations, renameColumns, tableSql.toString(), foreignKeySql.toString(), warningSql.toString());
   }
 
 
@@ -292,16 +256,18 @@ public class TableMigrator {
   }
 
 
+  private record ColumnsResult(String tableSql, String warningSql) {}
+
   /**
    * Migrates the columns.
    *
-   * @param hints the migration hints
+   * @param hints the migration hints, null if none
    * @param columnMigrations explicit column migrations, null if none
    * @param renameColumns  explicit column rename hints, null if none
    * @return the sql
    * @throws ModelException if failed
    */
-  private Result migrateColumns(Collection<Pattern> hints, Collection<ColumnMigration> columnMigrations, Map<String, String> renameColumns)
+  private ColumnsResult migrateColumns(Collection<Pattern> hints, Collection<ColumnMigration> columnMigrations, Map<String, String> renameColumns)
           throws ModelException {
 
     StringBuilder sqlBuf = new StringBuilder();
@@ -586,7 +552,7 @@ public class TableMigrator {
       sqlBuf.insert(0, hintsBuf);
     }
 
-    return new Result(sqlBuf.toString(), "", warnBuf.toString());
+    return new ColumnsResult(sqlBuf.toString(), warnBuf.toString());
   }
 
 
@@ -594,7 +560,7 @@ public class TableMigrator {
    * Check whether a hint applies to SQL code.
    *
    * @param sql the sql statement
-   * @param hints the hints
+   * @param hints the hints, null if none
    * @return the matching hint, null if none
    */
   private Pattern sqlMatchesHint(String sql, Collection<Pattern> hints) {

@@ -665,7 +665,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
                   hints.getHints(tableName), hints.getColumnMigrations(tableName), hints.getRenameColumns(tableName));
 
               // table will have to be migrated?
-              boolean migrated = !migrationResult.getTableSql().isEmpty();
+              boolean migrated = !migrationResult.tableSql().isEmpty();
 
               migratedEntitiesMap.put(entity.getName(), migrated);
 
@@ -693,7 +693,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
                   tableSql.append('\n').append(commentLead).append(" manual migration of ");
                   tableSql.append(tableName);
                   tableSql.append(":\n");
-                  tableSql.append(backendInfo.getBackend().sqlComment(migrationResult.getTableSql() + "\n"));
+                  tableSql.append(backendInfo.getBackend().sqlComment(migrationResult.tableSql() + "\n"));
                   tableSql.append(sql);
                   tableSql.append('\n');
                 }
@@ -704,7 +704,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
                     tableSql.append('\n');
                     tableSql.append(sql);
                   }
-                  tableSql.append(migrationResult.getTableSql());
+                  tableSql.append(migrationResult.tableSql());
                   sql = backendMigrationHints.getAfterTable(tableName);
                   if (sql != null) {
                     tableSql.append(sql);
@@ -714,8 +714,8 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
               }
 
               // foreign key migration is separate at end of migration
-              foreignKeySql.append(migrationResult.getForeignKeySql());
-              warningSql.append(migrationResult.getWarningSql());
+              foreignKeySql.append(migrationResult.foreignKeySql());
+              warningSql.append(migrationResult.warningSql());
 
               // check if migration needs to be delayed
               boolean migrate = true;
