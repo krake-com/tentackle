@@ -37,41 +37,12 @@ import java.util.Objects;
 public class IndexMigrator {
 
   /**
-   * Migration result.
+   * The migration result.
+   *
+   * @param dropSql the sql code to drop or rename indexes
+   * @param createSql the sql code to create indexes
    */
-  public static class Result {
-
-    private final String dropSql;
-    private final String createSql;
-
-    /**
-     * Creates the migration result.
-     *
-     * @param dropSql the sql code to drop or rename indexes
-     * @param createSql the sql code to create indexes
-     */
-    public Result(String dropSql, String createSql) {
-      this.dropSql = dropSql;
-      this.createSql = createSql;
-    }
-
-    /**
-     * Gets the sql code to drop or rename indexes.
-     *
-     * @return the sql code, empty string if nothing to migrate
-     */
-    public String getDropSql() {
-      return dropSql;
-    }
-
-    /**
-     * Gets the sql code to create indexes.
-     *
-     * @return the sql code, empty string if nothing to migrate
-     */
-    public String getCreateSql() {
-      return createSql;
-    }
+  public record Result(String dropSql, String createSql) {
 
     /**
      * Builds the sum of this and another result.
@@ -82,6 +53,7 @@ public class IndexMigrator {
     public Result sum(Result result) {
       return new Result(dropSql + result.dropSql, createSql + result.createSql);
     }
+
   }
 
 
