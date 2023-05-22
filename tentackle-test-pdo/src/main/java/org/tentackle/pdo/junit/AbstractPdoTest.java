@@ -79,6 +79,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   private final boolean closeIt;                // true if we're the first test that created the session
   private final TransactionType txType;         // transaction handling
   private final boolean commit;                 // true if commit transaction, else rollback (default)
+  private boolean rollbackLogged;               // true to log the rollback, even if test succeeds
   private long txVoucher;                       // transaction voucher for current test class
 
 
@@ -113,6 +114,28 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
     this(TransactionType.CLASS, false);    // per class
   }
 
+
+  /**
+   * Returns whether statements rolled back are always logged.
+   *
+   * @return true to log even if test succeeds, false is default
+   */
+  public boolean isRollbackLogged() {
+    return rollbackLogged;
+  }
+
+  /**
+   * Sets whether to log the statements rolled back.<br>
+   * By default, the statements are not logged if the test succeeds.
+   * Sometimes, however, it is nice to log the statements that were executed during the test.
+   * <p>
+   * Notice that the flag is reset to false when the transaction ends.
+   *
+   * @param rollbackLogged true to log the statements, default is false
+   */
+  public void setRollbackLogged(boolean rollbackLogged) {
+    this.rollbackLogged = rollbackLogged;
+  }
 
   /**
    * Opens the sessions and starts the modification tracker exactly once.<br>
@@ -318,9 +341,16 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
         session.commit(txVoucher);
       }
       else  {
-        session.rollback(txVoucher);
+        if (rollbackLogged) {
+          session.rollback(txVoucher);
+        }
+        else {
+          // don't log rollback if test succeeds
+          session.rollbackSilently(txVoucher);
+        }
       }
       txVoucher = 0;
+      rollbackLogged = false;
     }
   }
 
