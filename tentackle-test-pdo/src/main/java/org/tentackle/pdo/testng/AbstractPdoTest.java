@@ -19,6 +19,7 @@
 
 package org.tentackle.pdo.testng;
 
+import org.testng.ITestResult;
 import org.testng.Reporter;
 import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
@@ -227,7 +228,10 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
    * @throws Exception if failed
    */
   @AfterMethod(alwaysRun = true)
-  public void afterMethod() throws Exception {
+  public void afterMethod(ITestResult result) throws Exception {
+    if (!result.isSuccess()) {
+      rollbackLogged = true;    // log statements rolled back, if test failed
+    }
     if (txType == TransactionType.METHOD) {
       endTransaction();
     }
