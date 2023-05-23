@@ -19,7 +19,7 @@
 package org.tentackle.common;
 
 interface StringNormalizerHolder {
-  StringNormalizer INSTANCE = ServiceFactory.createService(StringNormalizer.class, StringNormalizer.class);
+  StringNormalizer INSTANCE = ServiceFactory.createService(StringNormalizer.class, DefaultStringNormalizer.class);
 }
 
 /**
