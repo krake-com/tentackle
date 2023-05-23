@@ -16,8 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-
 package org.tentackle.common;
 
 import java.io.BufferedReader;
@@ -31,8 +29,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Function;
-
 
 /**
  * Some handy methods for strings.
@@ -704,42 +700,6 @@ public final class StringHelper {
    */
   public static String digitToString(Character digit) {
     return CommonCommonBundle.getString(String.valueOf(digit));
-  }
-
-
-  /**
-   * Converts special unicode characters (so-called diacrits) to standard ascii.<br>
-   * Supports also special german and northern european "umlauts".
-   *
-   * @param str the string to be converted
-   * @param keepLength true if the length should be kept, i.e. no Ä to AE, but to A
-   * @return the converted string
-   */
-  public static String unDiacrit(String str, boolean keepLength)  {
-    return StringNormalizer.getInstance().unDiacrit(str, keepLength);
-  }
-
-
-  /**
-   * Normalizes a string (phonetically) for use as PDO.normText.
-   *
-   * @param str the string to be normalized
-   * @param normalizer the normalizer to use, null = global default
-   * @return the normalized string
-   */
-  public static String normalize (String str, Function<String,String> normalizer)  {
-    return normalizer == null ? StringNormalizer.getInstance().normalize(str) : normalizer.apply(str);
-  }
-
-  /**
-   * Normalizes a string (phonetically) for use as PDO.normText
-   * using {@link StringNormalizer}.
-   *
-   * @param str the string to be normalized
-   * @return the normalized string
-   */
-  public static String normalize (String str)  {
-    return normalize(str, null);
   }
 
 

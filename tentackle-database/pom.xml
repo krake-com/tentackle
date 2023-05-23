@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>8.3.0.2</version>
+    <version>8.3.0.3</version>
   </parent>
 
   <artifactId>tentackle-database</artifactId>
@@ -39,7 +39,7 @@
         <filtering>true</filtering>
       </testResource>
     </testResources>
-    
+
     <plugins>
 
       <plugin>
@@ -152,8 +152,3 @@
   </build>
 
 </project>
-
-
-
-
-
