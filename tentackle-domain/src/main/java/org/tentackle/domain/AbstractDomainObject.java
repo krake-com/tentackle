@@ -138,7 +138,7 @@ public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, 
   public String toString() {
     StringBuilder buf = new StringBuilder();
     try {
-      Object key = me().isRootEntity() ? getUniqueDomainKey() : getSingular();
+      Object key = me().getPersistenceDelegate().isRootEntity() ? getUniqueDomainKey() : getSingular();
       if (key != null) {
         buf.append(key);
       }

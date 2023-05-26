@@ -1949,7 +1949,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       derivedPdo = pdo;    // same type
     }
     else {
-      if (pdo.isAbstract()) {
+      if (pdo.getPersistenceDelegate().isAbstract()) {
         // some subtype
         derivedPdo = po.getPdo();
       }
