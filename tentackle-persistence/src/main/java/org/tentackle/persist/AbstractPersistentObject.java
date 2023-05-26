@@ -1551,12 +1551,13 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @param list the list
    */
   public void executeQueryToList(ResultSetWrapper rs, JoinedSelect<T> js, List<T> list) {
+    RootInfo rootInfo = new RootInfo();
     if (js == null) {
       while (rs.next()) {
         P nextPo = newInstance();
         nextPo = nextPo.readFromResultSetWrapper(rs);
         T nextPdo = Pdo.create(nextPo.getPdoClass(), nextPo);
-        nextPdo = derivePdoFromPo(nextPdo, nextPo);
+        nextPdo = derivePdoFromPo(nextPdo, nextPo, rootInfo);
         if (nextPdo != null) {
           list.add(nextPdo);
         }
@@ -1565,7 +1566,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     else  {
       js.initialize(list);
       while (rs.next()) {
-        readJoinedRow(rs, js);
+        readJoinedRow(rs, js, rootInfo);
       }
     }
   }
@@ -1714,7 +1715,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     return getClassVariables().getEagerJoins();
   }
 
-
   /**
    * Reads the next row from a result set within a joined select.<br>
    * The results may come in any order. Thus, it is possible to sort the results
@@ -1723,8 +1723,21 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @param js the joined select
    * @param rs the result set
    */
-  @SuppressWarnings("unchecked")
   public void readJoinedRow(ResultSetWrapper rs, JoinedSelect<T> js) {
+    readJoinedRow(rs, js, null);
+  }
+
+  /**
+   * Reads the next row from a result set within a joined select.<br>
+   * The results may come in any order. Thus, it is possible to sort the results
+   * according to the domain's requirements.
+   *
+   * @param js the joined select
+   * @param rs the result set
+   * @param lastCheckedRoot the last security-checked root, null if no optimization for lists
+   */
+  @SuppressWarnings("unchecked")
+  private void readJoinedRow(ResultSetWrapper rs, JoinedSelect<T> js, RootInfo lastCheckedRoot) {
     rs.startSkip();
     P nextPo = newInstance();
     nextPo = nextPo.readFromResultSetWrapper(rs);
@@ -1732,7 +1745,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     if (js.currentPdo() == null || js.currentPdo().getPersistenceDelegate().getId() != nextPo.getId()) {
       // create a new PDO
       nextPdo = Pdo.create(nextPo.getPdoClass(), nextPo);
-      nextPdo = derivePdoFromPo(nextPdo, nextPo);
+      nextPdo = derivePdoFromPo(nextPdo, nextPo, lastCheckedRoot);
       T knownPdo = js.nextPdo(nextPdo);
       if (knownPdo != nextPdo) {
         // already in list
@@ -1944,6 +1957,30 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @return the persistent domain object, null if no read permission
    */
   public T derivePdoFromPo(T pdo, P po) {
+    return derivePdoFromPo(pdo, po, null);
+  }
+
+
+  /**
+   * Just a holder for the object- and class-ID of the last successfully security-checked root entity.
+   * Used in list queries of components that don't belong to the current root context. In such cases,
+   * the security manager will be asked only once, if the components all belong to the same root (which
+   * is often the case).
+   */
+  private static class RootInfo {
+    private long rootId;
+    private int rootClassId;
+  }
+
+  /**
+   * Derive the concrete PDO from a given PO.
+   *
+   * @param pdo the original persistent domain object
+   * @param po the effective persistent object from readFromResultSetWrapper
+   * @param lastCheckedRoot the last security-checked root, null if no optimization for lists
+   * @return the persistent domain object, null if no read permission
+   */
+  private T derivePdoFromPo(T pdo, P po, RootInfo lastCheckedRoot) {
     T derivedPdo;
     if (po == pdo.getPersistenceDelegate()) {
       derivedPdo = pdo;    // same type
@@ -1984,26 +2021,37 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     }
     else {    // component
       // optional security checks for components (the root context is already checked by assertRootContextIsAccepted)
-      if (po.getRootId() != 0 && po.getRootId() != context.getRootId() ||
-          po.getRootClassId() != 0 && po.getRootClassId() != context.getRootClassId()) {
+      long poRootId = po.getRootId();
+      int poRootClassId = po.getRootClassId();
+      if (poRootId != 0 && poRootId != context.getRootId() ||
+          poRootClassId != 0 && poRootClassId != context.getRootClassId()) {
         // component not loaded from within its root entity context: make it immutable to
         // prevent modifying the wrong object within the RE's component tree
         po.setFinallyImmutable();
         // explicitly check the root-entity's security rules (if any)
-        if (po.getRootId() != 0 && po.getRootClassId() != 0) {
-          // po provides both the rootClassId and the rootId -> check that explicitly
-          // (useful for deep links)
-          SecurityResult sr = SecurityFactory.getInstance().getSecurityManager().evaluate(
-                  context, SecurityFactory.getInstance().getReadPermission(), po.getRootClassId(), po.getRootId());
-          if (sr.isAccepted()) {
-            return derivedPdo;
+        if (poRootId != 0 && poRootClassId != 0) {
+          // po provides both the rootClassId and the rootId -> check that explicitly (useful for deep links)
+          if (lastCheckedRoot == null ||    // no list optimization ...
+              lastCheckedRoot.rootId != poRootId || lastCheckedRoot.rootClassId != poRootClassId) { // ... or another root
+            // asking the security manager is necessary
+            SecurityResult sr = SecurityFactory.getInstance().getSecurityManager().
+                                evaluate(context, SecurityFactory.getInstance().getReadPermission(), poRootClassId, poRootId);
+            if (sr.isAccepted()) {
+              if (lastCheckedRoot != null) {
+                lastCheckedRoot.rootId = poRootId;
+                lastCheckedRoot.rootClassId = poRootClassId;
+              }
+            }
+            else {
+              // no permission for root-entity -> component does not exist as the root doesn't for this user as well
+              return null;
+            }
           }
-          // no permission for root-entity -> component does not exist as the root does for this user
-          return null;
         }
-        throw new SecurityException(po, "unexpected root context " +
-                context.getRootClassId() + "[" + context.getRootId() + "], expected " +
-                po.getRootClassId() + "[" + po.getRootId() + "]");
+        else {
+          throw new SecurityException(po, "unexpected root context " + context.getRootClassId() + "[" +
+                                          context.getRootId() + "], expected " + poRootClassId + "[" + poRootId + "]");
+        }
       }
     }
     return derivedPdo;
