@@ -4,7 +4,19 @@
  */
 
 .root {
-  -fx-base: rgba(60, 63, 65, 255); // dark
+  -fx-base: #3f474f;
+  -fx-accent: #e7eff7;
+  -fx-default-button: #7f878f;
+  -fx-focus-color: #efefef;
+  -fx-faint-focus-color: #efefef22;
+  -fx-focused-text-base-color: ladder(
+    -fx-selection-bar,
+    -fx-light-text-color 45%,
+    -fx-dark-text-color 46%,
+    -fx-dark-text-color 59%,
+    -fx-mid-text-color 60%
+  );
+  -fx-focused-mark-color: -fx-focused-text-base-color;
 
   /**
    * light yellow components indicate a mandatory field.
@@ -55,12 +67,22 @@
 /**
  * better visualization for non-editable text fields.
  */
+.text-input:focused {
+  -fx-highlight-text-fill: ladder(
+    -fx-highlight-fill,
+    -fx-light-text-color 45%,
+    -fx-dark-text-color 46%,
+    -fx-dark-text-color 59%,
+    -fx-mid-text-color 60%
+  );
+}
+
 .text-input:readonly {
-    -fx-text-fill: derive(-fx-text-inner-color, 30%);
-    -fx-background-color: -fx-shadow-highlight-color, -fx-text-box-border, derive(-fx-background, 30%);
-    -fx-background-insets: -0.4, 1, 2;
-    -fx-background-radius: 3.4, 2, 2;
-    -fx-prompt-text-fill: derive(-fx-control-inner-background,-30%);
+  -fx-text-fill: derive(-fx-text-inner-color, 30%);
+  -fx-background-color: -fx-shadow-highlight-color, -fx-text-box-border, derive(-fx-background, 30%);
+  -fx-background-insets: -0.4, 1, 2;
+  -fx-background-radius: 3.4, 2, 2;
+  -fx-prompt-text-fill: derive(-fx-control-inner-background, -30%);
 }
 
 .text-area:readonly .content {
@@ -68,7 +90,7 @@
   -fx-background-color: -fx-shadow-highlight-color, -fx-text-box-border, derive(-fx-background, 30%);
   -fx-background-insets: -0.4, 1, 2;
   -fx-background-radius: 3.4, 2, 2;
-  -fx-prompt-text-fill: derive(-fx-control-inner-background,-30%);
+  -fx-prompt-text-fill: derive(-fx-control-inner-background, -30%);
 }
 
 .radio-button:disabled {

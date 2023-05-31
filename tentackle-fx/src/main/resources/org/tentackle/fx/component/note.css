@@ -1,14 +1,15 @@
 
-.note > .box > .text  {
-  -fx-border-color: lightgray;
+.note > .box > .text {
+  -fx-border-color: -fx-background;
   -fx-label-padding: 5 5 5 5;
+  -fx-background-radius: 5 5 5 5;
   -fx-border-style: solid;
   -fx-border-radius: 5;
-	-fx-effect: dropshadow(gaussian, rgba(0,0,0,.2), 10.0, 0.5, 2.0, 2.0);
+  -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, .2), 10.0, 0.5, 2.0, 2.0);
 }
 
 .note > .box > .link > .line {
-	-fx-stroke-width: 2;
+  -fx-stroke-width: 2;
 }
 
 
@@ -33,8 +34,8 @@
 }
 
 .center > .box {
-    -fx-translate-y: 10;
-    -fx-translate-x: 8;
+  -fx-translate-y: 10;
+  -fx-translate-x: 8;
 }
 
 .error > .box > .text {
@@ -44,12 +45,12 @@
 }
 
 .error > .box > .link > .circle {
-  -fx-stroke: red ;
-	-fx-fill: red ;
+  -fx-stroke: red;
+  -fx-fill: red;
 }
 
 .error > .box > .link > .line {
-	-fx-stroke: red ;
+  -fx-stroke: red;
 }
 
 
@@ -60,12 +61,12 @@
 }
 
 .info > .box > .link > .circle {
-  -fx-stroke: green ;
-	-fx-fill: green ;
+  -fx-stroke: green;
+  -fx-fill: green;
 }
 
 .info > .box > .link > .line {
-	-fx-stroke: green ;
+  -fx-stroke: green;
 }
 
 
@@ -76,12 +77,10 @@
 }
 
 .sticky > .box > .link > .circle {
-  -fx-stroke: black ;
-	-fx-fill: black ;
+  -fx-stroke: black;
+  -fx-fill: black;
 }
 
 .sticky > .box > .link > .line {
-	-fx-stroke: black ;
+  -fx-stroke: black;
 }
-
-
