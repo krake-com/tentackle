@@ -53,11 +53,11 @@
  * better visualization for non-editable text fields.
  */
 .text-input:readonly {
-    -fx-text-fill: derive(-fx-text-inner-color, 30%);
-    -fx-background-color: -fx-shadow-highlight-color, -fx-text-box-border, derive(-fx-background, 30%);
-    -fx-background-insets: -0.4, 1, 2;
-    -fx-background-radius: 3.4, 2, 2;
-    -fx-prompt-text-fill: derive(-fx-control-inner-background,-30%);
+  -fx-text-fill: derive(-fx-text-inner-color, 30%);
+  -fx-background-color: -fx-shadow-highlight-color, -fx-text-box-border, derive(-fx-background, 30%);
+  -fx-background-insets: -0.4, 1, 2;
+  -fx-background-radius: 3.4, 2, 2;
+  -fx-prompt-text-fill: derive(-fx-control-inner-background, -30%);
 }
 
 .text-area:readonly .content {
@@ -65,7 +65,7 @@
   -fx-background-color: -fx-shadow-highlight-color, -fx-text-box-border, derive(-fx-background, 30%);
   -fx-background-insets: -0.4, 1, 2;
   -fx-background-radius: 3.4, 2, 2;
-  -fx-prompt-text-fill: derive(-fx-control-inner-background,-30%);
+  -fx-prompt-text-fill: derive(-fx-control-inner-background, -30%);
 }
 
 .radio-button:disabled {
