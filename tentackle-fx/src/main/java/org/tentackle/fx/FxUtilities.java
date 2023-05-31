@@ -141,6 +141,11 @@ public class FxUtilities {
    */
   private String helpURL;
 
+  /**
+   * Flag to switch to dark theme.
+   */
+  private boolean darkMode;
+
 
   /**
    * Creates the FX utilities.
@@ -150,13 +155,31 @@ public class FxUtilities {
   }
 
   /**
+   * Returns whether to enable dark mode.
+   *
+   * @return true to enable dark mode
+   */
+  public boolean isDarkMode() {
+    return darkMode;
+  }
+
+  /**
+   * Enables dark mode.
+   *
+   * @param darkMode true to enable dark theme, false for light theme (default)
+   */
+  public void setDarkMode(boolean darkMode) {
+    this.darkMode = darkMode;
+  }
+
+  /**
    * Applies the default stylesheets to a scene.<br>
    * Invoked for all newly created scenes.
    *
    * @param scene the scene
    */
   public void applyStylesheets(Scene scene) {
-    scene.getStylesheets().add("/org/tentackle/fx/tentackle.css");
+    scene.getStylesheets().add(isDarkMode() ? "/org/tentackle/fx/tentackle_dark.css" : "/org/tentackle/fx/tentackle.css");
   }
 
 

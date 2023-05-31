@@ -1,0 +1,106 @@
+/**
+ * Adds styles for tentackle-specific extensions.
+ * Dark mode variant (not very elaborated yet, but better than nothing)
+ */
+
+.root {
+  -fx-base: rgba(60, 63, 65, 255); // dark
+
+  /**
+   * light yellow components indicate a mandatory field.
+   */
+  -tt-mandatory-color: #ffffcc;
+
+  /**
+   * light red components indicate an error.
+   */
+  -tt-error-color: #fed1d1;
+
+  /**
+   * light green components indicate an info/hint.
+   */
+  -tt-info-color: #ccffcc;
+
+  /**
+   * opacity for disabled components like radio-buttons, checkboxes and comboboxes.
+   */
+  -tt-disabled-opacity: 0.6;
+}
+
+.tt-info {
+  -fx-control-inner-background: -tt-info-color;
+  -fx-base: -tt-info-color;
+}
+
+.tt-mandatory {
+  -fx-control-inner-background: -tt-mandatory-color;
+  -fx-base: -tt-mandatory-color;
+}
+
+.tt-error {
+  -fx-control-inner-background: -tt-error-color;
+  -fx-base: -tt-error-color;
+}
+
+.tt-i18n {
+  -fx-background-image: url('/org/tentackle/fx/i18n-style.png');
+  -fx-background-repeat: no-repeat;
+  -fx-background-position: right top;
+}
+
+.tt-i18n.text-area {
+  -fx-padding: 0 13 0 0;
+}
+
+/**
+ * better visualization for non-editable text fields.
+ */
+.text-input:readonly {
+    -fx-text-fill: derive(-fx-text-inner-color, 30%);
+    -fx-background-color: -fx-shadow-highlight-color, -fx-text-box-border, derive(-fx-background, 30%);
+    -fx-background-insets: -0.4, 1, 2;
+    -fx-background-radius: 3.4, 2, 2;
+    -fx-prompt-text-fill: derive(-fx-control-inner-background,-30%);
+}
+
+.text-area:readonly .content {
+  -fx-text-fill: derive(-fx-text-inner-color, 30%);
+  -fx-background-color: -fx-shadow-highlight-color, -fx-text-box-border, derive(-fx-background, 30%);
+  -fx-background-insets: -0.4, 1, 2;
+  -fx-background-radius: 3.4, 2, 2;
+  -fx-prompt-text-fill: derive(-fx-control-inner-background,-30%);
+}
+
+.radio-button:disabled {
+  -fx-opacity: 1.0;
+}
+
+.radio-button:disabled > .radio {
+  -fx-opacity: -tt-disabled-opacity;
+}
+
+.check-box:disabled {
+  -fx-opacity: 1.0;
+}
+
+.check-box:disabled > .box {
+  -fx-opacity: -tt-disabled-opacity;
+}
+
+.combo-box-base:disabled {
+  -fx-opacity: 1.0;
+}
+
+.combo-box-base:disabled > .arrow-button {
+  -fx-opacity: 1.0;
+  -fx-text-fill: black;
+}
+
+.combo-box-base:disabled > .arrow-button > .arrow {
+  -fx-opacity: -tt-disabled-opacity;
+}
+
+.ikonli-font-icon {
+  -fx-icon-size: 16;
+  -fx-icon-color: white;
+}

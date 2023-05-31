@@ -19,19 +19,20 @@
 
 package org.tentackle.maven.plugin.wizard;
 
-import javafx.application.Platform;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.shared.model.fileset.FileSet;
 
 import org.tentackle.fx.Fx;
+import org.tentackle.fx.FxUtilities;
 import org.tentackle.maven.AbstractTentackleMojo;
 import org.tentackle.model.EntityAliases;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
 
+import javafx.application.Platform;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -102,6 +103,13 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
 
 
   /**
+   * Enables dark mode.
+   */
+  @Parameter
+  private boolean darkMode;
+
+
+  /**
    * Gets the profiles.
    *
    * @param <T> the profile type
@@ -144,6 +152,7 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
 
   @Override
   public void executeImpl() throws MojoExecutionException, MojoFailureException {
+    FxUtilities.getInstance().setDarkMode(darkMode);
     loadModel();
   }
 
