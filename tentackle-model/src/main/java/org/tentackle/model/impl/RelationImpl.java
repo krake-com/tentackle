@@ -181,6 +181,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
   private List<MethodArgument> methodArgs;
   private String nmName;
   private String nmMethodName;
+  private AccessScope nmScope;
   private String linkMethodName;
   private String linkMethodIndex;
   private boolean deletionFromMainClass;
@@ -518,6 +519,9 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
             setNmName(stok.nextToken());
             if (stok.hasMoreTokens()) {
               setNmMethodName(stok.nextToken());
+              if (stok.hasMoreTokens()) {
+                setNmScope(AccessScope.valueOf(stok.nextToken().toUpperCase(Locale.ROOT)));
+              }
             }
             break;
 
@@ -1132,6 +1136,11 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
   }
 
   @Override
+  public AccessScope getNmScope() {
+    return nmScope == null ? getAccessScope() : nmScope;
+  }
+
+  @Override
   public String getLinkMethodName() {
     return linkMethodName;
   }
@@ -1221,6 +1230,10 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
 
   public void setNmMethodName(String nmMethodName) {
     this.nmMethodName = nmMethodName;
+  }
+
+  public void setNmScope(AccessScope nmScope) {
+    this.nmScope = nmScope;
   }
 
   public void setMethodName(String methodName) {

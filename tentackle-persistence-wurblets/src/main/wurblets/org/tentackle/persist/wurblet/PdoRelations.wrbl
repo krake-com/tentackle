@@ -609,10 +609,24 @@ For more options, see {\@link DbModelWurblet}.
 
         if (nmRel != null) {
           String nmType = nmRel.getDeclaredJavaType(false);
+          if (rel.getNmScope() == AccessScope.PUBLIC) {
 ]@
 
   \@Override
-  public TrackedList<@(nmType)@> get@(nmName)@() {
+@[
+          }
+          else {
+]@
+
+  /**
+   * Gets list of @(nmRel.getDeclaredJavaType(false))@ joined via @(rel)@.
+   *
+   * \@return list of @(nmRel.getVariableName())@
+   */
+@[
+          }
+]@
+  @(rel.getNmScope())@ TrackedList<@(nmType)@> get@(nmName)@() {
 @[
           if (!generateMock) {
 ]@
@@ -1810,8 +1824,8 @@ For more options, see {\@link DbModelWurblet}.
     if (generateSelects && isEntityPersistable() && !generateMock) {
       Set<String> wurbletArgSet = new HashSet<>();   // to avoid duplicates if args= is used
       for (Relation rel: getEntity().getReferencingRelations()) {
-        if (rel.getAccessScope() != AccessScope.PUBLIC) {
-          continue;   // skip non-public in interfaces
+        if (rel.getAccessScope() != AccessScope.PUBLIC && rel.getNmName() == null) {
+          continue;   // skip non-public in interfaces, except the N:M selects
         }
         if (rel.getRelationType() == RelationType.LIST) {
           Attribute attribute = rel.getForeignAttribute();
