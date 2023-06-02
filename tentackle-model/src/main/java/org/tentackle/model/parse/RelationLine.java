@@ -121,10 +121,12 @@ import java.util.Map;
  *    </li>
  * </ul>
  *
- * nm = &lt;entity&gt; [mnMethodName]
+ * nm = &lt;entity&gt; [mnMethodName] [nmScope]
  * <ul>
  *    <li>entity: name of opposite entity the N:M relation.</li>
  *    <li>mnMethodName: optional method name to access the list of opposite entities.</li>
+ *    <li>mnScope: optional access scope of the nm-method (defaults to scope = ...). Can be used
+ *        to hide the technical methods via <code>scope=private</code> from the interfaces and making the nm-method <code>public</code>.</li>
  * </ul>
  * The relation must be a list relation.<p>
  *

@@ -393,6 +393,14 @@ public interface Relation extends ModelElement {
    */
   String getNmMethodName();
 
+  /**
+   * Gets the access scope for the nm-method.<br>
+   * Defaults to the access scope of the relation.
+   *
+   * @return the access scope, never null
+   */
+  AccessScope getNmScope();
+
 
   // ---------------------------------------------------------------------------
 

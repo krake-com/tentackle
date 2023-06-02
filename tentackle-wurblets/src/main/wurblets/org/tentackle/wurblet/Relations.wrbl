@@ -12,9 +12,7 @@ For more options, see {\@link ModelWurblet}.
 
     for (Relation rel: getEntity().getRelations()) {
 
-      if (rel.getAccessScope() != AccessScope.PUBLIC) {
-        continue;   // skip non-public in interfaces
-      }
+      boolean isPublic = rel.getAccessScope() == AccessScope.PUBLIC;
 
       String var = rel.getVariableName();
       String type = rel.getDeclaredJavaType(false);
@@ -55,6 +53,7 @@ For more options, see {\@link ModelWurblet}.
         if (attr != null && !attr.getDataType().isPrimitive()) {
           checkNull = firstArg + " == null || " + checkNull;
         }
+        if (isPublic) {
 ]@
 
   /**
@@ -64,34 +63,35 @@ For more options, see {\@link ModelWurblet}.
    */
   \@Bindable
 @[
-        if (rel.isComposite()) {
+          if (rel.isComposite()) {
 ]@
   \@Persistent(ordinal=@(rel.getOrdinal())@, comment=@(StringHelper.toDoubleQuotes(rel.getComment()))@)
 @[
-        }
-        else {
-          if (oppRel != null && oppRel.isComposite()) {
+          }
+          else {
+            if (oppRel != null && oppRel.isComposite()) {
 ]@
   \@Persistent(ordinal=@(rel.getOrdinal())@, comment=@(StringHelper.toDoubleQuotes(rel.getComment()))@, component=false, parent=true)
 @[
-          }
-          else {
+            }
+            else {
 ]@
   \@Persistent(ordinal=@(rel.getOrdinal())@, comment=@(StringHelper.toDoubleQuotes(rel.getComment()))@, component=false)
 @[
+            }
           }
-        }
-        for (String annotation: rel.getAnnotations()) {
-          AnnotationOption anno = new AnnotationOption(annotation);
-          if (!anno.isHidden() && !anno.isSetterOnly()) {
+          for (String annotation: rel.getAnnotations()) {
+            AnnotationOption anno = new AnnotationOption(annotation);
+            if (!anno.isHidden() && !anno.isSetterOnly()) {
 ]@
   @(anno.getAnnotation())@
 @[
+            }
           }
-        }
 ]@
   @(type)@ @(rel.getGetterName())@();
 @[
+        }
         if (rel.isBluntDeclared()) {
 ]@
 
@@ -104,7 +104,7 @@ For more options, see {\@link ModelWurblet}.
 @[
         }
 
-        if (nmRel != null) {
+        if (nmRel != null && rel.getNmScope() == AccessScope.PUBLIC) {
 ]@
 
   /**
@@ -118,7 +118,7 @@ For more options, see {\@link ModelWurblet}.
 @[
         }
 
-        if (rel.isComposite() && !rel.isEmbedding() &&
+        if (isPublic && rel.isComposite() && !rel.isEmbedding() &&
             (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER)) {
 ]@
 
@@ -133,8 +133,7 @@ For more options, see {\@link ModelWurblet}.
         }
       }
 
-
-      if (createSetter)  {
+      if (createSetter && isPublic)  {
         String nullVal = attr != null && !attr.getDataType().isPrimitive() ? "null" : "0";
         boolean linkMethodIndexed = rel.getForeignRelation() != null ?
             rel.getForeignRelation().getLinkMethodIndex() != null : false;
@@ -186,8 +185,8 @@ For more options, see {\@link ModelWurblet}.
     Set<String> declaredArgSet = new HashSet<>();   // to avoid duplicates if args= is used
 
     for (Relation rel: getEntity().getReferencingRelations()) {
-      if (rel.getAccessScope() != AccessScope.PUBLIC) {
-        continue;   // skip non-public in interfaces
+      if (rel.getAccessScope() != AccessScope.PUBLIC && rel.getNmName() == null) {
+        continue;   // skip non-public in interfaces, except the N:M relations
       }
       if (rel.getRelationType() == RelationType.LIST) {
         Attribute attribute = rel.getForeignAttribute();
