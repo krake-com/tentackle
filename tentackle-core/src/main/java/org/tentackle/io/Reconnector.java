@@ -18,6 +18,7 @@
 
 package org.tentackle.io;
 
+import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.TentackleRuntimeException;
@@ -102,9 +103,12 @@ public class Reconnector {
           policy.getConsumer().accept(policy.getConnector().get());
           break;
         }
-        catch (Throwable t) {
+        catch (InterruptedException ix) {
+          throw new InterruptedRuntimeException(ix);
+        }
+        catch (RuntimeException rx) {
           if (count % LOG_MODULO == 0) {
-            LOGGER.severe("reconnection for " + policy + ", attempt " + (count == 0 ? 1 : count) + " failed, keep on trying...", t);
+            LOGGER.severe("reconnection for " + policy + ", attempt " + (count == 0 ? 1 : count) + " failed, keep on trying...", rx);
           }
         }
       }
