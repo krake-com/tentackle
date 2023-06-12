@@ -46,8 +46,10 @@ import org.tentackle.session.TableName;
  * integrity := $integrity
  *
  * ## attributes
+<#if pdoInheritance != "EMBEDDED">
  *
  * ## indexes
+</#if>
  *
  * ## relations
  *
