@@ -53,8 +53,10 @@ import org.tentackle.session.TableName;
  * [cached]
   </#if>
 </#if>
+<#if pdoInheritance != "EMBEDDED">
  *
  * ## indexes
+</#if>
  *
  * ## relations
  *

@@ -27,6 +27,7 @@ import org.tentackle.model.IndexAttribute;
 import org.tentackle.model.ModelElement;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.NameVerifier;
+import org.tentackle.model.Relation;
 import org.tentackle.model.SourceInfo;
 import org.tentackle.model.parse.ConfigurationLine;
 import org.tentackle.sql.Backend;
@@ -54,7 +55,8 @@ import java.util.StringTokenizer;
  * where:
  * <ul>
  *   <li>{@code name}: is the index name (the table-name will be prepended, separated by an underscore)</li>
- *   <li>{@code column}: is either the database column-name of the entity attribute name</li>
+ *   <li>{@code column}: is either the database column-name of the entity attribute name. Columns of embedded entities
+ *   are defined by prepending the corresponding dotted path to the column.</li>
  *   <li>{@code function}: is a function name</li>
  *   <li>{@code ASC} or {@code +} for ascending order (default)</li>
  *   <li>{@code DESC} or {@code -} for descending order</li>
@@ -235,11 +237,33 @@ public class IndexImpl implements Index {
             }
           }
 
+          // if the column contains dots, it must be a path to an embedded entity's attribute
+          Entity attrEntity = entity;
+          Relation embeddingRelation = null;
+          int dotNdx;
+          while ((dotNdx = column.indexOf('.')) >= 0 && dotNdx < column.length() - 1) {
+            String relationName = column.substring(0, dotNdx);
+            column = column.substring(dotNdx + 1);
+            embeddingRelation = attrEntity.getRelation(relationName, true);
+            if (embeddingRelation == null) {
+              throw sourceLine.createModelException("undefined embedded relation: " + relationName);
+            }
+            if (!embeddingRelation.isEmbedding()) {
+              throw sourceLine.createModelException("not an embedding relation: " + relationName);
+            }
+            embeddingRelation = embeddingRelation.createEmbedded(attrEntity, relationName, embeddingRelation.getColumnPrefix());
+            attrEntity = embeddingRelation.getForeignEntity();
+          }
+
           // check if column name exists
-          for (Attribute attribute : entity.getAttributes()) {
+          for (Attribute attribute : attrEntity.getAttributes()) {
             if (attribute.getColumnName().equals(column) ||
                 attribute.getName().equals(column)) {
               // found
+              if (embeddingRelation != null) {
+                attribute = attribute.createEmbedded(attrEntity, embeddingRelation.getPathName() + attribute.getName(),
+                embeddingRelation.getColumnPrefixPath() + attribute.getColumnName());
+              }
               indexAttribute = factory.createIndexAttribute(this);
               indexAttribute.setAttribute(attribute);
               indexAttribute.setFunctionName(function);
