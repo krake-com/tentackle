@@ -571,21 +571,37 @@ public class DbModelWurblet extends ModelWurblet {
           else  {
             if (!getEntity().equals(attr.getEntity())) {
               // must be a joined component (otherwise the column is not in the result set)
+              List<Relation> relations = key.getRelations();
+              List<Relation> embeddingPath = key.getEmbeddingPath();
+              if (embeddingPath != null && !embeddingPath.isEmpty() && relations != null && relations.size() > embeddingPath.size()) {
+                relations = new ArrayList<>(relations.subList(0, relations.size() - embeddingPath.size()));
+              }
               boolean joinFound = false;
               for (JoinPath joinPath: getJoinPaths()) {
-                Join join = joinPath.findJoin(key.getRelations());
+                Join join = joinPath.findJoin(relations);
                 if (join == null) {
                   join = joinPath.findJoin(key.getComponent());
                 }
                 if (join != null) {
-                  buf.append('"').append(join.getName())
-                     .append('.').append(attr.getColumnName()).append('"');
+                  buf.append('"').append(join.getName()).append('.');
+                  if (attr.isEmbedded()) {
+                    buf.append(key.getEmbeddingColumnPrefix()).append(attr.getColumnName());
+                  }
+                  else {
+                    buf.append(attr.getColumnName());
+                  }
+                  buf.append('"');
                   joinFound = true;
                   break;
                 }
               }
               if (!joinFound) {
-                throw new WurbelException("missing join for sort key: " + key);
+                if ((relations == null || relations.isEmpty()) && embeddingPath != null && !embeddingPath.isEmpty()) {
+                  buf.append('"').append(key.getEmbeddingColumnPrefix()).append(attr.getColumnName()).append('"');
+                }
+                else {
+                  throw new WurbelException("missing join for sort key: " + key);
+                }
               }
             }
             else {
