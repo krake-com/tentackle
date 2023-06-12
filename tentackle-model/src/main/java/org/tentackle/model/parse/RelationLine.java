@@ -81,7 +81,8 @@ import java.util.Map;
  *    The methods arguments are fixed to (this).</li>
  *    <li>
  *    [index] is an integer attribute of the referenced entity.<br>
- *    If [index] is set, (this, ndx) is invoked with index beginning at 0 (only for lists).
+ *    If [index] is set, (this, ndx) is invoked with index beginning at 0 (only for lists).<br>
+ *    [index] may be a path to an attribute of an embedded entity, as well.
  *    </li>
  * </ul>
  *

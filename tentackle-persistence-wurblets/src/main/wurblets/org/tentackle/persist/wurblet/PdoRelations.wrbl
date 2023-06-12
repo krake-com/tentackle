@@ -827,7 +827,7 @@ For more options, see {\@link DbModelWurblet}.
 
             if (linkMethodIndex != null) {
 ]@
-    set@(StringHelper.firstToUpper(linkMethodIndex))@(index);
+    @(createAccessorCode(getEntity(), linkMethodIndex, true))@(index);
 @[
             }
           }

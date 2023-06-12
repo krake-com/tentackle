@@ -975,4 +975,79 @@ public class ModelWurblet extends AbstractJavaWurblet {
     return new ComponentInfo(this, component);
   }
 
+
+  /**
+   * Creates the java code to access an attribute or column.<br>
+   * Relations are separated by dots. For multi-column types, the
+   * column is separated from the attribute by a hash.
+   *
+   * @param entity the entity where the path begins
+   * @param path the accessor path
+   * @param createSetter true if create setter, else getter
+   * @return the java code without the trailing braces
+   * @throws WurbelException if failed
+   */
+  public String createAccessorCode(Entity entity, String path, boolean createSetter) throws WurbelException {
+    StringBuilder buf = new StringBuilder();
+    StringTokenizer stok = new StringTokenizer(path, ".");   // . for relation, # for column in datatype
+    int tokenCount = stok.countTokens();
+    int tokenIndex = 0;
+    while (stok.hasMoreTokens()) {
+      String name = stok.nextToken();
+      if (tokenIndex < tokenCount - 1) {
+        Relation relation = entity.getRelation(name, true);
+        if (relation == null) {
+          throw new WurbelException("no such relation '" + name + "' in path '" + path + "'");
+        }
+        buf.append(relation.getGetterName()).append("().");
+        entity = relation.getForeignEntity();
+      }
+      else {
+        String column = null;
+        int colNdx = name.indexOf('#');
+        if (colNdx >= 0 && colNdx < name.length() - 1) {
+          column = name.substring(colNdx + 1);
+          name = name.substring(0, colNdx);
+        }
+        Attribute attribute = entity.getAttributeByJavaName(name, true);
+        if (attribute == null) {
+          throw new WurbelException("no such attribute '" + name + "' in path '" + path + "'");
+        }
+        if (column != null) {
+          buf.append(attribute.getGetterName()).append("().");
+          DataType<?> dataType = attribute.getDataType();
+          int columnCount = dataType.getColumnCount(null);
+          if (columnCount == 1) {
+            throw new WurbelException("datatype '" + dataType + "' in path '" + path + "' is not a multi-column type");
+          }
+          if (createSetter) {
+            throw new WurbelException("multi-column datatypes such as '" + dataType + "' in path '" + path + "' are immutable");
+          }
+          boolean found = false;
+          for (int i = 0; i < columnCount; i++) {
+            String columnAlias = dataType.getColumnAlias(i);
+            if (columnAlias.equalsIgnoreCase(column)) {
+              found = true;
+              buf.append(dataType.getColumnGetter(i, column));
+              break;
+            }
+          }
+          if (!found) {
+            throw new WurbelException("no such datatype column '" + column + "' in path '" + path + "'");
+          }
+        }
+        else {
+          if (createSetter) {
+            buf.append(attribute.getSetterName());
+          }
+          else {
+            buf.append(attribute.getGetterName());
+          }
+        }
+      }
+      tokenIndex++;
+    }
+    return buf.toString();
+  }
+
 }
