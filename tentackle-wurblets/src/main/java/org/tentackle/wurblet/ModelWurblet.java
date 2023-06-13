@@ -1050,4 +1050,19 @@ public class ModelWurblet extends AbstractJavaWurblet {
     return buf.toString();
   }
 
+
+  /**
+   * Gets the non-primitive java type string of an attribute.
+   *
+   * @param attribute the attribute
+   * @return the java type as a string
+   * @throws ModelException if type conversion failed
+   */
+  public String getNonPrimitiveJavaType(Attribute attribute) throws ModelException {
+    DataType<?> dataType = attribute.getDataType();
+    return dataType.isPrimitive() ?
+           dataType.toNonPrimitive().getJavaType() :
+           attribute.getJavaType();
+  }
+
 }
