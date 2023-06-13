@@ -86,7 +86,7 @@ For more options, see {\@link DbModelWurblet}.
       udk = getEntity().getUniqueDomainKey();
       if (!udk.isEmpty()) {
         if (udk.size() == 1) {
-          udkType = udk.get(0).getJavaType();
+          udkType = getNonPrimitiveJavaType(udk.get(0));
           udkName = udk.get(0).getName();
           udkSuffix = udk.get(0).getMethodNameSuffix();
         }
@@ -126,7 +126,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
       for (WurbletArgument key: getExpressionArguments()) {
         String name = key.getMethodArgumentName();
-        String type = key.getAttribute().getJavaType();
+        String type = getNonPrimitiveJavaType(key.getAttribute());
 ]@
     private static final PdoCacheIndex<? extends @(pdoName)@<?>, @(type)@> @(name.toUpperCase(Locale.ROOT) + "_INDEX")@ = create@(StringHelper.firstToUpper(name))@Index();
 @[
@@ -170,7 +170,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
       for (WurbletArgument key: getExpressionArguments()) {
         String name = key.getMethodArgumentName();
-        String type = key.getAttribute().getJavaType();
+        String type = getNonPrimitiveJavaType(key.getAttribute());
         String suffix = Character.toUpperCase(name.charAt(0)) + name.substring(1);
         if (isRemote()) {
           RemoteIncludes genInc = new RemoteIncludes(this);
@@ -285,7 +285,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
       for (WurbletArgument key: getExpressionArguments()) {
         String name = key.getMethodArgumentName();
-        String type = key.getAttribute().getJavaType();
+        String type = getNonPrimitiveJavaType(key.getAttribute());
 ]@
     private static final PdoCacheIndex<@(pdoName)@, @(type)@> @(name.toUpperCase(Locale.ROOT) + "_INDEX")@ = create@(StringHelper.firstToUpper(name))@Index();
 @[
@@ -328,7 +328,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
       for (WurbletArgument key: getExpressionArguments()) {
         String name = key.getMethodArgumentName();
-        String type = key.getAttribute().getJavaType();
+        String type = getNonPrimitiveJavaType(key.getAttribute());
         String suffix = Character.toUpperCase(name.charAt(0)) + name.substring(1);
         if (isRemote()) {
           RemoteIncludes genInc = new RemoteIncludes(this);
@@ -531,7 +531,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
     for (WurbletArgument key: getExpressionArguments()) {
       String name = key.getMethodArgumentName();
-      String type = key.getAttribute().getJavaType();
+      String type = getNonPrimitiveJavaType(key.getAttribute());
       String suffix = Character.toUpperCase(name.charAt(0)) + name.substring(1);
       String indexCast = getEntity().isAbstract() ? ("(PdoCacheIndex<T, " + type + ">) ") : "";
       String indexName = "CacheHolder." + name.toUpperCase(Locale.ROOT) + "_INDEX";
