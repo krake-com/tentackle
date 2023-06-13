@@ -65,24 +65,29 @@ public class IndexPrinter {
     }
     buf.append("index ").append(index.getName()).append(" := ");
     boolean needComma = false;
-    for (IndexAttribute attr: index.getAttributes()) {
+    for (IndexAttribute indexAttribute: index.getAttributes()) {
       if (needComma) {
         buf.append(", ");
       }
       else {
         needComma = true;
       }
-      if (attr.isDescending()) {
+      if (indexAttribute.isDescending()) {
         buf.append('-');
       }
       else {
         buf.append('+');
       }
-      if (attr.getFunctionName() != null) {
-        buf.append(attr.getFunctionName()).append('(');
+      if (indexAttribute.getFunctionName() != null) {
+        buf.append(indexAttribute.getFunctionName()).append('(');
       }
-      buf.append(attr.getAttribute().getColumnName());
-      if (attr.getFunctionName() != null) {
+      String colName = indexAttribute.getAttribute().getColumnName();
+      buf.append(colName);
+      if (!colName.equals(indexAttribute.getColumnName())) {
+        // multi-column type
+        buf.append('#').append(indexAttribute.getColumnName().substring(colName.length()));
+      }
+      if (indexAttribute.getFunctionName() != null) {
         buf.append(')');
       }
     }

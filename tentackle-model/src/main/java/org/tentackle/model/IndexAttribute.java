@@ -33,6 +33,15 @@ public interface IndexAttribute {
   Attribute getAttribute();
 
   /**
+   * Gets the column name.<br>
+   * For single-column data types: the column name of the attribute.
+   * For multi-column data types: the corresponding column name within the data type.
+   *
+   * @return the column name
+   */
+  String getColumnName();
+
+  /**
    * Gets the name of the function.
    *
    * @return the function name, null if no function-based index

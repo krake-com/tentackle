@@ -184,7 +184,7 @@ public class IndexMigrator {
           IndexAttribute indexAttribute = modelIndex.getAttributes().get(position);
           IndexColumnMetaData indexColumn = dbIndex.getColumns().get(position);
           if (indexAttribute.isDescending() != indexColumn.isDescending() ||
-              !indexAttribute.getAttribute().getColumnName().equals(indexColumn.getColumnName()) ||
+              !indexAttribute.getColumnName().equals(indexColumn.getColumnName()) ||
               !Objects.equals(indexAttribute.getFunctionName(), indexColumn.getFunctionName())) {
             different = true;
             break;
