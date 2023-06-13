@@ -185,9 +185,6 @@ For more options, see {\@link ModelWurblet}.
     Set<String> declaredArgSet = new HashSet<>();   // to avoid duplicates if args= is used
 
     for (Relation rel: getEntity().getReferencingRelations()) {
-      if (rel.getAccessScope() != AccessScope.PUBLIC && rel.getNmName() == null) {
-        continue;   // skip non-public in interfaces, except the N:M relations
-      }
       if (rel.getRelationType() == RelationType.LIST) {
         Attribute attribute = rel.getForeignAttribute();
         if (attribute != null) {

@@ -41,7 +41,7 @@ public enum AccessScope {
 
   @Override
   public String toString() {
-    return name().toLowerCase(Locale.ROOT);
+    return this == PACKAGE ? "" : name().toLowerCase(Locale.ROOT);
   }
 
 }
