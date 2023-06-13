@@ -259,10 +259,10 @@ public class CodeFactory {
     for (IndexAttribute indexAttribute : index.getAttributes()) {
       String indexPart;
       if (indexAttribute.getFunctionName() != null) {
-        indexPart = indexAttribute.getFunctionName() + "(" + indexAttribute.getAttribute().getColumnName() + ")";
+        indexPart = indexAttribute.getFunctionName() + "(" + indexAttribute.getColumnName() + ")";
       }
       else {
-        indexPart = indexAttribute.getAttribute().getColumnName();
+        indexPart = indexAttribute.getColumnName();
       }
       if (indexAttribute.isDescending()) {
         columnNames[attributeCount] = "-" + indexPart;

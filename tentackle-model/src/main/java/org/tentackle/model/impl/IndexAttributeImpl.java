@@ -32,6 +32,7 @@ public class IndexAttributeImpl implements IndexAttribute {
   private final Index index;
 
   private Attribute attribute;
+  private String columnName;
   private String functionName;
   private boolean descending;
 
@@ -60,6 +61,11 @@ public class IndexAttributeImpl implements IndexAttribute {
   }
 
   @Override
+  public String getColumnName() {
+    return columnName;
+  }
+
+  @Override
   public String getFunctionName() {
     return functionName;
   }
@@ -70,8 +76,9 @@ public class IndexAttributeImpl implements IndexAttribute {
   }
 
 
-  public void setAttribute(Attribute attribute) {
+  public void setAttributeAndColumnName(Attribute attribute, String columnName) {
     this.attribute = attribute;
+    this.columnName = columnName;
   }
 
   public void setFunctionName(String functionName) {

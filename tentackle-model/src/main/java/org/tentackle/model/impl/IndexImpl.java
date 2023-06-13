@@ -31,6 +31,7 @@ import org.tentackle.model.Relation;
 import org.tentackle.model.SourceInfo;
 import org.tentackle.model.parse.ConfigurationLine;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.DataType;
 import org.tentackle.sql.SqlNameType;
 
 import java.util.ArrayList;
@@ -56,7 +57,8 @@ import java.util.StringTokenizer;
  * <ul>
  *   <li>{@code name}: is the index name (the table-name will be prepended, separated by an underscore)</li>
  *   <li>{@code column}: is either the database column-name of the entity attribute name. Columns of embedded entities
- *   are defined by prepending the corresponding dotted path to the column.</li>
+ *   are defined by prepending the corresponding dotted path to the column. For multi-column types the
+ *   column consists of the attribute's column name, followed by a hash, followed by the column name within the datatype.</li>
  *   <li>{@code function}: is a function name</li>
  *   <li>{@code ASC} or {@code +} for ascending order (default)</li>
  *   <li>{@code DESC} or {@code -} for descending order</li>
@@ -67,6 +69,7 @@ import java.util.StringTokenizer;
  *   unique index udk := code
  *   index locid := location_id desc name
  *   index ucmt := -upper(comment)
+ *   index xpos := position#x
  * </pre>
  *
  * @author harald
@@ -255,17 +258,42 @@ public class IndexImpl implements Index {
             attrEntity = embeddingRelation.getForeignEntity();
           }
 
+          // in case the column belongs to a multi-column datatype
+          String attrName = column;
+          int sepNdx = column.indexOf('#');
+          if (sepNdx >= 0 && sepNdx < column.length() - 1) {
+            attrName = column.substring(0, sepNdx);
+            column = column.substring(sepNdx + 1);
+          }
+
           // check if column name exists
           for (Attribute attribute : attrEntity.getAttributes()) {
-            if (attribute.getColumnName().equals(column) ||
-                attribute.getName().equals(column)) {
+            if (attribute.getColumnName().equals(attrName) ||
+                attribute.getName().equals(attrName)) {
               // found
               if (embeddingRelation != null) {
                 attribute = attribute.createEmbedded(attrEntity, embeddingRelation.getPathName() + attribute.getName(),
                 embeddingRelation.getColumnPrefixPath() + attribute.getColumnName());
               }
               indexAttribute = factory.createIndexAttribute(this);
-              indexAttribute.setAttribute(attribute);
+              DataType<?> dataType = attribute.getEffectiveDataType();
+              String columnName = attribute.getColumnName();
+              int columnCount = dataType.getColumnCount(null);
+              if (columnCount > 1) {
+                boolean colFound = false;
+                for (int i=0; i < columnCount; i++) {
+                  String suffix = dataType.getColumnSuffix(null, i).orElse("");
+                  if (suffix.equals(column) || dataType.getColumnAlias(i).equals(column)) {
+                    columnName = attribute.getColumnName() + suffix;
+                    colFound = true;
+                    break;
+                  }
+                }
+                if (!colFound) {
+                  throw sourceLine.createModelException("no such column '" + column + "' in datatype " + dataType);
+                }
+              }
+              indexAttribute.setAttributeAndColumnName(attribute, columnName);
               indexAttribute.setFunctionName(function);
               if (descending != null) {
                 indexAttribute.setDescending(descending);
@@ -375,6 +403,9 @@ public class IndexImpl implements Index {
     if (getEntity().getOptions().isProvided()) {
       throw createModelException("[PROVIDED] entities cannot have index definitions");
     }
+    if (getEntity().isEmbedded()) {
+      throw createModelException(getEntity() + " is embedded -> consider index definition for the *embedding* entity");
+    }
     if (StringHelper.isAllWhitespace(getName())) {
       throw createModelException("missing index name");
     }
@@ -462,12 +493,8 @@ public class IndexImpl implements Index {
         for (int position = 0; position < getAttributes().size(); position++) {
           IndexAttribute indexAttribute = getAttributes().get(position);
           IndexAttribute otherAttribute = otherIndex.getAttributes().get(position);
-          Attribute indexAttr = indexAttribute.getAttribute();
-          Attribute otherAttr = otherAttribute.getAttribute();
-          String indexColumnName = indexAttr == null ? null : indexAttr.getColumnName();
-          String otherColumnName = otherAttr == null ? null : otherAttr.getColumnName();
           if (indexAttribute.isDescending() != otherAttribute.isDescending() ||
-              !Objects.equals(indexColumnName, otherColumnName) ||
+              !Objects.equals(indexAttribute.getColumnName(), otherAttribute.getColumnName()) ||
               !Objects.equals(indexAttribute.getFunctionName(), otherAttribute.getFunctionName())) {
             logicallyEqual = false;
             break;
