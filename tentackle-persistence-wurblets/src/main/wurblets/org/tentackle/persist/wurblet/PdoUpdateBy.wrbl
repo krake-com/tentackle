@@ -36,6 +36,7 @@ For more options, see {\@link DbModelWurblet}.
     for (String arg: getOptionArgs())  {
       if (arg.equals("private")) {
         scope = "private";
+        noif = true;
       }
       else if (arg.equals("noif")) {
         noif = true;
@@ -157,7 +158,7 @@ For more options, see {\@link DbModelWurblet}.
   }
 
 @[
-    if (classVar.length() == 0) {
+    if (classVar.isEmpty()) {
 ]@
 
   private static final StatementId @(statementId)@ = new StatementId();

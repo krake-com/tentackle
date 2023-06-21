@@ -58,6 +58,7 @@ For more options, see {\@link DbModelWurblet}.
     for (String arg: getOptionArgs())  {
       if (arg.equals("private")) {
         scope = "private";
+        noif = true;
       }
       else if (arg.equals("sort")) {
         if (isWithDefaultSorting()) {

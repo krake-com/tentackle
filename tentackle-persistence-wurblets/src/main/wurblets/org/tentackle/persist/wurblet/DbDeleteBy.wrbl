@@ -103,7 +103,7 @@ For more options, see {\@link DbModelWurblet}.
     return st.executeUpdate();
   }
 @[
-    if (classVar.length() == 0) {
+    if (classVar.isEmpty()) {
 ]@
 
   private static final StatementId @(statementId)@ = new StatementId();
