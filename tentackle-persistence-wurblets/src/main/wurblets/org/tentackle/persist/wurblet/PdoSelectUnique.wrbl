@@ -33,6 +33,8 @@ For more options, see {\@link DbModelWurblet}.
     String pdoType    = pdoName;
     String returnType = pdoName;
     String poType     = className;
+    String classVar   = null;
+
     if (isGenerified()) {
       returnType = "T";
       poType = "P";
@@ -68,11 +70,21 @@ For more options, see {\@link DbModelWurblet}.
       else if (arg.startsWith("append=")) {
         append = arg.substring(7);
       }
+      else if (arg.startsWith("classvar="))  {
+        classVar = arg.substring(9);
+      }
     }
 
     if (scope.equals("private")) {
       setRemote(false);
       noif = true;
+    }
+
+    if (classVar == null) {
+      classVar = "";
+    }
+    else  {
+      classVar += ".";    // add dot to access class var
     }
 
     if (methodName == null) {
@@ -94,11 +106,6 @@ For more options, see {\@link DbModelWurblet}.
     boolean withJoins = !joinPaths.isEmpty();
     boolean needSuppressWarnings = withJoins && isAbstractJoinPath(joinPaths);
 
-]@
-
-  private static final StatementId @(statementId)@ = new StatementId();
-
-@[
     if (!noif) {
 ]@
   \@Override
@@ -187,7 +194,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
     }
 ]@
-    PreparedStatementWrapper st = getPreparedStatement(@(statementId)@,
+    PreparedStatementWrapper st = getPreparedStatement(@(classVar)@@(statementId)@,
       b -> {
         StringBuilder sql = createSelectAllInnerSql(b);
 @{include $currentDir/genwhere.incl}@
@@ -248,5 +255,12 @@ For more options, see {\@link DbModelWurblet}.
 ]@
   }
 @[
+    if (classVar.isEmpty()) {
+]@
+
+  private static final StatementId @(statementId)@ = new StatementId();
+
+@[
+    }
   }
 ]@

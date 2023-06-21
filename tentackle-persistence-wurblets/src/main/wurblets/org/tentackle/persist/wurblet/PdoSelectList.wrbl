@@ -37,6 +37,8 @@ For more options, see {\@link DbModelWurblet}.
     String pdoName    = getPdoClassName();
     String pdoType    = pdoName;
     String poType     = className;
+    String classVar   = null;
+
     if (isGenerified()) {
       pdoType = "T";
       poType = "P";
@@ -92,11 +94,21 @@ For more options, see {\@link DbModelWurblet}.
       else if (arg.startsWith("append=")) {
         append = arg.substring(7);
       }
+      else if (arg.startsWith("classvar="))  {
+        classVar = arg.substring(9);
+      }
     }
 
     if (scope.equals("private")) {
       setRemote(false);
       noif = true;
+    }
+
+    if (classVar == null) {
+      classVar = "";
+    }
+    else  {
+      classVar += ".";    // add dot to access class var
     }
 
     if (resultSet) {
@@ -137,11 +149,6 @@ For more options, see {\@link DbModelWurblet}.
     String rmiListType = cursor != null ? cursor : ((isTracked() ? "TrackedList" : "List") + "<" + (bounded ? "? extends " : "") + pdoType + ">");
     String alias = getEntity().getTopSuperEntity().getTableAlias();
 
-]@
-
-  private static final StatementId @(statementId)@ = new StatementId();
-
-@[
     if (!noif) {
 ]@
   \@Override
@@ -286,7 +293,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
     }
 ]@
-    PreparedStatementWrapper st = getPreparedStatement(@(statementId)@,
+    PreparedStatementWrapper st = getPreparedStatement(@(classVar)@@(statementId)@,
       b -> {
         StringBuilder sql = createSelectAllInnerSql(b);
 @{include $currentDir/genwhere.incl}@
@@ -387,5 +394,12 @@ For more options, see {\@link DbModelWurblet}.
 ]@
   }
 @[
+    if (classVar.isEmpty()) {
+]@
+
+  private static final StatementId @(statementId)@ = new StatementId();
+
+@[
+    }
   }
 ]@
