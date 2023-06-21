@@ -21,6 +21,8 @@ package org.tentackle.model;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.DataType;
 
+import java.util.List;
+
 /**
  * An attribute.
  * <p>
@@ -137,11 +139,21 @@ public interface Attribute extends ModelElement {
   Attribute createEmbedded(Entity embeddingEntity, String pathName, String columnName);
 
   /**
-   * Gets the embedding entity.
+   * Gets the embedding entity.<br>
+   * Please notice that the embedding entity is determined by the specific relation,
+   * and {@link #isEmbedded()} just means that the attribute is part of an embeddable entity.
    *
    * @return the embedding entity, null if not an embedded attribute
    */
   Entity getEmbeddingEntity();
+
+  /**
+   * Gets the path of embedding entities.<br>
+   * The first entity is non-embedded.
+   *
+   * @return the embedding path (never empty), null if attribute is not embedded
+   */
+  List<Entity> getEmbeddingPath();
 
   /**
    * Gets the pathname.<br>
@@ -264,4 +276,3 @@ public interface Attribute extends ModelElement {
   String toMethodArgument(String value) throws ModelException;
 
 }
-

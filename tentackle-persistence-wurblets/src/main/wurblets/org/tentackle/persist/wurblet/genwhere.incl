@@ -163,16 +163,25 @@
                 buf.append(";\n");
               }
 
-              String compKeyClass = deriveClassNameForEntity(attr.getEntity());
+              String compKeyClass = deriveClassNameForEntity(attr.getEmbeddingPath() == null ? attr.getEntity() : attr.getEmbeddingPath().get(0));
               for (int columnIndex = 0; columnIndex < arg.getDataType().getColumnCount(null); columnIndex++) {
                 if (columnIndex > 0 && arg.getColumnIndex() == null) {
                   buf.append("        sql.append(Backend.SQL_AND);\n");
                 }
                 if (arg.getColumnIndex() == null || columnIndex == arg.getColumnIndex()) {
-                  buf.append("        sql.append(").append(compKeyClass).
-                      append(".CLASSVARIABLES.getColumnName(").
-                      append(compKeyClass).append('.').append(getColumnNameConstant(attr, columnIndex)).append("))\n").
-                      append("           ").append(createRelopCode(arg)).append(";\n");
+                  buf.append("        sql.append(").append(compKeyClass).append(".CLASSVARIABLES.getColumnName(");
+                  if (attr.getEmbeddingPath() != null) {
+                    try {
+                      buf.append('"').append(attr.getColumnName(null, columnIndex)).append("\"))\n");
+                    }
+                    catch(ModelException mx) {
+                      throw new WurbelException("cannot determine embedded column name", mx);
+                    }
+                  }
+                  else {
+                    buf.append(compKeyClass).append('.').append(getColumnNameConstant(attr, columnIndex)).append("))\n");
+                  }
+                  buf.append("           ").append(createRelopCode(arg)).append(";\n");
                 }
               }
             }
