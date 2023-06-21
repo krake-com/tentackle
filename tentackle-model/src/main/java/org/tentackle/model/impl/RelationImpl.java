@@ -145,7 +145,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
   private final Entity entity;
   private final SourceInfo sourceInfo;
 
-  private Entity embeddingEntity;
+  private List<Entity> embeddingPath;
   private String pathName;
   private String columnPrefixPath;
   private int ordinal;
@@ -216,7 +216,10 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
   @Override
   public RelationImpl createEmbedded(Entity embeddingEntity, String pathName, String columnPrefixPath) {
     RelationImpl relation = clone();
-    relation.embeddingEntity = embeddingEntity;
+    if (relation.embeddingPath == null) {
+      relation.embeddingPath = new ArrayList<>();
+    }
+    relation.embeddingPath.add(embeddingEntity);
     relation.pathName = pathName;
     relation.columnPrefixPath = columnPrefixPath;
     if (!relation.methodArgs.isEmpty()) {
@@ -623,7 +626,12 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
 
   @Override
   public Entity getEmbeddingEntity() {
-    return embeddingEntity;
+    return embeddingPath == null ? null : embeddingPath.get(embeddingPath.size() - 1);
+  }
+
+  @Override
+  public List<Entity> getEmbeddingPath() {
+    return embeddingPath;
   }
 
   @Override

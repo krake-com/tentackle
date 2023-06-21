@@ -153,11 +153,21 @@ public interface Relation extends ModelElement {
   Relation createEmbedded(Entity embeddingEntity, String pathName, String columnPrefixPath);
 
   /**
-   * Gets the embedding entity.
+   * Gets the embedding entity.<br>
+   * Please notice that the embedding entity is determined by the specific relation path,
+   * and {@link #isEmbedded()} just means that the relation is part of an embeddable entity.
    *
    * @return the embedding entity, null if not an embedded relation
    */
   Entity getEmbeddingEntity();
+
+  /**
+   * Gets the path of embedding entities.<br>
+   * The first entity is non-embedded.
+   *
+   * @return the embedding path (never empty), null if relation is not embedded
+   */
+  List<Entity> getEmbeddingPath();
 
   /**
    * Gets the pathname.<br>

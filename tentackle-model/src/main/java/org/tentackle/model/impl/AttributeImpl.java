@@ -37,6 +37,8 @@ import org.tentackle.sql.DataType;
 import org.tentackle.sql.DataTypeFactory;
 import org.tentackle.sql.SqlNameType;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -51,7 +53,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl>, Clon
   private final SourceInfo sourceInfo;
   private final boolean implicit;
 
-  private Entity embeddingEntity;
+  private List<Entity> embeddingPath;
   private AttributeOptionsImpl options;
   private AttributeLine sourceLine;
   private int ordinal;
@@ -100,7 +102,10 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl>, Clon
   @Override
   public Attribute createEmbedded(Entity embeddingEntity, String pathName, String columnName) {
     AttributeImpl attribute = clone();
-    attribute.embeddingEntity = embeddingEntity;
+    if (attribute.embeddingPath == null) {
+      attribute.embeddingPath = new ArrayList<>();
+    }
+    attribute.embeddingPath.add(embeddingEntity);
     attribute.options = options.clone(attribute);   // clone with updated reference to cloned attribute
     attribute.pathName = pathName;
     attribute.columnName = columnName;
@@ -295,7 +300,12 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl>, Clon
 
   @Override
   public Entity getEmbeddingEntity() {
-    return embeddingEntity;
+    return embeddingPath == null ? null : embeddingPath.get(embeddingPath.size() - 1);
+  }
+
+  @Override
+  public List<Entity> getEmbeddingPath() {
+    return embeddingPath;
   }
 
   @Override
