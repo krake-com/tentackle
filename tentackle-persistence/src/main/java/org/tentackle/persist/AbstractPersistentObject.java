@@ -3149,11 +3149,11 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @param context the local domain context
    * @param obj the object
    */
-  public void configureRemoteObject(DomainContext context, T obj) {
+  public void configureRemoteObject(DomainContext context, PersistentDomainObject<?> obj) {
     if (obj != null) {
       // do that without invocation handling (faster)
       @SuppressWarnings("unchecked")
-      AbstractPersistentObject<T,P> po = (AbstractPersistentObject<T,P>) obj.getPersistenceDelegate();
+      AbstractPersistentObject<?,?> po = (AbstractPersistentObject<?,?>) obj.getPersistenceDelegate();
       if (po.isRootEntity()) {
         // root entities get their own root-context
         if (!context.isSessionThreadLocal()) {
@@ -3182,9 +3182,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @param context the local domain context
    * @param objects the objects to configure
    */
-  public void configureRemoteObjects(DomainContext context, Collection<T> objects) {
+  public void configureRemoteObjects(DomainContext context, Collection<? extends PersistentDomainObject<?>> objects) {
     if (objects != null) {
-      for (T obj: objects) {
+      for (PersistentDomainObject<?> obj: objects) {
         configureRemoteObject(context, obj);
       }
     }
