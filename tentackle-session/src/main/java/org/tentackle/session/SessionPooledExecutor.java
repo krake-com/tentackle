@@ -169,11 +169,15 @@ public class SessionPooledExecutor {
     for (Supplier<V> task : tasks) {
       submit(task,
              result -> {
-               results.put(task, result);
+               if (result != null) {
+                 results.put(task, result);
+               }
                latch.countDown();
              },
              failure -> {
-               failures.put(task, failure);
+               if (failure != null) {
+                 failures.put(task, failure);
+               }
                latch.countDown();
              });
     }
