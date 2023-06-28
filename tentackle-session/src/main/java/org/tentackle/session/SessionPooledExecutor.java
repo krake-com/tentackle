@@ -185,6 +185,17 @@ public class SessionPooledExecutor {
 
 
   /**
+   * Gets the size of the thread pool.<br>
+   * The default implementation returns the size of the session pool.
+   *
+   * @return the fixed number of threads or unlimited dynamic size if &le; 0
+   * @see #createExecutorService()
+   */
+  protected int getThreadPoolSize() {
+    return sessionPool.getSize();
+  }
+
+  /**
    * Creates the executor service.<br>
    * For unlimited session pools the thread pool will also be unlimited and
    * the number of threads will be adjusted automatically, i.e. new threads are created when
@@ -192,12 +203,13 @@ public class SessionPooledExecutor {
    * For limited session pools a fixed size thread pool is used and tasks queued, if all threads are in use.
    *
    * @return the executor service
+   * @see #getThreadPoolSize()
    */
   protected ExecutorService createExecutorService() {
-    int maxSize = sessionPool.getMaxSize();
-    return maxSize <= 0 ?
+    int threadPoolSize = getThreadPoolSize();
+    return threadPoolSize <= 0 ?
            Executors.newCachedThreadPool(this::createThread) :
-           Executors.newFixedThreadPool(maxSize, this::createThread);
+           Executors.newFixedThreadPool(threadPoolSize, this::createThread);
   }
 
   /**
