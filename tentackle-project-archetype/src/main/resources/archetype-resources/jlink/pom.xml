@@ -54,6 +54,40 @@
 
     <plugins>
       <plugin>
+        <groupId>org.tentackle</groupId>
+        <artifactId>tentackle-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>properties</id>
+            <goals>
+              <goal>properties</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <verbosity>info</verbosity>
+          <propertyDescriptors>
+            <propertyDescriptor>
+              <input>${symbol_dollar}{dbPasswd}</input>
+              <converter>@org.tentackle.common.Cryptor</converter>
+              <property>encryptedPasswd</property>
+            </propertyDescriptor>
+            <propertyDescriptor>
+              <input>${symbol_dollar}{cert.password}</input>
+              <converter>@org.tentackle.common.Cryptor</converter>
+              <property>encryptedCertPasswd</property>
+            </propertyDescriptor>
+          </propertyDescriptors>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>${groupId}</groupId>
+            <artifactId>${rootArtifactId}-common</artifactId>
+            <version>${symbol_dollar}{project.version}</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
         <configuration>
