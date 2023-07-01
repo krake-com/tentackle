@@ -29,6 +29,7 @@ import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.persist.TokenLock;
 import org.tentackle.session.ClassId;
+import org.tentackle.session.Persistent;
 import org.tentackle.session.TableName;
 import org.tentackle.sql.Backend;
 
@@ -226,6 +227,7 @@ public class DbTokenLock extends AbstractDbObject<DbTokenLock> implements TokenL
    *
    * @return class ID of the PDO
    */
+  @Persistent(ordinal=0, comment="class ID of the PDO")
   public int getPdoClassId()    {
     return pdoClassId;
   }
@@ -245,6 +247,7 @@ public class DbTokenLock extends AbstractDbObject<DbTokenLock> implements TokenL
    *
    * @return userId of token lock holder
    */
+  @Persistent(ordinal=1, comment="userId of token lock holder")
   public long getLockedBy()    {
     return lockedBy;
   }
@@ -264,6 +267,7 @@ public class DbTokenLock extends AbstractDbObject<DbTokenLock> implements TokenL
    *
    * @return time since token lock given to user
    */
+  @Persistent(ordinal=2, comment="time since token lock given to user")
   public Timestamp getLockedSince()    {
     return lockedSince;
   }
@@ -285,6 +289,7 @@ public class DbTokenLock extends AbstractDbObject<DbTokenLock> implements TokenL
    *
    * @return time when token lock expires
    */
+  @Persistent(ordinal=3, comment="time when token lock expires")
   public Timestamp getLockExpiry()    {
     return lockExpiry;
   }

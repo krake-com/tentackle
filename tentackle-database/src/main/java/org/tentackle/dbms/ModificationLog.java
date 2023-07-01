@@ -407,6 +407,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    *
    * @return object id
    */
+  @Persistent(ordinal=0, comment="object id")
   public long getObjectId()    {
     return objectId;
   }
@@ -426,6 +427,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    *
    * @return object class id
    */
+  @Persistent(ordinal=1, comment="object class id")
   public int getObjectClassId()    {
     return objectClassId;
   }
@@ -445,6 +447,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    *
    * @return object classname (if classid == 0)
    */
+  @Persistent(ordinal=2, comment="object classname (if classid == 0)")
   public String getObjectClassName()    {
     return objectClassName;
   }
@@ -464,6 +467,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    *
    * @return transaction id (optional)
    */
+  @Persistent(ordinal=3, comment="transaction id (optional)")
   public long getTxId()    {
     return txId;
   }
@@ -483,6 +487,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    *
    * @return transaction name (optional)
    */
+  @Persistent(ordinal=4, comment="transaction name (optional)")
   public String getTxName()    {
     return txName;
   }
@@ -502,6 +507,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    *
    * @return modification type
    */
+  @Persistent(ordinal=5, comment="modification type")
   public ModificationType getModType()    {
     return modType;
   }
@@ -521,6 +527,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    *
    * @return time of event
    */
+  @Persistent(ordinal=6, comment="time of event")
   public Timestamp getWhen()    {
     return when;
   }
@@ -542,6 +549,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    *
    * @return user id
    */
+  @Persistent(ordinal=7, comment="user id")
   public long getUserId()    {
     return userId;
   }
@@ -566,6 +574,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    *
    * @return processing time
    */
+  @Persistent(ordinal=9, comment="processing time")
   public Timestamp getProcessed()    {
     return processed;
   }

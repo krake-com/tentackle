@@ -28,6 +28,7 @@ import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.dbms.StatementId;
 import org.tentackle.misc.TrackedArrayList;
 import org.tentackle.session.ClassId;
+import org.tentackle.session.Persistent;
 import org.tentackle.session.TableName;
 import org.tentackle.sql.Backend;
 
@@ -342,6 +343,7 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
    *
    * @return ID of the preferences-node
    */
+  @Persistent(ordinal=1, comment="ID of the preferences-node")
   public long getNodeId()    {
     return nodeId;
   }
@@ -363,6 +365,7 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
    *
    * @return ID of the root-node
    */
+  @Persistent(ordinal=2, comment="ID of the root-node")
   public long getRootNodeId()    {
     return rootNodeId;
   }
@@ -384,6 +387,7 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
    *
    * @return name of the key
    */
+  @Persistent(ordinal=3, comment="name of the key")
   public String getKey()    {
     return key;
   }
@@ -405,6 +409,7 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
    *
    * @return value of the key
    */
+  @Persistent(ordinal=4, comment="value of the key")
   public String getValue()    {
     return value;
   }
@@ -465,4 +470,3 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
   //</editor-fold>//GEN-END:fieldNames
 
 }
-
