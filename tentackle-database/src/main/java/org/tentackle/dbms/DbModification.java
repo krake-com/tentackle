@@ -24,6 +24,7 @@ import org.tentackle.log.Logger;
 import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.session.ClassId;
 import org.tentackle.session.PersistenceException;
+import org.tentackle.session.Persistent;
 import org.tentackle.session.TableName;
 import org.tentackle.session.ThreadLocalSessionHolder;
 import org.tentackle.sql.Backend;
@@ -226,6 +227,7 @@ public class DbModification extends AbstractDbObject<DbModification> {
    *
    * @return the tablename
    */
+  @Persistent(ordinal=0, comment="the tablename")
   public String getTrackedName()    {
     return trackedName;
   }

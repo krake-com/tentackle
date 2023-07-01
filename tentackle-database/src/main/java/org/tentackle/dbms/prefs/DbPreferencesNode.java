@@ -28,6 +28,7 @@ import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.dbms.StatementId;
 import org.tentackle.misc.TrackedArrayList;
 import org.tentackle.session.ClassId;
+import org.tentackle.session.Persistent;
 import org.tentackle.session.TableName;
 import org.tentackle.sql.Backend;
 
@@ -342,6 +343,7 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
    *
    * @return name of user, null if system
    */
+  @Persistent(ordinal=1, comment="name of user, null if system")
   public String getUser()    {
     return user;
   }
@@ -363,6 +365,7 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
    *
    * @return name of the node
    */
+  @Persistent(ordinal=2, comment="name of the node")
   public String getName()    {
     return name;
   }
@@ -384,6 +387,7 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
    *
    * @return ID of parent-node, 0 if root-node
    */
+  @Persistent(ordinal=3, comment="ID of parent-node, 0 if root-node")
   public long getParentId()    {
     return parentId;
   }
@@ -405,6 +409,7 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
    *
    * @return ID of the root-node
    */
+  @Persistent(ordinal=4, comment="ID of the root-node")
   public long getRootNodeId()    {
     return rootNodeId;
   }
@@ -493,4 +498,3 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
   //</editor-fold>//GEN-END:fieldNames
 
 }
-
