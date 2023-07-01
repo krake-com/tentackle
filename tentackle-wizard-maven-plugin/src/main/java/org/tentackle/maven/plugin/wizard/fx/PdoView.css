@@ -6,3 +6,7 @@
 .diff-mismatch:selected {
     -fx-background-color: #9191ff;
 }
+
+.implicit-attribute {
+    -fx-font-weight: bold;
+}
