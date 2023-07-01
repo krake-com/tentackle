@@ -18,10 +18,6 @@
 
 package org.tentackle.maven.plugin.wizard.fx;
 
-import javafx.geometry.Pos;
-import javafx.scene.Node;
-import javafx.scene.control.Tooltip;
-
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.rdc.GuiProvider;
@@ -30,9 +26,14 @@ import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
 import org.tentackle.fx.table.type.AbstractTableCellType;
+import org.tentackle.maven.plugin.wizard.pdodata.DataItem;
 import org.tentackle.maven.plugin.wizard.pdodata.DataNode;
 import org.tentackle.maven.plugin.wizard.pdodata.DataObject;
 import org.tentackle.pdo.PersistentDomainObject;
+
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.control.Tooltip;
 
 /**
  * Cell type to decorate the name field of a DataNode in a (tree)table.<br>
@@ -40,6 +41,8 @@ import org.tentackle.pdo.PersistentDomainObject;
  */
 @TableCellTypeService(DataNode.class)
 public class DataNodeCellType extends AbstractTableCellType<DataNode> {
+
+  private static final String STYLE_IMPLICIT = "implicit-attribute";
 
   @Override
   public void updateItem(FxTableCell<?, DataNode> tableCell, DataNode item) {
@@ -54,6 +57,11 @@ public class DataNodeCellType extends AbstractTableCellType<DataNode> {
     treeTableCell.setGraphic(getIcon(item));
     treeTableCell.setTooltip(item.getComment() == null ? null : new Tooltip(item.getComment()));
     updateAlignment(treeTableCell, Pos.BASELINE_LEFT);
+    treeTableCell.getStyleClass().remove(STYLE_IMPLICIT);
+    if (item instanceof DataItem dataItem && (dataItem.getAttribute() == null || dataItem.getAttribute().isImplicit())) {
+      // all implicit model attributes or attributes provided by the framework but not part of the model (such as classId)
+      treeTableCell.getStyleClass().add(STYLE_IMPLICIT);
+    }
   }
 
   private String getName(DataNode item) {
