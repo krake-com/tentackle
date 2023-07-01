@@ -36,6 +36,7 @@ public class DataObject implements DataNode {
   private final String comment;                         // the optional comment
   private final Relation relation;                      // composite object 1:1 relation
   private final NonCompositeRelation nmRelation;        // the optional N:M relation
+  private final boolean hidden;                         // true if object is hidden (no public method available)
   private String configurationPath;                     // the optional configuration path
 
   /**
@@ -47,8 +48,10 @@ public class DataObject implements DataNode {
    * @param nodes the items of the object, null if reference is null
    * @param relation the composite object 1:1 relation
    * @param nmRelation optional N:M relation
+   * @param hidden true if object is hidden (no public method available)
    */
-  public DataObject(PersistentDomainObject<?> pdo, String name, String comment, List<DataNode> nodes, Relation relation, NonCompositeRelation nmRelation) {
+  public DataObject(PersistentDomainObject<?> pdo, String name, String comment, List<DataNode> nodes,
+                    Relation relation, NonCompositeRelation nmRelation, boolean hidden) {
     this.pdo = pdo;
     this.type = pdo.getEffectiveClass().getSimpleName();
     this.name = name;
@@ -56,6 +59,7 @@ public class DataObject implements DataNode {
     this.nodes = nodes;
     this.relation = relation;
     this.nmRelation = nmRelation;
+    this.hidden = hidden;
   }
 
   /**
@@ -90,6 +94,11 @@ public class DataObject implements DataNode {
   @Override
   public String getComment() {
     return comment;
+  }
+
+  @Override
+  public boolean isHidden() {
+    return hidden;
   }
 
   /**

@@ -49,7 +49,8 @@ public class DataItem implements DataNode {
    * @param idOfCompositeRelation true if this an ID of a composite object relation
    * @param nonCompositeRelation the non-composite relation, may be null
    */
-  public DataItem(String type, String name, Object value, String comment, Attribute attribute, boolean idOfCompositeRelation, NonCompositeRelation nonCompositeRelation) {
+  public DataItem(String type, String name, Object value, String comment, Attribute attribute,
+                  boolean idOfCompositeRelation, NonCompositeRelation nonCompositeRelation) {
     this.type = type;
     this.name = name;
     this.value = value;
@@ -77,6 +78,11 @@ public class DataItem implements DataNode {
   @Override
   public String getName() {
     return name;
+  }
+
+  @Override
+  public boolean isHidden() {
+    return attribute == null ? false : attribute.isHidden();
   }
 
   /**

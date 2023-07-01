@@ -33,6 +33,7 @@ import org.tentackle.session.Persistent;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -57,7 +58,7 @@ public class DataNodeFactory {
    */
   public static DataObject create(PersistentDomainObject<?> pdo) {
     pdo.loadComponents(false);
-    return getDataObject(pdo, null, null, null);
+    return getDataObject(pdo, null, null, null, false);
   }
 
 
@@ -75,12 +76,17 @@ public class DataNodeFactory {
     private final Entity entity;
     private final Set<MethodInfo> methodInfos;
 
-    private ClassInfo(Class<? extends PersistentDomainObject<?>> pdoClass) {
+    private ClassInfo(Class<? extends PersistentDomainObject<?>> pdoClass, Class<?> poClass) {
       this.pdoClass = pdoClass;
       typeName = toTypeName(pdoClass);
       entity = lookupEntity(typeName);
       methodInfos = new TreeSet<>();      // sorted by name
-      for (Method method : pdoClass.getMethods()) {
+      Method[] pdoClassMethods = pdoClass.getMethods();
+      Method[] poClassMethods = poClass.getDeclaredMethods();
+      Method[] methods = new Method[pdoClassMethods.length + poClassMethods.length];
+      System.arraycopy(pdoClassMethods, 0, methods, 0, pdoClassMethods.length);
+      System.arraycopy(poClassMethods, 0, methods, pdoClassMethods.length, poClassMethods.length);
+      for (Method method : methods) {
         if (method.getParameterCount() == 0 && !method.isBridge()) {        // skip bridge methods such as List<Blah> implemented by TrackedList<Blah>
           String name = method.getName();
           Class<?> type = method.getReturnType();
@@ -96,6 +102,11 @@ public class DataNodeFactory {
           if (isGetter) {
             Persistent annotation = method.getAnnotation(Persistent.class);
             if (annotation != null && annotation.component()) {
+              boolean isHidden = false;
+              if (!Modifier.isPublic(method.getModifiers())) {
+                method.setAccessible(true);
+                isHidden = true;
+              }
               boolean isComponent = false;
               boolean isList = false;
               if (PersistentDomainObject.class.isAssignableFrom(type)) {
@@ -117,7 +128,7 @@ public class DataNodeFactory {
                   }
                 }
               }
-              methodInfos.add(new MethodInfo(name, annotation.comment(), method, type, isComponent, isList));
+              methodInfos.add(new MethodInfo(name, annotation.comment(), method, type, isComponent, isList, isHidden));
             }
           }
         }
@@ -153,14 +164,16 @@ public class DataNodeFactory {
     private final String typeName;
     private final boolean isComponent;
     private final boolean isList;
+    private final boolean isHidden;
 
-    private MethodInfo(String name, String comment, Method getter, Class<?> type, boolean isComponent, boolean isList) {
+    private MethodInfo(String name, String comment, Method getter, Class<?> type, boolean isComponent, boolean isList, boolean isHidden) {
       this.name = name;
       this.comment = comment;
       this.getter = getter;
       this.isComponent = isComponent;
       this.isList = isList;
       this.typeName = toTypeName(type);
+      this.isHidden = isHidden;
     }
 
     @Override
@@ -198,9 +211,11 @@ public class DataNodeFactory {
 
 
   @SuppressWarnings("unchecked")
-  private static DataObject getDataObject(PersistentDomainObject<?> pdo, String name, String comment, PersistentDomainObject<?> parentPdo) {
+  private static DataObject getDataObject(PersistentDomainObject<?> pdo, String name, String comment,
+                                          PersistentDomainObject<?> parentPdo, boolean hidden) {
 
-    ClassInfo classInfo = classMap.computeIfAbsent(pdo.getEffectiveClass(), ClassInfo::new);
+    ClassInfo classInfo = classMap.computeIfAbsent(pdo.getEffectiveClass(),
+                                effectiveClass -> new ClassInfo(effectiveClass, pdo.getPersistenceDelegate().getClass()));
     if (comment == null || comment.equals(classInfo.entity.getName())) {
       String entityComment = classInfo.entity.getOptions().getComment();
       if (entityComment != null) {
@@ -211,7 +226,7 @@ public class DataNodeFactory {
     List<DataNode> nodes = new ArrayList<>();
     for (MethodInfo methodInfo : classInfo.methodInfos) {
       try {
-        Object value = methodInfo.getter.invoke(pdo);
+        Object value = methodInfo.getter.invoke(pdo.getPersistenceDelegate());
         if (methodInfo.isComponent) {
           if (methodInfo.isList) {
             List<DataObject> dataObjects = new ArrayList<>();
@@ -219,30 +234,30 @@ public class DataNodeFactory {
             if (components != null) {       // should never be null, but one never knows...
               int ndx = 0;
               for (PersistentDomainObject<?> component : components) {
-                dataObjects.add(createDataObject(methodInfo.name + "[" + ndx++ + "]", methodInfo.comment, component, pdo));
+                dataObjects.add(createDataObject(methodInfo.name + "[" + ndx++ + "]", methodInfo.comment, component, pdo, false));
               }
             }
             Relation relation = classInfo.entity.getRelation(methodInfo.name, true);
             nodes.add(new DataList(methodInfo.typeName, methodInfo.name, methodInfo.comment, dataObjects, relation));
           }
           else {
-            nodes.add(createDataObject(methodInfo.name, methodInfo.comment, (PersistentDomainObject<?>) value, pdo));
+            nodes.add(createDataObject(methodInfo.name, methodInfo.comment, (PersistentDomainObject<?>) value, pdo, methodInfo.isHidden));
           }
         }
         else {
-          if ("rootId".equals(methodInfo.name) && !pdo.isRootIdProvided() ||
-              "rootClassId".equals(methodInfo.name) && !pdo.isRootClassIdProvided() ||
-              "tableSerial".equals(methodInfo.name) && !pdo.isTableSerialProvided() ||
-              "normText".equals(methodInfo.name) && !pdo.isNormTextProvided() ||
-              "editedBy".equals(methodInfo.name) && !pdo.isTokenLockProvided() ||
-              "editedSince".equals(methodInfo.name) && !pdo.isTokenLockProvided() ||
-              "editedExpiry".equals(methodInfo.name) && !pdo.isTokenLockProvided()) {
+          if (Constants.AN_ROOTID.equals(methodInfo.name) && !pdo.isRootIdProvided() ||
+              Constants.AN_ROOTCLASSID.equals(methodInfo.name) && !pdo.isRootClassIdProvided() ||
+              Constants.AN_TABLESERIAL.equals(methodInfo.name) && !pdo.isTableSerialProvided() ||
+              Constants.AN_NORMTEXT.equals(methodInfo.name) && !pdo.isNormTextProvided() ||
+              Constants.AN_EDITEDBY.equals(methodInfo.name) && !pdo.isTokenLockProvided() ||
+              Constants.AN_EDITEDSINCE.equals(methodInfo.name) && !pdo.isTokenLockProvided() ||
+              Constants.AN_EDITEDEXPIRY.equals(methodInfo.name) && !pdo.isTokenLockProvided()) {
             continue;
           }
           if (pdo.isEmbedded() && (
-              "id".equals(methodInfo.name) ||
-              "serial".equals(methodInfo.name) ||
-              "classId".equals(methodInfo.name))) {
+              Constants.AN_ID.equals(methodInfo.name) ||
+              Constants.AN_SERIAL.equals(methodInfo.name) ||
+              Constants.AN_CLASSID.equals(methodInfo.name))) {
             continue;
           }
           boolean idOfCompositeRelation = false;
@@ -329,16 +344,16 @@ public class DataNodeFactory {
       }
     }
 
-    return new DataObject(pdo, name, comment, nodes, objectRelation, nmRelation);
+    return new DataObject(pdo, name, comment, nodes, objectRelation, nmRelation, hidden);
   }
 
-  private static DataObject createDataObject(String name, String comment, PersistentDomainObject<?> pdo, PersistentDomainObject<?> parentPdo) {
+  private static DataObject createDataObject(String name, String comment, PersistentDomainObject<?> pdo, PersistentDomainObject<?> parentPdo, boolean hidden) {
     DataObject dataObject;
     if (pdo == null) {
-      dataObject = new DataObject(pdo, name, null, null, null, null);
+      dataObject = new DataObject(null, name, null, null, null, null, hidden);
     }
     else {
-      dataObject = getDataObject(pdo, name, comment, parentPdo);
+      dataObject = getDataObject(pdo, name, comment, parentPdo, hidden);
     }
     return dataObject;
   }

@@ -304,6 +304,7 @@ For more options, see {\@link DbModelWurblet}.
    *
    * \@return @(var)@ @(rel.getComment())@
    */
+  \@Persistent(ordinal=@(rel.getOrdinal())@, comment=@(StringHelper.toDoubleQuotes(rel.getComment()))@)
 @[
         }
         else {

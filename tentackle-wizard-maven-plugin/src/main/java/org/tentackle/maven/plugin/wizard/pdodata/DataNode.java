@@ -64,6 +64,13 @@ public interface DataNode {
   String getComment();
 
   /**
+   * Gets the hidden flag.
+   *
+   * @return true if object is hidden (no public method available)
+   */
+  boolean isHidden();
+
+  /**
    * Gets the optional sub nodes of this node.
    *
    * @return the nodes, null if this node has no sub nodes

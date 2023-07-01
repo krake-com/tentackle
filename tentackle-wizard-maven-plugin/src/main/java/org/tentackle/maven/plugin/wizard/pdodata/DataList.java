@@ -18,6 +18,7 @@
 
 package org.tentackle.maven.plugin.wizard.pdodata;
 
+import org.tentackle.model.AccessScope;
 import org.tentackle.model.Relation;
 
 import java.util.List;
@@ -74,6 +75,11 @@ public class DataList implements DataNode {
   @Override
   public String getComment() {
     return comment;
+  }
+
+  @Override
+  public boolean isHidden() {
+    return relation.getAccessScope() != AccessScope.PUBLIC;
   }
 
   /**
