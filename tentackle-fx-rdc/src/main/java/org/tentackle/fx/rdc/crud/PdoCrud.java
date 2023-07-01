@@ -19,34 +19,13 @@
 
 package org.tentackle.fx.rdc.crud;
 
-import javafx.application.Platform;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.collections.ObservableList;
-import javafx.collections.transformation.SortedList;
-import javafx.event.EventHandler;
-import javafx.event.EventType;
-import javafx.fxml.FXML;
-import javafx.geometry.Bounds;
-import javafx.geometry.Insets;
-import javafx.scene.Scene;
-import javafx.scene.control.TextField;
-import javafx.scene.control.Tooltip;
-import javafx.scene.control.TreeItem;
-import javafx.scene.control.TreeView;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.BorderPane;
-import javafx.stage.Modality;
-import javafx.stage.Popup;
-import javafx.stage.Stage;
-
 import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.component.FxButton;
 import org.tentackle.fx.component.FxLabel;
+import org.tentackle.fx.component.Note;
 import org.tentackle.fx.container.FxBorderPane;
 import org.tentackle.fx.container.FxHBox;
 import org.tentackle.fx.rdc.EventListenerProxy;
@@ -65,6 +44,28 @@ import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.session.NotFoundException;
 import org.tentackle.validate.ValidationFailedException;
 
+import javafx.application.Platform;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.SortedList;
+import javafx.event.EventHandler;
+import javafx.event.EventType;
+import javafx.fxml.FXML;
+import javafx.geometry.Bounds;
+import javafx.geometry.Insets;
+import javafx.scene.Node;
+import javafx.scene.Scene;
+import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.BorderPane;
+import javafx.stage.Modality;
+import javafx.stage.Popup;
+import javafx.stage.Stage;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Objects;
@@ -130,6 +131,10 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   private boolean editable;                         // editable requested by the application
   private boolean modal;                            // true if dialog is modal
   private EventListenerProxy<PdoEvent> eventProxy;  // event proxy to maintain PdoEvents registered on the View
+  private Node newIcon;                             // create new PDO
+  private Node newCopyIcon;                         // create new PDO as copy from existing one
+  private boolean shiftDown;                        // true if shift key is down
+  private boolean mouseOverNewButton;               // true if mouse over newButton
 
   private final SimpleBooleanProperty editing  = new SimpleBooleanProperty();   // is editing allowed effectively?
   private final SimpleBooleanProperty pdoIsNew = new SimpleBooleanProperty();   // pdo is new?
@@ -330,8 +335,24 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
     findButton.setGraphic(Fx.createGraphic("search"));
     findButton.setOnAction(e -> find());
 
-    newButton.setGraphic(Fx.createGraphic("new"));
+    newIcon = Fx.createGraphic("new");
+    newCopyIcon = Fx.createGraphic("copy");
+    newButton.setGraphic(newIcon);
+    newButton.setOnMouseEntered(event -> {
+      mouseOverNewButton = true;
+      updateNewButton();
+    });
+    newButton.setOnMouseExited(event -> {
+      mouseOverNewButton = false;
+      updateNewButton();
+    });
     newButton.setOnAction(e -> newPdo());
+    newButton.setOnMousePressed(event -> {
+      // onAction will not be triggered if shift-key is down during mouse click
+      if (shiftDown) {
+        newButton.doClick();
+      }
+    });
 
     saveButton.setGraphic(Fx.createGraphic("save"));
     saveButton.setOnAction(e -> save());
@@ -355,23 +376,9 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
 
     eventProxy = new EventListenerProxy<>(getView());
 
-    treeButton.addEventHandler(MouseEvent.ANY, (MouseEvent event) -> {
-      if (event.isPopupTrigger()) {
-        T pdo = getPdo();
-        if (pdo != null && !pdo.isNew()) {
-          // show object ID in a popup
-          Popup popup = new Popup();
-          TextField field = new TextField(Long.toString(pdo.getId()));
-          field.setPrefColumnCount(field.getText().length());
-          field.setEditable(false);
-          popup.getContent().add(field);
-          popup.setAutoHide(true);
-          Bounds bounds = treeButton.localToScreen(treeButton.getBoundsInLocal());
-          popup.show(treeButton, bounds.getMinX() + bounds.getWidth()/2, bounds.getMinY() + bounds.getHeight() / 2);
-        }
-        event.consume();
-      }
-    });
+    treeButton.addEventHandler(MouseEvent.ANY, this::handleTreeButtonMouseEvent);
+    // event handler on treeButton doesn't work if disabled -> register on buttonBox as well
+    buttonBox.addEventHandler(MouseEvent.ANY, this::handleTreeButtonMouseEvent);
 
     getView().addEventFilter(KeyEvent.KEY_PRESSED, (KeyEvent event) -> {
       if (!event.isAltDown() && !event.isControlDown() && !event.isMetaDown() &&
@@ -380,7 +387,9 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
 
         cancel();
       }
+      toggleShiftKey(event.isShiftDown());
     });
+    getView().addEventFilter(KeyEvent.KEY_RELEASED, event -> toggleShiftKey(event.isShiftDown()));
   }
 
 
@@ -458,7 +467,22 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   public void newPdo() {
     releasePdo(released -> {
       if (released) {
-        setPdo(getPdo().on());
+        if (shiftDown) {
+          if (!getPdo().isNew()) {
+            // create a deep copy
+            setPdo(getPdo().copy());
+            // show some feedback (because nothing changed visually, except perhaps the save button)
+            Note infoNote = Fx.create(Note.class);
+            infoNote.setPosition(Note.Position.TOP);
+            infoNote.setText(MessageFormat.format(resources.getString("new copy of {0} {1} created"), getPdo().getSingular(), getPdo()));
+            infoNote.setFadeEffect(500, 2000, 1000);
+            infoNote.show(newButton);
+          }
+          // else: don't copy new objects -> ignored
+        }
+        else {
+          setPdo(getPdo().on());
+        }
         getEditor().requestInitialFocus();
       }
     });
@@ -762,6 +786,43 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
    */
   protected void showValidationResults(ValidationFailedException ex) {
     FxUtilities.getInstance().showValidationResults(ex, editor.getValidationMappers(), editor.getBinder());
+  }
+
+
+  private void handleTreeButtonMouseEvent(MouseEvent event) {
+    if (event.isPopupTrigger()) {
+      T pdo = getPdo();
+      if (pdo != null && !pdo.isNew()) {
+        // show object ID in a popup
+        Popup popup = new Popup();
+        TextField field = new TextField(Long.toString(pdo.getId()));
+        field.setPrefColumnCount(field.getText().length());
+        field.setEditable(false);
+        popup.getContent().add(field);
+        popup.setAutoHide(true);
+        Bounds bounds = treeButton.localToScreen(treeButton.getBoundsInLocal());
+        if (bounds.contains(event.getScreenX(), event.getScreenY())) {
+          popup.show(treeButton, bounds.getMinX() + bounds.getWidth() / 2, bounds.getMinY() + bounds.getHeight() / 2);
+        }
+      }
+      event.consume();
+    }
+  }
+
+  private void toggleShiftKey(boolean shiftDown) {
+    if (this.shiftDown != shiftDown) {
+      this.shiftDown = shiftDown;
+      if (mouseOverNewButton || !shiftDown) {
+        updateNewButton();
+      }
+    }
+  }
+
+  private void updateNewButton() {
+    Node icon = shiftDown ? newCopyIcon : newIcon;
+    if (icon != newButton.getGraphic()) {
+      newButton.setGraphic(icon);
+    }
   }
 
 }
