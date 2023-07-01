@@ -135,7 +135,9 @@ public record Position3D(&#64;Bindable(options="AUTOSELECT") int x,
             decl += " transient";
           }
 ]@
-  @(decl)@ @(property.getType())@ @(property.getName())@;  // @(property.getComment())@
+  /** @(property.getComment())@. */
+  @(decl)@ @(property.getType())@ @(property.getName())@;
+
 @[
         }
       }
@@ -503,13 +505,18 @@ public record Position3D(&#64;Bindable(options="AUTOSELECT") int x,
       for (Property property: properties) {
         if (!property.isMutable()) {
 ]@
-    private @(property.getType())@ @(property.getName())@;  // @(property.getComment())@
+    /** @(property.getComment())@. */
+    private @(property.getType())@ @(property.getName())@;
 @[
           if (property.isRequired()) {
 ]@
-    private boolean @(property.getName())@Provided;  // true if @(property.getComment())@ was provided
+    /** true if @(property.getComment())@ was provided. */
+    private boolean @(property.getName())@Provided;
 @[
           }
+]@
+
+@[
         }
       }
 ]@
