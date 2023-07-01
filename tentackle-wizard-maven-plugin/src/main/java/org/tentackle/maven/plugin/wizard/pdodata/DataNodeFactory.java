@@ -18,6 +18,7 @@
 
 package org.tentackle.maven.plugin.wizard.pdodata;
 
+import org.tentackle.common.Constants;
 import org.tentackle.common.StringHelper;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
@@ -284,7 +285,9 @@ public class DataNodeFactory {
             }
           }
           Attribute attribute = classInfo.entity.getAttributeByJavaName(methodInfo.name, true);
-          nodes.add(new DataItem(methodInfo.typeName, methodInfo.name, value, methodInfo.comment, attribute, idOfCompositeRelation, nonCompositeRelation));
+          if (attribute != null || !Constants.AN_CLASSID.equals(methodInfo.name)) {    // classId is also available via context menu
+            nodes.add(new DataItem(methodInfo.typeName, methodInfo.name, value, methodInfo.comment, attribute, idOfCompositeRelation, nonCompositeRelation));
+          }
         }
       }
       catch (IllegalAccessException | InvocationTargetException e) {
