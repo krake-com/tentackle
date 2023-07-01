@@ -44,6 +44,7 @@ public class JavaCodeFactory {
    */
   public static final String NOTEST_STEREOTYPE = "NOTEST";
 
+  private static final String HIDDEN_COMMENT = "// hidden: ";
 
   /**
    * Generates code from a data object template.
@@ -129,6 +130,9 @@ public class JavaCodeFactory {
     Attribute attribute = item.getAttribute();
     if (!item.isIdOfCompositeRelation() && attribute != null &&
         !attribute.isImplicit() && isGenerating(!attribute.getOptions().getStereotypes().contains(NOTEST_STEREOTYPE), item)) {
+      if (item.isHidden()) {
+        buf.append(HIDDEN_COMMENT);
+      }
       Object orgValue = item.getOrgValue();
       NonCompositeRelation nonCompositeRelation = item.getNonCompositeRelation();
       if (nonCompositeRelation != null) {
@@ -172,6 +176,9 @@ public class JavaCodeFactory {
 
   private String createComponentCode(String varName, DataObject component) {
     StringBuilder buf = new StringBuilder();
+    if (component.isHidden()) {
+      buf.append(HIDDEN_COMMENT);
+    }
     buf.append(component.getType()).append(' ').append(varName)
        .append(" = on(").append(component.getType()).append(".class);")
        .append(toIdComment(component.getPdo())).append('\n');
@@ -196,8 +203,11 @@ public class JavaCodeFactory {
              .append(toIdComment(listRelation.getRelatedPdo())).append('\n');
         }
         else {
-          buf.append(createComponentCode(objectName, object))
-             .append(varName).append('.').append(list.getRelation().getGetterName())
+          buf.append(createComponentCode(objectName, object));
+          if (list.isHidden()) {
+            buf.append(HIDDEN_COMMENT);
+          }
+          buf.append(varName).append('.').append(list.getRelation().getGetterName())
              .append("().add(").append(objectName).append(");\n");
         }
       }

@@ -97,6 +97,11 @@ public class DataDiff implements DataNode {
   }
 
   @Override
+  public boolean isHidden() {
+    return false;
+  }
+
+  @Override
   @Bindable(ordinal = 2)
   public String getType() {
     if (left != null) {
@@ -297,12 +302,12 @@ public class DataDiff implements DataNode {
           else {
             if (!rootIdDiffers && nextLeft.getId() < nextRight.getId()) {
               // gap in right list
-              node = compareImpl(nextLeft, null, rightMissing, rootIdDiffers);
+              node = compareImpl(nextLeft, null, rightMissing, false);
               nextLeft = null;
             }
             else if (!rootIdDiffers && nextLeft.getId() > nextRight.getId()) {
               // gap in left list
-              node = compareImpl(null, nextRight, rightMissing, rootIdDiffers);
+              node = compareImpl(null, nextRight, rightMissing, false);
               nextRight = null;
             }
             else {

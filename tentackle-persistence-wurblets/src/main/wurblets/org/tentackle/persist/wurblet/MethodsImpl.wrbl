@@ -1135,6 +1135,7 @@ For more options, see {\@link DbModelWurblet}.
    *
    * \@return @(attr.getOptions().getComment())@
    */
+  \@Persistent(ordinal=@(attr.getOrdinal())@, comment=@(StringHelper.toDoubleQuotes(attr.getOptions().getComment()))@)
 @[
           }
           else {
