@@ -18,6 +18,20 @@
 
 package org.tentackle.fx.rdc.translate;
 
+import org.tentackle.fx.Fx;
+import org.tentackle.fx.FxComponent;
+import org.tentackle.fx.FxRuntimeException;
+import org.tentackle.fx.bind.FxComponentBinding;
+import org.tentackle.fx.rdc.RdcFxRdcBundle;
+import org.tentackle.fx.rdc.RdcUtilities;
+import org.tentackle.log.Logger;
+import org.tentackle.misc.IdentifiableKey;
+import org.tentackle.pdo.DomainContext;
+import org.tentackle.pdo.Pdo;
+import org.tentackle.pdo.PdoCache;
+import org.tentackle.pdo.PdoRuntimeException;
+import org.tentackle.pdo.PersistentDomainObject;
+
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -31,22 +45,6 @@ import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.TransferMode;
 import javafx.stage.Modality;
-
-import org.tentackle.fx.Fx;
-import org.tentackle.fx.FxComponent;
-import org.tentackle.fx.FxRuntimeException;
-import org.tentackle.fx.bind.FxComponentBinding;
-import org.tentackle.fx.rdc.RdcFxRdcBundle;
-import org.tentackle.fx.rdc.RdcUtilities;
-import org.tentackle.log.Logger;
-import org.tentackle.misc.IdentifiableKey;
-import org.tentackle.pdo.DomainContext;
-import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.PdoCache;
-import org.tentackle.pdo.PdoRuntimeException;
-import org.tentackle.pdo.PdoUtilities;
-import org.tentackle.pdo.PersistentDomainObject;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
@@ -124,9 +122,9 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
       if (e.getGestureSource() != component) {
         Class<?> type = component.getType();
         if (type != null) {
-          String idString = e.getDragboard().getString();
-          if (idString != null && !idString.isEmpty()) {
-            IdentifiableKey<PersistentDomainObject<?>> key = PdoUtilities.getInstance().idStringToIdentifiableKey(idString);
+          List<IdentifiableKey<PersistentDomainObject<?>>> keys = RdcUtilities.getInstance().getPdoKeysFromDragboard(e.getDragboard());
+          if (!keys.isEmpty()) {
+            IdentifiableKey<PersistentDomainObject<?>> key = keys.get(0);
             if (type.isAssignableFrom(key.getIdentifiableClass())) {
               e.acceptTransferModes(TransferMode.COPY);
               e.consume();
