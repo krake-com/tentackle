@@ -23,11 +23,14 @@ import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.component.FxTextArea;
 import org.tentackle.fx.component.FxTextField;
+import org.tentackle.fx.rdc.GuiProviderFactory;
 import org.tentackle.fx.rdc.PdoEditor;
 import org.tentackle.fx.rdc.Rdc;
+import org.tentackle.fx.rdc.RdcUtilities;
 import org.tentackle.fx.rdc.table.TablePopup;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
+import org.tentackle.pdo.PersistentDomainObject;
 
 import java.util.List;
 import java.util.ResourceBundle;
@@ -65,6 +68,16 @@ public class UserGroupEditor extends PdoEditor<UserGroup> {
     });
     emptyLabel = new Label(resources.getString("no users"));
     groupUsersNode.setPlaceholder(emptyLabel);
+    groupUsersNode.setOnDragOver(event -> {
+      GuiProviderFactory.getInstance().createGuiProvider(getPdo()).isDragAccepted(event);
+    });
+    groupUsersNode.setOnDragDropped(event -> {
+      for (PersistentDomainObject<?> droppedPdo : RdcUtilities.getInstance().getPdosFromDragboard(event.getDragboard(), getDomainContext())) {
+        if (droppedPdo instanceof User user) {
+          addUser(user);
+        }
+      }
+    });
     popup = Rdc.createTablePopup(groupUsersNode, "UserGroupEditor", resources.getString("Users"));
   }
 
@@ -91,6 +104,13 @@ public class UserGroupEditor extends PdoEditor<UserGroup> {
   }
 
   @SuppressWarnings("unchecked")
+  private void addUser(User user) {
+    if (!groupUsersNode.getItems().contains(user)) {
+      ((List<User>) ((SortedList<User>) groupUsersNode.getItems()).getSource()).add(user);
+      groupUsersNode.triggerViewModified();
+    }
+  }
+
   private ContextMenu createContextMenu(TableRow<User> row) {
     ContextMenu contextMenu = null;
     if (group != null && group.isEditAllowed()) {
@@ -101,11 +121,7 @@ public class UserGroupEditor extends PdoEditor<UserGroup> {
           Pdo.create(User.class, getBinder().getBindingProperty(DomainContext.class)),
           Modality.APPLICATION_MODAL, getStage(), true, users -> {
             if (!users.isEmpty()) {
-              User user = users.get(0);
-              if (!groupUsersNode.getItems().contains(user)) {
-                ((List<User>) ((SortedList<User>) groupUsersNode.getItems()).getSource()).add(user);
-                groupUsersNode.triggerViewModified();
-              }
+              addUser(users.get(0));
             }
           }));
       contextMenu.getItems().add(addMenuItem);

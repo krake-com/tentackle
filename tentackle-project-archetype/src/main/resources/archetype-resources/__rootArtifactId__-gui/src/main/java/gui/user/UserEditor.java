@@ -26,11 +26,14 @@ import org.tentackle.fx.component.FxCheckBox;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.component.FxTextArea;
 import org.tentackle.fx.component.FxTextField;
+import org.tentackle.fx.rdc.GuiProviderFactory;
 import org.tentackle.fx.rdc.PdoEditor;
 import org.tentackle.fx.rdc.Rdc;
+import org.tentackle.fx.rdc.RdcUtilities;
 import org.tentackle.fx.rdc.table.TablePopup;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
+import org.tentackle.pdo.PersistentDomainObject;
 
 import java.util.List;
 import java.util.ResourceBundle;
@@ -84,6 +87,16 @@ public class UserEditor extends PdoEditor<User> {
     });
     emptyLabel = new Label(resources.getString("no groups"));
     userUserGroupsNode.setPlaceholder(emptyLabel);
+    userUserGroupsNode.setOnDragOver(event -> {
+      GuiProviderFactory.getInstance().createGuiProvider(getPdo()).isDragAccepted(event);
+    });
+    userUserGroupsNode.setOnDragDropped(event -> {
+      for (PersistentDomainObject<?> droppedPdo : RdcUtilities.getInstance().getPdosFromDragboard(event.getDragboard(), getDomainContext())) {
+        if (droppedPdo instanceof UserGroup group) {
+          addUserGroup(group);
+        }
+      }
+    });
     popup = Rdc.createTablePopup(userUserGroupsNode, "UserEditor", resources.getString("Groups"));
   }
 
@@ -118,6 +131,13 @@ public class UserEditor extends PdoEditor<User> {
 
 
   @SuppressWarnings("unchecked")
+  private void addUserGroup(UserGroup group) {
+    if (!userUserGroupsNode.getItems().contains(group)) {
+      ((List<UserGroup>) ((SortedList<UserGroup>) userUserGroupsNode.getItems()).getSource()).add(group);
+      userUserGroupsNode.triggerViewModified();
+    }
+  }
+
   private ContextMenu createContextMenu(TableRow<UserGroup> row) {
     ContextMenu contextMenu = null;
     if (user != null && user.isEditAllowed()) {
@@ -128,11 +148,7 @@ public class UserEditor extends PdoEditor<User> {
           Pdo.create(UserGroup.class, getBinder().getBindingProperty(DomainContext.class)),
           Modality.APPLICATION_MODAL, getStage(), true, groups -> {
             if (!groups.isEmpty()) {
-              UserGroup group = groups.get(0);
-              if (!userUserGroupsNode.getItems().contains(group)) {
-                ((List<UserGroup>) ((SortedList<UserGroup>) userUserGroupsNode.getItems()).getSource()).add(group);
-                userUserGroupsNode.triggerViewModified();
-              }
+              addUserGroup(groups.get(0));
             }
           }));
       contextMenu.getItems().add(addMenuItem);
