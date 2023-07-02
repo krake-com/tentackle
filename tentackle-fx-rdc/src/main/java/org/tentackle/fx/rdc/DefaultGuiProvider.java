@@ -18,15 +18,6 @@
 
 package org.tentackle.fx.rdc;
 
-import javafx.scene.Node;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TreeCell;
-import javafx.scene.control.TreeItem;
-import javafx.scene.control.TreeView;
-import javafx.scene.input.DragEvent;
-import javafx.scene.input.Dragboard;
-import javafx.util.Callback;
-
 import org.tentackle.common.BundleFactory;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxFactory;
@@ -35,11 +26,18 @@ import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.rdc.search.DefaultPdoFinder;
 import org.tentackle.fx.rdc.table.TableUtilities;
 import org.tentackle.fx.table.TableConfiguration;
-import org.tentackle.misc.IdentifiableKey;
 import org.tentackle.misc.ShortLongText;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentDomainObject;
 
+import javafx.scene.Node;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TreeCell;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
+import javafx.util.Callback;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.MissingResourceException;
@@ -54,7 +52,7 @@ import java.util.ResourceBundle;
  * @author harald
  */
 public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements GuiProvider<T> {
-  
+
   private T pdo;                    // the PDO
   private Boolean bundleProvided;   // != null if determined according to GuiProviderService annotation or isBundleProvided
   private ResourceBundle bundle;    // optional resource bundle
@@ -177,24 +175,9 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
     return false;
   }
 
-  /**
-   * Gets the PDO key from the dragboard.<br>
-   * The method is provided to simplify implementing DND as only
-   * the methods {@link #isDragAccepted} and {@link #dropPdo} need to be overridden.
-   *
-   * @param dragboard the dragboard
-   * @return the key, null if dragboard's string is null or empty
-   */
-  protected IdentifiableKey<PersistentDomainObject<?>> getPdoKeyFromDragboard(Dragboard dragboard) {
-    return RdcUtilities.getInstance().getPdoKeyFromDragboard(dragboard);
-  }
-
   @Override
   public void dropDragboard(Dragboard dragboard) {
-    PersistentDomainObject<?> pdoToDrop = RdcUtilities.getInstance().getPdoFromDragboard(dragboard, pdo.getDomainContext());
-    if (pdoToDrop != null) {
-      dropPdo(pdoToDrop);
-    }
+    RdcUtilities.getInstance().getPdosFromDragboard(dragboard, pdo.getDomainContext()).forEach(this::dropPdo);
   }
 
   /**

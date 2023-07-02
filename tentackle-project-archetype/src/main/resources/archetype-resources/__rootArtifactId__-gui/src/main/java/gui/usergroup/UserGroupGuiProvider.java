@@ -18,6 +18,7 @@ import org.tentackle.fx.Fx;
 import org.tentackle.fx.rdc.DefaultGuiProvider;
 import org.tentackle.fx.rdc.GuiProviderService;
 import org.tentackle.fx.rdc.PdoFinder;
+import org.tentackle.fx.rdc.RdcUtilities;
 import org.tentackle.fx.rdc.search.DefaultPdoFinder;
 import org.tentackle.misc.IdentifiableKey;
 import org.tentackle.pdo.PersistentDomainObject;
@@ -79,18 +80,21 @@ public class UserGroupGuiProvider extends DefaultGuiProvider<UserGroup> {
 
   @Override
   public boolean isDragAccepted(DragEvent event) {
-    IdentifiableKey<PersistentDomainObject<?>> key = getPdoKeyFromDragboard(event.getDragboard());
-    if (key != null && User.class.equals(key.getIdentifiableClass())) {
-      // check if user not already added
-      for (User user: getPdo().getUsers()) {
-        if (!user.isEditAllowed() || key.getIdentifiableId() == user.getId()) {
-          return false;
+    for (IdentifiableKey<PersistentDomainObject<?>> key : RdcUtilities.getInstance().getPdoKeysFromDragboard(event.getDragboard())) {
+      if (User.class.equals(key.getIdentifiableClass())) {
+        // check if user not already added
+        for (User user : getPdo().getUsers()) {
+          if (!user.isEditAllowed() || key.getIdentifiableId() == user.getId()) {
+            return false;
+          }
         }
       }
-      event.acceptTransferModes(TransferMode.COPY);
-      return true;
+      else {
+        return false;   // only users!
+      }
     }
-    return false;
+    event.acceptTransferModes(TransferMode.COPY);
+    return true;
   }
 
   @Override

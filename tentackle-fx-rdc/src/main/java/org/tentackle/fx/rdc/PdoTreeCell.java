@@ -19,17 +19,19 @@
 
 package org.tentackle.fx.rdc;
 
+import org.tentackle.common.StringHelper;
+import org.tentackle.pdo.PersistentDomainObject;
+
 import javafx.collections.ObservableList;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.MouseEvent;
-
-import org.tentackle.common.StringHelper;
-import org.tentackle.pdo.PersistentDomainObject;
-
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -108,7 +110,25 @@ public class PdoTreeCell<T extends PersistentDomainObject<T>> extends TreeCell<T
    * @param event the mouse event after drag has been detected
    */
   protected void handleDragDetected(MouseEvent event) {
-    if (provider != null && provider.createDragboard(this) != null) {
+    PersistentDomainObject<?>[] selectedPdos = null;    // != null if one or more PDOs selected in tree
+    TreeView<T> treeView = getTreeView();
+    if (treeView != null) {
+      List<PersistentDomainObject<?>> pdoList = new ArrayList<>();
+      for (TreeItem<T> selectedItem : treeView.getSelectionModel().getSelectedItems()) {
+        if (selectedItem instanceof PdoTreeItem<?> pdoTreeItem) {
+          PersistentDomainObject<?> pdo = pdoTreeItem.getPdo();
+          if (pdo != null) {
+            pdoList.add(pdo);
+          }
+        }
+      }
+      if (!pdoList.isEmpty()) {
+        selectedPdos = pdoList.toArray(new PersistentDomainObject<?>[0]);
+      }
+    }
+
+    if (selectedPdos != null && RdcUtilities.getInstance().createDragboard(this, selectedPdos) != null ||
+        provider != null && provider.createDragboard(this) != null) {
       event.consume();
     }
   }
