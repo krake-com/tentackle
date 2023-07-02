@@ -60,13 +60,16 @@ import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import java.io.File;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.prefs.BackingStoreException;
@@ -83,7 +86,7 @@ interface RdcUtilitiesHolder {
  */
 @Service(RdcUtilities.class)    // defaults to self
 public class RdcUtilities {
-  
+
   private static final Logger LOGGER = Logger.get(RdcUtilities.class);
 
   /**
@@ -466,47 +469,97 @@ public class RdcUtilities {
 
 
   /**
-   * Creates the dragboard for a pdo and node.
+   * Creates the dragboard for a node and PDOs.
    *
    * @param node the drag source
-   * @param pdo the pdo
-   * @return the dragboard, null if PDO is not a DnD source
+   * @param pdos the PDOs
+   * @return the dragboard, null if PDOs are not transferable
    */
-  public Dragboard createDragboard(Node node, PersistentDomainObject<?> pdo) {
-    if (pdo.getClassId() != 0 && !pdo.isNew()) {
-      Dragboard dragboard = node.startDragAndDrop(TransferMode.COPY);
-      ClipboardContent content = new ClipboardContent();
-      content.putString(pdo.toIdString());
-      dragboard.setContent(content);
-      return dragboard;
+  public Dragboard createDragboard(Node node, PersistentDomainObject<?>... pdos) {
+    if (pdos != null) {
+      StringBuilder buf = new StringBuilder();
+      for (PersistentDomainObject<?> pdo : pdos) {
+        if (pdo.getClassId() != 0 && !pdo.isNew()) {
+          if (!buf.isEmpty()) {
+            buf.append(',');
+          }
+          buf.append(pdo.toIdString());
+        }
+      }
+      if (!buf.isEmpty()) {
+        Dragboard dragboard = node.startDragAndDrop(TransferMode.COPY);
+        ClipboardContent content = new ClipboardContent();
+        content.putString(buf.toString());
+        dragboard.setContent(content);
+        return dragboard;
+      }
     }
     return null;
   }
 
 
   /**
-   * Gets the PDO key from the dragboard.
+   * Gets all PDO keys from the dragboard.
+   *
+   * @param dragboard the dragboard
+   * @return the keys, empty list if the dragboard's string is null or empty
+   */
+  public List<IdentifiableKey<PersistentDomainObject<?>>> getPdoKeysFromDragboard(Dragboard dragboard) {
+    List<IdentifiableKey<PersistentDomainObject<?>>> keys = new ArrayList<>();
+    String idString = dragboard.getString();
+    if (idString != null) {
+      StringTokenizer stok = new StringTokenizer(idString, ",");
+      while (stok.hasMoreTokens()) {
+        keys.add(PdoUtilities.getInstance().idStringToIdentifiableKey(stok.nextToken()));
+      }
+    }
+    return keys;
+  }
+
+
+  /**
+   * Gets the PDO key from the dragboard.<br>
+   * If the dragboard contains more than one key, the first will be returned.
    *
    * @param dragboard the dragboard
    * @return the key, null if the dragboard's string is null or empty
    */
   public IdentifiableKey<PersistentDomainObject<?>> getPdoKeyFromDragboard(Dragboard dragboard) {
-    String idString = dragboard.getString();
-    return idString == null || idString.isEmpty() ? null : PdoUtilities.getInstance().idStringToIdentifiableKey(idString);
+    List<IdentifiableKey<PersistentDomainObject<?>>> pdoKeysFromDragboard = getPdoKeysFromDragboard(dragboard);
+    return pdoKeysFromDragboard.isEmpty() ? null : pdoKeysFromDragboard.get(0);
   }
 
 
   /**
-   * Gets the PDO from a dragboard.
+   * Gets all PDOs from a dragboard.
+   *
+   * @param dragboard the dragboard
+   * @param context the domain context
+   * @return the PDOs, empty list if dragboard doesn't contain a pdo key or no such pdos
+   */
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public List<PersistentDomainObject<?>> getPdosFromDragboard(Dragboard dragboard, DomainContext context) {
+    List<PersistentDomainObject<?>> pdos = new ArrayList<>();
+    for (IdentifiableKey pdoKey : getPdoKeysFromDragboard(dragboard)) {
+      PersistentDomainObject pdo = Pdo.create(pdoKey.getIdentifiableClass(), context).select(pdoKey.getIdentifiableId());
+      if (pdo != null) {
+        pdos.add(pdo);
+      }
+    }
+    return pdos;
+  }
+
+  /**
+   * Gets the PDO from a dragboard.<br>
+   * If the dragboard contains more than one key, the first PDO will be returned.
    *
    * @param dragboard the dragboard
    * @param context the domain context
    * @return the PDO, null if dragboard doesn't contain a pdo key or no such pdo
    */
-  @SuppressWarnings({"unchecked", "rawtypes"})
   public PersistentDomainObject<?> getPdoFromDragboard(Dragboard dragboard, DomainContext context) {
-    IdentifiableKey pdoKey = getPdoKeyFromDragboard(dragboard);
-    return pdoKey == null ? null : Pdo.create(pdoKey.getIdentifiableClass(), context).select(pdoKey.getIdentifiableId());
+    List<PersistentDomainObject<?>> pdos = getPdosFromDragboard(dragboard, context);
+    return pdos.isEmpty() ? null : pdos.get(0);
   }
 
 
