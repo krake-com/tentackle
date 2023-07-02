@@ -10,3 +10,11 @@
 .implicit-attribute {
     -fx-font-weight: bold;
 }
+
+.key-attribute {
+    -fx-underline: true;
+}
+
+.hidden-component {
+    -fx-font-style: italic;
+}
