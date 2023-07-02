@@ -129,7 +129,9 @@ public class JavaCodeFactory {
     StringBuilder buf = new StringBuilder();
     Attribute attribute = item.getAttribute();
     if (!item.isIdOfCompositeRelation() && attribute != null &&
-        !attribute.isImplicit() && isGenerating(!attribute.getOptions().getStereotypes().contains(NOTEST_STEREOTYPE), item)) {
+        !attribute.isImplicit() &&
+        isGenerating(!attribute.getOptions().getStereotypes().contains(NOTEST_STEREOTYPE), item) &&
+        !item.isCounterForListRelation()) {
       if (item.isHidden()) {
         buf.append(HIDDEN_COMMENT);
       }

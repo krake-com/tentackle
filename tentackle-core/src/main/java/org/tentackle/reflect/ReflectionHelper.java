@@ -414,7 +414,7 @@ public final class ReflectionHelper {
    * @param clazz the class to get all declared and inherited methods
    * @param boundingClasses bounding classes that all classes must implement or extend, null if all (avoid!)
    * @param boundToAll true if all boundingClasses must match (logically and), false if at least one (logically or)
-   * @param annotations the annotations, null if none
+   * @param annotations the class annotations, null if none
    * @param annotatedByAll true if all annotations must match (logically and), false if at least one (logically or)
    * @return all methods
    */

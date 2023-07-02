@@ -43,6 +43,8 @@ import javafx.scene.control.Tooltip;
 public class DataNodeCellType extends AbstractTableCellType<DataNode> {
 
   private static final String STYLE_IMPLICIT = "implicit-attribute";
+  private static final String STYLE_HIDDEN = "hidden-component";
+  private static final String STYLE_KEY = "key-attribute";
 
   @Override
   public void updateItem(FxTableCell<?, DataNode> tableCell, DataNode item) {
@@ -57,10 +59,18 @@ public class DataNodeCellType extends AbstractTableCellType<DataNode> {
     treeTableCell.setGraphic(getIcon(item));
     treeTableCell.setTooltip(item.getComment() == null ? null : new Tooltip(item.getComment()));
     updateAlignment(treeTableCell, Pos.BASELINE_LEFT);
-    treeTableCell.getStyleClass().remove(STYLE_IMPLICIT);
+
+    treeTableCell.getStyleClass().removeAll(STYLE_IMPLICIT, STYLE_HIDDEN, STYLE_KEY);
     if (item instanceof DataItem dataItem && (dataItem.getAttribute() == null || dataItem.getAttribute().isImplicit())) {
-      // all implicit model attributes or attributes provided by the framework but not part of the model (such as classId)
+      // all implicit model attributes or attributes provided by the framework but not part of the model
       treeTableCell.getStyleClass().add(STYLE_IMPLICIT);
+    }
+    else if (item.isHidden()) {
+      treeTableCell.getStyleClass().add(STYLE_HIDDEN);
+    }
+
+    if (item instanceof DataItem dataItem && dataItem.isKey()) {
+      treeTableCell.getStyleClass().add(STYLE_KEY);
     }
   }
 

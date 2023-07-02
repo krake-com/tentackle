@@ -19,6 +19,7 @@
 package org.tentackle.maven.plugin.wizard.pdodata;
 
 import org.tentackle.model.Attribute;
+import org.tentackle.model.Relation;
 
 import java.util.List;
 
@@ -82,7 +83,7 @@ public class DataItem implements DataNode {
 
   @Override
   public boolean isHidden() {
-    return attribute == null ? false : attribute.isHidden();
+    return attribute != null && attribute.isHidden();
   }
 
   /**
@@ -163,6 +164,32 @@ public class DataItem implements DataNode {
   @Override
   public String getConfigurationPath() {
     return configurationPath;
+  }
+
+  /**
+   * Determines whether this attribute is a counter for a composite list relation.<br>
+   * Used by the code generator to skip such items.
+   *
+   * @return true if counter
+   */
+  public boolean isCounterForListRelation() {
+    if (attribute != null) {
+      for (Relation relation : attribute.getEntity().getRelations()) {
+        if (attribute.equals(relation.getCountAttribute())) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Returns whether this item is part of the unique domain key.
+   *
+   * @return true if key
+   */
+  public boolean isKey() {
+    return attribute != null && attribute.getOptions().isDomainKey();
   }
 
   @Override

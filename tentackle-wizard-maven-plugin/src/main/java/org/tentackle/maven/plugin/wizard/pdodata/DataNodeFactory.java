@@ -29,6 +29,8 @@ import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
 import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.pdo.PersistentObject;
+import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.Persistent;
 
 import java.lang.reflect.InvocationTargetException;
@@ -82,7 +84,7 @@ public class DataNodeFactory {
       entity = lookupEntity(typeName);
       methodInfos = new TreeSet<>();      // sorted by name
       Method[] pdoClassMethods = pdoClass.getMethods();
-      Method[] poClassMethods = poClass.getDeclaredMethods();
+      Method[] poClassMethods = ReflectionHelper.getAllMethods(poClass, new Class<?>[] {PersistentObject.class}, false, null, false);
       Method[] methods = new Method[pdoClassMethods.length + poClassMethods.length];
       System.arraycopy(pdoClassMethods, 0, methods, 0, pdoClassMethods.length);
       System.arraycopy(poClassMethods, 0, methods, pdoClassMethods.length, poClassMethods.length);
