@@ -233,11 +233,23 @@ public class DataNodeFactory {
           if (methodInfo.isList) {
             List<DataObject> dataObjects = new ArrayList<>();
             List<? extends PersistentDomainObject<?>> components = (List<? extends PersistentDomainObject<?>>) value;
+            boolean needSort = false;
             if (components != null) {       // should never be null, but one never knows...
-              int ndx = 0;
               for (PersistentDomainObject<?> component : components) {
-                dataObjects.add(createDataObject(methodInfo.name + "[" + ndx++ + "]", methodInfo.comment, component, pdo, false));
+                DataObject dataObject = createDataObject(methodInfo.name, methodInfo.comment, component, pdo, false);
+                dataObjects.add(dataObject);
+                if (dataObject.getNmRelation() != null) {
+                  needSort = true;
+                }
               }
+            }
+            if (needSort) {
+              dataObjects.sort((o1, o2) -> {
+                if (o1.getNmRelation() != null && o2.getNmRelation() != null) {
+                  return o1.getNmRelation().toString().compareTo(o2.getNmRelation().toString());
+                }
+                return Long.compare(o1.getId(), o2.getId());
+              });
             }
             Relation relation = classInfo.entity.getRelation(methodInfo.name, true);
             nodes.add(new DataList(methodInfo.typeName, methodInfo.name, methodInfo.comment, dataObjects, relation));
