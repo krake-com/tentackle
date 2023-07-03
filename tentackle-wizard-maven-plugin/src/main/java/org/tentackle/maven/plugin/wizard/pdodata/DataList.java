@@ -32,7 +32,7 @@ public class DataList implements DataNode {
   private final String genericType;         // the inner generic type
   private final String name;                // the name of the list property
   private final String comment;             // the optional comment
-  private final List<DataObject> nodes;     // the items of the list sorted by ID
+  private final List<DataObject> nodes;     // the items of the list
   private final Relation relation;          // composite list relation
   private String configurationPath;         // the optional configuration path
 
@@ -42,7 +42,7 @@ public class DataList implements DataNode {
    * @param genericType the inner generic type
    * @param name the name of the list property
    * @param comment the optional comment
-   * @param nodes the items of the list sorted by ID
+   * @param nodes the items of the list
    * @param relation the composite list relation
    */
   public DataList(String genericType, String name, String comment, List<DataObject> nodes, Relation relation) {
@@ -51,6 +51,10 @@ public class DataList implements DataNode {
     this.comment = comment;
     this.nodes = nodes;
     this.relation = relation;
+    int ndx = 0;
+    for (DataObject node : nodes) {
+      node.setDataList(this, ndx++);
+    }
   }
 
   /**
@@ -83,9 +87,12 @@ public class DataList implements DataNode {
   }
 
   /**
-   * Gets the items of the list sorted by ID.
+   * Gets the items of the list.<br>
+   * For 1:N relations, the elements come in the same order as returned by the PDO's select method.
+   * For N:M relations, the elements are sorted by the toString-representation,
+   * since the N:M-link itself is just a technical detail.
    *
-   * @return the items of the list sorted by ID
+   * @return the items of the list
    */
   @Override
   public List<DataObject> getNodes() {

@@ -222,15 +222,15 @@ public class DataDiff implements DataNode {
       throw new IllegalArgumentException("cannot compare " + left.getClass() + " with " + right.getClass());
     }
 
-    List<DataDiff> nodes;
+    List<DataDiff> diffNodes;
     boolean different;
 
     if (left == null && right == null) {
-      nodes = null;
+      diffNodes = null;
       different = false;
     }
     else if (left instanceof DataItem || right instanceof DataItem) {
-      nodes = null;
+      diffNodes = null;
       if (left != null && right != null) {
         DataItem leftItem = (DataItem) left;
         DataItem rightItem = (DataItem) right;
@@ -248,7 +248,7 @@ public class DataDiff implements DataNode {
       }
     }
     else {    // DataObject or DataList
-      nodes = new ArrayList<>();
+      diffNodes = new ArrayList<>();
       List<? extends DataNode> leftNodes = left == null ? null : left.getNodes();
       List<? extends DataNode> rightNodes = right == null ? null : right.getNodes();
       int leftSize = leftNodes == null ? 0 : leftNodes.size();
@@ -257,16 +257,53 @@ public class DataDiff implements DataNode {
       if (left instanceof DataObject || right instanceof DataObject) {
         DataObject leftObject = (DataObject) left;
         DataObject rightObject = (DataObject) right;
-        long leftSerial = leftObject == null ? 0 : leftObject.getSerial();
-        long rightSerial = rightObject == null ? 0 : rightObject.getSerial();
-        different = !rightMissing && leftSerial != rightSerial;
+        long leftSerial;
+        long rightSerial;
+        long leftId;
+        long rightId;
+
+        if (leftObject == null) {
+          leftId = 0;
+          leftSerial = 0;
+        }
+        else {
+          NonCompositeRelation nmRelation = leftObject.getNmRelation();
+          if (nmRelation != null) {
+            // compare the PDO the N:M-link points to
+            leftId = nmRelation.getRelatedPdo().getId();
+            leftSerial = nmRelation.getRelatedPdo().getSerial();
+          }
+          else {
+            leftId = leftObject.getId();
+            leftSerial = leftObject.getSerial();
+          }
+        }
+
+        if (rightObject == null) {
+          rightId = 0;
+          rightSerial = 0;
+        }
+        else {
+          NonCompositeRelation nmRelation = rightObject.getNmRelation();
+          if (nmRelation != null) {
+            // compare the PDO the N:M-link points to
+            rightId = nmRelation.getRelatedPdo().getId();
+            rightSerial = nmRelation.getRelatedPdo().getSerial();
+          }
+          else {
+            rightId = rightObject.getId();
+            rightSerial = rightObject.getSerial();
+          }
+        }
+
+        different = !rightMissing && (leftSerial != rightSerial || leftId != rightId);
         int size = Math.max(leftSize, rightSize);
         for (int i=0; i < size; i++) {
           DataNode leftNode = i < leftSize ? leftNodes.get(i) : null;
           DataNode rightNode = i < rightSize ? rightNodes.get(i) : null;
-          DataDiff node = compareImpl(leftNode, rightNode, rightMissing, rootIdDiffers);
-          nodes.add(node);
-          different |= !rightMissing && node.different;
+          DataDiff diffNode = compareImpl(leftNode, rightNode, rightMissing, rootIdDiffers);
+          diffNodes.add(diffNode);
+          different |= !rightMissing && diffNode.different;
         }
       }
       else {    // DataList
@@ -286,51 +323,51 @@ public class DataDiff implements DataNode {
             nextRight = rightObjects.get(rightIndex++);
           }
 
-          DataDiff node;
+          DataDiff diffNode;
 
           if (nextLeft == null && nextRight == null) {
             break;
           }
           else if (nextLeft == null) {
-            node = compareImpl(null, nextRight, rightMissing, rootIdDiffers);
+            diffNode = compareImpl(null, nextRight, rightMissing, rootIdDiffers);
             nextRight = null;
           }
           else if (nextRight == null) {
-            node = compareImpl(nextLeft, null, rightMissing, rootIdDiffers);
+            diffNode = compareImpl(nextLeft, null, rightMissing, rootIdDiffers);
             nextLeft = null;
           }
           else {
             if (!rootIdDiffers && nextLeft.getId() < nextRight.getId()) {
               // gap in right list
-              node = compareImpl(nextLeft, null, rightMissing, false);
+              diffNode = compareImpl(nextLeft, null, rightMissing, false);
               nextLeft = null;
             }
             else if (!rootIdDiffers && nextLeft.getId() > nextRight.getId()) {
               // gap in left list
-              node = compareImpl(null, nextRight, rightMissing, false);
+              diffNode = compareImpl(null, nextRight, rightMissing, false);
               nextRight = null;
             }
             else {
               // same ID or root ID differs
-              node = compareImpl(nextLeft, nextRight, rightMissing, rootIdDiffers);
+              diffNode = compareImpl(nextLeft, nextRight, rightMissing, rootIdDiffers);
               nextLeft = null;
               nextRight = null;
             }
           }
 
-          nodes.add(node);
-          different |= !rightMissing && node.different;
+          diffNodes.add(diffNode);
+          different |= !rightMissing && diffNode.different;
         }
       }
     }
 
-    if (nodes != null && nodes.isEmpty() &&
+    if (diffNodes != null && diffNodes.isEmpty() &&
         (left == null || left instanceof DataObject) &&
         (right == null || right instanceof DataObject)) {
-      nodes = null;   // both missing
+      diffNodes = null;   // both missing
     }
 
-    return new DataDiff(left, right, different, nodes);
+    return new DataDiff(left, right, different, diffNodes);
   }
 
 }

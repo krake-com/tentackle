@@ -38,6 +38,9 @@ public class DataObject implements DataNode {
   private final NonCompositeRelation nmRelation;        // the optional N:M relation
   private final boolean hidden;                         // true if object is hidden (no public method available)
   private String configurationPath;                     // the optional configuration path
+  private DataList dataList;                            // != null if element of a list
+  private int listIndex;                                // index in dataList
+  private String formattedName;                         // the formatted name
 
   /**
    * Creates a DataObject.
@@ -82,13 +85,29 @@ public class DataObject implements DataNode {
   }
 
   /**
-   * Gets the object name, null if root entity or list member.
+   * Gets the object name, null if root entity.
    *
-   * @return the object name, null if root entity or list member
+   * @return the object name, null if root entity
    */
   @Override
   public String getName() {
-    return name;
+    if (formattedName == null) {
+      if (dataList == null) {
+        formattedName = name;
+      }
+      else {
+        StringBuilder buf = new StringBuilder();
+        if (nmRelation != null && nmRelation.getRelation().getNmMethodName() != null) {
+          buf.append(nmRelation.getRelation().getNmMethodName());
+        }
+        else {
+          buf.append(name);
+        }
+        buf.append('[').append(listIndex).append(']');
+        formattedName = buf.toString();
+      }
+    }
+    return formattedName;
   }
 
   @Override
@@ -174,12 +193,26 @@ public class DataObject implements DataNode {
     return configurationPath;
   }
 
+  /**
+   * Sets the parent datalist and the index if this is a list element.
+   *
+   * @param dataList the data list
+   * @param listIndex the list index
+   */
+  public void setDataList(DataList dataList, int listIndex) {
+    this.dataList = dataList;
+    this.listIndex = listIndex;
+    formattedName = null;
+  }
+
+
   @Override
   public String toString() {
     StringBuilder buf = new StringBuilder();
     buf.append(type);
-    if (name != null) {
-      buf.append(' ').append(name).append(" =");
+    String fmtName = getName();
+    if (fmtName != null) {
+      buf.append(' ').append(fmtName).append(" =");
     }
     buf.append(' ').append(getValue());
     return buf.toString();
