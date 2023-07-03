@@ -337,12 +337,16 @@ public class DataDiff implements DataNode {
             nextLeft = null;
           }
           else {
-            if (!rootIdDiffers && nextLeft.getId() < nextRight.getId()) {
+            if (nextLeft.getNmRelation() != null && nextRight.getNmRelation() != null &&
+                nextLeft.getNmRelation().toString().compareTo(nextRight.getNmRelation().toString()) < 0 ||
+                !rootIdDiffers && nextLeft.getId() < nextRight.getId()) {
               // gap in right list
               diffNode = compareImpl(nextLeft, null, rightMissing, false);
               nextLeft = null;
             }
-            else if (!rootIdDiffers && nextLeft.getId() > nextRight.getId()) {
+            else if (nextLeft.getNmRelation() != null && nextRight.getNmRelation() != null &&
+                     nextLeft.getNmRelation().toString().compareTo(nextRight.getNmRelation().toString()) > 0 ||
+                     !rootIdDiffers && nextLeft.getId() > nextRight.getId()) {
               // gap in left list
               diffNode = compareImpl(null, nextRight, rightMissing, false);
               nextRight = null;
