@@ -19,18 +19,6 @@
 package org.tentackle.fx.rdc;
 
 
-import javafx.application.Platform;
-import javafx.geometry.HPos;
-import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.GridPane;
-
 import org.tentackle.bind.Bindable;
 import org.tentackle.bind.BindableElement;
 import org.tentackle.bind.BindingMember;
@@ -51,6 +39,17 @@ import org.tentackle.pdo.PdoMember;
 import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
 
+import javafx.application.Platform;
+import javafx.geometry.HPos;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.GridPane;
 import java.lang.reflect.Field;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -120,9 +119,9 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
 
   @Override
   public void requestInitialFocus() {
-    FxComponent node = getFirstFocusableNode(nodeMap);
-    if (node instanceof Node) {
-      Platform.runLater(((Node) node)::requestFocus);
+    FxComponent component = getFirstFocusableNode(nodeMap);
+    if (component instanceof Node node) {
+      Platform.runLater(node::requestFocus);
     }
   }
 

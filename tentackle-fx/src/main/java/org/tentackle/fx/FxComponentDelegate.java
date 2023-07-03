@@ -19,15 +19,6 @@
 
 package org.tentackle.fx;
 
-import javafx.application.Platform;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.ReadOnlyBooleanWrapper;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.stage.PopupWindow;
-
 import org.tentackle.bind.BindingVetoException;
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.fx.bind.FxComponentBinding;
@@ -37,6 +28,14 @@ import org.tentackle.log.Logger;
 import org.tentackle.validate.ValidationFailedException;
 import org.tentackle.validate.ValidationResult;
 
+import javafx.application.Platform;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ReadOnlyBooleanWrapper;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.PopupWindow;
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Objects;
