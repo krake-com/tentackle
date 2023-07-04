@@ -140,9 +140,7 @@
             </tag>
           </tags>
           <!-- don't complain about wurblet args -->
-          <additionalJOptions>
-            <additionalJOption>-Xdoclint:none</additionalJOption>
-          </additionalJOptions>
+          <doclint>none</doclint>
         </configuration>
       </plugin>
     </plugins>
