@@ -106,6 +106,9 @@ public class PdoWrapper {
           udkStr = uniqueDomainKey.toString();
         }
       }
+      else {
+        udkStr = pdo.toString();
+      }
       udk = udkStr;
     }
     return udk;

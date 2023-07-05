@@ -8,7 +8,6 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.SplitPane?>
-<?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
@@ -16,8 +15,7 @@
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
-
-<BorderPane fx:id="borderPane" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.tentackle.maven.plugin.wizard.fx.PdoBrowser">
+<BorderPane fx:id="borderPane" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.tentackle.maven.plugin.wizard.fx.PdoBrowser">
    <top>
       <GridPane hgap="5.0" vgap="5.0" BorderPane.alignment="CENTER">
          <columnConstraints>
@@ -65,15 +63,15 @@
       </HBox>
    </bottom>
    <center>
-      <SplitPane fx:id="splitPane" BorderPane.alignment="CENTER">
-        <items>
-            <TableView fx:id="pdosTableView">
-              <columns>
-                <TableColumn prefWidth="75.0" text="C1" />
-                <TableColumn prefWidth="75.0" text="C2" />
-              </columns>
-            </TableView>
-        </items>
+      <SplitPane fx:id="outerSplitPane" orientation="VERTICAL" BorderPane.alignment="CENTER">
+         <items>
+            <SplitPane fx:id="innerSplitPane">
+              <items>
+                  <TableView fx:id="pdosTableView">
+                  </TableView>
+              </items>
+            </SplitPane>
+         </items>
       </SplitPane>
    </center>
 </BorderPane>

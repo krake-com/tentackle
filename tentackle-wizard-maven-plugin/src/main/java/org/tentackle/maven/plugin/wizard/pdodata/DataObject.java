@@ -173,7 +173,10 @@ public class DataObject implements DataNode {
       buf.append("<null>");
     }
     else {
-      if (!pdo.isEmbedded()) {
+      if (pdo.isEmbedded()) {
+        buf.append(pdo);
+      }
+      else {
         buf.append('[').append(getId()).append('/').append(getSerial()).append(']');
       }
       if (nmRelation != null) {
