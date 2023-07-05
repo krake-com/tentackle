@@ -44,6 +44,8 @@ import org.tentackle.fx.rdc.table.TablePopup;
 import org.tentackle.maven.plugin.wizard.BrowseMojo;
 import org.tentackle.maven.plugin.wizard.PdoProfile;
 import org.tentackle.maven.plugin.wizard.pdodata.DataDiff;
+import org.tentackle.maven.plugin.wizard.pdodata.DataList;
+import org.tentackle.maven.plugin.wizard.pdodata.DataNode;
 import org.tentackle.maven.plugin.wizard.pdodata.DataObject;
 import org.tentackle.maven.plugin.wizard.pdodata.JavaCodeFactory;
 import org.tentackle.maven.plugin.wizard.pdodata.PdoWrapper;
@@ -53,6 +55,7 @@ import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.PersistentDomainObject;
 
 import javafx.application.Platform;
+import javafx.beans.property.StringPropertyBase;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.Event;
@@ -64,6 +67,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SelectionMode;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.BorderPane;
@@ -110,7 +115,8 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
   @Bindable private PdoType entity;
   @Bindable private List<PdoWrapper> pdos;
 
-  @FXML private FxSplitPane splitPane;
+  @FXML private FxSplitPane outerSplitPane;   // top: innerSplitPane, bottom: row details
+  @FXML private FxSplitPane innerSplitPane;   // left: pdos, right: PdoView
   @FXML private FxChoiceBox<PdoProfile> profileField;
   @FXML private FxCheckBox rootOnlyField;
   @FXML private FxComboBox<PdoType> entityField;
@@ -129,6 +135,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
   private DataObject dataObject;
   private DataObject oldDataObject;
   private PdoView pdoView;
+  private TableView<DataNode> rowDetailsTable;
   private Timestamp loadingTime;
   private Timestamp memorizeTime;
   @SuppressWarnings("rawtypes")
@@ -139,7 +146,10 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
   @FXML
   private void initialize() {
     pdoView = Fx.load(PdoView.class);
-    splitPane.getItems().add(pdoView.getView());
+    pdoView.addSelectedItemListener((observable, oldValue, newValue) -> updateRowDetails(newValue == null ? null : newValue.getValue()));
+    innerSplitPane.getItems().add(pdoView.getView());
+    rowDetailsTable = new TableView<>();
+    outerSplitPane.getItems().add(rowDetailsTable);
 
     profileField.addViewToModelListener(this::updateEntityFieldProperties);
     rootOnlyField.addViewToModelListener(this::updateEntityFieldProperties);
@@ -204,8 +214,9 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     double leftWidth = pdosTableView.getPrefWidth();
     double totalWidth = pdosTableView.getPrefWidth() + pdoView.getPrefWidth();
     if (leftWidth >= 1.0 && totalWidth > leftWidth) {
-      splitPane.setDividerPosition(0,  leftWidth / totalWidth);
+      innerSplitPane.setDividerPosition(0,  leftWidth / totalWidth);
     }
+    outerSplitPane.setDividerPosition(0, 0.84);
   }
 
   @Override
@@ -229,6 +240,47 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     showDiff();
   }
 
+
+  private void updateRowDetails(DataDiff diffNode) {
+    rowDetailsTable.getColumns().clear();
+    if (diffNode != null) {
+      if (diffNode.getLeft() instanceof DataObject dataObject) {
+        showDataObjects(List.of(dataObject));
+      }
+      else if (diffNode.getLeft() instanceof DataList dataList) {
+        showDataObjects(dataList.getNodes());
+      }
+    }
+  }
+
+  private void showDataObjects(List<DataObject> dataObjects) {
+    if (!dataObjects.isEmpty()) {
+      int columnCount = 0;
+      for (DataNode node : dataObjects.get(0).getNodes()) {
+        final int columnIndex = columnCount;
+        TableColumn<DataNode, String> column = new TableColumn<>(node.getName());
+        column.setCellValueFactory(callback -> new StringPropertyBase() {
+          @Override
+          public DataNode getBean() {
+            return callback.getValue();
+          }
+
+          @Override
+          public String getName() {
+            return node.getName();
+          }
+
+          @Override
+          public String getValue() {
+            return getBean().getNodes().get(columnIndex).getValue();
+          }
+        });
+        rowDetailsTable.getColumns().add(column);
+        columnCount++;
+      }
+      rowDetailsTable.getItems().setAll(dataObjects);
+    }
+  }
 
   private void updateCodeConfiguration(List<? extends PdoWrapper> selectedItems) {
     codeConfiguration = new LinkedHashMap<>();

@@ -31,6 +31,7 @@ import org.tentackle.maven.plugin.wizard.pdodata.DataNode;
 import org.tentackle.maven.plugin.wizard.pdodata.DataObject;
 import org.tentackle.pdo.PersistentDomainObject;
 
+import javafx.beans.value.ChangeListener;
 import javafx.event.ActionEvent;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
@@ -78,6 +79,15 @@ public class PdoView extends AbstractFxController {
    */
   public double getPrefWidth() {
     return diffNode.getPrefWidth();
+  }
+
+  /**
+   * Adds a selection listener for the currently selected data node.
+   *
+   * @param listener the change listener
+   */
+  public void addSelectedItemListener(ChangeListener<TreeItem<DataDiff>> listener) {
+    diffNode.getSelectionModel().selectedItemProperty().addListener(listener);
   }
 
   @Override
@@ -152,7 +162,9 @@ public class PdoView extends AbstractFxController {
           copyFQCNItem.setVisible(true);
         }
         if (typeInfo.tableName != null) {
-          copyTableItem.setText("copy table name \"" + typeInfo.tableName + "\" to clipboard");
+          // replace _ by __ to avoid misinterpretation as a mnemonic (even if setMnemonicParsing=false!)
+          copyTableItem.setText("copy table name \"" + typeInfo.tableName.replace("_", "__") + "\" to clipboard");
+          copyTableItem.setMnemonicParsing(false);    // table names often contain underscores
           copyTableItem.setVisible(true);
         }
         if (typeInfo.classId != 0) {
@@ -228,4 +240,3 @@ public class PdoView extends AbstractFxController {
   }
 
 }
-
