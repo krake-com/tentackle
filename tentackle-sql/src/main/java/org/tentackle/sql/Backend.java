@@ -68,6 +68,9 @@ public interface Backend {
   /** closing bracket. */
   String SQL_RIGHT_PARENTHESIS = ") ";
 
+  /** dot all columns. */
+  String SQL_DOT_STAR = ".*";
+
   /** (VALUES) string for insert. */
   String SQL_INSERT_VALUES = SQL_RIGHT_PARENTHESIS + "VALUES" + SQL_LEFT_PARENTHESIS;
 

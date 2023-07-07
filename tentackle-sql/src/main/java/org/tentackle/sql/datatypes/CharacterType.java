@@ -56,6 +56,11 @@ public sealed class CharacterType extends AbstractDataType<Character> permits Ch
   }
 
   @Override
+  public Character getMappedNullValue(Backend backend, int index) {
+    return Character.valueOf(' ');
+  }
+
+  @Override
   public Optional<DataType<?>> toPrimitive() {
     return Optional.of(DataTypeFactory.getInstance().get("char"));
   }

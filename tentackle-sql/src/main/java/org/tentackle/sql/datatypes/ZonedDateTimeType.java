@@ -108,6 +108,15 @@ public final class ZonedDateTimeType extends AbstractDateTimeType<ZonedDateTime>
   }
 
   @Override
+  public Object getMappedNullValue(Backend backend, int index) {
+    return switch (index) {
+      case 0 -> DateHelper.MIN_TIMESTAMP;
+      case 1 -> GMT;
+      default -> throw new IndexOutOfBoundsException(index);
+    };
+  }
+
+  @Override
   public int getColumnCount(Backend backend) {
     return 2;
   }

@@ -305,6 +305,16 @@ public interface DataType<T> {
    */
   boolean isMapNullSupported();
 
+  /**
+   * Gets the mapped non-null value that represents the model's null value.<br>
+   * The method throws a {@link BackendException}, if !{@link #isMapNullSupported()}.
+   *
+   * @param backend the backend, null if not backend-specific
+   * @param index   the column index
+   * @return the non-null mapped value
+   */
+  Object getMappedNullValue(Backend backend, int index);
+
 
   /**
    * Returns whether this type supports the UTC option.

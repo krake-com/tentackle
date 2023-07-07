@@ -19,6 +19,7 @@
 package org.tentackle.maven.plugin.wizard.pdodata;
 
 import org.tentackle.model.AccessScope;
+import org.tentackle.model.Entity;
 import org.tentackle.model.Relation;
 
 import java.util.List;
@@ -34,6 +35,7 @@ public class DataList implements DataNode {
   private final String comment;             // the optional comment
   private final List<DataObject> nodes;     // the items of the list
   private final Relation relation;          // composite list relation
+  private final SqlCondition sqlCondition;  // the SQL where condition
   private String configurationPath;         // the optional configuration path
 
   /**
@@ -44,13 +46,16 @@ public class DataList implements DataNode {
    * @param comment the optional comment
    * @param nodes the items of the list
    * @param relation the composite list relation
+   * @param sqlCondition the SQL where condition
    */
-  public DataList(String genericType, String name, String comment, List<DataObject> nodes, Relation relation) {
+  public DataList(String genericType, String name, String comment, List<DataObject> nodes, Relation relation, SqlCondition sqlCondition) {
     this.genericType = genericType;
     this.name = name;
     this.comment = comment;
     this.nodes = nodes;
     this.relation = relation;
+    this.sqlCondition = sqlCondition;
+
     int ndx = 0;
     for (DataObject node : nodes) {
       node.setDataList(this, ndx++);
@@ -99,6 +104,11 @@ public class DataList implements DataNode {
     return nodes;
   }
 
+  @Override
+  public SqlCondition getSqlCondition() {
+    return sqlCondition;
+  }
+
   /**
    * Gets the composite list relation.
    *
@@ -106,6 +116,11 @@ public class DataList implements DataNode {
    */
   public Relation getRelation() {
     return relation;
+  }
+
+  @Override
+  public Entity getEntity() {
+    return relation.getForeignEntity();
   }
 
   @Override

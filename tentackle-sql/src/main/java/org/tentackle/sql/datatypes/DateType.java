@@ -68,6 +68,11 @@ public class DateType extends AbstractDateTimeType<Date> {
   }
 
   @Override
+  public Date getMappedNullValue(Backend backend, int index) {
+    return DateHelper.MIN_DATE;
+  }
+
+  @Override
   public boolean isMutable() {
     return true;
   }

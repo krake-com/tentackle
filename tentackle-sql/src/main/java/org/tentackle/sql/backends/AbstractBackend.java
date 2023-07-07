@@ -822,7 +822,7 @@ public abstract class AbstractBackend implements Backend {
     buf.append(select.substring(0, fromNdx));
 
     if (addColumns) {
-      buf.append(",").append(joinAlias).append(".*");
+      buf.append(',').append(joinAlias).append(SQL_DOT_STAR);
     }
 
     buf.append(select.substring(fromNdx, tailNdx)).

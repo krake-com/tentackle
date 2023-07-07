@@ -60,7 +60,7 @@ public class DataNodeFactory {
    */
   public static DataObject create(PersistentDomainObject<?> pdo) {
     pdo.loadComponents(false);
-    return getDataObject(pdo, null, null, null, false);
+    return getDataObject(pdo, null, null, null, false, null);
   }
 
 
@@ -214,7 +214,7 @@ public class DataNodeFactory {
 
   @SuppressWarnings("unchecked")
   private static DataObject getDataObject(PersistentDomainObject<?> pdo, String name, String comment,
-                                          PersistentDomainObject<?> parentPdo, boolean hidden) {
+                                          PersistentDomainObject<?> parentPdo, boolean hidden, Relation compositeRelation) {
 
     ClassInfo classInfo = classMap.computeIfAbsent(pdo.getEffectiveClass(),
                                 effectiveClass -> new ClassInfo(effectiveClass, pdo.getPersistenceDelegate().getClass()));
@@ -230,13 +230,24 @@ public class DataNodeFactory {
       try {
         Object value = methodInfo.getter.invoke(pdo.getPersistenceDelegate());
         if (methodInfo.isComponent) {
+          Relation relation = classInfo.entity.getRelation(methodInfo.name, true);
+          if (relation != null && relation.isEmbedding()) {
+            StringBuilder prefix = new StringBuilder();
+            if (compositeRelation.isEmbedding()) {
+              prefix.append(compositeRelation.getColumnPrefix());
+            }
+            if (relation.isEmbedding()) {
+              prefix.append(relation.getColumnPrefix());
+            }
+            relation = relation.createEmbedded(classInfo.entity, methodInfo.name, prefix.toString());
+          }
           if (methodInfo.isList) {
             List<DataObject> dataObjects = new ArrayList<>();
             List<? extends PersistentDomainObject<?>> components = (List<? extends PersistentDomainObject<?>>) value;
             boolean needSort = false;
             if (components != null) {       // should never be null, but one never knows...
               for (PersistentDomainObject<?> component : components) {
-                DataObject dataObject = createDataObject(methodInfo.name, methodInfo.comment, component, pdo, false);
+                DataObject dataObject = createDataObject(methodInfo.name, methodInfo.comment, component, pdo, false, relation);
                 dataObjects.add(dataObject);
                 if (dataObject.getNmRelation() != null) {
                   needSort = true;
@@ -251,11 +262,11 @@ public class DataNodeFactory {
                 return Long.compare(o1.getId(), o2.getId());
               });
             }
-            Relation relation = classInfo.entity.getRelation(methodInfo.name, true);
-            nodes.add(new DataList(methodInfo.typeName, methodInfo.name, methodInfo.comment, dataObjects, relation));
+            nodes.add(new DataList(methodInfo.typeName, methodInfo.name, methodInfo.comment, dataObjects, relation,
+                                   new SqlCondition(pdo.getId(), relation.getForeignAttribute())));
           }
           else {
-            nodes.add(createDataObject(methodInfo.name, methodInfo.comment, (PersistentDomainObject<?>) value, pdo, methodInfo.isHidden));
+            nodes.add(createDataObject(methodInfo.name, methodInfo.comment, (PersistentDomainObject<?>) value, pdo, methodInfo.isHidden, relation));
           }
         }
         else {
@@ -315,7 +326,15 @@ public class DataNodeFactory {
           }
           Attribute attribute = classInfo.entity.getAttributeByJavaName(methodInfo.name, true);
           if (attribute != null || !Constants.AN_CLASSID.equals(methodInfo.name)) {    // classId is also available via context menu
-            nodes.add(new DataItem(methodInfo.typeName, methodInfo.name, value, methodInfo.comment, attribute, idOfCompositeRelation, nonCompositeRelation));
+            Entity entity = classInfo.entity;
+            if (compositeRelation != null && compositeRelation.isEmbedding()) {
+              attribute = attribute.createEmbedded(classInfo.entity, compositeRelation.getPathName(),
+                                                   compositeRelation.getColumnPrefix() + attribute.getColumnName());
+              entity = compositeRelation.getEmbeddingPath().get(0);
+            }
+            nodes.add(new DataItem(methodInfo.typeName, methodInfo.name, value, methodInfo.comment,
+                                   entity, attribute, idOfCompositeRelation, nonCompositeRelation,
+                                   new SqlCondition(pdo.getId(), classInfo.entity.getAttributeByJavaName(Constants.AN_ID, true))));
           }
         }
       }
@@ -358,16 +377,18 @@ public class DataNodeFactory {
       }
     }
 
-    return new DataObject(pdo, name, comment, nodes, objectRelation, nmRelation, hidden);
+    return new DataObject(pdo, name, comment, nodes, classInfo.entity, objectRelation, nmRelation, hidden,
+                          new SqlCondition(pdo.getId(), classInfo.entity.getAttributeByJavaName(Constants.AN_ID, true)));
   }
 
-  private static DataObject createDataObject(String name, String comment, PersistentDomainObject<?> pdo, PersistentDomainObject<?> parentPdo, boolean hidden) {
+  private static DataObject createDataObject(String name, String comment, PersistentDomainObject<?> pdo,
+                                             PersistentDomainObject<?> parentPdo, boolean hidden, Relation compositeRelation) {
     DataObject dataObject;
     if (pdo == null) {
-      dataObject = new DataObject(null, name, null, null, null, null, hidden);
+      dataObject = new DataObject(null, name, null, null, null, null, null, hidden, null);
     }
     else {
-      dataObject = getDataObject(pdo, name, comment, parentPdo, hidden);
+      dataObject = getDataObject(pdo, name, comment, parentPdo, hidden, compositeRelation);
     }
     return dataObject;
   }

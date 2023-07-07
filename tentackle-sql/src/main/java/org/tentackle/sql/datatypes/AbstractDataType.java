@@ -215,6 +215,14 @@ public abstract class AbstractDataType<T> implements DataType<T> {
   }
 
   @Override
+  public Object getMappedNullValue(Backend backend, int index) {
+    if (!isMapNullSupported()) {
+      throw new BackendException(this + " does not support the MAPNULL-option");
+    }
+    throw new UnsupportedOperationException("getMappedNullValue not yet implemented for " + this);
+  }
+
+  @Override
   public boolean isUTCSupported() {
     return false;
   }

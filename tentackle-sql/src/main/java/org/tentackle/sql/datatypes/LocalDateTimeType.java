@@ -66,6 +66,11 @@ public final class LocalDateTimeType extends AbstractDateTimeType<LocalDateTime>
   }
 
   @Override
+  public Timestamp getMappedNullValue(Backend backend, int index) {
+    return DateHelper.MIN_TIMESTAMP;
+  }
+
+  @Override
   public SqlType getSqlType(Backend backend, int index) {
     if (index != 0) {
       throw new IndexOutOfBoundsException();

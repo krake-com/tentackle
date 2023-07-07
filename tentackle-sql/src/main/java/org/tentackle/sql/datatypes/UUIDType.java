@@ -71,6 +71,11 @@ public final class UUIDType extends AbstractDataType<UUID> {
   }
 
   @Override
+  public UUID getMappedNullValue(Backend backend, int index) {
+    return NIL;
+  }
+
+  @Override
   public boolean isPredefined() {
     return false;   // NOT a predefined type -> via setObject/getObject!
   }

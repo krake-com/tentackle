@@ -27,9 +27,13 @@ import org.tentackle.fx.container.FxBorderPane;
 import org.tentackle.fx.rdc.Rdc;
 import org.tentackle.fx.rdc.table.TablePopup;
 import org.tentackle.maven.plugin.wizard.pdodata.DataDiff;
+import org.tentackle.maven.plugin.wizard.pdodata.DataItem;
 import org.tentackle.maven.plugin.wizard.pdodata.DataNode;
 import org.tentackle.maven.plugin.wizard.pdodata.DataObject;
+import org.tentackle.maven.plugin.wizard.pdodata.SqlCodeFactory;
+import org.tentackle.model.ModelException;
 import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.sql.DataType;
 
 import javafx.beans.value.ChangeListener;
 import javafx.event.ActionEvent;
@@ -144,9 +148,13 @@ public class PdoView extends AbstractFxController {
     copyFQCNItem.setOnAction(this::copyFQCN);
     MenuItem copyTableItem = Fx.create(MenuItem.class);
     copyTableItem.setOnAction(this::copyTableName);
+    MenuItem copySqlItem = Fx.create(MenuItem.class);
+    copySqlItem.setOnAction(this::copySql);
+    copySqlItem.setText("copy SQL SELECT... to clipboard");
     MenuItem copyIdItem = Fx.create(MenuItem.class);
     copyIdItem.setOnAction(this::copyClassId);
     contextMenu.getItems().add(0, copyIdItem);
+    contextMenu.getItems().add(0, copySqlItem);
     contextMenu.getItems().add(0, copyTableItem);
     contextMenu.getItems().add(0, copyFQCNItem);
     contextMenu.getItems().add(0, diffOnlyItem);
@@ -155,6 +163,7 @@ public class PdoView extends AbstractFxController {
       TypeInfo typeInfo = getSelectedTypeInfo();
       copyFQCNItem.setVisible(false);
       copyTableItem.setVisible(false);
+      copySqlItem.setVisible(isCreatingSqlPossible());
       copyIdItem.setVisible(false);
       if (typeInfo != null) {
         if (typeInfo.fqcn != null) {
@@ -173,6 +182,29 @@ public class PdoView extends AbstractFxController {
         }
       }
     });
+  }
+
+
+  private boolean isCreatingSqlPossible() {
+    DataNode selectedDataNode = getSelectedDataNode();
+    if (selectedDataNode != null) {
+      if (selectedDataNode instanceof DataItem dataItem) {
+        try {
+          DataType<?> dataType = dataItem.getAttribute().getEffectiveDataType();
+          if (dataType.isColumnCountBackendSpecific() || dataType.getColumnCount(null) > 1) {
+            return false;
+          }
+        }
+        catch (ModelException mx) {
+          return false;   // just ignored...
+        }
+      }
+      else if (selectedDataNode instanceof DataObject dataObject && dataObject.getEntity().isEmbedded()) {
+        return false;
+      }
+      return true;
+    }
+    return false;
   }
 
   private void toggleDiffOnly(ActionEvent event) {
@@ -211,6 +243,13 @@ public class PdoView extends AbstractFxController {
     }
   }
 
+  private void copySql(ActionEvent event) {
+    DataNode node = getSelectedDataNode();
+    if (node != null) {
+      copyToClipboard(SqlCodeFactory.createSelect(node));
+    }
+  }
+
   private void copyClassId(ActionEvent event) {
     TypeInfo typeInfo = getSelectedTypeInfo();
     if (typeInfo != null) {
@@ -219,18 +258,24 @@ public class PdoView extends AbstractFxController {
   }
 
   private TypeInfo getSelectedTypeInfo() {
-    TreeItem<DataDiff> selectedItem = diffNode.getSelectionModel().getSelectedItem();
-    if (selectedItem != null) {
-      DataDiff diff = selectedItem.getValue();
-      DataNode data = diff.isLeftPresent() ? diff.getLeft() : diff.getRight();
-      if (data instanceof DataObject object) {
-        PersistentDomainObject<?> pdo = object.getPdo();
-        if (pdo != null) {
-          return new TypeInfo(pdo.getEffectiveClass().getName(), pdo.getTableName(), pdo.getClassId());
-        }
+    DataNode node = getSelectedDataNode();
+    if (node instanceof DataObject object) {
+      PersistentDomainObject<?> pdo = object.getPdo();
+      if (pdo != null) {
+        return new TypeInfo(pdo.getEffectiveClass().getName(), pdo.getTableName(), pdo.getClassId());
       }
     }
     return null;
+  }
+
+  private DataNode getSelectedDataNode() {
+    DataNode node = null;
+    TreeItem<DataDiff> selectedItem = diffNode.getSelectionModel().getSelectedItem();
+    if (selectedItem != null) {
+      DataDiff diff = selectedItem.getValue();
+      node = diff.isLeftPresent() ? diff.getLeft() : diff.getRight();
+    }
+    return node;
   }
 
   private void copyToClipboard(String text) {

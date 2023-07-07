@@ -19,6 +19,7 @@
 package org.tentackle.maven.plugin.wizard.pdodata;
 
 import org.tentackle.model.Attribute;
+import org.tentackle.model.Entity;
 import org.tentackle.model.Relation;
 
 import java.util.List;
@@ -33,9 +34,12 @@ public class DataItem implements DataNode {
   private final String name;                                  // the property name
   private final Object value;                                 // the property value, may be null
   private final String comment;                               // the optional comment
+  private final Entity entity;                                // the effective entity
   private final Attribute attribute;                          // the model attribute
   private final boolean idOfCompositeRelation;                // true if this is an ID of a composite object relation
   private final NonCompositeRelation nonCompositeRelation;    // the optional non-composite relation
+  private final SqlCondition sqlCondition;                    // the SQL where condition
+
   private String displayValue;                                // formatted value displayed
   private String configurationPath;                           // the optional configuration path
 
@@ -46,19 +50,23 @@ public class DataItem implements DataNode {
    * @param name the property name
    * @param value the property value, may be null
    * @param comment the optional comment
+   * @param entity the effective entity
    * @param attribute the model attribute, null if not in model
    * @param idOfCompositeRelation true if this an ID of a composite object relation
    * @param nonCompositeRelation the non-composite relation, may be null
+   * @param sqlCondition the SQL where condition
    */
-  public DataItem(String type, String name, Object value, String comment, Attribute attribute,
-                  boolean idOfCompositeRelation, NonCompositeRelation nonCompositeRelation) {
+  public DataItem(String type, String name, Object value, String comment, Entity entity, Attribute attribute,
+                  boolean idOfCompositeRelation, NonCompositeRelation nonCompositeRelation, SqlCondition sqlCondition) {
     this.type = type;
     this.name = name;
     this.value = value;
     this.comment = comment;
+    this.entity = entity;
     this.attribute = attribute;
     this.idOfCompositeRelation = idOfCompositeRelation;
     this.nonCompositeRelation = nonCompositeRelation;
+    this.sqlCondition = sqlCondition;
   }
 
   /**
@@ -138,6 +146,11 @@ public class DataItem implements DataNode {
     return attribute;
   }
 
+  @Override
+  public Entity getEntity() {
+    return entity;
+  }
+
   /**
    * Returns whether this the ID of a composite object relation.
    *
@@ -164,6 +177,11 @@ public class DataItem implements DataNode {
   @Override
   public String getConfigurationPath() {
     return configurationPath;
+  }
+
+  @Override
+  public SqlCondition getSqlCondition() {
+    return sqlCondition;
   }
 
   /**
