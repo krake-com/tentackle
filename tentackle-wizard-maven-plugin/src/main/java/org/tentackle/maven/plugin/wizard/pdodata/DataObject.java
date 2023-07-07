@@ -18,6 +18,7 @@
 
 package org.tentackle.maven.plugin.wizard.pdodata;
 
+import org.tentackle.model.Entity;
 import org.tentackle.model.Relation;
 import org.tentackle.pdo.PersistentDomainObject;
 
@@ -34,9 +35,12 @@ public class DataObject implements DataNode {
   private final String name;                            // the object name, null if root entity or list member
   private final List<DataNode> nodes;                   // the items of the object, null if reference is null
   private final String comment;                         // the optional comment
+  private final Entity entity;                          // the entity of this object
   private final Relation relation;                      // composite object 1:1 relation
   private final NonCompositeRelation nmRelation;        // the optional N:M relation
   private final boolean hidden;                         // true if object is hidden (no public method available)
+  private final SqlCondition sqlCondition;              // the SQL where condition
+
   private String configurationPath;                     // the optional configuration path
   private DataList dataList;                            // != null if element of a list
   private int listIndex;                                // index in dataList
@@ -49,20 +53,25 @@ public class DataObject implements DataNode {
    * @param name the object name, null if root entity or list member
    * @param comment the optional comment
    * @param nodes the items of the object, null if reference is null
+   * @param entity the entity of this object
    * @param relation the composite object 1:1 relation
    * @param nmRelation optional N:M relation
    * @param hidden true if object is hidden (no public method available)
+   * @param sqlCondition the SQL where condition
    */
   public DataObject(PersistentDomainObject<?> pdo, String name, String comment, List<DataNode> nodes,
-                    Relation relation, NonCompositeRelation nmRelation, boolean hidden) {
+                    Entity entity, Relation relation, NonCompositeRelation nmRelation, boolean hidden,
+                    SqlCondition sqlCondition) {
     this.pdo = pdo;
     this.type = pdo.getEffectiveClass().getSimpleName();
     this.name = name;
     this.comment = comment;
     this.nodes = nodes;
+    this.entity = entity;
     this.relation = relation;
     this.nmRelation = nmRelation;
     this.hidden = hidden;
+    this.sqlCondition = sqlCondition;
   }
 
   /**
@@ -120,6 +129,11 @@ public class DataObject implements DataNode {
     return hidden;
   }
 
+  @Override
+  public SqlCondition getSqlCondition() {
+    return sqlCondition;
+  }
+
   /**
    * Gets the object ID.
    *
@@ -146,6 +160,15 @@ public class DataObject implements DataNode {
   @Override
   public List<DataNode> getNodes() {
     return nodes;
+  }
+
+  /**
+   * Gets the entity of this object.
+   *
+   * @return the entity
+   */
+  public Entity getEntity() {
+    return entity;
   }
 
   /**

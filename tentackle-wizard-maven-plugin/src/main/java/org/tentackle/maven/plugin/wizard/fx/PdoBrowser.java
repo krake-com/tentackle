@@ -107,7 +107,8 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
 
 
 
-  private static final int LATEST_DEFAULT = 100;      // number of latest to show initially
+  private static final int LATEST_DEFAULT = 100;                // number of latest to show initially
+  private static final double OUTER_DIVIDER_POSITION = 0.84;    // outer split pane divider position
 
   @Bindable private int latest = LATEST_DEFAULT;
   @Bindable private PdoProfile profile;
@@ -216,7 +217,8 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     if (leftWidth >= 1.0 && totalWidth > leftWidth) {
       innerSplitPane.setDividerPosition(0,  leftWidth / totalWidth);
     }
-    outerSplitPane.setDividerPosition(0, 0.84);
+    outerSplitPane.setPrefHeight(pdosTableView.getPrefHeight() / OUTER_DIVIDER_POSITION);
+    outerSplitPane.setDividerPosition(0, OUTER_DIVIDER_POSITION);
   }
 
   @Override
@@ -242,15 +244,17 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
 
 
   private void updateRowDetails(DataDiff diffNode) {
-    rowDetailsTable.getColumns().clear();
-    if (diffNode != null) {
-      if (diffNode.getLeft() instanceof DataObject dataObject) {
-        showDataObjects(List.of(dataObject));
+    Platform.runLater(() -> {
+      rowDetailsTable.getColumns().clear();
+      if (diffNode != null) {
+        if (diffNode.getLeft() instanceof DataObject dataObject) {
+          showDataObjects(List.of(dataObject));
+        }
+        else if (diffNode.getLeft() instanceof DataList dataList) {
+          showDataObjects(dataList.getNodes());
+        }
       }
-      else if (diffNode.getLeft() instanceof DataList dataList) {
-        showDataObjects(dataList.getNodes());
-      }
-    }
+    });
   }
 
   private void showDataObjects(List<DataObject> dataObjects) {

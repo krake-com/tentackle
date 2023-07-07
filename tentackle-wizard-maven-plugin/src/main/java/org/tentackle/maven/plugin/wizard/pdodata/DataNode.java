@@ -19,6 +19,7 @@
 package org.tentackle.maven.plugin.wizard.pdodata;
 
 import org.tentackle.bind.Bindable;
+import org.tentackle.model.Entity;
 
 import java.util.List;
 
@@ -100,5 +101,19 @@ public interface DataNode {
    * @return the path, null if none
    */
   String getConfigurationPath();
+
+  /**
+   * Returns the SQL select configuration for the where clause.
+   *
+   * @return the sql config
+   */
+  SqlCondition getSqlCondition();
+
+  /**
+   * Gets the entity this node belongs to.
+   *
+   * @return the entity
+   */
+  Entity getEntity();
 
 }

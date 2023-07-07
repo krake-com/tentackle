@@ -21,6 +21,7 @@ package org.tentackle.sql.datatypes;
 import org.tentackle.common.Service;
 import org.tentackle.common.StringHelper;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.BackendException;
 import org.tentackle.sql.DataType;
 import org.tentackle.sql.SqlType;
 
@@ -49,6 +50,14 @@ public sealed class StringType extends AbstractDataType<String> permits LargeStr
   @Override
   public boolean isMapNullSupported() {
     return true;
+  }
+
+  @Override
+  public Object getMappedNullValue(Backend backend, int index) {
+    if (backend == null) {
+      throw new BackendException("MAPNULL value is backend-specific for " + this);
+    }
+    return backend.getEmptyString();
   }
 
   @Override

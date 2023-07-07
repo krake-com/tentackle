@@ -70,6 +70,11 @@ public class TimestampType extends AbstractDateTimeType<Timestamp> {
   }
 
   @Override
+  public Timestamp getMappedNullValue(Backend backend, int index) {
+    return DateHelper.MIN_TIMESTAMP;
+  }
+
+  @Override
   public boolean isUTCSupported() {
     return true;
   }

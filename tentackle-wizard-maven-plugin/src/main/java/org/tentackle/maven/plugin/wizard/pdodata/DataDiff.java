@@ -19,6 +19,7 @@
 package org.tentackle.maven.plugin.wizard.pdodata;
 
 import org.tentackle.bind.Bindable;
+import org.tentackle.model.Entity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -197,6 +198,16 @@ public class DataDiff implements DataNode {
   @Override
   public String getConfigurationPath() {
     return null;
+  }
+
+  @Override
+  public SqlCondition getSqlCondition() {
+    return left != null ? left.getSqlCondition() : right.getSqlCondition();
+  }
+
+  @Override
+  public Entity getEntity() {
+    return left != null ? left.getEntity() : right.getEntity();
   }
 
   /**
