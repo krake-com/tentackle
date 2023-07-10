@@ -45,8 +45,10 @@ import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.TransferMode;
 import javafx.stage.Modality;
+import javafx.util.Callback;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -72,6 +74,7 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
   private final Consumer<T> pdoConsumer;
   private boolean inSearchOrEdit;
   private T pdo;
+  private Callback<T, Collection<T>> loadAllPdosCallback;
 
   /**
    * Creates the addon.
@@ -85,6 +88,7 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
     this.component = component;
     this.pdoSupplier = pdoSupplier;
     this.pdoConsumer = pdoConsumer;
+    this.loadAllPdosCallback = this::loadAllPdos;
 
     Control control = (Control) component;
 
@@ -254,14 +258,27 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
    * @return the collection of all PDOs
    */
   public Collection<T> getAllPdos(T proxy) {
-    PdoCache<T> cache = proxy.getCache();
-    if (cache != null && cache.isPreloading()) {
-      return proxy.selectAllCached();
-    }
-    List<T> pdos = proxy.selectAll();
-    LOGGER.warning("{0} {1} retrieved by selectAll() -> consider caching with preloading!",
-                   pdos.size(), proxy.getEffectiveClass().getName());
-    return pdos;
+    return loadAllPdosCallback.call(proxy);
+  }
+
+  /**
+   * Gets the callback to load all PDOs.<br>
+   * Used by {@link #getAllPdos(PersistentDomainObject)}.
+   *
+   * @return the callback
+   */
+  public Callback<T, Collection<T>> getLoadAllPdosCallback() {
+    return loadAllPdosCallback;
+  }
+
+  /**
+   * Sets the callback to load all PDOs.<br>
+   * Used by {@link #getAllPdos(PersistentDomainObject)}.
+   *
+   * @param loadAllPdosCallback the callback
+   */
+  public void setLoadAllPdosCallback(Callback<T, Collection<T>> loadAllPdosCallback) {
+    this.loadAllPdosCallback = Objects.requireNonNull(loadAllPdosCallback);
   }
 
   /**
@@ -388,6 +405,24 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
   public void searchPdo(T proxy, Consumer<T> selectedItem) {
     RdcUtilities.getInstance().displaySearchStage(proxy, Modality.APPLICATION_MODAL, Fx.getStage((Node) component), true,
                                                   list -> selectedItem.accept(list.isEmpty() ? null : list.get(0)));
+  }
+
+
+  /**
+   * Default implementation for the {@link #getLoadAllPdosCallback()}.
+   *
+   * @param proxy the PDO proxy
+   * @return the collection of PDOs
+   */
+  protected Collection<T> loadAllPdos(T proxy) {
+    PdoCache<T> cache = proxy.getCache();
+    if (cache != null && cache.isPreloading()) {
+      return proxy.selectAllCached();
+    }
+    List<T> pdos = proxy.selectAll();
+    LOGGER.warning("{0} {1} retrieved by selectAll() -> consider caching with preloading!",
+    pdos.size(), proxy.getEffectiveClass().getName());
+    return pdos;
   }
 
 }

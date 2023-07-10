@@ -21,7 +21,11 @@ package org.tentackle.fx.rdc.component.delegate;
 import org.tentackle.fx.component.delegate.FxChoiceBoxDelegate;
 import org.tentackle.fx.rdc.component.RdcChoiceBox;
 import org.tentackle.fx.rdc.translate.PdoComponentAddon;
+import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentDomainObject;
+
+import javafx.util.Callback;
+import java.util.Collection;
 
 /**
  * Delegate for RdcChoiceBox.
@@ -57,6 +61,35 @@ public class RdcChoiceBoxDelegate extends FxChoiceBoxDelegate {
   public void setViewValue(Object value) {
     boxImpl.prepareSetViewValue();
     super.setViewValue(value);
+  }
+
+  /**
+   * Gets the domain context from the binding properties.
+   *
+   * @return the context, null if not bound or no such property
+   */
+  public DomainContext getDomainContext() {
+    return boxImpl.getDomainContext();
+  }
+
+  /**
+   * Gets the callback to load all PDOs.<br>
+   * Used by {@link PdoComponentAddon#getAllPdos(PersistentDomainObject)}.
+   *
+   * @return the callback
+   */
+  public <T extends PersistentDomainObject<T>> Callback<T, Collection<T>> getLoadAllPdosCallback() {
+    return boxImpl.getLoadAllPdosCallback();
+  }
+
+  /**
+   * Sets the callback to load all PDOs.<br>
+   * Used by {@link PdoComponentAddon#getAllPdos(PersistentDomainObject)}.
+   *
+   * @param loadAllPdosCallback the callback
+   */
+  public <T extends PersistentDomainObject<T>> void setLoadAllPdosCallback(Callback<T, Collection<T>> loadAllPdosCallback) {
+    boxImpl.setLoadAllPdosCallback(loadAllPdosCallback);
   }
 
   /**

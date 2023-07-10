@@ -18,12 +18,14 @@
 
 package org.tentackle.fx.rdc.component.delegate;
 
-import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.component.delegate.FxComboBoxDelegate;
 import org.tentackle.fx.rdc.component.RdcComboBox;
 import org.tentackle.fx.rdc.translate.PdoComponentAddon;
-import org.tentackle.fx.rdc.translate.PdoStringTranslator;
 import org.tentackle.pdo.DomainContext;
+import org.tentackle.pdo.PersistentDomainObject;
+
+import javafx.util.Callback;
+import java.util.Collection;
 
 /**
  * Delegate for RdcComboBox.
@@ -33,6 +35,8 @@ import org.tentackle.pdo.DomainContext;
 public class RdcComboBoxDelegate extends FxComboBoxDelegate {
 
   private final RdcBoxDelegateImpl boxImpl;
+  @SuppressWarnings("rawtypes")
+  private PdoComponentAddon pdoAddon;
 
   /**
    * Creates the delegate.
@@ -47,6 +51,9 @@ public class RdcComboBoxDelegate extends FxComboBoxDelegate {
   @Override
   public void setType(Class<?> type) {
     boxImpl.prepareSetType(type);
+    if (PersistentDomainObject.class.isAssignableFrom(type)) {
+      setPdoAddon(createPdoAddon());
+    }
     super.setType(type);
   }
 
@@ -65,14 +72,54 @@ public class RdcComboBoxDelegate extends FxComboBoxDelegate {
     return boxImpl.getDomainContext();
   }
 
+  /**
+   * Gets the callback to load all PDOs.<br>
+   * Used by {@link PdoComponentAddon#getAllPdos(PersistentDomainObject)}.
+   *
+   * @return the function
+   */
+  public <T extends PersistentDomainObject<T>> Callback<T, Collection<T>> getLoadAllPdosCallback() {
+    return boxImpl.getLoadAllPdosCallback();
+  }
 
+  /**
+   * Sets the callback to load all PDOs.<br>
+   * Used by {@link PdoComponentAddon#getAllPdos(PersistentDomainObject)}.
+   *
+   * @param loadAllPdosCallback the callback
+   */
+  public <T extends PersistentDomainObject<T>> void setLoadAllPdosCallback(Callback<T, Collection<T>> loadAllPdosCallback) {
+    boxImpl.setLoadAllPdosCallback(loadAllPdosCallback);
+  }
+
+  /**
+   * Gets the PDO addon.
+   *
+   * @return the addon
+   */
   @SuppressWarnings("rawtypes")
-  private PdoComponentAddon getPdoAddon() {
-    ValueTranslator translator = getValueTranslator();
-    if (translator instanceof PdoStringTranslator) {
-      return ((PdoStringTranslator) translator).getPdoAddon();
-    }
-    return null;    // not bound to a PDO type
+  public PdoComponentAddon getPdoAddon() {
+    return pdoAddon;
+  }
+
+  /**
+   * Sets the PDO addon.
+   *
+   * @param pdoAddon the addon
+   */
+  @SuppressWarnings("rawtypes")
+  public void setPdoAddon(PdoComponentAddon pdoAddon) {
+    this.pdoAddon = pdoAddon;
+  }
+
+  /**
+   * Creates the PDO style implementation.
+   *
+   * @return the implementation
+   */
+  @SuppressWarnings({ "rawtypes", "unchecked" })
+  protected PdoComponentAddon createPdoAddon() {
+    return new PdoComponentAddon(getComponent(), this::getViewValue, this::setViewValue);
   }
 
 }

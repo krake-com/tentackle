@@ -20,6 +20,11 @@ package org.tentackle.fx.rdc.component;
 
 import org.tentackle.fx.component.FxChoiceBox;
 import org.tentackle.fx.rdc.component.delegate.RdcChoiceBoxDelegate;
+import org.tentackle.fx.rdc.translate.PdoComponentAddon;
+import org.tentackle.pdo.PersistentDomainObject;
+
+import javafx.util.Callback;
+import java.util.Collection;
 
 /**
  * PDO-aware choice box.
@@ -35,6 +40,34 @@ public class RdcChoiceBox<T> extends FxChoiceBox<T> {
   public RdcChoiceBox() {
     // see -Xlint:missing-explicit-ctor since Java 16
   }
+
+  /**
+   * Gets the callback to load all PDOs.<br>
+   * Used by {@link PdoComponentAddon#getAllPdos(PersistentDomainObject)}.
+   *
+   * @return the callback
+   */
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  public Callback<T, Collection<T>> getLoadAllPdosCallback() {
+    return (Callback) getDelegate().getLoadAllPdosCallback();
+  }
+
+  /**
+   * Sets the callback to load all PDOs.<br>
+   * Used by {@link PdoComponentAddon#getAllPdos(PersistentDomainObject)}.
+   *
+   * @param loadAllPdosCallback the callback
+   */
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  public void setLoadAllPdosCallback(Callback<T, Collection<T>> loadAllPdosCallback) {
+    getDelegate().setLoadAllPdosCallback((Callback) loadAllPdosCallback);
+  }
+
+  @Override
+  public RdcChoiceBoxDelegate getDelegate() {
+    return (RdcChoiceBoxDelegate) super.getDelegate();
+  }
+
 
   @Override
   protected RdcChoiceBoxDelegate createDelegate() {

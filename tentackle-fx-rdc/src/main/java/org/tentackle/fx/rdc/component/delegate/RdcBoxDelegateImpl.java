@@ -18,8 +18,6 @@
 
 package org.tentackle.fx.rdc.component.delegate;
 
-import javafx.collections.ObservableList;
-
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.rdc.translate.PdoComponentAddon;
@@ -27,6 +25,9 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
 
+import javafx.collections.ObservableList;
+import javafx.util.Callback;
+import java.util.Collection;
 import java.util.function.Supplier;
 
 /**
@@ -141,4 +142,27 @@ public class RdcBoxDelegateImpl {
       }
     }
   }
+
+  /**
+   * Gets the callback to load all PDOs.<br>
+   * Used by {@link PdoComponentAddon#getAllPdos(PersistentDomainObject)}.
+   *
+   * @return the callback
+   */
+  @SuppressWarnings("unchecked")
+  public <T extends PersistentDomainObject<T>> Callback<T, Collection<T>> getLoadAllPdosCallback() {
+    return pdoAddonSupplier.get().getLoadAllPdosCallback();
+  }
+
+  /**
+   * Sets the callback to load all PDOs.<br>
+   * Used by {@link PdoComponentAddon#getAllPdos(PersistentDomainObject)}.
+   *
+   * @param loadAllPdosCallback the callback
+   */
+  @SuppressWarnings("unchecked")
+  public <T extends PersistentDomainObject<T>> void setLoadAllPdosCallback(Callback<T, Collection<T>> loadAllPdosCallback) {
+    pdoAddonSupplier.get().setLoadAllPdosCallback(loadAllPdosCallback);
+  }
+
 }
