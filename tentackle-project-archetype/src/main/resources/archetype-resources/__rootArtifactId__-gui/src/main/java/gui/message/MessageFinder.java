@@ -16,6 +16,7 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 
 import org.tentackle.bind.Bindable;
+import org.tentackle.common.Constants;
 import org.tentackle.common.Timestamp;
 import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.component.FxChoiceBox;
@@ -97,12 +98,12 @@ public class MessageFinder extends PdoFinder<Message> {
 
     numberField.setOnAction(e -> {
       if (number == null && from == null) {
-        from = DateHelper.now(-86400000); // -1 day
+        from = DateHelper.now(-Constants.DAY_MS);
         fromField.updateView();
       }
     });
 
-    from = DateHelper.now(-86400000); // -1 day
+    from = DateHelper.now(-Constants.DAY_MS);
   }
 
   @Override
