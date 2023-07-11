@@ -28,6 +28,12 @@ import org.tentackle.session.ModificationTracker;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendFactory;
 import org.tentackle.sql.DataType;
+import org.tentackle.sql.JoinType;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Factory generating SQL code to select PDOs.
@@ -57,7 +63,7 @@ public class SqlCodeFactory {
       if (inheritanceType == InheritanceType.SINGLE) {
         // only columns necessary for entity
         boolean needComma = false;
-        for (Attribute attribute : entity.getAttributesIncludingInherited()) {
+        for (Attribute attribute : entity.getAllAttributes()) {
           if (needComma) {
             sql.append(',');
           }
@@ -70,8 +76,10 @@ public class SqlCodeFactory {
       else {
         sql.append(tableAlias).append(Backend.SQL_DOT_STAR);
         if (inheritanceType == InheritanceType.MULTI) {
-          condition.attribute().getEntity().getInheritanceChain(entity).stream().skip(1).
-                    forEach(subEntity -> sql.append(',').append(subEntity.getTableAlias()).append(Backend.SQL_DOT_STAR));
+          List<Entity> entities = new ArrayList<>();
+          entities.addAll(condition.attribute().getEntity().getInheritanceChain(entity).stream().skip(1).toList());
+          entities.addAll(entity.getSubEntities());
+          entities.forEach(e -> sql.append(',').append(e.getTableAlias()).append(Backend.SQL_DOT_STAR));
         }
       }
 
@@ -80,7 +88,13 @@ public class SqlCodeFactory {
       if (inheritanceType == InheritanceType.MULTI) {
         condition.attribute().getEntity().getInheritanceChain(entity).stream().skip(1).
                   forEach(subEntity -> sql.append(", ").append(subEntity.getTableName()).
-                                       append(backend.sqlAsBeforeTableAlias()).append(subEntity.getTableAlias()));
+                                           append(backend.sqlAsBeforeTableAlias()).append(subEntity.getTableAlias()));
+        entity.getSubEntities().forEach(subEntity -> {
+          sql.append(' ').append(JoinType.LEFT).append(' ').append(subEntity.getTableName()).
+              append(backend.sqlAsBeforeTableAlias()).append(subEntity.getTableAlias()).append(" ON ").
+              append(subEntity.getTableAlias()).append('.').append(Constants.CN_ID).append('=').
+              append(tableAlias).append('.').append(Constants.CN_ID);
+        });
       }
 
       sql.append(Backend.SQL_WHERE);
@@ -118,9 +132,34 @@ public class SqlCodeFactory {
                                          append('.').append(Constants.CN_ID).append('=').append(tableAlias).
                                          append('.').append(Constants.CN_ID));
         }
-        else if (inheritanceType == InheritanceType.SINGLE && selectAllForItem) {
-          sql.append(Backend.SQL_AND).append(tableAlias).append('.').append(Constants.CN_CLASSID).
-              append('=').append(entity.getClassId());
+        else if (inheritanceType == InheritanceType.SINGLE) {
+          Set<Integer> classIds = new TreeSet<>();    // we want that sorted by classId
+          if (selectAllForItem && entity.getClassId() != 0) {
+            classIds.add(entity.getClassId());
+          }
+          entity.getSubEntities().forEach(subEntity -> {
+            if (entity.getClassId() != 0) {
+              classIds.add(subEntity.getClassId());
+            }
+          });
+          if (classIds.size() == 1) {
+            sql.append(Backend.SQL_AND).append(tableAlias).append('.').append(Constants.CN_CLASSID).
+            append('=').append(entity.getClassId());
+          }
+          else if (classIds.size() > 1) {
+            sql.append(Backend.SQL_AND).append(tableAlias).append('.').append(Constants.CN_CLASSID).append(" IN(");
+            boolean needComma = false;
+            for (Integer classId : classIds) {
+              if (needComma) {
+                sql.append(',');
+              }
+              else {
+                needComma = true;
+              }
+              sql.append(classId);
+            }
+            sql.append(')');
+          }
         }
       }
 
