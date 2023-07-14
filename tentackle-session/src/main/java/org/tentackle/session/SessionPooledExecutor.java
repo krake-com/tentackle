@@ -41,6 +41,7 @@ public class SessionPooledExecutor {
   private static final Logger LOGGER = Logger.get(SessionPooledExecutor.class);
 
   private final SessionPool sessionPool;
+  private final ThreadGroup threadGroup;
   private final ExecutorService executorService;
   private final AtomicInteger theadNumber = new AtomicInteger(1);
 
@@ -52,6 +53,7 @@ public class SessionPooledExecutor {
   public SessionPooledExecutor(SessionPool sessionPool) {
     this.sessionPool = sessionPool;
     executorService = createExecutorService();
+    threadGroup = createThreadGroup();
   }
 
   /**
@@ -70,6 +72,30 @@ public class SessionPooledExecutor {
    */
   public ExecutorService getExecutorService() {
     return executorService;
+  }
+
+  /**
+   * Gets the thread group for the thread pool.
+   *
+   * @return the thread group
+   */
+  public ThreadGroup getThreadGroup() {
+    return threadGroup;
+  }
+
+  /**
+   * Gets the size of the thread pool.<br>
+   * The default implementation returns the maximum size of the session pool.<br>
+   * If the session pool is unlimited, the thread pool will be unlimited too.<br>
+   * Override this method, if sizes differ.<br>
+   * Caution: using an unlimited or larger thread pool with a limited or smaller session pool will
+   * cause an exception when all sessions are in use!
+   *
+   * @return the number of threads or unlimited dynamic size if &le; 0
+   * @see #createExecutorService()
+   */
+  public int getThreadPoolSize() {
+    return sessionPool.getMaxSize();
   }
 
   /**
@@ -185,14 +211,12 @@ public class SessionPooledExecutor {
 
 
   /**
-   * Gets the size of the thread pool.<br>
-   * The default implementation returns the size of the session pool.
+   * Creates the thread group of the threads in the pool.
    *
-   * @return the fixed number of threads or unlimited dynamic size if &le; 0
-   * @see #createExecutorService()
+   * @return the thread group
    */
-  protected int getThreadPoolSize() {
-    return sessionPool.getSize();
+  protected ThreadGroup createThreadGroup() {
+    return new ThreadGroup(sessionPool.getName() + " thread pool");
   }
 
   /**
@@ -219,7 +243,7 @@ public class SessionPooledExecutor {
    * @return the thread
    */
   protected Thread createThread(Runnable runnable) {
-    Thread thread = new Thread(runnable, sessionPool.getName() + "(" + theadNumber.getAndIncrement() + ")");
+    Thread thread = new Thread(threadGroup, runnable, sessionPool.getName() + "(" + theadNumber.getAndIncrement() + ")");
     thread.setDaemon(true);
     return thread;
   }
