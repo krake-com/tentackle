@@ -18,9 +18,11 @@
 
 package org.tentackle.fx.rdc.component.delegate;
 
+import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.component.delegate.FxChoiceBoxDelegate;
 import org.tentackle.fx.rdc.component.RdcChoiceBox;
 import org.tentackle.fx.rdc.translate.PdoComponentAddon;
+import org.tentackle.fx.rdc.translate.PdoStringTranslator;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentDomainObject;
 
@@ -35,8 +37,6 @@ import java.util.Collection;
 public class RdcChoiceBoxDelegate extends FxChoiceBoxDelegate {
 
   private final RdcBoxDelegateImpl boxImpl;
-  @SuppressWarnings("rawtypes")
-  private PdoComponentAddon pdoAddon;
 
   /**
    * Creates the delegate.
@@ -51,9 +51,6 @@ public class RdcChoiceBoxDelegate extends FxChoiceBoxDelegate {
   @Override
   public void setType(Class<?> type) {
     boxImpl.prepareSetType(type);
-    if (PersistentDomainObject.class.isAssignableFrom(type)) {
-      setPdoAddon(createPdoAddon());
-    }
     super.setType(type);
   }
 
@@ -99,27 +96,11 @@ public class RdcChoiceBoxDelegate extends FxChoiceBoxDelegate {
    */
   @SuppressWarnings("rawtypes")
   public PdoComponentAddon getPdoAddon() {
-    return pdoAddon;
-  }
-
-  /**
-   * Sets the PDO addon.
-   *
-   * @param pdoAddon the addon
-   */
-  @SuppressWarnings("rawtypes")
-  public void setPdoAddon(PdoComponentAddon pdoAddon) {
-    this.pdoAddon = pdoAddon;
-  }
-
-  /**
-   * Creates the PDO style implementation.
-   *
-   * @return the implementation
-   */
-  @SuppressWarnings({ "rawtypes", "unchecked" })
-  protected PdoComponentAddon createPdoAddon() {
-    return new PdoComponentAddon(getComponent(), this::getViewValue, this::setViewValue);
+    ValueTranslator translator = getValueTranslator();
+    if (translator instanceof PdoStringTranslator) {
+      return ((PdoStringTranslator) translator).getPdoAddon();
+    }
+    return null;    // not bound to a PDO type
   }
 
 }
