@@ -22,7 +22,6 @@ import org.tentackle.common.TentackleRuntimeException;
 
 import java.text.DecimalFormat;
 
-
 /**
  * A duration.
  * <p>
@@ -32,7 +31,7 @@ import java.text.DecimalFormat;
  *
  * @author harald
  */
-public class TimeKeeper implements Cloneable {
+public class TimeKeeper implements Cloneable, Comparable<TimeKeeper> {
 
   /**
    * Format for xxxxToString().
@@ -102,7 +101,7 @@ public class TimeKeeper implements Cloneable {
   }
 
   /**
-   * Marks the end of a nanos.
+   * Marks the end of a duration.
    * <p>
    * The end is retrieved from {@link System#nanoTime()}.<br>
    * The method can be invoked more than once.
@@ -226,6 +225,13 @@ public class TimeKeeper implements Cloneable {
     return this;
   }
 
+  @Override
+  public int compareTo(TimeKeeper o) {
+    // don't throw an exception if duration not valid. Assume duration 0 instead.
+    long span = durationValid ? end - start : 0;
+    long otherSpan = o.durationValid ? o.end - o.start : 0;
+    return Long.compare(span, otherSpan);
+  }
 
   @Override
   public String toString() {

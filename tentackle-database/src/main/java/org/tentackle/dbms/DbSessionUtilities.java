@@ -84,4 +84,10 @@ public class DbSessionUtilities extends SessionUtilities {
   protected boolean isMultiLineExceptionMessage(String msg, Throwable cause, Identifiable identifiable, Session session) {
     return super.isMultiLineExceptionMessage(msg, cause, identifiable, session) || cause instanceof SQLException;
   }
+
+  @Override
+  public synchronized void terminateHelperThreads() {
+    DbTransactionFactory.getInstance().requestTermination();
+    super.terminateHelperThreads();
+  }
 }

@@ -8,6 +8,7 @@ Usage: `basename $0` <options> [<logfile>]
 Collects statistics information from a Tentackle log file, tab separated to stdout.
 
 OPTIONS:
+   -t           collect transaction statistics
    -s           collect sql statistics
    -r           collect rmi statistics
    -p           collect pdo statistics
@@ -26,9 +27,12 @@ UPPERMS=""
 EXPR=""
 LOCALEOPT=""
 
-while getopts "noprsl:u:x:" OPTION
+while getopts "noprstl:u:x:" OPTION
 do
     case $OPTION in
+        t)
+        PATTERN="    >TXN-Stats: "
+        ;;
         s)
         PATTERN="    >SQL-Stats: "
         ;;
@@ -66,7 +70,7 @@ then
     exit
 fi
 
-shift $(expr $OPTIND - 1 )
+shift $(expr $OPTIND - 1)
 FILE=$1
 
 fgrep "$PATTERN" $FILE | grep "$EXPR" | cut -c 17- | awk $LOCALEOPT '{
@@ -176,4 +180,3 @@ END {
         }
     }
 }'
-

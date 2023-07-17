@@ -16,9 +16,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.dbms;
 
+import org.tentackle.misc.TimeKeeper;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SavepointHandle;
 
@@ -53,12 +53,14 @@ public class DbTransaction {
   private final Db db;                  // the session
   private final DbBatch batch;          // statement batch, null if no batching (default)
   private final long creationTime;      // epochal time in ms when started/created
+  private final TimeKeeper timeKeeper;  // to measure the exact duration
   private final long txNumber;          // the unique transaction number
   private final String txName;          // optional transaction name
   private final long txVoucher;         // the random voucher for commit or rollback
   private int handleCount;              // the last handle number
   private int txLevel;                  // number of nested begin() (only for local Db), Integer.MIN_VALUE if invalid
   private Deque<String> nestedTxNames;  // transaction names for nested transactions
+  private volatile boolean alive;       // alive flag to detect idle transactions
 
   private Map<DbTransactionHandle,PersistenceVisitor> visitors;            // the visitors
   private Map<DbTransactionHandle,CommitTxRunnable> commitTxRunnables;     // the commit runnables
@@ -82,6 +84,7 @@ public class DbTransaction {
     txNumber = TX_COUNT.incrementAndGet();
     txLevel = 1;      // nesting level 1 = first begin
     creationTime = System.currentTimeMillis();
+    timeKeeper = new TimeKeeper();
 
     // create new commit/rollback voucher
     long magic;
@@ -124,11 +127,19 @@ public class DbTransaction {
     return creationTime;
   }
 
+  /**
+   * Gets the timekeeper for measurement of the duration.
+   *
+   * @return the timekeeper
+   */
+  public TimeKeeper getTimeKeeper() {
+    return timeKeeper;
+  }
 
   /**
    * Gets the transaction name.
    *
-   * @return the name
+   * @return the name, never null
    */
   public String getTxName() {
     return txName;
@@ -438,6 +449,7 @@ public class DbTransaction {
       }
       commitTxRunnables = null;
     }
+    DbTransactionFactory.getInstance().finish(this);
   }
 
 
@@ -464,6 +476,7 @@ public class DbTransaction {
       }
       rollbackTxRunnables = null;
     }
+    DbTransactionFactory.getInstance().finish(this);
   }
 
 
@@ -488,6 +501,24 @@ public class DbTransaction {
     return true;
   }
 
+
+  /**
+   * Sets the alive flag.
+   *
+   * @param alive true if alive, false if reset after poll
+   */
+  public void setAlive(boolean alive) {
+    this.alive = alive;
+  }
+
+  /**
+   * Gets the alive flag.
+   *
+   * @return true if alive, false if reset after poll and not marked alive since then
+   */
+  public boolean isAlive() {
+    return alive;
+  }
 
   /**
    * Creates the statement batch for this transaction.

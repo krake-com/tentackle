@@ -616,6 +616,7 @@ public class ManagedConnection {
         if (logStatisticsMillis > 0 && detachedSince - StatementStatistics.getSince() > logStatisticsMillis) {
           // log and clear statistics
           StatementStatistics.log(Logger.Level.INFO, true);
+          DbTransactionFactory.getInstance().logStatistics(Logger.Level.INFO, true);
         }
         // collect all statements
         if (isMDCValid()) {

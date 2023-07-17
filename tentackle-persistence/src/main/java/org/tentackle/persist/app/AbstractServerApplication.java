@@ -25,6 +25,7 @@ import org.tentackle.dbms.ConnectionManager;
 import org.tentackle.dbms.ConnectionManagerProvider;
 import org.tentackle.dbms.Db;
 import org.tentackle.dbms.DbPool;
+import org.tentackle.dbms.DbTransactionFactory;
 import org.tentackle.dbms.ManagedConnection;
 import org.tentackle.dbms.MpxConnectionManager;
 import org.tentackle.dbms.StatementStatistics;
@@ -296,6 +297,8 @@ public abstract class AbstractServerApplication extends AbstractApplication
 
     setSessionInfo(sessionInfo);    // this will also make the session info immutable
     setDomainContext(createDomainContext(serverDb));
+
+    DbTransactionFactory.getInstance().configure(sessionInfo.getProperties());
   }
 
 
@@ -391,6 +394,7 @@ public abstract class AbstractServerApplication extends AbstractApplication
     RemoteDelegateInvocationHandler.setCollectingStatistics(true);
     ManagedConnection.setCollectingStatistics(true);
     ManagedConnection.setLogLevelForParallelOpenResultSets(Logger.Level.INFO);
+    DbTransactionFactory.getInstance().setCollectingStatistics(true);
 
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
       LOGGER.warning("*** server killed ***");
@@ -405,6 +409,7 @@ public abstract class AbstractServerApplication extends AbstractApplication
     PdoInvocationHandler.INVOKER.logStatistics(Logger.Level.INFO, true);
     OperationInvocationHandler.INVOKER.logStatistics(Logger.Level.INFO, true);
     StatementStatistics.log(Logger.Level.INFO, true);
+    DbTransactionFactory.getInstance().logStatistics(Logger.Level.INFO, true);
   }
 
 }

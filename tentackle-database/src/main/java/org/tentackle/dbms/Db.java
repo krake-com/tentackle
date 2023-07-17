@@ -475,6 +475,7 @@ public class Db implements Session, Cloneable {
             // whatever happened: make it unusable
             clearMembers();   // clear members for re-open
             if (me != null) {
+              me.clearMembers();
               unregisterSession(me);    // no harm if me==null, since session refs are weak
             }
           }
@@ -1113,12 +1114,21 @@ public class Db implements Session, Cloneable {
   public void setAlive(boolean alive) {
     assertOpen();
     this.alive = alive;
-    if (alive && isRemote()) {    // only for alive=true -> to remote side (remote times out on its own if false)
-      try {
-        resources.rdel.setAlive(true);
+
+    if (alive) {
+      if (isRemote()) {    // only for alive=true -> to remote side (remote times out on its own if false)
+        try {
+          resources.rdel.setAlive(true);
+        }
+        catch (RemoteException e) {
+          throw PersistenceException.createFromRemoteException(this, e);
+        }
       }
-      catch (RemoteException e)  {
-        throw PersistenceException.createFromRemoteException(this, e);
+      else {
+        DbTransaction tx = transaction;
+        if (tx != null) {
+          tx.setAlive(true);
+        }
       }
     }
   }
@@ -1495,7 +1505,7 @@ public class Db implements Session, Cloneable {
    * @return the transaction
    */
   protected DbTransaction createTransaction(String txName, boolean fromRemote) {
-    return new DbTransaction(this, txName, fromRemote);
+    return DbTransactionFactory.getInstance().create(this, txName, fromRemote);
   }
 
 
@@ -2818,6 +2828,7 @@ public class Db implements Session, Cloneable {
     postCommits = null;
     postCommitsRunning = false;
     ownerThread = null;
+    autoCommit = true;
 
     if (sessionInfo != null && !sessionInfo.isImmutable()) {
       sessionInfo.setSince(0);    // not logged in anymore
