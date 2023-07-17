@@ -96,7 +96,7 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
    * @param cleanupRetryMax maximum number of retries to clean up a session
    */
   public RemoteDbSessionCleanupThread(long checkInterval, Set<WeakReference<RemoteDbSessionImpl>> sessions, int cleanupRetryMax) {
-    super("Session Cleanup");
+    super("Remote Session Cleanup");
     this.checkInterval = checkInterval;
     this.sessions = sessions;
     this.cleanupRetryMax = cleanupRetryMax;
@@ -118,7 +118,7 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
   @Override
   public void run() {
 
-    LOGGER.info(getName() + " started with interval=" + checkInterval + ", max.retries=" + cleanupRetryMax);
+    LOGGER.info("{0} started with interval={1} ms, max.retries={2}", getName(), checkInterval, cleanupRetryMax);
 
     while (!terminationRequested) {
       try {
@@ -134,7 +134,7 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
       }
     }
 
-    LOGGER.info(getName() + " terminated");
+    LOGGER.info("{0} terminated", getName());
   }
 
 
