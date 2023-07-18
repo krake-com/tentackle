@@ -40,14 +40,14 @@ public class PostgresTest {
     Postgres pg = new Postgres();
     pg.sqlJoinSelects(JoinType.LEFT, true, select, joinSelect, joinSelectIdAlias, joinAlias, join);
     Assert.assertEquals(select.toString(),
-            "SELECT DISTINCT vg.*,_j1.* FROM tx.vorgang vg LEFT JOIN (SELECT ou.*,mg.*,mr.*,ou.id AS ou_id FROM md.orgunit ou LEFT JOIN md.magruppe mg ON ou.id=mg.id LEFT JOIN md.mitarbeiter mr ON ou.id=mr.id) _j1 ON vg.orgunitid=_j1.ou_id WHERE 1=1 AND vg.id=123456");
+            "SELECT vg.*,_j1.* FROM tx.vorgang vg LEFT JOIN (SELECT ou.*,mg.*,mr.*,ou.id AS ou_id FROM md.orgunit ou LEFT JOIN md.magruppe mg ON ou.id=mg.id LEFT JOIN md.mitarbeiter mr ON ou.id=mr.id) _j1 ON vg.orgunitid=_j1.ou_id WHERE 1=1 AND vg.id=123456");
 
     select = new StringBuilder("SELECT ou.*,mr.* FROM md.orgunit ou,md.mitarbeiter mr WHERE 1=1 AND ou.id=mr.id AND ou.id=555");
     joinSelect = "SELECT kt.* FROM md.kontakt kt WHERE kt.classid=112";
     join = "ou_id=kt.id";
     pg.sqlJoinSelects(JoinType.LEFT, true, select, joinSelect, null, joinAlias, join);
     Assert.assertEquals(select.toString(),
-            "SELECT DISTINCT ou.*,mr.*,_j1.* FROM md.orgunit ou,md.mitarbeiter mr LEFT JOIN (SELECT kt.* FROM md.kontakt kt WHERE kt.classid=112) _j1 ON ou_id=kt.id WHERE 1=1 AND ou.id=mr.id AND ou.id=555");
+            "SELECT ou.*,mr.*,_j1.* FROM md.orgunit ou,md.mitarbeiter mr LEFT JOIN (SELECT kt.* FROM md.kontakt kt WHERE kt.classid=112) _j1 ON ou_id=kt.id WHERE 1=1 AND ou.id=mr.id AND ou.id=555");
   }
 
 }
