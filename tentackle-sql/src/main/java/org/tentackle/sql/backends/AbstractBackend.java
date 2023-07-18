@@ -787,21 +787,11 @@ public abstract class AbstractBackend implements Backend {
 
     // IMPORTANT: works only for generated code with proper UPPERCASE and WHERE 1=1
 
-    // insert DISTINCT if missing
-    int ndx = select.indexOf("SELECT DISTINCT ");
-    if (ndx < 0) {
-      ndx = select.indexOf("SELECT ");
-      if (ndx < 0) {
-        throw new BackendException("not a SELECT statement: " + select);
-      }
-      select.insert(6, " DISTINCT");
-    }
-
     // remove trailing WHERE 1=1, if any
     joinSelect = optimizeSql(joinSelect);
 
     // remove ORDER BY if appended by sorting rule
-    ndx = joinSelect.indexOf(SQL_ORDERBY);
+    int ndx = joinSelect.indexOf(SQL_ORDERBY);
     if (ndx > 0) {
       joinSelect = joinSelect.substring(0, ndx);
     }
