@@ -60,6 +60,10 @@ public class SqlCodeFactory {
       StringBuilder sql = new StringBuilder();
       sql.append(Backend.SQL_SELECT);
 
+      if (selectAllForItem) {
+        entity = dataItem.getAttribute().getEntity();
+      }
+
       if (inheritanceType == InheritanceType.SINGLE) {
         // only columns necessary for entity
         boolean needComma = false;
@@ -137,11 +141,11 @@ public class SqlCodeFactory {
           if (selectAllForItem && entity.getClassId() != 0) {
             classIds.add(entity.getClassId());
           }
-          entity.getSubEntities().forEach(subEntity -> {
+          for (Entity subEntity : entity.getSubEntities()) {
             if (entity.getClassId() != 0) {
               classIds.add(subEntity.getClassId());
             }
-          });
+          }
           if (classIds.size() == 1) {
             sql.append(Backend.SQL_AND).append(tableAlias).append('.').append(Constants.CN_CLASSID).
             append('=').append(entity.getClassId());
