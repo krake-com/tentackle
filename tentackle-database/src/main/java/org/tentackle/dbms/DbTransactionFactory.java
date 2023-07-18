@@ -80,6 +80,7 @@ public class DbTransactionFactory {
   public DbTransactionFactory() {
     transactions = new ConcurrentHashMap<>();
     statistics = new TransactionStatistics();
+    configChanged = true;
   }
 
   /**
