@@ -65,16 +65,22 @@ public class SqlCodeFactory {
       }
 
       if (inheritanceType == InheritanceType.SINGLE) {
-        // only columns necessary for entity
-        boolean needComma = false;
-        for (Attribute attribute : entity.getAllAttributes()) {
-          if (needComma) {
-            sql.append(',');
+        if (entity.getSuperEntity() == null) {
+          // attribute in top class -> need all columns anyway
+          sql.append(tableAlias).append(Backend.SQL_DOT_STAR);
+        }
+        else {
+          // only columns necessary for entity
+          boolean needComma = false;
+          for (Attribute attribute : entity.getAllAttributes()) {
+            if (needComma) {
+              sql.append(',');
+            }
+            else {
+              needComma = true;
+            }
+            sql.append(getSelectedColumn(attribute, tableAlias));
           }
-          else {
-            needComma = true;
-          }
-          sql.append(getSelectedColumn(attribute, tableAlias));
         }
       }
       else {
