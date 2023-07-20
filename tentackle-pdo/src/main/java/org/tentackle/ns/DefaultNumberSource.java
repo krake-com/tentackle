@@ -127,7 +127,7 @@ public class DefaultNumberSource implements NumberSource {
   }
 
   @Override
-  public Range[] popNumbers(final long count) {
+  public synchronized Range[] popNumbers(final long count) {
     return Session.getSession().transaction(() -> {
       lockPool();
       findCurrentRange();
