@@ -411,7 +411,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
              * Anyway: mark the connection dead so that it is closed and cleaned up.
              * The Db is also closed to prevent any further use.
              */
-            LOGGER.severe("connection {0} detached while still in transaction: *** MARKED DEAD ***", con);
+            LOGGER.severe("connection {0} detached while still in transaction", con);
             con.setDead(true);
           }
 

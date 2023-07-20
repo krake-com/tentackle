@@ -2253,14 +2253,18 @@ public class Db implements Session, Cloneable {
         ManagedConnection c = resources.con;
         if (c != null && !c.isClosed()) {
           // check low level transaction state
-          boolean connectionInTransaction;
+          boolean connectionInTransaction = false;
           try {
             connectionInTransaction = c.getConnection().getAutoCommit();
           }
           catch (SQLException ex) {
-            LOGGER.warning("cannot determine transaction state of " + c + ": assume transaction still running", ex);
-            connectionInTransaction = true;
+            c.checkForDeadLink(ex);
+            if (!c.isDead()) {
+              LOGGER.warning("cannot determine transaction state of " + c + ": assume transaction still running", ex);
+              connectionInTransaction = true;
+            }
           }
+
           if (connectionInTransaction) {
             /*
              * If the physical connection is still running a transaction,
@@ -2288,7 +2292,6 @@ public class Db implements Session, Cloneable {
             }
           }
           c.setDead(true);    // don't use this connection anymore!
-          LOGGER.warning("connection " + c + " marked dead");
         }
       }
       finally {
