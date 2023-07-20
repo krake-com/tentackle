@@ -481,6 +481,9 @@ public class ManagedConnection {
    * @param dead true if marked dead, false not dead
    */
   public void setDead(boolean dead) {
+    if (dead && !resources.dead) {
+      LOGGER.severe("managed connection {0}: *** MARKED DEAD ***", this);
+    }
     resources.dead = dead;
   }
 
@@ -1510,7 +1513,6 @@ public class ManagedConnection {
   public boolean checkForDeadLink(SQLException ex) {
     if (!isDead() && backend.isCommunicationLinkException(ex)) {
       // some severe comlink error, probably closed by server
-      LOGGER.severe("managed connection {0}: *** MARKED DEAD ***", this);
       setDead(true);
     }
     return isDead();

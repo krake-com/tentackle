@@ -24,9 +24,10 @@ import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.Timestamp;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.TimeKeeper;
-import org.tentackle.session.PersistenceException;
 
 import java.lang.ref.WeakReference;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -275,26 +276,43 @@ public class DbTransactionFactory {
               else {
                 if (txIdleTimeout > 0 &&
                     idleMap.computeIfAbsent(transaction.getTxNumber(), txNumber -> new TxIdleCounter(transaction)).count() > txIdleTimeout) {
-                  String msg = "idle transaction " + transaction + " timed out after " +
-                                txIdleTimeout * txIdleInterval / Constants.SECOND_MS + " s -> aborted and session closed!";
+                  String msg = "idle transaction " + transaction.getSession() + " timed out after " +
+                                txIdleTimeout * txIdleInterval / Constants.SECOND_MS + " s";
                   LOG.warning(msg);
                   idleMap.remove(transaction.getTxNumber());
                   iter.remove();
-                  try {
-                    Db session = transaction.getSession();
-                    try {
-                      session.rollbackImmediately(new PersistenceException(transaction.getSession(), msg));
+                  Db session = transaction.getSession();
+                  ManagedConnection mc = session.getConnection();
+                  if (mc != null) {
+                    final Connection con = mc.getConnection();
+                    if (con != null) {
+                      // do that in a separate thread, if it gets stuck, the supervisor still keeps running
+                      new Thread("transaction cleanup " + mc) {
+                        @Override
+                        public void run() {
+                          try {
+                            LOG.warning("performing low-level rollback and close of {0}", con);
+                            // really low level (as if the database closed it suddenly)
+                            try {
+                              con.rollback();
+                            }
+                            catch (SQLException sr) {
+                              LOG.warning("low-level rollback failed", sr);
+                            }
+                            con.close();   // just close -> leave the cleanup to the thread stuck in transaction
+                          }
+                          catch (SQLException | RuntimeException ex) {
+                            LOG.warning("closing JDBC connection failed", ex);
+                          }
+                        }
+                      }.start();
                     }
-                    catch (RuntimeException rb) {
-                      LOG.warning("rollback failed", rb);
-                    }
-                    session.close();    // session must not be used anymore!
-                    if (session.isPooled()) {
-                      session.getPool().putSession(session);    // remove closed session from pool immediately (don't wait for GC cleanup)
+                    else {
+                      LOG.warning("managed connection {0} already closed", mc);
                     }
                   }
-                  catch (RuntimeException rc) {
-                    LOG.warning("closing session failed", rc);
+                  else {
+                    LOG.warning("managed {0} connection already detached from session {1}", mc, session);
                   }
                 }
               }

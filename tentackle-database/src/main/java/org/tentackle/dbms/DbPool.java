@@ -331,26 +331,43 @@ public class DbPool implements SessionPool {
         boolean txRunning = db.isTxRunning();
         String exMsg = null;
         if (txRunning) {
-          exMsg = "session " + db + " was still running a transaction -> ";
+          exMsg = "session " + db + " was still running a transaction ->";
           if (db.isRemote()) {
             // rollbackImmediately not allowed for remote sessions.
             // just close it, the rollback will be performed at the remote side.
-            exMsg = "remote " + exMsg + "closed and removed from pool";
+            exMsg += " remote " + exMsg + "closed and removed from pool";
             removeDbInstance(db, poolId - 1);
             poolId = 0;
           }
           else {
             // rollback first and return to pool, log the exception later (see below)
-            exMsg += "rolled back";
-            db.rollbackImmediately(null);
+            try {
+              db.rollbackImmediately(null);
+              exMsg += " rolled back";
+            }
+            catch (RuntimeException rx) {
+              exMsg += " rollback failed (" + rx.getMessage() + ")";
+            }
           }
         }
+
         if (poolId > 0) { // if not returned to pool yet
           // check if there are no pending statements
           ManagedConnection con = db.getConnection();
-          if (con != null) {
-            con.closePreparedStatements(true); // cleanup all pending statements
-            removeDbInstance(db, poolId - 1);  // remove from pool
+          if (con != null) {    // still attached?
+            if (!con.isDead()) {
+              try {
+                con.closePreparedStatements(true); // cleanup all pending statements
+              }
+              catch (RuntimeException rx) {
+                LOGGER.warning("cleaning up pending statements failed", rx);
+              }
+            }
+            removeDbInstance(db, poolId - 1);    // remove from pool for sure
+            if (exMsg == null) {
+              exMsg = "session " + db + " still attached";
+            }
+            exMsg += " -> removed from pool";
           }
           else {
             LOGGER.fine("{0}: session {1} returned to pool, id {2}", this, db, poolId);
@@ -492,11 +509,11 @@ public class DbPool implements SessionPool {
         if (db.isOpen()) {
           db.close();       // this will also check for pending attach/tx and rollback if necessary
         }
-        db.setPoolId(-1);   // mark it as removed from pool -> cannot be re-opened again
       }
       catch (RuntimeException re) {
         LOGGER.severe("closing pooled session failed", re);
       }
+      db.setPoolId(-1);   // mark it as removed from pool -> cannot be re-opened again
     }
 
     removeDbIndex(index);
