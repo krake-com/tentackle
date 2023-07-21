@@ -29,7 +29,9 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeSuite;
 
+import org.tentackle.dbms.CommitTxRunnable;
 import org.tentackle.dbms.Db;
+import org.tentackle.dbms.RollbackTxRunnable;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelException;
 import org.tentackle.pdo.DomainContext;
@@ -49,6 +51,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Set;
 
 import static org.testng.Assert.fail;
@@ -363,6 +366,33 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
     }
   }
 
+  /**
+   * Invokes the {@link CommitTxRunnable}s, if any.<br>
+   * Useful for special test scenarios.
+   * Must be invoked explicitly from within the test.
+   */
+  protected void executeCommitTxRunnables() {
+    if (session instanceof Db db) {
+      Collection<CommitTxRunnable> runnables = db.getCommitTxRunnables();
+      if (runnables != null) {
+        runnables.forEach(runnable -> runnable.commit(db));
+      }
+    }
+  }
+
+  /**
+   * Invokes the {@link RollbackTxRunnable}s, if any.<br>
+   * Useful for special test scenarios.
+   * Must be invoked explicitly from within the test.
+   */
+  protected void executeRollbackTxRunnables() {
+    if (session instanceof Db db) {
+      Collection<RollbackTxRunnable> runnables = db.getRollbackTxRunnables();
+      if (runnables != null) {
+        runnables.forEach(runnable -> runnable.rollback(db));
+      }
+    }
+  }
 
 
   /**
