@@ -22,7 +22,7 @@ import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.component.delegate.FxComboBoxDelegate;
 import org.tentackle.fx.rdc.component.RdcComboBox;
 import org.tentackle.fx.rdc.translate.PdoComponentAddon;
-import org.tentackle.fx.rdc.translate.PdoStringTranslator;
+import org.tentackle.fx.rdc.translate.PdoTranslator;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentDomainObject;
 
@@ -73,7 +73,7 @@ public class RdcComboBoxDelegate extends FxComboBoxDelegate {
    * Gets the callback to load all PDOs.<br>
    * Used by {@link PdoComponentAddon#getAllPdos(PersistentDomainObject)}.
    *
-   * @return the function
+   * @return the callback
    */
   public <T extends PersistentDomainObject<T>> Callback<T, Collection<T>> getLoadAllPdosCallback() {
     return boxImpl.getLoadAllPdosCallback();
@@ -97,8 +97,8 @@ public class RdcComboBoxDelegate extends FxComboBoxDelegate {
   @SuppressWarnings("rawtypes")
   public PdoComponentAddon getPdoAddon() {
     ValueTranslator translator = getValueTranslator();
-    if (translator instanceof PdoStringTranslator) {
-      return ((PdoStringTranslator) translator).getPdoAddon();
+    if (translator instanceof PdoTranslator pdoTranslator) {
+      return pdoTranslator.getPdoAddon();
     }
     return null;    // not bound to a PDO type
   }

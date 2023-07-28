@@ -18,9 +18,6 @@
 
 package org.tentackle.fx.rdc.translate;
 
-import javafx.application.Platform;
-import javafx.scene.Node;
-
 import org.tentackle.bind.Bindable;
 import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxRuntimeException;
@@ -33,6 +30,8 @@ import org.tentackle.pdo.DomainKey;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
 
+import javafx.application.Platform;
+import javafx.scene.Node;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -47,7 +46,8 @@ import java.util.function.Function;
  * @param <T> the PDO type
  */
 @ValueTranslatorService(modelClass = PersistentDomainObject.class, viewClass = String.class)
-public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends ValueStringTranslator<T> {
+public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends ValueStringTranslator<T>
+       implements PdoTranslator<T, String > {
 
   private static final Logger LOGGER = Logger.get(PdoStringTranslator.class);
 
@@ -70,7 +70,8 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
       T proxy = Pdo.create(pdoClass);
       Class<?> udkClass = proxy.getUniqueDomainKeyType();
       // create translator for the unique domain key and configure the component (TextFormatter, for ex.)
-      udkTranslator = (ValueStringTranslator<?>) FxFactory.getInstance().createValueTranslator(udkClass, String.class, component);
+      udkTranslator = (ValueStringTranslator<?>) FxFactory.getInstance()
+                                                          .createValueTranslator(udkClass, String.class, component);
       // allow incomplete input to preset the search criteria in the finder if possible
       udkTranslator.setLenient(true);
 
@@ -87,11 +88,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
     setPdoAddon(createPdoAddon());
   }
 
-  /**
-   * Gets the PDO addon.
-   *
-   * @return the addon
-   */
+  @Override
   public PdoComponentAddon<T> getPdoAddon() {
     return pdoAddon;
   }

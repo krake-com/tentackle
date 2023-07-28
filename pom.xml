@@ -82,7 +82,7 @@
     <javac.lint>all,-processing</javac.lint>
     <javac.version>17</javac.version>
 
-    <javafx.version>20.0.1</javafx.version>
+    <javafx.version>20.0.2</javafx.version>
     <ikonli.version>12.3.1</ikonli.version>
     <ow2.asm.version>9.5</ow2.asm.version>
     <groovy.version>4.0.13</groovy.version>
@@ -250,7 +250,7 @@
         <!-- for the Junit5 test classes -->
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter-api</artifactId>
-        <version>5.9.2</version>
+        <version>5.10.0</version>
       </dependency>
 
       <!-- test dependencies -->
@@ -334,7 +334,7 @@
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-archiver</artifactId>
-        <version>4.7.1</version>
+        <version>4.8.0</version>
       </dependency>
 
     </dependencies>

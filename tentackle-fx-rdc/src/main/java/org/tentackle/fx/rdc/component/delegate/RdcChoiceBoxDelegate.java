@@ -22,7 +22,7 @@ import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.component.delegate.FxChoiceBoxDelegate;
 import org.tentackle.fx.rdc.component.RdcChoiceBox;
 import org.tentackle.fx.rdc.translate.PdoComponentAddon;
-import org.tentackle.fx.rdc.translate.PdoStringTranslator;
+import org.tentackle.fx.rdc.translate.PdoTranslator;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentDomainObject;
 
@@ -38,6 +38,10 @@ public class RdcChoiceBoxDelegate extends FxChoiceBoxDelegate {
 
   private final RdcBoxDelegateImpl boxImpl;
 
+  @SuppressWarnings("rawtypes")
+  // null if not bound to a PDO type or there is an explicit PdoTranslator provided by the application
+  private PdoComponentAddon pdoAddon;
+
   /**
    * Creates the delegate.
    *
@@ -52,6 +56,12 @@ public class RdcChoiceBoxDelegate extends FxChoiceBoxDelegate {
   public void setType(Class<?> type) {
     boxImpl.prepareSetType(type);
     super.setType(type);
+    if (getPdoAddon() == null && PersistentDomainObject.class.isAssignableFrom(type)) {
+      // FxChoiceBox is not a FxTextComponent, hence PdoStringTranslator does not apply.
+      // If there is no explicit PdoTranslator for the given concrete PDO type, create a default
+      // pdo addon. This allows us to use FxChoiceBox for PDOs even without such a translator.
+      pdoAddon = createPdoAddon();
+    }
   }
 
   @Override
@@ -97,10 +107,20 @@ public class RdcChoiceBoxDelegate extends FxChoiceBoxDelegate {
   @SuppressWarnings("rawtypes")
   public PdoComponentAddon getPdoAddon() {
     ValueTranslator translator = getValueTranslator();
-    if (translator instanceof PdoStringTranslator) {
-      return ((PdoStringTranslator) translator).getPdoAddon();
+    if (translator instanceof PdoTranslator pdoTranslator) {
+      return pdoTranslator.getPdoAddon();
     }
-    return null;    // not bound to a PDO type
+    return pdoAddon;    // null, if not bound to a PDO type
+  }
+
+  /**
+   * Creates the PDO style implementation.
+   *
+   * @return the implementation
+   */
+  @SuppressWarnings({ "rawtypes", "unchecked" })
+  protected PdoComponentAddon createPdoAddon() {
+    return new PdoComponentAddon(getComponent(), this::getViewValue, this::setViewValue);
   }
 
 }

@@ -18,8 +18,6 @@
 
 package org.tentackle.fx.rdc.translate;
 
-import javafx.scene.control.TreeItem;
-
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.ValueTranslatorService;
 import org.tentackle.fx.component.FxTreeTableView;
@@ -29,6 +27,8 @@ import org.tentackle.fx.rdc.Rdc;
 import org.tentackle.fx.translate.TreeItemTranslator;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
+
+import javafx.scene.control.TreeItem;
 
 /**
  * PDO-aware TreeItem translator for {@link org.tentackle.fx.component.FxTreeView} and
