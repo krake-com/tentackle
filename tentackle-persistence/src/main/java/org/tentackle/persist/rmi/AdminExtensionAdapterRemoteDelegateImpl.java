@@ -156,6 +156,7 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDelegateImpl<
     private final long sessionNumber;
     private final long sessionGroup;
     private final String options;
+    private final boolean cloned;
 
     private SessionDataImpl(RemoteDbSessionImpl remoteSession) {
       SessionInfo info = remoteSession.getClientSessionInfo();
@@ -179,6 +180,7 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDelegateImpl<
       sessionNumber = remoteSession.getSessionNumber();
       sessionGroup = remoteSession.getSession().getExportedSessionGroupId();
       options = remoteSession.getOptions();
+      cloned = remoteSession.getClientSessionInfo().isCloned();
     }
 
     @Override
@@ -259,6 +261,11 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDelegateImpl<
     @Override
     public String getOptions() {
       return options;
+    }
+
+    @Override
+    public boolean isCloned() {
+      return cloned;
     }
   }
 

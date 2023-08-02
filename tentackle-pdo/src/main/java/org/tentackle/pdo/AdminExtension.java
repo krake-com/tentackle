@@ -163,6 +163,14 @@ public interface AdminExtension extends DomainContextDependable {
     @Bindable
     String getOptions();
 
+    /**
+     * Gets the clone flag of the session.
+     *
+     * @return true if session is cloned
+     */
+    @Bindable
+    boolean isCloned();
+
   }
 
 
