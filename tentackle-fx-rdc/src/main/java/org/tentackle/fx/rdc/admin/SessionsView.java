@@ -18,9 +18,6 @@
 
 package org.tentackle.fx.rdc.admin;
 
-import javafx.fxml.FXML;
-import javafx.scene.control.SelectionMode;
-
 import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxControllerService;
@@ -38,6 +35,8 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoRemoteSession;
 
+import javafx.fxml.FXML;
+import javafx.scene.control.SelectionMode;
 import java.text.MessageFormat;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -161,8 +160,9 @@ public class SessionsView extends AbstractFxController {
     config.addColumn("clientHost", resources.getString("client"));
     config.addColumn("since", resources.getString("since"));
     config.addColumn("sessionNumber", resources.getString("session-no."));
-    config.addColumn("sessionName", resources.getString("name"));
     config.addColumn("sessionGroup", resources.getString("group-no."));
+    config.addColumn("sessionName", resources.getString("name"));
+    config.addColumn("cloned", resources.getString("cloned"));
     config.addColumn("options", resources.getString("options"));
     return config;
   }
