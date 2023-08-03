@@ -19,10 +19,12 @@
 
 package org.tentackle.session;
 
+import org.tentackle.common.ExceptionHelper;
 import org.tentackle.log.Logger;
 import org.tentackle.task.AbstractTask;
 
 import java.io.Serial;
+import java.rmi.NoSuchObjectException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -58,7 +60,7 @@ public class SessionKeepAliveTask extends AbstractTask {
    *
    * @param daemon the keep alive daemon
    * @param session the session
-   * @param interval the check interval in milliseconds, &le; 0 to close
+   * @param interval the check interval in milliseconds, &le; 0 to close the session
    * @param timeOut the timeout interval in milliseconds
    */
   public SessionKeepAliveTask(SessionKeepAliveDaemon daemon, Session session, long interval, long timeOut) {
@@ -73,24 +75,31 @@ public class SessionKeepAliveTask extends AbstractTask {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public void run() {
-    synchronized (session) {    // open and close are synchronized
-      if (session.isOpen()) {
-        if (getRepeatInterval() > 0) {
-          LOGGER.fine("keep-alive {0}", session);
-          if (future == null) {
-            future = daemon.getExecutorService().submit(aliveCallable);
+    if (session.isOpen()) {
+      if (getRepeatInterval() > 0) {
+        LOGGER.fine("keep-alive {0}", session);
+        if (future == null) {
+          future = daemon.getExecutorService().submit(aliveCallable);
+        }
+        try {
+          // wait for operation to complete, abort if timeout
+          future.get(timeOut, TimeUnit.MILLISECONDS);
+          failCount = 0;
+          future = null;
+        }
+        catch (TimeoutException tex) {
+          LOGGER.fine("setAlive still pending for {0}", session);
+        }
+        catch (ExecutionException eex) {
+          boolean remoteClosed = session.isRemote() && ExceptionHelper.extractException(true, eex, NoSuchObjectException.class) != null;
+          if (!session.isOpen() || remoteClosed) {
+            // this is usually a race condition, when sessions are closed while the keepalive task is running in parallel
+            LOGGER.info("session {0} closed in the meantime{1}", session, remoteClosed ? " by remote server" : "");
+            daemon.removeAliveTask(session);
           }
-          try {
-            // wait for operation to complete, abort if timeout
-            future.get(timeOut, TimeUnit.MILLISECONDS);
-            failCount = 0;
-            future = null;
-          }
-          catch (TimeoutException tex) {
-            LOGGER.fine("setAlive still pending for {0}", session);
-          }
-          catch (ExecutionException eex) {
+          else {
             failCount++;
             LOGGER.warning("setAlive failed for " + session, eex);
             if (failCount > MAX_FAILURES) {
@@ -101,22 +110,22 @@ public class SessionKeepAliveTask extends AbstractTask {
               daemon.removeAliveTask(session);
             }
           }
-          catch (InterruptedException iex) {
-            // the task repeats anyway
-            LOGGER.warning("interrupted -> ignored", iex);
-          }
         }
-        else {
-          // non-blocking close requested
-          LOGGER.fine("close requested for {0}", session);
-          daemon.getExecutorService().submit(createCloseCallable());
-          daemon.removeAliveTask(session);
+        catch (InterruptedException iex) {
+          // the task repeats anyway
+          LOGGER.warning("interrupted -> ignored", iex);
         }
       }
       else {
-        LOGGER.info(session + " is closed");
+        // non-blocking close requested
+        LOGGER.fine("close requested for {0}", session);
+        daemon.getExecutorService().submit(createCloseCallable());
         daemon.removeAliveTask(session);
       }
+    }
+    else {
+      LOGGER.info("{0} is closed", session);
+      daemon.removeAliveTask(session);
     }
   }
 
