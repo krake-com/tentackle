@@ -28,6 +28,7 @@ import org.apache.maven.shared.model.fileset.FileSet;
 import org.tentackle.common.StringHelper;
 import org.tentackle.maven.AbstractTentackleMojo;
 import org.tentackle.sql.BackendInfo;
+import org.tentackle.sql.BackendInfoFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
@@ -163,7 +164,7 @@ public class BackendInfoParameter {
       }
     }
 
-    return new BackendInfo(url, user, passwd, schemaArray);
+    return BackendInfoFactory.getInstance().create(url, user, passwd, schemaArray);
   }
 
 

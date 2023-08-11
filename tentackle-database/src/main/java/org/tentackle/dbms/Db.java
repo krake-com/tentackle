@@ -54,6 +54,7 @@ import org.tentackle.session.VersionIncompatibleException;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendInfo;
+import org.tentackle.sql.BackendInfoFactory;
 import org.tentackle.sql.ScriptRunnerResult;
 
 import java.io.IOException;
@@ -609,8 +610,8 @@ public class Db implements Session, Cloneable {
           }
           // else: user didn't select a backendConfiguration -> continue with default settings from properties
         }
-        else{
-          // programmatically predefined (usually technical) backend info from another property file
+        else if (!technicalBackendInfoName.equals(sessionProperties.getName())) {
+          // programmatically predefined (usually technical) backend info from _another_ property file
           try {
             backendProperties = FileHelper.loadProperties(technicalBackendInfoName);
           }
@@ -621,7 +622,7 @@ public class Db implements Session, Cloneable {
       }
 
       try {
-        backendInfo = new BackendInfo(backendProperties);
+        backendInfo = BackendInfoFactory.getInstance().create(backendProperties);
       }
       catch (BackendException bex) {
         throw new PersistenceException(this, "invalid configuration in " + sessionInfo.getPropertiesName(), bex);

@@ -171,10 +171,14 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDelegateImpl<
       vmInfo = info.getVmInfo();
       osInfo = info.getOsInfo();
       hostInfo = info.getHostInfo();
-      double tzOffsetH = info.getTimeZone().getOffset(System.currentTimeMillis()) / 3600000.0;
-      synchronized(OFFSET_FMT) {
-        timeZone = info.getTimeZone() == null ?
-                          "?" : (info.getTimeZone().getID() + " (" + OFFSET_FMT.format(tzOffsetH) + "h)");
+      if (info.getTimeZone() != null) {
+        double tzOffsetH = info.getTimeZone().getOffset(System.currentTimeMillis()) / 3600000.0;
+        synchronized (OFFSET_FMT) {
+          timeZone = info.getTimeZone().getID() + " (" + OFFSET_FMT.format(tzOffsetH) + "h)";
+        }
+      }
+      else {
+        timeZone = null;
       }
       clientHost = remoteSession.getClientHostString();
       sessionNumber = remoteSession.getSessionNumber();

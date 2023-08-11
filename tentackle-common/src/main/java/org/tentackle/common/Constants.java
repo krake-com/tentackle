@@ -99,7 +99,7 @@ public class Constants {
    * </ol>
    * If missing, the properties from the BACKEND_PROPS and optional user input are used.
    */
-  public static final String BACKEND_INFO = "backend";
+  public static final String BACKEND_INFO = BACKEND_PROPS;    // same (see EncryptedProperties#name)
 
   /**
    * Value of backendinfo to allow selecting the backend (see Login in fx-rdc) using user preferences.<br>

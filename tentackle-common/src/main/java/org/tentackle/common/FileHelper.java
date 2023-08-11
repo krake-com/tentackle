@@ -85,13 +85,14 @@ public class FileHelper {
    *
    * @param name the properties name, null if return empty properties
    * @param asResource true if load from the classpath, false if from filesystem
-   * @return the properties, empty if filename is null
+   * @return the properties, empty if name is null
    * @throws IOException if reading the property file failed
    * @throws FileNotFoundException if no properties found
    */
   public static EncryptedProperties loadProperties(String name, boolean asResource) throws IOException {
-    EncryptedProperties dbProps = new EncryptedProperties();
+    EncryptedProperties properties = new EncryptedProperties();
     if (name != null) {
+      properties.setName(name);
       if (name.indexOf('.') < 0) {
         name += Constants.PROPS_EXTENSION;
       }
@@ -99,10 +100,10 @@ public class FileHelper {
         name = "/" + name;
       }
       try (InputStream is = asResource ? createInputStream(FileHelper.class, name) : new FileInputStream(name)) {
-        dbProps.load(is);
+        properties.load(is);
       }
     }
-    return dbProps;
+    return properties;
   }
 
 
@@ -134,9 +135,13 @@ public class FileHelper {
    * @throws IOException if some I/O error
    */
   public static void copy(File source, File dest) throws IOException {
-    try (FileChannel sourceChannel = new FileInputStream(source).getChannel()) {
-      try (FileChannel destChannel = new FileOutputStream(dest).getChannel()) {
-        destChannel.transferFrom(sourceChannel, 0, sourceChannel.size());
+    try (FileInputStream is = new FileInputStream(source)) {
+      try (FileChannel sourceChannel = is.getChannel()) {
+        try (FileOutputStream os = new FileOutputStream(dest)) {
+          try (FileChannel destChannel = os.getChannel()) {
+            destChannel.transferFrom(sourceChannel, 0, sourceChannel.size());
+          }
+        }
       }
     }
   }

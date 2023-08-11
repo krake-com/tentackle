@@ -43,6 +43,7 @@ import org.tentackle.model.print.PrintConfiguration;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendFactory;
 import org.tentackle.sql.BackendInfo;
+import org.tentackle.sql.BackendInfoFactory;
 import org.tentackle.sql.metadata.MetaDataUtilities;
 
 import java.io.BufferedWriter;
@@ -430,7 +431,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
       connectableBackendInfos = new HashMap<>();
 
       BackendFactory.getInstance().getBackends(backendNames).
-        forEach(backend -> backendInfos.put(backend.getName(), new BackendInfo(backend)));
+        forEach(backend -> backendInfos.put(backend.getName(), BackendInfoFactory.getInstance().create(backend)));
 
       if (backendProperties != null) {
         // determine URL from property file(s)
@@ -457,7 +458,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
               try (InputStream is = new FileInputStream(propertiesFile)) {
                 getLog().debug("loading property file " + propertiesFile.getAbsolutePath());
                 props.load(is);
-                BackendInfo backendInfo = new BackendInfo(props);
+                BackendInfo backendInfo = BackendInfoFactory.getInstance().create(props);
                 // props infos will replace those loaded by name only
                 backendInfos.put(backendInfo.getBackend().getName(), backendInfo);
                 connectableBackendInfos.put(backendInfo.getUrl(), backendInfo);
@@ -732,14 +733,14 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
         String alias = entity.getTableAlias();
         if (entity.getDefinedTableAlias() == null && alias != null && alias.length() > 1 &&
             StringHelper.isAllDigits(alias.substring(1))) {
-          if (aliasBuf.length() > 0) {
+          if (!aliasBuf.isEmpty()) {
             aliasBuf.append(", ");
           }
           aliasBuf.append(entity).append('=').append(alias);
         }
       }
 
-      if (aliasBuf.length() > 0) {
+      if (!aliasBuf.isEmpty()) {
         getLog().warn("consider specifying explicit table aliases for: " + aliasBuf);
       }
     }
