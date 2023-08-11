@@ -19,8 +19,11 @@
 package org.tentackle.common;
 
 import java.io.Serial;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * Encrypted {@link Properties}.<br>
@@ -32,6 +35,18 @@ public class EncryptedProperties extends Properties {
 
   @Serial
   private static final long serialVersionUID = 1L;
+
+
+  /**
+   * Optional name of the properties.
+   */
+  private String name;
+
+  /**
+   * Optional prefix for the property keys.
+   */
+  private String keyPrefix;
+
 
   /**
    * Creates an empty property list with no default values.
@@ -70,6 +85,48 @@ public class EncryptedProperties extends Properties {
   }
 
   /**
+   * Gets the optional name of the properties.
+   *
+   * @return the name
+   */
+  public String getName() {
+    return name;
+  }
+
+  /**
+   * Sets the optional name of the properties.<br>
+   * The name can be used to express the source, for example the name of a properties file.
+   *
+   * @param name the name
+   */
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  /**
+   * Gets the key prefix.
+   *
+   * @return the prefix, null if none (default)
+   */
+  public String getKeyPrefix() {
+    return keyPrefix;
+  }
+
+  /**
+   * Sets a key prefix.<br>
+   * The prefix is prepended to the key for {@link #getProperty(String)} and alike.
+   * This allows merging the properties with others (such as spring's application.properties)
+   * and avoid duplicates.<br>
+   * Notice that all low-level methods of {@link java.util.Hashtable} dealing with objects rather than strings
+   * ignore the prefix.
+   *
+   * @param keyPrefix the prefix, null if none
+   */
+  public void setKeyPrefix(String keyPrefix) {
+    this.keyPrefix = keyPrefix;
+  }
+
+  /**
    * Searches for the property with the specified key in this property list.<br>
    * If the key is not found in this property list, the default property list,
    * and its defaults, recursively, are then checked. The method returns
@@ -87,6 +144,32 @@ public class EncryptedProperties extends Properties {
     return getValue(key).getText();
   }
 
+  @Override
+  public synchronized Object setProperty(String key, String value) {
+    return super.setProperty(translateKey(key), value);
+  }
+
+  /**
+   * Same as {@link super#stringPropertyNames()} but returns only those
+   * keys that belong to the <code>keyPrefix</code> space, if set.
+   *
+   * @return unmodifiable set of keys
+   */
+  @Override
+  public Set<String> stringPropertyNames() {
+    Set<String> keys = super.stringPropertyNames();
+    if (keyPrefix != null) {
+      Set<String> prefixKeys = new HashSet<>();
+      for (String key : keys) {
+        if (key.startsWith(keyPrefix)) {
+          prefixKeys.add(key.substring(keyPrefix.length()));
+        }
+      }
+      keys = Collections.unmodifiableSet(prefixKeys);
+    }
+    return keys;
+  }
+
   /**
    * Gets the original value of the property.<br>
    * If the value is encrypted, the encrypted value will be returned.
@@ -95,7 +178,7 @@ public class EncryptedProperties extends Properties {
    * @return the value, null if no such key
    */
   public String getPropertyBlunt(String key) {
-    return super.getProperty(key);
+    return super.getProperty(translateKey(key));
   }
 
   /**
@@ -145,7 +228,7 @@ public class EncryptedProperties extends Properties {
    * @param value the unencrypted value
    */
   public void setEncryptedProperty(String key, char[] value) {
-    value = Objects.requireNonNull(value, "missing value (char[])");
+    key = translateKey(key);
     Cryptor cryptor = Cryptor.getInstance();
     if (cryptor != null) {
       setProperty(key, '~' + Cryptor.getInstance().encrypt64(value));
@@ -173,7 +256,7 @@ public class EncryptedProperties extends Properties {
   }
 
   private Value getValue(String key) {
-    String text = super.getProperty(key);
+    String text = super.getProperty(translateKey(key));
     boolean encrypted = false;
     if (text != null) {
       if (text.startsWith("~")) {
@@ -185,6 +268,10 @@ public class EncryptedProperties extends Properties {
       }
     }
     return new Value(text, encrypted);
+  }
+
+  private String translateKey(String key) {
+    return keyPrefix == null ? key : (keyPrefix + key);
   }
 
 }

@@ -18,8 +18,14 @@
 
 package org.tentackle.common;
 
-import org.testng.Assert;
 import org.testng.annotations.Test;
+
+import java.util.Enumeration;
+import java.util.Set;
+
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
 
 /**
  * Tests for en- and decryption of properties.
@@ -35,27 +41,56 @@ public class EncryptedPropertiesTest {
   private static final String KEY_UNENCRYPTED = "unencrypted";
   private static final String KEY_STARTSWITHTILDE = "startswithtilde";
 
+  private static final String KEY_PREFIX = "tentackle.";
+  private static final String NOT_IN_SPACE = "notInSpace";
+
 
   @Test
   public void doProps() {
+    runIt(new EncryptedProperties());
+  }
+
+  @Test
+  public void withPrefix() {
+    EncryptedProperties properties = new EncryptedProperties();
+    properties.setKeyPrefix(KEY_PREFIX);
+    runIt(properties);
+
+    properties.put(NOT_IN_SPACE, "100");
+    Set<String> strings = properties.stringPropertyNames();
+    assertEquals(strings.size(), 3);
+    assertTrue(strings.contains(KEY_ENCRYPTED));
+    assertTrue(strings.contains(KEY_UNENCRYPTED));
+    assertTrue(strings.contains(KEY_STARTSWITHTILDE));
+
+    Enumeration<?> enumeration = properties.propertyNames();
+    int count = 0;
+    while(enumeration.hasMoreElements()) {
+      String key = (String) enumeration.nextElement();
+      count++;
+      assertTrue(key.startsWith(KEY_PREFIX) || NOT_IN_SPACE.equals(key));
+    }
+    assertEquals(count, 4);
+  }
+
+  private void runIt(EncryptedProperties properties) {
     Cryptor cryptor = Cryptor.getInstance();
     String base64 = cryptor.encrypt64(MSG);
 
-    EncryptedProperties properties = new EncryptedProperties();
     properties.setEncryptedProperty(KEY_ENCRYPTED, MSG);
     properties.setProperty(KEY_UNENCRYPTED, MSG);
     properties.setProperty(KEY_STARTSWITHTILDE, "\\" + STARTSWITHTILDE);
 
-    Assert.assertEquals(properties.getProperty(KEY_ENCRYPTED), MSG);
-    Assert.assertEquals(properties.getPropertyAsChars(KEY_ENCRYPTED), MSGARR);
-    Assert.assertEquals(properties.getPropertyBlunt(KEY_ENCRYPTED), "~" + base64);
-    Assert.assertEquals(properties.getProperty(KEY_UNENCRYPTED), MSG);
-    Assert.assertEquals(properties.getPropertyAsChars(KEY_UNENCRYPTED), MSGARR);
-    Assert.assertEquals(properties.getProperty(KEY_STARTSWITHTILDE), STARTSWITHTILDE);
-    Assert.assertEquals(properties.getPropertyBlunt(KEY_STARTSWITHTILDE), "\\" + STARTSWITHTILDE);
+    assertEquals(properties.getProperty(KEY_ENCRYPTED), MSG);
+    assertEquals(properties.getPropertyAsChars(KEY_ENCRYPTED), MSGARR);
+    assertEquals(properties.getPropertyBlunt(KEY_ENCRYPTED), "~" + base64);
+    assertEquals(properties.getProperty(KEY_UNENCRYPTED), MSG);
+    assertEquals(properties.getPropertyAsChars(KEY_UNENCRYPTED), MSGARR);
+    assertEquals(properties.getProperty(KEY_STARTSWITHTILDE), STARTSWITHTILDE);
+    assertEquals(properties.getPropertyBlunt(KEY_STARTSWITHTILDE), "\\" + STARTSWITHTILDE);
 
-    Assert.assertNull(properties.getProperty("bird"));
-    Assert.assertNull(properties.getPropertyAsChars("troll"));
+    assertNull(properties.getProperty("bird"));
+    assertNull(properties.getPropertyAsChars("troll"));
   }
 
 }

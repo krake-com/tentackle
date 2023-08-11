@@ -28,6 +28,7 @@ import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.rdc.login.Login;
 import org.tentackle.log.Logger;
+import org.tentackle.misc.CommandLine;
 import org.tentackle.session.SessionInfo;
 
 import javafx.application.Platform;
@@ -119,9 +120,10 @@ public class LoginApplication extends FxApplication {
    */
   public SessionInfo createSessionInfo() {
     DesktopApplication<?> application = (DesktopApplication<?>) Application.getInstance();
-    String username = application.getCommandLine().getOptionValue(Constants.BACKEND_USER);
-    char[] password = StringHelper.toCharArray(application.getCommandLine().getOptionValue(Constants.BACKEND_PASSWORD));
-    String sessionPropsName = application.getCommandLine().getOptionValue(Constants.BACKEND_PROPS);
+    CommandLine commandLine = application.getCommandLine();
+    String username = commandLine.getOptionValue(Constants.BACKEND_USER);
+    char[] password = StringHelper.toCharArray(commandLine.getOptionValue(Constants.BACKEND_PASSWORD));
+    String sessionPropsName = commandLine.getOptionValue(Constants.BACKEND_PROPS);
 
     SessionInfo sessionInfo = application.createSessionInfo(username, password, sessionPropsName);
     sessionInfo.setSessionName("FX");

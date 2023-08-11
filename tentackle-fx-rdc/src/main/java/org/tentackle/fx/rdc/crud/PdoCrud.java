@@ -467,21 +467,23 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   public void newPdo() {
     releasePdo(released -> {
       if (released) {
+        T pdo = getPdo();
         if (shiftDown) {
-          if (!getPdo().isNew()) {
+          if (!pdo.isNew()) {
             // create a deep copy
-            setPdo(getPdo().copy());
+            pdo.loadComponents(false);
+            setPdo(pdo.copy());
             // show some feedback (because nothing changed visually, except perhaps the save button)
             Note infoNote = Fx.create(Note.class);
             infoNote.setPosition(Note.Position.TOP);
-            infoNote.setText(MessageFormat.format(resources.getString("new copy of {0} {1} created"), getPdo().getSingular(), getPdo()));
+            infoNote.setText(MessageFormat.format(resources.getString("new copy of {0} {1} created"), pdo.getSingular(), pdo));
             infoNote.setFadeEffect(500, 2000, 1000);
             infoNote.show(newButton);
           }
           // else: don't copy new objects -> ignored
         }
         else {
-          setPdo(getPdo().on());
+          setPdo(pdo.on());
         }
         getEditor().requestInitialFocus();
       }

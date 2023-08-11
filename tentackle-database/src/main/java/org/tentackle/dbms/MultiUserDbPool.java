@@ -116,6 +116,17 @@ public class MultiUserDbPool implements MultiUserSessionPool {
     return poolMap == null;
   }
 
+
+  /**
+   * Determines whether the next session to open should be cloned or not.
+   *
+   * @param sessionInfo the session info requested
+   * @return true to be cloned
+   */
+  protected boolean determineSessionCloned(SessionInfo sessionInfo) {
+    return sessionInfo.isCloned();
+  }
+
   /**
    * Asserts that this pool wasn't shutdown.
    */
@@ -142,7 +153,7 @@ public class MultiUserDbPool implements MultiUserSessionPool {
       poolMap.put(sessionInfo, pool);
       determineSize();
     }
-    pool.setNextSessionName(sessionInfo.getSessionName(), sessionInfo.isCloned());
+    pool.setNextSessionName(sessionInfo.getSessionName(), determineSessionCloned(sessionInfo));
     return pool;
   }
 
@@ -250,12 +261,14 @@ public class MultiUserDbPool implements MultiUserSessionPool {
     }
 
     private void setNextSessionName(String nextSessionName, boolean nextSessionCloned) {
-      int ndx = nextSessionName.lastIndexOf('#');
-      if (ndx >= 0 && ndx < nextSessionName.length() - 1) {
-        String slotStr = nextSessionName.substring(ndx + 1);
-        if (StringHelper.isAllDigits(slotStr)) {  // pooled name!
-          nextSessionName = nextSessionName.substring(0, ndx);    // cut original slot number
-          nameCounterMap.putIfAbsent(nextSessionName, 0);
+      if (nextSessionName != null) {
+        int ndx = nextSessionName.lastIndexOf('#');
+        if (ndx >= 0 && ndx < nextSessionName.length() - 1) {
+          String slotStr = nextSessionName.substring(ndx + 1);
+          if (StringHelper.isAllDigits(slotStr)) {  // pooled name!
+            nextSessionName = nextSessionName.substring(0, ndx);    // cut original slot number
+            nameCounterMap.putIfAbsent(nextSessionName, 0);
+          }
         }
       }
       this.nextSessionName = nextSessionName;

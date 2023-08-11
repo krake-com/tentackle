@@ -428,17 +428,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
   @Override
   public EncryptedProperties getProperties() {
     if (properties == null) {
-      try {
-        try {
-          properties = FileHelper.loadProperties(propertiesName);
-        }
-        catch (FileNotFoundException e1) {
-          throw new PersistenceException("backend properties '" + propertiesName + "' not found");
-        }
-      }
-      catch (IOException ex) {
-        throw new PersistenceException("reading backend properties '" + propertiesName + "' failed", ex);
-      }
+      properties = loadProperties(propertiesName);
     }
     return properties;
   }
@@ -536,4 +526,26 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
     assertMutable();
     lockLinger = enabled;
   }
+
+
+  /**
+   * Loads the properties.
+   *
+   * @param propertiesName the resource or filename
+   * @return the properties
+   */
+  protected EncryptedProperties loadProperties(String propertiesName) {
+    try {
+      try {
+        return FileHelper.loadProperties(propertiesName);
+      }
+      catch (FileNotFoundException e1) {
+        throw new PersistenceException("backend properties '" + propertiesName + "' not found");
+      }
+    }
+    catch (IOException ex) {
+      throw new PersistenceException("reading backend properties '" + propertiesName + "' failed", ex);
+    }
+  }
+
 }
