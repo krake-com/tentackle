@@ -170,7 +170,8 @@ public class MultiUserDbPool implements MultiUserSessionPool {
     assertNotShutdown();
     MultiPoolImpl pool = poolMap.get(sessionInfo);
     if (pool == null) {
-      pool = new MultiPoolImpl(name + "(" + count.incrementAndGet() + ")", conMgr, sessionInfo.clone(), sessionGroupId);
+      pool = new MultiPoolImpl(sessionInfo.getUserName() + "@" + name + "(" + count.incrementAndGet() + ")",
+                               conMgr, sessionInfo.clone(), sessionGroupId);
       poolMap.put(sessionInfo, pool);
       determineSize();
     }

@@ -37,6 +37,7 @@ public class PooledDb {
   private final int slotNumber;             // the slot number
   private Db db;                            // the managed db, null if currently lent
   private final String dbStr;               // the db string (not the reference!)
+  private final String poolStr;             // the pool's toString
   private final WeakReference<Db> refDb;    // weak reference to detect unreferenced lent Db instances
   private long usedSince;                   // last lend time, 0 if in pool
   private String usingThreadStr;            // the lending thread string (not the reference!), null if in pool
@@ -58,6 +59,8 @@ public class PooledDb {
     db = createSession(slotNumber);
     db.setPool(pool);
     dbStr = db.toString();
+    // pool name is already in dbStr -> remove it
+    poolStr = pool.getName() + "#" + slotNumber + "|" + dbStr.replace(pool.getName() + "|", "");
     unusedSince = System.currentTimeMillis();
     refDb = new WeakReference<>(db);
   }
@@ -147,7 +150,7 @@ public class PooledDb {
 
   @Override
   public String toString() {
-    return pool + "#" + slotNumber + "|" + dbStr;
+    return poolStr;
   }
 
   /**
