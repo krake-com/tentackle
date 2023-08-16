@@ -198,7 +198,7 @@ public abstract class AbstractServerApplication extends AbstractApplication
       // this will close all those sessions if the main session died due to a modtracker crash or whatever.
       getSession().groupWith(getSession().getSessionId());
     }
-    return SessionPoolFactory.getInstance().create("remote-pool", getSession(), 100, 0L, 0L);
+    return SessionPoolFactory.getInstance().create("remote-pool", getSession(), 0, 100, 0L, 0L);
   }
 
   @Override

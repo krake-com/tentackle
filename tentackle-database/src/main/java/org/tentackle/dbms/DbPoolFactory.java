@@ -46,9 +46,9 @@ public class DbPoolFactory implements SessionPoolFactory {
   }
 
   @Override
-  public MultiUserSessionPool create(String name, Session session, int maxSize, long maxIdleMinutes, long maxUsageMinutes) {
+  public MultiUserSessionPool create(String name, Session session, int maxSize, int maxTotalSize, long maxIdleMinutes, long maxUsageMinutes) {
     Db db = (Db) session;
-    return new MultiUserDbPool(name, db.getConnectionManager(), db.getSessionGroupId(), maxSize, maxIdleMinutes, maxUsageMinutes);
+    return new MultiUserDbPool(name, db.getConnectionManager(), db.getSessionGroupId(), maxSize, maxTotalSize, maxIdleMinutes, maxUsageMinutes);
   }
 
 }

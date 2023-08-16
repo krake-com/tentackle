@@ -393,6 +393,16 @@ public class DbPool implements SessionPool {
   }
 
   /**
+   * Determines whether the given pooled session can be removed from the pool due to timeout.
+   *
+   * @param pooledDb the pooled session
+   * @return true if it can be removed
+   */
+  public boolean isPooledDbRemovable(PooledDb pooledDb) {
+    return pooledDb.getSession() != null;   // must not be lent!
+  }
+
+  /**
    * Gets the number of unused sessions.
    *
    * @return the unused count

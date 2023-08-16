@@ -105,46 +105,47 @@ public class DbPoolTimeoutThread extends Thread implements Scavenger {
                 while (i < pool.getUnusedCount()) {
                   int index = pool.getUnusedSessionIndex(i);
                   PooledDb pooledDb = pool.getPooledSessions()[index];  // pooledDb.db != null because unused
-
-                  boolean idleTimedOut = false;
-                  long maxIdleMinutes = pool.getMaxIdleMinutes();
-                  if (maxIdleMinutes > 0) {
-                    long idleMinutes = pooledDb.idleMinutes(curtime);
-                    idleTimedOut = idleMinutes > maxIdleMinutes;
-                    if (idleTimedOut) {
-                      LOGGER.info("{0} idle for {1} (max={2}) -> closed", pooledDb, idleMinutes, maxIdleMinutes);
+                  if (pool.isPooledDbRemovable(pooledDb)) { // not restricted to some application specific rule
+                    boolean idleTimedOut = false;
+                    long maxIdleMinutes = pool.getMaxIdleMinutes();
+                    if (maxIdleMinutes > 0) {
+                      long idleMinutes = pooledDb.idleMinutes(curtime);
+                      idleTimedOut = idleMinutes > maxIdleMinutes;
+                      if (idleTimedOut) {
+                        LOGGER.info("{0} idle for {1} (max={2}) -> closed", pooledDb, idleMinutes, maxIdleMinutes);
+                      }
                     }
-                  }
 
-                  boolean usageTimedOut = false;
-                  long maxUsageMinutes = pool.getMaxUsageMinutes();
-                  if (maxUsageMinutes > 0) {
-                    long usedMinutes = pooledDb.usedMinutes(curtime);
-                    usageTimedOut = usedMinutes > maxUsageMinutes;
-                    if (usageTimedOut) {
-                      LOGGER.info("{0} used for {1} (max={2}) -> closed", pooledDb, usedMinutes, maxUsageMinutes);
+                    boolean usageTimedOut = false;
+                    long maxUsageMinutes = pool.getMaxUsageMinutes();
+                    if (maxUsageMinutes > 0) {
+                      long usedMinutes = pooledDb.usedMinutes(curtime);
+                      usageTimedOut = usedMinutes > maxUsageMinutes;
+                      if (usageTimedOut) {
+                        LOGGER.info("{0} used for {1} (max={2}) -> closed", pooledDb, usedMinutes, maxUsageMinutes);
+                      }
                     }
-                  }
 
-                  // if used at all and unused interval elapsed
-                  if (idleTimedOut || usageTimedOut) {
-                    pool.removeDbInstance(pooledDb.getSession(), index);
-                    i--; // start over at same slot
-                  }
-                  else if (pooledDb.getSession().isRemote() && pooledDb.getSession().getSessionGroupId() == 0) {
-                    // remote connections must be kept alive in order not to be closed by remote server.
-                    // But only if they do not belong to session group! It is assumed that the root session
-                    // of the session group is kept alive by the application (modtracker, for example).
-                    try {
-                      pooledDb.getSession().setAlive(true);
-                    }
-                    catch (RuntimeException ex) {
-                      LOGGER.severe("remote keep alive failed", ex);
+                    // if used at all and unused interval elapsed
+                    if (idleTimedOut || usageTimedOut) {
                       pool.removeDbInstance(pooledDb.getSession(), index);
                       i--; // start over at same slot
                     }
+                    else if (pooledDb.getSession().isRemote() && pooledDb.getSession().getSessionGroupId() == 0) {
+                      // remote connections must be kept alive in order not to be closed by remote server.
+                      // But only if they do not belong to session group! It is assumed that the root session
+                      // of the session group is kept alive by the application (modtracker, for example).
+                      try {
+                        pooledDb.getSession().setAlive(true);
+                      }
+                      catch (RuntimeException ex) {
+                        LOGGER.severe("remote keep alive failed", ex);
+                        pool.removeDbInstance(pooledDb.getSession(), index);
+                        i--; // start over at same slot
+                      }
+                    }
+                    i++;
                   }
-                  i++;
                 }
 
                 // remove unreferenced sessions

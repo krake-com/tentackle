@@ -64,11 +64,18 @@ public interface MultiUserSessionPool {
 
 
   /**
-   * Gets the maximum pool size.
+   * Gets the maximum pool size per session info.
    *
    * @return the max. number of concurrent session instances, 0 = unlimited
    */
   int getMaxSize();
+
+  /**
+   * Gets the maximum pool size for all sessions.
+   *
+   * @return the max. number of concurrent session instances, 0 = unlimited
+   */
+  int getMaxTotalSize();
 
 
   /**

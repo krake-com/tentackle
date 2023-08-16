@@ -40,6 +40,7 @@ public class MultiUserDbPool implements MultiUserSessionPool {
   private final ConnectionManager conMgr;
   private final int sessionGroupId;
   private final int maxSize;
+  private final int maxTotalSize;
   private final long maxIdleMinutes;
   private final long maxUsageMinutes;
 
@@ -54,14 +55,16 @@ public class MultiUserDbPool implements MultiUserSessionPool {
    * @param conMgr the connection manager for local sessions, null if remote
    * @param sessionGroupId the session group ID to use for all sessions
    * @param maxSize the maximum number of sessions per session info, 0 = unlimited
+   * @param maxTotalSize the maximum total number of sessions, 0 = unlimited
    * @param maxIdleMinutes the idle timeout in minutes to close unused sessions per session info, 0 = unlimited
    * @param maxUsageMinutes the max. used time in minutes per session info, 0 = unlimited
    */
-  public MultiUserDbPool(String name, ConnectionManager conMgr, int sessionGroupId, int maxSize, long maxIdleMinutes, long maxUsageMinutes) {
+  public MultiUserDbPool(String name, ConnectionManager conMgr, int sessionGroupId, int maxSize, int maxTotalSize, long maxIdleMinutes, long maxUsageMinutes) {
     this.name = Objects.requireNonNullElse(name, "default-multi");
     this.conMgr = conMgr;
     this.sessionGroupId = sessionGroupId;
     this.maxSize = maxSize;
+    this.maxTotalSize = maxTotalSize;
     this.maxIdleMinutes = maxIdleMinutes;
     this.maxUsageMinutes = maxUsageMinutes;
 
@@ -98,6 +101,11 @@ public class MultiUserDbPool implements MultiUserSessionPool {
   }
 
   @Override
+  public int getMaxTotalSize() {
+    return maxTotalSize;
+  }
+
+  @Override
   public int getSize() {
     return size.get();
   }
@@ -121,10 +129,23 @@ public class MultiUserDbPool implements MultiUserSessionPool {
    * Determines whether the next session to open should be cloned or not.
    *
    * @param sessionInfo the session info requested
+   * @param pool the session pool for the given session info
    * @return true to be cloned
    */
-  protected boolean determineSessionCloned(SessionInfo sessionInfo) {
+  protected boolean determineSessionCloned(SessionInfo sessionInfo, DbPool pool) {
     return sessionInfo.isCloned();
+  }
+
+  /**
+   * Determines whether the given pooled session can be removed from the pool due to timeout.<br>
+   * This method is provided to override the default in {@link DbPool}, which is used a private subclass
+   * in {@code MultiUserDbPool}.
+   *
+   * @param pooledDb the pooled session
+   * @return true if it can be removed
+   */
+  protected boolean isPooledDbRemovable(PooledDb pooledDb) {
+    return true;
   }
 
   /**
@@ -153,7 +174,7 @@ public class MultiUserDbPool implements MultiUserSessionPool {
       poolMap.put(sessionInfo, pool);
       determineSize();
     }
-    pool.setNextSessionName(sessionInfo.getSessionName(), determineSessionCloned(sessionInfo));
+    pool.setNextSessionName(sessionInfo.getSessionName(), determineSessionCloned(sessionInfo, pool));
     return pool;
   }
 
@@ -200,8 +221,13 @@ public class MultiUserDbPool implements MultiUserSessionPool {
     private MultiPoolImpl(String name, ConnectionManager conMgr, SessionInfo sessionInfo, int sessionGroupId) {
       // iniSize 0  -> make sure that createSessionInfo uses nextSessionName
       // minSize -1 -> shutdown sub-pool when all sessions closed
-      // maxSize 0  -> unlimited per session info (but limited in total for all sub-pools)
+      // maxSize 0  -> unlimited in super class, but limited in createDbInstances below!
       super(name, conMgr, sessionInfo, sessionGroupId, 0, 1, -1, 0, maxIdleMinutes, maxUsageMinutes);
+    }
+
+    @Override
+    public boolean isPooledDbRemovable(PooledDb pooledDb) {
+      return MultiUserDbPool.this.isPooledDbRemovable(pooledDb) && super.isPooledDbRemovable(pooledDb);
     }
 
     @Override
@@ -238,12 +264,23 @@ public class MultiUserDbPool implements MultiUserSessionPool {
 
     @Override
     protected int createDbInstances(int num) {
-      if (maxSize > 0) {
+      if (maxTotalSize > 0) {
         int sz = size.get();
+        if (sz + num > maxTotalSize) {
+          num = maxTotalSize - sz;
+          if (num <= 0) {
+            PersistenceException pex = new PersistenceException("cannot create more session instances, max. total pool size " + maxTotalSize + " reached");
+            pex.setTemporary(true);
+            throw pex;
+          }
+        }
+      }
+      if (maxSize > 0) {
+        int sz = getSize();
         if (sz + num > maxSize) {
           num = maxSize - sz;
           if (num <= 0) {
-            PersistenceException pex = new PersistenceException("cannot create more session instances, max. pool size " + maxSize + " reached");
+            PersistenceException pex = new PersistenceException("cannot create more session instances, max. pool size per session " + maxSize + " reached");
             pex.setTemporary(true);
             throw pex;
           }

@@ -125,12 +125,14 @@ public abstract class WebApplication<T> extends AbstractServerApplication {
    * @param session the persistence session to release
    */
   public void putSession(Session session) {
-    /*
-     * dereference session info (possible target for the GC).
-     * If (due to tight memory or timeout) the session info gets garbage
-     * collected the user must log in again.
-     */
-    ((Db) session).setSessionInfo(null);
+    if (getSessionPool() != null) {   // only if not a remote server!
+      /*
+       * dereference session info (possible target for the GC).
+       * If (due to tight memory or timeout) the session info gets garbage
+       * collected the user must log in again.
+       */
+      ((Db) session).setSessionInfo(null);
+    }
     session.getPool().putSession(session);    // always pooled, works also for MultiUserDbPool
   }
 
