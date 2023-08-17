@@ -19,6 +19,7 @@
 package org.tentackle.app;
 
 import org.tentackle.common.EncryptedProperties;
+import org.tentackle.common.LocaleProvider;
 import org.tentackle.common.ModuleInfo;
 import org.tentackle.common.ModuleSorter;
 import org.tentackle.common.StringHelper;
@@ -44,9 +45,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.function.Function;
+import java.util.prefs.Preferences;
 
 /**
  * Base class for all kinds of Tentackle applications.
@@ -315,44 +316,29 @@ public abstract class AbstractApplication implements Application {
 
       // set default locale
       String localeStr = getProperty(LOCALE);
-      if (localeStr != null && !localeStr.isEmpty()) {
-        String language = null;
-        String country = null;
-        String variant = null;
-        StringTokenizer stok = new StringTokenizer(localeStr, "_");
-        while (stok.hasMoreTokens()) {
-          String token = stok.nextToken();
-          if (language == null) {
-            language = token;
-          }
-          else if (country == null) {
-            country = token;
-          }
-          else if (variant == null) {
-            variant = token;
-          }
-          else {
-            break;
-          }
+      if (StringHelper.isAllWhitespace(localeStr)) {
+        try {
+          // try to get from user preferences.
+          // The application may provide a feature to set this via the UI, for example.
+          localeStr = Preferences.userNodeForPackage(getClass()).get(LOCALE, "");
         }
-
-        Locale locale = null;
-
-        if (variant != null) {
-          locale = Locale.of(language, country, variant);
-        }
-        else if (country != null) {
-          locale = Locale.of(language, country);
-        }
-        else if (language != null) {
-          locale = Locale.of(language);
-        }
-
-        if (locale != null) {
-          Locale.setDefault(locale);
-          LOGGER.info("default locale set to {0}", locale);
+        catch (RuntimeException rx) {
+          LOGGER.warning("cannot retrieve locale from user preferences", rx);
         }
       }
+      if (!StringHelper.isAllWhitespace(localeStr)) {
+        Locale locale = LocaleProvider.getInstance().fromTag(localeStr);
+        if (locale != null) {
+          if (LocaleProvider.getInstance().isLocaleSupported(locale)) {
+            Locale.setDefault(locale);
+          }
+          else {
+            LOGGER.warning("locale {0} not supported", locale);
+          }
+        }
+      }
+      LOGGER.info("default locale is {0}", Locale.getDefault());
+
     }
   }
 
