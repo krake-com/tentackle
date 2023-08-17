@@ -19,14 +19,6 @@
 
 package org.tentackle.fx.rdc;
 
-import javafx.collections.ObservableList;
-import javafx.scene.Node;
-import javafx.scene.control.TreeCell;
-import javafx.scene.control.TreeItem;
-import javafx.scene.control.TreeView;
-import javafx.stage.Modality;
-import javafx.stage.Window;
-
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.component.FxTableView;
@@ -37,6 +29,14 @@ import org.tentackle.fx.rdc.table.TablePopup;
 import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.pdo.PersistentDomainObject;
 
+import javafx.collections.ObservableList;
+import javafx.scene.Node;
+import javafx.scene.control.TreeCell;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import javafx.stage.Window;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -233,6 +233,19 @@ public class Rdc {
     return RdcUtilities.getInstance().getCrud(pdo, pdoList, editable, modality, owner);
   }
 
+  /**
+   * Gets a CRUD stage for a PDO.<br>
+   * Useful to check whether a PDO is being edited or shown currently.
+   *
+   * @param <T> the pdo type
+   * @param pdo the pdo
+   * @param editable true if user may edit the pdo, false if to view only
+   * @return the CRUD showing stage, null if there is no such stage
+   */
+  @SuppressWarnings("unchecked")
+  public static <T extends PersistentDomainObject<T>> Stage getCrud(T pdo, boolean editable) {
+    return RdcUtilities.getInstance().getCrud(pdo, editable);
+  }
 
   /**
    * Searches for PDOs in a non-modal separate window.
