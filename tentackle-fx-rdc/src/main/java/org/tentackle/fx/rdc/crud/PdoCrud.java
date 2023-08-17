@@ -425,7 +425,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
           if (prevPdo.isImmutable() && editable && prevPdo.isEditAllowed()) {
             prevPdo = prevPdo.reload();
           }
-          setPdo(prevPdo);
+          setPdoImpl(prevPdo);
           updatePrevNextButtons();
           eventProxy.fireEvent(new PdoEvent(getPdo(), getView(), PdoEvent.READ));
         }
@@ -444,7 +444,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
           if (nextPdo.isImmutable() && editable && nextPdo.isEditAllowed()) {
             nextPdo = nextPdo.reload();
           }
-          setPdo(nextPdo);
+          setPdoImpl(nextPdo);
           updatePrevNextButtons();
           eventProxy.fireEvent(new PdoEvent(getPdo(), getView(), PdoEvent.READ));
         }
@@ -790,6 +790,16 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
     FxUtilities.getInstance().showValidationResults(ex, editor.getValidationMappers(), editor.getBinder());
   }
 
+
+  private void setPdoImpl(T pdo) {
+    Stage stage = Rdc.getCrud(pdo, editable);
+    if (stage != null) {
+      stage.toFront();
+    }
+    else {
+      setPdo(pdo);
+    }
+  }
 
   private void handleTreeButtonMouseEvent(MouseEvent event) {
     if (event.isPopupTrigger()) {

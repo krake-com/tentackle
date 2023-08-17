@@ -265,7 +265,13 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
               if (isCrudShown()) {
                 pdoCrud.releasePdo(released -> {
                   if (released) {
-                    pdoCrud.setPdo(firstPdo.reload());
+                    Stage stage = Rdc.getCrud(firstPdo, true);
+                    if (stage != null) {
+                      stage.toFront();
+                    }
+                    else {
+                      pdoCrud.setPdo(firstPdo.reload());
+                    }
                   }
                 });
               }

@@ -102,19 +102,27 @@ public class RdcUtilities {
   /**
    * Map of CRUD controllers.
    */
-  private final Map<Class<?>, Set<PdoCrud<?>>> crudCache = new HashMap<>();
+  private final Map<Class<?>, Set<PdoCrud<?>>> crudCache;
 
   /**
    * Map of search controllers.
    */
-  private final Map<Class<?>, Set<PdoSearch<?>>> searchCache = new HashMap<>();
+  private final Map<Class<?>, Set<PdoSearch<?>>> searchCache;
 
 
   /**
    * Creates the RDC utilities.
    */
   public RdcUtilities() {
-    // see -Xlint:missing-explicit-ctor since Java 16
+    if (Application.getInstance().isServer()) {
+      // we cannot use caching in servers like JRPO (different users, browser instances, etc...)
+      crudCache = null;
+      searchCache = null;
+    }
+    else {
+      crudCache = new HashMap<>();
+      searchCache = new HashMap<>();
+    }
   }
 
   /**
@@ -209,40 +217,81 @@ public class RdcUtilities {
   public synchronized <T extends PersistentDomainObject<T>> PdoCrud<T> getCrud(
                 T pdo, ObservableList<T> pdoList, boolean editable, Modality modality, Window owner) {
 
-    Class<T> pdoClass = pdo.getEffectiveClass();
-    Set<PdoCrud<?>> cruds = crudCache.computeIfAbsent(pdoClass, k -> new HashSet<>());
+    Set<PdoCrud<?>> cruds;
+    if (crudCache != null) {
+      Class<T> pdoClass = pdo.getEffectiveClass();
+      cruds = crudCache.computeIfAbsent(pdoClass, k -> new HashSet<>());
 
-    for (Iterator<PdoCrud<?>> iter = cruds.iterator(); iter.hasNext(); ) {
-      PdoCrud<T> crud = (PdoCrud<T>) iter.next();
-      Stage stage = Fx.getStage(crud.getView());
-      if (stage == null || (!stage.isShowing() && stage.getModality() == modality && stage.getOwner() == owner)) {
-        // not showing (i.e. unused), never used or same modality and owner
-        crud.setEditable(editable);
-        crud.setModal(modality != Modality.NONE);
-        crud.setPdo(pdo);
-        crud.setPdoList(pdoList);
-        return crud;
+      for (Iterator<PdoCrud<?>> iter = cruds.iterator(); iter.hasNext(); ) {
+        PdoCrud<T> crud = (PdoCrud<T>) iter.next();
+        Stage stage = Fx.getStage(crud.getView());
+        if (stage == null || (!stage.isShowing() && stage.getModality() == modality && stage.getOwner() == owner)) {
+          // not showing (i.e. unused), never used or same modality and owner
+          crud.setEditable(editable);
+          crud.setModal(modality != Modality.NONE);
+          crud.setPdo(pdo);
+          crud.setPdoList(pdoList);
+          return crud;
+        }
+        // is showing or other modality or different owner, i.e. part of some window which is showing
+        if (Objects.equals(pdo, crud.getPdo()) && stage.isShowing() &&    // same PDO
+            (crud.isEditing() || !editable)) {    // already being edited or just shown and view-only requested
+          stage.toFront();
+          return null;
+          // else: being edited, being shown or requested editable does not match: get a fresh one
+        }
+        if (!stage.isShowing() && stage.getModality() == modality && stage.getOwner() != owner &&
+            stage.getOwner() != null && !stage.getOwner().isShowing()) {
+          // just the wrong owner, which isn't showing:
+          // remove from cache to avoid pollution
+          iter.remove();
+        }
       }
-      // is showing or other modality or different owner, i.e. part of some window which is showing
-      if (Objects.equals(pdo, crud.getPdo()) && stage.isShowing() &&    // same PDO
-          (crud.isEditing() || !editable)) {    // already being edited or just shown and view-only requested
-        stage.toFront();
-        return null;
-        // else: being edited, being shown or requested editable does not match: get a fresh one
-      }
-      if (!stage.isShowing() && stage.getModality() == modality && stage.getOwner() != owner &&
-          stage.getOwner() != null && !stage.getOwner().isShowing()) {
-        // just the wrong owner, which isn't showing:
-        // remove from cache to avoid pollution
-        iter.remove();
-      }
+    }
+    else {
+      cruds = null;
     }
 
     // no unused cruds: create a new one
     PdoCrud<T> crud = RdcFactory.getInstance().createPdoCrud(pdo, editable, modality != Modality.NONE);
     crud.setPdoList(pdoList);
-    cruds.add(crud);
+    if (cruds != null) {
+      cruds.add(crud);
+    }
     return crud;
+  }
+
+
+  /**
+   * Gets a CRUD stage for a PDO.<br>
+   * Useful to check whether a PDO is being edited or shown currently.
+   *
+   * @param <T> the pdo type
+   * @param pdo the pdo
+   * @param editable true if user may edit the pdo, false if to view only
+   * @return the CRUD showing stage, null if there is no such stage
+   */
+  @SuppressWarnings("unchecked")
+  public synchronized <T extends PersistentDomainObject<T>> Stage getCrud(T pdo, boolean editable) {
+    if (crudCache != null) {
+      Class<T> pdoClass = pdo.getEffectiveClass();
+      Set<PdoCrud<?>> cruds = crudCache.get(pdoClass);
+      if (cruds != null) {
+        for (Iterator<PdoCrud<?>> iter = cruds.iterator(); iter.hasNext(); ) {
+          PdoCrud<T> crud = (PdoCrud<T>) iter.next();
+          Stage stage = Fx.getStage(crud.getView());
+          if (stage != null) {
+            // is showing or other modality or different owner, i.e. part of some window which is showing
+            if (Objects.equals(pdo, crud.getPdo()) && stage.isShowing() &&    // same PDO
+                (crud.isEditing() || !editable)) {    // already being edited or just shown and view-only requested
+              stage.toFront();
+              return stage;
+            }
+          }
+        }
+      }
+    }
+    return null;
   }
 
 
@@ -334,32 +383,40 @@ public class RdcUtilities {
   public synchronized <T extends PersistentDomainObject<T>> PdoSearch<T>
          getSearch(T pdo, Modality modality, Window owner) {
 
-    Class<T> pdoClass = pdo.getEffectiveClass();
-    Set<PdoSearch<?>> searches = searchCache.computeIfAbsent(pdoClass, k -> new HashSet<>());
+    Set<PdoSearch<?>> searches;
+    if (searchCache != null) {
+      Class<T> pdoClass = pdo.getEffectiveClass();
+      searches = searchCache.computeIfAbsent(pdoClass, k -> new HashSet<>());
 
-    for (Iterator<PdoSearch<?>> iter = searches.iterator(); iter.hasNext(); ) {
-      PdoSearch<T> search = (PdoSearch<T>) iter.next();
-      Stage stage = Fx.getStage(search.getView());
-      if (stage == null || (!stage.isShowing() && stage.getModality() == modality && stage.getOwner() == owner)) {
-        search.setItems(null);
-        search.setPdo(pdo);
-        if (search.getFinder().isTreeShowingInitially()) {
-          search.showTree();
+      for (Iterator<PdoSearch<?>> iter = searches.iterator(); iter.hasNext(); ) {
+        PdoSearch<T> search = (PdoSearch<T>) iter.next();
+        Stage stage = Fx.getStage(search.getView());
+        if (stage == null || (!stage.isShowing() && stage.getModality() == modality && stage.getOwner() == owner)) {
+          search.setItems(null);
+          search.setPdo(pdo);
+          if (search.getFinder().isTreeShowingInitially()) {
+            search.showTree();
+          }
+          else {
+            search.showTable();
+          }
+          return search;
         }
-        else {
-          search.showTable();
+        if (!stage.isShowing() && stage.getModality() == modality && stage.getOwner() != owner &&
+            stage.getOwner() != null && !stage.getOwner().isShowing()) {
+          iter.remove();
         }
-        return search;
       }
-      if (!stage.isShowing() && stage.getModality() == modality && stage.getOwner() != owner &&
-          stage.getOwner() != null && !stage.getOwner().isShowing()) {
-        iter.remove();
-      }
+    }
+    else {
+      searches = null;
     }
 
     // no unused searches with requested modality: create a new one
     PdoSearch<T> search = RdcFactory.getInstance().createPdoSearch(pdo);
-    searches.add(search);
+    if (searches != null) {
+      searches.add(search);
+    }
     return search;
   }
 
