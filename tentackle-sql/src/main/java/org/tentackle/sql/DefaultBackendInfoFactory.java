@@ -27,6 +27,13 @@ import org.tentackle.common.Service;
 @Service(BackendInfoFactory.class)
 public class DefaultBackendInfoFactory implements BackendInfoFactory {
 
+  /**
+   * Creates a backend info factory.
+   */
+  public DefaultBackendInfoFactory() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
   @Override
   public BackendInfo create(Backend backend) {
     return new BackendInfo(backend);
