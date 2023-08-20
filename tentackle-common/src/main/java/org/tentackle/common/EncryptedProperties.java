@@ -150,7 +150,7 @@ public class EncryptedProperties extends Properties {
   }
 
   /**
-   * Same as {@link super#stringPropertyNames()} but returns only those
+   * Same as {@link Properties#stringPropertyNames()} but returns only those
    * keys that belong to the <code>keyPrefix</code> space, if set.
    *
    * @return unmodifiable set of keys
