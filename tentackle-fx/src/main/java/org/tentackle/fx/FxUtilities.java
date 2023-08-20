@@ -52,6 +52,7 @@ import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
 import javafx.print.PageLayout;
 import javafx.print.PrinterJob;
+import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -182,6 +183,27 @@ public class FxUtilities {
     scene.getStylesheets().add(isDarkMode() ? "/org/tentackle/fx/tentackle_dark.css" : "/org/tentackle/fx/tentackle.css");
   }
 
+  /**
+   * Gets the default cursor for the given node.
+   *
+   * @param node the node
+   * @return the default cursor, never null
+   */
+  public Cursor getDefaultCursor(Node node) {
+    // default impl treats all nodes the same
+    return Cursor.DEFAULT;
+  }
+
+  /**
+   * Gets the wait cursor for the given node.
+   *
+   * @param node the node
+   * @return the wait cursor, never null
+   */
+  public Cursor getWaitCursor(Node node) {
+    // default impl treats all nodes the same
+    return Cursor.WAIT;
+  }
 
   /**
    * Returns whether decimal separator should be inserted automatically if missing in money input.<br>

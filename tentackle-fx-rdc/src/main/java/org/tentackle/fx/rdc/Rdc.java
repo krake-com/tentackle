@@ -351,36 +351,39 @@ public class Rdc {
    *          s -&gt; Fx.info(s));
    * </pre>
    *
-   * @param runner the code running in another thread in parallel to the FX thread
+   * @param <V>      the type returned by the runner
+   * @param node     the optional node this background task is related to, null if none
+   * @param runner   the code running in another thread in parallel to the FX thread
    * @param updateUI optional UI updater invoked from within the FX event queue
    * @param failedUI optional UI updater invoked if execution failed
-   * @param <V> the type returned by the runner
-   * @see RdcUtilities#runInBackground(Supplier, Consumer, Consumer)
+   * @see RdcUtilities#runInBackground(Node, Supplier, Consumer, Consumer)
    */
-  public static <V> void bg(Supplier<V> runner, Consumer<V> updateUI, Consumer<RuntimeException> failedUI) {
-    RdcUtilities.getInstance().runInBackground(runner, updateUI, failedUI);
+  public static <V> void bg(Node node, Supplier<V> runner, Consumer<V> updateUI, Consumer<RuntimeException> failedUI) {
+    RdcUtilities.getInstance().runInBackground(node, runner, updateUI, failedUI);
   }
 
   /**
-   * Same as {@link #bg(Supplier, Consumer, Consumer)} but with a predefined exception consumer.<br>
+   * Same as {@link #bg(Node, Supplier, Consumer, Consumer)} but with a predefined exception consumer.<br>
    * The exception is shown as an error dialog.
    *
-   * @param runner the code running in another thread in parallel to the FX thread
+   * @param <V>      the type returned by the runner
+   * @param node     the optional node this background task is related to, null if none
+   * @param runner   the code running in another thread in parallel to the FX thread
    * @param updateUI optional UI updater invoked from within the FX event queue
-   * @param <V> the type returned by the runner
    */
-  public static <V> void bg(Supplier<V> runner, Consumer<V> updateUI) {
-    bg(runner, updateUI, rx -> Fx.error(rx.getLocalizedMessage(), rx));
+  public static <V> void bg(Node node, Supplier<V> runner, Consumer<V> updateUI) {
+    bg(node, runner, updateUI, rx -> Fx.error(rx.getLocalizedMessage(), rx));
   }
 
   /**
    * Runs some code in another thread.
    *
+   * @param node   the optional node this background task is related to, null if none
    * @param runner the code running in another thread in parallel to the FX thread
-   * @see #bg(Supplier, Consumer)
+   * @see #bg(Node, Supplier, Consumer)
    */
-  public static void bg(Runnable runner) {
-    bg(() -> {
+  public static void bg(Node node, Runnable runner) {
+    bg(node, () -> {
       runner.run();
       return null;
     }, null);
