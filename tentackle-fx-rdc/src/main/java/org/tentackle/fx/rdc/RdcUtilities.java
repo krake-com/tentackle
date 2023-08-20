@@ -42,6 +42,7 @@ import org.tentackle.session.SessionDependable;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.geometry.Point2D;
+import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -481,22 +482,34 @@ public class RdcUtilities {
    * Use this method whenever some lengthy operation (database I/O, for example) would otherwise
    * block the event queue.
    * <p>
+   * The optional node will get the wait cursor set, while the task is executed in background.
+   * <p>
    * The default implementation creates a {@link AbstractSessionTask} and runs it
    * on behalf of the {@link ModificationTracker}. If the runner itself is a {@link SessionDependable}
    * it gets the session set as well before it is invoked. The result is then passed to {@code updateUI}
    * and executed via {@link Platform#runLater(Runnable)}.<br>
    *
-   * @param runner the code running in another thread in parallel to the FX thread
+   * @param <V>      the type returned by the runner
+   * @param node     the optional node this background task is related to, null if none
+   * @param runner   the code running in another thread in parallel to the FX thread
    * @param updateUI optional UI updater invoked from within the FX event queue, null if none
    * @param failedUI optional UI updater invoked if execution failed, null if log only as error
-   * @param <V> the type returned by the runner
    */
-  public <V> void runInBackground(Supplier<V> runner, Consumer<V> updateUI, Consumer<RuntimeException> failedUI) {
+  public <V> void runInBackground(Node node, Supplier<V> runner, Consumer<V> updateUI, Consumer<RuntimeException> failedUI) {
     AbstractSessionTask task;
-    if (runner instanceof AbstractSessionTask && updateUI == null && failedUI == null) {
+    if (runner instanceof AbstractSessionTask && updateUI == null && failedUI == null && node == null) {
       task = (AbstractSessionTask) runner;
     }
     else {
+      Cursor oldCursor;
+      if (node != null) {
+        oldCursor = node.getCursor();
+        node.setCursor(FxUtilities.getInstance().getWaitCursor(node));
+      }
+      else {
+        oldCursor = null;
+      }
+
       task = new AbstractSessionTask() {
         @Override
         public void run() {
@@ -505,17 +518,25 @@ public class RdcUtilities {
               ((SessionDependable) runner).setSession(getSession());
             }
             V value = runner.get();
+            Platform.runLater(this::restoreCursor);
             if (updateUI != null) {
               Platform.runLater(() -> updateUI.accept(value));
             }
           }
           catch (RuntimeException rx) {
+            Platform.runLater(this::restoreCursor);
             if (failedUI != null) {
               Platform.runLater(() -> failedUI.accept(rx));
             }
             else {
               LOGGER.severe("background task failed", rx);
             }
+          }
+        }
+
+        private void restoreCursor() {
+          if (node != null) {
+            node.setCursor(oldCursor == null ? null : FxUtilities.getInstance().getDefaultCursor(node));
           }
         }
       };

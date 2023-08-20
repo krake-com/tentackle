@@ -57,7 +57,6 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
-import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Label;
@@ -518,17 +517,14 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   public void find() {
     filterField.clear();
     if (finder.isSearchRunningInBackground()) {
-      getView().setCursor(Cursor.WAIT);
-      Rdc.bg(finder::runSearch,
-             result -> {
-               getView().setCursor(Cursor.DEFAULT);
-               setItems(result);
-               presetScrolling();
-             },
-             ex -> {
-               getView().setCursor(Cursor.DEFAULT);
-               Fx.error(ex.getLocalizedMessage(), ex);
-             });
+      Rdc.bg(getView(),
+      finder::runSearch,
+      result -> {
+        setItems(result);
+        presetScrolling();
+      }, ex -> {
+        Fx.error(ex.getLocalizedMessage(), ex);
+      });
     }
     else {
       Platform.runLater(() -> {

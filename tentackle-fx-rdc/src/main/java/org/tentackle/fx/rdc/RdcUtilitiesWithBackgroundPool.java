@@ -19,6 +19,7 @@
 package org.tentackle.fx.rdc;
 
 import org.tentackle.fx.Fx;
+import org.tentackle.fx.FxUtilities;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionCloseHandler;
@@ -27,6 +28,8 @@ import org.tentackle.session.SessionPoolFactory;
 import org.tentackle.session.SessionPooledExecutor;
 
 import javafx.application.Platform;
+import javafx.scene.Cursor;
+import javafx.scene.Node;
 import java.util.Collection;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -76,56 +79,95 @@ public class RdcUtilitiesWithBackgroundPool extends RdcUtilities {
 
 
   @Override
-  public <V> void runInBackground(Supplier<V> runner, Consumer<V> updateUI, Consumer<RuntimeException> failedUI) {
+  public <V> void runInBackground(Node node, Supplier<V> runner, Consumer<V> updateUI, Consumer<RuntimeException> failedUI) {
+    Cursor oldCursor;
+    if (node != null) {
+      oldCursor = node.getCursor();
+      node.setCursor(FxUtilities.getInstance().getWaitCursor(node));
+    }
+    else {
+      oldCursor = null;
+    }
     executor.submit(runner,
-                    updateUI == null ? null : value -> Platform.runLater(() -> updateUI.accept(value)),
-                    failedUI == null ? null : exception -> Platform.runLater(() -> failedUI.accept(exception)));
+                    value -> Platform.runLater(() -> {
+                      restoreDefaultCursor(node, oldCursor);
+                      if (updateUI != null) {
+                        updateUI.accept(value);
+                      }
+                    }),
+                    exception -> Platform.runLater(() -> {
+                      restoreDefaultCursor(node, oldCursor);
+                      if (failedUI != null) {
+                        failedUI.accept(exception);
+                      }
+                    }));
   }
 
   /**
    * Runs a collection of runners in background in parallel.<br>
    * If there are failures, <code>failedUI</code> (if any) will be invoked <em>before</em> <code>finishedUI</code>.
    *
-   * @param runners the runners to invoke
+   * @param <V>           the type returned by the runners
+   * @param node          the optional node the background execution is related to, null if none
+   * @param runners       the runners to invoke
    * @param timeoutMillis the timeout in milliseconds for all tasks to finish, 0 if no timeout
-   * @param finishedUI UI updater invoked from within the FX event queue when all runners finished, null if none
-   * @param failedUI UI updater invoked from within the FX event queue only if execution of some runner failed, null if log only as error
-   * @param <V> the type returned by the runners
+   * @param finishedUI    UI updater invoked from within the FX event queue when all runners finished, null if none
+   * @param failedUI      UI updater invoked from within the FX event queue only if execution of some runner failed, null if log only as error
    */
-  public <V> void runInBackground(Collection<Supplier<V>> runners, long timeoutMillis, Consumer<Map<Supplier<V>, V>> finishedUI, Consumer<Map<Supplier<V>, RuntimeException>> failedUI) {
+  public <V> void runInBackground(Node node, Collection<Supplier<V>> runners, long timeoutMillis, Consumer<Map<Supplier<V>, V>> finishedUI, Consumer<Map<Supplier<V>, RuntimeException>> failedUI) {
+    Cursor oldCursor;
+    if (node != null) {
+      oldCursor = node.getCursor();
+      node.setCursor(FxUtilities.getInstance().getWaitCursor(node));
+    }
+    else {
+      oldCursor = null;
+    }
     executor.submit(runners, timeoutMillis,
-                    finishedUI == null ? null : successHandler -> Platform.runLater(() -> finishedUI.accept(successHandler)),
-                    failedUI == null ? null : failHandler -> Platform.runLater(() -> failedUI.accept(failHandler)));
+                    successHandler -> Platform.runLater(() -> {
+                      restoreDefaultCursor(node, oldCursor);
+                      if (finishedUI != null) {
+                        finishedUI.accept(successHandler);
+                      }
+                    }),
+                    failHandler -> Platform.runLater(() -> {
+                      restoreDefaultCursor(node, oldCursor);
+                      if (failedUI != null) {
+                        failedUI.accept(failHandler);
+                      }
+                    }));
   }
 
   /**
    * Runs a collection of runners in background in parallel.<br>
    * Failures will be presented to the user in an error dialog.
    *
-   * @param runners the runners to invoke
+   * @param <V>           the type returned by the runners
+   * @param node          the optional node the background execution is related to, null if none
+   * @param runners       the runners to invoke
    * @param timeoutMillis the timeout in milliseconds for all tasks to finish, 0 if no timeout
-   * @param finishedUI optional UI updater always invoked from within the FX event queue if all runners finished, null if none
-   * @param <V> the type returned by the runners
+   * @param finishedUI    optional UI updater always invoked from within the FX event queue if all runners finished, null if none
    */
-  public <V> void runInBackground(Collection<Supplier<V>> runners, long timeoutMillis, Consumer<Map<Supplier<V>, V>> finishedUI) {
-    runInBackground(
-        runners,
-        timeoutMillis,
-        finishedUI,
-        failedMap -> {
-          StringBuilder buf = new StringBuilder();
-          for (RuntimeException rx : failedMap.values()) {
-            String msg = rx.getLocalizedMessage();
-            if (msg != null && !buf.toString().contains(msg)) {
-              if (buf.length() > 0) {
-                buf.append('\n');
-              }
-              buf.append(rx.getLocalizedMessage());
-            }
+  public <V> void runInBackground(Node node, Collection<Supplier<V>> runners, long timeoutMillis, Consumer<Map<Supplier<V>, V>> finishedUI) {
+    runInBackground(node,
+                    runners,
+                    timeoutMillis,
+                    finishedUI,
+                    failedMap -> {
+
+      StringBuilder buf = new StringBuilder();
+      for (RuntimeException rx : failedMap.values()) {
+        String msg = rx.getLocalizedMessage();
+        if (msg != null && !buf.toString().contains(msg)) {
+          if (buf.length() > 0) {
+            buf.append('\n');
           }
-          String msg = buf.toString();
-          Platform.runLater(() -> Fx.warning(msg));
-        });
+          buf.append(rx.getLocalizedMessage());
+        }
+      }
+      String msg = buf.toString();
+      Platform.runLater(() -> Fx.warning(msg));
+    });
   }
 
 
@@ -161,6 +203,18 @@ public class RdcUtilitiesWithBackgroundPool extends RdcUtilities {
   protected SessionPool createSessionPool(Session session) {
     return SessionPoolFactory.getInstance().create("BG", session, 0, 1, 0,
                                                    3, 5, 0);
+  }
+
+  /**
+   * Restores the cursor to the default.
+   *
+   * @param node the node, null if none
+   * @param oldCursor the old cursor of the node (null, if it was the default cursor)
+   */
+  protected void restoreDefaultCursor(Node node, Cursor oldCursor) {
+    if (node != null) {
+      node.setCursor(oldCursor == null ? null : FxUtilities.getInstance().getDefaultCursor(node));
+    }
   }
 
 }

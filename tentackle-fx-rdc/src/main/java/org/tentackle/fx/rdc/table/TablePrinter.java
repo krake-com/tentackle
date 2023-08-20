@@ -18,23 +18,6 @@
 
 package org.tentackle.fx.rdc.table;
 
-import javafx.application.Platform;
-import javafx.collections.FXCollections;
-import javafx.fxml.FXML;
-import javafx.print.PageLayout;
-import javafx.print.PrinterJob;
-import javafx.scene.Scene;
-import javafx.scene.control.IndexedCell;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TreeTableColumn;
-import javafx.scene.control.skin.TableViewSkin;
-import javafx.scene.control.skin.VirtualFlow;
-import javafx.scene.transform.Scale;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-import javafx.util.Callback;
-
 import org.tentackle.common.Timestamp;
 import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.Fx;
@@ -57,6 +40,22 @@ import org.tentackle.misc.FormatHelper;
 import org.tentackle.misc.TimeKeeper;
 import org.tentackle.session.AbstractSessionTask;
 
+import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.fxml.FXML;
+import javafx.print.PageLayout;
+import javafx.print.PrinterJob;
+import javafx.scene.Scene;
+import javafx.scene.control.IndexedCell;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TreeTableColumn;
+import javafx.scene.control.skin.TableViewSkin;
+import javafx.scene.control.skin.VirtualFlow;
+import javafx.scene.transform.Scale;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import javafx.util.Callback;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -286,8 +285,14 @@ public class TablePrinter extends AbstractFxController {
           TableColumnConfiguration<?, ?> columnConfig = column instanceof FxTreeTableColumn ?
                                                         ((FxTreeTableColumn) column).getConfiguration() : null;
           FxTableColumn printColumn = new FxTableColumn(columnConfig, column.getText());
-          printColumn.setCellValueFactory(columnConfig.getTableColumn().getCellValueFactory()); // use fake column!
-          printColumn.setCellFactory(columnConfig.getTableColumn().getCellFactory());   // no totals -> no PrintCell necessary
+          if (columnConfig != null) {
+            printColumn.setCellValueFactory(columnConfig.getTableColumn().getCellValueFactory()); // use fake column!
+            printColumn.setCellFactory(columnConfig.getTableColumn().getCellFactory());   // no totals -> no PrintCell necessary
+          }
+          else {
+            printColumn.setCellValueFactory(column.getCellValueFactory());
+            printColumn.setCellFactory(new PrintCellFactory(column.getCellFactory()));
+          }
           printColumn.setMinWidth(column.getWidth());
           printColumn.setMaxWidth(column.getWidth());
           tableView.getColumns().add(printColumn);
@@ -347,7 +352,7 @@ public class TablePrinter extends AbstractFxController {
     //    doesnt always work
     //    hence -> Task running in background and invoking Fx.runAndWait from bg task.
 
-    Rdc.bg(new PrinterTask(items, job, pageLayout, stage), null, null);
+    Rdc.bg(tableView, new PrinterTask(items, job, pageLayout, stage), null, null);
   }
 
 
