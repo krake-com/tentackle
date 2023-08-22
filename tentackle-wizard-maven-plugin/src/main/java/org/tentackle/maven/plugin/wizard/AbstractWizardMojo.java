@@ -33,6 +33,7 @@ import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
 
 import javafx.application.Platform;
+import javafx.stage.Stage;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -342,10 +343,20 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
     Thread.currentThread().setUncaughtExceptionHandler(getUncaughtExceptionHandler());    // overwrite existing handler for fx thread
   }
 
+  /**
+   * Gets the stage, if this an interactive FX application.
+   *
+   * @return the stage, null if console application
+   */
+  protected abstract Stage getStage();
+
   private Thread.UncaughtExceptionHandler getUncaughtExceptionHandler() {
     return (t, e) -> {
       getLog().error("unhandled exception detected", e);
-      Platform.runLater(() -> Fx.error(e.getMessage(), e, "UNEXPECTED EXCEPTION"));
+      Stage stage = getStage();
+      if (stage != null) {
+        Platform.runLater(() -> Fx.error(stage, e.getMessage(), e, "UNEXPECTED EXCEPTION", null));
+      }
     };
   }
 

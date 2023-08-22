@@ -19,7 +19,6 @@
 package org.tentackle.maven.plugin.wizard.fx;
 
 import freemarker.template.TemplateException;
-import javafx.fxml.FXML;
 
 import org.tentackle.bind.Bindable;
 import org.tentackle.fx.AbstractFxController;
@@ -37,10 +36,10 @@ import org.tentackle.maven.plugin.wizard.OperationProfile;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationUtilities;
 
+import javafx.fxml.FXML;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * Controller for the operation wizard.
@@ -133,34 +132,31 @@ public class OperationWizard extends AbstractFxController {
     cancel.setOnAction(e -> close());
 
     generate.setOnAction(e -> {
-
-      Consumer<Boolean> generateIt = ok -> {
-        if (ok) {
-          try {
-            List<ValidationResult> results = gen.generate();
-            if (results.isEmpty()) {
-              Fx.info("operation classes generated!").setOnHidden(event -> close());
-            }
-            else {
-              Fx.error(ValidationUtilities.getInstance().resultsToMessage(results));
-            }
-          }
-          catch (IOException | TemplateException ex) {
-            Fx.error("code generation failed", ex);
-          }
-        }
-      };
-
       if (gen.getDomainInterface() != null && gen.getDomainImplementation() == null) {
-        Fx.question("do you really don't want a domain implementation?", false, generateIt);
+        Fx.yes(getView(), "do you really don't want a domain implementation?",false, this::generateIt);
       }
       else if (gen.getPersistenceInterface() != null && gen.getPersistenceImplementation() == null) {
-        Fx.question("do you really don't want a persistence implementation?", false, generateIt);
+        Fx.yes(getView(), "do you really don't want a persistence implementation?",false, this::generateIt);
       }
       else {
-        generateIt.accept(true);
+        generateIt();
       }
     });
+  }
+
+  private void generateIt() {
+    try {
+      List<ValidationResult> results = gen.generate();
+      if (results.isEmpty()) {
+        Fx.info(getView(), "operation classes generated!", null, this::close);
+      }
+      else {
+        Fx.error(getView(), ValidationUtilities.getInstance().resultsToMessage(results));
+      }
+    }
+    catch (IOException | TemplateException ex) {
+      Fx.error(getView(), "code generation failed", ex);
+    }
   }
 
   private void close() {

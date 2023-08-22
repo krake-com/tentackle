@@ -18,8 +18,6 @@
 
 package org.tentackle.fx.rdc.table;
 
-import javafx.print.PrinterJob;
-import javafx.stage.Stage;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
@@ -44,6 +42,8 @@ import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.PersistentObject;
 
+import javafx.print.PrinterJob;
+import javafx.stage.Stage;
 import javax.xml.XMLConstants;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
@@ -348,7 +348,7 @@ public class TableUtilities {
       }
     }
     else {
-      Fx.error(RdcFxRdcBundle.getString("NO PRINTERS FOUND"));
+      Fx.error(table, RdcFxRdcBundle.getString("NO PRINTERS FOUND"));
     }
   }
 
@@ -368,7 +368,7 @@ public class TableUtilities {
       }
     }
     else {
-      Fx.error(RdcFxRdcBundle.getString("NO PRINTERS FOUND"));
+      Fx.error(treeTable, RdcFxRdcBundle.getString("NO PRINTERS FOUND"));
     }
   }
 

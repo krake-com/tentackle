@@ -21,6 +21,8 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 
+import javafx.stage.Stage;
+
 /**
  * Initializes the templates.<br>
  * Copies the default templates to the configured templateDir.<br>
@@ -28,6 +30,11 @@ import org.apache.maven.plugins.annotations.Mojo;
  */
 @Mojo(name = "init", aggregator = true)
 public class InitMojo extends AbstractWizardMojo {
+
+  @Override
+  protected Stage getStage() {
+    return null;
+  }
 
   @Override
   public void executeImpl() throws MojoExecutionException, MojoFailureException {

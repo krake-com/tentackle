@@ -17,17 +17,6 @@
  */
 package org.tentackle.fx.rdc.login;
 
-import javafx.application.Platform;
-import javafx.fxml.FXML;
-import javafx.scene.Scene;
-import javafx.scene.control.SelectionMode;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-import javafx.stage.FileChooser;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
-
 import org.tentackle.bind.Bindable;
 import org.tentackle.bind.BindingVetoException;
 import org.tentackle.fx.AbstractFxController;
@@ -49,6 +38,16 @@ import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScopeFactory;
 import org.tentackle.validate.ValidationUtilities;
 
+import javafx.application.Platform;
+import javafx.fxml.FXML;
+import javafx.scene.Scene;
+import javafx.scene.control.SelectionMode;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.stage.FileChooser;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 import java.io.File;
 import java.text.MessageFormat;
 import java.util.List;
@@ -355,7 +354,7 @@ public class Backends extends AbstractFxController {
       driver.persist(system);
     }
     else {
-      Fx.info(ValidationUtilities.getInstance().resultsToMessage(results));
+      Fx.info(getView(), ValidationUtilities.getInstance().resultsToMessage(results));
     }
   }
 
@@ -373,7 +372,7 @@ public class Backends extends AbstractFxController {
       }
     }
     else {
-      Fx.info(ValidationUtilities.getInstance().resultsToMessage(results));
+      Fx.info(getView(), ValidationUtilities.getInstance().resultsToMessage(results));
     }
   }
 

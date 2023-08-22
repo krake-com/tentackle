@@ -24,8 +24,11 @@ import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.Fx;
+import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.FxUtilities;
+import org.tentackle.fx.NotificationBuilder;
+import org.tentackle.fx.NotificationBuilder.ButtonConfig;
 import org.tentackle.fx.rdc.app.DesktopApplication;
 import org.tentackle.fx.rdc.crud.PdoCrud;
 import org.tentackle.fx.rdc.search.PdoSearch;
@@ -44,11 +47,8 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonBar.ButtonData;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.input.ClipboardContent;
@@ -56,6 +56,7 @@ import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
+import javafx.stage.Popup;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
@@ -425,32 +426,24 @@ public class RdcUtilities {
   /**
    * Shows a question dialog whether to save, discard or cancel editing of a PDO.
    *
+   * @param owner the owner window or node
    * @param doIt consumer invoked with true to save, false to discard changes, null to cancel and do nothing
    */
-  public void showSaveDiscardCancelDialog(Consumer<Boolean> doIt) {
-    Alert alert = Fx.createAlert(Alert.AlertType.CONFIRMATION);
-    alert.setTitle(RdcFxRdcBundle.getString("QUESTION"));
-    alert.setHeaderText(null);
-    alert.setContentText(RdcFxRdcBundle.getString("DATA_HAS_BEEN_MODIFIED!_DISCARD,_SAVE_OR_CANCEL?"));
-    ButtonType saveButtonType = new ButtonType(RdcFxRdcBundle.getString("SAVE"));
-    ButtonType discardButtonType = new ButtonType(RdcFxRdcBundle.getString("DISCARD"));
-    ButtonType cancelButtonType = new ButtonType(RdcFxRdcBundle.getString("CANCEL"), ButtonData.CANCEL_CLOSE);
-    alert.getButtonTypes().setAll(saveButtonType, discardButtonType, cancelButtonType);
-    Button cancelButton = (Button) alert.getDialogPane().lookupButton(cancelButtonType);
-    cancelButton.setDefaultButton(true);
-    alert.setOnHidden(event -> {
-      ButtonType result = alert.getResult();
-      if (result == saveButtonType) {
-        doIt.accept(Boolean.TRUE);
-      }
-      else if (result == discardButtonType) {
-        doIt.accept(Boolean.FALSE);
-      }
-      else {
-        doIt.accept(null);
-      }
-    });
-    alert.show();
+  public void showSaveDiscardCancelDialog(Object owner, Consumer<Boolean> doIt) {
+    Popup popup = new Popup();
+    Parent notification =
+      FxFactory.getInstance()
+               .createNotificationBuilder()
+               .type(NotificationBuilder.Type.QUESTION)
+               .text(RdcFxRdcBundle.getString("DATA_HAS_BEEN_MODIFIED!_DISCARD,_SAVE_OR_CANCEL?"))
+               .addButton(new ButtonConfig(RdcFxRdcBundle.getString("SAVE"), null, () -> doIt.accept(Boolean.TRUE)), false)
+               .addButton(new ButtonConfig(RdcFxRdcBundle.getString("DISCARD"), null, () -> doIt.accept(Boolean.FALSE)), false)
+               .addButton(new ButtonConfig(RdcFxRdcBundle.getString("CANCEL"), null, () -> doIt.accept(null)), true)
+               .hideAction(popup::hide)
+               .build();
+    popup.getContent().add(notification);
+    popup.setAutoHide(true);
+    popup.show(FxUtilities.getInstance().getWindow(owner));
   }
 
 

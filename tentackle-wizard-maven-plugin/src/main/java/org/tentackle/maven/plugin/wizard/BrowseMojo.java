@@ -71,6 +71,12 @@ public class BrowseMojo extends AbstractWizardMojo {
   @Parameter
   public int maxLinesInStringLiteral;
 
+  private Stage stage;
+
+  @Override
+  protected Stage getStage() {
+    return stage;
+  }
 
   @Override
   public void executeImpl() throws MojoExecutionException, MojoFailureException {
@@ -93,7 +99,7 @@ public class BrowseMojo extends AbstractWizardMojo {
       Platform.startup(() -> {
         try {
           registerUncaughtExceptionHandler();
-          Stage stage = PdoBrowser.show(this, context);
+          stage = PdoBrowser.show(this, context);
           stage.setOnHidden(event -> latch.countDown());
         }
         catch (Throwable t) {

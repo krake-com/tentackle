@@ -50,7 +50,7 @@ public abstract class AbstractValidateableFxController extends AbstractFxControl
       ValidationUtilities.getInstance().validate(this);
     }
     catch (ValidationFailedException vx) {
-      ok = !FxUtilities.getInstance().showValidationResults(vx, getValidationMappers(), getBinder());
+      ok = !FxUtilities.getInstance().showValidationResults(getView(), vx, getValidationMappers(), getBinder());
     }
     return ok;
   }

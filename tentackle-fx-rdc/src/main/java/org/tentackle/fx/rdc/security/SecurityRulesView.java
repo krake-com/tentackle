@@ -19,17 +19,6 @@
 
 package org.tentackle.fx.rdc.security;
 
-import javafx.application.Platform;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.event.Event;
-import javafx.fxml.FXML;
-import javafx.scene.Scene;
-import javafx.scene.control.Tab;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
-
 import org.tentackle.app.Application;
 import org.tentackle.bind.Bindable;
 import org.tentackle.fx.AbstractFxController;
@@ -54,6 +43,16 @@ import org.tentackle.security.pdo.Security;
 import org.tentackle.session.SessionUtilities;
 import org.tentackle.validate.ValidationFailedException;
 
+import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.event.Event;
+import javafx.fxml.FXML;
+import javafx.scene.Scene;
+import javafx.scene.control.Tab;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
@@ -462,7 +461,7 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
       });
     }
     catch (ValidationFailedException vx) {
-      Fx.info(vx.resultsAsMessage());
+      Fx.info(getView(), vx.resultsAsMessage());
       if (trackedClassRulesSnapshot != null) {
         trackedClassRules.revertToSnapshot(trackedClassRulesSnapshot);
         classRules.setAll(trackedClassRules);
@@ -489,7 +488,7 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
     };
 
     if (modified) {
-      Fx.yes(RdcFxRdcBundle.getString("Rules were modified. Really discard all changes?"), false, discardIt);
+      Fx.yes(RdcFxRdcBundle.getString("Rules were modified. Really discard all changes?"), null, false, discardIt);
     }
     else {
       discardIt.run();

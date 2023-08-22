@@ -319,10 +319,11 @@ public class Rdc {
   /**
    * Shows a question dialog whether to save, discard or cancel editing of a PDO.
    *
+   * @param owner the owner window or node
    * @param doIt consumer invoked with true to save, false to discard changes, null to cancel and do nothing
    */
-  public static void showSaveDiscardCancelDialog(Consumer<Boolean> doIt) {
-    RdcUtilities.getInstance().showSaveDiscardCancelDialog(doIt);
+  public static void showSaveDiscardCancelDialog(Object owner, Consumer<Boolean> doIt) {
+    RdcUtilities.getInstance().showSaveDiscardCancelDialog(owner, doIt);
   }
 
   /**
@@ -372,7 +373,7 @@ public class Rdc {
    * @param updateUI optional UI updater invoked from within the FX event queue
    */
   public static <V> void bg(Node node, Supplier<V> runner, Consumer<V> updateUI) {
-    bg(node, runner, updateUI, rx -> Fx.error(rx.getLocalizedMessage(), rx));
+    bg(node, runner, updateUI, rx -> Fx.error(node, rx.getLocalizedMessage(), rx));
   }
 
   /**

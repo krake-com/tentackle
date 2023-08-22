@@ -280,7 +280,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
         editing.set(false);
         editor.setChangeable(false);
         deleteButton.setDisable(true);
-        Platform.runLater(() -> Fx.info(PdoUtilities.getInstance().lockExceptionToString(lx, pdo)));
+        Platform.runLater(() -> Fx.info(getView(), PdoUtilities.getInstance().lockExceptionToString(lx, pdo)));
       }
     }
   }
@@ -500,7 +500,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
         if (getEditor().validateForm()) {
           T dup = getPdo().isUniqueDomainKeyProvided() ? getPdo().findDuplicate() : null;
           if (dup != null) {
-            Fx.error(MessageFormat.format(RdcFxRdcBundle.getString("{0} ALREADY EXISTS"), dup));
+            Fx.error(getView(), MessageFormat.format(RdcFxRdcBundle.getString("{0} ALREADY EXISTS"), dup));
           }
           else {
             T pdo = getPdo().persist();
@@ -532,7 +532,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
     catch (NotFoundException nfe) {
       // lock timed out and another user updated the PDO or lock was transferred to another user or removed
       LOGGER.info("saving " + getPdo().toGenericString() + " failed: " + nfe.getLocalizedMessage());
-      Fx.error(MessageFormat.format(RdcFxRdcBundle.getString("{0} MODIFIED BY_ANOTHER USER MEANWHILE"), getPdo()));
+      Fx.error(getView(), MessageFormat.format(RdcFxRdcBundle.getString("{0} MODIFIED BY_ANOTHER USER MEANWHILE"), getPdo()));
       T pdo = getPdo().reload();
       if (pdo != null) {
         setPdo(pdo);
@@ -596,7 +596,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
     T oldPdo = getPdo();
     if (oldPdo != null && isEditing()) {
       if (getContainer().isViewModified()) {
-        Rdc.showSaveDiscardCancelDialog(answer -> {
+        Rdc.showSaveDiscardCancelDialog(getView(), answer -> {
           if (Boolean.TRUE.equals(answer)) {    // save
             save();   // this also removes the token lock
             released.accept(Boolean.TRUE);
@@ -787,7 +787,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
    * @param ex the validation exception
    */
   protected void showValidationResults(ValidationFailedException ex) {
-    FxUtilities.getInstance().showValidationResults(ex, editor.getValidationMappers(), editor.getBinder());
+    FxUtilities.getInstance().showValidationResults(getView(), ex, editor.getValidationMappers(), editor.getBinder());
   }
 
 

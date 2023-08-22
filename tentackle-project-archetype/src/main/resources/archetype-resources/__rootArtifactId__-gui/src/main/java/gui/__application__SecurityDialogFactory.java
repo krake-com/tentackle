@@ -10,14 +10,16 @@ package ${package}.gui;
 import ${package}.pdo.md.OrgUnit;
 import ${package}.pdo.md.User;
 import ${package}.pdo.md.UserGroup;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
+import javafx.scene.Parent;
 import javafx.stage.Modality;
+import javafx.stage.Popup;
 import javafx.stage.Window;
 
 import org.tentackle.common.Service;
-import org.tentackle.fx.Fx;
-import org.tentackle.fx.FxFxBundle;
+import org.tentackle.fx.FxFactory;
+import org.tentackle.fx.FxUtilities;
+import org.tentackle.fx.NotificationBuilder;
+import org.tentackle.fx.NotificationBuilder.ButtonConfig;
 import org.tentackle.fx.rdc.Rdc;
 import org.tentackle.fx.rdc.security.DefaultSecurityDialogFactory;
 import org.tentackle.fx.rdc.security.SecurityDialogFactory;
@@ -38,29 +40,32 @@ public class ${application}SecurityDialogFactory extends DefaultSecurityDialogFa
   @Override
   @SuppressWarnings({"rawtypes"})
   public void selectGrantee(Window owner, DomainContext context, Consumer<PersistentDomainObject<?>> grantee) {
-    showUserOrGroupDialog(ifUser -> {
+    showUserOrGroupDialog(owner, ifUser -> {
       OrgUnit orgUnit = ifUser ? Pdo.create(User.class, context) : Pdo.create(UserGroup.class, context);
       Rdc.displaySearchStage(orgUnit, Modality.APPLICATION_MODAL, owner, false,
                              list -> grantee.accept(list.isEmpty() ? null : list.get(0)));
     });
   }
 
-
   /**
    * Shows a question dialog whether to select a user or a group.
    *
+   * @param owner the dialog owner
    * @param runIt a consumer invoked with true if user, false if group, never null
    */
-  public void showUserOrGroupDialog(Consumer<Boolean> runIt) {
-    Alert alert = Fx.createAlert(Alert.AlertType.CONFIRMATION);
-    alert.setTitle(FxFxBundle.getString("QUESTION"));
-    alert.setHeaderText(null);
-    alert.setContentText(GuiBundle.getString("User or Group?"));
-    ButtonType userButtonType = new ButtonType(GuiBundle.getString("User"));
-    ButtonType groupButtonType = new ButtonType(GuiBundle.getString("Group"));
-    alert.getButtonTypes().setAll(userButtonType, groupButtonType);
-    alert.setOnHidden(event -> runIt.accept(alert.getResult() == userButtonType));
-    alert.show();
+  public void showUserOrGroupDialog(Window owner, Consumer<Boolean> runIt) {
+    Popup popup = new Popup();
+    Parent notification =
+      FxFactory.getInstance()
+               .createNotificationBuilder()
+               .type(NotificationBuilder.Type.QUESTION)
+               .text(GuiBundle.getString("User or Group?"))
+               .addButton(new ButtonConfig(GuiBundle.getString("User"), null, () -> runIt.accept(Boolean.TRUE)), false)
+               .addButton(new ButtonConfig(GuiBundle.getString("Group"), null, () -> runIt.accept(Boolean.FALSE)), false)
+               .hideAction(popup::hide)
+               .build();
+    popup.getContent().add(notification);
+    popup.show(FxUtilities.getInstance().getWindow(owner));
   }
 
 }

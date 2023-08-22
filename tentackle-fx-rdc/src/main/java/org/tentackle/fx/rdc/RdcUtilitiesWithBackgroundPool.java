@@ -159,14 +159,14 @@ public class RdcUtilitiesWithBackgroundPool extends RdcUtilities {
       for (RuntimeException rx : failedMap.values()) {
         String msg = rx.getLocalizedMessage();
         if (msg != null && !buf.toString().contains(msg)) {
-          if (buf.length() > 0) {
+          if (!buf.isEmpty()) {
             buf.append('\n');
           }
           buf.append(rx.getLocalizedMessage());
         }
       }
       String msg = buf.toString();
-      Platform.runLater(() -> Fx.warning(msg));
+      Platform.runLater(() -> Fx.warning(node, msg));
     });
   }
 

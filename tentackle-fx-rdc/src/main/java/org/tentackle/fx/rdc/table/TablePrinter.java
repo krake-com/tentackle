@@ -129,7 +129,7 @@ public class TablePrinter extends AbstractFxController {
     else {
       stage.setOnShown(e -> Platform.runLater(() -> printer.print(null, treeTable, jobTitle, job, job.getJobSettings().getPageLayout(), stage)));
     }
-    stage.setOnCloseRequest(e -> Fx.question(RdcFxRdcBundle.getString("cancel print job?"), false, answer -> {
+    stage.setOnCloseRequest(e -> Fx.question(stage, RdcFxRdcBundle.getString("cancel print job?"), false, null, answer -> {
       if (answer) {
         printer.terminationRequested = true;
       }
@@ -414,7 +414,7 @@ public class TablePrinter extends AbstractFxController {
           // no space to print (could be a rendering problem, whatsoever....)
           Platform.runLater(() -> {
             job.cancelJob();
-            Fx.error(resources.getString("no printable area"));
+            Fx.error(getView(), resources.getString("no printable area"));
             stage.close();
           });
           return;
@@ -435,7 +435,7 @@ public class TablePrinter extends AbstractFxController {
         pageCount = pages.size();
         FxUtilities.getInstance().runAndWait(() -> {
           if (pageCount == 0) {
-            Fx.info(resources.getString("no pages to print"));
+            Fx.info(getView(), resources.getString("no pages to print"));
             job.cancelJob();
           }
           else {

@@ -23,7 +23,6 @@ import freemarker.template.TemplateException;
 
 import org.tentackle.bind.Bindable;
 import org.tentackle.common.Settings;
-import org.tentackle.fx.Fx;
 import org.tentackle.maven.GeneratedFile;
 import org.tentackle.model.Entity;
 import org.tentackle.model.InheritanceType;
@@ -128,33 +127,24 @@ public class PdoGenerator extends AbstractValidateableGenerator {
    * Checks whether entity name is not already used in model.
    *
    * @return true if ok
+   * @throws ModelException if failed
    */
-  public boolean isNewEntity() {
-    try {
-      return entityName == null || Model.getInstance().getByEntityName(entityName) == null;
-    }
-    catch (ModelException e) {
-      Fx.error("cannot check for duplicate entity", e);
-      return true;
-    }
+  public boolean isNewEntity() throws ModelException {
+    return entityName == null || Model.getInstance().getByEntityName(entityName) == null;
   }
 
   /**
    * Checks whether classID is not already used in model.
    *
    * @return true if ok
+   * @throws ModelException if failed
    */
-  public boolean isNewClassId() {
+  public boolean isNewClassId() throws ModelException {
     if (classId != null && classId > 0) {
-      try {
-        for (Entity entity : Model.getInstance().getAllEntities()) {
-          if (entity.getClassId() == classId) {
-            return false;
-          }
+      for (Entity entity : Model.getInstance().getAllEntities()) {
+        if (entity.getClassId() == classId) {
+          return false;
         }
-      }
-      catch (ModelException e) {
-        Fx.error("cannot check for duplicate entity", e);
       }
     }
     return true;
@@ -190,18 +180,14 @@ public class PdoGenerator extends AbstractValidateableGenerator {
    * Checks whether the tablename is not already used in model.
    *
    * @return true if ok
+   * @throws ModelException if failed
    */
-  public boolean isNewTableName() {
+  public boolean isNewTableName() throws ModelException {
     if (tableName != null) {
-      try {
-        for (Entity entity : Model.getInstance().getAllEntities()) {
-          if (tableName.equalsIgnoreCase(entity.getTableName())) {
-            return false;
-          }
+      for (Entity entity : Model.getInstance().getAllEntities()) {
+        if (tableName.equalsIgnoreCase(entity.getTableName())) {
+          return false;
         }
-      }
-      catch (ModelException e) {
-        Fx.error("cannot check for duplicate entity", e);
       }
     }
     return true;
