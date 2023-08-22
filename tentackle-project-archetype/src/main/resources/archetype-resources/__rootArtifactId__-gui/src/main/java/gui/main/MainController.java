@@ -126,7 +126,7 @@ public class MainController extends AbstractFxController implements DomainContex
     preferencesItem.setOnAction(e -> PreferencesDialog.show());
 
     passwordItem.setGraphic(Fx.createGraphic("password"));
-    passwordItem.setOnAction(e -> ChangePasswordView.showDialog(PdoUtilities.getInstance().getUser(getDomainContext()), false));
+    passwordItem.setOnAction(e -> ChangePasswordView.showDialog(getView(), PdoUtilities.getInstance().getUser(getDomainContext()), false));
 
     exitItem.setGraphic(Fx.createGraphic("exit"));
     exitItem.setOnAction(e -> exit());
@@ -157,7 +157,7 @@ public class MainController extends AbstractFxController implements DomainContex
    * Asks the user whether to exit the application and does so if yes.
    */
   public void exit() {
-    Fx.yes(resources.getString("ExitAction"), false, Platform::exit);
+    Fx.yes(getView(), resources.getString("ExitAction"), false, Platform::exit);
   }
 
 

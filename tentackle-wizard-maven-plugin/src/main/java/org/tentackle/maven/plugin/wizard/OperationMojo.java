@@ -18,10 +18,6 @@
 
 package org.tentackle.maven.plugin.wizard;
 
-import javafx.application.Platform;
-import javafx.scene.Scene;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -31,6 +27,10 @@ import org.tentackle.fx.Fx;
 import org.tentackle.maven.PackageInfo;
 import org.tentackle.maven.plugin.wizard.fx.OperationWizard;
 
+import javafx.application.Platform;
+import javafx.scene.Scene;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -45,6 +45,13 @@ import java.util.concurrent.CountDownLatch;
 public class OperationMojo extends AbstractWizardMojo {
 
   private List<OperationProfile> operationProfiles;
+
+  private Stage stage;
+
+  @Override
+  protected Stage getStage() {
+    return stage;
+  }
 
   public List<OperationProfile> getOperationProfiles() {
     return operationProfiles;
@@ -61,7 +68,7 @@ public class OperationMojo extends AbstractWizardMojo {
         registerUncaughtExceptionHandler();
         OperationWizard wizard = Fx.load(OperationWizard.class);
         wizard.applyMojo(this);
-        Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
+        stage = Fx.createStage(Modality.APPLICATION_MODAL);
         Scene scene = Fx.createScene(wizard.getView());
         stage.setScene(scene);
         stage.setTitle("Operation Wizard");

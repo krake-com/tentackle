@@ -29,6 +29,7 @@ import org.tentackle.common.LocaleProvider;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
+import org.tentackle.fx.NotificationBuilder.ButtonConfig;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.component.FxTextArea;
 import org.tentackle.fx.component.FxTreeTableView;
@@ -54,13 +55,10 @@ import javafx.print.PageLayout;
 import javafx.print.PrinterJob;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.Control;
 import javafx.scene.control.IndexedCell;
-import javafx.scene.control.Label;
 import javafx.scene.control.Skin;
 import javafx.scene.control.SkinBase;
 import javafx.scene.control.Skinnable;
@@ -79,11 +77,10 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.PickResult;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Priority;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.transform.Scale;
+import javafx.stage.Popup;
 import javafx.stage.PopupWindow;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
@@ -260,11 +257,15 @@ public class FxUtilities {
   /**
    * Opens the online help for a given component.
    *
-   * @param control the Fx control, null to show application top level help
+   * @param owner the owner window or node
    * @see #setHelpURL(String)
    */
-  public void showHelp(FxControl control)  {
+  public void showHelp(Object owner)  {
     String compUrl = null;
+    FxControl control = null;
+    if (owner instanceof FxControl) {
+      control = (FxControl) owner;
+    }
     while (compUrl == null && control != null) {
       compUrl = control.getHelpUrl();
       control = control.getParentContainer();
@@ -284,7 +285,7 @@ public class FxUtilities {
     String url = buf.toString();
 
     if (!url.isEmpty())  {
-      run(() -> browse(URI.create(url)));
+      run(owner, () -> browse(URI.create(url)));
     }
   }
 
@@ -310,10 +311,11 @@ public class FxUtilities {
    * Edits/opens a given file via the Desktop utilities.<br>
    * The corresponding application will be chosen according to the mime/file type.
    *
+   * @param owner the owner window or node
    * @param file the file
    */
-  public void edit(File file) {
-    run(() -> {
+  public void edit(Object owner, File file) {
+    run(owner, () -> {
       try {
         LOGGER.info("launching EDIT action for {0}", file);
         Desktop.getDesktop().edit(file);
@@ -349,6 +351,28 @@ public class FxUtilities {
       }
     }
     return stage;
+  }
+
+
+  /**
+   * Gets the window of an owner object.<br>
+   * The owner can be a window, a scene or a node.<br>
+   * Throws {@link FxRuntimeException} if the window cannot be determined.
+   *
+   * @param owner the owner object
+   * @return the window
+   */
+  public Window getWindow(Object owner) {
+    if (owner instanceof Scene scene) {
+      owner = scene.getWindow();
+    }
+    else if (owner instanceof Node node) {
+      owner = getStage(node);
+    }
+    if (owner instanceof Window window) {
+      return window;
+    }
+    throw new FxRuntimeException("cannot determine owner");
   }
 
 
@@ -524,9 +548,10 @@ public class FxUtilities {
    * Avoids blocking the FX-application thread.<br>
    * If the execution fails, an error dialog is shown.
    *
+   * @param owner the owner window or node
    * @param runnable the runnable to execute in background
    */
-  public void run(Runnable runnable) {
+  public void run(Object owner, Runnable runnable) {
     javafx.concurrent.Service<Void> service = new javafx.concurrent.Service<>() {
 
       @Override
@@ -546,7 +571,7 @@ public class FxUtilities {
       Throwable exception = event.getSource().getException();
       if (exception != null) {
         LOGGER.warning("FX background execution failed", exception);
-        Platform.runLater(() -> showErrorDialog(exception.getMessage(), exception, null));
+        Platform.runLater(() -> showErrorDialog(owner, exception.getMessage(), exception, null, null));
       }
     });
 
@@ -554,119 +579,119 @@ public class FxUtilities {
   }
 
 
-
-  /**
-   * Workaround for the bug that messages are not completely displayed if text is wrapped.
-   *
-   * @param alert the alert dialog
-   * @param message the text message
-   */
-  protected void setAlertMessage(Alert alert, String message) {
-    alert.setHeaderText(null);
-    Label textLabel = new Label();    // replace with non-wrapping label!
-    textLabel.setWrapText(false);
-    textLabel.setText(message);
-    alert.getDialogPane().setContent(textLabel);
-    alert.setResizable(true);   // RT-38998
-  }
-
   /**
    * Shows an info dialog.
    *
+   * @param owner the owner window or node
    * @param message the message
    * @param title optional title
-   * @return the alert dialog
+   * @param onClose optional runnable invoked when dialog is closed
    */
-  public Alert showInfoDialog(String message, String title) {
-    Alert alert = Fx.createAlert(Alert.AlertType.INFORMATION);   // Alert is APPLICATION_MODAL
-    alert.setTitle(title == null ? FxFxBundle.getString("INFORMATION") : title);
-    setAlertMessage(alert, message);
-    alert.show();
-    return alert;
+  public void showInfoDialog(Object owner, String message, String title, Runnable onClose) {
+    Popup popup = new Popup();
+    Parent notification = FxFactory.getInstance()
+                                   .createNotificationBuilder()
+                                   .type(NotificationBuilder.Type.INFORMATION)
+                                   .text(message)
+                                   .addButton(new ButtonConfig(FxFxBundle.getString("OK"), null, null), false)
+                                   .hideAction(popup::hide)
+                                   .build();
+    popup.getContent().add(notification);
+    if (onClose != null) {
+      popup.setOnHidden(event -> onClose.run());
+    }
+    popup.setAutoHide(true);
+    popup.show(getWindow(owner));
   }
 
   /**
    * Shows a warning dialog.
    *
+   * @param owner the owner window or node
    * @param message the message
    * @param title optional title
-   * @return the alert dialog
+   * @param onClose optional runnable invoked when dialog is closed
    */
-  public Alert showWarningDialog(String message, String title) {
-    Alert alert = Fx.createAlert(Alert.AlertType.WARNING);   // Alert is APPLICATION_MODAL
-    alert.setTitle(title == null ? FxFxBundle.getString("WARNING") : title);
-    setAlertMessage(alert, message);
-    alert.show();
-    return alert;
+  public void showWarningDialog(Object owner, String message, String title, Runnable onClose) {
+    Popup popup = new Popup();
+    Parent notification = FxFactory.getInstance()
+                                   .createNotificationBuilder()
+                                   .type(NotificationBuilder.Type.WARNING)
+                                   .text(message)
+                                   .addButton(new ButtonConfig(FxFxBundle.getString("OK"), null, null), false)
+                                   .hideAction(popup::hide)
+                                   .build();
+    popup.getContent().add(notification);
+    if (onClose != null) {
+      popup.setOnHidden(event -> onClose.run());
+    }
+    popup.setAutoHide(true);
+    popup.show(getWindow(owner));
   }
 
   /**
    * Shows a question dialog.<br>
    * To avoid showAndWait, the method returns void and the result is provided via a Consumer.
    *
+   * @param owner the owner window or node
    * @param message the message
    * @param defaultYes true if yes is the default button
    * @param title optional title
    * @param answer the user's answer (invoked with {@link Boolean#TRUE} or {@link Boolean#FALSE}, never null)
-   * @return the alert dialog
-   * @see Consumer
-   * @see org.tentackle.misc.Holder
    */
-  public Alert showQuestionDialog(String message, boolean defaultYes, String title, Consumer<Boolean> answer) {
-    Alert alert = Fx.createAlert(Alert.AlertType.CONFIRMATION);
-    alert.setTitle(title == null ? FxFxBundle.getString("QUESTION") : title);
-    setAlertMessage(alert, message);
-    alert.getButtonTypes().setAll(ButtonType.YES, ButtonType.NO);
-    Button noButton = (Button) alert.getDialogPane().lookupButton(ButtonType.NO);
-    Button yesButton = (Button) alert.getDialogPane().lookupButton(ButtonType.YES);
-    noButton.setDefaultButton(!defaultYes);
-    yesButton.setDefaultButton(defaultYes);
-    alert.setOnHidden(e -> answer.accept(alert.getResult() == ButtonType.YES));
-    alert.show();
-    return alert;
+  public void showQuestionDialog(Object owner, String message, boolean defaultYes, String title, Consumer<Boolean> answer) {
+    Popup popup = new Popup();
+    Parent notification = FxFactory.getInstance()
+                                   .createNotificationBuilder()
+                                   .type(NotificationBuilder.Type.QUESTION)
+                                   .text(message)
+                                   .addButton(new ButtonConfig(FxFxBundle.getString("NO"),
+                                                               null, () -> answer.accept(false)), false)
+                                   .addButton(new ButtonConfig(FxFxBundle.getString("YES"),
+                                                               null, () -> answer.accept(true)), defaultYes)
+                                   .hideAction(popup::hide)
+                                   .build();
+    popup.getContent().add(notification);
+    popup.setAutoHide(true);
+    popup.show(getWindow(owner));
   }
 
   /**
    * Shows an error dialog.
    *
+   * @param owner the owner window or node
    * @param message the message
    * @param t optional throwable
    * @param title optional title
-   * @return the alert dialog
+   * @param onClose optional runnable invoked when dialog is closed
    */
-  public Alert showErrorDialog(String message, Throwable t, String title) {
-    Alert alert = Fx.createAlert(Alert.AlertType.ERROR);   // Alert is APPLICATION_MODAL
-    alert.setTitle(title == null ? FxFxBundle.getString("ERROR") : title);
-    setAlertMessage(alert, message);
-
+  public void showErrorDialog(Object owner, String message, Throwable t, String title, Runnable onClose) {
+    String details;
     if (t != null) {
       StringWriter sw = new StringWriter();
       PrintWriter pw = new PrintWriter(sw);
       t.printStackTrace(pw);
-      String exceptionText = sw.toString();
-      Label label = new Label("STACKTRACE:");
-      TextArea textArea = new TextArea(exceptionText);
-      textArea.setEditable(false);
-      textArea.setWrapText(true);
-      textArea.setMaxWidth(Double.MAX_VALUE);
-      textArea.setMaxHeight(Double.MAX_VALUE);
-      GridPane expContent = new GridPane();
-      expContent.setMaxWidth(Double.MAX_VALUE);
-      expContent.add(label, 0, 0);
-      expContent.add(textArea, 0, 1);
-      GridPane.setVgrow(textArea, Priority.ALWAYS);
-      GridPane.setHgrow(textArea, Priority.ALWAYS);
-      alert.getDialogPane().setExpandableContent(expContent);
-      // because of resize bug in FX8 (@todo: remove in later versions if fixed)
-      alert.getDialogPane().expandedProperty().addListener(l -> Platform.runLater(() -> {
-        alert.getDialogPane().requestLayout();
-        Window w = alert.getDialogPane().getScene().getWindow();
-        w.sizeToScene();
-      }));
+      details = sw.toString();
+    }
+    else {
+      details = null;
     }
 
-    alert.show();
-    return alert;
+    Popup popup = new Popup();
+    Parent notification = FxFactory.getInstance()
+                                   .createNotificationBuilder()
+                                   .type(NotificationBuilder.Type.ERROR)
+                                   .title(title)
+                                   .text(message)
+                                   .details(details)
+                                   .addButton(new ButtonConfig(FxFxBundle.getString("OK"), null, null), false)
+                                   .hideAction(popup::hide).build();
+    popup.getContent().add(notification);
+    if (onClose != null) {
+      popup.setOnHidden(event -> onClose.run());
+    }
+    popup.setAutoHide(true);
+    popup.show(getWindow(owner));
   }
 
 
@@ -744,37 +769,38 @@ public class FxUtilities {
    * Shows the validation warnings and errors in a dialog and marks the {@link FxControl}s related to those errors.<br>
    * Errors and warnings are shown in error or info dialogs.
    *
+   * @param owner the owner window or node
    * @param ex the validation exception
    * @param validationMappers the validation mappers
    * @param binder the binder
    * @return true if there were errors, false if warnings only
    */
-  public boolean showValidationResults(ValidationFailedException ex, NavigableSet<ValidationMapper> validationMappers, Binder binder) {
+  public boolean showValidationResults(Object owner, ValidationFailedException ex, NavigableSet<ValidationMapper> validationMappers, Binder binder) {
     StringBuilder warnings = new StringBuilder();
     StringBuilder errors = new StringBuilder();
     List<InteractiveError> errorList = createInteractiveErrors(ex.getResults(), validationMappers, binder);
     for (InteractiveError error : errorList) {
       if (error.isWarning()) {
-        if (warnings.length() > 0) {
+        if (!warnings.isEmpty()) {
           warnings.append('\n');
         }
         warnings.append(error.getText());
       }
       else {
-        if (errors.length() > 0) {
+        if (!errors.isEmpty()) {
           errors.append('\n');
         }
         errors.append(error.getText());
       }
     }
 
-    if (warnings.length() > 0 && errors.length() > 0) {
+    if (!warnings.isEmpty() && !errors.isEmpty()) {
       errors.append("\n\n").append(warnings);
       warnings.setLength(0);
     }
 
-    if (errors.length() > 0) {
-      Fx.error(errors.toString()).setOnHidden(event -> {
+    if (!errors.isEmpty()) {
+      Fx.error(owner, errors.toString(), null, null, () -> {
         for (InteractiveError error : errorList) {
           if (error.getControl() instanceof FxComponent component) {
             if (error.isWarning()) {
@@ -787,8 +813,8 @@ public class FxUtilities {
         }
       });
     }
-    else if (warnings.length() > 0) {
-      Fx.info(warnings.toString()).setOnHidden(event -> {
+    else if (!warnings.isEmpty()) {
+      showInfoDialog(owner, warnings.toString(), null, () -> {
         for (InteractiveError error : errorList) {
           if (error.getControl() instanceof FxComponent component) {
             component.setInfo(error.getText());
@@ -797,7 +823,7 @@ public class FxUtilities {
       });
     }
 
-    return errors.length() > 0;
+    return !errors.isEmpty();
   }
 
 

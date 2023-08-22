@@ -19,8 +19,6 @@
 
 package org.tentackle.fx.rdc.app;
 
-import javafx.application.Platform;
-import javafx.scene.Parent;
 import org.tentackle.fx.Fx;
 import org.tentackle.log.Logger;
 import org.tentackle.session.AlreadyLoggedInException;
@@ -28,6 +26,8 @@ import org.tentackle.session.LoginFailedException;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.VersionIncompatibleException;
 
+import javafx.application.Platform;
+import javafx.scene.Parent;
 import java.text.MessageFormat;
 
 /**
@@ -100,7 +100,7 @@ public class LoginFailedHandler {
     }
     else if (ex instanceof VersionIncompatibleException vx) {
       Platform.runLater(() -> {
-        Fx.info(MessageFormat.format(AppFxRdcBundle.getString("client version {0} does not match server version {1}"),
+        Fx.info(view, MessageFormat.format(AppFxRdcBundle.getString("client version {0} does not match server version {1}"),
                 vx.getClientVersion(), vx.getServerVersion()));
         view.getScene().getWindow().hide();
       });
@@ -119,7 +119,7 @@ public class LoginFailedHandler {
           application.showApplicationStatus(AppFxRdcBundle.getString("LOGIN FAILED!"), 0.0);
           // this will close the login scene and terminate the application
           Platform.runLater(() -> {
-            Fx.info(AppFxRdcBundle.getString("LOGIN REFUSED! PLEASE CHECK YOUR USERNAME AND PASSWORD"));
+            Fx.info(view, AppFxRdcBundle.getString("LOGIN REFUSED! PLEASE CHECK YOUR USERNAME AND PASSWORD"));
             view.getScene().getWindow().hide();
           });
         }
@@ -131,7 +131,7 @@ public class LoginFailedHandler {
         if (application.getFxApplication() != null) {
           application.getFxApplication().setStopReason(98, ex);
         }
-        Fx.error(AppFxRdcBundle.getString("LOGIN FAILED!"), ex);
+        Fx.error(view, AppFxRdcBundle.getString("LOGIN FAILED!"), ex);
         view.getScene().getWindow().hide();   // application terminates when error window is closed
       });
     }

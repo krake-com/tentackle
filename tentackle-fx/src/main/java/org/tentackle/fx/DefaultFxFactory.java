@@ -19,17 +19,6 @@
 
 package org.tentackle.fx;
 
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
-import javafx.stage.Window;
-import javafx.util.BuilderFactory;
-
 import org.tentackle.common.BundleFactory;
 import org.tentackle.common.Constants;
 import org.tentackle.common.LocaleProvider;
@@ -41,6 +30,15 @@ import org.tentackle.log.Logger;
 import org.tentackle.reflect.DefaultClassMapper;
 import org.tentackle.reflect.ReflectionHelper;
 
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
+import javafx.stage.Window;
+import javafx.util.BuilderFactory;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -248,10 +246,8 @@ public class DefaultFxFactory implements FxFactory {
   }
 
   @Override
-  public Alert createAlert(Alert.AlertType alertType) {
-    Alert alert = new Alert(alertType);
-    FxUtilities.getInstance().applyStylesheets(alert.getDialogPane().getScene());
-    return alert;
+  public NotificationBuilder createNotificationBuilder() {
+    return new DefaultNotificationBuilder();
   }
 
   @Override

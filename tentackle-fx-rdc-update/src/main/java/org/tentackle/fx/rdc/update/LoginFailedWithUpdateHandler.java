@@ -124,10 +124,10 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
   protected Runnable createUpdateRunnable(ClientInfo clientInfo, UpdateInfo updateInfo, InstallationType installationType) {
     return () -> {
       BlockingHolder<Boolean> answer = new BlockingHolder<>();
-      Platform.runLater(() -> Fx.question(MessageFormat.format(UpdateFxRdcBundle.getString("{0}_{1}_OUTDATED_INSTALL_{2}"),
-                                                               clientInfo.getApplication(), clientInfo.getVersion(), updateInfo.getVersion()),
-                                          false,
-                                          answer));
+      Platform.runLater(() -> Fx.question(
+        getView(), MessageFormat.format(UpdateFxRdcBundle.getString("{0}_{1}_OUTDATED_INSTALL_{2}"),
+                                        clientInfo.getApplication(), clientInfo.getVersion(), updateInfo.getVersion()),
+        false, null, answer));
       if (answer.get()) {
         update(updateInfo, installationType);
       }
@@ -269,11 +269,11 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
       if (msg != null) {
         if (t != null) {
           LOGGER.severe(msg, t);
-          Fx.error(msg, t);
+          Fx.error(getView(), msg, t);
         }
         else {
           LOGGER.info(msg);
-          Fx.info(msg);
+          Fx.info(getView(), msg);
         }
       }
       // application terminates when the last stage closes

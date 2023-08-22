@@ -18,6 +18,14 @@
 
 package org.tentackle.fx.rdc.table;
 
+import org.tentackle.fx.Fx;
+import org.tentackle.fx.FxUtilities;
+import org.tentackle.fx.component.FxTableView;
+import org.tentackle.fx.component.FxTreeTableView;
+import org.tentackle.fx.rdc.RdcFxRdcBundle;
+import org.tentackle.log.Logger;
+import org.tentackle.prefs.PersistedPreferencesFactory;
+
 import javafx.collections.ObservableList;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ContextMenu;
@@ -29,15 +37,6 @@ import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeTableColumn;
-
-import org.tentackle.fx.Fx;
-import org.tentackle.fx.FxUtilities;
-import org.tentackle.fx.component.FxTableView;
-import org.tentackle.fx.component.FxTreeTableView;
-import org.tentackle.fx.rdc.RdcFxRdcBundle;
-import org.tentackle.log.Logger;
-import org.tentackle.prefs.PersistedPreferencesFactory;
-
 import java.io.File;
 import java.text.MessageFormat;
 import java.util.List;
@@ -459,20 +458,20 @@ public class TablePopup<S> {
         File file = TableUtilities.getInstance().selectSpreadsheetFile(table.getConfiguration().getName(), Fx.getStage(table));
         if (file != null) {
           TableUtilities.getInstance().toSpreadsheet(table, file, onlySelected);
-          FxUtilities.getInstance().edit(file);
+          FxUtilities.getInstance().edit(table, file);
         }
       }
       else {
         File file = TableUtilities.getInstance().selectSpreadsheetFile(treeTable.getConfiguration().getName(), Fx.getStage(treeTable));
         if (file != null) {
           TableUtilities.getInstance().toSpreadsheet(treeTable, file, onlySelected);
-          FxUtilities.getInstance().edit(file);
+          FxUtilities.getInstance().edit(treeTable, file);
         }
       }
     }
     catch (RuntimeException ex)  {
       LOGGER.severe("creating spreadsheet failed", ex);
-      Fx.error(RdcFxRdcBundle.getString("COULD NOT CREATE SPREADSHEET FILE"), ex);
+      Fx.error(table != null ? table : treeTable, RdcFxRdcBundle.getString("COULD NOT CREATE SPREADSHEET FILE"), ex);
     }
 
   }
@@ -489,20 +488,20 @@ public class TablePopup<S> {
         File file = TableUtilities.getInstance().selectXmlFile(table.getConfiguration().getName(), Fx.getStage(table));
         if (file != null) {
           TableUtilities.getInstance().toXml(table, file, onlySelected);
-          FxUtilities.getInstance().edit(file);
+          FxUtilities.getInstance().edit(table, file);
         }
       }
       else {
         File file = TableUtilities.getInstance().selectXmlFile(treeTable.getConfiguration().getName(), Fx.getStage(treeTable));
         if (file != null) {
           TableUtilities.getInstance().toXml(treeTable, file, onlySelected);
-          FxUtilities.getInstance().edit(file);
+          FxUtilities.getInstance().edit(treeTable, file);
         }
       }
     }
     catch (RuntimeException ex)  {
       LOGGER.severe("creating XML file failed", ex);
-      Fx.error(RdcFxRdcBundle.getString("COULD NOT CREATE XML FILE"), ex);
+      Fx.error(table != null ? table : treeTable, RdcFxRdcBundle.getString("COULD NOT CREATE XML FILE"), ex);
     }
   }
 
@@ -523,7 +522,7 @@ public class TablePopup<S> {
     }
     catch (RuntimeException ex) {
       LOGGER.severe("saving table preferences failed", ex);
-      Fx.error(RdcFxRdcBundle.getString("SAVING PREFERENCES FAILED"), ex);
+      Fx.error(table != null ? table : treeTable, RdcFxRdcBundle.getString("SAVING PREFERENCES FAILED"), ex);
     }
   }
 
@@ -552,7 +551,7 @@ public class TablePopup<S> {
     }
     catch (RuntimeException ex) {
       LOGGER.severe("loading table preferences failed", ex);
-      Fx.error(RdcFxRdcBundle.getString("LOADING PREFERENCES FAILED"), ex);
+      Fx.error(table != null ? table : treeTable, RdcFxRdcBundle.getString("LOADING PREFERENCES FAILED"), ex);
     }
   }
 

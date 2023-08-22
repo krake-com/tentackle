@@ -18,10 +18,6 @@
 
 package org.tentackle.maven.plugin.wizard;
 
-import javafx.application.Platform;
-import javafx.scene.Scene;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -34,6 +30,10 @@ import org.tentackle.model.Entity;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelException;
 
+import javafx.application.Platform;
+import javafx.scene.Scene;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -55,6 +55,13 @@ public class PdoMojo extends AbstractWizardMojo {
 
   private List<PdoProfile> pdoProfiles;
 
+  private Stage stage;
+
+  @Override
+  protected Stage getStage() {
+    return stage;
+  }
+
   public List<PdoProfile> getPdoProfiles() {
     return pdoProfiles;
   }
@@ -71,7 +78,7 @@ public class PdoMojo extends AbstractWizardMojo {
         registerUncaughtExceptionHandler();
         PdoWizard wizard = Fx.load(PdoWizard.class);
         wizard.applyMojo(this);
-        Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
+        stage = Fx.createStage(Modality.APPLICATION_MODAL);
         Scene scene = Fx.createScene(wizard.getView());
         stage.setScene(scene);
         stage.setTitle("PDO Wizard");

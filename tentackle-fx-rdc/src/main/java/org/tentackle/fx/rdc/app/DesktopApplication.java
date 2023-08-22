@@ -19,15 +19,6 @@
 
 package org.tentackle.fx.rdc.app;
 
-import javafx.application.Application;
-import javafx.application.Platform;
-import javafx.concurrent.Service;
-import javafx.concurrent.Task;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
 import org.tentackle.app.AbstractClientApplication;
 import org.tentackle.common.Constants;
 import org.tentackle.common.InterruptedRuntimeException;
@@ -45,6 +36,15 @@ import org.tentackle.session.SessionInfo;
 import org.tentackle.validate.Validator;
 import org.tentackle.validate.ValidatorCache;
 
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.concurrent.Service;
+import javafx.concurrent.Task;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 import java.text.MessageFormat;
 import java.util.Objects;
 
@@ -261,7 +261,7 @@ public abstract class DesktopApplication<C extends FxController>
                   String msg = MessageFormat.format(AppFxRdcBundle.getString("LAUNCHING {0} FAILED"),
                                                     getMainControllerClass().getSimpleName());
                   LOGGER.severe(msg, rex);
-                  Fx.error(msg, rex);
+                  Fx.error(view, msg, rex);
                   view.getScene().getWindow().hide();
                 }
               });
@@ -271,7 +271,7 @@ public abstract class DesktopApplication<C extends FxController>
               // if anything else fails: log that
               LOGGER.severe("login task failed", t);
               Platform.runLater(() -> {
-                Fx.error(t.getLocalizedMessage(), t);
+                Fx.error(view, t.getLocalizedMessage(), t);
                 view.getScene().getWindow().hide();
               });
             }
@@ -391,7 +391,7 @@ public abstract class DesktopApplication<C extends FxController>
       LOGGER.severe("unhandled exception detected", e);
       Platform.runLater(() -> {
         try {
-          Fx.error(e.getLocalizedMessage(), e, AppFxRdcBundle.getString("UNEXPECTED EXCEPTION"));
+          Fx.error(mainStage, e.getLocalizedMessage(), e, AppFxRdcBundle.getString("UNEXPECTED EXCEPTION"), null);
         }
         catch (Throwable x) {
           stop(99, x);    // there is something severe wrong -> terminate application immediately

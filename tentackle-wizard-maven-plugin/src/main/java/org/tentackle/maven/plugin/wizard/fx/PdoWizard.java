@@ -45,7 +45,6 @@ import javafx.fxml.FXML;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * Controller for the PDO wizard.
@@ -138,7 +137,7 @@ public class PdoWizard extends AbstractFxController {
       }
     }
     catch (ModelException e) {
-      Fx.error("cannot load super entities", e);
+      Fx.error(getView(), "cannot load super entities", e);
     }
 
     genProfile.setDeselectAllowed(false);
@@ -168,37 +167,34 @@ public class PdoWizard extends AbstractFxController {
     cancel.setOnAction(e -> close());
 
     generate.setOnAction(e -> {
-
-      Consumer<Boolean> generateIt = ok -> {
-        if (ok) {
-          try {
-            List<ValidationResult> results = gen.generate();
-            if (results.isEmpty()) {
-              Fx.info("PDO classes generated!").setOnHidden(event -> close());
-            }
-            else {
-              Fx.error(ValidationUtilities.getInstance().resultsToMessage(results));
-            }
-          }
-          catch (IOException | TemplateException ex) {
-            Fx.error("code generation failed", ex);
-          }
-        }
-      };
-
       if (gen.getDomainImplementation() == null && gen.getPersistenceImplementation() != null) {
-        Fx.question("do you really don't want a domain implementation?", false, generateIt);
+        Fx.yes(getView(), "do you really don't want a domain implementation?",false, this::generateIt);
       }
       else if (gen.getPersistenceImplementation() == null && gen.getDomainImplementation() != null) {
-        Fx.question("do you really don't want a persistence implementation?", false, generateIt);
+        Fx.yes(getView(), "do you really don't want a persistence implementation?",false, this::generateIt);
       }
       else if (gen.getDomainImplementation() == null && gen.getPersistenceImplementation() == null) {
-        Fx.question("do you really don't want the implementation files?", false, generateIt);
+        Fx.yes(getView(), "do you really don't want the implementation files?",false, this::generateIt);
       }
       else {
-        generateIt.accept(true);
+        generateIt();
       }
     });
+  }
+
+  private void generateIt() {
+    try {
+      List<ValidationResult> results = gen.generate();
+      if (results.isEmpty()) {
+        Fx.info(getView(), "PDO classes generated!", null, this::close);
+      }
+      else {
+        Fx.error(getView(), ValidationUtilities.getInstance().resultsToMessage(results));
+      }
+    }
+    catch (IOException | TemplateException ex) {
+      Fx.error(getView(), "code generation failed", ex);
+    }
   }
 
   private void close() {

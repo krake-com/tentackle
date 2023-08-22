@@ -19,18 +19,16 @@
 
 package org.tentackle.fx;
 
+import org.tentackle.common.ServiceFactory;
+import org.tentackle.fx.table.TableConfiguration;
+
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.BuilderFactory;
-
-import org.tentackle.common.ServiceFactory;
-import org.tentackle.fx.table.TableConfiguration;
-
 import java.net.URL;
 import java.util.Collection;
 import java.util.ResourceBundle;
@@ -116,12 +114,12 @@ public interface FxFactory {
 
 
   /**
-   * Creates an alert dialog.
+   * Creates a notification builder.<br>
+   * Notifications are a lightweight alternative to {@link javafx.scene.control.Alert}s.
    *
-   * @param alertType the alert type
-   * @return the dialog
+   * @return the builder
    */
-  Alert createAlert(Alert.AlertType alertType);
+  NotificationBuilder createNotificationBuilder();
 
 
   /**

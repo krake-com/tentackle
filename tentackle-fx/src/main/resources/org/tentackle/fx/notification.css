@@ -1,0 +1,61 @@
+/* see DefaultNotificationBuilder */
+
+.tt-notification {
+  -fx-background-color: -fx-background;
+  -fx-border-style: solid;
+}
+
+.text-area {
+  -fx-pref-row-count: 20;
+  -fx-pref-column-count: 60;
+  -fx-alignment: top-right;
+}
+
+#headerBox,#buttonBox .button {
+  -fx-padding: 10 30 10 30;
+}
+
+#headerBox {   /* HBox does not have a style class */
+  -fx-padding: 10 10 10 10;
+  -fx-spacing: 10.0;
+  -fx-alignment: center-left;
+}
+
+#buttonBox {   /* HBox does not have a style class */
+  -fx-padding: 10 10 10 10;
+  -fx-spacing: 10.0;
+  -fx-alignment: center-right;
+}
+
+#notificationPane {   /* BorderPane does not have a style class */
+  -fx-padding: 10 10 10 10;
+}
+
+/* need more space due to scrollbar */
+#copyButton {
+  -fx-padding: 20;
+  -fx-border-insets: 20;
+  -fx-background-insets: 20;
+}
+
+#closeButton {
+  -fx-padding: 5;
+  -fx-border-insets: 5;
+  -fx-background-insets: 5;
+}
+
+/* works with dark and light themes */
+
+#errorIcon {
+  -fx-icon-size: 48;
+  -fx-icon-color: red;
+}
+
+#warningIcon {
+  -fx-icon-size: 48;
+  -fx-icon-color: orange;
+}
+
+#standardIcon {
+  -fx-icon-size: 48;
+}

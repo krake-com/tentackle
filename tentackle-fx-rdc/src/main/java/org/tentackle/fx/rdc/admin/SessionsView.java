@@ -200,7 +200,7 @@ public class SessionsView extends AbstractFxController {
       String msg = toKill.size() > 1 ?
                    MessageFormat.format(resources.getString("really kill {0} sessions?"), toKill.size()) :
                    MessageFormat.format(resources.getString("really kill session {0}?"), toKill.iterator().next().getSessionNumber());
-      Fx.yes(msg, false, () -> {
+      Fx.yes(getView(), msg, false, () -> {
         for (SessionData session : toKill) {
           adminExt.kill(session.getUserId(), session.getSessionGroup(),
                         session.getApplicationName(), session.getApplicationId());

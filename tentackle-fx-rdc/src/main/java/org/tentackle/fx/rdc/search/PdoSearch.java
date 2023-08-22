@@ -523,7 +523,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
         setItems(result);
         presetScrolling();
       }, ex -> {
-        Fx.error(ex.getLocalizedMessage(), ex);
+        Fx.error(getView(), ex.getLocalizedMessage(), ex);
       });
     }
     else {

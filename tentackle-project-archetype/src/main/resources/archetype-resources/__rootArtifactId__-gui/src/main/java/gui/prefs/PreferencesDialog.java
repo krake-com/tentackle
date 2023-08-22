@@ -68,7 +68,7 @@ public class PreferencesDialog extends AbstractFxController {
         ${application}Preferences.getInstance().sync();
       }
       catch (BackingStoreException ex) {
-        Fx.error(resources.getString("saveFailed"), ex);
+        Fx.error(getView(), resources.getString("saveFailed"), ex);
       }
       getStage().hide();
     });
