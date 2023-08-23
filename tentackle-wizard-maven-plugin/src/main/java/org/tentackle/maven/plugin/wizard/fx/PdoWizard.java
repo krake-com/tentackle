@@ -186,7 +186,7 @@ public class PdoWizard extends AbstractFxController {
     try {
       List<ValidationResult> results = gen.generate();
       if (results.isEmpty()) {
-        Fx.info(getView(), "PDO classes generated!", null, this::close);
+        Fx.info(getView(), "PDO classes generated!", this::close);
       }
       else {
         Fx.error(getView(), ValidationUtilities.getInstance().resultsToMessage(results));

@@ -391,7 +391,7 @@ public abstract class DesktopApplication<C extends FxController>
       LOGGER.severe("unhandled exception detected", e);
       Platform.runLater(() -> {
         try {
-          Fx.error(mainStage, e.getLocalizedMessage(), e, AppFxRdcBundle.getString("UNEXPECTED EXCEPTION"), null);
+          Fx.error(mainStage, e.getLocalizedMessage(), e);
         }
         catch (Throwable x) {
           stop(99, x);    // there is something severe wrong -> terminate application immediately

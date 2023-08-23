@@ -355,7 +355,7 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
       getLog().error("unhandled exception detected", e);
       Stage stage = getStage();
       if (stage != null) {
-        Platform.runLater(() -> Fx.error(stage, e.getMessage(), e, "UNEXPECTED EXCEPTION", null));
+        Platform.runLater(() -> Fx.error(stage, e.getMessage(), e));
       }
     };
   }

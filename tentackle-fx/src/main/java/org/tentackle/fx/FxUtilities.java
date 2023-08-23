@@ -571,7 +571,7 @@ public class FxUtilities {
       Throwable exception = event.getSource().getException();
       if (exception != null) {
         LOGGER.warning("FX background execution failed", exception);
-        Platform.runLater(() -> showErrorDialog(owner, exception.getMessage(), exception, null, null));
+        Platform.runLater(() -> showErrorDialog(owner, exception.getMessage(), exception, null));
       }
     });
 
@@ -584,10 +584,9 @@ public class FxUtilities {
    *
    * @param owner the owner window or node
    * @param message the message
-   * @param title optional title
    * @param onClose optional runnable invoked when dialog is closed
    */
-  public void showInfoDialog(Object owner, String message, String title, Runnable onClose) {
+  public void showInfoDialog(Object owner, String message, Runnable onClose) {
     Popup popup = new Popup();
     Parent notification = FxFactory.getInstance()
                                    .createNotificationBuilder()
@@ -609,10 +608,9 @@ public class FxUtilities {
    *
    * @param owner the owner window or node
    * @param message the message
-   * @param title optional title
    * @param onClose optional runnable invoked when dialog is closed
    */
-  public void showWarningDialog(Object owner, String message, String title, Runnable onClose) {
+  public void showWarningDialog(Object owner, String message, Runnable onClose) {
     Popup popup = new Popup();
     Parent notification = FxFactory.getInstance()
                                    .createNotificationBuilder()
@@ -631,15 +629,15 @@ public class FxUtilities {
 
   /**
    * Shows a question dialog.<br>
-   * To avoid showAndWait, the method returns void and the result is provided via a Consumer.
+   * To avoid showAndWait, the method returns void and the result is provided via a Consumer.<br>
+   * Typing the key "0" is interpreted as "no" and "1" as "yes".
    *
    * @param owner the owner window or node
    * @param message the message
    * @param defaultYes true if yes is the default button
-   * @param title optional title
    * @param answer the user's answer (invoked with {@link Boolean#TRUE} or {@link Boolean#FALSE}, never null)
    */
-  public void showQuestionDialog(Object owner, String message, boolean defaultYes, String title, Consumer<Boolean> answer) {
+  public void showQuestionDialog(Object owner, String message, boolean defaultYes, Consumer<Boolean> answer) {
     Popup popup = new Popup();
     Parent notification = FxFactory.getInstance()
                                    .createNotificationBuilder()
@@ -653,6 +651,16 @@ public class FxUtilities {
                                    .build();
     popup.getContent().add(notification);
     popup.setAutoHide(true);
+    popup.addEventFilter(KeyEvent.KEY_TYPED, event -> {
+      if ("0".equals(event.getCharacter())) {
+        popup.hide();
+        answer.accept(false);
+      }
+      else if ("1".equals(event.getCharacter())) {
+        popup.hide();
+        answer.accept(true);
+      }
+    });
     popup.show(getWindow(owner));
   }
 
@@ -662,10 +670,9 @@ public class FxUtilities {
    * @param owner the owner window or node
    * @param message the message
    * @param t optional throwable
-   * @param title optional title
    * @param onClose optional runnable invoked when dialog is closed
    */
-  public void showErrorDialog(Object owner, String message, Throwable t, String title, Runnable onClose) {
+  public void showErrorDialog(Object owner, String message, Throwable t, Runnable onClose) {
     String details;
     if (t != null) {
       StringWriter sw = new StringWriter();
@@ -681,7 +688,6 @@ public class FxUtilities {
     Parent notification = FxFactory.getInstance()
                                    .createNotificationBuilder()
                                    .type(NotificationBuilder.Type.ERROR)
-                                   .title(title)
                                    .text(message)
                                    .details(details)
                                    .addButton(new ButtonConfig(FxFxBundle.getString("OK"), null, null), false)
@@ -800,7 +806,7 @@ public class FxUtilities {
     }
 
     if (!errors.isEmpty()) {
-      Fx.error(owner, errors.toString(), null, null, () -> {
+      showErrorDialog(owner, errors.toString(), null, () -> {
         for (InteractiveError error : errorList) {
           if (error.getControl() instanceof FxComponent component) {
             if (error.isWarning()) {
@@ -814,7 +820,7 @@ public class FxUtilities {
       });
     }
     else if (!warnings.isEmpty()) {
-      showInfoDialog(owner, warnings.toString(), null, () -> {
+      showInfoDialog(owner, warnings.toString(), () -> {
         for (InteractiveError error : errorList) {
           if (error.getControl() instanceof FxComponent component) {
             component.setInfo(error.getText());
@@ -1106,7 +1112,7 @@ public class FxUtilities {
    */
   public void print(Node node) {
     PrinterJob job = PrinterJob.createPrinterJob();
-    if (job != null && job.showPrintDialog(Fx.getStage(node))) {
+    if (job != null && job.showPrintDialog(getStage(node))) {
       PageLayout pageLayout = job.getJobSettings().getPageLayout();
       double scaleX = 1.0;
       if (pageLayout.getPrintableWidth() < node.getBoundsInParent().getWidth()) {
