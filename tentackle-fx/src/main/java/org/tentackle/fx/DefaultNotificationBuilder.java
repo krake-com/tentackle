@@ -229,7 +229,7 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
                case INFORMATION -> FxFxBundle.getString("INFORMATION");
                case WARNING -> FxFxBundle.getString("WARNING");
                case ERROR -> FxFxBundle.getString("ERROR");
-               case CONFIRMATION -> FxFxBundle.getString("INFORMATION");
+               case CONFIRMATION -> FxFxBundle.getString("CONFIRMATION");
                case QUESTION -> FxFxBundle.getString("QUESTION");
                case NONE -> null;
              };
@@ -245,8 +245,8 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
              switch (getType()) {
                case INFORMATION -> new FontIcon("mdi2i-information-outline");
                case WARNING -> new FontIcon("mdi2a-alert-circle-outline");
-               case ERROR -> new FontIcon("mdi2a-alert-circle-outline");
-               case CONFIRMATION -> new FontIcon("mdi2i-information-outline");
+               case ERROR -> new FontIcon("mdi2a-alert-outline");
+               case CONFIRMATION -> new FontIcon("mdi2c-check-circle-outline");
                case QUESTION -> new FontIcon("mdi2c-comment-question-outline");
                case NONE -> null;
              };
