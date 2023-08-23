@@ -646,7 +646,7 @@ public class FxUtilities {
                                    .type(NotificationBuilder.Type.QUESTION)
                                    .text(message)
                                    .addButton(new ButtonConfig(FxFxBundle.getString("NO"),
-                                                               null, () -> answer.accept(false)), false)
+                                                               null, () -> answer.accept(false)), !defaultYes)
                                    .addButton(new ButtonConfig(FxFxBundle.getString("YES"),
                                                                null, () -> answer.accept(true)), defaultYes)
                                    .hideAction(popup::hide)

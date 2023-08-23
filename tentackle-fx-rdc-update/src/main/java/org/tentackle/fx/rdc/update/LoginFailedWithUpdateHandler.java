@@ -127,7 +127,7 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
       Platform.runLater(() -> Fx.question(
         getView(), MessageFormat.format(UpdateFxRdcBundle.getString("{0}_{1}_OUTDATED_INSTALL_{2}"),
                                         clientInfo.getApplication(), clientInfo.getVersion(), updateInfo.getVersion()),
-        false, null, answer));
+        true, null, answer));
       if (answer.get()) {
         update(updateInfo, installationType);
       }
