@@ -148,11 +148,10 @@ public class Fx {
    *
    * @param owner the owner window or node
    * @param message the message
-   * @param title optional title
    * @param onClose optional runnable invoked when dialog is closed
    */
-  public static void info(Object owner, String message, String title, Runnable onClose) {
-    FxUtilities.getInstance().showInfoDialog(owner, message, title, onClose);
+  public static void info(Object owner, String message, Runnable onClose) {
+    FxUtilities.getInstance().showInfoDialog(owner, message, onClose);
   }
 
   /**
@@ -162,7 +161,7 @@ public class Fx {
    * @param message the message
    */
   public static void info(Object owner, String message) {
-    info(owner, message, null, null);
+    info(owner, message, null);
   }
 
 
@@ -171,11 +170,10 @@ public class Fx {
    *
    * @param owner the owner window or node
    * @param message the message
-   * @param title optional title
    * @param onClose optional runnable invoked when dialog is closed
    */
-  public static void warning(Object owner, String message, String title, Runnable onClose) {
-    FxUtilities.getInstance().showWarningDialog(owner, message, title, onClose);
+  public static void warning(Object owner, String message, Runnable onClose) {
+    FxUtilities.getInstance().showWarningDialog(owner, message, onClose);
   }
 
   /**
@@ -185,7 +183,7 @@ public class Fx {
    * @param message the message
    */
   public static void warning(Object owner, String message) {
-    warning(owner, message, null, null);
+    warning(owner, message, null);
   }
 
 
@@ -195,11 +193,10 @@ public class Fx {
    * @param owner the owner window or node
    * @param message the message
    * @param t optional throwable
-   * @param title optional title
    * @param onClose optional runnable invoked when dialog is closed
    */
-  public static void error(Object owner, String message, Throwable t, String title, Runnable onClose) {
-    FxUtilities.getInstance().showErrorDialog(owner, message, t, title, onClose);
+  public static void error(Object owner, String message, Throwable t, Runnable onClose) {
+    FxUtilities.getInstance().showErrorDialog(owner, message, t, onClose);
   }
 
   /**
@@ -210,7 +207,7 @@ public class Fx {
    * @param t optional throwable
    */
   public static void error(Object owner, String message, Throwable t) {
-    error(owner, message, t, null, null);
+    error(owner, message, t, null);
   }
 
   /**
@@ -220,7 +217,7 @@ public class Fx {
    * @param message the message
    */
   public static void error(Object owner, String message) {
-    error(owner, message, null, null, null);
+    error(owner, message, null, null);
   }
 
 
@@ -230,17 +227,16 @@ public class Fx {
    * @param owner the owner window or node
    * @param message the message
    * @param defaultYes true if yes is the default button
-   * @param title optional title
    * @param answer the user's answer (invoked with {@link Boolean#TRUE} or {@link Boolean#FALSE}, never null)
    */
-  public static void question(Object owner, String message, boolean defaultYes, String title, Consumer<Boolean> answer) {
-    FxUtilities.getInstance().showQuestionDialog(owner, message, defaultYes, title, answer);
+  public static void question(Object owner, String message, boolean defaultYes, Consumer<Boolean> answer) {
+    FxUtilities.getInstance().showQuestionDialog(owner, message, defaultYes, answer);
   }
 
 
   /**
    * Shows a question dialog.<br>
-   * Short for {@link #question(Object, String, boolean, String, Consumer)} if answer is only checked for yes.
+   * Short for {@link #question(Object, String, boolean, Consumer)} if answer is only checked for yes.
    *
    * @param owner the owner window or node
    * @param message the message
@@ -248,7 +244,7 @@ public class Fx {
    * @param yes invoked if user answers with yes
    */
   public static void yes(Object owner, String message, boolean defaultYes, Runnable yes) {
-    FxUtilities.getInstance().showQuestionDialog(owner, message, defaultYes, null, answer -> {
+    FxUtilities.getInstance().showQuestionDialog(owner, message, defaultYes, answer -> {
       if (answer) {
         yes.run();
       }
@@ -257,7 +253,7 @@ public class Fx {
 
   /**
    * Shows a question dialog.<br>
-   * Short for {@link #question(Object, String, boolean, String, Consumer)} if answer is only checked for no.
+   * Short for {@link #question(Object, String, boolean, Consumer)} if answer is only checked for no.
    *
    * @param owner the owner window or node
    * @param message the message
@@ -265,7 +261,7 @@ public class Fx {
    * @param no invoked if user answers with no
    */
   public static void no(Object owner, String message, boolean defaultYes, Runnable no) {
-    FxUtilities.getInstance().showQuestionDialog(owner, message, defaultYes, null, answer -> {
+    FxUtilities.getInstance().showQuestionDialog(owner, message, defaultYes, answer -> {
       if (!answer) {
         no.run();
       }
