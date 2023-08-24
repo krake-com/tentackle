@@ -438,9 +438,7 @@ public class RdcUtilities {
                .button(RdcFxRdcBundle.getString("CANCEL"), null, true, () -> doIt.accept(null))
                .hide(popup::hide)
                .build();
-    popup.getContent().add(notification);
-    popup.setAutoHide(true);
-    popup.show(FxUtilities.getInstance().getWindow(owner));
+    FxUtilities.getInstance().showNotification(owner, popup, notification, null);
   }
 
 

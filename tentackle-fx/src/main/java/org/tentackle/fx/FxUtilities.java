@@ -568,6 +568,31 @@ public class FxUtilities {
 
 
   /**
+   * Shows a notification popup.<br>
+   * The notification is centered above the owner window.
+   *
+   * @param owner the owner window or node
+   * @param popup the popup
+   * @param notification the notification node
+   * @param onClose the optional runner to execute when notification is closed/hidden
+   */
+  public void showNotification(Object owner, Popup popup, Parent notification, Runnable onClose) {
+    popup.getContent().add(notification);
+    popup.setAutoHide(true);
+    if (onClose != null) {
+      popup.setOnHidden(event -> onClose.run());
+    }
+    Window window = getWindow(owner);
+    popup.setOnShown(event -> {
+      // center above owner window
+      popup.setAnchorX(window.getX() + (window.getWidth() - popup.getWidth()) / 2.0);
+      popup.setAnchorY(window.getY() + (window.getHeight() - popup.getHeight()) / 2.0);
+    });
+    popup.show(window);
+  }
+
+
+  /**
    * Shows an info dialog.
    *
    * @param owner the owner window or node
@@ -583,12 +608,7 @@ public class FxUtilities {
                                    .button(FxFxBundle.getString("OK"), null, false, null)
                                    .hide(popup::hide)
                                    .build();
-    popup.getContent().add(notification);
-    if (onClose != null) {
-      popup.setOnHidden(event -> onClose.run());
-    }
-    popup.setAutoHide(true);
-    popup.show(getWindow(owner));
+    showNotification(owner, popup, notification, onClose);
   }
 
   /**
@@ -607,12 +627,7 @@ public class FxUtilities {
                                    .button(FxFxBundle.getString("OK"), null, false, null)
                                    .hide(popup::hide)
                                    .build();
-    popup.getContent().add(notification);
-    if (onClose != null) {
-      popup.setOnHidden(event -> onClose.run());
-    }
-    popup.setAutoHide(true);
-    popup.show(getWindow(owner));
+    showNotification(owner, popup, notification, onClose);
   }
 
   /**
@@ -650,8 +665,6 @@ public class FxUtilities {
                                    .button(FxFxBundle.getString("YES"), null, defaultYes, () -> answer.accept(true))
                                    .hide(popup::hide)
                                    .build();
-    popup.getContent().add(notification);
-    popup.setAutoHide(true);
     popup.addEventFilter(KeyEvent.KEY_TYPED, event -> {
       if ("0".equals(event.getCharacter())) {
         popup.hide();
@@ -662,8 +675,9 @@ public class FxUtilities {
         answer.accept(true);
       }
     });
-    popup.show(getWindow(owner));
+    showNotification(owner, popup, notification, null);
   }
+
 
   /**
    * Shows an error dialog.
@@ -693,12 +707,7 @@ public class FxUtilities {
                                    .details(details)
                                    .button(FxFxBundle.getString("OK"), null, false, null)
                                    .hide(popup::hide).build();
-    popup.getContent().add(notification);
-    if (onClose != null) {
-      popup.setOnHidden(event -> onClose.run());
-    }
-    popup.setAutoHide(true);
-    popup.show(getWindow(owner));
+    showNotification(owner, popup, notification, onClose);
   }
 
 
