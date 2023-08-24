@@ -184,6 +184,8 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
         borderStackPane.getChildren().add(borderPane);
         Button closeButton = new Button("", Fx.createGraphic("close"));
         closeButton.setId("closeButton");
+        closeButton.setFocusTraversable(false);
+        closeButton.setDefaultButton(true);
         closeButton.setTooltip(new Tooltip(FxFxBundle.getString("CLOSE")));
         closeButton.setOnAction(event -> hide(parent));
         borderStackPane.getChildren().add(closeButton);

@@ -19,12 +19,6 @@
 
 package org.tentackle.fx;
 
-import javafx.fxml.FXML;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
-import javafx.stage.Window;
-
 import org.tentackle.fx.bind.FxBindingFactory;
 import org.tentackle.fx.bind.FxComponentBinder;
 import org.tentackle.log.Logger;
@@ -34,6 +28,9 @@ import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.scope.ChangeableScope;
 import org.tentackle.validate.scope.MandatoryScope;
 
+import javafx.fxml.FXML;
+import javafx.scene.Parent;
+import javafx.stage.Stage;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -79,15 +76,7 @@ public abstract class AbstractFxController implements FxController, ScopeConfigu
 
   @Override
   public Stage getStage() {
-    Stage stage = null;
-    Scene scene = getView().getScene();
-    if (scene != null && scene.getRoot() == getView()) {
-      Window window = scene.getWindow();
-      if (window instanceof Stage) {
-        stage = (Stage) window;
-      }
-    }
-    return stage;
+    return FxUtilities.getInstance().getStage(getView());
   }
 
   @Override

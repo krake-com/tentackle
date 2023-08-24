@@ -340,14 +340,16 @@ public class FxUtilities {
    */
   public Stage getStage(Node node) {
     Stage stage = null;
-    if (node != null) {
+    while (node != null) {
       Scene scene = node.getScene();
       if (scene != null) {
         Window window = scene.getWindow();
         if (window instanceof Stage) {
           stage = (Stage) window;
+          break;
         }
       }
+      node = node.getParent();
     }
     return stage;
   }

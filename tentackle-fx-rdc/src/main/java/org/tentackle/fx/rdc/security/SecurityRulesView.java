@@ -488,7 +488,7 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
     };
 
     if (modified) {
-      Fx.yes(RdcFxRdcBundle.getString("Rules were modified. Really discard all changes?"), null, false, discardIt);
+      Fx.yes(getView(), RdcFxRdcBundle.getString("Rules were modified. Really discard all changes?"), false, discardIt);
     }
     else {
       discardIt.run();
