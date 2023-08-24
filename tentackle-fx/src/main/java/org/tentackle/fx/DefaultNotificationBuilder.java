@@ -45,6 +45,15 @@ import java.util.List;
  */
 public class DefaultNotificationBuilder implements NotificationBuilder {
 
+  /**
+   * Configuration for a button.
+   *
+   * @param text the button's text
+   * @param graphic the button's graphic
+   * @param action the action to perform when clicked
+   */
+  private record ButtonConfig(String text, Node graphic, Runnable action) {}
+
   private Type type;
   private Node graphic;
   private String title;
@@ -54,7 +63,7 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
   private Duration fadeOut;
   private final List<ButtonConfig> buttonConfigs = new ArrayList<>();
   private ButtonConfig defaultButtonConfig;
-  private Runnable hideAction;
+  private Runnable hide;
 
 
   public DefaultNotificationBuilder() {
@@ -104,17 +113,19 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
   }
 
   @Override
-  public NotificationBuilder addButton(ButtonConfig buttonConfig, boolean isDefault) {
+  public NotificationBuilder button(String text, Node graphic, boolean isDefault, Runnable action) {
+    ButtonConfig buttonConfig = new ButtonConfig(text, graphic, action);
     buttonConfigs.add(buttonConfig);
     if (isDefault) {
-      defaultButtonConfig = buttonConfig;
+      // there can only be one default button
+      defaultButtonConfig = buttonConfig;   // the last wins...
     }
     return this;
   }
 
   @Override
-  public NotificationBuilder hideAction(Runnable hideAction) {
-    this.hideAction = hideAction;
+  public NotificationBuilder hide(Runnable hide) {
+    this.hide = hide;
     return this;
   }
 
@@ -165,7 +176,7 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
     HBox buttonBox = new HBox();
     buttonBox.setId("buttonBox"); // HBox does not have a style class
     if (buttonConfigs.isEmpty()) {
-      if (hideAction != null) {
+      if (hide != null) {
         // no buttons: add small close button
         StackPane borderStackPane = new StackPane();
         parent = borderStackPane;
@@ -186,11 +197,11 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
       for (ButtonConfig buttonConfig : buttonConfigs) {
         Button button = new Button(buttonConfig.text(), buttonConfig.graphic());
         button.setOnAction(event -> {
+          if (hide != null) {
+            hide(parent);
+          }
           if (buttonConfig.action() != null) {
             buttonConfig.action().run();
-          }
-          if (hideAction != null) {
-            hide(parent);
           }
         });
         button.setFocusTraversable(false);
@@ -206,7 +217,7 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
     parent.getStylesheets().add(0, stylesheetUrl);
     parent.getStyleClass().add("tt-notification");
 
-    if (duration != null && hideAction != null) {
+    if (duration != null && hide != null) {
       PauseTransition pauseTransition = new PauseTransition(duration);
       SequentialTransition transition = new SequentialTransition(pauseTransition);
       if (fadeOut != null) {
@@ -215,7 +226,7 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
         outTransition.setToValue(0.0);
         transition.getChildren().add(outTransition);
       }
-      transition.setOnFinished(event -> hideAction.run());
+      transition.setOnFinished(event -> hide.run());
       transition.play();
     }
 
@@ -255,11 +266,11 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
   private void hide(Parent parent) {
     if (duration == null && fadeOut != null) {
       SequentialTransition transition = new SequentialTransition(createFadeOutTransition(parent));
-      transition.setOnFinished(event -> hideAction.run());
+      transition.setOnFinished(event -> hide.run());
       transition.play();
     }
     else {
-      hideAction.run();
+      hide.run();
     }
   }
 

@@ -19,7 +19,6 @@ import org.tentackle.common.Service;
 import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.NotificationBuilder;
-import org.tentackle.fx.NotificationBuilder.ButtonConfig;
 import org.tentackle.fx.rdc.Rdc;
 import org.tentackle.fx.rdc.security.DefaultSecurityDialogFactory;
 import org.tentackle.fx.rdc.security.SecurityDialogFactory;
@@ -60,9 +59,9 @@ public class ${application}SecurityDialogFactory extends DefaultSecurityDialogFa
                .createNotificationBuilder()
                .type(NotificationBuilder.Type.QUESTION)
                .text(GuiBundle.getString("User or Group?"))
-               .addButton(new ButtonConfig(GuiBundle.getString("User"), null, () -> runIt.accept(Boolean.TRUE)), false)
-               .addButton(new ButtonConfig(GuiBundle.getString("Group"), null, () -> runIt.accept(Boolean.FALSE)), false)
-               .hideAction(popup::hide)
+               .button(GuiBundle.getString("User"), null, false, () -> runIt.accept(Boolean.TRUE))
+               .button(GuiBundle.getString("Group"), null, false, () -> runIt.accept(Boolean.FALSE))
+               .hide(popup::hide)
                .build();
     popup.getContent().add(notification);
     popup.show(FxUtilities.getInstance().getWindow(owner));
