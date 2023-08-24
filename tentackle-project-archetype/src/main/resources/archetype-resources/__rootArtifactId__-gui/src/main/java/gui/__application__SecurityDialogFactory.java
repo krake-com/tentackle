@@ -63,8 +63,7 @@ public class ${application}SecurityDialogFactory extends DefaultSecurityDialogFa
                .button(GuiBundle.getString("Group"), null, false, () -> runIt.accept(Boolean.FALSE))
                .hide(popup::hide)
                .build();
-    popup.getContent().add(notification);
-    popup.show(FxUtilities.getInstance().getWindow(owner));
+    FxUtilities.getInstance().showNotification(owner, popup, notification, null);
   }
 
 }
