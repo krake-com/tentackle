@@ -149,6 +149,7 @@ public class Fx {
    * @param owner the owner window or node
    * @param message the message
    * @param onClose optional runnable invoked when dialog is closed
+   * @see FxUtilities#showInfoDialog(Object, String, Runnable)
    */
   public static void info(Object owner, String message, Runnable onClose) {
     FxUtilities.getInstance().showInfoDialog(owner, message, onClose);
@@ -159,6 +160,7 @@ public class Fx {
    *
    * @param owner the owner window or node
    * @param message the message
+   * @see FxUtilities#showInfoDialog(Object, String, Runnable)
    */
   public static void info(Object owner, String message) {
     info(owner, message, null);
@@ -171,6 +173,7 @@ public class Fx {
    * @param owner the owner window or node
    * @param message the message
    * @param onClose optional runnable invoked when dialog is closed
+   * @see FxUtilities#showWarningDialog(Object, String, Runnable)
    */
   public static void warning(Object owner, String message, Runnable onClose) {
     FxUtilities.getInstance().showWarningDialog(owner, message, onClose);
@@ -181,6 +184,7 @@ public class Fx {
    *
    * @param owner the owner window or node
    * @param message the message
+   * @see FxUtilities#showWarningDialog(Object, String, Runnable)
    */
   public static void warning(Object owner, String message) {
     warning(owner, message, null);
@@ -194,6 +198,7 @@ public class Fx {
    * @param message the message
    * @param t optional throwable
    * @param onClose optional runnable invoked when dialog is closed
+   * @see FxUtilities#showErrorDialog(Object, String, Throwable, Runnable)
    */
   public static void error(Object owner, String message, Throwable t, Runnable onClose) {
     FxUtilities.getInstance().showErrorDialog(owner, message, t, onClose);
@@ -205,6 +210,7 @@ public class Fx {
    * @param owner the owner window or node
    * @param message the message
    * @param t optional throwable
+   * @see FxUtilities#showErrorDialog(Object, String, Throwable, Runnable)
    */
   public static void error(Object owner, String message, Throwable t) {
     error(owner, message, t, null);
@@ -215,6 +221,7 @@ public class Fx {
    *
    * @param owner the owner window or node
    * @param message the message
+   * @see FxUtilities#showErrorDialog(Object, String, Throwable, Runnable)
    */
   public static void error(Object owner, String message) {
     error(owner, message, null, null);
@@ -228,6 +235,7 @@ public class Fx {
    * @param message the message
    * @param defaultYes true if yes is the default button
    * @param answer the user's answer (invoked with {@link Boolean#TRUE} or {@link Boolean#FALSE}, never null)
+   * @see FxUtilities#showQuestionDialog(Object, String, boolean, Consumer)
    */
   public static void question(Object owner, String message, boolean defaultYes, Consumer<Boolean> answer) {
     FxUtilities.getInstance().showQuestionDialog(owner, message, defaultYes, answer);
@@ -242,6 +250,7 @@ public class Fx {
    * @param message the message
    * @param defaultYes true if yes is the default button
    * @param yes invoked if user answers with yes
+   * @see FxUtilities#showQuestionDialog(Object, String, boolean, Consumer)
    */
   public static void yes(Object owner, String message, boolean defaultYes, Runnable yes) {
     FxUtilities.getInstance().showQuestionDialog(owner, message, defaultYes, answer -> {
@@ -259,6 +268,7 @@ public class Fx {
    * @param message the message
    * @param defaultYes true if yes is the default button
    * @param no invoked if user answers with no
+   * @see FxUtilities#showQuestionDialog(Object, String, boolean, Consumer)
    */
   public static void no(Object owner, String message, boolean defaultYes, Runnable no) {
     FxUtilities.getInstance().showQuestionDialog(owner, message, defaultYes, answer -> {

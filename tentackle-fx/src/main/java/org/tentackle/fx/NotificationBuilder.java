@@ -68,15 +68,6 @@ public interface NotificationBuilder {
 
   }
 
-  /**
-   * Configuration for a button.
-   *
-   * @param text the button's text
-   * @param graphic the button's graphic
-   * @param action the action to perform when clicked
-   */
-  record ButtonConfig(String text, Node graphic, Runnable action) {}
-
 
   /**
    * Sets the notification type.
@@ -138,19 +129,21 @@ public interface NotificationBuilder {
   /**
    * Adds a button.
    *
-   * @param buttonConfig the button configuration
+   * @param text the button's text
+   * @param graphic the button's graphic
    * @param isDefault true if this is the default button
+   * @param action the action to perform when clicked
    * @return the builder
    */
-  NotificationBuilder addButton(ButtonConfig buttonConfig, boolean isDefault);
+  NotificationBuilder button(String text, Node graphic, boolean isDefault, Runnable action);
 
   /**
    * Sets the hide action when a button is pressed.
    *
-   * @param hideAction the action to close or hide the notification
+   * @param hide the action to close or hide the notification
    * @return the builder
    */
-  NotificationBuilder hideAction(Runnable hideAction);
+  NotificationBuilder hide(Runnable hide);
 
 
   /**
@@ -163,7 +156,7 @@ public interface NotificationBuilder {
   /**
    * Returns the title of the notification.<br>
    * It depends on the implementation whether the title is already part of the node
-   * or of a window title.
+   * or of a window title or not visible at all.
    *
    * @return the title
    */

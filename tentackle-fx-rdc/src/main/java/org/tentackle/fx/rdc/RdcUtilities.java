@@ -28,7 +28,6 @@ import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.NotificationBuilder;
-import org.tentackle.fx.NotificationBuilder.ButtonConfig;
 import org.tentackle.fx.rdc.app.DesktopApplication;
 import org.tentackle.fx.rdc.crud.PdoCrud;
 import org.tentackle.fx.rdc.search.PdoSearch;
@@ -273,14 +272,12 @@ public class RdcUtilities {
    * @param editable true if user may edit the pdo, false if to view only
    * @return the CRUD showing stage, null if there is no such stage
    */
-  @SuppressWarnings("unchecked")
   public synchronized <T extends PersistentDomainObject<T>> Stage getCrud(T pdo, boolean editable) {
     if (crudCache != null) {
       Class<T> pdoClass = pdo.getEffectiveClass();
       Set<PdoCrud<?>> cruds = crudCache.get(pdoClass);
       if (cruds != null) {
-        for (Iterator<PdoCrud<?>> iter = cruds.iterator(); iter.hasNext(); ) {
-          PdoCrud<T> crud = (PdoCrud<T>) iter.next();
+        for (PdoCrud<?> crud : cruds) {
           Stage stage = Fx.getStage(crud.getView());
           if (stage != null) {
             // is showing or other modality or different owner, i.e. part of some window which is showing
@@ -436,10 +433,10 @@ public class RdcUtilities {
                .createNotificationBuilder()
                .type(NotificationBuilder.Type.QUESTION)
                .text(RdcFxRdcBundle.getString("DATA_HAS_BEEN_MODIFIED!_DISCARD,_SAVE_OR_CANCEL?"))
-               .addButton(new ButtonConfig(RdcFxRdcBundle.getString("SAVE"), null, () -> doIt.accept(Boolean.TRUE)), false)
-               .addButton(new ButtonConfig(RdcFxRdcBundle.getString("DISCARD"), null, () -> doIt.accept(Boolean.FALSE)), false)
-               .addButton(new ButtonConfig(RdcFxRdcBundle.getString("CANCEL"), null, () -> doIt.accept(null)), true)
-               .hideAction(popup::hide)
+               .button(RdcFxRdcBundle.getString("SAVE"), null, false, () -> doIt.accept(Boolean.TRUE))
+               .button(RdcFxRdcBundle.getString("DISCARD"), null, false, () -> doIt.accept(Boolean.FALSE))
+               .button(RdcFxRdcBundle.getString("CANCEL"), null, true, () -> doIt.accept(null))
+               .hide(popup::hide)
                .build();
     popup.getContent().add(notification);
     popup.setAutoHide(true);

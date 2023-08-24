@@ -29,7 +29,6 @@ import org.tentackle.common.LocaleProvider;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
-import org.tentackle.fx.NotificationBuilder.ButtonConfig;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.component.FxTextArea;
 import org.tentackle.fx.component.FxTreeTableView;
@@ -135,7 +134,7 @@ public class FxUtilities {
 
   /**
    * The help url.<br>
-   * Prefix for online help, e.g.: http://localhost/manual/index.html
+   * Prefix for online help, e.g.: <code>http://localhost/manual/index.html</code>
    */
   private String helpURL;
 
@@ -383,22 +382,11 @@ public class FxUtilities {
    * @return true if effectively modal
    */
   public boolean isModal(Stage stage) {
-    boolean modal = false;
-    if (stage != null) {
-      switch(stage.getModality()) {
-        case APPLICATION_MODAL:
-          modal = true;
-          break;
-
-        case WINDOW_MODAL:
-          modal = stage.getOwner() != null;
-          break;
-
-        default:
-          // NONE
-      }
-    }
-    return modal;
+    return stage != null && switch (stage.getModality()) {
+      case APPLICATION_MODAL -> true;
+      case WINDOW_MODAL -> stage.getOwner() != null;
+      default -> false;
+    };
   }
 
 
@@ -559,7 +547,7 @@ public class FxUtilities {
         return new Task<>() {
 
           @Override
-          protected Void call() throws Exception {
+          protected Void call() {
             runnable.run();
             return null;
           }
@@ -592,8 +580,8 @@ public class FxUtilities {
                                    .createNotificationBuilder()
                                    .type(NotificationBuilder.Type.INFORMATION)
                                    .text(message)
-                                   .addButton(new ButtonConfig(FxFxBundle.getString("OK"), null, null), false)
-                                   .hideAction(popup::hide)
+                                   .button(FxFxBundle.getString("OK"), null, false, null)
+                                   .hide(popup::hide)
                                    .build();
     popup.getContent().add(notification);
     if (onClose != null) {
@@ -616,8 +604,8 @@ public class FxUtilities {
                                    .createNotificationBuilder()
                                    .type(NotificationBuilder.Type.WARNING)
                                    .text(message)
-                                   .addButton(new ButtonConfig(FxFxBundle.getString("OK"), null, null), false)
-                                   .hideAction(popup::hide)
+                                   .button(FxFxBundle.getString("OK"), null, false, null)
+                                   .hide(popup::hide)
                                    .build();
     popup.getContent().add(notification);
     if (onClose != null) {
@@ -629,8 +617,23 @@ public class FxUtilities {
 
   /**
    * Shows a question dialog.<br>
-   * To avoid showAndWait, the method returns void and the result is provided via a Consumer.<br>
-   * Typing the key "0" is interpreted as "no" and "1" as "yes".
+   * To avoid blocking the event queue (see {@link javafx.scene.control.Dialog#showAndWait()}),
+   * the implementation is <em>not</em> based on {@link javafx.scene.control.Alert} and the
+   * method returns immediately. The result is then provided via a {@link Consumer}.<br>
+   * As a convenience, typing the key "0" is interpreted as "no" and "1" as "yes".
+   * <p>
+   * Note: if you need to wait for a decision of the user (i.e. no async use), you can do that from another
+   * than the FX-thread by using a {@link org.tentackle.misc.BlockingHolder} like so:
+   * <pre>
+   *      BlockingHolder&lt;Boolean&gt; answer = new BlockingHolder&lt;&gt;();
+   *      Platform.runLater(() -> Fx.question(..., answer);
+   *      if (answer.get()) {
+   *        ...
+   *      }
+   *      else {
+   *        ...
+   *      }
+   * </pre>
    *
    * @param owner the owner window or node
    * @param message the message
@@ -643,11 +646,9 @@ public class FxUtilities {
                                    .createNotificationBuilder()
                                    .type(NotificationBuilder.Type.QUESTION)
                                    .text(message)
-                                   .addButton(new ButtonConfig(FxFxBundle.getString("NO"),
-                                                               null, () -> answer.accept(false)), !defaultYes)
-                                   .addButton(new ButtonConfig(FxFxBundle.getString("YES"),
-                                                               null, () -> answer.accept(true)), defaultYes)
-                                   .hideAction(popup::hide)
+                                   .button(FxFxBundle.getString("NO"), null, !defaultYes, () -> answer.accept(false))
+                                   .button(FxFxBundle.getString("YES"), null, defaultYes, () -> answer.accept(true))
+                                   .hide(popup::hide)
                                    .build();
     popup.getContent().add(notification);
     popup.setAutoHide(true);
@@ -690,8 +691,8 @@ public class FxUtilities {
                                    .type(NotificationBuilder.Type.ERROR)
                                    .text(message)
                                    .details(details)
-                                   .addButton(new ButtonConfig(FxFxBundle.getString("OK"), null, null), false)
-                                   .hideAction(popup::hide).build();
+                                   .button(FxFxBundle.getString("OK"), null, false, null)
+                                   .hide(popup::hide).build();
     popup.getContent().add(notification);
     if (onClose != null) {
       popup.setOnHidden(event -> onClose.run());
@@ -1113,17 +1114,7 @@ public class FxUtilities {
   public void print(Node node) {
     PrinterJob job = PrinterJob.createPrinterJob();
     if (job != null && job.showPrintDialog(getStage(node))) {
-      PageLayout pageLayout = job.getJobSettings().getPageLayout();
-      double scaleX = 1.0;
-      if (pageLayout.getPrintableWidth() < node.getBoundsInParent().getWidth()) {
-        scaleX = pageLayout.getPrintableWidth() / node.getBoundsInParent().getWidth();
-      }
-      double scaleY = 1.0;
-      if (pageLayout.getPrintableHeight() < node.getBoundsInParent().getHeight()) {
-        scaleY = pageLayout.getPrintableHeight() / node.getBoundsInParent().getHeight();
-      }
-      double scaleXY = Double.min(scaleX, scaleY);
-      Scale scale = new Scale(scaleXY, scaleXY);
+      Scale scale = getScale(node, job);
       node.getTransforms().add(scale);
       boolean success = job.printPage(node);
       node.getTransforms().remove(scale);
@@ -1131,6 +1122,20 @@ public class FxUtilities {
         job.endJob();
       }
     }
+  }
+
+  private static Scale getScale(Node node, PrinterJob job) {
+    PageLayout pageLayout = job.getJobSettings().getPageLayout();
+    double scaleX = 1.0;
+    if (pageLayout.getPrintableWidth() < node.getBoundsInParent().getWidth()) {
+      scaleX = pageLayout.getPrintableWidth() / node.getBoundsInParent().getWidth();
+    }
+    double scaleY = 1.0;
+    if (pageLayout.getPrintableHeight() < node.getBoundsInParent().getHeight()) {
+      scaleY = pageLayout.getPrintableHeight() / node.getBoundsInParent().getHeight();
+    }
+    double scaleXY = Double.min(scaleX, scaleY);
+    return new Scale(scaleXY, scaleXY);
   }
 
 
