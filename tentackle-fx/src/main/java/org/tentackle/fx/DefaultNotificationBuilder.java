@@ -61,6 +61,7 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
   private String details;
   private Duration duration;
   private Duration fadeOut;
+  private Duration fadeIn;
   private final List<ButtonConfig> buttonConfigs = new ArrayList<>();
   private ButtonConfig defaultButtonConfig;
   private Runnable hide;
@@ -109,6 +110,12 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
   @Override
   public NotificationBuilder fadeOut(Duration fadeOut) {
     this.fadeOut = fadeOut;
+    return this;
+  }
+
+  @Override
+  public NotificationBuilder fadeIn(Duration fadeIn) {
+    this.fadeIn = fadeIn;
     return this;
   }
 
@@ -222,11 +229,19 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
     parent.getStyleClass().add("tt-notification");
 
     if (duration != null && hide != null) {
-      SequentialTransition transition = new SequentialTransition(new PauseTransition(duration));
+      SequentialTransition transition = new SequentialTransition();
+      if (fadeIn != null) {
+        transition.getChildren().add(createFadeInTransition(parent));
+      }
+      transition.getChildren().add(new PauseTransition(duration));
       if (fadeOut != null) {
         transition.getChildren().add(createFadeOutTransition(parent));
       }
       transition.setOnFinished(event -> hide.run());
+      transition.play();
+    }
+    else if (fadeIn != null) {
+      SequentialTransition transition = new SequentialTransition(createFadeInTransition(parent));
       transition.play();
     }
 
@@ -279,6 +294,13 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
     fadeOutTransition.setFromValue(1.0);
     fadeOutTransition.setToValue(0.0);
     return fadeOutTransition;
+  }
+
+  private FadeTransition createFadeInTransition(Parent parent) {
+    FadeTransition fadeInTransition = new FadeTransition(fadeIn, parent);
+    fadeInTransition.setFromValue(0.0);
+    fadeInTransition.setToValue(1.0);
+    return fadeInTransition;
   }
 
 }
