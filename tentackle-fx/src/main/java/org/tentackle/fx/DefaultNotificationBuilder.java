@@ -199,11 +199,13 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
       for (ButtonConfig buttonConfig : buttonConfigs) {
         Button button = new Button(buttonConfig.text(), buttonConfig.graphic());
         button.setOnAction(event -> {
-          if (hide != null) {
-            hide(parent);
-          }
           if (buttonConfig.action() != null) {
             buttonConfig.action().run();
+          }
+          if (hide != null) {
+            // must be _after_ button action (to know the action when notification is closed)
+            // for an example see org.tentackle.fx.FxUtilities.showQuestionDialog and org.tentackle.misc.BlockingHolder
+            hide(parent);
           }
         });
         button.setFocusTraversable(false);

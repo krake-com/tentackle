@@ -37,6 +37,7 @@ import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.ConcurrencyHelper;
+import org.tentackle.misc.Holder;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.validate.ValidationFailedException;
 import org.tentackle.validate.ValidationMapper;
@@ -655,29 +656,32 @@ public class FxUtilities {
    * @param owner the owner window or node
    * @param message the message
    * @param defaultYes true if yes is the default button
-   * @param answer the user's answer (invoked with {@link Boolean#TRUE} or {@link Boolean#FALSE}, never null)
+   * @param answer the user's answer with {@link Boolean#TRUE} for YES or {@link Boolean#FALSE} for NO, never null
    */
   public void showQuestionDialog(Object owner, String message, boolean defaultYes, Consumer<Boolean> answer) {
+    Holder<Boolean> result = new Holder<>(Boolean.FALSE);   // ESC or hiding w/o pressing a button -> NO
     Popup popup = new Popup();
     Parent notification = FxFactory.getInstance()
                                    .createNotificationBuilder()
                                    .type(NotificationBuilder.Type.QUESTION)
                                    .text(message)
-                                   .button(FxFxBundle.getString("NO"), null, !defaultYes, () -> answer.accept(false))
-                                   .button(FxFxBundle.getString("YES"), null, defaultYes, () -> answer.accept(true))
+                                   .button(FxFxBundle.getString("NO"), null, !defaultYes, null)
+                                   .button(FxFxBundle.getString("YES"), null, defaultYes, () -> result.accept(Boolean.TRUE))
                                    .hide(popup::hide)
                                    .build();
     popup.addEventFilter(KeyEvent.KEY_TYPED, event -> {
       if ("0".equals(event.getCharacter())) {
+        event.consume();
         popup.hide();
-        answer.accept(false);
       }
       else if ("1".equals(event.getCharacter())) {
+        event.consume();
+        result.accept(Boolean.TRUE);
         popup.hide();
-        answer.accept(true);
       }
     });
-    showNotification(owner, popup, notification, null);
+    // trigger the result consumer when popup is closed
+    showNotification(owner, popup, notification, () -> answer.accept(result.get()));
   }
 
 
