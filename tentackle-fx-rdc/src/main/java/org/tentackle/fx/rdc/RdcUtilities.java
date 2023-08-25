@@ -163,11 +163,10 @@ public class RdcUtilities {
           crud.getEditor().requestInitialFocus();
         }));
         // explicit close (pressing cancel or closing the window by a mouse click)
-        stage.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e -> crud.releasePdo(released -> {
-          if (!released) {
-            e.consume();    // don't close
-          }
-        }));
+        stage.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e -> {
+          e.consume();
+          crud.cancel();
+        });
         stage.addEventFilter(WindowEvent.WINDOW_HIDING, e -> {
           T oldPdo = crud.getPdo();
           if (oldPdo != null && oldPdo.getEditedBy() != 0 && oldPdo.isTokenLockableByMe()) { // my token lock still present (even if timed out)

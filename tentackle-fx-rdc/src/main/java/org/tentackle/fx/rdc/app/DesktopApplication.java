@@ -261,8 +261,7 @@ public abstract class DesktopApplication<C extends FxController>
                   String msg = MessageFormat.format(AppFxRdcBundle.getString("LAUNCHING {0} FAILED"),
                                                     getMainControllerClass().getSimpleName());
                   LOGGER.severe(msg, rex);
-                  Fx.error(view, msg, rex);
-                  view.getScene().getWindow().hide();
+                  Fx.error(view, msg, rex, () -> view.getScene().getWindow().hide());
                 }
               });
             }
@@ -270,10 +269,7 @@ public abstract class DesktopApplication<C extends FxController>
               Session.setCurrentSession(null);
               // if anything else fails: log that
               LOGGER.severe("login task failed", t);
-              Platform.runLater(() -> {
-                Fx.error(view, t.getLocalizedMessage(), t);
-                view.getScene().getWindow().hide();
-              });
+              Platform.runLater(() -> Fx.error(view, t.getLocalizedMessage(), t, () -> view.getScene().getWindow().hide()));
             }
             Session.setCurrentSession(null);
             return null;
