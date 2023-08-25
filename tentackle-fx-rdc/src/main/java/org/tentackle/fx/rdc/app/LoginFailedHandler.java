@@ -101,8 +101,7 @@ public class LoginFailedHandler {
     else if (ex instanceof VersionIncompatibleException vx) {
       Platform.runLater(() -> {
         Fx.info(view, MessageFormat.format(AppFxRdcBundle.getString("client version {0} does not match server version {1}"),
-                vx.getClientVersion(), vx.getServerVersion()));
-        view.getScene().getWindow().hide();
+                vx.getClientVersion(), vx.getServerVersion()), () -> view.getScene().getWindow().hide());
       });
     }
     else if (ex instanceof LoginFailedException){
@@ -119,8 +118,8 @@ public class LoginFailedHandler {
           application.showApplicationStatus(AppFxRdcBundle.getString("LOGIN FAILED!"), 0.0);
           // this will close the login scene and terminate the application
           Platform.runLater(() -> {
-            Fx.info(view, AppFxRdcBundle.getString("LOGIN REFUSED! PLEASE CHECK YOUR USERNAME AND PASSWORD"));
-            view.getScene().getWindow().hide();
+            Fx.info(view, AppFxRdcBundle.getString("LOGIN REFUSED! PLEASE CHECK YOUR USERNAME AND PASSWORD"),
+                    () -> view.getScene().getWindow().hide());
           });
         }
       }
@@ -131,8 +130,8 @@ public class LoginFailedHandler {
         if (application.getFxApplication() != null) {
           application.getFxApplication().setStopReason(98, ex);
         }
-        Fx.error(view, AppFxRdcBundle.getString("LOGIN FAILED!"), ex);
-        view.getScene().getWindow().hide();   // application terminates when error window is closed
+        Fx.error(view, AppFxRdcBundle.getString("LOGIN FAILED!"), ex, () -> view.getScene().getWindow().hide());
+        // application terminates when error window is closed
       });
     }
 

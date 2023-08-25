@@ -46,7 +46,6 @@ import org.tentackle.validate.ValidationFailedException;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.control.Tab;
@@ -83,7 +82,10 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
     }
     Scene scene = Fx.createScene(controller.getView());
     stage.setScene(scene);
-    stage.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, controller::cancel);
+    stage.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e -> {
+      e.consume();
+      controller.cancel();
+    });
     stage.show();
   }
 
@@ -189,7 +191,7 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
     saveButton.setOnAction(e -> save());
 
     cancelButton.setGraphic(Fx.createGraphic("cancel"));
-    cancelButton.setOnAction(e -> cancel(null));
+    cancelButton.setOnAction(e -> cancel());
 
     splitPane.setDividerPositions(0.3);   // works in most cases
   }
@@ -476,22 +478,16 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
     getStage().hide();
   }
 
-  private void cancel(Event e) {
+  private void cancel() {
     boolean modified = trackedClassRules != null && (trackedClassRules.isModified() || trackedClassRules.isElementModified()) ||
                        trackedPdoRules != null && (trackedPdoRules.isModified() || trackedPdoRules.isElementModified());
-
-    Runnable discardIt = () -> {
-      getStage().hide();
-      if (e != null) {
-        e.consume();
-      }
-    };
-
     if (modified) {
-      Fx.yes(getView(), RdcFxRdcBundle.getString("Rules were modified. Really discard all changes?"), false, discardIt);
+      Fx.yes(getStage(), RdcFxRdcBundle.getString("Rules were modified. Really discard all changes?"), false,
+             // run later to give popup a chance to close
+             () -> Platform.runLater(() -> getStage().close()));
     }
     else {
-      discardIt.run();
+      getStage().close();
     }
   }
 

@@ -269,16 +269,22 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
       if (msg != null) {
         if (t != null) {
           LOGGER.severe(msg, t);
-          Fx.error(getView(), msg, t);
+          Fx.error(getView(), msg, t, () -> hide());
         }
         else {
           LOGGER.info(msg);
-          Fx.info(getView(), msg);
+          Fx.info(getView(), msg, () -> hide());
         }
       }
-      // application terminates when the last stage closes
-      getView().getScene().getWindow().hide();
+      else {
+        hide();
+      }
     });
+  }
+
+  private void hide() {
+    // application terminates when the last stage closes
+    getView().getScene().getWindow().hide();
   }
 
 }

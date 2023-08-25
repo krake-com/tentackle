@@ -564,7 +564,8 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
       if (released) {
         Stage stage = Fx.getStage(getView());
         if (stage != null) {
-          stage.close();
+          // run later to give popup a chance to close
+          Platform.runLater(() -> stage.close());
         }
       }
     });

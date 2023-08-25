@@ -66,11 +66,11 @@ public class PreferencesDialog extends AbstractFxController {
     saveButton.setOnAction(e -> {
       try {
         ${application}Preferences.getInstance().sync();
+        getStage().hide();
       }
       catch (BackingStoreException ex) {
-        Fx.error(getView(), resources.getString("saveFailed"), ex);
+        Fx.error(getView(), resources.getString("saveFailed"), ex, () -> getStage().hide());
       }
-      getStage().hide();
     });
   }
 

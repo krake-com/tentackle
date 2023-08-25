@@ -3355,7 +3355,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Implementation of delete bypassing the invocation handler.
    */
   protected void deleteImpl() {
-    snapshots = null;     // cannot be used after delete, clear to save bandwidth if remote
     if (getSession().isRemote())  {
       assertPersistable();
       try {
@@ -3387,7 +3386,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Implementation of save bypassing the invocation handler.
    */
   protected void saveImpl() {
-    snapshots = null;     // cannot be used after save, clear to save bandwidth if remote
     if (getSession().isRemote())  {
       assertPersistable();
 
@@ -3510,7 +3508,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @return the persisted PDO
    */
   protected T persistImpl() {
-    snapshots = null;     // cannot be used after persist, clear to save bandwidth if remote
     if (getSession().isRemote())  {
       assertPersistable();
 
