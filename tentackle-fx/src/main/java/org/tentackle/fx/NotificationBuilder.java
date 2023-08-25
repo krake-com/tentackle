@@ -127,6 +127,14 @@ public interface NotificationBuilder {
   NotificationBuilder fadeOut(Duration fadeOut);
 
   /**
+   * Sets a fadein effect to show the notification smoothly.
+   *
+   * @param fadeIn the time to fade in
+   * @return the builder
+   */
+  NotificationBuilder fadeIn(Duration fadeIn);
+
+  /**
    * Adds a button.
    *
    * @param text the button's text
