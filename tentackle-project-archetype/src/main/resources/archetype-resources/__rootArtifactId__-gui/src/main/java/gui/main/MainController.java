@@ -15,7 +15,6 @@ import ${package}.gui.prefs.PreferencesDialog;
 import ${package}.pdo.md.User;
 import ${package}.pdo.md.UserGroup;
 import ${package}.pdo.td.Message;
-import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -157,7 +156,7 @@ public class MainController extends AbstractFxController implements DomainContex
    * Asks the user whether to exit the application and does so if yes.
    */
   public void exit() {
-    Fx.yes(getView(), resources.getString("ExitAction"), false, Platform::exit);
+    Fx.yes(getView(), resources.getString("ExitAction"), false, Fx::terminate);
   }
 
 
