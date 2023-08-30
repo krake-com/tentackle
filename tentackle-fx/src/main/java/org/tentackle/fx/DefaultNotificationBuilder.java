@@ -102,20 +102,20 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
   }
 
   @Override
-  public NotificationBuilder duration(Duration duration) {
-    this.duration = duration;
+  public NotificationBuilder duration(long duration) {
+    this.duration = duration > 0 ? new Duration(duration) : null;
     return this;
   }
 
   @Override
-  public NotificationBuilder fadeOut(Duration fadeOut) {
-    this.fadeOut = fadeOut;
+  public NotificationBuilder fadeOut(long fadeOut) {
+    this.fadeOut = fadeOut > 0 ? new Duration(fadeOut) : null;
     return this;
   }
 
   @Override
-  public NotificationBuilder fadeIn(Duration fadeIn) {
-    this.fadeIn = fadeIn;
+  public NotificationBuilder fadeIn(long fadeIn) {
+    this.fadeIn = fadeIn > 0 ? new Duration(fadeIn) : null;
     return this;
   }
 

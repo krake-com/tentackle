@@ -325,6 +325,14 @@ public class Fx {
   }
 
 
+  /**
+   * Terminates the FX client.
+   */
+  public static void terminate() {
+    FxUtilities.getInstance().terminate();
+  }
+
+
   private Fx() {
     // no instances
   }

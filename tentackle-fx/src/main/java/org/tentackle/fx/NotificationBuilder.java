@@ -20,7 +20,6 @@ package org.tentackle.fx;
 
 import javafx.scene.Node;
 import javafx.scene.Parent;
-import javafx.util.Duration;
 
 /**
  * Builder for notifications.<br>
@@ -113,26 +112,26 @@ public interface NotificationBuilder {
   /**
    * Sets a duration to close the notification automatically.
    *
-   * @param duration the time the dialog should be visible
+   * @param duration the time the dialog should be visible [ms]
    * @return the builder
    */
-  NotificationBuilder duration(Duration duration);
+  NotificationBuilder duration(long duration);
 
   /**
    * Sets a fadeout effect to close the notification smoothly.
    *
-   * @param fadeOut the time to fade out
+   * @param fadeOut the time to fade out [ms]
    * @return the builder
    */
-  NotificationBuilder fadeOut(Duration fadeOut);
+  NotificationBuilder fadeOut(long fadeOut);
 
   /**
    * Sets a fadein effect to show the notification smoothly.
    *
-   * @param fadeIn the time to fade in
+   * @param fadeIn the time to fade in [ms]
    * @return the builder
    */
-  NotificationBuilder fadeIn(Duration fadeIn);
+  NotificationBuilder fadeIn(long fadeIn);
 
   /**
    * Adds a button.

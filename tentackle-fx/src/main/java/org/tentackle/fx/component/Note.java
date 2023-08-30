@@ -19,6 +19,9 @@
 
 package org.tentackle.fx.component;
 
+import org.tentackle.fx.Fx;
+import org.tentackle.fx.component.skin.NoteSkin;
+
 import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
 import javafx.animation.SequentialTransition;
@@ -30,10 +33,6 @@ import javafx.scene.control.PopupControl;
 import javafx.scene.control.Skin;
 import javafx.scene.layout.StackPane;
 import javafx.util.Duration;
-
-import org.tentackle.fx.Fx;
-import org.tentackle.fx.component.skin.NoteSkin;
-
 import java.net.URL;
 import java.util.List;
 
@@ -187,29 +186,37 @@ public class Note extends PopupControl {
 
   private class FadeEffect {
 
-    private final double fadeIn;
-    private final double pause;
-    private final double fadeOut;
+    private final Duration fadeIn;
+    private final Duration pause;
+    private final Duration fadeOut;
 
-    private FadeEffect(double fadeIn, double pause, double fadeOut) {
+    private FadeEffect(Duration fadeIn, Duration pause, Duration fadeOut) {
       this.fadeIn = fadeIn;
       this.pause = pause;
       this.fadeOut = fadeOut;
     }
 
     private void play() {
-      FadeTransition inTransition = new FadeTransition(new Duration(fadeIn), getRootPane());
-      inTransition.setFromValue(0.0);
-      inTransition.setToValue(1.0);
+      SequentialTransition mainTransition = new SequentialTransition();
+      if (fadeIn != null) {
+        FadeTransition inTransition = new FadeTransition(fadeIn, getRootPane());
+        inTransition.setFromValue(0.0);
+        inTransition.setToValue(1.0);
+        mainTransition.getChildren().add(inTransition);
+      }
 
-      PauseTransition pauseTransition = new PauseTransition(new Duration(pause));
+      if (pause != null) {
+        mainTransition.getChildren().add(new PauseTransition(pause));
+      }
 
-      FadeTransition outTransition = new FadeTransition(new Duration(fadeOut), getRootPane());
-      outTransition.setFromValue(1.0);
-      outTransition.setToValue(0.0);
+      if (fadeOut != null) {
+        FadeTransition outTransition = new FadeTransition(fadeOut, getRootPane());
+        outTransition.setFromValue(1.0);
+        outTransition.setToValue(0.0);
+        mainTransition.getChildren().add(outTransition);
+      }
 
-      SequentialTransition mainTransition = new SequentialTransition(inTransition, pauseTransition, outTransition);
-      mainTransition.setOnFinished(ae -> hide());
+      mainTransition.setOnFinished(event -> hide());
       mainTransition.play();
     }
   }
@@ -246,8 +253,10 @@ public class Note extends PopupControl {
    * @param pause time to pause showing in [ms]
    * @param fadeOut time to fade-out in [ms]
    */
-  public void setFadeEffect(double fadeIn, double pause, double fadeOut) {
-    fadeEffect = new FadeEffect(fadeIn, pause, fadeOut);
+  public void setFadeEffect(long fadeIn, long pause, long fadeOut) {
+    fadeEffect = new FadeEffect(fadeIn > 0 ? new Duration(fadeIn) : null,
+                                pause > 0 ? new Duration(pause) : null,
+                                fadeOut > 0 ? new Duration(fadeOut) : null);
   }
 
   /**
