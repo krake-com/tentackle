@@ -291,6 +291,14 @@ public class FxUtilities {
 
 
   /**
+   * Terminates the FX client.<br>
+   * The default implementation invokes {@link Platform#exit()}.
+   */
+  public void terminate() {
+    Platform.exit();
+  }
+
+  /**
    * Launches the default browser to display a {@code URI}.<br>
    * Throws {@link FxRuntimeException} if failed.
    *
@@ -583,7 +591,8 @@ public class FxUtilities {
     popup.getContent().add(notification);
     popup.setAutoHide(true);
     if (onClose != null) {
-      popup.setOnHidden(event -> onClose.run());
+      // runLater: let the window close completely before running onClose to avoid race conditions
+      popup.setOnHidden(event -> Platform.runLater(onClose::run));
     }
     Window window = getWindow(owner);
     popup.setOnShown(event -> {

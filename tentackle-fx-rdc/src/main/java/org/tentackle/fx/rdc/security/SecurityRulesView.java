@@ -481,13 +481,13 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
   private void cancel() {
     boolean modified = trackedClassRules != null && (trackedClassRules.isModified() || trackedClassRules.isElementModified()) ||
                        trackedPdoRules != null && (trackedPdoRules.isModified() || trackedPdoRules.isElementModified());
+    Stage stage = getStage();
     if (modified) {
-      Fx.yes(getStage(), RdcFxRdcBundle.getString("Rules were modified. Really discard all changes?"), false,
-             // run later to give popup a chance to close
-             () -> Platform.runLater(() -> getStage().close()));
+      Fx.yes(stage, RdcFxRdcBundle.getString("Rules were modified. Really discard all changes?"),
+             false, stage::close);
     }
     else {
-      getStage().close();
+      stage.close();
     }
   }
 
