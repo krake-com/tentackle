@@ -32,6 +32,7 @@ import org.tentackle.fx.rdc.app.DesktopApplication;
 import org.tentackle.fx.rdc.crud.PdoCrud;
 import org.tentackle.fx.rdc.search.PdoSearch;
 import org.tentackle.log.Logger;
+import org.tentackle.misc.Holder;
 import org.tentackle.misc.IdentifiableKey;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
@@ -426,18 +427,19 @@ public class RdcUtilities {
    * @param doIt consumer invoked with true to save, false to discard changes, null to cancel and do nothing
    */
   public void showSaveDiscardCancelDialog(Object owner, Consumer<Boolean> doIt) {
+    Holder<Boolean> result = new Holder<>();
     Popup popup = new Popup();
     Parent notification =
       FxFactory.getInstance()
                .createNotificationBuilder()
                .type(NotificationBuilder.Type.QUESTION)
                .text(RdcFxRdcBundle.getString("DATA_HAS_BEEN_MODIFIED!_DISCARD,_SAVE_OR_CANCEL?"))
-               .button(RdcFxRdcBundle.getString("SAVE"), null, false, () -> doIt.accept(Boolean.TRUE))
-               .button(RdcFxRdcBundle.getString("DISCARD"), null, false, () -> doIt.accept(Boolean.FALSE))
-               .button(RdcFxRdcBundle.getString("CANCEL"), null, true, () -> doIt.accept(null))
+               .button(RdcFxRdcBundle.getString("SAVE"), null, false, () -> result.accept(Boolean.TRUE))
+               .button(RdcFxRdcBundle.getString("DISCARD"), null, false, () -> result.accept(Boolean.FALSE))
+               .button(RdcFxRdcBundle.getString("CANCEL"), null, true, null)
                .hide(popup::hide)
                .build();
-    FxUtilities.getInstance().showNotification(owner, popup, notification, null);
+    FxUtilities.getInstance().showNotification(owner, popup, notification, () -> doIt.accept(result.get()));
   }
 
 
