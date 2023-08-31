@@ -7,41 +7,49 @@
 
 package ${package}.gui.about;
 
-import ${package}.gui.GuiBundle;
 import javafx.fxml.FXML;
-import javafx.scene.Scene;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
+import javafx.scene.Parent;
+import javafx.stage.Popup;
 
 import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxControllerService;
-import org.tentackle.fx.component.FxButton;
+import org.tentackle.fx.FxFactory;
+import org.tentackle.fx.FxUtilities;
+import org.tentackle.fx.NotificationBuilder;
 import org.tentackle.fx.component.FxLabel;
 
 /**
- * Controller for showing an about-dialog.
+ * Controller for showing an about popup.
  */
-@FxControllerService
+@FxControllerService(css = FxControllerService.RESOURCES_NONE)
 public class AboutView extends AbstractFxController {
 
   /**
-   * Shows the dialog.
+   * Shows the about popup.
+   *
+   * @param owner the popup owner
    */
-  public static void showDialog() {
-    AboutView controller = Fx.load(AboutView.class);
-    Stage stage = Fx.createStage(Modality.NONE);
-    Scene scene = Fx.createScene(controller.getView());
-    stage.setScene(scene);
-    stage.setTitle(GuiBundle.getString("about"));
-    stage.show();
+  public static void show(Object owner) {
+    Popup popup = new Popup();
+    Parent notification =
+      FxFactory.getInstance()
+               .createNotificationBuilder()
+               .type(NotificationBuilder.Type.NONE)
+               .content(Fx.load(AboutView.class).getView())
+               .duration(5000)
+               .fadeOut(1500)
+               .hide(popup::hide)
+               .css(AboutView.class.getResource("AboutView.css"))
+               .build();
+    FxUtilities.getInstance().showNotification(owner, popup, notification, null);
   }
 
 
 
   @FXML
   private FxLabel applicationVersion;
-  
+
   @FXML
   private FxLabel tentackleVersion;
 
@@ -49,14 +57,9 @@ public class AboutView extends AbstractFxController {
   private FxLabel javaVersion;
 
   @FXML
-  private FxButton closeButton;
-
-  @FXML
   private void initialize() {
     applicationVersion.setText(${package}.common.Version.RELEASE + " (" + ${package}.common.Version.DATE + ")");
     tentackleVersion.setText(org.tentackle.common.Version.RELEASE + " (" + org.tentackle.common.Version.DATE + ")");
     javaVersion.setText(Runtime.version().toString());
-    closeButton.setGraphic(Fx.createGraphic("close"));
-    closeButton.setOnAction(e -> getStage().close());
   }
 }

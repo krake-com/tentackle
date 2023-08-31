@@ -36,6 +36,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.util.Duration;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -59,12 +60,15 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
   private String title;
   private String text;
   private String details;
+  private Node content;
   private Duration duration;
   private Duration fadeOut;
   private Duration fadeIn;
   private final List<ButtonConfig> buttonConfigs = new ArrayList<>();
   private ButtonConfig defaultButtonConfig;
   private Runnable hide;
+  private URL css;
+  private CloseButtonMode closeButtonMode = CloseButtonMode.AUTO;
 
 
   public DefaultNotificationBuilder() {
@@ -98,6 +102,11 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
   @Override
   public NotificationBuilder details(String details) {
     this.details = details;
+    return this;
+  }
+
+  public NotificationBuilder content(Node content) {
+    this.content = content;
     return this;
   }
 
@@ -137,6 +146,18 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
   }
 
   @Override
+  public NotificationBuilder css(URL css) {
+    this.css = css;
+    return this;
+  }
+
+  @Override
+  public NotificationBuilder closeButton(CloseButtonMode closeButtonMode) {
+    this.closeButtonMode = closeButtonMode == null ? CloseButtonMode.AUTO : closeButtonMode;
+    return this;
+  }
+
+  @Override
   public Parent build() {
     Parent parent;
 
@@ -161,7 +182,10 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
 
     borderPane.setTop(headerBox);
 
-    if (details != null) {
+    if (content != null) {
+      borderPane.setCenter(content);
+    }
+    else if (details != null) {
       StackPane detailsStackPane = new StackPane();
       detailsStackPane.setAlignment(Pos.TOP_RIGHT);
       TextArea textArea = new TextArea(details);
@@ -180,29 +204,30 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
       borderPane.setCenter(detailsStackPane);
     }
 
-    HBox buttonBox = new HBox();
-    buttonBox.setId("buttonBox"); // HBox does not have a style class
-    if (buttonConfigs.isEmpty()) {
-      if (hide != null) {
-        // no buttons: add small close button
-        StackPane borderStackPane = new StackPane();
-        parent = borderStackPane;
-        borderStackPane.setAlignment(Pos.TOP_RIGHT);
-        borderStackPane.getChildren().add(borderPane);
-        Button closeButton = new Button("", Fx.createGraphic("close"));
-        closeButton.setId("closeButton");
-        closeButton.setFocusTraversable(false);
+    if (hide != null && closeButtonMode != CloseButtonMode.NEVER &&
+        (buttonConfigs.isEmpty() || closeButtonMode.isAlwaysShown())) {
+      // add small close button
+      StackPane borderStackPane = new StackPane();
+      parent = borderStackPane;
+      borderStackPane.setAlignment(Pos.TOP_RIGHT);
+      borderStackPane.getChildren().add(borderPane);
+      Button closeButton = new Button("", Fx.createGraphic("close"));
+      closeButton.setId("closeButton");
+      closeButton.setFocusTraversable(false);
+      if (closeButtonMode.isDefaultButton()) {
         closeButton.setDefaultButton(true);
-        closeButton.setTooltip(new Tooltip(FxFxBundle.getString("CLOSE")));
-        closeButton.setOnAction(event -> hide(parent));
-        borderStackPane.getChildren().add(closeButton);
       }
-      else {
-        parent = borderPane;    // ESC key will close as well
-      }
+      closeButton.setTooltip(new Tooltip(FxFxBundle.getString("CLOSE")));
+      closeButton.setOnAction(event -> hide.run());
+      borderStackPane.getChildren().add(closeButton);
     }
     else {
-      parent = borderPane;
+      parent = borderPane;    // ESC will close as well
+    }
+
+    if (!buttonConfigs.isEmpty()) {
+      HBox buttonBox = new HBox();
+      buttonBox.setId("buttonBox"); // HBox does not have a style class
       for (ButtonConfig buttonConfig : buttonConfigs) {
         Button button = new Button(buttonConfig.text(), buttonConfig.graphic());
         button.setOnAction(event -> {
@@ -210,9 +235,7 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
             buttonConfig.action().run();
           }
           if (hide != null) {
-            // must be _after_ button action (to know the action when notification is closed)
-            // for an example see org.tentackle.fx.FxUtilities.showQuestionDialog and org.tentackle.misc.BlockingHolder
-            hide(parent);
+            hide.run();
           }
         });
         button.setFocusTraversable(false);
@@ -224,24 +247,30 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
       borderPane.setBottom(buttonBox);
     }
 
-    String stylesheetUrl = NotificationBuilder.class.getResource("notification.css").toExternalForm();
+    String stylesheetUrl = (css == null ? NotificationBuilder.class.getResource("notification.css") : css).toExternalForm();
     parent.getStylesheets().add(0, stylesheetUrl);
     parent.getStyleClass().add("tt-notification");
 
-    if (duration != null && hide != null) {
+    if (fadeIn != null || duration != null || fadeOut != null) {
       SequentialTransition transition = new SequentialTransition();
       if (fadeIn != null) {
-        transition.getChildren().add(createFadeInTransition(parent));
+        FadeTransition fadeInTransition = new FadeTransition(fadeIn, parent);
+        fadeInTransition.setFromValue(0.0);
+        fadeInTransition.setToValue(1.0);
+        transition.getChildren().add(fadeInTransition);
       }
-      transition.getChildren().add(new PauseTransition(duration));
-      if (fadeOut != null) {
-        transition.getChildren().add(createFadeOutTransition(parent));
+      if (hide != null) {
+        if (duration != null) {
+          transition.getChildren().add(new PauseTransition(duration));
+        }
+        if (fadeOut != null) {
+          FadeTransition fadeOutTransition = new FadeTransition(fadeOut, parent);
+          fadeOutTransition.setFromValue(1.0);
+          fadeOutTransition.setToValue(0.0);
+          transition.getChildren().add(fadeOutTransition);
+        }
+        transition.setOnFinished(event -> hide.run());
       }
-      transition.setOnFinished(event -> hide.run());
-      transition.play();
-    }
-    else if (fadeIn != null) {
-      SequentialTransition transition = new SequentialTransition(createFadeInTransition(parent));
       transition.play();
     }
 
@@ -276,31 +305,6 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
                case QUESTION -> new FontIcon("mdi2c-comment-question-outline");
                case NONE -> null;
              };
-  }
-
-  private void hide(Parent parent) {
-    if (duration == null && fadeOut != null) {
-      SequentialTransition transition = new SequentialTransition(createFadeOutTransition(parent));
-      transition.setOnFinished(event -> hide.run());
-      transition.play();
-    }
-    else {
-      hide.run();
-    }
-  }
-
-  private FadeTransition createFadeOutTransition(Parent parent) {
-    FadeTransition fadeOutTransition = new FadeTransition(fadeOut, parent);
-    fadeOutTransition.setFromValue(1.0);
-    fadeOutTransition.setToValue(0.0);
-    return fadeOutTransition;
-  }
-
-  private FadeTransition createFadeInTransition(Parent parent) {
-    FadeTransition fadeInTransition = new FadeTransition(fadeIn, parent);
-    fadeInTransition.setFromValue(0.0);
-    fadeInTransition.setToValue(1.0);
-    return fadeInTransition;
   }
 
 }

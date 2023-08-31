@@ -1,8 +1,15 @@
-.root {
+#aboutpane {
   -fx-background-image: url("/${packageInPathFormat}/gui/images/login-and-about.png");
   -fx-background-repeat: stretch;
   -fx-background-size: 550 300;
   -fx-background-position: center center;
   -fx-min-width: 550;
   -fx-min-height: 300;
+  -fx-border-style: solid;
+}
+
+#closeButton {
+  -fx-padding: 20 5 5 5;
+  -fx-border-insets: 20 5 5 5;
+  -fx-background-insets: 20 5 5 5;
 }
