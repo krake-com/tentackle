@@ -235,7 +235,7 @@ public class Note extends PopupControl {
 
     getStyleClass().add("note");
     rootPane = new StackPane();
-    URL noteCSS = Note.class.getResource(CSS_NAME);
+    URL noteCSS = getCSS();
     if (noteCSS != null) {
       rootPane.getStylesheets().add(noteCSS.toExternalForm());
     }
@@ -264,11 +264,6 @@ public class Note extends PopupControl {
    */
   public void clearFadeEffect() {
     fadeEffect = null;
-  }
-
-  @Override
-  protected Skin<?> createDefaultSkin() {
-    return new NoteSkin(this);
   }
 
 
@@ -396,6 +391,21 @@ public class Note extends PopupControl {
   public String getText() {
     Node contentNode = getContentNode();
     return contentNode instanceof Label label ? label.getText() : null;
+  }
+
+
+  @Override
+  protected Skin<?> createDefaultSkin() {
+    return new NoteSkin(this);
+  }
+
+  /**
+   * Gets the CSS URL.
+   *
+   * @return the URL
+   */
+  protected URL getCSS() {
+    return Note.class.getResource(CSS_NAME);
   }
 
 }
