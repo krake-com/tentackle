@@ -85,6 +85,7 @@ import javafx.stage.PopupWindow;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
+import javafx.stage.WindowEvent;
 import javafx.util.Callback;
 import java.awt.Desktop;
 import java.io.File;
@@ -595,7 +596,7 @@ public class FxUtilities {
       popup.setOnHidden(event -> Platform.runLater(onClose::run));
     }
     Window window = getWindow(owner);
-    popup.setOnShown(event -> {
+    popup.addEventFilter(WindowEvent.WINDOW_SHOWN, event -> { // filter event is triggered _before_ actually shown
       // center above owner window
       popup.setAnchorX(window.getX() + (window.getWidth() - popup.getWidth()) / 2.0);
       popup.setAnchorY(window.getY() + (window.getHeight() - popup.getHeight()) / 2.0);

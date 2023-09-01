@@ -55,7 +55,7 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
    */
   private record ButtonConfig(String text, Node graphic, Runnable action) {}
 
-  private Type type;
+  private Type type = Type.NONE;
   private Node graphic;
   private String title;
   private String text;
@@ -77,7 +77,7 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
 
   @Override
   public NotificationBuilder type(Type type) {
-    this.type = type;
+    this.type = type == null ? Type.NONE : type;
     return this;
   }
 
@@ -247,8 +247,11 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
       borderPane.setBottom(buttonBox);
     }
 
-    String stylesheetUrl = (css == null ? NotificationBuilder.class.getResource("notification.css") : css).toExternalForm();
-    parent.getStylesheets().add(0, stylesheetUrl);
+    URL cssURL = css == null ? getDefaultCSS() : css;
+    if (cssURL != null) {
+      String stylesheetUrl = cssURL.toExternalForm();
+      parent.getStylesheets().add(0, stylesheetUrl);
+    }
     parent.getStyleClass().add("tt-notification");
 
     if (fadeIn != null || duration != null || fadeOut != null) {
@@ -280,7 +283,7 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
   @Override
   public String getTitle() {
     return title != null ? title :
-             switch (getType()) {
+             switch (type) {
                case INFORMATION -> FxFxBundle.getString("INFORMATION");
                case WARNING -> FxFxBundle.getString("WARNING");
                case ERROR -> FxFxBundle.getString("ERROR");
@@ -291,13 +294,19 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
   }
 
 
-  private Type getType() {
-    return type == null ? Type.NONE : type;
+  /**
+   * Gets the default CSS URL.
+   *
+   * @return the URL
+   */
+  protected URL getDefaultCSS() {
+    return NotificationBuilder.class.getResource("notification.css");
   }
+
 
   private Node getGraphic() {
     return graphic != null ? graphic :
-             switch (getType()) {
+             switch (type) {
                case INFORMATION -> new FontIcon("mdi2i-information-outline");
                case WARNING -> new FontIcon("mdi2a-alert-circle-outline");
                case ERROR -> new FontIcon("mdi2a-alert-outline");
