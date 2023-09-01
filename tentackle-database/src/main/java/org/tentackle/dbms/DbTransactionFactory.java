@@ -154,7 +154,7 @@ public class DbTransactionFactory {
    * @param clear true if clear statistics after dump
    */
   public void logStatistics(Logger.Level level, boolean clear) {
-    statistics.logStatistics(toString(), level, "    >TXN-Stats: ", clear);
+    statistics.logStatistics(null, level, "    >TXN-Stats: ", clear);
   }
 
   /**
