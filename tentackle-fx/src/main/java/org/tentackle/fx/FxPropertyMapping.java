@@ -18,7 +18,6 @@
 
 package org.tentackle.fx;
 
-import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.misc.ImmutableException;
 import org.tentackle.misc.ObjectUtilities;
 import org.tentackle.reflect.PropertyMapping;
@@ -52,23 +51,28 @@ public class FxPropertyMapping<T> extends PropertyMapping<T> {
   public void set(T object, Object value) {
     try {
       if (isReadOnly()) {
-        if (List.class.isAssignableFrom(getValueType())) {    // getStylesheets, getChildren, for ex.
-          if (value instanceof List) {
-            getGetter().invoke(object, value);
-            return;
+        if (List.class.isAssignableFrom(getValueType())) {  // getStylesheets, getChildren, for ex.
+          List list = (List) getGetter().invoke(object);    // must work and list cannot be null!
+          if (value instanceof List values) {
+            list.addAll(values);
           }
-          if (value != null) {
-            List list = (List) getGetter().invoke(object);
+          else if (value != null) {
             Collections.addAll(list, value.toString().split(FXMLLoader.ARRAY_COMPONENT_DELIMITER));
-            return;
+          }
+          else {
+            throw new FxRuntimeException("setting list property " + this + " failed: value is null");
           }
         }
-        throw new ImmutableException("property " + this + " is read-only");
+        else {
+          throw new ImmutableException("property " + this + " is read-only");
+        }
       }
-      getSetter().invoke(object, ObjectUtilities.getInstance().convert(getValueType(), value));
+      else {
+        getSetter().invoke(object, ObjectUtilities.getInstance().convert(getValueType(), value));
+      }
     }
     catch (IllegalAccessException | InvocationTargetException e) {
-      throw new TentackleRuntimeException("setting property " + this + " failed", e);
+      throw new FxRuntimeException("setting property " + this + " failed", e);
     }
   }
 
