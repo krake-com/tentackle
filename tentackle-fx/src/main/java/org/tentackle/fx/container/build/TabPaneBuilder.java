@@ -19,11 +19,12 @@
 
 package org.tentackle.fx.container.build;
 
-import javafx.scene.control.TabPane;
-
 import org.tentackle.fx.AbstractBuilder;
 import org.tentackle.fx.BuilderService;
 import org.tentackle.fx.container.FxTabPane;
+
+import javafx.beans.DefaultProperty;
+import javafx.scene.control.TabPane;
 
 /**
  * Builder to create a TabPane.
@@ -31,6 +32,7 @@ import org.tentackle.fx.container.FxTabPane;
  * @author harald
  */
 @BuilderService(TabPane.class)
+@DefaultProperty("tabs")
 public class TabPaneBuilder extends AbstractBuilder<TabPane> {
 
   /**

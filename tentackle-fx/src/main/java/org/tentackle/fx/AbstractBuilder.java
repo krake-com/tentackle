@@ -19,11 +19,12 @@
 
 package org.tentackle.fx;
 
+import org.tentackle.reflect.PropertyMap;
+import org.tentackle.reflect.PropertyMapping;
+
 import javafx.scene.control.Label;
 import javafx.util.Builder;
-
-import org.tentackle.reflect.PropertyMap;
-
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -87,4 +88,8 @@ public class AbstractBuilder<T> extends PropertyMap<T> implements Builder<T> {
     return bean;
   }
 
+  @Override
+  protected PropertyMapping<T> createMapping(String name, Method getter, Method setter) {
+    return new FxPropertyMapping<>(name, getter, setter);
+  }
 }

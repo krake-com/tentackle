@@ -19,11 +19,12 @@
 
 package org.tentackle.fx.container.build;
 
-import javafx.scene.layout.StackPane;
-
 import org.tentackle.fx.AbstractBuilder;
 import org.tentackle.fx.BuilderService;
 import org.tentackle.fx.container.FxStackPane;
+
+import javafx.beans.DefaultProperty;
+import javafx.scene.layout.StackPane;
 
 /**
  * Builder to create a StackPane.
@@ -31,6 +32,7 @@ import org.tentackle.fx.container.FxStackPane;
  * @author harald
  */
 @BuilderService(StackPane.class)
+@DefaultProperty("children")
 public class StackPaneBuilder extends AbstractBuilder<StackPane> {
 
   /**

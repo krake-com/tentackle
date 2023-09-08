@@ -19,11 +19,12 @@
 
 package org.tentackle.fx.container.build;
 
-import javafx.scene.control.ScrollPane;
-
 import org.tentackle.fx.AbstractBuilder;
 import org.tentackle.fx.BuilderService;
 import org.tentackle.fx.container.FxScrollPane;
+
+import javafx.beans.DefaultProperty;
+import javafx.scene.control.ScrollPane;
 
 /**
  * Builder to create a ScrollPane.
@@ -31,6 +32,7 @@ import org.tentackle.fx.container.FxScrollPane;
  * @author harald
  */
 @BuilderService(ScrollPane.class)
+@DefaultProperty("content")
 public class ScrollPaneBuilder extends AbstractBuilder<ScrollPane> {
 
   /**

@@ -19,11 +19,12 @@
 
 package org.tentackle.fx.container.build;
 
-import javafx.scene.layout.TilePane;
-
 import org.tentackle.fx.AbstractBuilder;
 import org.tentackle.fx.BuilderService;
 import org.tentackle.fx.container.FxTilePane;
+
+import javafx.beans.DefaultProperty;
+import javafx.scene.layout.TilePane;
 
 /**
  * Builder to create a TilePane.
@@ -31,6 +32,7 @@ import org.tentackle.fx.container.FxTilePane;
  * @author harald
  */
 @BuilderService(TilePane.class)
+@DefaultProperty("children")
 public class TilePaneBuilder extends AbstractBuilder<TilePane> {
 
   /**

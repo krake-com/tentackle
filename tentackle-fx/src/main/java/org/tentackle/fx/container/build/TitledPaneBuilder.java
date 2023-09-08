@@ -19,11 +19,12 @@
 
 package org.tentackle.fx.container.build;
 
-import javafx.scene.control.TitledPane;
-
 import org.tentackle.fx.AbstractBuilder;
 import org.tentackle.fx.BuilderService;
 import org.tentackle.fx.container.FxTitledPane;
+
+import javafx.beans.DefaultProperty;
+import javafx.scene.control.TitledPane;
 
 /**
  * Builder to create a TitledPane.
@@ -31,6 +32,7 @@ import org.tentackle.fx.container.FxTitledPane;
  * @author harald
  */
 @BuilderService(TitledPane.class)
+@DefaultProperty("content")
 public class TitledPaneBuilder extends AbstractBuilder<TitledPane> {
 
   /**

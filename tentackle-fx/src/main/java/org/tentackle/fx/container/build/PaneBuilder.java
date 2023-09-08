@@ -19,11 +19,12 @@
 
 package org.tentackle.fx.container.build;
 
-import javafx.scene.layout.Pane;
-
 import org.tentackle.fx.AbstractBuilder;
 import org.tentackle.fx.BuilderService;
 import org.tentackle.fx.container.FxPane;
+
+import javafx.beans.DefaultProperty;
+import javafx.scene.layout.Pane;
 
 /**
  * Builder to create a Pane.
@@ -31,6 +32,7 @@ import org.tentackle.fx.container.FxPane;
  * @author harald
  */
 @BuilderService(Pane.class)
+@DefaultProperty("children")
 public class PaneBuilder extends AbstractBuilder<Pane> {
 
   /**

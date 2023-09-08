@@ -19,11 +19,12 @@
 
 package org.tentackle.fx.container.build;
 
-import javafx.scene.text.TextFlow;
-
 import org.tentackle.fx.AbstractBuilder;
 import org.tentackle.fx.BuilderService;
 import org.tentackle.fx.container.FxTextFlow;
+
+import javafx.beans.DefaultProperty;
+import javafx.scene.text.TextFlow;
 
 /**
  * Builder to create a TextFlow.
@@ -31,6 +32,7 @@ import org.tentackle.fx.container.FxTextFlow;
  * @author harald
  */
 @BuilderService(TextFlow.class)
+@DefaultProperty("children")
 public class TextFlowBuilder extends AbstractBuilder<TextFlow> {
 
   /**

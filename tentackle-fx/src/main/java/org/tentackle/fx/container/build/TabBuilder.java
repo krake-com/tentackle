@@ -19,11 +19,12 @@
 
 package org.tentackle.fx.container.build;
 
-import javafx.scene.control.Tab;
-
 import org.tentackle.fx.AbstractBuilder;
 import org.tentackle.fx.BuilderService;
 import org.tentackle.fx.container.FxTab;
+
+import javafx.beans.DefaultProperty;
+import javafx.scene.control.Tab;
 
 /**
  * Builder to create a Tab.
@@ -31,6 +32,7 @@ import org.tentackle.fx.container.FxTab;
  * @author harald
  */
 @BuilderService(Tab.class)
+@DefaultProperty("content")
 public class TabBuilder extends AbstractBuilder<Tab> {
 
   /**

@@ -19,11 +19,12 @@
 
 package org.tentackle.fx.container.build;
 
-import javafx.scene.layout.AnchorPane;
-
 import org.tentackle.fx.AbstractBuilder;
 import org.tentackle.fx.BuilderService;
 import org.tentackle.fx.container.FxAnchorPane;
+
+import javafx.beans.DefaultProperty;
+import javafx.scene.layout.AnchorPane;
 
 /**
  * Builder to create an AnchorPane.
@@ -31,6 +32,7 @@ import org.tentackle.fx.container.FxAnchorPane;
  * @author harald
  */
 @BuilderService(AnchorPane.class)
+@DefaultProperty("children")
 public class AnchorPaneBuilder extends AbstractBuilder<AnchorPane> {
 
   /**
