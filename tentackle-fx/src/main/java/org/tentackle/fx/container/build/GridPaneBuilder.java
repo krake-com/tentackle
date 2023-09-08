@@ -19,11 +19,12 @@
 
 package org.tentackle.fx.container.build;
 
-import javafx.scene.layout.GridPane;
-
 import org.tentackle.fx.AbstractBuilder;
 import org.tentackle.fx.BuilderService;
 import org.tentackle.fx.container.FxGridPane;
+
+import javafx.beans.DefaultProperty;
+import javafx.scene.layout.GridPane;
 
 /**
  * Builder to create a GridPane.
@@ -31,6 +32,7 @@ import org.tentackle.fx.container.FxGridPane;
  * @author harald
  */
 @BuilderService(GridPane.class)
+@DefaultProperty("children")
 public class GridPaneBuilder extends AbstractBuilder<GridPane> {
 
   /**

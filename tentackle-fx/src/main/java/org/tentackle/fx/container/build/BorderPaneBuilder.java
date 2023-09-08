@@ -19,11 +19,12 @@
 
 package org.tentackle.fx.container.build;
 
-import javafx.scene.layout.BorderPane;
-
 import org.tentackle.fx.AbstractBuilder;
 import org.tentackle.fx.BuilderService;
 import org.tentackle.fx.container.FxBorderPane;
+
+import javafx.beans.DefaultProperty;
+import javafx.scene.layout.BorderPane;
 
 /**
  * Builder to create a BorderPane.
@@ -31,6 +32,7 @@ import org.tentackle.fx.container.FxBorderPane;
  * @author harald
  */
 @BuilderService(BorderPane.class)
+@DefaultProperty("children")
 public class BorderPaneBuilder extends AbstractBuilder<BorderPane> {
 
   /**

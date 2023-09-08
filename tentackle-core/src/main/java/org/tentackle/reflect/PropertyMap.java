@@ -18,12 +18,18 @@
 
 package org.tentackle.reflect;
 
+import org.tentackle.common.StringHelper;
 import org.tentackle.misc.ImmutableException;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.AbstractMap;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A property map.<br>
@@ -80,8 +86,18 @@ public class PropertyMap<T> extends AbstractMap<String, Object> {
 
   @Override
   public Object get(Object key) {
-    PropertyMapping<T> mapping = PropertyMapping.getMapping(beanType, (String) key);
+    PropertyMapping<T> mapping = getMapping((String) key);
     return mapping == null ? null : mapping.get(bean);
+  }
+
+  /**
+   * Gets a mapping for a property name.
+   *
+   * @param key the name of the property
+   * @return the property mapping, null if no such property
+   */
+  public PropertyMapping<T> getMapping(String key) {
+    return getMapping(beanType, key);
   }
 
   /**
@@ -94,7 +110,7 @@ public class PropertyMap<T> extends AbstractMap<String, Object> {
    */
   @Override
   public Object put(String key, Object value) {
-    PropertyMapping<T> mapping = PropertyMapping.getMapping(beanType, key);
+    PropertyMapping<T> mapping = getMapping(key);
     if (mapping == null) {
       throw new IllegalArgumentException("no such property '" + key + "'");
     }
@@ -109,13 +125,13 @@ public class PropertyMap<T> extends AbstractMap<String, Object> {
 
   @Override
   public boolean containsKey(Object key) {
-    return PropertyMapping.getMapping(beanType, (String) key) != null;
+    return getMapping((String) key) != null;
   }
 
   @Override
   public Set<Entry<String, Object>> entrySet() {
     Set<Entry<String, Object>> propSet = new HashSet<>();
-    for (String name : PropertyMapping.getPropertyNames(beanType)) {
+    for (String name : getPropertyNames(beanType)) {
       propSet.add(new PropertyEntry(name, get(name)));
     }
     return propSet;
@@ -137,6 +153,18 @@ public class PropertyMap<T> extends AbstractMap<String, Object> {
     return result;
   }
 
+
+  /**
+   * Creates a property mapping.
+   *
+   * @param name the name of the property
+   * @param getter the getter
+   * @param setter the setter, null if readonly
+   * @return the mapping
+   */
+  protected PropertyMapping<T> createMapping(String name, Method getter, Method setter) {
+    return new PropertyMapping<>(name, getter, setter);
+  }
 
 
 
@@ -180,6 +208,90 @@ public class PropertyMap<T> extends AbstractMap<String, Object> {
       result = 31 * result + (value != null ? value.hashCode() : 0);
       return result;
     }
+  }
+
+
+
+  // lookup cache per class
+  private static final Map<Class<?>, Map<String,PropertyMapping<?>>> classPropertyMapping = new ConcurrentHashMap<>();
+  private static final Map<Class<?>, Set<String>> classPropertyNames = new ConcurrentHashMap<>();
+
+  /**
+   * Gets the property map for a given bean type.<br>
+   * Property maps are cached and evaluated only once per bean type.
+   *
+   * @param beanType the bean type
+   * @return the property map
+   */
+  private Map<String, PropertyMapping<?>> getPropertyMap(Class<?> beanType) {
+    return classPropertyMapping.computeIfAbsent(beanType, type -> {
+      Map<String, PropertyMapping<?>> propertyMap = new HashMap<>();
+      Set<Method> getters = new HashSet<>();
+      Map<String, Method> setters = new HashMap<>();
+      for (Method method : type.getMethods()) {
+        if (Modifier.isPublic(method.getModifiers()) && !Modifier.isStatic(method.getModifiers()) &&
+            method.getDeclaringClass() != Object.class) {
+          if (method.getReturnType() == Void.TYPE) {
+            if (method.getParameterCount() == 1) {
+              setters.put(method.getName(), method);
+            }
+          }
+          else if (method.getParameterCount() == 0) {
+            getters.add(method);
+          }
+        }
+
+        for (Method getter : getters) {
+          String propertyName;
+          Method setter = null;
+          String getterName = getter.getName();
+          if (getterName.startsWith("get") && getterName.length() > 3 && Character.isUpperCase(getterName.charAt(3))) {
+            String suffix = getterName.substring(3);
+            propertyName = StringHelper.firstToLower(suffix);
+            setter = setters.get("set" + suffix);
+          }
+          else if ((getter.getReturnType() == Boolean.class || getter.getReturnType() == Boolean.TYPE) &&
+                   getterName.startsWith("is") && getterName.length() > 2 && Character.isUpperCase(getterName.charAt(2))) {
+            String suffix = getterName.substring(2);
+            propertyName = StringHelper.firstToLower(suffix);
+            setter = setters.get("set" + suffix);
+          }
+          else {
+            propertyName = getterName;
+          }
+          if (setter != null && !setter.getParameterTypes()[0].isAssignableFrom(getter.getReturnType())) {
+            setter = null;    // types do not match -> readonly
+          }
+          propertyMap.put(propertyName, createMapping(propertyName, getter, setter));
+        }
+      }
+      return propertyMap;
+    });
+  }
+
+
+  /**
+   * Gets a mapping for a given bean type and property name.
+   *
+   * @param beanType the class the property belongs to
+   * @param name the name of the property
+   * @param <T> the class type
+   * @return the property mapping, null if no such property
+   */
+  @SuppressWarnings("unchecked")
+  private <T> PropertyMapping<T> getMapping(Class<T> beanType, String name) {
+    return (PropertyMapping<T>) getPropertyMap(beanType).get(name);
+  }
+
+
+  /**
+   * Gets all property names for a given class.
+   *
+   * @param beanType the class the properties belongs to
+   * @return the property names
+   */
+  private Set<String> getPropertyNames(Class<?> beanType) {
+    return classPropertyNames.computeIfAbsent(beanType, t -> Set.copyOf(getPropertyMap(beanType).keySet()));
   }
 
 }

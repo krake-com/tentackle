@@ -19,11 +19,12 @@
 
 package org.tentackle.fx.container.build;
 
-import javafx.scene.layout.VBox;
-
 import org.tentackle.fx.AbstractBuilder;
 import org.tentackle.fx.BuilderService;
 import org.tentackle.fx.container.FxVBox;
+
+import javafx.beans.DefaultProperty;
+import javafx.scene.layout.VBox;
 
 /**
  * Builder to create a VBox.
@@ -31,6 +32,7 @@ import org.tentackle.fx.container.FxVBox;
  * @author harald
  */
 @BuilderService(VBox.class)
+@DefaultProperty("children")
 public class VBoxBuilder extends AbstractBuilder<VBox> {
 
   /**

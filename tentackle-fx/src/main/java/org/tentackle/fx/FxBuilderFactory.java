@@ -19,12 +19,11 @@
 
 package org.tentackle.fx;
 
+import org.tentackle.common.ServiceFactory;
+
 import javafx.fxml.JavaFXBuilderFactory;
 import javafx.util.Builder;
 import javafx.util.BuilderFactory;
-
-import org.tentackle.common.ServiceFactory;
-
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,6 +33,10 @@ import java.util.Map;
  * The default implementation of a builder factory.
  * <p>
  * Adds custom builders to replace by tentackle's implementations.
+ * <p>
+ * We cannot extend {@link JavaFXBuilderFactory}, since it is final.
+ * Duplicating its code is impossible as well, since it uses a lot of <code>com.sun.xxx</code>
+ * private classes, final, static, ... anti OOP at its best :(
  *
  * @author harald
  */

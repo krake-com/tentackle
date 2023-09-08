@@ -19,11 +19,12 @@
 
 package org.tentackle.fx.container.build;
 
-import javafx.scene.control.DialogPane;
-
 import org.tentackle.fx.AbstractBuilder;
 import org.tentackle.fx.BuilderService;
 import org.tentackle.fx.container.FxDialogPane;
+
+import javafx.beans.DefaultProperty;
+import javafx.scene.control.DialogPane;
 
 /**
  * Builder to create a DialogPane.
@@ -31,6 +32,7 @@ import org.tentackle.fx.container.FxDialogPane;
  * @author harald
  */
 @BuilderService(DialogPane.class)
+@DefaultProperty("buttonTypes")
 public class DialogPaneBuilder extends AbstractBuilder<DialogPane> {
 
   /**

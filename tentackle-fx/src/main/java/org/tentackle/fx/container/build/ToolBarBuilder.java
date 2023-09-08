@@ -19,11 +19,12 @@
 
 package org.tentackle.fx.container.build;
 
-import javafx.scene.control.ToolBar;
-
 import org.tentackle.fx.AbstractBuilder;
 import org.tentackle.fx.BuilderService;
 import org.tentackle.fx.container.FxToolBar;
+
+import javafx.beans.DefaultProperty;
+import javafx.scene.control.ToolBar;
 
 /**
  * Builder to create a ToolBar.
@@ -31,6 +32,7 @@ import org.tentackle.fx.container.FxToolBar;
  * @author harald
  */
 @BuilderService(ToolBar.class)
+@DefaultProperty("items")
 public class ToolBarBuilder extends AbstractBuilder<ToolBar> {
 
   /**

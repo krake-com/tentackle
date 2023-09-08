@@ -19,11 +19,12 @@
 
 package org.tentackle.fx.container.build;
 
-import javafx.scene.layout.HBox;
-
 import org.tentackle.fx.AbstractBuilder;
 import org.tentackle.fx.BuilderService;
 import org.tentackle.fx.container.FxHBox;
+
+import javafx.beans.DefaultProperty;
+import javafx.scene.layout.HBox;
 
 /**
  * Builder to create a HBox.
@@ -31,6 +32,7 @@ import org.tentackle.fx.container.FxHBox;
  * @author harald
  */
 @BuilderService(HBox.class)
+@DefaultProperty("children")
 public class HBoxBuilder extends AbstractBuilder<HBox> {
 
   /**

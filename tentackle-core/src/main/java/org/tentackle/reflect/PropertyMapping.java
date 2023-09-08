@@ -18,20 +18,13 @@
 
 package org.tentackle.reflect;
 
-import org.tentackle.common.StringHelper;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.misc.ImmutableException;
 import org.tentackle.misc.ObjectUtilities;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Describes the mapping of a property.<br>
@@ -40,91 +33,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * @param <T> the type of the bean providing the property
  */
 public class PropertyMapping<T> {
-
-  // lookup cache per class
-  private static final Map<Class<?>, Map<String,PropertyMapping<?>>> classPropertyMapping = new ConcurrentHashMap<>();
-  private static final Map<Class<?>, Set<String>> classPropertyNames = new ConcurrentHashMap<>();
-
-  /**
-   * Gets the property map for a given bean type.<br>
-   * Property maps are cached and evaluated only once per bean type.
-   *
-   * @param beanType the bean type
-   * @return the property map
-   */
-  private static Map<String, PropertyMapping<?>> getPropertyMap(Class<?> beanType) {
-    return classPropertyMapping.computeIfAbsent(beanType, type -> {
-      Map<String, PropertyMapping<?>> propertyMap = new HashMap<>();
-      Set<Method> getters = new HashSet<>();
-      Map<String, Method> setters = new HashMap<>();
-      for (Method method : type.getMethods()) {
-        if (Modifier.isPublic(method.getModifiers()) && !Modifier.isStatic(method.getModifiers()) &&
-            method.getDeclaringClass() != Object.class) {
-          if (method.getReturnType() == Void.TYPE) {
-            if (method.getParameterCount() == 1) {
-              setters.put(method.getName(), method);
-            }
-          }
-          else if (method.getParameterCount() == 0) {
-            getters.add(method);
-          }
-        }
-
-        for (Method getter : getters) {
-          String propertyName;
-          Method setter = null;
-          String getterName = getter.getName();
-          if (getterName.startsWith("get") && getterName.length() > 3 && Character.isUpperCase(getterName.charAt(3))) {
-            String suffix = getterName.substring(3);
-            propertyName = StringHelper.firstToLower(suffix);
-            setter = setters.get("set" + suffix);
-          }
-          else if ((getter.getReturnType() == Boolean.class || getter.getReturnType() == Boolean.TYPE) &&
-                   getterName.startsWith("is") && getterName.length() > 2 && Character.isUpperCase(getterName.charAt(2))) {
-            String suffix = getterName.substring(2);
-            propertyName = StringHelper.firstToLower(suffix);
-            setter = setters.get("set" + suffix);
-          }
-          else {
-            propertyName = getterName;
-          }
-          if (setter != null && !setter.getParameterTypes()[0].isAssignableFrom(getter.getReturnType())) {
-            setter = null;    // types do not match -> readonly
-          }
-          propertyMap.put(propertyName, new PropertyMapping<>(propertyName, getter, setter));
-        }
-      }
-      return propertyMap;
-    });
-  }
-
-
-  /**
-   * Gets a mapping for a given bean type and property name.
-   *
-   * @param beanType the class the property belongs to
-   * @param name the name of the property
-   * @param <T> the class type
-   * @return the property mapping, null if no such property
-   */
-  @SuppressWarnings("unchecked")
-  public static <T> PropertyMapping<T> getMapping(Class<T> beanType, String name) {
-    return (PropertyMapping<T>) getPropertyMap(beanType).get(name);
-  }
-
-
-  /**
-   * Gets all property names for a given class.
-   *
-   * @param beanType the class the properties belongs to
-   * @return the property names
-   */
-  public static Set<String> getPropertyNames(Class<?> beanType) {
-    return classPropertyNames.computeIfAbsent(beanType, t -> Set.copyOf(getPropertyMap(beanType).keySet()));
-  }
-
-
-
 
   private final String name;
   private final Class<?> valueType;
@@ -144,6 +52,33 @@ public class PropertyMapping<T> {
     this.setter = setter;
     // return type may be supertype of the setter's parameter -> setter takes precedence
     this.valueType = setter != null ? setter.getParameterTypes()[0] : getter.getReturnType();
+  }
+
+  /**
+   * Gets the name of the property.
+   *
+   * @return the name
+   */
+  public String getName() {
+    return name;
+  }
+
+  /**
+   * Gets the getter.
+   *
+   * @return the getter
+   */
+  public Method getGetter() {
+    return getter;
+  }
+
+  /**
+   * Gets the setter.
+   *
+   * @return the setter, null if read-only
+   */
+  public Method getSetter() {
+    return setter;
   }
 
   /**

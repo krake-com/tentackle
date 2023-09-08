@@ -19,11 +19,12 @@
 
 package org.tentackle.fx.container.build;
 
-import javafx.scene.layout.FlowPane;
-
 import org.tentackle.fx.AbstractBuilder;
 import org.tentackle.fx.BuilderService;
 import org.tentackle.fx.container.FxFlowPane;
+
+import javafx.beans.DefaultProperty;
+import javafx.scene.layout.FlowPane;
 
 /**
  * Builder to create a FlowPane.
@@ -31,6 +32,7 @@ import org.tentackle.fx.container.FxFlowPane;
  * @author harald
  */
 @BuilderService(FlowPane.class)
+@DefaultProperty("children")
 public class FlowPaneBuilder extends AbstractBuilder<FlowPane> {
 
   /**

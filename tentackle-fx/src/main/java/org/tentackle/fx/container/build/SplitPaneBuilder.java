@@ -19,11 +19,12 @@
 
 package org.tentackle.fx.container.build;
 
-import javafx.scene.control.SplitPane;
-
 import org.tentackle.fx.AbstractBuilder;
 import org.tentackle.fx.BuilderService;
 import org.tentackle.fx.container.FxSplitPane;
+
+import javafx.beans.DefaultProperty;
+import javafx.scene.control.SplitPane;
 
 /**
  * Builder to create a SplitPane.
@@ -31,6 +32,7 @@ import org.tentackle.fx.container.FxSplitPane;
  * @author harald
  */
 @BuilderService(SplitPane.class)
+@DefaultProperty("items")
 public class SplitPaneBuilder extends AbstractBuilder<SplitPane> {
 
   /**
