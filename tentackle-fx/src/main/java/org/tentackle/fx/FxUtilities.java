@@ -723,7 +723,16 @@ public class FxUtilities {
                                    .details(details)
                                    .button(FxFxBundle.getString("OK"), null, false, null)
                                    .hide(popup::hide).build();
-    showNotification(owner, popup, notification, onClose);
+    try {
+      showNotification(owner, popup, notification, onClose);
+    }
+    catch (RuntimeException rx) {
+      if (details != null) {
+        // log the stacktrace in case we cannot show the dialog
+        LOGGER.severe(details);
+      }
+      throw rx;
+    }
   }
 
 
