@@ -85,12 +85,12 @@
     <javafx.version>20.0.2</javafx.version>
     <ikonli.version>12.3.1</ikonli.version>
     <ow2.asm.version>9.5</ow2.asm.version>
-    <groovy.version>4.0.13</groovy.version>
+    <groovy.version>4.0.14</groovy.version>
     <maven.version>3.9.0</maven.version>    <!-- only for build, apps can still use 3.8.5 -->
     <postgresql.version>42.6.0</postgresql.version>
     <h2.version>2.2.220</h2.version>
     <testng.version>7.8.0</testng.version>
-    <slf4j.version>2.0.7</slf4j.version>
+    <slf4j.version>2.0.9</slf4j.version>
     <log4j2.version>2.20.0</log4j2.version>
 
     <maven.archetype.plugin.version>3.2.1</maven.archetype.plugin.version>
@@ -564,13 +564,13 @@
         <plugin>
           <groupId>org.owasp</groupId>
           <artifactId>dependency-check-maven</artifactId>
-          <version>8.3.1</version>
+          <version>8.4.0</version>
         </plugin>
 
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-enforcer-plugin</artifactId>
-          <version>3.3.0</version>
+          <version>3.4.1</version>
         </plugin>
       </plugins>
     </pluginManagement>

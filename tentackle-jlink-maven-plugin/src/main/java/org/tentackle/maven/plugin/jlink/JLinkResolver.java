@@ -624,35 +624,37 @@ public class JLinkResolver {
   }
 
   private void runJdeps(Artifact artifact) throws MojoExecutionException {
-    List<String> lines = JDEPS_MAP.get(artifact);   // no computeIfAbsent due to checked exception
+    if (!"pom".equals(artifact.getType())) {    // skip BOM/POM files: their deps are already included in the artifact list
+      List<String> lines = JDEPS_MAP.get(artifact);   // no computeIfAbsent due to checked exception
 
-    if (lines == null) {
-      ToolRunner runner = new ToolRunner(mojo.getJdepsTool()).arg("--list-deps").arg("--ignore-missing-deps")
-                                                             .arg(artifact.getFile()).run();
-      int errCode = runner.getErrCode();
-      if (errCode != 0) {
-        if (runner.getOutputAsString().contains("multi-release")) {
-          runner = new ToolRunner(mojo.getJdepsTool()).arg("--list-deps").arg("--ignore-missing-deps")
-                                                      .arg("--multi-release").arg(mojo.getJavaMajorRuntimeVersion())
-                                                      .arg(artifact.getFile()).run();
-          errCode = runner.getErrCode();
-        }
+      if (lines == null) {
+        ToolRunner runner = new ToolRunner(mojo.getJdepsTool()).arg("--list-deps").arg("--ignore-missing-deps")
+                                                               .arg(artifact.getFile()).run();
+        int errCode = runner.getErrCode();
         if (errCode != 0) {
-          throw new MojoExecutionException(runner + " failed for " + artifact +
-                                           "\nerror code: " + errCode +
-                                           "\nstdout: " + runner.getOutputAsString() +
-                                           "\nstderr: " + runner.getErrorsAsString());
+          if (runner.getOutputAsString().contains("multi-release")) {
+            runner = new ToolRunner(mojo.getJdepsTool()).arg("--list-deps").arg("--ignore-missing-deps")
+                                                        .arg("--multi-release").arg(mojo.getJavaMajorRuntimeVersion())
+                                                        .arg(artifact.getFile()).run();
+            errCode = runner.getErrCode();
+          }
+          if (errCode != 0) {
+            throw new MojoExecutionException(runner + " failed for " + artifact +
+                                             "\nerror code: " + errCode +
+                                             "\nstdout: " + runner.getOutputAsString() +
+                                             "\nstderr: " + runner.getErrorsAsString());
+          }
         }
+        lines = runner.getOutput();
+        JDEPS_MAP.put(artifact, lines);
       }
-      lines = runner.getOutput();
-      JDEPS_MAP.put(artifact, lines);
-    }
 
-    for (String line: lines) {
-      line = line.trim();
-      if (!line.isEmpty() && !line.contains(" ")) {   // a valid module name (no "not found" and such)
-        mojo.getLog().debug(artifact + " (non-module): " + line);
-        addRequired(line);
+      for (String line : lines) {
+        line = line.trim();
+        if (!line.isEmpty() && !line.contains(" ")) {   // a valid module name (no "not found" and such)
+          mojo.getLog().debug(artifact + " (non-module): " + line);
+          addRequired(line);
+        }
       }
     }
   }
