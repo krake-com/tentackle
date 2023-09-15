@@ -269,11 +269,11 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
       if (msg != null) {
         if (t != null) {
           LOGGER.severe(msg, t);
-          Fx.error(getView(), msg, t, () -> hide());
+          Fx.error(getView(), msg, t, this::hide);
         }
         else {
           LOGGER.info(msg);
-          Fx.info(getView(), msg, () -> hide());
+          Fx.info(getView(), msg, this::hide);
         }
       }
       else {

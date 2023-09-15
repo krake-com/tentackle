@@ -516,7 +516,7 @@ public class ValidationUtilities {
     StringBuilder buf = new StringBuilder();
     if (results != null) {
       for (ValidationResult result: results) {
-        if (buf.length() > 0) {
+        if (!buf.isEmpty()) {
           buf.append('\n');
         }
         buf.append(result.toString());
@@ -535,7 +535,7 @@ public class ValidationUtilities {
     StringBuilder buf = new StringBuilder();
     if (results != null) {
       for (ValidationResult result: results) {
-        if (buf.length() > 0) {
+        if (!buf.isEmpty()) {
           buf.append('\n');
         }
         buf.append(result.getMessage());

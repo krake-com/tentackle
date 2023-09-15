@@ -371,7 +371,7 @@ public class DTOWurblet extends AbstractJavaWurblet {
                 name = token;
               }
               else {
-                if (comment.length() > 0) {
+                if (!comment.isEmpty()) {
                   comment.append(' ');
                 }
                 comment.append(token);

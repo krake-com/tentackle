@@ -225,7 +225,7 @@ public class Document {
 
       // determine line type
       String trimmedLine = lineText.trim(); // trim to skip leading whitespaces (trailing doesn't matter here)
-      if (trimmedLine.length() == 0) {
+      if (trimmedLine.isEmpty()) {
         return LineType.EMPTY.createLine(this, offset);
       }
 

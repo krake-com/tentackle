@@ -98,7 +98,7 @@ public class RemoteIncludes {
           if (pdoClassName != null && className.startsWith(pdoClassName)) {
             // subtract from classname to get the tail, something like "PersistenceImpl" or alike
             String tail = className.substring(pdoClassName.length());
-            if (tail.length() > 0 && remotePrefix.endsWith(tail)) {
+            if (!tail.isEmpty() && remotePrefix.endsWith(tail)) {
               remotePrefix = remotePrefix.substring(0, remotePrefix.length() - tail.length());
             }
           }

@@ -215,7 +215,7 @@ public class DbTransactionFactory {
    */
   private class TransactionSupervisor extends Thread {
 
-    private class TxIdleCounter {
+    private static class TxIdleCounter {
       final String txName;
       final long txNumber;
       final long creationTime;
@@ -312,7 +312,7 @@ public class DbTransactionFactory {
                     }
                   }
                   else {
-                    LOG.warning("managed {0} connection already detached from session {1}", mc, session);
+                    LOG.warning("managed connection already detached from session {0}", session);
                   }
                 }
               }

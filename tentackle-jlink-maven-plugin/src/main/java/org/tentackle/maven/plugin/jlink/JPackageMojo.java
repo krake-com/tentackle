@@ -465,7 +465,7 @@ public class JPackageMojo extends AbstractJLinkMojo {
         break;
       }
     }
-    if (appVersion.length() > 0) {
+    if (!appVersion.isEmpty()) {
       jpackageRunner.arg("--app-version").arg(appVersion);  // can be overridden via options file below
     }
     jpackageRunner.arg("-d").arg(getMavenProject().getBuild().getDirectory())

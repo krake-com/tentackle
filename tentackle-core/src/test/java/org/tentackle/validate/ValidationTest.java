@@ -80,9 +80,9 @@ public class ValidationTest {
       }
     }
     assertEquals(valueValidators.size(), 4);
-    assertTrue("50".equals(valueValidators.get(0).getValue()));   // has priority 1!
-    assertTrue("100".equals(valueValidators.get(1).getValue()));
-    assertTrue("25".equals(valueValidators.get(2).getValue()));
+    assertEquals(valueValidators.get(0).getValue(), "50");   // has priority 1!
+    assertEquals(valueValidators.get(1).getValue(), "100");
+    assertEquals(valueValidators.get(2).getValue(), "25");
     // repeatable annotations are always grouped together within the same priority, so NotZeroImpl comes after GreaterImpls
     assertTrue(valueValidators.get(3) instanceof NotZeroImpl);
 

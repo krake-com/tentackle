@@ -193,7 +193,7 @@ public class CompoundValue {
           StringBuilder classBuf = new StringBuilder();
           while (stok.hasMoreTokens()) {
             String token = stok.nextToken();
-            if (classBuf.length() > 0) {
+            if (!classBuf.isEmpty()) {
               classBuf.append('.');
             }
             classBuf.append(token);

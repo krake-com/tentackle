@@ -117,7 +117,7 @@ public final class SecuredInterceptor extends AbstractInterceptor {
         StringBuilder buf = new StringBuilder();
         if (ored) {
           for (SecurityException sx : failedSx) {
-            if (buf.length() > 0) {
+            if (!buf.isEmpty()) {
               buf.append('\n');
             }
             buf.append(sx.getMessage());

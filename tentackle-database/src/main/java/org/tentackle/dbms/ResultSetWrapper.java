@@ -1358,7 +1358,7 @@ public class ResultSetWrapper implements AutoCloseable {
   public char getChar (String name) {
     try {
       String val = resources.rs.getString(name);
-      return val == null || val.length() == 0 ? 0 : val.charAt(0);
+      return val == null || val.isEmpty() ? 0 : val.charAt(0);
     }
     catch (SQLException e)  {
       throw new PersistenceException(resources.db, e);
@@ -2288,7 +2288,7 @@ public class ResultSetWrapper implements AutoCloseable {
   public char getChar (int pos) {
     try {
       String val = resources.rs.getString(pos + columnOffset);
-      return val == null || val.length() == 0 ? 0 : val.charAt(0);
+      return val == null || val.isEmpty() ? 0 : val.charAt(0);
     }
     catch (SQLException e)  {
       throw new PersistenceException(resources.db, e);
@@ -3146,7 +3146,7 @@ public class ResultSetWrapper implements AutoCloseable {
   public char getChar () {
     try {
       String val = resources.rs.getString(nextConfiguredIndex() + columnOffset);
-      return val == null || val.length() == 0 ? 0 : val.charAt(0);
+      return val == null || val.isEmpty() ? 0 : val.charAt(0);
     }
     catch (SQLException e)  {
       throw new PersistenceException(resources.db, e);

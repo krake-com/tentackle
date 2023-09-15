@@ -57,7 +57,7 @@ public sealed class CharacterType extends AbstractDataType<Character> permits Ch
 
   @Override
   public Character getMappedNullValue(Backend backend, int index) {
-    return Character.valueOf(' ');
+    return ' ';
   }
 
   @Override
@@ -116,7 +116,7 @@ public sealed class CharacterType extends AbstractDataType<Character> permits Ch
   @Override
   public Character get(Backend backend, ResultSet resultSet, int[] pos, boolean mapNull, Integer size) throws SQLException {
     String val = resultSet.getString(pos[0]);
-    char value = val == null || val.length() == 0 ? 0 : val.charAt(0);
+    char value = val == null || val.isEmpty() ? 0 : val.charAt(0);
     return resultSet.wasNull() ? null : (mapNull && value == ' ' ? null : value);
   }
 

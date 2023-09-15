@@ -179,7 +179,7 @@ public class RelationLine extends MultiLine {
       throw createModelException("missing colon (:)");
     }
     className = text.substring(0, ndx).trim();
-    if (className.length() == 0) {
+    if (className.isEmpty()) {
       throw createModelException("missing classname");
     }
 
@@ -190,11 +190,11 @@ public class RelationLine extends MultiLine {
     OptionParser parser = new OptionParser(configText, null);
     String prop;
     while ((prop = parser.nextOption()) != null) {
-      if (prop.length() > 0) {
+      if (!prop.isEmpty()) {
         ndx = prop.charAt(0) == '@' ? -1 : prop.indexOf('='); // leave annotations as is
         if (ndx > 0) {
           String propName = prop.substring(0, ndx).trim();
-          if (propName.length() == 0) {
+          if (propName.isEmpty()) {
             throw createModelException("missing property name");
           }
           String propValue = prop.substring(ndx + 1).trim();

@@ -66,7 +66,7 @@ public class CompoundValueTest {
 
     result = new CompoundValue("$org.tentackle.common.DateHelper.now").getValue();
     Assert.assertTrue(result instanceof Timestamp);
-    Reporter.log(result.toString() + "<br/>");
+    Reporter.log(result + "<br/>");
 
     // scripts are tested in the corresponding scripting language tt-modules
   }

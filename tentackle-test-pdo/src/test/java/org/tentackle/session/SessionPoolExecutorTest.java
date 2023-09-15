@@ -48,7 +48,7 @@ public class SessionPoolExecutorTest extends AbstractPdoTest {
     Set<RuntimeException> failures = ConcurrentHashMap.newKeySet();
 
     for (int i=0; i < TASK_NUM; i++) {
-      executor.submit(this::run, v -> sum.incrementAndGet(), f -> failures.add(f));
+      executor.submit(this::run, v -> sum.incrementAndGet(), failures::add);
     }
 
     try {

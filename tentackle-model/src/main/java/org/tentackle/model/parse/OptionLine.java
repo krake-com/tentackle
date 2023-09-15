@@ -61,7 +61,7 @@ public class OptionLine extends MultiLine {
       throw createModelException("missing colon (:)");
     }
     name = text.substring(0, ndx).trim();
-    if (name.length() == 0) {
+    if (name.isEmpty()) {
       throw createModelException("missing attribute name");
     }
 

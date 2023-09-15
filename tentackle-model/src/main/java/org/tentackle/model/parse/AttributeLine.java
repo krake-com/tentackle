@@ -272,7 +272,7 @@ public class AttributeLine extends SingleLine {
    * @throws ModelException if parsing failed
    */
   private void extractJavaType(String token) throws ModelException {
-    if (token != null && token.length() > 0) {
+    if (token != null && !token.isEmpty()) {
       int genBegin = token.indexOf('<');
       if (genBegin > 0) {
         // generic type
@@ -334,14 +334,14 @@ public class AttributeLine extends SingleLine {
       // size and scale
       try {
         String sizeStr = str.substring(0, scaleBegin).trim();
-        size = sizeStr.length() == 0 ? 0 : Integer.parseInt(sizeStr);
+        size = sizeStr.isEmpty() ? 0 : Integer.parseInt(sizeStr);
       }
       catch (NumberFormatException rex) {
         throw createModelException("cannot determine size from '" + str + "'", rex);
       }
       try {
         String scaleStr = str.substring(scaleBegin+1).trim();
-        scale = scaleStr.length() == 0 ? 0 : Integer.parseInt(scaleStr);
+        scale = scaleStr.isEmpty() ? 0 : Integer.parseInt(scaleStr);
       }
       catch (NumberFormatException rex) {
         throw createModelException("cannot determine scale from '" + str + "'", rex);

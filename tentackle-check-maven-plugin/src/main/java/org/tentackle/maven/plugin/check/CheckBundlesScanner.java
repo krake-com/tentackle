@@ -132,7 +132,7 @@ public class CheckBundlesScanner extends TreePathScanner<Object, Trees> {
     for (Tree tree : path) {
       if (tree.getKind() == Kind.CLASS) {
         String simpleName = ((ClassTree) tree).getSimpleName().toString();
-        if (name.length() == 0) {
+        if (name.isEmpty()) {
           name.append(simpleName);
         }
         else {

@@ -37,6 +37,7 @@ import org.tentackle.session.LoginFailedException;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.SessionInfo;
 
+import java.io.Serial;
 import java.rmi.RemoteException;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
@@ -56,6 +57,7 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
    */
   public static class ConnectionImpl extends RemoteDbConnectionImpl {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public ConnectionImpl(RmiServer server, int port, RMIClientSocketFactory csf, RMIServerSocketFactory ssf)
@@ -115,6 +117,7 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
 
   private void addPreferences() {
     ModificationTracker.getInstance().addTaskAndWait(new AbstractSessionTask() {
+      @Serial
       private static final long serialVersionUID = 1L;
       @Override
       public void run() {
@@ -134,6 +137,7 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
 
   private void removePreferences() {
     ModificationTracker.getInstance().addTaskAndWait(new AbstractSessionTask() {
+      @Serial
       private static final long serialVersionUID = 1L;
       @Override
       public void run() {
@@ -153,6 +157,7 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
 
   private void cleanupData() {
     ModificationTracker.getInstance().addTaskAndWait(new AbstractSessionTask() {
+      @Serial
       private static final long serialVersionUID = 1L;
       @Override
       public void run() {

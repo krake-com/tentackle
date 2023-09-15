@@ -247,8 +247,8 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     Platform.runLater(() -> {
       rowDetailsTable.getColumns().clear();
       if (diffNode != null) {
-        if (diffNode.getLeft() instanceof DataObject dataObject) {
-          showDataObjects(List.of(dataObject));
+        if (diffNode.getLeft() instanceof DataObject dataObj) {
+          showDataObjects(List.of(dataObj));
         }
         else if (diffNode.getLeft() instanceof DataList dataList) {
           showDataObjects(dataList.getNodes());

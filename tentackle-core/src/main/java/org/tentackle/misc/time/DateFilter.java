@@ -68,7 +68,7 @@ public class DateFilter implements SmartDateTimeParser.TextFilter {
               }
             }
           }
-          if (mdyNdx > 0 || buf.length() > 0) {     // at least two numbers
+          if (mdyNdx > 0 || !buf.isEmpty()) {     // at least two numbers
             mdy[mdyNdx++] = buf.toString();
             buf.setLength(0);
             for (int i=0; i < mdyNdx; i++) {

@@ -125,7 +125,7 @@ public final class StringHelper {
    * @return the converted string
    */
   public static String firstToUpper(String str) {
-    if (str != null && str.length() > 0) {
+    if (str != null && !str.isEmpty()) {
       StringBuilder buf = new StringBuilder(str);
       buf.deleteCharAt(0);
       buf.insert(0, Character.toUpperCase(str.charAt(0)));
@@ -142,7 +142,7 @@ public final class StringHelper {
    * @return the converted string
    */
   public static String firstToLower(String str) {
-    if (str != null && str.length() > 0) {
+    if (str != null && !str.isEmpty()) {
       StringBuilder buf = new StringBuilder(str);
       buf.deleteCharAt(0);
       buf.insert(0, Character.toLowerCase(str.charAt(0)));
@@ -315,7 +315,7 @@ public final class StringHelper {
    */
   public static String parseString(String str) {
     StringBuilder buf = new StringBuilder();
-    if (str != null && str.length() > 0) {
+    if (str != null && !str.isEmpty()) {
       char quoteChar = str.charAt(0);
       if (quoteChar != '"' && quoteChar != '\'') {
         quoteChar = 0;    // not quoted
@@ -498,7 +498,7 @@ public final class StringHelper {
         return false;
       }
     }
-    if (className.length() < 1) {
+    if (className.isEmpty()) {
       return false;
     }
     char firstChar = className.charAt(0);
@@ -1257,7 +1257,7 @@ public final class StringHelper {
    */
   public static int countOccurrences(String str, char c) {
     int count = 0;
-    if (str != null && str.length() > 0) {
+    if (str != null && !str.isEmpty()) {
       int ndx = 0;
       while (ndx >= 0) {
         ndx = str.indexOf(c, ndx + 1);

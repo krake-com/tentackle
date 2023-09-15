@@ -344,7 +344,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         }
       }
 
-      if (sqlCode.length() > 0 || !splitMigrations.isEmpty()) {
+      if (!sqlCode.isEmpty() || !splitMigrations.isEmpty()) {
         if (split) {
           sqlWriter.append(commentLead).append(" migrated entities in sub-folders: ")
                    .append(String.valueOf(splitMigrations.size())).append('\n');
@@ -378,13 +378,13 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         }
       }
 
-      if (sqlDrops.length() > 0) {
+      if (!sqlDrops.isEmpty()) {
         sqlWriter.append('\n').append(commentLead).append(" tables removed from the model\n");
         sqlWriter.append(sqlDrops);
         migrationNecessary = true;
       }
 
-      if (sqlWarnings.length() > 0) {
+      if (!sqlWarnings.isEmpty()) {
         sqlWriter.append('\n').append(commentLead).append(" ============================== WARNINGS ==============================\n");
         sqlWriter.append(sqlWarnings);
       }
@@ -584,7 +584,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
                     for (DatabaseMetaDataTableHeader tableHeader: tableHeaders) {
                       if (tableHeader.isUserTable()) {
                         schemaCount++;
-                        if (schemaBuf.length() > 0) {
+                        if (!schemaBuf.isEmpty()) {
                           schemaBuf.append(", ");
                         }
                         schemaBuf.append(tableHeader.getSchema());
@@ -767,7 +767,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         flushSqlForTable(pendingTablename, entry.getValue());
       }
 
-      if (foreignKeySql.length() > 0) {
+      if (!foreignKeySql.isEmpty()) {
         sqlCode.append('\n');
         sqlCode.append(foreignKeySql);
       }
@@ -781,7 +781,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
 
       sqlWarnings.append(warningSql);
 
-      if (depErrors.length() > 0) {
+      if (!depErrors.isEmpty()) {
         sqlCode.append("\n\n").append(commentLead).append(" ************* CAUTION *************\n");
         sqlCode.append(depErrors);
       }

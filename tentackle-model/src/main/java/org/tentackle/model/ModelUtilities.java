@@ -113,7 +113,7 @@ public class ModelUtilities {
           char c = s.charAt(i);
           if (Character.isDigit(c)) {
             // numbers build a syllable on their own
-            if (syllable.length() > 0 && !Character.isDigit(lastChar)) {
+            if (!syllable.isEmpty() && !Character.isDigit(lastChar)) {
               syllables.add(syllable.toString());
               syllable.setLength(0);
               containsVowel = false;
@@ -123,14 +123,14 @@ public class ModelUtilities {
           }
           else if (Character.isLetter(c)) {
             c = Character.toLowerCase(c);
-            if (syllable.length() > 0 && !Character.isLetter(lastChar)) {
+            if (!syllable.isEmpty() && !Character.isLetter(lastChar)) {
               syllables.add(syllable.toString());
               syllable.setLength(0);
               containsVowel = false;
             }
             if (lastChar != c) {    // ignore duplicates such as tt, ss, pp, etc...
               boolean isVwl = isVowel(c);
-              if (syllable.length() == 0) {
+              if (syllable.isEmpty()) {
                 syllable.append(c);
                 containsVowel |= isVwl;
               }
@@ -154,7 +154,7 @@ public class ModelUtilities {
             }
           }
         }
-        if (syllable.length() > 0) {
+        if (!syllable.isEmpty()) {
           syllables.add(syllable.toString());
         }
       }

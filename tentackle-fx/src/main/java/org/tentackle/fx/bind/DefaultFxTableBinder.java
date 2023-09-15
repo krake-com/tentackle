@@ -116,7 +116,7 @@ public class DefaultFxTableBinder<S> extends AbstractBinder implements FxTableBi
     if (!unboundColumns.isEmpty()) {
       StringBuilder buf = new StringBuilder();
       for (String columnName: unboundColumns) {
-        if (buf.length() > 0) {
+        if (!buf.isEmpty()) {
           buf.append(", ");
         }
         buf.append(columnName);

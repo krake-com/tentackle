@@ -654,7 +654,7 @@ public final class ReflectionHelper {
           // cut trailing () as this is a common error if a method is meant
           element = element.substring(0, element.length() - 2);
         }
-        if (donePath.length() > 0) {
+        if (!donePath.isEmpty()) {
           donePath.append('.');
         }
         donePath.append(element);

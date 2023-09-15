@@ -40,8 +40,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class JSR223Script extends AbstractScript {
 
-  private static final long serialVersionUID = 1L;
-
   private static final Logger LOGGER = Logger.get(JSR223Script.class);
 
   /** map of code:scripts. */

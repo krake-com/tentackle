@@ -20,7 +20,6 @@ package org.tentackle.dbms;
 
 import org.testng.annotations.Test;
 
-import org.tentackle.misc.Provider;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionFactory;
 
@@ -36,14 +35,14 @@ import static org.testng.Assert.fail;
 public class TransactionEnvelopeTest {
 
   @SuppressWarnings("serial")
-  private class MyException extends Exception {
+  private static class MyException extends Exception {
     public MyException(String message) {
       super(message);
     }
   }
 
   @SuppressWarnings("serial")
-  private class OtherException extends Exception {
+  private static class OtherException extends Exception {
     public OtherException(String message) {
       super(message);
     }
@@ -103,12 +102,9 @@ public class TransactionEnvelopeTest {
       }
 
       // with inner class
-      rv = session.transaction(new Provider<>() {
-        @Override
-        public Integer get() {
-          assertEquals(session.getTxName(), "TransactionEnvelopeTest#testEnvelope");
-          return 10;
-        }
+      rv = session.transaction(() -> {
+        assertEquals(session.getTxName(), "TransactionEnvelopeTest#testEnvelope");
+        return 10;
       });
       assertEquals(rv, 10);
     }

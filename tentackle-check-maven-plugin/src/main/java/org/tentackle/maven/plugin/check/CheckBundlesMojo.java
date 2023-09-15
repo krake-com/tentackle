@@ -185,7 +185,7 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
     // show results
     StringBuilder localestr = new StringBuilder();
     for (Locale bundleLocale : bundleLocales) {
-      if (localestr.length() > 0) {
+      if (!localestr.isEmpty()) {
         localestr.append(", ");
       }
       localestr.append(bundleLocale);

@@ -69,7 +69,7 @@ public class Mixin<T, M extends Serializable> implements Serializable {
     }
   }
 
-  
+
   /**
    * Cache to speed up constructor lookup.
    */
@@ -200,7 +200,7 @@ public class Mixin<T, M extends Serializable> implements Serializable {
         if (constructor == null) {
           StringBuilder paramsAsString = new StringBuilder();
           for (Class<?> paramClass : constructorArgumentClasses) {
-            if (paramsAsString.length() > 0) {
+            if (!paramsAsString.isEmpty()) {
               paramsAsString.append(", ");
             }
             paramsAsString.append(paramClass.getName());

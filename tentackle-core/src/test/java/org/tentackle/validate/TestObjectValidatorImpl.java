@@ -47,11 +47,6 @@ public class TestObjectValidatorImpl extends AbstractObjectValidator<TestObjectV
   }
 
   @Override
-  public String getValue() {
-    return "";
-  }
-
-  @Override
   public String getMessage() {
     return annotation.message();
   }

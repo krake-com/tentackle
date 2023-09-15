@@ -19,20 +19,6 @@
 
 package org.tentackle.fx.component;
 
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.ReadOnlyBooleanProperty;
-import javafx.collections.ObservableList;
-import javafx.scene.Node;
-import javafx.scene.control.TreeItem;
-import javafx.scene.control.TreeTableCell;
-import javafx.scene.control.TreeTableColumn;
-import javafx.scene.control.TreeTablePosition;
-import javafx.scene.control.TreeTableView;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxContainer;
@@ -47,6 +33,19 @@ import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.fx.table.TableConfiguration;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.collections.ObservableList;
+import javafx.scene.Node;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeTableCell;
+import javafx.scene.control.TreeTableColumn;
+import javafx.scene.control.TreeTablePosition;
+import javafx.scene.control.TreeTableView;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
@@ -352,7 +351,7 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
           colMin = 0;
           colMax = getColumns().size();
         }
-        if (buf.length() > 0 && lastRow >= 0 && lastRow != row) {
+        if (!buf.isEmpty() && lastRow >= 0 && lastRow != row) {
           buf.append('\n');
           cellInRowCopied = false;
         }
@@ -382,7 +381,7 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
         lastRow = row;
       }
     }
-    if (buf.length() > 0) {
+    if (!buf.isEmpty()) {
       ClipboardContent cbc = new ClipboardContent();
       String text = buf.toString();
       cbc.putString(text);

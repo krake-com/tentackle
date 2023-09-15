@@ -518,13 +518,12 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     filterField.clear();
     if (finder.isSearchRunningInBackground()) {
       Rdc.bg(getView(),
-      finder::runSearch,
-      result -> {
-        setItems(result);
-        presetScrolling();
-      }, ex -> {
-        Fx.error(getView(), ex.getLocalizedMessage(), ex);
-      });
+             finder::runSearch,
+             result -> {
+               setItems(result);
+               presetScrolling();
+             },
+             ex -> Fx.error(getView(), ex.getLocalizedMessage(), ex));
     }
     else {
       Platform.runLater(() -> {

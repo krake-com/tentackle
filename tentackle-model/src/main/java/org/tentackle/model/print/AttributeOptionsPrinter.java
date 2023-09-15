@@ -130,7 +130,7 @@ public class AttributeOptionsPrinter {
       buf.append('#').append(stereotype).append(',');
     }
 
-    if (buf.length() > 0 && buf.charAt(buf.length() - 1) == ',') {
+    if (!buf.isEmpty() && buf.charAt(buf.length() - 1) == ',') {
       buf.setLength(buf.length() - 1);
     }
 
