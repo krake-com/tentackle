@@ -24,6 +24,7 @@ import org.testng.Reporter;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.io.Serial;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -82,6 +83,7 @@ public class TaskDispatcherTest {
 
   private class TestTask extends AbstractTask {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Override

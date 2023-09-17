@@ -438,7 +438,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    */
   public String getPathRelativeToBasedir(String path) {
     String basePath = mavenProject.getBasedir().getAbsolutePath();
-    while (basePath.length() > 0) {
+    while (!basePath.isEmpty()) {
       if (path.startsWith(basePath)) {
         int len = basePath.lastIndexOf(File.separatorChar);
         if (len > 0) {
@@ -749,7 +749,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
       }
     }
 
-    if (buf.length() > 0) {
+    if (!buf.isEmpty()) {
       // at least one split package found.
       // this isn't okay whether used in profiles or not.
       buf.deleteCharAt(0);    // remove leading newline

@@ -40,7 +40,7 @@ import java.util.TimeZone;
  * @author harald
  */
 @SuppressWarnings({ "exports", "missing-explicit-ctor" })
-public class DateSerialization {
+public class DateSerializationTest {
 
   private static final TimeZone TZ1 = TimeZone.getTimeZone("Europe/Berlin");
   private static final TimeZone TZ2 = TimeZone.getTimeZone("America/Los_Angeles");

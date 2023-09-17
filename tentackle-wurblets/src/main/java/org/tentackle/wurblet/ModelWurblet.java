@@ -553,7 +553,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
   public String createDeclaredArgsForSelectOrDeleteMethod(Relation relation) throws ModelException {
     StringBuilder text = new StringBuilder();
     for (MethodArgument arg : relation.getMethodArgs()) {
-      if (text.length() > 0) {
+      if (!text.isEmpty()) {
         text.append(", ");
       }
       Attribute attr = arg.getForeignAttribute();
@@ -944,7 +944,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
    * @param appendStr the string to append
    */
   public void appendCommaSeparated(StringBuilder builder, String appendStr) {
-    if (builder.length() > 0) {
+    if (!builder.isEmpty()) {
       builder.append(", ");
     }
     builder.append(appendStr);
@@ -957,7 +957,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
    * @param prependStr the string to prepend
    */
   public void prependCommaSeparated(StringBuilder builder, String prependStr) {
-    if (builder.length() > 0) {
+    if (!builder.isEmpty()) {
       builder.insert(0, ", ");
     }
     builder.insert(0, prependStr);

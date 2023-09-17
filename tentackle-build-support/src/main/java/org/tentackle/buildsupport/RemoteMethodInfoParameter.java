@@ -192,7 +192,7 @@ public class RemoteMethodInfoParameter {
     buf.append(' ');
     buf.append(instanceOfPdo);
     String modStr = getModifiersAsString();
-    if (modStr.length() > 0) {
+    if (!modStr.isEmpty()) {
       buf.append(' ');
       buf.append(modStr);
     }
@@ -203,7 +203,7 @@ public class RemoteMethodInfoParameter {
   public String toString() {
     StringBuilder buf = new StringBuilder();
     buf.append(getModifiersAsString());
-    if (buf.length() > 0) {
+    if (!buf.isEmpty()) {
       buf.append(' ');
     }
     buf.append(getType());

@@ -154,28 +154,28 @@ public class MigrationHints {
     private void finish() throws MojoExecutionException {
       switch(keyword) {
         case ALWAYS_BEFORE:
-          if (alwaysBefore.length() > 0) {
+          if (!alwaysBefore.isEmpty()) {
             alwaysBefore.append('\n');
           }
           alwaysBefore.append(text);
           break;
 
         case ALWAYS_AFTER:
-          if (alwaysAfter.length() > 0) {
+          if (!alwaysAfter.isEmpty()) {
             alwaysAfter.append('\n');
           }
           alwaysAfter.append(text);
           break;
 
         case BEFORE_ALL:
-          if(beforeAll.length() > 0) {
+          if(!beforeAll.isEmpty()) {
             beforeAll.append('\n');
           }
           beforeAll.append(text);
           break;
 
         case AFTER_ALL:
-          if (afterAll.length() > 0) {
+          if (!afterAll.isEmpty()) {
             afterAll.append('\n');
           }
           afterAll.append(text);

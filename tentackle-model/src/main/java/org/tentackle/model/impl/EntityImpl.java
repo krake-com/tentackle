@@ -762,9 +762,8 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
   @Override
   public List<Attribute> getTableAttributes() throws ModelException {
-    List<Attribute> tableAttributes = new ArrayList<>();
     InheritanceType ihType = getHierarchyInheritanceType();
-    tableAttributes.addAll(getEmbeddedAttributes());
+    List<Attribute> tableAttributes = new ArrayList<>(getEmbeddedAttributes());
     if (ihType.isMappingToOwnTable()) {
       tableAttributes.addAll(attributes);
       if (getSuperEntity() != null) {

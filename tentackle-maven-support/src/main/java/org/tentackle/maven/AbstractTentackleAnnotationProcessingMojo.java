@@ -367,7 +367,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
         options.add("-classpath");
         StringBuilder buf = new StringBuilder();
         for (String element : classpathElements) {
-          if (buf.length() > 0) {
+          if (!buf.isEmpty()) {
             buf.append(File.pathSeparatorChar);
           }
           buf.append(element);

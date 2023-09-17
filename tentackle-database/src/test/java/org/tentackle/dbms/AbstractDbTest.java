@@ -65,7 +65,7 @@ public abstract class AbstractDbTest {
 
   private static Session session;           // session for all methods in all test classes
 
-  private TransactionType txType;           // transaction handling
+  private final TransactionType txType;     // transaction handling
   private long txVoucher;                   // transaction voucher for current test class
 
   public AbstractDbTest(TransactionType txType) {

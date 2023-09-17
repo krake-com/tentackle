@@ -593,7 +593,7 @@ public class FxUtilities {
     popup.setAutoHide(true);
     if (onClose != null) {
       // runLater: let the window close completely before running onClose to avoid race conditions
-      popup.setOnHidden(event -> Platform.runLater(onClose::run));
+      popup.setOnHidden(event -> Platform.runLater(onClose));
     }
     Window window = getWindow(owner);
     popup.addEventFilter(WindowEvent.WINDOW_SHOWN, event -> { // filter event is triggered _before_ actually shown

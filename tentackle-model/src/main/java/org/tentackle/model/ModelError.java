@@ -38,7 +38,7 @@ public class ModelError {
   public static String toString(Collection<ModelError> errors) {
     StringBuilder buf = new StringBuilder();
     for (ModelError error: errors) {
-      if (buf.length() > 0) {
+      if (!buf.isEmpty()) {
         buf.append('\n');
       }
       buf.append(error);

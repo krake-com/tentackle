@@ -126,7 +126,7 @@ public class OptionParser {
     }
 
     String opt = option.toString().trim();
-    if (opt.length() > 0) {
+    if (!opt.isEmpty()) {
       return opt;
     }
     return pos >= max ? null : opt;

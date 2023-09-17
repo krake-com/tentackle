@@ -110,7 +110,7 @@ public class ParameterString implements Serializable {
   public String toString() {
     StringBuilder buf = new StringBuilder();
     for (Map.Entry<String,String> entry: parameters.entrySet()) {
-      if (buf.length() > 0) {
+      if (!buf.isEmpty()) {
         buf.append(", ");
       }
       buf.append(entry.getKey());

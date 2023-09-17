@@ -19,14 +19,6 @@
 
 package org.tentackle.fx.component;
 
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.ReadOnlyBooleanProperty;
-import javafx.scene.control.ListView;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxContainer;
@@ -39,6 +31,13 @@ import org.tentackle.fx.component.delegate.FxListViewDelegate;
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.FxTreeTableCell;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.scene.control.ListView;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
@@ -115,7 +114,7 @@ public class FxListView<T> extends ListView<T> implements FxComponent {
     String separator = FxUtilities.getInstance().getCsvSeparator();
     StringBuilder buf = new StringBuilder();
     for (T item : getSelectionModel().getSelectedItems()) {
-      if (buf.length() > 0) {
+      if (!buf.isEmpty()) {
         if (commaSeparated) {
           buf.append(separator);
         }
@@ -125,7 +124,7 @@ public class FxListView<T> extends ListView<T> implements FxComponent {
       }
       buf.append(item);
     }
-    if (buf.length() > 0) {
+    if (!buf.isEmpty()) {
       ClipboardContent cbc = new ClipboardContent();
       String text = buf.toString();
       cbc.putString(text);

@@ -282,7 +282,7 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
       StringBuilder buf = new StringBuilder();
       for (FxComponent comp : eligibleComponents.values()) {   // sorted by bindingPath
         if (comp.getBinding() == null) {
-          if (buf.length() > 0) {
+          if (!buf.isEmpty()) {
             buf.append(", ");
           }
           buf.append(comp.getComponentPath());
@@ -482,7 +482,7 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
     String lastCamelName = null;
     while (stok.hasMoreTokens()) {
       String token = stok.nextToken();
-      if (buf.length() == 0) {
+      if (buf.isEmpty()) {
         buf.append(token);
         if (omitCount >= 0) {
           omitBuf.append(token);

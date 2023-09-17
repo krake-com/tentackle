@@ -156,11 +156,11 @@ public class ResultSetTest extends AbstractPdoTest {
       BuilderDTO dto = dtos.get(0);
       Assert.assertEquals(dto.getName(), "pool1");
       Assert.assertEquals(dto.getRealm(), "realm1");
-      Assert.assertEquals(dto.isPoolOnline(), true);
+      Assert.assertTrue(dto.isPoolOnline());
       dto = dtos.get(1);
       Assert.assertEquals(dto.getName(), "pool2");
       Assert.assertEquals(dto.getRealm(), "realm2");
-      Assert.assertEquals(dto.isPoolOnline(), false);
+      Assert.assertFalse(dto.isPoolOnline());
     }
 
     // same with record
@@ -170,11 +170,11 @@ public class ResultSetTest extends AbstractPdoTest {
       RecordDTO dto = dtos.get(0);
       Assert.assertEquals(dto.name(), "pool1");
       Assert.assertEquals(dto.realm(), "realm1");
-      Assert.assertEquals(dto.poolOnline(), true);
+      Assert.assertTrue(dto.poolOnline());
       dto = dtos.get(1);
       Assert.assertEquals(dto.name(), "pool2");
       Assert.assertEquals(dto.realm(), "realm2");
-      Assert.assertEquals(dto.poolOnline(), false);
+      Assert.assertFalse(dto.poolOnline());
     }
 
   }

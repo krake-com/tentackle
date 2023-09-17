@@ -62,17 +62,18 @@ public class RubyThreadingTest {
                                          new ScriptVariable("b", b));
           if (result != a + b) {
             // string concat because of multi-threading
-            errorBuffer.append(this + " failed: " + a + " + " + b + " != " + result + "\n");
+            errorBuffer.append(this).append(" failed: ").append(a).append(" + ")
+                       .append(b).append(" != ").append(result).append("\n");
             break;
           }
           a = result;
         }
       }
       catch (RuntimeException rx) {
-        errorBuffer.append(rx.getMessage() + "\n");
+        errorBuffer.append(rx.getMessage()).append("\n");
       }
       if (loop < LOOPS) {
-        errorBuffer.append(this + " interrupted at " + loop + "\n");
+        errorBuffer.append(this).append(" interrupted at ").append(loop).append("\n");
       }
     }
   }
@@ -96,12 +97,13 @@ public class RubyThreadingTest {
       }
       catch (InterruptedException e) {
         // string concat because of multi-threading
-        errorBuffer.append("test interrupted while waiting for " + runners[i] + " to terminate: " + e + "\n");
+        errorBuffer.append("test interrupted while waiting for ").append(runners[i])
+                   .append(" to terminate: ").append(e).append("\n");
         runners[i].interrupt();
       }
     }
     Reporter.log("Duration " + timeKeeper.end().millisToString() + "<br>");
-    if (errorBuffer.length() > 0) {
+    if (!errorBuffer.isEmpty()) {
       Assert.fail(errorBuffer.toString());
     }
   }

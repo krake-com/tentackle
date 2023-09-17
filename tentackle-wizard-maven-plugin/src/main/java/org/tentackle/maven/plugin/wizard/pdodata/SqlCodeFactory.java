@@ -99,12 +99,10 @@ public class SqlCodeFactory {
         condition.attribute().getEntity().getInheritanceChain(entity).stream().skip(1).
                   forEach(subEntity -> sql.append(", ").append(subEntity.getTableName()).
                                            append(backend.sqlAsBeforeTableAlias()).append(subEntity.getTableAlias()));
-        entity.getSubEntities().forEach(subEntity -> {
-          sql.append(' ').append(JoinType.LEFT).append(' ').append(subEntity.getTableName()).
-              append(backend.sqlAsBeforeTableAlias()).append(subEntity.getTableAlias()).append(" ON ").
-              append(subEntity.getTableAlias()).append('.').append(Constants.CN_ID).append('=').
-              append(tableAlias).append('.').append(Constants.CN_ID);
-        });
+        entity.getSubEntities().forEach(subEntity -> sql.append(' ').append(JoinType.LEFT).append(' ').append(subEntity.getTableName())
+                                                        .append(backend.sqlAsBeforeTableAlias()).append(subEntity.getTableAlias()).append(" ON ")
+                                                        .append(subEntity.getTableAlias()).append('.').append(Constants.CN_ID).append('=')
+                                                        .append(tableAlias).append('.').append(Constants.CN_ID));
       }
 
       sql.append(Backend.SQL_WHERE);

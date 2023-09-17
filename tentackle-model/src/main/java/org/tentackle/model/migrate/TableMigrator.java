@@ -165,7 +165,7 @@ public class TableMigrator {
       foreignKeySql.append(migrateForeignKeysToAdd());
     }
 
-    if (tableSql.length() > 0) {
+    if (!tableSql.isEmpty()) {
       // insert a blank line if something to migrate
       tableSql.insert(0, '\n');
     }
@@ -537,13 +537,13 @@ public class TableMigrator {
     }
 
     // add explicit migrations (if there is anything to migrate at all)
-    if (sqlBuf.length() > 0 && columnMigrations != null) {
+    if (!sqlBuf.isEmpty() && columnMigrations != null) {
       for (ColumnMigration migration: columnMigrations) {
         sqlBuf.append(migration.getSql()).append('\n');
       }
     }
 
-    if (sqlBuf.length() > 0 && hints != null && !hints.isEmpty()) {
+    if (!sqlBuf.isEmpty() && hints != null && !hints.isEmpty()) {
       StringBuilder hintsBuf = new StringBuilder();
       hintsBuf.append(backend.getSingleLineComment()).append(" hints for ").append(entity).append('\n');
       for (Pattern hint: hints) {

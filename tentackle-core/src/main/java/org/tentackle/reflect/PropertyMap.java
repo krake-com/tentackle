@@ -275,12 +275,12 @@ public class PropertyMap<T> extends AbstractMap<String, Object> {
    *
    * @param beanType the class the property belongs to
    * @param name the name of the property
-   * @param <T> the class type
+   * @param <C> the class type
    * @return the property mapping, null if no such property
    */
   @SuppressWarnings("unchecked")
-  private <T> PropertyMapping<T> getMapping(Class<T> beanType, String name) {
-    return (PropertyMapping<T>) getPropertyMap(beanType).get(name);
+  private <C> PropertyMapping<C> getMapping(Class<C> beanType, String name) {
+    return (PropertyMapping<C>) getPropertyMap(beanType).get(name);
   }
 
 

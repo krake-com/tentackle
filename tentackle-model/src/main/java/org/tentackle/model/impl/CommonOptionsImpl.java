@@ -354,7 +354,7 @@ public abstract class CommonOptionsImpl implements CommonOptions, Cloneable {
    * @param option the option
    */
   public void addBindOption(String option) {
-    if (bindOptions.length() > 0 && bindOptions.charAt(bindOptions.length() - 1) != ',') {
+    if (!bindOptions.isEmpty() && bindOptions.charAt(bindOptions.length() - 1) != ',') {
       bindOptions.append(',');    // separate by comma
     }
     bindOptions.append(option);

@@ -46,7 +46,7 @@ import static org.testng.Assert.fail;
 
 /**
  * Tests the FormatHelper.
- *
+ * <p>
  * Performance tests show that the new DateTimeFormatter is about twice as fast as old DateFormat,
  * even including additional conversion between java.util- and java.time-types.
  */

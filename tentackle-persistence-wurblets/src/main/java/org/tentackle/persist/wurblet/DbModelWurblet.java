@@ -145,7 +145,7 @@ public class DbModelWurblet extends ModelWurblet {
         }
         else if (arg.startsWith("context="))  {
           String ctx = arg.substring(8);
-          if (ctx.length() == 0) {
+          if (ctx.isEmpty()) {
             contextAttribute = null;
           }
           else {
@@ -973,7 +973,7 @@ public class DbModelWurblet extends ModelWurblet {
     String id = getGuardName();
     for (int i=0; i < id.length(); i++) {
       char c = id.charAt(i);
-      if (Character.isUpperCase(c) && buf.length() > 0) {
+      if (Character.isUpperCase(c) && !buf.isEmpty()) {
         buf.append('_');
       }
       buf.append(Character.toUpperCase(c));
@@ -1146,7 +1146,7 @@ public class DbModelWurblet extends ModelWurblet {
    * @return comma + str if str not empty or null, the empty string otherwise
    */
   public String aas(String str) {
-    if (str != null && str.length() > 0) {
+    if (str != null && !str.isEmpty()) {
       return ", " + str;
     }
     else  {
@@ -1332,7 +1332,7 @@ public class DbModelWurblet extends ModelWurblet {
     StringBuilder buf = new StringBuilder();
     List<MethodArgument> args = relation.getMethodArgs();
     for (MethodArgument arg: args) {
-      if (buf.length() > 0) {
+      if (!buf.isEmpty()) {
         buf.append(' ');
       }
       buf.append(arg.getForeignAttribute().getName());

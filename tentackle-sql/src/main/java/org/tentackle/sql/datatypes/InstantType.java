@@ -204,7 +204,7 @@ public final class InstantType extends AbstractDateTimeType<Instant> {
     return switch (index) {
 
       case 0 -> {
-        Long seconds;
+        long seconds;
         if (object == null) {
           if (mapNull) {
             seconds = 0L;
@@ -222,7 +222,7 @@ public final class InstantType extends AbstractDateTimeType<Instant> {
       }
 
       case 1 -> {
-        Integer nanos;
+        int nanos;
         if (object == null) {
           if (mapNull) {
             nanos = 0;

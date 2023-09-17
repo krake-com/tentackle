@@ -285,7 +285,7 @@ public class DefaultSecurityFactory implements SecurityFactory {
     if (permissions != null) {
       StringBuilder buf = new StringBuilder();
       for (Permission permission: permissions) {
-        if (buf.length() > 0) {
+        if (!buf.isEmpty()) {
           buf.append(',');
         }
         buf.append(permission.getName());
