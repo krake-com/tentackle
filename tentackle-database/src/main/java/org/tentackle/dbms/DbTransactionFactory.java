@@ -312,7 +312,7 @@ public class DbTransactionFactory {
                     }
                   }
                   else {
-                    LOG.warning("managed connection already detached from session {1}", session);
+                    LOG.warning("managed connection already detached from session {0}", session);
                   }
                 }
               }
