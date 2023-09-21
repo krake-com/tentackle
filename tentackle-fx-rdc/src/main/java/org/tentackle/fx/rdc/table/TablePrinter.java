@@ -137,7 +137,7 @@ public class TablePrinter extends AbstractFxController {
         e.consume();
       }
     }));
-    stage.show();
+    Fx.show(stage);
   }
 
   private static final Logger LOGGER = Logger.get(TablePrinter.class);

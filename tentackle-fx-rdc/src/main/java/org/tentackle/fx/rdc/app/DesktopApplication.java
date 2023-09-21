@@ -255,7 +255,7 @@ public abstract class DesktopApplication<C extends FxController>
                       throw new TentackleRuntimeException("finish startup failed", ex);
                     }
                   });
-                  stage.show();
+                  Fx.show(stage);
                 }
                 catch (RuntimeException rex) {
                   String msg = MessageFormat.format(AppFxRdcBundle.getString("LAUNCHING {0} FAILED"),

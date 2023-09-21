@@ -201,7 +201,7 @@ public class MainController extends AbstractFxController implements DomainContex
     Scene scene = Fx.createScene(controller.getView());
     stage.setScene(scene);
     stage.setTitle(resources.getString("Sessions"));
-    stage.show();
+    Fx.show(stage);
   }
 
   private Node createCenterNode() {

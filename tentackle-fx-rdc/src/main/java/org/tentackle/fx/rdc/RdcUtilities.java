@@ -197,7 +197,7 @@ public class RdcUtilities {
       else {
         stage.setOnHidden(null);
       }
-      stage.show();
+      Fx.show(stage);
     }
   }
 
@@ -365,7 +365,7 @@ public class RdcUtilities {
     else {
       stage.setOnHidden(null);
     }
-    stage.show();
+    Fx.show(stage);
   }
 
 
@@ -461,7 +461,7 @@ public class RdcUtilities {
     stage.setScene(scene);
     stage.setTitle(MessageFormat.format(RdcFxRdcBundle.getString("{0} {1} (modal)"),
                    pdo.getSingular(), pdo.toString()));
-    stage.show();
+    Fx.show(stage);
   }
 
 

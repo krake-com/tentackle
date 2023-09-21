@@ -52,7 +52,7 @@ public class ChangePasswordView extends AbstractFxController implements DomainCo
       stage.setScene(scene);
       stage.setTitle(MessageFormat.format(GuiBundle.getString("password {0}"), user));
       controller.setUser(user, admin);
-      stage.show();
+      Fx.show(stage);
     }
     else {
       Fx.info(owner, GuiBundle.getString("you're not allowed to change your password"));
