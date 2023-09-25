@@ -13,7 +13,6 @@
     <!-- to be build separately -->
   </parent>
 
-  <groupId>org.tentackle</groupId>
   <artifactId>tentackle-parent-osgi</artifactId>
   <!-- OSGI semantic versioning is restricted to x.y.z[.timestamp], i.e. leading java LTS version (11./12./...) must be omitted -->
   <version>15.0.0</version>
