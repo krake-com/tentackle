@@ -411,7 +411,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
     stage.setScene(scene);
     stage.setTitle(MessageFormat.format(resources.getString("{0} {1} (modal)"),
                    getPdo().getSingular(), getPdo().toString()));
-    stage.show();
+    Fx.show(stage);
   }
 
   /**

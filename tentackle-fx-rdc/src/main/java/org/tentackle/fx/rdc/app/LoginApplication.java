@@ -91,7 +91,7 @@ public class LoginApplication extends FxApplication {
           controller.login();       // perform a login once, allow the user to edit if login fails
         }
       });
-      stage.show();
+      Fx.show(stage);
       stage.setResizable(false);
       controller.requestInitialFocus();
     }

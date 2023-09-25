@@ -6,14 +6,14 @@ It contains a middle-tier server, a desktop FX client and a daemon client.
 The numerous modules are the bare minimum to separate the different
 abstraction layers like domain logic, persistence model, UI and so on.
 Tentackle applications are full-fledged modular JPMS ([Jigsaw](https://openjdk.java.net/projects/jigsaw/quick-start)) projects,
-including [Jlink](https://docs.oracle.com/en/java/javase/17/docs/specs/man/jlink.html) or 
-[JPackage](https://docs.oracle.com/en/java/javase/17/docs/specs/man/jpackage.html) images and 
+including [Jlink](https://docs.oracle.com/en/java/javase/20/docs/specs/man/jlink.html) or 
+[JPackage](https://docs.oracle.com/en/java/javase/20/docs/specs/man/jpackage.html) images and 
 an auto-update feature for the clients.
 By default, the server connects to a PostgreSQL database, but in principle
 you can use any relational database (see the [Tentackle docs](https://tentackle.org) for more info).
 
 ## Prerequisites
-* Java (JDK) >= 17
+* Java (JDK) >= 20
 * Maven >= 3.8.5
 * PostgreSQL >= 9
 
@@ -30,7 +30,7 @@ Generate your project via the Tentackle Maven archetype:
 mvn archetype:generate \
     -DarchetypeGroupId=org.tentackle \
     -DarchetypeArtifactId=tentackle-project-archetype \
-    -DarchetypeVersion=17.14.0.0
+    -DarchetypeVersion=21.0-SNAPSHOT
 ```
 When all dependencies have been pulled from [Maven Central](https://search.maven.org/),
 you will be prompted for:
@@ -100,7 +100,7 @@ Take a look at the other logs in `jlink/server/target/jlink/logs` and
 Notice: on Windows, the scripts are named `server.cmd`, `daemon.cmd` and `client.cmd`.
 
 ## Explore the code with your favorite IDE
-You can use any Java IDE that supports at least Java 17, JPMS (Jigsaw) and Maven. 
+You can use any Java IDE that supports at least Java 20, JPMS (Jigsaw) and Maven. 
 There are no special plugins necessary. However, not all IDEs provide support
 for custom code folding regions, which are pretty nice to automatically collapse generated code.
 [IntelliJ](https://www.jetbrains.com/idea/) and [Netbeans](https://netbeans.apache.org/) work fine out of the box.

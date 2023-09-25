@@ -18,16 +18,17 @@
 
 package org.tentackle.misc;
 
+import org.tentackle.common.ExceptionHelper;
+import org.tentackle.common.Service;
+import org.tentackle.common.ServiceFactory;
+import org.tentackle.task.TaskDispatcher;
+
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
-import org.tentackle.common.ExceptionHelper;
-import org.tentackle.common.Service;
-import org.tentackle.common.ServiceFactory;
-import org.tentackle.task.TaskDispatcher;
 
 
 interface DiagnosticUtilitiesHolder {
@@ -95,7 +96,7 @@ public class DiagnosticUtilities {
     // build a map of thread id <-> thread
     Map<Long, Thread> threadIdMap = new HashMap<>();
     for (Thread thread : Thread.getAllStackTraces().keySet()) {
-      threadIdMap.put(thread.getId(), thread);
+      threadIdMap.put(thread.threadId(), thread);
     }
 
     ThreadMXBean bean = ManagementFactory.getThreadMXBean();

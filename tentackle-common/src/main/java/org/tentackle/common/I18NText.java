@@ -473,7 +473,7 @@ public class I18NText implements CharSequence, Comparable<I18NText>, Serializabl
       // The LocaleProvider may allow wider locales for ResourceBundles,
       // but for I18NText this would complicate things way too much.
       // In most applications, the LocaleProvider narrows to language anyway.
-      locale = new Locale(locale.getLanguage());
+      locale = Locale.of(locale.getLanguage());
     }
     return locale;
   }

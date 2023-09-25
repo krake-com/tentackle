@@ -7,7 +7,7 @@
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-parent</artifactId>
-  <version>17.14.0.0</version>
+  <version>21.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Tentackle Parent</name>
@@ -79,14 +79,14 @@
     <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <dependency.locations.enabled>false</dependency.locations.enabled>
-    <javac.lint>all,-processing</javac.lint>
-    <javac.version>17</javac.version>
+    <javac.lint>all,-processing,-this-escape</javac.lint>
+    <javac.version>21</javac.version>
 
-    <javafx.version>20.0.2</javafx.version>
+    <javafx.version>21</javafx.version>
     <ikonli.version>12.3.1</ikonli.version>
     <ow2.asm.version>9.5</ow2.asm.version>
     <groovy.version>4.0.14</groovy.version>
-    <maven.version>3.9.0</maven.version>    <!-- only for build, apps can still use 3.8.5 -->
+    <maven.version>3.9.0</maven.version>
     <postgresql.version>42.6.0</postgresql.version>
     <h2.version>2.2.222</h2.version>
     <testng.version>7.8.0</testng.version>
@@ -98,7 +98,7 @@
     <maven.dependency.plugin.version>3.6.0</maven.dependency.plugin.version>
     <maven.deploy.plugin.version>3.1.1</maven.deploy.plugin.version>
     <maven.install.plugin.version>3.1.1</maven.install.plugin.version>
-    <maven.javadoc.plugin.version>3.5.0</maven.javadoc.plugin.version>
+    <maven.javadoc.plugin.version>3.6.0</maven.javadoc.plugin.version>
     <maven.resources.plugin.version>3.3.1</maven.resources.plugin.version>
     <maven.source.plugin.version>3.3.0</maven.source.plugin.version>
     <maven.surefire.plugin.version>3.1.2</maven.surefire.plugin.version>
@@ -110,7 +110,7 @@
     <tentackle.manifestDirectory>${project.build.directory}/generated-resources/manifest</tentackle.manifestDirectory>
     <netbeans.hint.license>tentackle</netbeans.hint.license>
 
-    <wurbelizer.version>17.5.1.0</wurbelizer.version>
+    <wurbelizer.version>21.0-SNAPSHOT</wurbelizer.version>
     <!-- override the default wurbelDir for multi-module project -->
     <wurbel.wurbelDir>${rootBasedir}/target/wurbel</wurbel.wurbelDir>
 
@@ -319,7 +319,7 @@
       <dependency>
         <groupId>org.apache.maven.plugin-tools</groupId>
         <artifactId>maven-plugin-annotations</artifactId>
-        <version>3.8.1</version>
+        <version>3.9.0</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven.shared</groupId>
@@ -387,11 +387,10 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-plugin-plugin</artifactId>
-          <version>3.8.2</version>
+          <version>3.9.0</version>
           <configuration>
-            <requirements>
-              <maven>${maven.version}</maven>
-            </requirements>
+            <requiredMavenVersion>${maven.version}</requiredMavenVersion>
+            <requiredJavaVersion>${javac.version}</requiredJavaVersion>
           </configuration>
           <dependencies>
             <dependency>
@@ -400,6 +399,12 @@
               <version>${ow2.asm.version}</version>
             </dependency>
           </dependencies>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-plugin-report-plugin</artifactId>
+          <version>3.9.0</version>
         </plugin>
 
         <plugin>
@@ -458,6 +463,7 @@
             <showDeprecation>true</showDeprecation>
             <compilerArgs>
               <arg>-Xlint:${javac.lint}</arg>
+              <arg>-proc:full</arg>
             </compilerArgs>
           </configuration>
           <dependencies>
@@ -641,7 +647,7 @@
       <plugin>
         <!-- generate plugin docs as well -->
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-plugin-plugin</artifactId>
+        <artifactId>maven-plugin-report-plugin</artifactId>
       </plugin>
 
       <plugin>
@@ -650,6 +656,9 @@
         <configuration>
           <doclint>none</doclint>
           <failOnError>false</failOnError>
+          <additionalOptions>
+            <additionalOption>--link-modularity-mismatch=info</additionalOption>
+          </additionalOptions>
           <tags>
             <tag>
               <name>wurblet</name>
@@ -668,7 +677,6 @@
           </reportSet>
           <reportSet>
             <id>aggregate</id>
-            <inherited>false</inherited>
             <reports>
               <report>aggregate</report>
             </reports>
@@ -756,6 +764,9 @@
                       <Implementation-Build-Date>${maven.build.timestamp}</Implementation-Build-Date>
                     </manifestEntries>
                   </archive>
+                  <additionalOptions>
+                    <additionalOption>--link-modularity-mismatch=info</additionalOption>
+                  </additionalOptions>
                 </configuration>
               </execution>
             </executions>

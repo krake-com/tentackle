@@ -104,6 +104,17 @@ public class Fx {
   }
 
   /**
+   * Shows a stage.<br>
+   * Should be preferred over {@link Stage#show()} to allow adding
+   * application-specific bookkeeping.
+   *
+   * @param stage the stage to show
+   */
+  public static void show(Stage stage) {
+    FxUtilities.getInstance().show(stage);
+  }
+
+  /**
    * Creates a scene.
    *
    * @param root the parent node

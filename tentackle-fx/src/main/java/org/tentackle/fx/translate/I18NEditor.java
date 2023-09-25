@@ -18,6 +18,13 @@
 
 package org.tentackle.fx.translate;
 
+import org.tentackle.common.I18NText;
+import org.tentackle.common.LocaleProvider;
+import org.tentackle.fx.AbstractFxController;
+import org.tentackle.fx.Fx;
+import org.tentackle.fx.FxControllerService;
+import org.tentackle.fx.FxTextComponent;
+
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -30,14 +37,6 @@ import javafx.scene.control.TextInputControl;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-
-import org.tentackle.common.I18NText;
-import org.tentackle.common.LocaleProvider;
-import org.tentackle.fx.AbstractFxController;
-import org.tentackle.fx.Fx;
-import org.tentackle.fx.FxControllerService;
-import org.tentackle.fx.FxTextComponent;
-
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Locale;
@@ -67,7 +66,7 @@ public class I18NEditor extends AbstractFxController {
     stage.initOwner(Fx.getStage(i18NEditor.component));
     stage.setTitle(i18NEditor.resources.getString("translations"));
     stage.setScene(scene);
-    stage.show();
+    Fx.show(stage);
   }
 
 
@@ -115,7 +114,7 @@ public class I18NEditor extends AbstractFxController {
     Locale fallbackLocale = LocaleProvider.getInstance().getFallbackLocale();
     Set<Locale> locales = new LinkedHashSet<>();
     for (Locale effectiveLocale : LocaleProvider.getInstance().getEffectiveLocales()) {
-      locales.add(new Locale(effectiveLocale.getLanguage()));    // flatten to language only (see I18NText)
+      locales.add(Locale.of(effectiveLocale.getLanguage()));    // flatten to language only (see I18NText)
     }
 
     editorMap = new LinkedHashMap<>();    // editors ordered by effective locales from LocaleProvider to provide consistent update order

@@ -8,19 +8,19 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>17.14.0.0</version>
+    <version>21.0-SNAPSHOT</version>
     <!-- not a module of tentackle-parent -->
     <!-- to be build separately -->
   </parent>
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-parent-osgi</artifactId>
-  <!-- OSGI semantic versioning is restricted to x.y.z[.timestamp], i.e. leading java LTS version (17.) must be omitted -->
-  <version>14.0.0</version>
+  <!-- OSGI semantic versioning is restricted to x.y.z[.timestamp], i.e. leading java LTS version (11./12./...) must be omitted -->
+  <version>21.0.0</version>
   <packaging>pom</packaging>
 
   <properties>
-    <tentackle.version>17.14.0.0</tentackle.version>
+    <tentackle.version>21.0-SNAPSHOT</tentackle.version>
   </properties>
 
   <name>Tentackle OSGi Parent</name>

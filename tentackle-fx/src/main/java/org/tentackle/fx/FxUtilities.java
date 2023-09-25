@@ -153,6 +153,18 @@ public class FxUtilities {
     // see -Xlint:missing-explicit-ctor since Java 16
   }
 
+
+  /**
+   * Shows a stage.<br>
+   * Should be preferred over {@link Stage#show()} to allow adding
+   * application-specific bookkeeping.
+   *
+   * @param stage the stage to show
+   */
+  public void show(Stage stage) {
+    stage.show();
+  }
+
   /**
    * Returns whether to enable dark mode.
    *

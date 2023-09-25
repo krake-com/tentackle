@@ -24,6 +24,7 @@ import org.tentackle.common.TentackleRuntimeException;
 import java.io.IOException;
 import java.io.Serial;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.http.HttpClient;
@@ -165,9 +166,9 @@ public abstract class AbstractUpdateServiceImpl extends UnicastRemoteObject impl
    */
   protected URL createZipURL(ClientInfo clientInfo) {
     try {
-      return new URL(createBaseUrlName(clientInfo) + ".zip");
+      return new URI(createBaseUrlName(clientInfo) + ".zip").toURL();
     }
-    catch (MalformedURLException e) {
+    catch (URISyntaxException | MalformedURLException e) {
       throw new TentackleRuntimeException(e);
     }
   }
@@ -180,9 +181,9 @@ public abstract class AbstractUpdateServiceImpl extends UnicastRemoteObject impl
    */
   protected URL createChecksumURL(ClientInfo clientInfo) {
     try {
-      return new URL(createBaseUrlName(clientInfo) + ".sha256");
+      return new URI(createBaseUrlName(clientInfo) + ".sha256").toURL();
     }
-    catch (MalformedURLException e) {
+    catch (URISyntaxException | MalformedURLException e) {
       throw new TentackleRuntimeException(e);
     }
   }

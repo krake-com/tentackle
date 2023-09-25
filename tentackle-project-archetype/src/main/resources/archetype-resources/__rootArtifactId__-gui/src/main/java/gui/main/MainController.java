@@ -201,7 +201,17 @@ public class MainController extends AbstractFxController implements DomainContex
     Scene scene = Fx.createScene(controller.getView());
     stage.setScene(scene);
     stage.setTitle(resources.getString("Sessions"));
-    stage.show();
+    Fx.show(stage);
+  }
+
+  private Node createCenterNode() {
+    // just to show something nice (to be replaced by some application relevant stuff)
+    try (InputStream is = getClass().getResourceAsStream("/${packageInPathFormat}/gui/images/tentackle.png")) {
+      return new ImageView(new Image(is));
+    }
+    catch (IOException iox) {
+      throw new FxRuntimeException("loading center image failed", iox);
+    }
   }
 
   private Node createCenterNode() {

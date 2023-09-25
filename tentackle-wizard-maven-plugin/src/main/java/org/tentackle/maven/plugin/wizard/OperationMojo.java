@@ -74,7 +74,7 @@ public class OperationMojo extends AbstractWizardMojo {
         stage.setTitle("Operation Wizard");
         wizard.getContainer().updateView();
         stage.setOnHidden(event -> latch.countDown());
-        stage.show();
+        Fx.show(stage);
       }
       catch (Throwable t) {
         getLog().error(t);

@@ -101,7 +101,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     stage.setTitle("PDO Browser");
     diffDialog.setContext(mojo, context);
     diffDialog.getContainer().updateView();
-    stage.show();
+    Fx.show(stage);
     return stage;
   }
 
@@ -366,7 +366,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
           stage.setScene(scene);
           stage.setTitle("Find " + proxy.getPlural());
           borderPane.updateView();
-          stage.show();
+          Fx.show(stage);
         });
       }
       else {
@@ -420,7 +420,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
       Scene scene = Fx.createScene(borderPane);
       stage.setScene(scene);
       stage.setTitle("Code Configuration");
-      stage.show();
+      Fx.show(stage);
     }
   }
 
