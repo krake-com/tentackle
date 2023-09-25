@@ -13,8 +13,8 @@ By default, the server connects to a PostgreSQL database, but in principle
 you can use any relational database (see the [Tentackle docs](https://tentackle.org) for more info).
 
 ## Prerequisites
-* Java (JDK) >= 20
-* Maven >= 3.8.5
+* Java (JDK) >= 21
+* Maven >= 3.9.0
 * PostgreSQL >= 9
 
 Verify with:
@@ -30,7 +30,7 @@ Generate your project via the Tentackle Maven archetype:
 mvn archetype:generate \
     -DarchetypeGroupId=org.tentackle \
     -DarchetypeArtifactId=tentackle-project-archetype \
-    -DarchetypeVersion=21.0-SNAPSHOT
+    -DarchetypeVersion=21.15.0.0
 ```
 When all dependencies have been pulled from [Maven Central](https://search.maven.org/),
 you will be prompted for:
