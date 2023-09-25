@@ -8,7 +8,7 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent-osgi</artifactId>
-    <version>20.0.0</version>
+    <version>21.0.0</version>
   </parent>
 
   <groupId>org.tentackle</groupId>
@@ -65,4 +65,3 @@
   </build>
 
 </project>
-
