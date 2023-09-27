@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.wurblet;
 
 import org.wurbelizer.misc.Constants;
@@ -39,7 +38,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.StringTokenizer;
-
 
 /**
  * Base class for the {@code @DTO}-wurblet.

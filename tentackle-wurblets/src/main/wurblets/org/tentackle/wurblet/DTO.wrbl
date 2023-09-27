@@ -187,6 +187,12 @@ public record Position3D(&#64;Bindable(options="AUTOSELECT") int x,
         }
       }
 
+      if (validate != null) {
+]@
+  \@SuppressWarnings("this-escape")
+@[
+      }
+
       if (withBuilder) {
 ]@
   protected @(getClassName())@(Builder builder) {

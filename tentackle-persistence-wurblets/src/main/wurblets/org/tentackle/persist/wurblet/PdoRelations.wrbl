@@ -634,6 +634,9 @@ For more options, see {\@link DbModelWurblet}.
     if (@(nmVar)@ == null) {
       @(nmVar)@ = new TrackedArrayList<>() {
 
+        \@Serial
+        private static final long serialVersionUID = 1L;
+
         \@Override
         public boolean isModified() {
           return @(rel.getGetterName())@().isModified();
