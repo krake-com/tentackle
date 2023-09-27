@@ -86,7 +86,7 @@ public interface NotificationBuilder {
     AUTO(false, false),
 
     /**
-     * Same a as <code>AUTO</code>, but the close button will be shown as the default button,
+     * Same as <code>AUTO</code>, but the close button will be shown as the default button,
      * i.e. <code>ENTER</code> closes the dialog.
      */
     AUTO_DEFAULT(true, false),

@@ -176,7 +176,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
 
   /**
    * true if prepared statements should always be prepared (i.e. if
-   * the statement is changing for some reasons, e.g. the tablename).
+   * the statement is changing for some reason, e.g. the table name).
    */
   public boolean alwaysPrepare;
 
