@@ -18,21 +18,26 @@
 
 package org.tentackle.dbms.prefs;
 
+import org.testng.Reporter;
+import org.testng.annotations.Test;
+
+import org.tentackle.dbms.AbstractDbTest;
+import org.tentackle.dbms.DbModification;
+import org.tentackle.log.Logger;
+import org.tentackle.prefs.PersistedPreferences;
+import org.tentackle.prefs.PersistedPreferencesFactory;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.prefs.NodeChangeEvent;
 import java.util.prefs.NodeChangeListener;
 import java.util.prefs.PreferenceChangeEvent;
 import java.util.prefs.PreferenceChangeListener;
-import org.tentackle.log.Logger;
-import org.tentackle.dbms.AbstractDbTest;
-import org.tentackle.dbms.DbModification;
-import org.tentackle.prefs.PersistedPreferences;
-import org.tentackle.prefs.PersistedPreferencesFactory;
-import org.testng.Reporter;
-import org.testng.annotations.Test;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
 
 
 /**
@@ -60,7 +65,7 @@ public class MultiJVMPreferencesTest extends AbstractDbTest implements NodeChang
   }
 
   // synchronized because it's the modtracker's thread
-  // Reporter.log doesnt work from other than test thread!
+  // Reporter.log doesn't work from other than test thread!
   @Override
   public synchronized void childAdded(NodeChangeEvent evt) {
     nodeEvents.add(evt);

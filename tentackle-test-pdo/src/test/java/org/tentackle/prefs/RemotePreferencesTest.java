@@ -67,7 +67,7 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
 
 
   // synchronized because it's the modtracker's thread
-  // Reporter.log doesnt work from other than test thread!
+  // Reporter.log doesn't work from other than test thread!
   @Override
   public synchronized void childAdded(NodeChangeEvent evt) {
     nodeEvents.add(evt);

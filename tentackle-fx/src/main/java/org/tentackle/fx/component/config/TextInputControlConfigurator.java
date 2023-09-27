@@ -19,11 +19,11 @@
 
 package org.tentackle.fx.component.config;
 
+import org.tentackle.fx.FxComponent;
+
 import javafx.scene.control.TextInputControl;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-
-import org.tentackle.fx.FxComponent;
 
 /**
  * Configures a {@link TextInputControl}.
@@ -104,7 +104,7 @@ public abstract class TextInputControlConfigurator<T extends TextInputControl> e
    */
   protected void focusPrevious(T control) {
     if (!(control instanceof FxComponent) || !((FxComponent) control).isCellEditor()) {
-      //      NodeHelper.traverse(control, Direction.PREVIOUS);   is non public API :(
+      //      NodeHelper.traverse(control, Direction.PREVIOUS);   is non-public API :(
       KeyEvent event = new KeyEvent(KeyEvent.KEY_PRESSED, KeyEvent.CHAR_UNDEFINED, "", KeyCode.TAB,
                                     true, false, false, false);
       control.fireEvent(event);

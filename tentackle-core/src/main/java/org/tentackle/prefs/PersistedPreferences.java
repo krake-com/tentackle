@@ -177,7 +177,7 @@ public interface PersistedPreferences {
    * <code>MAX_KEY_LENGTH</code>.
    * @throws IllegalStateException    if this node (or an ancestor) has been removed with the {@link #removeNode()}
    *                                  method.
-   * @see #getInt(String,int)
+   * @see #getInt(String, int)
    */
   void putInt(String key, int value);
 

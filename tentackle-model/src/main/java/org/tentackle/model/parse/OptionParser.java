@@ -25,7 +25,7 @@ package org.tentackle.model.parse;
  */
 public class OptionParser {
 
-  private final String text;          // text to parse
+  private final String text;          // the text to parse
   private final StringBuilder other;  // buffer gets remaining comment
   private final int max;              // length of text
   private int pos;                    // current offset in text

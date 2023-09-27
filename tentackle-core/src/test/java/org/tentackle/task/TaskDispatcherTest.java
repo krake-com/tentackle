@@ -25,6 +25,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.io.Serial;
+import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -52,9 +53,7 @@ public class TaskDispatcherTest {
 
   @BeforeClass
   public void initialize() {
-    for (int i=0; i < THREAD_NUM; i++) {
-      failMessages[i] = null;
-    }
+    Arrays.fill(failMessages, null);
   }
 
 

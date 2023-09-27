@@ -19,13 +19,13 @@
 
 package org.tentackle.fx.component.config;
 
-import javafx.scene.control.TextArea;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-
 import org.tentackle.fx.ConfiguratorService;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.component.FxTextArea;
+
+import javafx.scene.control.TextArea;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 
 /**
  * Configures a {@link TextArea}.
@@ -87,7 +87,7 @@ public class TextAreaConfigurator<T extends TextArea> extends TextInputControlCo
 
   protected void focusPrevious(T control) {
     if (!(control instanceof FxComponent) || !((FxComponent) control).isCellEditor()) {
-      //      NodeHelper.traverse(control, Direction.PREVIOUS);   is non public API :(
+      //      NodeHelper.traverse(control, Direction.PREVIOUS);   is non-public API :(
       KeyEvent event = new KeyEvent(KeyEvent.KEY_PRESSED, KeyEvent.CHAR_UNDEFINED, PREVIOUS, KeyCode.TAB,
                                     true, false, false, false);
       control.fireEvent(event);

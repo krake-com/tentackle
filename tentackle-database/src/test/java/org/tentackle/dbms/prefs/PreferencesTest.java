@@ -137,7 +137,7 @@ public class PreferencesTest extends AbstractDbTest implements NodeChangeListene
     boolean found2 = false;
     for (DbPreferencesKey prefKey: prefKeys) {
       assertEquals(prefKey.getRootNodeId(), rootId);
-      // nodeId must be ok, otherwise the select above wouldnt catch it
+      // nodeId must be ok, otherwise the select above wouldn't catch it
       switch (prefKey.getKey()) {
         case KEY_1:
           assertEquals(prefKey.getValue(), VALUE_1);
