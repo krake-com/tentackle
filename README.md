@@ -34,7 +34,7 @@ mvn archetype:generate \
     -DarchetypeArtifactId=tentackle-project-archetype \
     -DarchetypeVersion=21.15.0.0
 ```
-When all dependencies have been pulled from [Maven Central](https://search.maven.org/),
+When all dependencies have been pulled from [Maven Central](https://search.maven.org/search?q=org.tentackle),
 you will be prompted for:
 
 * **groupId**: the group-ID of your project.
