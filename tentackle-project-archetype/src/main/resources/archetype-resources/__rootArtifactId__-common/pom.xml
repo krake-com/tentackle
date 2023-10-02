@@ -26,12 +26,6 @@
       <groupId>org.tentackle</groupId>
       <artifactId>tentackle-pdo</artifactId>
     </dependency>
-
-    <dependency>
-      <!-- logger binder for testng -->
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-simple</artifactId>
-    </dependency>
   </dependencies>
 
   <build>
