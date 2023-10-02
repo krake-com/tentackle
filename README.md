@@ -22,6 +22,8 @@ Verify with:
 mvn --version
 psql --version
 ```
+_Notice: for older LTS-versions see the branches java17, java11 and java8.
+Java17 still receives bugfixes. Java11 and java8 reached end-of-life._
 
 ## Project Setup
 Generate your project via the Tentackle Maven archetype:
