@@ -68,9 +68,7 @@ public class UserGroupEditor extends PdoEditor<UserGroup> {
     });
     emptyLabel = new Label(resources.getString("no users"));
     groupUsersNode.setPlaceholder(emptyLabel);
-    groupUsersNode.setOnDragOver(event -> {
-      GuiProviderFactory.getInstance().createGuiProvider(getPdo()).isDragAccepted(event);
-    });
+    groupUsersNode.setOnDragOver(event -> GuiProviderFactory.getInstance().createGuiProvider(getPdo()).isDragAccepted(event));
     groupUsersNode.setOnDragDropped(event -> {
       for (PersistentDomainObject<?> droppedPdo : RdcUtilities.getInstance().getPdosFromDragboard(event.getDragboard(), getDomainContext())) {
         if (droppedPdo instanceof User user) {
