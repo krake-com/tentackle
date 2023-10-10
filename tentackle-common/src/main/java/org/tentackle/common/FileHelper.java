@@ -96,7 +96,7 @@ public class FileHelper {
       if (name.indexOf('.') < 0) {
         name += Constants.PROPS_EXTENSION;
       }
-      if (!name.startsWith("/")) {
+      if (asResource && !name.startsWith("/")) {
         name = "/" + name;
       }
       try (InputStream is = asResource ? createInputStream(FileHelper.class, name) : new FileInputStream(name)) {
