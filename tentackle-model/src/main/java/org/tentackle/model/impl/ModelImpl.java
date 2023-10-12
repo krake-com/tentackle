@@ -309,7 +309,7 @@ public class ModelImpl implements Model {
           entityInfos.add(loadFromURL(url, false));
         }
         catch (URISyntaxException | MalformedURLException e) {
-          throw new ModelException("cannot create model URL for " + entry.getKey() + " in " + entry.getValue());
+          throw new ModelException("cannot create model URL for " + entry.getKey() + " in " + entry.getValue(), e);
         }
       }
       else {
