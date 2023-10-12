@@ -645,7 +645,8 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
                 }
               }
               else {
-                dumpedName = getPathRelativeToBasedir(getCanonicalPath(dumpedFile));
+                dumpedName = getPathRelativeToBasedir(getCanonicalPath(dumpedFile))
+                               .replace('\\', '/'); // if built on windows: translate to unix-style paths
               }
               writer.write(dumpedName + "\n");
             }
