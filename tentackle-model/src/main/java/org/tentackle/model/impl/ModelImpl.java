@@ -79,6 +79,13 @@ import java.util.jar.JarFile;
 @Service(Model.class)
 public class ModelImpl implements Model {
 
+  private static final String PROPS_PREFIX = "tentackle.model.";     // system properties prefix
+  private static final String PROPS_MAP_SCHEMAS = PROPS_PREFIX + "mapSchemas";
+  private static final String PROPS_MODEL_DEFAULTS = PROPS_PREFIX + "modelDefaults";
+  private static final String PROPS_ENTITY_ALIASES = PROPS_PREFIX + "entityAliases";
+  private static final String PROPS_INDEX_NAME = PROPS_PREFIX + "indexName";
+
+
   /** cached entities mapped by URL. */
   private final Map<String, EntityInfo> urlToEntityInfoMap;
 
@@ -115,12 +122,14 @@ public class ModelImpl implements Model {
   /** the optional entity aliases. */
   private EntityAliases entityAliases;
 
+  /** the name of the model index list. */
+  private String indexName = DEFAULT_INDEX_NAME;
 
 
   /**
    * Creates a model.
    */
-  public ModelImpl() {
+  public ModelImpl() throws ModelException {
     entityFactory = createEntityFactory();
     nameToEntityInfoMap = new TreeMap<>();    // tree map for implicit sort by name
     tableToEntityInfoMap = new HashMap<>();
@@ -129,6 +138,38 @@ public class ModelImpl implements Model {
     entityToSourceInfoMap = new HashMap<>();
     modelDirs = new HashMap<>();
     customModelValidators = CustomModelValidator.loadValidators();
+
+    /*
+     * Presets model configuration from the runtime properties.
+     * This is provided to easily configure unit tests as an alternative
+     * to extend DbTestUtilities in tentackle-test-pdo.
+     * Example:
+     *
+       <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>3.1.2</version>
+          <configuration>
+            <argLine>-Dtentackle.model.mapSchemas=true</argLine>
+          </configuration>
+        </plugin>
+     */
+    String prop = System.getProperty(PROPS_MAP_SCHEMAS);
+    if (prop != null) {
+      mapSchemas = Boolean.parseBoolean(prop);
+    }
+    prop = System.getProperty(PROPS_MODEL_DEFAULTS);
+    if (prop != null) {
+      modelDefaults = new ModelDefaults(prop);
+    }
+    prop = System.getProperty(PROPS_ENTITY_ALIASES);
+    if (prop != null) {
+      entityAliases = new EntityAliases(prop);
+    }
+    prop = System.getProperty(PROPS_INDEX_NAME);
+    if (prop != null) {
+      indexName = prop;
+    }
   }
 
   @Override
@@ -159,6 +200,16 @@ public class ModelImpl implements Model {
   @Override
   public void setEntityAliases(EntityAliases entityAliases) {
     this.entityAliases = entityAliases;
+  }
+
+  @Override
+  public String getIndexName() {
+    return indexName;
+  }
+
+  @Override
+  public void setIndexName(String indexName) {
+    this.indexName = indexName;
   }
 
   @Override
@@ -257,9 +308,9 @@ public class ModelImpl implements Model {
   @Override
   public Collection<EntityInfo> loadFromJar(File file, boolean updateRelations) throws ModelException {
     Collection<EntityInfo> entityInfos = new ArrayList<>();
-    String indexName = Constants.META_INF + MODEL_INDEX_LIST;
+    String metaInfIndexName = Constants.META_INF + getIndexName();
     try (JarFile jarFile = new JarFile(file)) {
-      JarEntry indexEntry = jarFile.getJarEntry(indexName);
+      JarEntry indexEntry = jarFile.getJarEntry(metaInfIndexName);
       if (indexEntry != null) {
         String urlLead = "jar:file:" + file.getCanonicalPath() + "!/";
         try (BufferedReader indexReader = new BufferedReader(new InputStreamReader(jarFile.getInputStream(indexEntry), Settings.getEncodingCharset()))) {
@@ -277,7 +328,7 @@ public class ModelImpl implements Model {
         }
       }
       else {
-        throw new ModelException("missing " + indexName + " in " + file);
+        throw new ModelException("missing " + metaInfIndexName + " in " + file);
       }
     }
     catch (URISyntaxException | IOException e) {
@@ -294,7 +345,7 @@ public class ModelImpl implements Model {
   @Override
   public Collection<EntityInfo> loadFromResources(boolean updateRelations) throws ModelException {
     Collection<EntityInfo> entityInfos = new ArrayList<>();
-    for (Map.Entry<String, URL> entry : ServiceFactory.getServiceFinder(Constants.META_INF).findServiceConfigurations(MODEL_INDEX_LIST).entrySet()) {
+    for (Map.Entry<String, URL> entry : ServiceFactory.getServiceFinder(Constants.META_INF).findServiceConfigurations(getIndexName()).entrySet()) {
       // URL forms:
       // from jimage:       jrt:/com.example.myapp.client/META-INF/MODEL-INDEX.LIST
       // from artifact:     jar:file:/home/harald/.m2/repository/com/example/myapp-client/1.0/myapp-client-1.0.jar!/META-INF/MODEL-INDEX.LIST

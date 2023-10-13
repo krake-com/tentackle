@@ -38,10 +38,11 @@ interface ModelHolder {
 public interface Model {
 
   /**
-   * Name of the index file holding the model names within a jar or classpath.<br>
+   * Default name of the index file holding the model names within a jar or classpath.<br>
    * Resides in {@code META-INF}.
    */
-  String MODEL_INDEX_LIST = "MODEL-INDEX.LIST";
+  String DEFAULT_INDEX_NAME = "MODEL-INDEX.LIST";
+
 
   /**
    * The singleton.
@@ -51,7 +52,6 @@ public interface Model {
   static Model getInstance() {
     return ModelHolder.INSTANCE;
   }
-
 
 
   /**
@@ -88,6 +88,21 @@ public interface Model {
    * @return the aliases, null if none
    */
   EntityAliases getEntityAliases();
+
+  /**
+   * Sets the name of the model index list.<br>
+   * The default is {@link #DEFAULT_INDEX_NAME}.
+   *
+   * @param indexName the name of the list containing the entity model resource names
+   */
+  void setIndexName(String indexName);
+
+  /**
+   * Gets the name of the model index list.
+   *
+   * @return the name of the list containing the entity model resource names
+   */
+  String getIndexName();
 
   /**
    * Loads the whole model from the model directory if not yet done.
