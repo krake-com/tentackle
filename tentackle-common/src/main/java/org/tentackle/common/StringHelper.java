@@ -225,8 +225,9 @@ public final class StringHelper {
 
   /**
    * Takes a string, surrounds it with double-quotes and escapes all double-quotes
-   * already in the string according to Unix rules. Transforms all ISO Controls
-   * to spaces as well.
+   * already in the string according to Unix rules. Formfeed, linefeed, carriage return
+   * and tab will be converted to their well-known escape sequence. All other ISO Controls
+   * are converted to spaces.
    * <p>
    * Example:
    * <pre>
@@ -247,7 +248,24 @@ public final class StringHelper {
           buf.append('\\');
         }
         else if (Character.isISOControl(c)) {
-          c = ' ';    // transform any controls to spaces
+          if (c == '\f') {
+            buf.append("\\f");
+            continue;
+          }
+          if (c == '\t') {
+            buf.append("\\t");
+            continue;
+          }
+          if (c == '\n') {
+            buf.append("\\n");
+            continue;
+          }
+          if (c == '\r') {
+            buf.append("\\r");
+            continue;
+          }
+          // transform any controls/separators to spaces
+          c = ' ';
         }
         buf.append(c);
       }
