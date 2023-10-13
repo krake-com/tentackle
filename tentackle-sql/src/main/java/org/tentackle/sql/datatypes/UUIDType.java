@@ -19,6 +19,7 @@
 package org.tentackle.sql.datatypes;
 
 import org.tentackle.common.Service;
+import org.tentackle.common.StringHelper;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.DataType;
 import org.tentackle.sql.SqlType;
@@ -107,7 +108,7 @@ public final class UUIDType extends AbstractDataType<UUID> {
   @Override
   public String valueOfLiteralToCode(String str, Integer index) {
     if (!str.isEmpty() && str.charAt(0) != '"') {
-      str = "\"" + str + "\"";
+      str = StringHelper.toDoubleQuotes(str);
     }
     return "UUID.fromString(" + str + ")";
   }

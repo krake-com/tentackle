@@ -213,7 +213,7 @@ public final class ZonedDateTimeType extends AbstractDateTimeType<ZonedDateTime>
         return str;
       }
       if (!str.isEmpty() && Character.isDigit(str.charAt(0))) {
-        str = "\"" + str + "\"";
+        str = StringHelper.toDoubleQuotes(str);
       }
       return switch (index) {
         case 0 -> "Timestamp.valueOf(" + str + ")";
@@ -222,7 +222,7 @@ public final class ZonedDateTimeType extends AbstractDateTimeType<ZonedDateTime>
       };
     }
     if (!str.isEmpty() && Character.isDigit(str.charAt(0))) {
-      str = "\"" + str + "\"";
+      str = StringHelper.toDoubleQuotes(str);
     }
     return "ZonedDateTime.parse(" + str + ")";
   }
