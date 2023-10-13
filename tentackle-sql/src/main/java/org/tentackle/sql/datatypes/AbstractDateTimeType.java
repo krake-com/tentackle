@@ -18,6 +18,8 @@
 
 package org.tentackle.sql.datatypes;
 
+import org.tentackle.common.StringHelper;
+
 /**
  * Base class for date- or time-related data types.
  *
@@ -43,7 +45,7 @@ public abstract class AbstractDateTimeType<T> extends AbstractDataType<T> {
       return str;
     }
     if (index == null && !str.isEmpty() && Character.isDigit(str.charAt(0))) {
-      str = "\"" + str + "\"";
+      str = StringHelper.toDoubleQuotes(str);
     }
     return (isPredefined() ? getJavaType() : getDataTypeConstant()) + ".valueOf(" + str + ")";
   }

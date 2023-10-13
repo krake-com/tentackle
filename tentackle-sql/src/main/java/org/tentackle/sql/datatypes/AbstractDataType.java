@@ -261,7 +261,7 @@ public abstract class AbstractDataType<T> implements DataType<T> {
       return str;
     }
     if (index == null && !str.isEmpty() && str.charAt(0) != '"') {
-      str = "\"" + str + "\"";
+      str = StringHelper.toDoubleQuotes(str);
     }
     return (isPredefined() ? getJavaType() : getDataTypeConstant()) + ".valueOf(" + str + ")";
   }
@@ -368,7 +368,7 @@ public abstract class AbstractDataType<T> implements DataType<T> {
         str = buf.toString();
       }
       else {
-        str = "\"" + str + "\"";
+        str = StringHelper.toDoubleQuotes(str);
       }
     }
     return str;
