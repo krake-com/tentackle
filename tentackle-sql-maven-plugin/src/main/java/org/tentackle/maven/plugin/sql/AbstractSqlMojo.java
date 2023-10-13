@@ -640,13 +640,13 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
                 String resourcePath = getCanonicalPath(resourceDir);
                 String dumpedFilePath = getCanonicalPath(dumpedFile);
                 dumpedName = dumpedFilePath.substring(resourcePath.length());
-                if (dumpedName.startsWith("/")) {
-                  dumpedName = dumpedName.substring(1);
-                }
               }
               else {
-                dumpedName = getPathRelativeToBasedir(getCanonicalPath(dumpedFile))
-                               .replace('\\', '/'); // if built on windows: translate to unix-style paths
+                dumpedName = getPathRelativeToBasedir(getCanonicalPath(dumpedFile));
+              }
+              dumpedName = dumpedName.replace('\\', '/'); // if built on windows: translate to unix-style paths
+              if (dumpedName.startsWith("/")) {
+                dumpedName = dumpedName.substring(1);
               }
               writer.write(dumpedName + "\n");
             }
