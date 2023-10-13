@@ -351,8 +351,14 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
     }
     catch (ServerNotActiveException | RuntimeException ex) {
       if (db != null) {
-        cleanup(false);
-        closeDb(false);
+        try {
+          cleanup(false);
+          closeDb(false);
+        }
+        catch (RuntimeException rx) {
+          // may be some overridden stuff failed in application
+          LOGGER.warning("could not close session after failed login -> ignored", rx);
+        }
       }
       if (ex instanceof LoginFailedException) {
         throw (LoginFailedException) ex;
