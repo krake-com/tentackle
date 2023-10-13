@@ -173,8 +173,8 @@ public class StringHelperTest {
     String from = "This \" is to be quoted";
     assertEquals(StringHelper.toDoubleQuotes(from), "\"This \\\" is to be quoted\"");
 
-    from = "This \" is\tto be quoted";
-    assertEquals(StringHelper.toDoubleQuotes(from), "\"This \\\" is to be quoted\"");
+    from = "This \" is\tto\nbe\u001Cquoted";
+    assertEquals(StringHelper.toDoubleQuotes(from), "\"This \\\" is\\tto\\nbe quoted\"");
 
     from = "This \\\" is to be quoted";
     assertEquals(StringHelper.toDoubleQuotes(from), "\"This \\\\\\\" is to be quoted\"");
