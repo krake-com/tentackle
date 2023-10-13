@@ -185,7 +185,7 @@ public final class OffsetTimeType extends AbstractDateTimeType<OffsetTime> {
             yield str;
           }
           if (!str.isEmpty() && Character.isDigit(str.charAt(0))) {
-            str = "\"" + str + "\"";
+            str = StringHelper.toDoubleQuotes(str);
           }
           yield "Time.valueOf(" + str + ")";
         }
@@ -194,7 +194,7 @@ public final class OffsetTimeType extends AbstractDateTimeType<OffsetTime> {
       };
     }
     if (!str.isEmpty() && Character.isDigit(str.charAt(0))) {
-      str = "\"" + str + "\"";
+      str = StringHelper.toDoubleQuotes(str);
     }
     return "OffsetTime.parse(" + str + ")";
   }

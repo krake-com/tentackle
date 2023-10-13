@@ -412,7 +412,7 @@ public class DbModelWurblet extends ModelWurblet {
 
     String value = arg.getValue();
     if (arg.isValueLiterally() && !value.startsWith("\"")) {
-      value = "\"" + value + "\"";
+      value = StringHelper.toDoubleQuotes(value);
     }
 
     String str;

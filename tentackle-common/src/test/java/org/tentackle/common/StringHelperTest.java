@@ -29,7 +29,6 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 
-
 /**
  * String helper test.
  *
@@ -166,6 +165,19 @@ public class StringHelperTest {
     assertEquals(StringHelper.levenshteinDistance("shot", "spot"), 1);
     assertEquals(StringHelper.levenshteinDistance("weight", "light"), 2);
     assertEquals(StringHelper.levenshteinDistance("release_pos_x", "x_release_loc"), 6);
+  }
+
+
+  @Test
+  public void doubleQuotingTest() {
+    String from = "This \" is to be quoted";
+    assertEquals(StringHelper.toDoubleQuotes(from), "\"This \\\" is to be quoted\"");
+
+    from = "This \" is\tto be quoted";
+    assertEquals(StringHelper.toDoubleQuotes(from), "\"This \\\" is to be quoted\"");
+
+    from = "This \\\" is to be quoted";
+    assertEquals(StringHelper.toDoubleQuotes(from), "\"This \\\\\\\" is to be quoted\"");
   }
 
 }

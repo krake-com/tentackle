@@ -225,7 +225,9 @@ public final class StringHelper {
 
   /**
    * Takes a string, surrounds it with double-quotes and escapes all double-quotes
-   * already in the string according to Unix rules.
+   * already in the string according to Unix rules. Transforms all ISO Controls
+   * to spaces as well.
+   * <p>
    * Example:
    * <pre>
    * <code>Length 5" --&gt; "Length 5\""</code>
