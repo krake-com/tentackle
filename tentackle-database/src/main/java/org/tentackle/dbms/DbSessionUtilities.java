@@ -43,11 +43,13 @@ public class DbSessionUtilities extends SessionUtilities {
 
   @Override
   public Throwable alignExceptionCause(Throwable t) {
-    if (t instanceof SQLException sx && !"java.sql".equals(ReflectionHelper.getPackageName(t.getClass().getName()))) {
+    if (t instanceof SQLException sx &&
+        (sx.getCause() != null || // for ex. java.sql.SQLIntegrityConstraintViolationException points to oracle.jdbc.OracleDatabaseException
+         !"java.sql".equals(ReflectionHelper.getPackageName(t.getClass().getName())))) {
       // if some JDBC-driver specific exception (usually not in the classpath of a remote client)
       StackTraceElement[] trace = t.getStackTrace();
       SQLException next = sx.getNextException();
-      // replace by java.sql.SQLException which definitely is in the classpath!
+      // replace by java.sql.SQLException which definitely is in the classpath! (w/o cause)
       sx = new SQLException(sx.getMessage() + " (" + sx.getClass().getName() + ")", sx.getSQLState(), sx.getErrorCode());
       sx.setStackTrace(trace);
       if (next != null) {
