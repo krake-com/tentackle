@@ -81,8 +81,10 @@ public class JavaCodeFactory {
         buf.append('\n');
       }
       String varName = createVarName(dataObject.getType());
-      buf.append(createComponentCode(varName, dataObject))
-         .append(varName).append(" = ").append(varName).append(".persist();\n");
+      buf.append(createComponentCode(varName, dataObject));
+      if (dataObject.getPdo().isRootEntity()) {
+        buf.append(varName).append(" = ").append(varName).append(".persist();\n");
+      }
     }
     return buf.toString();
   }

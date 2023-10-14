@@ -44,10 +44,13 @@ import org.tentackle.fx.rdc.table.TablePopup;
 import org.tentackle.maven.plugin.wizard.BrowseMojo;
 import org.tentackle.maven.plugin.wizard.PdoProfile;
 import org.tentackle.maven.plugin.wizard.pdodata.DataDiff;
+import org.tentackle.maven.plugin.wizard.pdodata.DataItem;
 import org.tentackle.maven.plugin.wizard.pdodata.DataList;
 import org.tentackle.maven.plugin.wizard.pdodata.DataNode;
+import org.tentackle.maven.plugin.wizard.pdodata.DataNodeFactory;
 import org.tentackle.maven.plugin.wizard.pdodata.DataObject;
 import org.tentackle.maven.plugin.wizard.pdodata.JavaCodeFactory;
+import org.tentackle.maven.plugin.wizard.pdodata.NonCompositeRelation;
 import org.tentackle.maven.plugin.wizard.pdodata.PdoWrapper;
 import org.tentackle.misc.FormatHelper;
 import org.tentackle.pdo.DomainContext;
@@ -149,7 +152,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     pdoView = Fx.load(PdoView.class);
     pdoView.addSelectedItemListener((observable, oldValue, newValue) -> updateRowDetails(newValue == null ? null : newValue.getValue()));
     innerSplitPane.getItems().add(pdoView.getView());
-    rowDetailsTable = new TableView<>();
+    rowDetailsTable = Fx.create(TableView.class);
     outerSplitPane.getItems().add(rowDetailsTable);
 
     profileField.addViewToModelListener(this::updateEntityFieldProperties);
@@ -244,17 +247,22 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
 
 
   private void updateRowDetails(DataDiff diffNode) {
-    Platform.runLater(() -> {
-      rowDetailsTable.getColumns().clear();
-      if (diffNode != null) {
-        if (diffNode.getLeft() instanceof DataObject dataObj) {
-          showDataObjects(List.of(dataObj));
-        }
-        else if (diffNode.getLeft() instanceof DataList dataList) {
-          showDataObjects(dataList.getNodes());
-        }
+    rowDetailsTable.getColumns().clear();
+    if (diffNode != null) {
+      switch (diffNode.getLeft()) {
+        case DataObject dataObj -> showDataObjects(List.of(dataObj));
+        case DataList dataList -> showDataObjects(dataList.getNodes());
+        case DataItem dataItem -> showDataItem(dataItem);
+        default -> { break; }
       }
-    });
+    }
+  }
+
+  private void showDataItem(DataItem dataItem) {
+    NonCompositeRelation nonCompositeRelation = dataItem.getNonCompositeRelation();
+    if (nonCompositeRelation != null) {
+      showDataObjects(List.of(DataNodeFactory.create(nonCompositeRelation.getRelatedPdo())));
+    }
   }
 
   private void showDataObjects(List<DataObject> dataObjects) {
