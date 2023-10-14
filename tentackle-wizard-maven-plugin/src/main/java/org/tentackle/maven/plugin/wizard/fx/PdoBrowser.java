@@ -68,6 +68,8 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
@@ -79,6 +81,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -153,6 +156,19 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     pdoView.addSelectedItemListener((observable, oldValue, newValue) -> updateRowDetails(newValue == null ? null : newValue.getValue()));
     innerSplitPane.getItems().add(pdoView.getView());
     rowDetailsTable = Fx.create(TableView.class);
+    MenuItem copyFQCNItem = Fx.create(MenuItem.class);
+    copyFQCNItem.setOnAction(e -> PdoBrowserUtils.copyFQCN(getSelectedDetailDataNode()));
+    MenuItem copyTableItem = Fx.create(MenuItem.class);
+    copyTableItem.setOnAction(e -> PdoBrowserUtils.copyTableName(getSelectedDetailDataNode()));
+    MenuItem copyClassIdItem = Fx.create(MenuItem.class);
+    copyClassIdItem.setOnAction(e -> PdoBrowserUtils.copyClassId(getSelectedDetailDataNode()));
+    MenuItem copySqlItem = PdoBrowserUtils.createCopySqlItem(e -> PdoBrowserUtils.copySql(getSelectedDetailDataNode()));
+    ContextMenu contextMenu = new ContextMenu(copyFQCNItem, copyTableItem, copyClassIdItem, copySqlItem);
+    contextMenu.addEventHandler(WindowEvent.WINDOW_SHOWING,
+                                event -> PdoBrowserUtils.configureContextMenu(getSelectedDetailDataNode(), copyFQCNItem,
+                                                                              copyTableItem, copyClassIdItem, copySqlItem));
+    rowDetailsTable.getSelectionModel().selectedItemProperty().addListener(
+      (obs, old, current) -> rowDetailsTable.setContextMenu(current == null ? null : contextMenu));
     outerSplitPane.getItems().add(rowDetailsTable);
 
     profileField.addViewToModelListener(this::updateEntityFieldProperties);
@@ -253,7 +269,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
         case DataObject dataObj -> showDataObjects(List.of(dataObj));
         case DataList dataList -> showDataObjects(dataList.getNodes());
         case DataItem dataItem -> showDataItem(dataItem);
-        default -> { break; }
+        default -> {}
       }
     }
   }
@@ -475,6 +491,10 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
 
   private void close(Event event) {
     getStage().hide();
+  }
+
+  private DataNode getSelectedDetailDataNode() {
+    return rowDetailsTable.getSelectionModel().getSelectedItem();
   }
 
 }
