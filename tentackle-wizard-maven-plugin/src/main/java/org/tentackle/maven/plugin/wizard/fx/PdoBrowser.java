@@ -74,8 +74,6 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -163,10 +161,21 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     MenuItem copyClassIdItem = Fx.create(MenuItem.class);
     copyClassIdItem.setOnAction(e -> PdoBrowserUtils.copyClassId(getSelectedDetailDataNode()));
     MenuItem copySqlItem = PdoBrowserUtils.createCopySqlItem(e -> PdoBrowserUtils.copySql(getSelectedDetailDataNode()));
-    ContextMenu contextMenu = new ContextMenu(copyFQCNItem, copyTableItem, copyClassIdItem, copySqlItem);
-    contextMenu.addEventHandler(WindowEvent.WINDOW_SHOWING,
-                                event -> PdoBrowserUtils.configureContextMenu(getSelectedDetailDataNode(), copyFQCNItem,
-                                                                              copyTableItem, copyClassIdItem, copySqlItem));
+    MenuItem genCodeItem = Fx.create(MenuItem.class);
+    genCodeItem.setOnAction(e -> {
+      DataNode node = getSelectedDetailDataNode();
+      if (node instanceof DataObject dataObject) {
+        // no fine control, but useful to quickly create referenced master data
+        PdoBrowserUtils.copyToClipboard(JavaCodeFactory.generateCode(null, dataObject));
+      }
+    });
+    genCodeItem.setText("copy Java code to clipboard");
+    ContextMenu contextMenu = new ContextMenu(copyFQCNItem, copyTableItem, copyClassIdItem, copySqlItem, genCodeItem);
+    contextMenu.addEventHandler(WindowEvent.WINDOW_SHOWING, event -> {
+      genCodeItem.setVisible(getSelectedDetailDataNode() instanceof DataObject);
+      PdoBrowserUtils.configureContextMenu(getSelectedDetailDataNode(), copyFQCNItem,
+                                           copyTableItem, copyClassIdItem, copySqlItem);
+    });
     rowDetailsTable.getSelectionModel().selectedItemProperty().addListener(
       (obs, old, current) -> rowDetailsTable.setContextMenu(current == null ? null : contextMenu));
     outerSplitPane.getItems().add(rowDetailsTable);
@@ -466,10 +475,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
       }
       String text = JavaCodeFactory.generateCode(codeConfiguration, dataObjects);
       buf.append(text);
-
-      ClipboardContent cbc = new ClipboardContent();
-      cbc.putString(buf.toString());
-      Clipboard.getSystemClipboard().setContent(cbc);
+      PdoBrowserUtils.copyToClipboard(buf.toString());
 
       // show some feedback
       Note infoNote = Fx.create(Note.class);
