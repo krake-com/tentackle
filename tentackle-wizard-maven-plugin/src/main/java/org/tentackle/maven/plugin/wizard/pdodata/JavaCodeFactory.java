@@ -46,6 +46,23 @@ public class JavaCodeFactory {
 
   private static final String HIDDEN_COMMENT = "// hidden: ";
 
+
+  /**
+   * By default, the variables of the created entities are reused for the
+   * 2nd, 3rd, etc... instances. If this flag is true, the variables names
+   * are numbered starting at {@link #variableOffset}.
+   */
+  public static boolean distinctVariables;
+
+  /**
+   * If {@link #distinctVariables} is true, the variable names are numbered.
+   * If {@code variableOffset} is null, the first instance has no number,
+   * otherwise it starts with the given offset.
+   */
+  public static Integer variableOffset;
+
+
+
   /**
    * Generates code from a data object template.
    *
@@ -83,18 +100,27 @@ public class JavaCodeFactory {
       String varName = createVarName(dataObject.getType());
       buf.append(createComponentCode(varName, dataObject));
       if (dataObject.getPdo().isRootEntity()) {
-        buf.append(varName).append(" = ").append(varName).append(".persist();\n");
+        if (distinctVariables) {
+          buf.append(varName).append(" = ").append(varName).append(".persist();\n");
+        }
+        else {
+          buf.append(varName).append(".save();\n");
+        }
       }
     }
     return buf.toString();
   }
 
 
+  private Holder<Integer> getVariableCount(String varName) {
+    return nameMap.computeIfAbsent(varName, n -> new Holder<>(variableOffset == null ? 0 : variableOffset));
+  }
+
   private String createVarName(String type) {
     String varName = StringHelper.firstToLower(type);
-    Holder<Integer> holder = nameMap.computeIfAbsent(varName, n -> new Holder<>(0));
+    Holder<Integer> holder = getVariableCount(varName);
     int count = holder.get();
-    if (count > 0) {
+    if (distinctVariables && (count > 0 || variableOffset != null)) {
       varName += count;
     }
     holder.accept(count + 1);
@@ -183,8 +209,10 @@ public class JavaCodeFactory {
     if (component.isHidden()) {
       buf.append(HIDDEN_COMMENT);
     }
-    buf.append(component.getType()).append(' ').append(varName)
-       .append(" = on(").append(component.getType()).append(".class);")
+    if (distinctVariables || getVariableCount(varName).get() == 1) {
+      buf.append(component.getType()).append(' ');
+    }
+    buf.append(varName).append(" = on(").append(component.getType()).append(".class);")
        .append(toIdComment(component.getPdo())).append('\n');
     for (DataNode node : component.getNodes()) {
       buf.append(createNodeCode(varName, node));
