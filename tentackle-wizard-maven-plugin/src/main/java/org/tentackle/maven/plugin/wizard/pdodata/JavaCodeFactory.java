@@ -66,22 +66,22 @@ public class JavaCodeFactory {
   /**
    * Generates code from a data object template.
    *
-   * @param configuration optional configuration map
+   * @param codePaths optional code paths configuration map
    * @param dataObjects the data objects
    * @return the Java code
    */
-  public static String generateCode(Map<String, Boolean> configuration, DataObject... dataObjects) {
-    return new JavaCodeFactory(configuration, dataObjects).generate();
+  public static String generateCode(Map<String, Boolean> codePaths, DataObject... dataObjects) {
+    return new JavaCodeFactory(codePaths, dataObjects).generate();
   }
 
 
 
-  private final Map<String, Boolean> configuration;
+  private final Map<String, Boolean> codePaths;
   private final DataObject[] dataObjects;
   private final Map<String, Holder<Integer>> nameMap;
 
-  private JavaCodeFactory(Map<String, Boolean> configuration, DataObject... dataObjects) {
-    this.configuration = configuration;
+  private JavaCodeFactory(Map<String, Boolean> codePaths, DataObject... dataObjects) {
+    this.codePaths = codePaths;
     this.dataObjects = dataObjects;
     nameMap = new HashMap<>();
   }
@@ -294,10 +294,10 @@ public class JavaCodeFactory {
   }
 
   private boolean isGenerating(boolean generating, DataNode node) {
-    if (configuration != null) {
+    if (codePaths != null) {
       String configurationPath = node.getConfigurationPath();
       if (configurationPath != null) {
-        Boolean toggle = configuration.get(configurationPath);
+        Boolean toggle = codePaths.get(configurationPath);
         if (toggle != null) {
           generating = toggle;
         }
