@@ -129,7 +129,8 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
   @FXML private FxTextField latestField;
   @FXML private FxButton refreshButton;
   @FXML private FxButton finderButton;
-  @FXML private FxButton configButton;
+  @FXML private FxButton configCodeButton;
+  @FXML private FxButton configPathsButton;
   @FXML private FxButton generateButton;
   @FXML private FxButton memorizeButton;
   @FXML private FxButton closeButton;
@@ -145,7 +146,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
   private Timestamp memorizeTime;
   @SuppressWarnings("rawtypes")
   private PdoFinder finder;
-  private Map<String, Boolean> codeConfiguration;
+  private Map<String, Boolean> codePathsConfiguration;
 
 
   @FXML
@@ -203,9 +204,11 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
       memorizeTime = new Timestamp();
       showDiff();
     });
-    configButton.setGraphic(Fx.createGraphic("preferences"));
-    configButton.setOnAction(e -> showCodeConfigurationDialog());
-    configButton.setDisable(true);
+    configCodeButton.setGraphic(Fx.createGraphic("preferences"));
+    configCodeButton.setOnAction(e -> JavaCodeFactorySettings.show(getView()));
+    configPathsButton.setGraphic(Fx.createGraphic("tree"));
+    configPathsButton.setOnAction(e -> showCodeConfigurationDialog());
+    configPathsButton.setDisable(true);
     generateButton.setGraphic(Fx.createGraphic("generate"));
     generateButton.setDisable(true);
     generateButton.setOnAction(e -> generateCode());
@@ -219,8 +222,8 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
         dataObject = null;
         oldDataObject = null;
         memorizeTime = null;
-        codeConfiguration = null;
-        configButton.setDisable(true);
+        codePathsConfiguration = null;
+        configPathsButton.setDisable(true);
         generateButton.setDisable(true);
         memorizeButton.setDisable(true);
         showDiff();
@@ -320,11 +323,11 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
   }
 
   private void updateCodeConfiguration(List<? extends PdoWrapper> selectedItems) {
-    codeConfiguration = new LinkedHashMap<>();
+    codePathsConfiguration = new LinkedHashMap<>();
     for (PdoWrapper selectedItem : selectedItems) {
-      codeConfiguration.putAll(selectedItem.getCodeConfiguration());
+      codePathsConfiguration.putAll(selectedItem.getCodeConfiguration());
     }
-    configButton.setDisable(codeConfiguration.isEmpty());
+    configPathsButton.setDisable(codePathsConfiguration.isEmpty());
   }
 
   private void showDiff() {
@@ -422,7 +425,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
   }
 
   private void showCodeConfigurationDialog() {
-    if (codeConfiguration != null) {
+    if (codePathsConfiguration != null) {
       Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
       stage.initOwner(getStage());
       BorderPane borderPane = Fx.create(BorderPane.class);
@@ -432,7 +435,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
       vBox.setSpacing(5.0);
       scrollPane.setMinWidth(300);
       scrollPane.setMinHeight(150);
-      for (Map.Entry<String, Boolean> entry : codeConfiguration.entrySet()) {
+      for (Map.Entry<String, Boolean> entry : codePathsConfiguration.entrySet()) {
         CheckBox checkBox = Fx.create(CheckBox.class);
         checkBox.setText(entry.getKey());
         checkBox.setSelected(entry.getValue());
@@ -473,7 +476,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
       for (PdoWrapper pdoWrapper : selectedItems) {
         dataObjects[i++] = pdoWrapper.getDataObject();
       }
-      String text = JavaCodeFactory.generateCode(codeConfiguration, dataObjects);
+      String text = JavaCodeFactory.generateCode(codePathsConfiguration, dataObjects);
       buf.append(text);
       PdoBrowserUtils.copyToClipboard(buf.toString());
 
