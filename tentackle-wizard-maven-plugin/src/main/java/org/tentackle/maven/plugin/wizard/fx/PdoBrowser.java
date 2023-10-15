@@ -25,6 +25,8 @@ import org.tentackle.common.Timestamp;
 import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxControllerService;
+import org.tentackle.fx.FxFactory;
+import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.component.FxButton;
 import org.tentackle.fx.component.FxCheckBox;
 import org.tentackle.fx.component.FxChoiceBox;
@@ -65,10 +67,12 @@ import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SelectionMode;
@@ -78,6 +82,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
+import javafx.stage.Popup;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import java.util.ArrayList;
@@ -146,7 +151,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
   private Timestamp memorizeTime;
   @SuppressWarnings("rawtypes")
   private PdoFinder finder;
-  private Map<String, Boolean> codePathsConfiguration;
+  private Map<String, Boolean> codePaths;
 
 
   @FXML
@@ -207,7 +212,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     configCodeButton.setGraphic(Fx.createGraphic("preferences"));
     configCodeButton.setOnAction(e -> JavaCodeFactorySettings.show(getView()));
     configPathsButton.setGraphic(Fx.createGraphic("tree"));
-    configPathsButton.setOnAction(e -> showCodeConfigurationDialog());
+    configPathsButton.setOnAction(e -> editCodePaths());
     configPathsButton.setDisable(true);
     generateButton.setGraphic(Fx.createGraphic("generate"));
     generateButton.setDisable(true);
@@ -222,7 +227,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
         dataObject = null;
         oldDataObject = null;
         memorizeTime = null;
-        codePathsConfiguration = null;
+        codePaths = null;
         configPathsButton.setDisable(true);
         generateButton.setDisable(true);
         memorizeButton.setDisable(true);
@@ -323,11 +328,11 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
   }
 
   private void updateCodeConfiguration(List<? extends PdoWrapper> selectedItems) {
-    codePathsConfiguration = new LinkedHashMap<>();
+    codePaths = new LinkedHashMap<>();
     for (PdoWrapper selectedItem : selectedItems) {
-      codePathsConfiguration.putAll(selectedItem.getCodeConfiguration());
+      codePaths.putAll(selectedItem.getCodeConfiguration());
     }
-    configPathsButton.setDisable(codePathsConfiguration.isEmpty());
+    configPathsButton.setDisable(codePaths.isEmpty());
   }
 
   private void showDiff() {
@@ -424,10 +429,8 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     }
   }
 
-  private void showCodeConfigurationDialog() {
-    if (codePathsConfiguration != null) {
-      Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
-      stage.initOwner(getStage());
+  private void editCodePaths() {
+    if (codePaths != null) {
       BorderPane borderPane = Fx.create(BorderPane.class);
       ScrollPane scrollPane = Fx.create(ScrollPane.class);
       VBox vBox = Fx.create(VBox.class);
@@ -435,7 +438,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
       vBox.setSpacing(5.0);
       scrollPane.setMinWidth(300);
       scrollPane.setMinHeight(150);
-      for (Map.Entry<String, Boolean> entry : codePathsConfiguration.entrySet()) {
+      for (Map.Entry<String, Boolean> entry : codePaths.entrySet()) {
         CheckBox checkBox = Fx.create(CheckBox.class);
         checkBox.setText(entry.getKey());
         checkBox.setSelected(entry.getValue());
@@ -444,19 +447,18 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
       }
       scrollPane.setContent(vBox);
       borderPane.setCenter(scrollPane);
-      HBox hBox = Fx.create(HBox.class);
-      Button closeButton = Fx.create(Button.class);
-      closeButton.setText("close");
-      closeButton.setGraphic(Fx.createGraphic("close"));
-      closeButton.setOnAction(event -> stage.close());
-      hBox.getChildren().add(closeButton);
-      hBox.setPadding(new Insets(10.0));
-      hBox.setAlignment(Pos.BASELINE_RIGHT);
-      borderPane.setBottom(hBox);
-      Scene scene = Fx.createScene(borderPane);
-      stage.setScene(scene);
-      stage.setTitle("Code Configuration");
-      Fx.show(stage);
+      Label headerLabel = Fx.create(Label.class);
+      headerLabel.setText("Code Paths");
+      headerLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 16;");
+      BorderPane.setAlignment(headerLabel, Pos.CENTER);
+      borderPane.setTop(headerLabel);
+
+      Popup popup = new Popup();
+      Parent notification = FxFactory.getInstance()
+                                     .createNotificationBuilder()
+                                     .content(borderPane)
+                                     .hide(popup::hide).build();
+      FxUtilities.getInstance().showNotification(getView(), popup, notification, null);
     }
   }
 
@@ -476,7 +478,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
       for (PdoWrapper pdoWrapper : selectedItems) {
         dataObjects[i++] = pdoWrapper.getDataObject();
       }
-      String text = JavaCodeFactory.generateCode(codePathsConfiguration, dataObjects);
+      String text = JavaCodeFactory.generateCode(codePaths, dataObjects);
       buf.append(text);
       PdoBrowserUtils.copyToClipboard(buf.toString());
 
