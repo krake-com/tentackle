@@ -110,7 +110,8 @@ public class CreateSqlMojo extends AbstractSqlMojo {
 
   /**
    * Set of backends processed so far.
-   * Used if {@link #prependModelFromClassPath} is true to generate classpath model only once per backend.
+   * Used if {@link #prependModelFromClassPath} or {@link #appendModelFromClassPath} is true to
+   * generate classpath model only once per backend.
    */
   private final Set<BackendInfo> processedBackendInfos = new HashSet<>();
 

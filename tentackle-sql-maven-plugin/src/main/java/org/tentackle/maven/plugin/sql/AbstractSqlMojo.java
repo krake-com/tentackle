@@ -57,8 +57,6 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -273,33 +271,6 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
    */
   protected abstract String getSqlFileName();
 
-
-  /**
-   * The connection to the backend.
-   */
-  private Connection connection;
-
-  /**
-   * Gets the open connection.<br>
-   * Opens it if it is closed.
-   *
-   * @param backendInfo the connection info
-   * @return the open connection
-   * @throws MojoExecutionException if connection failed
-   */
-  protected Connection getConnection(BackendInfo backendInfo) throws MojoExecutionException {
-    if (connection == null) {
-      try {
-        connection = backendInfo.connect();
-      }
-      catch (SQLException sqx) {
-        throw new MojoExecutionException("cannot connect to " + backendInfo, sqx);
-      }
-    }
-    return connection;
-  }
-
-
   /**
    * Gets the model defaults.
    *
@@ -379,16 +350,6 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
    * @throws MojoFailureException if build failure
    */
   protected void closeResources(BackendInfo backendInfo) throws MojoExecutionException, MojoFailureException {
-    if (connection != null) {
-      try {
-        connection.close();
-        connection = null;
-      }
-      catch (SQLException sqx) {
-        throw new MojoExecutionException(
-          "cannot close connection " + connection, sqx);
-      }
-    }
     if (sqlWriter != null) {
       try {
         sqlWriter.close();
@@ -512,7 +473,6 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
   }
 
 
-
   @Override
   public void executeImpl() throws MojoExecutionException, MojoFailureException {
 
@@ -553,6 +513,18 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
       }
     }
 
+    dumpModel();
+    dumpBundles();
+    checkFallbackTableAliases();
+  }
+
+
+  /**
+   * Dumps the model.
+   *
+   * @throws MojoFailureException if failed
+   */
+  protected void dumpModel() throws MojoFailureException {
     if (dumpDir != null) {
       dumpDir.mkdirs();
       try {
@@ -592,9 +564,9 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
               File dumpFile = new File(dumpDir, entityInfo.getFile().getName());
               dumpedFiles.add(dumpFile);
               try (BufferedWriter writer =
-                       new BufferedWriter(
-                           new OutputStreamWriter(
-                               new FileOutputStream(dumpFile), Settings.getEncodingCharset()))) {
+                     new BufferedWriter(
+                       new OutputStreamWriter(
+                         new FileOutputStream(dumpFile), Settings.getEncodingCharset()))) {
                 String modelSource = entityInfo.getModelSource();
                 if (modelSource.startsWith(Document.ORIGIN_INFO_LEAD)) {
                   // cut source info, makes no sense outside the project
@@ -616,9 +588,9 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
             File dumpFile = new File(dumpDir, entity.getName() + ".txt");
             dumpedFiles.add(dumpFile);
             try (BufferedWriter writer =
-                     new BufferedWriter(
-                         new OutputStreamWriter(
-                             new FileOutputStream(dumpFile), Settings.getEncodingCharset()))) {
+                   new BufferedWriter(
+                     new OutputStreamWriter(
+                       new FileOutputStream(dumpFile), Settings.getEncodingCharset()))) {
               writer.write(new EntityPrinter(entity, configuration).print());
             }
           }
@@ -627,9 +599,9 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
         if (dumpModelIndex != null) {
           dumpModelIndex.getParentFile().mkdirs();
           try (BufferedWriter writer =
-                   new BufferedWriter(
-                       new OutputStreamWriter(
-                           new FileOutputStream(dumpModelIndex), Settings.getEncodingCharset()))) {
+                 new BufferedWriter(
+                   new OutputStreamWriter(
+                     new FileOutputStream(dumpModelIndex), Settings.getEncodingCharset()))) {
             for (File dumpedFile : dumpedFiles) {
               String dumpedName;
               File resourceDir = getResourceDir(dumpedFile, false);
@@ -651,13 +623,14 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
               writer.write(dumpedName + "\n");
             }
           }
+          getLog().info("model index created in " + getPathRelativeToBasedir(dumpModelIndex.getAbsolutePath()));
         }
 
         File file = new File(dumpDir, "_aliases_.txt");
         try (BufferedWriter writer =
-                 new BufferedWriter(
-                     new OutputStreamWriter(
-                         new FileOutputStream(file), Settings.getEncodingCharset()))) {
+               new BufferedWriter(
+                 new OutputStreamWriter(
+                   new FileOutputStream(file), Settings.getEncodingCharset()))) {
           for (Map.Entry<String,String> entry : aliasesMap.entrySet()) {
             writer.write(entry.getKey());
             writer.write(" = ");
@@ -668,9 +641,9 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
 
         file = new File(dumpDir, "_tables_.txt");
         try (BufferedWriter writer =
-                 new BufferedWriter(
-                     new OutputStreamWriter(
-                         new FileOutputStream(file), Settings.getEncodingCharset()))) {
+               new BufferedWriter(
+                 new OutputStreamWriter(
+                   new FileOutputStream(file), Settings.getEncodingCharset()))) {
           for (Map.Entry<String,String> entry : tableMap.entrySet()) {
             writer.write(entry.getKey());
             writer.write(" = ");
@@ -681,9 +654,9 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
 
         file = new File(dumpDir, "_classid_.txt");
         try (BufferedWriter writer =
-                 new BufferedWriter(
-                     new OutputStreamWriter(
-                         new FileOutputStream(file), Settings.getEncodingCharset()))) {
+               new BufferedWriter(
+                 new OutputStreamWriter(
+                   new FileOutputStream(file), Settings.getEncodingCharset()))) {
           for (Map.Entry<Integer,String> entry : classidMap.entrySet()) {
             writer.write(entry.getKey().toString());
             writer.write(" = ");
@@ -693,20 +666,27 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
         }
         getLog().info("model dump created in " + getPathRelativeToBasedir(dumpDir.getAbsolutePath()));
       }
-      catch (IOException | ModelException ex) {
+      catch (IOException | ModelException | MojoExecutionException ex) {
         throw new MojoFailureException("creating model dump failed", ex);
       }
     }
+  }
 
+  /**
+   * Dumps attribute and relation bundles.
+   *
+   * @throws MojoFailureException if failed
+   */
+  protected void dumpBundles() throws MojoFailureException {
     if (bundleDir != null) {
       bundleDir.mkdirs();
       try {
         for (Entity entity : Model.getInstance().getAllEntities()) {
           File dumpFile = new File(bundleDir, entity.getName() + ".properties");
           try (BufferedWriter writer =
-                   new BufferedWriter(
-                       new OutputStreamWriter(
-                           new FileOutputStream(dumpFile), Settings.getEncodingCharset()))) {
+                 new BufferedWriter(
+                   new OutputStreamWriter(
+                     new FileOutputStream(dumpFile), Settings.getEncodingCharset()))) {
             writer.write("# attributes\n");
             for (Attribute attribute: entity.getAttributesIncludingInherited()) {
               if (!attribute.isImplicit()) {
@@ -719,14 +699,18 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
             }
           }
         }
-        getLog().info("bundle files created in " + getPathRelativeToBasedir(bundleDir.getAbsolutePath()));
+        getLog().info("bundle property files created in " + getPathRelativeToBasedir(bundleDir.getAbsolutePath()));
       }
       catch (IOException | ModelException ex) {
         throw new MojoFailureException("creating bundle dump failed", ex);
       }
     }
+  }
 
-    // check for numbered fallback aliases
+  /**
+   * Check for numbered fallback aliases.
+   */
+  protected void checkFallbackTableAliases() throws MojoFailureException {
     try {
       StringBuilder aliasBuf = new StringBuilder();
 
@@ -770,7 +754,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
     if (generateHeaderComment) {
       try {
         sqlWriter.append('\n').append(backendInfo.getBackend().getSingleLineComment()).append(" created from ");
-        sqlWriter.append(getPathRelativeToBasedir(modelDirName));
+        sqlWriter.append(getModelLocation(modelDirName));
         sqlWriter.append(" at ");
         sqlWriter.append(new Date().toString());
         sqlWriter.append(" by ");
@@ -785,6 +769,16 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
         throw new MojoExecutionException("cannot write to sql file " + sqlFile.getAbsolutePath(), iox);
       }
     }
+  }
+
+  /**
+   * Returns the model source location to be used in the intro comment.
+   *
+   * @param modelDirName the model directory name
+   * @return the model source description
+   */
+  protected String getModelLocation(String modelDirName) {
+    return getPathRelativeToBasedir(modelDirName);
   }
 
 
