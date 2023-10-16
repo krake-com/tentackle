@@ -35,7 +35,6 @@ import org.tentackle.model.ModelException;
 import org.tentackle.model.migrate.CustomMigrationValidator;
 import org.tentackle.model.migrate.TableMigrator;
 import org.tentackle.sql.Backend;
-import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendInfo;
 import org.tentackle.sql.metadata.DatabaseMetaDataTableHeader;
 import org.tentackle.sql.metadata.ForeignKeyMetaData;
@@ -121,6 +120,18 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   @Parameter
   private boolean validate;
 
+  /**
+   * Uses the model found in the resources of the classpath.<br>
+   * Useful to migrate the database tables for dependencies, for example the Tentackle-framework's model.<br>
+   * Requires that the plugin dependencies contain the model resources
+   * (see {@link #dumpModelIndex}) amd {@link #dumpModelSource}).
+   * <p>
+   * Notice: when this flag is true, the model files in the filesets are ignored!
+   * If only the tentackle tables should be migrated, make sure to set checkReservedTables to false.
+   */
+  @Parameter
+  private boolean loadModelFromClassPath;
+
 
   /**
    * The database metadata retrieved from the backend.
@@ -192,6 +203,11 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
    */
   private Map<String, DatabaseMetaDataTableHeader> alienTablesMap;
 
+  /**
+   * Set of backends processed so far.
+   * Used if {@link #loadModelFromClassPath} is true to migrate classpath model only once per backend.
+   */
+  private final Set<BackendInfo> processedBackendInfos = new HashSet<>();
 
 
   /**
@@ -199,6 +215,36 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
    */
   protected void enableValidation() {
     validate = true;
+  }
+
+
+  @Override
+  protected String getModelLocation(String modelDirName) {
+    if (loadModelFromClassPath) {
+      return "classpath";
+    }
+    return super.getModelLocation(modelDirName);
+  }
+
+  @Override
+  protected void dumpModel() throws MojoFailureException {
+    if (!loadModelFromClassPath) {
+      super.dumpModel();
+    }
+  }
+
+  @Override
+  protected void dumpBundles() throws MojoFailureException {
+    if (!loadModelFromClassPath) {
+      super.dumpBundles();
+    }
+  }
+
+  @Override
+  protected void checkFallbackTableAliases() throws MojoFailureException {
+    if (!loadModelFromClassPath) {
+      super.checkFallbackTableAliases();
+    }
   }
 
   @Override
@@ -318,7 +364,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
                  .append(", skipped=")
                  .append(Integer.toString(skippedEntities)).append('\n');
 
-        if (!otherTablesMap.isEmpty()) {
+        if (!otherTablesMap.isEmpty() && !loadModelFromClassPath) {
           sqlWriter.append('\n').append(commentLead)
                    .append(" unexpected tables in database not belonging to the model: ")
                    .append(Integer.toString(otherTablesMap.size())).append('\n');
@@ -488,14 +534,25 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       Map<String, String> renamedTables;      // map <new:old> tablename
       Map<String, String> revRenamedTables;   // map <old:new> tablename
       Set<String> droppedTables;              // set of tables to drop
+      Collection<ForeignKey> foreignKeys;     // foreign keys
 
-      Collection<ForeignKey> foreignKeys;
       try {
         Model model = Model.getInstance();
         model.setModelDefaults(defaults);
         model.setEntityAliases(aliases);
         model.setSchemaNameMapped(mapSchemas);
-        model.loadFromDirectory(modelDirName, true);
+        if (loadModelFromClassPath) {
+          if (processedBackendInfos.add(backendInfo)) {
+            model.clearModel();
+            model.loadFromResources(true);
+          }
+          else {
+            return;
+          }
+        }
+        else {
+          model.loadFromDirectory(modelDirName, true);
+        }
         foreignKeys = Model.getInstance().getForeignKeys();
         // build table rename maps if hints given
         renamedTables = determineRenamedTables(hints);
@@ -518,234 +575,51 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
 
       StringBuilder warningSql = new StringBuilder();       // collected optional migrations as warnings
       StringBuilder foreignKeySql = new StringBuilder();    // collected foreign key migration code
-      String[] fileNames = getIncludedFiles(fileSet);
 
-      if (fileNames.length > 0) {
-        Arrays.sort(fileNames);
-        for (String filename : fileNames) {
-          // check if file exists
-          File modelFile = new File(modelDirName, filename);
-          if (!modelFile.exists()) {
-            getLog().error("no such model file: " + filename);
-            errorCount++;
-          }
-          else  {
+      if (loadModelFromClassPath) {
+        try {
+          for (Entity entity : Model.getInstance().getAllEntities()) {
             if (verbosityLevel.isDebug()) {
-              getLog().info("processing " + modelFile);
+              getLog().info("processing " + entity + " from classpath");
             }
-            try {
-              URL url = modelFile.toURI().toURL();
-              Entity entity = Model.getInstance().getByURL(url);
-              if (entity == null) {
-                throw new MojoExecutionException("no entity for " + url);
+            errorCount += migrateEntity(entity, backendInfo, hints, commentLead, renamedTables, revRenamedTables,
+                                        foreignKeys, migratedTablenames, pendingMigrations, warningSql, foreignKeySql);
+          }
+        }
+        catch (ModelException | RuntimeException ex) {
+          getLog().error("parsing model from classpath failed", ex);
+          errorCount++;
+        }
+      }
+      else {
+        String[] fileNames = getIncludedFiles(fileSet);
+        if (fileNames.length > 0) {
+          Arrays.sort(fileNames);
+          for (String filename : fileNames) {
+            // check if file exists
+            File modelFile = new File(modelDirName, filename);
+            if (!modelFile.exists()) {
+              getLog().error("no such model file: " + filename);
+              errorCount++;
+            }
+            else {
+              if (verbosityLevel.isDebug()) {
+                getLog().info("processing " + modelFile);
               }
-              if (entity.getTableProvidingEntity() != entity || entity.getOptions().isProvided()) {
-                continue;   // skip
-              }
-
-              // check schema, if set
-              if (!mapSchemas && backendInfo.getSchemas() != null) {
-                boolean add = false;
-                for (String schema: backendInfo.getSchemas()) {
-                  if (entity.getSchemaName() != null && schema.equalsIgnoreCase(entity.getSchemaName())) {
-                    add = true;
-                    break;
-                  }
+              try {
+                URL url = modelFile.toURI().toURL();
+                Entity entity = Model.getInstance().getByURL(url);
+                if (entity == null) {
+                  throw new MojoExecutionException("no entity for " + url);
                 }
-                if (!add) {
-                  getLog().debug(entity + " skipped because of wrong schema " + entity.getSchemaName());
-                  skippedEntities++;
-                  continue;   // skip
-                }
+
+                errorCount += migrateEntity(entity, backendInfo, hints, commentLead, renamedTables, revRenamedTables,
+                                            foreignKeys, migratedTablenames, pendingMigrations, warningSql, foreignKeySql);
               }
-
-              processedEntities++;
-              StringBuilder tableSql = new StringBuilder();
-              String tableName = entity.getTableName();
-              String plainTableName = entity.getTableNameWithoutSchema();
-              String plainOldTableName = renamedTables.get(plainTableName);
-              String oldTableName = entity.getSchemaName() != null && plainOldTableName != null ?
-                                    entity.getSchemaName() + "." + plainOldTableName : plainOldTableName;
-
-              if (checkReservedTables && checkAndLogReservedTable(entity)) {
+              catch (IOException | ModelException | RuntimeException ex) {
+                getLog().error("parsing model failed for " + filename, ex);
                 errorCount++;
               }
-
-              TableMetaData table = backendInfo.getBackend().getTableMetaData(modelMetaData, oldTableName != null ? oldTableName : tableName);
-
-              if (table != null) {
-                // verify that this is a user-defined table we can migrate and that we picked the correct table
-                try {
-                  List<DatabaseMetaDataTableHeader> tableHeaders = modelMetaData.getTableInDatabase(plainOldTableName != null ? plainOldTableName : plainTableName);
-                  if (tableHeaders != null) {
-                    boolean conflicts = false;
-                    int schemaCount = 0;
-                    StringBuilder schemaBuf = new StringBuilder();
-                    for (DatabaseMetaDataTableHeader tableHeader: tableHeaders) {
-                      if (tableHeader.isUserTable()) {
-                        schemaCount++;
-                        if (!schemaBuf.isEmpty()) {
-                          schemaBuf.append(", ");
-                        }
-                        schemaBuf.append(tableHeader.getSchema());
-                      }
-                      else {
-                        getLog().error("table " + entity.getTableName() + " of entity " + entity + " conflicts with " + tableHeader);
-                        errorCount++;
-                        conflicts = true;
-                      }
-                    }
-                    if (conflicts) {
-                      continue;
-                    }
-                    if (schemaCount > 1) {
-                      getLog().warn("table " + entity.getTableNameWithoutSchema() + " of entity " + entity +
-                                    " exists in different schemas: " + schemaBuf);
-                    }
-                  }
-                  else {
-                    getLog().warn("table found in wrong schema: " + table.getFullTableName());
-                    errorCount++;
-                    continue;
-                  }
-                }
-                catch (SQLException sqx) {
-                  getLog().warn("could not retrieve table header info for table " + tableName, sqx);
-                }
-
-                if (isAlienTable(plainTableName)) {
-                  DatabaseMetaDataTableHeader header = alienTablesMap.get(plainTableName);
-                  StringBuilder buf = new StringBuilder();
-                  buf.append("table '").append(entity.getTableName()).append("' is reserved for other uses");
-                  if (header != null && !StringHelper.isAllWhitespace(header.getComment())) {
-                    buf.append(": ").append(header.getComment());
-                  }
-                  getLog().error(buf);
-                  errorCount++;
-                  continue;
-                }
-                else {
-                  modelMetaData.addTableMetaData(table);
-                  countTableStats(table);
-                }
-
-                if (oldTableName != null) {
-                  // generate RENAME TABLE first
-                  otherTablesMap.remove(plainOldTableName);
-                  tableSql.append('\n').append(backendInfo.getBackend().sqlRenameTable(oldTableName, plainTableName));
-                }
-
-                // migrate foreign key metadata (since RENAME TABLE migrates the FK as well, and we don't need explicit migrations)
-                for (ForeignKeyMetaData foreignKeyMetaData : table.getForeignKeys()) {
-                  // FKs to other entities, which are renamed
-                  String oldPrimaryKeyTable = revRenamedTables.get(foreignKeyMetaData.getPrimaryKeyTable());
-                  if (oldPrimaryKeyTable != null) {
-                    foreignKeyMetaData.setPrimaryKeyTable(oldPrimaryKeyTable);
-                  }
-                  // my own FKs if this table is renamed
-                  if (plainOldTableName != null) {
-                    foreignKeyMetaData.setForeignKeyTable(plainTableName);
-                  }
-                }
-              }
-              otherTablesMap.remove(plainTableName);
-
-              // filter foreign keys
-              Collection<ForeignKey> relatedForeignKeys = new ArrayList<>();
-              if (foreignKeys != null) {
-                for (ForeignKey key : foreignKeys) {
-                  if (key.getReferencingEntity().equals(entity)) {
-                    relatedForeignKeys.add(key);
-                  }
-                }
-              }
-
-              TableMigrator tableMigrator = new TableMigrator(entity, relatedForeignKeys, backendInfo.getBackend(), table);
-              TableMigrator.Result migrationResult = tableMigrator.migrate(
-                  hints.getHints(tableName), hints.getColumnMigrations(tableName), hints.getRenameColumns(tableName));
-
-              // table will have to be migrated?
-              boolean migrated = !migrationResult.tableSql().isEmpty();
-
-              migratedEntitiesMap.put(entity.getName(), migrated);
-
-              if (migrated) {
-
-                try {
-                  // first failed validator will skip the rest, if any (same as with model validators).
-                  // there is usually only one, btw.
-                  for (CustomMigrationValidator migrationValidator : CustomMigrationValidator.loadValidators()) {
-                    migrationValidator.validate(tableMigrator, migrationResult);
-                  }
-                }
-                catch (ModelException mx) {
-                  // collect for all tables
-                  if (migrationValidation.isEmpty()) {
-                    migrationValidation.append("migration validation failed:");
-                  }
-                  migrationValidation.append('\n').append(mx.getMessage());
-                  errorCount++;
-                }
-
-                // check if explicit migration code is available
-                String sql = backendMigrationHints.getMigrateTable(tableName);
-                if (sql != null) {
-                  tableSql.append('\n').append(commentLead).append(" manual migration of ");
-                  tableSql.append(tableName);
-                  tableSql.append(":\n");
-                  tableSql.append(backendInfo.getBackend().sqlComment(migrationResult.tableSql() + "\n"));
-                  tableSql.append(sql);
-                  tableSql.append('\n');
-                }
-                else {
-                  // run the generated migration
-                  sql = backendMigrationHints.getBeforeTable(tableName);
-                  if (sql != null) {
-                    tableSql.append('\n');
-                    tableSql.append(sql);
-                  }
-                  tableSql.append(migrationResult.tableSql());
-                  sql = backendMigrationHints.getAfterTable(tableName);
-                  if (sql != null) {
-                    tableSql.append(sql);
-                    tableSql.append('\n');
-                  }
-                }
-              }
-
-              // foreign key migration is separate at end of migration
-              foreignKeySql.append(migrationResult.foreignKeySql());
-              warningSql.append(migrationResult.warningSql());
-
-              // check if migration needs to be delayed
-              boolean migrate = true;
-              Collection<String> dependencies = backendMigrationHints.getDependencies(tableName);
-              if (dependencies != null && !dependencies.isEmpty() &&
-                  isMigrationPending(dependencies, migratedTablenames)) {
-                migrate = false;
-                pendingMigrations.put(tableName, tableSql.toString());
-              }
-
-              if (migrate) {  // no dependencies
-                migratedTablenames.add(tableName);
-                flushSqlForTable(tableName, tableSql.toString());
-
-                // check if we can now migrate some pending table
-                for (Iterator<Map.Entry<String, String>> iter = pendingMigrations.entrySet().iterator(); iter.hasNext(); ) {
-                  Map.Entry<String, String> entry = iter.next();
-                  String pendingTablename = entry.getKey();
-                  if (!isMigrationPending(backendMigrationHints.getDependencies(pendingTablename), migratedTablenames)) {
-                    migratedTablenames.add(pendingTablename);
-                    flushSqlForTable(pendingTablename, entry.getValue());
-                    iter.remove();
-                  }
-                }
-              }
-            }
-
-            catch (IOException | BackendException | ModelException ex) {
-              getLog().error("parsing model failed for " + filename, ex);
-              errorCount++;
             }
           }
         }
@@ -794,14 +668,237 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         getLog().error(migrationValidation);
       }
 
-      getLog().info(getPathRelativeToBasedir(modelDirName) + ": " +
-                    fileNames.length + " files processed, " +
+      getLog().info(getModelLocation(modelDirName) + ": " +
+                    processedEntities + " entities processed, " +
                     errorCount + " errors, " +
                     getPathRelativeToBasedir(sqlDirName) + File.separator + sqlFileName + " created");
 
       totalErrors += errorCount;
     }
   }
+
+
+  private int migrateEntity(Entity entity,
+                            BackendInfo backendInfo,
+                            MigrationHints hints,
+                            String commentLead,
+                            Map<String, String> renamedTables,
+                            Map<String, String> revRenamedTables,
+                            Collection<ForeignKey> foreignKeys,
+                            Set<String> migratedTablenames,
+                            Map<String, String> pendingMigrations,
+                            StringBuilder warningSql,
+                            StringBuilder foreignKeySql)
+      throws ModelException {
+
+    if (entity.getTableProvidingEntity() != entity || entity.getOptions().isProvided()) {
+      return 0;
+    }
+
+    // check schema, if set
+    if (!mapSchemas && backendInfo.getSchemas() != null) {
+      boolean add = false;
+      for (String schema : backendInfo.getSchemas()) {
+        if (entity.getSchemaName() != null && schema.equalsIgnoreCase(entity.getSchemaName())) {
+          add = true;
+          break;
+        }
+      }
+      if (!add) {
+        getLog().debug(entity + " skipped because of wrong schema " + entity.getSchemaName());
+        skippedEntities++;
+        return 0;
+      }
+    }
+
+    processedEntities++;
+
+    int errorCount = 0;
+    StringBuilder tableSql = new StringBuilder();
+    String tableName = entity.getTableName();
+    String plainTableName = entity.getTableNameWithoutSchema();
+    String plainOldTableName = renamedTables.get(plainTableName);
+    String oldTableName = entity.getSchemaName() != null && plainOldTableName != null ?
+                            entity.getSchemaName() + "." + plainOldTableName : plainOldTableName;
+
+    if (checkReservedTables && checkAndLogReservedTable(entity)) {
+      errorCount++;
+    }
+
+    TableMetaData table = backendInfo.getBackend().getTableMetaData(modelMetaData, oldTableName != null ? oldTableName : tableName);
+
+    if (table != null) {
+      // verify that this is a user-defined table we can migrate and that we picked the correct table
+      try {
+        List<DatabaseMetaDataTableHeader> tableHeaders = modelMetaData.getTableInDatabase(plainOldTableName != null ? plainOldTableName : plainTableName);
+        if (tableHeaders != null) {
+          boolean conflicts = false;
+          int schemaCount = 0;
+          StringBuilder schemaBuf = new StringBuilder();
+          for (DatabaseMetaDataTableHeader tableHeader: tableHeaders) {
+            if (tableHeader.isUserTable()) {
+              schemaCount++;
+              if (!schemaBuf.isEmpty()) {
+                schemaBuf.append(", ");
+              }
+              schemaBuf.append(tableHeader.getSchema());
+            }
+            else {
+              getLog().error("table " + entity.getTableName() + " of entity " + entity + " conflicts with " + tableHeader);
+              errorCount++;
+              conflicts = true;
+            }
+          }
+          if (conflicts) {
+            return errorCount;
+          }
+          if (schemaCount > 1) {
+            getLog().warn("table " + entity.getTableNameWithoutSchema() + " of entity " + entity +
+                          " exists in different schemas: " + schemaBuf);
+          }
+        }
+        else {
+          getLog().warn("table found in wrong schema: " + table.getFullTableName());
+          errorCount++;
+          return errorCount;
+        }
+      }
+      catch (SQLException sqx) {
+        getLog().warn("could not retrieve table header info for table " + tableName, sqx);
+      }
+
+      if (isAlienTable(plainTableName)) {
+        DatabaseMetaDataTableHeader header = alienTablesMap.get(plainTableName);
+        StringBuilder buf = new StringBuilder();
+        buf.append("table '").append(entity.getTableName()).append("' is reserved for other uses");
+        if (header != null && !StringHelper.isAllWhitespace(header.getComment())) {
+          buf.append(": ").append(header.getComment());
+        }
+        getLog().error(buf);
+        errorCount++;
+        return errorCount;
+      }
+      else {
+        modelMetaData.addTableMetaData(table);
+        countTableStats(table);
+      }
+
+      if (oldTableName != null) {
+        // generate RENAME TABLE first
+        otherTablesMap.remove(plainOldTableName);
+        tableSql.append('\n').append(backendInfo.getBackend().sqlRenameTable(oldTableName, plainTableName));
+      }
+
+      // migrate foreign key metadata (since RENAME TABLE migrates the FK as well, and we don't need explicit migrations)
+      for (ForeignKeyMetaData foreignKeyMetaData : table.getForeignKeys()) {
+        // FKs to other entities, which are renamed
+        String oldPrimaryKeyTable = revRenamedTables.get(foreignKeyMetaData.getPrimaryKeyTable());
+        if (oldPrimaryKeyTable != null) {
+          foreignKeyMetaData.setPrimaryKeyTable(oldPrimaryKeyTable);
+        }
+        // my own FKs if this table is renamed
+        if (plainOldTableName != null) {
+          foreignKeyMetaData.setForeignKeyTable(plainTableName);
+        }
+      }
+    }
+    otherTablesMap.remove(plainTableName);
+
+    // filter foreign keys
+    Collection<ForeignKey> relatedForeignKeys = new ArrayList<>();
+    if (foreignKeys != null) {
+      for (ForeignKey key : foreignKeys) {
+        if (key.getReferencingEntity().equals(entity)) {
+          relatedForeignKeys.add(key);
+        }
+      }
+    }
+
+    TableMigrator tableMigrator = new TableMigrator(entity, relatedForeignKeys, backendInfo.getBackend(), table);
+    TableMigrator.Result migrationResult = tableMigrator.migrate(
+      hints.getHints(tableName), hints.getColumnMigrations(tableName), hints.getRenameColumns(tableName));
+
+    // table will have to be migrated?
+    boolean migrated = !migrationResult.tableSql().isEmpty();
+
+    migratedEntitiesMap.put(entity.getName(), migrated);
+
+    if (migrated) {
+
+      try {
+        // first failed validator will skip the rest, if any (same as with model validators).
+        // there is usually only one, btw.
+        for (CustomMigrationValidator migrationValidator : CustomMigrationValidator.loadValidators()) {
+          migrationValidator.validate(tableMigrator, migrationResult);
+        }
+      }
+      catch (ModelException mx) {
+        // collect for all tables
+        if (migrationValidation.isEmpty()) {
+          migrationValidation.append("migration validation failed:");
+        }
+        migrationValidation.append('\n').append(mx.getMessage());
+        errorCount++;
+      }
+
+      // check if explicit migration code is available
+      String sql = backendMigrationHints.getMigrateTable(tableName);
+      if (sql != null) {
+        tableSql.append('\n').append(commentLead).append(" manual migration of ");
+        tableSql.append(tableName);
+        tableSql.append(":\n");
+        tableSql.append(backendInfo.getBackend().sqlComment(migrationResult.tableSql() + "\n"));
+        tableSql.append(sql);
+        tableSql.append('\n');
+      }
+      else {
+        // run the generated migration
+        sql = backendMigrationHints.getBeforeTable(tableName);
+        if (sql != null) {
+          tableSql.append('\n');
+          tableSql.append(sql);
+        }
+        tableSql.append(migrationResult.tableSql());
+        sql = backendMigrationHints.getAfterTable(tableName);
+        if (sql != null) {
+          tableSql.append(sql);
+          tableSql.append('\n');
+        }
+      }
+    }
+
+    // foreign key migration is separate at end of migration
+    foreignKeySql.append(migrationResult.foreignKeySql());
+    warningSql.append(migrationResult.warningSql());
+
+    // check if migration needs to be delayed
+    boolean migrate = true;
+    Collection<String> dependencies = backendMigrationHints.getDependencies(tableName);
+    if (dependencies != null && !dependencies.isEmpty() &&
+        isMigrationPending(dependencies, migratedTablenames)) {
+      migrate = false;
+      pendingMigrations.put(tableName, tableSql.toString());
+    }
+
+    if (migrate) {  // no dependencies
+      migratedTablenames.add(tableName);
+      flushSqlForTable(tableName, tableSql.toString());
+
+      // check if we can now migrate some pending table
+      for (Iterator<Map.Entry<String, String>> iter = pendingMigrations.entrySet().iterator(); iter.hasNext(); ) {
+        Map.Entry<String, String> entry = iter.next();
+        String pendingTablename = entry.getKey();
+        if (!isMigrationPending(backendMigrationHints.getDependencies(pendingTablename), migratedTablenames)) {
+          migratedTablenames.add(pendingTablename);
+          flushSqlForTable(pendingTablename, entry.getValue());
+          iter.remove();
+        }
+      }
+    }
+
+    return errorCount;
+  }
+
 
   /**
    * Applies the "rename" table hints to determine the renamed tables.
