@@ -27,6 +27,7 @@ import org.tentackle.common.Constants;
 import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.maven.plugin.wizard.fx.PdoBrowser;
+import org.tentackle.model.Model;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.session.ModificationTracker;
@@ -71,12 +72,15 @@ public class BrowseMojo extends AbstractWizardMojo {
   @Parameter
   public int maxLinesInStringLiteral;
 
+  /**
+   * Map schema names to flat table names in generated SQL SELECT statements.
+   */
+  @Parameter(property = "tentackle.mapSchemas")
+  public boolean mapSchemas;
+
+
   private Stage stage;
 
-  @Override
-  protected Stage getStage() {
-    return stage;
-  }
 
   @Override
   public void executeImpl() throws MojoExecutionException, MojoFailureException {
@@ -119,6 +123,20 @@ public class BrowseMojo extends AbstractWizardMojo {
       // no database? wrong database? whatever: testing environment incomplete
       throw new MojoExecutionException("no backend found", ex);
     }
+  }
+
+
+  @Override
+  protected Stage getStage() {
+    return stage;
+  }
+
+  @Override
+  protected void loadModel() throws MojoFailureException, MojoExecutionException {
+    if (mapSchemas) {
+      Model.getInstance().setSchemaNameMapped(true);
+    }
+    super.loadModel();
   }
 
 }
