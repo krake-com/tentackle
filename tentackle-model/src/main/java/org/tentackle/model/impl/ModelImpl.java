@@ -79,7 +79,7 @@ import java.util.jar.JarFile;
 @Service(Model.class)
 public class ModelImpl implements Model {
 
-  private static final String PROPS_PREFIX = "tentackle.model.";     // system properties prefix
+  private static final String PROPS_PREFIX = "tentackle.";     // system properties prefix
   private static final String PROPS_MAP_SCHEMAS = PROPS_PREFIX + "mapSchemas";
   private static final String PROPS_MODEL_DEFAULTS = PROPS_PREFIX + "modelDefaults";
   private static final String PROPS_ENTITY_ALIASES = PROPS_PREFIX + "entityAliases";
@@ -150,7 +150,7 @@ public class ModelImpl implements Model {
           <artifactId>maven-surefire-plugin</artifactId>
           <version>3.1.2</version>
           <configuration>
-            <argLine>-Dtentackle.model.mapSchemas=true</argLine>
+            <argLine>-Dtentackle.mapSchemas=true</argLine>
           </configuration>
         </plugin>
      */
