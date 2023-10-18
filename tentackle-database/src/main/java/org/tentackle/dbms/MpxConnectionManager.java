@@ -40,16 +40,12 @@ import java.util.Date;
  */
 public class MpxConnectionManager extends DefaultConnectionManager {
 
-  /** property name for the database's timeout for inactive JDBC connections. */
-  public static final String INACTIVITY_TIMEOUT = "jdbcIdleTimeout";
-
   private static final Logger LOGGER = Logger.get(MpxConnectionManager.class);
 
   private static final int MAX_LOOP = 100;        // max. number of sleep-with-retry if no connection available
   private static final int BASE_MS = 50;          // base milliseconds to sleep before next try
   private static final long REQ_MUTEX_MS = 1000;  // request connections mutex wait timeout
   private static final long DONE_MUTEX_MS = 500;  // done connections mutex wait timeout
-
 
 
   // args
@@ -92,7 +88,6 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   private final Object doneMtx;                       // connections created mutex
 
 
-
   /**
    * Creates a new connection manager.
    *
@@ -111,8 +106,6 @@ public class MpxConnectionManager extends DefaultConnectionManager {
                               int minSize, int maxSize, int minMinutes, int maxMinutes) {
 
     super(name, iniSize, maxSize, idOffset, minMinutes, maxMinutes);
-
-    setConnectionInactivityTimeout(0);    // set the default timeout
 
     if (minSize > maxSize) {
       throw new IllegalArgumentException("maxSize must be >= minSize");
@@ -135,8 +128,10 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     // connections are brought up in an extra thread
     doneMtx = new Object();
     connectThread = new ConnectionThread(this);
-  }
 
+    // if undefined by backendInfo -> minMinutes/2
+    setConnectionInactivityTimeout(backendInfo.getBackendTimeout());
+  }
 
   /**
    * Creates a connection manager with reasonable values for most servers.
@@ -188,7 +183,6 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     return (int) (connectionInactivityTimeoutMs / Constants.MINUTE_MS);
   }
 
-
   /**
    * Shuts down this connection manager.<br>
    * All connections are closed and the threads stopped.
@@ -217,7 +211,6 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     unConCount = 0;
   }
 
-
   /**
    * Gets the number of connections when to start info logging.
    * <p>
@@ -237,7 +230,6 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   public void setInfoLogSize(int infoLogSize) {
     this.infoLogSize = infoLogSize;
   }
-
 
   /**
    * Gets the number of connections when to start warning logging.
@@ -259,8 +251,6 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     this.warnLogSize = warnLogSize;
   }
 
-
-
   @Override
   public synchronized int login(Db session) {
     if (!initialized) {
@@ -273,7 +263,6 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     LOGGER.fine("{0} logged into {1}, id={2}", session, this, id);
     return id;
   }
-
 
   @Override
   public synchronized void logout(Db session) {
@@ -300,7 +289,6 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     freeConnection(connection);
   }
 
-
   @Override
   public void attach(Db session) {
     assertSessionBelongsToMe(session);
@@ -326,9 +314,8 @@ public class MpxConnectionManager extends DefaultConnectionManager {
             throw new PersistenceException(session,
                     "connection " + con + " has wrong index " + con.getIndex() + ", expected " + conIndex);
           }
-          // if the connection is detached for a long time, verify the connection before use for sure
-          // to avoid unexpected persistence exceptions.
-          if (System.currentTimeMillis() - con.getDetachedSince() >= connectionInactivityTimeoutMs) {
+
+          if (con.isConnectionVerificationNecessary()) {
             /*
              * Although this will block all threads from attaching/detaching a connection,
              * this is the preferred solution compared to an extra "verification thread",
@@ -416,7 +403,6 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     }
   }
 
-
   @Override
   public void detach(Db session) {
     assertSessionBelongsToMe(session);
@@ -491,7 +477,6 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     }
   }
 
-
   @Override
   public synchronized void forceDetach(Db session) {
     assertSessionBelongsToMe(session);
@@ -500,11 +485,17 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
 
   @Override
+  protected ManagedConnection createConnection(BackendInfo backendInfo) {
+    ManagedConnection mc = super.createConnection(backendInfo);
+    mc.setConnectionInactivityTimeoutMs(connectionInactivityTimeoutMs);   // at least minMinutes/2, if not configured
+    return mc;
+  }
+
+  @Override
   protected void logConfiguration() {
     LOGGER.info("{0} {1}: maxSessions={2}, idOffset={3}, iniSize={4}, incSize={5}, minSize={6}, maxSize={7}, minMinutes={8}, maxMinutes={9}",
       getClass().getSimpleName(), name, maxDbSize, idOffset, iniSize, incSize, minSize, maxConSize, minMinutes, maxMinutes);
   }
-
 
   /**
    * Frees a connection and adds it to the unattached list.
@@ -548,7 +539,6 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     }
   }
 
-
   /**
    * Adds the index of an unused connection to the freelist.
    *
@@ -567,7 +557,6 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     unConList[unConCount++] = index;    // add to freelist
   }
 
-
   /**
    * Gets a connection from the unattached freelist.
    *
@@ -576,7 +565,6 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   protected int popUnattached() {
     return unConCount > 0 ? unConList[--unConCount] : -1;
   }
-
 
   /**
    * Create spare connections.
@@ -655,7 +643,6 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     }
   }
 
-
   /**
    * checks whether the number of connections dropped below minSize.
    * If so, reopen missing connections.
@@ -681,7 +668,6 @@ public class MpxConnectionManager extends DefaultConnectionManager {
       }
     }
   }
-
 
 
   /**

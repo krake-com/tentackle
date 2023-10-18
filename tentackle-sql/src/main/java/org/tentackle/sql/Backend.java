@@ -426,6 +426,14 @@ public interface Backend {
   String getEmptyString();
 
   /**
+   * Gets the dummy select to keep/test connections alive.<br>
+   * Most databases just require a <code>"SELECT 1"</code>.
+   *
+   * @return the select string
+   */
+  String getDummySelect();
+
+  /**
    * According to the JDBC-specs {@link java.sql.Connection#setAutoCommit}(true)
    * should commit, but some backends require an extra {@link java.sql.Connection#commit}.
    *
