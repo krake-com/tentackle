@@ -27,7 +27,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.concurrent.ConcurrentHashMap;
-
+import java.util.logging.Level;
 
 
 /**
@@ -133,15 +133,18 @@ public class DefaultLoggerFactory implements LoggerFactory {
 
     // could not load logger
     String msg = "Could not load logger " + loggerClass;
+    Throwable t = null;
     if (methodException != null) {
+      t = methodException;
       msg += " (via static method: " + methodException + ")";
     }
     if (constructorException != null) {
-      msg += " (via constructor: " + constructorException;
+      t = constructorException;
+      msg += " (via constructor: " + constructorException + ")";
     }
+    java.util.logging.Logger.getLogger(name).log(Level.WARNING, msg, t);
 
-    // return the default logger
-    java.util.logging.Logger.getLogger(name).warning(msg);
+    // fall back to the default logger
     return DefaultLogger.getLogger(name);
   }
 
