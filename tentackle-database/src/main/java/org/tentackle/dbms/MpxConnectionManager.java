@@ -640,7 +640,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
       con.close();
     }
     catch (PersistenceException ex) {
-      LOGGER.warning("closing **DEAD** connection failed -> ignored", ex);
+      LOGGER.fine("closing **DEAD** connection failed expectedly -> ignored", ex);
     }
   }
 
