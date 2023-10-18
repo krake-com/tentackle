@@ -18,6 +18,7 @@
 
 package org.tentackle.dbms;
 
+import org.tentackle.common.Constants;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.FormatHelper;
 import org.tentackle.session.PersistenceException;
@@ -38,6 +39,9 @@ import java.util.Date;
  * @author harald
  */
 public class MpxConnectionManager extends DefaultConnectionManager {
+
+  /** property name for the database's timeout for inactive JDBC connections. */
+  public static final String INACTIVITY_TIMEOUT = "jdbcIdleTimeout";
 
   private static final Logger LOGGER = Logger.get(MpxConnectionManager.class);
 
@@ -72,6 +76,12 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   protected boolean initialized;
 
 
+  // optional configuration
+
+  /** connection inactivity timeout in ms. */
+  private long connectionInactivityTimeoutMs;
+
+
   // connect thread
 
   private boolean shutdownRequested;                  // true if shutdown procedure initiated
@@ -101,6 +111,8 @@ public class MpxConnectionManager extends DefaultConnectionManager {
                               int minSize, int maxSize, int minMinutes, int maxMinutes) {
 
     super(name, iniSize, maxSize, idOffset, minMinutes, maxMinutes);
+
+    setConnectionInactivityTimeout(0);    // set the default timeout
 
     if (minSize > maxSize) {
       throw new IllegalArgumentException("maxSize must be >= minSize");
@@ -145,6 +157,36 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   }
 
 
+  /**
+   * Sets the connection inactivity timeout in minutes.<br>
+   * By default, connections that weren't used for a long time (&ge; <code>minMinutes/2</code> minutes)
+   * are checked for being still alive via {@link ManagedConnection#verifyConnection()} before being attached.
+   * This assertion is sufficient for databases that usually don't close inactive sessions.<br>
+   * Some databases, however, enforce inactivity timeouts with much shorter intervals,
+   * that cannot be deactivated or configured to a large enough value.<br>
+   * In those cases, the connection verification timeout should be configured appropriately,
+   * i.e. less than the database's value.
+   *
+   * @param connectionInactivityTimeout idle verification timeout in minutes, 0 for default (minMinutes/2)
+   */
+  public void setConnectionInactivityTimeout(int connectionInactivityTimeout) {
+    if (connectionInactivityTimeout == 0) {
+      connectionInactivityTimeoutMs = minMinutes * Constants.MINUTE_MS / 2;
+    }
+    else {
+      connectionInactivityTimeoutMs = connectionInactivityTimeout * Constants.MINUTE_MS;
+      LOGGER.info("{0}: connection inactivity timeout for {1} = {2} minutes", getName(), backendInfo, connectionInactivityTimeout);
+    }
+  }
+
+  /**
+   * Gets the inactivity timeout.
+   *
+   * @return the inactivity timeout in minutes.
+   */
+  public int getConnectionInactivityTimeout() {
+    return (int) (connectionInactivityTimeoutMs / Constants.MINUTE_MS);
+  }
 
 
   /**
@@ -284,12 +326,9 @@ public class MpxConnectionManager extends DefaultConnectionManager {
             throw new PersistenceException(session,
                     "connection " + con + " has wrong index " + con.getIndex() + ", expected " + conIndex);
           }
-          /*
-           * If connection is detached for a long time (minMinutes/2), verify the connection first.
-           * This is mainly for databases like MySQL that close connections after a certain time
-           * of inactivity. For those databases it is recommended to set the idle-timeout to minTime.
-           */
-          if (System.currentTimeMillis() - con.getDetachedSince() > minMinutes * 30000L) {
+          // if the connection is detached for a long time, verify the connection before use for sure
+          // to avoid unexpected persistence exceptions.
+          if (System.currentTimeMillis() - con.getDetachedSince() >= connectionInactivityTimeoutMs) {
             /*
              * Although this will block all threads from attaching/detaching a connection,
              * this is the preferred solution compared to an extra "verification thread",
