@@ -253,6 +253,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
   @Override
   public synchronized int login(Db session) {
+    session.assertNotRemote();
     if (!initialized) {
       createConnections(iniSize);
       connectThread.start();

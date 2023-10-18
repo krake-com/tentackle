@@ -289,9 +289,9 @@ public class DefaultConnectionManager implements ConnectionManager {
 
   @Override
   public int login(Db session) {
-
+    session.assertNotRemote();
     BackendInfo backendInfo = session.getBackendInfo();
-    if (!session.isRemote() && backendInfo.getUser() == null && backendInfo.getPassword() == null) {
+    if (backendInfo.getUser() == null && backendInfo.getPassword() == null) {
       // for direct jdbc connections via backend config:
       // take user/passwd from session info if missing in backend info
       SessionInfo sessionInfo = session.getSessionInfo();
