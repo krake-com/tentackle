@@ -519,7 +519,7 @@ public class ManagedConnection {
    * @return return true if {@link #verifyConnection()} should be invoked before use
    */
   public boolean isConnectionVerificationNecessary() {
-    return connectionInactivityTimeoutMs > 0 &&
+    return connectionInactivityTimeoutMs > 0 && detachedSince > 0 &&
            System.currentTimeMillis() - detachedSince >= connectionInactivityTimeoutMs;
   }
 
@@ -530,6 +530,7 @@ public class ManagedConnection {
    * If the check fails the connection is marked dead.
    *
    * @return true if connection still valid, false if invalid
+   * @see Backend#getDummySelect()
    */
   public boolean verifyConnection() {
     try (Statement stmt = getConnection().createStatement()) {
