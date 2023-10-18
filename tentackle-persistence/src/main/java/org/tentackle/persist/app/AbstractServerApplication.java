@@ -213,15 +213,9 @@ public abstract class AbstractServerApplication extends AbstractApplication
    * @return the connection manager
    */
   protected ConnectionManager createConnectionManager() {
-    MpxConnectionManager mpxConMgr = new MpxConnectionManager(getSession().getBackendInfo(),
-                                                              getSession().getConnectionManager().getSessionIdOffset() +
-                                                              getSession().getConnectionManager().getMaxSessions());
-    // optional configuration for MpxConnectionManager only
-    String propVal = getProperty(MpxConnectionManager.INACTIVITY_TIMEOUT);
-    if (propVal != null) {
-      mpxConMgr.setConnectionInactivityTimeout(Integer.parseInt(propVal));
-    }
-    return mpxConMgr;
+    return new MpxConnectionManager(getSession().getBackendInfo(),
+                                    getSession().getConnectionManager().getSessionIdOffset() +
+                                    getSession().getConnectionManager().getMaxSessions());
   }
 
 

@@ -292,6 +292,11 @@ public class Oracle8 extends AbstractSql2003Backend {
   }
 
   @Override
+  public String getDummySelect() {
+    return "SELECT 1 FROM DUAL";
+  }
+
+  @Override
   public String columnTypeNullDefaultToString(String columnName, SqlType sqlType, int size, int scale,
                                               boolean nullable, Object defaultValue) {
     StringBuilder buf = new StringBuilder();

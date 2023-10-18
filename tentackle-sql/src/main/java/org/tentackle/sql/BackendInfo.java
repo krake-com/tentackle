@@ -45,6 +45,8 @@ public class BackendInfo {
   private final char[] password;                // the password
   private final String[] schemas;               // schemas (only for migration)
 
+  private int backendTimeout;                   // optional database idle session timeout in minutes, 0 if default or remote
+
 
   /**
    * Creates a backend info from a backend.<br>
@@ -168,9 +170,14 @@ public class BackendInfo {
          backendProperties.getProperty(Constants.BACKEND_USER),
          parsePassword(backendProperties.getPropertyBlunt(Constants.BACKEND_PASSWORD)),
          parseSchemas(backendProperties.getProperty(Constants.BACKEND_SCHEMAS)));
-    String driver = backendProperties.getProperty(Constants.BACKEND_DRIVER);
-    if (driver != null) {
-      DynamicDriver.load(driver);
+
+    String propVal = backendProperties.getProperty(Constants.BACKEND_DRIVER);
+    if (propVal != null) {
+      DynamicDriver.load(propVal);
+    }
+    propVal = backendProperties.getProperty(Constants.BACKEND_TIMEOUT);
+    if (propVal != null) {
+      backendTimeout = Integer.parseInt(propVal);
     }
   }
 
@@ -271,6 +278,23 @@ public class BackendInfo {
     return url != null;
   }
 
+  /**
+   * Gets the optional database connection inactivity timeout.
+   *
+   * @return the timeout in minutes, 0 if none
+   */
+  public int getBackendTimeout() {
+    return backendTimeout;
+  }
+
+  /**
+   * Sets the database connection inactivity timeout.
+   *
+   * @param backendTimeout the timeout in minutes, 0 if none
+   */
+  public void setBackendTimeout(int backendTimeout) {
+    this.backendTimeout = backendTimeout;
+  }
 
   /**
    * Creates a connection.

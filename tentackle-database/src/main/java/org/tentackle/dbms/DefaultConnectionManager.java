@@ -19,6 +19,7 @@
 
 package org.tentackle.dbms;
 
+import org.tentackle.common.Constants;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.FormatHelper;
 import org.tentackle.session.PersistenceException;
@@ -637,6 +638,9 @@ public class DefaultConnectionManager implements ConnectionManager {
       Backend backend = backendInfo.getBackend();
       backend.validateVersion(versionInfo.majorVersion, versionInfo.minorVersion);
       mc = new ManagedConnection(this, backend, con);
+      if (backendInfo.getBackendTimeout() > 0) {
+        mc.setConnectionInactivityTimeoutMs(backendInfo.getBackendTimeout() * Constants.MINUTE_MS);
+      }
     }
     catch (RuntimeException rx) {
       try {
@@ -678,6 +682,9 @@ public class DefaultConnectionManager implements ConnectionManager {
     assertSessionBelongsToMe(session);
     int index = getIndexFromSession(session);
     ManagedConnection con = conList[index];
+    if (con.isConnectionVerificationNecessary()) {
+      con.verifyConnection();
+    }
     if (con.isDead()) {
       LOGGER.warning("{0}: closing ***DEAD*** connection {1}", this, con);
     }

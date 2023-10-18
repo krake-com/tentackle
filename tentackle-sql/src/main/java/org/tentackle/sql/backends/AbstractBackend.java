@@ -217,6 +217,11 @@ public abstract class AbstractBackend implements Backend {
   }
 
   @Override
+  public String getDummySelect() {
+    return "SELECT 1";
+  }
+
+  @Override
   public String sqlAsBeforeTableAlias() {
     return " ";
   }

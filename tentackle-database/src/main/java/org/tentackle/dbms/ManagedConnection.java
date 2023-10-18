@@ -325,6 +325,7 @@ public class ManagedConnection {
   private int maxCountForClearWarnings;                   // trigger when to clearWarning() on a connection (0 = disabled)
   private int counterForClearWarnings;                    // current counter
   private StatementHistory currentStatement;              // statement history while not in transaction
+  private long connectionInactivityTimeoutMs;             // optional database connection inactivity timeout
 
   private final List<StatementHistory> statementHistory;                        // statement history while in transaction
   private final Map<StatementKey,PreparedStatementWrapper> preparedStatements;  // all prepared statements for this connection (stmtId:statement)
@@ -397,6 +398,23 @@ public class ManagedConnection {
     return c;
   }
 
+  /**
+   * Gets the optional connection inactivity timeout.
+   *
+   * @return the timeout in [ms]
+   */
+  public long getConnectionInactivityTimeoutMs() {
+    return connectionInactivityTimeoutMs;
+  }
+
+  /**
+   * Sets the optional connection inactivity timeout.
+   *
+   * @param connectionInactivityTimeoutMs the timeout in [ms]
+   */
+  public void setConnectionInactivityTimeoutMs(long connectionInactivityTimeoutMs) {
+    this.connectionInactivityTimeoutMs = connectionInactivityTimeoutMs;
+  }
 
   /**
    * Gets the epochal time when this connection was established.
@@ -495,6 +513,15 @@ public class ManagedConnection {
     return resources.dead;
   }
 
+  /**
+   * Returns whether timeout is enabled and connection wasn't use for a long time and needs verification.
+   *
+   * @return return true if {@link #verifyConnection()} should be invoked before use
+   */
+  public boolean isConnectionVerificationNecessary() {
+    return connectionInactivityTimeoutMs > 0 &&
+           System.currentTimeMillis() - detachedSince >= connectionInactivityTimeoutMs;
+  }
 
   /**
    * Checks whether connection is still valid.<p>
@@ -506,7 +533,7 @@ public class ManagedConnection {
    */
   public boolean verifyConnection() {
     try (Statement stmt = getConnection().createStatement()) {
-      stmt.executeQuery("SELECT 1");
+      stmt.executeQuery(getBackend().getDummySelect());
       return true;
     }
     catch (RuntimeException | SQLException ex) {
