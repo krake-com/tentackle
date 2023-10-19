@@ -82,7 +82,7 @@
     <javac.lint>all,-processing</javac.lint>
     <javac.version>17</javac.version>
 
-    <javafx.version>20.0.2</javafx.version>
+    <javafx.version>21.0.1</javafx.version>
     <ikonli.version>12.3.1</ikonli.version>
     <ow2.asm.version>9.6</ow2.asm.version>
     <groovy.version>4.0.15</groovy.version>
@@ -226,7 +226,7 @@
       <dependency>
         <groupId>org.jruby</groupId>
         <artifactId>jruby</artifactId>
-        <version>9.4.3.0</version>
+        <version>9.4.4.0</version>
       </dependency>
 
       <dependency>
@@ -329,7 +329,7 @@
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-java</artifactId>
-        <version>1.1.2</version>
+        <version>1.2.0</version>
       </dependency>
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
