@@ -136,11 +136,11 @@ public class DefaultLoggerFactory implements LoggerFactory {
     Throwable t = null;
     if (methodException != null) {
       t = methodException;
-      msg += " (via static method: " + methodException + ")";
+      msg += " (via static method)";
     }
     if (constructorException != null) {
       t = constructorException;
-      msg += " (via constructor: " + constructorException + ")";
+      msg += " (via constructor)";
     }
     java.util.logging.Logger.getLogger(name).log(Level.WARNING, msg, t);
 
