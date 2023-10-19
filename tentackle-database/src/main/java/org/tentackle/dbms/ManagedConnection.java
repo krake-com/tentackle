@@ -1257,7 +1257,9 @@ public class ManagedConnection {
       // we ignore the unprepared running statements.
     }
     catch (SQLException e) {
-      throw createFromSqlException("reading warnings failed", e);
+      if (!resources.dead) {
+        throw createFromSqlException("reading warnings failed", e);
+      }
     }
   }
 
@@ -1403,8 +1405,10 @@ public class ManagedConnection {
           stmt.close();
         }
         catch (RuntimeException ex) {
-          // just log, we need to close really all
-          LOGGER.warning("closing statement failed: " + stmt, ex);
+          // just log, we need to close them all
+          if (!resources.dead) {
+            LOGGER.warning("closing statement failed: " + stmt, ex);
+          }
         }
       }
       if (onlyMarkedReady) {
