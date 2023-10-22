@@ -20,6 +20,7 @@ package org.tentackle.fx;
 
 import javafx.scene.Node;
 import javafx.scene.Parent;
+import javafx.scene.control.Button;
 import java.net.URL;
 
 /**
@@ -223,6 +224,16 @@ public interface NotificationBuilder {
    * @return the builder
    */
   NotificationBuilder button(String text, Node graphic, boolean isDefault, Runnable action);
+
+  /**
+   * Adds a button.
+   *
+   * @param button the button to add
+   * @param isDefault true if this is the default button
+   * @param action the action to perform when clicked
+   * @return the builder
+   */
+  NotificationBuilder button(Button button, boolean isDefault, Runnable action);
 
   /**
    * Sets the close button mode.
