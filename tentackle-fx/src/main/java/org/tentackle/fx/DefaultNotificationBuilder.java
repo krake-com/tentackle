@@ -51,9 +51,15 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
    *
    * @param text the button's text
    * @param graphic the button's graphic
+   * @param button a created button as an alternative to text and graphic
    * @param action the action to perform when clicked
    */
-  private record ButtonConfig(String text, Node graphic, Runnable action) {}
+  private record ButtonConfig(String text, Node graphic, Button button, Runnable action) {
+
+    private Button getButton() {
+      return button == null ? new Button(text, graphic) : button;
+    }
+  }
 
   private Type type = Type.NONE;
   private Node graphic;
@@ -130,13 +136,12 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
 
   @Override
   public NotificationBuilder button(String text, Node graphic, boolean isDefault, Runnable action) {
-    ButtonConfig buttonConfig = new ButtonConfig(text, graphic, action);
-    buttonConfigs.add(buttonConfig);
-    if (isDefault) {
-      // there can only be one default button
-      defaultButtonConfig = buttonConfig;   // the last wins...
-    }
-    return this;
+    return addButtonConfig(new ButtonConfig(text, graphic, null, action), isDefault);
+  }
+
+  @Override
+  public NotificationBuilder button(Button button, boolean isDefault, Runnable action) {
+    return addButtonConfig(new ButtonConfig(null, null, button, action), isDefault);
   }
 
   @Override
@@ -178,9 +183,14 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
       }
       headerBox.getChildren().add(icon);
     }
-    headerBox.getChildren().add(new Label(text));
-
-    borderPane.setTop(headerBox);
+    if (text != null) {
+      Label label = new Label(text);
+      label.setId("textLabel");
+      headerBox.getChildren().add(label);
+    }
+    if (!headerBox.getChildren().isEmpty()) {
+      borderPane.setTop(headerBox);
+    }
 
     if (content != null) {
       borderPane.setCenter(content);
@@ -228,8 +238,10 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
     if (!buttonConfigs.isEmpty()) {
       HBox buttonBox = new HBox();
       buttonBox.setId("buttonBox"); // HBox does not have a style class
+      int buttonIndex = 0;
       for (ButtonConfig buttonConfig : buttonConfigs) {
-        Button button = new Button(buttonConfig.text(), buttonConfig.graphic());
+        Button button = buttonConfig.getButton();
+        button.setId("button" + buttonIndex++);
         button.setOnAction(event -> {
           if (buttonConfig.action() != null) {
             buttonConfig.action().run();
@@ -314,6 +326,15 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
                case QUESTION -> new FontIcon("mdi2c-comment-question-outline");
                case NONE -> null;
              };
+  }
+
+  private NotificationBuilder addButtonConfig(ButtonConfig buttonConfig, boolean isDefault) {
+    buttonConfigs.add(buttonConfig);
+    if (isDefault) {
+      // there can only be one default button
+      defaultButtonConfig = buttonConfig;   // the last wins...
+    }
+    return this;
   }
 
 }

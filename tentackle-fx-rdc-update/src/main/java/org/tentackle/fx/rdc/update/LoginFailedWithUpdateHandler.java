@@ -26,11 +26,17 @@ import org.tentackle.common.FileHelper;
 import org.tentackle.common.StringHelper;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.fx.Fx;
+import org.tentackle.fx.FxFactory;
+import org.tentackle.fx.FxFxBundle;
+import org.tentackle.fx.FxUtilities;
+import org.tentackle.fx.NotificationBuilder;
+import org.tentackle.fx.component.FxButton;
 import org.tentackle.fx.rdc.app.DesktopApplication;
 import org.tentackle.fx.rdc.app.LoginApplication;
 import org.tentackle.fx.rdc.app.LoginFailedHandler;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.BlockingHolder;
+import org.tentackle.misc.Holder;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.VersionIncompatibleException;
 import org.tentackle.update.ClientInfo;
@@ -39,8 +45,13 @@ import org.tentackle.update.InstallationType;
 import org.tentackle.update.UpdateInfo;
 import org.tentackle.update.UpdateService;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.scene.Parent;
+import javafx.scene.control.Button;
+import javafx.stage.Popup;
+import javafx.util.Duration;
 import javax.net.ssl.SSLHandshakeException;
 import java.io.File;
 import java.io.IOException;
@@ -48,6 +59,7 @@ import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * To handle login failed exceptions.
@@ -123,11 +135,11 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
    */
   protected Runnable createUpdateRunnable(ClientInfo clientInfo, UpdateInfo updateInfo, InstallationType installationType) {
     return () -> {
-      BlockingHolder<Boolean> answer = new BlockingHolder<>();
-      Platform.runLater(() -> Fx.question(
+      BlockingHolder<Boolean> answer = new BlockingHolder<>();    // wait for result!
+      Platform.runLater(() -> showUpdateDialog(
         getView(), MessageFormat.format(UpdateFxRdcBundle.getString("{0}_{1}_OUTDATED_INSTALL_{2}"),
                                         clientInfo.getApplication(), clientInfo.getVersion(), updateInfo.getVersion()),
-        true, answer));
+        answer));
       if (answer.get()) {
         update(updateInfo, installationType);
       }
@@ -135,6 +147,67 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
         terminate(null, null);
       }
     };
+  }
+
+  /**
+   * Shows an update dialog to ask the user whether to update or not.
+   *
+   * @param owner the dialog owner
+   * @param message the message
+   * @param answer the result consumer
+   */
+  protected void showUpdateDialog(Object owner, String message, Consumer<Boolean> answer) {
+    Holder<Boolean> result = new Holder<>(Boolean.FALSE);   // ESC or hiding w/o pressing a button -> NO
+    FxButton goButton = Fx.create(Button.class);
+    goButton.setText(FxFxBundle.getString("YES"));
+    Timeline countdown = createCountdownTimeline(goButton);
+    Popup popup = new Popup();
+    Parent notification = FxFactory.getInstance()
+                                   .createNotificationBuilder()
+                                   .type(NotificationBuilder.Type.QUESTION)
+                                   .text(message)
+                                   .button(FxFxBundle.getString("NO"), null, false, null)
+                                   .button(goButton, true, () -> result.accept(Boolean.TRUE))
+                                   .hide(popup::hide)
+                                   .build();
+    FxUtilities.getInstance().showNotification(owner, popup, notification, () -> {
+      if (countdown != null) {
+        countdown.stop();
+      }
+      answer.accept(result.get());
+    });
+    if (countdown != null) {
+      countdown.play();
+    }
+  }
+
+  /**
+   * Creates a countdown timeline for the go-button to start the update automatically after a few seconds.<br>
+   * The default implementation counts down from 3 each second.<br>
+   * The update should not start automatically since the user should have to option to cancel.
+   * Furthermore, if the update fails for whatever reason, we don't want to end up in an installation loop.
+   *
+   * @param goButton the go-button
+   * @return the timeline, null if no countdown (no automatic update start)
+   */
+  protected Timeline createCountdownTimeline(FxButton goButton) {
+    Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
+      String text = goButton.getText();
+      char c = text.charAt(0);
+      int value;
+      if (Character.isDigit(c)) {
+        value = c - '0' - 1;
+      }
+      else {
+        value = 3;
+      }
+      goButton.setText(value + " s");
+      if (value < 1) {
+        goButton.doClick();
+      }
+    }));
+    timeline.setCycleCount(4);
+    return timeline;
   }
 
   /**
