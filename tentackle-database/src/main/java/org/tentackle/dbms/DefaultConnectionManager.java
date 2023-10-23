@@ -682,11 +682,22 @@ public class DefaultConnectionManager implements ConnectionManager {
     assertSessionBelongsToMe(session);
     int index = getIndexFromSession(session);
     ManagedConnection con = conList[index];
+    boolean verified;
     if (con.isConnectionVerificationNecessary()) {
       con.verifyConnection();
+      verified = true;
+    }
+    else {
+      verified = false;
     }
     if (con.isDead()) {
-      LOGGER.warning("{0}: closing ***DEAD*** connection {1}", this, con);
+      if (verified) {
+        LOGGER.info("{0}: database closed idle connection {1}", this, con);
+      }
+      else {
+        // marked dead unexpectedly!
+        LOGGER.warning("{0}: closing ***DEAD*** connection {1}", this, con);
+      }
     }
     else if (con.isExpired()) {
       LOGGER.info("{0}: closing connection {1}, open since {2}",
