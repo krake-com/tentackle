@@ -602,7 +602,6 @@ public class FxUtilities {
    */
   public void showNotification(Object owner, Popup popup, Parent notification, Runnable onClose) {
     popup.getContent().add(notification);
-    popup.setAutoHide(true);
     if (onClose != null) {
       // runLater: let the window close completely before running onClose to avoid race conditions
       popup.setOnHidden(event -> Platform.runLater(onClose));
@@ -616,6 +615,30 @@ public class FxUtilities {
     popup.show(window);
   }
 
+  /**
+   * Creates a notification popup.<br>
+   * Swallows accidental events to prevent being hidden before becoming visible to the user.
+   *
+   * @return the popup
+   */
+  public Popup createNotificationPopup() {
+    Holder<Long> shownSince = new Holder<>();
+    Popup popup = new Popup() {
+      @Override
+      public void hide() {
+        Long since = shownSince.get();
+        // this prevents accidental events from hiding the popup before becoming visible to the user
+        if (since == null || System.currentTimeMillis() > since + 500) {    // 500ms is short enough for a "fast" user
+          super.hide();
+        }
+      }
+    };
+    popup.addEventFilter(WindowEvent.WINDOW_SHOWING, event -> {
+      shownSince.accept(System.currentTimeMillis());
+    });
+    popup.setAutoHide(true);
+    return popup;
+  }
 
   /**
    * Shows an info dialog.
@@ -625,7 +648,7 @@ public class FxUtilities {
    * @param onClose optional runnable invoked when dialog is closed
    */
   public void showInfoDialog(Object owner, String message, Runnable onClose) {
-    Popup popup = new Popup();
+    Popup popup = createNotificationPopup();
     Parent notification = FxFactory.getInstance()
                                    .createNotificationBuilder()
                                    .type(NotificationBuilder.Type.INFORMATION)
@@ -644,7 +667,7 @@ public class FxUtilities {
    * @param onClose optional runnable invoked when dialog is closed
    */
   public void showWarningDialog(Object owner, String message, Runnable onClose) {
-    Popup popup = new Popup();
+    Popup popup = createNotificationPopup();
     Parent notification = FxFactory.getInstance()
                                    .createNotificationBuilder()
                                    .type(NotificationBuilder.Type.WARNING)
@@ -682,7 +705,7 @@ public class FxUtilities {
    */
   public void showQuestionDialog(Object owner, String message, boolean defaultYes, Consumer<Boolean> answer) {
     Holder<Boolean> result = new Holder<>(Boolean.FALSE);   // ESC or hiding w/o pressing a button -> NO
-    Popup popup = new Popup();
+    Popup popup = createNotificationPopup();
     Parent notification = FxFactory.getInstance()
                                    .createNotificationBuilder()
                                    .type(NotificationBuilder.Type.QUESTION)
@@ -727,7 +750,7 @@ public class FxUtilities {
       details = null;
     }
 
-    Popup popup = new Popup();
+    Popup popup = createNotificationPopup();
     Parent notification = FxFactory.getInstance()
                                    .createNotificationBuilder()
                                    .type(NotificationBuilder.Type.ERROR)
