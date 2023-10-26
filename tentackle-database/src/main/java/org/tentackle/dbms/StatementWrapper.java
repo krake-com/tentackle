@@ -141,7 +141,7 @@ public class StatementWrapper implements AutoCloseable {
    * @return the session, never null
    */
   public Db getAttachedSession() {
-    Db db = getSession();
+    Db db = con.getSession();
     if (db == null) {
       throw new PersistenceException("connection " + con + " already detached from statement " + this);
     }
@@ -253,7 +253,7 @@ public class StatementWrapper implements AutoCloseable {
    * on close() in the {@link ResultSetWrapper} after executeQuery.
    */
   protected void detachSession() {
-    Db db = getSession();
+    Db db = con.getSession();
     if (db != null) {
       // if not already cleaned up
       db.detach();
@@ -755,7 +755,7 @@ public class StatementWrapper implements AutoCloseable {
    * Asserts db is writable.
    */
   protected void assertNotReadOnly() {
-    Db db = getSession();
+    Db db = con.getSession();
     if (db != null && db.isReadOnly()) {
       throw new PersistenceException(db, "is read-only");
     }
@@ -772,7 +772,7 @@ public class StatementWrapper implements AutoCloseable {
    */
   protected void forceDetached() {
     try {
-      Db db = getSession();
+      Db db = con.getSession();
       if (db != null) {
         db.forceDetached();
       }
