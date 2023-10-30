@@ -128,7 +128,7 @@ public class StatementWrapper implements AutoCloseable {
    */
   public Db getSession() {
     Db db = con.getSession();
-    if (db == null) {
+    if (db == null && !con.isDead()) {
       LOGGER.warning("statement " + this + " not attached to connection " + con);
     }
     return db;
@@ -173,8 +173,9 @@ public class StatementWrapper implements AutoCloseable {
   public synchronized void markReady() {
     if (isMarkedReady()) {
       String msg = "statement " + this + " marked ready and not consumed yet";
+      Db session = con.getSession();
       forceDetached();
-      throw new PersistenceException(getSession(), msg);
+      throw new PersistenceException(session, msg);
     }
     ready = true;
     cancelled = false;
@@ -186,8 +187,9 @@ public class StatementWrapper implements AutoCloseable {
   public synchronized void unmarkReady() {
     if (!isClosed() && !isMarkedReady()) {
       String msg = "statement " + this + " already consumed";
+      Db session = con.getSession();
       forceDetached();
-      throw new PersistenceException(getSession(), msg);
+      throw new PersistenceException(session, msg);
     }
     ready = false;
     setRunning(false);
