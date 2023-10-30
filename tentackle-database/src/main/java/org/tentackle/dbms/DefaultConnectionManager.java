@@ -653,8 +653,9 @@ public class DefaultConnectionManager implements ConnectionManager {
     }
 
     if (!mc.getAutoCommit()) {
+      String mcMsg = mc.toString();
       mc.close();
-      throw new PersistenceException(this + ": connection " + mc + " is not in autoCommit mode");
+      throw new PersistenceException(this + ": connection " + mcMsg + " is not in autoCommit mode -> closed");
     }
 
     mc.setMaxCountForClearWarnings(maxCountForClearWarnings);

@@ -408,7 +408,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   public void detach(Db session) {
     assertSessionBelongsToMe(session);
 
-    boolean closeIt = false;
+    boolean expired = false;
     ManagedConnection con;
 
     synchronized (this) {
@@ -454,7 +454,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
           else if (con.isExpired()) {
             // connection time elapsed: close it
             removeConnection(con.getIndex());
-            closeIt = true;    // will close below
+            expired = true;    // will close below
           }
           else {
             // add unattached connection
@@ -465,8 +465,8 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     }
 
     // un-synchronized...
-    if (closeIt) {
-      LOGGER.info("{0}: closing connection {1}, open since {2}",
+    if (expired) {
+      LOGGER.info("{0}: closing expired connection {1}, open since {2}",
                   this, con, FormatHelper.formatTimestampFast(new Date(con.getEstablishedSince())));
       try {
         con.close();
