@@ -18,6 +18,9 @@
 
 package org.tentackle.fx;
 
+import org.tentackle.bind.Binder;
+
+import javafx.scene.Node;
 import java.util.function.Function;
 
 /**
@@ -103,15 +106,12 @@ public interface ValueTranslator<M,V> {
   }
 
   /**
-   * Invoked explicitly by the application after binding properties have been updated.<br>
-   * May be necessary if action must be taken by the translator.<br>
-   * The method is provided for custom translators. Not used by the framework itself.
-   * <p>
-   * Example:
-   * <pre>
-   *   getBinder().putBindingProperty(DomainContext.class, getDomainContext());
-   *   pdoField.getValueTranslator().bindingPropertiesUpdated();
-   * </pre>
+   * Invoked from the binder after a binding property has been modified
+   * via {@link Binder#putBindingProperty(Object, Object)}.<br>
+   * Not to be mixed up with the component's properties (see {@link Node#getProperties()}),
+   * which may require explicit invocation of this method.<br>
+   * May be necessary if some action must be taken by the translator, for example
+   * re-initialize, cleanup, etc...
    */
   default void bindingPropertiesUpdated() {
     // default does nothing.
