@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.fx.bind;
 
 import org.tentackle.bind.AbstractBinder;
@@ -29,6 +28,7 @@ import org.tentackle.common.StringHelper;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxController;
+import org.tentackle.fx.ValueTranslator;
 import org.tentackle.log.Logger;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.validate.ChangeableBindingEvaluator;
@@ -48,10 +48,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
-
 
 /**
  * Binding Workhorse.
@@ -168,6 +168,19 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
     }
   }
 
+  @Override
+  public Object putBindingProperty(Object key, Object value) {
+    Object oldValue = super.putBindingProperty(key, value);
+    if (!Objects.equals(oldValue, value)) {
+      for (FxComponent component : boundComponents.keySet()) {
+        ValueTranslator<?, ?> translator = component.getValueTranslator();
+        if (translator != null) {
+          translator.bindingPropertiesUpdated();
+        }
+      }
+    }
+    return oldValue;
+  }
 
   @Override
   public void fireToModel(Binding binding, Object parent, Object viewValue) throws BindingVetoException {
@@ -175,8 +188,6 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
     requestMandatoryUpdate();
     requestChangeableUpdate();
   }
-
-
 
   @Override
   public void requestMandatoryUpdate() {
@@ -188,7 +199,6 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
     return dynamicMandatoryBindings;
   }
 
-
   @Override
   public void requestChangeableUpdate() {
     needChangeableUpdate = true;
@@ -199,7 +209,6 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
     return dynamicChangeableBindings;
   }
 
-
   @Override
   public int bindAllInherited() {
     int count = doBind(true, true);   // try fast binding first
@@ -208,7 +217,6 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
     }
     return count;
   }
-
 
   @Override
   public int bindWithInheritedBindables() {
@@ -219,7 +227,6 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
     return count;
   }
 
-
   @Override
   public int bindWithInheritedComponents() {
     int count = doBind(true, true);   // try fast binding first
@@ -229,12 +236,10 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
     return count;
   }
 
-
   @Override
   public int bind() {
     return doBind(true, true);
   }
-
 
   @Override
   public void unbind() {
@@ -247,24 +252,20 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
     boundPaths.clear();
   }
 
-
   @Override
   public Collection<FxComponentBinding> getBindings() {
     return boundComponents.values();
   }
-
 
   @Override
   public Collection<FxComponent> getBoundComponents() {
     return boundComponents.keySet();
   }
 
-
   @Override
   public Collection<FxComponent> getUnboundComponents() {
     return unboundComponents;
   }
-
 
   /**
    * Checks whether some components are still unbound.
@@ -274,7 +275,6 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
   public boolean isUnboundPending() {
     return !unboundComponents.isEmpty();
   }
-
 
   @Override
   public void assertAllBound() {
@@ -291,7 +291,6 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
       throw new BindingException("unbound components in " + controller.getClass().getSimpleName() + ": " + buf);
     }
   }
-
 
   @Override
   public void addBinding(Binding binding) {
@@ -328,18 +327,15 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
     }
   }
 
-
   @Override
   public FxComponentBinding getBinding(FxComponent component) {
     return boundComponents.get(component);
   }
 
-
   @Override
   public FxComponentBinding getBinding(String bindingPath) {
     return boundPaths.get(bindingPath);
   }
-
 
   @Override
   public FxComponentBinding removeBinding(FxComponent component) {
@@ -352,7 +348,6 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
     }
     return binding;
   }
-
 
   @Override
   public FxComponentBinding removeBinding(String bindingPath) {
@@ -367,7 +362,6 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
   }
 
 
-
   /**
    * Adds a mandatory binding.
    *
@@ -376,7 +370,6 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
   protected void addMandatoryBinding(Binding mandatoryBinding) {
     dynamicMandatoryBindings.add(mandatoryBinding);
   }
-
 
   /**
    * Adds a changeable binding.
@@ -387,11 +380,8 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
     dynamicChangeableBindings.add(changeableBinding);
   }
 
-
-
   @Override
   protected int doBind(BindingMember[] parents, String parentMemberPath, Class<?> parentClass, boolean declaredOnly) {
-
     /*
      * To detect recursion loops:
      * we don't need to recursively walk down the binding path more
@@ -416,7 +406,6 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
         return 0;   // no more matches possible
       }
     }
-
 
     int count = 0;
 
@@ -460,10 +449,6 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
 
     return count;
   }
-
-
-
-
 
 
   /**
@@ -519,8 +504,6 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
     }
   }
 
-
-
   /**
    * Finds the component according to the field's object path.
    * <p>
@@ -545,7 +528,6 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
 
     return comp;
   }
-
 
   /**
    * Gets the component associated with the declared field in a controller.
@@ -575,7 +557,6 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
     }
     return component;
   }
-
 
   /**
    * Adds all eligible components of given controller.
@@ -650,7 +631,6 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
       unboundComponents.add(component);
     }
   }
-
 
   /**
    * Binds all objects to the form.
