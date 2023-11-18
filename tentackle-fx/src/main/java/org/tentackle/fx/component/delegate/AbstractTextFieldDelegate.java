@@ -18,12 +18,17 @@
 
 package org.tentackle.fx.component.delegate;
 
+import org.tentackle.fx.FxTextComponent;
+import org.tentackle.fx.FxTextComponentDelegate;
+import org.tentackle.fx.FxUtilities;
+import org.tentackle.fx.component.auto.AutoCompletionController;
+import org.tentackle.misc.SubString;
+
 import javafx.application.Platform;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.TextInputControl;
-
-import org.tentackle.fx.FxTextComponent;
-import org.tentackle.fx.FxTextComponentDelegate;
+import java.util.List;
+import java.util.function.Function;
 
 /**
  * Delegate for text input fields.
@@ -33,7 +38,8 @@ import org.tentackle.fx.FxTextComponentDelegate;
  */
 public abstract class AbstractTextFieldDelegate<T extends TextInputControl & FxTextComponent> extends FxTextComponentDelegate {
 
-  private final T component;   // the component
+  private final T component;                                      // the component
+  private AutoCompletionController autoCompletionController;      // != null if auto-completion enabled
 
   /**
    * Creates the delegate.
@@ -58,6 +64,20 @@ public abstract class AbstractTextFieldDelegate<T extends TextInputControl & FxT
         component.deselect();
         component.positionCaret(errorOffset);
       });
+    }
+  }
+
+  @Override
+  public void setAutoCompletion(Function<String, List<List<SubString>>> autoCompletion) {
+    super.setAutoCompletion(autoCompletion);
+    if (autoCompletion != null) {
+      if (autoCompletionController == null) {
+        autoCompletionController = FxUtilities.getInstance().createAutoCompletion(component, autoCompletion);
+      }
+    }
+    else if (autoCompletionController != null) {
+      autoCompletionController.close();
+      autoCompletionController = null;
     }
   }
 

@@ -19,11 +19,6 @@
 
 package org.tentackle.fx.component;
 
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.ReadOnlyBooleanProperty;
-import javafx.geometry.Pos;
-import javafx.scene.control.PasswordField;
-
 import org.tentackle.common.StringHelper;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.fx.CaseConversion;
@@ -37,10 +32,16 @@ import org.tentackle.fx.component.delegate.FxPasswordFieldDelegate;
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.log.Logger;
+import org.tentackle.misc.SubString;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.geometry.Pos;
+import javafx.scene.control.PasswordField;
 import java.lang.reflect.Field;
 import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.Type;
+import java.util.List;
 import java.util.function.Function;
 
 
@@ -675,6 +676,17 @@ public class FxPasswordField extends PasswordField implements FxTextComponent {
   public void autoSelect() {
     getDelegate().autoSelect();
   }
+
+  @Override
+  public void setAutoCompletion(Function<String, List<List<SubString>>> autoCompletion) {
+    getDelegate().setAutoCompletion(autoCompletion);
+  }
+
+  @Override
+  public Function<String, List<List<SubString>>> getAutoCompletion() {
+    return getDelegate().getAutoCompletion();
+  }
+
   //</editor-fold>//GEN-END:textcomponent
 
 }

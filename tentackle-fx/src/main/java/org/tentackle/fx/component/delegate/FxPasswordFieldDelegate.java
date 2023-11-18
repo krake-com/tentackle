@@ -18,13 +18,17 @@
 
 package org.tentackle.fx.component.delegate;
 
-import javafx.geometry.Pos;
-import javafx.scene.control.TextFormatter;
-
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.FxFactory;
+import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.component.FxPasswordField;
+import org.tentackle.misc.SubString;
+
+import javafx.geometry.Pos;
+import javafx.scene.control.TextFormatter;
+import java.util.List;
+import java.util.function.Function;
 
 
 /**
@@ -114,6 +118,13 @@ public class FxPasswordFieldDelegate extends AbstractTextFieldDelegate<FxPasswor
       StringHelper.blank((char[]) getBinding().getModelValue());
     }
     super.updateModel();
+  }
+
+  @Override
+  public void setAutoCompletion(Function<String, List<List<SubString>>> autoCompletion) {
+    if (autoCompletion != null) {
+      throw new FxRuntimeException("auto-completion is not allowed for password fields");
+    }
   }
 
   private boolean isCharArray() {

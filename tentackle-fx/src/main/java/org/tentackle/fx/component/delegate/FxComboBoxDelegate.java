@@ -18,20 +18,26 @@
 
 package org.tentackle.fx.component.delegate;
 
+import org.tentackle.common.StringHelper;
+import org.tentackle.fx.FxContainer;
+import org.tentackle.fx.FxRuntimeException;
+import org.tentackle.fx.FxTextComponentDelegate;
+import org.tentackle.fx.FxUtilities;
+import org.tentackle.fx.ValueTranslator;
+import org.tentackle.fx.component.FxComboBox;
+import org.tentackle.fx.component.auto.AutoCompletionController;
+import org.tentackle.misc.SubString;
+
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
+import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
-
-import org.tentackle.common.StringHelper;
-import org.tentackle.fx.FxContainer;
-import org.tentackle.fx.FxTextComponentDelegate;
-import org.tentackle.fx.ValueTranslator;
-import org.tentackle.fx.component.FxComboBox;
-
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 
 
 /**
@@ -41,7 +47,8 @@ import java.util.Objects;
  */
 public class FxComboBoxDelegate extends FxTextComponentDelegate {
 
-  private final FxComboBox<?> component;   // the component
+  private final FxComboBox<?> component;                          // the component
+  private AutoCompletionController autoCompletionController;      // != null if auto-completion enabled
 
   /**
    * Creates the delegate.
@@ -171,6 +178,28 @@ public class FxComboBoxDelegate extends FxTextComponentDelegate {
       else {
         component.getEditor().deselect();
       }
+    }
+  }
+
+  @Override
+  public void setAutoCompletion(Function<String, List<List<SubString>>> autoCompletion) {
+    TextField editor = component.getEditor();
+    if (editor != null) {
+      super.setAutoCompletion(autoCompletion);
+      if (autoCompletion != null) {
+        if (autoCompletionController == null) {
+          autoCompletionController = FxUtilities.getInstance().createAutoCompletion(editor, autoCompletion);
+        }
+      }
+      else {
+        if (autoCompletionController != null) {
+          autoCompletionController.close();
+          autoCompletionController = null;
+        }
+      }
+    }
+    else {
+      throw new FxRuntimeException("combobox must be editable to use auto-completion");
     }
   }
 

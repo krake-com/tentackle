@@ -33,11 +33,13 @@ import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.component.FxTextArea;
 import org.tentackle.fx.component.FxTreeTableView;
 import org.tentackle.fx.component.Note;
+import org.tentackle.fx.component.auto.AutoCompletionController;
 import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.ConcurrencyHelper;
 import org.tentackle.misc.Holder;
+import org.tentackle.misc.SubString;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.validate.ValidationFailedException;
 import org.tentackle.validate.ValidationMapper;
@@ -66,6 +68,7 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextInputControl;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeTableCell;
 import javafx.scene.control.TreeTableColumn;
@@ -103,6 +106,7 @@ import java.util.NavigableSet;
 import java.util.StringTokenizer;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 interface FxUtilitiesHolder {
   FxUtilities INSTANCE = ServiceFactory.createService(FxUtilities.class, FxUtilities.class);
@@ -395,7 +399,7 @@ public class FxUtilities {
     if (owner instanceof Window window) {
       return window;
     }
-    throw new FxRuntimeException("cannot determine owner");
+    throw new FxRuntimeException("cannot determine window of " + owner);
   }
 
 
@@ -583,7 +587,7 @@ public class FxUtilities {
       Throwable exception = event.getSource().getException();
       if (exception != null) {
         LOGGER.warning("FX background execution failed", exception);
-        Platform.runLater(() -> showErrorDialog(owner, exception.getMessage(), exception, null));
+        showErrorDialog(owner, exception.getMessage(), exception, null);
       }
     });
 
@@ -1724,6 +1728,16 @@ public class FxUtilities {
     return ";";
   }
 
+
+  /**
+   * Creates an auto-completion controller for a text component.
+   *
+   * @param component the component
+   * @return the auto-completion
+   */
+  public AutoCompletionController createAutoCompletion(TextInputControl component, Function<String, List<List<SubString>>> suggestionGenerator) {
+    return new AutoCompletionController(component, suggestionGenerator);
+  }
 
 
   /**
