@@ -19,11 +19,6 @@
 
 package org.tentackle.fx.component;
 
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.ReadOnlyBooleanProperty;
-import javafx.geometry.Pos;
-import javafx.scene.control.TextArea;
-
 import org.tentackle.fx.CaseConversion;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxTextComponent;
@@ -34,8 +29,14 @@ import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.component.delegate.FxTextAreaDelegate;
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.FxTreeTableCell;
+import org.tentackle.misc.SubString;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.geometry.Pos;
+import javafx.scene.control.TextArea;
 import java.lang.reflect.Type;
+import java.util.List;
 import java.util.function.Function;
 
 /**
@@ -607,6 +608,17 @@ public class FxTextArea extends TextArea implements FxTextComponent {
   public void autoSelect() {
     getDelegate().autoSelect();
   }
+
+  @Override
+  public void setAutoCompletion(Function<String, List<List<SubString>>> autoCompletion) {
+    getDelegate().setAutoCompletion(autoCompletion);
+  }
+
+  @Override
+  public Function<String, List<List<SubString>>> getAutoCompletion() {
+    return getDelegate().getAutoCompletion();
+  }
+
   //</editor-fold>//GEN-END:textcomponent
 
 }

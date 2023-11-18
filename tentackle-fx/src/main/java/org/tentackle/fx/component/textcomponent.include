@@ -157,3 +157,13 @@
   public void autoSelect() {
     getDelegate().autoSelect();
   }
+
+  @Override
+  public void setAutoCompletion(Function<String, List<List<SubString>>> autoCompletion) {
+    getDelegate().setAutoCompletion(autoCompletion);
+  }
+
+  @Override
+  public Function<String, List<List<SubString>>> getAutoCompletion() {
+    return getDelegate().getAutoCompletion();
+  }

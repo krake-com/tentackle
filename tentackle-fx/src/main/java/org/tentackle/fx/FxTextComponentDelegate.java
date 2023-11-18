@@ -20,12 +20,14 @@
 package org.tentackle.fx;
 
 import org.tentackle.fx.translate.ValueStringTranslator;
+import org.tentackle.misc.SubString;
 import org.tentackle.reflect.ReflectionHelper;
 
 import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.geometry.Pos;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.TextInputControl;
+import java.util.List;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
@@ -111,6 +113,11 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate
    * The error offset within the text field.
    */
   private Integer errorOffset;
+
+  /**
+   * Auto-completion function.
+   */
+  private Function<String, List<List<SubString>>> autoCompletion;
 
 
   /**
@@ -514,6 +521,21 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate
         ((TextInputControl) getComponent()).deselect();
       }
     }
+  }
+
+  @Override
+  public void setAutoCompletion(Function<String, List<List<SubString>>> autoCompletion) {
+    this.autoCompletion = autoCompletion;
+  }
+
+  @Override
+  public Function<String, List<List<SubString>>> getAutoCompletion() {
+    return autoCompletion;
+  }
+
+  @Override
+  public boolean isEditable() {
+    return getTextComponent().isEditable();
   }
 
 }

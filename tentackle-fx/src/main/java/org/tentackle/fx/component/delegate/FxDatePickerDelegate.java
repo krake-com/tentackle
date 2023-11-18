@@ -18,24 +18,29 @@
 
 package org.tentackle.fx.component.delegate;
 
-import javafx.application.Platform;
-import javafx.geometry.Pos;
-import javafx.scene.Node;
-import javafx.scene.control.TextFormatter;
-import javafx.util.StringConverter;
-
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.FxTextComponentDelegate;
+import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.component.FxDatePicker;
+import org.tentackle.fx.component.auto.AutoCompletionController;
 import org.tentackle.misc.ObjectUtilities;
+import org.tentackle.misc.SubString;
 
+import javafx.application.Platform;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TextFormatter;
+import javafx.util.StringConverter;
 import java.sql.Time;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Date;
+import java.util.List;
+import java.util.function.Function;
 
 
 /**
@@ -45,8 +50,9 @@ import java.util.Date;
  */
 public class FxDatePickerDelegate extends FxTextComponentDelegate {
 
-  private final FxDatePicker component;   // the component
-  private String text;                    // copy of the editor's text
+  private final FxDatePicker component;                         // the component
+  private String text;                                          // copy of the editor's text
+  private AutoCompletionController autoCompletionController;    // != null if auto-completion enabled
 
   /**
    * Creates the delegate.
@@ -171,5 +177,22 @@ public class FxDatePickerDelegate extends FxTextComponentDelegate {
 			return lastDate;
 		}
 	}
+
+  @Override
+  public void setAutoCompletion(Function<String, List<List<SubString>>> autoCompletion) {
+    super.setAutoCompletion(autoCompletion);
+    TextField editor = component.getEditor();   // never null
+    if (autoCompletion != null) {
+      if (autoCompletionController == null) {
+        autoCompletionController = FxUtilities.getInstance().createAutoCompletion(editor, autoCompletion);
+      }
+    }
+    else {
+      if (autoCompletionController != null) {
+        autoCompletionController.close();
+        autoCompletionController = null;
+      }
+    }
+  }
 
 }

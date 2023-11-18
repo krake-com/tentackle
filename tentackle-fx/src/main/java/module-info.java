@@ -25,6 +25,7 @@ module org.tentackle.fx {
   exports org.tentackle.fx.apt;
   exports org.tentackle.fx.bind;
   exports org.tentackle.fx.component;
+  exports org.tentackle.fx.component.auto;
   exports org.tentackle.fx.component.build;
   exports org.tentackle.fx.component.config;
   exports org.tentackle.fx.component.delegate;

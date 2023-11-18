@@ -18,12 +18,16 @@
 
 package org.tentackle.fx.component.delegate;
 
-import javafx.scene.Parent;
-
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.FxContainer;
+import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.FxTextComponentDelegate;
 import org.tentackle.fx.component.FxHTMLEditor;
+import org.tentackle.misc.SubString;
+
+import javafx.scene.Parent;
+import java.util.List;
+import java.util.function.Function;
 
 /**
  * Delegate for FxHTMLEditor.
@@ -80,6 +84,13 @@ public class FxHTMLEditorDelegate extends FxTextComponentDelegate {
   @Override
   public void mapErrorOffsetToCaretPosition() {
     // @todo
+  }
+
+  @Override
+  public void setAutoCompletion(Function<String, List<List<SubString>>> autoCompletion) {
+    if (autoCompletion != null) {
+      throw new FxRuntimeException("auto-completion is not supported by HTML editors");
+    }
   }
 
 }

@@ -31,7 +31,6 @@ import javafx.scene.Node;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.text.Font;
-import javafx.scene.text.FontSmoothingType;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
@@ -168,7 +167,6 @@ public class PdoTypeStringTranslator extends ValueStringTranslator<PdoType> {
   private void addText(TextFlow textFlow, String str, Font font) {
     Text text = new Text(str);
     text.setFont(font);
-    text.setFontSmoothingType(FontSmoothingType.LCD);
     textFlow.getChildren().add(text);
   }
 

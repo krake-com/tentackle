@@ -37,7 +37,7 @@ import java.util.function.Supplier;
 
 /**
  * Select items according to a prefix.<br>
- * Useful for ComboBox and ChoiceBox but can be applied to any control providing a list of items
+ * Useful for (non-editable) ComboBoxes and ChoiceBoxes but can be applied to any control providing a list of items
  * that can be selected.<br>
  * The prefix selection is case-sensitive, if the first typed character is uppercase.
  *
