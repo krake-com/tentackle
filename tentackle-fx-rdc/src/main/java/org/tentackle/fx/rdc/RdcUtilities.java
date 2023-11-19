@@ -116,7 +116,8 @@ public class RdcUtilities {
    * Creates the RDC utilities.
    */
   public RdcUtilities() {
-    if (Application.getInstance().isServer()) {
+    Application application = Application.getInstance();
+    if (application != null && application.isServer()) {
       // we cannot use caching in servers like JRPO (different users, browser instances, etc...)
       crudCache = null;
       searchCache = null;
@@ -531,7 +532,15 @@ public class RdcUtilities {
       };
     }
 
-    ModificationTracker.getInstance().addTask(task);
+    ModificationTracker modificationTracker = ModificationTracker.getInstance();
+    if (Application.getInstance() != null ||
+        modificationTracker.isAlive()) { // MT may be not alive yet while starting up the application
+      ModificationTracker.getInstance().addTask(task);
+    }
+    else {
+      // no application and no tracker running ?
+      task.run();   // corner case in generic tools like PdoBrowser
+    }
   }
 
 
@@ -644,7 +653,8 @@ public class RdcUtilities {
     // prefs stored in the database don't make sense in this case.
     // the filename applies to a machine + user only!
     Preferences prefs = Preferences.userRoot();
-    String applicationName = Application.getInstance().getName();
+    Application application = Application.getInstance();
+    String applicationName = application == null ? null : application.getName();
     if (!StringHelper.isAllWhitespace(applicationName)) {
       prefs = prefs.node(applicationName);
     }
@@ -684,7 +694,8 @@ public class RdcUtilities {
    * @return the main stage
    */
   public Stage getMainStage() {
-    return ((DesktopApplication<?>) Application.getInstance()).getMainStage();
+    Application application = Application.getInstance();
+    return application instanceof DesktopApplication<?> desktopApplication ? desktopApplication.getMainStage() : null;
   }
 
 }

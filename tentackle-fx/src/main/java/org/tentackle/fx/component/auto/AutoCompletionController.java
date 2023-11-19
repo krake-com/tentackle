@@ -22,6 +22,7 @@ import org.tentackle.fx.component.AutoCompletionPopup;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.SubString;
 
+import javafx.application.Platform;
 import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
@@ -55,7 +56,7 @@ public class AutoCompletionController {
     this.suggestionGenerator = suggestionGenerator;
     component.textProperty().addListener(this::textChanged);
     component.focusedProperty().addListener(this::focusChanged);
-    popup = new AutoCompletionPopup(this);
+    popup = createAutoCompletionPopup();
 
     // run the suggestions generator in background and not more than one at a time.
     // The last input is just remembered, if the generator is running and executed when finished.
@@ -75,6 +76,7 @@ public class AutoCompletionController {
         };
       }
     };
+
     backgroundService.setOnSucceeded(event -> {
       @SuppressWarnings("unchecked")
       List<List<SubString>> suggestions = (List<List<SubString>>) event.getSource().getValue();
@@ -94,6 +96,7 @@ public class AutoCompletionController {
         }
       }
     });
+
     backgroundService.setOnFailed(event -> LOG.warning("suggestions could not be determined", event.getSource().getException()));
   }
 
@@ -136,6 +139,16 @@ public class AutoCompletionController {
     updatingItem = false;
   }
 
+
+  /**
+   * Creates the auto-completion popup.
+   *
+   * @return the popup
+   */
+  protected AutoCompletionPopup createAutoCompletionPopup() {
+    return new AutoCompletionPopup(this);
+  }
+
   /**
    * Shows or updates the popup.
    *
@@ -159,7 +172,7 @@ public class AutoCompletionController {
   }
 
   private void textChanged(ObservableValue<? extends String> observable, String oldValue, String input) {
-    if (!updatingItem) {
+    if (!updatingItem && Platform.isFxApplicationThread()) {  // don't fire while updating or controller loading
       textInput = input;
       if (input != null && !input.isEmpty() && component.isEditable() && component.isFocused()) {
         synchronized (backgroundService) {

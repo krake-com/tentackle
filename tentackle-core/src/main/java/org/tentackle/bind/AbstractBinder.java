@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
 
@@ -73,6 +74,17 @@ public abstract class AbstractBinder implements Binder {
   @Override
   public Object putBindingProperty(Object key, Object value) {
     return bindingProperties.put(key, value);
+  }
+
+  @Override
+  public boolean putBindingProperties(Map<Object, Object> properties) {
+    boolean changed = false;
+    for (Map.Entry<Object, Object> entry : properties.entrySet()) {
+      Object newValue = entry.getValue();
+      Object oldValue = bindingProperties.put(entry.getKey(), newValue);
+      changed |= !Objects.equals(newValue, oldValue);
+    }
+    return changed;
   }
 
   /**
