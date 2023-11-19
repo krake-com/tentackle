@@ -24,7 +24,7 @@ import org.tentackle.validate.ValidationScope;
 
 import java.util.Collection;
 import java.util.List;
-
+import java.util.Map;
 
 
 /**
@@ -116,13 +116,6 @@ public interface Binder extends Comparable<Binder> {
   <T> T getBindingProperty(Class<T> clazz);
 
   /**
-   * Gets the list of all bindings for the view.
-   *
-   * @return the bindings, never null
-   */
-  Collection<? extends Binding> getBindings();
-
-  /**
    * Sets a binding property that can be used by components.
    * <p>
    * Example: putBindingProperty(DomainContext.class, context);
@@ -132,6 +125,21 @@ public interface Binder extends Comparable<Binder> {
    * @return null if property added, else the replaced property
    */
   Object putBindingProperty(Object key, Object value);
+
+  /**
+   * Sets more than one property at once.
+   *
+   * @param properties the property map <code>key:value</code>
+   * @return true if at least one property has changed
+   */
+  boolean putBindingProperties(Map<Object, Object> properties);
+
+  /**
+   * Gets the list of all bindings for the view.
+   *
+   * @return the bindings, never null
+   */
+  Collection<? extends Binding> getBindings();
 
   /**
    * Programmatically removes a binding from the view.

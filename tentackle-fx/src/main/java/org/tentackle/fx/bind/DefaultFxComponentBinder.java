@@ -172,14 +172,28 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
   public Object putBindingProperty(Object key, Object value) {
     Object oldValue = super.putBindingProperty(key, value);
     if (!Objects.equals(oldValue, value)) {
-      for (FxComponent component : boundComponents.keySet()) {
-        ValueTranslator<?, ?> translator = component.getValueTranslator();
-        if (translator != null) {
-          translator.bindingPropertiesUpdated();
-        }
-      }
+      bindingPropertiesUpdated();
     }
     return oldValue;
+  }
+
+  @Override
+  public boolean putBindingProperties(Map<Object, Object> properties) {
+    boolean changed = super.putBindingProperties(properties);
+    if (changed) {
+      bindingPropertiesUpdated();
+    }
+    return changed;
+  }
+
+  @Override
+  public void bindingPropertiesUpdated() {
+    for (FxComponent component : boundComponents.keySet()) {
+      ValueTranslator<?, ?> translator = component.getValueTranslator();
+      if (translator != null) {
+        translator.bindingPropertiesUpdated();
+      }
+    }
   }
 
   @Override
