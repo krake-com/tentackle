@@ -199,7 +199,8 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
 
   @Override
   public void configure() {
-    context = Application.getInstance().getDomainContext();
+    Application application = Application.getInstance();
+    context = application != null ? application.getDomainContext() : Pdo.createDomainContext();
     TablePopup<Security> classRulesPopup = Rdc.createTablePopup(
             classRulesNode, "classRules", resources.getString("Class Rules"));
     classRulesPopup.loadPreferences();
