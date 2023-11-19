@@ -115,7 +115,7 @@ public class AutoCompletionPopup extends PopupControl {
       }
       Window window = FxUtilities.getInstance().getWindow(component);
       Scene scene = component.getScene();
-      show(window,
+      show(component,
            window.getX() + component.localToScene(0, 0).getX() + scene.getX(),
            window.getY() + component.localToScene(0, 0).getY() + scene.getY() + component.getHeight());
     }

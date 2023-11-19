@@ -23,6 +23,7 @@ import org.tentackle.bind.Binder;
 import org.tentackle.bind.Binding;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxController;
+import org.tentackle.fx.ValueTranslator;
 
 import java.util.Collection;
 import java.util.List;
@@ -40,7 +41,6 @@ public interface FxComponentBinder extends Binder {
    * @return the controller
    */
   FxController getController();
-
 
   /**
    * Binds including inherited bindables.
@@ -85,7 +85,6 @@ public interface FxComponentBinder extends Binder {
   @Override
   FxComponentBinding getBinding(String bindingPath);
 
-
   /**
    * Gets the list of all bound components of this form.
    *
@@ -98,7 +97,6 @@ public interface FxComponentBinder extends Binder {
    * @return the list of unbound components, never null
    */
   Collection<FxComponent> getUnboundComponents();
-
 
   /**
    * Programmatically removes a binding from this view.
@@ -117,7 +115,6 @@ public interface FxComponentBinder extends Binder {
   @Override
   FxComponentBinding removeBinding(String bindingPath);
 
-
   /**
    * Gets the dynamically mandatory bindings.
    *
@@ -130,7 +127,6 @@ public interface FxComponentBinder extends Binder {
    */
   void requestMandatoryUpdate();
 
-
   /**
    * Gets the dynamically changeable bindings.
    *
@@ -142,5 +138,11 @@ public interface FxComponentBinder extends Binder {
    * Request to update the changeable attribute of all dynamically mandatory components.
    */
   void requestChangeableUpdate();
+
+  /**
+   * Invokes {@link ValueTranslator#bindingPropertiesUpdated()} on the translators
+   * for all bound components.
+   */
+  void bindingPropertiesUpdated();
 
 }

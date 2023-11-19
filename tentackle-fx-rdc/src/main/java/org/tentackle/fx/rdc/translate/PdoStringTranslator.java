@@ -117,7 +117,13 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
         }
       }
       else {
-        viewValue = null;
+        if (udkTranslator != null) {
+          // invoke the udk translator, even if null, to allow detecting the to-view action
+          viewValue = udkTranslator.toViewFunction().apply(null);
+        }
+        else {
+          viewValue = null;
+        }
       }
       pdoAddon.setPdo(m);
       return viewValue;
