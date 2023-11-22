@@ -24,6 +24,7 @@ import org.tentackle.common.Constants;
 import org.tentackle.common.LocaleProvider;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
+import org.tentackle.fx.nofxml.NoFXMLLinker;
 import org.tentackle.fx.table.DefaultTableConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.log.Logger;
@@ -268,13 +269,15 @@ public class DefaultFxFactory implements FxFactory {
       throw new FxRuntimeException("missing annotation @FxControllerService for controller " + controllerClass.getName());
     }
 
-    if (fxmlUrl == null) {
+    Class<? extends Parent> viewClass = service.view() == Parent.class ? null : service.view();
+
+    if (fxmlUrl == null && viewClass == null) {
       String urlStr = service.url();
       if (!FxControllerService.FXML_NONE.equals(urlStr)) {
         if (!urlStr.isEmpty()) {
           fxmlUrl = annotatedClass.getResource(urlStr);
           if (fxmlUrl == null) {
-            throw new FxRuntimeException("no such URL '" + urlStr +
+            throw new FxRuntimeException("no such FXML URL '" + urlStr +
                                          "' -> check @FxControllerService of " + annotatedClass.getName());
           }
         }
@@ -282,7 +285,7 @@ public class DefaultFxFactory implements FxFactory {
           urlStr = annotatedClass.getSimpleName() + ".fxml";
           fxmlUrl = annotatedClass.getResource(urlStr);
           if (fxmlUrl == null) {
-            throw new FxRuntimeException("no such default URL '" + urlStr + "'");
+            throw new FxRuntimeException("no such default FXML URL '" + urlStr + "'");
           }
         }
       }
@@ -303,10 +306,27 @@ public class DefaultFxFactory implements FxFactory {
 
     try {
       Parent view;
-      if (fxmlUrl == null) {
+      if (viewClass != null) {
+        Constructor<? extends Parent> viewConstructor;
+        if (resources != null) {
+          try {
+            view = viewClass.getConstructor(ResourceBundle.class).newInstance(resources);
+          }
+          catch (NoSuchMethodException nc) {
+            // resources may then be injected via @NoFXML
+            view = viewClass.getConstructor().newInstance();
+          }
+        }
+        else {
+          view = viewClass.getConstructor().newInstance();
+        }
+        controller = controllerClass.getConstructor().newInstance();
+        NoFXMLLinker.getInstance().link(view, controller, resources);
+      }
+      else if (fxmlUrl == null) {
         controller = resources == null ?
-                     controllerClass.getConstructor().newInstance() :
-                     controllerClass.getConstructor(ResourceBundle.class).newInstance(resources);
+                       controllerClass.getConstructor().newInstance() :
+                       controllerClass.getConstructor(ResourceBundle.class).newInstance(resources);
         view = controller.getView();
       }
       else {
