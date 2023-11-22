@@ -28,6 +28,7 @@ import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionProvider;
+import org.tentackle.session.SessionUtilities;
 import org.tentackle.session.TransactionIsolation;
 import org.tentackle.session.TransactionWritability;
 
@@ -107,14 +108,12 @@ public final class TransactionInterceptor extends AbstractInterceptor {
             // transaction failed!
             try {
               PersistenceException rootPex;    // temporary LockException is always the root cause
-              if (rollbackSilently || txVoucher == 0 ||
-                  (rootPex = ExceptionHelper.extractException(PersistenceException.class, false, t)) == null || rootPex.isTemporary() ||
-                  ExceptionHelper.extractTemporaryException(true, t) != null) {
+              if (rollbackSilently || txVoucher == 0 || SessionUtilities.getInstance().isSilentRollbackSufficient(t)) {
                 // silent rollback requested, nested tx, temporary or application-specific exception (domain logic) -> no detailed logging
                 session.rollbackSilently(txVoucher);
               }
               else {
-                // cause is a non-temporary PersistenceException (usually some database error such as a constraint exception) -> log details
+                // cause is a non-temporary PersistenceException (usually some database error such as a constraint exception) -> log the details
                 session.rollback(txVoucher);
               }
             }

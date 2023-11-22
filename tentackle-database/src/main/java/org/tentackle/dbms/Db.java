@@ -20,7 +20,6 @@ package org.tentackle.dbms;
 
 import org.tentackle.common.Constants;
 import org.tentackle.common.EncryptedProperties;
-import org.tentackle.common.ExceptionHelper;
 import org.tentackle.common.FileHelper;
 import org.tentackle.daemon.Scavenger;
 import org.tentackle.dbms.rmi.DbRemoteDelegate;
@@ -1476,20 +1475,19 @@ public class Db implements Session, Cloneable {
       commit(txVoucher);
       return rv;
     }
-    catch (Throwable ex) {
+    catch (Throwable t) {
       try {
-        if (txVoucher != 0 && ExceptionHelper.extractException(PersistenceException.class, true, ex) != null) {
-          // log only if cause is a PersistenceException
-          rollback(txVoucher);
+        if (txVoucher == 0 || SessionUtilities.getInstance().isSilentRollbackSufficient(t)) {
+          rollbackSilently(txVoucher);
         }
         else {
-          rollbackSilently(txVoucher);
+          rollback(txVoucher);
         }
       }
       catch (RuntimeException rex) {
         LOGGER.severe("rollback failed", rex);
       }
-      throw ex;
+      throw t;
     }
   }
 
@@ -2236,9 +2234,7 @@ public class Db implements Session, Cloneable {
         int currentTxLevel = transaction.getTxLevel();
         immediatelyRolledBack = 0;
         transaction.invalidateTxLevel();    // avoid misleading warnings
-        // log statements only if the root-cause is a persistence exception
-        boolean withLog = ExceptionHelper.extractException(PersistenceException.class, true, cause) != null;
-        if (!rollback(transaction.getTxVoucher(), withLog)) {
+        if (!rollback(transaction.getTxVoucher(), !SessionUtilities.getInstance().isSilentRollbackSufficient(cause))) {
           throw new PersistenceException(this, transaction + " not rolled back despite valid voucher");
         }
         transaction = null;
