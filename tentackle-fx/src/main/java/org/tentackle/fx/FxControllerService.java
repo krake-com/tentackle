@@ -22,7 +22,9 @@ package org.tentackle.fx;
 import org.tentackle.common.Analyze;
 import org.tentackle.common.Constants;
 import org.tentackle.common.Service;
+import org.tentackle.fx.nofxml.NoFXMLLinker;
 
+import javafx.scene.Parent;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -128,5 +130,16 @@ public @interface FxControllerService {
    * @return the binding mode, BINDING.YES is the default
    */
   BINDING binding() default BINDING.YES;
+
+  /**
+   * When set, instances of the given view class and annotated controller are created without using {@link javafx.fxml.FXMLLoader} at all.<br>
+   * This option is provided for situations, when creating the view programmatically turns out to be easier than sticking to the {@code FXML} approach.
+   * Although no {@code FXML} file is involved anymore, the controller code does not require any changes.
+   * Even switching back to {@code FXML} is then just a matter of changing this annotation parameter.
+   *
+   * @return the view class
+   * @see NoFXMLLinker
+   */
+  Class<? extends Parent> view() default Parent.class;
 
 }

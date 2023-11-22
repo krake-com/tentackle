@@ -19,11 +19,10 @@
 
 package org.tentackle.fx;
 
-import javafx.scene.Parent;
-import javafx.stage.Stage;
-
 import org.tentackle.fx.bind.FxComponentBinder;
 
+import javafx.scene.Parent;
+import javafx.stage.Stage;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -85,16 +84,14 @@ public interface FxController {
   void configure();
 
   /**
-   * Gets all fields in this controller annotated with &#64;FXML.<br>
-   * The fields are made accessible, if private.
+   * Gets all fields in this controller annotated with {@code @FXML}.
    *
    * @return the fields
    */
   List<Field> getFXMLFields();
 
   /**
-   * Gets all methods in this controller annotated with &#64;FXML.<br>
-   * The methods are made accessible, if private.
+   * Gets all methods in this controller annotated with {@code @FXML}.
    *
    * @return the methods
    */
