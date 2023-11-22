@@ -692,8 +692,8 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
               // if local: database server has closed the session
               // reopen once and treat as if polling was ok
               // if the session could not be re-opened: the process will terminate
-              if (getSession().getSessionGroupId() == 0) {    // only if ungrouped (else rich client)
-                LOGGER.severe("session " + getSession() + " closed unexpectedly -> try to re-open ...", sx);
+              if (isReOpenOnceEnabled()) {
+                LOGGER.severe("session " + getSession() + " closed unexpectedly -> trying to re-open ...", sx);
                 getSession().reOpen();
               }
               else {
@@ -706,6 +706,21 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     }
 
     super.lockInternal();
+  }
+
+
+  /**
+   * Returns whether the session should be re-opened (once) after a {@link SessionClosedException}.<br>
+   * This is usually the case for non-grouped sessions, since grouping usually means
+   * that the tracker's session is a lead session for applications such as desktop clients.
+   * Those applications must be "killable" by closing the lead session.
+   * <p>
+   * Override this method, if application follows other rules.
+   *
+   * @return true if try to re-open, false to propagate exception as usual
+   */
+  protected boolean isReOpenOnceEnabled() {
+    return getSession().getSessionGroupId() == 0;
   }
 
 
