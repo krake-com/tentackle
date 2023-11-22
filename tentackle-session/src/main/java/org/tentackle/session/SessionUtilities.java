@@ -291,6 +291,23 @@ public class SessionUtilities {
 
 
   /**
+   * Returns whether a rollback should log all statements or not.<br>
+   * The rollback should not be logged, if the root-cause is not a {@link PersistenceException},
+   * or {@link PersistenceException#isTemporary()} or there is another temporary exception
+   * in the exception chain.
+   * <p>
+   * Notice that {@code LockException}s are usually temporary.
+   *
+   * @param t the head of the exception chain causing the rollback
+   * @return true if rollback silently, false if all statements that were rolled back are logged
+   */
+  public boolean isSilentRollbackSufficient(Throwable t) {
+    PersistenceException rootPex = ExceptionHelper.extractException(PersistenceException.class, false, t);
+    return rootPex == null || rootPex.isTemporary() || ExceptionHelper.extractTemporaryException(true, t) != null;
+  }
+
+
+  /**
    * Creates the lazy exception message for a {@link PersistenceException}.
    *
    * @param msg the original message
