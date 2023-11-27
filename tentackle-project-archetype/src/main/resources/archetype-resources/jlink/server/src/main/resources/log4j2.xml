@@ -7,7 +7,7 @@
   <Appenders>
     <RollingFile name="daily"
                  fileName="${baseDir}/${logName}.log"
-                 filePattern="${baseDir}/${logName}-%d{yyyy-MM-dd}.log.zip"
+                 filePattern="${baseDir}/${logName}-%d{yyyy-MM-dd}-%i.log.zip"
                  ignoreExceptions="false">
       <PatternLayout>
         <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%t %X{session}] %-5p %c{1.}#%M:%L - %m%n</Pattern>
