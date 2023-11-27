@@ -555,7 +555,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
       String token = stok.nextToken();
       if (Character.isDigit(token.charAt(0)) &&
           (token.length() == 2 || (token.length() > 2 && (token.charAt(2) == '.' || token.charAt(2) == '-')))) {
-        // 14, 14.0.2, 17-ea, etc.. but not 100, 8, 7.3
+        // 14, 14.0.2, 17-ea, etc... but not 100, 8, 7.3
         // this should work up to java 99 ;)
         return token;
       }

@@ -102,7 +102,7 @@ public class SqlScriptTest extends AbstractPdoTest {
       assertEquals(buf.toString(), OUTPUT);
     }
     else {
-      throw new SkipException("session is not a Db instance");    // ... for whatever reasons
+      throw new SkipException("session is not a Db instance");    // ... for whatever reason
     }
   }
 

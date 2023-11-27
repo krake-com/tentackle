@@ -19,6 +19,10 @@
 
 package org.tentackle.fx.component.skin;
 
+import org.tentackle.fx.FxRuntimeException;
+import org.tentackle.fx.component.Note;
+import org.tentackle.fx.component.Note.Position;
+
 import javafx.beans.WeakInvalidationListener;
 import javafx.beans.binding.Bindings;
 import javafx.geometry.Bounds;
@@ -34,10 +38,6 @@ import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.stage.Window;
 
-import org.tentackle.fx.FxRuntimeException;
-import org.tentackle.fx.component.Note;
-import org.tentackle.fx.component.Note.Position;
-
 /**
  * Skin for the {@link Note} control.
  *
@@ -48,9 +48,9 @@ public class NoteSkin implements Skin<Note> {
   private static final double LINE_LENGTH = 15;
   private static final double CIRCLE_RADIUS = 3;
 
-  private final Note note;
   private final Node linkedNode;
-  private final StackPane rootPane;
+  private Note note;
+  private StackPane rootPane;
 
 
   /**
@@ -139,7 +139,8 @@ public class NoteSkin implements Skin<Note> {
 
   @Override
   public void dispose() {
-    // nothing to do
+    note = null;
+    rootPane = null;
   }
 
 

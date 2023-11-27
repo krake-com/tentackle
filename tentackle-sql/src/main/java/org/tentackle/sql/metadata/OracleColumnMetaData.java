@@ -21,7 +21,7 @@ package org.tentackle.sql.metadata;
 /**
  * Oracle column data.<br>
  * Oracle returns the default value exactly as specified in the ALTER TABLE statement.
- * Hence "MODIFY ... DEFAULT NULL" will <em>not</em> drop the default value, but
+ * Hence, "MODIFY ... DEFAULT NULL" will <em>not</em> drop the default value, but
  * simply use {@code NULL} as default. Furthermore, any attempt to fool the dbms
  * (using (null), for example) will not work either.
  *

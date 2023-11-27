@@ -80,7 +80,7 @@ public class PdoViewer<T extends PersistentDomainObject<T>, C extends PdoControl
 
   @Override
   public void requestInitialFocus() {
-    // default does nothing, assumes setPdo() does it already. Otherwise override!
+    // default does nothing, assumes setPdo() does it already
   }
 
   @Override

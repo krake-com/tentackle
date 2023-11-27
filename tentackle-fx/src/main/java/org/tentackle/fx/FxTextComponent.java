@@ -98,18 +98,18 @@ public interface FxTextComponent extends FxComponent {
 
   /**
    * Sets the auto-select feature.<br>
-   * A component with autoselect enabled will automatically
+   * A component with auto-select enabled will automatically
    * select all characters if the component gets the keyboard focus.
    * Useful for numerical fields, for example.
    *
-   * @param autoSelect true if autoselect enabled, false if disabled (default)
+   * @param autoSelect true if auto-select enabled, false if disabled (default)
    */
   void setAutoSelect(boolean autoSelect);
 
   /**
    * Returns whether the auto-select feature is enabled.
    *
-   * @return true if autoselect enabled, false if disabled (default)
+   * @return true if auto-select enabled, false if disabled (default)
    */
   boolean isAutoSelect();
 

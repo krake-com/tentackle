@@ -383,7 +383,7 @@ public class FxUtilities {
     if (owner instanceof Window window) {
       return window;
     }
-    throw new FxRuntimeException("cannot determine owner");
+    throw new FxRuntimeException("cannot determine window of " + owner);
   }
 
 
@@ -571,7 +571,7 @@ public class FxUtilities {
       Throwable exception = event.getSource().getException();
       if (exception != null) {
         LOGGER.warning("FX background execution failed", exception);
-        Platform.runLater(() -> showErrorDialog(owner, exception.getMessage(), exception, null));
+        showErrorDialog(owner, exception.getMessage(), exception, null);
       }
     });
 

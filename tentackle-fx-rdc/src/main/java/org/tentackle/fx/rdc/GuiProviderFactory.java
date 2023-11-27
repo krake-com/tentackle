@@ -56,7 +56,7 @@ public interface GuiProviderFactory {
   <T extends PersistentDomainObject<T>> GuiProvider<T> createGuiProvider(T pdo);
 
   /**
-   * Returns whether a {@link GuiProviderService} is present for the given PDO class.
+   * Returns whether a {@link GuiProviderService} is available for the given PDO class.
    * <p>
    * Throws a {@link org.tentackle.pdo.PdoRuntimeException} if provider could not be created.
    *

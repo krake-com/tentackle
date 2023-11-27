@@ -638,7 +638,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
     catch (LockException lx) {
       // probably locked by another user meanwhile.
       // just log it and don't bother the user
-      LOGGER.info("token unlock failed (ignored): " + lx.getMessage());
+      LOGGER.fine("token unlock failed (ignored): {0}", lx::getMessage);
     }
   }
 

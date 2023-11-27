@@ -24,6 +24,7 @@ import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.FxTextComponent;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.ValueTranslatorService;
+import org.tentackle.fx.rdc.GuiProviderFactory;
 import org.tentackle.fx.translate.ValueStringTranslator;
 import org.tentackle.log.Logger;
 import org.tentackle.pdo.DomainKey;
@@ -116,7 +117,13 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
         }
       }
       else {
-        viewValue = null;
+        if (udkTranslator != null) {
+          // invoke the udk translator, even if null, to allow detecting the to-view action
+          viewValue = udkTranslator.toViewFunction().apply(null);
+        }
+        else {
+          viewValue = null;
+        }
       }
       pdoAddon.setPdo(m);
       return viewValue;
@@ -168,8 +175,9 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
                 }
               }
               pdoAddon.setPdo(proxy.findByUniqueDomainKey(udk));
-              if (pdoAddon.getPdo() == null) {
-                // no such pdo: try search
+              if (pdoAddon.getPdo() == null &&
+                  GuiProviderFactory.getInstance().isGuiProviderAvailable(proxy.getEffectiveClass())) {
+                // no such pdo: try search (if gui provider available)
                 presetSearchCriteria(proxy, udkClass, v);    // try to preset the proxy, if possible
                 runSearch(proxy);
               }
