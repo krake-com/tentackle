@@ -8,7 +8,7 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>21.15.1.0-SNAPSHOT</version>
+    <version>21.15.1.0</version>
     <!-- not a module of tentackle-parent -->
     <!-- to be build separately -->
   </parent>
@@ -19,7 +19,7 @@
   <packaging>pom</packaging>
 
   <properties>
-    <tentackle.version>21.15.1.0-SNAPSHOT</tentackle.version>
+    <tentackle.version>21.15.1.0</tentackle.version>
   </properties>
 
   <name>Tentackle OSGi Parent</name>
