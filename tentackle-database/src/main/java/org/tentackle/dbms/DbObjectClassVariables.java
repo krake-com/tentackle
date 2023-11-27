@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -132,6 +133,17 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
       int rv = priority - o.priority;
       if (rv == 0) {
         rv = methodPath.compareTo(o.methodPath);
+        if (rv == 0) {
+          rv = Objects.compare(methods, o.methods, (o1, o2) -> {
+            int mv = o1.length - o2.length;
+            if (mv == 0) {
+              for (int i=0; i < o1.length && mv == 0; i++) {
+                mv = o1[i].hashCode() - o2[i].hashCode();
+              }
+            }
+            return mv;
+          });
+        }
       }
       return rv;
     }
