@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent-osgi</artifactId>
-    <version>15.1.0</version>
+    <version>15.1.1</version>
   </parent>
 
   <artifactId>tentackle.database.osgi</artifactId>
