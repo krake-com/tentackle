@@ -3938,7 +3938,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
         }
         catch (PersistenceException px) {
           setPersistable(false);
-          db.rollback(txVoucher);
+          db.rollback(txVoucher, !px.isTemporary());
           px.updateDbObject(this);
           throw px;
         }
@@ -4022,7 +4022,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       }
       catch (PersistenceException px) {
         setPersistable(false);
-        db.rollback(txVoucher);
+        db.rollback(txVoucher, !px.isTemporary());
         px.updateDbObject(this);
         throw px;
       }
