@@ -877,15 +877,14 @@ public class ManagedConnection {
     }
 
     try {
-      // the following code may fail if statement history is being
-      // modified in parallel. As this will only happen in rare cases
-      // such as via StackdumpHelper, we don't synchronize on statementHistory
-      // to avoid cost and locks.
       if (!statementHistory.isEmpty() || currentStatement != null) {
         buf.append("\n\n    Statements:");
-        for (StatementHistory stmt: statementHistory) {
-          buf.append("\n    ");
-          buf.append(stmt);
+        try {
+          buf.append(logStatementHistory(statementHistory));
+        }
+        catch (ConcurrentModificationException cmx) {
+          buf.append(" (history may be incomplete because connection is still in use by other threads)");
+          buf.append(logStatementHistory(new ArrayList<>(statementHistory)));   // try on copy
         }
         StatementHistory stmt = currentStatement;
         if (stmt != null) {
@@ -894,9 +893,6 @@ public class ManagedConnection {
         }
         buf.append("\n");
       }
-    }
-    catch (ConcurrentModificationException cmx) {
-      buf.append("\n*** connection still in use by other thread(s) -> statement history aborted ***\n");
     }
     catch (RuntimeException rex) {
       LOGGER.warning("cannot dump statement history", rex);
@@ -919,6 +915,14 @@ public class ManagedConnection {
     }
 
     return buf.toString();
+  }
+
+  private StringBuilder logStatementHistory(Collection<StatementHistory> statementHistory) {
+    StringBuilder buf = new StringBuilder();
+    for (StatementHistory stmt : statementHistory) {
+      buf.append("\n    ").append(stmt);
+    }
+    return buf;
   }
 
   /**
