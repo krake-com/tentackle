@@ -166,22 +166,46 @@ public class InterceptionUtilities {
    * <p>
    * Finds the implementing method of the delegate and optional interceptors.
    *
-   * @param clazz the topmost interceptable's interface
+   * @param clazz the topmost interceptable interface
    * @param delegateClazz the delegate's class to invoke the method on
    * @param method the interface's method to invoke
    * @return the interceptable method
    */
-  public InterceptableMethod createInterceptableMethod(Class<? extends Interceptable> clazz, Class<? extends Interceptable> delegateClazz, Method method) {
-    Method effectiveMethod = ReflectionHelper.findDeclaredMethod(clazz, method);
+  public InterceptableMethod createInterceptableMethod(Class<? extends Interceptable> clazz,
+                                                       Class<? extends Interceptable> delegateClazz,
+                                                       Method method) {
+
     Method implMethod;
     try {
       implMethod = delegateClazz.getMethod(method.getName(), method.getParameterTypes());
     }
     catch (NoSuchMethodException nx) {
-      throw new TentackleRuntimeException("cannot create interceptable method", nx);
+      throw new TentackleRuntimeException("cannot determine implementation for " + method, nx);
     }
+
+    // The default is that the method invoked is declared in the top-level interface or one of the interfaces it extends.
+    // This is, how a dynamic proxy works.
+    // Otherwise, the invocation went to some other class: find the corresponding interface method by
+    // its name and parameters. This mode is _NOT_ used by the tentackle framework itself,
+    // but the InterceptionUtilities can be used by the application for such nasty things as well...
+    Method effectiveMethod = method.getDeclaringClass().isAssignableFrom(clazz) ?
+                               method : findDeclaredMethod(clazz, method);
+
+    // find the top-level interceptor, null if no interceptors at all
     Interceptor interceptor = findInterceptors(Interceptable.class, effectiveMethod, implMethod);
+
     return new InterceptableMethod(method, implMethod, interceptor);
+  }
+
+  /**
+   * Finds the topmost overridden interface method for a given method signature.
+   *
+   * @param clazz the interface
+   * @param method the original method (usually the invoked method)
+   * @return the possibly overridden method, else the original method
+   */
+  public Method findDeclaredMethod(Class<?> clazz, Method method) {
+    return ReflectionHelper.findDeclaredMethod(clazz, method);
   }
 
 }

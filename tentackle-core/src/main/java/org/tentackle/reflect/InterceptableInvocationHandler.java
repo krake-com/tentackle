@@ -16,16 +16,15 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.reflect;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Class mapping invocation handler.
@@ -35,13 +34,16 @@ import java.util.concurrent.ConcurrentHashMap;
  * @param <T> the interceptable type
  * @author harald
  */
-public class InterceptableInvocationHandler<T extends Interceptable & Serializable> implements InvocationHandler {
+public class InterceptableInvocationHandler<T extends Interceptable & Serializable> implements InvocationHandler, Serializable {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   /**
-   * The method cache.
-   * Speeds up method invocations.
+   * The method invoker.<br>
+   * Performs the method invocations and provides logging and statistics.
    */
-  private static final ConcurrentHashMap<Method,InterceptableMethod> METHOD_CACHE = new ConcurrentHashMap<>();
+  public static final InterceptableMethodInvoker INVOKER = new InterceptableMethodInvoker("Interceptable");
 
 
   // preloaded methods of EffectiveClassProvider
@@ -60,21 +62,23 @@ public class InterceptableInvocationHandler<T extends Interceptable & Serializab
 
 
 
-  private final Class<T> clazz;     // the handled class
-  private final Mixin<T,T> mixin;   // the mixin
+  private final Class<T> clazz;                           // the handled class
+  private final Mixin<T,T> mixin;                         // the mixin
+  private final InterceptableMethodCache methodCache;     // the method cache for given class
 
 
   /**
    * Creates an invocation handler.
    *
    * @param mapper the classmapper
-   * @param clazz the PDO declaring interface
+   * @param clazz the declaring interface
    *
    * @throws ClassNotFoundException if no implementation found
    */
   public InterceptableInvocationHandler(ClassMapper mapper, Class<T> clazz) throws ClassNotFoundException {
     this.clazz = clazz;
     mixin = new Mixin<>(mapper, clazz, Interceptable.class);
+    methodCache = InterceptableMethodCache.getCache(clazz);
   }
 
 
@@ -112,16 +116,7 @@ public class InterceptableInvocationHandler<T extends Interceptable & Serializab
       return list;
     }
 
-    InterceptableMethod delegateMethod = METHOD_CACHE.get(method);
-    if (delegateMethod == null) {
-      Method implMethod = mixin.getDelegate().getClass().getMethod(method.getName(), method.getParameterTypes());
-      Interceptor interceptor = InterceptionUtilities.getInstance().findInterceptors(clazz, method, implMethod);
-      delegateMethod = new InterceptableMethod(method, implMethod, interceptor);
-      METHOD_CACHE.put(method, delegateMethod);
-    }
-    
-    // invoke the method
-    return delegateMethod.invoke(mixin.getDelegate(), args);
+    return methodCache.invoke(INVOKER, mixin.getDelegate(), method, args);
   }
 
 }
