@@ -77,9 +77,11 @@ import java.util.function.Supplier;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
+
 interface RdcUtilitiesHolder {
-  RdcUtilities INSTANCE = ServiceFactory.createService(RdcUtilities.class);
+  RdcUtilities INSTANCE = ServiceFactory.createService(RdcUtilities.class, RdcUtilities.class);
 }
+
 
 /**
  * RDC-related utility methods.

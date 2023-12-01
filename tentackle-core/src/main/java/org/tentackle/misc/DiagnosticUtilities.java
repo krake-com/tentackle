@@ -32,8 +32,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 
 interface DiagnosticUtilitiesHolder {
-  DiagnosticUtilities INSTANCE = ServiceFactory.createService(
-              DiagnosticUtilities.class, DiagnosticUtilities.class);
+  DiagnosticUtilities INSTANCE = ServiceFactory.createService(DiagnosticUtilities.class, DiagnosticUtilities.class);
 }
 
 

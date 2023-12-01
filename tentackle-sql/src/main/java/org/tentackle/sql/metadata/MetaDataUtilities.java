@@ -30,8 +30,9 @@ import java.util.Map;
 
 
 interface MetaDataUtilitiesHolder {
-  MetaDataUtilities INSTANCE = ServiceFactory.createService(MetaDataUtilities.class);
+  MetaDataUtilities INSTANCE = ServiceFactory.createService(MetaDataUtilities.class, MetaDataUtilities.class);
 }
+
 
 /**
  * Database metadata utility methods.<br>
