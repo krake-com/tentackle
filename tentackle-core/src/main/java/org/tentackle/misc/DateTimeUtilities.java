@@ -56,9 +56,11 @@ import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
+
 interface DateTimeUtilitiesHolder {
-  DateTimeUtilities INSTANCE = ServiceFactory.createService(DateTimeUtilities.class);
+  DateTimeUtilities INSTANCE = ServiceFactory.createService(DateTimeUtilities.class, DateTimeUtilities.class);
 }
+
 
 /**
  * Utility methods related to the {@code java.time} API.

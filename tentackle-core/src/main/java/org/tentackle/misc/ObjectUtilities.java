@@ -47,9 +47,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
+
 interface ObjectUtilitiesHolder {
-  ObjectUtilities INSTANCE = ServiceFactory.createService(ObjectUtilities.class);
+  ObjectUtilities INSTANCE = ServiceFactory.createService(ObjectUtilities.class, ObjectUtilities.class);
 }
+
 
 /**
  * Object utility methods.

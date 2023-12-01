@@ -60,9 +60,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.ResourceBundle;
 
+
 interface TableUtilitiesHolder {
-  TableUtilities INSTANCE = ServiceFactory.createService(TableUtilities.class);
+  TableUtilities INSTANCE = ServiceFactory.createService(TableUtilities.class, TableUtilities.class);
 }
+
 
 /**
  * Table-related utility methods.

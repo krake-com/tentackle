@@ -37,7 +37,7 @@ import java.util.Set;
 
 
 interface DbTestUtilitiesHolder {
-  DbTestUtilities INSTANCE = ServiceFactory.createService(DbTestUtilities.class);
+  DbTestUtilities INSTANCE = ServiceFactory.createService(DbTestUtilities.class, DbTestUtilities.class);
 }
 
 
