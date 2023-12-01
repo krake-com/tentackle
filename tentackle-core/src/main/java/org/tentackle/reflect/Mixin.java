@@ -152,7 +152,7 @@ public class Mixin<T, M extends Serializable> implements Serializable {
    * @return true if dummy
    */
   public boolean isDummy() {
-    return implClass == null;
+    return implClass == null || DummyDelegate.class.isAssignableFrom(implClass);
   }
 
 
@@ -175,7 +175,7 @@ public class Mixin<T, M extends Serializable> implements Serializable {
 
     // notice: we're not using method handles since invokeWithArguments is much slower than invoking a constructor.
     // don't know why, but that's the observation.
-    if (!isDummy()) {
+    if (implClass != null) {
       ConstructorKey key = new ConstructorKey(implClass, constructorArgumentClasses);
       Constructor constructor = CONSTRUCTOR_MAP.get(key);   // no computeIfAbsent cause of exception below
       if (constructor == null) {

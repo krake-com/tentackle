@@ -40,8 +40,10 @@ public class DefaultOperationFactory extends AbstractOperationFactory {
     persistenceClassMapper = ClassMapper.create("operation persistence", PersistentOperation.class);
 
     // if there is no persistence delegate (which is allowed for operations in contrast to PDOs),
-    // map to a dummy delegate
+    // map to a dummy delegate. Necessary, since certain methods such as keeping the
+    // context, session, etc... must be implemented.
     persistenceClassMapper.setDefaultClass(DummyPersistentOperation.class);
+    // there is no default for the domain delegate (doesn't make any sense)
   }
 
   @Override
