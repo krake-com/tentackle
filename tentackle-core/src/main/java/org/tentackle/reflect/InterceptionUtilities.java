@@ -21,6 +21,7 @@ package org.tentackle.reflect;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.log.Logger;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
@@ -43,6 +44,8 @@ interface InterceptionUtilitiesHolder {
  */
 @Service(InterceptionUtilities.class)   // defaults to self
 public class InterceptionUtilities {
+
+  private static final Logger LOG = Logger.get(InterceptionUtilities.class);
 
   /**
    * The singleton.
@@ -186,8 +189,7 @@ public class InterceptionUtilities {
     // The default is that the method invoked is declared in the top-level interface or one of the interfaces it extends.
     // This is, how a dynamic proxy works.
     // Otherwise, the invocation went to some other class: find the corresponding interface method by
-    // its name and parameters. This mode is _NOT_ used by the tentackle framework itself,
-    // but the InterceptionUtilities can be used by the application for such nasty things as well...
+    // its name and parameters.
     Method effectiveMethod = method.getDeclaringClass().isAssignableFrom(clazz) ?
                                method : findDeclaredMethod(clazz, method);
 
@@ -198,14 +200,17 @@ public class InterceptionUtilities {
   }
 
   /**
-   * Finds the topmost overridden interface method for a given method signature.
+   * Finds the declared interface method for a given method signature.<br>
+   * This usually indicates that the invocation handler is not servicing the expected interface.<br>
+   * The default implementation just logs the fact that something is weird and returns the passed method.
    *
-   * @param clazz the interface
-   * @param method the original method (usually the invoked method)
-   * @return the possibly overridden method, else the original method
+   * @param clazz the top-level interface serviced by the invocation handler
+   * @param method the invoked interface method
+   * @return the effective interface method to scan for public interceptors
    */
   public Method findDeclaredMethod(Class<?> clazz, Method method) {
-    return ReflectionHelper.findDeclaredMethod(clazz, method);
+    LOG.warning("method {0} is not declared in {1} or its interfaces", method, clazz);
+    return method;
   }
 
 }
