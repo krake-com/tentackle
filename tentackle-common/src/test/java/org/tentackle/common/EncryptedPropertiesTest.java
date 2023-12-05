@@ -40,6 +40,7 @@ public class EncryptedPropertiesTest {
   private static final String KEY_ENCRYPTED = "encrypted";
   private static final String KEY_UNENCRYPTED = "unencrypted";
   private static final String KEY_STARTSWITHTILDE = "startswithtilde";
+  private static final String KEY_STARTSWITHTILDE_CASE = "startsWithTilde";
 
   private static final String KEY_PREFIX = "tentackle.";
   private static final String NOT_IN_SPACE = "notInSpace";
@@ -91,6 +92,8 @@ public class EncryptedPropertiesTest {
 
     assertNull(properties.getProperty("bird"));
     assertNull(properties.getPropertyAsChars("troll"));
+
+    assertEquals(properties.getPropertyIgnoreCase(KEY_STARTSWITHTILDE_CASE), STARTSWITHTILDE);
   }
 
 }

@@ -113,8 +113,8 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
   public DefaultSessionInfo(EncryptedProperties properties)  {
     setPropertiesName("<internal>");
     setProperties(properties);
-    setUserName(properties.getProperty(Constants.BACKEND_USER));
-    setPassword(properties.getPropertyAsChars(Constants.BACKEND_PASSWORD));
+    setUserName(properties.getPropertyIgnoreCase(Constants.BACKEND_USER));
+    setPassword(properties.getPropertyAsChars(properties.getKeyIgnoreCase(Constants.BACKEND_PASSWORD)));
   }
 
 
@@ -441,15 +441,16 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
 
   @Override
   public void applyProperties() {
-    String name = getProperties().getProperty(Constants.BACKEND_USER);
+    EncryptedProperties props = getProperties();
+    String name = props.getPropertyIgnoreCase(Constants.BACKEND_USER);
     if (name != null) {
       setUserName(name);
     }
-    char[] pwd = getProperties().getPropertyAsChars(Constants.BACKEND_PASSWORD);
+    char[] pwd = props.getPropertyAsChars(props.getKeyIgnoreCase(Constants.BACKEND_PASSWORD));
     if (pwd != null) {
       setPassword(pwd);
     }
-    name = getProperties().getProperty(Constants.BACKEND_APPLICATION_NAME);
+    name = props.getPropertyIgnoreCase(Constants.BACKEND_APPLICATION_NAME);
     if (name != null) {
       setApplicationName(name);
     }

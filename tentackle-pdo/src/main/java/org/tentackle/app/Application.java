@@ -128,6 +128,14 @@ public interface Application extends SessionProvider, DomainContextProvider {
   String getProperty(String key);
 
   /**
+   * Gets an application property case-insensitive.
+   *
+   * @param key the property's name
+   * @return the value of the key, null if no such property, the empty string if no value for this property
+   */
+  String getPropertyIgnoreCase(String key);
+
+  /**
    * Gets an application property as a character array.<br>
    * Useful for passwords and alike.
    *
@@ -135,6 +143,15 @@ public interface Application extends SessionProvider, DomainContextProvider {
    * @return the value of the key, null if no such property, the empty array if no value for this property
    */
   char[] getPropertyAsChars(String key);
+
+  /**
+   * Gets an application property as a character array, case-insensitive.<br>
+   * Useful for passwords and alike.
+   *
+   * @param key the property's name
+   * @return the value of the key, null if no such property, the empty array if no value for this property
+   */
+  char[] getPropertyAsCharsIgnoreCase(String key);
 
   /**
    * Applies further application properties.<br>

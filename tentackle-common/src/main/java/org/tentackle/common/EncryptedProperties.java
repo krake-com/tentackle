@@ -20,7 +20,10 @@ package org.tentackle.common;
 
 import java.io.Serial;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
@@ -30,6 +33,8 @@ import java.util.Set;
  * If a value starts with a <code>~</code> (tilde), the remainder of the string is considered to be
  * encrypted by the application-specific {@link Cryptor}.
  * If an unencrypted value starts with a <code>~</code>, it must be escaped with a backslash.
+ * <p>
+ * Also supports case-insensitive keys.
  */
 public class EncryptedProperties extends Properties {
 
@@ -47,18 +52,23 @@ public class EncryptedProperties extends Properties {
    */
   private String keyPrefix;
 
+  /**
+   * Optional mapping of case-insensitive to case-sensitive keys.<br>
+   * The map will be created and maintained after the first
+   * invocation of getPropertyIgnoreCase or getKeyIgnoreCase.
+   */
+  private Map<String, String> keyCaseMap;
+
 
   /**
-   * Creates an empty property list with no default values.
+   * Creates an empty property list.
    */
   public EncryptedProperties() {
     super();
   }
 
   /**
-   * Creates an empty property list with no default values, and with an
-   * initial size accommodating the specified number of elements without the
-   * need to dynamically resize.
+   * Creates an empty property list with an initial size.
    *
    * @param  initialCapacity the {@code EncryptedProperties} will be sized to
    *         accommodate this many elements
@@ -67,15 +77,6 @@ public class EncryptedProperties extends Properties {
    */
   public EncryptedProperties(int initialCapacity) {
     super(initialCapacity);
-  }
-
-  /**
-   * Creates an empty property list with the specified defaults.
-   *
-   * @param   defaults   the defaults.
-   */
-  public EncryptedProperties(Properties defaults) {
-    super(defaults);
   }
 
 
@@ -137,7 +138,6 @@ public class EncryptedProperties extends Properties {
    * @param   key the property key
    * @return  the value in this property list with the specified key value
    * @see     #setProperty
-   * @see     #defaults
    */
   @Override
   public String getProperty(String key) {
@@ -146,7 +146,33 @@ public class EncryptedProperties extends Properties {
 
   @Override
   public synchronized Object setProperty(String key, String value) {
+    if (keyCaseMap != null) {
+      keyCaseMap.put(key.toUpperCase(Locale.ROOT), key);
+    }
     return super.setProperty(translateKey(key), value);
+  }
+
+  /**
+   * Searches for the property with the specified key case insensitively.<br>
+   * Throws {@link TentackleRuntimeException}, if duplicate case-mapped keys found.
+   *
+   * @param key the property key in any case combination
+   * @return the value, null if none
+   */
+  public String getPropertyIgnoreCase(String key) {
+    String csKey = getKeyIgnoreCase(key);
+    return csKey == null ? null : getProperty(csKey);
+  }
+
+  /**
+   * Gets the case-sensitive key.
+   *
+   * @param key the case-insensitive key
+   * @return the original case-sensitive key
+   */
+  public String getKeyIgnoreCase(String key) {
+    String csKey = getKeyCaseMap().get(key.toUpperCase(Locale.ROOT));
+    return csKey == null ? key : csKey;
   }
 
   /**
@@ -237,6 +263,22 @@ public class EncryptedProperties extends Properties {
       super.setProperty(key, String.valueOf(value));
     }
   }
+
+
+  private Map<String, String> getKeyCaseMap() {
+    if (keyCaseMap == null) {
+      // initialize the case map with already existing keys
+      Map<String, String> map = new HashMap<>();
+      for (String name : stringPropertyNames()) {
+        if (map.put(name.toUpperCase(Locale.ROOT), name) != null) {
+          throw new TentackleRuntimeException("duplicate case-insensitive key '" + name + "' found");
+        }
+      }
+      keyCaseMap = map;
+    }
+    return keyCaseMap;
+  }
+
 
   /**
    * Holds the property value.

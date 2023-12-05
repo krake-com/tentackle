@@ -18,6 +18,7 @@
 
 package org.tentackle.dbms.rmi;
 
+import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.dbms.Db;
 import org.tentackle.io.RMISocketFactoryFactory;
@@ -40,7 +41,6 @@ import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.StringTokenizer;
 
 /**
@@ -264,10 +264,10 @@ public class RmiServer {
     this.sessionInfo = sessionInfo;
     this.connectionClass = connectionClass == null ? RemoteDbConnectionImpl.class : connectionClass;
 
-    Properties props = sessionInfo.getProperties();
+    EncryptedProperties props = sessionInfo.getProperties();
 
     // check connection class
-    String val = props.getProperty(CONNECTION_CLASS);
+    String val = props.getPropertyIgnoreCase(CONNECTION_CLASS);
     if (val != null) {
       try {
         this.connectionClass = (Class<RemoteDbConnectionImpl>) Class.forName(val);
@@ -277,7 +277,7 @@ public class RmiServer {
       }
     }
 
-    val = props.getProperty(RMI_SERVICE);
+    val = props.getPropertyIgnoreCase(RMI_SERVICE);
     service = Objects.requireNonNullElseGet(val, () -> "rmi://localhost:" + Registry.REGISTRY_PORT + "/" +
                                                        getClass().getSimpleName());
 
@@ -291,7 +291,7 @@ public class RmiServer {
     }
 
     RMISocketFactoryType loginFactoryType = null;
-    val = props.getProperty(CREATE_REGISTRY);
+    val = props.getPropertyIgnoreCase(CREATE_REGISTRY);
     if (val != null) {
       createRegistry = true;
       if (!val.isEmpty()) {
@@ -301,7 +301,7 @@ public class RmiServer {
       }
     }
 
-    val = props.getProperty(TIMEOUT);
+    val = props.getPropertyIgnoreCase(TIMEOUT);
     if (val != null) {
       sessionTimeout = Integer.parseInt(val);
     }
@@ -309,7 +309,7 @@ public class RmiServer {
       sessionTimeout = DEFAULT_SESSION_TIMEOUT;
     }
 
-    val = props.getProperty(TIMEOUT_INTERVAL);
+    val = props.getPropertyIgnoreCase(TIMEOUT_INTERVAL);
     if (val != null) {
       sessionTimeoutCheckInterval = Long.parseLong(val);
     }
@@ -318,7 +318,7 @@ public class RmiServer {
     }
 
     // check for default ports
-    val = props.getProperty(PORTS);
+    val = props.getPropertyIgnoreCase(PORTS);
     if (val != null) {
       StringTokenizer stok = new StringTokenizer(val, " \t,;");
       int pos = 0;
@@ -362,7 +362,7 @@ public class RmiServer {
     }
 
     // more server side ssl properties
-    val = props.getProperty(Db.CIPHER_SUITES);
+    val = props.getPropertyIgnoreCase(Db.CIPHER_SUITES);
     if (val != null) {
       StringTokenizer stok = new StringTokenizer(val, " \t,;");
       RMISocketFactoryFactory.getInstance().setEnabledCipherSuites(new String[stok.countTokens()]);
@@ -372,7 +372,7 @@ public class RmiServer {
       }
     }
 
-    val = props.getProperty(Db.PROTOCOLS);
+    val = props.getPropertyIgnoreCase(Db.PROTOCOLS);
     if (val != null) {
       StringTokenizer stok = new StringTokenizer(val, " \t,;");
       RMISocketFactoryFactory.getInstance().setEnabledProtocols(new String[stok.countTokens()]);
@@ -382,18 +382,18 @@ public class RmiServer {
       }
     }
 
-    val = props.getProperty(CLIENT_AUTH);
+    val = props.getPropertyIgnoreCase(CLIENT_AUTH);
     if (val != null)  {
       RMISocketFactoryFactory.getInstance().setClientAuthenticationRequired(true);
     }
 
 
     // switch socket factories
-    RMISocketFactoryType factoryType = RMISocketFactoryType.parse(sessionInfo.getProperties().getProperty(Db.SOCKET_FACTORY));
+    RMISocketFactoryType factoryType = RMISocketFactoryType.parse(sessionInfo.getProperties().getPropertyIgnoreCase(Db.SOCKET_FACTORY));
     csf = RMISocketFactoryFactory.getInstance().createClientSocketFactory(null, factoryType);
     ssf = RMISocketFactoryFactory.getInstance().createServerSocketFactory(null, factoryType);
 
-    val = props.getProperty(PORT);
+    val = props.getPropertyIgnoreCase(PORT);
     // notice: ssl and/or compressed requires another port than the original serverport
     if (val != null) {
       port = Integer.parseInt(val);

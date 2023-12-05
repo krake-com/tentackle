@@ -216,7 +216,7 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
    * @return the service object, null if no service configured
    */
   protected UpdateService createUpdateService() {
-    String serviceUrl = getApplication().getProperty("updateService");
+    String serviceUrl = getApplication().getPropertyIgnoreCase("updateService");
     return serviceUrl == null ? null : ClientUpdateUtilities.getInstance().getUpdateService(serviceUrl, null);
   }
 

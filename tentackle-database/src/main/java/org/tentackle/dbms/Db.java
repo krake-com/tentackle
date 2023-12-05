@@ -582,7 +582,7 @@ public class Db implements Session, Cloneable {
       // load configuration settings
       EncryptedProperties sessionProperties = sessionInfo.getProperties();
       EncryptedProperties backendProperties = sessionProperties;   // backend properties defaults to session properties
-      String technicalBackendInfoName = sessionInfo.getProperties().getProperty(Constants.BACKEND_INFO);
+      String technicalBackendInfoName = sessionInfo.getProperties().getPropertyIgnoreCase(Constants.BACKEND_INFO);
       if (technicalBackendInfoName != null) {
         if (technicalBackendInfoName.startsWith(Constants.BACKEND_INFO_USER) ||
             technicalBackendInfoName.startsWith(Constants.BACKEND_INFO_SYSTEM)) {
@@ -629,20 +629,20 @@ public class Db implements Session, Cloneable {
 
       if (backendInfo.isRemote()) {
         conMgr = null;                         // no connection manager for remote connections
-        RMISocketFactoryType factoryType = RMISocketFactoryType.parse(backendProperties.getProperty(SOCKET_FACTORY));
+        RMISocketFactoryType factoryType = RMISocketFactoryType.parse(backendProperties.getPropertyIgnoreCase(SOCKET_FACTORY));
         csf = RMISocketFactoryFactory.getInstance().createClientSocketFactory(null, factoryType);
       }
       else  {
         if (conMgr == null) {
           throw new PersistenceException("connection manager required for local connections");
         }
-        String val = backendProperties.getProperty(BATCHSIZE);
+        String val = backendProperties.getPropertyIgnoreCase(BATCHSIZE);
         if (val != null) {
           batchSize = Integer.parseInt(val);
         }
       }
 
-      String val = sessionProperties.getProperty(IDSOURCE);
+      String val = sessionProperties.getPropertyIgnoreCase(IDSOURCE);
       if (val != null) {
         idConfig = val;
       }

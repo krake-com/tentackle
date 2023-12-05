@@ -19,15 +19,6 @@
 
 package org.tentackle.fx.rdc.login;
 
-import javafx.application.Platform;
-import javafx.event.ActionEvent;
-import javafx.fxml.FXML;
-import javafx.scene.control.Label;
-import javafx.scene.control.ProgressBar;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.GridPane;
-import javafx.stage.WindowEvent;
 import org.tentackle.app.Application;
 import org.tentackle.common.Constants;
 import org.tentackle.fx.AbstractFxController;
@@ -43,6 +34,15 @@ import org.tentackle.log.Logger;
 import org.tentackle.session.BackendConfiguration;
 import org.tentackle.session.SessionInfo;
 
+import javafx.application.Platform;
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.scene.control.Label;
+import javafx.scene.control.ProgressBar;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.GridPane;
+import javafx.stage.WindowEvent;
 import java.util.ResourceBundle;
 
 /**
@@ -236,7 +236,7 @@ public class Login extends AbstractFxController {
     this.sessionInfo = sessionInfo;
     setUsername(sessionInfo.getUserName());
     setPassword(sessionInfo.getPassword());
-    String backendInfo = sessionInfo.getProperties().getProperty(Constants.BACKEND_INFO);
+    String backendInfo = sessionInfo.getProperties().getPropertyIgnoreCase(Constants.BACKEND_INFO);
     backendsEditable = false;
     if (Constants.BACKEND_INFO_USER.equals(backendInfo)) {
       backendsEditable = true;
@@ -375,7 +375,7 @@ public class Login extends AbstractFxController {
       sessionInfo.setPassword(password);
       BackendConfiguration backendConfiguration = backendField.getValue();
       if (backendConfiguration != null) {
-        String backendInfo = sessionInfo.getProperties().getProperty(Constants.BACKEND_INFO) + ":" + backendConfiguration;
+        String backendInfo = sessionInfo.getProperties().getPropertyIgnoreCase(Constants.BACKEND_INFO) + ":" + backendConfiguration;
         sessionInfo.getProperties().setProperty(Constants.BACKEND_INFO, backendInfo);
       }
       setProgress(0.01);    // login is in progress...

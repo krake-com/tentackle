@@ -19,6 +19,7 @@
 package org.tentackle.dbms;
 
 import org.tentackle.common.Constants;
+import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.Timestamp;
@@ -31,7 +32,6 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 interface DbTransactionFactoryHolder {
@@ -89,12 +89,12 @@ public class DbTransactionFactory {
    *
    * @param properties the properties
    */
-  public void configure(Properties properties) {
-    String val = properties.getProperty(TX_IDLE_INTERVAL);
+  public void configure(EncryptedProperties properties) {
+    String val = properties.getPropertyIgnoreCase(TX_IDLE_INTERVAL);
     if (val != null) {
       setTxIdleInterval(Long.parseLong(val));
     }
-    val = properties.getProperty(TX_IDLE_TIMEOUT);
+    val = properties.getPropertyIgnoreCase(TX_IDLE_TIMEOUT);
     if (val != null) {
       setTxIdleTimeout(Integer.parseInt(val));
     }
