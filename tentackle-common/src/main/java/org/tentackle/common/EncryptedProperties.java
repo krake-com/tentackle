@@ -57,8 +57,7 @@ public class EncryptedProperties extends Properties {
    * The map will be created and maintained after the first
    * invocation of getPropertyIgnoreCase or getKeyIgnoreCase.
    */
-  @SuppressWarnings("serial")
-  private Map<String, String> keyCaseMap;
+  private transient Map<String, String> keyCaseMap;
 
 
   /**
