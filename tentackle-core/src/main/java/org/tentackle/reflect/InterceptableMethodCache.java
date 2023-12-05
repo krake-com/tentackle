@@ -19,8 +19,6 @@
 
 package org.tentackle.reflect;
 
-import java.io.Serial;
-import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -29,10 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author harald
  */
-public class InterceptableMethodCache implements Serializable {
-
-  @Serial
-  private static final long serialVersionUID = 1L;
+public class InterceptableMethodCache {
 
   /**
    * Maps interceptable classes to caches.
