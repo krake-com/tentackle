@@ -99,8 +99,8 @@ public abstract class ConsoleApplication extends AbstractClientApplication {
    * Connects to the database backend or application server.
    */
   protected void login() {
-    String username = getProperty(Constants.BACKEND_USER);
-    char[] password = getPropertyAsChars(Constants.BACKEND_PASSWORD);
+    String username = getPropertyIgnoreCase(Constants.BACKEND_USER);
+    char[] password = getPropertyAsCharsIgnoreCase(Constants.BACKEND_PASSWORD);
     String sessionPropsName = getCommandLine().getOptionValue(Constants.BACKEND_PROPS);
 
     SessionInfo sessionInfo = createSessionInfo(username, password, sessionPropsName);

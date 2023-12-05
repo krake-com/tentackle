@@ -305,17 +305,17 @@ public abstract class AbstractApplication implements Application {
         }
       }
 
-      String scripting = getProperty(SCRIPTING);
+      String scripting = getPropertyIgnoreCase(SCRIPTING);
       if (scripting != null) {
         ScriptFactory.getInstance().setDefaultLanguage(scripting);
       }
 
-      if (getProperty(DISABLE_SECURITY_MANAGER) != null) {
+      if (getPropertyIgnoreCase(DISABLE_SECURITY_MANAGER) != null) {
         SecurityFactory.getInstance().getSecurityManager().setEnabled(false);
       }
 
       // set default locale
-      String localeStr = getProperty(LOCALE);
+      String localeStr = getPropertyIgnoreCase(LOCALE);
       if (StringHelper.isAllWhitespace(localeStr)) {
         try {
           // try to get from user preferences.
@@ -348,8 +348,18 @@ public abstract class AbstractApplication implements Application {
   }
 
   @Override
+  public String getPropertyIgnoreCase(String key) {
+    return props == null ? null : props.getPropertyIgnoreCase(key);
+  }
+
+  @Override
   public char[] getPropertyAsChars(String key) {
     return props == null ? null : props.getPropertyAsChars(key);
+  }
+
+  @Override
+  public char[] getPropertyAsCharsIgnoreCase(String key) {
+    return props == null ? null : props.getPropertyAsChars(props.getKeyIgnoreCase(key));
   }
 
   @Override
@@ -505,9 +515,9 @@ public abstract class AbstractApplication implements Application {
    */
   protected void configurePreferences() {
     // install preferences handler to use the db as backing store
-    PersistedPreferencesFactory.getInstance().setReadOnly(getProperty("readonlyprefs") != null);
-    PersistedPreferencesFactory.getInstance().setSystemOnly(getProperty("systemprefs") != null);
-    PersistedPreferencesFactory.getInstance().setAutoSync(getProperty("noprefsync") == null);
+    PersistedPreferencesFactory.getInstance().setReadOnly(getPropertyIgnoreCase("readonlyprefs") != null);
+    PersistedPreferencesFactory.getInstance().setSystemOnly(getPropertyIgnoreCase("systemprefs") != null);
+    PersistedPreferencesFactory.getInstance().setAutoSync(getPropertyIgnoreCase("noprefsync") == null);
   }
 
 

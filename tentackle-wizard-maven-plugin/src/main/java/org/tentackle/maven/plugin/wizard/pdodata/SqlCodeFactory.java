@@ -42,9 +42,9 @@ public class SqlCodeFactory {
 
   public static String createSelect(DataNode dataNode) {
     try {
-      Backend backend = BackendFactory.getInstance().getBackendByUrl(ModificationTracker.getInstance().getSession().
-                                                                     getSessionInfo().getProperties().
-                                                                     getProperty(Constants.BACKEND_URL));
+      Backend backend = BackendFactory.getInstance().getBackendByUrl(
+        ModificationTracker.getInstance().getSession().getSessionInfo().getProperties()
+                           .getPropertyIgnoreCase(Constants.BACKEND_URL));
       DataItem dataItem = null;
       boolean selectAllForItem = false;
       if (dataNode instanceof DataItem item) {

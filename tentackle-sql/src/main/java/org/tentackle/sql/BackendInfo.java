@@ -166,16 +166,16 @@ public class BackendInfo {
    * @param backendProperties the properties
    */
   public BackendInfo(EncryptedProperties backendProperties) {
-    this(backendProperties.getProperty(Constants.BACKEND_URL),
-         backendProperties.getProperty(Constants.BACKEND_USER),
-         parsePassword(backendProperties.getPropertyBlunt(Constants.BACKEND_PASSWORD)),
-         parseSchemas(backendProperties.getProperty(Constants.BACKEND_SCHEMAS)));
+    this(backendProperties.getPropertyIgnoreCase(Constants.BACKEND_URL),
+         backendProperties.getPropertyIgnoreCase(Constants.BACKEND_USER),
+         parsePassword(backendProperties.getPropertyBlunt(backendProperties.getKeyIgnoreCase(Constants.BACKEND_PASSWORD))),
+         parseSchemas(backendProperties.getPropertyIgnoreCase(Constants.BACKEND_SCHEMAS)));
 
-    String propVal = backendProperties.getProperty(Constants.BACKEND_DRIVER);
+    String propVal = backendProperties.getPropertyIgnoreCase(Constants.BACKEND_DRIVER);
     if (propVal != null) {
       DynamicDriver.load(propVal);
     }
-    propVal = backendProperties.getProperty(Constants.BACKEND_TIMEOUT);
+    propVal = backendProperties.getPropertyIgnoreCase(Constants.BACKEND_TIMEOUT);
     if (propVal != null) {
       backendTimeout = Integer.parseInt(propVal);
     }

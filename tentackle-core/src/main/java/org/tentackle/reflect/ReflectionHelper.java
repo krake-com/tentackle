@@ -776,31 +776,6 @@ public final class ReflectionHelper {
 
 
   /**
-   * Finds the topmost overridden interface method for a given method signature.
-   *
-   * @param clazz the interface
-   * @param method the original method (usually the invoked method)
-   * @return the possibly overridden method, else the original method
-   */
-  public static Method findDeclaredMethod(Class<?> clazz, Method method) {
-    try {
-      return clazz.getDeclaredMethod(method.getName(), method.getParameterTypes());
-      // if found: return that method
-    }
-    catch (NoSuchMethodException nme) {
-      // try interfaces
-      for (Class<?> ifClass: clazz.getInterfaces()) {
-        Method m = findDeclaredMethod(ifClass, method);
-        if (!m.equals(method)) {
-          return m;
-        }
-      }
-    }
-    return method;
-  }
-
-
-  /**
    * Finds the declared interface for a given class.<br>
    * Checks the interfaces of the class and its superclasses
    * until it finds a declared interface that is of the given interface type

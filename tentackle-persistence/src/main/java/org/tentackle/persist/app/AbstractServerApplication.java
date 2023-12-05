@@ -285,9 +285,9 @@ public abstract class AbstractServerApplication extends AbstractApplication
    * Connects the server to the database backend or another remote server.
    */
   protected void login() {
-    String username = getProperty(Constants.BACKEND_USER);
-    char[] password = getPropertyAsChars(Constants.BACKEND_PASSWORD);
-    String sessionPropsName = getProperty(Constants.BACKEND_PROPS);
+    String username = getPropertyIgnoreCase(Constants.BACKEND_USER);
+    char[] password = getPropertyAsCharsIgnoreCase(Constants.BACKEND_PASSWORD);
+    String sessionPropsName = getPropertyIgnoreCase(Constants.BACKEND_PROPS);
 
     SessionInfo sessionInfo = createSessionInfo(username, password, sessionPropsName);
     configureSessionInfo(sessionInfo);
