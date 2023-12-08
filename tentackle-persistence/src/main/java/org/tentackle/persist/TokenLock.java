@@ -20,7 +20,6 @@ package org.tentackle.persist;
 
 import org.tentackle.common.Timestamp;
 
-
 /**
  * A token lock.
  */
