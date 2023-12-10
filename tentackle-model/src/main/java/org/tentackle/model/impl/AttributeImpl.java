@@ -300,7 +300,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl>, Clon
 
   @Override
   public Entity getEmbeddingEntity() {
-    return embeddingPath == null ? null : embeddingPath.get(embeddingPath.size() - 1);
+    return embeddingPath == null ? null : embeddingPath.getLast();
   }
 
   @Override

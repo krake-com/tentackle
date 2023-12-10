@@ -141,6 +141,7 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
   @SuppressWarnings("unchecked")
   @Override
   public PdoMethodCache<T> getPdoMethodCache() {
+    // pdo.getEffectiveClass() is routed through the invocation handler, but that's ok for mocking
     return METHOD_CACHE_MAP.computeIfAbsent(pdo.getEffectiveClass(), PdoMethodCache::new);
   }
 

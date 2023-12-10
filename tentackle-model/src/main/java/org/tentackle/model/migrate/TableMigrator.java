@@ -719,8 +719,7 @@ public class TableMigrator {
 
            (existingForeignKey.getDeleteRule() == ForeignKeyAction.CASCADE) == foreignKey.isComposite() &&
 
-           foreignKey.getReferencingAttribute().getColumnName().equalsIgnoreCase(existingForeignKey.getForeignKeyColumns().get(
-            0).getForeignKeyColumn()) &&
+           foreignKey.getReferencingAttribute().getColumnName().equalsIgnoreCase(existingForeignKey.getForeignKeyColumns().get(0).getForeignKeyColumn()) &&
            (mapSchemas || StringHelper.equalsIgnoreCase(referencingTableProvidingEntity.getSchemaName(), existingForeignKey.getForeignKeySchema())) &&
            referencingTableProvidingEntity.getTableNameWithoutSchema().equalsIgnoreCase(existingForeignKey.getForeignKeyTable()) &&
 

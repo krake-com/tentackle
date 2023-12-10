@@ -371,10 +371,11 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    * @return true if forced to mp folder
    */
   public boolean isModulePathOnly() {
-    return modulePathOnly != null && modulePathOnly.size() == 1 &&
-           ("true".equals(modulePathOnly.get(0)) ||
-            "all".equals(modulePathOnly.get(0)) ||
-            "*".equals(modulePathOnly.get(0)));
+    if (modulePathOnly != null && modulePathOnly.size() == 1) {
+      String arg = modulePathOnly.get(0);
+      return "true".equals(arg) || "all".equals(arg) || "*".equals(arg);
+    }
+    return false;
   }
 
   /**
@@ -799,7 +800,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
       throw new MojoExecutionException("copying extra directories failed", ex);
     }
   }
-  
+
   @Override
   protected boolean validate() throws MojoExecutionException {
     if (super.validate()) {

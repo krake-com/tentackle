@@ -328,9 +328,11 @@ public class DataNodeFactory {
           if (attribute != null || !Constants.AN_CLASSID.equals(methodInfo.name)) {    // classId is also available via context menu
             Entity entity = classInfo.entity;
             if (compositeRelation != null && compositeRelation.isEmbedding()) {
-              attribute = attribute.createEmbedded(classInfo.entity, compositeRelation.getPathName(),
-                                                   compositeRelation.getColumnPrefix() + attribute.getColumnName());
-              entity = compositeRelation.getEmbeddingPath().get(0);
+              if (attribute != null) {
+                attribute = attribute.createEmbedded(classInfo.entity, compositeRelation.getPathName(),
+                                                     compositeRelation.getColumnPrefix() + attribute.getColumnName());
+              }
+              entity = compositeRelation.getEmbeddingPath().getFirst();
             }
             nodes.add(new DataItem(methodInfo.typeName, methodInfo.name, value, methodInfo.comment,
                                    entity, attribute, idOfCompositeRelation, nonCompositeRelation,

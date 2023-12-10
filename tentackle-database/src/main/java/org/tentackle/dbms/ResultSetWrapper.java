@@ -494,7 +494,7 @@ public class ResultSetWrapper implements AutoCloseable {
     if (cursorMovedInSkipMode) {
       assertInSkipMode();
       // just rewind
-      resources.skipBlock = resources.skipBlocks.get(0);
+      resources.skipBlock = resources.skipBlocks.getFirst();
       skipBlockIndex = 0;
     }
     else  {

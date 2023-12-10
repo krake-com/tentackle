@@ -530,7 +530,7 @@ public class ModelImpl implements Model {
                   if (relation.getMethodArgs().isEmpty()) {
                     errors.add(new ModelError(relation, "broken foreign key relation " + relation + " in embedded " + entity));
                   }
-                  referencingAttribute = relation.getMethodArgs().get(0).getAttribute();
+                  referencingAttribute = relation.getMethodArgs().getFirst().getAttribute();
                 }
                 else {
                   referencingEntity = relation.getEntity();
@@ -957,7 +957,7 @@ public class ModelImpl implements Model {
       if (!entity.isEmbedded()) {
         for (List<Relation> compositePath : entity.getCompositePaths()) {
           if (compositePath.size() > 1 ||
-              compositePath.get(compositePath.size() - 1).getRelationType() == RelationType.OBJECT) {
+              compositePath.getLast().getRelationType() == RelationType.OBJECT) {
             ((EntityImpl) entity).setProvidingRootIdAccordingToModel(true);
             break;
           }
@@ -1349,7 +1349,7 @@ public class ModelImpl implements Model {
    * @param entity the entity
    */
   protected void updateCompositePath(List<Relation> compositePath, Entity entity) throws ModelException {
-    Relation lastRelation = compositePath.get(compositePath.size() - 1);
+    Relation lastRelation = compositePath.getLast();
     if (lastRelation.getForeignAttribute() != null) {
       // the attribute actually may belong to a superclass
       entity = lastRelation.getForeignAttribute().getEntity();

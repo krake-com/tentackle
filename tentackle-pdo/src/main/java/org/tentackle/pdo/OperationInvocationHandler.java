@@ -386,8 +386,8 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
         methodCache = OperationMethodCache.getCache(clazz);
       }
       else {  // faster, but needs persistence delegate
-        // all persistence delegates must implement PdoMethodCacheProvider, but we don't
-        // want the PersistentObject to extend that because that's an implementation detail
+        // all persistence delegates must implement OperationMethodCacheProvider, but we don't
+        // want PersistentOperation to extend that because that's an implementation detail
         methodCache = ((OperationMethodCacheProvider<T>) persistenceMixin.getDelegate()).getOperationMethodCache();
       }
     }

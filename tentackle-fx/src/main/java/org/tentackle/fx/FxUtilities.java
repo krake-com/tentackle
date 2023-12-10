@@ -637,9 +637,7 @@ public class FxUtilities {
         }
       }
     };
-    popup.addEventFilter(WindowEvent.WINDOW_SHOWING, event -> {
-      shownSince.accept(System.currentTimeMillis());
-    });
+    popup.addEventFilter(WindowEvent.WINDOW_SHOWING, event -> shownSince.accept(System.currentTimeMillis()));
     popup.setAutoHide(true);
     return popup;
   }

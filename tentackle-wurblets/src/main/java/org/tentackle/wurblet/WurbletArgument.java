@@ -358,7 +358,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
 
       boolean isComponent = false;
       for (List<Relation> path: component.getAllCompositePaths()) {
-        if (path.get(0).getEntity().equals(entity)) {
+        if (path.getFirst().getEntity().equals(entity)) {
           isComponent = true;
           relations = new ArrayList<>();    // empty list: path is valid and starts with component
           break;
@@ -434,7 +434,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
             columnName.setLength(0);
           }
           columnName.append(attribute.getColumnName());
-          attribute = attribute.createEmbedded(embeddingPath.get(0).getEntity(), pathName.toString(), columnName.toString());
+          attribute = attribute.createEmbedded(embeddingPath.getFirst().getEntity(), pathName.toString(), columnName.toString());
         }
 
         try {

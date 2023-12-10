@@ -257,7 +257,7 @@ public class EntityFactoryImpl implements EntityFactory {
     // find associated attributes associated to object relations
     for (Relation relation: entity.getRelations()) {
       if (relation.getRelationType() == RelationType.OBJECT) {
-        MethodArgument firstArg = relation.getMethodArgs().get(0);
+        MethodArgument firstArg = relation.getMethodArgs().getFirst();
         Attribute attribute = firstArg.getAttribute();
         if (attribute != null) {
           ((RelationImpl) relation).setAttribute(attribute);
@@ -273,7 +273,7 @@ public class EntityFactoryImpl implements EntityFactory {
       classIdAttribute.setName(Constants.AN_CLASSID);
       classIdAttribute.getOptions().setComment("class id");
       classIdAttribute.getOptions().setFromSuper(true);
-      entity.getAttributes().add(0, classIdAttribute);    // comes first
+      entity.getAttributes().addFirst(classIdAttribute);    // comes first
     }
 
     // move from start to end of model

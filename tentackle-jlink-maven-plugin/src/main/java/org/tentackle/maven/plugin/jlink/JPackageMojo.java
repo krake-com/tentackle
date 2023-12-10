@@ -700,7 +700,7 @@ public class JPackageMojo extends AbstractJLinkMojo {
   private String determineMainJar(JLinkResolver.Result result) throws MojoExecutionException {
     String jarName = null;
     if (mainJar == null) {
-      jarName = result.getClassPath().iterator().next().getFile().getName();
+      jarName = result.getClassPath().getFirst().getFile().getName();
     }
     else {
       for (Artifact artifact : result.getClassPath()) {

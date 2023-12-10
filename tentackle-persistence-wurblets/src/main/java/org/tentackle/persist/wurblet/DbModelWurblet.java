@@ -733,7 +733,7 @@ public class DbModelWurblet extends ModelWurblet {
         }
         else {
           buf.append(inset).append("  new Join<>(JoinType.LEFT, ");
-          Attribute attribute = relation.getMethodArgs().get(0).getAttribute();   // not relation.getAttribute!
+          Attribute attribute = relation.getMethodArgs().getFirst().getAttribute();   // not relation.getAttribute!
           if (parentName == null) {
             buf.append("getColumnName(");
             if (attribute.isEmbedded()) {
@@ -774,7 +774,7 @@ public class DbModelWurblet extends ModelWurblet {
       List<JoinPath> subPaths = path.getPaths();
       if (!subPaths.isEmpty()) {
         // all sub paths start with the same entity
-        Relation subRelation = subPaths.get(0).getElements().get(0).getRelation();
+        Relation subRelation = subPaths.get(0).getElements().getFirst().getRelation();
         Entity subEntity = subRelation.getEntity();
         createJoinsImpl(buf, subEntity.isEmbedded() ? lastNonEmbeddedEntity : subEntity, inset + "  ", subPaths, subEntity.getName(), lastJoinName);
       }

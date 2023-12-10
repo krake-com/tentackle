@@ -114,6 +114,7 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
   private final Class<T> clazz;                                   // the pdo class
   private final Mixin<T,PersistentObject<T>> persistenceMixin;    // the persistence mixin
   private final Mixin<T,DomainObject<T>> domainMixin;             // the domain mixin
+  private transient PdoMethodCache<T> methodCache;                // the method cache (not serialized!)
 
 
   /**
@@ -353,9 +354,13 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
       }
     }
 
-    // all persistence delegates must implement PdoMethodCacheProvider, but we don't
-    // want the PersistentObject to extend that because that's an implementation detail
-    return ((PdoMethodCacheProvider<T>) persistenceMixin.getDelegate()).getPdoMethodCache().invoke(this, method, args);
+    if (methodCache == null) {
+      // all persistence delegates must implement PdoMethodCacheProvider, but we don't
+      // want PersistentObject to extend that because that's an implementation detail
+      methodCache = ((PdoMethodCacheProvider<T>) persistenceMixin.getDelegate()).getPdoMethodCache();
+    }
+
+    return methodCache.invoke(this, method, args);
   }
 
 
