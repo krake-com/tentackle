@@ -68,10 +68,13 @@ public class DefaultLockManager implements LockManager {
 
     @Override
     public String toString() {
+      return tokenLock.toDiagnosticString() + toContextString();
+    }
+
+    private String toContextString() {
       StringBuilder buf = new StringBuilder();
-      buf.append(tokenLock.toDiagnosticString());
       if (!StringHelper.isAllWhitespace(contextName)) {
-        buf.append(", context='").append(contextName).append('\'');
+        buf.append(", context '").append(contextName).append('\'');
       }
       if (tainted) {
         buf.append(", tainted");
@@ -96,7 +99,7 @@ public class DefaultLockManager implements LockManager {
 
     @Override
     public String toString() {
-      return "pdoClassId=" + classId + ", pdoId=" + pdoId;
+      return "classId " + classId + ", id " + pdoId;
     }
   }
 
@@ -315,10 +318,10 @@ public class DefaultLockManager implements LockManager {
               dbTokenLock.setLockedSince(pdo.getEditedSince());
               dbTokenLock.setLockExpiry(pdo.getEditedExpiry());
               dbTokenLock.insertPlain();
-              lock = new Lock(dbTokenLock, pdo.getDomainContext().getNames().getLast());
-              lockMap.put(key, lock);
-              addCreatedLock(lock);
-              LOGGER.fine("created {0}", () -> pdoLockToString(pdo));
+              Lock createdlock = new Lock(dbTokenLock, pdo.getDomainContext().getNames().getLast());
+              lockMap.put(key, createdlock);
+              addCreatedLock(createdlock);
+              LOGGER.fine("created {0}", () -> pdoLockToString(pdo, createdlock));
             }
             finally {
               dbTokenLock.setSession(null);    // remove link to session to allow GC
@@ -346,7 +349,7 @@ public class DefaultLockManager implements LockManager {
                   dbTokenLock.setLockedSince(pdo.getEditedSince());
                   dbTokenLock.setLockExpiry(pdo.getEditedExpiry());
                   dbTokenLock.updatePlain();
-                  LOGGER.fine("updated {0}", () -> pdoLockToString(pdo));
+                  LOGGER.fine("updated {0}", () -> pdoLockToString(pdo, lock));
                 }
                 finally {
                   dbTokenLock.setSession(null);    // remove link to session to allow GC
@@ -360,7 +363,7 @@ public class DefaultLockManager implements LockManager {
                 dbTokenLock.deleteObject();
                 lockMap.remove(key);
                 addRemovedLock(lock);
-                LOGGER.fine("removed {0}", () -> pdoLockToString(pdo));
+                LOGGER.fine("released {0}", () -> pdoLockToString(pdo, lock));
               }
               finally {
                 dbTokenLock.setSession(null);    // remove link to session to allow GC
@@ -652,20 +655,12 @@ public class DefaultLockManager implements LockManager {
   }
 
   @SuppressWarnings("rawtypes")
-  private static String pdoLockToString(PersistentDomainObject pdo) {
-    StringBuilder buf = new StringBuilder();
-    buf.append("lock for ").append(pdo.toGenericString());
-    if (pdo.getEditedBy() != 0) {
-      buf.append(" locked by ").append(pdo.getEditedBy());
-    }
-    if (pdo.getEditedSince() != null) {
-      buf.append(", since ").append(pdo.getEditedSince());
-    }
-    if (pdo.getEditedExpiry() != null) {
-      buf.append(", expiry ").append(pdo.getEditedExpiry());
-    }
-    buf.append(" (").append(pdo.getSession()).append(')');
-    return buf.toString();
+  private static String pdoLockToString(PersistentDomainObject pdo, Lock lock) {
+    return "lock for " + pdo.toGenericString() +
+           " locked by " + lock.tokenLock.getLockedBy() +
+           ", since " + lock.tokenLock.getLockedSince() +
+           ", expiry " + lock.tokenLock.getLockExpiry() +
+           lock.toContextString() + " (" + pdo.getSession() + ')';
   }
 
   private static String lockToString(PdoKey pdoKey, Lock lock) {
