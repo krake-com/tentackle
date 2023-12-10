@@ -142,11 +142,11 @@ public class PdoView extends AbstractFxController {
     MenuItem copySqlItem = PdoBrowserUtils.createCopySqlItem(e -> PdoBrowserUtils.copySql(getSelectedDataNode()));
     MenuItem copyClassIdItem = Fx.create(MenuItem.class);
     copyClassIdItem.setOnAction(e -> PdoBrowserUtils.copyClassId(getSelectedDataNode()));
-    contextMenu.getItems().add(0, copyClassIdItem);
-    contextMenu.getItems().add(0, copySqlItem);
-    contextMenu.getItems().add(0, copyTableItem);
-    contextMenu.getItems().add(0, copyFQCNItem);
-    contextMenu.getItems().add(0, diffOnlyItem);
+    contextMenu.getItems().addFirst(copyClassIdItem);
+    contextMenu.getItems().addFirst(copySqlItem);
+    contextMenu.getItems().addFirst(copyTableItem);
+    contextMenu.getItems().addFirst(copyFQCNItem);
+    contextMenu.getItems().addFirst(diffOnlyItem);
     contextMenu.addEventHandler(WindowEvent.WINDOW_SHOWING, event -> {
       diffOnlyItem.setVisible(diff != null && diff.isRightPresent());
       diffOnlyItem.setText(diffOnly ? "show all lines" : "show differences only");

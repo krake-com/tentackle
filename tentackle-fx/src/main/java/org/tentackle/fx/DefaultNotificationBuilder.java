@@ -262,7 +262,7 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
     URL cssURL = css == null ? getDefaultCSS() : css;
     if (cssURL != null) {
       String stylesheetUrl = cssURL.toExternalForm();
-      parent.getStylesheets().add(0, stylesheetUrl);
+      parent.getStylesheets().addFirst(stylesheetUrl);
     }
     parent.getStyleClass().add("tt-notification");
 

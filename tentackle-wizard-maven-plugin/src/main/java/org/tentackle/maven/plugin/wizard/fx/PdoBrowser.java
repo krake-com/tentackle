@@ -170,9 +170,9 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     MenuItem genCodeItem = Fx.create(MenuItem.class);
     genCodeItem.setOnAction(e -> {
       DataNode node = getSelectedDetailDataNode();
-      if (node instanceof DataObject dataObject) {
+      if (node instanceof DataObject dataObj) {
         // no fine control, but useful to quickly create referenced master data
-        PdoBrowserUtils.copyToClipboard(JavaCodeFactory.generateCode(null, dataObject));
+        PdoBrowserUtils.copyToClipboard(JavaCodeFactory.generateCode(null, dataObj));
       }
     });
     genCodeItem.setText("copy Java code to clipboard");

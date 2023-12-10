@@ -626,7 +626,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
 
   @Override
   public Entity getEmbeddingEntity() {
-    return embeddingPath == null ? null : embeddingPath.get(embeddingPath.size() - 1);
+    return embeddingPath == null ? null : embeddingPath.getLast();
   }
 
   @Override

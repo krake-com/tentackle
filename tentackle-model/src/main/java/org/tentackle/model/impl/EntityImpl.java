@@ -408,7 +408,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
     List<Entity> chain = new ArrayList<>();
     Entity entity = childEntity;
     while (entity != null) {
-      chain.add(0, entity);
+      chain.addFirst(entity);
       if (entity == this) {
         break;
       }
@@ -1082,7 +1082,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   public Set<Entity> getEmbeddingEntities() {
     Set<Entity> embeddingEntities = new LinkedHashSet<>();
     for (List<Relation> embeddingPath : getEmbeddingPaths()) {
-      embeddingEntities.add(embeddingPath.get(0).getEntity());
+      embeddingEntities.add(embeddingPath.getFirst().getEntity());
     }
     return embeddingEntities;
   }
@@ -1621,7 +1621,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   public Set<Attribute> getRootAttributes() {
     Set<Attribute> rootAttributes = new LinkedHashSet<>();
     for (List<Relation> compositePath: compositePaths) {
-      Relation lastRelation = compositePath.get(compositePath.size() - 1);
+      Relation lastRelation = compositePath.getLast();
       if (lastRelation.getForeignAttribute() != null) {
         rootAttributes.add(lastRelation.getForeignAttribute());
       }
@@ -1639,7 +1639,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   public Set<Entity> getRootEntities() {
     Set<Entity> rootEntities = new LinkedHashSet<>();
     for (List<Relation> compositePath: compositePaths) {
-      Relation firstRelation = compositePath.get(0);
+      Relation firstRelation = compositePath.getFirst();
       rootEntities.add(firstRelation.getEntity());
     }
     return rootEntities;
