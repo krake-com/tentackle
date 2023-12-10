@@ -20,6 +20,7 @@ package org.tentackle.persist.lock;
 
 import org.tentackle.app.Application;
 import org.tentackle.common.Service;
+import org.tentackle.common.StringHelper;
 import org.tentackle.dbms.Db;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.Holder;
@@ -67,7 +68,15 @@ public class DefaultLockManager implements LockManager {
 
     @Override
     public String toString() {
-      return tokenLock.toDiagnosticString();
+      StringBuilder buf = new StringBuilder();
+      buf.append(tokenLock.toDiagnosticString());
+      if (!StringHelper.isAllWhitespace(contextName)) {
+        buf.append(", context='").append(contextName).append('\'');
+      }
+      if (tainted) {
+        buf.append(", tainted");
+      }
+      return buf.toString();
     }
   }
 
@@ -83,6 +92,11 @@ public class DefaultLockManager implements LockManager {
     @SuppressWarnings("rawtypes")
     PdoKey(PersistentDomainObject pdo) {
       this(pdo.getClassId(), pdo.getId());
+    }
+
+    @Override
+    public String toString() {
+      return "pdoClassId=" + classId + ", pdoId=" + pdoId;
     }
   }
 
@@ -114,6 +128,17 @@ public class DefaultLockManager implements LockManager {
     @Override
     public int hashCode() {
       return Objects.hash(txNo);
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder buf = new StringBuilder();
+      buf.append("TX:").append(txNo);
+      Db session = sessionRef.get();
+      if (session != null) {
+        buf.append(", ").append(session);
+      }
+      return buf.toString();
     }
   }
 
@@ -293,6 +318,7 @@ public class DefaultLockManager implements LockManager {
               lock = new Lock(dbTokenLock, pdo.getDomainContext().getNames().getLast());
               lockMap.put(key, lock);
               addCreatedLock(lock);
+              LOGGER.fine("created {0}", () -> pdoLockToString(pdo));
             }
             finally {
               dbTokenLock.setSession(null);    // remove link to session to allow GC
@@ -320,6 +346,7 @@ public class DefaultLockManager implements LockManager {
                   dbTokenLock.setLockedSince(pdo.getEditedSince());
                   dbTokenLock.setLockExpiry(pdo.getEditedExpiry());
                   dbTokenLock.updatePlain();
+                  LOGGER.fine("updated {0}", () -> pdoLockToString(pdo));
                 }
                 finally {
                   dbTokenLock.setSession(null);    // remove link to session to allow GC
@@ -333,6 +360,7 @@ public class DefaultLockManager implements LockManager {
                 dbTokenLock.deleteObject();
                 lockMap.remove(key);
                 addRemovedLock(lock);
+                LOGGER.fine("removed {0}", () -> pdoLockToString(pdo));
               }
               finally {
                 dbTokenLock.setSession(null);    // remove link to session to allow GC
@@ -364,7 +392,10 @@ public class DefaultLockManager implements LockManager {
         Map<PdoKey, Lock> createdLocks = createdLocksInFlight.get(txKey);
         if (createdLocks != null) {
           for (PdoKey key : createdLocks.keySet()) {
-            lockMap.remove(key);
+            Lock removedLock = lockMap.remove(key);
+            if (removedLock != null) {
+              LOGGER.fine("rolled back {0}", () -> lockToString(key, removedLock));
+            }
           }
         }
         createdLocksInFlight.remove(txKey);
@@ -372,14 +403,34 @@ public class DefaultLockManager implements LockManager {
         // restore updated locks
         Map<PdoKey, Lock> updatedLocks = updatedLocksInFlight.get(txKey);
         if (updatedLocks != null) {
-          lockMap.putAll(updatedLocks);
+          if (LOGGER.isFineLoggable()) {
+            for (Map.Entry<PdoKey, Lock> entry : updatedLocks.entrySet()) {
+              PdoKey pdoKey = entry.getKey();
+              Lock lock = entry.getValue();
+              lockMap.put(pdoKey, lock);
+              LOGGER.fine("updated {0}", lockToString(pdoKey, lock));
+            }
+          }
+          else {
+            lockMap.putAll(updatedLocks);
+          }
         }
         updatedLocksInFlight.remove(txKey);
 
         // add removed locks
         Map<PdoKey, Lock> removedLocks = removedLocksInFlight.get(txKey);
         if (removedLocks != null) {
-          lockMap.putAll(removedLocks);
+          if (LOGGER.isFineLoggable()) {
+            for (Map.Entry<PdoKey, Lock> entry : removedLocks.entrySet()) {
+              PdoKey pdoKey = entry.getKey();
+              Lock lock = entry.getValue();
+              lockMap.put(pdoKey, lock);
+              LOGGER.fine("restored {0}", lockToString(pdoKey, lock));
+            }
+          }
+          else {
+            lockMap.putAll(removedLocks);
+          }
         }
         removedLocksInFlight.remove(txKey);
 
@@ -594,10 +645,31 @@ public class DefaultLockManager implements LockManager {
    * @param txMap the in-flight map
    * @return true if empty
    */
-  private boolean isTxMapEmpty(Map<TransactionKey, Map<PdoKey, Lock>> txMap) {
+  private static boolean isTxMapEmpty(Map<TransactionKey, Map<PdoKey, Lock>> txMap) {
     // remove unreferenced transactions
     txMap.keySet().removeIf(txKey -> txKey.sessionRef.get() == null);
     return txMap.isEmpty();
+  }
+
+  @SuppressWarnings("rawtypes")
+  private static String pdoLockToString(PersistentDomainObject pdo) {
+    StringBuilder buf = new StringBuilder();
+    buf.append("lock for ").append(pdo.toGenericString());
+    if (pdo.getEditedBy() != 0) {
+      buf.append(" locked by ").append(pdo.getEditedBy());
+    }
+    if (pdo.getEditedSince() != null) {
+      buf.append(", since ").append(pdo.getEditedSince());
+    }
+    if (pdo.getEditedExpiry() != null) {
+      buf.append(", expiry ").append(pdo.getEditedExpiry());
+    }
+    buf.append(" (").append(pdo.getSession()).append(')');
+    return buf.toString();
+  }
+
+  private static String lockToString(PdoKey pdoKey, Lock lock) {
+    return "lock for " + pdoKey + ", " + lock;
   }
 
 }

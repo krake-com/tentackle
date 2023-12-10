@@ -318,6 +318,7 @@ public class DbTokenLock extends AbstractDbObject<DbTokenLock> implements TokenL
    */
   public String toDiagnosticString() {
     return "{pdoClassId=" + pdoClassId +
+           ", pdoId=" + getPdoId() +
            ", lockedBy=" + lockedBy +
            ", lockedSince=" + lockedSince +
            ", lockExpiry=" + lockExpiry + '}';
