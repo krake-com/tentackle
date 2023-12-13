@@ -114,6 +114,7 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
   private final Class<T> clazz;                                   // the pdo class
   private final Mixin<T,PersistentObject<T>> persistenceMixin;    // the persistence mixin
   private final Mixin<T,DomainObject<T>> domainMixin;             // the domain mixin
+  private transient PdoMethodCache<T> methodCache;                // the method cache (not serialized!)
 
 
   /**
@@ -126,7 +127,7 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
    * @throws ClassNotFoundException if no implementation found
    */
   public PdoInvocationHandler(ClassMapper persistenceMapper, ClassMapper domainMapper, Class<T> clazz)
-         throws ClassNotFoundException {
+    throws ClassNotFoundException {
     this.clazz = clazz;
     persistenceMixin = new Mixin<>(persistenceMapper, clazz, PersistentObject.class);
     domainMixin = new Mixin<>(domainMapper, clazz, DomainObject.class);
@@ -145,7 +146,7 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
    * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T pdo, DomainContext context)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
+    throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
     persistenceMixin.createDelegate(new Class<?>[] { PersistentDomainObject.class, DomainContext.class },
                                     new Object[] { pdo, context });
@@ -168,7 +169,7 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
    * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T pdo, Session session)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
+    throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
     persistenceMixin.createDelegate(new Class<?>[] { PersistentDomainObject.class, Session.class },
                                     new Object[] { pdo, session });
@@ -191,7 +192,7 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
    * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T pdo, PersistentObject<T> persistenceDelegate)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
+    throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
     PersistenceDelegateLinker.getInstance().linkPersistentObject(pdo, persistenceDelegate);
     persistenceMixin.setDelegate(persistenceDelegate);
@@ -213,7 +214,7 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
    * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T pdo, DomainContext context, DomainObject<T> domainDelegate)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
+    throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
     persistenceMixin.createDelegate(new Class<?>[] { PersistentDomainObject.class, DomainContext.class },
                                     new Object[] { pdo, context });
@@ -235,7 +236,7 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
    * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T pdo, Session session, DomainObject<T> domainDelegate)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
+    throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
     persistenceMixin.createDelegate(new Class<?>[] { PersistentDomainObject.class, Session.class },
                                     new Object[] { pdo, session });
@@ -270,7 +271,7 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
    * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T pdo)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
+    throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
     persistenceMixin.createDelegate(new Class<?>[] { PersistentDomainObject.class },
                                     new Object[] { pdo });
@@ -353,9 +354,13 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
       }
     }
 
-    // all persistence delegates must implement PdoMethodCacheProvider, but we don't
-    // want the PersistentObject to extend that because that's an implementation detail
-    return ((PdoMethodCacheProvider<T>) persistenceMixin.getDelegate()).getPdoMethodCache().invoke(this, method, args);
+    if (methodCache == null) {
+      // all persistence delegates must implement PdoMethodCacheProvider, but we don't
+      // want PersistentObject to extend that because that's an implementation detail
+      methodCache = ((PdoMethodCacheProvider<T>) persistenceMixin.getDelegate()).getPdoMethodCache();
+    }
+
+    return methodCache.invoke(this, method, args);
   }
 
 

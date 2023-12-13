@@ -21,6 +21,7 @@ package org.tentackle.reflect;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.log.Logger;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
@@ -43,6 +44,8 @@ interface InterceptionUtilitiesHolder {
  */
 @Service(InterceptionUtilities.class)   // defaults to self
 public class InterceptionUtilities {
+
+  private static final Logger LOG = Logger.get(InterceptionUtilities.class);
 
   /**
    * The singleton.
@@ -140,13 +143,13 @@ public class InterceptionUtilities {
         }
         else if (!interception.implementedByService().isEmpty()) {
           Map.Entry<String,URL> entry = ServiceFactory.getServiceFinder().
-                  findFirstServiceConfiguration(interception.implementedByService());
+                                                      findFirstServiceConfiguration(interception.implementedByService());
           implClass = (Class<? extends Interceptor>) Class.forName(entry.getKey());
         }
         else {
           // default to service (name of interceptor)
           Map.Entry<String,URL> entry = ServiceFactory.getServiceFinder().
-                  findFirstServiceConfiguration(annotation.annotationType().getName());
+                                                      findFirstServiceConfiguration(annotation.annotationType().getName());
           implClass = (Class<? extends Interceptor>) Class.forName(entry.getKey());
         }
       }
@@ -166,22 +169,48 @@ public class InterceptionUtilities {
    * <p>
    * Finds the implementing method of the delegate and optional interceptors.
    *
-   * @param clazz the topmost interceptable's interface
+   * @param clazz the topmost interceptable interface
    * @param delegateClazz the delegate's class to invoke the method on
    * @param method the interface's method to invoke
    * @return the interceptable method
    */
-  public InterceptableMethod createInterceptableMethod(Class<? extends Interceptable> clazz, Class<? extends Interceptable> delegateClazz, Method method) {
-    Method effectiveMethod = ReflectionHelper.findDeclaredMethod(clazz, method);
+  public InterceptableMethod createInterceptableMethod(Class<? extends Interceptable> clazz,
+                                                       Class<? extends Interceptable> delegateClazz,
+                                                       Method method) {
+
     Method implMethod;
     try {
       implMethod = delegateClazz.getMethod(method.getName(), method.getParameterTypes());
     }
     catch (NoSuchMethodException nx) {
-      throw new TentackleRuntimeException("cannot create interceptable method", nx);
+      throw new TentackleRuntimeException("cannot determine implementation for " + method, nx);
     }
+
+    // The default is that the method invoked is declared in the top-level interface or one of the interfaces it extends.
+    // This is, how a dynamic proxy works.
+    // Otherwise, the invocation went to some other class: find the corresponding interface method by
+    // its name and parameters.
+    Method effectiveMethod = method.getDeclaringClass().isAssignableFrom(clazz) ?
+                               method : findDeclaredMethod(clazz, method);
+
+    // find the top-level interceptor, null if no interceptors at all
     Interceptor interceptor = findInterceptors(Interceptable.class, effectiveMethod, implMethod);
+
     return new InterceptableMethod(method, implMethod, interceptor);
+  }
+
+  /**
+   * Finds the declared interface method for a given method signature.<br>
+   * This usually indicates that the invocation handler is not servicing the expected interface.<br>
+   * The default implementation just logs the fact that something is weird and returns the passed method.
+   *
+   * @param clazz the top-level interface serviced by the invocation handler
+   * @param method the invoked interface method
+   * @return the effective interface method to scan for public interceptors
+   */
+  public Method findDeclaredMethod(Class<?> clazz, Method method) {
+    LOG.warning("method {0} is not declared in {1} or its interfaces", method, clazz);
+    return method;
   }
 
 }

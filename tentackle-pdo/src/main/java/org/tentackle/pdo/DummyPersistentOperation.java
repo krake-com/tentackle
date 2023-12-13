@@ -19,6 +19,7 @@
 
 package org.tentackle.pdo;
 
+import org.tentackle.reflect.DummyDelegate;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 
@@ -33,7 +34,8 @@ import java.util.Objects;
  * @author harald
  * @param <T> the operation type
  */
-public class DummyPersistentOperation<T extends Operation<T>> implements PersistentOperation<T>, OperationMethodCacheProvider<T>, Serializable {
+public class DummyPersistentOperation<T extends Operation<T>>
+       implements PersistentOperation<T>, OperationMethodCacheProvider<T>, DummyDelegate, Serializable {
 
   @Serial
   private static final long serialVersionUID = 1L;
