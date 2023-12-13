@@ -500,8 +500,14 @@ public class JLinkResolver {
       }
       else {
         for (ModularArtifact unresolvedModule: unresolvedModules) {
-          mojo.getLog().info("required " + unresolvedModule + " is not a full-blown module");
-          result.addToModulePath(unresolvedModule);   // must go to module path!
+          if (mojo.isClasspathDependency(unresolvedModule.getArtifact())) {
+            // moved to the classpath explicitly
+            result.addToClassPath(unresolvedModule.getArtifact());
+          }
+          else {
+            mojo.getLog().info("required " + unresolvedModule + " is not a full-blown module");
+            result.addToModulePath(unresolvedModule);   // must go to module path!
+          }
         }
         mojo.getLog().info("linking runtime modules only: project dependencies moved to the module-path");
         result.addRuntimeModuleNames(runtimeModules);
