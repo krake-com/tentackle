@@ -217,7 +217,7 @@ public class DefaultLockManager implements LockManager {
                 session.transaction("cleanup user locks", () -> {
                   try {
                     dbTokenLock.setSession(session);
-                    remove(dbTokenLock, context);  // this will remove from lockMap as well
+                    removeStaleTokenLock(dbTokenLock, context);  // this will remove from lockMap as well
                     return null;
                   }
                   finally {
@@ -253,7 +253,7 @@ public class DefaultLockManager implements LockManager {
           else {
             try {
               session.transaction("initialize lockmanager", () -> {
-                remove(dbTokenLock, context);
+                removeStaleTokenLock(dbTokenLock, context);
                 return null;
               });
             }
@@ -520,13 +520,13 @@ public class DefaultLockManager implements LockManager {
 
 
   /**
-   * Removes a token lock from the lock table and the PDO.<br>
+   * Removes a stale token lock from the lock table and the PDO.
    * Must be invoked from within sync on lockMap!
    *
    * @param dbTokenLock the token lock
    * @param context the application's domain context
    */
-  private void remove(DbTokenLock dbTokenLock, DomainContext context) {
+  private void removeStaleTokenLock(DbTokenLock dbTokenLock, DomainContext context) {
     String className = SessionUtilities.getInstance().getClassName(dbTokenLock.getPdoClassId());
     if (className == null) {
       throw new PersistenceException(context.getSession(), "no PDO class for classId " + dbTokenLock.getPdoClassId());
@@ -554,8 +554,9 @@ public class DefaultLockManager implements LockManager {
       po.updateTokenLockOnly();   // this will also remove the DbTokenLock if in map
     }
 
-    if (!dbTokenLock.isDeleted()) {    // wasn't in map
-      dbTokenLock.deleteObject();
+    DbTokenLock reloadedDbTokenLock = dbTokenLock.reloadObject();
+    if (reloadedDbTokenLock != null) {    // still in database table (wasn't in map or PDO didn't exist)
+      reloadedDbTokenLock.deleteObject();
     }
 
     LOGGER.warning("stale tokenlock removed for {0}, userId {1}, since {2}, expiry {3}",
