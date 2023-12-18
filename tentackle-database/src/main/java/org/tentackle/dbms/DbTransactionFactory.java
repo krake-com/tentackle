@@ -287,7 +287,7 @@ public class DbTransactionFactory {
                     final Connection con = mc.getConnection();
                     if (con != null) {
                       // do that in a separate thread, if it gets stuck, the supervisor still keeps running
-                      new Thread("transaction cleanup " + mc) {
+                      Thread txCleanupThread = new Thread("transaction cleanup " + mc) {
                         @Override
                         public void run() {
                           try {
@@ -305,7 +305,9 @@ public class DbTransactionFactory {
                             LOG.warning("closing JDBC connection failed", ex);
                           }
                         }
-                      }.start();
+                      };
+                      txCleanupThread.setDaemon(true);
+                      txCleanupThread.start();
                     }
                     else {
                       LOG.warning("managed connection {0} already closed", mc);
