@@ -27,6 +27,7 @@ import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxUtilities;
+import org.tentackle.fx.NotificationBuilder;
 import org.tentackle.fx.component.FxButton;
 import org.tentackle.fx.component.FxCheckBox;
 import org.tentackle.fx.component.FxChoiceBox;
@@ -78,6 +79,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextArea;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -86,9 +88,12 @@ import javafx.stage.Popup;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
 
 /**
  * Dialog to browse PDOs and generate test code.
@@ -118,6 +123,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
 
   private static final int LATEST_DEFAULT = 100;                // number of latest to show initially
   private static final double OUTER_DIVIDER_POSITION = 0.84;    // outer split pane divider position
+  private static final String POPUP_CSS = "-fx-font-weight: bold; -fx-font-size: 16;";
 
   @Bindable private int latest = LATEST_DEFAULT;
   @Bindable private PdoProfile profile;
@@ -134,6 +140,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
   @FXML private FxTextField latestField;
   @FXML private FxButton refreshButton;
   @FXML private FxButton finderButton;
+  @FXML private FxButton byIdButton;
   @FXML private FxButton configCodeButton;
   @FXML private FxButton configPathsButton;
   @FXML private FxButton generateButton;
@@ -199,9 +206,11 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     refreshButton.setGraphic(Fx.createGraphic("reload"));
     refreshButton.setDisable(true);
     refreshButton.setOnAction(e -> run());
+    byIdButton.setGraphic(Fx.createGraphic("id"));
+    byIdButton.setDisable(true);
+    byIdButton.setOnAction(e -> loadById());
     finderButton.setGraphic(Fx.createGraphic("search"));
     finderButton.setDisable(true);
-    finderButton.setFocusTraversable(true); // trigger focus lost
     memorizeButton.setGraphic(Fx.createGraphic("copy"));
     memorizeButton.setDisable(true);
     memorizeButton.setOnAction(event -> {
@@ -354,7 +363,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
   }
 
   @SuppressWarnings({ "unchecked", "rawtypes" })
-  private void run() {
+  private void run(long... ids) {
     PdoWrapper selectedItem = pdosTableView.getSelectionModel().getSelectedItem();
     DataObject savedOldDataObject = oldDataObject;
     Timestamp savedMemorizedTime = memorizeTime;
@@ -367,10 +376,37 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
       if (finder != null && finder.getPdo().getEffectiveClass() != entity.getClazz()) {
         finder = null;
       }
-      if (finder == null) {
+      if (ids.length > 0) {   // load by IDs
+        List<PdoWrapper> pdoList = new ArrayList<>(pdos);
+        Set<PdoWrapper> pdoSet = new HashSet<>(pdoList);
+        int insertIndex = 0;
+        for (long id : ids) {
+          if (id <= 0) {
+            pdoList.clear();
+          }
+          else {
+            PersistentDomainObject<?> pdo = proxy.on().select(id);
+            if (pdo != null) {
+              PdoWrapper pdoWrapper = new PdoWrapper(pdo);
+              if (pdoSet.add(pdoWrapper)) {
+                pdoList.add(insertIndex++, pdoWrapper);   // insert at top
+              }
+            }
+          }
+        }
+        pdos = pdoList;
+        // show some feedback
+        Note infoNote = Fx.create(Note.class);
+        infoNote.setPosition(Note.Position.TOP);
+        infoNote.setText(insertIndex + " PDOs loaded");
+        infoNote.setFadeEffect(500, 2000, 1000);
+        infoNote.show(byIdButton);
+      }
+      else if (finder == null) {
         pdos = proxy.selectLatest(0, latest).stream().map(PdoWrapper::new).toList();
       }
       refreshButton.setDisable(false);
+      byIdButton.setDisable(false);
       GuiProvider<?> guiProvider = getGuiProvider(proxy);
       if (guiProvider != null && guiProvider.isFinderAvailable()) {
         finderButton.setDisable(false);
@@ -429,6 +465,57 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     }
   }
 
+  private void loadById() {
+    BorderPane borderPane = Fx.create(BorderPane.class);
+    HBox hBox = Fx.create(HBox.class);
+    hBox.setPadding(new Insets(10.0));
+    hBox.setSpacing(5.0);
+    hBox.setAlignment(Pos.BASELINE_CENTER);
+    Label label = Fx.create(Label.class);
+    label.setText("Id(s):");
+    TextArea textField = Fx.create(TextArea.class);
+    textField.setWrapText(true);
+    textField.setPrefWidth(500);
+    textField.setPrefHeight(200);
+    hBox.getChildren().addAll(label, textField);
+    borderPane.setCenter(hBox);
+    Label headerLabel = Fx.create(Label.class);
+    headerLabel.setText("Enter Object IDs");
+    headerLabel.setStyle(POPUP_CSS);
+    BorderPane.setAlignment(headerLabel, Pos.CENTER);
+    borderPane.setTop(headerLabel);
+    Button loadButton = Fx.create(Button.class);
+    loadButton.setText("load");
+    Popup popup = new Popup();
+    Parent notification = FxFactory.getInstance()
+                                   .createNotificationBuilder()
+                                   .content(borderPane)
+                                   .button(loadButton, false, () -> performLoadById(textField.getText()))
+                                   .closeButton(NotificationBuilder.CloseButtonMode.ALWAYS)
+                                   .hide(popup::hide).build();
+    FxUtilities.getInstance().showNotification(getView(), popup, notification, null);
+  }
+
+  private void performLoadById(String idString) {
+    StringTokenizer stok = new StringTokenizer(idString, " ,:;/\t\n\r\f");
+    List<Long> idList = new ArrayList<>();
+    while (stok.hasMoreTokens()) {
+      String idStr = stok.nextToken();
+      try {
+        idList.add(Long.valueOf(idStr));
+      }
+      catch (NumberFormatException nx) {
+        Fx.warning(getView(), idStr + " is not a number");
+      }
+    }
+    long[] idArgs = new long[idList.size()];
+    int i = 0;
+    for (Long id : idList) {
+      idArgs[i++] = id;
+    }
+    run(idArgs);
+  }
+
   private void editCodePaths() {
     if (codePaths != null) {
       BorderPane borderPane = Fx.create(BorderPane.class);
@@ -449,7 +536,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
       borderPane.setCenter(scrollPane);
       Label headerLabel = Fx.create(Label.class);
       headerLabel.setText("Code Paths");
-      headerLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 16;");
+      headerLabel.setStyle(POPUP_CSS);
       BorderPane.setAlignment(headerLabel, Pos.CENTER);
       borderPane.setTop(headerLabel);
 
