@@ -22,8 +22,9 @@ import org.tentackle.common.ServiceFactory;
 
 
 interface ClassMapperFactoryHolder {
-  ClassMapperFactory INSTANCE = ServiceFactory.createService(ClassMapperFactory.class);
+  ClassMapperFactory INSTANCE = ServiceFactory.createService(ClassMapperFactory.class, DefaultClassMapperFactory.class);
 }
+
 
 /**
  * Classmapper factory.

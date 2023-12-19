@@ -20,9 +20,11 @@ package org.tentackle.ns;
 
 import org.tentackle.common.ServiceFactory;
 
+
 interface NumberSourceFactoryHolder {
-  NumberSourceFactory INSTANCE = ServiceFactory.createService(NumberSourceFactory.class);
+  NumberSourceFactory INSTANCE = ServiceFactory.createService(NumberSourceFactory.class, DefaultNumberSourceFactory.class);
 }
+
 
 /**
  * A factory of number sources.

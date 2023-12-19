@@ -24,8 +24,10 @@ import java.io.File;
 
 
 interface VersionFileFilterHolder {
-  VersionFileFilter INSTANCE = ServiceFactory.createService(VersionFileFilter.class, SemanticVersionFileFilter.class, false);
+  VersionFileFilter INSTANCE = ServiceFactory.createService(
+    VersionFileFilter.class, SemanticVersionFileFilter.class, false);
 }
+
 
 /**
  * Filters files according to their version.

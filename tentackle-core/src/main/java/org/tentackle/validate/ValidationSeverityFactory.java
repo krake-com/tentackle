@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.validate;
 
 import org.tentackle.common.ServiceFactory;
@@ -25,7 +24,8 @@ import java.util.Collection;
 
 
 interface ValidationSeverityFactoryHolder {
-  ValidationSeverityFactory INSTANCE = ServiceFactory.createService(ValidationSeverityFactory.class);
+  ValidationSeverityFactory INSTANCE = ServiceFactory.createService(
+    ValidationSeverityFactory.class, DefaultValidationSeverityFactory.class);
 }
 
 

@@ -19,8 +19,6 @@
 
 package org.tentackle.fx.rdc.security;
 
-import javafx.stage.Window;
-
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentDomainObject;
@@ -30,11 +28,14 @@ import org.tentackle.security.pdo.Security;
 import org.tentackle.security.permissions.EditPermission;
 import org.tentackle.session.SessionUtilities;
 
+import javafx.stage.Window;
 import java.util.function.Consumer;
 
+
 interface SecurityDialogFactoryHolder {
-  SecurityDialogFactory INSTANCE = ServiceFactory.createService(SecurityDialogFactory.class);
+  SecurityDialogFactory INSTANCE = ServiceFactory.createService(SecurityDialogFactory.class, DefaultSecurityDialogFactory.class);
 }
+
 
 /**
  * A factory for security dialogs.
