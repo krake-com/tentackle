@@ -33,6 +33,7 @@ import org.tentackle.fx.component.FxCheckBox;
 import org.tentackle.fx.component.FxChoiceBox;
 import org.tentackle.fx.component.FxComboBox;
 import org.tentackle.fx.component.FxTableView;
+import org.tentackle.fx.component.FxTextArea;
 import org.tentackle.fx.component.FxTextField;
 import org.tentackle.fx.component.Note;
 import org.tentackle.fx.component.config.PrefixSelectionFeature;
@@ -377,20 +378,15 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
         finder = null;
       }
       if (ids.length > 0) {   // load by IDs
-        List<PdoWrapper> pdoList = new ArrayList<>(pdos);
+        List<PdoWrapper> pdoList = ids[0] == 0 ? new ArrayList<>() : new ArrayList<>(pdos); // clear if first ID is 0
         Set<PdoWrapper> pdoSet = new HashSet<>(pdoList);
         int insertIndex = 0;
         for (long id : ids) {
-          if (id <= 0) {
-            pdoList.clear();
-          }
-          else {
-            PersistentDomainObject<?> pdo = proxy.on().select(id);
-            if (pdo != null) {
-              PdoWrapper pdoWrapper = new PdoWrapper(pdo);
-              if (pdoSet.add(pdoWrapper)) {
-                pdoList.add(insertIndex++, pdoWrapper);   // insert at top
-              }
+          PersistentDomainObject<?> pdo = proxy.on().select(id);
+          if (pdo != null) {
+            PdoWrapper pdoWrapper = new PdoWrapper(pdo);
+            if (pdoSet.add(pdoWrapper)) {
+              pdoList.add(insertIndex++, pdoWrapper);   // insert at top
             }
           }
         }
@@ -469,18 +465,15 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     BorderPane borderPane = Fx.create(BorderPane.class);
     HBox hBox = Fx.create(HBox.class);
     hBox.setPadding(new Insets(10.0));
-    hBox.setSpacing(5.0);
-    hBox.setAlignment(Pos.BASELINE_CENTER);
-    Label label = Fx.create(Label.class);
-    label.setText("Id(s):");
-    TextArea textField = Fx.create(TextArea.class);
+    FxTextArea textField = Fx.create(TextArea.class);
     textField.setWrapText(true);
     textField.setPrefWidth(500);
     textField.setPrefHeight(200);
-    hBox.getChildren().addAll(label, textField);
+    textField.setNavigateViaEnterEnabled(false);
+    hBox.getChildren().add(textField);
     borderPane.setCenter(hBox);
     Label headerLabel = Fx.create(Label.class);
-    headerLabel.setText("Enter Object IDs");
+    headerLabel.setText("Enter IDs (first 0 to clear)");
     headerLabel.setStyle(POPUP_CSS);
     BorderPane.setAlignment(headerLabel, Pos.CENTER);
     borderPane.setTop(headerLabel);
