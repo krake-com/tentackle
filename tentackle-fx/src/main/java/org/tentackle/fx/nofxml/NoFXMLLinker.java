@@ -27,8 +27,9 @@ import java.util.ResourceBundle;
 
 
 interface NoFXMLLinkerHolder {
-  NoFXMLLinker INSTANCE = ServiceFactory.createService(NoFXMLLinker.class);
+  NoFXMLLinker INSTANCE = ServiceFactory.createService(NoFXMLLinker.class, DefaultNoFXMLLinker.class);
 }
+
 
 /**
  * Links a view object with a controller without using {@code FXML}.<br>

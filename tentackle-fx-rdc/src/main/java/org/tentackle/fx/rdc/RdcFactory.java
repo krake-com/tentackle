@@ -19,8 +19,6 @@
 
 package org.tentackle.fx.rdc;
 
-import javafx.scene.control.TreeView;
-
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.component.FxTreeTableView;
@@ -30,10 +28,13 @@ import org.tentackle.fx.rdc.table.TablePopup;
 import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.pdo.PersistentDomainObject;
 
+import javafx.scene.control.TreeView;
+
 
 interface RdcFactoryHolder {
-  RdcFactory INSTANCE = ServiceFactory.createService(RdcFactory.class);
+  RdcFactory INSTANCE = ServiceFactory.createService(RdcFactory.class, DefaultRdcFactory.class);
 }
+
 
 /**
  * A factory for FX-RDC-related stuff.

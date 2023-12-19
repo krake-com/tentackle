@@ -22,9 +22,12 @@ import org.tentackle.common.ServiceFactory;
 import org.tentackle.misc.CompoundValue;
 import org.tentackle.script.ScriptRuntimeException;
 
+
 interface ValidatorCompoundValueFactoryHolder {
-  ValidatorCompoundValueFactory INSTANCE = ServiceFactory.createService(ValidatorCompoundValueFactory.class);
+  ValidatorCompoundValueFactory INSTANCE = ServiceFactory.createService(
+    ValidatorCompoundValueFactory.class, DefaultValidatorCompoundValueFactory.class);
 }
+
 
 /**
  * Factory to create {@link CompoundValue}s for validators.
@@ -39,7 +42,6 @@ public interface ValidatorCompoundValueFactory {
   static ValidatorCompoundValueFactory getInstance() {
     return ValidatorCompoundValueFactoryHolder.INSTANCE;
   }
-
 
 
   /**
@@ -71,5 +73,3 @@ public interface ValidatorCompoundValueFactory {
   CompoundValue createMessageParameter(String message);
 
 }
-
-

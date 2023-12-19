@@ -22,7 +22,8 @@ import org.tentackle.common.ServiceFactory;
 
 
 interface TableCellTypeFactoryHolder {
-  TableCellTypeFactory INSTANCE = ServiceFactory.createService(TableCellTypeFactory.class);
+  TableCellTypeFactory INSTANCE = ServiceFactory.createService(
+    TableCellTypeFactory.class, DefaultTableCellTypeFactory.class);
 }
 
 

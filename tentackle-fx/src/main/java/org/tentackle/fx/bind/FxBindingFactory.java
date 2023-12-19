@@ -27,9 +27,11 @@ import org.tentackle.fx.FxController;
 import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
 
+
 interface FxBindingFactoryHolder {
-  FxBindingFactory INSTANCE = ServiceFactory.createService(FxBindingFactory.class);
+  FxBindingFactory INSTANCE = ServiceFactory.createService(FxBindingFactory.class, DefaultFxBindingFactory.class);
 }
+
 
 /**
  * The fx binding factory.

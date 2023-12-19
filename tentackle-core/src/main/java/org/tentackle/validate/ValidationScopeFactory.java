@@ -16,10 +16,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.validate;
 
-import java.util.Collection;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.validate.scope.AllScope;
 import org.tentackle.validate.scope.ChangeableScope;
@@ -27,9 +25,12 @@ import org.tentackle.validate.scope.InteractiveScope;
 import org.tentackle.validate.scope.MandatoryScope;
 import org.tentackle.validate.scope.PersistenceScope;
 
+import java.util.Collection;
+
 
 interface ValidationScopeFactoryHolder {
-  ValidationScopeFactory INSTANCE = ServiceFactory.createService(ValidationScopeFactory.class);
+  ValidationScopeFactory INSTANCE = ServiceFactory.createService(
+    ValidationScopeFactory.class, DefaultValidationScopeFactory.class);
 }
 
 

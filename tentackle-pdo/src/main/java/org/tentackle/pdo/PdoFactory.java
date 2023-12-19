@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.pdo;
 
 import org.tentackle.common.ServiceFactory;
@@ -25,8 +24,9 @@ import org.tentackle.session.Session;
 
 
 interface PdoFactoryHolder {
-  PdoFactory INSTANCE = ServiceFactory.createService(PdoFactory.class);
+  PdoFactory INSTANCE = ServiceFactory.createService(PdoFactory.class, DefaultPdoFactory.class);
 }
+
 
 /**
  * A factory for persistent domain objects.

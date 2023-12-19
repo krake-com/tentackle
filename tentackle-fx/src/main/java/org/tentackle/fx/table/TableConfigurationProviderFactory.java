@@ -22,7 +22,8 @@ import org.tentackle.common.ServiceFactory;
 
 
 interface TableConfigurationProviderFactoryHolder {
-  TableConfigurationProviderFactory INSTANCE = ServiceFactory.createService(TableConfigurationProviderFactory.class);
+  TableConfigurationProviderFactory INSTANCE = ServiceFactory.createService(
+    TableConfigurationProviderFactory.class, DefaultTableConfigurationProviderFactory.class);
 }
 
 

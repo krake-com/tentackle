@@ -28,8 +28,9 @@ import java.util.NavigableSet;
 
 
 interface InteractiveErrorFactoryHolder {
-  InteractiveErrorFactory INSTANCE = ServiceFactory.createService(InteractiveErrorFactory.class);
+  InteractiveErrorFactory INSTANCE = ServiceFactory.createService(InteractiveErrorFactory.class, DefaultInteractiveErrorFactory.class);
 }
+
 
 /**
  * A factory for interactive errors.
@@ -71,4 +72,3 @@ public interface InteractiveErrorFactory {
                                           ValidationResult validationResult, FxControl control);
 
 }
-

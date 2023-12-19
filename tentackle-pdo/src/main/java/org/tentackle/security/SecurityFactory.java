@@ -32,7 +32,7 @@ import java.util.Set;
 
 
 interface SecurityFactoryHolder {
-  SecurityFactory INSTANCE = ServiceFactory.createService(SecurityFactory.class);
+  SecurityFactory INSTANCE = ServiceFactory.createService(SecurityFactory.class, DefaultSecurityFactory.class);
 }
 
 
