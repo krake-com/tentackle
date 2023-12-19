@@ -15,6 +15,7 @@
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
+
 <BorderPane fx:id="borderPane" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.tentackle.maven.plugin.wizard.fx.PdoBrowser">
    <top>
       <GridPane hgap="5.0" vgap="5.0" BorderPane.alignment="CENTER">
@@ -50,6 +51,7 @@
             <Label text="latest:" />
             <TextField fx:id="latestField" prefColumnCount="5" />
             <Button fx:id="refreshButton" mnemonicParsing="false" text="refresh" />
+            <Button fx:id="byIdButton" mnemonicParsing="false" text="find by ID" />
             <Button fx:id="finderButton" mnemonicParsing="false" text="use finder" />
             <Separator maxWidth="1.7976931348623157E308" orientation="VERTICAL" HBox.hgrow="ALWAYS" />
             <Button fx:id="configCodeButton" mnemonicParsing="false" />
