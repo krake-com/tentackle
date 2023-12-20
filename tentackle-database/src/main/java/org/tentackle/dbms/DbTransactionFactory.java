@@ -32,7 +32,9 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 interface DbTransactionFactoryHolder {
   DbTransactionFactory INSTANCE = ServiceFactory.createService(DbTransactionFactory.class, DbTransactionFactory.class);
@@ -65,6 +67,7 @@ public class DbTransactionFactory {
 
 
   private final Map<Long, WeakReference<DbTransaction>> transactions;           // txId::transaction
+  private final Queue<Long> finishedTransactions;                               // txIds of finished transactions
   private final TransactionStatistics statistics;
 
   private TransactionSupervisor transactionSupervisor;
@@ -80,6 +83,7 @@ public class DbTransactionFactory {
    */
   public DbTransactionFactory() {
     transactions = new ConcurrentHashMap<>();
+    finishedTransactions = new ConcurrentLinkedDeque<>();
     statistics = new TransactionStatistics();
     configChanged = true;
   }
@@ -123,10 +127,12 @@ public class DbTransactionFactory {
    * @param transaction the transaction
    */
   public void finish(DbTransaction transaction) {
-    transactions.remove(transaction.getTxNumber());
+    long txId = transaction.getTxNumber();
+    transactions.remove(txId);
     if (collectingStatistics) {
       statistics.countTransaction(transaction);
     }
+    finishedTransactions.add(txId);   // hand over to supervisor thread asynchronously
   }
 
   /**
@@ -256,6 +262,14 @@ public class DbTransactionFactory {
         }
         try {
           sleep(txIdleInterval);
+
+          // remove finished transactions
+          Long finishedTxId;
+          while ((finishedTxId = finishedTransactions.poll()) != null) {
+            idleMap.remove(finishedTxId);
+          }
+
+          // check running transaction for idle timeout
           for (Iterator<Map.Entry<Long, WeakReference<DbTransaction>>> iter = transactions.entrySet().iterator(); iter.hasNext(); ) {
             Map.Entry<Long, WeakReference<DbTransaction>> entry = iter.next();
             DbTransaction transaction = entry.getValue().get();
@@ -329,6 +343,7 @@ public class DbTransactionFactory {
         }
       }
 
+      supervisorTerminated();
       LOG.info("{0} terminated", getName());
     }
   }
@@ -338,6 +353,10 @@ public class DbTransactionFactory {
       transactionSupervisor = new TransactionSupervisor();
       transactionSupervisor.start();
     }
+  }
+
+  private synchronized void supervisorTerminated() {
+    transactionSupervisor = null;
   }
 
 }
