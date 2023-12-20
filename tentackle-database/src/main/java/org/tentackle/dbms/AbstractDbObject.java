@@ -185,7 +185,6 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   private SessionHolder sessionHolder;                // a redirector to retrieve the session
   private final transient boolean fromThisJVM = true; // true if object created in this JVM, else remote
   private transient boolean overloadable;             // true if object can be loaded more than once from the database
-  private transient ModificationLog modlog;           // if this object is being replayed from a modification log
   private transient volatile PropertySupport propertySupport; // for PropertyListeners
 
 
@@ -329,7 +328,6 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       immutable = snapshot.immutable;
       finallyImmutable = snapshot.finallyImmutable;
       overloadable = snapshot.overloadable;
-      modlog = snapshot.modlog;
       propertySupport = snapshot.propertySupport;
       sessionImmutable = snapshot.sessionImmutable;
     }
@@ -479,29 +477,6 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       localSupport.firePropertyChanged(propertyName, oldValue, newValue);
     }
   }
-
-
-
-  /**
-   * Sets a (transient) reference to a modification log.<br>
-   * Used to keep the original user and timestamp when an object gets
-   * replayed in another server instance.
-   *
-   * @param modlog the modification log, null to clear
-   */
-  public void setModificationLog(ModificationLog modlog) {
-    this.modlog = modlog;
-  }
-
-  /**
-   * Gets the modification log if object is being replayed.
-   *
-   * @return the modlog, null if none (not replayed)
-   */
-  public ModificationLog getModificationLog() {
-    return modlog;
-  }
-
 
 
   /**

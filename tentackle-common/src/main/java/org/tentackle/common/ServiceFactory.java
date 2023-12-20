@@ -259,6 +259,9 @@ public class ServiceFactory {
       return createService(serviceClass);
     }
     catch (TentackleRuntimeException re) {
+      if (defaultClass == null) {   // one never knows...
+        throw re;
+      }
       try {
         if (logDefault) {
           // we cannot use LOGGER here because this may use the createService as well
