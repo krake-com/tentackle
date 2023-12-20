@@ -1999,7 +1999,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    * @param lenient true if lenient update in case object already exists
    */
   public void replayInsert(ModificationLog modlog, AbstractDbObject<?> object, boolean lenient) {
-    object.setModificationLog(modlog);
     long oldSerial = object.getSerial();    // keep old serial because of Canonicalizer
     try {
       // set the modlog's serial (usually 1), in case multiple updates follow
@@ -2041,7 +2040,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    */
   public void replayUpdate(ModificationLog modlog, AbstractDbObject<?> object, boolean lenient) {
     long oldSerial = object.getSerial();    // keep old serial for finally below
-    object.setModificationLog(modlog);
     try {
       if (object.getSerial() > modlog.getSerial()) {
         // update only the serial
@@ -2119,7 +2117,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    * @param lenient true if ignore missing object, false if object must exist
    */
   public void replayDelete(ModificationLog modlog, AbstractDbObject<?> object, boolean lenient) {
-    object.setModificationLog(modlog);
     long oldSerial = object.getSerial();    // keep old serial for finally below
     try {
       // set the modlog's serial, in case insert and further updates follow
