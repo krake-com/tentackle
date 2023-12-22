@@ -255,6 +255,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
 
   @Override
   public void configure() {
+    pdosTableView.getConfiguration().setSortingIncluded(true);
     pdosTablePopup = Rdc.createTablePopup(pdosTableView, "pdoView", "PDOs");
     pdosTablePopup.setColumnMenuEnabled(false);
     pdosTablePopup.loadPreferences();
