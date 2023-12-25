@@ -732,7 +732,7 @@ public class ManagedConnection {
       buf.append(", attached ").append(attachCount).append(" since ").append(new Timestamp(attachedSince));
     }
     if (resources.dead) {
-      buf.append(", dead");
+      buf.append(", *DEAD*");
     }
     return buf.toString();
   }

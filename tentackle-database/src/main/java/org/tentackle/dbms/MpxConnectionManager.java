@@ -636,11 +636,11 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     // marked dead: close it (hard close) and remove it from connection list
     removeConnection(con.getIndex());
     try {
-      LOGGER.warning(this + ": closing **DEAD** connection " + con);
+      LOGGER.warning("{0}: closing connection {1}", this, con);
       con.close();
     }
     catch (PersistenceException ex) {
-      LOGGER.fine("closing **DEAD** connection failed expectedly -> ignored", ex);
+      LOGGER.fine("closing dead connection failed expectedly -> ignored", ex);
     }
   }
 
