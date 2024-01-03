@@ -62,8 +62,11 @@ public class Constants {
   /** explicit driver name and url to load it from &lt;name:url&gt;. */
   public static final String BACKEND_DRIVER = "driver";
 
-  /** database connection inactivity timeout. */
+  /** database connection inactivity timeout in minutes. */
   public static final String BACKEND_TIMEOUT = "jdbcIdleTimeout";
+
+  /** send a keep alive select every BACKEND_TIMEOUT minutes. */
+  public static final String BACKEND_KEEP_ALIVE = "jdbcKeepAlive";
 
   /** property key for the optional schemas. */
   public static final String BACKEND_SCHEMAS = "schemas";

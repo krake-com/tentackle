@@ -46,6 +46,8 @@ public class BackendInfo {
   private final String[] schemas;               // schemas (only for migration)
 
   private int backendTimeout;                   // optional database idle session timeout in minutes, 0 if default or remote
+  private boolean backendKeepAliveEnabled;      // if backendTimeout set: send a keep alive SELECT every backendTimeout interval,
+                                                // otherwise the SELECT will only be sent before an idle connection is used again
 
 
   /**
@@ -179,6 +181,10 @@ public class BackendInfo {
     if (propVal != null) {
       backendTimeout = Integer.parseInt(propVal);
     }
+    propVal = backendProperties.getPropertyIgnoreCase(Constants.BACKEND_KEEP_ALIVE);
+    if (propVal != null) {
+      backendKeepAliveEnabled = Boolean.parseBoolean(propVal);
+    }
   }
 
 
@@ -288,12 +294,40 @@ public class BackendInfo {
   }
 
   /**
-   * Sets the database connection inactivity timeout.
+   * Sets the database connection inactivity timeout.<br>
+   * Some databases close connections if being idle for a certain time, which cannot
+   * be deactivated especially in clouds.<br>
+   * When this timeout is set, a dummy select will be sent to the backend, to
+   * make sure that the connection hasn't been closed in the meantime
+   * and/or to keep it alive periodically.
    *
    * @param backendTimeout the timeout in minutes, 0 if none
+   * @see #setBackendKeepAliveEnabled(boolean)
    */
   public void setBackendTimeout(int backendTimeout) {
     this.backendTimeout = backendTimeout;
+  }
+
+  /**
+   * Returns whether dummy selects should be sent periodically or only on re-use of an idle connection.
+   *
+   * @return true if periodically, false if on demand only
+   */
+  public boolean isBackendKeepAliveEnabled() {
+    return backendKeepAliveEnabled;
+  }
+
+  /**
+   * Sets whether a keep-alive SELECT should be sent periodically on idle connections.<br>
+   * When true and <code>backendTimeout</code> is set, a dummy select will be sent to
+   * the backend, when the connection is idle for more than <code>backendTimeout</code> minutes.
+   * Otherwise, the dummy select will be sent when the connection is re-used after at least
+   * <code>backendTimeout</code> minutes to test if the connection is still alive.
+   *
+   * @param backendKeepAliveEnabled true to keep alive periodically, false only before usage after
+   */
+  public void setBackendKeepAliveEnabled(boolean backendKeepAliveEnabled) {
+    this.backendKeepAliveEnabled = backendKeepAliveEnabled;
   }
 
   /**

@@ -640,6 +640,7 @@ public class DefaultConnectionManager implements ConnectionManager {
       mc = new ManagedConnection(this, backend, con);
       if (backendInfo.getBackendTimeout() > 0) {
         mc.setConnectionInactivityTimeoutMs(backendInfo.getBackendTimeout() * Constants.MINUTE_MS);
+        mc.setConnectionKeepAliveEnabled(backendInfo.isBackendKeepAliveEnabled());
       }
     }
     catch (RuntimeException rx) {
