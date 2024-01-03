@@ -77,6 +77,9 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   /** connection inactivity timeout in ms. */
   private long connectionInactivityTimeoutMs;
 
+  /** periodical dummy select to prevent premature close of idle connections. */
+  private boolean connectionKeepAlive;
+
 
   // connect thread
 
@@ -131,6 +134,10 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
     // if undefined by backendInfo -> minMinutes/2
     setConnectionInactivityTimeout(backendInfo.getBackendTimeout());
+    if (backendInfo.getBackendTimeout() > 0) {
+      // only if timeout set!
+      setConnectionKeepAlive(backendInfo.isBackendKeepAliveEnabled());
+    }
   }
 
   /**
@@ -181,6 +188,24 @@ public class MpxConnectionManager extends DefaultConnectionManager {
    */
   public int getConnectionInactivityTimeout() {
     return (int) (connectionInactivityTimeoutMs / Constants.MINUTE_MS);
+  }
+
+  /**
+   * Returns whether to send dummy selects to the backend periodically.
+   *
+   * @return true if dummy selects are sent periodically to prevent premature close of idle connections
+   */
+  public boolean isConnectionKeepAlive() {
+    return connectionKeepAlive;
+  }
+
+  /**
+   * Sets whether to send dummy selects to the backend periodically.
+   *
+   * @param connectionKeepAlive true to periodically send dummy selects to prevent premature close of idle connections
+   */
+  public void setConnectionKeepAlive(boolean connectionKeepAlive) {
+    this.connectionKeepAlive = connectionKeepAlive;
   }
 
   /**
@@ -298,7 +323,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
     for (;;) {   // until attached
 
-      synchronized(this) {
+      synchronized (this) {
 
         ManagedConnection con = session.getConnection();
         if (con != null) {
@@ -317,15 +342,6 @@ public class MpxConnectionManager extends DefaultConnectionManager {
           }
 
           if (con.isConnectionVerificationNecessary()) {
-            /*
-             * Although this will block all threads from attaching/detaching a connection,
-             * this is the preferred solution compared to an extra "verification thread",
-             * because that thread would need some synchronisation on the connection object
-             * to prevent attachment while running the verification statement.
-             * However, verification happens very rarely, so the performance would suffer
-             * more from permanent and mostly unnecessary syncs than rare blocking verifications --
-             * hopefully... ;)
-             */
             con.verifyConnection();
           }
 
@@ -489,6 +505,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   protected ManagedConnection createConnection(BackendInfo backendInfo) {
     ManagedConnection mc = super.createConnection(backendInfo);
     mc.setConnectionInactivityTimeoutMs(connectionInactivityTimeoutMs);   // at least minMinutes/2, if not configured
+    mc.setConnectionKeepAliveEnabled(connectionKeepAlive);
     return mc;
   }
 
@@ -602,7 +619,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
             // is reaching its limits, i.e. the operations take too long. Or maxConSize is simply too low.
             // Log attached connections.
             StringBuilder buf = new StringBuilder(msg).append("\n\n  attached connections:");
-            for (ManagedConnection con: ManagedConnection.getManagedConnections()) {
+            for (ManagedConnection con: ManagedConnectionMonitor.getInstance().getManagedConnections()) {
               if (con.getManager() == this && con.isAttached()) {
                 buf.append("\n\n  ").append(con.toDiagnosticString());
               }

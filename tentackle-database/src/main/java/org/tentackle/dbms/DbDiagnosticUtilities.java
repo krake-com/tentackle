@@ -27,7 +27,7 @@ import java.util.Collection;
 /**
  * Utilities for diagnostic purposes with persistence extensions.
  * <p>
- * Adds extra information to the thread stackdump.
+ * Adds extra information to the thread stack-dump.
  *
  * @author harald
  */
@@ -47,7 +47,7 @@ public class DbDiagnosticUtilities extends DiagnosticUtilities {
     super.doCreateStackDump(buf, info, thread);
 
     // check all attached connections
-    for (ManagedConnection connection: ManagedConnection.getManagedConnections()) {
+    for (ManagedConnection connection: ManagedConnectionMonitor.getInstance().getManagedConnections()) {
       Db db = connection.getSession();
       if (db != null) {
         // still attached

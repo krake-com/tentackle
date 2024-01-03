@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.dbms;
 
 import org.tentackle.common.Timestamp;
@@ -64,35 +63,6 @@ import java.util.regex.Pattern;
  * @author harald
  */
 public class ManagedConnection {
-
-  /**
-   * We keep an internal set of all ManagedConnections via WeakReferences, so the
-   * ManagedConnections still will be finalized when closed.
-   * The set is used to figure out which Db is attached to what connection
-   * for debugging purposes.
-   */
-  private static final Set<WeakReference<ManagedConnection>> MANAGED_CONNECTIONS = ConcurrentHashMap.newKeySet();
-
-
-  /**
-   * Gets a list of all managed open connections.
-   *
-   * @return the set of connections
-   */
-  public static Collection<ManagedConnection> getManagedConnections() {
-    List<ManagedConnection> mgcons = new ArrayList<>();
-    for (Iterator<WeakReference<ManagedConnection>> iter = MANAGED_CONNECTIONS.iterator(); iter.hasNext(); ) {
-      ManagedConnection mgcon = iter.next().get();
-      if (mgcon != null && !mgcon.isClosed()) {
-        mgcons.add(mgcon);
-      }
-      else  {
-        iter.remove();
-      }
-    }
-    return mgcons;
-  }
-
 
   /**
    * Minimum milliseconds a connection remains attached before being logged.<br>
@@ -290,7 +260,6 @@ public class ManagedConnection {
           }
           finally {
             connection = null;
-            getManagedConnections();        // remove unreferenced or closed entries
           }
         }
       }
@@ -316,12 +285,14 @@ public class ManagedConnection {
   private long expireAt;                                  // connection shutdown at (epochal [ms]), 0 = forever
   private long attachedSince;                             // attached since when...
   private long detachedSince;                             // detached since when...
+  private long lastVerified;                              // last connection verification
   private int index;                                      // connection index given by connection manager, -1 not used
   private int attachCount;                                // 0 = not attached, else number of times db is attached
   private int maxCountForClearWarnings;                   // trigger when to clearWarning() on a connection (0 = disabled)
   private int counterForClearWarnings;                    // current counter
   private StatementHistory currentStatement;              // statement history while not in transaction
   private long connectionInactivityTimeoutMs;             // optional database connection inactivity timeout
+  private boolean connectionKeepAliveEnabled;             // optional periodical dummy select to prevent premature close of idle connection
 
   private final List<StatementHistory> statementHistory;                        // statement history while in transaction
   private final Map<StatementKey,PreparedStatementWrapper> preparedStatements;  // all prepared statements for this connection (stmtId:statement)
@@ -342,14 +313,12 @@ public class ManagedConnection {
 
     backendId = backend.getBackendId(Objects.requireNonNull(connection, "connection"));
     instanceNumber = INSTANCE_COUNTER.incrementAndGet();
-    MANAGED_CONNECTIONS.add(new WeakReference<>(this));
-
     establishedSince = System.currentTimeMillis();
     detachedSince = establishedSince;
     index = -1;
     statementHistory = new ArrayList<>();
     preparedStatements = new ConcurrentHashMap<>();
-    // use a threadsafe set due to concurrent cleanup of weak references in getOpenResultSets and cancelRunningStatements
+    // use a thread-safe set due to concurrent cleanup of weak references in getOpenResultSets and cancelRunningStatements
     openResultSets = ConcurrentHashMap.newKeySet();
     runningStatements = ConcurrentHashMap.newKeySet();
 
@@ -359,6 +328,8 @@ public class ManagedConnection {
 
     defaultTxIsolation = txIsolation = getTransactionIsolation();
     defaultReadOnly = readOnly = isReadOnly();
+
+    ManagedConnectionMonitor.getInstance().registerManagedConnection(this);
   }
 
 
@@ -410,6 +381,42 @@ public class ManagedConnection {
    */
   public void setConnectionInactivityTimeoutMs(long connectionInactivityTimeoutMs) {
     this.connectionInactivityTimeoutMs = connectionInactivityTimeoutMs;
+  }
+
+  /**
+   * Returns whether dummy selects are sent periodically to the backend.
+   *
+   * @return true if idle connections kept alive
+   */
+  public boolean isConnectionKeepAliveEnabled() {
+    return connectionKeepAliveEnabled;
+  }
+
+  /**
+   * Sets the optional flag to send dummy selects periodically to the backend.
+   *
+   * @param connectionKeepAliveEnabled true to keep idle connections alive
+   */
+  public void setConnectionKeepAliveEnabled(boolean connectionKeepAliveEnabled) {
+    this.connectionKeepAliveEnabled = connectionKeepAliveEnabled;
+  }
+
+  /**
+   * Gets the epochal time in ms when this connection was verified.
+   *
+   * @return the last verification, null if never been verified at all
+   */
+  public long getLastVerified() {
+    return lastVerified;
+  }
+
+  /**
+   * Sets the epochal time in ms when this connection was verified.
+   *
+   * @param lastVerified the last verification
+   */
+  public void setLastVerified(long lastVerified) {
+    this.lastVerified = lastVerified;
   }
 
   /**
@@ -515,14 +522,23 @@ public class ManagedConnection {
    * @return return true if {@link #verifyConnection()} should be invoked before use
    */
   public boolean isConnectionVerificationNecessary() {
+    return isConnectionVerificationNecessary(System.currentTimeMillis());
+  }
+
+  /**
+   * Returns whether timeout is enabled and connection wasn't use for a long time and needs verification.
+   *
+   * @param currentTimeMillis the current epochal time in milliseconds
+   * @return return true if {@link #verifyConnection()} should be invoked before use
+   */
+  public boolean isConnectionVerificationNecessary(long currentTimeMillis) {
     return connectionInactivityTimeoutMs > 0 && detachedSince > 0 &&
-           System.currentTimeMillis() - detachedSince >= connectionInactivityTimeoutMs;
+           currentTimeMillis - detachedSince >= connectionInactivityTimeoutMs;
   }
 
   /**
    * Checks whether connection is still valid.<p>
-   *
-   * Implemented via a "SELECT 1" query.
+   * Usually implemented by the backend via a "SELECT 1" query.<br>
    * If the check fails the connection is marked dead.
    *
    * @return true if connection still valid, false if invalid
@@ -530,9 +546,12 @@ public class ManagedConnection {
    */
   public boolean verifyConnection() {
     try (Statement stmt = getConnection().createStatement()) {
+      // Can be invoked at any time, even if another statement is currently running
+      // on this connection (submitted from another thread) since JDBC-drivers are thread-safe these days.
+      // However, the invocation may be blocked until the other statement finishes.
       stmt.executeQuery(getBackend().getDummySelect());
       return true;
-    }
+    } // stmt.close closes the result set as well
     catch (RuntimeException | SQLException ex) {
       setDead(true);
       return false;
