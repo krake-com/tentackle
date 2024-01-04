@@ -411,15 +411,6 @@ public class ManagedConnection {
   }
 
   /**
-   * Sets the epochal time in ms when this connection was verified.
-   *
-   * @param lastVerified the last verification
-   */
-  public void setLastVerified(long lastVerified) {
-    this.lastVerified = lastVerified;
-  }
-
-  /**
    * Gets the epochal time when this connection was established.
    *
    * @return the time establishedSince in ms
@@ -550,6 +541,7 @@ public class ManagedConnection {
       // on this connection (submitted from another thread) since JDBC-drivers are thread-safe these days.
       // However, the invocation may be blocked until the other statement finishes.
       stmt.executeQuery(getBackend().getDummySelect());
+      lastVerified = System.currentTimeMillis();
       return true;
     } // stmt.close closes the result set as well
     catch (RuntimeException | SQLException ex) {
@@ -730,8 +722,7 @@ public class ManagedConnection {
     StringBuilder buf = new StringBuilder();
     buf.append(instanceNumber);
     if (backendId != null) {
-      buf.append('/');
-      buf.append(backendId);
+      buf.append('/').append(backendId);
     }
     return buf.toString();
   }
@@ -741,7 +732,12 @@ public class ManagedConnection {
   public String toString() {
     StringBuilder buf = new StringBuilder();
     Connection con = resources.connection;  // local variable because could be closed between test and use
-    buf.append(con == null ? "<closed connection>" : con.toString());
+    if (con == null) {
+      buf.append("<closed connection>");
+    }
+    else {
+      buf.append(con);
+    }
     buf.append('[').append(getName());
     if (index >= 0) {
       buf.append('/').append(index);
@@ -874,20 +870,17 @@ public class ManagedConnection {
    */
   public String toDiagnosticString() {
     StringBuilder buf = new StringBuilder(toString());
-    if (resources.dead) {
-      buf.append(" *** DEAD *** ");
-    }
-    buf.append(": ");
-    buf.append(manager);
-    buf.append('[');
-    buf.append(index);
-    buf.append("] valid ");
-    buf.append(new Date(establishedSince));
-    buf.append(" - ");
+    buf.append(": ")
+       .append(manager)
+       .append('[')
+       .append(index)
+       .append("] valid ")
+       .append(new Date(establishedSince))
+       .append(" - ");
     if (expireAt != 0) {
       buf.append(new Date(expireAt));
     }
-    else  {
+    else {
       buf.append(" <unlimited>");
     }
     if (readOnly != defaultReadOnly) {
@@ -899,22 +892,18 @@ public class ManagedConnection {
 
     Db lDb = db;    // may be closed in the meantime...
     if (lDb != null) {
-      buf.append("\n    -> ");
-      buf.append(lDb.getName());
+      buf.append("\n    -> ").append(lDb.getName());
       if (lDb.getTxName() != null) {
-        buf.append("/");
-        buf.append(lDb.getTxName());
+        buf.append('/').append(lDb.getTxName());
       }
       Thread ownerThread = lDb.getOwnerThread();
       if (ownerThread != null) {
-        buf.append(", ");
-        buf.append(lDb.getOwnerThread());
+        buf.append(", ").append(lDb.getOwnerThread());
       }
       for (RemoteDbSessionImpl session: RemoteDbSessionImpl.getOpenSessions()) {
         if (session.getSession() == lDb) {
           // this is my session!
-          buf.append(", ");
-          buf.append(session);
+          buf.append(", ").append(session);
         }
       }
     }

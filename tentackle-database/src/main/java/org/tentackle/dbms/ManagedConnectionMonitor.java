@@ -66,6 +66,22 @@ public class ManagedConnectionMonitor extends Thread {
     return ManagedConnectionMonitorHolder.INSTANCE;
   }
 
+  private static boolean running;
+
+  /**
+   * Returns whether the monitor is running.<br>
+   * Useful to avoid {@link #getInstance()} since this will start it, if not running yet.
+   *
+   * @return true if running, false if no {@link ManagedConnection}s created ever (remote server, for example)
+   */
+  public static synchronized boolean isRunning() {
+    return running;
+  }
+
+  private static synchronized void started() {
+    running = true;
+  }
+
 
   private static final Logger LOG = Logger.get(ManagedConnectionMonitor.class);
 
@@ -113,6 +129,8 @@ public class ManagedConnectionMonitor extends Thread {
 
   @Override
   public void run() {
+
+    started();
     LOG.info("{0} started", getName());
 
     for (;;) {    // runs forever, once a minute
@@ -133,7 +151,6 @@ public class ManagedConnectionMonitor extends Thread {
                    currentTimeMillis - managedConnection.getLastVerified() >= managedConnection.getConnectionInactivityTimeoutMs()) {
 
             if (managedConnection.verifyConnection()) {
-              managedConnection.setLastVerified(currentTimeMillis);
               LOG.fine("{0} verified", managedConnection);
             }
             // else marked DEAD! -> will be cleaned up when used again
