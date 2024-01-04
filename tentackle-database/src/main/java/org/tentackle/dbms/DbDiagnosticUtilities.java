@@ -46,18 +46,20 @@ public class DbDiagnosticUtilities extends DiagnosticUtilities {
 
     super.doCreateStackDump(buf, info, thread);
 
-    // check all attached connections
-    for (ManagedConnection connection: ManagedConnectionMonitor.getInstance().getManagedConnections()) {
-      Db db = connection.getSession();
-      if (db != null) {
-        // still attached
-        Thread ownerThread = db.getOwnerThread();
-        if (ownerThread != null && ownerThread.threadId() == info.getThreadId()) {
-          // this thread belongs to the connection
-          buf.append("    connection: ");
-          doCreateConnectionDump(buf, connection);
-          buf.append("\n\n");
-          break;
+    if (ManagedConnectionMonitor.isRunning()) {   // don't start it, if no connections at all
+      // check all attached connections
+      for (ManagedConnection connection : ManagedConnectionMonitor.getInstance().getManagedConnections()) {
+        Db db = connection.getSession();
+        if (db != null) {
+          // still attached
+          Thread ownerThread = db.getOwnerThread();
+          if (ownerThread != null && ownerThread.threadId() == info.getThreadId()) {
+            // this thread belongs to the connection
+            buf.append("    connection: ");
+            doCreateConnectionDump(buf, connection);
+            buf.append("\n\n");
+            break;
+          }
         }
       }
     }
