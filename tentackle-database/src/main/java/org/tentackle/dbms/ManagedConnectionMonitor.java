@@ -19,6 +19,7 @@
 package org.tentackle.dbms;
 
 import org.tentackle.common.Constants;
+import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.log.Logger;
@@ -129,50 +130,76 @@ public class ManagedConnectionMonitor extends Thread {
 
   @Override
   public void run() {
-
     started();
     LOG.info("{0} started", getName());
-
-    for (;;) {    // runs forever, once a minute
+    for (;;) {    // loops forever
       try {
-        sleep(Constants.MINUTE_MS);
-
-        long currentTimeMillis = System.currentTimeMillis();
-        int closeCount = 0;
-
-        for (Iterator<WeakReference<ManagedConnection>> iter = managedConnections.iterator(); iter.hasNext(); ) {
-          ManagedConnection managedConnection = iter.next().get();
-          if (managedConnection == null || managedConnection.isClosed()) {
-            iter.remove();
-            closeCount++;
-          }
-          else if (managedConnection.isConnectionKeepAliveEnabled() &&
-                   managedConnection.isConnectionVerificationNecessary(currentTimeMillis) &&
-                   currentTimeMillis - managedConnection.getLastVerified() >= managedConnection.getConnectionInactivityTimeoutMs()) {
-
-            if (managedConnection.verifyConnection()) {
-              LOG.fine("{0} verified", managedConnection);
-            }
-            // else marked DEAD! -> will be cleaned up when used again
-          }
-        }
-
-        if (closeCount >= WARN_CONNECTIONS_CLOSE_COUNT) {
-          LOG.warning(LOG_MESSAGE, closeCount);
-        }
-        else if (closeCount >= INFO_CONNECTIONS_CLOSE_COUNT) {
-          LOG.info(LOG_MESSAGE, closeCount);
-        }
-        else {
-          LOG.fine(LOG_MESSAGE, closeCount);
-        }
-      }
-      catch (InterruptedException e) {
-        LOG.warning("interrupted? -> ignored");
+        pause();
+        loop();
       }
       catch (RuntimeException rx) {
         LOG.severe("verification failed -> keep on running...", rx);
       }
+    }
+  }
+
+
+  /**
+   * Pauses the thread between loop runs.
+   */
+  protected void pause() {
+    try {
+      sleep(Constants.MINUTE_MS);
+    }
+    catch (InterruptedException e) {
+      throw new InterruptedRuntimeException(e);
+    }
+  }
+
+  /**
+   * A single loop run.
+   */
+  protected void loop() {
+    long currentTimeMillis = System.currentTimeMillis();
+    int closeCount = 0;
+
+    for (Iterator<WeakReference<ManagedConnection>> iter = managedConnections.iterator(); iter.hasNext(); ) {
+      ManagedConnection managedConnection = iter.next().get();
+      if (managedConnection == null || managedConnection.isClosed()) {
+        iter.remove();
+        closeCount++;
+      }
+      else {
+        inspect(managedConnection, currentTimeMillis);
+      }
+    }
+
+    if (closeCount >= WARN_CONNECTIONS_CLOSE_COUNT) {
+      LOG.warning(LOG_MESSAGE, closeCount);
+    }
+    else if (closeCount >= INFO_CONNECTIONS_CLOSE_COUNT) {
+      LOG.info(LOG_MESSAGE, closeCount);
+    }
+    else {
+      LOG.fine(LOG_MESSAGE, closeCount);
+    }
+  }
+
+  /**
+   * Inspects the idle connection.
+   *
+   * @param managedConnection the connection
+   * @param currentTimeMillis the current epochal time
+   */
+  protected void inspect(ManagedConnection managedConnection, long currentTimeMillis) {
+    if (managedConnection.isConnectionKeepAliveEnabled() &&
+        managedConnection.isConnectionVerificationNecessary(currentTimeMillis) &&
+        currentTimeMillis - managedConnection.getLastVerified() >= managedConnection.getConnectionInactivityTimeoutMs()) {
+
+      if (managedConnection.verifyConnection()) {
+        LOG.fine("{0} verified", managedConnection);
+      }
+      // else marked DEAD! -> will be cleaned up when used again
     }
   }
 
