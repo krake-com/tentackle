@@ -27,6 +27,9 @@ import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxController;
 import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.FxFactory;
+import org.tentackle.session.Session;
+
+import javafx.application.Platform;
 
 /**
  * TestNG test to verify that controllers can be loaded and bound.<br>
@@ -60,6 +63,9 @@ public abstract class ControllerTest extends FxRdcTestApplication {
 
   @Test(alwaysRun = true)
   public void testControllers() {
+
+    // set the current session in the FX-thread as well (in case controllers use Platform.runLater)
+    Platform.runLater(() -> Session.setCurrentSession(getSession()));
 
     for (Class<FxController> clazz : FxFactory.getInstance().getControllerClasses()) {
       if (packagePrefix == null || clazz.getName().startsWith(packagePrefix)) {

@@ -85,16 +85,16 @@
     <javafx.version>21.0.1</javafx.version>
     <ikonli.version>12.3.1</ikonli.version>
     <ow2.asm.version>9.6</ow2.asm.version>
-    <groovy.version>4.0.16</groovy.version>
+    <groovy.version>4.0.17</groovy.version>
     <maven.version>3.9.0</maven.version>
     <postgresql.version>42.7.1</postgresql.version>
     <h2.version>2.2.224</h2.version>
     <testng.version>7.9.0</testng.version>
-    <slf4j.version>2.0.9</slf4j.version>
-    <log4j2.version>2.22.0</log4j2.version>
+    <slf4j.version>2.0.10</slf4j.version>
+    <log4j2.version>2.22.1</log4j2.version>
 
     <maven.archetype.plugin.version>3.2.1</maven.archetype.plugin.version>
-    <maven.compiler.plugin.version>3.12.0</maven.compiler.plugin.version>
+    <maven.compiler.plugin.version>3.12.1</maven.compiler.plugin.version>
     <maven.dependency.plugin.version>3.6.1</maven.dependency.plugin.version>
     <maven.deploy.plugin.version>3.1.1</maven.deploy.plugin.version>
     <maven.install.plugin.version>3.1.1</maven.install.plugin.version>
@@ -334,7 +334,7 @@
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-archiver</artifactId>
-        <version>4.9.0</version>
+        <version>4.9.1</version>
       </dependency>
 
     </dependencies>
@@ -546,7 +546,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jxr-plugin</artifactId>
-          <version>3.3.1</version>
+          <version>3.3.2</version>
         </plugin>
 
         <plugin>
