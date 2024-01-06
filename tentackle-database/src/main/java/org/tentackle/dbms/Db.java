@@ -1485,7 +1485,7 @@ public class Db implements Session, Cloneable {
         }
       }
       catch (RuntimeException rex) {
-        LOGGER.severe("rollback failed", rex);
+        LOGGER.severe("rollback failed after " + t.getClass().getSimpleName() + " (" + t.getMessage() + ")", rex);
       }
       throw t;
     }
