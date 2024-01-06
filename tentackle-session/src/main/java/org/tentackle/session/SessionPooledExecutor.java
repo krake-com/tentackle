@@ -19,6 +19,7 @@
 package org.tentackle.session;
 
 import org.tentackle.common.InterruptedRuntimeException;
+import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
 
 import java.util.Collection;
@@ -132,6 +133,15 @@ public class SessionPooledExecutor {
       catch (RuntimeException rx) {
         failEx = rx;
         // run the fail handler _after_ the session was returned to the pool
+      }
+      catch (Throwable t) {
+        // how??
+        if (failHandler == null) {
+          LOGGER.severe("execution error", t);    // log this for sure!
+          throw t;
+        }
+        // wrap into runtime exception and pass to failHandler
+        failEx = new TentackleRuntimeException(t);
       }
       finally {
         if (session != null) {
