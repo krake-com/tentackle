@@ -95,43 +95,41 @@ public class ModelCommentSupport {
   public static void printReferencedBy(Entity entity, Relation relation, String indent, PrintStream out) {
     Entity referencingEntity = relation.getEntity();
     Collection<Entity> roots = referencingEntity.getRootEntities();
-    if (roots.size() != 1 || !roots.contains(entity)) {
-      out.print(indent);
-      out.print(referencingEntity);
-      printRootEntities(referencingEntity, roots, out);
-      if (relation.isDeepReference()) {
-        out.print(" deeply");
-      }
+    out.print(indent);
+    out.print(referencingEntity);
+    printRootEntities(referencingEntity, roots, out);
+    if (relation.isDeepReference()) {
+      out.print(" deeply");
+    }
 
-      Relation nmRel = relation.getNmRelation();
-      if (nmRel == null && relation.getForeignRelation() != null) {
-        nmRel = relation.getForeignRelation().getNmRelation();
-      }
+    Relation nmRel = relation.getNmRelation();
+    if (nmRel == null && relation.getForeignRelation() != null) {
+      nmRel = relation.getForeignRelation().getNmRelation();
+    }
 
-      if (nmRel != null && !entity.equals(relation.getForeignEntity())) {
-        out.print(" via ");
-        out.print(relation.getForeignEntity());
-        out.print(" as ");
-        out.print(relation.getName());
-        out.println(" [N:M]");
+    if (nmRel != null && !entity.equals(relation.getForeignEntity())) {
+      out.print(" via ");
+      out.print(relation.getForeignEntity());
+      out.print(" as ");
+      out.print(relation.getName());
+      out.println(" [N:M]");
+    }
+    else  {
+      if (relation.isComposite() && !relation.isEmbedding()) {
+        out.print(" composite");
       }
-      else  {
-        if (relation.isComposite() && !relation.isEmbedding()) {
-          out.print(" composite");
+      printVia(relation, out);
+      if (!relation.getName().equalsIgnoreCase(referencingEntity.toString())) {
+        out.print(" as " + relation.getVariableName());
+      }
+      if (relation.getRelationType() == RelationType.LIST && !relation.isReversed()) {
+        out.println(" [1:N]");
+      }
+      else {
+        if (relation.isReversed()) {
+          out.print(" reversed");
         }
-        printVia(relation, out);
-        if (!relation.getName().equalsIgnoreCase(referencingEntity.toString())) {
-          out.print(" as " + relation.getVariableName());
-        }
-        if (relation.getRelationType() == RelationType.LIST && !relation.isReversed()) {
-          out.println(" [1:N]");
-        }
-        else {
-          if (relation.isReversed()) {
-            out.print(" reversed");
-          }
-          out.println(" [1:1]");
-        }
+        out.println(" [1:1]");
       }
     }
   }
