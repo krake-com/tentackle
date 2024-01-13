@@ -482,4 +482,11 @@ public abstract class DesktopApplication<C extends FxController>
     });
   }
 
+
+  @Override
+  protected void cleanup() {
+    super.cleanup();
+    logStatistics();
+  }
+
 }
