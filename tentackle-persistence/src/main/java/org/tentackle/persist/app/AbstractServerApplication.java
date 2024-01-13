@@ -31,9 +31,7 @@ import org.tentackle.dbms.MpxConnectionManager;
 import org.tentackle.dbms.StatementStatistics;
 import org.tentackle.dbms.rmi.RemoteDelegateInvocationHandler;
 import org.tentackle.log.Logger;
-import org.tentackle.pdo.OperationInvocationHandler;
 import org.tentackle.pdo.PdoFactory;
-import org.tentackle.pdo.PdoInvocationHandler;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.MultiUserSessionPool;
@@ -389,25 +387,19 @@ public abstract class AbstractServerApplication extends AbstractApplication
 
   @Override
   protected void activateStatistics() {
-    PdoInvocationHandler.INVOKER.setCollectingStatistics(true);
-    OperationInvocationHandler.INVOKER.setCollectingStatistics(true);
-    RemoteDelegateInvocationHandler.setCollectingStatistics(true);
+    super.activateStatistics();
+    RemoteDelegateInvocationHandler.setCollectingStatistics(true);    // will be logged when session is closed
     ManagedConnection.setCollectingStatistics(true);
+    ManagedConnection.setLogStatisticsMillis(Constants.SECOND_MS * 30);
     ManagedConnection.setLogLevelForParallelOpenResultSets(Logger.Level.INFO);
     DbTransactionFactory.getInstance().setCollectingStatistics(true);
-
-    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-      LOGGER.warning("*** server killed ***");
-      logStatistics();
-    }));
   }
 
   /**
    * Logs and clears the statistics.
    */
   public void logStatistics() {
-    PdoInvocationHandler.INVOKER.logStatistics(Logger.Level.INFO, true);
-    OperationInvocationHandler.INVOKER.logStatistics(Logger.Level.INFO, true);
+    super.logStatistics();
     StatementStatistics.log(Logger.Level.INFO, true);
     DbTransactionFactory.getInstance().logStatistics(Logger.Level.INFO, true);
   }
