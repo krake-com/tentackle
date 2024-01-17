@@ -82,12 +82,12 @@
     <javac.lint>all,-processing</javac.lint>
     <javac.version>17</javac.version>
 
-    <javafx.version>21.0.1</javafx.version>
+    <javafx.version>21.0.2</javafx.version>
     <ikonli.version>12.3.1</ikonli.version>
     <ow2.asm.version>9.6</ow2.asm.version>
-    <groovy.version>4.0.15</groovy.version>
+    <groovy.version>4.0.17</groovy.version>
     <maven.version>3.9.0</maven.version>  <!-- only for build, apps can still use 3.8.5 -->
-    <postgresql.version>42.7.0</postgresql.version>
+    <postgresql.version>42.7.1</postgresql.version>
     <h2.version>2.2.224</h2.version>
     <testng.version>7.8.0</testng.version>
     <slf4j.version>2.0.9</slf4j.version>
@@ -226,7 +226,7 @@
       <dependency>
         <groupId>org.jruby</groupId>
         <artifactId>jruby</artifactId>
-        <version>9.4.4.0</version>
+        <version>9.4.5.0</version>
       </dependency>
 
       <dependency>
