@@ -7,7 +7,7 @@
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-parent</artifactId>
-  <version>17.14.0.2-SNAPSHOT</version>
+  <version>17.14.0.2</version>
   <packaging>pom</packaging>
 
   <name>Tentackle Parent</name>
