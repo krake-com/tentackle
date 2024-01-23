@@ -8,17 +8,17 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>8.3.0.3</version>
+    <version>8.3.0.4</version>
   </parent>
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-parent-osgi</artifactId>
   <!-- OSGI semantic versioning is restricted to x.y.z[.timestamp], i.e. 8. must be omitted -->
-  <version>3.0.3</version>
+  <version>3.0.4</version>
   <packaging>pom</packaging>
 
   <properties>
-    <tentackle.version>8.3.0.3</tentackle.version>
+    <tentackle.version>8.3.0.4</tentackle.version>
   </properties>
 
   <name>Tentackle OSGi Parent</name>

@@ -84,6 +84,20 @@ public class Cryptor implements Function<String, String> {
     return cryptor;
   }
 
+  /**
+   * Gets the application specific cryptor singleton.<br>
+   * Throws a {@link TentackleRuntimeException} if no cryptor defined.
+   *
+   * @return the cryptor, never null
+   */
+  public static Cryptor getInstanceSafely() {
+    Cryptor cryptor = getInstance();
+    if (cryptor == null) {
+      throw new TentackleRuntimeException("missing application specific Cryptor");
+    }
+    return cryptor;
+  }
+
 
   private final SecretKey key;
   private final Cipher cipher;
