@@ -58,10 +58,21 @@ public class DefaultLockManager implements LockManager {
    */
   private record Lock(DbTokenLock tokenLock, String contextName, boolean tainted) {
 
+    /**
+     * Creates an untainted lock.
+     *
+     * @param tokenLock the token lock
+     * @param contextName the last name of the domain context chain
+     */
     Lock(DbTokenLock tokenLock, String contextName) {
       this(tokenLock, contextName, false);
     }
 
+    /**
+     * Creates a tainted lock.
+     *
+     * @param tokenLock the token lock
+     */
     Lock(DbTokenLock tokenLock) {
       this(tokenLock, "", true);
     }
@@ -330,12 +341,16 @@ public class DefaultLockManager implements LockManager {
           else if (lock != null) {
             Db db = (Db) pdo.getSession();
             if (lock.tainted) {
-              LOGGER.warning("{0} is tainted -> within {1}", lock, pdo.getDomainContext().toDiagnosticString());
+              Lock untaintedLock = new Lock(lock.tokenLock, pdo.getDomainContext().getNames().getLast());
+              lockMap.put(key, untaintedLock);
+              LOGGER.warning("{0} updated to untainted within {1}", lock, pdo.getDomainContext().toDiagnosticString());
+              lock = untaintedLock;
             }
             else if (!pdo.getDomainContext().isWithinContext(lock.contextName)) {
               // lock is neither unnamed nor a valid name within the PDO's context
               throw new LockException(db, lock.contextName);
             }
+
             DbTokenLock dbTokenLock = lock.tokenLock;
             if (locked) {
               if (dbTokenLock.getLockedBy() != pdo.getEditedBy() ||
@@ -349,7 +364,8 @@ public class DefaultLockManager implements LockManager {
                   dbTokenLock.setLockedSince(pdo.getEditedSince());
                   dbTokenLock.setLockExpiry(pdo.getEditedExpiry());
                   dbTokenLock.updatePlain();
-                  LOGGER.fine("updated {0}", () -> pdoLockToString(pdo, lock));
+                  Lock updatedLock = lock;    // due to lambda below
+                  LOGGER.fine("updated {0}", () -> pdoLockToString(pdo, updatedLock));
                 }
                 finally {
                   dbTokenLock.setSession(null);    // remove link to session to allow GC
@@ -363,7 +379,8 @@ public class DefaultLockManager implements LockManager {
                 dbTokenLock.deleteObject();
                 lockMap.remove(key);
                 addRemovedLock(lock);
-                LOGGER.fine("released {0}", () -> pdoLockToString(pdo, lock));
+                Lock removedLock = lock;    // due to lambda below
+                LOGGER.fine("released {0}", () -> pdoLockToString(pdo, removedLock));
               }
               finally {
                 dbTokenLock.setSession(null);    // remove link to session to allow GC
