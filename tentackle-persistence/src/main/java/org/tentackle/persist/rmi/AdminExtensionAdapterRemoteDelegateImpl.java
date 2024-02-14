@@ -18,6 +18,7 @@
 
 package org.tentackle.persist.rmi;
 
+import org.tentackle.app.LogoutEvent;
 import org.tentackle.common.Compare;
 import org.tentackle.common.Timestamp;
 import org.tentackle.dbms.Db;
@@ -84,8 +85,20 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDelegateImpl<
 
   @Override
   public int kill(DomainContext context, long userId, long sessionGroupId, String applicationName, long applicationId)
+    throws RemoteException {
+    return kill(context, userId, sessionGroupId, applicationName, applicationId, true);
+  }
+
+  @Override
+  public boolean logout(DomainContext context, long userId, long sessionGroupId, String applicationName, long applicationId)
+    throws RemoteException {
+    return kill(context, userId, sessionGroupId, applicationName, applicationId, false) == 1;
+  }
+
+  protected int kill(DomainContext context, long userId, long sessionGroupId, String applicationName, long applicationId, boolean kill)
          throws RemoteException {
-    LOGGER.warning("killing session(s) for userId {0}, groupId {1}, application {2}, applicationId {3}",
+    LOGGER.warning("{0} for userId {1}, groupId {2}, application {3}, applicationId {4}",
+                   kill ? "killing session(s)" : "submitting logout request",
                    userId, sessionGroupId, applicationName, applicationId);
     try {
       context.setSession(getSession());
@@ -93,17 +106,23 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDelegateImpl<
       int count = 0;
       for (RemoteDbSessionImpl openSession : RemoteDbSessionImpl.getOpenSessions()) {
         if (openSession.getClientSessionInfo().getUserId() == userId &&
+            (kill || openSession.isModificationTrackerSession()) &&
             (sessionGroupId == 0 || openSession.getSession().getExportedSessionGroupId() == sessionGroupId) &&
             (applicationName == null ||
             Objects.equals(openSession.getClientSessionInfo().getApplicationName(), applicationName)) &&
             (applicationId == 0 || openSession.getClientSessionInfo().getApplicationId() == applicationId)) {
 
           Db db = openSession.getSession();
-          if (db != null) {
-            // switch owner to prevent any further use and allow close by me
-            db.setOwnerThread(Thread.currentThread());
+          if (kill) {
+            if (db != null) {
+              // switch owner to prevent any further use and allow close by me
+              db.setOwnerThread(Thread.currentThread());
+            }
+            openSession.close();
           }
-          openSession.close();
+          else {
+            openSession.addMasterSerialEvent(new LogoutEvent());
+          }
           count++;
         }
       }

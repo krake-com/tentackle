@@ -16,13 +16,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.dbms.rmi;
+
+import org.tentackle.misc.IdSerialTuple;
+import org.tentackle.session.MasterSerial;
 
 import java.rmi.RemoteException;
 import java.util.List;
-import org.tentackle.dbms.MasterSerial;
-import org.tentackle.misc.IdSerialTuple;
 
 /**
  * Remote delegate interface for {@link org.tentackle.session.ModificationTracker}.

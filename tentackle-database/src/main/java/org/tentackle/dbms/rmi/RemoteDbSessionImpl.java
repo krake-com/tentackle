@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.dbms.rmi;
 
 import org.tentackle.dbms.Db;
@@ -32,6 +31,7 @@ import org.tentackle.log.MethodStatistics;
 import org.tentackle.misc.DiagnosticUtilities;
 import org.tentackle.misc.TimeKeeper;
 import org.tentackle.session.LoginFailedException;
+import org.tentackle.session.MasterSerialEvent;
 import org.tentackle.session.MultiUserSessionPool;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
@@ -57,8 +57,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 
@@ -296,19 +299,21 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   }
 
 
-  private final Resources resources;                  // resources to be cleaned up
-  private final Cleanable cleanable;                  // to clean up the connection
-  private final SessionInfo clientInfo;               // saved client info
-  private final SessionInfo serverInfo;               // the server info for creating a new session
-  private final long sessionNumber;                   // unique session number
-  private final String clientHost;                    // the client host string
-  private final Map<String, Logger> loggers;          // logger-name :: logger
-  private int timeout;                                // timeout in polling intervals of the RemoteDbSessionCleanupThread
-  private int port;                                   // port for all delegates
-  private RMIClientSocketFactory csf;                 // client socket factory for all delegates
-  private RMIServerSocketFactory ssf;                 // server socket factory for all delegates
-  private int timeoutCount;                           // consecutive timeouts
-  private long closedSince;                           // session closed since, 0 if still open
+  private final Resources resources;                          // resources to be cleaned up
+  private final Cleanable cleanable;                          // to clean up the connection
+  private final SessionInfo clientInfo;                       // saved client info
+  private final SessionInfo serverInfo;                       // the server info for creating a new session
+  private final long sessionNumber;                           // unique session number
+  private final String clientHost;                            // the client host string
+  private final Map<String, Logger> loggers;                  // logger-name :: logger
+  private int timeout;                                        // timeout in polling intervals of the RemoteDbSessionCleanupThread
+  private int port;                                           // port for all delegates
+  private RMIClientSocketFactory csf;                         // client socket factory for all delegates
+  private RMIServerSocketFactory ssf;                         // server socket factory for all delegates
+  private int timeoutCount;                                   // consecutive timeouts
+  private long closedSince;                                   // session closed since, 0 if still open
+  private final AtomicBoolean modificationTrackerSession;     // true if this the remote ModificationTracker's session
+  private final Queue<MasterSerialEvent> masterSerialEvents;  // master serial event queue
 
 
   /**
@@ -373,6 +378,9 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
     timeout = determineTimeout(db, clientInfo, serverInfo);
     loggers = new ConcurrentHashMap<>();
 
+    modificationTrackerSession = new AtomicBoolean();
+    masterSerialEvents = new ConcurrentLinkedQueue<>();
+
     resources.name = toString();    // chicken egg...
     cleanable = CLEANER.register(this, resources);
   }
@@ -432,6 +440,30 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
     }
   }
 
+
+  /**
+   * Adds a master serial event.
+   *
+   * @param masterSerialEvent the event
+   */
+  public void addMasterSerialEvent(MasterSerialEvent masterSerialEvent) {
+    if (isModificationTrackerSession()) {
+      masterSerialEvents.add(masterSerialEvent);
+    }
+    else {
+      throw new PersistenceException("not a modification tracker session");
+    }
+  }
+
+  /**
+   * Gets the next master serial event.<br>
+   * The method is invoked by the {@link org.tentackle.session.ModificationTracker}.
+   *
+   * @return the next master serial event, null if none
+   */
+  public MasterSerialEvent pollMasterSerialEvent() {
+    return masterSerialEvents.poll();
+  }
 
   /**
    * Verifies and updates the client's session info.<br>
@@ -581,6 +613,24 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
     this.ssf = ssf;
   }
 
+
+  /**
+   * Returns whether this is the remote session of the modification tracker.
+   *
+   * @return true if tracker's session
+   */
+  public boolean isModificationTrackerSession() {
+    return modificationTrackerSession.get();
+  }
+
+  /**
+   * Sets the modification tracker session flag.
+   *
+   * @param modificationTrackerSession true if tracker's session
+   */
+  public void setModificationTrackerSession(boolean modificationTrackerSession) {
+    this.modificationTrackerSession.set(modificationTrackerSession);
+  }
 
 
   /**

@@ -487,6 +487,7 @@ public abstract class DesktopApplication<C extends FxController>
   protected void cleanup() {
     super.cleanup();
     logStatistics();
+    Fx.terminate();
   }
 
 }

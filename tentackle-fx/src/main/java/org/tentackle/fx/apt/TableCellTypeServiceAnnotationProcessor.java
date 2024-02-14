@@ -21,12 +21,9 @@ package org.tentackle.fx.apt;
 import org.tentackle.apt.AbstractServiceAnnotationProcessor;
 import org.tentackle.common.AnnotationProcessor;
 
-import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
-import java.util.Set;
 
 /**
  * Annotation processor for the {@code @TableCellTypeService} annotation.<br>
@@ -47,18 +44,6 @@ public class TableCellTypeServiceAnnotationProcessor extends AbstractServiceAnno
    */
   public TableCellTypeServiceAnnotationProcessor() {
     // see -Xlint:missing-explicit-ctor since Java 16
-  }
-
-  @Override
-  public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-    if (!roundEnv.processingOver()) {
-      for (TypeElement type: annotations) {
-        for (Element element : roundEnv.getElementsAnnotatedWith(type)) {
-          processClass(element);
-        }
-      }
-    }
-    return true; // claim annotation
   }
 
 

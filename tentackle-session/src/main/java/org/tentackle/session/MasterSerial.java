@@ -1,0 +1,39 @@
+/*
+ * Tentackle - https://tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+package org.tentackle.session;
+
+import java.io.Serializable;
+
+/**
+ * Wraps the master serial used by the {@link ModificationTracker}.<br>
+ * The tracker of a remote client periodically requests the master serial from the server.
+ * This is a long primitive wrapped in an object implementing <code>MasterSerial</code>.
+ * This can be a record or some other object representing a {@link MasterSerialEvent}
+ * with optional, application-specific payload data.
+ */
+public interface MasterSerial extends Serializable {
+
+  /**
+   * Gets the serial value.
+   *
+   * @return the serial
+   */
+  long serial();
+
+}

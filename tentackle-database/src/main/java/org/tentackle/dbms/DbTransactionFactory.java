@@ -34,7 +34,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 interface DbTransactionFactoryHolder {
   DbTransactionFactory INSTANCE = ServiceFactory.createService(DbTransactionFactory.class, DbTransactionFactory.class);
@@ -59,8 +59,8 @@ public class DbTransactionFactory {
 
   private static final Logger LOG = Logger.get(DbTransactionFactory.class);
 
-  private static final String TX_IDLE_INTERVAL = "txidleinterval";
-  private static final String TX_IDLE_TIMEOUT = "txidletimeout";
+  private static final String TX_IDLE_INTERVAL = "txIdleInterval";
+  private static final String TX_IDLE_TIMEOUT = "txIdleTimeout";
 
   private static final long DEFAULT_TX_IDLE_INTERVAL = Constants.SECOND_MS;     // default is to check every second
   private static final int DEFAULT_TX_IDLE_TIMEOUT = 60;                        // 1 minute idle transaction timeout
@@ -83,7 +83,7 @@ public class DbTransactionFactory {
    */
   public DbTransactionFactory() {
     transactions = new ConcurrentHashMap<>();
-    finishedTransactions = new ConcurrentLinkedDeque<>();
+    finishedTransactions = new ConcurrentLinkedQueue<>();
     statistics = new TransactionStatistics();
     configChanged = true;
   }
@@ -212,6 +212,18 @@ public class DbTransactionFactory {
   }
 
 
+  private synchronized void ensureSupervisorAlive() {
+    if (transactionSupervisor == null) {
+      transactionSupervisor = new TransactionSupervisor();
+      transactionSupervisor.start();
+    }
+  }
+
+  private synchronized void supervisorTerminated() {
+    transactionSupervisor = null;
+  }
+
+
   /**
    * The supervisor finds unreferenced transactions and cleans up.<br>
    * It also closes sessions with transactions being idle too long.
@@ -301,27 +313,7 @@ public class DbTransactionFactory {
                     final Connection con = mc.getConnection();
                     if (con != null) {
                       // do that in a separate thread, if it gets stuck, the supervisor still keeps running
-                      Thread txCleanupThread = new Thread("transaction cleanup " + mc) {
-                        @Override
-                        public void run() {
-                          try {
-                            LOG.warning("performing low-level rollback and close of {0}", con);
-                            // really low level (as if the database closed it suddenly)
-                            try {
-                              con.rollback();
-                            }
-                            catch (SQLException sr) {
-                              LOG.warning("low-level rollback failed", sr);
-                            }
-                            con.close();   // just close -> leave the cleanup to the thread stuck in transaction
-                          }
-                          catch (SQLException | RuntimeException ex) {
-                            LOG.warning("closing JDBC connection failed", ex);
-                          }
-                        }
-                      };
-                      txCleanupThread.setDaemon(true);
-                      txCleanupThread.start();
+                      createTxCleanupThread(mc, con).start();
                     }
                     else {
                       LOG.warning("managed connection {0} already closed", mc);
@@ -346,17 +338,30 @@ public class DbTransactionFactory {
       supervisorTerminated();
       LOG.info("{0} terminated", getName());
     }
-  }
 
-  private synchronized void ensureSupervisorAlive() {
-    if (transactionSupervisor == null) {
-      transactionSupervisor = new TransactionSupervisor();
-      transactionSupervisor.start();
+    private static Thread createTxCleanupThread(ManagedConnection mc, Connection con) {
+      Thread txCleanupThread = new Thread("transaction cleanup " + mc) {
+        @Override
+        public void run() {
+          try {
+            LOG.warning("performing low-level rollback and close of {0}", con);
+            // really low level (as if the database closed it suddenly)
+            try {
+              con.rollback();
+            }
+            catch (SQLException sr) {
+              LOG.warning("low-level rollback failed", sr);
+            }
+            con.close();   // just close -> leave the cleanup to the thread stuck in transaction
+          }
+          catch (SQLException | RuntimeException ex) {
+            LOG.warning("closing JDBC connection failed", ex);
+          }
+        }
+      };
+      txCleanupThread.setDaemon(true);
+      return txCleanupThread;
     }
-  }
-
-  private synchronized void supervisorTerminated() {
-    transactionSupervisor = null;
   }
 
 }

@@ -79,6 +79,16 @@ public class AdminExtensionAdapter implements AdminExtension {
   }
 
   @Override
+  public boolean logout(long userId, long sessionGroupId, String applicationName, long applicationId) {
+    try {
+      return adminExt.logout(context, userId, sessionGroupId, applicationName, applicationId);
+    }
+    catch (RemoteException rex) {
+      throw PersistenceException.createFromRemoteException(this, rex);
+    }
+  }
+
+  @Override
   public int kill(long userId, long sessionGroupId, String applicationName,  long applicationId) {
     try {
       return adminExt.kill(context, userId, sessionGroupId, applicationName, applicationId);

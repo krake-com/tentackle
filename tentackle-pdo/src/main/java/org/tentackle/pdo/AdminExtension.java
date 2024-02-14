@@ -182,7 +182,18 @@ public interface AdminExtension extends DomainContextDependable {
   List<SessionData> getSessions();
 
   /**
-   * Kills all sessions for a given user id.
+   * Submits a logout request to the modification tracker session of a given user.
+   *
+   * @param userId the user id
+   * @param sessionGroupId the optional session group, 0 = all
+   * @param applicationName the optional application name, null = all
+   * @param applicationId the optional application ID, 0 = all
+   * @return true if request submitted, false if no such user session
+   */
+  boolean logout(long userId, long sessionGroupId, String applicationName,  long applicationId);
+
+  /**
+   * Kills all sessions of a given user.
    *
    * @param userId the user id
    * @param sessionGroupId the optional session group, 0 = all
