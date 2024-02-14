@@ -16,12 +16,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.dbms.rmi;
 
 import org.tentackle.dbms.DbModificationTracker;
-import org.tentackle.dbms.MasterSerial;
 import org.tentackle.misc.IdSerialTuple;
+import org.tentackle.session.MasterSerial;
+import org.tentackle.session.MasterSerialEvent;
 import org.tentackle.session.ModificationTracker;
 
 import java.rmi.RemoteException;
@@ -36,7 +36,6 @@ public class DbModificationTrackerRemoteDelegateImpl<T extends DbModificationTra
              extends RemoteDelegateImpl<T>
              implements DbModificationTrackerRemoteDelegate {
 
-
   public DbModificationTrackerRemoteDelegateImpl(RemoteDbSessionImpl session, Class<T> clazz) {
     super(session, clazz);
   }
@@ -44,19 +43,25 @@ public class DbModificationTrackerRemoteDelegateImpl<T extends DbModificationTra
   /**
    * Creates the master serial object from a long serial.
    * <p>
-   * Application can override this method to return some application-
-   * specific status back to the client.
+   * If {@link MasterSerialEvent}s are registered for this remote session,
+   * the next event will be polled from the queue, its serial set and that event returned.
    *
    * @param serial the long master serial
    * @return the master serial object
    */
   protected MasterSerial createMasterSerial(long serial) {
-    return new MasterSerial(serial);
+    MasterSerialEvent masterSerialEvent = getServerSession().pollMasterSerialEvent();
+    if (masterSerialEvent != null) {
+      masterSerialEvent.setSerial(serial);
+      return masterSerialEvent;
+    }
+    return new DefaultMasterSerial(serial);
   }
 
   @Override
   public MasterSerial selectMasterSerial() throws RemoteException {
     try {
+      getServerSession().setModificationTrackerSession(true);
       return createMasterSerial(((DbModificationTracker) ModificationTracker.getInstance()).getMasterSerial());
     }
     catch (RuntimeException ex)  {

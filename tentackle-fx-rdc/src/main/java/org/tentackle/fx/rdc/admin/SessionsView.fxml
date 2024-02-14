@@ -6,7 +6,8 @@
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
-<BorderPane xmlns="http://javafx.com/javafx/8.0.65" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.tentackle.fx.rdc.admin.SessionsView">
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.tentackle.fx.rdc.admin.SessionsView">
    <padding>
       <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
    </padding>
@@ -26,6 +27,7 @@
          <children>
             <Button fx:id="securityButton" mnemonicParsing="false" />
             <HBox minWidth="10.0" HBox.hgrow="ALWAYS" />
+            <Button fx:id="logoutButton" mnemonicParsing="false" text="%logout" />
             <Button fx:id="killButton" mnemonicParsing="false" text="%kill" />
             <Button fx:id="refreshButton" mnemonicParsing="false" text="%refresh" />
          </children>

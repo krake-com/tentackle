@@ -73,6 +73,18 @@
         </configuration>
       </plugin>
 
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <compilerArgs>
+            <arg>-Xlint:${javac.lint}</arg>
+            <!-- proc:none because of chicken-egg problem with annotation processors in same module -->
+            <arg>-proc:none</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+
     </plugins>
 
   </build>

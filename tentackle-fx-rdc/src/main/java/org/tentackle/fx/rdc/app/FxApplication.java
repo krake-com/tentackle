@@ -19,11 +19,11 @@
 
 package org.tentackle.fx.rdc.app;
 
-import javafx.application.Application;
-import javafx.stage.Stage;
-
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.log.Logger;
+
+import javafx.application.Application;
+import javafx.stage.Stage;
 
 /**
  * Tentackle FX application base class.
@@ -82,7 +82,10 @@ public abstract class FxApplication extends Application {
 
   @Override
   public void stop() {
-    org.tentackle.app.Application.getInstance().stop(exitValue, exitThrowable);
+    org.tentackle.app.Application tentackleApplication = org.tentackle.app.Application.getInstance();
+    if (tentackleApplication != null) {   // not already terminated
+      tentackleApplication.stop(exitValue, exitThrowable);
+    }
   }
 
   /**

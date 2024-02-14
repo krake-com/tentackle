@@ -597,7 +597,11 @@ public abstract class AbstractApplication implements Application {
       ModificationTracker.getInstance().start();
       // add a shutdown handler in case the modification tracker terminates unexpectedly
       ModificationTracker.getInstance().addShutdownRunnable(() -> {
-        if (!ModificationTracker.getInstance().isTerminationRequested()) {
+        if (ModificationTracker.getInstance().isTerminationRequested()) {
+          LOGGER.info("termination requested");
+          AbstractApplication.this.stop(0, null);
+        }
+        else {
           LOGGER.severe("*** emergency shutdown ***");
           AbstractApplication.this.stop(2, null);
         }
@@ -649,14 +653,14 @@ public abstract class AbstractApplication implements Application {
 
   @Override
   public void stop(int exitValue, Throwable exitThrowable) {
-    try {
-      synchronized (this) {
-        if (stopping) {
-          return;
-        }
-        stopping = true;
+    synchronized (this) {
+      if (stopping) {
+        return;
       }
+      stopping = true;
+    }
 
+    try {
       LOGGER.info("terminating {0} with exit value {1} ...", getName(), exitValue);
       if (exitThrowable != null) {
         LOGGER.logStacktrace(exitThrowable);

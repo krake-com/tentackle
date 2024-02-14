@@ -22,17 +22,14 @@ import org.tentackle.apt.AbstractServiceAnnotationProcessor;
 import org.tentackle.common.AnnotationProcessor;
 import org.tentackle.fx.rdc.PdoTreeCell;
 
-import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVisitor;
 import javax.lang.model.util.SimpleTypeVisitor8;
 import javax.tools.Diagnostic;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Annotation processor for the {@code @PdoTreeContextMenuItemService} annotation.<br>
@@ -53,18 +50,6 @@ public class PdoTreeContextMenuItemServiceAnnotationProcessor extends AbstractSe
    */
   public PdoTreeContextMenuItemServiceAnnotationProcessor() {
     // see -Xlint:missing-explicit-ctor since Java 16
-  }
-
-  @Override
-  public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-    if (!roundEnv.processingOver()) {
-      for (TypeElement type: annotations) {
-        for (Element element : roundEnv.getElementsAnnotatedWith(type)) {
-          processClass(element);
-        }
-      }
-    }
-    return true; // claim annotation
   }
 
 

@@ -63,6 +63,8 @@ public class SessionsView extends AbstractFxController {
   @FXML
   private FxButton refreshButton;
   @FXML
+  private FxButton logoutButton;
+  @FXML
   private FxButton killButton;
 
   @FXML
@@ -86,8 +88,12 @@ public class SessionsView extends AbstractFxController {
     refreshButton.setGraphic(Fx.createGraphic("reload"));
     refreshButton.setOnAction(e -> refresh());
 
+    logoutButton.setGraphic(Fx.createGraphic("exit"));
+    logoutButton.setOnAction(e -> killSessions(false));
+    logoutButton.disableProperty().bind(sessionsNode.getSelectionModel().selectedItemProperty().isNull());
+
     killButton.setGraphic(Fx.createGraphic("cancel"));
-    killButton.setOnAction(e -> killSessions());
+    killButton.setOnAction(e -> killSessions(true));
     killButton.disableProperty().bind(sessionsNode.getSelectionModel().selectedItemProperty().isNull());
 
     sessionsNode.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
@@ -178,34 +184,53 @@ public class SessionsView extends AbstractFxController {
   }
 
   /**
-   * Kills all marked user sessions.
+   * Kills or sends a logout request to all marked user sessions.
+   *
+   * @param kill true to kill, else just send logout request
    */
-  private void killSessions() {
-    Set<SessionData> toKill = new LinkedHashSet<>();
+  private void killSessions(boolean kill) {
+    Set<SessionData> sessionData = new LinkedHashSet<>();
     // include all sessions of a group, even if not all are selected
     for (SessionData session : sessionsNode.getSelectionModel().getSelectedItems()) {
-      toKill.add(session);
+      sessionData.add(session);
       if (session.getSessionGroup() != 0) {
         int row = 0;
         for (SessionData otherSession: sessions) {
           if (otherSession.getSessionGroup() == session.getSessionGroup() && otherSession.getUserId() == session.getUserId()) {
-            toKill.add(otherSession);
+            sessionData.add(otherSession);
             sessionsNode.getSelectionModel().select(row, null);
           }
           row++;
         }
       }
     }
-    if (!toKill.isEmpty()) {
-      String msg = toKill.size() > 1 ?
-                   MessageFormat.format(resources.getString("really kill {0} sessions?"), toKill.size()) :
-                   MessageFormat.format(resources.getString("really kill session {0}?"), toKill.iterator().next().getSessionNumber());
+
+    if (!sessionData.isEmpty()) {
+      String msg = kill ?
+                     sessionData.size() > 1 ?
+                     MessageFormat.format(resources.getString("really kill {0} sessions?"), sessionData.size()) :
+                     MessageFormat.format(resources.getString("really kill session {0}?"), sessionData.iterator().next().getSessionNumber()) :
+                     sessionData.size() > 1 ?
+                       MessageFormat.format(resources.getString("log out {0} sessions?"), sessionData.size()) :
+                       MessageFormat.format(resources.getString("log out session {0}?"), sessionData.iterator().next().getSessionNumber());
       Fx.yes(getView(), msg, false, () -> {
-        for (SessionData session : toKill) {
-          adminExt.kill(session.getUserId(), session.getSessionGroup(),
-                        session.getApplicationName(), session.getApplicationId());
+        for (SessionData session : sessionData) {
+          if (kill) {
+            adminExt.kill(session.getUserId(), session.getSessionGroup(),
+                          session.getApplicationName(), session.getApplicationId());
+          }
+          else {
+            adminExt.logout(session.getUserId(), session.getSessionGroup(),
+                            session.getApplicationName(), session.getApplicationId());
+          }
         }
-        refresh();
+        if (kill) {
+          refresh();
+        }
+        else {
+          // logout requires manual refresh since the request is executed by the remote tracker and may be ignored at all
+          Fx.info(getView(), resources.getString("logout request submitted"));
+        }
       });
     }
   }

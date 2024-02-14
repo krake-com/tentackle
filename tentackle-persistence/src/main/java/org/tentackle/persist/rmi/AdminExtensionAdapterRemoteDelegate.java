@@ -42,6 +42,20 @@ public interface AdminExtensionAdapterRemoteDelegate extends RemoteDelegate {
   List<SessionData> getSessions(DomainContext context) throws RemoteException;
 
   /**
+   * Submits a logout request for a given user id.
+   *
+   * @param context the domain context
+   * @param userId the user id
+   * @param sessionGroupId the optional session group, 0 = all
+   * @param applicationName the optional application name, null = all
+   * @param applicationId the optional application ID, 0 = all
+   * @return true if modification tracker event submitted
+   * @throws RemoteException if failed (usually missing permissions)
+   */
+  boolean logout(DomainContext context, long userId, long sessionGroupId, String applicationName, long applicationId)
+    throws RemoteException;
+
+  /**
    * Kills all sessions for a given user id.
    *
    * @param context the domain context

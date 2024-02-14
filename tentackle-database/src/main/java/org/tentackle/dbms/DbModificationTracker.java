@@ -27,6 +27,9 @@ import org.tentackle.log.Logger.Level;
 import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.session.AbstractSessionTask;
 import org.tentackle.session.DefaultSessionTaskDispatcher;
+import org.tentackle.session.MasterSerial;
+import org.tentackle.session.MasterSerialEvent;
+import org.tentackle.session.MasterSerialEventHandlerFactory;
 import org.tentackle.session.ModificationEvent;
 import org.tentackle.session.ModificationEventDetail;
 import org.tentackle.session.ModificationListener;
@@ -51,9 +54,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-
-
-
+import java.util.function.Consumer;
 
 /**
  * The modification tracker for the tentackle persistence layer.
@@ -166,9 +167,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
 
     @Override
     public int compareTo(ListenerEntry obj) {
-      if (obj == null) {
-        return Integer.MAX_VALUE;
-      }
       int rv = priority - obj.priority;
       if (rv == 0) {
         rv = instanceNumber - obj.instanceNumber;
@@ -208,8 +206,8 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
      * Creates a modification entry.<br>
      * For internal use only!
      *
-     * @param tableName the tablename of the class, null if master serial
-     * @param id the tablename id, 0 if master serial
+     * @param tableName the table name of the class, null if master serial
+     * @param id the table name id, 0 if master serial
      * @param serial the last serial seen
      */
     private TableEntry(String tableName, long id, long serial) {
@@ -231,7 +229,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     public String toString() {
       StringBuilder buf = new StringBuilder();
       if (tableName != null) {
-        buf.append("tablename='");
+        buf.append("tableName='");
         buf.append(tableName);
         buf.append("', id=");
         buf.append(id);
@@ -320,7 +318,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
 
 
   private final List<Runnable> shutdownRunnables;                   // runnables to be run once when thread is stopped
-  private final Map<String, ModificationTally> countersByName;      // map of modification counters (tablename:counter)
+  private final Map<String, ModificationTally> countersByName;      // map of modification counters (tableName:counter)
   private final Map<Long, ModificationTally> countersById;          // map of modification counters (id:counter)
   private final Set<ListenerEntry> listenerEntries;                 // modification listeners
   private final Map<String, TableEntry> tableEntriesByName;         // the table entries mapped by (table)name
@@ -552,11 +550,11 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
 
 
   /**
-   * Gets the pair of id/serial for a given tablename.<br>
+   * Gets the pair of id/serial for a given table name.<br>
    * Used in remote connections.
    *
    * @param tableName the table to lookup
-   * @return the id/serial pair for the tablename, never null
+   * @return the id/serial pair for the table name, never null
    */
   public IdSerialTuple getIdSerialForName(String tableName) {
     if (tableName == null) {
@@ -873,7 +871,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
       else if (msLeft < delayedSleepInterval) {
         delayedSleepInterval = msLeft;   // sleep until the first execution interval
       }
-      // else: more than mseconds left
     }
   }
 
@@ -893,16 +890,28 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   }
 
   /**
-   * Extracts the master serial from the master serial object.
+   * Extracts the master serial from the master serial object.<br>
+   * Used in remote clients only.
    * <p>
-   * Application can override this method to process optional application data.
+   * If the master serial implements {@link MasterSerialEvent}, the corresponding
+   * handler will be invoked (if any), before returning the serial.
    *
    * @param masterSerial the master serial object
    * @return the long serial
    */
+  @SuppressWarnings("unchecked")
   protected long extractMasterSerial(MasterSerial masterSerial) {
-    return masterSerial.getSerial();
+    if (masterSerial instanceof MasterSerialEvent event) {
+      // map to corresponding handler
+      Consumer<MasterSerialEvent> eventHandler = (Consumer<MasterSerialEvent>) MasterSerialEventHandlerFactory.getInstance().createEventHandler(event.getClass());
+      if (eventHandler != null) {
+        eventHandler.accept(event);
+      }
+      // else: no handler registered -> ignored (this may be intended!)
+    }
+    return masterSerial.serial();
   }
+
 
   /**
    * Returns the new master serial if modified.<br>
@@ -961,10 +970,10 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
 
 
   /**
-   * Selects the pair of id/serial for a given tablename.
+   * Selects the pair of id/serial for a given table name.
    *
    * @param tableName the table to lookup
-   * @return the id/serial pair for the tablename, null table not configured so far
+   * @return the id/serial pair for the table name, null table not configured so far
    */
   protected IdSerialTuple selectIdSerialForName(String tableName) {
 

@@ -16,39 +16,33 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.dbms;
+package org.tentackle.app;
+
+import org.tentackle.session.MasterSerialEvent;
 
 import java.io.Serial;
-import java.io.Serializable;
 
 /**
- * Holds the master serial.
- * <p>
- * This is just a DTO without further logic.<br>
- * It can be extended to provide additional application-specific data.
+ * A master serial event to request a remote client logout.
  */
-public class MasterSerial implements Serializable {
+public class LogoutEvent implements MasterSerialEvent {
 
   @Serial
   private static final long serialVersionUID = 1L;
 
-  private final long serial;
+  private long serial;
 
-  /**
-   * Creates a master serial object.
-   *
-   * @param serial the master serial
-   */
-  public MasterSerial(long serial) {
+  public LogoutEvent() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  @Override
+  public void setSerial(long serial) {
     this.serial = serial;
   }
 
-  /**
-   * Gets the serial value.
-   *
-   * @return the serial
-   */
-  public long getSerial() {
+  @Override
+  public long serial() {
     return serial;
   }
 

@@ -7,9 +7,15 @@
 
 package ${package}.daemon;
 
+import org.testng.Assert;
+import org.testng.Reporter;
 import org.testng.annotations.Test;
 
 public class RunDaemon {
+
+  private int exitValue;
+  private Throwable exitThrowable;
+
 
   @Test
   public void runDaemon() {
@@ -18,11 +24,38 @@ public class RunDaemon {
 
 
   private synchronized void run(String[] args) {
-    new ${application}Daemon().start(args);
+
+    @SuppressWarnings("unchecked")
+    ${application}Daemon daemon = new ${application}Daemon() {
+
+      @Override
+      protected boolean isSystemExitNecessaryToStop() {
+        return false;   // no System.exit() by default within the test container
+      }
+
+      @Override
+      public void stop(int exitValue, Throwable exitThrowable) {
+        super.stop(exitValue, exitThrowable);
+        synchronized (RunDaemon.this) {
+          RunDaemon.this.exitValue = exitValue;
+          RunDaemon.this.exitThrowable = exitThrowable;
+          RunDaemon.this.notifyAll();
+        }
+      }
+    };
+
+    daemon.start(args);
+
     try {
-      wait();   // keep it running...
+      wait();   // keep it running until stop invoked
+      if (exitValue != 0) {
+        Assert.fail("daemon terminated while running with exit code = " + exitValue, exitThrowable);
+      }
+      Reporter.log("daemon finished", true);
     }
-    catch (InterruptedException e) {}
+    catch (InterruptedException e) {
+      Reporter.log("daemon interrupted", true);
+    }
   }
 
 }

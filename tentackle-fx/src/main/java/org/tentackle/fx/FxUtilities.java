@@ -149,6 +149,11 @@ public class FxUtilities {
    */
   private boolean darkMode;
 
+  /**
+   * Flag to avoid invoking Platform.exit() more than once
+   */
+  private boolean terminated;
+
 
   /**
    * Creates the FX utilities.
@@ -312,6 +317,12 @@ public class FxUtilities {
    * The default implementation invokes {@link Platform#exit()}.
    */
   public void terminate() {
+    synchronized (this) {
+      if (terminated) {
+        return;
+      }
+      terminated = true;
+    }
     Platform.exit();
   }
 
