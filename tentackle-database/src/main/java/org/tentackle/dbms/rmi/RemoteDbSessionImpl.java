@@ -466,6 +466,16 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   }
 
   /**
+   * Returns whether there is at least one master serial event pending.
+   *
+   * @return true if at least one event hasn't been retrieved by the client yet
+   */
+  public boolean isMasterSerialEventPending() {
+    return masterSerialEvents.peek() != null;
+  }
+
+
+  /**
    * Verifies and updates the client's session info.<br>
    * Needs to be implemented by the application.<br>
    * Checks login credentials and sets the user id.
