@@ -54,7 +54,7 @@ package org.tentackle.session;
  *   Example:
  *   <pre>
  *     &#64;MasterSerialEventService(MyEvent.class)
- *     public class LogoutEventHandler implements Consumer&lt;MyEvent&gt; {
+ *     public class MyEventHandler implements Consumer&lt;MyEvent&gt; {
  *
  *       &#64;Override
  *       public void accept(MyEvent event) {
