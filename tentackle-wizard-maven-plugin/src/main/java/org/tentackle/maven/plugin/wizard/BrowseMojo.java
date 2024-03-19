@@ -92,7 +92,6 @@ public class BrowseMojo extends AbstractWizardMojo {
     props.setProperty(Constants.BACKEND_PASSWORD, password);
     SessionInfo sessionInfo = Pdo.createSessionInfo(props);
     try (Session session = Pdo.createSession(sessionInfo)) {
-      session.makeCurrent();
       DomainContext context = Pdo.createDomainContext(session);
 
       ModificationTracker pdoTracker = ModificationTracker.getInstance();   // create tracker but don't start the thread
@@ -103,6 +102,7 @@ public class BrowseMojo extends AbstractWizardMojo {
       Platform.startup(() -> {
         try {
           registerUncaughtExceptionHandler();
+          session.makeCurrent();
           stage = PdoBrowser.show(this, context);
           stage.setOnHidden(event -> latch.countDown());
         }
