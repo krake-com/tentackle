@@ -6,6 +6,7 @@ jshell.history
 # Maven
 target/
 keystore
+.mvn/
 
 # Eclipse
 *.pydevproject
