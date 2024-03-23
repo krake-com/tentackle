@@ -26,6 +26,7 @@ import org.tentackle.common.StringHelper;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxController;
+import org.tentackle.fx.FxUtilities;
 import org.tentackle.log.Logger;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PdoFactory;
@@ -47,6 +48,8 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import java.text.MessageFormat;
 import java.util.Objects;
+import java.util.Properties;
+import java.util.prefs.Preferences;
 
 /**
  * Java FX tentackle desktop application.
@@ -57,6 +60,12 @@ import java.util.Objects;
 public abstract class DesktopApplication<C extends FxController>
        extends AbstractClientApplication
        implements ClassMappedListener {
+
+  /**
+   * Property to set the dark mode.
+   */
+  public static final String DARK_MODE = "darkMode";
+
 
   /** minimum milliseconds a status message should be visible to the user. */
   private static final long MESSAGE_MIN_MILLIS = 100;
@@ -71,6 +80,7 @@ public abstract class DesktopApplication<C extends FxController>
   private String lastStatusMessage;           // last status message
   private long lastStatusMillis;              // last epochal millis the status message has changed
   private boolean autoLogin;                  // user is logged in w/o prompting for username/password
+  private boolean darkModePlatformDependent;  // true if set to dark mode according to the platform preferences
 
   /**
    * Creates an FX desktop application.
@@ -143,6 +153,15 @@ public abstract class DesktopApplication<C extends FxController>
    */
   public boolean isAutoLogin() {
     return autoLogin;
+  }
+
+  /**
+   * True if dark mode should be activated according to the platform preferences.
+   *
+   * @return false if already overridden by commandline or user preferences
+   */
+  public boolean isDarkModePlatformDependent() {
+    return darkModePlatformDependent;
   }
 
   /**
@@ -415,6 +434,22 @@ public abstract class DesktopApplication<C extends FxController>
   @Override
   public DomainContext createDomainContext(Session session) {
     return super.createDomainContext(null);   // thread-local immutable context
+  }
+
+  @Override
+  public void applyProperties(Properties properties) {
+    super.applyProperties(properties);
+
+    String darkModeStr = getPropertyIgnoreCase(DARK_MODE);
+    if (StringHelper.isAllWhitespace(darkModeStr)) {
+      darkModeStr = Preferences.userNodeForPackage(getClass()).get(DARK_MODE, null);
+    }
+    if (StringHelper.isAllWhitespace(darkModeStr)) {
+      darkModePlatformDependent = true;
+    }
+    else {
+      FxUtilities.getInstance().setDarkMode(Boolean.parseBoolean(darkModeStr));
+    }
   }
 
   @Override

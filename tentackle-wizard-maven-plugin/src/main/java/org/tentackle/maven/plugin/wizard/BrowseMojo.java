@@ -101,6 +101,7 @@ public class BrowseMojo extends AbstractWizardMojo {
 
       Platform.startup(() -> {
         try {
+          configureFx();
           registerUncaughtExceptionHandler();
           session.makeCurrent();
           stage = PdoBrowser.show(this, context);

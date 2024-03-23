@@ -26,11 +26,13 @@ import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxRuntimeException;
+import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.rdc.login.Login;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.CommandLine;
 import org.tentackle.session.SessionInfo;
 
+import javafx.application.ColorScheme;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -67,6 +69,9 @@ public class LoginApplication extends FxApplication {
       controller = loadLoginController();
       SessionInfo sessionInfo = createSessionInfo();
       controller.setSessionInfo(sessionInfo);
+      if (((DesktopApplication<?>) Application.getInstance()).isDarkModePlatformDependent()) {
+        FxUtilities.getInstance().setDarkMode(Platform.getPreferences().getColorScheme() == ColorScheme.DARK);
+      }
       Scene scene = Fx.createScene(controller.getView());
       stage.setScene(scene);
       stage.initStyle(StageStyle.TRANSPARENT);
@@ -80,7 +85,7 @@ public class LoginApplication extends FxApplication {
         stage.widthProperty().addListener((observable, oldValue, newValue) -> stage.setX(splashX - newValue.doubleValue() / 2.0 ));
         stage.heightProperty().addListener((observable, oldValue, newValue) -> stage.setY(splashY - newValue.doubleValue() / 2.0));
       }
-      stage.setOnShown(event -> {
+      stage.setOnShown(_ -> {
         if (splashScreen != null) {
           Platform.runLater(splashScreen::close);
         }
