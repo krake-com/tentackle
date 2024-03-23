@@ -57,12 +57,43 @@ public class LocaleProvider {
    */
   private final List<Locale> EFFECTIVE_LOCALES = List.of(Locale.ENGLISH);
 
+  /**
+   * The initial locale on startup.
+   */
+  private final Locale initialLocale;
+
+  /**
+   * The effective initial locale on startup.
+   */
+  private Locale effectiveInitialLocale;
+
 
   /**
    * Creates a locale provider.
    */
   public LocaleProvider() {
-    // see -Xlint:missing-explicit-ctor since Java 16
+    initialLocale = Locale.getDefault();
+  }
+
+  /**
+   * Gets the initial locale on startup of the JVM.
+   *
+   * @return the initial locale
+   */
+  public Locale getInitialLocale() {
+    return initialLocale;
+  }
+
+  /**
+   * Gets the effective initial locale on startup of the JVM.
+   *
+   * @return the effective initial locale
+   */
+  public Locale getEffectiveInitialLocale() {
+    if (effectiveInitialLocale == null) {
+      effectiveInitialLocale = getEffectiveLocale(initialLocale);
+    }
+    return effectiveInitialLocale;
   }
 
   /**
@@ -90,8 +121,8 @@ public class LocaleProvider {
   }
 
   /**
-   * Sets the session used by the current thread.<br>
-   * The session is stored as {@link ThreadLocal}.
+   * Sets the locale used by the current thread.<br>
+   * The locale is stored as {@link ThreadLocal}.
    *
    * @param locale the locale
    */

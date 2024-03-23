@@ -32,6 +32,7 @@ import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
 
+import javafx.application.ColorScheme;
 import javafx.application.Platform;
 import javafx.stage.Stage;
 import java.io.File;
@@ -107,7 +108,7 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
    * Enables dark mode.
    */
   @Parameter
-  private boolean darkMode;
+  private Boolean darkMode;
 
 
   /**
@@ -153,7 +154,6 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
 
   @Override
   public void executeImpl() throws MojoExecutionException, MojoFailureException {
-    FxUtilities.getInstance().setDarkMode(darkMode);
     loadModel();
   }
 
@@ -341,6 +341,15 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
   protected void registerUncaughtExceptionHandler() {
     Thread.setDefaultUncaughtExceptionHandler(getUncaughtExceptionHandler());             // all threads
     Thread.currentThread().setUncaughtExceptionHandler(getUncaughtExceptionHandler());    // overwrite existing handler for fx thread
+  }
+
+  protected void configureFx() {
+    if (darkMode != null) {
+      FxUtilities.getInstance().setDarkMode(darkMode);
+    }
+    else {
+      FxUtilities.getInstance().setDarkMode(Platform.getPreferences().getColorScheme() == ColorScheme.DARK);
+    }
   }
 
   /**

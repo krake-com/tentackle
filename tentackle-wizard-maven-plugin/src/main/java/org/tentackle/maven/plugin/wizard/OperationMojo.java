@@ -65,6 +65,7 @@ public class OperationMojo extends AbstractWizardMojo {
 
     Platform.startup(() -> {
       try {
+        configureFx();
         registerUncaughtExceptionHandler();
         OperationWizard wizard = Fx.load(OperationWizard.class);
         wizard.applyMojo(this);
