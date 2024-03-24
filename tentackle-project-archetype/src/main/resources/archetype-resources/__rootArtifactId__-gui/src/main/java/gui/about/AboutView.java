@@ -40,7 +40,7 @@ public class AboutView extends AbstractFxController {
                .duration(5000)
                .fadeOut(1500)
                .hide(popup::hide)
-               .css(AboutView.class.getResource("AboutView.css"))
+               .css(AboutView.class.getResource(FxUtilities.getInstance().isDarkMode() ? "AboutView-dark.css" : "AboutView.css"))
                .build();
     FxUtilities.getInstance().showNotification(owner, popup, notification, null);
   }

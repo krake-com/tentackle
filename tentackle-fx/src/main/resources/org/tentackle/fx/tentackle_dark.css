@@ -115,7 +115,7 @@
 
 .combo-box-base:disabled > .arrow-button {
   -fx-opacity: 1.0;
-  -fx-text-fill: black;
+  -fx-text-fill: white;
 }
 
 .combo-box-base:disabled > .arrow-button > .arrow {
