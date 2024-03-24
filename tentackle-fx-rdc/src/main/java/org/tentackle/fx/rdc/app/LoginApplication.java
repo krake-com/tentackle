@@ -66,12 +66,12 @@ public class LoginApplication extends FxApplication {
   @Override
   public void startApplication(Stage stage) {
     try {
-      controller = loadLoginController();
-      SessionInfo sessionInfo = createSessionInfo();
-      controller.setSessionInfo(sessionInfo);
       if (((DesktopApplication<?>) Application.getInstance()).isDarkModePlatformDependent()) {
         FxUtilities.getInstance().setDarkMode(Platform.getPreferences().getColorScheme() == ColorScheme.DARK);
       }
+      controller = loadLoginController();
+      SessionInfo sessionInfo = createSessionInfo();
+      controller.setSessionInfo(sessionInfo);
       Scene scene = Fx.createScene(controller.getView());
       stage.setScene(scene);
       stage.initStyle(StageStyle.TRANSPARENT);

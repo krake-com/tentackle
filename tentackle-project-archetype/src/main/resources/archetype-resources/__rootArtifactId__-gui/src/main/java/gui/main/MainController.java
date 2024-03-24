@@ -206,7 +206,9 @@ public class MainController extends AbstractFxController implements DomainContex
 
   private Node createCenterNode() {
     // just to show something nice (to be replaced by some application relevant stuff)
-    try (InputStream is = getClass().getResourceAsStream("/${packageInPathFormat}/gui/images/tentackle.png")) {
+    try (InputStream is = getClass().getResourceAsStream(
+      FxUtilities.getInstance().isDarkMode() ?
+        "/${packageInPathFormat}/gui/images/tentackle-dark.png" : "/${packageInPathFormat}/gui/images/tentackle.png")) {
       return new ImageView(new Image(is));
     }
     catch (IOException iox) {
