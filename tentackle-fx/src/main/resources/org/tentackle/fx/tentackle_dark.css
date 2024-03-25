@@ -37,6 +37,11 @@
    * opacity for disabled components like radio-buttons, checkboxes and comboboxes.
    */
   -tt-disabled-opacity: 0.6;
+
+  /**
+   * special base color for scrollbars (would be way too dark otherwise, see below)
+   */
+  -tt-scrollbar-color: derive(-fx-base, 50%);
 }
 
 .tt-info {
@@ -125,4 +130,42 @@
 .ikonli-font-icon {
   -fx-icon-size: 16;
   -fx-icon-color: white;
+}
+
+
+.scroll-bar:horizontal {
+  -fx-background-color: derive(-fx-box-border,30%), linear-gradient(to bottom, derive(-tt-scrollbar-color,-3%), derive(-tt-scrollbar-color,5%) 50%, derive(-tt-scrollbar-color,-3%));
+  -fx-background-insets: 0, 1 0 1 0;
+}
+.scroll-bar:vertical {
+  -fx-background-color: derive(-fx-box-border,30%), linear-gradient(to right, derive(-tt-scrollbar-color,-3%), derive(-tt-scrollbar-color,5%) 50%, derive(-tt-scrollbar-color,-3%));
+  -fx-background-insets: 0, 0 1 0 1;
+}
+.scroll-bar:focused {
+  -fx-background-color:
+    -fx-focus-color,
+    linear-gradient(to bottom, derive(-tt-scrollbar-color,-3%), derive(-tt-scrollbar-color,5%) 50%, derive(-tt-scrollbar-color,-3%)),
+    -fx-faint-focus-color,
+    linear-gradient(to bottom, derive(-tt-scrollbar-color,-3%), derive(-tt-scrollbar-color,5%) 50%, derive(-tt-scrollbar-color,-3%));
+  -fx-background-insets: -0.2, 1, -1.4, 2.6;
+}
+.scroll-bar:vertical:focused {
+  -fx-background-color:
+    -fx-focus-color,
+    linear-gradient(to right, derive(-tt-scrollbar-color,-3%), derive(-tt-scrollbar-color,5%) 50%, derive(-tt-scrollbar-color,-3%)),
+    -fx-faint-focus-color,
+    linear-gradient(to right, derive(-tt-scrollbar-color,-3%), derive(-tt-scrollbar-color,5%) 50%, derive(-tt-scrollbar-color,-3%));
+}
+
+.scroll-bar > .increment-button > .increment-arrow,
+.scroll-bar > .decrement-button > .decrement-arrow {
+  -fx-background-color: -fx-mark-highlight-color,derive(-tt-scrollbar-color,-45%);
+}
+.scroll-bar > .increment-button:hover > .increment-arrow,
+.scroll-bar > .decrement-button:hover > .decrement-arrow {
+  -fx-background-color: -fx-mark-highlight-color,derive(-tt-scrollbar-color,-50%);
+}
+.scroll-bar > .increment-button:pressed > .increment-arrow,
+.scroll-bar > .decrement-button:pressed > .decrement-arrow {
+  -fx-background-color: -fx-mark-highlight-color,derive(-tt-scrollbar-color,-55%);
 }

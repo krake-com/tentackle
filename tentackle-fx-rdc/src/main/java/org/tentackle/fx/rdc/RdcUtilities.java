@@ -63,7 +63,6 @@ import javafx.stage.WindowEvent;
 import java.io.File;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -72,6 +71,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.prefs.BackingStoreException;
@@ -119,14 +119,28 @@ public class RdcUtilities {
    */
   public RdcUtilities() {
     Application application = Application.getInstance();
-    if (application != null && application.isServer()) {
+    if (application != null && (application.isServer() || application.getPropertyIgnoreCase("noRdcCache") != null)) {
       // we cannot use caching in servers like JRPO (different users, browser instances, etc...)
+      // or when using BundleMonkey (application should be started w/o caching to see the changes immediately)
       crudCache = null;
       searchCache = null;
     }
     else {
-      crudCache = new HashMap<>();
-      searchCache = new HashMap<>();
+      crudCache = new ConcurrentHashMap<>();
+      searchCache = new ConcurrentHashMap<>();
+    }
+  }
+
+
+  /**
+   * Invalidates the caches for search- and crud dialogs.
+   */
+  public void invalidateCaches() {
+    if (crudCache != null) {
+      crudCache.clear();
+    }
+    if (searchCache != null) {
+      searchCache.clear();
     }
   }
 
