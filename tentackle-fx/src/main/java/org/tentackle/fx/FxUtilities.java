@@ -194,11 +194,6 @@ public class FxUtilities {
     this.darkMode.set(darkMode);
   }
 
-  /**
-   * Gets the dark mode property.
-   *
-   * @return the property
-   */
   public BooleanProperty darkModeProperty() {
     return darkMode;
   }
