@@ -349,6 +349,10 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
     }
     else {
       FxUtilities.getInstance().setDarkMode(Platform.getPreferences().getColorScheme() == ColorScheme.DARK);
+      Platform.getPreferences().colorSchemeProperty().subscribe(colorScheme -> {
+        FxUtilities.getInstance().setDarkMode(colorScheme == ColorScheme.DARK);
+        FxUtilities.getInstance().reapplyStyleSheets();
+      });
     }
   }
 
