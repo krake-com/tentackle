@@ -63,6 +63,7 @@ import javafx.stage.WindowEvent;
 import java.io.File;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -71,7 +72,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.prefs.BackingStoreException;
@@ -106,12 +106,14 @@ public class RdcUtilities {
   /**
    * Map of CRUD controllers.
    */
-  private final Map<Class<?>, Set<PdoCrud<?>>> crudCache;
+  private final Map<Class<?>, Set<PdoCrud<?>>> crudCache = new HashMap<>();
 
   /**
    * Map of search controllers.
    */
-  private final Map<Class<?>, Set<PdoSearch<?>>> searchCache;
+  private final Map<Class<?>, Set<PdoSearch<?>>> searchCache = new HashMap<>();
+
+  private final boolean cachingEnabled;
 
 
   /**
@@ -119,29 +121,19 @@ public class RdcUtilities {
    */
   public RdcUtilities() {
     Application application = Application.getInstance();
-    if (application != null && (application.isServer() || application.getPropertyIgnoreCase("noRdcCache") != null)) {
-      // we cannot use caching in servers like JRPO (different users, browser instances, etc...)
-      // or when using BundleMonkey (application should be started w/o caching to see the changes immediately)
-      crudCache = null;
-      searchCache = null;
-    }
-    else {
-      crudCache = new ConcurrentHashMap<>();
-      searchCache = new ConcurrentHashMap<>();
-    }
+    // we cannot use caching in servers like JRPO (different users, browser instances, etc...)
+    // or when using BundleMonkey (application should be started w/o caching to see the changes immediately)
+    cachingEnabled = application != null && !application.isServer() &&
+                     application.getPropertyIgnoreCase("noRdcCache") == null;
   }
 
 
   /**
    * Invalidates the caches for search- and crud dialogs.
    */
-  public void invalidateCaches() {
-    if (crudCache != null) {
-      crudCache.clear();
-    }
-    if (searchCache != null) {
-      searchCache.clear();
-    }
+  public synchronized void invalidateCaches() {
+    crudCache.clear();
+    searchCache.clear();
   }
 
   /**
@@ -236,7 +228,7 @@ public class RdcUtilities {
                 T pdo, ObservableList<T> pdoList, boolean editable, Modality modality, Window owner) {
 
     Set<PdoCrud<?>> cruds;
-    if (crudCache != null) {
+    if (isCrudCachingEnabled(pdo)) {
       Class<T> pdoClass = pdo.getEffectiveClass();
       cruds = crudCache.computeIfAbsent(pdoClass, k -> new HashSet<>());
 
@@ -290,7 +282,7 @@ public class RdcUtilities {
    * @return the CRUD showing stage, null if there is no such stage
    */
   public synchronized <T extends PersistentDomainObject<T>> Stage getCrud(T pdo, boolean editable) {
-    if (crudCache != null) {
+    if (isCrudCachingEnabled(pdo)) {
       Class<T> pdoClass = pdo.getEffectiveClass();
       Set<PdoCrud<?>> cruds = crudCache.get(pdoClass);
       if (cruds != null) {
@@ -400,7 +392,7 @@ public class RdcUtilities {
          getSearch(T pdo, Modality modality, Window owner) {
 
     Set<PdoSearch<?>> searches;
-    if (searchCache != null) {
+    if (isSearchCachingEnabled(pdo)) {
       Class<T> pdoClass = pdo.getEffectiveClass();
       searches = searchCache.computeIfAbsent(pdoClass, k -> new HashSet<>());
 
@@ -712,6 +704,29 @@ public class RdcUtilities {
   public Stage getMainStage() {
     Application application = Application.getInstance();
     return application instanceof DesktopApplication<?> desktopApplication ? desktopApplication.getMainStage() : null;
+  }
+
+
+  /**
+   * Determines whether the search controller is cached.
+   *
+   * @param pdo the PDO
+   * @return true if cached
+   * @param <T> the PDO type
+   */
+  protected <T extends PersistentDomainObject<T>> boolean isSearchCachingEnabled(T pdo) {
+    return cachingEnabled;
+  }
+
+  /**
+   * Determines whether the crud controller is cached.
+   *
+   * @param pdo the PDO
+   * @return true if cached
+   * @param <T> the PDO type
+   */
+  protected <T extends PersistentDomainObject<T>> boolean isCrudCachingEnabled(T pdo) {
+    return cachingEnabled;
   }
 
 }
