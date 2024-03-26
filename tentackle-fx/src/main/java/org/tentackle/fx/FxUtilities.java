@@ -46,6 +46,8 @@ import org.tentackle.validate.ValidationMapper;
 import org.tentackle.validate.ValidationResult;
 
 import javafx.application.Platform;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
@@ -147,7 +149,7 @@ public class FxUtilities {
   /**
    * Flag to switch to dark theme.
    */
-  private boolean darkMode;
+  private final SimpleBooleanProperty darkMode = new SimpleBooleanProperty();
 
   /**
    * Flag to avoid invoking Platform.exit() more than once
@@ -180,7 +182,7 @@ public class FxUtilities {
    * @return true to enable dark mode
    */
   public boolean isDarkMode() {
-    return darkMode;
+    return darkMode.get();
   }
 
   /**
@@ -189,17 +191,39 @@ public class FxUtilities {
    * @param darkMode true to enable dark theme, false for light theme (default)
    */
   public void setDarkMode(boolean darkMode) {
-    this.darkMode = darkMode;
+    this.darkMode.set(darkMode);
+  }
+
+  /**
+   * Gets the dark mode property.
+   *
+   * @return the property
+   */
+  public BooleanProperty darkModeProperty() {
+    return darkMode;
   }
 
   /**
    * Applies the default stylesheets to a scene.<br>
-   * Invoked for all newly created scenes.
+   * Invoked for all newly created scenes or via {@link #reapplyStyleSheets()}.
    *
    * @param scene the scene
    */
   public void applyStylesheets(Scene scene) {
-    scene.getStylesheets().add(isDarkMode() ? "/org/tentackle/fx/tentackle_dark.css" : "/org/tentackle/fx/tentackle.css");
+    scene.getStylesheets().setAll(isDarkMode() ? "/org/tentackle/fx/tentackle_dark.css" : "/org/tentackle/fx/tentackle.css");
+  }
+
+  /**
+   * Resets and applies the stylesheets to all scenes.<br>
+   * Useful when the dark mode configuration changed, for example.
+   */
+  public void reapplyStyleSheets() {
+    for (Window window : Window.getWindows()) {
+      Scene scene = window.getScene();
+      if (scene != null) {
+        applyStylesheets(scene);
+      }
+    }
   }
 
   /**

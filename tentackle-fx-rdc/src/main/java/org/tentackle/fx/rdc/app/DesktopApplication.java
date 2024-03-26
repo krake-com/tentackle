@@ -27,6 +27,7 @@ import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxController;
 import org.tentackle.fx.FxUtilities;
+import org.tentackle.fx.rdc.RdcUtilities;
 import org.tentackle.log.Logger;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PdoFactory;
@@ -38,6 +39,7 @@ import org.tentackle.validate.Validator;
 import org.tentackle.validate.ValidatorCache;
 
 import javafx.application.Application;
+import javafx.application.ColorScheme;
 import javafx.application.Platform;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
@@ -80,7 +82,7 @@ public abstract class DesktopApplication<C extends FxController>
   private String lastStatusMessage;           // last status message
   private long lastStatusMillis;              // last epochal millis the status message has changed
   private boolean autoLogin;                  // user is logged in w/o prompting for username/password
-  private boolean darkModePlatformDependent;  // true if set to dark mode according to the platform preferences
+
 
   /**
    * Creates an FX desktop application.
@@ -153,15 +155,6 @@ public abstract class DesktopApplication<C extends FxController>
    */
   public boolean isAutoLogin() {
     return autoLogin;
-  }
-
-  /**
-   * True if dark mode should be activated according to the platform preferences.
-   *
-   * @return false if already overridden by commandline or user preferences
-   */
-  public boolean isDarkModePlatformDependent() {
-    return darkModePlatformDependent;
   }
 
   /**
@@ -440,17 +433,41 @@ public abstract class DesktopApplication<C extends FxController>
   public void applyProperties(Properties properties) {
     super.applyProperties(properties);
 
+    Boolean darkMode = getConfiguredDarkMode();
+    if (darkMode != null) {
+      FxUtilities.getInstance().setDarkMode(darkMode);
+    }
+  }
+
+  /**
+   * Gets the configured dark mode.<br>
+   * It can be configured via command line or user preferences.
+   * If such configuration is missing, the mode is considered to be determined automatically according
+   * to the desktop settings.
+   *
+   * @return null if automatic, TRUE if fixed dark mode, FALSE if fixed light mode
+   */
+  public Boolean getConfiguredDarkMode() {
     String darkModeStr = getPropertyIgnoreCase(DARK_MODE);
     if (StringHelper.isAllWhitespace(darkModeStr)) {
       darkModeStr = Preferences.userNodeForPackage(getClass()).get(DARK_MODE, null);
     }
-    if (StringHelper.isAllWhitespace(darkModeStr)) {
-      darkModePlatformDependent = true;
-    }
-    else {
-      FxUtilities.getInstance().setDarkMode(Boolean.parseBoolean(darkModeStr));
-    }
+    return darkModeStr == null ? null : Boolean.valueOf(darkModeStr);
   }
+
+
+  /**
+   * Updates the dark mode.<br>
+   * All scenes get their CSS stylesheets updated and view refreshed.
+   *
+   * @param darkMode true if dark mode, false is light mode
+   */
+  public void updateDarkMode(boolean darkMode) {
+    RdcUtilities.getInstance().invalidateCaches();
+    FxUtilities.getInstance().setDarkMode(darkMode);
+    FxUtilities.getInstance().reapplyStyleSheets();
+  }
+
 
   @Override
   protected void startup() {
@@ -489,7 +506,20 @@ public abstract class DesktopApplication<C extends FxController>
   @Override
   protected void finishStartup() {
     super.finishStartup();
+    registerColorSchemeListener();
     showApplicationStatus(AppFxRdcBundle.getString("SUCCESSFULLY LOGGED IN"), 1.0);
+  }
+
+  /**
+   * Registers a listener to update the dark mode of all windows
+   * if configuration is automatic.
+   */
+  protected void registerColorSchemeListener() {
+    Platform.getPreferences().colorSchemeProperty().subscribe(colorScheme -> {
+      if (getConfiguredDarkMode() == null) {
+        updateDarkMode(colorScheme == ColorScheme.DARK);
+      }
+    });
   }
 
   @Override
