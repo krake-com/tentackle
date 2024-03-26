@@ -106,6 +106,7 @@ public class MainController extends AbstractFxController implements DomainContex
   public void initialize() {
 
     borderPane.setCenter(createCenterNode());
+    FxUtilities.getInstance().darkModeProperty().subscribe(cs -> borderPane.setCenter(createCenterNode()));
 
     securityManagerItem.setGraphic(Fx.createGraphic("security"));
     securityManagerItem.setDisable(!SecurityDialogFactory.getInstance().isDialogAllowed(getDomainContext()));

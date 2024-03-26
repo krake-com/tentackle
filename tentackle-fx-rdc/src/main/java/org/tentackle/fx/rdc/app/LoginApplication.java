@@ -66,9 +66,12 @@ public class LoginApplication extends FxApplication {
   @Override
   public void startApplication(Stage stage) {
     try {
-      if (((DesktopApplication<?>) Application.getInstance()).isDarkModePlatformDependent()) {
-        FxUtilities.getInstance().setDarkMode(Platform.getPreferences().getColorScheme() == ColorScheme.DARK);
+      Boolean darkMode = ((DesktopApplication<?>) Application.getInstance()).getConfiguredDarkMode();
+      if (darkMode == null) {
+        darkMode = Platform.getPreferences().getColorScheme() == ColorScheme.DARK;
       }
+      FxUtilities.getInstance().setDarkMode(darkMode);
+
       controller = loadLoginController();
       SessionInfo sessionInfo = createSessionInfo();
       controller.setSessionInfo(sessionInfo);
