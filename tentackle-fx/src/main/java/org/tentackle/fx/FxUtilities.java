@@ -147,9 +147,10 @@ public class FxUtilities {
   private String helpURL;
 
   /**
-   * Flag to switch to dark theme.
+   * Holds the dark theme boolean.<br>
+   * False is light mode (default).
    */
-  private final SimpleBooleanProperty darkMode = new SimpleBooleanProperty();
+  private final BooleanProperty darkMode = new SimpleBooleanProperty();
 
   /**
    * Flag to avoid invoking Platform.exit() more than once
