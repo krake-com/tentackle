@@ -19,7 +19,6 @@ import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.MenuItem;
-import javafx.scene.Node;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
@@ -105,8 +104,8 @@ public class MainController extends AbstractFxController implements DomainContex
   @FXML
   public void initialize() {
 
-    borderPane.setCenter(createCenterNode());
-    FxUtilities.getInstance().darkModeProperty().subscribe(cs -> borderPane.setCenter(createCenterNode()));
+    loadCenterImage();
+    FxUtilities.getInstance().darkModeProperty().subscribe(this::loadCenterImage);
 
     securityManagerItem.setGraphic(Fx.createGraphic("security"));
     securityManagerItem.setDisable(!SecurityDialogFactory.getInstance().isDialogAllowed(getDomainContext()));
@@ -205,12 +204,12 @@ public class MainController extends AbstractFxController implements DomainContex
     Fx.show(stage);
   }
 
-  private Node createCenterNode() {
+  private void loadCenterImage() {
     // just to show something nice (to be replaced by some application relevant stuff)
     try (InputStream is = getClass().getResourceAsStream(
       FxUtilities.getInstance().isDarkMode() ?
         "/${packageInPathFormat}/gui/images/tentackle-dark.png" : "/${packageInPathFormat}/gui/images/tentackle.png")) {
-      return new ImageView(new Image(is));
+      borderPane.setCenter(new ImageView(new Image(is)));
     }
     catch (IOException iox) {
       throw new FxRuntimeException("loading center image failed", iox);
