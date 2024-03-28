@@ -41,6 +41,7 @@ import org.tentackle.wurblet.ModelWurblet;
 import org.tentackle.wurblet.WurbletArgument;
 import org.tentackle.wurblet.WurbletArgumentExpression;
 import org.tentackle.wurblet.WurbletArgumentParser;
+import org.tentackle.wurblet.WurbletRelation;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -74,7 +75,7 @@ public class DbModelWurblet extends ModelWurblet {
   private Attribute contextAttribute;
   private List<JoinPath> joinPaths;
   private WurbletArgumentParser parser;
-
+  private List<WurbletArgument> methodArguments;
 
   /**
    * Returns whether argument grouping is enabled.<br>
@@ -168,16 +169,23 @@ public class DbModelWurblet extends ModelWurblet {
       if (isRemote()) {
         // check whether relations are not transient
         for (WurbletArgument joinArgument: parser.getJoinArguments()) {
-          for (Relation relation: joinArgument.getRelations()) {
-            if (!relation.isComposite() && !relation.isSerialized() && relation.getSelectionType() != SelectionType.EAGER) {
-              throw new WurbelException("joined non-composite relation '" + relation.getName() +
-                      "' must be serialized for remote access");
+          List<WurbletRelation> wurbletRelations = joinArgument.getWurbletRelations();
+          if (wurbletRelations != null) {   // is always != null, but one never knows ...
+            for (WurbletRelation wurbletRelation : wurbletRelations) {
+              Relation relation = wurbletRelation.getRelation();
+              if (!relation.isComposite() && !relation.isSerialized() && relation.getSelectionType() != SelectionType.EAGER) {
+                throw new WurbelException("joined non-composite relation '" + relation.getName() +
+                                          "' must be serialized for remote access");
+              }
+              Relation opRel = relation.getForeignRelation();
+              if (opRel != null && !opRel.isSerialized() && !opRel.isComposite()) {
+                throw new WurbelException("joined opposite relation '" + opRel.getEntity() + "." + opRel.getName() +
+                                          "' must be serialized for remote access");
+              }
             }
-            Relation opRel = relation.getForeignRelation();
-            if (opRel != null && !opRel.isSerialized() && !opRel.isComposite()) {
-              throw new WurbelException("joined opposite relation '" + opRel.getEntity() + "." + opRel.getName() +
-                      "' must be serialized for remote access");
-            }
+          }
+          else {
+            throw new WurbelException("join argument '" + joinArgument + "' does not provide relations?");
           }
         }
       }
@@ -269,7 +277,20 @@ public class DbModelWurblet extends ModelWurblet {
    * @return the method arguments
    */
   public List<WurbletArgument> getMethodArguments() {
-    return parser.getMethodArguments();
+    if (methodArguments == null) {
+      List<WurbletArgument> wurbletArguments = new ArrayList<>();
+      for (JoinPath joinPath : getJoinPaths()) {
+        for (Join element : joinPath.getElements()) {
+          WurbletArgumentParser elementParser = element.getWurbletRelation().getParser();
+          if (elementParser != null) {
+            wurbletArguments.addAll(elementParser.getMethodArguments());
+          }
+        }
+      }
+      wurbletArguments.addAll(parser.getMethodArguments());
+      methodArguments = wurbletArguments;
+    }
+    return methodArguments;
   }
 
 
@@ -392,6 +413,20 @@ public class DbModelWurblet extends ModelWurblet {
    */
   public boolean isWithJoins() {
     return !getJoinPaths().isEmpty();
+  }
+
+  /**
+   * Returns whether there are load joins with filters.
+   *
+   * @return true if result must be made immutable, false if no filters
+   */
+  public boolean isWithFilteredJoins() {
+    for (JoinPath joinPath : getJoinPaths()) {
+      if (joinPath.isFiltered()) {
+        return true;
+      }
+    }
+    return false;
   }
 
 
@@ -522,10 +557,144 @@ public class DbModelWurblet extends ModelWurblet {
           str += ".append(Backend.SQL_ARRAY_ALL_PAR)";
           break;
         case Backend.SQL_ARRAY_NOT_IN:
-          str = ".append(Backend.SQL_ARRAY_NOT_IN_PAR)";  // includes leading space
+          str += ".append(Backend.SQL_ARRAY_NOT_IN_PAR)";  // includes leading space
           break;
         default:
-          str = ".append(Backend.SQL_ARRAY_IN_PAR)";    // includes leading space
+          str += ".append(Backend.SQL_ARRAY_IN_PAR)";    // includes leading space
+      }
+    }
+
+    return str;
+  }
+
+
+  /**
+   * Creates the relop SQL for prepared statements.<br>
+   * Same as {@link #createRelopCode(WurbletArgument)}, but creates SQL code.
+   *
+   * @param arg the wurblet argument
+   * @return the SQL code
+   */
+  public String createRelopSql(WurbletArgument arg) throws WurbelException {
+
+    if (arg.isArray()) {
+      // this feature may not be supported by all backends
+      String op = arg.getArrayOperator();
+      assertSupportedByBackends("array operator '" + op + "'", b -> b.isArrayOperatorSupported(op));
+    }
+
+    String value = arg.getValue();
+    if (arg.isValueLiterally() && !value.startsWith("\"")) {
+      value = StringHelper.toDoubleQuotes(value);
+    }
+
+    String str;
+
+    // translate to predefined strings, if possible
+    switch(arg.getRelop()) {
+      case Backend.SQL_EQUAL:
+        if (arg.isValueLiterally()) {
+          str = Backend.SQL_EQUAL + value;
+        }
+        else  {
+          str = arg.isArray() ? Backend.SQL_EQUAL : Backend.SQL_EQUAL_PAR;
+        }
+        break;
+
+      case Backend.SQL_NOTEQUAL:
+      case "!=":
+        if (arg.isValueLiterally()) {
+          str = Backend.SQL_NOTEQUAL + value;
+        }
+        else  {
+          str = arg.isArray() ? Backend.SQL_NOTEQUAL : Backend.SQL_NOTEQUAL_PAR;
+        }
+        break;
+
+      case Backend.SQL_LESS:
+        if (arg.isValueLiterally()) {
+          str = Backend.SQL_LESS + value;
+        }
+        else  {
+          str = arg.isArray() ? Backend.SQL_LESS : Backend.SQL_LESS_PAR;
+        }
+        break;
+
+      case Backend.SQL_GREATER:
+        if (arg.isValueLiterally()) {
+          str = Backend.SQL_GREATER + value;
+        }
+        else  {
+          str = arg.isArray() ? Backend.SQL_GREATER : Backend.SQL_GREATER_PAR;
+        }
+        break;
+
+      case Backend.SQL_LESSOREQUAL:
+        if (arg.isValueLiterally()) {
+          str = Backend.SQL_LESSOREQUAL + value;
+        }
+        else  {
+          str = arg.isArray() ? Backend.SQL_LESSOREQUAL : Backend.SQL_LESSOREQUAL_PAR;
+        }
+        break;
+
+      case Backend.SQL_GREATEROREQUAL:
+        if (arg.isValueLiterally()) {
+          str = Backend.SQL_GREATEROREQUAL + value;
+        }
+        else  {
+          str = arg.isArray() ? Backend.SQL_GREATEROREQUAL : Backend.SQL_GREATEROREQUAL_PAR;
+        }
+        break;
+
+      case Backend.SQL_LIKE:
+        if (arg.isValueLiterally()) {
+          str = Backend.SQL_LIKE + value;
+        }
+        else  {
+          str = Backend.SQL_LIKE_PAR;
+        }
+        break;
+
+      case Backend.SQL_NOTLIKE:
+        if (arg.isValueLiterally()) {
+          str = Backend.SQL_NOTLIKE + value;
+        }
+        else  {
+          str = Backend.SQL_NOTLIKE_PAR;
+        }
+        break;
+
+      case Backend.SQL_ISNULL:
+        str = Backend.SQL_ISNULL;
+        break;
+
+      case Backend.SQL_ISNOTNULL:
+        str = Backend.SQL_ISNOTNULL;
+        break;
+
+      default:
+        if (arg.isArray()) {
+          str = "";
+        }
+        else {
+          str = arg.getRelop() + (arg.isValueLiterally() ? value : "?");
+        }
+    }
+
+    if (arg.isArray()) {
+      switch (arg.getArrayOperator()) {
+        case Backend.SQL_ARRAY_ANY:
+          str += Backend.SQL_ARRAY_ANY_PAR;
+          break;
+        case Backend.SQL_ARRAY_ALL:
+          str += Backend.SQL_ARRAY_ALL_PAR;
+          break;
+        case Backend.SQL_ARRAY_NOT_IN:
+          str += Backend.SQL_ARRAY_NOT_IN_PAR;  // includes leading space
+          break;
+        default:
+          str += Backend.SQL_ARRAY_IN_PAR;    // includes leading space
       }
     }
 
@@ -571,14 +740,14 @@ public class DbModelWurblet extends ModelWurblet {
           else  {
             if (!getEntity().equals(attr.getEntity())) {
               // must be a joined component (otherwise the column is not in the result set)
-              List<Relation> relations = key.getRelations();
+              List<WurbletRelation> wurbletRelations = key.getWurbletRelations();
               List<Relation> embeddingPath = key.getEmbeddingPath();
-              if (embeddingPath != null && !embeddingPath.isEmpty() && relations != null && relations.size() > embeddingPath.size()) {
-                relations = new ArrayList<>(relations.subList(0, relations.size() - embeddingPath.size()));
+              if (embeddingPath != null && !embeddingPath.isEmpty() && wurbletRelations != null && wurbletRelations.size() > embeddingPath.size()) {
+                wurbletRelations = new ArrayList<>(wurbletRelations.subList(0, wurbletRelations.size() - embeddingPath.size()));
               }
               boolean joinFound = false;
               for (JoinPath joinPath: getJoinPaths()) {
-                Join join = joinPath.findJoin(relations);
+                Join join = joinPath.findJoin(wurbletRelations);
                 if (join == null) {
                   join = joinPath.findJoin(key.getComponent());
                 }
@@ -596,7 +765,7 @@ public class DbModelWurblet extends ModelWurblet {
                 }
               }
               if (!joinFound) {
-                if ((relations == null || relations.isEmpty()) && embeddingPath != null && !embeddingPath.isEmpty()) {
+                if ((wurbletRelations == null || wurbletRelations.isEmpty()) && embeddingPath != null && !embeddingPath.isEmpty()) {
                   buf.append('"').append(key.getEmbeddingColumnPrefix()).append(attr.getColumnName()).append('"');
                 }
                 else {
@@ -640,14 +809,13 @@ public class DbModelWurblet extends ModelWurblet {
    * The casts of such joins are "unchecked" and need a SuppressWarnings to avoid Xlint warnings.
    *
    * @return true if join paths involve delegates of abstract classes
-   * @throws WurbelException if failed
    */
-  public boolean isAbstractJoinPath(List<JoinPath> paths) throws WurbelException {
+  public boolean isAbstractJoinPath(List<JoinPath> paths) {
     boolean isAbstract = false;
     for (JoinPath path: paths) {
       if (!path.getElements().isEmpty()) {
         Join join = path.getElements().get(0);  // normalized, i.e. only one (see above)
-        Relation relation = join.getRelation();
+        Relation relation = join.getWurbletRelation().getRelation();
         if (relation.getEntity().isAbstract() || relation.getForeignEntity().isAbstract()) {
           isAbstract = true;
           break;
@@ -687,7 +855,7 @@ public class DbModelWurblet extends ModelWurblet {
       String lastJoinName = null;
       if (!path.getElements().isEmpty()) {
         Join join = path.getElements().get(0);    // normalized, i.e. only one (see above)
-        Relation relation = join.getRelation();
+        Relation relation = join.getWurbletRelation().getRelation();
         lastJoinName = join.getName();
         String poImpl = deriveClassNameForEntity(relation.getEntity());
         String alias = lastNonEmbeddedEntity.getTopSuperEntity().getTableAlias();
@@ -705,7 +873,7 @@ public class DbModelWurblet extends ModelWurblet {
           }
           buf.append(join.getName()).append('.').append(relation.getForeignAttribute().getColumnName())
              .append("\", ").append(joinClass).append(".class, \"").append(join.getName()).append("\",\n");
-          String extraSql = createOptionalWhereForJoin(relation, parentName, join.getName());
+          String extraSql = createOptionalWhereForJoin(relation, parentName, join);
           if (!extraSql.isEmpty()) {
             buf.append(inset).append("             ").append(extraSql).append(",\n");
           }
@@ -774,7 +942,7 @@ public class DbModelWurblet extends ModelWurblet {
       List<JoinPath> subPaths = path.getPaths();
       if (!subPaths.isEmpty()) {
         // all sub paths start with the same entity
-        Relation subRelation = subPaths.get(0).getElements().getFirst().getRelation();
+        Relation subRelation = subPaths.get(0).getElements().getFirst().getWurbletRelation().getRelation();
         Entity subEntity = subRelation.getEntity();
         createJoinsImpl(buf, subEntity.isEmbedded() ? lastNonEmbeddedEntity : subEntity, inset + "  ", subPaths, subEntity.getName(), lastJoinName);
       }
@@ -783,13 +951,13 @@ public class DbModelWurblet extends ModelWurblet {
   }
 
 
-  private String createOptionalWhereForJoin(Relation relation, String parentName, String joinName) throws WurbelException {
+  private String createOptionalWhereForJoin(Relation relation, String parentName, Join join) throws WurbelException {
     StringBuilder buf = new StringBuilder();
     List<MethodArgument> methodArgs = relation.getMethodArgs();
     if (methodArgs.size() > 1) {
       for (MethodArgument methodArg: methodArgs.subList(1, methodArgs.size())) {
         Attribute attr = methodArg.getForeignAttribute();
-        buf.append("\" AND ").append(joinName).append('.')
+        buf.append("\" AND ").append(join.getName()).append('.')
            .append(attr.getColumnName())
            .append('=');
         if (methodArg.isValue()) {
@@ -799,7 +967,7 @@ public class DbModelWurblet extends ModelWurblet {
             throw new WurbelException("backend-specific datatype " + effectiveDataType + " cannot be used in joins");
           }
           for (int columnIndex = 1; columnIndex < effectiveDataType.getColumnCount(null); columnIndex++) {   // for more than one column
-            buf.append(" AND ").append(joinName).append('.').append(getColumnName(attr, columnIndex)).append("=?");
+            buf.append(" AND ").append(join.getName()).append('.').append(getColumnName(attr, columnIndex)).append("=?");
           }
           buf.append('"');
         }
@@ -814,6 +982,21 @@ public class DbModelWurblet extends ModelWurblet {
         }
       }
     }
+
+    WurbletArgumentParser joinFilterParser = join.getWurbletRelation().getParser();
+    if (joinFilterParser != null && join.getName() != null) {
+      if (buf.isEmpty()) {
+        buf.append('"');
+      }
+      else if (buf.charAt(buf.length() - 1) == '"') {
+        buf.deleteCharAt(buf.length() - 1);
+      }
+      else {
+        buf.append(" + \"");
+      }
+      buf.append(new JoinClauseGenerator(this, join).generate()).append('"');
+    }
+
     return buf.toString();
   }
 
@@ -944,7 +1127,7 @@ public class DbModelWurblet extends ModelWurblet {
   private void createJoinSetPars(StringBuilder buf, JoinPath path) throws WurbelException, ModelException {
     if (!path.getElements().isEmpty()) {
       Join join = path.getElements().get(0);    // normalized, i.e. only one (see above)
-      Relation relation = join.getRelation();
+      Relation relation = join.getWurbletRelation().getRelation();
       List<MethodArgument> methodArgs = relation.getMethodArgs();
       if (methodArgs.size() > 1) {
         for (MethodArgument methodArg: methodArgs.subList(1, methodArgs.size())) {

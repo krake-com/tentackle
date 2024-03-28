@@ -203,7 +203,7 @@ public class WurbletArgumentParser {
    */
   public List<JoinPath> getJoinPaths() {
     if (joinPaths == null) {
-      joinPaths = new JoinPathFactory().createPaths(joinArguments);
+      joinPaths = JoinPathFactory.getInstance().createPaths(joinArguments);
     }
     return joinPaths;
   }

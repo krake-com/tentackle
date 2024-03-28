@@ -18,6 +18,7 @@
 
 package org.tentackle.wurblet;
 
+import org.wurbelizer.wurbel.ArgScanner;
 import org.wurbelizer.wurbel.WurbelException;
 
 import org.tentackle.common.StringHelper;
@@ -62,7 +63,11 @@ import java.util.Set;
  * Optional for conditions, required for load joins. Illegal for updates and sorting.<br>
  * If the current entity is a root-entity, the path starts with a dot and is followed by the name of
  * a pointsToComponent, the pointsToComponent is replaced by its relation path, if there is only one path.<br>
- * For joins, the dots between the relations can be replaced by asterisks.
+ * For load joins, the dots between the relations can be replaced by asterisks.
+ * Each join path element can be filtered by appending a pipe-character followed by the filter expression,
+ * which in turn consists of wurblet arguments. Filters with more than one argument must be enclosed in single- or
+ * double quotes (see {@link ArgScanner}). Notice that for filtered load joins the returned PDOs are automatically made
+ * immutable since they may be incomplete and should not be modified and/or written back to the database!
  * </li>
  * <li>attribute: a property of an entity.<br>
  * Required for conditions, updates, sorting. Illegal for joins.
@@ -100,6 +105,8 @@ import java.util.Set;
  *
  *          *invoice.lines              -&gt; joins the invoice pointsToComponent together with its lines
  *          *invoice*lines              -&gt; equivalent to the above
+ *
+ *          *invoice*lines|no:&lt;:10      -&gt; equivalent to the above with filter "no &lt; 10"
  *
  *          blahId:=ANY                 -&gt; attribute blahId as an array, SQL relop is =ANY(?)
  *
@@ -149,7 +156,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
   private Integer columnIndex;
 
   /** the relation path to the attribute. */
-  private List<Relation> relations;
+  private List<WurbletRelation> wurbletRelations;
 
   /** embedding relation path if attribute is embedded. */
   private final List<Relation> embeddingPath;
@@ -234,7 +241,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
     String str;
 
     int ndx = text.indexOf(':');
-    if (ndx > 0) {
+    if (ndx > 0 && argumentType != WurbletArgumentType.JOIN) {
       if (!argumentType.isRelopOptional()) {
         throw new WurbelException("relops not allowed for " + argumentType + "-argument '" + this.text + "'");
       }
@@ -360,7 +367,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
       for (List<Relation> path: component.getAllCompositePaths()) {
         if (path.getFirst().getEntity().equals(entity)) {
           isComponent = true;
-          relations = new ArrayList<>();    // empty list: path is valid and starts with component
+          wurbletRelations = new ArrayList<>();    // empty list: path is valid and starts with component
           break;
         }
       }
@@ -582,8 +589,8 @@ public class WurbletArgument implements WurbletArgumentOperand {
    *
    * @return the relations, null if refers directly to the wurblet's entity
    */
-  public List<Relation> getRelations() {
-    return relations;
+  public List<WurbletRelation> getWurbletRelations() {
+    return wurbletRelations;
   }
 
   /**
@@ -705,10 +712,11 @@ public class WurbletArgument implements WurbletArgumentOperand {
    * @return the relation path to be used in expressions, null if refers directly to the wurblet's entity
    */
   public List<Relation> getExpressionRelations() {
-    if (relations != null && expressionRelations == null) {
+    if (wurbletRelations != null && expressionRelations == null) {
       expressionRelations = new ArrayList<>();
       if (entity.isRootEntity() && component == null) { // check if path to component
-        for (Relation relation: relations) {
+        for (WurbletRelation wurbletRelation: wurbletRelations) {
+          Relation relation = wurbletRelation.getRelation();
           if (expressionRelations.isEmpty() &&
               relation.isComposite() && relation.getMethodArgs().size() == 1) {
             // in chain of component relations without extra args from the beginning
@@ -722,7 +730,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
       }
       else {
         // no root entity or component already given -> cannot compact relation path
-        expressionRelations = relations;
+        expressionRelations = wurbletRelations.stream().map(WurbletRelation::getRelation).toList();
       }
     }
     return expressionRelations;
@@ -746,7 +754,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
    * @return true if argument describes a path to another entity
    */
   public boolean isPath() {
-    return relations != null;
+    return wurbletRelations != null;
   }
 
   /**
@@ -882,6 +890,12 @@ public class WurbletArgument implements WurbletArgumentOperand {
       if (ndx2 >= 0 && (ndx2 < ndx || ndx < 0)) {
         ndx = ndx2;
       }
+      if (ndx > 0) {
+        int filterNdx = name.indexOf('|');
+        if (filterNdx > 0 && filterNdx < ndx) {
+          ndx = -1;
+        }
+      }
     }
     return ndx;
   }
@@ -896,6 +910,12 @@ public class WurbletArgument implements WurbletArgumentOperand {
    * @throws WurbelException if no such relation
    */
   private Relation addRelation(Entity currentEntity, String name, Relation predecessorRelation) throws WurbelException {
+    int ndx = name.indexOf('|');
+    String filter = null;
+    if (ndx > 0) {
+      filter = name.substring(ndx + 1);
+      name = name.substring(0, ndx);
+    }
     Relation relation = currentEntity.getRelation(name, true);
     if (relation == null) {
       throw new WurbelException(
@@ -922,10 +942,10 @@ public class WurbletArgument implements WurbletArgumentOperand {
                                            predecessorRelation.getPathName(),
                                            predecessorRelation.getColumnPrefixPath());
       }
-      if (relations == null) {
-        relations = new ArrayList<>();
+      if (wurbletRelations == null) {
+        wurbletRelations = new ArrayList<>();
       }
-      relations.add(relation);
+      wurbletRelations.add(new WurbletRelation(relation, filter));
     }
     return relation;
   }

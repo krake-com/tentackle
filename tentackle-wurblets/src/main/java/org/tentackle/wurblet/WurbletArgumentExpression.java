@@ -104,7 +104,7 @@ public class WurbletArgumentExpression implements WurbletArgumentOperand {
       }
       else {
         // merge as much as possible (only AND operators)
-        mergedPaths = new JoinPathFactory().createPaths(pathArgs);
+        mergedPaths = JoinPathFactory.getInstance().createPaths(pathArgs);
       }
     }
     return mergedPaths;

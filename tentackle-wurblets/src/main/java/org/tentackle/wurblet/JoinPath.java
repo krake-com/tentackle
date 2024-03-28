@@ -22,7 +22,6 @@ import org.wurbelizer.wurbel.WurbelException;
 
 import org.tentackle.common.Path;
 import org.tentackle.model.Entity;
-import org.tentackle.model.Relation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,8 +33,8 @@ import java.util.List;
  */
 public class JoinPath implements Path<JoinPath, Join> {
 
-  private List<Join> elements;            // the relations forming a path
-  private List<JoinPath> paths;           // continuation paths
+  private final List<Join> elements;            // the relations forming a path
+  private final List<JoinPath> paths;           // continuation paths
 
   /**
    * Creates a relation path.
@@ -44,8 +43,8 @@ public class JoinPath implements Path<JoinPath, Join> {
    * @param paths the continuation paths, null or empty if none
    */
   public JoinPath(List<Join> elements, List<JoinPath> paths) {
-    this.elements = elements;
-    this.paths = paths;
+    this.elements = elements == null ? new ArrayList<>() : elements;
+    this.paths = paths == null ? new ArrayList<>() : paths;
   }
 
   /**
@@ -55,27 +54,33 @@ public class JoinPath implements Path<JoinPath, Join> {
    * @param paths the continuation paths, null or empty if none
    */
   public JoinPath(Join element, List<JoinPath> paths) {
-    elements = new ArrayList<>();
+    this(new ArrayList<>(), paths);
     elements.add(element);
-    this.paths = paths;
   }
 
   @Override
   public List<Join> getElements() {
-    if (elements == null) {
-      elements = new ArrayList<>();
-    }
     return elements;
   }
 
   @Override
   public List<JoinPath> getPaths() {
-    if (paths == null) {
-      paths = new ArrayList<>();
-    }
     return paths;
   }
 
+  /**
+   * Returns whether at least one join path contains a filter expression.
+   *
+   * @return true if filtered, false if no filter found
+   */
+  public boolean isFiltered() {
+    for (Join element : elements) {
+      if (element.getWurbletRelation().getFilter() != null) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   /**
    * Finds the join for a given component.
@@ -92,10 +97,8 @@ public class JoinPath implements Path<JoinPath, Join> {
     Join join = null;
     JoinPath joinPath = null;
 
-    List<Join> joins = path.getElements();
-    int joinCount = joins.size();
     for (Join jn : path.getElements()) {
-      if (component.equals(jn.getRelation().getForeignEntity())) {
+      if (component.equals(jn.getWurbletRelation().getRelation().getForeignEntity())) {
         if (join != null) {
           throw new WurbelException("ambiguous path to " + component + " in path " + path);
         }
@@ -120,33 +123,33 @@ public class JoinPath implements Path<JoinPath, Join> {
   /**
    * Find the join for given relation path.
    *
-   * @param relations the relation path
+   * @param wurbletRelations the relation path
    * @return the join if found, else null
    */
-  public Join findJoin(List<Relation> relations) {
-    return relations == null || relations.isEmpty() ? null : findJoinImpl(this, relations);
+  public Join findJoin(List<WurbletRelation> wurbletRelations) {
+    return wurbletRelations == null || wurbletRelations.isEmpty() ? null : findJoinImpl(this, wurbletRelations);
   }
 
-  private Join findJoinImpl(JoinPath path, List<Relation> relations) {
+  private Join findJoinImpl(JoinPath path, List<WurbletRelation> wurbletRelations) {
     Join join = null;
     int depth = 0;
     List<Join> joins = path.getElements();
     int joinCount = joins.size();
-    for (Relation relation: relations) {
+    for (WurbletRelation wurbletRelation: wurbletRelations) {
       if (depth >= joinCount) {
         break;
       }
       join = joins.get(depth);    // last join
-      if (!relation.equals(join.getRelation())) {
+      if (!wurbletRelation.equals(join.getWurbletRelation())) {
         return null;    // not in this join path
       }
       depth++;
     }
-    if (depth < relations.size()) {
-      relations = relations.subList(depth, relations.size()); // remaining relations
+    if (depth < wurbletRelations.size()) {
+      wurbletRelations = wurbletRelations.subList(depth, wurbletRelations.size()); // remaining relations
       // perhaps in one of the sub paths
       for (JoinPath subPath: path.getPaths()) {
-        join = findJoinImpl(subPath, relations);
+        join = findJoinImpl(subPath, wurbletRelations);
         if (join != null) {
           break;
         }
