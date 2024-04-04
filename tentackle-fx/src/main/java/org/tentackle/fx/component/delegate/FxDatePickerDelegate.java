@@ -51,7 +51,8 @@ import java.util.function.Function;
 public class FxDatePickerDelegate extends FxTextComponentDelegate {
 
   private final FxDatePicker component;                         // the component
-  private String text;                                          // copy of the editor's text
+  private final DatePickerConverter converter;                  // the converter for the datepicker component
+  private String lastText;                                      // copy of the editor's text, counterpart to lastDate below
   private AutoCompletionController autoCompletionController;    // != null if auto-completion enabled
 
   /**
@@ -61,7 +62,8 @@ public class FxDatePickerDelegate extends FxTextComponentDelegate {
    */
   public FxDatePickerDelegate(FxDatePicker component) {
     this.component = component;
-    component.setConverter(new DatePickerConverter());
+    this.converter = new DatePickerConverter();
+    component.setConverter(converter);
     component.getEditor().setTextFormatter(new TextFormatter<>(this));
   }
 
@@ -82,14 +84,18 @@ public class FxDatePickerDelegate extends FxTextComponentDelegate {
 
   @Override
   public String getViewObject() {
-    text = component.getEditor().getText();
-    return StringHelper.isAllWhitespace(text) ? null : text;
+    lastText = component.getEditor().getText();
+    return StringHelper.isAllWhitespace(lastText) ? null : lastText;
   }
 
   @Override
   public void setViewObject(Object viewObject) {
-    text = (String) viewObject;
-    component.getEditor().setText(text);
+    lastText = (String) viewObject;
+    component.getEditor().setText(lastText);
+    // necessary since FX 18!
+    // see javafx.scene.control.DatePicker#commitValue, which cannot be overridden since final,
+    // like 99.99% of all the FX stuff :(
+    component.setValue(converter.fromString(lastText));   // avoid invalidation due to changed value
   }
 
   @Override
@@ -146,13 +152,20 @@ public class FxDatePickerDelegate extends FxTextComponentDelegate {
    */
   private class DatePickerConverter extends StringConverter<LocalDate> {
 
-    private LocalDate lastDate;
+    private LocalDate lastDate;     // counterpart to lastText above
 
     @Override
     @SuppressWarnings({ "unchecked", "rawtypes" })
 		public String toString(LocalDate object) {
       if (component.isChangeable()) {
         if (object != null) {
+          if (object.equals(lastDate)) {
+            // see javafx.scene.control.DatePicker#cancelEdit
+            // same reason as in #setViewObject, necessary since FX18!
+            // avoid clearing the time if date unchanged when just pressing ESC or closing w/o any change
+            return lastText;
+          }
+          // date has changed
           ValueTranslator translator = getValueTranslator();
           Object modelValue = ObjectUtilities.getInstance().convert(component.getType(), object);
           return (String) translator.toView(modelValue);
@@ -162,7 +175,7 @@ public class FxDatePickerDelegate extends FxTextComponentDelegate {
         }
       }
       else {
-        return text;
+        return lastText;
       }
 		}
 
