@@ -58,85 +58,55 @@ public class FormatHelperTest {
   @Test
   @SuppressWarnings("deprecation")
   public void testFormats() {
-    try {
-      Timestamp ts = new Timestamp();
-      ts.setNanos(0);
-      String sts = FormatHelper.formatTimestamp(ts);
-      String stsf = FormatHelper.formatTimestampFast(ts);
-      assertEquals(stsf, sts);
-      Timestamp pts = FormatHelper.parseTimestamp(sts);
-      assertEquals(pts, ts);
-      pts = FormatHelper.parseTimestampFast(sts);
-      assertEquals(pts, ts);
-      LocalDateTime lts = ts.toLocalDateTime();
-      String sdt = FormatHelper.formatLocalDateTime(lts);
-      assertEquals(sdt, sts);
+    Timestamp ts = new Timestamp();
+    ts.setNanos(0);
+    String sts = FormatHelper.formatTimestamp(ts);
+    Timestamp pts = FormatHelper.parseTimestamp(sts);
+    assertEquals(pts, ts);
+    LocalDateTime lts = ts.toLocalDateTime();
+    String sdt = FormatHelper.formatLocalDateTime(lts);
+    assertEquals(sdt, sts);
 
-      ts.setSeconds(0);
-      sts = FormatHelper.formatShortTimestamp(ts);
-      stsf = FormatHelper.formatShortTimestampFast(ts);
-      assertEquals(stsf, sts);
-      pts = FormatHelper.parseShortTimestamp(sts);
-      assertEquals(pts, ts);
-      pts = FormatHelper.parseShortTimestampFast(sts);
-      assertEquals(pts, ts);
-      lts = ts.toLocalDateTime();
-      sdt = FormatHelper.formatShortLocalDateTime(lts);
-      assertEquals(sdt, sts);
+    ts.setSeconds(0);
+    sts = FormatHelper.formatShortTimestamp(ts);
+    pts = FormatHelper.parseShortTimestamp(sts);
+    assertEquals(pts, ts);
+    lts = ts.toLocalDateTime();
+    sdt = FormatHelper.formatShortLocalDateTime(lts);
+    assertEquals(sdt, sts);
 
-      Calendar cal = DateHelper.today();
-      DateHelper.setMidnight(cal);
-      Date d = new Date(cal.getTimeInMillis());
-      String sd = FormatHelper.formatDate(d);
-      String sdf = FormatHelper.formatDateFast(d);
-      assertEquals(sdf, sd);
-      Date pd = FormatHelper.parseDate(sd);
-      assertEquals(pd, d);
-      pd = FormatHelper.parseDateFast(sd);
-      assertEquals(pd, d);
-      LocalDate ld = d.toLocalDate();
-      String sld = FormatHelper.formatLocalDate(ld);
-      assertEquals(sld, sd);
+    Calendar cal = DateHelper.today();
+    DateHelper.setMidnight(cal);
+    Date d = new Date(cal.getTimeInMillis());
+    String sd = FormatHelper.formatDate(d);
+    Date pd = FormatHelper.parseDate(sd);
+    assertEquals(pd, d);
+    LocalDate ld = d.toLocalDate();
+    String sld = FormatHelper.formatLocalDate(ld);
+    assertEquals(sld, sd);
 
-      sd = FormatHelper.formatShortDate(d);
-      sdf = FormatHelper.formatShortDateFast(d);
-      assertEquals(sdf, sd);
-      pd = FormatHelper.parseShortDate(sd);
-      assertEquals(pd, d);
-      pd = FormatHelper.parseShortDateFast(sd);
-      assertEquals(pd, d);
-      ld = d.toLocalDate();
-      sld = FormatHelper.formatShortLocalDate(ld);
-      assertEquals(sld, sd);
+    sd = FormatHelper.formatShortDate(d);
+    pd = FormatHelper.parseShortDate(sd);
+    assertEquals(pd, d);
+    ld = d.toLocalDate();
+    sld = FormatHelper.formatShortLocalDate(ld);
+    assertEquals(sld, sd);
 
-      Time t = new Time();
-      String st = FormatHelper.formatTime(t);
-      String stf = FormatHelper.formatTimeFast(t);
-      assertEquals(stf, st);
-      Time pt = FormatHelper.parseTime(st);
-      assertEquals(pt.toString(), t.toString());
-      pt = FormatHelper.parseTimeFast(st);
-      assertEquals(pt.toString(), t.toString());
-      LocalTime lt = t.toLocalTime();
-      String slt = FormatHelper.formatLocalTime(lt);
-      assertEquals(slt, st);
+    Time t = new Time();
+    String st = FormatHelper.formatTime(t);
+    Time pt = FormatHelper.parseTime(st);
+    assertEquals(pt.toString(), t.toString());
+    LocalTime lt = t.toLocalTime();
+    String slt = FormatHelper.formatLocalTime(lt);
+    assertEquals(slt, st);
 
-      t.setSeconds(0);
-      st = FormatHelper.formatShortTime(t);
-      stf = FormatHelper.formatShortTimeFast(t);
-      assertEquals(stf, st);
-      pt = FormatHelper.parseShortTime(st);
-      assertEquals(pt.toString(), t.toString());
-      pt = FormatHelper.parseShortTimeFast(st);
-      assertEquals(pt.toString(), t.toString());
-      lt = t.toLocalTime();
-      slt = FormatHelper.formatShortLocalTime(lt);
-      assertEquals(slt, st);
-
-    }
-    catch (ParseException px) {
-      fail("parsing failed", px);
-    }
+    t.setSeconds(0);
+    st = FormatHelper.formatShortTime(t);
+    pt = FormatHelper.parseShortTime(st);
+    assertEquals(pt.toString(), t.toString());
+    lt = t.toLocalTime();
+    slt = FormatHelper.formatShortLocalTime(lt);
+    assertEquals(slt, st);
   }
 
 
@@ -192,24 +162,6 @@ public class FormatHelperTest {
     TimeKeeper timeKeeper = new TimeKeeper();
     try {
       for (int i = 0; i < LOOPS; i++) {
-        synchronized (dateFormat) {   // dateFormat is not threadsafe
-          String str = dateFormat.format(timestamp);
-          Timestamp ts = new Timestamp(dateFormat.parse(str).getTime());
-          assertEquals(dateFormat.format(ts), str);
-          timestamp = new Timestamp(timestamp.getTime() + 1000);
-        }
-      }
-    }
-    catch (ParseException parseException) {
-      fail("parsing failed", parseException);
-    }
-    timeKeeper.end();
-    Reporter.log("old java.util package w/ sync: " + timeKeeper.millisToString() + " ms<br>", true);
-
-    timestamp = new Timestamp();
-    timeKeeper = new TimeKeeper();
-    try {
-      for (int i = 0; i < LOOPS; i++) {
         String str = dateFormat.format(timestamp);
         Timestamp ts = new Timestamp(dateFormat.parse(str).getTime());
         assertEquals(dateFormat.format(ts), str);
@@ -220,7 +172,7 @@ public class FormatHelperTest {
       fail("parsing failed", parseException);
     }
     timeKeeper.end();
-    Reporter.log("old java.util package w/o sync: " + timeKeeper.millisToString() + " ms<br>", true);
+    Reporter.log("old java.util package: " + timeKeeper.millisToString() + " ms<br>", true);
 
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern(FormatHelper.getTimestampPattern(Locale.US));
     LocalDateTime localDateTime = LocalDateTime.now();
@@ -253,7 +205,7 @@ public class FormatHelperTest {
       fail("parsing failed", parseException);
     }
     timeKeeper.end();
-    Reporter.log("new java.time package w/ conversion: " + timeKeeper.millisToString() + " ms<br>", true);
+    Reporter.log("new java.time package with conversion: " + timeKeeper.millisToString() + " ms<br>", true);
   }
 
   /**
@@ -267,21 +219,6 @@ public class FormatHelperTest {
     TimeKeeper timeKeeper = new TimeKeeper();
     try {
       for (int i = 0; i < LOOPS; i++) {
-        synchronized (dateFormat) {   // dateFormat is not threadsafe
-          Timestamp ts = new Timestamp(dateFormat.parse(str).getTime());
-          assertEquals(ts, timestamp);
-        }
-      }
-    }
-    catch (ParseException parseException) {
-      fail("parsing failed", parseException);
-    }
-    timeKeeper.end();
-    Reporter.log("old java.util package w/ sync: " + timeKeeper.millisToString() + " ms<br>", true);
-
-    timeKeeper = new TimeKeeper();
-    try {
-      for (int i = 0; i < LOOPS; i++) {
         Timestamp ts = new Timestamp(dateFormat.parse(str).getTime());
         assertEquals(ts, timestamp);
       }
@@ -290,7 +227,7 @@ public class FormatHelperTest {
       fail("parsing failed", parseException);
     }
     timeKeeper.end();
-    Reporter.log("old java.util package w/o sync: " + timeKeeper.millisToString() + " ms<br>", true);
+    Reporter.log("old java.util package: " + timeKeeper.millisToString() + " ms<br>", true);
 
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern(FormatHelper.getTimestampPattern(Locale.US));
     LocalDateTime localDateTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
@@ -320,7 +257,7 @@ public class FormatHelperTest {
       fail("parsing failed", parseException);
     }
     timeKeeper.end();
-    Reporter.log("new java.time package w/ conversion: " + timeKeeper.millisToString() + " ms<br>", true);
+    Reporter.log("new java.time package with conversion: " + timeKeeper.millisToString() + " ms<br>", true);
   }
 
   /**
@@ -333,19 +270,10 @@ public class FormatHelperTest {
     String str = dateFormat.format(timestamp);
     TimeKeeper timeKeeper = new TimeKeeper();
     for (int i = 0; i < LOOPS; i++) {
-      synchronized (dateFormat) {   // dateFormat is not threadsafe
-        assertEquals(dateFormat.format(timestamp), str);
-      }
-    }
-    timeKeeper.end();
-    Reporter.log("old java.util package w/ sync: " + timeKeeper.millisToString() + " ms<br>", true);
-
-    timeKeeper = new TimeKeeper();
-    for (int i = 0; i < LOOPS; i++) {
       assertEquals(dateFormat.format(timestamp), str);
     }
     timeKeeper.end();
-    Reporter.log("old java.util package w/ sync: " + timeKeeper.millisToString() + " ms<br>", true);
+    Reporter.log("old java.util package: " + timeKeeper.millisToString() + " ms<br>", true);
 
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern(FormatHelper.getTimestampPattern(Locale.US));
     LocalDateTime localDateTime = LocalDateTime.now();
@@ -365,7 +293,16 @@ public class FormatHelperTest {
       assertEquals(formatter.format(timestamp.toLocalDateTime()), str);
     }
     timeKeeper.end();
-    Reporter.log("new java.time package w/ conversion: " + timeKeeper.millisToString() + " ms<br>", true);
+    Reporter.log("new java.time package with conversion: " + timeKeeper.millisToString() + " ms<br>", true);
+  }
+
+
+  @Test
+  public void warmedUpTest() {
+    Reporter.log("----------- warmed up ------------ <br>", true);
+    testPerformance();
+    testScanPerformance();
+    testFormatPerformance();
   }
 
 }

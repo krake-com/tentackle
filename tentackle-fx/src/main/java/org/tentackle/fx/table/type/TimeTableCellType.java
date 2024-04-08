@@ -48,7 +48,7 @@ public class TimeTableCellType extends AbstractDateTimeTableCellType<Time> {
       text = fmt.format(item.toLocalTime());
     }
     else {
-      text = FormatHelper.formatTimeFast(item);
+      text = FormatHelper.formatTime(item);
     }
     return text;
   }

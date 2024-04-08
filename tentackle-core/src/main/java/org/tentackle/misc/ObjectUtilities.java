@@ -225,26 +225,15 @@ public class ObjectUtilities {
    * @return true if number is zero
    */
   public boolean isZero(Number number) {
-    boolean zero;
-    if (number instanceof BMoney) {
-      zero = ((BMoney) number).isZero();
-    }
-    else if (number instanceof BigInteger) {
-      zero = number.equals(BigInteger.ZERO);
-    }
-    else if (number instanceof BigDecimal) {
-      zero = number.equals(BigDecimal.ZERO);
-    }
-    else if (number instanceof Double) {
-      zero = ((Double) number) == 0.0d;
-    }
-    else if (number instanceof Float) {
-      zero = ((Float) number) == 0.0f;
-    }
-    else {
-      zero = number.longValue() == 0;
-    }
-    return zero;
+    return switch (number) {
+      case null -> false;
+      case BMoney bMoney -> bMoney.isZero();
+      case BigInteger bigInteger -> number.equals(BigInteger.ZERO);
+      case BigDecimal bigDecimal -> number.equals(BigDecimal.ZERO);
+      case Double v -> v == 0.0d;
+      case Float v -> v == 0.0f;
+      default -> number.longValue() == 0;
+    };
   }
 
 
@@ -377,7 +366,7 @@ public class ObjectUtilities {
     if (value instanceof Instant instant) {
       return new java.sql.Timestamp(instant.toEpochMilli());
     }
-    return FormatHelper.parseTimestampFast(value.toString());   // tentackle Timestamp extends sql Timestamp
+    return FormatHelper.parseTimestamp(value.toString());   // tentackle Timestamp extends sql Timestamp
   }
 
   private org.tentackle.common.Timestamp toTimestamp(Object value) {
@@ -406,7 +395,7 @@ public class ObjectUtilities {
     if (value instanceof Instant instant) {
       return new java.sql.Time(instant.toEpochMilli());
     }
-    return FormatHelper.parseTimeFast(value.toString());   // tentackle Time extends sql Time
+    return FormatHelper.parseTime(value.toString());   // tentackle Time extends sql Time
   }
 
   private org.tentackle.common.Time toTime(Object value) {
@@ -436,7 +425,7 @@ public class ObjectUtilities {
     if (value instanceof Instant instant) {
       return new java.sql.Date(instant.toEpochMilli());
     }
-    return FormatHelper.parseDateFast(value.toString());   // tentackle Date extends sql Date
+    return FormatHelper.parseDate(value.toString());   // tentackle Date extends sql Date
   }
 
   private org.tentackle.common.Date toDate(Object value) {
@@ -516,7 +505,7 @@ public class ObjectUtilities {
     if (value instanceof TemporalAccessor temporalAccessor) {
       return Instant.from(temporalAccessor);
     }
-    return Instant.ofEpochMilli(FormatHelper.parseTimestampFast(value.toString()).getTime());
+    return Instant.ofEpochMilli(FormatHelper.parseTimestamp(value.toString()).getTime());
   }
 
   private LocalDate toLocalDate(Object value) {

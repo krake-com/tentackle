@@ -157,7 +157,7 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDelegateImpl<
     @Serial
     private static final long serialVersionUID = 1L;
 
-    private static final NumberFormat OFFSET_FMT = new DecimalFormat("+#0.#");
+    private static final ThreadLocal<NumberFormat> OFFSET_FMT = ThreadLocal.withInitial(() -> new DecimalFormat("+#0.#"));
 
     private final long userId;
     private final String userName;
@@ -192,9 +192,7 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDelegateImpl<
       hostInfo = info.getHostInfo();
       if (info.getTimeZone() != null) {
         double tzOffsetH = info.getTimeZone().getOffset(System.currentTimeMillis()) / 3600000.0;
-        synchronized (OFFSET_FMT) {
-          timeZone = info.getTimeZone().getID() + " (" + OFFSET_FMT.format(tzOffsetH) + "h)";
-        }
+        timeZone = info.getTimeZone().getID() + " (" + OFFSET_FMT.get().format(tzOffsetH) + "h)";
       }
       else {
         timeZone = null;

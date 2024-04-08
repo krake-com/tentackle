@@ -483,7 +483,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     // un-synchronized...
     if (expired) {
       LOGGER.info("{0}: closing expired connection {1}, open since {2}",
-                  this, con, FormatHelper.formatTimestampFast(new Date(con.getEstablishedSince())));
+                  this, con, FormatHelper.formatTimestamp(new Date(con.getEstablishedSince())));
       try {
         con.close();
       }

@@ -38,7 +38,7 @@ public class TimeKeeper implements Cloneable, Comparable<TimeKeeper> {
    * <p>
    * The default format prints 3 digits after the comma.
    */
-  private static final DecimalFormat DURATION_FORMAT = new DecimalFormat("#0.000");
+  private static final ThreadLocal<DecimalFormat> DURATION_FORMAT = ThreadLocal.withInitial(() -> new DecimalFormat("#0.000"));
 
   /**
    * String for invalid duration.
@@ -274,9 +274,7 @@ public class TimeKeeper implements Cloneable, Comparable<TimeKeeper> {
    */
   protected String durationToString(double duration) {
     if (isValid()) {
-      synchronized(DURATION_FORMAT) {
-        return DURATION_FORMAT.format(duration);
-      }
+      return DURATION_FORMAT.get().format(duration);
     }
     return INVALID_DURATION_TEXT;
   }

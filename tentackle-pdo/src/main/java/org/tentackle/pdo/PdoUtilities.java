@@ -59,6 +59,7 @@ interface PdoUtilitiesHolder {
   PdoUtilities INSTANCE = ServiceFactory.createService(PdoUtilities.class, PdoUtilities.class);
 }
 
+
 /**
  * Utility methods for PDOs.
  *
@@ -750,7 +751,7 @@ public class PdoUtilities {
       String userTxt = user == null ? ("ID=" + userId) : user.toString();
       str = MessageFormat.format(PdoPdoBundle.getString("{0} {1} is being locked by {2} since {3}"),
                                  pdo.getSingular(), pdo.toString(), userTxt,
-                                 since == null ? "?" : FormatHelper.formatTimestampFast(since));
+                                 since == null ? "?" : FormatHelper.formatTimestamp(since));
     }
     else {
       str = MessageFormat.format(PdoPdoBundle.getString("{0} {1} is already locked in context {2}"),
