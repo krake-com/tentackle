@@ -53,7 +53,7 @@ public class DateTableCellType<T extends Date> extends AbstractDateTimeTableCell
       }
     }
     else {
-      text = FormatHelper.formatDateFast(item);
+      text = FormatHelper.formatDate(item);
     }
     return text;
   }

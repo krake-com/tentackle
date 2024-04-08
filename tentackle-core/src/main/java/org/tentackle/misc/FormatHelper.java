@@ -25,7 +25,6 @@ import org.tentackle.common.Timestamp;
 
 import java.text.DecimalFormat;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -47,8 +46,6 @@ import static java.util.Calendar.MONTH;
 import static java.util.Calendar.SECOND;
 import static java.util.Calendar.WEEK_OF_YEAR;
 import static java.util.Calendar.YEAR;
-
-
 
 /**
  * Formatting helper methods.
@@ -140,31 +137,13 @@ public class FormatHelper {
 
 
     /** localized {@link DecimalFormat} for an integer. */
-    private final DecimalFormat integerFormat;
+    private final ThreadLocal<DecimalFormat> integerFormat;
 
     /** localized {@link DecimalFormat} for a float or double. */
-    private final DecimalFormat floatingNumberFormat;
+    private final ThreadLocal<DecimalFormat> floatingNumberFormat;
 
     /** localized {@link DecimalFormat} for a money value. */
-    private final DecimalFormat moneyFormat;
-
-    /** localized {@link java.text.DateFormat} for a timestamp. */
-    private final SimpleDateFormat timestampFormat;
-
-    /** localized {@link java.text.DateFormat} for a date. */
-    private final SimpleDateFormat dateFormat;
-
-    /** localized {@link java.text.DateFormat} for a time. */
-    private final SimpleDateFormat timeFormat;
-
-    /** localized {@link java.text.DateFormat} for a short timestamp. */
-    private final SimpleDateFormat shortTimestampFormat;
-
-    /** localized {@link java.text.DateFormat} for a short date. */
-    private final SimpleDateFormat shortDateFormat;
-
-    /** localized {@link java.text.DateFormat} for a short time. */
-    private final SimpleDateFormat shortTimeFormat;
+    private final ThreadLocal<DecimalFormat> moneyFormat;
 
     /** localized {@link java.time.format.DateTimeFormatter} for a timestamp. */
     private final DateTimeFormatter localDateTimeFormat;
@@ -195,18 +174,12 @@ public class FormatHelper {
       this.patterns = patterns;
       debitString = " " + patterns.debitLetter + "    ";
       creditString = " " + patterns.creditLetter;
-      // old java.util classes w/o threadsafe formats
-      integerFormat = new DecimalFormat(patterns.integerPattern);
-      floatingNumberFormat = new DecimalFormat(patterns.floatingNumberPattern);
-      decimalSeparator = floatingNumberFormat.getDecimalFormatSymbols().getDecimalSeparator();
-      moneyFormat = new DecimalFormat(patterns.moneyPattern);
-      timestampFormat = new SimpleDateFormat(patterns.timestampPattern, locale);
-      dateFormat = new SimpleDateFormat(patterns.datePattern, locale);
-      timeFormat = new SimpleDateFormat(patterns.timePattern, locale);
-      shortTimestampFormat = new SimpleDateFormat(patterns.shortTimestampPattern, locale);
-      shortDateFormat = new SimpleDateFormat(patterns.shortDatePattern, locale);
-      shortTimeFormat = new SimpleDateFormat(patterns.shortTimePattern, locale);
-      // new java.time package (threadsafe formats)
+      // number formats made thread-safe via thread-local (as there is no alternative in JDK yet)
+      integerFormat = ThreadLocal.withInitial(() -> new DecimalFormat(patterns.integerPattern));
+      floatingNumberFormat = ThreadLocal.withInitial(() -> new DecimalFormat(patterns.floatingNumberPattern));
+      decimalSeparator = floatingNumberFormat.get().getDecimalFormatSymbols().getDecimalSeparator();
+      moneyFormat = ThreadLocal.withInitial(() -> new DecimalFormat(patterns.moneyPattern));
+      // new java.time package (thread-safe)
       localDateTimeFormat = DateTimeFormatter.ofPattern(patterns.timestampPattern, locale);
       localDateTimeFormatWithOffset = DateTimeFormatter.ofPattern(patterns.timestampPatternWithOffset, locale);
       localDateTimeFormatWithTimeZone = DateTimeFormatter.ofPattern(patterns.timestampPatternWithTimeZone, locale);
@@ -225,114 +198,34 @@ public class FormatHelper {
       if (money == null) {
         return "";
       }
-      synchronized (moneyFormat) {
-        setScale(moneyFormat, money.scale());
-        return debit ? (moneyFormat.format(money) + debitString) :
-               ("    " + moneyFormat.format(money) + creditString);
-      }
+      DecimalFormat mf = moneyFormat.get();
+      setScale(mf, money.scale());
+      return debit ? (mf.format(money) + debitString) :
+             ("    " + mf.format(money) + creditString);
     }
 
     private Number parseInteger(String str) throws ParseException {
-      synchronized (integerFormat) {
-        return integerFormat.parse(str);
-      }
+      return integerFormat.get().parse(str);
     }
 
     private String formatInteger(long number) {
-      synchronized (integerFormat) {
-        return integerFormat.format(number);
-      }
+      return integerFormat.get().format(number);
     }
 
     private Number parseFloatingNumber(String str) throws ParseException {
-      synchronized (floatingNumberFormat) {
-        return floatingNumberFormat.parse(str);
-      }
+      return floatingNumberFormat.get().parse(str);
     }
 
     private String formatFloatingNumber(double number) {
-      synchronized (floatingNumberFormat) {
-        return floatingNumberFormat.format(number);
-      }
+      return floatingNumberFormat.get().format(number);
     }
 
     // money makes no sense to parse or format since we need to know the scale and reflect that in the format itself
 
-    private Date parseTimestamp(String str) throws ParseException {
-      synchronized (timestampFormat) {
-        return timestampFormat.parse(str);
-      }
-    }
-
-    private String formatTimestamp(Date date) {
-      synchronized (timestampFormat) {
-        return timestampFormat.format(date);
-      }
-    }
-
-    private Date parseShortTimestamp(String str) throws ParseException {
-      synchronized (shortTimestampFormat) {
-        return shortTimestampFormat.parse(str);
-      }
-    }
-
-    private String formatShortTimestamp(Date date) {
-      synchronized (shortTimestampFormat) {
-        return shortTimestampFormat.format(date);
-      }
-    }
-
-    private Date parseDate(String str) throws ParseException {
-      synchronized (dateFormat) {
-        return dateFormat.parse(str);
-      }
-    }
-
-    private String formatDate(Date date) {
-      synchronized (dateFormat) {
-        return dateFormat.format(date);
-      }
-    }
-
-    private Date parseShortDate(String str) throws ParseException {
-      synchronized (shortDateFormat) {
-        return shortDateFormat.parse(str);
-      }
-    }
-
-    private String formatShortDate(Date date) {
-      synchronized (shortDateFormat) {
-        return shortDateFormat.format(date);
-      }
-    }
-
-    private Date parseTime(String str) throws ParseException {
-      synchronized (timeFormat) {
-        return timeFormat.parse(str);
-      }
-    }
-
-    private String formatTime(Date date) {
-      synchronized (timeFormat) {
-        return timeFormat.format(date);
-      }
-    }
-
-    private Date parseShortTime(String str) throws ParseException {
-      synchronized (shortTimeFormat) {
-        return shortTimeFormat.parse(str);
-      }
-    }
-
-    private String formatShortTime(Date date) {
-      synchronized (shortTimeFormat) {
-        return shortTimeFormat.format(date);
-      }
-    }
   }
 
 
-  /** {@link Formatting}s by {@link Locale}. */
+  /** Formattings by Locale. */
   private static final Map<Locale, Formatting> FORMATTING_MAP = new ConcurrentHashMap<>();
 
 
@@ -698,160 +591,75 @@ public class FormatHelper {
 
   /**
    * Parses a timestamp.
-   *
-   * @param str the string to parse
-   * @return the timestamp
-   * @throws ParseException if parsing failed
-   * @deprecated use {@link #parseTimestampFast(String)} instead
-   */
-  @Deprecated
-  public static Timestamp parseTimestamp(String str) throws ParseException {
-    return new Timestamp(getFormatting().parseTimestamp(str).getTime());
-  }
-
-  /**
-   * Parses a timestamp.<br>
-   * Faster than {@link #parseTimestamp(String)} using {@link DateTimeFormatter}.
    * <p>
    * Throws {@link java.time.format.DateTimeParseException} if parsing failed.
    *
    * @param str the string to parse
    * @return the timestamp
    */
-  public static Timestamp parseTimestampFast(String str) {
+  public static Timestamp parseTimestamp(String str) {
     return new Timestamp(java.sql.Timestamp.valueOf(getFormatting().localDateTimeFormat.parse(str, LocalDateTime::from)).getTime());
   }
 
   /**
    * Parses a short timestamp.
-   *
-   * @param str the string to parse
-   * @return the timestamp
-   * @throws ParseException if parsing failed
-   * @deprecated use {@link #parseShortTimestampFast(String)} instead
-   */
-  @Deprecated
-  public static Timestamp parseShortTimestamp(String str) throws ParseException {
-    return new Timestamp(getFormatting().parseShortTimestamp(str).getTime());
-  }
-
-  /**
-   * Parses a short timestamp.<br>
-   * Faster than {@link #parseShortTimestamp(String)} using {@link DateTimeFormatter}.
    * <p>
    * Throws {@link java.time.format.DateTimeParseException} if parsing failed.
    *
    * @param str the string to parse
    * @return the timestamp
    */
-  public static Timestamp parseShortTimestampFast(String str) {
+  public static Timestamp parseShortTimestamp(String str) {
     return new Timestamp(java.sql.Timestamp.valueOf(getFormatting().shortLocalDateTimeFormat.parse(str, LocalDateTime::from)).getTime());
   }
 
   /**
    * Parses a date.
-   *
-   * @param str the string to parse
-   * @return the date
-   * @throws ParseException if parsing failed
-   * @deprecated use {@link #parseDateFast(String)} instead
-   */
-  @Deprecated
-  public static org.tentackle.common.Date parseDate(String str) throws ParseException {
-    return new org.tentackle.common.Date(getFormatting().parseDate(str).getTime());
-  }
-
-  /**
-   * Parses a date.<br>
-   * Faster than {@link #parseDate(String)} using {@link DateTimeFormatter}.
    * <p>
    * Throws {@link java.time.format.DateTimeParseException} if parsing failed.
    *
    * @param str the string to parse
    * @return the date
    */
-  public static org.tentackle.common.Date parseDateFast(String str) {
+  public static org.tentackle.common.Date parseDate(String str) {
     return new org.tentackle.common.Date(java.sql.Date.valueOf(getFormatting().localDateFormat.parse(str, LocalDate::from)).getTime());
   }
 
   /**
    * Parses a short date.
-   *
-   * @param str the string to parse
-   * @return the date
-   * @throws ParseException if parsing failed
-   * @deprecated use {@link #parseShortDateFast(String)} instead
-   */
-  @Deprecated
-  public static org.tentackle.common.Date parseShortDate(String str) throws ParseException {
-    return new org.tentackle.common.Date(getFormatting().parseShortDate(str).getTime());
-  }
-
-  /**
-   * Parses a short date.<br>
-   * Faster than {@link #parseShortDate(String)} using {@link DateTimeFormatter}.
    * <p>
    * Throws {@link java.time.format.DateTimeParseException} if parsing failed.
    *
    * @param str the string to parse
    * @return the date
    */
-  public static org.tentackle.common.Date parseShortDateFast(String str) {
+  public static org.tentackle.common.Date parseShortDate(String str) {
     return new org.tentackle.common.Date(java.sql.Date.valueOf(getFormatting().shortLocalDateFormat.parse(str, LocalDate::from)).getTime());
   }
 
   /**
    * Parses a time.
-   *
-   * @param str the string to parse
-   * @return the time
-   * @throws ParseException if parsing failed
-   * @deprecated use {@link #parseTimeFast(String)} instead
-   */
-  @Deprecated
-  public static org.tentackle.common.Time parseTime(String str) throws ParseException {
-    return new org.tentackle.common.Time(getFormatting().parseTime(str).getTime());
-  }
-
-  /**
-   * Parses a time.<br>
-   * Faster than {@link #parseTime(String)} using {@link DateTimeFormatter}.
    * <p>
    * Throws {@link java.time.format.DateTimeParseException} if parsing failed.
    *
    * @param str the string to parse
    * @return the time
    */
-  public static org.tentackle.common.Time parseTimeFast(String str) {
+  public static org.tentackle.common.Time parseTime(String str) {
     return new org.tentackle.common.Time(java.sql.Time.valueOf(getFormatting().localTimeFormat.parse(str, LocalTime::from)).getTime());
   }
 
   /**
    * Parses a short time.
-   *
-   * @param str the string to parse
-   * @return the time
-   * @throws ParseException if parsing failed
-   * @deprecated use {@link #parseShortTimeFast(String)} instead
-   */
-  @Deprecated
-  public static org.tentackle.common.Time parseShortTime(String str) throws ParseException {
-    return new org.tentackle.common.Time(getFormatting().parseShortTime(str).getTime());
-  }
-
-  /**
-   * Parses a short time.<br>
-   * Faster than {@link  #parseShortTime(String)} using {@link DateTimeFormatter}.
    * <p>
    * Throws {@link java.time.format.DateTimeParseException} if parsing failed.
    *
    * @param str the string to parse
    * @return the time
    */
-  public static org.tentackle.common.Time parseShortTimeFast(String str) {
+  public static org.tentackle.common.Time parseShortTime(String str) {
     return new org.tentackle.common.Time(java.sql.Time.valueOf(getFormatting().shortLocalTimeFormat.parse(str, LocalTime::from)).getTime());
   }
-
 
   /**
    * Parses a timestamp.
@@ -1024,21 +832,8 @@ public class FormatHelper {
    *
    * @param timestamp the timestamp to format
    * @return the formatted string
-   * @deprecated use {@link #formatTimestampFast(Date)} instead
    */
-  @Deprecated
   public static String formatTimestamp(Date timestamp) {
-    return getFormatting().formatTimestamp(timestamp);
-  }
-
-  /**
-   * Formats a timestamp.<br>
-   * Faster than {@link #formatTimestamp(Date)} using {@link DateTimeFormatter}.
-   *
-   * @param timestamp the timestamp to format
-   * @return the formatted string
-   */
-  public static String formatTimestampFast(Date timestamp) {
     return getFormatting().localDateTimeFormat.format(new java.sql.Timestamp(timestamp.getTime()).toLocalDateTime());
   }
 
@@ -1047,21 +842,8 @@ public class FormatHelper {
    *
    * @param timestamp the timestamp to format
    * @return the formatted string
-   * @deprecated use {@link #formatShortTimestampFast(Date)} instead
    */
-  @Deprecated
   public static String formatShortTimestamp(Date timestamp) {
-    return getFormatting().formatShortTimestamp(timestamp);
-  }
-
-  /**
-   * Formats a short timestamp.<br>
-   * Faster than {@link #formatShortTimestamp(Date)} using {@link DateTimeFormatter}.
-   *
-   * @param timestamp the timestamp to format
-   * @return the formatted string
-   */
-  public static String formatShortTimestampFast(Date timestamp) {
     return getFormatting().shortLocalDateTimeFormat.format(new java.sql.Timestamp(timestamp.getTime()).toLocalDateTime());
   }
 
@@ -1070,21 +852,8 @@ public class FormatHelper {
    *
    * @param date the date to format
    * @return the formatted string
-   * @deprecated use {@link #formatDateFast(Date)} instead
    */
-  @Deprecated
   public static String formatDate(Date date) {
-    return getFormatting().formatDate(date);
-  }
-
-  /**
-   * Formats a date.<br>
-   * Faster than {@link #formatDate(Date)} using {@link DateTimeFormatter}.
-   *
-   * @param date the date to format
-   * @return the formatted string
-   */
-  public static String formatDateFast(Date date) {
     return getFormatting().localDateFormat.format(new java.sql.Date(date.getTime()).toLocalDate());
   }
 
@@ -1093,21 +862,8 @@ public class FormatHelper {
    *
    * @param date the date to format
    * @return the formatted string
-   * @deprecated use {@link #formatShortDateFast(Date)} instead
    */
-  @Deprecated
   public static String formatShortDate(Date date) {
-    return getFormatting().formatShortDate(date);
-  }
-
-  /**
-   * Formats a short date.<br>
-   * Faster than {@link #formatShortDate(Date)} using {@link DateTimeFormatter}.
-   *
-   * @param date the date to format
-   * @return the formatted string
-   */
-  public static String formatShortDateFast(Date date) {
     return getFormatting().shortLocalDateFormat.format(new java.sql.Date(date.getTime()).toLocalDate());
   }
 
@@ -1116,21 +872,8 @@ public class FormatHelper {
    *
    * @param time the time to format
    * @return the formatted string
-   * @deprecated use {@link #formatTimeFast(Date)} instead
    */
-  @Deprecated
   public static String formatTime(Date time) {
-    return getFormatting().formatTime(time);
-  }
-
-  /**
-   * Formats a time.<br>
-   * Faster than {@link #formatTime(Date)} using {@link DateTimeFormatter}.
-   *
-   * @param time the time to format
-   * @return the formatted string
-   */
-  public static String formatTimeFast(Date time) {
     return getFormatting().localTimeFormat.format(new java.sql.Time(time.getTime()).toLocalTime());
   }
 
@@ -1139,21 +882,8 @@ public class FormatHelper {
    *
    * @param time the time to format
    * @return the formatted string
-   * @deprecated use {@link #formatShortTimeFast(Date)} instead
    */
-  @Deprecated
   public static String formatShortTime(Date time) {
-    return getFormatting().formatShortTime(time);
-  }
-
-  /**
-   * Formats a short time.<br>
-   * Faster than {@link #formatShortTime(Date)} using {@link DateTimeFormatter}.
-   *
-   * @param time the time to format
-   * @return the formatted string
-   */
-  public static String formatShortTimeFast(Date time) {
     return getFormatting().shortLocalTimeFormat.format(new java.sql.Time(time.getTime()).toLocalTime());
   }
 
@@ -1282,7 +1012,7 @@ public class FormatHelper {
   /**
    * Gets the formatter for a LocalDateTime.
    *
-   * @return the immutable and threadsafe formatter
+   * @return the immutable and thread-safe formatter
    */
   public static DateTimeFormatter getLocalDateTimeFormatter() {
     return getFormatting().localDateTimeFormat;
@@ -1291,7 +1021,7 @@ public class FormatHelper {
   /**
    * Gets the formatter for an OffsetDateTime.
    *
-   * @return the immutable and threadsafe formatter
+   * @return the immutable and thread-safe formatter
    */
   public static DateTimeFormatter getOffsetDateTimeFormatter() {
     return getFormatting().localDateTimeFormatWithOffset;
@@ -1300,7 +1030,7 @@ public class FormatHelper {
   /**
    * Gets the formatter for a ZonedDateTime.
    *
-   * @return the immutable and threadsafe formatter
+   * @return the immutable and thread-safe formatter
    */
   public static DateTimeFormatter getZonedDateTimeFormatter() {
     return getFormatting().localDateTimeFormatWithTimeZone;
@@ -1309,7 +1039,7 @@ public class FormatHelper {
   /**
    * Gets the formatter for a LocalDate.
    *
-   * @return the immutable and threadsafe formatter
+   * @return the immutable and thread-safe formatter
    */
   public static DateTimeFormatter getLocalDateFormatter() {
     return getFormatting().localDateFormat;
@@ -1318,7 +1048,7 @@ public class FormatHelper {
   /**
    * Gets the formatter for a LocalTime.
    *
-   * @return the immutable and threadsafe formatter
+   * @return the immutable and thread-safe formatter
    */
   public static DateTimeFormatter getLocalTimeFormatter() {
     return getFormatting().localTimeFormat;
@@ -1327,7 +1057,7 @@ public class FormatHelper {
   /**
    * Gets the formatter for an OffsetTime.
    *
-   * @return the immutable and threadsafe formatter
+   * @return the immutable and thread-safe formatter
    */
   public static DateTimeFormatter getOffsetTimeFormatter() {
     return getFormatting().localTimeFormatWithOffset;
@@ -1336,7 +1066,7 @@ public class FormatHelper {
   /**
    * Gets the formatter for a short LocalDateTime.
    *
-   * @return the immutable and threadsafe formatter
+   * @return the immutable and thread-safe formatter
    */
   public static DateTimeFormatter getShortLocalDateTimeFormatter() {
     return getFormatting().shortLocalDateTimeFormat;
@@ -1345,7 +1075,7 @@ public class FormatHelper {
   /**
    * Gets the formatter for a short OffsetDateTime.
    *
-   * @return the immutable and threadsafe formatter
+   * @return the immutable and thread-safe formatter
    */
   public static DateTimeFormatter getShortOffsetDateTimeFormatter() {
     return getFormatting().shortLocalDateTimeFormatWithOffset;
@@ -1354,7 +1084,7 @@ public class FormatHelper {
   /**
    * Gets the formatter for a short ZonedDateTime.
    *
-   * @return the immutable and threadsafe formatter
+   * @return the immutable and thread-safe formatter
    */
   public static DateTimeFormatter getShortZonedDateTimeFormatter() {
     return getFormatting().shortLocalDateTimeFormatWithTimeZone;
@@ -1363,7 +1093,7 @@ public class FormatHelper {
   /**
    * Gets the formatter for a short LocalDate.
    *
-   * @return the immutable and threadsafe formatter
+   * @return the immutable and thread-safe formatter
    */
   public static DateTimeFormatter getShortLocalDateFormatter() {
     return getFormatting().shortLocalDateFormat;
@@ -1372,7 +1102,7 @@ public class FormatHelper {
   /**
    * Gets the formatter for a short LocalTime.
    *
-   * @return the immutable and threadsafe formatter
+   * @return the immutable and thread-safe formatter
    */
   public static DateTimeFormatter getShortLocalTimeFormatter() {
     return getFormatting().shortLocalTimeFormat;
@@ -1381,7 +1111,7 @@ public class FormatHelper {
   /**
    * Gets the formatter for a short OffsetTime.
    *
-   * @return the immutable and threadsafe formatter
+   * @return the immutable and thread-safe formatter
    */
   public static DateTimeFormatter getShortOffsetTimeFormatter() {
     return getFormatting().shortLocalTimeFormatWithOffset;
@@ -1392,7 +1122,7 @@ public class FormatHelper {
    * Gets the formatter for a LocalDateTime.
    *
    * @param locale the locale
-   * @return the immutable and threadsafe formatter
+   * @return the immutable and thread-safe formatter
    */
   public static DateTimeFormatter getLocalDateTimeFormatter(Locale locale) {
     return getFormatting(locale).localDateTimeFormat;
@@ -1402,7 +1132,7 @@ public class FormatHelper {
    * Gets the formatter for an OffsetDateTime.
    *
    * @param locale the locale
-   * @return the immutable and threadsafe formatter
+   * @return the immutable and thread-safe formatter
    */
   public static DateTimeFormatter getOffsetDateTimeFormatter(Locale locale) {
     return getFormatting(locale).localDateTimeFormatWithOffset;
@@ -1412,7 +1142,7 @@ public class FormatHelper {
    * Gets the formatter for a ZonedDateTime.
    *
    * @param locale the locale
-   * @return the immutable and threadsafe formatter
+   * @return the immutable and thread-safe formatter
    */
   public static DateTimeFormatter getZonedDateTimeFormatter(Locale locale) {
     return getFormatting(locale).localDateTimeFormatWithTimeZone;
@@ -1422,7 +1152,7 @@ public class FormatHelper {
    * Gets the formatter for a LocalDate.
    *
    * @param locale the locale
-   * @return the immutable and threadsafe formatter
+   * @return the immutable and thread-safe formatter
    */
   public static DateTimeFormatter getLocalDateFormatter(Locale locale) {
     return getFormatting(locale).localDateFormat;
@@ -1432,7 +1162,7 @@ public class FormatHelper {
    * Gets the formatter for a LocalTime.
    *
    * @param locale the locale
-   * @return the immutable and threadsafe formatter
+   * @return the immutable and thread-safe formatter
    */
   public static DateTimeFormatter getLocalTimeFormatter(Locale locale) {
     return getFormatting(locale).localTimeFormat;
@@ -1442,7 +1172,7 @@ public class FormatHelper {
    * Gets the formatter for an OffsetTime.
    *
    * @param locale the locale
-   * @return the immutable and threadsafe formatter
+   * @return the immutable and thread-safe formatter
    */
   public static DateTimeFormatter getOffsetTimeFormatter(Locale locale) {
     return getFormatting(locale).localTimeFormatWithOffset;
@@ -1452,7 +1182,7 @@ public class FormatHelper {
    * Gets the formatter for a short LocalDateTime.
    *
    * @param locale the locale
-   * @return the immutable and threadsafe formatter
+   * @return the immutable and thread-safe formatter
    */
   public static DateTimeFormatter getShortLocalDateTimeFormatter(Locale locale) {
     return getFormatting(locale).shortLocalDateTimeFormat;
@@ -1462,7 +1192,7 @@ public class FormatHelper {
    * Gets the formatter for a short OffsetDateTime.
    *
    * @param locale the locale
-   * @return the immutable and threadsafe formatter
+   * @return the immutable and thread-safe formatter
    */
   public static DateTimeFormatter getShortOffsetDateTimeFormatter(Locale locale) {
     return getFormatting(locale).shortLocalDateTimeFormatWithOffset;
@@ -1472,7 +1202,7 @@ public class FormatHelper {
    * Gets the formatter for a short ZonedDateTime.
    *
    * @param locale the locale
-   * @return the immutable and threadsafe formatter
+   * @return the immutable and thread-safe formatter
    */
   public static DateTimeFormatter getShortZonedDateTimeFormatter(Locale locale) {
     return getFormatting(locale).shortLocalDateTimeFormatWithTimeZone;
@@ -1482,7 +1212,7 @@ public class FormatHelper {
    * Gets the formatter for a short LocalDate.
    *
    * @param locale the locale
-   * @return the immutable and threadsafe formatter
+   * @return the immutable and thread-safe formatter
    */
   public static DateTimeFormatter getShortLocalDateFormatter(Locale locale) {
     return getFormatting(locale).shortLocalDateFormat;
@@ -1492,7 +1222,7 @@ public class FormatHelper {
    * Gets the formatter for a short LocalTime.
    *
    * @param locale the locale
-   * @return the immutable and threadsafe formatter
+   * @return the immutable and thread-safe formatter
    */
   public static DateTimeFormatter getShortLocalTimeFormatter(Locale locale) {
     return getFormatting(locale).shortLocalTimeFormat;
@@ -1502,7 +1232,7 @@ public class FormatHelper {
    * Gets the formatter for a short OffsetTime.
    *
    * @param locale the locale
-   * @return the immutable and threadsafe formatter
+   * @return the immutable and thread-safe formatter
    */
   public static DateTimeFormatter getShortOffsetTimeFormatter(Locale locale) {
     return getFormatting(locale).shortLocalTimeFormatWithOffset;

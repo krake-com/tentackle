@@ -349,8 +349,8 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
   private void showDiff() {
     if (dataObject != null) {
       pdoView.setDiff(DataDiff.compare(dataObject, oldDataObject),
-                      loadingTime == null ? "Value" : FormatHelper.formatTimestampFast(loadingTime),
-                      memorizeTime == null ? "" : FormatHelper.formatTimestampFast(memorizeTime));
+                      loadingTime == null ? "Value" : FormatHelper.formatTimestamp(loadingTime),
+                      memorizeTime == null ? "" : FormatHelper.formatTimestamp(memorizeTime));
     }
     else {
       pdoView.setDiff(null, "Value", "");
@@ -547,7 +547,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     ObservableList<PdoWrapper> selectedItems = pdosTableView.getSelectionModel().getSelectedItems();
     if (!selectedItems.isEmpty()) {
       StringBuilder buf = new StringBuilder();
-      buf.append("// generated at ").append(FormatHelper.formatShortTimestampFast(new Timestamp())).append(" by ")
+      buf.append("// generated at ").append(FormatHelper.formatShortTimestamp(new Timestamp())).append(" by ")
          .append(System.getProperty("user.name"))
          .append('@')
          .append(mojo.getHostName())

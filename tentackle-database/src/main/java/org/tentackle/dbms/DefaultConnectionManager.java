@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.dbms;
 
 import org.tentackle.common.Constants;
@@ -41,7 +40,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
-
 
 /**
  * The default implementation of a connection manager.<br>
@@ -200,7 +198,7 @@ public class DefaultConnectionManager implements ConnectionManager {
   /**
    * Sets the countForClearWarnings trigger, 0 = app must eat the warnings!
    *
-   * @param maxCountForClearWarnings the maxcount
+   * @param maxCountForClearWarnings the maximum count
    */
   public void setMaxCountForClearWarnings(int maxCountForClearWarnings) {
     this.maxCountForClearWarnings = maxCountForClearWarnings;
@@ -669,7 +667,7 @@ public class DefaultConnectionManager implements ConnectionManager {
                                            this, mc, backendInfo.getBackend().getName(), versionInfo,
                                            TransactionIsolation.valueOf(mc.getTransactionIsolation()),
                                            TransactionWritability.valueOf(!mc.isReadOnly()),
-                                           FormatHelper.formatTimestampFast(new Date(mc.getExpireAt()))));
+                                           FormatHelper.formatTimestamp(new Date(mc.getExpireAt()))));
     return mc;
   }
 
@@ -703,7 +701,7 @@ public class DefaultConnectionManager implements ConnectionManager {
     }
     else if (con.isExpired()) {
       LOGGER.info("{0}: closing connection {1}, open since {2}",
-                  this, con, FormatHelper.formatTimestampFast(new Date(con.getEstablishedSince())));
+                  this, con, FormatHelper.formatTimestamp(new Date(con.getEstablishedSince())));
     }
     else if (con.isClosed()) {
       LOGGER.warning("{0}: connection {1} is closed", this, con);

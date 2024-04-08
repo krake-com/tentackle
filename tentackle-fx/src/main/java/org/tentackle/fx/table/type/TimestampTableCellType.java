@@ -48,7 +48,7 @@ public class TimestampTableCellType extends AbstractDateTimeTableCellType<Timest
       text = fmt.format(item.toLocalDateTime());
     }
     else {
-      text = FormatHelper.formatTimestampFast(item);
+      text = FormatHelper.formatTimestamp(item);
     }
     return text;
   }
