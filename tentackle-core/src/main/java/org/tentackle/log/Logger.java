@@ -21,7 +21,6 @@ package org.tentackle.log;
 import java.lang.StackWalker.Option;
 import java.util.function.Supplier;
 
-
 /**
  * A pluggable logger.
  *
@@ -30,9 +29,11 @@ import java.util.function.Supplier;
 public interface Logger {
 
   /**
-   * Gets a logger for the given classname.
+   * Gets a logger for the given classname.<br>
+   * If the logger doesn't exist so far for the given class, it will be created.
+   * Otherwise, the existing logger instance is returned.
    *
-   * @param clazz the clazz to create a logger for
+   * @param clazz the clazz to get the logger for
    * @return the logger
    */
   static Logger get(Class<?> clazz) {
@@ -41,7 +42,7 @@ public interface Logger {
 
   /**
    * Gets a logger for the invoking class.<br>
-   * The method uses the {@link StackWalker} to determine the caller class.
+   * Same as {@link #get(Class)} but uses the {@link StackWalker} to determine the caller class.
    *
    * @return the logger
    */
