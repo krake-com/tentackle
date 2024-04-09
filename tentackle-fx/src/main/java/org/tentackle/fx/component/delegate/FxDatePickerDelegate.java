@@ -159,7 +159,8 @@ public class FxDatePickerDelegate extends FxTextComponentDelegate {
 		public String toString(LocalDate object) {
       if (component.isChangeable()) {
         if (object != null) {
-          if (object.equals(lastDate)) {
+          if (object.equals(lastDate) &&
+              lastText != null && lastText.equals(component.getEditor().getText())) {
             // see javafx.scene.control.DatePicker#cancelEdit
             // same reason as in #setViewObject, necessary since FX18!
             // avoid clearing the time if date unchanged when just pressing ESC or closing w/o any change
