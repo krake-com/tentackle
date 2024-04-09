@@ -16,11 +16,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.log;
 
 import org.tentackle.common.ServiceFactory;
-
 
 
 interface LoggerFactoryHolder {
@@ -62,7 +60,7 @@ public interface LoggerFactory {
    * The method invokes {@link #getLogger(java.lang.String)} with the
    * name of the given class.
    *
-   * @param clazz the clazz to create a logger for
+   * @param clazz the clazz to get the logger for
    * @return the logger
    */
   static Logger getLogger(Class<?> clazz) {

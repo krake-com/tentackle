@@ -386,8 +386,8 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
             foundSet.add(id);
             if (!inToString && LOGGER.isFinerLoggable()) {
               inToString = true;    // avoid recursion cause context.toString
-              LOGGER.finer(object.toGenericString() + " context=" +
-                           object.getPersistenceDelegate().getDomainContext().toDiagnosticString() + " expired in " + this);
+              LOGGER.finer(object.toGenericString() + " context=\"" +
+                           object.getPersistenceDelegate().getDomainContext().toDiagnosticString() + "\" expired in " + this);
               inToString = false;
             }
           }
@@ -684,7 +684,18 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
    * @return the object or null if no such object
    */
   public T select(DomainContext context, long id, boolean loadIfMissing)  {
-    return id > 0 ? select(idIndex, context, id, loadIfMissing) : null;
+    T pdo;
+    if (id > 0) {
+      pdo = select(idIndex, context, id, loadIfMissing);
+      if (pdo == null && loadIfMissing) {
+        // this is usually an application error, since the ID is obviously wrong, or database/cache corrupted
+        LOGGER.warning("no such {0} with ID={1}, context=\"{2}\"", clazz.getName(), id, context.toDiagnosticString());
+      }
+    }
+    else {
+      pdo = null;
+    }
+    return pdo;
   }
 
   /**
@@ -1253,8 +1264,8 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
           if (!inToString && LOGGER.isFinerLoggable()) {
             inToString = true;    // avoid recursion cause context.toString
             LOGGER.finer("expired object " + pdo.toGenericString() +
-                         " context=" + pdo.getPersistenceDelegate().getDomainContext().toDiagnosticString() +
-                         " removed from " + this);
+                         " context=\"" + pdo.getPersistenceDelegate().getDomainContext().toDiagnosticString() +
+                         "\" removed from " + this);
             inToString = false;
           }
           pdo = null;   // treat as if not in cache
@@ -1275,8 +1286,8 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
               if (!inToString && LOGGER.isFinerLoggable()) {
                 inToString = true;    // avoid recursion cause of context.toString
                 LOGGER.finer("added object " + pdo.toGenericString() +
-                             " context=" + pdo.getPersistenceDelegate().getDomainContext().toDiagnosticString() +
-                             " to " + this);
+                             " context=\"" + pdo.getPersistenceDelegate().getDomainContext().toDiagnosticString() +
+                             "\" to " + this);
                 inToString = false;
               }
             }
