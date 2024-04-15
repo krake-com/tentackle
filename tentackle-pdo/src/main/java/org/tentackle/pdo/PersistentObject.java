@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.pdo;
 
 import org.tentackle.bind.Bindable;
@@ -549,6 +548,8 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
 
   /**
    * Requests a token lock.
+   * <p>
+   * Throws a {@link LockException} if locked by another user.
    */
   void requestTokenLock();
 
@@ -621,7 +622,19 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   T select(long id);
 
   /**
-   * Loads and write-locks a PDO from the database by its unique ID.<br>
+   * Loads a PDO from the database by its unique ID and applies a token lock.<br>
+   * Same as {@link #select(long)} followed by {@link #requestTokenLock()}, but requires only a single roundtrip if remote.
+   * <p>
+   * Throws a {@link LockException}, if locked by another user.
+   *
+   * @param id is the object id
+   *
+   * @return object if loaded, null if no such object
+   */
+  T selectTokenLocked(long id);
+
+  /**
+   * Loads a PDO from the database by its unique ID with a database write-lock.<br>
    * Requires that a transaction is running.
    *
    * @param id is the object id
@@ -633,15 +646,25 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   /**
    * Reloads the object.
    *
-   * @return the object if reloaded, null if vanished from the database (never <em>this</em>)
+   * @return the object if reloaded, null if vanished from the database
    */
   T reload();
 
   /**
-   * Reloads the object with a write-lock.<br>
+   * Reloads the object and applies a token lock.<br>
+   * Same as {@link #reload()} followed by {@link #requestTokenLock()}, but requires only a single roundtrip if remote.
+   * <p>
+   * Throws a {@link LockException}, if locked by another user.
+   *
+   * @return the object if reloaded, null if vanished from the database
+   */
+  T reloadTokenLocked();
+
+  /**
+   * Reloads the object with a database write-lock.<br>
    * Requires that a transaction is running.
    *
-   * @return the object if reloaded, else null (never <em>this</em>)
+   * @return the object if reloaded, else null
    */
   T reloadForUpdate();
 

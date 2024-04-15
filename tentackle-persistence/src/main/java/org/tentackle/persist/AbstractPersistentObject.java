@@ -1843,16 +1843,17 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    *
    * @param id is the object id
    * @param forUpdate true if select FOR UPDATE
+   * @param tokenLocked true if request a token lock as well
    *
    * @return object if loaded, null if no such object
    */
-  public T select(long id, boolean forUpdate) {
+  public T select(long id, boolean forUpdate, boolean tokenLocked) {
     T obj = null;
     if (id > 0) {
       if (getSession().isRemote())  {
         try {
           DomainContext context = getDomainContext();
-          obj = getRemoteDelegate().select(context, id, forUpdate);
+          obj = getRemoteDelegate().select(context, id, forUpdate, tokenLocked);
           configureRemoteObject(context, obj);
         }
         catch (RemoteException e) {
@@ -1881,22 +1882,27 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
         );
         st.setLong(1, id);
         obj = executeFirstPdoQuery(st, js);
+        if (tokenLocked && obj != null) {
+          obj.getPersistenceDelegate().requestTokenLock();
+        }
       }
     }
     return obj;
   }
 
-
-  /**
-   * Loads a PDO from the database by its unique ID.<br>
-   *
-   * @param id is the object id
-   *
-   * @return object if loaded, null if no such object
-   */
   @Override
   public T select(long id) {
-    return select(id, false);
+    return select(id, false, false);
+  }
+
+  @Override
+  public T selectTokenLocked(long id) {
+    return select(id, false, true);
+  }
+
+  @Override
+  public T selectForUpdate(long id) {
+    return select(id, true, false);
   }
 
 
@@ -1904,48 +1910,38 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Reloads the object.<p>
    * Restores transient data, if present.
    *
+   * @param tokenLocked true to apply token lock as well
+   *
    * @return the object if reloaded, else null (never <em>this</em>)
    */
-  @Override
-  @SuppressWarnings("rawtypes")
-  public T reload() {
+  public T reload(boolean tokenLocked) {
     Object data = getTransientData();
-    T obj = Pdo.create(getPdo()).select(getId());
+    T obj = Pdo.create(getPdo());
+    obj = tokenLocked ? obj.selectTokenLocked(getId()) : obj.select(getId());
     if (obj != null && data != null) {
-      ((AbstractPersistentObject) obj.getPersistenceDelegate()).setTransientData(data);
+      ((AbstractPersistentObject<?,?>) obj.getPersistenceDelegate()).setTransientData(data);
     }
     return obj;
   }
 
-
-  /**
-   * Reloads the object with a write-lock.<br>
-   * Restores transient data, if present.
-   *
-   * @return the object if reloaded, else null (never <em>this</em>)
-   */
   @Override
-  @SuppressWarnings("rawtypes")
+  public T reload() {
+    return reload(false);
+  }
+
+  @Override
+  public T reloadTokenLocked() {
+    return reload(true);
+  }
+
+  @Override
   public T reloadForUpdate() {
     Object data = getTransientData();
     T obj = Pdo.create(getPdo()).selectForUpdate(getId());
     if (obj != null && data != null) {
-      ((AbstractPersistentObject) obj.getPersistenceDelegate()).setTransientData(data);
+      ((AbstractPersistentObject<?,?>) obj.getPersistenceDelegate()).setTransientData(data);
     }
     return obj;
-  }
-
-
-  /**
-   * Loads and write-locks a PDO from the database by its unique ID.<br>
-   *
-   * @param id is the object id
-   *
-   * @return object if loaded, null if no such object
-   */
-  @Override
-  public T selectForUpdate(long id) {
-    return select(id, true);
   }
 
 
@@ -3738,6 +3734,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
   /**
    * Requests an edited by lock.
+   * <p>
+   * Throws a {@link LockException}, if locked by another user.
    */
   @Override
   public void requestTokenLock() {

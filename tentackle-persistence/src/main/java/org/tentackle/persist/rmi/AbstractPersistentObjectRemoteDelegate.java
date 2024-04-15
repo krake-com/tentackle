@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.persist.rmi;
 
 import org.tentackle.common.Timestamp;
@@ -28,8 +27,6 @@ import org.tentackle.persist.AbstractPersistentObject;
 
 import java.rmi.RemoteException;
 import java.util.List;
-
-
 
 /**
  * Remote delegate for {@link PersistentDomainObject}.
@@ -47,7 +44,7 @@ public interface AbstractPersistentObjectRemoteDelegate<T extends PersistentDoma
 
   long deleteImpl(T obj) throws RemoteException;
 
-  T select(DomainContext cb, long id, boolean locked) throws RemoteException;
+  T select(DomainContext cb, long id, boolean forUpdate, boolean tokenLocked) throws RemoteException;
 
   List<T> selectAll(DomainContext cb) throws RemoteException;
 

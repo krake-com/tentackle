@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.pdo.mock;
 
 import org.tentackle.common.Timestamp;
@@ -363,12 +362,22 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
   }
 
   @Override
+  public T selectTokenLocked(long id) {
+    throw new UnsupportedOperationException(UNSUPPORTED);
+  }
+
+  @Override
   public T selectForUpdate(long id) {
     throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public T reload() {
+    throw new UnsupportedOperationException(UNSUPPORTED);
+  }
+
+  @Override
+  public T reloadTokenLocked() {
     throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
