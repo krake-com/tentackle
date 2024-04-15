@@ -307,9 +307,9 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
 
   @Override
   @SuppressWarnings("unchecked")
-  public T select(DomainContext cb, long id, boolean locked) throws RemoteException {
+  public T select(DomainContext cb, long id, boolean forUpdate, boolean tokenLocked) throws RemoteException {
     try {
-      return ((P) newInstance(cb).getPersistenceDelegate()).select(id, locked);
+      return ((P) newInstance(cb).getPersistenceDelegate()).select(id, forUpdate, tokenLocked);
     }
     catch (RuntimeException e) {
       throw createException(e);
@@ -458,7 +458,6 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
       throw createException(e);
     }
   }
-
 
 
   /**
