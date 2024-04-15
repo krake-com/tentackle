@@ -18,13 +18,16 @@
 
 package org.tentackle.pdo;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 import org.tentackle.common.Service;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionCloseHandler;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * The default Pdo-Cache factory.
@@ -77,6 +80,23 @@ public class DefaultPdoCacheFactory implements PdoCacheFactory {
     PdoCache<T> cache = new PdoCache<>(clazz, preload, readOnly, checkSecurity);
     cacheMap.put(clazz, cache);
     return cache;
+  }
+
+  @Override
+  public <T extends PersistentDomainObject<T>, C extends Comparable<? super C>> PdoCacheIndex<T, C> createCacheIndex(
+    String name, BiFunction<DomainContext, C, T> selectFunction, Function<T, C> extractFunction) {
+
+    return new PdoCacheIndex<>(name) {
+      @Override
+      public T select(DomainContext context, C key) {
+        return selectFunction.apply(context, key);
+      }
+
+      @Override
+      public C extract(T pdo) {
+        return extractFunction.apply(pdo);
+      }
+    };
   }
 
   @Override

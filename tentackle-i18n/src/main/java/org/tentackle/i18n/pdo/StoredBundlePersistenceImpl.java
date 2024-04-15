@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.i18n.pdo;
 
 import org.tentackle.dbms.ModificationType;
@@ -50,8 +49,6 @@ import java.io.Serial;
 import java.rmi.RemoteException;
 import java.util.List;
 import java.util.Objects;
-
-
 
 /**
  * Number Space persistence implementation.
@@ -509,16 +506,9 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
     }
 
     private static PdoCacheIndex<StoredBundle, StoredBundle.StoredBundleUDK> createUdkIndex() {
-      return new PdoCacheIndex<>("StoredBundle:UDK") {
-        @Override
-        public StoredBundle select(DomainContext context, StoredBundle.StoredBundleUDK udk) {
-          return Pdo.create(StoredBundle.class, context).selectByUniqueDomainKeyForCache(udk);
-        }
-        @Override
-        public StoredBundle.StoredBundleUDK extract(StoredBundle pdo) {
-          return pdo.getUniqueDomainKey();
-        }
-      };
+      return Pdo.createCacheIndex("StoredBundle:UDK",
+                                  (context, udk) -> Pdo.create(StoredBundle.class, context).selectByUniqueDomainKeyForCache(udk),
+                                  StoredBundle::getUniqueDomainKey);
     }
   }
 
@@ -713,6 +703,4 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
 
   //</editor-fold>//GEN-END:findByNameAndLocale
 
-
 }
-
