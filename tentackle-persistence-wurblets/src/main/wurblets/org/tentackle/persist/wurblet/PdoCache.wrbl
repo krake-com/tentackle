@@ -192,36 +192,22 @@ For more options, see {\@link DbModelWurblet}.
   }
 @{to}@
 
+    \@SuppressWarnings("unchecked")
     private static <X extends @(pdoName)@<X>> PdoCacheIndex<X, @(type)@> create@(StringHelper.firstToUpper(name))@Index() {
-      return new PdoCacheIndex<>("@(pdoName)@:@(name)@") {
-        \@Override
-        \@SuppressWarnings("unchecked")
-        public X select(DomainContext context, @(type)@ @(name)@) {
-          return (X) Pdo.create(@(pdoName)@.class, context).selectBy@(suffix)@ForCache(@(name)@);
-        }
-        \@Override
-        public @(type)@ extract(X pdo) {
-          return pdo.get@(suffix)@();
-        }
-      };
+      return Pdo.createCacheIndex("@(pdoName)@:@(name)@",
+                                  (context, @(name)@) -> (X) Pdo.create(@(pdoName)@.class, context).selectBy@(suffix)@ForCache(@(name)@),
+                                  @(pdoName)@::get@(suffix)@);
     }
 @[
         } // end isRemote
         else {
 ]@
 
+    \@SuppressWarnings("unchecked")
     private static <X extends @(pdoName)@<X>> PdoCacheIndex<X, @(type)@> create@(StringHelper.firstToUpper(name))@Index() {
-      return new PdoCacheIndex<>("@(pdoName)@:@(name)@") {
-        \@Override
-        \@SuppressWarnings("unchecked")
-        public X select(DomainContext context, @(type)@ @(name)@) {
-          return (X) Pdo.create(@(pdoName)@.class, context).findBy@(suffix)@(@(name)@);
-        }
-        \@Override
-        public @(type)@ extract(X pdo) {
-          return pdo.get@(suffix)@();
-        }
-      };
+      return Pdo.createCacheIndex("@(pdoName)@:@(name)@",
+                                  (context, @(name)@) -> (X) Pdo.create(@(pdoName)@.class, context).findBy@(suffix)@(@(name)@),
+                                  @(pdoName)@::get@(suffix)@);
     }
 @[
         }
@@ -230,11 +216,9 @@ For more options, see {\@link DbModelWurblet}.
       if (genudk) {
 ]@
 
+    \@SuppressWarnings("unchecked")
     private static <X extends @(pdoName)@<X>> PdoCacheIndex<X, @(udkType)@> createUdkIndex() {
-      return new PdoCacheIndex<>("@(pdoName)@:UDK") {
-        \@Override
-        \@SuppressWarnings("unchecked")
-        public X select(DomainContext context, @(udkType)@ @(udkName)@) {
+      return Pdo.createCacheIndex("@(pdoName)@:UDK",
 @[
         if (isRemote()) {
           RemoteIncludes genInc = new RemoteIncludes(this);
@@ -255,21 +239,16 @@ For more options, see {\@link DbModelWurblet}.
     }
   }
 @{to}@
-          return (X) Pdo.create(@(pdoName)@.class, context).selectByUniqueDomainKeyForCache(@(udkName)@);
+                                  (context, @(udkName)@) -> (X) Pdo.create(@(pdoName)@.class, context).selectByUniqueDomainKeyForCache(@(udkName)@),
 @[
         }
         else {
 ]@
-          return (X) Pdo.create(@(pdoName)@.class, context).selectByUniqueDomainKey(@(udkName)@);
+                                  (context, @(udkName)@) -> (X) Pdo.create(@(pdoName)@.class, context).selectByUniqueDomainKey(@(udkName)@),
 @[
         }
 ]@
-        }
-        \@Override
-        public @(udkType)@ extract(X pdo) {
-          return pdo.get@(udkSuffix)@();
-        }
-      };
+                                  @(pdoName)@::get@(udkSuffix)@);
     }
 @[
       }
@@ -351,16 +330,9 @@ For more options, see {\@link DbModelWurblet}.
 @{to}@
 
     private static PdoCacheIndex<@(pdoName)@, @(type)@> create@(StringHelper.firstToUpper(name))@Index() {
-      return new PdoCacheIndex<>("@(pdoName)@:@(name)@") {
-        \@Override
-        public @(pdoName)@ select(DomainContext context, @(type)@ @(name)@) {
-          return Pdo.create(@(pdoName)@.class, context).selectBy@(suffix)@ForCache(@(name)@);
-        }
-        \@Override
-        public @(type)@ extract(@(pdoName)@ pdo) {
-          return pdo.get@(suffix)@();
-        }
-      };
+      return Pdo.createCacheIndex("@(pdoName)@:@(name)@",
+                                  (context, @(name)@) -> Pdo.create(@(pdoName)@.class, context).selectBy@(suffix)@ForCache(@(name)@),
+                                  @(pdoName)@::get@(suffix)@);
     }
 @[
         } // end isRemote
@@ -368,16 +340,9 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
     private static PdoCacheIndex<@(pdoName)@, @(type)@> create@(StringHelper.firstToUpper(name))@Index() {
-      return new PdoCacheIndex<>("@(pdoName)@:@(name)@") {
-        \@Override
-        public @(pdoName)@ select(DomainContext context, @(type)@ @(name)@) {
-          return Pdo.create(@(pdoName)@.class, context).findBy@(suffix)@(@(name)@);
-        }
-        \@Override
-        public @(type)@ extract(@(pdoName)@ pdo) {
-          return pdo.get@(suffix)@();
-        }
-      };
+      return Pdo.createCacheIndex("@(pdoName)@:@(name)@",
+                                  (context, @(name)@) -> Pdo.create(@(pdoName)@.class, context).findBy@(suffix)@(@(name)@),
+                                  @(pdoName)@::get@(suffix)@);
     }
 @[
         }
@@ -387,9 +352,7 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
     private static PdoCacheIndex<@(pdoName)@, @(udkType)@> createUdkIndex() {
-      return new PdoCacheIndex<>("@(pdoName)@:UDK") {
-        \@Override
-        public @(pdoName)@ select(DomainContext context, @(udkType)@ @(udkName)@) {
+      return Pdo.createCacheIndex("@(pdoName)@:UDK",
 @[
         if (isRemote()) {
           RemoteIncludes genInc = new RemoteIncludes(this);
@@ -410,21 +373,16 @@ For more options, see {\@link DbModelWurblet}.
     }
   }
 @{to}@
-          return Pdo.create(@(pdoName)@.class, context).selectByUniqueDomainKeyForCache(@(udkName)@);
+                                  (context, @(udkName)@) -> Pdo.create(@(pdoName)@.class, context).selectByUniqueDomainKeyForCache(@(udkName)@),
 @[
         }
         else {
 ]@
-          return Pdo.create(@(pdoName)@.class, context).selectByUniqueDomainKey(@(udkName)@);
+                                  (context, @(udkName)@) -> Pdo.create(@(pdoName)@.class, context).selectByUniqueDomainKey(@(udkName)@),
 @[
         }
 ]@
-        }
-        \@Override
-        public @(udkType)@ extract(@(pdoName)@ pdo) {
-          return pdo.get@(udkSuffix)@();
-        }
-      };
+                                  @(pdoName)@::get@(udkSuffix)@);
     }
 @[
       }

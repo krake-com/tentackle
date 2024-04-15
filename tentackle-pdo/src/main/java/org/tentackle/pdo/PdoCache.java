@@ -131,42 +131,25 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
    */
   public PdoCache(Class<T> clazz, boolean preload, boolean readOnly, boolean checkSecurity) {
 
+    LOGGER.fine("creating cache for {0}, preload={1}, readOnly={2}, checkSecurity={3}",
+                clazz, preload, readOnly, checkSecurity);
+
     this.clazz = clazz;
     this.readOnly = readOnly;
     this.checkSecurity = checkSecurity;
 
-    indexes           = new ArrayList<>();                              // first index created below
+    indexes = new ArrayList<>();
+    lists = new HashMap<>();
+    expiredLists = new HashSet<>();
+    serialInfos = new HashMap<>();
+
     preloadedContexts = preload ? new HashSet<>() : null;               // no contexts preloaded so far
-    lists             = new HashMap<>();                                // lists from selectAll
-    expiredLists      = new HashSet<>();                                // expired lists
-    enabled           = true;                                           // initially enabled
-    keepQuota         = 50;                                             // keep 50% when shrinking
-    serialInfos       = new HashMap<>();                                // serial infos per table name
-    tableSerialProvided = Pdo.create(clazz).isTableSerialProvided();    // table serial provided (false if invalidate all if expire() invoked
+    enabled = true;                                                     // initially enabled
+    keepQuota = 50;                                                     // keep 50% when shrinking
+    tableSerialProvided = Pdo.create(clazz).isTableSerialProvided();    // table serial provided (false if invalidate all if expire() invoked)
 
-    LOGGER.fine("creating cache for {0}", clazz);
-
-    // createPdo default index by object-ID.
-    idIndex = new PdoCacheIndex<>(clazz.getSimpleName() + ":ID") {
-
-      @Override
-      public Long extract(T pdo) {
-        return pdo.getPersistenceDelegate().getId();
-      }
-
-      @Override
-      public T select(DomainContext context, Long id) {
-        try {
-          return Pdo.create(clazz, context).selectForCache(id);
-        }
-        catch (RuntimeException ex) {
-          // what can we do??
-          throw new PdoCacheException("creating cache object failed for " + clazz + ", ID=" + id, ex);
-        }
-      }
-    };
-
-    addIndex(idIndex);
+    idIndex = createIdIndex();
+    addIndex(idIndex);                                                  // ID index is mandatory!
   }
 
   /**
@@ -1165,6 +1148,18 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
     return keepQuota;
   }
 
+
+  /**
+   * Creates the ID index.
+   *
+   * @return the default index via object-ID
+   */
+  protected PdoCacheIndex<T, Long> createIdIndex() {
+    return PdoCacheFactory.getInstance().createCacheIndex(
+      clazz.getSimpleName() + ":ID",
+      (context, id) -> Pdo.create(clazz, context).selectForCache(id),
+      (pdo) -> pdo.getPersistenceDelegate().getId());
+  }
 
   /**
    * Read all PDOs from storage.

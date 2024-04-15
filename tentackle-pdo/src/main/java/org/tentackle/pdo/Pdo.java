@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.pdo;
 
 import org.tentackle.common.EncryptedProperties;
@@ -30,7 +29,9 @@ import org.tentackle.session.SessionInfoFactory;
 import org.tentackle.session.SessionUtilities;
 
 import java.util.Collection;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Collected factory methods for the PDOs and related objects.<br>
@@ -40,9 +41,7 @@ import java.util.function.Consumer;
  */
 public class Pdo {
 
-
   // ------------------- methods to create an implementation of a PDO --------------
-
 
   /**
    * Creates a snapshot from a pdo.
@@ -419,22 +418,35 @@ public class Pdo {
 
 
   /**
-   * Creates a PDO Cache.<br>
-   * Multiple calls on this method will return the same object reference.
-   * <p>
-   * If the current PDO tracker is a dummy tracker, the tracker
-   * will be replaced.
+   * Creates a PDO-cache.<br>
+   * Multiple calls on this method return the same object reference,
+   * since PDO-caches are singletons per PDO-type.
    *
    * @param <T> the PDO type
-   * @param clazz is the PersistentDomainObject-class managed by the cache.
-   * @param preload is true if preload all objects in domain context of cache.
-   * @param readOnly true if cache is readonly (shared)
-   * @param checkSecurity true if check read permission
+   * @param clazz is the PDO-class managed by the cache
+   * @param preload is true if preload all objects in domain context of cache
+   * @param readOnly true if cache is readonly
+   * @param checkSecurity true if read permission is checked
    * @return the cache
    */
   public static <T extends PersistentDomainObject<T>> PdoCache<T> createPdoCache(
           Class<T> clazz, boolean preload, boolean readOnly, boolean checkSecurity) {
     return PdoCacheFactory.getInstance().createCache(clazz, preload, readOnly, checkSecurity);
+  }
+
+  /**
+   * Creates an index for a PDO-cache.
+   *
+   * @param name the index name
+   * @param selectFunction the function to select a PDO by key
+   * @param extractFunction the function to extract the key from a PDO
+   * @return the index
+   * @param <T> the PDO type
+   * @param <C> the key type
+   */
+  public static <T extends PersistentDomainObject<T>, C extends Comparable<? super C>> PdoCacheIndex<T, C> createCacheIndex(
+    String name, BiFunction<DomainContext, C, T> selectFunction, Function<T, C> extractFunction) {
+    return PdoCacheFactory.getInstance().createCacheIndex(name, selectFunction, extractFunction);
   }
 
 
