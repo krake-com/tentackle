@@ -1749,16 +1749,6 @@ public class FxUtilities {
 
 
   /**
-   * Gets the separator string for CSV exports.
-   *
-   * @return the separator, default is <code>";"</code>
-   */
-  public String getCsvSeparator() {
-    return ";";
-  }
-
-
-  /**
    * Creates an auto-completion controller for a text component.
    *
    * @param component the component

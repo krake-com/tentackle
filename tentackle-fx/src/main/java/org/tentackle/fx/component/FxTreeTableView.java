@@ -32,6 +32,7 @@ import org.tentackle.fx.component.delegate.FxTreeTableViewDelegate;
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.fx.table.TableConfiguration;
+import org.tentackle.misc.CsvConverter;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
@@ -335,58 +336,69 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
    * @return the copied text, null if nothing copied
    */
   public String copyToClipboard() {
-    StringBuilder buf = new StringBuilder();
-    int lastRow = -1;
-    boolean cellInRowCopied = false;
-    String separator = FxUtilities.getInstance().getCsvSeparator();
-    for (TreeTablePosition<S,?> pos: getSelectionModel().getSelectedCells()) {
-      int row = pos.getRow();
-      if (row >= 0) {
-        int colMin = pos.getColumn();
-        int colMax;
-        if (colMin >= 0) {
-          colMax = colMin + 1;
+    List<TreeTablePosition<S, ?>> selectedCells = getSelectionModel().getSelectedCells();
+    // determine left and right column bounds first
+    int colMin = Integer.MAX_VALUE;
+    int colMax = Integer.MIN_VALUE;
+    boolean colsValid = false;
+    for (TreeTablePosition<S,?> pos: selectedCells) {
+      if (pos.getRow() >= 0) {
+        int col = pos.getColumn();
+        if (col >= 0) {
+          colMin = Math.min(col, colMin);
+          colMax = Math.max(col, colMax);
+          colsValid = true;
         }
-        else {
-          colMin = 0;
-          colMax = getColumns().size();
-        }
-        if (!buf.isEmpty() && lastRow >= 0 && lastRow != row) {
-          buf.append('\n');
-          cellInRowCopied = false;
-        }
-        for (int col = colMin; col < colMax; col++) {
-          TreeTableColumn<S, ?> treeTableColumn = getVisibleLeafColumn(col);
-          Object item = treeTableColumn.getCellData(row);
-          if (item != null) {
+      }
+    }
+    if (colsValid) {
+      List<List<String>> values = new ArrayList<>();
+      for (TreeTablePosition<S, ?> pos : selectedCells) {
+        int row = pos.getRow();
+        if (row >= 0) {
+          List<String> rowValues = new ArrayList<>();
+          for (int col = colMin; col < colMax; col++) {
             String text = null;
-            // try to look up the rendered text
-            for (Node c : lookupAll(".tree-table-cell")) {    // all visible cells only
-              TreeTableCell<?, ?> tc = (TreeTableCell<?, ?>) c;
-              if (tc.getItem() == item) {   // == is ok here, must be the same instance!
-                text = tc.getText();
-                break;
+            TreeTableColumn<S, ?> treeTableColumn = getVisibleLeafColumn(col);
+            if (treeTableColumn != null) {
+              Object item = treeTableColumn.getCellData(row);
+              if (item != null) {
+                // try to look up the rendered text
+                for (Node c : lookupAll(".tree-table-cell")) {    // all visible cells only
+                  TreeTableCell<?, ?> tc = (TreeTableCell<?, ?>) c;
+                  if (tc.getItem() == item) {   // == is ok here, must be the same instance!
+                    text = tc.getText();
+                    break;
+                  }
+                }
+                if (text == null) {
+                  text = item.toString();   // fallback if no rendered text found
+                }
               }
             }
             if (text == null) {
-              text = item.toString();   // fallback if no rendered text found
+              text = "";
             }
-            if (cellInRowCopied) {
-              buf.append(separator);
-            }
-            buf.append(text);
-            cellInRowCopied = true;
+            rowValues.add(text);
           }
+          values.add(rowValues);
         }
-        lastRow = row;
       }
-    }
-    if (!buf.isEmpty()) {
-      ClipboardContent cbc = new ClipboardContent();
-      String text = buf.toString();
-      cbc.putString(text);
-      Clipboard.getSystemClipboard().setContent(cbc);
-      return text;
+      if (!values.isEmpty()) {
+        // intentionally not RFC4180-conform: avoid quoting if possible and use platform line separator
+        StringBuilder buf = new StringBuilder();
+        for (String csv : CsvConverter.getInstance().toCsvLenient(values)) {
+          if (!buf.isEmpty()) {
+            buf.append(System.lineSeparator());
+          }
+          buf.append(csv);
+        }
+        ClipboardContent cbc = new ClipboardContent();
+        String text = buf.toString();
+        cbc.putString(text);
+        Clipboard.getSystemClipboard().setContent(cbc);
+        return text;
+      }
     }
     return null;
   }
