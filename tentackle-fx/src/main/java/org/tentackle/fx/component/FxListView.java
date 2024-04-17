@@ -30,6 +30,7 @@ import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.component.delegate.FxListViewDelegate;
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.FxTreeTableCell;
+import org.tentackle.misc.CsvConverter;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
@@ -107,26 +108,20 @@ public class FxListView<T> extends ListView<T> implements FxComponent {
   /**
    * Copies the selected items to the clipboard.
    *
-   * @param commaSeparated true if separate multiple items via commas instead of newlines
+   * @param inline true to put all items in one line, else one line per item
    * @return the copied text, null if nothing copied
    */
-  public String copyToClipboard(boolean commaSeparated) {
-    String separator = FxUtilities.getInstance().getCsvSeparator();
-    StringBuilder buf = new StringBuilder();
+  public String copyToClipboard(boolean inline) {
+    List<String> items = new ArrayList<>();
     for (T item : getSelectionModel().getSelectedItems()) {
-      if (!buf.isEmpty()) {
-        if (commaSeparated) {
-          buf.append(separator);
-        }
-        else {
-          buf.append('\n');
-        }
+      if (item != null) {
+        items.add(item.toString());
       }
-      buf.append(item);
     }
-    if (!buf.isEmpty()) {
+    if (!items.isEmpty()) {
+      // intentionally not RFC4180-conform: avoid quoting if possible and/or use platform line separator
+      String text = CsvConverter.getInstance().toCsv(inline ? null : System.lineSeparator(), List.of(items)).getFirst();
       ClipboardContent cbc = new ClipboardContent();
-      String text = buf.toString();
       cbc.putString(text);
       Clipboard.getSystemClipboard().setContent(cbc);
       return text;

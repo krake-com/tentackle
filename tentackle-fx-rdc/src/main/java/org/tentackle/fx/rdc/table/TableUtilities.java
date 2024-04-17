@@ -29,7 +29,6 @@ import org.tentackle.common.StringHelper;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxRuntimeException;
-import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.bind.FxTableBinding;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.component.FxTreeTableView;
@@ -37,6 +36,7 @@ import org.tentackle.fx.rdc.RdcFxRdcBundle;
 import org.tentackle.fx.rdc.RdcUtilities;
 import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
+import org.tentackle.misc.CsvConverter;
 import org.tentackle.pdo.PdoMember;
 import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
@@ -56,6 +56,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -207,42 +208,46 @@ public class TableUtilities {
    * @param <S> the row type
    */
   protected <S> void toSpreadsheet(Collection<TableColumnConfiguration<S,?>> columnConfigurations, File file, List<S> items) {
-    String separator = FxUtilities.getInstance().getCsvSeparator();
+    Collection<Collection<String>> values = new ArrayList<>();
 
-    try (PrintStream out = new PrintStream(new BufferedOutputStream(new FileOutputStream(file)))) {
-      // write header
-      int ndx = 0;
+    List<String> headerValues = new ArrayList<>();
+    for (TableColumnConfiguration<S, ?> tc : columnConfigurations) {
+      if (isColumnVisible(tc)) {
+        headerValues.add(tc.getDisplayedName());
+      }
+    }
+    values.add(headerValues);
+
+    for (S item : items) {
+      List<String> rowValues = new ArrayList<>();
       for (TableColumnConfiguration<S, ?> tc : columnConfigurations) {
         if (isColumnVisible(tc)) {
-          if (ndx > 0) {
-            out.append(separator);
+          FxTableBinding<S, ?> binding = tc.getBinding();
+          if (binding != null) {
+            binding.setBoundRootObject(item);
+            Object value = binding.getModelValue();
+            if (value != null) {
+              rowValues.add(value.toString());
+            }
           }
-          out.append(toCSV(tc.getDisplayedName()));
-          ndx++;
         }
       }
-      out.append('\n');
+      values.add(rowValues);
+    }
 
-      // write rows
-      for (S item : items) {
-        ndx = 0;
-        for (TableColumnConfiguration<S, ?> tc : columnConfigurations) {
-          if (isColumnVisible(tc)) {
-            if (ndx > 0) {
-              out.append(separator);
-            }
-            FxTableBinding<S, ?> binding = tc.getBinding();
-            if (binding != null) {
-              binding.setBoundRootObject(item);
-              Object value = binding.getModelValue();
-              if (value != null) {
-                out.append(toCSV(value.toString()));
-              }
-            }
-            ndx++;
-          }
+    // default exports to CSV (RFC 4180)
+    // overridden by export to XLS in module tentackle-fx-rdc-poi
+    try (PrintStream out = new PrintStream(new BufferedOutputStream(new FileOutputStream(file)))) {
+      boolean first = true;   // the last line should not be terminated with a line-ending
+      String lineEnding = CsvConverter.getInstance().getLineEnding(); // line ending is always CR+LF, regardless of the platform
+      for (String csv : CsvConverter.getInstance().toCsv(values)) {
+        if (first) {
+          first = false;
         }
-        out.append('\n');
+        else {
+          out.print(lineEnding);
+        }
+        out.print(csv);
       }
     }
     catch (IOException ex) {
@@ -366,37 +371,12 @@ public class TableUtilities {
     PrinterJob job = PrinterJob.createPrinterJob();
     if (job != null) {
       if (job.showPrintDialog(Fx.getStage(treeTable))) {
-        TablePrinter.print(treeTable, title, job);    //
+        TablePrinter.print(treeTable, title, job);
       }
     }
     else {
       Fx.error(treeTable, RdcFxRdcBundle.getString("NO PRINTERS FOUND"));
     }
-  }
-
-
-
-  /**
-   * Converts a string to a quoted CSV-Field.
-   *
-   * @return the quoted string, null if value was null
-   */
-  private String toCSV(String value)  {
-    if (value != null)  {
-      StringBuilder field = new StringBuilder();
-      field.append('"');
-      int length = value.length();
-      for (int i=0; i < length; i++)  {
-        char c = value.charAt(i);
-        if (c == '"') {
-          field.append('"');
-        }
-        field.append(c);
-      }
-      field.append('"');
-      return field.toString();
-    }
-    return null;
   }
 
 }

@@ -32,6 +32,7 @@ import org.tentackle.fx.component.delegate.FxTableViewDelegate;
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.FxTreeTableCell;
 import org.tentackle.fx.table.TableConfiguration;
+import org.tentackle.misc.CsvConverter;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
@@ -250,57 +251,43 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
       }
 
       // generate the text
-      StringBuilder buf = new StringBuilder();
-      boolean needLine = false;
-      String separator = FxUtilities.getInstance().getCsvSeparator();
+      List<List<String>> values = new ArrayList<>();
       if (swap) {
         for (int col=0; col < colNum; col++) {
-          if (needLine) {
-            buf.append('\n');
-          }
-          else {
-            needLine = true;
-          }
-          boolean needSep = false;
+          List<String> colValues = new ArrayList<>();
           for (int row=0; row < rowNum; row++) {
-            if (needSep) {
-              buf.append(separator);
-            }
-            else {
-              needSep = true;
-            }
             String text = cells[row][col];
-            if (text != null) {
-              buf.append(text);
+            if (text == null) {
+              text = "";
             }
+            colValues.add(text);
           }
+          values.add(colValues);
         }
       }
       else {
         for (int row=0; row < rowNum; row++) {
-          if (needLine) {
-            buf.append('\n');
-          }
-          else {
-            needLine = true;
-          }
-          boolean needSep = false;
+          List<String> rowValues = new ArrayList<>();
           for (int col=0; col < colNum; col++) {
-            if (needSep) {
-              buf.append(separator);
-            }
-            else {
-              needSep = true;
-            }
             String text = cells[row][col];
-            if (text != null) {
-              buf.append(text);
+            if (text == null) {
+              text = "";
             }
+            rowValues.add(text);
           }
+          values.add(rowValues);
         }
       }
 
-      if (!buf.isEmpty()) {
+      if (!values.isEmpty()) {
+        // intentionally not RFC4180-conform: avoid quoting if possible and use platform line separator
+        StringBuilder buf = new StringBuilder();
+        for (String csv : CsvConverter.getInstance().toCsvLenient(values)) {
+          if (!buf.isEmpty()) {
+            buf.append(System.lineSeparator());
+          }
+          buf.append(csv);
+        }
         ClipboardContent cbc = new ClipboardContent();
         String text = buf.toString();
         cbc.putString(text);
