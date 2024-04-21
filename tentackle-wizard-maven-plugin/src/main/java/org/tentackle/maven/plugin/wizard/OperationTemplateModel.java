@@ -15,9 +15,11 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
 package org.tentackle.maven.plugin.wizard;
 
-import org.tentackle.maven.TemplateModel;
+import org.tentackle.buildsupport.codegen.TemplateModel;
+import org.tentackle.common.NamingRules;
 
 import java.io.Serial;
 
@@ -35,15 +37,17 @@ public class OperationTemplateModel extends TemplateModel {
    * @param generator the operation generator
    */
   public OperationTemplateModel(OperationGenerator generator) {
-    super(generator.getLogger());
+    NamingRules namingRules = NamingRules.getInstance();
 
     putValue("profile", generator.getProfile().getName());
-    
+
     putValue("operationPackage", generator.getProfile().getOperationPackage());
     putValue("domainPackage", generator.getProfile().getDomainPackage());
     putValue("persistencePackage", generator.getProfile().getPersistencePackage());
     putValue("domainImplPackage", generator.getProfile().getDomainImplPackage());
     putValue("persistenceImplPackage", generator.getProfile().getPersistenceImplPackage());
+    putValue("remotePackage", namingRules.getOperationRemoteInterfacePackageName(generator.getProfile().getPersistenceImplPackage()));
+    putValue("remoteImplPackage", namingRules.getOperationRemoteImplementationPackageName(generator.getProfile().getPersistenceImplPackage()));
 
     putValue("superOperationInterface", generator.getSuperOperationInterface());
     putValue("operationInterface", generator.getOperationName());
@@ -55,6 +59,8 @@ public class OperationTemplateModel extends TemplateModel {
     putValue("superPersistenceInterface", generator.getSuperPersistenceInterface());
     putValue("superDomainImplementation", generator.getSuperDomainImplementation());
     putValue("superPersistenceImplementation", generator.getSuperPersistenceImplementation());
+    putValue("remoteInterface", namingRules.getPdoRemoteInterface(generator.getOperationName()));
+    putValue("remoteImplementation", namingRules.getPdoRemoteImplementation(generator.getOperationName()));
 
     putValue("shortDescription", generator.getShortDescription());
     putValue("longDescription", generator.getLongDescription());

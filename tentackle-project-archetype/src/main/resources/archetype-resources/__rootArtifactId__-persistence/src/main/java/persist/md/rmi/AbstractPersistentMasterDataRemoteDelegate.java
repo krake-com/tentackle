@@ -8,7 +8,7 @@
 package ${package}.persist.md.rmi;
 
 import ${package}.pdo.MasterData;
-import ${package}.persist.AbstractPersistentMasterData;
+import ${package}.persist.md.AbstractPersistentMasterData;
 
 import org.tentackle.persist.rmi.AbstractPersistentObjectRemoteDelegate;
 
@@ -20,4 +20,3 @@ public interface AbstractPersistentMasterDataRemoteDelegate<T extends MasterData
        extends AbstractPersistentObjectRemoteDelegate<T,P> {
 
 }
-

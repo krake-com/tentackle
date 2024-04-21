@@ -18,7 +18,9 @@
 
 package org.tentackle.dbms.rmi;
 
+import org.tentackle.common.NamingRules;
 import org.tentackle.common.Service;
+import org.tentackle.dbms.AbstractDbOperation;
 import org.tentackle.session.PersistenceException;
 
 /**
@@ -33,6 +35,8 @@ public class DbRemoteDelegateLocator implements RemoteDelegateLocator {
                                Class<RemoteDelegate> remoteDelegate,
                                Class<RemoteDelegateImpl<?>> remoteDelegateImpl) implements Result {
   }
+
+  private final NamingRules namingRules = NamingRules.getInstance();
 
   /**
    * Creates a remote delegate locator.
@@ -56,7 +60,13 @@ public class DbRemoteDelegateLocator implements RemoteDelegateLocator {
     ndx = effectiveClassName.lastIndexOf('.');
     String clsName = effectiveClassName.substring(ndx + 1);
 
-    String delegateName = pkgName + ".rmi." + clsName + "RemoteDelegate";
+    boolean isOperation = isOperation(effectiveClazz);
+
+    String delegateName =
+      isOperation ?
+        namingRules.getOperationRemoteInterfacePackageName(pkgName) + '.' + namingRules.getOperationRemoteInterface(clsName) :
+        namingRules.getPdoRemoteInterfacePackageName(pkgName) + '.' + namingRules.getPdoRemoteInterface(clsName);
+
     Class<?> delegateClass = Class.forName(delegateName);
     if (!delegateClass.isInterface()) {
       throw new PersistenceException(delegateClass + " is not an interface");
@@ -65,7 +75,12 @@ public class DbRemoteDelegateLocator implements RemoteDelegateLocator {
       throw new PersistenceException(delegateClass + " does not extend " + RemoteDelegate.class);
     }
 
-    Class<?> delegateImplClass = Class.forName(delegateName + "Impl");
+    String delegateImplName =
+      isOperation ?
+        namingRules.getOperationRemoteInterfacePackageName(pkgName) + '.' + namingRules.getOperationRemoteImplementation(clsName) :
+        namingRules.getPdoRemoteInterfacePackageName(pkgName) + '.' + namingRules.getPdoRemoteImplementation(clsName);
+
+    Class<?> delegateImplClass = Class.forName(delegateImplName);
     if (delegateImplClass.isInterface()) {
       throw new PersistenceException(delegateImplClass + " is an interface");
     }
@@ -87,6 +102,16 @@ public class DbRemoteDelegateLocator implements RemoteDelegateLocator {
    */
   protected Class<?> findEffectiveClass(Class<?> clazz) {
     return clazz;
+  }
+
+  /**
+   * Returns whether the given class is an operation or a PDO.
+   *
+   * @param clazz the implementation class
+   * @return true if operation, false is PDO
+   */
+  protected boolean isOperation(Class<?> clazz) {
+    return AbstractDbOperation.class.isAssignableFrom(clazz);
   }
 
 }

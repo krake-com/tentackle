@@ -21,6 +21,7 @@ package org.tentackle.persist.rmi;
 import org.tentackle.common.Service;
 import org.tentackle.dbms.rmi.DbRemoteDelegateLocator;
 import org.tentackle.dbms.rmi.RemoteDelegateLocator;
+import org.tentackle.pdo.Operation;
 import org.tentackle.pdo.PdoUtilities;
 
 /**
@@ -38,16 +39,15 @@ public class PdoRemoteDelegateLocator extends DbRemoteDelegateLocator {
     // see -Xlint:missing-explicit-ctor since Java 16
   }
 
-  /**
-   * Gets the effective class.<br>
-   *
-   * @param clazz the serviced class
-   * @return the effective serviced class
-   */
   @Override
   protected Class<?> findEffectiveClass(Class<?> clazz) {
     Class<?> servicedClass = PdoUtilities.getInstance().determineServicedClass(clazz);
     return servicedClass != null ? servicedClass : super.findEffectiveClass(clazz);
+  }
+
+  @Override
+  protected boolean isOperation(Class<?> clazz) {
+    return Operation.class.isAssignableFrom(clazz) || super.isOperation(clazz);
   }
 
 }

@@ -18,10 +18,17 @@
 
 package org.tentackle.persist.wurblet;
 
+import freemarker.template.TemplateException;
+import org.wurbelizer.misc.Constants;
 import org.wurbelizer.wurbel.HeapStream;
 import org.wurbelizer.wurbel.WurbelException;
+import org.wurbelizer.wurbel.WurbelTerminationException;
 import org.wurbelizer.wurbel.Wurbler;
 
+import org.tentackle.buildsupport.codegen.AbstractGenerator;
+import org.tentackle.buildsupport.codegen.GeneratedFile;
+import org.tentackle.buildsupport.codegen.TemplateModel;
+import org.tentackle.common.NamingRules;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.Entity;
 import org.tentackle.wurblet.ModelWurblet;
@@ -29,7 +36,7 @@ import org.tentackle.wurblet.ModelWurblet;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.Date;
+import java.util.regex.Pattern;
 
 /**
  * Handles generated .remote and .impl-code.
@@ -40,22 +47,111 @@ import java.util.Date;
  */
 public class RemoteIncludes {
 
+  /** template variables. */
+  private final class TemplatePars {
+    private final NamingRules namingRules;          // the naming rules
+    private final String popPackage;                // package name of the pdo or operation interface
+    private final String superPackage;              // package name of the remote super interface
+    private final String superImplPackage;          // package name of the remote super implementation
+    private final String superInterface;            // name of the remote super interface
+    private final String superImplementation;       // name of the remote super implementation
+    private final TemplateModel model;              // the template model (for pdo or operation)
+    private final AbstractGenerator generator;      // the template generator
+
+    private TemplatePars() throws WurbelException {
+      namingRules = NamingRules.getInstance();
+      popPackage = wurblet.determinePackageName(popInterface);
+      switch (superClassName) {
+        case "AbstractPersistentObject":
+          superInterface = "AbstractPersistentObjectRemoteDelegate";
+          superPackage = "org.tentackle.persist.rmi";
+          superImplementation = "AbstractPersistentObjectRemoteDelegateImpl";
+          superImplPackage = "org.tentackle.persist.rmi";
+          break;
+
+        case "AbstractPersistentOperation":
+          superInterface = "AbstractPersistentOperationRemoteDelegate";
+          superPackage = "org.tentackle.persist.rmi";
+          superImplementation = "AbstractPersistentOperationRemoteDelegateImpl";
+          superImplPackage = "org.tentackle.persist.rmi";
+          break;
+
+        case "AbstractDbObject":
+          // just convenience for TT-builds...
+          superInterface = "AbstractDbObjectRemoteDelegate";
+          superPackage = "org.tentackle.dbms.rmi";
+          superImplementation = "AbstractDbObjectRemoteDelegateImpl";
+          superImplPackage = "org.tentackle.dbms.rmi";
+          break;
+
+        default:
+          String superClassPackageName = wurblet.determinePackageName(superClassName);
+          if (wurblet.isOperation()) {
+            superInterface = namingRules.getOperationRemoteInterface(superClassName);
+            superPackage = namingRules.getOperationRemoteInterfacePackageName(superClassPackageName);
+            superImplementation = namingRules.getOperationRemoteImplementation(superClassName);
+            superImplPackage = namingRules.getOperationRemoteImplementationPackageName(superClassPackageName);
+          }
+          else {
+            superInterface = namingRules.getPdoRemoteInterface(superClassName);
+            superPackage = namingRules.getPdoRemoteInterfacePackageName(superClassPackageName);
+            superImplementation = namingRules.getPdoRemoteImplementation(superClassName);
+            superImplPackage = namingRules.getPdoRemoteImplementationPackageName(superClassPackageName);
+          }
+      }
+
+      model = new TemplateModel();
+      if (wurblet.isOperation()) {
+        model.putValue("operationInterface", popInterface);
+        model.putValue("operationPackage", popPackage);
+        String sourceText = wurblet.getContainer().getProperty(Wurbler.PROPSPACE_WURBLET, Wurbler.WURBLET_FILECONTENTS);
+        model.putValue("abstractOperation",
+                       sourceText != null &&
+                       Pattern.compile("\\s+extends\\s+" + popInterface + "\\s*<").matcher(sourceText).find());
+      }
+      else {
+        model.putValue("pdoInterface", popInterface);
+        model.putValue("pdoPackage", popPackage);
+        model.putValue("pdoInheritance", entity != null ? entity.getInheritanceType() : "");
+      }
+      model.putValue("persistenceImplementation", className);
+      model.putValue("persistenceImplPackage", packageName);
+      model.putValue("remoteInterface", remoteInterface);
+      model.putValue("remotePackage", remotePackage);
+      model.putValue("remoteImplementation", remoteImplementation);
+      model.putValue("remoteImplPackage", remoteImplPackage);
+      model.putValue("superInterface", superInterface);
+      model.putValue("superPackage", superPackage);
+      model.putValue("superImplementation", superImplementation);
+      model.putValue("superImplPackage", superImplPackage);
+
+      String templateDir = wurblet.getContainer().getProperty(Wurbler.PROPSPACE_EXTRA, "templateDir");
+      if (templateDir == null) {
+        templateDir = wurblet.getContainer().getProperty(Wurbler.PROPSPACE_EXTRA, "projectRoot") +
+                      File.separator + "templates" +
+                      File.separator + (wurblet.isOperation() ? "operation" : "pdo");
+      }
+      generator = new AbstractGenerator() {};
+      generator.setTemplateDirectory(new File(templateDir));
+    }
+
+  }
+
   private final Wurbler container;            // the executing container
+  private final ModelWurblet wurblet;         // the model wurblet
   private final Entity entity;                // the wurblet's entity
   private final String className;             // classname of persistence object
-  private final String packageName;           // package of the class
+  private final String packageName;           // package of the persistence implementation class
   private final String superClassName;        // name of the superclass
-  private final String type;                  // type name (pdo or operation)
-  private final boolean isOperation;          // true if not a PDO but an Operation
-  private final String remotePrefixBasename;  // basename of remotePrefix
   private final HeapStream remoteStream;      // stream for remote file
   private final HeapStream implStream;        // stream for impl file
-  private String pdoClassName;                // classname of the pdo interface
-  private String pdoPackageName;              // package name of the pdo interface
-  private String rmiDirName;                  // directory of rmi-classes
-  private String remotePrefix;                // prefix of the remote parent class (usually from ant script)
-  private boolean importSuperDelegate;        // create import for superclass/interface of remote delegate
 
+  private String popInterface;                // classname of the pdo or operation interface
+  private String remotePackage;               // package name of the remote interface
+  private String remoteInterface;             // classname of the remote interface
+  private String remoteImplPackage;           // package name of the remote implementation
+  private String remoteImplementation;        // classname of the remote implementation
+  private TemplatePars templatePars;          // template variables
 
   /**
    * Create remote includes.
@@ -65,65 +161,58 @@ public class RemoteIncludes {
    */
   public RemoteIncludes(ModelWurblet wurblet) throws WurbelException {
 
-    container       = wurblet.getContainer();
-    className       = wurblet.getClassName();
-    entity          = wurblet.getEntity();
-    superClassName  = StringHelper.getPlainClassName(wurblet.getSuperClassName());
-    packageName     = wurblet.getPackageName();
-    remotePrefix    = container.getProperty(Wurbler.PROPSPACE_EXTRA, "remoteprefix");
+    this.wurblet = wurblet;
+    container = wurblet.getContainer();
+    className = wurblet.getClassName();
+    entity = wurblet.getEntity();
+    superClassName = StringHelper.getPlainClassName(wurblet.getSuperClassName());
+    packageName = wurblet.getPackageName();
 
     try {
-      pdoClassName    = wurblet.getPdoClassName();
+      popInterface = wurblet.getPdoClassName();
     }
     catch (WurbelException ex) {
-      // only needed for initial class file generation below
+      // run into fallback below
     }
 
-    if (remotePrefix == null) {
-      // if not defined, set the default
-      pdoPackageName = packageName.replace(".persistence.", ".pdo.").replace(".persist.", ".pdo.");
-      switch (superClassName) {
-        case "AbstractPersistentObject":
-          remotePrefix = "org.tentackle.persist.rmi." + superClassName;
-          importSuperDelegate = true;
-          break;
-
-        case "AbstractDbObject":
-          remotePrefix = "org.tentackle.dbms.rmi." + superClassName;
-          importSuperDelegate = true;
-          break;
-
-        default:
-          remotePrefix = superClassName;
-          if (pdoClassName != null && className.startsWith(pdoClassName)) {
-            // subtract from classname to get the tail, something like "PersistenceImpl" or alike
-            String tail = className.substring(pdoClassName.length());
-            if (!tail.isEmpty() && remotePrefix.endsWith(tail)) {
-              remotePrefix = remotePrefix.substring(0, remotePrefix.length() - tail.length());
-            }
-          }
-      }
+    if (popInterface == null) {
+      popInterface = className;   // fallback if simple object
     }
 
-    int ndx = remotePrefix.lastIndexOf('.');
-    remotePrefixBasename = ndx < 0 ? remotePrefix : remotePrefix.substring(ndx + 1);
+    NamingRules namingRules = NamingRules.getInstance();
 
-    isOperation = remotePrefix.endsWith("Operation");
-    type = isOperation ? "operation" : (pdoClassName != null ? "pdo" : "object");
+    if (wurblet.isOperation()) {
+      remotePackage = namingRules.getOperationRemoteInterfacePackageName(packageName);
+      remoteInterface = namingRules.getOperationRemoteInterface(popInterface);
+      remoteImplPackage = namingRules.getOperationRemoteImplementationPackageName(packageName);
+      remoteImplementation = namingRules.getOperationRemoteImplementation(popInterface);
+    }
+    else {
+      remotePackage = namingRules.getPdoRemoteInterfacePackageName(packageName);
+      remoteInterface = namingRules.getPdoRemoteInterface(popInterface);
+      remoteImplPackage = namingRules.getPdoRemoteImplementationPackageName(packageName);
+      remoteImplementation = namingRules.getPdoRemoteImplementation(popInterface);
+    }
 
-    // find directory for remote delegates
-    rmiDirName = container.getProperty(Wurbler.PROPSPACE_WURBLET, Wurbler.WURBLET_DIRNAME);
-    rmiDirName += "/rmi";
+
+    // find directory for remote delegates (must be in the same module as the persistence implementation!)
+    String dirName = container.getProperty(Wurbler.PROPSPACE_WURBLET, Wurbler.WURBLET_DIRNAME);
+    String packagePath = packageName.replace('.', File.separatorChar);
+    int ndx = dirName.indexOf(packagePath);
+    String pathPrefix = ndx > 0 ? dirName.substring(0, ndx) : "";
+
+    String remoteDirName = pathPrefix + File.separator + remotePackage.replace('.', File.separatorChar);
+    String remoteImplDirName = pathPrefix + File.separator + remoteImplPackage.replace('.', File.separatorChar);
 
     // create remote stream and file
-    String remoteName = (pdoClassName != null ? pdoClassName : className) + "RemoteDelegate";
-    remoteStream = new HeapStream(container, remoteName + "/methods");
-    checkFile(remoteName, false);
+    remoteStream = new HeapStream(container, remoteInterface + "/methods");
+    checkFile(remoteDirName, remoteInterface, "RemoteInterface.ftl");
 
     // create impl stream and file
-    implStream = new HeapStream(container, remoteName + "Impl/methods");
-    checkFile(remoteName, true);
+    implStream = new HeapStream(container, remoteImplementation + "/methods");
+    checkFile(remoteImplDirName, remoteImplementation, "RemoteImplementation.ftl");
   }
+
 
   /**
    * Marks the heapfiles as discarded.<br>
@@ -167,182 +256,31 @@ public class RemoteIncludes {
     return implStream.getStream();
   }
 
-
   /**
-   * Returns whether entity is abstract.<br>
-   *
-   * @return true if abstract, false if concrete or no entity (e.g. operation)
+   * Check if remote file exists. If not, generate it.
    */
-  private boolean isAbstract() {
-    return entity != null && entity.isAbstract();
-  }
-
-  /**
-   * Check if remote file exists. If not, create it.
-   */
-  private void checkFile(String name, boolean impl) throws WurbelException {
+  private void checkFile(String dirName, String remoteName, String templateName) throws WurbelException {
     // check directory first
-    new File(rmiDirName).mkdirs();
-    String fileName = name + (impl ? "Impl" : "") + ".java";
-    String pathName = rmiDirName + "/" + fileName;
-    File file = new File(pathName);
+    File dir = new File(dirName);
+    File file = new File(dir, remoteName + Constants.JAVA_SOURCE_EXTENSION);
     if (!file.exists()) {
-      if (pdoClassName != null) {
-        // create it
-        try (PrintStream s = new PrintStream(file)) { // this is ok unbuffered for one time
-          s.println(
-          "/*\n" +
-          " * " + fileName + " (generated " + new Date() + ")\n" +
-          " */\n\n" +
-          "package " + packageName + ".rmi;\n\n" +
-          "import " + pdoPackageName + "." + pdoClassName + ";\n" +
-          "import " + packageName + "." + className + ";\n" +
-          "import java.rmi.RemoteException;\n" +
-          "import java.util.List;\n" +
-          "import org.tentackle.common.BMoney;\n" +
-          "import org.tentackle.common.Binary;\n" +
-          "import org.tentackle.common.DMoney;\n" +
-          "import org.tentackle.common.Date;\n" +
-          "import org.tentackle.common.Time;\n" +
-          "import org.tentackle.common.Timestamp;\n" +
-          "import org.tentackle.misc.TrackedList;\n" +
-          "import org.tentackle.persist.rmi.RemoteResultSetCursor;"
-          );
-          s.println("import org.tentackle.pdo.DomainContext;");
-          if (impl) {
-            if (importSuperDelegate) {
-              s.println("import " + remotePrefix + "RemoteDelegateImpl;");
-            }
-            s.println("import org.tentackle.dbms.rmi.RemoteDbSessionImpl;\n\n");
-            s.println("/**");
-            s.println(" * Remote delegate implementation for {@link " + className + "}.");
-            if (isAbstract()) {
-              s.println(" * ");
-              s.println(" * @param <T> the " + type + " interface");
-              s.println(" * @param <P> the persistence implementation");
-            }
-            s.println(" */");
-            if (isAbstract()) {
-              s.println("public class " + name + "Impl<T extends " + pdoClassName + "<T>, P extends " + className + "<T,P>>");
-              s.println("       extends " + remotePrefixBasename + "RemoteDelegateImpl<T,P>");
-              s.println("       implements " + name + "<T,P>  {\n");
-            }
-            else  {
-              s.println("public class " + name + "Impl");
-              s.println("       extends " + remotePrefixBasename + "RemoteDelegateImpl<" + pdoClassName + "," + className + ">");
-              s.println("       implements " + name + " {\n");
-            }
-            s.println("  /**");
-            s.println("   * Creates the remote delegate for {@link " + className + "}.");
-            s.println("   *");
-            s.println("   * @param session the RMI session");
-            s.println("   * @param persistenceClass the persistence implementation class");
-            s.println("   * @param " + type + "Class the " + type + " interface class");
-            s.println("   */");
-            if (isAbstract()) {
-              s.println("  public " + name + "Impl(RemoteDbSessionImpl session, Class<P> persistenceClass, Class<T> " + type + "Class) {");
-            }
-            else  {
-              s.println("  public " + name + "Impl(RemoteDbSessionImpl session, Class<" + className +
-                        "> persistenceClass, Class<" + pdoClassName + "> " + type + "Class) {");
-            }
-            s.println("    super(session, persistenceClass, " + type + "Class);");
-            s.println("  }");
-          }
-          else  {
-            if (importSuperDelegate) {
-              s.println("import " + remotePrefix + "RemoteDelegate;");
-            }
-            s.println("\n/**");
-            s.println(" * Remote delegate for {@link " + className + "}.");
-            if (isAbstract()) {
-              s.println(" * ");
-              s.println(" * @param <T> the " + type + " interface");
-              s.println(" * @param <P> the persistence implementation");
-            }
-            s.println(" */");
-            if (isAbstract()) {
-              s.println("public interface " + name + "<T extends " + pdoClassName + "<T>, P extends " + className + "<T,P>>");
-              s.println("       extends " + remotePrefixBasename + "RemoteDelegate<T,P> {\n");
-            }
-            else  {
-              s.println("public interface " + name);
-              s.println("       extends " + remotePrefixBasename + "RemoteDelegate<" + pdoClassName + "," + className + "> {\n");
-            }
-          }
-          s.println(
-          "\n" +
-          "  // @wurblet inclrmi Include --missingok .$classname/methods\n" +
-          "}"
-          );
-        }
-        catch (IOException ex) {
-          throw new WurbelException("printing to " + pathName + " failed", ex);
-        }
+      // generate it with freemarker
+      dir.mkdirs();
+      TemplatePars pars = getTemplatePars();
+      try {
+        new GeneratedFile(pars.generator.createFreemarkerConfiguration(), pars.model, templateName, file).generate();
       }
-      else if (superClassName != null && superClassName.equals("AbstractDbObject")) {
-        // primitive AbstractDbObjects
-        try (PrintStream s = new PrintStream(file)) { // this is ok unbuffered for one time
-          s.println(
-          "/*\n" +
-          " * " + fileName + " (generated " + new Date() + ")\n" +
-          " */\n\n" +
-          "package " + packageName + ".rmi;\n\n" +
-          "import " + packageName + "." + className + ";\n" +
-          "import java.rmi.RemoteException;\n" +
-          "import java.util.List;\n" +
-          "import org.tentackle.persist.AbstractDbObject;\n" +
-          "import org.tentackle.misc.TrackedList;"
-          );
-          if (impl) {
-            if (importSuperDelegate) {
-              s.println("import " + remotePrefix + "RemoteDelegateImpl;");
-            }
-            s.println("import org.tentackle.persist.rmi.RemoteDbSessionImpl;\n");
-            s.println("/**");
-            s.println(" * Remote delegate implementation for {@link " + className + "}.");
-            s.println(" * ");
-            s.println(" * @param <P> the persistence implementation");
-            s.println(" */");
-            s.println("public class " + name + "Impl<P extends " + className + ">");
-            s.println("             extends " + remotePrefixBasename + "RemoteDelegateImpl<P>");
-            s.println("             implements " + name + "<P>  {\n\n");
-            s.println("  /**");
-            s.println("   * Creates the remote delegate for {@link " + className + "}.");
-            s.println("   *");
-            s.println("   * @param session the RMI session");
-            s.println("   * @param persistenceClass the persistence implementation class");
-            s.println("   */");
-            s.println("  public " + name + "Impl(RemoteDbSessionImpl session, Class<P> persistenceClass) {");
-            s.println("    super(session, persistenceClass);");
-            s.println("  }");
-          }
-          else  {
-            if (importSuperDelegate) {
-              s.println("import " + remotePrefix + "RemoteDelegate;");
-            }
-            s.println("\n/**");
-            s.println(" * Remote delegate for {@link " + className + "}.");
-            s.println(" * ");
-            s.println(" * @param <P> the persistence implementation");
-            s.println(" */");
-            s.println("public interface " + name + "<P extends " + className + ">");
-            s.println("       extends " + remotePrefixBasename + "RemoteDelegate<P> {\n");
-          }
-          s.println(
-          "\n" +
-          "  // @wurblet inclrmi Include --missingok .$classname/methods\n" +
-          "}"
-          );
-        }
-        catch (IOException ex) {
-          throw new WurbelException("printing to " + pathName + " failed", ex);
-        }
-      }
-      else  {
-        container.getLogger().warning(pathName + " cannot be generated because " + type + " class is unknown (missing service annotation?)");
+      catch (IOException | TemplateException e) {
+        throw new WurbelTerminationException("cannot generate " + file, e);
       }
     }
+  }
+
+  private TemplatePars getTemplatePars() throws WurbelException {
+    if (templatePars == null) {
+      templatePars = new TemplatePars();
+    }
+    return templatePars;
   }
 
 }

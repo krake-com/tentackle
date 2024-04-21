@@ -8,7 +8,7 @@
 package ${package}.persist.md.rmi;
 
 import ${package}.pdo.MasterData;
-import ${package}.persist.AbstractPersistentMasterData;
+import ${package}.persist.md.AbstractPersistentMasterData;
 
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
 import org.tentackle.persist.rmi.AbstractPersistentObjectRemoteDelegateImpl;

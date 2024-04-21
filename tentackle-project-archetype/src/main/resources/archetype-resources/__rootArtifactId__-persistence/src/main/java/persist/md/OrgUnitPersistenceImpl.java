@@ -12,7 +12,6 @@ import ${package}.pdo.md.User;
 import ${package}.pdo.md.UserGroup;
 import ${package}.pdo.md.persist.OrgUnitPersistence;
 import ${package}.pdo.td.Message;
-import ${package}.persist.AbstractPersistentMasterData;
 import ${package}.persist.md.rmi.OrgUnitRemoteDelegate;
 
 import org.tentackle.common.StringHelper;

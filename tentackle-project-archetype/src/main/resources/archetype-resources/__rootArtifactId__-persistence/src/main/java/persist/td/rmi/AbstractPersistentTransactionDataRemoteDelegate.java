@@ -8,7 +8,7 @@
 package ${package}.persist.td.rmi;
 
 import ${package}.pdo.TransactionData;
-import ${package}.persist.AbstractPersistentTransactionData;
+import ${package}.persist.td.AbstractPersistentTransactionData;
 
 import org.tentackle.persist.rmi.AbstractPersistentObjectRemoteDelegate;
 

@@ -1037,40 +1037,6 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   }
 
 
-
-
-  /**
-   * Creates the classname of the remote delegate interface from the
-   * serviced classname.<br>
-   * The default implementation returns:
-   * <code>package-name + ".rmi." + class-basename + "RemoteDelegate"</code>
-   *
-   * @param className the name of the class to look for a delegate
-   * @return the classname of the remote delegate for given class
-   */
-  public String createRemoteDelegateClassName(String className) {
-    int ndx = className.lastIndexOf('.');
-    String pkgName = className.substring(0, ndx);
-    String clsName = className.substring(ndx + 1);
-    return pkgName + ".rmi." + clsName + "RemoteDelegate";
-  }
-
-
-  /**
-   * Creates the classname of the remote delegate implementation from the
-   * serviced classname.<br>
-   * The default implementation returns
-   * {@link #createRemoteDelegateClassName(java.lang.String) + "Impl"}.
-   *
-   * @param className the name of the class to look for a delegate
-   * @return the classname of the remote delegate for given class
-   */
-  public String createRemoteDelegateImplClassName(String className) {
-    return createRemoteDelegateClassName(className) + "Impl";
-  }
-
-
-
   /**
    * Creates a remote delegate for the given class.
    * <p>

@@ -33,6 +33,7 @@ import org.tentackle.maven.plugin.wizard.Constants;
 import org.tentackle.maven.plugin.wizard.OperationGenerator;
 import org.tentackle.maven.plugin.wizard.OperationMojo;
 import org.tentackle.maven.plugin.wizard.OperationProfile;
+import org.tentackle.model.Model;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationUtilities;
 
@@ -109,7 +110,8 @@ public class OperationWizard extends AbstractFxController {
       gen.setProfile(profiles.get(0));
     }
     gen.setTemplateDirectory(new File(mojo.getTemplateDir(), Constants.CATEGORY_OPERATION));
-    gen.setLogger(mojo.getLog());
+    gen.setRemoteEnabled(Model.getInstance().getModelDefaults() == null ||
+                         Boolean.TRUE.equals(Model.getInstance().getModelDefaults().getRemote()));
   }
 
   @Override

@@ -15,24 +15,13 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
 package org.tentackle.maven.plugin.wizard;
 
 /**
  * Constants and strings.
  */
 public class Constants {
-
-  /** classname suffix for the domain interface. */
-  public static final String DOMAIN_SUFFIX = "Domain";
-
-  /** classname suffix for the domain implementation. */
-  public static final String DOMAIN_IMPL_SUFFIX = "DomainImpl";
-
-  /** classname suffix for the persistence interface. */
-  public static final String PERSISTENCE_SUFFIX = "Persistence";
-
-  /** classname suffix for the persistence implementation. */
-  public static final String PERSISTENCE_IMPL_SUFFIX = "PersistenceImpl";
 
   /** java file extension. */
   public static final String JAVA_EXT = ".java";

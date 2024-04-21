@@ -53,6 +53,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -76,6 +77,9 @@ import java.util.regex.Pattern;
 public class ModelWurblet extends AbstractJavaWurblet {
 
   private static final Pattern ANNOTATION_PATTERN = Pattern.compile("\\s*([\\w\\.]+)\\.class");  // only 1-line annos for now
+  private static final Pattern IMPORT_PATTERN = Pattern.compile("^\\s*import\\s+([\\w\\.]+)\\s*;");
+
+  private static final Map<String, String> PACKAGE_CACHE = new ConcurrentHashMap<>();
 
   /**
    * The name of the model directory.
@@ -121,8 +125,11 @@ public class ModelWurblet extends AbstractJavaWurblet {
   /** true if --remote option set. */
   private boolean remote;
 
-  /** the pdo classname if it's a pdo. */
+  /** the pdo classname if isPdo == true, the operation classname if isPdo == false, null if class cannot be determined. */
   private String pdoClassName;
+
+  /** true if PDO-level operation. */
+  private boolean isOperation;
 
   /** true if missing model file is ok. */
   private boolean missingModelOk;
@@ -158,8 +165,9 @@ public class ModelWurblet extends AbstractJavaWurblet {
   }
 
   /**
-   * Gets the pdo class from the source.<br>
-   * Looks for annotations {@code @DomainObjectService}, {@code @PersistentObjectService} and interface extensions.
+   * Gets the pdo/operation class from the source.<br>
+   * Looks for annotations {@code @DomainObjectService, @PersistentObjectService, @DomainOperationService, @PersistentOperationService}
+   * and interface extensions.
    *
    * @return the pdo name
    * @throws WurbelException if pdo class cannot be determined from the source file
@@ -179,9 +187,22 @@ public class ModelWurblet extends AbstractJavaWurblet {
           if (matcher.find()) {
             pdoClassName = matcher.group(1);
             if (getContainer().getVerbosity().isDebug()) {
-              getContainer().getLogger().info("pdoClassName: " + pdoClassName);
+              getContainer().getLogger().info("pdo: " + pdoClassName);
             }
             isPdo = true;
+            return pdoClassName;
+          }
+          throw new WurbelException("malformed annotation: " + annotation);
+        }
+        else if (annotation.startsWith("@DomainOperationService") ||
+                 annotation.startsWith("@PersistentOperationService")) {
+          Matcher matcher = ANNOTATION_PATTERN.matcher(annotation);
+          if (matcher.find()) {
+            pdoClassName = matcher.group(1);
+            isOperation = true;
+            if (getContainer().getVerbosity().isDebug()) {
+              getContainer().getLogger().info("operation: " + pdoClassName);
+            }
             return pdoClassName;
           }
           throw new WurbelException("malformed annotation: " + annotation);
@@ -244,26 +265,24 @@ public class ModelWurblet extends AbstractJavaWurblet {
           }
         }
       }
+
+      // last try: use interface name (manually implemented PDOs, or migration from TT1)
+      pdoClassName = getContainer().getProperty(Wurbler.PROPSPACE_WURBLET, JavaSourceType.INTERFACE_NAME);
+      if (pdoClassName != null) {
+        return pdoClassName;
+      }
+
+      throw new WurbelException("cannot determine the pdo-class from the java-source");
     }
 
-    if (isPdo) {
-      return pdoClassName;
-    }
-
-    // last try: use interface name (manually implemented PDOs, or migration from TT1)
-    pdoClassName = getContainer().getProperty(Wurbler.PROPSPACE_WURBLET, JavaSourceType.INTERFACE_NAME);
-    if (pdoClassName != null) {
-      return pdoClassName;
-    }
-
-    throw new WurbelException("cannot determine the pdo-class from the java-source");
+    return pdoClassName;
   }
 
 
   /**
-   * Returns whether this is a pdo.
+   * Returns whether wurblet located within a pdo.
    *
-   * @return true if pdo
+   * @return true for PDOs, false for low-level objects
    */
   public boolean isPdo() {
     if (isPdo == null) {
@@ -275,6 +294,15 @@ public class ModelWurblet extends AbstractJavaWurblet {
       }
     }
     return isPdo;
+  }
+
+  /**
+   * Returns whether wurblet located within an operation.
+   *
+   * @return true if operation
+   */
+  public boolean isOperation() {
+    return isOperation;
   }
 
   /**
@@ -1063,6 +1091,37 @@ public class ModelWurblet extends AbstractJavaWurblet {
     return dataType.isPrimitive() ?
            dataType.toNonPrimitive().getJavaType() :
            attribute.getJavaType();
+  }
+
+
+  /**
+   * Determines the package name of a class from the source contents.<br>
+   * This is done by scanning the import statements.<br>
+   * Rather costly. Use only if there is no other way to determine the package (by rule, for example).
+   *
+   * @param className the simple classname
+   * @return the package name (never null)
+   * @throws ModelException if package could not be determined
+   */
+  public String determinePackageName(String className) throws WurbelException {
+    final String packageName = getPackageName();    // default is the same package
+    return PACKAGE_CACHE.computeIfAbsent(className, cn -> {
+      String sourceText = getContainer().getProperty(Wurbler.PROPSPACE_WURBLET, Wurbler.WURBLET_FILECONTENTS);
+      if (sourceText != null) {
+        String endStr = '.' + className;
+        // scan imports to determine the package
+        for (String line : sourceText.lines().toList()) {
+          Matcher matcher = IMPORT_PATTERN.matcher(line);
+          if (matcher.find()) {
+            String fqcn = matcher.group(1);
+            if (fqcn.endsWith(endStr)) {
+              return fqcn.substring(0, fqcn.length() - endStr.length());
+            }
+          }
+        }
+      }
+      return packageName;
+    });
   }
 
 }

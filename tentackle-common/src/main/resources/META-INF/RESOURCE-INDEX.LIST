@@ -5,3 +5,4 @@ META-INF/services/org.tentackle.common.BundleFactory
 META-INF/services/org.tentackle.common.LocaleProvider
 META-INF/services/org.tentackle.common.ServiceFactory
 META-INF/services/org.tentackle.common.ServiceFinder
+META-INF/services/org.tentackle.common.NamingRules
