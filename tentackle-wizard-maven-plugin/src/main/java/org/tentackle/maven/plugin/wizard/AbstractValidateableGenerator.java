@@ -15,9 +15,10 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
 package org.tentackle.maven.plugin.wizard;
 
-import org.tentackle.maven.AbstractGenerator;
+import org.tentackle.buildsupport.codegen.AbstractGenerator;
 import org.tentackle.validate.ScopeConfigurator;
 import org.tentackle.validate.Validateable;
 import org.tentackle.validate.ValidationScope;
@@ -28,7 +29,7 @@ import org.tentackle.validate.scope.MandatoryScope;
  * Base class for generators.<br>
  * Holds common methods for {@link PdoGenerator} and {@link OperationGenerator}.
  */
-public class AbstractValidateableGenerator extends AbstractGenerator implements ScopeConfigurator, Validateable {
+public abstract class AbstractValidateableGenerator extends AbstractGenerator implements ScopeConfigurator, Validateable {
 
   @Override
   @SuppressWarnings({ "unchecked", "rawtypes" })

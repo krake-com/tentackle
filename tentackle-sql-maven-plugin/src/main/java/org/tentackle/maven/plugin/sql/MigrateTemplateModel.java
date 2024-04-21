@@ -20,7 +20,7 @@ package org.tentackle.maven.plugin.sql;
 
 import org.apache.maven.plugin.MojoExecutionException;
 
-import org.tentackle.maven.TemplateModel;
+import org.tentackle.buildsupport.codegen.TemplateModel;
 import org.tentackle.sql.BackendInfo;
 
 import java.io.Serial;
@@ -58,7 +58,6 @@ public class MigrateTemplateModel extends TemplateModel {
    * @throws MojoExecutionException if module path could not be generated
    */
   public MigrateTemplateModel(MigrateSqlMojo mojo, BackendInfo backendInfo, Map<String, Boolean> migratedEntitiesMap) throws MojoExecutionException {
-    super(mojo.getLog());
 
     putValue("url", backendInfo.getUrl());
     put("migrate", migratedEntitiesMap);

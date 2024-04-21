@@ -20,13 +20,11 @@ For more options, see {\@link DbModelWurblet}.
     // main class
     String mainClass = getClassName();
     String pdoClass = null;
-    boolean isPdo;
     try {
       pdoClass = getPdoClassName();
-      isPdo = true;
     }
     catch (WurbelException we) {
-      isPdo = false;
+      // not a PDO -> isPdo() is false and pdoClass isn't used for low-level db-objects by this wurblet
     }
 
     boolean noif = false;
@@ -73,7 +71,7 @@ For more options, see {\@link DbModelWurblet}.
     if (!generateMock) {
       if (isRemote()) {
         new RemoteIncludes(this);   // create RMI-files if they don't exist yet
-        String delegateType = (isPdo() ? pdoClass : mainClass) + "RemoteDelegate";
+        String delegateType = NamingRules.getInstance().getPdoRemoteInterface(isPdo() ? pdoClass : mainClass);
         if (getEntity().isAbstract()) {
           delegateType += "<T,P>";
         }
@@ -1353,7 +1351,7 @@ For more options, see {\@link DbModelWurblet}.
     }
 
     if (!generateMock) {
-      if (isPdo && generateSnapshot) {
+      if (isPdo() && generateSnapshot) {
 
         // createAttributesInSnapshot isnt necessary anymore since 2.2.x, because all attributes are either immutable or frozen
         // therefore, modifying an attribute requires changing the object reference

@@ -12,7 +12,6 @@ import ${package}.pdo.MessageType;
 import ${package}.pdo.md.OrgUnit;
 import ${package}.pdo.td.Message;
 import ${package}.pdo.td.persist.MessagePersistence;
-import ${package}.persist.AbstractPersistentTransactionData;
 import ${package}.persist.td.rmi.MessageRemoteDelegate;
 
 import org.tentackle.common.Freezable;

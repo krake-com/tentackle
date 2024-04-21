@@ -15,11 +15,11 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-package org.tentackle.maven;
+
+package org.tentackle.buildsupport.codegen;
 
 import freemarker.template.Configuration;
 import freemarker.template.TemplateExceptionHandler;
-import org.apache.maven.plugin.logging.Log;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,10 +27,9 @@ import java.io.IOException;
 /**
  * Base class for generators.
  */
-public class AbstractGenerator {
+public abstract class AbstractGenerator {
 
   private File templateDirectory;
-  private Log logger;
 
   /**
    * Gets the freemarker template directory.
@@ -48,24 +47,6 @@ public class AbstractGenerator {
    */
   public void setTemplateDirectory(File templateDirectory) {
     this.templateDirectory = templateDirectory;
-  }
-
-  /**
-   * Gets the maven logger.
-   *
-   * @return the logger
-   */
-  public Log getLogger() {
-    return logger;
-  }
-
-  /**
-   * Sets the maven logger.
-   *
-   * @param logger the logger
-   */
-  public void setLogger(Log logger) {
-    this.logger = logger;
   }
 
   /**

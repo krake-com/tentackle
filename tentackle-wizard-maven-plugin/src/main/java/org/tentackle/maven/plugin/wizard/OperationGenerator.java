@@ -22,7 +22,8 @@ import freemarker.template.Configuration;
 import freemarker.template.TemplateException;
 
 import org.tentackle.bind.Bindable;
-import org.tentackle.maven.GeneratedFile;
+import org.tentackle.buildsupport.codegen.GeneratedFile;
+import org.tentackle.common.NamingRules;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScopeFactory;
 import org.tentackle.validate.validator.Changeable;
@@ -137,18 +138,11 @@ public class OperationGenerator extends AbstractValidateableGenerator {
       persistenceImplementation = null;
     }
     else {
-      if (domainInterface == null || domainInterface.endsWith(Constants.DOMAIN_SUFFIX)) {
-        domainInterface = operationName + Constants.DOMAIN_SUFFIX;
-      }
-      if (domainImplementation == null || domainImplementation.endsWith(Constants.DOMAIN_IMPL_SUFFIX)) {
-        domainImplementation = operationName + Constants.DOMAIN_IMPL_SUFFIX;
-      }
-      if (persistenceInterface == null || persistenceInterface.endsWith(Constants.PERSISTENCE_SUFFIX)) {
-        persistenceInterface = operationName + Constants.PERSISTENCE_SUFFIX;
-      }
-      if (persistenceImplementation == null || persistenceImplementation.endsWith(Constants.PERSISTENCE_IMPL_SUFFIX)) {
-        persistenceImplementation = operationName + Constants.PERSISTENCE_IMPL_SUFFIX;
-      }
+      NamingRules namingRules = NamingRules.getInstance();
+      domainInterface = namingRules.getOperationDomainInterface(operationName);
+      domainImplementation = namingRules.getOperationDomainImplementation(operationName);
+      persistenceInterface = namingRules.getOperationPersistenceInterface(operationName);
+      persistenceImplementation = namingRules.getOperationPersistenceImplementation(operationName);
     }
   }
 
@@ -205,8 +199,8 @@ public class OperationGenerator extends AbstractValidateableGenerator {
     if (domainInterface == null) {
       domainImplementation = null;
     }
-    else if (domainImplementation == null || domainImplementation.endsWith(Constants.DOMAIN_IMPL_SUFFIX)) {
-      domainImplementation = operationName + Constants.DOMAIN_IMPL_SUFFIX;
+    else if (domainImplementation == null) {
+      domainImplementation = NamingRules.getInstance().getOperationDomainImplementation(operationName);
     }
   }
 
@@ -222,8 +216,8 @@ public class OperationGenerator extends AbstractValidateableGenerator {
     if (persistenceInterface == null) {
       persistenceImplementation = null;
     }
-    else if (persistenceImplementation == null || persistenceImplementation.endsWith(Constants.PERSISTENCE_IMPL_SUFFIX)) {
-      persistenceImplementation = operationName + Constants.PERSISTENCE_IMPL_SUFFIX;
+    else if (persistenceImplementation == null) {
+      persistenceImplementation = NamingRules.getInstance().getOperationPersistenceImplementation(operationName);
     }
   }
 
@@ -287,7 +281,7 @@ public class OperationGenerator extends AbstractValidateableGenerator {
   public String getSuperDomainInterface() {
     String superDomainInterface;
     if (superOperationName != null) {
-      superDomainInterface = superOperationName + Constants.DOMAIN_SUFFIX;
+      superDomainInterface = NamingRules.getInstance().getOperationDomainInterface(superOperationName);
     }
     else if (profile.getDomainInterface() != null) {
       superDomainInterface = profile.getDomainInterface();
@@ -306,7 +300,7 @@ public class OperationGenerator extends AbstractValidateableGenerator {
   public String getSuperPersistenceInterface() {
     String superPersistenceInterface;
     if (superOperationName != null) {
-      superPersistenceInterface = superOperationName + Constants.PERSISTENCE_SUFFIX;
+      superPersistenceInterface = NamingRules.getInstance().getOperationPersistenceInterface(superOperationName);
     }
     else if (profile.getPersistenceInterface() != null) {
       superPersistenceInterface = profile.getPersistenceInterface();
@@ -325,7 +319,7 @@ public class OperationGenerator extends AbstractValidateableGenerator {
   public String getSuperDomainImplementation() {
     String superDomainImplementation;
     if (superOperationName != null) {
-      superDomainImplementation = superOperationName + Constants.DOMAIN_IMPL_SUFFIX;
+      superDomainImplementation = NamingRules.getInstance().getOperationDomainImplementation(superOperationName);
     }
     else if (profile.getDomainImplementation() != null) {
       superDomainImplementation = profile.getDomainImplementation();
@@ -344,7 +338,7 @@ public class OperationGenerator extends AbstractValidateableGenerator {
   public String getSuperPersistenceImplementation() {
     String superPersistenceImplementation;
     if (superOperationName != null) {
-      superPersistenceImplementation = superOperationName + Constants.PERSISTENCE_IMPL_SUFFIX;
+      superPersistenceImplementation = NamingRules.getInstance().getOperationPersistenceImplementation(superOperationName);
     }
     else if (profile.getPersistenceImplementation() != null) {
       superPersistenceImplementation = profile.getPersistenceImplementation();

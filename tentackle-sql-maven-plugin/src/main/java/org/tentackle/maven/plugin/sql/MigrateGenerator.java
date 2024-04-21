@@ -21,8 +21,8 @@ import freemarker.template.Configuration;
 import freemarker.template.TemplateException;
 import org.apache.maven.plugin.MojoExecutionException;
 
-import org.tentackle.maven.AbstractGenerator;
-import org.tentackle.maven.GeneratedFile;
+import org.tentackle.buildsupport.codegen.AbstractGenerator;
+import org.tentackle.buildsupport.codegen.GeneratedFile;
 import org.tentackle.sql.BackendInfo;
 
 import java.io.File;
@@ -52,7 +52,6 @@ public class MigrateGenerator extends AbstractGenerator {
     this.backendInfo = backendInfo;
     this.migratedEntitiesMap = migratedEntitiesMap;
     setTemplateDirectory(templateFile.getParentFile());
-    setLogger(mojo.getLog());
   }
 
   /**

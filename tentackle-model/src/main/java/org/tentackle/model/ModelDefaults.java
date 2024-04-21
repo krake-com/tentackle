@@ -247,7 +247,7 @@ public class ModelDefaults {
   /**
    * Gets the root default.
    *
-   * @return true if determine root option according to model
+   * @return true to determine root option according to model
    */
   public Boolean getRoot() {
     return root;
@@ -256,7 +256,7 @@ public class ModelDefaults {
   /**
    * Gets the rootid default.
    *
-   * @return true if determine rootid option according to model
+   * @return true to determine rootid option according to model
    */
   public Boolean getRootId() {
     return rootId;
@@ -265,7 +265,7 @@ public class ModelDefaults {
   /**
    * Gets the rootclassid default.
    *
-   * @return true if determine rootclassid option according to model
+   * @return true to determine rootclassid option according to model
    */
   public Boolean getRootClassId() {
     return rootClassId;
@@ -274,7 +274,7 @@ public class ModelDefaults {
   /**
    * Gets the [bind] default.
    *
-   * @return true if set [bind] option
+   * @return true to set [bind] option
    */
   public Boolean getBind() {
     return bind;
@@ -283,7 +283,7 @@ public class ModelDefaults {
   /**
    * Gets the [size] default.
    *
-   * @return true if set [size] option
+   * @return true to set [size] option
    */
   public Boolean getSize() {
     return size;
@@ -292,7 +292,7 @@ public class ModelDefaults {
   /**
    * Gets the [autoselect] default.
    *
-   * @return true if set [autoselect] option
+   * @return true to set [autoselect] option
    */
   public Boolean getAutoSelect() {
     return autoSelect;
@@ -301,7 +301,7 @@ public class ModelDefaults {
   /**
    * Gets the [remote] default.
    *
-   * @return true i set [remote] option
+   * @return true to set [remote] option
    */
   public Boolean getRemote() {
     return remote;

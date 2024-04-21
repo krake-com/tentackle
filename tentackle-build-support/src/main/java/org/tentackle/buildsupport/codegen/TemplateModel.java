@@ -16,9 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.maven;
-
-import org.apache.maven.plugin.logging.Log;
+package org.tentackle.buildsupport.codegen;
 
 import org.tentackle.common.StringHelper;
 
@@ -35,16 +33,12 @@ public class TemplateModel extends HashMap<String, Object> {
   @Serial
   private static final long serialVersionUID = 1L;
 
-  @SuppressWarnings("serial")
-  private final Log logger;   // the maven logger
 
   /**
    * Creates the template model.
-   *
-   * @param logger the maven logger
    */
-  public TemplateModel(Log logger) {
-    this.logger = logger;
+  public TemplateModel() {
+    // see -Xlint:missing-explicit-ctor since Java 16
   }
 
   /**
@@ -82,6 +76,5 @@ public class TemplateModel extends HashMap<String, Object> {
   public void putValue(String key, Object value) {
     String val = value == null ? "" : value.toString();
     put(key, val);
-    logger.debug("template variable " + key + " = \"" + val + "\"");
   }
 }

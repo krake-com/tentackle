@@ -22,10 +22,10 @@ import freemarker.template.Configuration;
 import freemarker.template.TemplateException;
 import org.apache.maven.plugin.MojoExecutionException;
 
+import org.tentackle.buildsupport.codegen.AbstractGenerator;
+import org.tentackle.buildsupport.codegen.GeneratedFile;
+import org.tentackle.buildsupport.codegen.TemplateModel;
 import org.tentackle.common.StringHelper;
-import org.tentackle.maven.AbstractGenerator;
-import org.tentackle.maven.GeneratedFile;
-import org.tentackle.maven.TemplateModel;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,7 +48,6 @@ public class JPackageGenerator extends AbstractGenerator {
     this.mojo = mojo;
     this.result = result;
     setTemplateDirectory(mojo.getTemplateDir());
-    setLogger(mojo.getLog());
   }
 
   /**

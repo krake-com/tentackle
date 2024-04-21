@@ -22,8 +22,9 @@ import freemarker.template.Configuration;
 import freemarker.template.TemplateException;
 
 import org.tentackle.bind.Bindable;
+import org.tentackle.buildsupport.codegen.GeneratedFile;
+import org.tentackle.common.NamingRules;
 import org.tentackle.common.Settings;
-import org.tentackle.maven.GeneratedFile;
 import org.tentackle.model.Entity;
 import org.tentackle.model.InheritanceType;
 import org.tentackle.model.Model;
@@ -292,18 +293,11 @@ public class PdoGenerator extends AbstractValidateableGenerator {
       persistenceImplementation = null;
     }
     else {
-      if (domainInterface == null || domainInterface.endsWith(Constants.DOMAIN_SUFFIX)) {
-        domainInterface = entityName + Constants.DOMAIN_SUFFIX;
-      }
-      if (domainImplementation == null || domainImplementation.endsWith(Constants.DOMAIN_IMPL_SUFFIX)) {
-        domainImplementation = entityName + Constants.DOMAIN_IMPL_SUFFIX;
-      }
-      if (persistenceInterface == null || persistenceInterface.endsWith(Constants.PERSISTENCE_SUFFIX)) {
-        persistenceInterface = entityName + Constants.PERSISTENCE_SUFFIX;
-      }
-      if (persistenceImplementation == null || persistenceImplementation.endsWith(Constants.PERSISTENCE_IMPL_SUFFIX)) {
-        persistenceImplementation = entityName + Constants.PERSISTENCE_IMPL_SUFFIX;
-      }
+      NamingRules namingRules = NamingRules.getInstance();
+      domainInterface = namingRules.getPdoDomainInterface(entityName);
+      domainImplementation = namingRules.getPdoDomainImplementation(entityName);
+      persistenceInterface = namingRules.getPdoPersistenceInterface(entityName);
+      persistenceImplementation = namingRules.getPdoPersistenceImplementation(entityName);
     }
   }
 
@@ -466,7 +460,7 @@ public class PdoGenerator extends AbstractValidateableGenerator {
   public String getSuperDomainInterface() {
     String superDomainInterface;
     if (superEntity != null) {
-      superDomainInterface = superEntity.getName() + Constants.DOMAIN_SUFFIX;
+      superDomainInterface = NamingRules.getInstance().getPdoDomainInterface(superEntity.getName());
     }
     else if (profile.getDomainInterface() != null) {
       superDomainInterface = profile.getDomainInterface();
@@ -485,7 +479,7 @@ public class PdoGenerator extends AbstractValidateableGenerator {
   public String getSuperPersistenceInterface() {
     String superPersistenceInterface;
     if (superEntity != null) {
-      superPersistenceInterface = superEntity.getName() + Constants.PERSISTENCE_SUFFIX;
+      superPersistenceInterface = NamingRules.getInstance().getPdoPersistenceInterface(superEntity.getName());
     }
     else if (profile.getPersistenceInterface() != null) {
       superPersistenceInterface = profile.getPersistenceInterface();
@@ -504,7 +498,7 @@ public class PdoGenerator extends AbstractValidateableGenerator {
   public String getSuperDomainImplementation() {
     String superDomainImplementation;
     if (superEntity != null) {
-      superDomainImplementation = superEntity.getName() + Constants.DOMAIN_IMPL_SUFFIX;
+      superDomainImplementation = NamingRules.getInstance().getPdoDomainImplementation(superEntity.getName());
     }
     else if (profile.getDomainImplementation() != null) {
       superDomainImplementation = profile.getDomainImplementation();
@@ -523,7 +517,7 @@ public class PdoGenerator extends AbstractValidateableGenerator {
   public String getSuperPersistenceImplementation() {
     String superPersistenceImplementation;
     if (superEntity != null) {
-      superPersistenceImplementation = superEntity.getName() + Constants.PERSISTENCE_IMPL_SUFFIX;
+      superPersistenceImplementation = NamingRules.getInstance().getPdoPersistenceImplementation(superEntity.getName());
     }
     else if (profile.getPersistenceImplementation() != null) {
       superPersistenceImplementation = profile.getPersistenceImplementation();

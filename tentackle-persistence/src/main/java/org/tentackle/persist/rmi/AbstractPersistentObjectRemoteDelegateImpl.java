@@ -65,7 +65,7 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
   /**
    * Creates a delegate on the serverSession socket.
    *
-   * @param serverSession the RMI serverSession
+   * @param serverSession the RMI session
    * @param persistenceClass the subclass of AbstractDbObject
    * @param pdoClass the PDO class (interface)
    */

@@ -311,12 +311,16 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
     installTemplate(Constants.CATEGORY_PDO, "PdoInterface.ftl");
     installTemplate(Constants.CATEGORY_PDO, "PersistenceImplementation.ftl");
     installTemplate(Constants.CATEGORY_PDO, "PersistenceInterface.ftl");
+    installTemplate(Constants.CATEGORY_PDO, "RemoteInterface.ftl");
+    installTemplate(Constants.CATEGORY_PDO, "RemoteImplementation.ftl");
 
     installTemplate(Constants.CATEGORY_OPERATION, "DomainImplementation.ftl");
     installTemplate(Constants.CATEGORY_OPERATION, "DomainInterface.ftl");
     installTemplate(Constants.CATEGORY_OPERATION, "OperationInterface.ftl");
     installTemplate(Constants.CATEGORY_OPERATION, "PersistenceImplementation.ftl");
     installTemplate(Constants.CATEGORY_OPERATION, "PersistenceInterface.ftl");
+    installTemplate(Constants.CATEGORY_OPERATION, "RemoteInterface.ftl");
+    installTemplate(Constants.CATEGORY_OPERATION, "RemoteImplementation.ftl");
   }
 
   private void installTemplate(String category, String template) throws MojoExecutionException {

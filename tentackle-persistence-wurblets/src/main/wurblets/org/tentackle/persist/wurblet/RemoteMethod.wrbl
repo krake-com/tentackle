@@ -47,14 +47,14 @@ For more options, see {\@link DbModelWurblet}.
       throw new WurbelException("can't determine <packagename>");
     }
 
-    boolean isPdo = false;
+    boolean isPdoOrOperation = false;
     String pdoClassName = null;
     try {
       pdoClassName = getPdoClassName();
-      isPdo = true;
+      isPdoOrOperation = true;
     }
     catch (WurbelException wx) {
-      // no pdo
+      // not a pdo or operation -> low level object
     }
 
     if (isRemote()) {
@@ -100,7 +100,7 @@ For more options, see {\@link DbModelWurblet}.
       String riparms = helper.getRemoteInvocationParameterString();
       String dparms  = helper.getDeclarationParameterString();
 
-      if (isPdo && !addThis && !noContext) {
+      if (isPdoOrOperation && !addThis && !noContext) {
         if (iparms.length() > 0) {
           iparms = "getDomainContext(), " + iparms;
         }
@@ -123,7 +123,9 @@ For more options, see {\@link DbModelWurblet}.
       boolean firstIsDb = helper.isFirstInstanceOfDb();
       boolean firstIsDomainContext = helper.isFirstInstanceOfDomainContext();
 
-      String remoteDelegateName = (pdoClassName != null ? pdoClassName : className) + "RemoteDelegate";
+      String remoteDelegateName = isOperation() ?
+          NamingRules.getInstance().getOperationRemoteInterface(pdoClassName != null ? pdoClassName : className) :
+          NamingRules.getInstance().getPdoRemoteInterface(pdoClassName != null ? pdoClassName : className);
       String imethod = "getRemoteDelegate()";
 
       String setDomainContext = "setDomainContext(" + firstName + ")";
@@ -138,7 +140,7 @@ For more options, see {\@link DbModelWurblet}.
 
       // always use a fresh pdo because we don't know what the app is really doing with it
       String dbObject = "newInstance(" + (firstIsDomainContext ? firstName : "context") + ")";
-      if (!isPdo || noContext) {
+      if (!isPdoOrOperation || noContext) {
         dbObject = "dbObject";
       }
       if (addThis) {
@@ -270,7 +272,7 @@ For more options, see {\@link DbModelWurblet}.
   }
 @{to}@
 @[
-        if (isPdo) {
+        if (isPdoOrOperation) {
 ]@
         return new ResultSetCursor<>(getDomainContext(),
                      @(imethod)@.@(methodName)@(@(iparms)@));

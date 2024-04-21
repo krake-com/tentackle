@@ -66,8 +66,6 @@ public class DataNodeFactory {
 
   // --- all private static below ---
 
-  private static final String PO_SUFFIX = "PersistenceObject";
-
   /**
    * Collected infos for attributes and components of a PDO class.
    */
@@ -80,7 +78,7 @@ public class DataNodeFactory {
 
     private ClassInfo(Class<? extends PersistentDomainObject<?>> pdoClass, Class<?> poClass) {
       this.pdoClass = pdoClass;
-      typeName = toTypeName(pdoClass);
+      typeName = pdoClass.getSimpleName();
       entity = lookupEntity(typeName);
       methodInfos = new TreeSet<>();      // sorted by name
       Method[] pdoClassMethods = pdoClass.getMethods();
@@ -174,7 +172,7 @@ public class DataNodeFactory {
       this.getter = getter;
       this.isComponent = isComponent;
       this.isList = isList;
-      this.typeName = toTypeName(type);
+      this.typeName = type.getSimpleName();
       this.isHidden = isHidden;
     }
 
@@ -393,14 +391,6 @@ public class DataNodeFactory {
       dataObject = getDataObject(pdo, name, comment, parentPdo, hidden, compositeRelation);
     }
     return dataObject;
-  }
-
-  private static String toTypeName(Class<?> type) {
-    String typeName = type.getSimpleName();
-    if (PersistentDomainObject.class.isAssignableFrom(type) && typeName.endsWith(PO_SUFFIX)) {
-      typeName = typeName.substring(0, typeName.length() - PO_SUFFIX.length());
-    }
-    return typeName;
   }
 
   private static Entity lookupEntity(String typeName) {

@@ -15,9 +15,11 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
 package org.tentackle.maven.plugin.wizard;
 
-import org.tentackle.maven.TemplateModel;
+import org.tentackle.buildsupport.codegen.TemplateModel;
+import org.tentackle.common.NamingRules;
 
 import java.io.Serial;
 
@@ -35,7 +37,7 @@ public class PdoTemplateModel extends TemplateModel {
    * @param generator the PDO generator
    */
   public PdoTemplateModel(PdoGenerator generator) {
-    super(generator.getLogger());
+    NamingRules namingRules = NamingRules.getInstance();
 
     putValue("profile", generator.getProfile().getName());
 
@@ -44,6 +46,8 @@ public class PdoTemplateModel extends TemplateModel {
     putValue("persistencePackage", generator.getProfile().getPersistencePackage());
     putValue("domainImplPackage", generator.getProfile().getDomainImplPackage());
     putValue("persistenceImplPackage", generator.getProfile().getPersistenceImplPackage());
+    putValue("remotePackage", namingRules.getPdoRemoteInterfacePackageName(generator.getProfile().getPersistenceImplPackage()));
+    putValue("remoteImplPackage", namingRules.getPdoRemoteImplementationPackageName(generator.getProfile().getPersistenceImplPackage()));
 
     putValue("superPdoInterface", generator.getSuperPdoInterface());
     putValue("pdoInterface", generator.getEntityName());
@@ -55,6 +59,8 @@ public class PdoTemplateModel extends TemplateModel {
     putValue("superPersistenceInterface", generator.getSuperPersistenceInterface());
     putValue("superDomainImplementation", generator.getSuperDomainImplementation());
     putValue("superPersistenceImplementation", generator.getSuperPersistenceImplementation());
+    putValue("remoteInterface", namingRules.getPdoRemoteInterface(generator.getEntityName()));
+    putValue("remoteImplementation", namingRules.getPdoRemoteImplementation(generator.getEntityName()));
 
     putValue("pdoTablename", generator.getTableName());
     putValue("pdoClassId", generator.getClassId());

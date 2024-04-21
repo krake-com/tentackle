@@ -11,7 +11,6 @@ import ${package}.pdo.md.User;
 import ${package}.pdo.md.User2Group;
 import ${package}.pdo.md.UserGroup;
 import ${package}.pdo.md.persist.User2GroupPersistence;
-import ${package}.persist.AbstractPersistentMasterData;
 import ${package}.persist.md.rmi.User2GroupRemoteDelegate;
 
 import org.tentackle.dbms.PreparedStatementWrapper;

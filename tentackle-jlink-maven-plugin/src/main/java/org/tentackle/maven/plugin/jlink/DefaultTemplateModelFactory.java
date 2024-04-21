@@ -20,7 +20,7 @@ package org.tentackle.maven.plugin.jlink;
 
 import org.apache.maven.plugin.MojoExecutionException;
 
-import org.tentackle.maven.TemplateModel;
+import org.tentackle.buildsupport.codegen.TemplateModel;
 
 import java.util.Locale;
 import java.util.StringTokenizer;
@@ -34,7 +34,7 @@ public class DefaultTemplateModelFactory implements TemplateModelFactory {
   @Override
   public TemplateModel create(AbstractJLinkMojo mojo, JLinkResolver.Result result) throws MojoExecutionException {
 
-    TemplateModel model = new TemplateModel(mojo.getLog());
+    TemplateModel model = new TemplateModel();
 
     StringTokenizer stok = new StringTokenizer(mojo.getVariablesPrecedence(), " \t\r\n,");
 

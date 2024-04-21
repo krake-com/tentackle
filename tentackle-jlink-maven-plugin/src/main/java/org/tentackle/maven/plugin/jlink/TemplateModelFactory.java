@@ -20,8 +20,8 @@ package org.tentackle.maven.plugin.jlink;
 
 import org.apache.maven.plugin.MojoExecutionException;
 
+import org.tentackle.buildsupport.codegen.TemplateModel;
 import org.tentackle.common.ServiceFactory;
-import org.tentackle.maven.TemplateModel;
 
 interface TemplateModelFactoryHolder {
   TemplateModelFactory INSTANCE = ServiceFactory.createService(TemplateModelFactory.class, DefaultTemplateModelFactory.class, false);
