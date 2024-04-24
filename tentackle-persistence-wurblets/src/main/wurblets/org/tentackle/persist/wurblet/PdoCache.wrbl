@@ -174,8 +174,8 @@ For more options, see {\@link DbModelWurblet}.
         String suffix = Character.toUpperCase(name.charAt(0)) + name.substring(1);
         if (isRemote()) {
           RemoteIncludes genInc = new RemoteIncludes(this);
-          PrintStream implOut   = genInc.getImplStream();
-          PrintStream remoteOut = genInc.getRemoteStream();
+          PrintStream implOut   = genInc.getImplementationStream();
+          PrintStream remoteOut = genInc.getInterfaceStream();
 ]@
 @{to remoteOut}@
   T selectBy@(suffix)@ForCache(DomainContext context, @(type)@ @(name)@) throws RemoteException;
@@ -222,8 +222,8 @@ For more options, see {\@link DbModelWurblet}.
 @[
         if (isRemote()) {
           RemoteIncludes genInc = new RemoteIncludes(this);
-          PrintStream implOut   = genInc.getImplStream();
-          PrintStream remoteOut = genInc.getRemoteStream();
+          PrintStream implOut   = genInc.getImplementationStream();
+          PrintStream remoteOut = genInc.getInterfaceStream();
 ]@
 @{to remoteOut}@
   T selectByUniqueDomainKeyForCache(DomainContext context, @(udkType)@ @(udkName)@) throws RemoteException;
@@ -311,8 +311,8 @@ For more options, see {\@link DbModelWurblet}.
         String suffix = Character.toUpperCase(name.charAt(0)) + name.substring(1);
         if (isRemote()) {
           RemoteIncludes genInc = new RemoteIncludes(this);
-          PrintStream implOut   = genInc.getImplStream();
-          PrintStream remoteOut = genInc.getRemoteStream();
+          PrintStream implOut   = genInc.getImplementationStream();
+          PrintStream remoteOut = genInc.getInterfaceStream();
 ]@
 @{to remoteOut}@
   @(pdoType)@ selectBy@(suffix)@ForCache(DomainContext context, @(type)@ @(name)@) throws RemoteException;
@@ -356,8 +356,8 @@ For more options, see {\@link DbModelWurblet}.
 @[
         if (isRemote()) {
           RemoteIncludes genInc = new RemoteIncludes(this);
-          PrintStream implOut   = genInc.getImplStream();
-          PrintStream remoteOut = genInc.getRemoteStream();
+          PrintStream implOut   = genInc.getImplementationStream();
+          PrintStream remoteOut = genInc.getInterfaceStream();
 ]@
 @{to remoteOut}@
   @(pdoType)@ selectByUniqueDomainKeyForCache(DomainContext context, @(udkType)@ @(udkName)@) throws RemoteException;
