@@ -82,8 +82,8 @@ For more options, see {\@link DbModelWurblet}.
     if (isRemote()) {
       // create includes
       RemoteIncludes genInc = new RemoteIncludes(this);
-      PrintStream implOut   = genInc.getImplStream();
-      PrintStream remoteOut = genInc.getRemoteStream();
+      PrintStream implOut   = genInc.getImplementationStream();
+      PrintStream remoteOut = genInc.getInterfaceStream();
 ]@
     Db db = getSession();
     if (db.isRemote())  {

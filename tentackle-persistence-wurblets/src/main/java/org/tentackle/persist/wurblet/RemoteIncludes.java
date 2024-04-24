@@ -39,28 +39,30 @@ import java.io.PrintStream;
 import java.util.regex.Pattern;
 
 /**
- * Handles generated .remote and .impl-code.
+ * Handles generated remote interface and implementation code.
  * <p>
- * Also creates the RMI-java files, if missing.
+ * Creates the RMI-java files from freemarker templates, if missing.
  *
  * @author harald
  */
 public class RemoteIncludes {
 
-  /** template variables. */
+  /** template parameters and variables. */
   private final class TemplatePars {
-    private final NamingRules namingRules;          // the naming rules
-    private final String popPackage;                // package name of the pdo or operation interface
-    private final String superPackage;              // package name of the remote super interface
-    private final String superImplPackage;          // package name of the remote super implementation
-    private final String superInterface;            // name of the remote super interface
-    private final String superImplementation;       // name of the remote super implementation
+
     private final TemplateModel model;              // the template model (for pdo or operation)
     private final AbstractGenerator generator;      // the template generator
 
     private TemplatePars() throws WurbelException {
-      namingRules = NamingRules.getInstance();
-      popPackage = wurblet.determinePackageName(popInterface);
+
+      NamingRules namingRules = NamingRules.getInstance();
+      String popPackage = wurblet.determinePackageName(popInterface); // package name of the pdo or operation interface
+
+      String superPackage;              // package name of the remote super interface
+      String superImplPackage;          // package name of the remote super implementation
+      String superInterface;            // name of the remote super interface
+      String superImplementation;       // name of the remote super implementation
+
       switch (superClassName) {
         case "AbstractPersistentObject":
           superInterface = "AbstractPersistentObjectRemoteDelegate";
@@ -127,31 +129,33 @@ public class RemoteIncludes {
 
       String templateDir = wurblet.getContainer().getProperty(Wurbler.PROPSPACE_EXTRA, "templateDir");
       if (templateDir == null) {
-        templateDir = wurblet.getContainer().getProperty(Wurbler.PROPSPACE_EXTRA, "projectRoot") +
-                      File.separator + "templates" +
+        String projectRoot = wurblet.getContainer().getProperty(Wurbler.PROPSPACE_EXTRA, "projectRoot");
+        if (projectRoot == null) {
+          throw new WurbelTerminationException("neither the WurbletProperty \"templateDir\" nor \"projectRoot\" were set.");
+        }
+        templateDir = projectRoot + File.separator + "templates" +
                       File.separator + (wurblet.isOperation() ? "operation" : "pdo");
       }
       generator = new AbstractGenerator() {};
       generator.setTemplateDirectory(new File(templateDir));
     }
-
   }
 
-  private final Wurbler container;            // the executing container
-  private final ModelWurblet wurblet;         // the model wurblet
-  private final Entity entity;                // the wurblet's entity
-  private final String className;             // classname of persistence object
-  private final String packageName;           // package of the persistence implementation class
-  private final String superClassName;        // name of the superclass
-  private final HeapStream remoteStream;      // stream for remote file
-  private final HeapStream implStream;        // stream for impl file
+  private final ModelWurblet wurblet;             // the model wurblet
+  private final Entity entity;                    // the entity associated to the wurblet
+  private final String className;                 // classname of persistence object
+  private final String packageName;               // package of the persistence implementation class
+  private final String superClassName;            // name of the superclass
+  private final HeapStream interfaceStream;       // stream for remote interface wurblet generated code
+  private final HeapStream implementationStream;  // stream for remote implementation wurblet generated code
 
-  private String popInterface;                // classname of the pdo or operation interface
-  private String remotePackage;               // package name of the remote interface
-  private String remoteInterface;             // classname of the remote interface
-  private String remoteImplPackage;           // package name of the remote implementation
-  private String remoteImplementation;        // classname of the remote implementation
-  private TemplatePars templatePars;          // template variables
+  private final String popInterface;              // classname of the pdo or operation interface
+  private final String remotePackage;             // package name of the remote interface
+  private final String remoteInterface;           // classname of the remote interface
+  private final String remoteImplPackage;         // package name of the remote implementation
+  private final String remoteImplementation;      // classname of the remote implementation
+
+  private TemplatePars templatePars;              // template variables (null if not created yet)
 
   /**
    * Create remote includes.
@@ -162,24 +166,15 @@ public class RemoteIncludes {
   public RemoteIncludes(ModelWurblet wurblet) throws WurbelException {
 
     this.wurblet = wurblet;
-    container = wurblet.getContainer();
+
     className = wurblet.getClassName();
     entity = wurblet.getEntity();
     superClassName = StringHelper.getPlainClassName(wurblet.getSuperClassName());
     packageName = wurblet.getPackageName();
-
-    try {
-      popInterface = wurblet.getPdoClassName();
-    }
-    catch (WurbelException ex) {
-      // run into fallback below
-    }
-
-    if (popInterface == null) {
-      popInterface = className;   // fallback if simple object
-    }
+    popInterface = determinePopInterface(wurblet);
 
     NamingRules namingRules = NamingRules.getInstance();
+    Wurbler container = wurblet.getContainer();
 
     if (wurblet.isOperation()) {
       remotePackage = namingRules.getOperationRemoteInterfacePackageName(packageName);
@@ -194,7 +189,6 @@ public class RemoteIncludes {
       remoteImplementation = namingRules.getPdoRemoteImplementation(popInterface);
     }
 
-
     // find directory for remote delegates (must be in the same module as the persistence implementation!)
     String dirName = container.getProperty(Wurbler.PROPSPACE_WURBLET, Wurbler.WURBLET_DIRNAME);
     String packagePath = packageName.replace('.', File.separatorChar);
@@ -205,82 +199,84 @@ public class RemoteIncludes {
     String remoteImplDirName = pathPrefix + File.separator + remoteImplPackage.replace('.', File.separatorChar);
 
     // create remote stream and file
-    remoteStream = new HeapStream(container, remoteInterface + "/methods");
+    interfaceStream = new HeapStream(container, remoteInterface + "/methods");
     checkFile(remoteDirName, remoteInterface, "RemoteInterface.ftl");
 
     // create impl stream and file
-    implStream = new HeapStream(container, remoteImplementation + "/methods");
+    implementationStream = new HeapStream(container, remoteImplementation + "/methods");
     checkFile(remoteImplDirName, remoteImplementation, "RemoteImplementation.ftl");
   }
 
-
   /**
-   * Marks the heapfiles as discarded.<br>
+   * Marks the heap files as discarded.<br>
    * Such files should not be used to generate code because their contents are incomplete
    * because of former errors. Wurblets reading this file should throw a {@link org.wurbelizer.wurbel.WurbelDiscardException}.
    */
   public void discard() {
-    implStream.discard();
-    remoteStream.discard();
+    implementationStream.discard();
+    interfaceStream.discard();
   }
 
   /**
-   * Appends text to remote file.
+   * Gets the print stream of the remote interface.
    *
-   * @param text the text to append
-   */
-  public void appendRemote(String text) {
-    remoteStream.append(text);
-  }
-
-  /**
-   * Appends text to impl file.
-   *
-   * @param text the text to append
-   */
-  public void appendImpl(String text) {
-    implStream.append(text);
-  }
-
-  /**
    * @return get the remote stream
    */
-  public PrintStream getRemoteStream()  {
-    return remoteStream.getStream();
+  public PrintStream getInterfaceStream()  {
+    return interfaceStream.getStream();
   }
 
   /**
+   * Gets the print stream of the remote implementation.
+   *
    * @return the impl stream
    */
-  public PrintStream getImplStream()  {
-    return implStream.getStream();
+  public PrintStream getImplementationStream()  {
+    return implementationStream.getStream();
+  }
+
+
+  /**
+   * Determines the interface name of the PDO or operation.
+   *
+   * @param wurblet the model wurblet from within the persistence implementation java file
+   * @return the proxy interface
+   * @throws WurbelException if fallback classname could not be determined
+   */
+  private String determinePopInterface(ModelWurblet wurblet) throws WurbelException {
+    String popInterface = null;
+    try {
+      popInterface = wurblet.getPdoClassName();
+    }
+    catch (WurbelException ex) {
+      // run into fallback below
+    }
+    if (popInterface == null) {
+      popInterface = wurblet.getClassName();   // fallback if simple object
+    }
+    return popInterface;
   }
 
   /**
    * Check if remote file exists. If not, generate it.
    */
   private void checkFile(String dirName, String remoteName, String templateName) throws WurbelException {
-    // check directory first
     File dir = new File(dirName);
     File file = new File(dir, remoteName + Constants.JAVA_SOURCE_EXTENSION);
     if (!file.exists()) {
       // generate it with freemarker
       dir.mkdirs();
-      TemplatePars pars = getTemplatePars();
+      if (templatePars == null) {
+        templatePars = new TemplatePars();
+      }
       try {
-        new GeneratedFile(pars.generator.createFreemarkerConfiguration(), pars.model, templateName, file).generate();
+        new GeneratedFile(templatePars.generator.createFreemarkerConfiguration(),
+                          templatePars.model, templateName, file).generate();
       }
       catch (IOException | TemplateException e) {
-        throw new WurbelTerminationException("cannot generate " + file, e);
+        throw new WurbelTerminationException("cannot generate " + file + " from " + templateName, e);
       }
     }
-  }
-
-  private TemplatePars getTemplatePars() throws WurbelException {
-    if (templatePars == null) {
-      templatePars = new TemplatePars();
-    }
-    return templatePars;
   }
 
 }

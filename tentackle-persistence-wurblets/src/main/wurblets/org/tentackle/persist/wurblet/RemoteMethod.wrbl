@@ -61,8 +61,8 @@ For more options, see {\@link DbModelWurblet}.
 
       // create includes
       RemoteIncludes genInc = new RemoteIncludes(this);
-      PrintStream implOut   = genInc.getImplStream();
-      PrintStream remoteOut = genInc.getRemoteStream();
+      PrintStream implOut   = genInc.getImplementationStream();
+      PrintStream remoteOut = genInc.getInterfaceStream();
 
       // load the info file
       String infoName = (packageName + "." + className + "." + methodName).replace('.', '/') +
