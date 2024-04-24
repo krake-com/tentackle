@@ -404,7 +404,7 @@ public class ManagedConnection {
   /**
    * Gets the epochal time in ms when this connection was verified.
    *
-   * @return the last verification, null if never been verified at all
+   * @return the last verification, 0 if never been verified at all
    */
   public long getLastVerified() {
     return lastVerified;
