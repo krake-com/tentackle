@@ -279,13 +279,8 @@ public class EntityFactoryImpl implements EntityFactory {
     // move from start to end of model
     entity.getAttributes().remove(idAttribute);
     entity.getAttributes().remove(serialAttribute);
-
-    if (!entity.isEmbedded() &&
-        (entity.getSuperEntityName() == null ||
-         entity.isAbstract() && entity.getInheritanceType().isMappingToOwnTable())) {
-      // top of hierarchy or no hierarchy at all or MULTI inheritance
-
-      // all entities provide an id and serial attribute (should be last in model)
+    if (!entity.isEmbedded() && entity.getSuperEntityName() == null) {
+      // top of hierarchy or no hierarchy at all
       entity.getAttributes().add(idAttribute);
       entity.getAttributes().add(serialAttribute);
     }

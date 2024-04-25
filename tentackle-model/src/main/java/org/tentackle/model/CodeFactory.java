@@ -25,7 +25,6 @@ import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.DataType;
-import org.tentackle.sql.SqlType;
 
 import java.util.List;
 
@@ -208,7 +207,6 @@ public class CodeFactory {
         String columnName = attribute.getColumnName(backend, columnIndex);
         int size = dataType.getSize(backend, columnIndex, attribute.getSize());
         int scale = dataType.getScale(backend, columnIndex, attribute.getScale());
-        SqlType sqlType = dataType.getSqlType(backend, columnIndex);
         String comment = attribute.getOptions().getComment();
         if (comment != null && !comment.isEmpty()) {
           comment += dataType.getCommentSuffix(backend, columnIndex).orElse("");
