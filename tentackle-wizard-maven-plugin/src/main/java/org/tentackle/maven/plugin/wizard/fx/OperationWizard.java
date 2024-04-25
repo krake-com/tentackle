@@ -33,7 +33,6 @@ import org.tentackle.maven.plugin.wizard.Constants;
 import org.tentackle.maven.plugin.wizard.OperationGenerator;
 import org.tentackle.maven.plugin.wizard.OperationMojo;
 import org.tentackle.maven.plugin.wizard.OperationProfile;
-import org.tentackle.model.Model;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationUtilities;
 
@@ -94,7 +93,6 @@ public class OperationWizard extends AbstractFxController {
 
   public OperationWizard() {
     gen = new OperationGenerator();
-    gen.setRemoteEnabled(true);
   }
 
   /**
@@ -110,8 +108,7 @@ public class OperationWizard extends AbstractFxController {
       gen.setProfile(profiles.get(0));
     }
     gen.setTemplateDirectory(new File(mojo.getTemplateDir(), Constants.CATEGORY_OPERATION));
-    gen.setRemoteEnabled(Model.getInstance().getModelDefaults() == null ||
-                         Boolean.TRUE.equals(Model.getInstance().getModelDefaults().getRemote()));
+    gen.initializeRemoteDefault();
   }
 
   @Override
@@ -127,9 +124,13 @@ public class OperationWizard extends AbstractFxController {
       genDomainImplementation.updateView();
       genPersistenceInterface.updateView();
       genPersistenceImplementation.updateView();
+      genRemoteEnabled.updateView();
     });
     genDomainInterface.addModelToViewListener(genDomainImplementation::updateView);
-    genPersistenceInterface.addModelToViewListener(genPersistenceImplementation::updateView);
+    genPersistenceInterface.addModelToViewListener(() -> {
+      genPersistenceImplementation.updateView();
+      genRemoteEnabled.updateView();
+    });
 
     cancel.setOnAction(e -> close());
 

@@ -24,6 +24,7 @@ import freemarker.template.TemplateException;
 import org.tentackle.bind.Bindable;
 import org.tentackle.buildsupport.codegen.GeneratedFile;
 import org.tentackle.common.NamingRules;
+import org.tentackle.model.Model;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScopeFactory;
 import org.tentackle.validate.validator.Changeable;
@@ -98,6 +99,10 @@ public class OperationGenerator extends AbstractValidateableGenerator {
     return results;
   }
 
+  public void initializeRemoteDefault() {
+    setRemoteEnabled(Model.getInstance().getModelDefaults() == null ||
+                     Boolean.TRUE.equals(Model.getInstance().getModelDefaults().getRemote()));
+  }
 
   public boolean isDomainValid() {
     return domainInterface != null;
@@ -143,6 +148,7 @@ public class OperationGenerator extends AbstractValidateableGenerator {
       domainImplementation = namingRules.getOperationDomainImplementation(operationName);
       persistenceInterface = namingRules.getOperationPersistenceInterface(operationName);
       persistenceImplementation = namingRules.getOperationPersistenceImplementation(operationName);
+      initializeRemoteDefault();
     }
   }
 
@@ -215,9 +221,11 @@ public class OperationGenerator extends AbstractValidateableGenerator {
     this.persistenceInterface = persistenceInterface;
     if (persistenceInterface == null) {
       persistenceImplementation = null;
+      remoteEnabled = false;
     }
     else if (persistenceImplementation == null) {
       persistenceImplementation = NamingRules.getInstance().getOperationPersistenceImplementation(operationName);
+      initializeRemoteDefault();
     }
   }
 
@@ -244,6 +252,7 @@ public class OperationGenerator extends AbstractValidateableGenerator {
   }
 
   @Bindable
+  @Changeable(condition = "$isPersistenceValid")
   public boolean isRemoteEnabled() {
     return remoteEnabled;
   }

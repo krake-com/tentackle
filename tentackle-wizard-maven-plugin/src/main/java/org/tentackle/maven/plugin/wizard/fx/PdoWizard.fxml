@@ -11,6 +11,8 @@
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.control.ComboBox?>
+
 <GridPane hgap="5.0" vgap="5.0" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.tentackle.maven.plugin.wizard.fx.PdoWizard">
   <columnConstraints>
     <ColumnConstraints hgrow="SOMETIMES" maxWidth="-Infinity" minWidth="10.0" />
@@ -109,7 +111,7 @@
     </ChoiceBox>
     <TextField fx:id="genEntityName" maxWidth="-Infinity" prefColumnCount="20" GridPane.columnIndex="1" GridPane.rowIndex="1" />
     <ChoiceBox fx:id="genSuperEntity" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-    <ChoiceBox fx:id="genInheritanceType" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+    <ComboBox fx:id="genInheritanceType" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="3" />
     <TextField fx:id="genClassId" maxWidth="-Infinity" prefColumnCount="5" GridPane.columnIndex="1" GridPane.rowIndex="4" />
     <TextField fx:id="genTableName" maxWidth="-Infinity" prefColumnCount="20" GridPane.columnIndex="1" GridPane.rowIndex="5" />
     <TextField fx:id="genShortDescription" GridPane.columnIndex="1" GridPane.rowIndex="6">

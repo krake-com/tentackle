@@ -169,7 +169,9 @@ public class RemoteIncludes {
 
     className = wurblet.getClassName();
     entity = wurblet.getEntity();
-    superClassName = StringHelper.getPlainClassName(wurblet.getSuperClassName());
+    superClassName = entity != null && entity.getSuperEntityName() != null ?
+                       entity.getSuperEntityName() :
+                       StringHelper.getPlainClassName(wurblet.getSuperClassName());
     packageName = wurblet.getPackageName();
     popInterface = determinePopInterface(wurblet);
 

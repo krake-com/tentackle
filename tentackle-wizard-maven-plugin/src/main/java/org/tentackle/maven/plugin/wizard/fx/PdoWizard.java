@@ -27,6 +27,7 @@ import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.component.FxButton;
 import org.tentackle.fx.component.FxCheckBox;
 import org.tentackle.fx.component.FxChoiceBox;
+import org.tentackle.fx.component.FxComboBox;
 import org.tentackle.fx.component.FxTextArea;
 import org.tentackle.fx.component.FxTextField;
 import org.tentackle.maven.plugin.wizard.Constants;
@@ -42,6 +43,9 @@ import org.tentackle.validate.ValidationUtilities;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.util.Callback;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -72,7 +76,7 @@ public class PdoWizard extends AbstractFxController {
   private FxChoiceBox<Entity> genSuperEntity;
 
   @FXML
-  private FxChoiceBox<InheritanceType> genInheritanceType;
+  private FxComboBox<InheritanceType> genInheritanceType;
 
   @FXML
   private FxTextField genShortDescription;
@@ -105,7 +109,6 @@ public class PdoWizard extends AbstractFxController {
   public PdoWizard() {
     gen = new PdoGenerator();
     gen.setInheritanceType(InheritanceType.NONE);
-    gen.setRemoteEnabled(true);
   }
 
   /**
@@ -205,6 +208,26 @@ public class PdoWizard extends AbstractFxController {
   private void updateViewOfClassIdAndTableName() {
     genClassId.updateView();
     genTableName.updateView();
+
+    genInheritanceType.setCellFactory(new Callback<>() {
+      @Override
+      public ListCell<InheritanceType> call(ListView<InheritanceType> param) {
+        return new ListCell<>() {
+          @Override
+          protected void updateItem(InheritanceType item, boolean empty) {
+            super.updateItem(item, empty);
+            if (item != null) {
+              boolean itemInvalid = false;
+              if (gen.getSuperEntity() != null) {
+                itemInvalid = item != InheritanceType.NONE && item != gen.getSuperEntity().getInheritanceType();
+              }
+              setDisable(itemInvalid);    // see PdoWizard.css
+              setText(item.toString());
+            }
+          }
+        };
+      }
+    });
   }
 
   private void updateViewOfClassIdAndTableNameAndSuperEntity() {
