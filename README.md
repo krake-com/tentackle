@@ -32,7 +32,7 @@ Generate your project via the Tentackle Maven archetype:
 mvn archetype:generate \
     -DarchetypeGroupId=org.tentackle \
     -DarchetypeArtifactId=tentackle-project-archetype \
-    -DarchetypeVersion=21.0-SNAPSHOT
+    -DarchetypeVersion=22.0-SNAPSHOT
 ```
 When all dependencies have been pulled from [Maven Central](https://search.maven.org/search?q=org.tentackle),
 you will be prompted for:
