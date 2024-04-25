@@ -13,7 +13,7 @@ By default, the server connects to a PostgreSQL database, but in principle
 you can use any relational database (see the [Tentackle docs](https://tentackle.org) for more info).
 
 ## Prerequisites
-* Java (JDK) >= 21
+* Java (JDK) >= 22
 * Maven >= 3.9.0
 * PostgreSQL >= 9
 
