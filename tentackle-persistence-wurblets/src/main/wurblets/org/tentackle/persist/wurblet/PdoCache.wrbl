@@ -141,7 +141,7 @@ For more options, see {\@link DbModelWurblet}.
 
     \@SuppressWarnings("unchecked")
     private static <X extends @(pdoName)@<X>> PdoCache<X> createCache() {
-      PdoCache<X> cache = (PdoCache<X>) Pdo.createPdoCache(@(pdoName)@.class, @(preload ? "true" : "false")@, @(mutable ? "false" : "true")@, @(secure ? "true" : "false")@);
+      PdoCache<X> cache = (PdoCache<X>) Pdo.createCache(@(pdoName)@.class, @(preload ? "true" : "false")@, @(mutable ? "false" : "true")@, @(secure ? "true" : "false")@);
       Pdo.listen(cache::expire, @(listenNames)@);
 @[
       if (strategy != null) {
@@ -278,7 +278,7 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
     private static PdoCache<@(pdoName)@> createCache() {
-      PdoCache<@(pdoName)@> cache = Pdo.createPdoCache(@(pdoName)@.class, @(preload ? "true" : "false")@, @(mutable ? "false" : "true")@, @(secure ? "true" : "false")@);
+      PdoCache<@(pdoName)@> cache = Pdo.createCache(@(pdoName)@.class, @(preload ? "true" : "false")@, @(mutable ? "false" : "true")@, @(secure ? "true" : "false")@);
       Pdo.listen(cache::expire, @(listenNames)@);
 @[
       if (strategy != null) {

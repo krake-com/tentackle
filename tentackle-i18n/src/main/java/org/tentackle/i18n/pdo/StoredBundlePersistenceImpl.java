@@ -500,7 +500,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
     private static final PdoCacheIndex<StoredBundle, StoredBundle.StoredBundleUDK> UDK_INDEX = createUdkIndex();
 
     private static PdoCache<StoredBundle> createCache() {
-      PdoCache<StoredBundle> cache = Pdo.createPdoCache(StoredBundle.class, true, true, false);
+      PdoCache<StoredBundle> cache = Pdo.createCache(StoredBundle.class, true, true, false);
       Pdo.listen(cache::expire, StoredBundle.class);
       return cache;
     }

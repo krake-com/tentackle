@@ -348,7 +348,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
     private static final PdoCache<Security> CACHE = createCache();
 
     private static PdoCache<Security> createCache() {
-      PdoCache<Security> cache = Pdo.createPdoCache(Security.class, true, true, false);
+      PdoCache<Security> cache = Pdo.createCache(Security.class, true, true, false);
       Pdo.listen(cache::expire, Security.class);
       return cache;
     }

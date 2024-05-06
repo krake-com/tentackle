@@ -429,9 +429,15 @@ public class Pdo {
    * @param checkSecurity true if read permission is checked
    * @return the cache
    */
-  public static <T extends PersistentDomainObject<T>> PdoCache<T> createPdoCache(
+  public static <T extends PersistentDomainObject<T>> PdoCache<T> createCache(
           Class<T> clazz, boolean preload, boolean readOnly, boolean checkSecurity) {
     return PdoCacheFactory.getInstance().createCache(clazz, preload, readOnly, checkSecurity);
+  }
+
+  @Deprecated(forRemoval = true)
+  public static <T extends PersistentDomainObject<T>> PdoCache<T> createPdoCache(
+    Class<T> clazz, boolean preload, boolean readOnly, boolean checkSecurity) {
+    return createCache(clazz, preload, readOnly, checkSecurity);
   }
 
   /**
