@@ -632,6 +632,16 @@ public interface Backend {
   void assertValidName(SqlNameType nameType, String name);
 
   /**
+   * Gets the maximum allowed length for a name.<br>
+   * This method is used by {@link #assertValidName(SqlNameType, String)}.
+   *
+   * @param nameType the type of the name
+   * @return the length
+   */
+  int getMaxNameLength(SqlNameType nameType);
+
+
+  /**
    * Determines the unique id or name used by the backend for a given connection.
    * <p>
    * Useful to figure out the corresponding {@code ManagedConnection} from the backend's logfiles.

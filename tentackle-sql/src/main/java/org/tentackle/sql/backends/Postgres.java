@@ -26,6 +26,7 @@ import org.tentackle.sql.BackendPreparedStatement;
 import org.tentackle.sql.MigrationStrategy;
 import org.tentackle.sql.NonStandardCommons;
 import org.tentackle.sql.ScriptRunner;
+import org.tentackle.sql.SqlNameType;
 import org.tentackle.sql.SqlType;
 import org.tentackle.sql.metadata.ColumnMetaData;
 import org.tentackle.sql.metadata.IndexColumnMetaData;
@@ -56,6 +57,9 @@ import java.util.Set;
  */
 @Service(Backend.class)
 public class Postgres extends AbstractSql92Backend {
+
+  // maximum length for identifiers, names, etc...
+  private static final int MAX_NAME_LENGTH = 63;
 
   /** postgres' default schema. */
   public static final String DEFAULT_SCHEMA = "public";
@@ -107,6 +111,10 @@ public class Postgres extends AbstractSql92Backend {
     return reservedWords;
   }
 
+  @Override
+  public int getMaxNameLength(SqlNameType nameType) {
+    return MAX_NAME_LENGTH;
+  }
 
   @Override
   public boolean isMatchingUrl(String url) {

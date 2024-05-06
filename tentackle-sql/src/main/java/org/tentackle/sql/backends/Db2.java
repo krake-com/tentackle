@@ -22,6 +22,7 @@ import org.tentackle.common.Service;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.NonStandardCommons;
+import org.tentackle.sql.SqlNameType;
 import org.tentackle.sql.SqlType;
 
 import java.sql.Connection;
@@ -40,12 +41,20 @@ public class Db2 extends AbstractSql2003Backend {
 
   private static final String STR_CONTINUATION = " \\";
 
+  // maximum length for identifiers, names, etc...
+  private static final int MAX_COLUMN_NAME_LENGTH = 30;
+  private static final int MAX_NAME_LENGTH = 128;
 
   /**
    * Creates the DB2 backend.
    */
   public Db2() {
     // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  @Override
+  public int getMaxNameLength(SqlNameType nameType) {
+    return nameType == SqlNameType.COLUMN_NAME ? MAX_COLUMN_NAME_LENGTH : MAX_NAME_LENGTH;
   }
 
   @Override

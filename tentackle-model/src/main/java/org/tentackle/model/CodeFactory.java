@@ -25,6 +25,7 @@ import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.DataType;
+import org.tentackle.sql.SqlNameType;
 
 import java.util.List;
 
@@ -284,12 +285,15 @@ public class CodeFactory {
    * @return the SQL code
    */
   public String createSqlForeignKey(ForeignKey foreignKey, Backend backend) {
+    String fkName = foreignKey.getReferencingEntity().getTableAlias() + "_" +
+                    foreignKey.getReferencingAttribute().getColumnName() + "_fkey";
+    backend.assertValidName(SqlNameType.FOREIGN_KEY_NAME, fkName);
     return backend.sqlCreateForeignKey(
         foreignKey.getReferencingTableProvidingEntity().getTableName(),
         foreignKey.getReferencingAttribute().getColumnName(),
         foreignKey.getReferencedTableProvidingEntity().getTableName(),
         foreignKey.getReferencedAttribute().getColumnName(),
-        foreignKey.getReferencingEntity().getTableAlias() + "_" + foreignKey.getReferencingAttribute().getColumnName() + "_fkey",
+        fkName,
         foreignKey.isComposite() && foreignKey.getReferencingEntity().getIntegrity().isCompositesCheckedByDatabase());
   }
 

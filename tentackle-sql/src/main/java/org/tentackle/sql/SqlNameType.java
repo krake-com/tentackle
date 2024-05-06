@@ -33,7 +33,10 @@ public enum SqlNameType {
   COLUMN_NAME("column name"),
 
   /** name of an index. */
-  INDEX_NAME("index name");
+  INDEX_NAME("index name"),
+
+  /** name of a foreign key. */
+  FOREIGN_KEY_NAME("foreign key name");
 
 
   private final String text;
