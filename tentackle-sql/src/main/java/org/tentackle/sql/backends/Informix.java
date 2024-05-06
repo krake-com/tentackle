@@ -24,6 +24,7 @@ import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendPreparedStatement;
 import org.tentackle.sql.NonStandardCommons;
+import org.tentackle.sql.SqlNameType;
 import org.tentackle.sql.SqlType;
 
 import java.sql.Connection;
@@ -38,6 +39,9 @@ import java.sql.Types;
  */
 @Service(Backend.class)
 public class Informix extends AbstractSql92Backend {
+
+  // maximum length for identifiers, names, etc...
+  private static final int MAX_NAME_LENGTH = 128;
 
   /** NVL keyword. */
   public static final String SQL_NVL = "NVL";   // instead of COALESCE
@@ -60,6 +64,11 @@ public class Informix extends AbstractSql92Backend {
    */
   public Informix() {
     // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  @Override
+  public int getMaxNameLength(SqlNameType nameType) {
+    return MAX_NAME_LENGTH;
   }
 
   @Override

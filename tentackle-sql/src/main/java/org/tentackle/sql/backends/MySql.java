@@ -24,6 +24,7 @@ import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendInfo;
 import org.tentackle.sql.BackendPreparedStatement;
 import org.tentackle.sql.MigrationStrategy;
+import org.tentackle.sql.SqlNameType;
 import org.tentackle.sql.SqlType;
 import org.tentackle.sql.metadata.ColumnMetaData;
 import org.tentackle.sql.metadata.MySqlColumnMetaData;
@@ -46,6 +47,9 @@ import java.util.Objects;
  */
 @Service(Backend.class)
 public class MySql extends AbstractSql92Backend {
+
+  // maximum length for identifiers, names, etc...
+  private static final int MAX_NAME_LENGTH = 64;
 
   /** LIMIT string. */
   public static final String SQL_LIMIT = " LIMIT ";
@@ -72,6 +76,11 @@ public class MySql extends AbstractSql92Backend {
    */
   public MySql() {
     // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  @Override
+  public int getMaxNameLength(SqlNameType nameType) {
+    return MAX_NAME_LENGTH;
   }
 
   @Override

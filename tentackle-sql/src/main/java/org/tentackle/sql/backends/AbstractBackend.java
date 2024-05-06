@@ -855,6 +855,13 @@ public abstract class AbstractBackend implements Backend {
   @Override
   public void assertValidName(SqlNameType nameType, String name) {
     if (name != null) {
+      int maxNameLength = getMaxNameLength(nameType);
+      int length = name.length();
+      if (length > maxNameLength) {
+        throw new BackendException(nameType + " '" + name + "' is " + length +
+                                   " characters long, which is more than " +
+                                   maxNameLength + " supported by backend " + this);
+      }
       if (getReservedWords().contains(name.toUpperCase(Locale.ROOT))) {
         throw new BackendException(nameType + " '" + name + "' is a reserved word for backend " + this);
       }
@@ -879,6 +886,11 @@ public abstract class AbstractBackend implements Backend {
         throw new BackendException(nameType + " '" + name + "' is a temporary identifier for backend " + this);
       }
     }
+  }
+
+  @Override
+  public int getMaxNameLength(SqlNameType nameType) {
+    return Integer.MAX_VALUE;
   }
 
   @Override

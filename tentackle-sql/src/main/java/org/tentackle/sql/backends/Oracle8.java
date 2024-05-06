@@ -268,10 +268,14 @@ public class Oracle8 extends AbstractSql2003Backend {
   @Override
   public void assertValidName(SqlNameType nameType, String name) {
     super.assertValidName(nameType, name);
-    assertNameLength(nameType, name);
     if (name != null && name.startsWith("_")) {
       throw new BackendException(nameType + " '" + name + "' is illegal for backend " + this);
     }
+  }
+
+  @Override
+  public int getMaxNameLength(SqlNameType nameType) {
+    return MAX_NAME_LENGTH;
   }
 
   @Override
@@ -507,13 +511,6 @@ public class Oracle8 extends AbstractSql2003Backend {
       sql = sql.substring(0, ndx);
     }
     return sql;
-  }
-
-  private void assertNameLength(SqlNameType nameType, String name) {
-    if (name != null && name.length() > MAX_NAME_LENGTH) {
-      throw new BackendException(nameType + " name " + name + " is too long (" + name.length() + "). " +
-                                 this + " allows only " + MAX_NAME_LENGTH);
-    }
   }
 
 }
