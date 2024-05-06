@@ -590,7 +590,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
       throw new MojoExecutionException("no such resource: " + path);
     }
     BufferedReader buffer = new BufferedReader(new InputStreamReader(inputStream));
-    return buffer.lines().collect(Collectors.joining(System.getProperty("line.separator")));
+    return buffer.lines().collect(Collectors.joining(System.lineSeparator()));
   }
 
   /**

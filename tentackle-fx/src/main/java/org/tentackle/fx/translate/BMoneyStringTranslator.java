@@ -78,12 +78,13 @@ public class BMoneyStringTranslator extends FractionNumberStringTranslator<BMone
           FxUtilities.getInstance().isLenientMoneyInput(getComponent())) {      // insert automatically?
         // insert decimal separator according to scale
         int len = str.length();
-        int prec = getComponent().getScale();
-        while (len <= prec) {
-          str = "0" + str;
-          len++;
+        int scale = getComponent().getScale();
+        int lead = scale - len + 1;
+        if (lead > 0) {
+          str = "0".repeat(lead) + str;
+          len += lead;
         }
-        str = str.substring(0, len - prec) + commaChar + str.substring(len - prec);
+        str = str.substring(0, len - scale) + commaChar + str.substring(len - scale);
       }
 
       try {
