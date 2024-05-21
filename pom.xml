@@ -7,7 +7,7 @@
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-parent</artifactId>
-  <version>11.7.4.1</version>
+  <version>11.7.4.2-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Tentackle Parent</name>
@@ -456,13 +456,13 @@
           <artifactId>maven-javadoc-plugin</artifactId>
           <version>${maven.javadoc.plugin.version}</version>
           <configuration>
-            <jdkToolchain>
-              <!--
-                need at least 11.0.9
-                see https://bugs.openjdk.java.net/browse/JDK-8208269 and https://bugs.openjdk.java.net/browse/JDK-8240169
-              -->
-              <version>latest-lts-11</version>
-            </jdkToolchain>
+<!--            <jdkToolchain>-->
+<!--              &lt;!&ndash;-->
+<!--                need at least 11.0.9-->
+<!--                see https://bugs.openjdk.java.net/browse/JDK-8208269 and https://bugs.openjdk.java.net/browse/JDK-8240169-->
+<!--              &ndash;&gt;-->
+<!--              <version>latest-lts-11</version>-->
+<!--            </jdkToolchain>-->
           </configuration>
           <dependencies>
             <dependency>
@@ -767,4 +767,3 @@
   </profiles>
 
 </project>
-

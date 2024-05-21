@@ -415,7 +415,7 @@ public class JLinkResolver {
    * @param artifacts the maven artifacts
    */
   public JLinkResolver(AbstractJLinkMojo mojo, Set<Artifact> artifacts) {
-    this.artifacts = artifacts;
+    this.artifacts = filterArtifacts(artifacts);
     this.mojo = mojo;
 
     automaticModules = new LinkedHashMap<>();
@@ -501,8 +501,14 @@ public class JLinkResolver {
       }
       else {
         for (ModularArtifact unresolvedModule: unresolvedModules) {
-          mojo.getLog().info("required " + unresolvedModule + " is not a full-blown module");
-          result.addToModulePath(unresolvedModule);   // must go to module path!
+          if (mojo.isClasspathDependency(unresolvedModule.getArtifact())) {
+            // moved to the classpath explicitly
+            result.addToClassPath(unresolvedModule.getArtifact());
+          }
+          else {
+            mojo.getLog().info("required " + unresolvedModule + " is not a full-blown module");
+            result.addToModulePath(unresolvedModule);   // must go to module path!
+          }
         }
         mojo.getLog().info("linking runtime modules only: project dependencies moved to the module-path");
         result.addRuntimeModuleNames(runtimeModules);
@@ -544,6 +550,17 @@ public class JLinkResolver {
   }
 
 
+  private Set<Artifact> filterArtifacts(Set<Artifact> artifacts) {
+    Set<Artifact> filteredArtifacts = new LinkedHashSet<>();    // keep order
+    for (Artifact artifact : artifacts) {
+      if (!"pom".equals(artifact.getType())) {
+        // skip BOM/POM files (their deps are included in the artifact list)
+        filteredArtifacts.add(artifact);
+      }
+    }
+    return filteredArtifacts;
+  }
+
   private Map<Artifact, JavaModuleDescriptor> loadArtifacts() throws MojoExecutionException {
     // build file to artifact map
     Map<File, Artifact> artifactMap = new LinkedHashMap<>();  // keep order
@@ -562,6 +579,7 @@ public class JLinkResolver {
     int maxNameLength = 0;
     try {
       for (Map.Entry<File, JavaModuleDescriptor> entry: mojo.getLocationManager().resolvePaths(request).getPathElements().entrySet()) {
+        File file = entry.getKey();
         JavaModuleDescriptor descriptor = entry.getValue();
         if (descriptor == null) {
           // there are cases that the descriptor is null for old artifacts with Java > 11.0.2
@@ -580,7 +598,7 @@ public class JLinkResolver {
         if (descriptor.name() != null && descriptor.name().length() > maxNameLength) {
           maxNameLength = descriptor.name().length();
         }
-        artifactJavaModuleDescriptorMap.put(artifactMap.get(entry.getKey()), descriptor);
+        artifactJavaModuleDescriptorMap.put(artifactMap.get(file), descriptor);
       }
     }
     catch (IOException e) {
@@ -625,17 +643,30 @@ public class JLinkResolver {
 
   private void runJdeps(Artifact artifact) throws MojoExecutionException {
     List<String> lines = JDEPS_MAP.get(artifact);   // no computeIfAbsent due to checked exception
+
     if (lines == null) {
-      ToolRunner jdepsRunner = new ToolRunner(mojo.getJdepsTool()).arg("--list-deps");
-      if (mojo.getJavaMajorRuntimeVersion() >= 12) {
-        // necessary since java 12
-        jdepsRunner.arg("--ignore-missing-deps");
+      ToolRunner runner = new ToolRunner(mojo.getJdepsTool()).arg("--list-deps").arg("--ignore-missing-deps")
+                                                             .arg(artifact.getFile()).run();
+      int errCode = runner.getErrCode();
+      if (errCode != 0) {
+        if (runner.getOutputAsString().contains("multi-release")) {
+          runner = new ToolRunner(mojo.getJdepsTool()).arg("--list-deps").arg("--ignore-missing-deps")
+                                                      .arg("--multi-release").arg(mojo.getJavaMajorRuntimeVersion())
+                                                      .arg(artifact.getFile()).run();
+          errCode = runner.getErrCode();
+        }
+        if (errCode != 0) {
+          throw new MojoExecutionException(runner + " failed for " + artifact +
+                                           "\nerror code: " + errCode +
+                                           "\nstdout: " + runner.getOutputAsString() +
+                                           "\nstderr: " + runner.getErrorsAsString());
+        }
       }
-      lines = jdepsRunner.arg(artifact.getFile()).run().getOutput();
+      lines = runner.getOutput();
       JDEPS_MAP.put(artifact, lines);
     }
 
-    for (String line: lines) {
+    for (String line : lines) {
       line = line.trim();
       if (!line.isEmpty() && !line.contains(" ")) {   // a valid module name (no "not found" and such)
         mojo.getLog().debug(artifact + " (non-module): " + line);

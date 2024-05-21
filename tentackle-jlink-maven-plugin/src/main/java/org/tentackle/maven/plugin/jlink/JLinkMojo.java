@@ -39,7 +39,7 @@ import org.tentackle.common.StringHelper;
  * <ol>
  *   <li>Full-blown modular applications: all module-infos must require real modules only. Jlink creates
  *   an image from those modules. Optional artifacts and runtime modules can still be added.</li>
- *   <li>Modular applications with non-modular dependencies: jlink is used to create an image from the mininum necessary java runtime modules only,
+ *   <li>Modular applications with non-modular dependencies: jlink is used to create an image from the minimum necessary java runtime modules only,
  *   which are determined by the plugin either from the module-infos or via the <code>jdeps</code> tool.
  *   The application's dependencies are placed on the modulepath via the generated run-script.</li>
  *   <li>Non-modular traditional classpath applications: same as 2, but all dependencies are placed on the classpath.</li>
@@ -86,15 +86,15 @@ import org.tentackle.common.StringHelper;
  *   <li><code>id</code>: the execution id</li>
  *   <li>all system properties (dots in property names translated to camelCase, e.g. "os.name" becomes "osName"</li>
  *   <li>all maven properties (translated to camelCase as well)</li>
- *   <li>the plugin configuration {@link #variables}</li>
+ *   <li>the plugin configuration {@link AbstractJLinkMojo#getVariables()}</li>
  * </ul>
  *
  * Modules not passed to <code>jlink</code> and automatic modules are copied to the <code>mp</code> folder
  * and added to the <code>modulePath</code> template variable. If no such modules are detected, no folder is created.<br>
  * Non-modular classpath artifacts are copied to the <code>cp</code> folder and added to the <code>classPath</code> template variable.
- * Again, the folder is only created if necessary.<br>
+ * Again, the folder will only be created if necessary.<br>
  * Additional project resources, such as property files or logger configurations, are copied to the <code>conf</code> directory and
- * this directory is prepended to the classpath.
+ * this directory prepended to the classpath.
  * <p>
  * The generation of the ZIP-file and attachment of the artifact for installation and deployment can be customized by an
  * application-specific implementation. This allows further modification of the generated image or files in the jlink target
@@ -102,7 +102,7 @@ import org.tentackle.common.StringHelper;
  * To do so, provide a plugin dependency that contains a class annotated with {@code @Service(}{@link ArtifactCreator}).
  * <p>
  * Notice that you can create an image for a different java version than the one used for the maven build process
- * by specifying an explicit {@link #jdkToolchain}.
+ * by specifying an explicit {@code AbstractJLinkMojo#getToolchain()}.
  */
 @Mojo(name = "jlink",
       requiresDependencyResolution = ResolutionScope.RUNTIME,
@@ -139,13 +139,6 @@ public class JLinkMojo extends AbstractJLinkMojo {
   @Parameter(defaultValue = UPDATE_TEMPLATE)
   private String updateTemplate;
 
-  /**
-   * Disables the generation of a ZIP file and does not add an artifact for installation and deployment.<br>
-   * If {@code true}, no {@link ArtifactCreator} will be invoked.
-   */
-  @Parameter(defaultValue = "false")
-  private boolean noArtifact;
-
 
   /**
    * Gets the name of the name template.
@@ -177,10 +170,7 @@ public class JLinkMojo extends AbstractJLinkMojo {
   @Override
   public void executeImpl() throws MojoExecutionException, MojoFailureException {
     super.executeImpl();
-
-    if (!noArtifact) {
-      ArtifactCreator.getInstance().createAndAttachArtifact(this);
-    }
+    ArtifactCreator.getInstance().createAndAttachArtifact(this);
   }
 
 

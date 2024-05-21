@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>11.7.4.1</version>
+    <version>11.7.4.2-SNAPSHOT</version>
   </parent>
 
   <artifactId>tentackle-persistence</artifactId>
@@ -39,7 +39,7 @@
         <filtering>true</filtering>
       </testResource>
     </testResources>
-    
+
     <plugins>
 
       <plugin>
@@ -154,8 +154,3 @@
   </build>
 
 </project>
-
-
-
-
-

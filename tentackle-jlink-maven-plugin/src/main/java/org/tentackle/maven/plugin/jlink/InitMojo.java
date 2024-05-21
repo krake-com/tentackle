@@ -29,7 +29,7 @@ import java.io.File;
  * Initializes the templates.<br>
  * Copies the default templates to the project's template directory.
  */
-@Mojo(name = "init", inheritByDefault = false, aggregator = true)
+@Mojo(name = "init", aggregator = true)
 public class InitMojo extends AbstractJLinkMojo {
 
   private static final String[] TEMPLATES_ALL = {
@@ -43,9 +43,9 @@ public class InitMojo extends AbstractJLinkMojo {
 
   /**
    * Controls whether all or only already installed templates should be copied.<br>
-   * By default (true), all templates are copied to the project's template folder.<br>
-   * Otherwise (false), only those templates that already exist in the template folder
-   * will be overwritten.<br>
+   * By default, all templates are copied to the project's template folder.<br>
+   * Otherwise, only those templates that already exist in the template folder
+   * will be overwritten.
    */
   @Parameter(defaultValue = "true")
   private boolean copyAll;
