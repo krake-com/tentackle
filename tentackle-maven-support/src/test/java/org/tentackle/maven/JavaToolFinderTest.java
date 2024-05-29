@@ -37,7 +37,8 @@ public class JavaToolFinderTest {
     File tool = new JavaToolFinder().find("java");
     Assert.assertNotNull(tool);
     Reporter.log("java is " + tool.getAbsolutePath() + "<br>");
-    tool = new JavaToolFinder().find("mvn");
+    String toolName = File.separatorChar == '\\' ? "mvn.cmd" : "mvn";
+    tool = new JavaToolFinder().find(toolName);
     if (tool != null) {
       Reporter.log("maven is " + tool.getAbsolutePath() + "<br>");
       try {
