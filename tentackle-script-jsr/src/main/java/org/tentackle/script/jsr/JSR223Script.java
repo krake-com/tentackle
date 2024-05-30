@@ -136,7 +136,7 @@ public class JSR223Script extends AbstractScript {
       return new CompiledJSR223Script(code, script);
     }
     catch (RuntimeException | ScriptException ex) {
-      throw new ScriptRuntimeException("creating script failed: " + this, ex);
+      throw new ScriptRuntimeException("compiling script failed (" + ex.getMessage() + "): " + this, ex);
     }
   }
 
