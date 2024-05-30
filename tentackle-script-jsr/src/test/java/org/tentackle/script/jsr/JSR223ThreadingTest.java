@@ -73,7 +73,7 @@ public class JSR223ThreadingTest {
         errorBuffer.append(rx.getMessage()).append("\n");
       }
       if (loop < loopNum) {
-        errorBuffer.append(this).append(" interrupted at ").append(loop).append("\n");
+        errorBuffer.append(this).append(" prematurely aborted in loop #").append(loop).append(" of ").append(loopNum).append("\n");
       }
     }
   }
