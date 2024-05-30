@@ -73,7 +73,7 @@ public class RubyThreadingTest {
         errorBuffer.append(rx.getMessage()).append("\n");
       }
       if (loop < LOOPS) {
-        errorBuffer.append(this).append(" interrupted at ").append(loop).append("\n");
+        errorBuffer.append(this).append(" prematurely aborted in loop #").append(loop).append(" of ").append(LOOPS).append("\n");
       }
     }
   }

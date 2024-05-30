@@ -119,8 +119,8 @@ public class GroovyScript extends AbstractScript {
       Class<groovy.lang.Script> scriptClass = groovyClassLoader.parseClass(code);
       return new CompiledGroovyScript(code, scriptClass);
     }
-    catch (RuntimeException rx) {
-      throw new ScriptRuntimeException("compiling script failed", rx);
+    catch (RuntimeException ex) {
+      throw new ScriptRuntimeException("compiling script failed (" + ex.getMessage() + "): " + this, ex);
     }
   }
 
