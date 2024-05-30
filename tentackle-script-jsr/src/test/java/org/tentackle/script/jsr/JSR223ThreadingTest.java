@@ -97,12 +97,6 @@ public class JSR223ThreadingTest {
       runners[i] = runner;
       runner.start();
     }
-    try {
-      Thread.sleep(1000);   // for slow systems (ruby...)
-    }
-    catch (InterruptedException e) {
-      errorBuffer.append("how? " + e.getMessage());
-    }
     for (int i=0; i < threadNum; i++) {
       try {
         Runner runner = runners[i];
