@@ -175,8 +175,8 @@ public abstract class AbstractDbTest {
     String classPath = System.getProperty("java.class.path");
     String modulePath = System.getProperty("jdk.module.path");
     if (modulePath != null) {
-      if (!classPath.endsWith(":")) {
-        classPath += ":";
+      if (!classPath.endsWith(File.pathSeparator)) {
+        classPath += File.pathSeparator;
       }
       classPath += modulePath;    // just append the module path to the classpath
     }
