@@ -194,15 +194,14 @@ public abstract class AbstractApplication implements Application {
     return cmdLine;
   }
 
-
   /**
    * Logs a stackdump.
    * <p>
-   * The logging level used is WARNING.<br>
+   * The logging level used is INFO.<br>
    * Can be used for example from a groovy console at runtime.
    */
   public void logStackdump() {
-    LOGGER.warning(DiagnosticUtilities.getInstance().createStackDump());
+    DiagnosticUtilities.getInstance().logStackDump(Logger.Level.INFO, "");
   }
 
 

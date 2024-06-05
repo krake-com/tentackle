@@ -21,6 +21,7 @@ package org.tentackle.misc;
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
+import org.tentackle.log.Logger;
 import org.tentackle.task.TaskDispatcher;
 
 import java.lang.management.ManagementFactory;
@@ -53,7 +54,7 @@ public class DiagnosticUtilities {
     return DiagnosticUtilitiesHolder.INSTANCE;
   }
 
-
+  private static final Logger LOG = Logger.get(DiagnosticUtilities.class);
 
   private final AtomicLong dumpCount;       // dump counter
 
@@ -66,7 +67,42 @@ public class DiagnosticUtilities {
     dumpCount = new AtomicLong();
   }
 
+  /**
+   * Creates the stackdump string for the whole application.
+   * <p>
+   * Useful for debugging, crash analysis.
+   *
+   * @return the stackdump
+   */
+  public String createStackDump() {
+    StringBuilder buf = new StringBuilder("\n-------------------- Stackdump ");
+    buf.append(dumpCount.incrementAndGet())
+       .append(" --------------------\n\n");
 
+    try {
+      doCreateStackDump(buf);
+    }
+    catch (RuntimeException ex) {
+      buf.append("CREATING STACKDUMP FAILED:\n")
+         .append(ExceptionHelper.getStackTraceAsString(ex));
+    }
+
+    buf.append("\n-------------------- End Of Stackdump ")
+       .append(dumpCount)
+       .append(" --------------------\n\n");
+
+    return buf.toString();
+  }
+
+  /**
+   * Logs the stackdump.
+   *
+   * @param level the logging level
+   * @param message the header message
+   */
+  public void logStackDump(Logger.Level level, String message) {
+    LOG.log(level, null, () -> message + createStackDump());
+  }
 
 
   /**
@@ -84,7 +120,6 @@ public class DiagnosticUtilities {
       buf.append("\n\n");
     }
   }
-
 
   /**
    * Creates the stackdump.
@@ -112,36 +147,6 @@ public class DiagnosticUtilities {
         doCreateStackDump(buf, info, threadIdMap.get(info.getThreadId()));
       }
     }
-  }
-
-
-
-  /**
-   * Creates the stackdump string for the whole application.
-   * <p>
-   * Useful for debugging, crash analysis.
-   *
-   * @return the stackdump
-   */
-  public String createStackDump() {
-
-    StringBuilder buf = new StringBuilder("\n-------------------- Stackdump ");
-    buf.append(dumpCount.incrementAndGet())
-       .append(" --------------------\n\n");
-
-    try {
-      doCreateStackDump(buf);
-    }
-    catch (RuntimeException ex) {
-      buf.append("CREATING STACKDUMP FAILED:\n")
-         .append(ExceptionHelper.getStackTraceAsString(ex));
-    }
-
-    buf.append("\n-------------------- End Of Stackdump ")
-       .append(dumpCount)
-       .append(" --------------------\n\n");
-
-    return buf.toString();
   }
 
 }

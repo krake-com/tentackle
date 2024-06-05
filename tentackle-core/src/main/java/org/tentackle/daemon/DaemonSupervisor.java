@@ -666,7 +666,7 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
               LOGGER.warning("daemon has terminated: {0}", daemon.supervisable);
             }
             else {
-              LOGGER.warning("dead daemon detected: {0}{1}", daemon.supervisable, DiagnosticUtilities.getInstance().createStackDump());
+              DiagnosticUtilities.getInstance().logStackDump(Logger.Level.WARNING, "dead daemon detected: " + daemon.supervisable);
             }
 
             try {
