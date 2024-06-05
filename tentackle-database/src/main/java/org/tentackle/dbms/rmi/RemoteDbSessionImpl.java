@@ -191,20 +191,21 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   /**
    * Holds the resources and state to be cleaned up.
    */
-  private class Resources implements Runnable {
+  private static class Resources implements Runnable {
 
+    private final RemoteDbConnectionImpl con;         // the connection object
+    private final SessionInfo serverInfo;             // the server info (to restore after close)
+    private final Collection<WeakReference<RemoteDelegate>> exportedDelegates;  // delegates to un-export on close
+    private final MethodStatistics methodStats;       // method statistics (managed by invocation handler, null if no stats)
     private RemoteDbSessionImpl me;                   // != null if programmatic close
     private String name;                              // the session name
     private Db db;                                    // the local session
     private String mdcInfo;                           // the cached MDC info
-    private final RemoteDbConnectionImpl con;         // the connection object
-    private final Collection<WeakReference<RemoteDelegate>> exportedDelegates;  // delegates to un-export on close
-    private final MethodStatistics methodStats;       // statistics for method invocations
-                                                      // (managed by invocation handler, null if no stats)
 
-    Resources(Db db, RemoteDbConnectionImpl con) {
+    Resources(Db db, RemoteDbConnectionImpl con, SessionInfo serverInfo) {
       this.db = db;
       this.con = con;
+      this.serverInfo = serverInfo;
       exportedDelegates = new ArrayList<>();
       methodStats = new MethodStatistics();
     }
@@ -241,7 +242,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
 
     void cleanup(boolean crashed) {
       if (crashed) {
-        LOGGER.warning("cleaning up crashed {0}{1}", name, DiagnosticUtilities.getInstance().createStackDump());
+        DiagnosticUtilities.getInstance().logStackDump(Level.WARNING, "cleaning up crashed " + name);
       }
       if (db != null) {
         db.setCrashed(crashed);
@@ -274,7 +275,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
             db.close();
           }
           else if (db.isOpen()) {
-            // reset the session info for this Db for sure (the application may have changed it to clientInfo)
+            // reset the session info for this Db for sure (the application usually changed it to clientInfo)
             db.setSessionInfo(serverInfo);
             db.setExportedSessionGroupId(0);      // remove from session group
           }
@@ -346,7 +347,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
     try {
       clientHost = UnicastRemoteObject.getClientHost();
       db = openDb();
-      resources = new Resources(db, con);
+      resources = new Resources(db, con, this.serverInfo);
       synchronized (SESSIONS) {   // prevents race condition between verifySessionInfo and SESSIONS.add
         this.clientInfo.setSince(System.currentTimeMillis());
         verifySessionInfo(this.clientInfo);
