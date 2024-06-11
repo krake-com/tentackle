@@ -60,6 +60,9 @@ public class IndexPrinter {
     if (configuration.isPrintingAsComment()) {
       buf.append(" * ");
     }
+    if (index.isOptional()) {
+      buf.append("optional ");
+    }
     if (index.isUnique()) {
       buf.append("unique ");
     }

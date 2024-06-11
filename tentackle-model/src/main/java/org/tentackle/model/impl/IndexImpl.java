@@ -45,10 +45,20 @@ import java.util.StringTokenizer;
  * <p>
  * An index line is of the form:
  * <pre>
- *   [unique] index &lt;name&gt; := part1[ part2 ...]
+ *   [optional] [unique] index &lt;name&gt; := part1[ part2 ...] [| condition] [WHERE condition]
  * </pre>
  *
- * where {@code part} is:
+ * where:
+ * <ul>
+ *   <li>{@code optional}: create if database backend supports it. This applies only to functions and conditions
+ *   that especially some in-memory databases (used by tests) don't support. In those cases, it may be sufficient to create the index only
+ *   for the production database. Without {@code optional} the build would fail.</li>
+ *   <li>{@code unique}: create a unique constraint</li>
+ *   <li>{@code name}: the suffix of the index name. The effective index name is the tablename followed
+ *   by an underscore and then followed by the name.</li>
+ * </ul>
+ *
+ * and {@code part} is:
  * <pre>
  *   [+|-]&lt;column&gt; | &lt;function&gt;(&lt;column&gt;) [asc|desc]
  * </pre>
@@ -64,9 +74,13 @@ import java.util.StringTokenizer;
  *   <li>{@code DESC} or {@code -} for descending order</li>
  * </ul>
  *
+ * and {@code condition} is an expression to create a partial (a.k.a. filtered or conditional) index.
+ * <p>
  * Examples:
  * <pre>
  *   unique index udk := code
+ *   optional unique index subname := name | type=0
+ *   optional unique index subname := name where type=0
  *   index locid := location_id desc name
  *   index ucmt := -upper(comment)
  *   index xpos := position#x
@@ -85,6 +99,7 @@ public class IndexImpl implements Index {
   private String name;
   private String comment;
   private boolean unique;
+  private boolean optional;
   private String filterCondition;
   private boolean parsed;
 
@@ -158,6 +173,13 @@ public class IndexImpl implements Index {
               throw sourceLine.createModelException("keyword 'unique' not allowed after 'index'");
             }
             uniqueFound = true;
+            break;
+
+          case "optional":
+            if (indexFound) {
+              throw sourceLine.createModelException("keyword 'optional' not allowed after 'index'");
+            }
+            setOptional(true);
             break;
 
           default:
@@ -340,6 +362,11 @@ public class IndexImpl implements Index {
   }
 
   @Override
+  public boolean isOptional() {
+    return optional;
+  }
+
+  @Override
   public String getFilterCondition() {
     return filterCondition;
   }
@@ -360,6 +387,10 @@ public class IndexImpl implements Index {
 
   public void setUnique(boolean unique) {
     this.unique = unique;
+  }
+
+  public void setOptional(boolean optional) {
+    this.optional = optional;
   }
 
   public void setFilterCondition(String filterCondition) {
@@ -418,11 +449,11 @@ public class IndexImpl implements Index {
     for (Backend backend: factory.getBackends()) {
       try {
         backend.assertValidName(SqlNameType.INDEX_NAME, createDatabaseIndexName(entity));
-        if (filterCondition != null && !backend.isFilteredIndexSupported()) {
+        if (getFilterCondition() != null && !backend.isFilteredIndexSupported() && !isOptional()) {
           throw createModelException("filtered/partial index not supported by " + backend);
         }
         for (IndexAttribute attribute : getAttributes()) {
-          if (attribute.getFunctionName() != null && !backend.isFunctionBasedIndexSupported()) {
+          if (attribute.getFunctionName() != null && !backend.isFunctionBasedIndexSupported() && !isOptional()) {
             throw createModelException("function-based index not supported by " + backend);
           }
         }
