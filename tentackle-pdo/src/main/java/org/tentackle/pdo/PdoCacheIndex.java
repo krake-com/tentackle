@@ -460,7 +460,9 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
    */
   protected boolean remove(T object) {
     try {
-      return cacheMap.remove(new CacheKey(object.getPersistenceDelegate().getDomainContext(), extract(object))) != null;
+      C key = extract(object);
+      return key != null &&
+             cacheMap.remove(new CacheKey(object.getPersistenceDelegate().getDomainContext(), key)) != null;
     }
     catch (PdoCacheException e)  {
       logInvalidKey(e);

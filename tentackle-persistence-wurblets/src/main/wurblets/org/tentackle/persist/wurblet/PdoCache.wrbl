@@ -18,8 +18,18 @@ arguments:
 <li><em>--maxsize=&lt;n&gt;:</em> the cache size (if not preloaded).</li>
 <li><em>--keepquota=&lt;p&gt;:</em> percentage of entries to keep when applying caching strategy. Default is 50.</li>
 <li><em>--configure=&lt;method&gt;:</em> an optional method to further configure the cache.</li>
-<li><em>--index&lt;n&gt;:</em> additional unique indexes. By default, only the ID-index will be created.</li>
+<li><em>[index&lt;n&gt;]:</em> additional unique indexes. By default, only the ID-index will be created.</li>
 </ul>
+Additional indexes are usually defined by their attribute name. Its values must be unique among all entities of the PDO class.
+However, if the attribute name is followed by a method-name (w/o leading "get") in square brackets, that method is used to extract the key from the pdo
+instead of the attribute's getter. This can be used to create a filtered index that contains only a subset of all PDOs,
+if the method returns {\@code null} for PDOs that should not be part of the index.
+<p>
+Example:
+<pre>
+  // &#064;wurblet cache PdoCache --preload --udk objectId code[codeIfUser]
+</pre>
+<p>
 For more options, see {\@link DbModelWurblet}.
 }@
 @[
