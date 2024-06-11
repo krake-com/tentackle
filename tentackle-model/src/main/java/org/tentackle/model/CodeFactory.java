@@ -24,6 +24,7 @@ import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.BackendException;
 import org.tentackle.sql.DataType;
 import org.tentackle.sql.SqlNameType;
 
@@ -248,17 +249,26 @@ public class CodeFactory {
   public String createSqlIndex(Backend backend, Entity entity, Index index) {
     StringBuilder buf = new StringBuilder();
 
+    boolean unsupportedFunctions = false;
+
     if (index.getComment() != null) {
       buf.append(backend.getSingleLineComment()).append(' ');
       buf.append(index.getComment());
       buf.append('\n');
     }
+
     String[] columnNames = new String[index.getAttributes().size()];
     int attributeCount = 0;
     for (IndexAttribute indexAttribute : index.getAttributes()) {
       String indexPart;
       if (indexAttribute.getFunctionName() != null) {
-        indexPart = indexAttribute.getFunctionName() + "(" + indexAttribute.getColumnName() + ")";
+        if (backend.isFunctionBasedIndexSupported()) {
+          indexPart = indexAttribute.getFunctionName() + "(" + indexAttribute.getColumnName() + ")";
+        }
+        else {
+          unsupportedFunctions = true;
+          break;
+        }
       }
       else {
         indexPart = indexAttribute.getColumnName();
@@ -271,9 +281,32 @@ public class CodeFactory {
       }
       attributeCount++;
     }
-    buf.append(backend.sqlCreateIndex(entity.getTableName(), index.createDatabaseIndexName(entity),
-                                      index.isUnique(), index.getFilterCondition(), columnNames));
 
+    boolean unsupportedFilters = index.getFilterCondition() != null && !backend.isFilteredIndexSupported();
+
+    if (unsupportedFunctions || unsupportedFilters) {
+      if (index.isOptional()) {
+        buf.setLength(0);
+        buf.append(backend.getSingleLineComment()).append(" index ").append(index).append(": ");
+        if (unsupportedFilters) {
+          buf.append("filters ");
+        }
+        if (unsupportedFunctions) {
+          if (unsupportedFilters) {
+            buf.append("and ");
+          }
+          buf.append("functions ");
+        }
+        buf.append("not supported by backend ").append(backend).append(" -> ignored!\n");
+      }
+      else {
+        throw new BackendException("index " + index + " not supported by backend " + backend);
+      }
+    }
+    else {
+      buf.append(backend.sqlCreateIndex(entity.getTableName(), index.createDatabaseIndexName(entity),
+                                        index.isUnique(), index.getFilterCondition(), columnNames));
+    }
     return buf.toString();
   }
 

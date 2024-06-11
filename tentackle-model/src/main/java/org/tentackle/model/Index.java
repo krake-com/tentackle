@@ -18,8 +18,9 @@
 
 package org.tentackle.model;
 
-import java.util.List;
 import org.tentackle.sql.Backend;
+
+import java.util.List;
 
 /**
  * Describes a database index.
@@ -56,6 +57,15 @@ public interface Index extends ModelElement {
    * @return true if unique, else non-unique
    */
   boolean isUnique();
+
+  /**
+   * Returns whether the index is optional.<br>
+   * Such an index is only created if the backend supports all features, especially
+   * functions and conditions.
+   *
+   * @return true to issue only a warning if backend doesn't support it, false to abort the build process in such a case
+   */
+  boolean isOptional();
 
   /**
    * Gets the optional filter condition.
