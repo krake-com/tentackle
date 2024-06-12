@@ -132,7 +132,17 @@ public class JSR223Script extends AbstractScript {
     try {
       ScriptEngine engine = getLanguage().getEngine();
       LOGGER.fine("compiling script with {0}:\n{1}", engine, code);
-      CompiledScript script = ((Compilable) engine).compile(code);
+      CompiledScript script;
+      if (isThreadSafe()) {
+        // compile may be thread-unsafe as well
+        // at least Jruby throws ConcurrentModificationException sporadically!
+        synchronized (engine) {
+          script = ((Compilable) engine).compile(code);
+        }
+      }
+      else {
+        script = ((Compilable) engine).compile(code);
+      }
       return new CompiledJSR223Script(code, script);
     }
     catch (RuntimeException | ScriptException ex) {
