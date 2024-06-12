@@ -40,8 +40,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class JSR223Script extends AbstractScript {
 
-  private static final long serialVersionUID = 1L;
-
   private static final Logger LOGGER = Logger.get(JSR223Script.class);
 
   /** map of code:scripts. */
@@ -54,7 +52,7 @@ public class JSR223Script extends AbstractScript {
    *
    * @param language the language instance
    * @param code the scripting code
-   * @param cached true if use caching if possible
+   * @param cached true to use caching if possible
    * @param threadSafe true if thread safe execution required
    */
   public JSR223Script(JSR223Language language, String code, boolean cached, boolean threadSafe) {
@@ -134,7 +132,17 @@ public class JSR223Script extends AbstractScript {
     try {
       ScriptEngine engine = getLanguage().getEngine();
       LOGGER.fine("compiling script with {0}:\n{1}", engine, code);
-      CompiledScript script = ((Compilable) engine).compile(code);
+      CompiledScript script;
+      if (isThreadSafe()) {
+        // compile may be thread-unsafe as well
+        // at least Jruby throws ConcurrentModificationException sporadically!
+        synchronized (engine) {
+          script = ((Compilable) engine).compile(code);
+        }
+      }
+      else {
+        script = ((Compilable) engine).compile(code);
+      }
       return new CompiledJSR223Script(code, script);
     }
     catch (RuntimeException | ScriptException ex) {
