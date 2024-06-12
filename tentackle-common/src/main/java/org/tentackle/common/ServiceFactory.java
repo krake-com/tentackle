@@ -249,7 +249,7 @@ public class ServiceFactory {
    *
    * @param <T> the service type
    * @param serviceClass the service class
-   * @param defaultClass the default class if no service found
+   * @param defaultClass the fallback class if no service found or could not be instantiated
    * @param logDefault true if log warning with stacktrace if default implementation is used
    * @return an instance of the service
    */
@@ -258,6 +258,9 @@ public class ServiceFactory {
       return createService(serviceClass);
     }
     catch (TentackleRuntimeException re) {
+      if (defaultClass == null) {   // one never knows...
+        throw re;
+      }
       try {
         if (logDefault) {
           // we cannot use LOGGER here because this may use the createService as well
