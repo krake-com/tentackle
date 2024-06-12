@@ -120,7 +120,11 @@ public class GroovyScript extends AbstractScript {
       return new CompiledGroovyScript(code, scriptClass);
     }
     catch (RuntimeException ex) {
-      throw new ScriptRuntimeException("compiling script failed (" + ex.getMessage() + "): " + this, ex);
+      String message = ex.getMessage();
+      if (message == null) {
+        message = ex.getClass().getSimpleName();
+      }
+      throw new ScriptRuntimeException("compiling script failed (" + message + "): " + this, ex);
     }
   }
 

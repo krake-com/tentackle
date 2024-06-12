@@ -128,7 +128,11 @@ public class RubyScript extends AbstractScript {
       return new CompiledRubyScript(container, code, rubyScript);
     }
     catch (RuntimeException ex) {
-      throw new ScriptRuntimeException("compiling script failed (" + ex.getMessage() + "): " + this, ex);
+      String message = ex.getMessage();
+      if (message == null) {
+        message = ex.getClass().getSimpleName();
+      }
+      throw new ScriptRuntimeException("compiling script failed (" + message + "): " + this, ex);
     }
   }
 
