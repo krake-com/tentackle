@@ -39,7 +39,7 @@ public interface Script {
   /**
    * Returns whether script may be invoked from more than one thread in parallel.
    *
-   * @return true if threadsafe execution required
+   * @return true if thread-safe execution required, false if parallel execution allowed
    */
   boolean isThreadSafe();
 
