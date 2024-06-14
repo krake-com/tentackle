@@ -32,7 +32,7 @@ import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
 import org.apache.maven.toolchain.Toolchain;
 import org.apache.maven.toolchain.ToolchainManager;
-import org.apache.maven.toolchain.java.DefaultJavaToolChain;
+import org.apache.maven.toolchain.java.JavaToolchainImpl;
 import org.slf4j.LoggerFactory;
 import org.wurbelizer.misc.Verbosity;
 
@@ -317,13 +317,12 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    * Gets the java home directory from a toolchain.
    *
    * @param toolchain the toolchain
-   * @return the java home directory, null if not a <code>DefaultJavaToolChain</code> or undefined by the toolchain
+   * @return the java home directory, null if not a {@link JavaToolchainImpl} or undefined by the toolchain
    * @throws MojoExecutionException if the given directory does not exist or is not a directory
    */
-  @SuppressWarnings("deprecation")    // @TODO DefaultJavaToolChain is deprecated, but there is no alternative yet (JavaToolchainImpl is package scope!)
   public File getJavaHome(Toolchain toolchain) throws MojoExecutionException {
-    if (toolchain instanceof DefaultJavaToolChain defaultJavaToolChain) {
-      String javaHome = defaultJavaToolChain.getJavaHome();
+    if (toolchain instanceof JavaToolchainImpl javaToolchain) {
+      String javaHome = javaToolchain.getJavaHome();
       if (javaHome != null && !javaHome.isBlank()) {
         File javaHomeDir = new File(javaHome);
         if (javaHomeDir.isDirectory()) {
