@@ -66,15 +66,18 @@ If the option --with is set, the methods are prefixed by <code>with</code> (a.k.
 </pre>
 This would create an instance method "fromName(String name)" that returns a new DTO instance.
 <p>
-The comment may contain optional annotations enclosed in square brackets.
+The comment may contain optional annotations or access scope enclosed in square brackets.
 <pre>
-String name   the name [&#64;Bindable(MAXCOL=20)] [&#64;MyAnno]
+String name   the name [&#64;Bindable(MAXCOL=20)] [&#64;MyAnno] [protected]
 </pre>
 Can also be written as:
 <pre>
-String name   the name [&#64;Bindable(MAXCOL=20), &#64;MyAnno]
+String name   the name [&#64;Bindable(MAXCOL=20), &#64;MyAnno, protected]
 </pre>
 <p>
+Valid access scopes are: public (default), protected, package, private.
+<p>
+Global annotations are defined in a single line above the properties, enclosed in square brackets.
 Annotations not belonging to a property are applied to all properties, if not already defined in the comment.
 Global annotations can be removed from a property with a leading dash or exclamation mark.
 <pre>
@@ -290,7 +293,7 @@ public record Position3D(&#64;Bindable(options="AUTOSELECT") int x,
 @[
           }
 ]@
-  public @(property.getType())@ @(property.getGetterName())@() {
+  @(property.getScopeAsKeyword())@@(property.getType())@ @(property.getGetterName())@() {
     return @(property.getName())@;
   }
 @[
@@ -314,7 +317,7 @@ public record Position3D(&#64;Bindable(options="AUTOSELECT") int x,
 @[
           }
 ]@
-  public void @(property.getSetterName())@(@(property.getType())@ @(property.getName())@) {
+  @(property.getScopeAsKeyword())@void @(property.getSetterName())@(@(property.getType())@ @(property.getName())@) {
     this.@(property.getName())@ = @(property.getName())@;
   }
 @[
@@ -340,7 +343,7 @@ public record Position3D(&#64;Bindable(options="AUTOSELECT") int x,
 @[
         }
 ]@
-  public @(getClassName())@ @(property.getFromName())@(@(property.getType())@ @(property.getName())@) {
+  @(property.getScopeAsKeyword())@@(getClassName())@ @(property.getFromName())@(@(property.getType())@ @(property.getName())@) {
 @[
         if (withBuilder) {
           if (property.isMutable()) {
