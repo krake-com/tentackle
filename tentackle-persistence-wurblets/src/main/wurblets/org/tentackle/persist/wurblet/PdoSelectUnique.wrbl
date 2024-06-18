@@ -6,7 +6,7 @@
 usage:<br>
 &#064;wurblet &lt;tag&gt; PdoSelectUnique
     [--private] [--noif] [--append=&lt;sqltext&gt;] [--classvar=&lt;classvariables&gt;]
-    [--sort] [--lock]
+    [--sort] [--lock] [--immutable] [--finallyImmutable]
     &lt;expression&gt;
 <p>
 arguments:
@@ -17,6 +17,8 @@ arguments:
 <li><em>--classvar=&lt;classvariables&gt;:</em> reference to classvariables, if pick the statement-IDs from there.</li>
 <li><em>--sort:</em> sort according to orderBy()-method.</li>
 <li><em>--lock:</em> generates SELECT FOR UPDATE.</li>
+<li><em>--immutable:</em> the returned PDO is immutable.</li>
+<li><em>--finallyImmutable:</em> the returned PDO is finally immutable.</li>
 <li><em>&lt;expression&gt;:</em> see {\@link WurbletArgumentParser}.</li>
 </ul>
 For more options, see {\@link DbModelWurblet}.
@@ -40,11 +42,13 @@ For more options, see {\@link DbModelWurblet}.
       poType = "P";
     }
 
-    boolean sort        = false;
-    boolean lock        = false;
-    String  append      = null;
-    boolean noif        = false;
-    String  scope       = "public";
+    boolean sort              = false;
+    boolean lock              = false;
+    String  append            = null;
+    boolean noif              = false;
+    boolean immutable         = false;
+    boolean finallyImmutable  = false;
+    String  scope             = "public";
 
     for (String arg: getOptionArgs())  {
       if (arg.equals("private")) {
@@ -53,6 +57,12 @@ For more options, see {\@link DbModelWurblet}.
       }
       else if (arg.equals("noif")) {
         noif = true;
+      }
+      else if (arg.equals("immutable")) {
+        immutable = true;
+      }
+      else if (arg.equals("finallyimmutable")) {
+        finallyImmutable = true;
       }
       else if (arg.equals("sort")) {
         if (isWithDefaultSorting()) {
@@ -243,15 +253,42 @@ For more options, see {\@link DbModelWurblet}.
     getBackend().setTrailingSelectParameters(st, ndx, 1, 0);
 @[
     }
-    if (withJoins) {
+    if (immutable || finallyImmutable) {
+      if (withJoins) {
+]@
+    @(returnType)@ obj = executeFirstPdoQuery(st, js);
+@[
+      }
+      else  {
+]@
+    @(returnType)@ obj = executeFirstPdoQuery(st);
+@[
+      }
+      if (finallyImmutable) {
+]@
+    obj.setFinallyImmutable();
+@[
+      }
+      else {
+]@
+    obj.setImmutable(true);
+@[
+      }
+]@
+    return obj;
+@[
+    }
+    else {
+      if (withJoins) {
 ]@
     return executeFirstPdoQuery(st, js);
 @[
-    }
-    else  {
+      }
+      else  {
 ]@
     return executeFirstPdoQuery(st);
 @[
+      }
     }
 ]@
   }
