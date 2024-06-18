@@ -6,7 +6,7 @@
 usage:<br>
 &#064;wurblet &lt;tag&gt; PdoSelectList
     [--private] [--noif] [--append=&lt;sqltext&gt;] [--classvar=&lt;classvariables&gt;]
-    [--sort] [--lock] [--resultset] [--cursor] [--bounded] [--limit] [--offset]
+    [--sort] [--lock] [--resultset] [--cursor] [--bounded] [--limit] [--offset] [--immutable] [--finallyImmutable]
     &lt;expression&gt;
 <p>
 arguments:
@@ -22,6 +22,8 @@ arguments:
 <li><em>--resultset:</em> returns the ResultSetWrapper instead of a List.</li>
 <li><em>--cursor:</em> returns a ScrollableResource instead of a List.</li>
 <li><em>--bounded:</em> returns a bounded List&lt;? extends mainClass&gt; instead of List&lt;mainClass&gt;.</li>
+<li><em>--immutable:</em> the returned list is immutable.</li>
+<li><em>--finallyImmutable:</em> the returned list is finally immutable.</li>
 <li><em>&lt;expression&gt;:</em> see {\@link WurbletArgumentParser}.</li>
 </ul>
 For more options, see {\@link DbModelWurblet}.
@@ -44,16 +46,18 @@ For more options, see {\@link DbModelWurblet}.
       poType = "P";
     }
 
-    boolean sort        = false;
-    boolean lock        = false;
-    String  append      = null;
-    boolean limit       = false;
-    boolean offset      = false;
-    boolean bounded     = false;
-    String  cursor      = null;
-    boolean resultSet   = false;
-    boolean noif        = false;
-    String  scope       = "public";
+    boolean sort              = false;
+    boolean lock              = false;
+    String  append            = null;
+    boolean limit             = false;
+    boolean offset            = false;
+    boolean bounded           = false;
+    String  cursor            = null;
+    boolean resultSet         = false;
+    boolean noif              = false;
+    boolean immutable         = false;
+    boolean finallyImmutable  = false;
+    String  scope             = "public";
 
     for (String arg: getOptionArgs())  {
       if (arg.equals("private")) {
@@ -73,6 +77,12 @@ For more options, see {\@link DbModelWurblet}.
       }
       else if (arg.equals("noif")) {
         noif = true;
+      }
+      else if (arg.equals("immutable")) {
+        immutable = true;
+      }
+      else if (arg.equals("finallyimmutable")) {
+        finallyImmutable = true;
       }
       else if (arg.equals("lock")) {
         lock = true;
@@ -113,6 +123,9 @@ For more options, see {\@link DbModelWurblet}.
     }
 
     if (resultSet) {
+      if (immutable || finallyImmutable) {
+        throw new WurbelException("immutable/finallyimmutable not allowed with resultset");
+      }
       setRemote(false);     // disable remoting for sure
     }
 
@@ -123,6 +136,9 @@ For more options, see {\@link DbModelWurblet}.
     if (cursor != null) {
       if (resultSet) {
         throw new WurbelException("resultset not allowed with cursor");
+      }
+      if (immutable || finallyImmutable) {
+        throw new WurbelException("immutable/finallyimmutable not allowed with cursor");
       }
       if (isTracked()) {
         throw new WurbelException("tracked not available with cursors!");
@@ -366,30 +382,71 @@ For more options, see {\@link DbModelWurblet}.
         }
       } // end if cursor
       else  { // list
-        if (isTracked())  {
-          if (withJoins) {
+        if (immutable || finallyImmutable) {
+          if (isTracked())  {
+            if (withJoins) {
+]@
+    @(listType)@ list = executeTrackedListQuery(st, js);
+@[
+            }
+            else  {
+]@
+    @(listType)@ list = executeTrackedListQuery(st);
+@[
+            }
+          }
+          else  {
+            if (withJoins) {
+]@
+    @(listType)@ list = executeListQuery(st, js);
+@[
+            }
+            else  {
+]@
+    @(listType)@ list = executeListQuery(st);
+@[
+            }
+          }
+          if (finallyImmutable) {
+]@
+    list.setFinallyImmutable();
+@[
+      }
+      else {
+]@
+    list.setImmutable(true);
+@[
+      }
+]@
+    return list;
+@[
+        } // end immutable
+        else {
+          if (isTracked())  {
+            if (withJoins) {
 ]@
     return executeTrackedListQuery(st, js);
 @[
-          }
-          else  {
+            }
+            else  {
 ]@
     return executeTrackedListQuery(st);
 @[
+            }
           }
-        }
-        else  {
-          if (withJoins) {
+          else  {
+            if (withJoins) {
 ]@
     return executeListQuery(st, js);
 @[
-          }
-          else  {
+            }
+            else  {
 ]@
     return executeListQuery(st);
 @[
+            }
           }
-        }
+        }   // end !immutable
       }   // end if list
     }   // end !resultset
 ]@
