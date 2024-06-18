@@ -18,8 +18,6 @@
 
 package org.tentackle.model;
 
-import java.util.Locale;
-
 /**
  * Access scope.
  *
@@ -28,20 +26,27 @@ import java.util.Locale;
 public enum AccessScope {
 
   /** private scope. */
-  PRIVATE,
+  PRIVATE("private"),
 
   /** package scope. */
-  PACKAGE,
+  PACKAGE(""),
 
   /** protected scope. */
-  PROTECTED,
+  PROTECTED("protected"),
 
   /** public scope. */
-  PUBLIC;
+  PUBLIC("public");
+
+
+  private final String text;
+
+  AccessScope(String text) {
+    this.text = text;
+  }
 
   @Override
   public String toString() {
-    return this == PACKAGE ? "" : name().toLowerCase(Locale.ROOT);
+    return text;
   }
 
 }

@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.wurblet;
 
 import org.wurbelizer.misc.Constants;
@@ -29,6 +28,7 @@ import org.tentackle.buildsupport.AnalyzeProcessor;
 import org.tentackle.buildsupport.RecordDTOInfo;
 import org.tentackle.buildsupport.RecordDTOInfoParameter;
 import org.tentackle.common.StringHelper;
+import org.tentackle.model.AccessScope;
 import org.tentackle.model.parse.OptionParser;
 
 import java.io.BufferedReader;
@@ -39,7 +39,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.StringTokenizer;
-
 
 /**
  * Base class for the {@code @DTO}-wurblet.
@@ -55,18 +54,19 @@ public class DTOWurblet extends AbstractJavaWurblet {
    */
   protected class Property {
 
-    private final String type;                // the java type
-    private final String name;                // the property name
-    private final String comment;             // the comment
-    private final int lineNo;                 // line number in source file
-    private final boolean inherited;          // true if inherited
-    private final boolean mutable;            // true if with setter instead of final
-    private final boolean unserialized;       // true if transient (transient is a java keyword, hence "unserialized")
-    private final boolean required;           // true if attribute is required (builder mode only)
-    private final boolean withFrom;           // true if generate fromX method as well
-    private final List<String> annotations;   // optional annotations for getters and setters
+    private final String type;                        // the java type
+    private final String name;                        // the property name
+    private final String comment;                     // the comment
+    private final int lineNo;                         // line number in source file
+    private final boolean inherited;                  // true if inherited
+    private final boolean mutable;                    // true if with setter instead of final
+    private final boolean unserialized;               // true if transient (transient is a java keyword, hence "unserialized")
+    private final boolean required;                   // true if attribute is required (builder mode only)
+    private final boolean withFrom;                   // true if generate fromX method as well
+    private final List<String> annotations;           // optional annotations for getters and setters
+    private final AccessScope scope;                  // optional access scope (defaults to PUBLIC)
 
-    public Property(String type, String name, String comment, int lineNo) {
+    public Property(String type, String name, String comment, int lineNo) throws WurbelException {
       StringBuilder buf = new StringBuilder();
       int i = 0;
       while (i < type.length()) {
@@ -114,11 +114,13 @@ public class DTOWurblet extends AbstractJavaWurblet {
       this.withFrom = options.contains("+");
       this.name = name;
       buf = new StringBuilder(comment == null || comment.isEmpty() ? "the " + name + " property" : comment);
-      this.annotations = parseAnnotations(buf);
+      ParseResult parseResult = parseComment(buf);
+      this.annotations = parseResult.annotations;
+      this.scope = parseResult.scope;
       this.comment = buf.toString().trim();
     }
 
-    public Property(RecordDTOInfoParameter recordParameter) {
+    public Property(RecordDTOInfoParameter recordParameter) throws WurbelException {
       this((DTOWurblet.this.withFrom ? "+" : "") + recordParameter.getType(), recordParameter.getName(), null, 0);
     }
 
@@ -203,6 +205,18 @@ public class DTOWurblet extends AbstractJavaWurblet {
 
     public List<String> getAnnotations() {
       return annotations;
+    }
+
+    public AccessScope getScope() {
+      return scope;
+    }
+
+    public String getScopeAsKeyword() {
+      String keyword = scope.toString();
+      if (!keyword.isEmpty()) {
+        keyword += " ";
+      }
+      return keyword;
     }
 
     public void addGlobalAnnotation(String globalAnnotation) {
@@ -355,7 +369,7 @@ public class DTOWurblet extends AbstractJavaWurblet {
           }
           else if (line.startsWith("[")) {
             // global annotations
-            annotations.addAll(parseAnnotations(new StringBuilder(line)));
+            annotations.addAll(parseComment(new StringBuilder(line)).annotations);
           }
           else if (!line.isEmpty() && !line.startsWith("#")) {
             StringTokenizer stok = new StringTokenizer(line);
@@ -435,14 +449,17 @@ public class DTOWurblet extends AbstractJavaWurblet {
   }
 
 
+  private record ParseResult(List<String> annotations, AccessScope scope) {}
+
   /**
-   * Extracts the annotations in square brackets from a comment string.
+   * Extracts the annotations and other options in square brackets from a comment string.
    *
    * @param commentBuf the updated comment string buffer
    * @return the annotations, never null
    */
-  private List<String> parseAnnotations(StringBuilder commentBuf) {
+  private ParseResult parseComment(StringBuilder commentBuf) throws WurbelException {
     List<String> annos = new ArrayList<>();
+    AccessScope scope = AccessScope.PUBLIC;
     String cmt = commentBuf.toString();
     commentBuf.setLength(0);
     OptionParser parser = new OptionParser(cmt, commentBuf);
@@ -451,8 +468,17 @@ public class DTOWurblet extends AbstractJavaWurblet {
       if (option.startsWith("@") || option.startsWith("-@") || option.startsWith("!@")) {
         annos.add(option);
       }
+      else {
+        scope = switch (option.toLowerCase(Locale.ROOT)) {
+          case "private" -> AccessScope.PRIVATE;
+          case "protected" -> AccessScope.PROTECTED;
+          case "public" -> AccessScope.PUBLIC;
+          case "package" -> AccessScope.PACKAGE;
+          default -> throw new WurbelException("invalid access scope '" + option + "' (valid: public, protected, package, private)");
+        };
+      }
     }
-    return annos;
+    return new ParseResult(annos, scope);
   }
 
 }
