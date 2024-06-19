@@ -18,39 +18,37 @@
 
 package org.tentackle.wurblet;
 
-import org.tentackle.model.Relation;
-
 import java.util.Objects;
 
 /**
- * Load join.
+ * A load join.
  *
  * @author harald
  */
 public class Join {
 
-  private final Relation relation;
+  private final WurbletRelation wurbletRelation;
   private final WurbletArgument argument;
   private String name;
 
   /**
-   * Creates an unnamed join.
+   * Creates an unnamed load join.
    *
-   * @param relation the relation
+   * @param wurbletRelation the wurblet relation
    * @param argument the wurblet argument
    */
-  public Join(Relation relation, WurbletArgument argument) {
-    this.relation = relation;
+  public Join(WurbletRelation wurbletRelation, WurbletArgument argument) {
+    this.wurbletRelation = wurbletRelation;
     this.argument = argument;
   }
 
   /**
-   * Gets the relation wrapped by this join.
+   * Gets the relation wrapped by this load join.
    *
    * @return the relation, never null
    */
-  public Relation getRelation() {
-    return relation;
+  public WurbletRelation getWurbletRelation() {
+    return wurbletRelation;
   }
 
   /**
@@ -83,7 +81,7 @@ public class Join {
   @Override
   public int hashCode() {
     int hash = 5;
-    hash = 41 * hash + Objects.hashCode(this.relation);
+    hash = 41 * hash + Objects.hashCode(this.wurbletRelation);
     return hash;
   }
 
@@ -99,14 +97,13 @@ public class Join {
       return false;
     }
     final Join other = (Join) obj;
-    return Objects.equals(this.relation, other.relation);
+    return Objects.equals(this.wurbletRelation, other.wurbletRelation);
   }
 
   @Override
   public String toString() {
     StringBuilder buf = new StringBuilder();
-    buf.append(relation.getEntity()).append('.');
-    buf.append(relation.getName());
+    buf.append(wurbletRelation);
     if (name != null) {
       buf.append(" as ").append(name);
     }

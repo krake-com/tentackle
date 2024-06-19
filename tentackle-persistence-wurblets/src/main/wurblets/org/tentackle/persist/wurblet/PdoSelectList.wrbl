@@ -6,7 +6,8 @@
 usage:<br>
 &#064;wurblet &lt;tag&gt; PdoSelectList
     [--private] [--noif] [--append=&lt;sqltext&gt;] [--classvar=&lt;classvariables&gt;]
-    [--sort] [--lock] [--resultset] [--cursor] [--bounded] [--limit] [--offset] [--immutable] [--finallyImmutable]
+    [--sort] [--lock] [--resultset] [--cursor] [--bounded] [--limit] [--offset]
+    [--immutable] [--finallyImmutable] [--mutable]
     &lt;expression&gt;
 <p>
 arguments:
@@ -24,6 +25,7 @@ arguments:
 <li><em>--bounded:</em> returns a bounded List&lt;? extends mainClass&gt; instead of List&lt;mainClass&gt;.</li>
 <li><em>--immutable:</em> the returned list is immutable.</li>
 <li><em>--finallyImmutable:</em> the returned list is finally immutable.</li>
+<li><em>--mutable:</em> the returned list is mutable (to override automatic immutability if filtered joins are used).</li>
 <li><em>&lt;expression&gt;:</em> see {\@link WurbletArgumentParser}.</li>
 </ul>
 For more options, see {\@link DbModelWurblet}.
@@ -57,6 +59,7 @@ For more options, see {\@link DbModelWurblet}.
     boolean noif              = false;
     boolean immutable         = false;
     boolean finallyImmutable  = false;
+    boolean forceMutable      = false;
     String  scope             = "public";
 
     for (String arg: getOptionArgs())  {
@@ -83,6 +86,9 @@ For more options, see {\@link DbModelWurblet}.
       }
       else if (arg.equals("finallyimmutable")) {
         finallyImmutable = true;
+      }
+      else if (arg.equals("mutable")) {
+        forceMutable = true;
       }
       else if (arg.equals("lock")) {
         lock = true;
@@ -132,6 +138,10 @@ For more options, see {\@link DbModelWurblet}.
     List<JoinPath> joinPaths = getJoinPaths();
     boolean withJoins = !joinPaths.isEmpty();
     boolean needSuppressWarnings = withJoins && isAbstractJoinPath(joinPaths);
+
+    if (!forceMutable && isWithFilteredJoins()) {
+      immutable = true;
+    }
 
     if (cursor != null) {
       if (resultSet) {

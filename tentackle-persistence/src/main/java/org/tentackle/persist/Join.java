@@ -285,7 +285,7 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
    * @return the new or already joined pdo
    */
   public J join(T pdo, J pdoToJoin) {
-    Map<Long, J> lastJoined = lastJoinedPdoMap.computeIfAbsent(pdo, k -> new HashMap<>());
+    Map<Long, J> lastJoined = lastJoinedPdoMap.computeIfAbsent(pdo, _ -> new HashMap<>());
     J joinedPdo = lastJoined.putIfAbsent(pdoToJoin.getId(), pdoToJoin);
     if (joinedPdo == null) {
       // if not already added

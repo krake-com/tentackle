@@ -19,17 +19,33 @@
 package org.tentackle.wurblet;
 
 import org.tentackle.common.PathFactory;
-import org.tentackle.model.Relation;
+import org.tentackle.common.Service;
+import org.tentackle.common.ServiceFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+
+interface JoinPathFactoryHolder {
+  JoinPathFactory INSTANCE = ServiceFactory.createService(JoinPathFactory.class);
+}
 
 /**
  * Factory for relation paths.
  *
  * @author harald
  */
+@Service(JoinPathFactory.class)   // defaults to self
 public class JoinPathFactory implements PathFactory<JoinPath, Join> {
+
+  /**
+   * The singleton.
+   *
+   * @return the singleton
+   */
+  static JoinPathFactory getInstance() {
+    return JoinPathFactoryHolder.INSTANCE;
+  }
+
 
   @Override
   public JoinPath create(List<Join> elements, List<JoinPath> paths) {
@@ -57,8 +73,8 @@ public class JoinPathFactory implements PathFactory<JoinPath, Join> {
     for (WurbletArgument argument: arguments) {
       if (argument.isPath()) {
         List<Join> joins = new ArrayList<>();
-        for (Relation relation: argument.getRelations()) {
-          joins.add(new Join(relation, argument));
+        for (WurbletRelation wurbletRelation: argument.getWurbletRelations()) {
+          joins.add(new Join(wurbletRelation, argument));
         }
         paths.add(new JoinPath(joins, null));
       }
@@ -72,6 +88,7 @@ public class JoinPathFactory implements PathFactory<JoinPath, Join> {
     }
     return paths;
   }
+
 
   private void namePath(String prefix, JoinPath path) {
     int index = 1;
