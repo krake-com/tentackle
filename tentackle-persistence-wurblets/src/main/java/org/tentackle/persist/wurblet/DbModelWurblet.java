@@ -522,10 +522,10 @@ public class DbModelWurblet extends ModelWurblet {
           str += ".append(Backend.SQL_ARRAY_ALL_PAR)";
           break;
         case Backend.SQL_ARRAY_NOT_IN:
-          str = ".append(Backend.SQL_ARRAY_NOT_IN_PAR)";  // includes leading space
+          str += ".append(Backend.SQL_ARRAY_NOT_IN_PAR)";  // includes leading space
           break;
         default:
-          str = ".append(Backend.SQL_ARRAY_IN_PAR)";    // includes leading space
+          str += ".append(Backend.SQL_ARRAY_IN_PAR)";    // includes leading space
       }
     }
 
