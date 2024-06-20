@@ -63,7 +63,7 @@ import java.util.Set;
  * Optional for conditions, required for load joins. Illegal for updates and sorting.<br>
  * If the current entity is a root-entity, the path starts with a dot and is followed by the name of
  * a pointsToComponent, the pointsToComponent is replaced by its relation path, if there is only one path.<br>
- * For load joins, the dots between the relations can be replaced by asterisks.
+ * For load joins, asterisks must be used between joins.
  * Each join path element can be filtered by appending a pipe-character followed by the filter expression,
  * which in turn consists of wurblet arguments. Filters with more than one argument must be enclosed in single- or
  * double quotes (see {@link ArgScanner}). Notice that for filtered load joins the returned PDOs are automatically made
@@ -103,8 +103,7 @@ import java.util.Set;
  *          invoice.lines.currencyId    -&gt; SQL WHERE condition for currency_id
  *          .InvoiceLine.currencyId     -&gt; equivalent to the above
  *
- *          *invoice.lines              -&gt; joins the invoice pointsToComponent together with its lines
- *          *invoice*lines              -&gt; equivalent to the above
+ *          *invoice*lines              -&gt; joins the invoice pointsToComponent together with its lines
  *
  *          *invoice*lines|no:&lt;:10      -&gt; equivalent to the above with filter "no &lt; 10"
  *
@@ -878,26 +877,13 @@ public class WurbletArgument implements WurbletArgumentOperand {
   /**
    * Finds the next relation path separator index.<br>
    * For relations the separator is a dot.<br>
-   * For load joins a dot or asterisk can be used.
+   * For load joins the separator is an asterisk.
    *
    * @param name the argument
    * @return the next index, -1 if none
    */
   private int nextSeparatorIndex(String name) {
-    int ndx = name.indexOf('.');
-    if (argumentType == WurbletArgumentType.JOIN) {
-      int ndx2 = name.indexOf('*');
-      if (ndx2 >= 0 && (ndx2 < ndx || ndx < 0)) {
-        ndx = ndx2;
-      }
-      if (ndx > 0) {
-        int filterNdx = name.indexOf('|');
-        if (filterNdx > 0 && filterNdx < ndx) {
-          ndx = -1;
-        }
-      }
-    }
-    return ndx;
+    return name.indexOf(argumentType == WurbletArgumentType.JOIN ? '*' : '.');
   }
 
   /**
