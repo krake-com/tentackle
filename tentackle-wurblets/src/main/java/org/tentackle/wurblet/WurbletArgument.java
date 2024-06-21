@@ -103,9 +103,9 @@ import java.util.Set;
  *          invoice.lines.currencyId    -&gt; SQL WHERE condition for currency_id
  *          .InvoiceLine.currencyId     -&gt; equivalent to the above
  *
- *          *invoice*lines              -&gt; joins the invoice pointsToComponent together with its lines
- *
+ *          *invoice*lines              -&gt; joins the invoice and its lines (chained join)
  *          *invoice*lines|no:&lt;:10      -&gt; equivalent to the above with filter "no &lt; 10"
+ *          *invoice|date:>=*lines      -&gt; same with filter on invoice date "date >= ?"
  *
  *          blahId:=ANY                 -&gt; attribute blahId as an array, SQL relop is =ANY(?)
  *
