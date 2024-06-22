@@ -19,7 +19,7 @@
 
 package org.tentackle.fx.rdc;
 
-import org.tentackle.fx.AbstractFxController;
+import org.tentackle.fx.AbstractValidateableFxController;
 import org.tentackle.fx.table.TotalsTableView;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
@@ -38,7 +38,7 @@ import java.util.List;
  * @author harald
  * @param <T> the pdo type
  */
-public abstract class PdoFinder<T extends PersistentDomainObject<T>> extends AbstractFxController
+public abstract class PdoFinder<T extends PersistentDomainObject<T>> extends AbstractValidateableFxController
                 implements PdoController<T>, DomainContextProvider {
 
 
@@ -54,15 +54,6 @@ public abstract class PdoFinder<T extends PersistentDomainObject<T>> extends Abs
    */
   public PdoFinder() {
     // see -Xlint:missing-explicit-ctor since Java 16
-  }
-
-  /**
-   * Validates the form before {@link #runSearch()}.
-   *
-   * @return true if ok
-   */
-  public boolean validateForm() {
-    return true;
   }
 
   /**

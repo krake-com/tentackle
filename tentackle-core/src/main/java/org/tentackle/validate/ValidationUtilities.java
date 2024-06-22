@@ -574,7 +574,7 @@ public class ValidationUtilities {
           if (currentPath.startsWith(mapper.getValidationPath()) &&
               (mapper.getBinder() == null || mapper.getBinder().equals(currentBinder))) {
 
-            currentPath = mapper.getBindingPath() + currentPath.substring(mapper.getValidationPath().length());
+            currentPath = mapper.map(currentPath);
 
             if (mapper.getNextBinder() != null) {
               currentBinder = mapper.getNextBinder();
