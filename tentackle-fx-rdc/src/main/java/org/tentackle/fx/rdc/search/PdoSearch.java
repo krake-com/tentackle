@@ -515,23 +515,25 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    * Runs the search and displays the results.
    */
   public void find() {
-    filterField.clear();
-    if (finder.isSearchRunningInBackground()) {
-      Rdc.bg(getView(),
-             finder::runSearch,
-             result -> {
-               setItems(result);
-               presetScrolling();
-             },
-             ex -> Fx.error(getView(), ex.getLocalizedMessage(), ex));
+    if (finder.validateForm()) {
+      filterField.clear();
+      if (finder.isSearchRunningInBackground()) {
+        Rdc.bg(getView(),
+               finder::runSearch,
+               result -> {
+                 setItems(result);
+                 presetScrolling();
+               },
+               ex -> Fx.error(getView(), ex.getLocalizedMessage(), ex));
+      }
+      else {
+        Platform.runLater(() -> {
+          setItems(finder.runSearch());
+          presetScrolling();
+        });
+      }
+      cancelButton.setText(resources.getString(Fx.isModal(getStage()) ? "cancel" : "close"));
     }
-    else {
-      Platform.runLater(() -> {
-        setItems(finder.runSearch());
-        presetScrolling();
-      });
-    }
-    cancelButton.setText(resources.getString(Fx.isModal(getStage()) ? "cancel" : "close"));
   }
 
 
