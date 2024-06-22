@@ -130,6 +130,10 @@ public abstract class PdoEditor<T extends PersistentDomainObject<T>> extends Abs
    * Validates the form before the PDO get saved.<br>
    * This can be used for validations that are not covered by the persistence model,
    * for example password confirmation.
+   * <p>
+   * Notice: PdoEditor does <em>not</em> extend {@link org.tentackle.fx.AbstractValidateableFxController}, since
+   * its validation mappers map the persistence operation's validation results of the PDO and not the validation
+   * of the form!
    *
    * @return true if ok
    */

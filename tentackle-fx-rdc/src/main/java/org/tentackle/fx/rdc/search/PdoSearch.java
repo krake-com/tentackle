@@ -515,7 +515,6 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    * Runs the search and displays the results.
    */
   public void find() {
-    finder.getContainer().clearErrors();
     if (finder.validateForm()) {
       filterField.clear();
       if (finder.isSearchRunningInBackground()) {

@@ -15,6 +15,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
 package org.tentackle.fx;
 
 import org.tentackle.validate.Validateable;
@@ -71,7 +72,7 @@ public abstract class AbstractValidateableFxController extends AbstractFxControl
    */
   protected NavigableSet<ValidationMapper> getValidationMappers() {
     NavigableSet<ValidationMapper> validationMappers = new TreeSet<>();
-    validationMappers.add(new ValidationMapper(ValidationUtilities.getInstance().getDefaultValidationPath(this), getBinder(), "", null));
+    validationMappers.add(new ValidationMapper(ValidationUtilities.getInstance().getDefaultValidationPath(this), getBinder(), null, null));
     return validationMappers;
   }
 
