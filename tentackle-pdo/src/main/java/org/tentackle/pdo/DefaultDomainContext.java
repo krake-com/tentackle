@@ -380,6 +380,7 @@ public class DefaultDomainContext implements DomainContext {
       context.rootClassId = 0;
       context.sessionImmutable = false;
       context.tlsContext = null;
+      context.namesList = null;
       return context;
     }
     catch (CloneNotSupportedException ex) {
