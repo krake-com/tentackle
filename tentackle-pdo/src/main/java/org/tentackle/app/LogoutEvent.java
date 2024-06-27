@@ -46,4 +46,8 @@ public class LogoutEvent implements MasterSerialEvent {
     return serial;
   }
 
+  @Override
+  public boolean isOverridingOlderEvents() {
+    return true;
+  }
 }

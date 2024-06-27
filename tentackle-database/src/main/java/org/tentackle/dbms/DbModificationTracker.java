@@ -799,7 +799,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
             if (listenerEntry.tableEntry.id == idSer.getId() && listenerEntry.tableEntry.serial != idSer.getSerial()) {
               // table entry for listener has changed
               LOGGER.fine("modification detected for {0}, new serial {1}", listenerEntry.tableEntry, idSer.getSerial());
-              Set<ModificationEventDetail> details = detailMap.computeIfAbsent(listenerEntry.listener, k -> new HashSet<>());
+              Set<ModificationEventDetail> details = detailMap.computeIfAbsent(listenerEntry.listener, _ -> new HashSet<>());
               // create a new one
               if (!listenerEntry.isMaster()) {
                 getCounter(listenerEntry.tableEntry.tableName);   // configure counter if not yet done
@@ -899,19 +899,39 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * @param masterSerial the master serial object
    * @return the long serial
    */
-  @SuppressWarnings("unchecked")
   protected long extractMasterSerial(MasterSerial masterSerial) {
-    if (masterSerial instanceof MasterSerialEvent event) {
-      // map to corresponding handler
-      Consumer<MasterSerialEvent> eventHandler = (Consumer<MasterSerialEvent>) MasterSerialEventHandlerFactory.getInstance().createEventHandler(event.getClass());
-      if (eventHandler != null) {
-        eventHandler.accept(event);
+    if (masterSerial instanceof MasterSerialEvent masterSerialEvent) {
+      if (masterSerialEvent instanceof Collection<?> events) {
+        for (Object object : events) {
+          if (object instanceof MasterSerialEvent event) {
+            handleMasterSerialEvent(event);
+          }
+        }
       }
-      // else: no handler registered -> ignored (this may be intended!)
+      else {
+        handleMasterSerialEvent(masterSerialEvent);
+      }
     }
     return masterSerial.serial();
   }
 
+  /**
+   * Handles a single master serial event.
+   *
+   * @param event the master serial event
+   */
+  @SuppressWarnings("unchecked")
+  protected void handleMasterSerialEvent(MasterSerialEvent event) {
+    // map to corresponding handler
+    Consumer<MasterSerialEvent> eventHandler = (Consumer<MasterSerialEvent>) MasterSerialEventHandlerFactory.getInstance().getEventHandler(event.getClass());
+    if (eventHandler != null) {
+      eventHandler.accept(event);
+    }
+    else {
+      // else: no handler registered -> ignored (this may be intended!)
+      LOGGER.fine("no handler for {0}", () -> event.getClass().getName());
+    }
+  }
 
   /**
    * Returns the new master serial if modified.<br>

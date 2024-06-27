@@ -64,7 +64,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-
 /**
  * User session within the application server.
  *
@@ -464,15 +463,6 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    */
   public MasterSerialEvent pollMasterSerialEvent() {
     return masterSerialEvents.poll();
-  }
-
-  /**
-   * Returns whether there is at least one master serial event pending.
-   *
-   * @return true if at least one event hasn't been retrieved by the client yet
-   */
-  public boolean isMasterSerialEventPending() {
-    return masterSerialEvents.peek() != null;
   }
 
 

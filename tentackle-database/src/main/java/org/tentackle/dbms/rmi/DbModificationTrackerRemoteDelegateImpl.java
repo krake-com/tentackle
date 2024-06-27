@@ -22,6 +22,7 @@ import org.tentackle.dbms.DbModificationTracker;
 import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.session.MasterSerial;
 import org.tentackle.session.MasterSerialEvent;
+import org.tentackle.session.MasterSerialListEvent;
 import org.tentackle.session.ModificationTracker;
 
 import java.rmi.RemoteException;
@@ -53,6 +54,19 @@ public class DbModificationTrackerRemoteDelegateImpl<T extends DbModificationTra
     MasterSerialEvent masterSerialEvent = getServerSession().pollMasterSerialEvent();
     if (masterSerialEvent != null) {
       masterSerialEvent.setSerial(serial);
+      MasterSerialEvent nextEvent = getServerSession().pollMasterSerialEvent();
+      if (nextEvent != null) {
+        MasterSerialListEvent listEvent = new MasterSerialListEvent();
+        listEvent.setSerial(serial);
+        listEvent.add(masterSerialEvent);
+        while (nextEvent != null) {
+          nextEvent.setSerial(serial);
+          listEvent.add(nextEvent);
+          nextEvent = getServerSession().pollMasterSerialEvent();
+        }
+        // only one element is possible due to MasterSerialEvent.isOverridingOlderEvents(), see MasterSerialListEvent.add()
+        masterSerialEvent = listEvent.size() == 1 ? listEvent.get(0) : listEvent;
+      }
       return masterSerialEvent;
     }
     return new DefaultMasterSerial(serial);

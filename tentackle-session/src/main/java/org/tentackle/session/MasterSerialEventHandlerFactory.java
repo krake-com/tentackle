@@ -44,13 +44,14 @@ public interface MasterSerialEventHandlerFactory {
   }
 
   /**
-   * Creates an event handler for a master serial event class.<br>
-   * The handler is simply a {@link Consumer} of a {@link MasterSerialEvent}.
+   * Gets the event handler for a master serial event class.<br>
+   * The handler is simply a {@link Consumer} of a {@link MasterSerialEvent}
+   * and must be stateless. There is only one handler per event type (singleton).
    *
    * @param <T> the event type
    * @param eventClass the event class
    * @return the event handler, null if there is no handler registered for this remote client
    */
-  <T extends MasterSerialEvent> Consumer<T> createEventHandler(Class<T> eventClass);
+  <T extends MasterSerialEvent> Consumer<T> getEventHandler(Class<T> eventClass);
 
 }
