@@ -434,11 +434,6 @@ public class Pdo {
     return PdoCacheFactory.getInstance().createCache(clazz, preload, readOnly, checkSecurity);
   }
 
-  @Deprecated(forRemoval = true)
-  public static <T extends PersistentDomainObject<T>> PdoCache<T> createPdoCache(
-    Class<T> clazz, boolean preload, boolean readOnly, boolean checkSecurity) {
-    return createCache(clazz, preload, readOnly, checkSecurity);
-  }
 
   /**
    * Creates an index for a PDO-cache.
@@ -462,7 +457,7 @@ public class Pdo {
    *
    * @param session the session (probably closed)
    */
-  public static void removeObjectsForSessionInAllPdoCaches(Session session) {
+  public static void removeObjectsForSessionInAllCaches(Session session) {
     PdoCacheFactory.getInstance().removeObjectsForSessionInAllCaches(session);
   }
 
@@ -472,7 +467,7 @@ public class Pdo {
    *
    * @return all registered caches
    */
-  public static Collection<PdoCache<? extends PersistentDomainObject<?>>> getAllPdoCaches() {
+  public static Collection<PdoCache<? extends PersistentDomainObject<?>>> getAllCaches() {
     return PdoCacheFactory.getInstance().getAllCaches();
   }
 
@@ -484,7 +479,7 @@ public class Pdo {
    * @param clazz the class
    * @return the cache, null if none
    */
-  public static <T extends PersistentDomainObject<T>> PdoCache<T> getPdoCache(Class<T> clazz) {
+  public static <T extends PersistentDomainObject<T>> PdoCache<T> getCache(Class<T> clazz) {
     return PdoCacheFactory.getInstance().getCache(clazz);
   }
 
