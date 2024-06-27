@@ -760,7 +760,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   @Override
   protected int determineReferencePriority(Class<? extends AbstractDbObject<?>> clazz) {
     @SuppressWarnings("unchecked")
-    PdoCache<T> cache = Pdo.getPdoCache((Class<T>) clazz);
+    PdoCache<T> cache = Pdo.getCache((Class<T>) clazz);
     if (cache != null) {
       return cache.isPreloading() ? 1 : 2;
     }
