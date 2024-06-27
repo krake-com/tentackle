@@ -21,7 +21,6 @@ package org.tentackle.session;
 import org.tentackle.common.Service;
 import org.tentackle.reflect.ClassMapper;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -55,30 +54,22 @@ public class DefaultMasterSerialEventHandlerFactory implements MasterSerialEvent
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T extends MasterSerialEvent> Consumer<T> createEventHandler(Class<T> eventClass) {
-    Optional<Constructor<Consumer<T>>> constructor = serviceMap.computeIfAbsent(eventClass, this::getConstructor);
-    if (constructor.isPresent()) {
-      try {
-        return constructor.get().newInstance();
-      }
-      catch (IllegalAccessException | IllegalArgumentException | InstantiationException | InvocationTargetException e) {
-        throw new PersistenceException("cannot instantiate GUI service object for " + eventClass.getName(), e);
-      }
-    }
-    return null;
+  public <T extends MasterSerialEvent> Consumer<T> getEventHandler(Class<T> eventClass) {
+    Optional<Consumer<T>> handler = serviceMap.computeIfAbsent(eventClass, this::getHandler);
+    return handler.orElse(null);
   }
 
 
   @SuppressWarnings({ "unchecked", "rawtypes" })
-  protected <T extends MasterSerialEvent> Optional<Constructor<Consumer<T>>> getConstructor(Class<T> eventClass) {
+  protected <T extends MasterSerialEvent> Optional<Consumer<T>> getHandler(Class<T> eventClass) {
     try {
       Class serviceClass = eventClassMapper.mapLenient(eventClass);
       try {
-        return Optional.of(serviceClass.getConstructor());
+        return Optional.of((Consumer<T>) serviceClass.getConstructor().newInstance());
       }
-      catch (NoSuchMethodException e) {
-        throw new PersistenceException("no matching constructor for " + serviceClass.getName() +
-                                       "(" + eventClass.getName() + ")");
+      catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+        throw new PersistenceException("no no-args constructor for " + serviceClass.getName() +
+                                       " (master serial event handler for " + eventClass.getName() + ")");
       }
     }
     catch (ClassNotFoundException ex) {

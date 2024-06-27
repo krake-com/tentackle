@@ -69,6 +69,9 @@ package org.tentackle.session;
  *   module <code>tentackle-database</code>.
  *   </li>
  * </ul>
+ * <p>
+ * If the event is a {@link java.util.Collection}, the elements of the event are
+ * processed instead of the event itself, see {@code org.tentackle.dbms.DbModificationTracker#extractMasterSerial}.
  */
 public interface MasterSerialEvent extends MasterSerial {
 
@@ -78,5 +81,26 @@ public interface MasterSerialEvent extends MasterSerial {
    * @param serial the serial
    */
   void setSerial(long serial);
+
+  /**
+   * Returns whether only the latest event counts.<br>
+   * Useful for events, that contain status information or alike.
+   *
+   * @return true if replace older event of this type, false to deliver each event
+   */
+  default boolean isOverridingOlderEvents() {
+    return false;
+  }
+
+  /**
+   * Returns whether this event is overriding given other event.<br>
+   * The method is only invoked if {@link #isOverridingOlderEvents()} returns true.
+   *
+   * @param olderEvent the older event
+   * @return true if other event should be replaced by this event
+   */
+  default boolean isOverridingEvent(MasterSerialEvent olderEvent) {
+    return getClass() == olderEvent.getClass();
+  }
 
 }
