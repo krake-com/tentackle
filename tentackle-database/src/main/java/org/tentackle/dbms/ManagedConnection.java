@@ -104,6 +104,13 @@ public class ManagedConnection {
    */
   private static Level logLevelForParallelOpenResultSets;
 
+  /**
+   * Optional limit for the number of statements per transaction.<br>
+   * Useful to detect wild running transactions eating up all memory and blowing up the backend.<br>
+   * Default is 0 (disabled).
+   */
+  private static int maxStatementsPerTransaction;
+
 
   /**
    * Gets the minimum milliseconds a connection remains attached before being logged.
@@ -217,6 +224,26 @@ public class ManagedConnection {
    */
   public static void setLogLevelForParallelOpenResultSets(Level level) {
     logLevelForParallelOpenResultSets = level;
+  }
+
+  /**
+   * Sets the limit for the number of statements per transaction.<br>
+   * Useful to detect wild running transactions eating up all memory and blowing up the backend.<br>
+   * Default is 0 (disabled).
+   *
+   * @param max the max. number of statements within a transaction.
+   */
+  public static void setMaxStatementsPerTransaction(int max) {
+    maxStatementsPerTransaction = max;
+  }
+
+  /**
+   * Gets the statement limit per transaction.
+   *
+   * @return number of statements, 0 if unlimited (default)
+   */
+  public static int getMaxStatementsPerTransaction() {
+    return maxStatementsPerTransaction;
   }
 
 
@@ -781,6 +808,9 @@ public class ManagedConnection {
     StatementHistory history = new StatementHistory(statement, sql);
     if (isTxRunning()) {
       statementHistory.add(history);
+      if (maxStatementsPerTransaction != 0 && statementHistory.size() > maxStatementsPerTransaction) {
+        throw new PersistenceException(db, "transaction limit of statements exceeded (" + maxStatementsPerTransaction + ")");
+      }
     }
     else  {
       currentStatement = history;
