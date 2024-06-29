@@ -6,7 +6,7 @@
 usage:<br>
 &#064;wurblet &lt;tag&gt; PdoSelectUnique
     [--private] [--noif] [--append=&lt;sqltext&gt;] [--classvar=&lt;classvariables&gt;]
-    [--sort] [--lock] [--immutable] [--finallyImmutable] [--mutable]
+    [--sort] [--lock] [--tokenlock] [--immutable] [--finallyImmutable] [--mutable]
     &lt;expression&gt;
 <p>
 arguments:
@@ -17,6 +17,7 @@ arguments:
 <li><em>--classvar=&lt;classvariables&gt;:</em> reference to classvariables, if pick the statement-IDs from there.</li>
 <li><em>--sort:</em> sort according to orderBy()-method.</li>
 <li><em>--lock:</em> generates SELECT FOR UPDATE.</li>
+<li><em>--tokenlock:</em> requests a token-lock.</li>
 <li><em>--immutable:</em> the returned PDO is immutable.</li>
 <li><em>--finallyImmutable:</em> the returned PDO is finally immutable.</li>
 <li><em>--mutable:</em> the returned list is mutable (to override automatic immutability if filtered joins are used).</li>
@@ -45,6 +46,7 @@ For more options, see {\@link DbModelWurblet}.
 
     boolean sort              = false;
     boolean lock              = false;
+    boolean tokenlock         = false;
     String  append            = null;
     boolean noif              = false;
     boolean immutable         = false;
@@ -82,6 +84,9 @@ For more options, see {\@link DbModelWurblet}.
       }
       else if (arg.equals("lock")) {
         lock = true;
+      }
+      else if (arg.equals("tokenlock")) {
+        tokenlock = true;
       }
       else if (arg.startsWith("append=")) {
         append = arg.substring(7);
@@ -262,7 +267,7 @@ For more options, see {\@link DbModelWurblet}.
     getBackend().setTrailingSelectParameters(st, ndx, 1, 0);
 @[
     }
-    if (immutable || finallyImmutable) {
+    if (immutable || finallyImmutable || tokenlock) {
       if (withJoins) {
 ]@
     @(returnType)@ obj = executeFirstPdoQuery(st, js);
@@ -273,17 +278,26 @@ For more options, see {\@link DbModelWurblet}.
     @(returnType)@ obj = executeFirstPdoQuery(st);
 @[
       }
+]@
+    if (obj != null) {
+@[
       if (finallyImmutable) {
 ]@
-    obj.setFinallyImmutable();
+      obj.setFinallyImmutable();
 @[
       }
-      else {
+      else if (immutable) {
 ]@
-    obj.setImmutable(true);
+      obj.setImmutable(true);
+@[
+      }
+      if (tokenlock) {
+]@
+      obj.requestTokenLock();
 @[
       }
 ]@
+    }
     return obj;
 @[
     }
