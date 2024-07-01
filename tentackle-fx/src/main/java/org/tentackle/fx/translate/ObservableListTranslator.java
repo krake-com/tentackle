@@ -18,22 +18,22 @@
 
 package org.tentackle.fx.translate;
 
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.collections.transformation.SortedList;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.ValueTranslatorService;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.component.FxTreeTableView;
+import org.tentackle.fx.table.DefaultTableConfigurationProvider;
 import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.fx.table.TableConfigurationProvider;
 import org.tentackle.fx.table.TableConfigurationProviderFactory;
 import org.tentackle.reflect.ReflectionHelper;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.SortedList;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import java.util.List;
 import java.util.function.Function;
 
@@ -112,6 +112,10 @@ public class ObservableListTranslator<T, C extends List<T>> extends AbstractValu
   protected void configureTableView(FxTableView<T> tableView, Class<T> elemClass) {
     // determine optional table configuration provider for elemClass
     TableConfigurationProvider<T> provider = TableConfigurationProviderFactory.getInstance().createTableConfigurationProvider(elemClass);
+    if (provider == null && tableView.isBindable()) {
+      // create default provider w/o bundle and standard binding
+      provider = new DefaultTableConfigurationProvider<>(elemClass, false, TableConfiguration.BINDING.YES);
+    }
     if (provider != null) {
       TableConfiguration<T> configuration = createTableConfiguration(provider);
       configuration.configure(tableView);
@@ -129,6 +133,10 @@ public class ObservableListTranslator<T, C extends List<T>> extends AbstractValu
   protected void configureTreeTableView(FxTreeTableView<T> treeTableView, Class<T> elemClass) {
     // determine optional table configuration provider for elemClass
     TableConfigurationProvider<T> provider = TableConfigurationProviderFactory.getInstance().createTableConfigurationProvider(elemClass);
+    if (provider == null && treeTableView.isBindable()) {
+      // create default provider w/o bundle and standard binding
+      provider = new DefaultTableConfigurationProvider<>(elemClass, false, TableConfiguration.BINDING.YES);
+    }
     if (provider != null) {
       TableConfiguration<T> configuration = createTableConfiguration(provider);
       configuration.configure(treeTableView);

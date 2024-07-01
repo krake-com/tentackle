@@ -18,16 +18,16 @@
 
 package org.tentackle.fx.translate;
 
-import javafx.scene.control.TreeItem;
-
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.ValueTranslatorService;
 import org.tentackle.fx.component.FxTreeTableView;
 import org.tentackle.fx.component.FxTreeView;
+import org.tentackle.fx.table.DefaultTableConfigurationProvider;
 import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.fx.table.TableConfigurationProvider;
 import org.tentackle.fx.table.TableConfigurationProviderFactory;
 
+import javafx.scene.control.TreeItem;
 import java.util.function.Function;
 
 /**
@@ -73,10 +73,7 @@ public class TreeItemTranslator<T> extends AbstractValueTranslator<T, TreeItem<T
   @SuppressWarnings("unchecked")
   protected void configureComponent() {
     FxComponent component = getComponent();
-    if (component instanceof FxTreeView) {
-      FxTreeView<T> treeView = (FxTreeView<T>) component;
-    }
-    else if (component instanceof FxTreeTableView) {
+    if (component instanceof FxTreeTableView) {
       FxTreeTableView<T> treeTableView = (FxTreeTableView<T>) component;
       configureTreeTableView(treeTableView, getTableConfiguration());
     }
@@ -93,6 +90,10 @@ public class TreeItemTranslator<T> extends AbstractValueTranslator<T, TreeItem<T
       Class elemClass = getComponent().getType();
       if (elemClass != null) {
         provider = TableConfigurationProviderFactory.getInstance().createTableConfigurationProvider(elemClass);
+        if (provider == null && getComponent().isBindable()) {
+          // create default provider w/o bundle and standard binding
+          provider = new DefaultTableConfigurationProvider<>(elemClass, false, TableConfiguration.BINDING.YES);
+        }
         if (provider != null) {
           configuration = provider.createTableConfiguration();
         }
