@@ -331,7 +331,6 @@ public class TaskDispatcherTest {
 
     for (int i=0; i < THREAD_NUM; i++) {
       lockThreads[i].requestTermination();
-      lockThreads[i].interrupt();
     }
 
     for (int i=0; i < THREAD_NUM; i++) {
@@ -405,7 +404,6 @@ public class TaskDispatcherTest {
 
     for (int i=0; i < THREAD_NUM; i++) {
       lockThreads[i].requestTermination();
-      lockThreads[i].interrupt();
     }
     for (int i=0; i < THREAD_NUM; i++) {
       try {
@@ -419,7 +417,6 @@ public class TaskDispatcherTest {
 
     for (int i=0; i < THREAD_NUM; i++) {
       unlockThreads[i].requestTermination();
-      unlockThreads[i].interrupt();
     }
     for (int i=0; i < THREAD_NUM; i++) {
       try {
