@@ -494,7 +494,8 @@ public final class ReflectionHelper {
    */
   public static String skipMethodNamePrefix(String methodName, String prefix) {
     int prefixLength = prefix.length();
-    if (methodName.length() > prefixLength && Character.isUpperCase(methodName.charAt(prefixLength))) {
+    if (methodName.length() > prefixLength && methodName.startsWith(prefix) &&
+        Character.isUpperCase(methodName.charAt(prefixLength))) {
       return StringHelper.firstToLower(methodName.substring(prefixLength));
     }
     return null;
