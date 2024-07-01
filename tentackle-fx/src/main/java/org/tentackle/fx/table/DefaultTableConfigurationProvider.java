@@ -26,6 +26,7 @@ import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.bind.FxBindingFactory;
 
 import java.util.Collection;
+import java.util.Objects;
 import java.util.ResourceBundle;
 
 /**
@@ -78,6 +79,19 @@ public class DefaultTableConfigurationProvider<T> implements TableConfigurationP
       bundleProvided = !annotation.noBundle();
       bindingType = annotation.binding();
     }
+  }
+
+  /**
+   * Creates a table configuration provider.
+   *
+   * @param clazz the table element's class
+   * @param bundleProvided true if resource bundle is provided
+   * @param bindingType the table binding type
+   */
+  public DefaultTableConfigurationProvider(Class<T> clazz, boolean bundleProvided, TableConfiguration.BINDING bindingType) {
+    this.clazz = Objects.requireNonNull(clazz, "clazz must not be null");
+    this.bundleProvided = bundleProvided;
+    this.bindingType = Objects.requireNonNull(bindingType, "bindingType must not be null");
   }
 
   /**
