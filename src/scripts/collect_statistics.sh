@@ -83,9 +83,21 @@ fgrep "$PATTERN" $FILE | grep "$EXPR" | cut -c 17- | awk $LOCALEOPT '{
         if ($4 == "ms") {
             cnt = $6
         }
+        else if ($7 == "ms:st") {  # txn with statement counts
+            txn++
+            rollbacks[operation] += $9
+            cnt = $11
+            if (minStmts[operation] == "" || minStmts[operation] > $4) {
+              minStmts[operation] = $4
+            }
+            if (maxStmts[operation] == "" || maxStmts[operation] < $5) {
+              maxStmts[operation] = $5
+            }
+            totStmts[operation] += $6
+        }
         else {  # extended sql with fetch results
-            cnt = $12
             extended++
+            cnt = $12
             if (minRows[operation] == "" || minRows[operation] > $4) {
               minRows[operation] = $4
             }
@@ -168,6 +180,18 @@ END {
                        fetch, fetch/calls, minFetch[operation], maxFetch[operation], rowfetch,\
                        operation)
             }
+        }
+    }
+    else if (txn > 0) {
+        printf("transactions\tcommits\trollbacks\ttotal[ms]\tavg[ms]\tmin[ms]\tmax[ms]\tstmt\tstmt-avg\tstmt-min\tstmt-max\t  ---\tTransactions (%s - %s)\n", fromTime, uptoTime)
+        for (operation in millis) {
+            totalms = millis[operation]
+            txns = invocs[operation]
+            rbc = rollbacks[operation]
+            stmts = totStmts[operation]
+            stmtsPerTx = stmts / txns
+            printf("%d\t%d\t%d\t%.3f\t%.3f\t%.3f\t%.3f\t%d\t%.1f\t%d\t%d\t\t%s\n",\
+                   txns, txns - rbc, rbc, totalms, totalms/txns, minms[operation], maxms[operation], stmts, stmtsPerTx, minStmts[operation], maxStmts[operation], operation)
         }
     }
     else {

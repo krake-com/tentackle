@@ -125,12 +125,13 @@ public class DbTransactionFactory {
    * Notice that this method is only invoked for local sessions, never for remote sessions.
    *
    * @param transaction the transaction
+   * @param rolledBack true if transaction was rolled back, false if committed
    */
-  public void finish(DbTransaction transaction) {
+  public void finish(DbTransaction transaction, boolean rolledBack) {
     long txId = transaction.getTxNumber();
     transactions.remove(txId);
     if (collectingStatistics) {
-      statistics.countTransaction(transaction);
+      statistics.countTransaction(transaction, rolledBack);
     }
     finishedTransactions.add(txId);   // hand over to supervisor thread asynchronously
   }
