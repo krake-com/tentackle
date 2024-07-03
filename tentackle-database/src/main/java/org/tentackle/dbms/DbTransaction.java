@@ -449,7 +449,7 @@ public class DbTransaction {
       }
       commitTxRunnables = null;
     }
-    DbTransactionFactory.getInstance().finish(this);
+    DbTransactionFactory.getInstance().finish(this, false);
   }
 
 
@@ -476,7 +476,7 @@ public class DbTransaction {
       }
       rollbackTxRunnables = null;
     }
-    DbTransactionFactory.getInstance().finish(this);
+    DbTransactionFactory.getInstance().finish(this, true);
   }
 
 

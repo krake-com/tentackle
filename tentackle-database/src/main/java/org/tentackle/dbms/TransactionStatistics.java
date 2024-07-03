@@ -24,6 +24,7 @@ import org.tentackle.misc.FormatHelper;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -41,7 +42,7 @@ public class TransactionStatistics {
   /**
    * Statistics map txname:result
    */
-  private final Map<String, StatisticsResult> stats;
+  private final Map<String, TransactionStatisticsResult> stats;
 
   /**
    * Creates a new statistics object.
@@ -54,10 +55,25 @@ public class TransactionStatistics {
    * Counts the invocation of a transaction.
    *
    * @param transaction the transaction
+   * @param rolledBack true if transaction was rolled back, false if committed
    */
-  public synchronized void countTransaction(DbTransaction transaction) {
-    StatisticsResult result = stats.computeIfAbsent(transaction.getTxName(), k -> new StatisticsResult());
+  public synchronized void countTransaction(DbTransaction transaction, boolean rolledBack) {
+    TransactionStatisticsResult result = stats.computeIfAbsent(transaction.getTxName(), k -> new TransactionStatisticsResult());
     result.count(transaction.getTimeKeeper().end());
+    if (rolledBack) {
+      result.countRollback();
+    }
+    // count statements (with pessimistic null-checks, should never be null, but...)
+    Db session = transaction.getSession();
+    if (session != null) {
+      ManagedConnection connection = session.getConnection();
+      if (connection != null) {
+        List<StatementHistory> statementHistory = connection.getStatementHistory();
+        if (statementHistory != null) {
+          result.countStatements(statementHistory.size());
+        }
+      }
+    }
   }
 
   /**
@@ -65,7 +81,7 @@ public class TransactionStatistics {
    *
    * @param title the title, null if default
    * @param level the logging level
-   * @param tag intro logging tag
+   * @param tag   intro logging tag
    * @param clear true if clear statistics after dump
    */
   public synchronized void logStatistics(String title, Logger.Level level, String tag, boolean clear) {
@@ -77,7 +93,7 @@ public class TransactionStatistics {
             title = "Transaction Statistics";
           }
           buf.append(title).append(tag).append(FormatHelper.formatLocalDateTime(LocalDateTime.now()));
-          for (Map.Entry<String, StatisticsResult> entry : stats.entrySet()) {
+          for (Map.Entry<String, TransactionStatisticsResult> entry : stats.entrySet()) {
             StatisticsResult result = entry.getValue();
             if (result.isValid()) {
               String txName = entry.getKey();
