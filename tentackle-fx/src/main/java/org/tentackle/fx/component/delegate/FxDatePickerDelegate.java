@@ -23,6 +23,7 @@ import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.FxTextComponentDelegate;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.ValueTranslator;
+import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.component.FxDatePicker;
 import org.tentackle.fx.component.auto.AutoCompletionController;
 import org.tentackle.misc.ObjectUtilities;
@@ -92,7 +93,7 @@ public class FxDatePickerDelegate extends FxTextComponentDelegate {
   public void setViewObject(Object viewObject) {
     lastText = (String) viewObject;
     component.getEditor().setText(lastText);
-    // necessary since FX 18!
+    // necessary since FX18!
     // see javafx.scene.control.DatePicker#commitValue, which cannot be overridden since final,
     // like 99.99% of all the FX stuff :(
     component.setValue(converter.fromString(lastText));   // avoid invalidation due to changed value
@@ -182,14 +183,23 @@ public class FxDatePickerDelegate extends FxTextComponentDelegate {
 
     @Override
     @SuppressWarnings({ "unchecked", "rawtypes" })
-		public LocalDate fromString(String value) {
+    public LocalDate fromString(String value) {
       if (getError() == null) {
         ValueTranslator translator = getValueTranslator();
         Object modelValue = translator.toModel(value);
-        lastDate = ObjectUtilities.getInstance().convert(LocalDate.class, modelValue);
+        LocalDate oldLastDate = lastDate;
+        lastDate = ObjectUtilities.getInstance().convert(LocalDate.class, modelValue);  // narrow to LocalDate for DatePicker
+        if (lastDate != null && !lastDate.equals(oldLastDate)) {
+          // this allows changing the date AND the time w/o the time being cleared to 00:00:00 (see FX18 hacks)
+          FxComponentBinding binding = getBinding();
+          if (binding != null) {
+            binding.setModelValue(modelValue);
+            updateView();
+          }
+        }
       }
-			return lastDate;
-		}
+      return lastDate;
+    }
 	}
 
   @Override
