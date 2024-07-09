@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
@@ -62,10 +63,10 @@ public class DbTransaction {
   private Deque<String> nestedTxNames;  // transaction names for nested transactions
   private volatile boolean alive;       // alive flag to detect idle transactions
 
-  private Map<DbTransactionHandle,PersistenceVisitor> visitors;            // the visitors
-  private Map<DbTransactionHandle,CommitTxRunnable> commitTxRunnables;     // the commit runnables
-  private Map<DbTransactionHandle,RollbackTxRunnable> rollbackTxRunnables; // the rollback runnables
-  private Map<SavepointHandle,Savepoint> savepoints;                       // the savepoints
+  private Map<DbTransactionHandle, PersistenceVisitor> visitors;            // the visitors
+  private Map<DbTransactionHandle, CommitTxRunnable> commitTxRunnables;     // the commit runnables
+  private Map<DbTransactionHandle, RollbackTxRunnable> rollbackTxRunnables; // the rollback runnables
+  private Map<SavepointHandle, Savepoint> savepoints;                       // the savepoints
 
 
   /**
@@ -350,14 +351,16 @@ public class DbTransaction {
 
   /**
    * Registers a {@link CommitTxRunnable} to be invoked just before
-   * committing a transaction.
+   * committing a transaction.<br>
+   * The order of execution corresponds to the order of registration.<br>
+   * Runnables may create other runnables up to {@link #maxTxRunnableDepth} recursion depth.
    *
    * @param commitRunnable the runnable to register
    * @return the handle for the runnable
    */
   public DbTransactionHandle registerCommitTxRunnable(CommitTxRunnable commitRunnable) {
     if (commitTxRunnables == null)  {
-      commitTxRunnables = new HashMap<>();
+      commitTxRunnables = new LinkedHashMap<>();
     }
     DbTransactionHandle handle = new DbTransactionHandle(txNumber, ++handleCount);
     commitTxRunnables.put(handle, commitRunnable);
@@ -387,14 +390,16 @@ public class DbTransaction {
 
   /**
    * Registers a {@link RollbackTxRunnable} to be invoked just before
-   * rolling back a transaction.
+   * rolling back a transaction.<br>
+   * The order of execution corresponds to the order of registration.<br>
+   * Runnables may create other runnables up to {@link #maxTxRunnableDepth} recursion depth.
    *
    * @param rollbackRunnable the runnable to register
    * @return the handle for the runnable
    */
   public DbTransactionHandle registerRollbackTxRunnable(RollbackTxRunnable rollbackRunnable) {
     if (rollbackTxRunnables == null)  {
-      rollbackTxRunnables = new HashMap<>();
+      rollbackTxRunnables = new LinkedHashMap<>();
     }
     DbTransactionHandle handle = new DbTransactionHandle(txNumber, ++handleCount);
     rollbackTxRunnables.put(handle, rollbackRunnable);

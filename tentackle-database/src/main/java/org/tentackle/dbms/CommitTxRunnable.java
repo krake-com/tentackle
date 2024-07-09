@@ -16,16 +16,14 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-
 package org.tentackle.dbms;
 
 import java.io.Serializable;
 
-
-
 /**
- * A Runnable that gets invoked before a physical commit.
+ * A Runnable that gets invoked before a physical commit.<br>
+ * The commit runnable is {@link Serializable} and transferred to
+ * the server, if registered at a remote client.
  *
  * @see Db#registerCommitTxRunnable(CommitTxRunnable)
  */

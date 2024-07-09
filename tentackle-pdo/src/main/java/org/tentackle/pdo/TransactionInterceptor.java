@@ -78,8 +78,8 @@ public final class TransactionInterceptor extends AbstractInterceptor {
   public Object proceed(Object proxy, Method method, Object[] args,
                         Object orgProxy, Method orgMethod, Object[] orgArgs) throws Throwable {
 
-    if (orgProxy instanceof SessionProvider) {
-      Session session = ((SessionProvider) orgProxy).getSession();
+    if (orgProxy instanceof SessionProvider sessionProvider) {
+      Session session = sessionProvider.getSession();
 
       if (running) {
         if (session.isTxRunning()) {
@@ -107,7 +107,6 @@ public final class TransactionInterceptor extends AbstractInterceptor {
           catch (Throwable t) {
             // transaction failed!
             try {
-              PersistenceException rootPex;    // temporary LockException is always the root cause
               if (rollbackSilently || txVoucher == 0 || SessionUtilities.getInstance().isSilentRollbackSufficient(t)) {
                 // silent rollback requested, nested tx, temporary or application-specific exception (domain logic) -> no detailed logging
                 session.rollbackSilently(txVoucher);

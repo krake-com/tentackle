@@ -537,11 +537,13 @@ public interface Session extends Comparable<Session>, AutoCloseable {
   /**
    * Registers a post commit.<br>
    * Post commits are invoked <em>after</em> the successful physical commit of a transaction.
-   * They must be registered from within a transactional method, i.e. the transaction must be running.<br>
+   * They must be registered from within a transactional method, i.e. a transaction must be running.<br>
    * They are executed in reverse order of their registration, which is the expected behavior for
    * nested transactions.<br>
-   * Post commits are intended for non-transactional purposes, such as firing events. They must not be used to
-   * directly or indirectly invoke other transactional methods that in turn register post commits.
+   * Post commits are intended for non-transactional purposes, such as firing events. Any attempt
+   * to register a post commit directly or indirectly from within another post commit will throw a
+   * {@link PersistenceException}.<br>
+   * Notice that post commits are executed in the same JVM they were registered.
    *
    * @param postCommit the post commit
    */

@@ -812,21 +812,30 @@ public class Db implements Session, Cloneable {
   }
 
 
-
   /**
    * Compares two session instances.<br>
-   * We simply use the unique instanceNumber.<br>
-   * Because the instanceNumber is unique, we don't need to override equals/hash.
-   * In fact, we must not override equals because it may be used in WeakHashMaps, where
-   * the object reference counts, for example.
+   * Since the instance number is unique, it is used for the comparison.
+   * <p>
+   * Notice that this method, as well as equals and hashCode are marked
+   * as final, since they must not be overridden!
    *
    * @param session the session to compare this session with
    * @return  a negative integer, zero, or a positive integer as this object
    *          is less than, equal to, or greater than the specified object.
    */
   @Override
-  public int compareTo(Session session) {
+  public final int compareTo(Session session) {
     return instanceNumber - ((Db) session).instanceNumber;
+  }
+
+  @Override
+  public final boolean equals(Object obj) {
+    return super.equals(obj);
+  }
+
+  @Override
+  public final int hashCode() {
+    return super.hashCode();
   }
 
 
@@ -1894,12 +1903,23 @@ public class Db implements Session, Cloneable {
 
   /**
    * Registers a {@link CommitTxRunnable} to be invoked just before
-   * committing a transaction.
+   * committing a transaction.<br>
+   * The order of execution corresponds to the order of registration.<br>
+   * Runnables may create other runnables up to {@link DbTransaction#maxTxRunnableDepth} recursion depth.
    *
    * @param commitRunnable the runnable to register
    * @return the handle
    */
   public DbTransactionHandle registerCommitTxRunnable(CommitTxRunnable commitRunnable) {
+    /*
+     Since CommitTxRunnables (and RollbackTxRunnables) are always executed at the local session's side,
+     they need to be Serializable in order to be transferred from the remote client to the server.
+     That's why an annotation like @PreCommit, similar to @PostCommit, wouldn't work since we cannot transfer
+     method references, which are by definition not serializable.
+     That's why commit- and rollback-runnables are only available at the persistence implementation layer
+     and not at the PDO interface or Session interface layer.
+     */
+
     if (isRemote()) {
       try {
         return resources.rdel.registerCommitTxRunnable(commitRunnable);
@@ -1957,7 +1977,9 @@ public class Db implements Session, Cloneable {
 
   /**
    * Registers a {@link RollbackTxRunnable} to be invoked just before
-   * rolling back a transaction.
+   * rolling back a transaction.<br>
+   * The order of execution corresponds to the order of registration.<br>
+   * Runnables may create other runnables up to {@link DbTransaction#maxTxRunnableDepth} recursion depth.
    *
    * @param rollbackRunnable the runnable to register
    * @return the handle
