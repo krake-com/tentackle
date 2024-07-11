@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Counter per name.<br>
- * The counter is threadsafe.
+ * The counter is thread-safe.
  * <p>
  * Example:
  * <pre>
@@ -59,7 +59,7 @@ public class NamedCounter {
   }
 
   /**
-   * Returns the next number for given name.
+   * Increments and gets the value for given name.
    *
    * @param name the counter's name
    * @return the number, starting at 1
@@ -69,7 +69,7 @@ public class NamedCounter {
   }
 
   /**
-   * Returns the previous number for given name.
+   * Decrements and gets the value for given name.
    *
    * @param name the counter's name
    * @return the number, starting at -1
@@ -79,13 +79,23 @@ public class NamedCounter {
   }
 
   /**
-   * Gets the current value of the counter.
+   * Gets the value for given name.
    *
    * @param name the counter's name
    * @return the counter's value
    */
   public long get(String name) {
     return getCounter(name).get();
+  }
+
+  /**
+   * Sets the value for given name.
+   *
+   * @param name the counter's name
+   * @param value the counter's value
+   */
+  public void set(String name, long value) {
+    getCounter(name).set(value);
   }
 
   /**
@@ -101,4 +111,5 @@ public class NamedCounter {
   private AtomicLong getCounter(String name) {
     return counters.computeIfAbsent(name, n -> new AtomicLong());
   }
+
 }
