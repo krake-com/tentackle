@@ -25,8 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Counter per name.<br>
- * The counter is thread-safe.
+ * Thread-safe named counter.
+ *
  * <p>
  * Example:
  * <pre>
@@ -41,12 +41,12 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * </pre>
  *
- * @author harald
+ * @see NamedValue for named values of any type
  */
 public class NamedCounter {
 
   /**
-   * Counters for instances with the same name.
+   * Counters mapped by name.
    */
   private final Map<String, AtomicLong> counters = new ConcurrentHashMap<>();
 
@@ -99,9 +99,9 @@ public class NamedCounter {
   }
 
   /**
-   * Gets the names of the counters.
+   * Gets the names of all counters.
    *
-   * @return the counter names
+   * @return the names
    */
   public Collection<String> names() {
     return new ArrayList<>(counters.keySet());
