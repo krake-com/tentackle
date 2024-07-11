@@ -418,11 +418,12 @@ public class DbModelWurblet extends ModelWurblet {
   /**
    * Returns whether there are load joins with filters.
    *
+   * @param componentsOnly true if check component relations only
    * @return true if result must be made immutable, false if no filters
    */
-  public boolean isWithFilteredJoins() {
+  public boolean isWithFilteredJoins(boolean componentsOnly) {
     for (JoinPath joinPath : getJoinPaths()) {
-      if (joinPath.isFiltered()) {
+      if (joinPath.isFiltered(componentsOnly)) {
         return true;
       }
     }

@@ -127,7 +127,7 @@ For more options, see {\@link DbModelWurblet}.
     boolean withJoins = !joinPaths.isEmpty();
     boolean needSuppressWarnings = withJoins && isAbstractJoinPath(joinPaths);
 
-    if (!forceMutable && isWithFilteredJoins()) {
+    if (!forceMutable && isWithFilteredJoins(true)) {
       immutable = true;
     }
 

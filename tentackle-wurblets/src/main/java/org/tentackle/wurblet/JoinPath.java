@@ -22,6 +22,7 @@ import org.wurbelizer.wurbel.WurbelException;
 
 import org.tentackle.common.Path;
 import org.tentackle.model.Entity;
+import org.tentackle.model.Relation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -71,11 +72,17 @@ public class JoinPath implements Path<JoinPath, Join> {
   /**
    * Returns whether at least one join path contains a filter expression.
    *
+   * @param componentsOnly true if check component relations only
    * @return true if filtered, false if no filter found
    */
-  public boolean isFiltered() {
+  public boolean isFiltered(boolean componentsOnly) {
     for (Join element : elements) {
-      if (element.getWurbletRelation().getFilter() != null) {
+      WurbletRelation wurbletRelation = element.getWurbletRelation();
+      Relation relation = wurbletRelation.getRelation();
+      if (componentsOnly && !relation.isComposite()) {
+        break;
+      }
+      if (wurbletRelation.getFilter() != null) {
         return true;
       }
     }
