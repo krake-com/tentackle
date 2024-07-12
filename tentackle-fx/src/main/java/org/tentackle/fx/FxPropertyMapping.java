@@ -23,10 +23,12 @@ import org.tentackle.misc.ObjectUtilities;
 import org.tentackle.reflect.PropertyMapping;
 
 import javafx.fxml.FXMLLoader;
+import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
+import java.util.StringTokenizer;
 
 /**
  * Extended {@link PropertyMapping} to support lists.
@@ -68,10 +70,25 @@ public class FxPropertyMapping<T> extends PropertyMapping<T> {
         }
       }
       else {
-        getSetter().invoke(object, ObjectUtilities.getInstance().convert(getValueType(), value));
+        Class<?> valueType = getValueType();
+        if (valueType.isArray() && value instanceof String strValue) {
+          // array of values, for example SplitPane's dividerPositions
+          Class<?> componentType = valueType.componentType();
+          StringTokenizer stok = new StringTokenizer(strValue, " ,"); // hopefully comma-separated!
+          int arraySize = stok.countTokens();
+          int arrayIndex = 0;
+          Object array = Array.newInstance(componentType, arraySize);
+          while (stok.hasMoreTokens()) {
+            Array.set(array, arrayIndex++, ObjectUtilities.getInstance().convert(componentType, stok.nextToken()));
+          }
+          getSetter().invoke(object, array);
+        }
+        else {
+          getSetter().invoke(object, ObjectUtilities.getInstance().convert(valueType, value));
+        }
       }
     }
-    catch (IllegalAccessException | InvocationTargetException e) {
+    catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException e) {
       throw new FxRuntimeException("setting property " + this + " failed", e);
     }
   }
