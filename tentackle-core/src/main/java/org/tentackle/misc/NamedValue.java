@@ -74,8 +74,13 @@ public class NamedValue<T> {
     return new ArrayList<>(references.keySet());
   }
 
-
-  private AtomicReference<T> getReference(String name) {
+  /**
+   * Gets the atomic reference.
+   *
+   * @param name the value's name
+   * @return the atomic reference
+   */
+  protected AtomicReference<T> getReference(String name) {
     return references.computeIfAbsent(name, n -> new AtomicReference<>());
   }
 

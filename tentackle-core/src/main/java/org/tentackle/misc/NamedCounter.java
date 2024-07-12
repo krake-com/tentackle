@@ -59,7 +59,7 @@ public class NamedCounter {
   }
 
   /**
-   * Increments and gets the value for given name.
+   * Increments and gets the value for given named counter.
    *
    * @param name the counter's name
    * @return the number, starting at 1
@@ -69,7 +69,7 @@ public class NamedCounter {
   }
 
   /**
-   * Decrements and gets the value for given name.
+   * Decrements and gets the value for given named counter.
    *
    * @param name the counter's name
    * @return the number, starting at -1
@@ -79,7 +79,7 @@ public class NamedCounter {
   }
 
   /**
-   * Gets the value for given name.
+   * Gets the value for given named counter.
    *
    * @param name the counter's name
    * @return the counter's value
@@ -89,13 +89,25 @@ public class NamedCounter {
   }
 
   /**
-   * Sets the value for given name.
+   * Sets the value for given named counter.
    *
    * @param name the counter's name
    * @param value the counter's value
+   * @return the old value
    */
-  public void set(String name, long value) {
-    getCounter(name).set(value);
+  public long set(String name, long value) {
+    return getCounter(name).getAndSet(value);
+  }
+
+  /**
+   * Adds a value to given named counter.
+   *
+   * @param name the counter's name
+   * @param value the value to add
+   * @return the new value
+   */
+  public long add(String name, long value) {
+    return getCounter(name).addAndGet(value);
   }
 
   /**
@@ -108,7 +120,13 @@ public class NamedCounter {
   }
 
 
-  private AtomicLong getCounter(String name) {
+  /**
+   * Gets the atomic value.
+   *
+   * @param name the counter's name
+   * @return the atomic value
+   */
+  protected AtomicLong getCounter(String name) {
     return counters.computeIfAbsent(name, n -> new AtomicLong());
   }
 
