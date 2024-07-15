@@ -29,7 +29,6 @@ import java.io.Serial;
 import java.util.Arrays;
 import java.util.List;
 
-
 /**
  * The default application's domain context.
  *
@@ -87,7 +86,7 @@ public class DefaultDomainContext implements DomainContext {
   private int rootClassId;
 
   /**
-   * thread-local session clonePdo of this domain context.
+   * thread-local session clone of this domain context.
    */
   private transient DefaultDomainContext tlsContext;
 
@@ -374,13 +373,11 @@ public class DefaultDomainContext implements DomainContext {
   public DefaultDomainContext clone() {
     try {
       DefaultDomainContext context = (DefaultDomainContext) super.clone();
-      context.nonRootContext = nonRootContext;
       context.rootEntity = null;
       context.rootId = 0;
       context.rootClassId = 0;
       context.sessionImmutable = false;
       context.tlsContext = null;
-      context.namesList = null;
       return context;
     }
     catch (CloneNotSupportedException ex) {
@@ -397,12 +394,13 @@ public class DefaultDomainContext implements DomainContext {
       throw new DomainException("context name '" + name + "' already within " + toDiagnosticString());
     }
     DefaultDomainContext context = clone();
-    if (names == null) {
+    context.namesList = null;
+    if (context.names == null) {
       context.names = new String[]{"", name};
     }
     else {
-      context.names = Arrays.copyOf(names, names.length + 1);
-      context.names[names.length] = name;
+      context.names = Arrays.copyOf(context.names, context.names.length + 1);
+      context.names[context.names.length] = name;
     }
     return context;
   }
