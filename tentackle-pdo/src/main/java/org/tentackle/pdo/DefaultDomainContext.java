@@ -399,8 +399,9 @@ public class DefaultDomainContext implements DomainContext {
       context.names = new String[]{"", name};
     }
     else {
-      context.names = Arrays.copyOf(context.names, context.names.length + 1);
-      context.names[context.names.length] = name;
+      int oldLen = context.names.length;
+      context.names = Arrays.copyOf(context.names, oldLen + 1);
+      context.names[oldLen] = name;
     }
     return context;
   }
