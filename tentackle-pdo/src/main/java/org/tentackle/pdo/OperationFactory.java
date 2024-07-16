@@ -118,7 +118,9 @@ public interface OperationFactory {
   <T extends Operation<T>> T create(T op);
 
   /**
-   * Creates an operation within a sub context.
+   * Creates an operation within a sub context.<br>
+   * If the current context is already within the given context name, the result is equivalent
+   * to {@link #create(Operation)}.
    *
    * @param <T> the operation type
    * @param op the operation
