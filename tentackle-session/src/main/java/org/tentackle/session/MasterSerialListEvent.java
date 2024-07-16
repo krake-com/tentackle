@@ -18,6 +18,7 @@
 
 package org.tentackle.session;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -30,6 +31,9 @@ import java.util.Collection;
  * to check for {@link MasterSerialEvent#isOverridingOlderEvents()}!
  */
 public class MasterSerialListEvent extends ArrayList<MasterSerialEvent> implements MasterSerialEvent {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private long serial;
 
