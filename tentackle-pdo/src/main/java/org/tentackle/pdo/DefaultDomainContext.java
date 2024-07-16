@@ -26,6 +26,7 @@ import org.tentackle.session.SessionInfo;
 
 import java.io.ObjectStreamException;
 import java.io.Serial;
+import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.List;
 
@@ -94,6 +95,12 @@ public class DefaultDomainContext implements DomainContext {
    * the non-root context.
    */
   private DefaultDomainContext nonRootContext;
+
+  /**
+   * Reference to the cloned context.
+   */
+  private transient WeakReference<DefaultDomainContext> clonedContextRef;
+
 
   /**
    * The context name chain.<br>
@@ -367,17 +374,13 @@ public class DefaultDomainContext implements DomainContext {
     return hash;
   }
 
-
-
   @Override
-  public DefaultDomainContext clone() {
+  public DefaultDomainContext cloneKeepRoot() {
     try {
       DefaultDomainContext context = (DefaultDomainContext) super.clone();
-      context.rootEntity = null;
-      context.rootId = 0;
-      context.rootClassId = 0;
       context.sessionImmutable = false;
       context.tlsContext = null;
+      context.clonedContextRef = new WeakReference<>(this);
       return context;
     }
     catch (CloneNotSupportedException ex) {
@@ -386,14 +389,21 @@ public class DefaultDomainContext implements DomainContext {
   }
 
   @Override
-  public DefaultDomainContext clone(String name) {
+  public DefaultDomainContext clone() {
+    DefaultDomainContext context = cloneKeepRoot();
+    context.clearRoot();
+    return context;
+  }
+
+  @Override
+  public DefaultDomainContext cloneKeepRoot(String name) {
     if (StringHelper.isAllWhitespace(name) || name.contains(":")) {
       throw new DomainException("illegal context name: '" + name + "'");
     }
     if (isWithinContext(name)) {
       throw new DomainException("context name '" + name + "' already within " + toDiagnosticString());
     }
-    DefaultDomainContext context = clone();
+    DefaultDomainContext context = cloneKeepRoot();
     context.namesList = null;
     if (context.names == null) {
       context.names = new String[]{"", name};
@@ -404,6 +414,25 @@ public class DefaultDomainContext implements DomainContext {
       context.names[oldLen] = name;
     }
     return context;
+  }
+
+  @Override
+  public DefaultDomainContext clone(String name) {
+    DefaultDomainContext context = cloneKeepRoot(name);
+    context.clearRoot();
+    return context;
+  }
+
+  @Override
+  public DomainContext getClonedContext() {
+    DomainContext clonedContext = null;
+    if (clonedContextRef != null) {
+      clonedContext = clonedContextRef.get();
+      if (clonedContext == null) {
+        clonedContextRef = null;    // GC'd
+      }
+    }
+    return clonedContext;
   }
 
   @Override
@@ -506,6 +535,12 @@ public class DefaultDomainContext implements DomainContext {
     return rootEntity == null ? rootId : rootEntity.getPersistenceDelegate().getId();
   }
 
+
+  private void clearRoot() {
+    rootEntity = null;
+    rootId = 0;
+    rootClassId = 0;
+  }
 
   private String createChainedName() {
     if (names == null) {

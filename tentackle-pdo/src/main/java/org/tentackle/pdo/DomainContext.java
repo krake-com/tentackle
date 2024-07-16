@@ -83,9 +83,17 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
    * Clones this context.
    * <p>
    * The clone gets the root entity and sessionImmutable cleared.
-   * @return the cloned context
+   * @return the context's clone
    */
   DomainContext clone();
+
+  /**
+   * Clones this context.<br>
+   * Same as {@link #clone()}, but keeps the root entity, if any is set.
+   *
+   * @return the context's clone
+   */
+  DomainContext cloneKeepRoot();
 
   /**
    * Clones this context with another context name.
@@ -95,9 +103,25 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
    * not null, not containing only whitespaces and not containing a colon (: is used to concatenate the context names in toGenericString).
    *
    * @param name the name of the new context
-   * @return the cloned context
+   * @return the context's clone
    */
   DomainContext clone(String name);
+
+  /**
+   * Clones this context with another context name.<br>
+   * Same as {@link #clone(String)}, but keeps the root entity, if any is set.
+   *
+   * @param name the name of the new context
+   * @return the context's clone
+   */
+  DomainContext cloneKeepRoot(String name);
+
+  /**
+   * Gets the context this context was cloned from.
+   *
+   * @return null if not cloned or original context isn't available anymore (GC'd or was remote)
+   */
+  DomainContext getClonedContext();
 
   /**
    * Gets the names of this context.
@@ -189,7 +213,7 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
    * is always unnamed.
    *
    * @param name the requested name
-   * @return true if within context, false if not.
+   * @return true if within context, false if not
    */
   boolean isWithinContext(String name);
 

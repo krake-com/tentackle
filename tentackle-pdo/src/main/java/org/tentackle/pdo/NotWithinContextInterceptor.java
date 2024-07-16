@@ -57,7 +57,7 @@ public final class NotWithinContextInterceptor extends AbstractInterceptor {
             throw createException(orgProxy, "context '" + name + "' is within " + context.toDiagnosticString());
           }
         }
-      }
+      } // else: context not set yet (unit test, whatever)
       return method.invoke(proxy, args);
     }
     else {

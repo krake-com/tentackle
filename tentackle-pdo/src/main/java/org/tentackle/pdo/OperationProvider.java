@@ -42,4 +42,14 @@ public interface OperationProvider<T extends Operation<T>> {
     return OperationFactory.getInstance().create(getOperation());
   }
 
+  /**
+   * Creates a new instance of the same type as the operation within a new sub context.
+   *
+   * @param contextName the context name
+   * @return the new instance
+   */
+  default T op(String contextName) {
+    return OperationFactory.getInstance().create(getOperation(), contextName);
+  }
+
 }

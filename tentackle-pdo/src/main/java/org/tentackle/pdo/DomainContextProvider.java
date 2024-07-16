@@ -95,4 +95,30 @@ public interface DomainContextProvider {
     return OperationFactory.getInstance().create(clazz, getDomainContext().clone(contextName));
   }
 
+  /**
+   * Determines whether the provided context belongs to an inheritance hierarchy that
+   * is created from a given context object.
+   *
+   * @param contextId the object ID of a context object, 0 = default context
+   * @param contextClassId the class id of the context object, 0 = default context
+   * @return true if within that context, false if context does not apply
+   * @see DomainContext#isWithinContext(long, int)
+   */
+  default boolean isWithinContext(long contextId, int contextClassId) {
+    DomainContext context = getDomainContext();
+    return context != null && context.isWithinContext(contextId, contextClassId);
+  }
+
+  /**
+   * Checks whether the given name equals the name of this or one of its parent contexts.
+   *
+   * @param name the requested name
+   * @return true if within context, false if not
+   * @see DomainContext#isWithinContext(String)
+   */
+  default boolean isWithinContext(String name) {
+    DomainContext context = getDomainContext();
+    return context != null && context.isWithinContext(name);
+  }
+
 }
