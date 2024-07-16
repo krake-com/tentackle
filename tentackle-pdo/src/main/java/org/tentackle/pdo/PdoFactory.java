@@ -134,7 +134,9 @@ public interface PdoFactory {
   <T extends PersistentDomainObject<T>> T create(T pdo);
 
   /**
-   * Creates a PDO within a sub context.
+   * Creates a PDO within a sub context.<br>
+   * If the current context is already within the given context name, the result is equivalent
+   * to {@link #create(PersistentDomainObject)}.
    *
    * @param <T> the PDO type
    * @param pdo the PDO

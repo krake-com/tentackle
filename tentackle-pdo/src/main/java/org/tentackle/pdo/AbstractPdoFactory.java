@@ -159,7 +159,7 @@ public abstract class AbstractPdoFactory implements PdoFactory {
       PdoInvocationHandler<T> handler = createInvocationHandler(clazz);
       T instance = (T) Proxy.newProxyInstance(clazz.getClassLoader(), new Class<?>[] { clazz }, handler);
       DomainContext context = pdo.getPersistenceDelegate().getDomainContext();
-      if (contextName != null) {
+      if (contextName != null && !context.isWithinContext(contextName)) {
         context = context.cloneKeepRoot(contextName);
       }
       handler.setupDelegates(instance, context);
