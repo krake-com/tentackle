@@ -1906,6 +1906,25 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
 
+  private long getIdForReload() {
+    long reloadId = getId();
+    if (reloadId == 0 && isRootEntity()) {
+      // probably something like: incident.on("anotherContext").reload() ?
+      DomainContext clonedContext = getDomainContext();
+      while ((clonedContext = clonedContext.getClonedContext()) != null) {
+        if (clonedContext.isRootContext() && clonedContext.getRootClassId() == getClassId()) {
+          // was cloned from a valid root-entity of same class
+          reloadId = clonedContext.getRootId();   // take that id for reload operation
+          // shorthand for: incident.on("anotherContext").select(incident.getId())
+          // this behaviour also avoids programming errors, since the developer would
+          // expect it to work this way.
+          break;
+        }
+      }
+    }
+    return reloadId;
+  }
+
   /**
    * Reloads the object.<p>
    * Restores transient data, if present.
@@ -1917,7 +1936,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   public T reload(boolean tokenLocked) {
     Object data = getTransientData();
     T obj = Pdo.create(getPdo());
-    obj = tokenLocked ? obj.selectTokenLocked(getId()) : obj.select(getId());
+    obj = tokenLocked ? obj.selectTokenLocked(getIdForReload()) : obj.select(getIdForReload());
     if (obj != null && data != null) {
       ((AbstractPersistentObject<?,?>) obj.getPersistenceDelegate()).setTransientData(data);
     }
@@ -1937,7 +1956,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   @Override
   public T reloadForUpdate() {
     Object data = getTransientData();
-    T obj = Pdo.create(getPdo()).selectForUpdate(getId());
+    T obj = Pdo.create(getPdo()).selectForUpdate(getIdForReload());
     if (obj != null && data != null) {
       ((AbstractPersistentObject<?,?>) obj.getPersistenceDelegate()).setTransientData(data);
     }

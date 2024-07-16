@@ -88,7 +88,6 @@ public abstract class AbstractOperationFactory implements OperationFactory {
     }
   }
 
-
   @SuppressWarnings("unchecked")
   private <T extends Operation<T>> T createOperation(Class<T> clazz, Session session) {
     try {
@@ -102,7 +101,6 @@ public abstract class AbstractOperationFactory implements OperationFactory {
       throw new PdoRuntimeException("cannot create operation for class " + clazz + " for session " + session, e);
     }
   }
-
 
   @SuppressWarnings("unchecked")
   private <T extends Operation<T>> T createOperation(Class<T> clazz, PersistentOperation<T> persistenceDelegate) {
@@ -118,7 +116,6 @@ public abstract class AbstractOperationFactory implements OperationFactory {
     }
   }
 
-
   @SuppressWarnings("unchecked")
   private <T extends Operation<T>> T createOperation(Class<T> clazz, DomainContext context, DomainOperation<T> domainDelegate) {
     try {
@@ -132,7 +129,6 @@ public abstract class AbstractOperationFactory implements OperationFactory {
       throw new PdoRuntimeException("cannot create operation for class " + clazz + " for domain delegate " + domainDelegate, e);
     }
   }
-
 
   @SuppressWarnings("unchecked")
   private <T extends Operation<T>> T createOperation(Class<T> clazz, Session session, DomainOperation<T> domainDelegate) {
@@ -148,7 +144,6 @@ public abstract class AbstractOperationFactory implements OperationFactory {
     }
   }
 
-
   @SuppressWarnings("unchecked")
   private <T extends Operation<T>> T createOperation(Class<T> clazz, PersistentOperation<T> persistenceDelegate, DomainOperation<T> domainDelegate) {
     try {
@@ -162,7 +157,6 @@ public abstract class AbstractOperationFactory implements OperationFactory {
                                     persistenceDelegate + " : " + domainDelegate, e);
     }
   }
-
 
   @SuppressWarnings("unchecked")
   private <T extends Operation<T>> T createOperation(Class<T> clazz) {
@@ -178,15 +172,17 @@ public abstract class AbstractOperationFactory implements OperationFactory {
     }
   }
 
-
-
   @SuppressWarnings("unchecked")
-  private <T extends Operation<T>> T createOperation(T op) {
+  private <T extends Operation<T>> T createOperation(T op, String contextName) {
     try {
       Class<T> clazz = op.getEffectiveClass();
       OperationInvocationHandler<T> handler = createInvocationHandler(clazz);
       T instance = (T) Proxy.newProxyInstance(clazz.getClassLoader(), new Class<?>[] { clazz }, handler);
-      handler.setupDelegates(instance, op.getDomainContext());
+      DomainContext context = op.getPersistenceDelegate().getDomainContext();
+      if (contextName != null) {
+        context = context.cloneKeepRoot(contextName);
+      }
+      handler.setupDelegates(instance, context);
       return instance;
     }
     catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
@@ -194,9 +190,6 @@ public abstract class AbstractOperationFactory implements OperationFactory {
       throw new PdoRuntimeException("cannot create operation from template " + op, e);
     }
   }
-
-
-
 
   @SuppressWarnings("unchecked")
   private <T extends Operation<T>> T createOperation(String className, DomainContext context) {
@@ -208,7 +201,6 @@ public abstract class AbstractOperationFactory implements OperationFactory {
     }
   }
 
-
   @SuppressWarnings("unchecked")
   private <T extends Operation<T>> T createOperation(String className, Session session) {
     try {
@@ -218,7 +210,6 @@ public abstract class AbstractOperationFactory implements OperationFactory {
       throw new PdoRuntimeException("cannot create operation for class " + className + " for session " + session, e);
     }
   }
-
 
   @SuppressWarnings("unchecked")
   private <T extends Operation<T>> T createOperation(String className, PersistentOperation<T> persistenceDelegate) {
@@ -230,7 +221,6 @@ public abstract class AbstractOperationFactory implements OperationFactory {
     }
   }
 
-
   @SuppressWarnings("unchecked")
   private <T extends Operation<T>> T createOperation(String className, DomainContext context, DomainOperation<T> domainDelegate) {
     try {
@@ -240,7 +230,6 @@ public abstract class AbstractOperationFactory implements OperationFactory {
       throw new PdoRuntimeException("cannot create operation for class " + className + " for domain delegate " + domainDelegate, e);
     }
   }
-
 
   @SuppressWarnings("unchecked")
   private <T extends Operation<T>> T createOperation(String className, Session session, DomainOperation<T> domainDelegate) {
@@ -252,7 +241,6 @@ public abstract class AbstractOperationFactory implements OperationFactory {
     }
   }
 
-
   @SuppressWarnings("unchecked")
   private <T extends Operation<T>> T createOperation(String className, PersistentOperation<T> persistenceDelegate, DomainOperation<T> domainDelegate) {
     try {
@@ -262,8 +250,6 @@ public abstract class AbstractOperationFactory implements OperationFactory {
       throw new PdoRuntimeException("cannot create operation for class " + className + " for domain delegate " + domainDelegate, e);
     }
   }
-
-
 
   @SuppressWarnings("unchecked")
   private <T extends Operation<T>> T createOperation(String className) {
@@ -291,9 +277,13 @@ public abstract class AbstractOperationFactory implements OperationFactory {
 
   @Override
   public <T extends Operation<T>> T create(T op) {
-    return createOperation(op);
+    return createOperation(op, null);
   }
 
+  @Override
+  public <T extends Operation<T>> T create(T op, String contextName) {
+    return createOperation(op, contextName);
+  }
 
   @Override
   public <T extends Operation<T>> T create(Class<T> clazz, Session session) {

@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.pdo;
 
 import org.tentackle.common.ServiceFactory;
@@ -27,6 +26,7 @@ interface OperationFactoryHolder {
   OperationFactory INSTANCE = ServiceFactory.createService(
               OperationFactory.class, DefaultOperationFactory.class);
 }
+
 
 /**
  * A factory for operation objects.
@@ -47,7 +47,7 @@ public interface OperationFactory {
   /**
    * Creates an operation.
    *
-   * @param <T> the operation class
+   * @param <T> the operation type
    * @param clazz the class of the operation, usually an interface
    * @param context the domain context
    * @return the created operation
@@ -57,7 +57,7 @@ public interface OperationFactory {
   /**
    * Creates an operation.
    *
-   * @param <T> the operation class
+   * @param <T> the operation type
    * @param clazz the class of the operation, usually an interface
    * @param session the session
    * @return the created operation
@@ -67,7 +67,7 @@ public interface OperationFactory {
   /**
    * Creates an operation.
    *
-   * @param <T> the operation class
+   * @param <T> the operation type
    * @param className the name of operation-class, usually an interface
    * @param context the domain context
    * @return the created operation
@@ -79,7 +79,7 @@ public interface OperationFactory {
    * <p>
    * Note: the application must set the context.
    *
-   * @param <T> the operation class
+   * @param <T> the operation type
    * @param className the name of operation-class, usually an interface
    * @param session the session
    * @return the created operation
@@ -91,7 +91,7 @@ public interface OperationFactory {
    * <p>
    * Note: the application must set the context.
    *
-   * @param <T> the operation class
+   * @param <T> the operation type
    * @param clazz the class of the operation, usually an interface
    * @return the created operation
    */
@@ -102,7 +102,7 @@ public interface OperationFactory {
    * <p>
    * Note: the application must set the context.
    *
-   * @param <T> the operation class
+   * @param <T> the operation type
    * @param className the name of operation-class, usually an interface
    * @return the created operation
    */
@@ -111,16 +111,26 @@ public interface OperationFactory {
   /**
    * Creates an operation.
    *
-   * @param <T> the operation class
+   * @param <T> the operation type
    * @param op the operation
-   * @return the created operation belonging to the same class as the given {@code pdo} and in same context.
+   * @return the created operation belonging to the same class as the given {@code op} and in same context.
    */
   <T extends Operation<T>> T create(T op);
 
   /**
+   * Creates an operation within a sub context.
+   *
+   * @param <T> the operation type
+   * @param op the operation
+   * @param contextName the context name
+   * @return the created operation belonging to the same class as the given {@code op} in a sub context of given name
+   */
+  <T extends Operation<T>> T create(T op, String contextName);
+
+  /**
    * Creates an operation for a given persistence delegate.
    *
-   * @param <T> the operation class
+   * @param <T> the operation type
    * @param clazz the class of the operation, usually an interface
    * @param persistenceDelegate the persistence delegate
    * @return the created operation
@@ -130,7 +140,7 @@ public interface OperationFactory {
   /**
    * Creates an operation for a given persistence delegate.
    *
-   * @param <T> the operation class
+   * @param <T> the operation type
    * @param className the name of operation-class, usually an interface
    * @param persistenceDelegate the persistence delegate
    * @return the created operation
@@ -140,7 +150,7 @@ public interface OperationFactory {
   /**
    * Creates an operation for a given domain delegate.
    *
-   * @param <T> the operation class
+   * @param <T> the operation type
    * @param clazz the class of the operation, usually an interface
    * @param context the domain context
    * @param domainDelegate the domain delegate
@@ -151,7 +161,7 @@ public interface OperationFactory {
   /**
    * Creates an operation for a given domain delegate.
    *
-   * @param <T> the operation class
+   * @param <T> the operation type
    * @param className the name of operation-class, usually an interface
    * @param context the domain context
    * @param domainDelegate the domain delegate
@@ -162,7 +172,7 @@ public interface OperationFactory {
   /**
    * Creates an operation for a given domain delegate.
    *
-   * @param <T> the operation class
+   * @param <T> the operation type
    * @param clazz the class of the operation, usually an interface
    * @param session the session
    * @param domainDelegate the domain delegate
@@ -173,7 +183,7 @@ public interface OperationFactory {
   /**
    * Creates an operation for a given domain delegate.
    *
-   * @param <T> the operation class
+   * @param <T> the operation type
    * @param className the name of operation-class, usually an interface
    * @param session the session
    * @param domainDelegate the domain delegate
@@ -184,7 +194,7 @@ public interface OperationFactory {
   /**
    * Creates an operation for given delegates.
    *
-   * @param <T> the operation class
+   * @param <T> the operation type
    * @param clazz the class of the operation, usually an interface
    * @param persistenceDelegate the persistence delegate
    * @param domainDelegate the domain delegate
@@ -195,7 +205,7 @@ public interface OperationFactory {
   /**
    * Creates an operation for given delegates.
    *
-   * @param <T> the operation class
+   * @param <T> the operation type
    * @param className the name of operation-class, usually an interface
    * @param persistenceDelegate the persistence delegate
    * @param domainDelegate the domain delegate
@@ -206,7 +216,7 @@ public interface OperationFactory {
   /**
    * Gets the class implementing the persistence layer.
    *
-   * @param <T> the operation class
+   * @param <T> the operation type
    * @param className the name of operation-class, usually an interface
    * @return the persistence class
    */
@@ -215,7 +225,7 @@ public interface OperationFactory {
   /**
    * Gets the class implementing the domain layer.
    *
-   * @param <T> the operation class
+   * @param <T> the operation type
    * @param className the name of operation-class, usually an interface
    * @return the domain class
    */
@@ -224,7 +234,7 @@ public interface OperationFactory {
   /**
    * Creates the delegate implementing the persistence layer.
    *
-   * @param <T> the operation class
+   * @param <T> the operation type
    * @param className the name of operation-class, usually an interface
    * @return the persistent delegate
    */
@@ -233,7 +243,7 @@ public interface OperationFactory {
   /**
    * Creates the delegate implementing the domain layer.
    *
-   * @param <T> the operation class
+   * @param <T> the operation type
    * @param className the name of operation-class, usually an interface
    * @return the domain delegate
    */

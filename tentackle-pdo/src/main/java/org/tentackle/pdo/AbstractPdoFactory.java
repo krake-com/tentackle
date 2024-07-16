@@ -69,7 +69,6 @@ public abstract class AbstractPdoFactory implements PdoFactory {
     }
   }
 
-
   @SuppressWarnings("unchecked")
   private <T extends PersistentDomainObject<T>> T createPdo(Class<T> clazz, Session session) {
     try {
@@ -83,7 +82,6 @@ public abstract class AbstractPdoFactory implements PdoFactory {
       throw new PdoRuntimeException(CANNOT_CREATE_PDO_FOR + clazz + " for session " + session, e);
     }
   }
-
 
   @SuppressWarnings("unchecked")
   private <T extends PersistentDomainObject<T>> T createPdo(Class<T> clazz, PersistentObject<T> persistenceDelegate) {
@@ -99,7 +97,6 @@ public abstract class AbstractPdoFactory implements PdoFactory {
     }
   }
 
-
   @SuppressWarnings("unchecked")
   private <T extends PersistentDomainObject<T>> T createPdo(Class<T> clazz, DomainContext context, DomainObject<T> domainDelegate) {
     try {
@@ -113,7 +110,6 @@ public abstract class AbstractPdoFactory implements PdoFactory {
       throw new PdoRuntimeException(CANNOT_CREATE_PDO_FOR + clazz + " for domain delegate " + domainDelegate, e);
     }
   }
-
 
   @SuppressWarnings("unchecked")
   private <T extends PersistentDomainObject<T>> T createPdo(Class<T> clazz, Session session, DomainObject<T> domainDelegate) {
@@ -129,7 +125,6 @@ public abstract class AbstractPdoFactory implements PdoFactory {
     }
   }
 
-
   @SuppressWarnings("unchecked")
   private <T extends PersistentDomainObject<T>> T createPdo(Class<T> clazz, PersistentObject<T> persistenceDelegate, DomainObject<T> domainDelegate) {
     try {
@@ -142,7 +137,6 @@ public abstract class AbstractPdoFactory implements PdoFactory {
       throw new PdoRuntimeException(CANNOT_CREATE_PDO_FOR + clazz + " for delegates " + persistenceDelegate + " : " + domainDelegate, e);
     }
   }
-
 
   @SuppressWarnings("unchecked")
   private <T extends PersistentDomainObject<T>> T createPdo(Class<T> clazz) {
@@ -158,7 +152,6 @@ public abstract class AbstractPdoFactory implements PdoFactory {
     }
   }
 
-
   @SuppressWarnings("unchecked")
   private <T extends PersistentDomainObject<T>> T createPdo(T pdo, String contextName) {
     try {
@@ -167,7 +160,7 @@ public abstract class AbstractPdoFactory implements PdoFactory {
       T instance = (T) Proxy.newProxyInstance(clazz.getClassLoader(), new Class<?>[] { clazz }, handler);
       DomainContext context = pdo.getPersistenceDelegate().getDomainContext();
       if (contextName != null) {
-        context = context.clone(contextName);
+        context = context.cloneKeepRoot(contextName);
       }
       handler.setupDelegates(instance, context);
       return instance;
@@ -177,7 +170,6 @@ public abstract class AbstractPdoFactory implements PdoFactory {
       throw new PdoRuntimeException("cannot create PDO from template " + pdo, e);
     }
   }
-
 
   @SuppressWarnings("unchecked")
   private <T extends PersistentDomainObject<T>> T createPdo(String className, DomainContext context) {
@@ -189,7 +181,6 @@ public abstract class AbstractPdoFactory implements PdoFactory {
     }
   }
 
-
   @SuppressWarnings("unchecked")
   private <T extends PersistentDomainObject<T>> T createPdo(String className, Session session) {
     try {
@@ -199,7 +190,6 @@ public abstract class AbstractPdoFactory implements PdoFactory {
       throw new PdoRuntimeException(CANNOT_CREATE_PDO_FOR + className + " for session " + session, e);
     }
   }
-
 
   @SuppressWarnings("unchecked")
   private <T extends PersistentDomainObject<T>> T createPdo(String className, PersistentObject<T> persistenceDelegate) {
@@ -211,7 +201,6 @@ public abstract class AbstractPdoFactory implements PdoFactory {
     }
   }
 
-
   @SuppressWarnings("unchecked")
   private <T extends PersistentDomainObject<T>> T createPdo(String className, DomainContext context, DomainObject<T> domainDelegate) {
     try {
@@ -221,7 +210,6 @@ public abstract class AbstractPdoFactory implements PdoFactory {
       throw new PdoRuntimeException(CANNOT_CREATE_PDO_FOR + className + " for domain delegate " + domainDelegate, e);
     }
   }
-
 
   @SuppressWarnings("unchecked")
   private <T extends PersistentDomainObject<T>> T createPdo(String className, Session session, DomainObject<T> domainDelegate) {
@@ -233,7 +221,6 @@ public abstract class AbstractPdoFactory implements PdoFactory {
     }
   }
 
-
   @SuppressWarnings("unchecked")
   private <T extends PersistentDomainObject<T>> T createPdo(String className, PersistentObject<T> persistenceDelegate, DomainObject<T> domainDelegate) {
     try {
@@ -243,7 +230,6 @@ public abstract class AbstractPdoFactory implements PdoFactory {
       throw new PdoRuntimeException(CANNOT_CREATE_PDO_FOR + className + " for domain delegate " + domainDelegate, e);
     }
   }
-
 
   @SuppressWarnings("unchecked")
   private <T extends PersistentDomainObject<T>> T createPdo(String className) {
