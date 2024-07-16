@@ -51,14 +51,13 @@ public final class WithinContextInterceptor extends AbstractInterceptor {
   public Object proceed(Object proxy, Method method, Object[] args, Object orgProxy, Method orgMethod, Object[] orgArgs) throws Throwable {
     if (orgProxy instanceof DomainContextProvider dcp) {
       DomainContext context = dcp.getDomainContext();
-      if (context == null) {
-        return false;   // context not set yet (unit test, whatever)
-      }
-      for (String name : names) {
-        if (!context.isWithinContext(name)) {
-          throw createException(orgProxy, "context '" + name + "' is not within " + context.toDiagnosticString());
+      if (context != null) {
+        for (String name : names) {
+          if (!context.isWithinContext(name)) {
+            throw createException(orgProxy, "context '" + name + "' is not within " + context.toDiagnosticString());
+          }
         }
-      }
+      } // else: context not set yet (unit test, whatever)
       return method.invoke(proxy, args);
     }
     else {
