@@ -82,7 +82,7 @@
     <javac.lint>all,-processing,-this-escape</javac.lint>
     <javac.version>21</javac.version>
 
-    <javafx.version>22.0.1</javafx.version>
+    <javafx.version>22.0.2</javafx.version>
     <ikonli.version>12.3.1</ikonli.version>
     <ow2.asm.version>9.7</ow2.asm.version>
     <groovy.version>4.0.22</groovy.version>
