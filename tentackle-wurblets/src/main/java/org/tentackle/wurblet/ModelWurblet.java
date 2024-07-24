@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.wurblet;
 
 import org.wurbelizer.wurbel.JavaSourceType;
@@ -58,8 +57,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-
 
 /**
  * Extended {@link AbstractJavaWurblet} providing basic functionality for the persistent object model.
@@ -136,7 +133,6 @@ public class ModelWurblet extends AbstractJavaWurblet {
 
   /** the backends that are going to be used. */
   private Collection<Backend> backends;
-
 
 
   /**
@@ -237,8 +233,8 @@ public class ModelWurblet extends AbstractJavaWurblet {
          * extends UmzugsListePersistenceImpl<UmzugsErfassungsListe, UmzugsErfassungsListePersistenceImpl>
          *   implements UmzugsErfassungsListePersistence
          * or
-         * <T extends UmzugsListe<T>, P extends UmzugsListePersistenceImpl<T,P>>
-         *   extends AbstractPersistentObject<T,P> implements UmzugsListePersistence<T>
+         * <T extends UmzugsListe<T>, P extends UmzugsListePersistenceImpl<T, P>>
+         *   extends AbstractPersistentObject<T, P> implements UmzugsListePersistence<T>
          */
         if (getContainer().getVerbosity().isDebug()) {
           getContainer().getLogger().info(getContainer().getProperty(Wurbler.PROPSPACE_WURBLET, JavaSourceType.CLASS_NAME) +
@@ -356,7 +352,6 @@ public class ModelWurblet extends AbstractJavaWurblet {
     return definition != null && definition.startsWith("<");
   }
 
-
   /**
    * Returns whether at least one of the mapped attributes has the [MUTE]-option set.
    *
@@ -375,7 +370,6 @@ public class ModelWurblet extends AbstractJavaWurblet {
     return mute;
   }
 
-
   /**
    * Gets the methodname.<br>
    * From the guardname or from arg "--method=&lt;.....&gt;" if present.
@@ -390,7 +384,6 @@ public class ModelWurblet extends AbstractJavaWurblet {
     }
     return methodName;
   }
-
 
   /**
    * Gets the name of the modelfile.
@@ -411,7 +404,6 @@ public class ModelWurblet extends AbstractJavaWurblet {
     }
     return modelName;
   }
-
 
   /**
    * Applies the semantics of {@link #getClassName()} to another entity.<br>
@@ -437,7 +429,6 @@ public class ModelWurblet extends AbstractJavaWurblet {
     String tail = className.substring(ndx + entityName.length());
     return lead + otherEntity.getName() + tail;
   }
-
 
   /**
    * Sorts the given list of entities by inheritance level plus classid.
@@ -468,7 +459,6 @@ public class ModelWurblet extends AbstractJavaWurblet {
     return args;
   }
 
-
   /**
    * Gets the wurblet options.<br>
    * The options got the leading '--' removed.
@@ -478,7 +468,6 @@ public class ModelWurblet extends AbstractJavaWurblet {
   public List<String> getOptionArgs() {
     return optionArgs;
   }
-
 
   /**
    * Gets the option if set.<br>
@@ -504,7 +493,6 @@ public class ModelWurblet extends AbstractJavaWurblet {
     return null;
   }
 
-
   /**
    * Gets the wurblet arguments.<br>
    * All arguments except the options.
@@ -514,7 +502,6 @@ public class ModelWurblet extends AbstractJavaWurblet {
   public List<String> getWurbletArgs() {
     return wurbletArgs;
   }
-
 
   /**
    * Creates the method name to select a relation.
@@ -549,7 +536,6 @@ public class ModelWurblet extends AbstractJavaWurblet {
     return text.toString();
   }
 
-
   /**
    * Creates the method name to select a relation.
    *
@@ -570,7 +556,6 @@ public class ModelWurblet extends AbstractJavaWurblet {
     return text.toString();
   }
 
-
   /**
    * Creates the method argument declaration for the select or delete method.
    *
@@ -590,7 +575,6 @@ public class ModelWurblet extends AbstractJavaWurblet {
     return text.toString();
   }
 
-
   /**
    * Gets the effective datatype.<br>
    * The effective type may be different if type is a Convertible.
@@ -606,7 +590,6 @@ public class ModelWurblet extends AbstractJavaWurblet {
       throw new WurbelException("cannot determine effective datatype for " + attribute, e);
     }
   }
-
 
   /**
    * Gets the column name.
@@ -625,7 +608,6 @@ public class ModelWurblet extends AbstractJavaWurblet {
     }
   }
 
-
   /**
    * Gets the name of the string constant for a database column name.
    *
@@ -641,7 +623,6 @@ public class ModelWurblet extends AbstractJavaWurblet {
     return "CN_" + (attribute.getName() + (columnIndex < 0 ? "" :
                                            getEffectiveDataType(attribute).getColumnSuffix(null, columnIndex).orElse(""))).toUpperCase(Locale.ROOT);
   }
-
 
   /**
    * Returns the annotation options for all annotation strings provided by the model and a given annotation type.
@@ -665,7 +646,6 @@ public class ModelWurblet extends AbstractJavaWurblet {
     return annotationOptions;
   }
 
-
   /**
    * Determines all embedded attributes for the table of the entity.
    *
@@ -686,7 +666,6 @@ public class ModelWurblet extends AbstractJavaWurblet {
     }
     return embeddedAttributes;
   }
-
 
   /**
    * {@inheritDoc}
@@ -924,7 +903,6 @@ public class ModelWurblet extends AbstractJavaWurblet {
     throw new WurbelException(msg.toString());
   }
 
-
   /**
    * Checks whether attribute is the pdo ID.
    *
@@ -991,7 +969,6 @@ public class ModelWurblet extends AbstractJavaWurblet {
     builder.insert(0, prependStr);
   }
 
-
   /**
    * Creates the component info for a given component.
    *
@@ -1002,7 +979,6 @@ public class ModelWurblet extends AbstractJavaWurblet {
   public ComponentInfo createComponentInfo(Entity component) throws WurbelException {
     return new ComponentInfo(this, component);
   }
-
 
   /**
    * Creates the java code to access an attribute or column.<br>
@@ -1078,7 +1054,6 @@ public class ModelWurblet extends AbstractJavaWurblet {
     return buf.toString();
   }
 
-
   /**
    * Gets the non-primitive java type string of an attribute.
    *
@@ -1093,7 +1068,6 @@ public class ModelWurblet extends AbstractJavaWurblet {
            attribute.getJavaType();
   }
 
-
   /**
    * Determines the package name of a class from the source contents.<br>
    * This is done by scanning the import statements.<br>
@@ -1101,7 +1075,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
    *
    * @param className the simple classname
    * @return the package name (never null)
-   * @throws ModelException if package could not be determined
+   * @throws WurbelException if package could not be determined
    */
   public String determinePackageName(String className) throws WurbelException {
     final String packageName = getPackageName();    // default is the same package

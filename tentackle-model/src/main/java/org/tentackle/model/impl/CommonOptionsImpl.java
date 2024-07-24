@@ -258,15 +258,13 @@ public abstract class CommonOptionsImpl implements CommonOptions, Cloneable {
           break;
         }
         catch (IllegalArgumentException ex) {
-          // no a scope
+          // not a scope
         }
         applied = false;
     }
 
     return applied;
   }
-
-
 
   /**
    * Processes an option string.<br>
@@ -280,24 +278,13 @@ public abstract class CommonOptionsImpl implements CommonOptions, Cloneable {
    * @throws ModelException if option malformed
    */
   public boolean processOption(String option) throws ModelException {
-    boolean applied = false;
-    if (option != null && !option.isEmpty()) {
-      switch (option.charAt(0)) {
-        case '!':
-        case '-':
-          applied = applyOption(option.substring(1), Boolean.FALSE);
-          break;
-        case '+':
-          applied = applyOption(option.substring(1), Boolean.TRUE);
-          break;
-        default:
-          applied = applyOption(option, null);
-          break;
-      }
-    }
-    return applied;
+    return option != null && !option.isEmpty() &&
+           switch (option.charAt(0)) {
+             case '!', '-' -> applyOption(option.substring(1), Boolean.FALSE);
+             case '+' -> applyOption(option.substring(1), Boolean.TRUE);
+             default -> applyOption(option, null);
+           };
   }
-
 
   /**
    * Processes a bind option.
@@ -314,7 +301,6 @@ public abstract class CommonOptionsImpl implements CommonOptions, Cloneable {
       removeBindOption(option);
     }
   }
-
 
   @Override
   public String getComment() {
@@ -375,7 +361,6 @@ public abstract class CommonOptionsImpl implements CommonOptions, Cloneable {
       }
     }
   }
-
 
   @Override
   public boolean isNoDeclare() {
@@ -489,7 +474,6 @@ public abstract class CommonOptionsImpl implements CommonOptions, Cloneable {
     this.writeOnly = writeOnly;
   }
 
-
   @Override
   public boolean isAutoSelect() {
     return autoSelect;
@@ -539,6 +523,5 @@ public abstract class CommonOptionsImpl implements CommonOptions, Cloneable {
   public ModelException createModelException(String message) {
     return new ModelException(message);
   }
-
 
 }

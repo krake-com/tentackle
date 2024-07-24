@@ -83,9 +83,7 @@ public abstract class AbstractTask implements Task {
 
   @Override
   public int hashCode() {
-    int hash = 3;
-    hash = 53 * hash + (int) (this.id ^ (this.id >>> 32));
-    return hash;
+    return Long.hashCode(id);
   }
 
   @Override
@@ -216,6 +214,7 @@ public abstract class AbstractTask implements Task {
     return true;
   }
 
+
   /**
    * Gets the listeners.
    *
@@ -227,4 +226,5 @@ public abstract class AbstractTask implements Task {
     }
     return listeners;
   }
+
 }

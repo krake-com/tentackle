@@ -42,7 +42,7 @@ public class WurbletRelation {
    *
    * @param relation the model relation
    * @param filter an optional filter string (only for load joins), null if none
-   * @throws WurbelException
+   * @throws WurbelException if parsing the filter failed
    */
   public WurbletRelation(Relation relation, String filter) throws WurbelException {
     this.relation = Objects.requireNonNull(relation, "relation");

@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.misc;
 
 import java.io.Serial;
@@ -58,7 +57,6 @@ public class IdentifiableKey<T extends Identifiable> implements Comparable<Ident
     this((Class<T>) identifiable.getClass(), identifiable.getId());
   }
 
-
   /**
    * Creates a key from a classname and id.
    *
@@ -70,7 +68,6 @@ public class IdentifiableKey<T extends Identifiable> implements Comparable<Ident
   public IdentifiableKey(String identifiableClassName, long identifiableId) throws ClassNotFoundException {
     this((Class<T>) Class.forName(identifiableClassName), identifiableId);
   }
-
 
   /**
    * Gets the object class.
@@ -89,8 +86,6 @@ public class IdentifiableKey<T extends Identifiable> implements Comparable<Ident
   public long getIdentifiableId() {
     return identifiableId;
   }
-
-
 
   @Override
   public boolean equals(Object obj) {
@@ -111,8 +106,8 @@ public class IdentifiableKey<T extends Identifiable> implements Comparable<Ident
   @Override
   public int hashCode() {
     int hash = 7;
-    hash = 43 * hash + (this.identifiableClass != null ? this.identifiableClass.hashCode() : 0);
-    hash = 43 * hash + (int) (this.identifiableId ^ (this.identifiableId >>> 32));
+    hash = 43 * hash + (identifiableClass != null ? identifiableClass.hashCode() : 0);
+    hash = 43 * hash + Long.hashCode(identifiableId);
     return hash;
   }
 
@@ -124,7 +119,6 @@ public class IdentifiableKey<T extends Identifiable> implements Comparable<Ident
     }
     return rv;
   }
-
 
   @Override
   public String toString() {

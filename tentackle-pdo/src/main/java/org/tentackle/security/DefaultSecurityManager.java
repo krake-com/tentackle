@@ -131,10 +131,10 @@ public class DefaultSecurityManager implements SecurityManager {
     @Override
     public int hashCode() {
       int hash = 3;
-      hash = 67 * hash + this.granteeClassId;
-      hash = 67 * hash + (int) (this.granteeId ^ (this.granteeId >>> 32));
-      hash = 67 * hash + Objects.hashCode(this.className);
-      hash = 67 * hash + this.priority;
+      hash = 67 * hash + granteeClassId;
+      hash = 67 * hash + Long.hashCode(granteeId);
+      hash = 67 * hash + Objects.hashCode(className);
+      hash = 67 * hash + priority;
       return hash;
     }
 
@@ -215,11 +215,11 @@ public class DefaultSecurityManager implements SecurityManager {
     @Override
     public int hashCode() {
       int hash = 7;
-      hash = 73 * hash + this.granteeClassId;
-      hash = 73 * hash + (int) (this.granteeId ^ (this.granteeId >>> 32));
-      hash = 73 * hash + this.objectClassId;
-      hash = 73 * hash + (int) (this.objectId ^ (this.objectId >>> 32));
-      hash = 73 * hash + this.priority;
+      hash = 73 * hash + granteeClassId;
+      hash = 73 * hash + Long.hashCode(granteeId);
+      hash = 73 * hash + objectClassId;
+      hash = 73 * hash + Long.hashCode(objectId);
+      hash = 73 * hash + priority;
       return hash;
     }
 
@@ -297,10 +297,10 @@ public class DefaultSecurityManager implements SecurityManager {
     @Override
     public int hashCode() {
       int hash = 5;
-      hash = 37 * hash + this.granteeClassId;
-      hash = 37 * hash + (int) (this.granteeId ^ (this.granteeId >>> 32));
-      hash = 37 * hash + this.objectClassId;
-      hash = 37 * hash + this.priority;
+      hash = 37 * hash + granteeClassId;
+      hash = 37 * hash + Long.hashCode(granteeId);
+      hash = 37 * hash + objectClassId;
+      hash = 37 * hash + priority;
       return hash;
     }
 
@@ -374,7 +374,6 @@ public class DefaultSecurityManager implements SecurityManager {
     classDeniedResult = createDeniedSecurityResult(NO_CLASS_RULES_MESSAGE, true);
     noGranteeResult = createAcceptedSecurityResult(NO_GRANTEE_MESSAGE, true);
   }
-
 
   @Override
   public void invalidate() {

@@ -25,6 +25,7 @@ import org.tentackle.common.ServiceFactory;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
 
+
 interface RMISocketFactoryFactoryHolder {
   RMISocketFactoryFactory INSTANCE = ServiceFactory.createService(RMISocketFactoryFactory.class, RMISocketFactoryFactory.class);
 }
@@ -117,7 +118,6 @@ public class RMISocketFactoryFactory {
     this.clientAuthenticationRequired = clientAuthenticationRequired;
   }
 
-
   /**
    * Creates a client socket factory.
    *
@@ -126,36 +126,15 @@ public class RMISocketFactoryFactory {
    * @return the factory, null if system default
    */
   public RMIClientSocketFactory createClientSocketFactory(RMIClientSocketFactory defaultFactory, RMISocketFactoryType factoryType) {
-    RMIClientSocketFactory factory;
-
-    switch (factoryType) {
-      case DEFAULT:
-        factory = defaultFactory;
-        break;
-
-      case PLAIN:
-        factory = new ClientSocketFactory();
-        break;
-
-      case SSL:
-        factory = new SslClientSocketFactory();
-        break;
-
-      case COMPRESSED:
-        factory = new CompressedClientSocketFactory();
-        break;
-
-      case SSL_COMPRESSED:
-        factory = new CompressedSslClientSocketFactory();
-        break;
-
-      default:
-        factory = null;   // null = SYSTEM
-    }
-
-    return factory;
+    return switch (factoryType) {
+      case DEFAULT -> defaultFactory;
+      case PLAIN -> new ClientSocketFactory();
+      case SSL -> new SslClientSocketFactory();
+      case COMPRESSED -> new CompressedClientSocketFactory();
+      case SSL_COMPRESSED -> new CompressedSslClientSocketFactory();
+      default -> null;   // null = SYSTEM
+    };
   }
-
 
   /**
    * Creates a server socket factory.
@@ -165,34 +144,14 @@ public class RMISocketFactoryFactory {
    * @return the factory, null if system default
    */
   public RMIServerSocketFactory createServerSocketFactory(RMIServerSocketFactory defaultFactory, RMISocketFactoryType factoryType) {
-    RMIServerSocketFactory factory;
-
-    switch (factoryType) {
-      case DEFAULT:
-        factory = defaultFactory;
-        break;
-
-      case PLAIN:
-        factory = new ServerSocketFactory();
-        break;
-
-      case SSL:
-        factory = new SslServerSocketFactory(getEnabledCipherSuites(), getEnabledProtocols(), isClientAuthenticationRequired());
-        break;
-
-      case COMPRESSED:
-        factory = new CompressedServerSocketFactory();
-        break;
-
-      case SSL_COMPRESSED:
-        factory = new CompressedSslServerSocketFactory(getEnabledCipherSuites(), getEnabledProtocols(), isClientAuthenticationRequired());
-        break;
-
-      default:
-        factory = null;   // null = SYSTEM
-    }
-
-    return factory;
+    return switch (factoryType) {
+      case DEFAULT -> defaultFactory;
+      case PLAIN -> new ServerSocketFactory();
+      case SSL -> new SslServerSocketFactory(getEnabledCipherSuites(), getEnabledProtocols(), isClientAuthenticationRequired());
+      case COMPRESSED -> new CompressedServerSocketFactory();
+      case SSL_COMPRESSED -> new CompressedSslServerSocketFactory(getEnabledCipherSuites(), getEnabledProtocols(), isClientAuthenticationRequired());
+      default -> null;   // null = SYSTEM
+    };
   }
 
 }

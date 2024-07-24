@@ -69,18 +69,12 @@ public class BundleSupport {
         List<String> parts = StringHelper.split(entry.getKey(), ":= ");
         // figure out the bundle name
         String className = parts.get(0);
-        String bundleName;
-        switch (parts.size()) {
-          case 1:
-            bundleName = className;
-            break;
-          case 2:
-            bundleName = parts.get(1);
-            break;
-          default:
-            throw new TentackleRuntimeException("invalid bundle configuration '" + entry.getKey() + "' in " + entry.
-                    getValue());
-        }
+        String bundleName = switch (parts.size()) {
+          case 1 -> className;
+          case 2 -> parts.get(1);
+          default -> throw new TentackleRuntimeException("invalid bundle configuration '" + entry.getKey() +
+                                                         "' in " + entry.getValue());
+        };
         bundles.add(new BundleSupport(info, className, bundleName));
       }
     }

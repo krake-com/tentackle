@@ -22,7 +22,6 @@ import org.tentackle.common.TentackleRuntimeException;
 
 import java.io.Serial;
 
-
 /**
  * A tuple holding the ID and the serial of an object.<br>
  * There is no further logic. Mainly used for serializing.
@@ -70,14 +69,12 @@ public class IdSerialTuple implements Identifiable, SerialNumbered, Cloneable, C
       return false;
     }
     final IdSerialTuple other = (IdSerialTuple) obj;
-    return this.id == other.id;
+    return id == other.id;
   }
 
   @Override
   public int hashCode() {
-    int hash = 7;
-    hash = 79 * hash + (int) (this.id ^ (this.id >>> 32));
-    return hash;
+    return Long.hashCode(id);
   }
 
   @Override

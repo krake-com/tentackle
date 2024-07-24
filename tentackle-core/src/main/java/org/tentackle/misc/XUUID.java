@@ -141,7 +141,7 @@ public class XUUID implements Identifiable {
 
   @Override
   public int hashCode() {
-    int result = (int) (id ^ (id >>> 32));
+    int result = Long.hashCode(id);
     result = 31 * result + uuid.hashCode();
     return result;
   }
