@@ -129,26 +129,14 @@ public class DTOWurblet extends AbstractJavaWurblet {
     }
 
     public String getHashCodeInvocation() {
-      String code;
-      if (isPrimitive()) {
-        switch(type) {
-          case "double":
-            code = "Double.hashCode(" + name + ")";
-            break;
-          case "float":
-            code = "Float.hashCode(" + name + ")";
-            break;
-          case "long":
-            code = "Long.hashCode(" + name + ")";
-            break;
-          default:
-            code = name;
-        }
-      }
-      else {
-        code = "Objects.hashCode(" + name + ")";
-      }
-      return code;
+      return isPrimitive() ?
+               switch (type) {
+                 case "double" -> "Double.hashCode(" + name + ")";
+                 case "float" -> "Float.hashCode(" + name + ")";
+                 case "long" -> "Long.hashCode(" + name + ")";
+                 default -> name;
+               } :
+               "Objects.hashCode(" + name + ")";
     }
 
     public boolean isInherited() {
@@ -316,7 +304,6 @@ public class DTOWurblet extends AbstractJavaWurblet {
         filename = arg;
       }
     }
-
 
     properties = new ArrayList<>();
     annotations = new ArrayList<>();

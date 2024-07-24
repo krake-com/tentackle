@@ -78,8 +78,8 @@ public class GranteeDescriptor {
   @Override
   public int hashCode() {
     int hash = 7;
-    hash = 89 * hash + this.granteeClassId;
-    hash = 89 * hash + (int) (this.granteeId ^ (this.granteeId >>> 32));
+    hash = 89 * hash + granteeClassId;
+    hash = 89 * hash + Long.hashCode(granteeId);
     return hash;
   }
 
@@ -95,10 +95,10 @@ public class GranteeDescriptor {
       return false;
     }
     final GranteeDescriptor other = (GranteeDescriptor) obj;
-    if (this.granteeClassId != other.granteeClassId) {
+    if (granteeClassId != other.granteeClassId) {
       return false;
     }
-    return this.granteeId == other.granteeId;
+    return granteeId == other.granteeId;
   }
 
 }

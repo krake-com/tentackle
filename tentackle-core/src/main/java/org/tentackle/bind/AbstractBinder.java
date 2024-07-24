@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.bind;
 
 import org.tentackle.validate.ValidationResult;
@@ -29,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
-
 
 /**
  * Binding Workhorse.
@@ -50,7 +48,6 @@ public abstract class AbstractBinder implements Binder {
   private ValidationScope validationScope;                  // validation scope
 
 
-
   /**
    * Creates a binder.
    */
@@ -59,7 +56,6 @@ public abstract class AbstractBinder implements Binder {
     bindingProperties = new HashMap<>();
     validationScope = ValidationScopeFactory.getInstance().getInteractiveScope();
   }
-
 
 
   /**
@@ -143,7 +139,6 @@ public abstract class AbstractBinder implements Binder {
     return toModelListeners;
   }
 
-
   @Override
   public synchronized void addValidationListener(ValidationListener l) {
     getValidationListeners().add(l);
@@ -171,8 +166,6 @@ public abstract class AbstractBinder implements Binder {
   public ValidationScope getValidationScope() {
     return validationScope;
   }
-
-
 
   @Override
   public void fireToView(Binding binding, Object parent, Object modelValue) throws BindingVetoException {
@@ -213,7 +206,6 @@ public abstract class AbstractBinder implements Binder {
     }
   }
 
-
   @Override
   public long getInstanceNumber() {
     return instanceNumber;
@@ -228,12 +220,7 @@ public abstract class AbstractBinder implements Binder {
    */
   @Override
   public int compareTo(Binder other) {
-    if (other != null) {
-      return Long.compare(instanceNumber, other.getInstanceNumber());
-    }
-    else {
-      return Integer.MAX_VALUE;
-    }
+    return Long.compare(instanceNumber, other.getInstanceNumber());
   }
 
   @Override
@@ -250,9 +237,7 @@ public abstract class AbstractBinder implements Binder {
 
   @Override
   public int hashCode() {
-    int hash = 3;
-    hash = 31 * hash + (int) (this.instanceNumber ^ (this.instanceNumber >>> 32));
-    return hash;
+    return Long.hashCode(instanceNumber);
   }
 
 
