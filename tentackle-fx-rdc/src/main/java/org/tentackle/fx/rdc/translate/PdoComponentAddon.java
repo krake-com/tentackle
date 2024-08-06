@@ -316,7 +316,12 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
           }
           catch (RuntimeException rx) {
             inSearchOrEdit = false;
-            throw rx;
+            if (rx instanceof FxRuntimeException) {
+              LOGGER.warning(rx.getMessage());    // probably no GuiProvider or no editor available -> just log
+            }
+            else {
+              throw rx;
+            }
           }
         }
       }
@@ -352,7 +357,12 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
       }
       catch (RuntimeException rx) {
         inSearchOrEdit = false;
-        throw rx;
+        if (rx instanceof FxRuntimeException) {
+          LOGGER.warning(rx.getMessage());    // probably no GuiProvider or no finder -> just log
+        }
+        else {
+          throw rx;
+        }
       }
     }
   }

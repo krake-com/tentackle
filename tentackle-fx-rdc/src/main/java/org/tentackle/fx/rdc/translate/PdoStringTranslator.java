@@ -200,12 +200,17 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
    * @param proxy the proxy object
    */
   protected void runSearch(T proxy) {
-    pdoAddon.searchPdo(proxy, found -> {
-      pdoAddon.setPdo(found);
-      getComponent().setViewValue(found);
-      getComponent().updateModel();
-      Platform.runLater(() -> ((Node) getComponent()).requestFocus());
-    });
+    try {
+      pdoAddon.searchPdo(proxy, found -> {
+        pdoAddon.setPdo(found);
+        getComponent().setViewValue(found);
+        getComponent().updateModel();
+        Platform.runLater(() -> ((Node) getComponent()).requestFocus());
+      });
+    }
+    catch (FxRuntimeException rx) {
+      LOGGER.warning(rx.getMessage());    // probably no GuiController or no finder -> just log
+    }
   }
 
   /**
