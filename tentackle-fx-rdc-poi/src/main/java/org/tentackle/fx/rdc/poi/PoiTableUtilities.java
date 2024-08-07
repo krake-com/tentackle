@@ -18,7 +18,6 @@
 
 package org.tentackle.fx.rdc.poi;
 
-import javafx.stage.Stage;
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFCellStyle;
 import org.apache.poi.hssf.usermodel.HSSFDataFormat;
@@ -33,13 +32,14 @@ import org.tentackle.common.BMoney;
 import org.tentackle.common.ClasspathFirst;
 import org.tentackle.common.Service;
 import org.tentackle.common.StringHelper;
-import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.bind.FxTableBinding;
 import org.tentackle.fx.rdc.RdcFxRdcBundle;
+import org.tentackle.fx.rdc.RdcRuntimeException;
 import org.tentackle.fx.rdc.RdcUtilities;
 import org.tentackle.fx.rdc.table.TableUtilities;
 import org.tentackle.fx.table.TableColumnConfiguration;
 
+import javafx.stage.Stage;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -49,7 +49,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-
 
 /**
  * Table-related utility methods with POI extension to create XLS files.
@@ -178,7 +177,7 @@ public class PoiTableUtilities extends TableUtilities {
       }
     }
     catch (IOException ex) {
-      throw new FxRuntimeException("creating spreadsheet file failed", ex);
+      throw new RdcRuntimeException("creating spreadsheet file failed", ex);
     }
   }
 

@@ -20,9 +20,9 @@ package org.tentackle.fx.rdc.translate;
 
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxComponent;
-import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.rdc.RdcFxRdcBundle;
+import org.tentackle.fx.rdc.RdcRuntimeException;
 import org.tentackle.fx.rdc.RdcUtilities;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.IdentifiableKey;
@@ -316,7 +316,7 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
           }
           catch (RuntimeException rx) {
             inSearchOrEdit = false;
-            if (rx instanceof FxRuntimeException) {
+            if (rx instanceof RdcRuntimeException) {
               LOGGER.warning(rx.getMessage());    // probably no GuiProvider or no editor available -> just log
             }
             else {
@@ -357,7 +357,7 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
       }
       catch (RuntimeException rx) {
         inSearchOrEdit = false;
-        if (rx instanceof FxRuntimeException) {
+        if (rx instanceof RdcRuntimeException) {
           LOGGER.warning(rx.getMessage());    // probably no GuiProvider or no finder -> just log
         }
         else {
@@ -377,7 +377,7 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
     Class<T> pdoClass = (Class<T>) component.getType();
     DomainContext context = getDomainContext();
     if (context == null) {
-      throw new FxRuntimeException("missing binding property for DomainContext");
+      throw new RdcRuntimeException("missing binding property for DomainContext");
     }
     return Pdo.create(pdoClass, context);
   }

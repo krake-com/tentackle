@@ -19,7 +19,6 @@
 package org.tentackle.fx.rdc;
 
 import org.tentackle.common.Service;
-import org.tentackle.pdo.PdoRuntimeException;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.reflect.ClassMapper;
 
@@ -65,10 +64,10 @@ public class DefaultGuiProviderFactory implements GuiProviderFactory {
         return (GuiProvider<T>) constructor.get().newInstance(pdo);
       }
       catch (IllegalAccessException | IllegalArgumentException | InstantiationException | InvocationTargetException e) {
-        throw new PdoRuntimeException("cannot instantiate GUI service object for " + pdoClass.getName(), e);
+        throw new RdcRuntimeException("cannot instantiate GUI service object for " + pdoClass.getName(), e);
       }
     }
-    throw new PdoRuntimeException("no @GuiProviderService for " + pdoClass.getName());
+    throw new RdcRuntimeException("no @GuiProviderService for " + pdoClass.getName());
   }
 
   @Override
@@ -80,7 +79,7 @@ public class DefaultGuiProviderFactory implements GuiProviderFactory {
   /**
    * Creates the {@link GuiProvider}'s constructor for a PDO class.
    * <p>
-   * Throws {@link PdoRuntimeException} if no matching constructor found.
+   * Throws {@link RdcRuntimeException} if no matching constructor found.
    *
    * @param pdoClass the PDO class
    * @param <T> the PDO type
@@ -96,7 +95,7 @@ public class DefaultGuiProviderFactory implements GuiProviderFactory {
           return Optional.of(con);
         }
       }
-      throw new PdoRuntimeException("no matching constructor found for " + serviceClass.getName() +
+      throw new RdcRuntimeException("no matching constructor found for " + serviceClass.getName() +
                                     "(" + pdoClass.getName() + ")");
     }
     catch (ClassNotFoundException ex) {

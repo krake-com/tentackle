@@ -28,11 +28,11 @@ import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxFactory;
-import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.bind.FxTableBinding;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.component.FxTreeTableView;
 import org.tentackle.fx.rdc.RdcFxRdcBundle;
+import org.tentackle.fx.rdc.RdcRuntimeException;
 import org.tentackle.fx.rdc.RdcUtilities;
 import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
@@ -251,7 +251,7 @@ public class TableUtilities {
       }
     }
     catch (IOException ex) {
-      throw new FxRuntimeException("creating spreadsheet file failed", ex);
+      throw new RdcRuntimeException("creating spreadsheet file failed", ex);
     }
   }
 
@@ -335,7 +335,7 @@ public class TableUtilities {
       hd.endDocument();
     }
     catch (IOException | TransformerConfigurationException | SAXException ex) {
-      throw new FxRuntimeException("creating XML file failed", ex);
+      throw new RdcRuntimeException("creating XML file failed", ex);
     }
   }
 

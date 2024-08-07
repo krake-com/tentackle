@@ -18,7 +18,6 @@
 
 package org.tentackle.fx.rdc;
 
-
 import org.tentackle.bind.Bindable;
 import org.tentackle.bind.BindableElement;
 import org.tentackle.bind.BindingMember;
@@ -26,7 +25,6 @@ import org.tentackle.common.Constants;
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxComponent;
-import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.bind.FxBindingFactory;
 import org.tentackle.fx.bind.FxComponentBinding;
@@ -54,7 +52,6 @@ import java.lang.reflect.Field;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
-
 
 /**
  * A default pdo editor.<br>
@@ -91,7 +88,7 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
       pdoElement.setField(field);
     }
     catch (NoSuchFieldException e) {
-      throw new FxRuntimeException("cannot determine parent field", e);
+      throw new RdcRuntimeException("cannot determine parent field", e);
     }
     pdoMember = FxBindingFactory.getInstance().createBindingMember(DefaultPdoEditor.class, null, PDO, PDO, pdoElement);
     parents = new BindingMember[] {pdoMember};
@@ -269,7 +266,7 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
                                 }
                               });
     if (map.isEmpty()) {
-      throw new FxRuntimeException("no visible attributes found for " + getPdoClass().getName());
+      throw new RdcRuntimeException("no visible attributes found for " + getPdoClass().getName());
     }
     return map;
   }
