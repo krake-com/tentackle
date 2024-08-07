@@ -19,7 +19,7 @@
 
 package org.tentackle.fx.rdc.app;
 
-import org.tentackle.fx.FxRuntimeException;
+import org.tentackle.fx.rdc.RdcRuntimeException;
 import org.tentackle.log.Logger;
 
 import javafx.application.Application;
@@ -64,7 +64,7 @@ public abstract class FxApplication extends Application {
     }
     catch (Throwable t) {
       LOGGER.severe(FATAL, t);
-      throw new FxRuntimeException(FATAL, t);
+      throw new RdcRuntimeException(FATAL, t);
     }
   }
 

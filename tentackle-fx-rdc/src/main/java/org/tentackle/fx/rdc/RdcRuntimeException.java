@@ -19,7 +19,7 @@
 
 package org.tentackle.fx.rdc;
 
-import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.fx.FxRuntimeException;
 
 import java.io.Serial;
 
@@ -28,7 +28,7 @@ import java.io.Serial;
  *
  * @author harald
  */
-public class RdcRuntimeException extends TentackleRuntimeException {
+public class RdcRuntimeException extends FxRuntimeException {
 
   @Serial
   private static final long serialVersionUID = 1L;

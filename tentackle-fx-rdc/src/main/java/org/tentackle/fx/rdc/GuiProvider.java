@@ -16,8 +16,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.fx.rdc;
+
+import org.tentackle.fx.component.FxTableView;
+import org.tentackle.fx.table.TableConfigurationProvider;
+import org.tentackle.pdo.DomainContextProvider;
+import org.tentackle.pdo.PdoProvider;
+import org.tentackle.pdo.PersistentDomainObject;
 
 import javafx.scene.Node;
 import javafx.scene.control.TreeCell;
@@ -26,17 +31,8 @@ import javafx.scene.control.TreeView;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.util.Callback;
-
-import org.tentackle.fx.FxRuntimeException;
-import org.tentackle.fx.component.FxTableView;
-import org.tentackle.fx.table.TableConfigurationProvider;
-import org.tentackle.pdo.DomainContextProvider;
-import org.tentackle.pdo.PdoProvider;
-import org.tentackle.pdo.PersistentDomainObject;
-
 import java.util.Collection;
 import java.util.ResourceBundle;
-
 
 /**
  * Provider of GUI-functionality for a pdo.
@@ -97,7 +93,7 @@ public interface GuiProvider<T extends PersistentDomainObject<T>>
    * Creates a controller to edit or view this object.
    *
    * @return the controller
-   * @throws FxRuntimeException if {@link #isEditorAvailable()} == false
+   * @throws RdcRuntimeException if {@link #isEditorAvailable()} == false
    */
   PdoEditor<T> createEditor();
 
@@ -113,7 +109,7 @@ public interface GuiProvider<T extends PersistentDomainObject<T>>
    * Creates a controller to search PDOs.
    *
    * @return the controller
-   * @throws FxRuntimeException if {@link #isFinderAvailable()} == false
+   * @throws RdcRuntimeException if {@link #isFinderAvailable()} == false
    */
   PdoFinder<T> createFinder();
 

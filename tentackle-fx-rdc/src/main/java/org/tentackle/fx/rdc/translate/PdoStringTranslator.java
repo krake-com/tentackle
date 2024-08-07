@@ -20,11 +20,11 @@ package org.tentackle.fx.rdc.translate;
 
 import org.tentackle.bind.Bindable;
 import org.tentackle.fx.FxFactory;
-import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.FxTextComponent;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.ValueTranslatorService;
 import org.tentackle.fx.rdc.GuiProviderFactory;
+import org.tentackle.fx.rdc.RdcRuntimeException;
 import org.tentackle.fx.translate.ValueStringTranslator;
 import org.tentackle.log.Logger;
 import org.tentackle.pdo.DomainKey;
@@ -170,8 +170,8 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
                 }
                 catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException |
                         IllegalArgumentException e) {
-                  throw new FxRuntimeException("could not create domain key: " + udkClass.getName() +
-                                               "(" + v.getClass().getName() + ")", e);
+                  throw new RdcRuntimeException("could not create domain key: " + udkClass.getName() +
+                                                "(" + v.getClass().getName() + ")", e);
                 }
               }
               pdoAddon.setPdo(proxy.findByUniqueDomainKey(udk));
@@ -208,7 +208,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
         Platform.runLater(() -> ((Node) getComponent()).requestFocus());
       });
     }
-    catch (FxRuntimeException rx) {
+    catch (RdcRuntimeException rx) {
       LOGGER.warning(rx.getMessage());    // probably no GuiController or no finder -> just log
     }
   }
@@ -272,7 +272,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
     }
     catch (SecurityException | IllegalAccessException | IllegalArgumentException |
             InvocationTargetException e1) {
-      throw new FxRuntimeException("cannot create lenient domain key", e1);
+      throw new RdcRuntimeException("cannot create lenient domain key", e1);
     }
     catch (NoSuchMethodException nm) {
       // no such method -> do nothing

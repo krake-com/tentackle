@@ -21,7 +21,6 @@ package org.tentackle.fx.rdc;
 import org.tentackle.common.BundleFactory;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxFactory;
-import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.rdc.search.DefaultPdoFinder;
 import org.tentackle.fx.rdc.table.TableUtilities;
@@ -148,7 +147,7 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
     if (isEditorAvailable()) {
       return new DefaultPdoEditor<>(getPdo().getEffectiveClass(), isBundleProvided() ? getBundle() : null);
     }
-    throw new FxRuntimeException("no editor for " + pdo.getEffectiveClass().getName());
+    throw new RdcRuntimeException("no editor for " + pdo.getEffectiveClass().getName());
   }
 
   @Override
@@ -162,7 +161,7 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
     if (isFinderAvailable()) {
       return Fx.load(DefaultPdoFinder.class);
     }
-    throw new FxRuntimeException("no finder for " + pdo.getEffectiveClass().getName());
+    throw new RdcRuntimeException("no finder for " + pdo.getEffectiveClass().getName());
   }
 
   @Override
@@ -186,7 +185,7 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
    * @param pdoToDrop the PDO to drop
    */
   public void dropPdo(PersistentDomainObject<?> pdoToDrop) {
-    throw new FxRuntimeException("dropPdo is not implemented for " + pdo.getEffectiveClass().getName());
+    throw new RdcRuntimeException("dropPdo is not implemented for " + pdo.getEffectiveClass().getName());
   }
 
 

@@ -25,8 +25,8 @@ import org.tentackle.common.Cryptor;
 import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.Fx;
-import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.FxUtilities;
+import org.tentackle.fx.rdc.RdcRuntimeException;
 import org.tentackle.fx.rdc.login.Login;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.CommandLine;
@@ -104,7 +104,7 @@ public class LoginApplication extends FxApplication {
       controller.requestInitialFocus();
     }
     catch (RuntimeException rx) {
-      throw new FxRuntimeException("cannot create session info", rx);
+      throw new RdcRuntimeException("cannot create session info", rx);
     }
   }
 

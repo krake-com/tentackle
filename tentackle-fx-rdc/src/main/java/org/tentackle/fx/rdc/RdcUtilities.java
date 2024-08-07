@@ -25,7 +25,6 @@ import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxFactory;
-import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.NotificationBuilder;
 import org.tentackle.fx.rdc.app.DesktopApplication;
@@ -197,7 +196,7 @@ public class RdcUtilities {
       }
 
       if (stage == null) {
-        throw new FxRuntimeException("misconfigured crud stage");
+        throw new RdcRuntimeException("misconfigured crud stage");
       }
 
       if (modality != Modality.NONE && updatedPdo != null) {
@@ -365,7 +364,7 @@ public class RdcUtilities {
     }
 
     if (stage == null) {
-      throw new FxRuntimeException("misconfigured search stage");
+      throw new RdcRuntimeException("misconfigured search stage");
     }
 
     if (modality != Modality.NONE && selectedItems != null) {
