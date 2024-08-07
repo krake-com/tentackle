@@ -145,8 +145,14 @@ public class Fx {
     if (builder != null) {
       return builder.build();
     }
+    // else T == R! (for application-specific extensions, for example BlahTableView extends FxTableView)
     try {
-      return (R) clazz.getDeclaredConstructor().newInstance();
+      R bean = (R) clazz.getDeclaredConstructor().newInstance();
+      Configurator<T> configurator = FxFactory.getInstance().getConfigurator(clazz);
+      if (configurator != null) {
+        configurator.configure(bean);
+      }
+      return bean;
     }
     catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
       throw new FxRuntimeException("cannot create " + clazz.getName());
