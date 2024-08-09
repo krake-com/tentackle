@@ -357,7 +357,7 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
         int row = pos.getRow();
         if (row >= 0) {
           List<String> rowValues = new ArrayList<>();
-          for (int col = colMin; col < colMax; col++) {
+          for (int col = colMin; col <= colMax; col++) {
             String text = null;
             TreeTableColumn<S, ?> treeTableColumn = getVisibleLeafColumn(col);
             if (treeTableColumn != null) {
