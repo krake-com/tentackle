@@ -131,12 +131,9 @@ public interface StoredBundle extends PersistentDomainObject<StoredBundle>, Stor
 
     @Override
     public int compareTo(StoredBundleUDK other) {
-      int rv = other == null ? 1 : 0;
+      int rv = Compare.compare(name, other.name);
       if (rv == 0) {
-        rv = Compare.compare(name, other.name);
-        if (rv == 0) {
-          rv = Compare.compare(locale, other.locale);
-        }
+        rv = Compare.compare(locale, other.locale);
       }
       return rv;
     }

@@ -166,9 +166,6 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl>, Clon
 
   @Override
   public int compareTo(AttributeImpl o) {
-    if (o == null) {
-      return Integer.MAX_VALUE;
-    }
     int rv = Compare.compare((EntityImpl) entity, (EntityImpl) o.entity);
     if (rv == 0) {
       rv = Compare.compare(getPathName(), o.getPathName());

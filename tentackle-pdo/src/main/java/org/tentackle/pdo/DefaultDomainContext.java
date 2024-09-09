@@ -338,14 +338,11 @@ public class DefaultDomainContext implements DomainContext {
    */
   @Override
   public int compareTo(DomainContext otherContext) {
-    if (otherContext == null) {
-      return 1;
-    }
-    int rv = getClass().hashCode() - otherContext.getClass().hashCode();
+    int rv = Integer.compare(getClass().hashCode(), otherContext.getClass().hashCode());
     if (rv == 0) {
       rv = Long.compare(getContextId(), otherContext.getContextId());
       if (rv == 0) {
-        rv = getSessionInstanceNumber() - otherContext.getSessionInstanceNumber();
+        rv = Integer.compare(getSessionInstanceNumber(), otherContext.getSessionInstanceNumber());
       }
     }
     return rv;

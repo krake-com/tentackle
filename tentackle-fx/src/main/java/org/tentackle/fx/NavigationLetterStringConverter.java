@@ -57,16 +57,14 @@ import java.util.TreeMap;
 public abstract class NavigationLetterStringConverter<T> extends StringConverter<T> {
 
   private record Key(String navigationLetters, String name) implements Comparable<Key> {
+
     @Override
     public int compareTo(Key other) {
-      if (other != null) {
-        int rv = Compare.compare(navigationLetters, other.navigationLetters);
-        if (rv == 0) {
-          rv = Compare.compare(name, other.name);
-        }
-        return rv;
+      int rv = Compare.compare(navigationLetters, other.navigationLetters);
+      if (rv == 0) {
+        rv = Compare.compare(name, other.name);
       }
-      return Integer.MAX_VALUE;
+      return rv;
     }
   }
 

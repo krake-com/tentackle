@@ -325,7 +325,7 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
        * Because statistics are only created for unequal parameters
        * it is sufficient to compare the instanceNumber
        */
-      rv = instanceNumber - o.instanceNumber;
+      rv = Integer.compare(instanceNumber, o.instanceNumber);
     }
     return rv;
   }

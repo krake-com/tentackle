@@ -167,9 +167,9 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
 
     @Override
     public int compareTo(ListenerEntry obj) {
-      int rv = priority - obj.priority;
+      int rv = Integer.compare(priority, obj.priority);
       if (rv == 0) {
-        rv = instanceNumber - obj.instanceNumber;
+        rv = Integer.compare(instanceNumber, obj.instanceNumber);
       }
       return rv;
     }

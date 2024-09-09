@@ -128,16 +128,11 @@ public class ValidationMapper implements Comparable<ValidationMapper> {
 
   @Override
   public int compareTo(ValidationMapper other) {
-    if (other != null) {
-      int rv = Compare.compare(validationPath, other.validationPath);
-      if (rv == 0) {
-        rv = Compare.compare(binder, other.binder);
-      }
-      return rv;
+    int rv = Compare.compare(validationPath, other.validationPath);
+    if (rv == 0) {
+      rv = Compare.compare(binder, other.binder);
     }
-    else {
-      return Integer.MAX_VALUE;
-    }
+    return rv;
   }
 
 }

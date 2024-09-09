@@ -183,7 +183,7 @@ public class ForeignKeyColumnMetaData implements Comparable<ForeignKeyColumnMeta
 
   @Override
   public int compareTo(ForeignKeyColumnMetaData o) {
-    return position - o.position;
+    return Integer.compare(position, o.position);
   }
 
   @Override

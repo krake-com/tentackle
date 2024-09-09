@@ -91,15 +91,9 @@ public class ForeignKeyImpl implements ForeignKey, Comparable<ForeignKey> {
 
   @Override
   public int compareTo(ForeignKey o) {
-    int rv;
-    if (o == null) {
-      rv = Integer.MAX_VALUE;
-    }
-    else  {
-      rv = Compare.compare(getReferencingEntity().getName(), o.getReferencingEntity().getName());
-      if (rv == 0) {
-        rv = Compare.compare(getReferencingAttribute().getPathName(), o.getReferencingAttribute().getPathName());
-      }
+    int rv = Compare.compare(getReferencingEntity().getName(), o.getReferencingEntity().getName());
+    if (rv == 0) {
+      rv = Compare.compare(getReferencingAttribute().getPathName(), o.getReferencingAttribute().getPathName());
     }
     return rv;
   }

@@ -53,7 +53,7 @@ public class DefaultBindableCache implements BindableCache {
 
     @Override
     public int compareTo(ElementKey o) {
-      int rv = ordinal - o.ordinal;
+      int rv = Integer.compare(ordinal, o.ordinal);
       if (rv == 0) {
         rv = camelName.compareTo(o.camelName);
       }
