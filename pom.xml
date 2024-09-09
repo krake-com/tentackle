@@ -82,26 +82,51 @@
     <javac.lint>all,-processing,-this-escape</javac.lint>
     <javac.version>22</javac.version>
 
-    <javafx.version>22.0.2</javafx.version>
-    <ikonli.version>12.3.1</ikonli.version>
-    <ow2.asm.version>9.7</ow2.asm.version>
+    <asm.version>9.7</asm.version>
+    <freemarker.version>2.3.33</freemarker.version>
     <groovy.version>4.0.22</groovy.version>
-    <maven.version>3.9.0</maven.version>
-    <postgresql.version>42.7.3</postgresql.version>
-    <h2.version>2.3.230</h2.version>
-    <testng.version>7.10.2</testng.version>
-    <slf4j.version>2.0.13</slf4j.version>
+    <h2.version>2.3.232</h2.version>
+    <ikonli.version>12.3.1</ikonli.version>
+    <javafx.version>22.0.2</javafx.version>
+    <jruby.version>9.4.8.0</jruby.version>
+    <junit.version>5.11.0</junit.version>
     <log4j2.version>2.23.1</log4j2.version>
+    <mavengem.wagon.version>1.0.3</mavengem.wagon.version>
+    <plexus.archiver.version>4.10.0</plexus.archiver.version>
+    <plexus.java.version>1.2.0</plexus.java.version>
+    <poi.version>5.3.0</poi.version>
+    <postgresql.version>42.7.4</postgresql.version>
+    <slf4j.version>2.0.16</slf4j.version>
+    <testng.version>7.10.2</testng.version>
+    <wagon.ssh.version>3.5.3</wagon.ssh.version>
+
+    <maven.version>3.9.0</maven.version>
+    <maven.artifact.transfer.version>0.13.1</maven.artifact.transfer.version>
+    <maven.dependency.tree.version>3.3.0</maven.dependency.tree.version>
+    <maven.file.management.version>3.1.0</maven.file.management.version>
+    <maven.plugin.annotations.version>3.13.1</maven.plugin.annotations.version>
 
     <maven.archetype.plugin.version>3.2.1</maven.archetype.plugin.version>
+    <maven.clean.plugin.version>3.4.0</maven.clean.plugin.version>
     <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
-    <maven.dependency.plugin.version>3.7.1</maven.dependency.plugin.version>
-    <maven.deploy.plugin.version>3.1.2</maven.deploy.plugin.version>
-    <maven.install.plugin.version>3.1.2</maven.install.plugin.version>
-    <maven.javadoc.plugin.version>3.8.0</maven.javadoc.plugin.version>
+    <maven.dependency.plugin.version>3.8.0</maven.dependency.plugin.version>
+    <maven.deploy.plugin.version>3.1.3</maven.deploy.plugin.version>
+    <maven.enforcer.plugin.version>3.5.0</maven.enforcer.plugin.version>
+    <maven.gpg.plugin.version>3.2.5</maven.gpg.plugin.version>
+    <maven.help.plugin.version>3.5.0</maven.help.plugin.version>
+    <maven.install.plugin.version>3.1.3</maven.install.plugin.version>
+    <maven.jar.plugin.version>3.4.2</maven.jar.plugin.version>
+    <maven.javadoc.plugin.version>3.10.0</maven.javadoc.plugin.version>
+    <maven.jxr.plugin.version>3.5.0</maven.jxr.plugin.version>
+    <maven.owasp.plugin.version>10.0.4</maven.owasp.plugin.version>
+    <maven.plugin.plugin.version>3.15.0</maven.plugin.plugin.version>
+    <maven.plugin.report.plugin.version>3.15.0</maven.plugin.report.plugin.version>
+    <maven.project.info.reports.plugin.version>3.6.2</maven.project.info.reports.plugin.version>
     <maven.resources.plugin.version>3.3.1</maven.resources.plugin.version>
+    <maven.site.plugin.version>3.12.1</maven.site.plugin.version>
     <maven.source.plugin.version>3.3.1</maven.source.plugin.version>
-    <maven.surefire.plugin.version>3.3.1</maven.surefire.plugin.version>
+    <maven.surefire.plugin.version>3.5.0</maven.surefire.plugin.version>
+    <maven.versions.plugin.version>2.17.1</maven.versions.plugin.version>
 
     <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
 
@@ -196,7 +221,7 @@
       <dependency>
         <groupId>org.apache.poi</groupId>
         <artifactId>poi</artifactId>
-        <version>5.3.0</version>
+        <version>${poi.version}</version>
       </dependency>
 
       <dependency>
@@ -226,7 +251,7 @@
       <dependency>
         <groupId>org.jruby</groupId>
         <artifactId>jruby</artifactId>
-        <version>9.4.8.0</version>
+        <version>${jruby.version}</version>
       </dependency>
 
       <dependency>
@@ -243,14 +268,14 @@
       <dependency>
         <groupId>org.freemarker</groupId>
         <artifactId>freemarker</artifactId>
-        <version>2.3.33</version>
+        <version>${freemarker.version}</version>
       </dependency>
 
       <dependency>
         <!-- for the Junit5 test classes -->
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter-api</artifactId>
-        <version>5.10.3</version>
+        <version>${junit.version}</version>
       </dependency>
 
       <!-- test dependencies -->
@@ -309,32 +334,32 @@
       <dependency>
         <groupId>org.apache.maven.shared</groupId>
         <artifactId>maven-artifact-transfer</artifactId>
-        <version>0.13.1</version>
+        <version>${maven.artifact.transfer.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven.shared</groupId>
         <artifactId>file-management</artifactId>
-        <version>3.1.0</version>
+        <version>${maven.file.management.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven.plugin-tools</groupId>
         <artifactId>maven-plugin-annotations</artifactId>
-        <version>3.13.1</version>
+        <version>${maven.plugin.annotations.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven.shared</groupId>
         <artifactId>maven-dependency-tree</artifactId>
-        <version>3.3.0</version>
+        <version>${maven.dependency.tree.version}</version>
       </dependency>
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-java</artifactId>
-        <version>1.2.0</version>
+        <version>${plexus.java.version}</version>
       </dependency>
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-archiver</artifactId>
-        <version>4.10.0</version>
+        <version>${plexus.archiver.version}</version>
       </dependency>
 
     </dependencies>
@@ -365,7 +390,7 @@
         <!-- this allows us to download gems (for the maven-project-info-reports-plugin) -->
         <groupId>org.torquebox.mojo</groupId>
         <artifactId>mavengem-wagon</artifactId>
-        <version>1.0.3</version>
+        <version>${mavengem.wagon.version}</version>
       </extension>
     </extensions>
 
@@ -387,7 +412,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-plugin-plugin</artifactId>
-          <version>3.13.1</version>
+          <version>${maven.plugin.plugin.version}</version>
           <configuration>
             <requiredMavenVersion>${maven.version}</requiredMavenVersion>
             <requiredJavaVersion>${javac.version}</requiredJavaVersion>
@@ -396,7 +421,7 @@
             <dependency>
               <groupId>org.ow2.asm</groupId>
               <artifactId>asm</artifactId>
-              <version>${ow2.asm.version}</version>
+              <version>${asm.version}</version>
             </dependency>
           </dependencies>
         </plugin>
@@ -404,19 +429,19 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-plugin-report-plugin</artifactId>
-          <version>3.13.1</version>
+          <version>${maven.plugin.report.plugin.version}</version>
         </plugin>
 
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-help-plugin</artifactId>
-          <version>3.4.1</version>
+          <version>${maven.help.plugin.version}</version>
         </plugin>
 
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-clean-plugin</artifactId>
-          <version>3.4.0</version>
+          <version>${maven.clean.plugin.version}</version>
         </plugin>
 
         <plugin>
@@ -428,7 +453,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-site-plugin</artifactId>
-          <version>3.12.1</version>
+          <version>${maven.site.plugin.version}</version>
           <configuration>
             <siteDirectory>${rootBasedir}/src/site</siteDirectory>
           </configuration>
@@ -436,12 +461,12 @@
             <dependency>
               <groupId>org.apache.maven.wagon</groupId>
               <artifactId>wagon-ssh</artifactId>
-              <version>3.5.3</version>
+              <version>${wagon.ssh.version}</version>
             </dependency>
             <dependency>
               <groupId>org.ow2.asm</groupId>
               <artifactId>asm</artifactId>
-              <version>${ow2.asm.version}</version>
+              <version>${asm.version}</version>
             </dependency>
           </dependencies>
         </plugin>
@@ -470,7 +495,7 @@
             <dependency>
               <groupId>org.ow2.asm</groupId>
               <artifactId>asm</artifactId>
-              <version>${ow2.asm.version}</version>
+              <version>${asm.version}</version>
             </dependency>
           </dependencies>
         </plugin>
@@ -497,7 +522,7 @@
             <dependency>
               <groupId>org.ow2.asm</groupId>
               <artifactId>asm</artifactId>
-              <version>${ow2.asm.version}</version>
+              <version>${asm.version}</version>
             </dependency>
           </dependencies>
         </plugin>
@@ -516,7 +541,7 @@
             <dependency>
               <groupId>org.ow2.asm</groupId>
               <artifactId>asm</artifactId>
-              <version>${ow2.asm.version}</version>
+              <version>${asm.version}</version>
             </dependency>
           </dependencies>
         </plugin>
@@ -524,7 +549,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
-          <version>3.4.2</version>
+          <version>${maven.jar.plugin.version}</version>
           <configuration>
             <archive>
               <manifest>
@@ -546,37 +571,37 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jxr-plugin</artifactId>
-          <version>3.4.0</version>
+          <version>${maven.jxr.plugin.version}</version>
         </plugin>
 
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-project-info-reports-plugin</artifactId>
-          <version>3.6.2</version>
+          <version>${maven.project.info.reports.plugin.version}</version>
         </plugin>
 
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>versions-maven-plugin</artifactId>
-          <version>2.17.1</version>
+          <version>${maven.versions.plugin.version}</version>
         </plugin>
 
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-gpg-plugin</artifactId>
-          <version>3.2.4</version>
+          <version>${maven.gpg.plugin.version}</version>
         </plugin>
 
         <plugin>
           <groupId>org.owasp</groupId>
           <artifactId>dependency-check-maven</artifactId>
-          <version>10.0.3</version>
+          <version>${maven.owasp.plugin.version}</version>
         </plugin>
 
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-enforcer-plugin</artifactId>
-          <version>3.5.0</version>
+          <version>${maven.enforcer.plugin.version}</version>
         </plugin>
       </plugins>
     </pluginManagement>

@@ -467,7 +467,7 @@
             <dependency>
               <groupId>org.ow2.asm</groupId>
               <artifactId>asm</artifactId>
-              <version>${ow2.asm.version}</version> <!-- Use newer version of ASM -->
+              <version>${asm.version}</version> <!-- Use newer version of ASM -->
             </dependency>
           </dependencies>
         </plugin>
@@ -486,7 +486,7 @@
             <dependency>
               <groupId>org.ow2.asm</groupId>
               <artifactId>asm</artifactId>
-              <version>${ow2.asm.version}</version>
+              <version>${asm.version}</version>
             </dependency>
           </dependencies>
         </plugin>
