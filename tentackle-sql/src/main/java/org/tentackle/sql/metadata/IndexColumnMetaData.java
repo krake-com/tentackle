@@ -119,7 +119,7 @@ public class IndexColumnMetaData implements Comparable<IndexColumnMetaData> {
 
   @Override
   public int compareTo(IndexColumnMetaData o) {
-    return position - o.position;
+    return Integer.compare(position, o.position);
   }
 
   /**

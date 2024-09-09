@@ -130,15 +130,15 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
      */
     @Override
     public int compareTo(ForeignReference o) {
-      int rv = priority - o.priority;
+      int rv = Integer.compare(priority, o.priority);
       if (rv == 0) {
         rv = methodPath.compareTo(o.methodPath);
         if (rv == 0) {
           rv = Objects.compare(methods, o.methods, (o1, o2) -> {
-            int mv = o1.length - o2.length;
+            int mv = o1.length - o2.length;   // no Integer.compare here!
             if (mv == 0) {
               for (int i=0; i < o1.length && mv == 0; i++) {
-                mv = o1[i].hashCode() - o2[i].hashCode();
+                mv = Integer.compare(o1[i].hashCode(), o2[i].hashCode());
               }
             }
             return mv;

@@ -825,7 +825,7 @@ public class Db implements Session, Cloneable {
    */
   @Override
   public final int compareTo(Session session) {
-    return instanceNumber - ((Db) session).instanceNumber;
+    return Integer.compare(instanceNumber, ((Db) session).instanceNumber);
   }
 
   @Override

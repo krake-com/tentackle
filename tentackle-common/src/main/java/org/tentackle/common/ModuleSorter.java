@@ -295,7 +295,7 @@ public final class ModuleSorter {
 
     @Override
     public int compareTo(SortKey o) {
-      int rv = o.ordinal - ordinal;   // higher sequence comes first
+      int rv = Integer.compare(o.ordinal, ordinal);   // higher sequence comes first
       if (rv == 0) {
         rv = name.compareTo(o.name);
       }

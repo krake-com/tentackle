@@ -1207,6 +1207,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   /**
    * Compare two objects.<br>
    * Objects are compared by ID.<br>
+   * Comparison makes only sense between objects of the same type.
    * Method is final!<br>
    *
    * @param obj the object to compare this object with

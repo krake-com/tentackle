@@ -18,16 +18,15 @@
 
 package org.tentackle.fx.rdc;
 
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.SeparatorMenuItem;
-
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.fx.Fx;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.reflect.ClassToServicesMapper;
 
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
@@ -212,7 +211,7 @@ public class DefaultPdoContextMenuFactory implements PdoContextMenuFactory {
 
     @Override
     public int compareTo(ItemConfig o) {
-      return ordinal - o.ordinal;
+      return Integer.compare(ordinal, o.ordinal);
     }
 
     @Override

@@ -246,7 +246,7 @@ public class ModelUtilities {
           rv = Integer.MAX_VALUE;
         }
         else {
-          rv = distances[ndx] - o.distances[ndx];
+          rv = Integer.compare(distances[ndx], o.distances[ndx]);
         }
       }
       return rv;

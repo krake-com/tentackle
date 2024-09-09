@@ -307,9 +307,6 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
 
   @Override
   public int compareTo(RelationImpl o) {
-    if (o == null) {
-      return Integer.MAX_VALUE;
-    }
     int rv = Compare.compare((EntityImpl) entity, (EntityImpl) o.entity);
     if (rv == 0) {
       rv = Compare.compare(name, o.name);

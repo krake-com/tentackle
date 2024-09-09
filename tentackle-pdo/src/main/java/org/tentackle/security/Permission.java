@@ -33,7 +33,7 @@ public interface Permission extends Comparable<Permission> {
    * The name must conform to the rules of a java identifier,
    * must be unique among all permissions and should be reasonably short.
    *
-   * @return the name
+   * @return the name, never null
    */
   String getName();
 

@@ -78,33 +78,41 @@ For more options, see {\@link ModelWurblet}.
 
     \@Override
     public int compareTo(@(getEntity())@UDK other) {
-      int rv = other == null ? 1 : 0;
 @[
       String inset = "";
+      String oldInset = "";
       for (Attribute attr: udk) {
+        String decl;
+        if (inset.isEmpty()) {
+          decl = "int ";
+        }
+        else {
+          decl = "";
 ]@
-      @(inset)@if (rv == 0) {
+      @(oldInset)@if (rv == 0) {
 @[
-          if (attr.getDataType().isPrimitive()) {
+        }
+        if (attr.getDataType().isPrimitive()) {
 ]@
-      @(inset)@  rv = @(attr.getDataType().toNonPrimitive())@.compare(@(attr.getName())@, other.@(attr.getName())@);
+      @(inset)@@(decl)@rv = @(attr.getDataType().toNonPrimitive())@.compare(@(attr.getName())@, other.@(attr.getName())@);
 @[
         }
         else  {
 ]@
-      @(inset)@  rv = Compare.compare(@(attr.getName())@, other.@(attr.getName())@);
+      @(inset)@@(decl)@rv = Compare.compare(@(attr.getName())@, other.@(attr.getName())@);
 @[
         }
+        oldInset = inset;
         inset += "  ";
       }
 
-      do {
-        inset = inset.substring(2);
+      while (!oldInset.isEmpty()) {
+        oldInset = oldInset.substring(2);
 ]@
-      @(inset)@}
+      @(oldInset)@}
 @[
 
-      } while (!inset.isEmpty());
+      };
 ]@
       return rv;
     }

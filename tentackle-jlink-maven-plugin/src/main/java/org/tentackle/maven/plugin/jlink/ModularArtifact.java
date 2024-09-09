@@ -116,9 +116,7 @@ public class ModularArtifact implements Comparable<ModularArtifact> {
 
   @Override
   public int compareTo(ModularArtifact o) {
-    if (o == null) {
-      return Integer.MAX_VALUE;
-    }
     return artifact.compareTo(o.artifact);
   }
+
 }

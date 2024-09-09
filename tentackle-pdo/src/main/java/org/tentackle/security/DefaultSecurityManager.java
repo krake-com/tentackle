@@ -115,13 +115,13 @@ public class DefaultSecurityManager implements SecurityManager {
 
     @Override
     public int compareTo(ClassKey k) {
-      int rv = granteeClassId - k.granteeClassId;
+      int rv = Integer.compare(granteeClassId, k.granteeClassId);
       if (rv == 0) {
         rv = Long.compare(granteeId, k.granteeId);
         if (rv == 0) {
           rv = className.compareTo(k.className);
           if (rv == 0)  {
-            rv = priority - k.priority;
+            rv = Integer.compare(priority, k.priority);
           }
         }
       }
@@ -196,15 +196,15 @@ public class DefaultSecurityManager implements SecurityManager {
 
     @Override
     public int compareTo(PdoKey k) {
-      int rv = granteeClassId - k.granteeClassId;
+      int rv = Integer.compare(granteeClassId, k.granteeClassId);
       if (rv == 0) {
         rv = Long.compare(granteeId, k.granteeId);
         if (rv == 0) {
-          rv = objectClassId - k.objectClassId;
+          rv = Integer.compare(objectClassId, k.objectClassId);
           if (rv == 0) {
             rv = Long.compare(objectId, k.objectId);
             if (rv == 0) {
-              rv = priority - k.priority;
+              rv = Integer.compare(priority, k.priority);
             }
           }
         }
@@ -281,13 +281,13 @@ public class DefaultSecurityManager implements SecurityManager {
 
     @Override
     public int compareTo(PdoClassKey k) {
-      int rv = granteeClassId - k.granteeClassId;
+      int rv = Integer.compare(granteeClassId, k.granteeClassId);
       if (rv == 0) {
         rv = Long.compare(granteeId, k.granteeId);
         if (rv == 0) {
-          rv = objectClassId - k.objectClassId;
+          rv = Integer.compare(objectClassId, k.objectClassId);
           if (rv == 0) {
-            rv = priority - k.priority;
+            rv = Integer.compare(priority, k.priority);
           }
         }
       }
