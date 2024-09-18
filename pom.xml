@@ -80,7 +80,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <dependency.locations.enabled>false</dependency.locations.enabled>
     <javac.lint>all,-processing,-this-escape</javac.lint>
-    <javac.version>22</javac.version>
+    <javac.version>23</javac.version>
 
     <asm.version>9.7</asm.version>
     <freemarker.version>2.3.33</freemarker.version>
