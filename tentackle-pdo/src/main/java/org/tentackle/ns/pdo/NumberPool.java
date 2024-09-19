@@ -69,8 +69,8 @@ import org.tentackle.session.TableName;
  *
  * @author harald
  */
-@TableName(/**/"numpool"/**/) // @wurblet < Inject --string $tablename
-@ClassId(/**/6/**/) // @wurblet < Inject $classid
+@TableName(/*@*/"numpool"/*@*/) // @wurblet < Inject --string $tablename
+@ClassId(/*@*/6/*@*/) // @wurblet < Inject $classid
 @Singular("number pool")
 @Plural("number pools")
 public interface NumberPool extends PersistentDomainObject<NumberPool>, NumberPoolDomain, NumberPoolPersistence {

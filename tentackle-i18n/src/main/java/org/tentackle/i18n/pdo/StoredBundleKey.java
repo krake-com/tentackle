@@ -65,8 +65,8 @@ import org.tentackle.session.TableName;
  *
  * @author harald
  */
-@TableName(/**/"bundlekey"/**/) // @wurblet < Inject --string $tablename
-@ClassId(/**/9/**/) // @wurblet < Inject $classid
+@TableName(/*@*/"bundlekey"/*@*/) // @wurblet < Inject --string $tablename
+@ClassId(/*@*/9/*@*/) // @wurblet < Inject $classid
 @Singular("bundle key")
 @Plural("bundle keys")
 public interface StoredBundleKey

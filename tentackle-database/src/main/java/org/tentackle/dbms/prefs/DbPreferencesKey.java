@@ -68,8 +68,8 @@ import java.util.Objects;
  *
  * @author harald
  */
-@ClassId(/**/4/**/)               // @wurblet < Inject $classid
-@TableName(/**/"prefkey"/**/)     // @wurblet < Inject --string $tablename
+@ClassId(/*@*/4/*@*/)               // @wurblet < Inject $classid
+@TableName(/*@*/"prefkey"/*@*/)     // @wurblet < Inject --string $tablename
 public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
 
   @Serial
