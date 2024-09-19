@@ -89,8 +89,8 @@ import java.util.List;
  * In such cases the txid is necessary to separate the modlog sequences into
  * discrete transactions. (see the PoolKeeper project)
  */
-@ClassId(/**/2/**/)               // @wurblet < Inject $classid
-@TableName(/**/"modlog"/**/)      // @wurblet < Inject --string $tablename
+@ClassId(/*@*/2/*@*/)               // @wurblet < Inject $classid
+@TableName(/*@*/"modlog"/*@*/)      // @wurblet < Inject --string $tablename
 public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
   @Serial

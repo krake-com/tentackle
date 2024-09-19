@@ -73,8 +73,8 @@ import java.io.Serial;
  *
  * @author harald
  */
-@ClassId(/**/10/**/)                // @wurblet < Inject $classid
-@TableName(/**/"tokenlock"/**/)     // @wurblet < Inject --string $tablename
+@ClassId(/*@*/10/*@*/)                // @wurblet < Inject $classid
+@TableName(/*@*/"tokenlock"/*@*/)     // @wurblet < Inject --string $tablename
 public class DbTokenLock extends AbstractDbObject<DbTokenLock> implements TokenLock {
 
   @Serial

@@ -73,12 +73,12 @@ import org.tentackle.session.TableName;
 </#if>
  */
 <#if pdoTablename != "">
-@TableName(value=/**/"${pdoTablename}"/**/,    // @wurblet < Inject --string $tablename
-           mapSchema=/**/false/**/,     // @wurblet < Inject $mapSchema
-           prefix=/**/""/**/)       // @wurblet < Inject --string $tablePrefix
+@TableName(value=/*@*/"${pdoTablename}"/*@*/,    // @wurblet < Inject --string $tablename
+           mapSchema=/*@*/false/*@*/,     // @wurblet < Inject $mapSchema
+           prefix=/*@*/""/*@*/)       // @wurblet < Inject --string $tablePrefix
 </#if>
 <#if pdoClassId != "">
-@ClassId(/**/${pdoClassId}/**/) // @wurblet < Inject $classid
+@ClassId(/*@*/${pdoClassId}/*@*/) // @wurblet < Inject $classid
 </#if>
 <#if pdoInheritance != "PLAIN" && pdoInheritance != "EMBEDDED">
 @Singular("${pdoInterface}")

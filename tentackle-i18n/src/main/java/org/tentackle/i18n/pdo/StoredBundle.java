@@ -71,8 +71,8 @@ import java.io.Serializable;
  *
  * @author harald
  */
-@TableName(/**/"bundle"/**/) // @wurblet < Inject --string $tablename
-@ClassId(/**/8/**/) // @wurblet < Inject $classid
+@TableName(/*@*/"bundle"/*@*/) // @wurblet < Inject --string $tablename
+@ClassId(/*@*/8/*@*/) // @wurblet < Inject $classid
 @Singular("bundle")
 @Plural("bundles")
 public interface StoredBundle extends PersistentDomainObject<StoredBundle>, StoredBundleDomain, StoredBundlePersistence {

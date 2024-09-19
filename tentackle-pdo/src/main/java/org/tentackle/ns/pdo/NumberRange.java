@@ -60,8 +60,8 @@ import org.tentackle.session.TableName;
  *
  * @author harald
  */
-@TableName(/**/"numrange"/**/) // @wurblet < Inject --string $tablename
-@ClassId(/**/7/**/) // @wurblet < Inject $classid
+@TableName(/*@*/"numrange"/*@*/) // @wurblet < Inject --string $tablename
+@ClassId(/*@*/7/*@*/) // @wurblet < Inject $classid
 @Singular("number range")
 @Plural("number ranges")
 public interface NumberRange extends PersistentDomainObject<NumberRange>, NumberRangeDomain, NumberRangePersistence {

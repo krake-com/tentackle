@@ -56,8 +56,8 @@ import java.io.Serial;
  *
  * @author harald
  */
-@ClassId(/**/1/**/)                   // @wurblet < Inject $classid
-@TableName(/**/"modification"/**/)    // @wurblet < Inject --string $tablename
+@ClassId(/*@*/1/*@*/)                   // @wurblet < Inject $classid
+@TableName(/*@*/"modification"/*@*/)    // @wurblet < Inject --string $tablename
 public class DbModification extends AbstractDbObject<DbModification> {
 
   @Serial

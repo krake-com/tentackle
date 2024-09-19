@@ -81,8 +81,8 @@ import org.tentackle.session.TableName;
  *
  * @author harald
  */
-@TableName(/**/"secrules"/**/) // @wurblet < Inject --string $tablename
-@ClassId(/**/5/**/) // @wurblet < Inject $classid
+@TableName(/*@*/"secrules"/*@*/) // @wurblet < Inject --string $tablename
+@ClassId(/*@*/5/*@*/) // @wurblet < Inject $classid
 @Singular("security rule")
 @Plural("security rules")
 @SecurityValidator
