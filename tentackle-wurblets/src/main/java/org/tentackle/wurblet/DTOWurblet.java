@@ -240,6 +240,7 @@ public class DTOWurblet extends AbstractJavaWurblet {
   protected List<Property> properties;  // the DTO properties
   protected boolean needConstructor;    // true if constructor necessary
   protected boolean withBuilder;        // use the builder pattern
+  protected String builderAnnotation;   // optional builder annotation
   protected boolean withFrom;           // true if at least one property has the "from"-option set (or --from/--with forced)
   protected boolean asWithers;          // true if withFrom is set and from-methods should be generated as withers
   protected boolean withEquals;         // true if generate equals method
@@ -261,10 +262,7 @@ public class DTOWurblet extends AbstractJavaWurblet {
     super.run();
 
     for (String arg: getContainer().getArgs()) {
-      if ("--builder".equals(arg)) {
-        withBuilder = true;
-      }
-      else if ("--from".equals(arg)) {
+      if ("--from".equals(arg)) {
         withFrom = true;
       }
       else if ("--with".equals(arg)) {
@@ -288,6 +286,13 @@ public class DTOWurblet extends AbstractJavaWurblet {
       }
       else if ("--nott".equals(arg)) {
         nott = true;
+      }
+      if (arg.startsWith("--builder")) {
+        withBuilder = true;
+        if (arg.length() > 10 && arg.charAt(9) == '[' && arg.charAt(10) == '@' &&
+            arg.charAt(arg.length() - 1) == ']') {
+          builderAnnotation = arg.substring(10, arg.length() - 1);
+        }
       }
       else if (arg.startsWith("--validate")) {
         if (isRecord()) {

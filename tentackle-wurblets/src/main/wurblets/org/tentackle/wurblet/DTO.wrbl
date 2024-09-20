@@ -14,6 +14,7 @@ usage:<br>
 <p>
 <ul>
 <li><em>--builder:</em> generate code according to the builder pattern.</li>
+<li><em>--builder[\@someAnnotation]:</em> builder pattern with annotated builder class.</li>
 <li><em>--equals:</em> generate the equals method.</li>
 <li><em>--hashCode:</em> generate the hashCode method.</li>
 <li><em>--validate[=&lt;code&gt;]:</em> perform validation after construction.
@@ -104,7 +105,7 @@ public record Position3D(&#64;Bindable(options="AUTOSELECT") int x,
                          &#64;Bindable(options="AUTOSELECT") int z) {
   ...
 
-  // &#064;wurblet dto DTO --builder --from
+  // &#064;wurblet dto DTO '--builder[\@JsonPOJOBuilder(withPrefix = "")]' --with
 
 </pre>
 }@
@@ -508,6 +509,13 @@ public record Position3D(&#64;Bindable(options="AUTOSELECT") int x,
   /**
    * The @(getClassName())@ builder.
    */
+@[
+      if (builderAnnotation != null) {
+]@
+  @(builderAnnotation)@
+@[
+      }
+]@
   public static class Builder @(extendsStr)@{
 
 @[
