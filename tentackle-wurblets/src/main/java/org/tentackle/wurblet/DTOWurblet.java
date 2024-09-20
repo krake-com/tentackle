@@ -299,7 +299,7 @@ public class DTOWurblet extends AbstractJavaWurblet {
       else if ("--nott".equals(arg)) {
         nott = true;
       }
-      if (arg.startsWith("--builder")) {
+      else if (arg.startsWith("--builder")) {
         withBuilder = true;
         if (arg.length() > 10 && arg.charAt(9) == '[' && arg.charAt(10) == '@' &&
             arg.charAt(arg.length() - 1) == ']') {
