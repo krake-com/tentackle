@@ -53,23 +53,9 @@ public class ObservableListTranslator<T, C extends List<T>> extends AbstractValu
    *
    * @param component the component
    */
-  @SuppressWarnings("unchecked")
   public ObservableListTranslator(FxComponent component) {
     super(component);
-
-    boolean isTableView = component instanceof FxTableView;
-    boolean isTreeTableView = component instanceof FxTreeTableView;
-    if (isTableView || isTreeTableView) {
-      Class<T> elemClass = ReflectionHelper.extractGenericInnerTypeClass(component.getGenericType());
-      if (elemClass != null) {
-        if (isTableView) {
-          configureTableView((FxTableView<T>) component, elemClass);
-        }
-        else {
-          configureTreeTableView((FxTreeTableView<T>) component, elemClass);
-        }
-      }
-    }
+    configureComponent(component);
   }
 
   @Override
@@ -104,24 +90,41 @@ public class ObservableListTranslator<T, C extends List<T>> extends AbstractValu
 
 
   /**
+   * Configures the component.<br>
+   * The component (table- or treetable-view) is only configured, if it is bindable
+   * and not already configured.
+   *
+   * @param component the table or treetable
+   * @see TableConfiguration
+   * @see TableConfigurationProvider
+   */
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  protected void configureComponent(FxComponent component) {
+    if (component.isBindable()) {
+      Class<T> elemClass = ReflectionHelper.extractGenericInnerTypeClass(component.getGenericType());
+      if (elemClass != null) {
+        if (component instanceof FxTableView tableView) {
+          if (tableView.getConfiguration() == null) {
+            configureTableView(tableView, elemClass);
+          }
+        }
+        else if (component instanceof FxTreeTableView treeTableView) {
+          if (treeTableView.getConfiguration() == null) {
+            configureTreeTableView(treeTableView, elemClass);
+          }
+        }
+      }
+    }
+  }
+
+  /**
    * Configures the tableview.
    *
    * @param tableView the tableview
    * @param elemClass the list's element class
    */
   protected void configureTableView(FxTableView<T> tableView, Class<T> elemClass) {
-    // determine optional table configuration provider for elemClass
-    TableConfigurationProvider<T> provider = TableConfigurationProviderFactory.getInstance().createTableConfigurationProvider(elemClass);
-    if (provider == null && tableView.isBindable()) {
-      // create default provider w/o bundle and standard binding
-      provider = new DefaultTableConfigurationProvider<>(elemClass, false, TableConfiguration.BINDING.YES);
-    }
-    if (provider != null) {
-      TableConfiguration<T> configuration = createTableConfiguration(provider);
-      configuration.configure(tableView);
-    }
-
-    // else: no configuration available -> must be done in application explicitly
+    createTableConfiguration(createTableConfigurationProvider(elemClass)).configure(tableView);
   }
 
   /**
@@ -131,26 +134,30 @@ public class ObservableListTranslator<T, C extends List<T>> extends AbstractValu
    * @param elemClass the list's element class
    */
   protected void configureTreeTableView(FxTreeTableView<T> treeTableView, Class<T> elemClass) {
+    createTableConfiguration(createTableConfigurationProvider(elemClass)).configure(treeTableView);
+  }
+
+  /**
+   * Creates the table configuration provider.
+   *
+   * @param elemClass the list's element class
+   * @return the provider, never null
+   */
+  protected TableConfigurationProvider<T> createTableConfigurationProvider(Class<T> elemClass) {
     // determine optional table configuration provider for elemClass
     TableConfigurationProvider<T> provider = TableConfigurationProviderFactory.getInstance().createTableConfigurationProvider(elemClass);
-    if (provider == null && treeTableView.isBindable()) {
+    if (provider == null) {
       // create default provider w/o bundle and standard binding
       provider = new DefaultTableConfigurationProvider<>(elemClass, false, TableConfiguration.BINDING.YES);
     }
-    if (provider != null) {
-      TableConfiguration<T> configuration = createTableConfiguration(provider);
-      configuration.configure(treeTableView);
-    }
-
-    // else: no configuration available -> must be done in application explicitly
+    return provider;
   }
-
 
   /**
    * Creates the table configuration and performs the binding.
    *
    * @param provider the configuration provider
-   * @return the table configuration
+   * @return the table configuration, never null
    */
   protected TableConfiguration<T> createTableConfiguration(TableConfigurationProvider<T> provider) {
     TableConfiguration<T> configuration = provider.createTableConfiguration();

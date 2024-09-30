@@ -21,9 +21,8 @@ package org.tentackle.fx.translate;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.ValueTranslator;
 
-
 /**
- * Base class of a value translator.<br>
+ * Base class of a value translator.
  *
  * @author harald
  * @param <M> the model's type
@@ -44,7 +43,7 @@ public abstract class AbstractValueTranslator<M,V> implements ValueTranslator<M,
 
 
   /**
-   * Creates a string translator for a given text component.
+   * Creates a translator for a given component.
    *
    * @param component the component
    */

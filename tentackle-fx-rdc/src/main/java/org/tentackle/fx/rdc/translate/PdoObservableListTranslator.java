@@ -18,21 +18,17 @@
 
 package org.tentackle.fx.rdc.translate;
 
-import javafx.collections.ObservableList;
-
-import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.ValueTranslatorService;
-import org.tentackle.fx.component.FxTableView;
-import org.tentackle.fx.component.FxTreeTableView;
-import org.tentackle.fx.rdc.GuiProvider;
 import org.tentackle.fx.rdc.Rdc;
-import org.tentackle.fx.table.TableConfiguration;
+import org.tentackle.fx.table.TableConfigurationProvider;
 import org.tentackle.fx.translate.ObservableListTranslator;
+import org.tentackle.log.Logger;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoRuntimeException;
 import org.tentackle.pdo.PersistentDomainObject;
 
+import javafx.collections.ObservableList;
 import java.util.List;
 
 /**
@@ -48,8 +44,10 @@ import java.util.List;
 public class PdoObservableListTranslator<T extends PersistentDomainObject<T>, C extends List<T>>
        extends ObservableListTranslator<T, C> {
 
+  private static final Logger LOG = Logger.get(PdoObservableListTranslator.class);
+
   /**
-   * Creates a translator for components maintaining a list of objects.
+   * Creates a translator for components maintaining a list of PDOs.
    *
    * @param component the component
    */
@@ -57,54 +55,22 @@ public class PdoObservableListTranslator<T extends PersistentDomainObject<T>, C 
     super(component);
   }
 
+
   @Override
-  protected void configureTableView(FxTableView<T> tableView, Class<T> elemClass) {
-
-    PdoRuntimeException pdoRuntimeException = null;   // != null if elemClass leads to a non-existing mapping
-
+  protected TableConfigurationProvider<T> createTableConfigurationProvider(Class<T> elemClass) {
     if (PersistentDomainObject.class.isAssignableFrom(elemClass)) {
       // is a PDO: get table configuration from gui provider
-      T pdo;
       try {
-        pdo = Pdo.create(elemClass);
+        // GuiProvider is a TableConfigurationProvider
+        return Rdc.createGuiProvider(Pdo.create(elemClass));
       }
       catch (PdoRuntimeException px) {
-        // no such mapping: may be an abstract type such as PersistentDomainObject
-        pdoRuntimeException = px;
-        pdo = null;
+        // may be an abstract type?
+        LOG.warning("no GuiProvider for " + elemClass + " (" + px.getMessage() + ") -> fallback to default table configuration provider");
       }
-      if (pdo != null) {
-        GuiProvider<T> provider = Rdc.createGuiProvider(pdo);
-        TableConfiguration<T> configuration = createTableConfiguration(provider);
-        configuration.configure(tableView);
-        return;
-      }
-      // else try super method and if that fails, throw the original exception
     }
 
-    try {
-      super.configureTableView(tableView, elemClass);
-    }
-    catch (TentackleRuntimeException tx) {
-      if (pdoRuntimeException != null) {
-        throw pdoRuntimeException;
-      }
-      throw tx;
-    }
-  }
-
-  @Override
-  protected void configureTreeTableView(FxTreeTableView<T> treeTableView, Class<T> elemClass) {
-    if (PersistentDomainObject.class.isAssignableFrom(elemClass)) {
-      // is a PDO: get table configuration from gui provider
-      T pdo = Pdo.create(elemClass);
-      GuiProvider<T> provider = Rdc.createGuiProvider(pdo);
-      TableConfiguration<T> configuration = createTableConfiguration(provider);
-      configuration.configure(treeTableView);
-    }
-    else {
-      super.configureTreeTableView(treeTableView, elemClass);
-    }
+    return super.createTableConfigurationProvider(elemClass);
   }
 
 }
