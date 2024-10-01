@@ -21,6 +21,7 @@ package org.tentackle.fx.rdc.translate;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.ValueTranslatorService;
 import org.tentackle.fx.rdc.Rdc;
+import org.tentackle.fx.rdc.RdcRuntimeException;
 import org.tentackle.fx.table.TableConfigurationProvider;
 import org.tentackle.fx.translate.ObservableListTranslator;
 import org.tentackle.log.Logger;
@@ -64,7 +65,7 @@ public class PdoObservableListTranslator<T extends PersistentDomainObject<T>, C 
         // GuiProvider is a TableConfigurationProvider
         return Rdc.createGuiProvider(Pdo.create(elemClass));
       }
-      catch (PdoRuntimeException px) {
+      catch (RdcRuntimeException | PdoRuntimeException px) {
         // may be an abstract type?
         LOG.warning("no GuiProvider for " + elemClass + " (" + px.getMessage() + ") -> fallback to default table configuration provider");
       }
