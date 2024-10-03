@@ -23,7 +23,7 @@ Requires that the DTO implements <code>Validateable</code>.
 If the optional &lt;code&gt; is missing, the default <code>"ValidationUtilities.getInstance().validate(this)"</code> will be used.
 </li>
 <li><em>--names:</em> generate the name constants for all properties.</li>
-<li><em>--from:</em>generate methods to create variants from an existing instance. For builders, a toBuilder-method is generated,
+<li><em>--from:</em> generate methods to create variants from an existing instance. For builders, a toBuilder-method is generated,
 that creates a builder from an instance. Notice that for frommer/withers to be generated, the '+' option must be set for the corresponding properties
 (except for records, where this defaults to all)</li>
 <li><em>--with:</em> same as <code>--from</code>, but the generated methods are prefixed by "with" instead of "from".
