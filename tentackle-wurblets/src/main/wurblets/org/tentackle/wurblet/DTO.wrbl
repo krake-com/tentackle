@@ -15,6 +15,7 @@ usage:<br>
 <ul>
 <li><em>--builder:</em> generate code according to the builder pattern.</li>
 <li><em>--builder[\@someAnnotation]:</em> builder pattern with annotated builder class.</li>
+<li><em>--builderPrefix=&lt;prefix&gt;:</em> prefix builder methods with the given string. Implies --builder. Default is no prefix.</li>
 <li><em>--equals:</em> generate the equals method.</li>
 <li><em>--hashCode:</em> generate the hashCode method.</li>
 <li><em>--validate[=&lt;code&gt;]:</em> perform validation after construction.
@@ -22,8 +23,9 @@ Requires that the DTO implements <code>Validateable</code>.
 If the optional &lt;code&gt; is missing, the default <code>"ValidationUtilities.getInstance().validate(this)"</code> will be used.
 </li>
 <li><em>--names:</em> generate the name constants for all properties.</li>
-<li><em>--from:</em> only if --builder set: generate method to create a builder from instance. This will automatically
-happen if the '+' option is set for at least one property.</li>
+<li><em>--from:</em>generate methods to create variants from an existing instance. For builders, a toBuilder-method is generated,
+that creates a builder from an instance. Notice that for frommer/withers to be generated, the '+' option must be set for the corresponding properties
+(except for records, where this defaults to all)</li>
 <li><em>--with:</em> same as <code>--from</code>, but the generated methods are prefixed by "with" instead of "from".
 In TT, the default is to use "frommers" instead of "withers", since builder implementations exist in the wild
 that use withers for builder methods (which return the builder and not the object to be built!). This may be confusing.
@@ -356,7 +358,7 @@ public record Position3D(&#64;Bindable(options="AUTOSELECT") int x,
           }
           else {
 ]@
-    return toBuilder().@(property.getName())@(@(property.getName())@).build();
+    return toBuilder().@(property.getBuilderName())@(@(property.getName())@).build();
 @[
           }
         }
@@ -553,13 +555,13 @@ public record Position3D(&#64;Bindable(options="AUTOSELECT") int x,
         for (Property property: properties) {
           if (isRecord()) {
 ]@
-      @(property.getName())@(template.@(property.getName())@());
+      @(property.getBuilderName())@(template.@(property.getName())@());
 @[
           }
           else {
             if (!property.isMutable()) {
 ]@
-      @(property.getName())@(template.@(property.getGetterName())@());
+      @(property.getBuilderName())@(template.@(property.getGetterName())@());
 @[
             }
           }
@@ -609,7 +611,7 @@ public record Position3D(&#64;Bindable(options="AUTOSELECT") int x,
      * \@param @(property.getName())@ @(property.getComment())@
      * \@return the builder
      */
-    public Builder @(property.getName())@(@(property.getType())@ @(property.getName())@) {
+    public Builder @(property.getBuilderName())@(@(property.getType())@ @(property.getName())@) {
       this.@(property.getName())@ = @(property.getName())@;
 @[
         if (property.isRequired()) {

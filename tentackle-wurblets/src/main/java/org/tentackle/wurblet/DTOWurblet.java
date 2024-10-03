@@ -191,6 +191,10 @@ public class DTOWurblet extends AbstractJavaWurblet {
       return "set" + StringHelper.firstToUpper(name);
     }
 
+    public String getBuilderName() {
+      return builderPrefix == null ? name : builderPrefix + StringHelper.firstToUpper(name);
+    }
+
     public List<String> getAnnotations() {
       return annotations;
     }
@@ -241,6 +245,7 @@ public class DTOWurblet extends AbstractJavaWurblet {
   protected boolean needConstructor;    // true if constructor necessary
   protected boolean withBuilder;        // use the builder pattern
   protected String builderAnnotation;   // optional builder annotation
+  protected String builderPrefix;       // optional prefix for builder methods
   protected boolean withFrom;           // true if at least one property has the "from"-option set (or --from/--with forced)
   protected boolean asWithers;          // true if withFrom is set and from-methods should be generated as withers
   protected boolean withEquals;         // true if generate equals method
@@ -286,6 +291,10 @@ public class DTOWurblet extends AbstractJavaWurblet {
       }
       else if ("--nott".equals(arg)) {
         nott = true;
+      }
+      else if (arg.startsWith("--builderPrefix=")) {
+        builderPrefix = arg.substring(16);
+        withBuilder = true;
       }
       else if (arg.startsWith("--builder")) {
         withBuilder = true;
