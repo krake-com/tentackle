@@ -89,11 +89,11 @@
     <ikonli.version>12.3.1</ikonli.version>
     <javafx.version>23</javafx.version>
     <jruby.version>9.4.8.0</jruby.version>
-    <junit.version>5.11.0</junit.version>
-    <log4j2.version>2.23.1</log4j2.version>
+    <junit.version>5.11.1</junit.version>
+    <log4j2.version>2.24.1</log4j2.version>
     <mavengem.wagon.version>1.0.3</mavengem.wagon.version>
     <plexus.archiver.version>4.10.0</plexus.archiver.version>
-    <plexus.java.version>1.2.0</plexus.java.version>
+    <plexus.java.version>1.3.0</plexus.java.version>
     <poi.version>5.3.0</poi.version>
     <postgresql.version>42.7.4</postgresql.version>
     <slf4j.version>2.0.16</slf4j.version>
@@ -106,17 +106,17 @@
     <maven.file.management.version>3.1.0</maven.file.management.version>
     <maven.plugin.annotations.version>3.13.1</maven.plugin.annotations.version>
 
-    <maven.archetype.plugin.version>3.2.1</maven.archetype.plugin.version>
+    <maven.archetype.plugin.version>3.3.0</maven.archetype.plugin.version>
     <maven.clean.plugin.version>3.4.0</maven.clean.plugin.version>
     <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
     <maven.dependency.plugin.version>3.8.0</maven.dependency.plugin.version>
     <maven.deploy.plugin.version>3.1.3</maven.deploy.plugin.version>
     <maven.enforcer.plugin.version>3.5.0</maven.enforcer.plugin.version>
-    <maven.gpg.plugin.version>3.2.5</maven.gpg.plugin.version>
+    <maven.gpg.plugin.version>3.2.7</maven.gpg.plugin.version>
     <maven.help.plugin.version>3.5.0</maven.help.plugin.version>
     <maven.install.plugin.version>3.1.3</maven.install.plugin.version>
     <maven.jar.plugin.version>3.4.2</maven.jar.plugin.version>
-    <maven.javadoc.plugin.version>3.10.0</maven.javadoc.plugin.version>
+    <maven.javadoc.plugin.version>3.10.1</maven.javadoc.plugin.version>
     <maven.jxr.plugin.version>3.5.0</maven.jxr.plugin.version>
     <maven.owasp.plugin.version>10.0.4</maven.owasp.plugin.version>
     <maven.plugin.plugin.version>3.15.0</maven.plugin.plugin.version>
