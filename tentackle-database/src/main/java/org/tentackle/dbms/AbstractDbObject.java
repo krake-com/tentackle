@@ -43,7 +43,7 @@ import java.util.List;
 import static org.tentackle.sql.Backend.SQL_ALLSTAR;
 import static org.tentackle.sql.Backend.SQL_AND;
 import static org.tentackle.sql.Backend.SQL_COMMA;
-import static org.tentackle.sql.Backend.SQL_DELETE;
+import static org.tentackle.sql.Backend.SQL_DELETE_FROM;
 import static org.tentackle.sql.Backend.SQL_EQUAL;
 import static org.tentackle.sql.Backend.SQL_EQUAL_PAR;
 import static org.tentackle.sql.Backend.SQL_FROM;
@@ -1759,7 +1759,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     else  {
       // local
       if (db.isPersistenceOperationAllowed(this, DbModificationType.DELETE)) {
-        deleteImpl(getClassVariables(), b -> createDeleteSql());
+        deleteImpl(getClassVariables(), this::createDeleteSql);
       }
     }
   }
@@ -2380,7 +2380,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
         try {
           initModification(DbModificationType.DELETE);
           deleteReferencingRelations();
-          deleteImpl(getClassVariables(), b -> createDeleteSql());
+          deleteImpl(getClassVariables(), this::createDeleteSql);
           deleteReferencedRelations();
           finishModification(DbModificationType.DELETE);
           db.commit(txVoucher);
@@ -2775,8 +2775,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * @return the sql text
    */
   public StringBuilder createDeleteAllSql() {
-    StringBuilder sql = new StringBuilder(SQL_DELETE);
-    sql.append(SQL_FROM);
+    StringBuilder sql = new StringBuilder(SQL_DELETE_FROM);
     sql.append(getTableName());
     sql.append(SQL_WHEREALL);
     return sql;
@@ -2865,10 +2864,11 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   /**
    * Creates the SQL code for the delete statement.
    *
+   * @param backend the backend
    * @return the sql code
    */
-  public String createDeleteSql() {
-    return SQL_DELETE + SQL_FROM + getTableName() + SQL_WHERE + CN_ID + SQL_EQUAL_PAR + SQL_AND + CN_SERIAL + SQL_EQUAL_PAR;
+  public String createDeleteSql(Backend backend) {
+    return SQL_DELETE_FROM + getTableName() + SQL_WHERE + CN_ID + SQL_EQUAL_PAR + SQL_AND + CN_SERIAL + SQL_EQUAL_PAR;
   }
 
   /**
