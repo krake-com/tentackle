@@ -786,7 +786,8 @@ For more options, see {\@link DbModelWurblet}.
             }
           }
 
-          if (multiInheritance) {
+          if (!getEntity().getOptions().isNoPrimaryKey()) {
+            if (multiInheritance) {
 ]@
 
   /**
@@ -796,75 +797,76 @@ For more options, see {\@link DbModelWurblet}.
    */
   public String createUpdateSql@(pdoClass)@(Backend backend) {
 @[
-          }
-          else  {
+            }
+            else  {
 ]@
 
   \@Override
   public String createUpdateSql(Backend backend) {
 @[
-          }
+            }
 
-          if (getEntity().isEmbedded()) {
+            if (getEntity().isEmbedded()) {
 ]@
     return
 @[
-          }
-          else {
+            }
+            else {
 ]@
     return Backend.SQL_UPDATE + @(multiInheritance ? "CLASSVARIABLES." : "")@getTableName() + Backend.SQL_SET +
 @[
-          }
+            }
 
-          for (Relation rel: getEntity().getRelations()) {
-            if (rel.isEmbedding()) {
+            for (Relation rel: getEntity().getRelations()) {
+              if (rel.isEmbedding()) {
 ]@
            ((AbstractPersistentObject<?,?>) @(rel.getGetterName())@().getPersistenceDelegate()).createUpdateSql(backend) +
 @[
+              }
             }
-          }
 
-          boolean checkSerial = !multiInheritance || getEntity().getSuperEntity() == null;
-          int ncnt = 0;
-          for (String name: names) {
-            ncnt++;
-            if (!checkSerial && ncnt == names.size()) {
+            boolean checkSerial = !multiInheritance || getEntity().getSuperEntity() == null;
+            int ncnt = 0;
+            for (String name: names) {
+              ncnt++;
+              if (!checkSerial && ncnt == names.size()) {
 ]@
            @(prefix)@@(name)@ + Backend.SQL_EQUAL_PAR +
 @[
-            }
-            else {
-              String tailStr = getEntity().isEmbedded() && ncnt == names.size() ? ";" : " +";
+              }
+              else {
+                String tailStr = getEntity().isEmbedded() && ncnt == names.size() ? ";" : " +";
 ]@
            @(prefix)@@(name)@ + Backend.SQL_EQUAL_PAR_COMMA@(tailStr)@
 @[
+              }
             }
-          }
 
-          if (!getEntity().isEmbedded()) {
-            if (ncnt == 0 && !checkSerial) {
-              // special case: no attributes and no checkserial
+            if (!getEntity().isEmbedded()) {
+              if (ncnt == 0 && !checkSerial) {
+                // special case: no attributes and no checkserial
 ]@
            CN_ID + Backend.SQL_EQUAL + CN_ID +
 @[
-            }
+              }
 
-            if (checkSerial) {
+              if (checkSerial) {
 ]@
            CN_SERIAL + Backend.SQL_EQUAL + CN_SERIAL + Backend.SQL_PLUS_ONE +
            Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR +
            Backend.SQL_AND + CN_SERIAL + Backend.SQL_EQUAL_PAR;
 @[
-            }
-            else  {
+              }
+              else  {
 ]@
            Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR;
 @[
+              }
             }
-          }
 ]@
   }
 @[
+          }
         }
       }
 
@@ -923,14 +925,14 @@ For more options, see {\@link DbModelWurblet}.
 @[
           if (getEntity().isRootOfInheritanceHierarchy()) {
 ]@
-    return Backend.SQL_DELETE + Backend.SQL_FROM + CLASSVARIABLES.getTableName() +
+    return Backend.SQL_DELETE_FROM + CLASSVARIABLES.getTableName() +
            Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR +
            Backend.SQL_AND + CN_SERIAL + Backend.SQL_EQUAL_PAR;
 @[
           }
           else  {
 ]@
-    return Backend.SQL_DELETE + Backend.SQL_FROM + CLASSVARIABLES.getTableName() +
+    return Backend.SQL_DELETE_FROM + CLASSVARIABLES.getTableName() +
            Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR;
 @[
           }

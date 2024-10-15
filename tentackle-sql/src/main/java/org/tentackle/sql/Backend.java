@@ -56,6 +56,9 @@ public interface Backend {
   /** DELETE string. */
   String SQL_DELETE = "DELETE ";
 
+  /** DELETE FROM string. */
+  String SQL_DELETE_FROM = "DELETE FROM ";
+
   /** UPDATE string. */
   String SQL_UPDATE = "UPDATE ";
 
