@@ -87,7 +87,7 @@
     <groovy.version>4.0.22</groovy.version>
     <h2.version>2.3.232</h2.version>
     <ikonli.version>12.3.1</ikonli.version>
-    <javafx.version>23</javafx.version>
+    <javafx.version>23.0.1</javafx.version>
     <jruby.version>9.4.8.0</jruby.version>
     <junit.version>5.11.1</junit.version>
     <log4j2.version>2.24.1</log4j2.version>
