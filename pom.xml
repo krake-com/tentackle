@@ -82,14 +82,14 @@
     <javac.lint>all,-processing,-this-escape</javac.lint>
     <javac.version>23</javac.version>
 
-    <asm.version>9.7</asm.version>
+    <asm.version>9.7.1</asm.version>
     <freemarker.version>2.3.33</freemarker.version>
-    <groovy.version>4.0.22</groovy.version>
+    <groovy.version>4.0.23</groovy.version>
     <h2.version>2.3.232</h2.version>
     <ikonli.version>12.3.1</ikonli.version>
     <javafx.version>23.0.1</javafx.version>
     <jruby.version>9.4.8.0</jruby.version>
-    <junit.version>5.11.1</junit.version>
+    <junit.version>5.11.2</junit.version>
     <log4j2.version>2.24.1</log4j2.version>
     <mavengem.wagon.version>1.0.3</mavengem.wagon.version>
     <plexus.archiver.version>4.10.0</plexus.archiver.version>
@@ -104,7 +104,7 @@
     <maven.artifact.transfer.version>0.13.1</maven.artifact.transfer.version>
     <maven.dependency.tree.version>3.3.0</maven.dependency.tree.version>
     <maven.file.management.version>3.1.0</maven.file.management.version>
-    <maven.plugin.annotations.version>3.13.1</maven.plugin.annotations.version>
+    <maven.plugin.annotations.version>3.14.0</maven.plugin.annotations.version>
 
     <maven.archetype.plugin.version>3.3.0</maven.archetype.plugin.version>
     <maven.clean.plugin.version>3.4.0</maven.clean.plugin.version>
