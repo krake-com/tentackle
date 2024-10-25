@@ -545,15 +545,18 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
    */
   public void delete() {
     T pdo = getPdo();
-    getPdo().getSession().transaction(() -> {
-      pdo.delete();
-      return null;
+    Fx.yes(getView(), MessageFormat.format(resources.getString("Delete {0} {1}?"),
+                                           pdo.getSingular(), pdo.toString()), false, () -> {
+      pdo.getSession().transaction(() -> {
+        pdo.delete();
+        return null;
+      });
+      if (!closeIfModal()) {
+        setPdo(pdo.on());
+        getEditor().requestInitialFocus();
+      }
+      eventProxy.fireEvent(new PdoEvent(pdo, getView(), PdoEvent.DELETE));
     });
-    if (!closeIfModal()) {
-      setPdo(pdo.on());
-      getEditor().requestInitialFocus();
-    }
-    eventProxy.fireEvent(new PdoEvent(pdo, getView(), PdoEvent.DELETE));
   }
 
   /**
