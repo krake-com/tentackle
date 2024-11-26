@@ -36,6 +36,7 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashSet;
+import java.util.Properties;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
@@ -79,33 +80,26 @@ public class FileHelper {
     return is;
   }
 
-
   /**
    * Loads properties from a resource.
    *
-   * @param name the properties name, null if return empty properties
+   * @param name the properties name
    * @param asResource true if load from the classpath, false if from filesystem
-   * @return the properties, empty if name is null
+   * @param properties the properties to load into
    * @throws IOException if reading the property file failed
    * @throws FileNotFoundException if no properties found
    */
-  public static EncryptedProperties loadProperties(String name, boolean asResource) throws IOException {
-    EncryptedProperties properties = new EncryptedProperties();
-    if (name != null) {
-      properties.setName(name);
-      if (name.indexOf('.') < 0) {
-        name += Constants.PROPS_EXTENSION;
-      }
-      if (asResource && !name.startsWith("/")) {
-        name = "/" + name;
-      }
-      try (InputStream is = asResource ? createInputStream(FileHelper.class, name) : new FileInputStream(name)) {
-        properties.load(is);
-      }
+  public static void loadProperties(String name, boolean asResource, Properties properties) throws IOException {
+    if (name.indexOf('.') < 0) {
+      name += Constants.PROPS_EXTENSION;
     }
-    return properties;
+    if (asResource && !name.startsWith("/")) {
+      name = "/" + name;
+    }
+    try (InputStream is = asResource ? createInputStream(FileHelper.class, name) : new FileInputStream(name)) {
+      properties.load(is);
+    }
   }
-
 
   /**
    * Loads properties.<br>
@@ -117,15 +111,19 @@ public class FileHelper {
    * @throws FileNotFoundException if no properties found
    */
   public static EncryptedProperties loadProperties(String name) throws IOException {
-    try {
-      return loadProperties(name, false);
+    EncryptedProperties properties = new EncryptedProperties();
+    if (name != null) {
+      properties.setName(name);
+      try {
+        loadProperties(name, false, properties);
+      }
+      catch (FileNotFoundException e1) {
+        // try as resource
+        loadProperties(name, true, properties);
+      }
     }
-    catch (FileNotFoundException e1) {
-      // try as resource
-      return loadProperties(name, true);
-    }
+    return properties;
   }
-
 
   /**
    * Copies a file.
@@ -183,7 +181,6 @@ public class FileHelper {
     return count;
   }
 
-
   /**
    * Downloads data from a URL into memory.
    *
@@ -202,7 +199,6 @@ public class FileHelper {
       return outputStream.toByteArray();
     }
   }
-
 
   /**
    * Removes a directory and all its contents recursively.
@@ -227,7 +223,6 @@ public class FileHelper {
       }
     });
   }
-
 
   /**
    * Unzips a zip file.
@@ -269,6 +264,7 @@ public class FileHelper {
       }
     }
   }
+
 
   private FileHelper() {}
 
