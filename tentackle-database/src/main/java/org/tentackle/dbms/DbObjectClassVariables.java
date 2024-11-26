@@ -18,14 +18,11 @@
 
 package org.tentackle.dbms;
 
-import org.tentackle.common.FileHelper;
 import org.tentackle.dbms.rmi.AbstractDbObjectRemoteDelegate;
-import org.tentackle.log.Logger;
+import org.tentackle.misc.PropertiesUtilities;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SessionUtilities;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -47,8 +44,6 @@ import java.util.TreeSet;
  * @author harald
  */
 public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
-
-  private static final Logger LOGGER = Logger.get(DbObjectClassVariables.class);
 
   // all classes register here:
   private static final Map<String,DbObjectClassVariables<? extends AbstractDbObject<?>>> CLASSMAP = new HashMap<>();
@@ -351,19 +346,10 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
     if (properties == null) {
       // load properties, if any from file or resource
       String propertiesName = clazz.getName().replace('.', '/');
-      try {
-        properties = FileHelper.loadProperties(propertiesName);
-      }
-      catch (FileNotFoundException nf) {
-        // missing props is okay and default
-      }
-      catch (IOException io) {
-        LOGGER.severe("could not load class variable properties from " + propertiesName, io);
-      }
-      finally {
-        if (properties == null) {
-          properties = new Properties();
-        }
+      properties = PropertiesUtilities.getInstance().loadIfExists(propertiesName);
+      if (properties == null) {
+        // missing props is okay and the default
+        properties = PropertiesUtilities.getInstance().create();
       }
     }
     return properties;

@@ -20,7 +20,6 @@ package org.tentackle.dbms;
 
 import org.tentackle.common.Constants;
 import org.tentackle.common.EncryptedProperties;
-import org.tentackle.common.FileHelper;
 import org.tentackle.daemon.Scavenger;
 import org.tentackle.dbms.rmi.DbRemoteDelegate;
 import org.tentackle.dbms.rmi.RemoteDbConnection;
@@ -32,6 +31,7 @@ import org.tentackle.io.ReconnectionPolicy;
 import org.tentackle.io.Reconnector;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.Holder;
+import org.tentackle.misc.PropertiesUtilities;
 import org.tentackle.misc.Provider;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.BackendConfiguration;
@@ -56,7 +56,7 @@ import org.tentackle.sql.BackendInfo;
 import org.tentackle.sql.BackendInfoFactory;
 import org.tentackle.sql.ScriptRunnerResult;
 
-import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.io.Serializable;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Cleaner.Cleanable;
@@ -594,7 +594,7 @@ public class Db implements Session, Cloneable {
               BackendConfiguration backendConfiguration = BackendConfiguration.getBackendConfigurations(
                   sessionInfo.getApplicationName(), systemPrefs).get(configName);
               if (backendConfiguration != null) {
-                backendProperties = new EncryptedProperties();
+                backendProperties = PropertiesUtilities.getInstance().create();
                 DbUtilities.getInstance().applyBackendConfiguration(backendConfiguration, backendProperties);
               }
               else {
@@ -612,10 +612,10 @@ public class Db implements Session, Cloneable {
         else if (!technicalBackendInfoName.equals(sessionProperties.getName())) {
           // programmatically predefined (usually technical) backend info from _another_ property file
           try {
-            backendProperties = FileHelper.loadProperties(technicalBackendInfoName);
+            backendProperties = PropertiesUtilities.getInstance().load(technicalBackendInfoName);
           }
-          catch (IOException e1) {
-            throw new PersistenceException("technical backend properties '" + technicalBackendInfoName + "' could not be loaded", e1);
+          catch (FileNotFoundException fx) {
+            throw new PersistenceException("backend properties '" + technicalBackendInfoName + "' could not be loaded", fx);
           }
         }
       }

@@ -21,6 +21,7 @@ package org.tentackle.app;
 import org.tentackle.common.Constants;
 import org.tentackle.common.EncryptedProperties;
 import org.tentackle.log.Logger;
+import org.tentackle.misc.PropertiesUtilities;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
 
@@ -82,7 +83,7 @@ public abstract class ConsoleApplication extends AbstractClientApplication {
     String password = getCommandLine().getOptionValue(Constants.BACKEND_PASSWORD);
     if (url != null && user != null) {
       // don't use a properties file: get from command line (password is optional)
-      EncryptedProperties props = new EncryptedProperties();
+      EncryptedProperties props = PropertiesUtilities.getInstance().create();
       props.setProperty(Constants.BACKEND_URL, url);
       props.setProperty(Constants.BACKEND_USER, user);
       if (password != null) {

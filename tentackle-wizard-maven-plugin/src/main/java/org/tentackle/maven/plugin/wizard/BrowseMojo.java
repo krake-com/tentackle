@@ -27,6 +27,7 @@ import org.tentackle.common.Constants;
 import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.maven.plugin.wizard.fx.PdoBrowser;
+import org.tentackle.misc.PropertiesUtilities;
 import org.tentackle.model.Model;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
@@ -86,7 +87,7 @@ public class BrowseMojo extends AbstractWizardMojo {
   public void executeImpl() throws MojoExecutionException, MojoFailureException {
     super.executeImpl();
     AbstractDataType.maxLinesInLiteral = maxLinesInStringLiteral;
-    EncryptedProperties props = new EncryptedProperties();
+    EncryptedProperties props = PropertiesUtilities.getInstance().create();
     props.setProperty(org.tentackle.common.Constants.BACKEND_URL, url);
     props.setProperty(org.tentackle.common.Constants.BACKEND_USER, user);
     props.setProperty(Constants.BACKEND_PASSWORD, password);

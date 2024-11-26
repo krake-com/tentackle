@@ -22,13 +22,12 @@ package org.tentackle.session;
 import org.tentackle.common.Constants;
 import org.tentackle.common.Cryptor;
 import org.tentackle.common.EncryptedProperties;
-import org.tentackle.common.FileHelper;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.ImmutableException;
+import org.tentackle.misc.PropertiesUtilities;
 
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.Serial;
 import java.util.Arrays;
 import java.util.Locale;
@@ -537,15 +536,10 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
    */
   protected EncryptedProperties loadProperties(String propertiesName) {
     try {
-      try {
-        return FileHelper.loadProperties(propertiesName);
-      }
-      catch (FileNotFoundException e1) {
-        throw new PersistenceException("backend properties '" + propertiesName + "' not found");
-      }
+      return PropertiesUtilities.getInstance().load(propertiesName);
     }
-    catch (IOException ex) {
-      throw new PersistenceException("reading backend properties '" + propertiesName + "' failed", ex);
+    catch (FileNotFoundException e1) {
+      throw new PersistenceException("backend properties '" + propertiesName + "' not found");
     }
   }
 
