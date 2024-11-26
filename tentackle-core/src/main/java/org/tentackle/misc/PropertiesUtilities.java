@@ -168,8 +168,7 @@ public class PropertiesUtilities {
    * <p>
    * For security reasons, only already existing properties will be overridden.
    * Property keys not starting with a letter are ignored.<br>
-   * An optional prefix can be used to filter environment variables. The prefix
-   * is removed from the variable name before the replacement.
+   * An optional prefix prepends the environment variable names derived from the property names.
    *
    * @param properties the properties to override
    * @param envPrefix optional prefix, null if none
@@ -179,16 +178,11 @@ public class PropertiesUtilities {
   public boolean applyEnvironment(Properties properties, String envPrefix) {
     boolean applied = false;
     for (String propertyName : properties.stringPropertyNames()) {
-      if (envPrefix != null) {
-        if (propertyName.startsWith(envPrefix)) {
-          propertyName = propertyName.substring(envPrefix.length());
-        }
-        else {
-          continue;
-        }
-      }
       if (!propertyName.isEmpty() && Character.isLetter(propertyName.charAt(0))) {
         String envName = toEnvironmentVariable(propertyName);
+        if (envPrefix != null) {
+          envName = envPrefix + envName;
+        }
         String value = System.getenv(envName);
         if (value != null) {
           Object oldValue = properties.setProperty(propertyName, value);
