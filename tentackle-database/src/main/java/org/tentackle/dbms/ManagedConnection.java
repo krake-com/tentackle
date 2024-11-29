@@ -100,9 +100,14 @@ public class ManagedConnection {
    * Logging level to log nested selects.<br>
    * When enabled, selects running in parallel on the same connection will be logged.
    * This is usually means, that from within a loop processing a result set, a method is invoked,
-   * that in turn triggers another select.
+   * that in turn triggers another select (which may be perfectly ok or an unwanted side effect).
    */
   private static Level logLevelForParallelOpenResultSets;
+
+  /**
+   * Add detected and logged parallel result sets to the {@link StatementTracer}.
+   */
+  private static boolean traceParallelOpenResultSets;
 
   /**
    * Optional limit for the number of statements per transaction.<br>
@@ -224,6 +229,25 @@ public class ManagedConnection {
    */
   public static void setLogLevelForParallelOpenResultSets(Level level) {
     logLevelForParallelOpenResultSets = level;
+  }
+
+  /**
+   * Returns whether detected (and logged) parallel result sets should automatically be added to the {@link StatementTracer}.
+   *
+   * @return true to add, false is default
+   */
+  public static boolean isTraceParallelOpenResultSets() {
+    return traceParallelOpenResultSets;
+  }
+
+  /**
+   * Sets whether detected (and logged) parallel result sets should automatically be added to the {@link StatementTracer}.<br>
+   * Enabling requires {@link #setLogLevelForParallelOpenResultSets(Level)} to be a valid loggable level.
+   *
+   * @param trace true to add, false is default
+   */
+  public static void setTraceParallelOpenResultSets(boolean trace) {
+    traceParallelOpenResultSets = trace;
   }
 
   /**
@@ -837,19 +861,34 @@ public class ManagedConnection {
   public void addResultSet(ResultSetWrapper rs) {
     openResultSets.add(new WeakReference<>(rs));
     if (logLevelForParallelOpenResultSets != null && openResultSets.size() > 1 && LOGGER.isLoggable(logLevelForParallelOpenResultSets)) {
-      Collection<ResultSetWrapper> parallelResultStatements = getOpenResultSets();
-      if (!parallelResultStatements.isEmpty()) {
-        int count = 0;
-        StringBuilder buf = new StringBuilder();
-        buf.append("parallel queries running on ").append(this).append(":");
-        for (ResultSetWrapper prs: parallelResultStatements) {
-          StatementWrapper stmt = prs.getStatement();
-          if (stmt != null && !stmt.isParallelOk()) {
-            buf.append('\n').append(prs);
-            count++;
+      Collection<ResultSetWrapper> connectionResultSets = getOpenResultSets();
+      if (!connectionResultSets.isEmpty()) {
+        List<ResultSetWrapper> resultSetsToLog = new ArrayList<>();
+        for (ResultSetWrapper resultSet: connectionResultSets) {
+          StatementWrapper statement = resultSet.getStatement();
+          if (statement != null && !statement.isParallelOk()) {
+            resultSetsToLog.add(resultSet);
           }
         }
-        if (count > 1) {
+        if (resultSetsToLog.size() > 1) {
+          StringBuilder buf = new StringBuilder();
+          buf.append("parallel queries running on ").append(this).append(':');
+          for (ResultSetWrapper resultSet: resultSetsToLog) {
+            buf.append('\n').append(resultSet);
+            if (traceParallelOpenResultSets) {
+              // enable tracer for all future invocations of this statement (if not done already)
+              // this will log the invocation trace of the statement (see StatementWrapper.toString())
+              StatementWrapper statement = resultSet.getStatement();
+              if (statement != null) {
+                String sql = statement.getSql();
+                if (sql != null) {
+                  StatementTracer tracer = StatementTracer.getInstance();
+                  tracer.addSql(sql);
+                  tracer.setEnabled(true);
+                }
+              }
+            }
+          }
           LOGGER.log(logLevelForParallelOpenResultSets, buf.toString(), null);
         }
       }

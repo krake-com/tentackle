@@ -293,6 +293,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
    */
   @Override
   protected int executeUpdateImpl(String sql) throws SQLException {
+    StatementTracer.getInstance().trace(this);
     return getStatement().executeUpdate();
   }
 
@@ -410,6 +411,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
    */
   @Override
   protected ResultSet executeQueryImpl(String sql) throws SQLException {
+    StatementTracer.getInstance().trace(this);
     return getStatement().executeQuery();
   }
 
