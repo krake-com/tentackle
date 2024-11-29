@@ -60,6 +60,9 @@ public class StatementWrapper implements AutoCloseable {
   /** flag to tell that parallel execution should not be logged. */
   protected boolean parallelOk;
 
+  /** optional stacktrace that invoked the last query or update. */
+  protected String stackTrace;
+
   /** pending open result set. */
   protected WeakReference<ResultSetWrapper> openResultSet;
 
@@ -120,6 +123,24 @@ public class StatementWrapper implements AutoCloseable {
     this.parallelOk = parallelOk;
   }
 
+  /**
+   * Gets the optional stacktrace that invoked the last query or update.
+   *
+   * @return the stacktrace as a string, null if none (default)
+   */
+  public String getStackTrace() {
+    return stackTrace;
+  }
+
+  /**
+   * Sets an optional stacktrace that invoked the last query or update.<br>
+   * If set, the stacktrace will be logged in {@link #toString()}.
+   *
+   * @param stackTrace the stacktrace as a string, null to clear
+   */
+  public void setStackTrace(String stackTrace) {
+    this.stackTrace = stackTrace;
+  }
 
   /**
    * Gets the currently attached session.
@@ -245,6 +266,9 @@ public class StatementWrapper implements AutoCloseable {
     if (stmt == null) {
       buf.append(" (closed)");
     }
+    if (stackTrace != null) {
+      buf.append(", last invocation:").append(stackTrace);
+    }
     return buf.toString();
   }
 
@@ -272,6 +296,7 @@ public class StatementWrapper implements AutoCloseable {
    */
   protected int executeUpdateImpl(String sql) throws SQLException {
     this.sql = sql;
+    StatementTracer.getInstance().trace(this);
     return stmt.executeUpdate(sql);
   }
 
@@ -401,6 +426,7 @@ public class StatementWrapper implements AutoCloseable {
    */
   protected ResultSet executeQueryImpl(String sql) throws SQLException {
     this.sql = sql;
+    StatementTracer.getInstance().trace(this);
     return stmt.executeQuery(sql);
   }
 
@@ -579,6 +605,7 @@ public class StatementWrapper implements AutoCloseable {
       }
       finally {
         stmt = null;  // this marks it closed!
+        stackTrace = null;
         final WeakReference<ResultSetWrapper> ref = openResultSet;    // local copy in case of race-condition
         if (ref != null) {
           ResultSetWrapper rs = ref.get();
