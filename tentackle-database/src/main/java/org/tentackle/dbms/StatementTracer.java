@@ -60,8 +60,8 @@ public class StatementTracer {
   private final Map<String, Pattern> regexSet = new ConcurrentHashMap<>();    // regexes for SQLs to trace
 
   private transient boolean regexPresent;       // to speed up
-  private transient boolean enabled;            // tracer is disabled by default
-  private transient Logger.Level logLevel;      // log level, if traced statements should be immediately logged
+  private boolean enabled;                      // tracer is disabled by default
+  private Logger.Level logLevel;                // log level, if traced statements should be immediately logged
 
   /**
    * Creates the tracer.
