@@ -611,6 +611,13 @@ public record Position3D(&#64;Bindable(options="AUTOSELECT") int x,
      * \@param @(property.getName())@ @(property.getComment())@
      * \@return the builder
      */
+@[
+          for (String anno: property.getAnnotations()) {
+]@
+    @(anno)@
+@[
+          }
+]@
     public Builder @(property.getBuilderName())@(@(property.getType())@ @(property.getName())@) {
       this.@(property.getName())@ = @(property.getName())@;
 @[
