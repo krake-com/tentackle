@@ -1050,6 +1050,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * Refreshes the serials and ids for all monitored tables.
    */
   private void refreshTableEntries() {
+    remoteSerials = null;
     for (TableEntry entry: tableEntriesByName.values()) {
       getCounter(entry.tableName);
       IdSerialTuple idSer = selectIdSerialForName(entry.tableName);
