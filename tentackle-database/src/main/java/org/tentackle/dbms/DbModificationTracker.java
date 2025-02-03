@@ -24,6 +24,7 @@ import org.tentackle.dbms.rmi.DbModificationTrackerRemoteDelegate;
 import org.tentackle.io.ReconnectedException;
 import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;
+import org.tentackle.misc.IdSerialNameTuple;
 import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.session.AbstractSessionTask;
 import org.tentackle.session.DefaultSessionTaskDispatcher;
@@ -192,7 +193,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   }
 
 
-
   /**
    * Entry for each table (or class) to watch for modifications.
    */
@@ -316,7 +316,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
 
 
 
-
   private final List<Runnable> shutdownRunnables;                   // runnables to be run once when thread is stopped
   private final Map<String, ModificationTally> countersByName;      // map of modification counters (tableName:counter)
   private final Map<Long, ModificationTally> countersById;          // map of modification counters (id:counter)
@@ -331,6 +330,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   private DbModification masterModification;                        // po to access the master serial
   private boolean localClientMode;                                  // true if local session and not a server
   private long lastPollTime;                                        // last polling time
+  private Map<String, IdSerialTuple> remoteSerials;                 // initial id/serial/name tuples of the remote server's tracker (null if local)
 
 
   /**
@@ -360,7 +360,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     shutdownRunnables = new ArrayList<>();
   }
 
-
   /**
    * Creates a tracker with a default name to be configured.
    */
@@ -379,7 +378,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   public boolean releaseSession(Session session) {
     return unlock(Thread.currentThread());
   }
-
 
   @Override
   public Db getSession() {
@@ -406,25 +404,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     }
   }
 
-
-  @Override
-  protected void cleanup() {
-    if (lastPollTime != 0) {
-      long pollPending = System.currentTimeMillis() - lastPollTime;
-      double pollFactor = (double) pollPending / (double) getSleepInterval();
-      if (pollFactor > 2.0) {
-        // longer running tasks? blocked connection? server closed a crashed session?
-        LOGGER.warning("last poll " + pollPending + " ms ago, " +
-                       String.format("%.2f", pollFactor) + " times the polling interval of " + getSleepInterval() + " ms)");
-      }
-      lastPollTime = 0;   // cleanup is invoked a second time from the main thread for sure
-    }
-
-    performPendingCounts();
-    super.cleanup();
-    invokeShutdownRunnables();
-  }
-
   /**
    * Adds a shutdown runnable.<br>
    * The runnables will be executed on termination of this tracker.
@@ -448,7 +427,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   public synchronized boolean removeShutdownRunnable(Runnable runnable) {
     return shutdownRunnables.remove(runnable);
   }
-
 
   /**
    * Adds a modification listener.
@@ -501,7 +479,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     return removed;
   }
 
-
   /**
    * Returns whether tracker runs in local client mode.<br>
    * In this mode, modifications will be persisted immediately.
@@ -534,7 +511,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     }
   }
 
-
   /**
    * Gets the current master serial.<br>
    * Used in remote connections.
@@ -547,7 +523,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     }
     return masterEntry.serial;
   }
-
 
   /**
    * Gets the pair of id/serial for a given table name.<br>
@@ -598,21 +573,33 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     return getIdSerialForName(name).getSerial();
   }
 
-
   /**
-   * Gets the serials of all monitored tables.<br>
-   * Used in remote connections.
+   * Gets the id/serial tuples of all monitored tables.<br>
+   * Used to serve remote clients only.
    *
-   * @return the serials
+   * @return the tuples
    */
-  public List<IdSerialTuple> getAllSerials() {
-    List<IdSerialTuple> idSerList = new ArrayList<>();
+  public List<IdSerialTuple> getAllIdSerials() {
+    List<IdSerialTuple> tuples = new ArrayList<>();
     for (TableEntry entry: tableEntriesByName.values()) {
-      idSerList.add(new IdSerialTuple(entry.id, entry.serial));
+      tuples.add(new IdSerialTuple(entry.id, entry.serial));
     }
-    return idSerList;
+    return tuples;
   }
 
+  /**
+   * Gets all id/serial/name tuples from the table entries.<br>
+   * Used in remote connections.
+   *
+   * @return the tuples
+   */
+  public List<IdSerialNameTuple> getAllIdSerialNames() {
+    List<IdSerialNameTuple> tuples = new ArrayList<>();
+    for (TableEntry entry : tableEntriesByName.values()) {
+      tuples.add(new IdSerialNameTuple(entry.id, entry.serial, entry.tableName));
+    }
+    return tuples;
+  }
 
   /**
    * Counts the modification for a table.<br>
@@ -635,7 +622,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     // return the guessed minimum table serial (pending count is done in next poll())
     return counter.getLatestSerial();
   }
-
 
   /**
    * Invalidates the modification table and re-initializes all entries and counters.
@@ -664,6 +650,24 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     }
   }
 
+
+  @Override
+  protected void cleanup() {
+    if (lastPollTime != 0) {
+      long pollPending = System.currentTimeMillis() - lastPollTime;
+      double pollFactor = (double) pollPending / (double) getSleepInterval();
+      if (pollFactor > 2.0) {
+        // longer running tasks? blocked connection? server closed a crashed session?
+        LOGGER.warning("last poll " + pollPending + " ms ago, " +
+                       String.format("%.2f", pollFactor) + " times the polling interval of " + getSleepInterval() + " ms)");
+      }
+      lastPollTime = 0;   // cleanup is invoked a second time from the main thread for sure
+    }
+
+    performPendingCounts();
+    super.cleanup();
+    invokeShutdownRunnables();
+  }
 
   @Override
   @SuppressWarnings("unchecked")
@@ -706,7 +710,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     super.lockInternal();
   }
 
-
   /**
    * Returns whether the session should be re-opened (once) after a {@link SessionClosedException}.<br>
    * This is usually the case for non-grouped sessions, since grouping usually means
@@ -721,7 +724,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     return getSession().getSessionGroupId() == 0;
   }
 
-
   @Override
   protected void unlockInternal(long sleepMs) {
     if (delayedSleepInterval > 0) {
@@ -732,7 +734,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     }
     super.unlockInternal(sleepMs);
   }
-
 
   /**
    * Creates a modification event.
@@ -746,6 +747,159 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
             new ModificationEvent(getSession(), details);
   }
 
+  /**
+   * Extracts the master serial from the master serial object.<br>
+   * Used in remote clients only.
+   * <p>
+   * If the master serial implements {@link MasterSerialEvent}, the corresponding
+   * handler will be invoked (if any), before returning the serial.
+   *
+   * @param masterSerial the master serial object
+   * @return the long serial
+   */
+  protected long extractMasterSerial(MasterSerial masterSerial) {
+    if (masterSerial instanceof MasterSerialEvent masterSerialEvent) {
+      if (masterSerialEvent instanceof Collection<?> events) {
+        for (Object object : events) {
+          if (object instanceof MasterSerialEvent event) {
+            handleMasterSerialEvent(event);
+          }
+        }
+      }
+      else {
+        handleMasterSerialEvent(masterSerialEvent);
+      }
+    }
+    return masterSerial.serial();
+  }
+
+  /**
+   * Handles a single master serial event.
+   *
+   * @param event the master serial event
+   */
+  @SuppressWarnings("unchecked")
+  protected void handleMasterSerialEvent(MasterSerialEvent event) {
+    // map to corresponding handler
+    Consumer<MasterSerialEvent> eventHandler = (Consumer<MasterSerialEvent>) MasterSerialEventHandlerFactory.getInstance().getEventHandler(event.getClass());
+    if (eventHandler != null) {
+      eventHandler.accept(event);
+    }
+    else {
+      // else: no handler registered -> ignored (this may be intended!)
+      LOGGER.fine("no handler for {0}", () -> event.getClass().getName());
+    }
+  }
+
+  /**
+   * Returns the new master serial if modified.<br>
+   * The method is provided to allow extensions, for example listening for other events on other tables.
+   *
+   * @return the updated master serial, null if unchanged
+   */
+  protected Long getModifiedMasterSerial() {
+    long serial = selectMasterSerial();
+    if (serial != getMasterSerial()) {
+      return serial;
+    }
+    return null;
+  }
+
+  /**
+   * Reads the master-serial from the database.
+   * @return the master serial
+   */
+  protected long selectMasterSerial() {
+    Db session = getSession();
+    if (session.isRemote()) {
+      try {
+        return extractMasterSerial(((DbModificationTrackerRemoteDelegate)
+                                      session.getRemoteDelegate(getRemoteDelegateId())).selectMasterSerial());
+      }
+      catch (RemoteException e) {
+        throw PersistenceException.createFromRemoteException(session, e);
+      }
+    }
+    else {
+      return masterModification.selectMasterSerial();
+    }
+  }
+
+  /**
+   * Selects id/serial/name tuples from the remote server's tracker.<br>
+   * The method is provided to reduce the number of roundtrips during startup of the client application.
+   * <p>
+   * Throws a {@link PersistenceException} if invoked on a local session.
+   *
+   * @return the tuples
+   */
+  protected List<IdSerialNameTuple> selectAllIdSerialNames() {
+    Db session = getSession();
+    if (session.isRemote()) {
+      try {
+        return ((DbModificationTrackerRemoteDelegate) session.getRemoteDelegate(getRemoteDelegateId())).selectAllIdSerialNames();
+      }
+      catch (RemoteException e) {
+        throw PersistenceException.createFromRemoteException(session, e);
+      }
+    }
+    else {
+      List<IdSerialNameTuple> tuples = new ArrayList<>();
+      for (DbModification dbMod : masterModification.selectAllObjects()) {
+        tuples.add(new IdSerialNameTuple(dbMod.getId(), dbMod.getSerial(), dbMod.getTrackedName()));
+      }
+      return tuples;
+    }
+  }
+
+  /**
+   * Selects id/serial for all monitored tables.<br>
+   * Override this method to listen on other modification tables as well (from other apps, for example),
+   * see {@link #getModifiedMasterSerial()}.
+   *
+   * @return the tuples
+   */
+  protected List<IdSerialTuple> selectAllIdSerials() {
+    Db session = getSession();
+    if (session.isRemote())  {
+      try {
+        return ((DbModificationTrackerRemoteDelegate) session.getRemoteDelegate(getRemoteDelegateId())).selectAllIdSerials();
+      }
+      catch (RemoteException e) {
+        throw PersistenceException.createFromRemoteException(session, e);
+      }
+    }
+    else  {
+      return masterModification.selectAllIdSerial();
+    }
+  }
+
+  /**
+   * Selects the pair of id/serial for a given table name.
+   *
+   * @param tableName the table to lookup
+   * @return the id/serial pair for the table name, null table not configured so far
+   */
+  protected IdSerialTuple selectIdSerialForName(String tableName) {
+    Db session = getSession();
+    if (session.isRemote())  {
+      IdSerialTuple tuple = getRemoteIdSerial(tableName);   // try fast lookup first (to save a roundtrip)
+      if (tuple == null) {
+        // not in initial map? -> get it from remote server (and optionally create it)
+        try {
+          tuple = ((DbModificationTrackerRemoteDelegate) session.getRemoteDelegate(getRemoteDelegateId())).selectIdSerialForName(tableName);
+        }
+        catch (RemoteException e) {
+          throw PersistenceException.createFromRemoteException(session, e);
+        }
+      }
+      return tuple;
+    }
+    else  {
+      return masterModification.selectIdSerial(tableName);
+    }
+  }
+
 
   /**
    * Flushes all pending modification counts to database.
@@ -755,7 +909,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
       counter.performPendingCount();
     }
   }
-
 
   /**
    * Checks for changes in the modification table.
@@ -772,6 +925,8 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     Long serial = getModifiedMasterSerial();
 
     if (serial != null) {   // changed!
+
+      remoteSerials = null;   // no more valid
 
       if (serial < masterEntry.serial) {
         // new serial is less than current serial: force complete re-initialization
@@ -850,7 +1005,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     }
   }
 
-
   /**
    * Invokes the delayed modification listeners.
    */
@@ -874,6 +1028,23 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     }
   }
 
+  /**
+   * Gets the id/serial tuple from the cached remote initial values.<br>
+   * Only used in remote connections.
+   *
+   * @param tableName the table to lookup
+   * @return the id/serial tuple
+   */
+  private IdSerialTuple getRemoteIdSerial(String tableName) {
+    if (remoteSerials == null) {
+      Map<String, IdSerialTuple> remSers = new HashMap<>();
+      for (IdSerialNameTuple tuple : selectAllIdSerialNames()) {
+        remSers.put(tuple.getName(), tuple);
+      }
+      remoteSerials = remSers;
+    }
+    return remoteSerials.get(tableName);
+  }
 
   /**
    * Refreshes the serials and ids for all monitored tables.
@@ -890,128 +1061,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   }
 
   /**
-   * Extracts the master serial from the master serial object.<br>
-   * Used in remote clients only.
-   * <p>
-   * If the master serial implements {@link MasterSerialEvent}, the corresponding
-   * handler will be invoked (if any), before returning the serial.
-   *
-   * @param masterSerial the master serial object
-   * @return the long serial
-   */
-  protected long extractMasterSerial(MasterSerial masterSerial) {
-    if (masterSerial instanceof MasterSerialEvent masterSerialEvent) {
-      if (masterSerialEvent instanceof Collection<?> events) {
-        for (Object object : events) {
-          if (object instanceof MasterSerialEvent event) {
-            handleMasterSerialEvent(event);
-          }
-        }
-      }
-      else {
-        handleMasterSerialEvent(masterSerialEvent);
-      }
-    }
-    return masterSerial.serial();
-  }
-
-  /**
-   * Handles a single master serial event.
-   *
-   * @param event the master serial event
-   */
-  @SuppressWarnings("unchecked")
-  protected void handleMasterSerialEvent(MasterSerialEvent event) {
-    // map to corresponding handler
-    Consumer<MasterSerialEvent> eventHandler = (Consumer<MasterSerialEvent>) MasterSerialEventHandlerFactory.getInstance().getEventHandler(event.getClass());
-    if (eventHandler != null) {
-      eventHandler.accept(event);
-    }
-    else {
-      // else: no handler registered -> ignored (this may be intended!)
-      LOGGER.fine("no handler for {0}", () -> event.getClass().getName());
-    }
-  }
-
-  /**
-   * Returns the new master serial if modified.<br>
-   * The method is provided to allow extensions, for example listening for other events on other tables.
-   *
-   * @return the updated master serial, null if unchanged
-   */
-  protected Long getModifiedMasterSerial() {
-    long serial = selectMasterSerial();
-    if (serial != getMasterSerial()) {
-      return serial;
-    }
-    return null;
-  }
-
-  /**
-   * Reads the master-serial from the database.
-   * @return the master serial
-   */
-  protected long selectMasterSerial() {
-   if (getSession().isRemote())  {
-      try {
-        return extractMasterSerial(((DbModificationTrackerRemoteDelegate) getSession().
-                getRemoteDelegate(getRemoteDelegateId())).selectMasterSerial());
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(getSession(), e);
-      }
-    }
-    else  {
-      return masterModification.selectMasterSerial();
-    }
-  }
-
-
-  /**
-   * Selects id/serial for all monitored tables.<br>
-   * Override this method to listen on other modification tables as well (from other apps, for example),
-   * see {@link #getModifiedMasterSerial()}.
-   *
-   * @return the tuples
-   */
-  protected List<IdSerialTuple> selectAllIdSerials() {
-    if (getSession().isRemote())  {
-      try {
-        return ((DbModificationTrackerRemoteDelegate) getSession().getRemoteDelegate(getRemoteDelegateId())).selectAllSerials();
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(getSession(), e);
-      }
-    }
-    else  {
-      return masterModification.selectAllIdSerial();
-    }
-  }
-
-
-  /**
-   * Selects the pair of id/serial for a given table name.
-   *
-   * @param tableName the table to lookup
-   * @return the id/serial pair for the table name, null table not configured so far
-   */
-  protected IdSerialTuple selectIdSerialForName(String tableName) {
-
-    if (getSession().isRemote())  {
-      try {
-        return ((DbModificationTrackerRemoteDelegate) getSession().getRemoteDelegate(getRemoteDelegateId())).selectIdSerialForName(tableName);
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(getSession(), e);
-      }
-    }
-    else  {
-      return masterModification.selectIdSerial(tableName);
-    }
-  }
-
-
-  /**
    * Gets the modification counter for a given table.<br>
    * If there is no such counter, it will be created.
    *
@@ -1025,7 +1074,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     }
     return counter;
   }
-
 
   /**
    * Configures a counter.
@@ -1054,8 +1102,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     return countersByName.get(tableName);
   }
 
-
-
   /**
    * Configures the master entry.
    */
@@ -1075,7 +1121,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
       addTaskAndWait(task);
     }
   }
-
 
   /**
    * Configures a named entry.
@@ -1105,7 +1150,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
       addTaskAndWait(task);
     }
   }
-
 
   /**
    * runs the shutdown runnables

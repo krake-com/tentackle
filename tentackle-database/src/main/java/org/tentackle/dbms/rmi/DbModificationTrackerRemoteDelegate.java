@@ -18,6 +18,7 @@
 
 package org.tentackle.dbms.rmi;
 
+import org.tentackle.misc.IdSerialNameTuple;
 import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.session.MasterSerial;
 
@@ -33,6 +34,7 @@ public interface DbModificationTrackerRemoteDelegate extends RemoteDelegate {
 
   MasterSerial selectMasterSerial() throws RemoteException;
   IdSerialTuple selectIdSerialForName(String tableName) throws RemoteException;
-  List<IdSerialTuple> selectAllSerials() throws RemoteException;
+  List<IdSerialTuple> selectAllIdSerials() throws RemoteException;
+  List<IdSerialNameTuple> selectAllIdSerialNames() throws RemoteException;
 
 }

@@ -19,6 +19,7 @@
 package org.tentackle.dbms.rmi;
 
 import org.tentackle.dbms.DbModificationTracker;
+import org.tentackle.misc.IdSerialNameTuple;
 import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.session.MasterSerial;
 import org.tentackle.session.MasterSerialEvent;
@@ -94,9 +95,19 @@ public class DbModificationTrackerRemoteDelegateImpl<T extends DbModificationTra
   }
 
   @Override
-  public List<IdSerialTuple> selectAllSerials() throws RemoteException {
+  public List<IdSerialTuple> selectAllIdSerials() throws RemoteException {
     try {
-      return ((DbModificationTracker) ModificationTracker.getInstance()).getAllSerials();
+      return ((DbModificationTracker) ModificationTracker.getInstance()).getAllIdSerials();
+    }
+    catch (RuntimeException ex)  {
+      throw createException(ex);
+    }
+  }
+
+  @Override
+  public List<IdSerialNameTuple> selectAllIdSerialNames() throws RemoteException {
+    try {
+      return ((DbModificationTracker) ModificationTracker.getInstance()).getAllIdSerialNames();
     }
     catch (RuntimeException ex)  {
       throw createException(ex);
