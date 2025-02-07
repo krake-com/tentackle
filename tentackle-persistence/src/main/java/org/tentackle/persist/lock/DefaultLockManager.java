@@ -560,7 +560,7 @@ public class DefaultLockManager implements LockManager {
     String poStr;
     if (pdo == null) {
       poStr = className + "[" + dbTokenLock.getId() + "]";
-      LOGGER.severe("missing {0} for id {1} in {2}", className, dbTokenLock.getId(), context.getSession());
+      LOGGER.severe("missing {0} in {1}", poStr, context.getSession());
       // just remove from map
       lockMap.remove(pdoKey);
     }
@@ -568,12 +568,15 @@ public class DefaultLockManager implements LockManager {
       AbstractPersistentObject<?, ?> po = (AbstractPersistentObject<?, ?>) pdo.getPersistenceDelegate();
       poStr = po.toGenericString();
       po.clearTokenLock();
-      po.updateTokenLockOnly();   // this will also remove the DbTokenLock if in map
+      po.updateTokenLockOnly();   // this will also remove the DbTokenLock if in map and set DbTokenLock.session to null
     }
 
-    DbTokenLock reloadedDbTokenLock = dbTokenLock.reloadObject();
-    if (reloadedDbTokenLock != null) {    // still in database table (wasn't in map or PDO didn't exist)
-      reloadedDbTokenLock.deleteObject();
+    if (dbTokenLock.getSession() != null) {   // if not removed by po.updateTokenLockOnly() above
+      DbTokenLock reloadedDbTokenLock = dbTokenLock.reloadObject();
+      if (reloadedDbTokenLock != null) {    // still in database table (wasn't in map or PDO didn't exist)
+        LOGGER.warning("removing obsolete tokenlock for {0}", poStr);
+        reloadedDbTokenLock.deleteObject();
+      }
     }
 
     LOGGER.warning("stale tokenlock removed for {0}, userId {1}, since {2}, expiry {3}",
