@@ -26,7 +26,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Spliterator;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 /**
  * A copy-on-write wrapper for collections.<br>
@@ -187,6 +190,11 @@ public class CopyOnWriteCollection<E> implements Collection<E>, Serializable {
   }
 
   @Override
+  public boolean removeIf(Predicate<? super E> filter) {
+    return clonedCollection().removeIf(filter);
+  }
+
+  @Override
   public boolean containsAll(Collection<?> c) {
     return clonedCollection().containsAll(c);
   }
@@ -211,6 +219,30 @@ public class CopyOnWriteCollection<E> implements Collection<E>, Serializable {
     clonedCollection().clear();
   }
 
+  @Override
+  public boolean equals(Object obj) {
+    return collection.equals(obj);
+  }
+
+  @Override
+  public int hashCode() {
+    return collection.hashCode();
+  }
+
+  @Override
+  public Spliterator<E> spliterator() {
+    return collection.spliterator();
+  }
+
+  @Override
+  public Stream<E> stream() {
+    return collection.stream();
+  }
+
+  @Override
+  public Stream<E> parallelStream() {
+    return collection.parallelStream();
+  }
 
   /**
    * Creates a read-only iterator for the collection.

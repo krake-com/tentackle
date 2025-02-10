@@ -20,8 +20,10 @@ package org.tentackle.misc;
 
 import java.io.Serial;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.function.UnaryOperator;
 
 /**
  * A copy-on-write wrapper for lists.<br>
@@ -109,6 +111,16 @@ public class CopyOnWriteList<E> extends CopyOnWriteCollection<E> implements List
   }
 
   @Override
+  public E getFirst() {
+    return list().getFirst();
+  }
+
+  @Override
+  public E getLast() {
+    return list().getLast();
+  }
+
+  @Override
   public E set(int index, E element) {
     return clonedList().set(index, element);
   }
@@ -119,8 +131,28 @@ public class CopyOnWriteList<E> extends CopyOnWriteCollection<E> implements List
   }
 
   @Override
+  public void addFirst(E e) {
+    clonedList().addFirst(e);
+  }
+
+  @Override
+  public void addLast(E e) {
+    clonedList().addLast(e);
+  }
+
+  @Override
   public E remove(int index) {
     return clonedList().remove(index);
+  }
+
+  @Override
+  public E removeFirst() {
+    return clonedList().removeFirst();
+  }
+
+  @Override
+  public E removeLast() {
+    return clonedList().removeLast();
   }
 
   @Override
@@ -131,6 +163,21 @@ public class CopyOnWriteList<E> extends CopyOnWriteCollection<E> implements List
   @Override
   public int lastIndexOf(Object o) {
     return list().lastIndexOf(o);
+  }
+
+  @Override
+  public List<E> reversed() {
+    return list().reversed();
+  }
+
+  @Override
+  public void replaceAll(UnaryOperator<E> operator) {
+    clonedList().replaceAll(operator);
+  }
+
+  @Override
+  public void sort(Comparator<? super E> c) {
+    clonedList().sort(c);
   }
 
   @Override
