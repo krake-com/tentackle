@@ -30,7 +30,7 @@ import java.util.Map;
  */
 public class PdoWrapper {
 
-  private final PersistentDomainObject<?> pdo;      // the PDO
+  private PersistentDomainObject<?> pdo;            // the PDO
   private String udk;                               // lazily created UDK
   private DataObject dataObject;                    // lazily created object tree
   private Map<String, Boolean> codeConfiguration;   // lazily created code configuration
@@ -51,6 +51,17 @@ public class PdoWrapper {
    */
   public PersistentDomainObject<?> getPdo() {
     return pdo;
+  }
+
+  /**
+   * Reloads the pdo from the database.
+   */
+  public void reload() {
+    PersistentDomainObject<?> reloaded = pdo.reload();
+    if (reloaded != null) {
+      pdo = reloaded;
+      dataObject = null;
+    }
   }
 
   /**
@@ -131,6 +142,11 @@ public class PdoWrapper {
   @Override
   public int hashCode() {
     return pdo.hashCode();
+  }
+
+  @Override
+  public String toString() {
+    return pdo.toGenericString();
   }
 
 }

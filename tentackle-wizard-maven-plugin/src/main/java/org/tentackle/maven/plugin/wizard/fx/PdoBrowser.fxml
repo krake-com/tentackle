@@ -16,7 +16,8 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
 
-<BorderPane fx:id="borderPane" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.tentackle.maven.plugin.wizard.fx.PdoBrowser">
+<?import javafx.scene.control.ToggleButton?>
+<BorderPane fx:id="borderPane" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.tentackle.maven.plugin.wizard.fx.PdoBrowser">
    <top>
       <GridPane hgap="5.0" vgap="5.0" BorderPane.alignment="CENTER">
          <columnConstraints>
@@ -50,14 +51,14 @@
          <children>
             <Label text="latest:" />
             <TextField fx:id="latestField" prefColumnCount="5" />
-            <Button fx:id="refreshButton" mnemonicParsing="false" text="refresh" />
+            <Button fx:id="loadButton" mnemonicParsing="false" text="load" />
             <Button fx:id="byIdButton" mnemonicParsing="false" text="find by ID" />
             <Button fx:id="finderButton" mnemonicParsing="false" text="use finder" />
             <Separator maxWidth="1.7976931348623157E308" orientation="VERTICAL" HBox.hgrow="ALWAYS" />
             <Button fx:id="configCodeButton" mnemonicParsing="false" />
             <Button fx:id="configPathsButton" mnemonicParsing="false" />
             <Button fx:id="generateButton" mnemonicParsing="false" text="generate code" />
-            <Button fx:id="memorizeButton" mnemonicParsing="false" text="memorize" />
+            <ToggleButton fx:id="memorizeButton" mnemonicParsing="false" text="memorize" />
             <Button fx:id="closeButton" mnemonicParsing="false" text="close" />
          </children>
          <padding>
