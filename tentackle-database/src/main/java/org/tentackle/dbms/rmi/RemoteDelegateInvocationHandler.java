@@ -566,6 +566,7 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
         if (locals != null) {
           locals.restore();
         }
+        clearMDC();
       }
     }
   }
