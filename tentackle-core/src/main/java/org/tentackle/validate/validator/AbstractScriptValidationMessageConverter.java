@@ -33,7 +33,7 @@ public abstract class AbstractScriptValidationMessageConverter implements Script
 
   /** start marker for I18N strings. */
   public static final String I18N_INTRO = "@(";
-
+  private static final int I18N_INTRO_LEN = I18N_INTRO.length();
 
   private static final String VALIDATION_UTILITIES_NAME = ValidationUtilities.class.getName();
 
@@ -48,10 +48,10 @@ public abstract class AbstractScriptValidationMessageConverter implements Script
   @Override
   public String convert(String code, ScriptingLanguage language) {
     int ndx = code.indexOf(I18N_INTRO);
-    if (ndx > 0) {
+    if (ndx >= 0) {
       return code.substring(0, ndx) + VALIDATION_UTILITIES_NAME + ".getInstance().format(" +
              language.createLocalVariableReference(ValidationContext.VAR_OBJECT) + "," +
-             code.substring(ndx + 2);
+             code.substring(ndx + I18N_INTRO_LEN);
     }
     return code;
   }
