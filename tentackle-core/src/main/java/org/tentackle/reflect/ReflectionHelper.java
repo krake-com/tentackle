@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.reflect;
 
 import org.tentackle.common.StringHelper;
@@ -33,7 +32,6 @@ import java.lang.reflect.WildcardType;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
-
 
 /**
  * Methods related to the reflection API.
@@ -68,7 +66,6 @@ public final class ReflectionHelper {
     String pkgName = clazz.getPackageName();
     return "/" + pkgName.replace('.', '/');
   }
-
 
   /**
    * Gets the package name of a classname(-like) string.<br>
@@ -140,7 +137,6 @@ public final class ReflectionHelper {
       return "<" + e + ">";
     }
   }
-
 
   /**
    * create a source-usable string from clazz.getName().
@@ -344,31 +340,31 @@ public final class ReflectionHelper {
     Class<T> clazz = null;
     if (type instanceof ParameterizedType parameterizedType) {
       Type[] typeArguments = parameterizedType.getActualTypeArguments();
-      if (typeArguments != null && typeArguments.length == 1) {
+      if (typeArguments.length == 1) {
         Type typeArgument = typeArguments[0];
         if (typeArgument instanceof Class) {
           clazz = (Class<T>) typeArgument;
         }
         else if (typeArgument instanceof WildcardType wildcardType) {
           typeArguments = wildcardType.getLowerBounds();
-          if (typeArguments == null || typeArguments.length != 1) {
+          if (typeArguments.length != 1) {
             typeArguments = wildcardType.getUpperBounds();
           }
-          if (typeArguments != null && typeArguments.length == 1) {
+          if (typeArguments.length == 1) {
             typeArgument = typeArguments[0];
             if (typeArgument instanceof Class) {
               clazz = (Class<T>) typeArgument;
             }
-            else if (typeArgument instanceof ParameterizedType) {
-              Type rawType = ((ParameterizedType) typeArgument).getRawType();
+            else if (typeArgument instanceof ParameterizedType parTypeArg) {
+              Type rawType = parTypeArg.getRawType();
               if (rawType instanceof Class) {
                 clazz = (Class<T>) rawType;
               }
             }
           }
         }
-        else if (typeArgument instanceof ParameterizedType) {
-          Type rawType = ((ParameterizedType) typeArgument).getRawType();
+        else if (typeArgument instanceof ParameterizedType parTypeArg) {
+          Type rawType = parTypeArg.getRawType();
           if (rawType instanceof Class) {
             clazz = (Class<T>) rawType;     // something like OrgUnit<?>
           }
@@ -836,7 +832,6 @@ public final class ReflectionHelper {
     }
     return field;
   }
-
 
 
   /**

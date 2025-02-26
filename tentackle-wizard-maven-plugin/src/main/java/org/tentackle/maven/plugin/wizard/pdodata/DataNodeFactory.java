@@ -72,14 +72,12 @@ public class DataNodeFactory {
   private static class ClassInfo {
 
     private final Class<? extends PersistentDomainObject<?>> pdoClass;
-    private final String typeName;
     private final Entity entity;
     private final Set<MethodInfo> methodInfos;
 
     private ClassInfo(Class<? extends PersistentDomainObject<?>> pdoClass, Class<?> poClass) {
       this.pdoClass = pdoClass;
-      typeName = pdoClass.getSimpleName();
-      entity = lookupEntity(typeName);
+      entity = lookupEntity(pdoClass.getSimpleName());
       methodInfos = new TreeSet<>();      // sorted by name
       Method[] pdoClassMethods = pdoClass.getMethods();
       Method[] poClassMethods = ReflectionHelper.getAllMethods(poClass, new Class<?>[] {PersistentObject.class}, false, null, false);
@@ -114,9 +112,9 @@ public class DataNodeFactory {
               }
               else if (List.class.isAssignableFrom(type)) {
                 Type genType = method.getGenericReturnType();
-                if (genType instanceof ParameterizedType) {
-                  Type[] typeArguments = ((ParameterizedType) genType).getActualTypeArguments();
-                  if (typeArguments != null && typeArguments.length == 1) {
+                if (genType instanceof ParameterizedType parGenType) {
+                  Type[] typeArguments = parGenType.getActualTypeArguments();
+                  if (typeArguments.length == 1) {
                     Type typeArg = typeArguments[0];
                     if (typeArg instanceof Class<?> clz) {
                       if (PersistentDomainObject.class.isAssignableFrom(clz)) {
@@ -231,7 +229,7 @@ public class DataNodeFactory {
           Relation relation = classInfo.entity.getRelation(methodInfo.name, true);
           if (relation != null && relation.isEmbedding()) {
             StringBuilder prefix = new StringBuilder();
-            if (compositeRelation.isEmbedding()) {
+            if (compositeRelation != null && compositeRelation.isEmbedding()) {
               prefix.append(compositeRelation.getColumnPrefix());
             }
             if (relation.isEmbedding()) {
@@ -261,7 +259,7 @@ public class DataNodeFactory {
               });
             }
             nodes.add(new DataList(methodInfo.typeName, methodInfo.name, methodInfo.comment, dataObjects, relation,
-                                   new SqlCondition(pdo.getId(), relation.getForeignAttribute())));
+                                   new SqlCondition(pdo.getId(), relation == null ? null : relation.getForeignAttribute())));
           }
           else {
             nodes.add(createDataObject(methodInfo.name, methodInfo.comment, (PersistentDomainObject<?>) value, pdo, methodInfo.isHidden, relation));
