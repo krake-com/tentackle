@@ -636,7 +636,10 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
         if (masterEntry != null) {
           masterEntry.serial = 1;
         }
-        DbModification.initializeModificationTable((Db) getSession());
+        Session session = getSession();
+        if (session instanceof Db db && !db.isRemote()) {
+          DbModification.initializeModificationTable(db);
+        }
         refreshTableEntries();
       }
     };
