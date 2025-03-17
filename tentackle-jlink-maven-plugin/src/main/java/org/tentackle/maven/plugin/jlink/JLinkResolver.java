@@ -446,7 +446,8 @@ public class JLinkResolver {
         automaticModules.put(moduleName, new ModularArtifact(artifact, moduleDescriptor));
       }
       else if (mojo.isClasspathDependency(artifact)) {
-        mojo.getLog().info("full-blown module " + moduleName + " moved to the class-path");
+        mojo.getLog().debug("full-blown module " + moduleName + " treated as an automatic module");
+        // will be logged again in addToModuleOrClasspath below
         automaticModules.put(moduleName, new ModularArtifact(artifact, moduleDescriptor));
       }
       else if (mojo.isModulePathOnly(moduleName)) {
@@ -501,7 +502,7 @@ public class JLinkResolver {
       else {
         for (ModularArtifact unresolvedModule: unresolvedModules) {
           if (mojo.isClasspathDependency(unresolvedModule.getArtifact())) {
-            // moved to the classpath explicitly
+            // moved to the classpath explicitly (already moved to the automatic modules, see above)
             result.addToClassPath(unresolvedModule.getArtifact());
           }
           else {
@@ -697,7 +698,11 @@ public class JLinkResolver {
   }
 
   private void addToModuleOrClasspath(ModularArtifact artifact, Result result) {
-    if (mojo.isClasspathDependency(artifact.getArtifact()) || !result.isModular()) {
+    if (!result.isModular()) {
+      result.addToClassPath(artifact.getArtifact());
+    }
+    else if (mojo.isClasspathDependency(artifact.getArtifact())) {
+      mojo.getLog().info("artifact " + artifact + " moved to the class-path");
       result.addToClassPath(artifact.getArtifact());
     }
     else {
