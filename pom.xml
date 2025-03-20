@@ -7,7 +7,7 @@
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-parent</artifactId>
-  <version>23.0-SNAPSHOT</version>
+  <version>24.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Tentackle Parent</name>
@@ -80,24 +80,24 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <dependency.locations.enabled>false</dependency.locations.enabled>
     <javac.lint>all,-processing,-this-escape</javac.lint>
-    <javac.version>23</javac.version>
+    <javac.version>24</javac.version>
 
     <asm.version>9.7.1</asm.version>
     <freemarker.version>2.3.34</freemarker.version>
-    <groovy.version>4.0.25</groovy.version>
+    <groovy.version>4.0.26</groovy.version>
     <h2.version>2.3.232</h2.version>
     <ikonli.version>12.3.1</ikonli.version>
-    <javafx.version>23.0.2</javafx.version>
-    <jruby.version>9.4.11.0</jruby.version>
+    <javafx.version>24</javafx.version>
+    <jruby.version>9.4.12.0</jruby.version>
     <junit.version>5.11.4</junit.version>
     <log4j2.version>2.24.3</log4j2.version>
     <mavengem.wagon.version>1.0.3</mavengem.wagon.version>
     <plexus.archiver.version>4.10.0</plexus.archiver.version>
-    <plexus.java.version>1.3.0</plexus.java.version>
+    <plexus.java.version>1.4.0</plexus.java.version>
     <poi.version>5.4.0</poi.version>
     <postgresql.version>42.7.5</postgresql.version>
-    <slf4j.version>2.0.16</slf4j.version>
-    <testng.version>7.10.2</testng.version>
+    <slf4j.version>2.0.17</slf4j.version>
+    <testng.version>7.11.0</testng.version>
     <wagon.ssh.version>3.5.3</wagon.ssh.version>
 
     <maven.version>3.9.0</maven.version>
@@ -107,18 +107,18 @@
     <maven.plugin.annotations.version>3.14.0</maven.plugin.annotations.version>
 
     <maven.archetype.plugin.version>3.3.1</maven.archetype.plugin.version>
-    <maven.clean.plugin.version>3.4.0</maven.clean.plugin.version>
-    <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
+    <maven.clean.plugin.version>3.4.1</maven.clean.plugin.version>
+    <maven.compiler.plugin.version>3.14.0</maven.compiler.plugin.version>
     <maven.dependency.plugin.version>3.8.1</maven.dependency.plugin.version>
-    <maven.deploy.plugin.version>3.1.3</maven.deploy.plugin.version>
+    <maven.deploy.plugin.version>3.1.4</maven.deploy.plugin.version>
     <maven.enforcer.plugin.version>3.5.0</maven.enforcer.plugin.version>
     <maven.gpg.plugin.version>3.2.7</maven.gpg.plugin.version>
     <maven.help.plugin.version>3.5.1</maven.help.plugin.version>
-    <maven.install.plugin.version>3.1.3</maven.install.plugin.version>
+    <maven.install.plugin.version>3.1.4</maven.install.plugin.version>
     <maven.jar.plugin.version>3.4.2</maven.jar.plugin.version>
     <maven.javadoc.plugin.version>3.11.2</maven.javadoc.plugin.version>
     <maven.jxr.plugin.version>3.6.0</maven.jxr.plugin.version>
-    <maven.owasp.plugin.version>12.0.2</maven.owasp.plugin.version>
+    <maven.owasp.plugin.version>12.1.0</maven.owasp.plugin.version>
     <maven.plugin.plugin.version>3.15.0</maven.plugin.plugin.version>
     <maven.plugin.report.plugin.version>3.15.1</maven.plugin.report.plugin.version>
     <maven.project.info.reports.plugin.version>3.6.2</maven.project.info.reports.plugin.version>
@@ -135,7 +135,7 @@
     <tentackle.manifestDirectory>${project.build.directory}/generated-resources/manifest</tentackle.manifestDirectory>
     <netbeans.hint.license>tentackle</netbeans.hint.license>
 
-    <wurbelizer.version>23.0-SNAPSHOT</wurbelizer.version>
+    <wurbelizer.version>24.0-SNAPSHOT</wurbelizer.version>
     <!-- override the default wurbelDir for multi-module project -->
     <wurbel.wurbelDir>${rootBasedir}/target/wurbel</wurbel.wurbelDir>
 
