@@ -16,12 +16,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.security;
 
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
+import org.tentackle.log.Logger;
 import org.tentackle.security.permissions.AllPermission;
 import org.tentackle.security.permissions.EditPermission;
 import org.tentackle.security.permissions.ExecutePermission;
@@ -38,24 +38,22 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 
-
 /**
- * Default implementation of a security manager factory.
+ * Default implementation of a security factory.
  *
  * @author harald
  */
 @Service(SecurityFactory.class)
 public class DefaultSecurityFactory implements SecurityFactory {
 
+  private static final Logger LOG = Logger.get(DefaultSecurityFactory.class);
 
-  private final SecurityManager securityManager;              // the manager singleton
+  private final SecurityManager securityManager;                                      // the manager singleton
+  private final Map<String, Class<? extends Permission>> permissionInterfacesByName;  // permission interfaces by name
+  private final Map<Class<? extends Permission>, Permission> permissionsByIface;      // permission implementations by interface
+  private final Map<Class<? extends Permission>, Permission> permissionsByClass;      // permission implementations by implementing class (fallback)
 
-
-  private final Map<String,Class<? extends Permission>> permissionInterfacesByName; // permission interfaces by name
-  private final Map<Class<? extends Permission>,Permission> permissionsByIface;     // permission implementations by interface
-  private final Collection<Permission> permissions;                                 // all permissions
-
-  // permissions essential to the framework
+  // predefined permissions essential to the framework
   private AllPermission allPermission;
   private ReadPermission readPermission;
   private ViewPermission viewPermission;
@@ -71,10 +69,10 @@ public class DefaultSecurityFactory implements SecurityFactory {
     securityManager = createSecurityManager();
     permissionInterfacesByName = new HashMap<>();
     permissionsByIface = new HashMap<>();
-    permissions = new ArrayList<>();
+    permissionsByClass = new HashMap<>();
     try {
-      Map<String,String> permissionMap = ServiceFactory.getServiceFinder().createNameMap(PermissionService.class.getName());
-      for (Map.Entry<String,String> entry: permissionMap.entrySet()) {
+      Map<String, String> permissionMap = ServiceFactory.getServiceFinder().createNameMap(PermissionService.class.getName());
+      for (Map.Entry<String, String> entry : permissionMap.entrySet()) {
         @SuppressWarnings("unchecked")
         Class<Permission> permissionInterface = (Class<Permission>) Class.forName(entry.getKey());
         @SuppressWarnings("unchecked")
@@ -91,10 +89,10 @@ public class DefaultSecurityFactory implements SecurityFactory {
         Class<? extends Permission> oldPermission = permissionInterfacesByName.put(name, permissionInterface);
         if (oldPermission != null) {
           throw new SecurityException("permission name '" + name + "' of " + permissionImplementation.getName() +
-                  " already used by " + oldPermission.getName());
+                                      " already used by " + oldPermission.getName());
         }
         permissionsByIface.put(permissionInterface, permission);
-        permissions.add(permission);
+        permissionsByClass.put(permission.getClass(), permission);
 
         if (permission instanceof EditPermission &&
             (editPermission == null ||
@@ -178,13 +176,13 @@ public class DefaultSecurityFactory implements SecurityFactory {
 
   @Override
   public Collection<Permission> getPermissions() {
-    return permissions;
+    return permissionsByIface.values();
   }
 
   @Override
   public Collection<Permission> getPermissions(Class<?> clazz) {
     Collection<Permission> perms = new ArrayList<>();
-    for (Class<? extends Permission> permissionIface: getPermissionInterfaces()) {
+    for (Class<? extends Permission> permissionIface : getPermissionInterfaces()) {
       Permission permission = getPermission(permissionIface);
       if (permission.appliesTo(clazz)) {
         perms.add(permission);
@@ -196,7 +194,7 @@ public class DefaultSecurityFactory implements SecurityFactory {
   @Override
   public Collection<Class<? extends Permission>> getPermissionInterfaces(Class<?> clazz) {
     Collection<Class<? extends Permission>> perms = new ArrayList<>();
-    for (Permission permission: getPermissions(clazz)) {
+    for (Permission permission : getPermissions(clazz)) {
       if (permission.appliesTo(clazz)) {
         perms.add(permission.getPermissionInterface());
       }
@@ -212,7 +210,17 @@ public class DefaultSecurityFactory implements SecurityFactory {
   @Override
   @SuppressWarnings("unchecked")
   public <T extends Permission> T getPermission(Class<T> iFace) {
-    T permission = (T) permissionsByIface.get(iFace);
+    T permission;
+    if (iFace.isInterface()) {
+      permission = (T) permissionsByIface.get(iFace);
+    }
+    else {
+      // accidentally passed BlahPermissionImpl.class instead of BlahPermission.class ?
+      permission = (T) permissionsByClass.get(iFace);
+      if (permission != null) {
+        LOG.warning("passed {0} instead of its interface! please fix that!", iFace);
+      }
+    }
     if (permission == null) {
       throw new SecurityException("no permission instance for " + iFace);
     }
@@ -274,7 +282,7 @@ public class DefaultSecurityFactory implements SecurityFactory {
   public Set<Permission> stringToPermissions(String str) {
     Class<?>[] permIfaces = stringToPermissionInterfaces(str);
     Set<Permission> perms = new LinkedHashSet<>();
-    for (Class<?> permIface: permIfaces) {
+    for (Class<?> permIface : permIfaces) {
       perms.add(getPermission((Class<Permission>) permIface));
     }
     return perms;
@@ -284,7 +292,7 @@ public class DefaultSecurityFactory implements SecurityFactory {
   public String permissionsToString(Set<Permission> permissions) {
     if (permissions != null) {
       StringBuilder buf = new StringBuilder();
-      for (Permission permission: permissions) {
+      for (Permission permission : permissions) {
         if (!buf.isEmpty()) {
           buf.append(',');
         }
