@@ -21,6 +21,7 @@ package org.tentackle.fx.component.config;
 
 import org.tentackle.fx.FxComponent;
 
+import javafx.scene.TraversalDirection;
 import javafx.scene.control.TextInputControl;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -45,10 +46,10 @@ public abstract class TextInputControlConfigurator<T extends TextInputControl> e
     super.configure(control);
 
     // first keystroke triggers check for modification
-    control.textProperty().addListener(o -> ((FxComponent) control).triggerViewModified());
+    control.textProperty().addListener(_ -> ((FxComponent) control).triggerViewModified());
 
     // Shift-Backspace clears the field
-    control.addEventFilter(KeyEvent.ANY, (KeyEvent event) -> {
+    control.addEventFilter(KeyEvent.ANY, event -> {
 
       if (event.getCode() == KeyCode.BACK_SPACE && event.isShiftDown() &&
           !event.isControlDown() && !event.isAltDown() && !event.isMetaDown()) {
@@ -66,7 +67,7 @@ public abstract class TextInputControlConfigurator<T extends TextInputControl> e
   @Override
   protected void remapKeys(T control) {
 
-    control.addEventFilter(KeyEvent.ANY, (KeyEvent event) -> {
+    control.addEventFilter(KeyEvent.ANY, event -> {
 
       if (event.getCode() == KeyCode.ENTER &&
           !event.isControlDown() && !event.isAltDown() && !event.isMetaDown() &&
@@ -90,10 +91,7 @@ public abstract class TextInputControlConfigurator<T extends TextInputControl> e
    */
   protected void focusNext(T control) {
     if (!(control instanceof FxComponent) || !((FxComponent) control).isCellEditor()) {
-      //      NodeHelper.traverse(control, Direction.NEXT);   is non-public API :(
-      KeyEvent event = new KeyEvent(KeyEvent.KEY_PRESSED, KeyEvent.CHAR_UNDEFINED, "", KeyCode.TAB,
-                                    false, false, false, false);
-      control.fireEvent(event);
+      control.requestFocusTraversal(TraversalDirection.NEXT);
     }
   }
 
@@ -104,10 +102,7 @@ public abstract class TextInputControlConfigurator<T extends TextInputControl> e
    */
   protected void focusPrevious(T control) {
     if (!(control instanceof FxComponent) || !((FxComponent) control).isCellEditor()) {
-      //      NodeHelper.traverse(control, Direction.PREVIOUS);   is non-public API :(
-      KeyEvent event = new KeyEvent(KeyEvent.KEY_PRESSED, KeyEvent.CHAR_UNDEFINED, "", KeyCode.TAB,
-                                    true, false, false, false);
-      control.fireEvent(event);
+      control.requestFocusTraversal(TraversalDirection.PREVIOUS);
     }
   }
 
