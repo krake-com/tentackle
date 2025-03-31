@@ -346,6 +346,8 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
      * As long as this thread is running the JVM will not terminate.
      */
     setDaemon(false);
+    setPriority(MAX_PRIORITY);    // runs periodically as reliable as possible
+
     setSessionClosedOnTermination(true);
     setSleepInterval(DEFAULT_POLLING_INTERVAL);
 
