@@ -170,7 +170,7 @@ public class DefaultFxFactory implements FxFactory {
                       viewClass.getSimpleName() + "-translator",
                       ServiceFactory.getClassLoader(Constants.DEFAULT_SERVICE_PATH, ValueTranslator.class.getName()),
                       new HashMap<>(), null));
-      translators.getNameMap().put(entry.getKey().modelClass().getName(), entry.getValue().getName());
+      translators.getNameMap().put(entry.getKey().modelClass().getCanonicalName(), entry.getValue().getName());
     }
 
   }

@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.reflect;
 
 import org.tentackle.common.Constants;
@@ -28,7 +27,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
 
 /**
  * A default implementation of a classmapper.<br>
@@ -104,7 +102,7 @@ public class DefaultClassMapper extends AbstractClassMapper<String> implements C
    * @param mappedClass the mapped service class
    */
   public DefaultClassMapper(String name, Class<?> mappedClass) {
-    this(name, mappedClass.getName());
+    this(name, mappedClass.getCanonicalName());
   }
 
 
@@ -178,7 +176,7 @@ public class DefaultClassMapper extends AbstractClassMapper<String> implements C
 
   @Override
   public Class<?> map(Class<?> clazz) throws ClassNotFoundException {
-    return map(clazz.getName());
+    return map(clazz.getCanonicalName());
   }
 
   @Override
@@ -188,7 +186,7 @@ public class DefaultClassMapper extends AbstractClassMapper<String> implements C
 
   @Override
   public Class<?> mapLenient(Class<?> clazz) throws ClassNotFoundException {
-    return mapLenient(clazz.getName());
+    return mapLenient(clazz.getCanonicalName());
   }
 
   @Override

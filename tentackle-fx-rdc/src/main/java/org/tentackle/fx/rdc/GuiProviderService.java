@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.fx.rdc;
 
 import org.tentackle.common.Analyze;
@@ -28,8 +27,6 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
-
 
 /**
  * Annotation to express that the annotated class
@@ -68,4 +65,3 @@ public @interface GuiProviderService {
   boolean test() default true;
 
 }
-
