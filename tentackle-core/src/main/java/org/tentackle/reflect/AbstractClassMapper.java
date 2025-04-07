@@ -16,16 +16,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.reflect;
 
 import org.tentackle.log.Logger;
 
+import java.lang.reflect.Array;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * A generic class mapper.<br>
+ * Base implementation for class mappers.<br>
  * Implements lenient (superclass/interface) and package (class basenames) lookup.
  *
  * @author harald
@@ -135,13 +135,13 @@ public abstract class AbstractClassMapper<S> {
         }
         // no explicit mapping: try superclass/interfaces
         if (initialClass == null) {
-          initialClass = superClass = Class.forName(className);
+          initialClass = superClass = findClass(className);
         }
-        superClass = superClass.getSuperclass();
+        superClass = findSuperClass(superClass);
         if (superClass == null) {
-          break;    // is an interface or we reached Object.class
+          break;    // is an interface or record, or we reached Object.class
         }
-        className = superClass.getName();  // continue with name of superclass
+        className = superClass.getCanonicalName();  // continue with name of superclass
       }
       // no mapping found for an object-class so far or interface: try interfaces
       return initialClass == null ? null : mapInterfaces(initialClass);
@@ -150,6 +150,43 @@ public abstract class AbstractClassMapper<S> {
       // exact match required
       return getNameMap().get(className);
     }
+  }
+
+
+  private Class<?> findClass(String className) throws ClassNotFoundException {
+    int arrayNdx = className.indexOf('[');
+    String arraySuffix = null;
+    if (arrayNdx >= 0) {
+      arraySuffix = className.substring(arrayNdx);
+      className = className.substring(0, arrayNdx);
+    }
+    Class<?> clazz = Class.forName(className);
+    if (arraySuffix != null) {
+      int dimensions = arraySuffix.length() / 2;
+      for (int i = 0; i < dimensions; i++) {
+        clazz = Array.newInstance(clazz, 0).getClass();
+      }
+    }
+    return clazz;
+  }
+
+  private Class<?> findSuperClass(Class<?> clazz) {
+    if (clazz.isArray()) {
+      int dimensions = 1;
+      Class<?> componentType = clazz.getComponentType();
+      while (componentType.isArray()) {
+        componentType = componentType.getComponentType();
+        dimensions++;
+      }
+      clazz = componentType.getSuperclass();
+      if (clazz != null) {
+        for (int i = 0; i < dimensions; i++) {
+          clazz = Array.newInstance(clazz, 0).getClass();
+        }
+      }
+      return clazz;
+    }
+    return clazz.getSuperclass();
   }
 
 
@@ -162,21 +199,17 @@ public abstract class AbstractClassMapper<S> {
    * @throws java.lang.ClassNotFoundException if {@code className} is not a valid classname
    */
   private S mapNameWithPackages(String className, boolean lenient) throws ClassNotFoundException {
-    if (!className.startsWith("[") && className.indexOf('.') < 0) {   // not array type and not FQCN
-      String[] packageNames = getPackageNames();
-      if (packageNames != null) {
-        for (String packageName: packageNames) {
-          S result = mapName(packageName + "." + className, lenient);
-          if (result != null)  {
-            return result;
-          }
+    String[] packageNames = getPackageNames();
+    if (packageNames != null && className.indexOf('.') < 0) {   // if not FQCN
+      for (String packageName : packageNames) {
+        S result = mapName(packageName + "." + className, lenient);
+        if (result != null) {
+          return result;
         }
       }
-      return null;    // no such class in all packages
+      // try default (primitive type? "char[]"? ...)
     }
-    else  {
-      return mapName(className, lenient);
-    }
+    return mapName(className, lenient);
   }
 
 
