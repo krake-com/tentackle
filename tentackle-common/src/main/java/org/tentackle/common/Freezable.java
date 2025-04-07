@@ -35,6 +35,12 @@ public interface Freezable {
    */
   void freeze();
 
+  /**
+   * Returns whether this object is frozen.
+   *
+   * @return true if frozen
+   */
+  boolean isFrozen();
 
   /**
    * Freezes a value object null-safe.<br>

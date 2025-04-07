@@ -157,6 +157,10 @@ public class Timestamp extends java.sql.Timestamp implements Freezable {
     frozen = true;
   }
 
+  @Override
+  public boolean isFrozen() {
+    return frozen;
+  }
 
   /**
    * {@inheritDoc}
