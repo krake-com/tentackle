@@ -20,7 +20,6 @@
 package org.tentackle.fx.component.config;
 
 import org.tentackle.fx.ConfiguratorService;
-import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.component.FxTextArea;
 
 import javafx.scene.control.TextArea;
@@ -36,9 +35,6 @@ import javafx.scene.input.KeyEvent;
 @ConfiguratorService(TextArea.class)
 public class TextAreaConfigurator<T extends TextArea> extends TextInputControlConfigurator<T> {
 
-  private static final String NEXT = "to_next";
-  private static final String PREVIOUS = "to_previous";
-
   /**
    * Creates the configurator for a {@link TextArea}.
    */
@@ -48,11 +44,10 @@ public class TextAreaConfigurator<T extends TextArea> extends TextInputControlCo
 
   @Override
   protected void remapKeys(T control) {
-    control.addEventFilter(KeyEvent.ANY, (KeyEvent event) -> {
+    control.addEventFilter(KeyEvent.ANY, event -> {
 
       if ((event.getCode() == KeyCode.TAB || event.getCode() == KeyCode.ENTER) &&
           !event.isAltDown() && !event.isMetaDown() &&
-          !NEXT.equals(event.getText()) && !PREVIOUS.equals(event.getText()) &&
           (!(control instanceof FxTextArea) || ((FxTextArea) control).isNavigateViaEnterEnabled())) {
 
         if (event.getEventType() == KeyEvent.KEY_PRESSED) {
@@ -72,26 +67,6 @@ public class TextAreaConfigurator<T extends TextArea> extends TextInputControlCo
         event.consume();
       }
     });
-  }
-
-  @Override
-  protected void focusNext(T control) {
-    if (!(control instanceof FxComponent) || !((FxComponent) control).isCellEditor()) {
-      //      NodeHelper.traverse(control, Direction.NEXT);   is non-public API :(
-      KeyEvent event = new KeyEvent(KeyEvent.KEY_PRESSED, KeyEvent.CHAR_UNDEFINED, NEXT, KeyCode.TAB,
-                                    // ctrl tab gets out of the textarea
-                                    false, true, false, false);
-      control.fireEvent(event);
-    }
-  }
-
-  protected void focusPrevious(T control) {
-    if (!(control instanceof FxComponent) || !((FxComponent) control).isCellEditor()) {
-      //      NodeHelper.traverse(control, Direction.PREVIOUS);   is non-public API :(
-      KeyEvent event = new KeyEvent(KeyEvent.KEY_PRESSED, KeyEvent.CHAR_UNDEFINED, PREVIOUS, KeyCode.TAB,
-                                    true, false, false, false);
-      control.fireEvent(event);
-    }
   }
 
 }
