@@ -20,6 +20,8 @@ package org.tentackle.fx;
 
 import org.kordamp.ikonli.javafx.FontIcon;
 
+import org.tentackle.fx.component.FxLabel;
+
 import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
 import javafx.animation.SequentialTransition;
@@ -27,11 +29,8 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
-import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.Tooltip;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
@@ -184,8 +183,10 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
       headerBox.getChildren().add(icon);
     }
     if (text != null) {
-      Label label = new Label(text);
+      FxLabel label = new FxLabel();
+      label.setText(text);
       label.setId("textLabel");
+      label.setContextMenuEnabled(true);
       headerBox.getChildren().add(label);
     }
     if (!headerBox.getChildren().isEmpty()) {
@@ -205,18 +206,14 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
       copyButton.setId("copyButton");
       copyButton.setFocusTraversable(false);
       copyButton.setTooltip(new Tooltip(FxFxBundle.getString("COPY TO CLIPBOARD")));
-      copyButton.setOnAction(event -> {
-        ClipboardContent cbc = new ClipboardContent();
-        cbc.putString(details);
-        Clipboard.getSystemClipboard().setContent(cbc);
-      });
+      copyButton.setOnAction(event -> Fx.copyToClipboard(details));
       detailsStackPane.getChildren().add(copyButton);
       borderPane.setCenter(detailsStackPane);
     }
 
     if (hide != null && closeButtonMode != CloseButtonMode.NEVER &&
         (buttonConfigs.isEmpty() || closeButtonMode.isAlwaysShown())) {
-      // add small close button
+      // add a small close button
       StackPane borderStackPane = new StackPane();
       parent = borderStackPane;
       borderStackPane.setAlignment(Pos.TOP_RIGHT);

@@ -162,8 +162,7 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
     goButton.setText(FxFxBundle.getString("YES"));
     Timeline countdown = createCountdownTimeline(goButton);
     Popup popup = new Popup();
-    Parent notification = FxFactory.getInstance()
-                                   .createNotificationBuilder()
+    Parent notification = FxFactory.getInstance().createNotificationBuilder()
                                    .type(NotificationBuilder.Type.QUESTION)
                                    .text(message)
                                    .button(FxFxBundle.getString("NO"), null, false, null)
