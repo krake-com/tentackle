@@ -78,6 +78,8 @@ import javafx.scene.control.TreeTableView;
 import javafx.scene.control.skin.TableViewSkin;
 import javafx.scene.control.skin.TreeTableViewSkin;
 import javafx.scene.control.skin.VirtualFlow;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
@@ -425,7 +427,27 @@ public class FxUtilities {
       owner = scene.getWindow();
     }
     else if (owner instanceof Node node) {
-      owner = getStage(node);
+      Scene scene = node.getScene();
+      if (scene != null) {
+        owner = scene.getWindow();
+      }
+      else {
+        Stage stage = getStage(node);
+        if (stage != null) {
+          owner = stage;
+        }
+        else {
+          Parent parent = node.getParent();
+          while (parent != null) {
+            scene = parent.getScene();
+            if (scene != null) {
+              owner = scene.getWindow();
+              break;
+            }
+            parent = parent.getParent();
+          }
+        }
+      }
     }
     if (owner instanceof Window window) {
       return window;
@@ -446,6 +468,18 @@ public class FxUtilities {
       case WINDOW_MODAL -> stage.getOwner() != null;
       default -> false;
     };
+  }
+
+
+  /**
+   * Copies a text to the clipboard.
+   *
+   * @param text the message to copy
+   */
+  public void copyToClipboard(String text) {
+    ClipboardContent cbc = new ClipboardContent();
+    cbc.putString(text);
+    Clipboard.getSystemClipboard().setContent(cbc);
   }
 
 
@@ -682,8 +716,7 @@ public class FxUtilities {
    */
   public void showInfoDialog(Object owner, String message, Runnable onClose) {
     Popup popup = createNotificationPopup();
-    Parent notification = FxFactory.getInstance()
-                                   .createNotificationBuilder()
+    Parent notification = FxFactory.getInstance().createNotificationBuilder()
                                    .type(NotificationBuilder.Type.INFORMATION)
                                    .text(message)
                                    .button(FxFxBundle.getString("OK"), null, false, null)
@@ -701,8 +734,7 @@ public class FxUtilities {
    */
   public void showWarningDialog(Object owner, String message, Runnable onClose) {
     Popup popup = createNotificationPopup();
-    Parent notification = FxFactory.getInstance()
-                                   .createNotificationBuilder()
+    Parent notification = FxFactory.getInstance().createNotificationBuilder()
                                    .type(NotificationBuilder.Type.WARNING)
                                    .text(message)
                                    .button(FxFxBundle.getString("OK"), null, false, null)
@@ -739,8 +771,7 @@ public class FxUtilities {
   public void showQuestionDialog(Object owner, String message, boolean defaultYes, Consumer<Boolean> answer) {
     Holder<Boolean> result = new Holder<>(Boolean.FALSE);   // ESC or hiding w/o pressing a button -> NO
     Popup popup = createNotificationPopup();
-    Parent notification = FxFactory.getInstance()
-                                   .createNotificationBuilder()
+    Parent notification = FxFactory.getInstance().createNotificationBuilder()
                                    .type(NotificationBuilder.Type.QUESTION)
                                    .text(message)
                                    .button(FxFxBundle.getString("NO"), null, !defaultYes, null)
@@ -784,8 +815,7 @@ public class FxUtilities {
     }
 
     Popup popup = createNotificationPopup();
-    Parent notification = FxFactory.getInstance()
-                                   .createNotificationBuilder()
+    Parent notification = FxFactory.getInstance().createNotificationBuilder()
                                    .type(NotificationBuilder.Type.ERROR)
                                    .text(message)
                                    .details(details)

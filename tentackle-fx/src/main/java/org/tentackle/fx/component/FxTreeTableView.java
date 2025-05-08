@@ -43,8 +43,6 @@ import javafx.scene.control.TreeTableCell;
 import javafx.scene.control.TreeTableColumn;
 import javafx.scene.control.TreeTablePosition;
 import javafx.scene.control.TreeTableView;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import java.lang.reflect.Type;
@@ -393,10 +391,8 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
           }
           buf.append(csv);
         }
-        ClipboardContent cbc = new ClipboardContent();
         String text = buf.toString();
-        cbc.putString(text);
-        Clipboard.getSystemClipboard().setContent(cbc);
+        Fx.copyToClipboard(text);
         return text;
       }
     }

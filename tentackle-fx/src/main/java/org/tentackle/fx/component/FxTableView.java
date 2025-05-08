@@ -41,8 +41,6 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TablePosition;
 import javafx.scene.control.TableView;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import java.lang.reflect.Type;
@@ -288,10 +286,8 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
           }
           buf.append(csv);
         }
-        ClipboardContent cbc = new ClipboardContent();
         String text = buf.toString();
-        cbc.putString(text);
-        Clipboard.getSystemClipboard().setContent(cbc);
+        Fx.copyToClipboard(text);
         return text;
       }
     }

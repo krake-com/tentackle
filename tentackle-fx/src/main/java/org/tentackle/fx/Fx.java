@@ -343,6 +343,16 @@ public class Fx {
 
 
   /**
+   * Copies a text to the clipboard.
+   *
+   * @param text the message to copy
+   */
+  public static void copyToClipboard(String text) {
+    FxUtilities.getInstance().copyToClipboard(text);
+  }
+
+
+  /**
    * Terminates the FX client.
    */
   public static void terminate() {

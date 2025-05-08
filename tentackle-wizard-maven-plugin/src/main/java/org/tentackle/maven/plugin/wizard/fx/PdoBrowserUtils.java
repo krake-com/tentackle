@@ -30,8 +30,6 @@ import org.tentackle.sql.DataType;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.control.MenuItem;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.ClipboardContent;
 
 /**
  * Some common UI methods to reduce code duplication.
@@ -69,19 +67,12 @@ public class PdoBrowserUtils {
     return false;
   }
 
-  public static void copyToClipboard(String text) {
-    ClipboardContent cbc = new ClipboardContent();
-    cbc.putString(text);
-    Clipboard.getSystemClipboard().setContent(cbc);
-  }
-
   public static MenuItem createCopySqlItem(EventHandler<ActionEvent> handler) {
     MenuItem copySqlItem = Fx.create(MenuItem.class);
     copySqlItem.setOnAction(handler);
     copySqlItem.setText("copy SQL SELECT... to clipboard");
     return copySqlItem;
   }
-
 
   public static void configureContextMenu(DataNode dataNode, MenuItem copyFQCNItem, MenuItem copyTableItem,
                                           MenuItem copyClassIdItem, MenuItem copySqlItem) {
@@ -111,27 +102,27 @@ public class PdoBrowserUtils {
   public static void copyFQCN(DataNode dataNode) {
     TypeInfo typeInfo = getTypeInfo(dataNode);
     if (typeInfo != null) {
-      copyToClipboard(typeInfo.fqcn());
+      Fx.copyToClipboard(typeInfo.fqcn());
     }
   }
 
   public static void copyTableName(DataNode dataNode) {
     TypeInfo typeInfo = getTypeInfo(dataNode);
     if (typeInfo != null) {
-      copyToClipboard(typeInfo.tableName());
+      Fx.copyToClipboard(typeInfo.tableName());
     }
   }
 
   public static void copyClassId(DataNode dataNode) {
     TypeInfo typeInfo = getTypeInfo(dataNode);
     if (typeInfo != null) {
-      copyToClipboard(Long.toString(typeInfo.classId()));
+      Fx.copyToClipboard(Long.toString(typeInfo.classId()));
     }
   }
 
   public static void copySql(DataNode dataNode) {
     if (dataNode != null) {
-      copyToClipboard(SqlCodeFactory.createSelect(dataNode));
+      Fx.copyToClipboard(SqlCodeFactory.createSelect(dataNode));
     }
   }
 

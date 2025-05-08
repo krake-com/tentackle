@@ -35,8 +35,6 @@ import org.tentackle.misc.CsvConverter;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.scene.control.ListView;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import java.lang.reflect.Type;
@@ -121,9 +119,7 @@ public class FxListView<T> extends ListView<T> implements FxComponent {
     if (!items.isEmpty()) {
       // intentionally not RFC4180-conform: avoid quoting if possible and/or use platform line separator
       String text = CsvConverter.getInstance().toCsv(inline ? null : System.lineSeparator(), List.of(items)).getFirst();
-      ClipboardContent cbc = new ClipboardContent();
-      cbc.putString(text);
-      Clipboard.getSystemClipboard().setContent(cbc);
+      Fx.copyToClipboard(text);
       return text;
     }
     return null;

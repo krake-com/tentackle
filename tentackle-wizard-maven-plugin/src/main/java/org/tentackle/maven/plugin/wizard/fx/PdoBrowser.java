@@ -182,7 +182,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
       DataNode node = getSelectedDetailDataNode();
       if (node instanceof DataObject dataObj) {
         // no fine control, but useful to quickly create referenced master data
-        PdoBrowserUtils.copyToClipboard(JavaCodeFactory.generateCode(null, dataObj));
+        Fx.copyToClipboard(JavaCodeFactory.generateCode(null, dataObj));
       }
     });
     genCodeItem.setText("copy Java code to clipboard");
@@ -529,12 +529,12 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     Button loadButton = Fx.create(Button.class);
     loadButton.setText("load");
     Popup popup = new Popup();
-    Parent notification = FxFactory.getInstance()
-                                   .createNotificationBuilder()
+    Parent notification = FxFactory.getInstance().createNotificationBuilder()
                                    .content(borderPane)
                                    .button(loadButton, false, () -> performLoadById(textField.getText()))
                                    .closeButton(NotificationBuilder.CloseButtonMode.ALWAYS)
-                                   .hide(popup::hide).build();
+                                   .hide(popup::hide)
+                                   .build();
     FxUtilities.getInstance().showNotification(getView(), popup, notification, null);
   }
 
@@ -583,10 +583,10 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
       borderPane.setTop(headerLabel);
 
       Popup popup = new Popup();
-      Parent notification = FxFactory.getInstance()
-                                     .createNotificationBuilder()
+      Parent notification = FxFactory.getInstance().createNotificationBuilder()
                                      .content(borderPane)
-                                     .hide(popup::hide).build();
+                                     .hide(popup::hide)
+                                     .build();
       FxUtilities.getInstance().showNotification(getView(), popup, notification, null);
     }
   }
@@ -609,7 +609,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
       }
       String text = JavaCodeFactory.generateCode(codePaths, dataObjects);
       buf.append(text);
-      PdoBrowserUtils.copyToClipboard(buf.toString());
+      Fx.copyToClipboard(buf.toString());
 
       // show some feedback
       Note infoNote = Fx.create(Note.class);

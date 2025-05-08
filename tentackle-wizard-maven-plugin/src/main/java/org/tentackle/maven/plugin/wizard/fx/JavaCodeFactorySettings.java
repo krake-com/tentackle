@@ -73,10 +73,10 @@ public class JavaCodeFactorySettings extends AbstractFxController {
     JavaCodeFactorySettings controller = Fx.load(JavaCodeFactorySettings.class);
 
     Popup popup = new Popup();
-    Parent notification = FxFactory.getInstance()
-                                   .createNotificationBuilder()
+    Parent notification = FxFactory.getInstance().createNotificationBuilder()
                                    .content(controller.getView())
-                                   .hide(popup::hide).build();
+                                   .hide(popup::hide)
+                                   .build();
 
     FxUtilities.getInstance().showNotification(owner, popup, notification, () -> {
       JavaCodeFactory.distinctVariables = controller.distinctVariables;
