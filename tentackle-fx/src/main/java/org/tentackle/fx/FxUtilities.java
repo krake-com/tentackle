@@ -685,29 +685,6 @@ public class FxUtilities {
   }
 
   /**
-   * Creates a notification popup.<br>
-   * Swallows accidental events to prevent being hidden before becoming visible to the user.
-   *
-   * @return the popup
-   */
-  public Popup createNotificationPopup() {
-    Holder<Long> shownSince = new Holder<>();
-    Popup popup = new Popup() {
-      @Override
-      public void hide() {
-        Long since = shownSince.get();
-        // this prevents accidental events from hiding the popup before becoming visible to the user
-        if (since == null || System.currentTimeMillis() > since + 500) {    // 500ms is short enough for a "fast" user
-          super.hide();
-        }
-      }
-    };
-    popup.addEventFilter(WindowEvent.WINDOW_SHOWING, event -> shownSince.accept(System.currentTimeMillis()));
-    popup.setAutoHide(true);
-    return popup;
-  }
-
-  /**
    * Shows an info dialog.
    *
    * @param owner the owner window or node
@@ -715,7 +692,7 @@ public class FxUtilities {
    * @param onClose optional runnable invoked when dialog is closed
    */
   public void showInfoDialog(Object owner, String message, Runnable onClose) {
-    Popup popup = createNotificationPopup();
+    Popup popup = FxFactory.getInstance().createNotificationPopup();
     Parent notification = FxFactory.getInstance().createNotificationBuilder()
                                    .type(NotificationBuilder.Type.INFORMATION)
                                    .text(message)
@@ -733,7 +710,7 @@ public class FxUtilities {
    * @param onClose optional runnable invoked when dialog is closed
    */
   public void showWarningDialog(Object owner, String message, Runnable onClose) {
-    Popup popup = createNotificationPopup();
+    Popup popup = FxFactory.getInstance().createNotificationPopup();
     Parent notification = FxFactory.getInstance().createNotificationBuilder()
                                    .type(NotificationBuilder.Type.WARNING)
                                    .text(message)
@@ -770,7 +747,7 @@ public class FxUtilities {
    */
   public void showQuestionDialog(Object owner, String message, boolean defaultYes, Consumer<Boolean> answer) {
     Holder<Boolean> result = new Holder<>(Boolean.FALSE);   // ESC or hiding w/o pressing a button -> NO
-    Popup popup = createNotificationPopup();
+    Popup popup = FxFactory.getInstance().createNotificationPopup();
     Parent notification = FxFactory.getInstance().createNotificationBuilder()
                                    .type(NotificationBuilder.Type.QUESTION)
                                    .text(message)
@@ -814,7 +791,7 @@ public class FxUtilities {
       details = null;
     }
 
-    Popup popup = createNotificationPopup();
+    Popup popup = FxFactory.getInstance().createNotificationPopup();
     Parent notification = FxFactory.getInstance().createNotificationBuilder()
                                    .type(NotificationBuilder.Type.ERROR)
                                    .text(message)

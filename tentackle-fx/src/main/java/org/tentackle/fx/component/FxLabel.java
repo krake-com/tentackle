@@ -38,7 +38,7 @@ import javafx.stage.Popup;
  */
 public class FxLabel extends Label {
 
-  private ContextMenu contextMenu;
+  private ContextMenu contextMenu;    // != null if items were added
 
   /**
    * Creates a label.
@@ -47,33 +47,62 @@ public class FxLabel extends Label {
     // see -Xlint:missing-explicit-ctor since Java 16
   }
 
+  /**
+   * Enables a context menu for this label.<br>
+   * Since the label's text cannot be selected, it cannot be copied to the clipboard.
+   * By enabling a contextmenu, two menu items will be available:
+   * <ol>
+   *   <li>Copy the label's text to the clipboard.</li>
+   *   <li>Copy the label's text to a textarea in a popup window. Allows selecting only
+   *   parts of the text.</li>
+   * </ol>
+   * @param enabled true to install or update a context menu, false to remove it (if previously enabled)
+   */
   public void setContextMenuEnabled(boolean enabled) {
     if (enabled) {
-      if (contextMenu == null) {
-        contextMenu = createContextMenu();
-        setContextMenu(contextMenu);
+      if (!isContextMenuEnabled()) {
+        contextMenu = getContextMenu();   // in case there was already some menu defined
+        boolean created = false;
+        if (contextMenu == null) {
+          contextMenu = new ContextMenu();
+          created = true;
+        }
+        configureContextMenu(contextMenu);
+        if (created) {
+          setContextMenu(contextMenu);
+        }
       }
+      // else: already appended (hopefully)
     }
-    else if (contextMenu != null) {
+    else if (isContextMenuEnabled()) {
       setContextMenu(null);
       contextMenu = null;
     }
   }
 
   /**
-   * Creates a context menu with items to copy the label's text to the clipboard and
+   * Returns whether the context menu has been enabled by {@link #setContextMenuEnabled(boolean)}.
+   *
+   * @return true if enabled
+   */
+  public boolean isContextMenuEnabled() {
+    return contextMenu != null;
+  }
+
+
+  /**
+   * Adds menu items to copy the label's text to the clipboard and
    * to open a scratchpad to select only parts the of the text.
    *
-   * @return the context menu
+   * @param contextMenu the context menu to append the menu items to
    */
-  protected ContextMenu createContextMenu() {
-    ContextMenu contextMenu = new ContextMenu();
+  protected void configureContextMenu(ContextMenu contextMenu) {
     MenuItem copyItem = new MenuItem(FxFxBundle.getString("COPY TO CLIPBOARD"));
     copyItem.setOnAction(_ -> Fx.copyToClipboard(getText()));
     contextMenu.getItems().add(copyItem);
     MenuItem scratchItem = new MenuItem(FxFxBundle.getString("COPY TO SCRATCHPAD"));
     scratchItem.setOnAction(_ -> {
-      Popup popup = FxUtilities.getInstance().createNotificationPopup();
+      Popup popup = FxFactory.getInstance().createNotificationPopup();
       Parent notification = FxFactory.getInstance().createNotificationBuilder()
                                      .content(new TextArea(getText()))
                                      .hide(popup::hide)
@@ -81,7 +110,6 @@ public class FxLabel extends Label {
       FxUtilities.getInstance().showNotification(this, popup, notification, null);
     });
     contextMenu.getItems().add(scratchItem);
-    return contextMenu;
   }
 
 }
