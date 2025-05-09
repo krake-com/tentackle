@@ -26,6 +26,7 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Modality;
+import javafx.stage.Popup;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.BuilderFactory;
@@ -111,6 +112,15 @@ public interface FxFactory {
    * @return the scene
    */
   Scene createScene(Parent root);
+
+
+  /**
+   * Creates a notification popup.<br>
+   * Swallows accidental events to prevent being hidden before becoming visible to the user.
+   *
+   * @return the popup
+   */
+  Popup createNotificationPopup();
 
 
   /**

@@ -28,6 +28,7 @@ import org.tentackle.fx.nofxml.NoFXMLLinker;
 import org.tentackle.fx.table.DefaultTableConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.log.Logger;
+import org.tentackle.misc.Holder;
 import org.tentackle.reflect.DefaultClassMapper;
 import org.tentackle.reflect.ReflectionHelper;
 
@@ -36,9 +37,11 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Modality;
+import javafx.stage.Popup;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
+import javafx.stage.WindowEvent;
 import javafx.util.BuilderFactory;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -78,7 +81,7 @@ public class DefaultFxFactory implements FxFactory {
   private final Map<Class<?>, DefaultClassMapper> viewTranslatorMap;
 
   /**
-   * Map of FX control class to evaluated configurator.
+   * Map of FX control class to an evaluated configurator.
    */
   private final Map<Class<?>, Optional<Configurator<?>>> fxToConfiguratorMap;   // Optional to denote: not present, null if not determined yet
 
@@ -244,6 +247,24 @@ public class DefaultFxFactory implements FxFactory {
     Scene scene = new Scene(root);
     FxUtilities.getInstance().applyStylesheets(scene);
     return scene;
+  }
+
+  @Override
+  public Popup createNotificationPopup() {
+    Holder<Long> shownSince = new Holder<>();
+    Popup popup = new Popup() {
+      @Override
+      public void hide() {
+        Long since = shownSince.get();
+        // this prevents accidental events from hiding the popup before becoming visible to the user
+        if (since == null || System.currentTimeMillis() > since + 500) {    // 500 ms is short enough for a "fast" user
+          super.hide();
+        }
+      }
+    };
+    popup.addEventFilter(WindowEvent.WINDOW_SHOWING, event -> shownSince.accept(System.currentTimeMillis()));
+    popup.setAutoHide(true);
+    return popup;
   }
 
   @Override
