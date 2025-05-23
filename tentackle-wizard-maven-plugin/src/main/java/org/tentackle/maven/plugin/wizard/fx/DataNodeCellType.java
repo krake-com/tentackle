@@ -86,10 +86,12 @@ public class DataNodeCellType extends AbstractTableCellType<DataNode> {
   private Node getIcon(DataNode item) {
     if (item instanceof DataObject) {
       PersistentDomainObject pdo = ((DataObject) item).getPdo();
-      if (GuiProviderFactory.getInstance().isGuiProviderAvailable(pdo.getEffectiveClass())) {
-        GuiProvider<?> guiProvider = GuiProviderFactory.getInstance().createGuiProvider(pdo);
-        if (guiProvider != null) {
-          return guiProvider.createGraphic();
+      if (pdo != null) {
+        if (GuiProviderFactory.getInstance().isGuiProviderAvailable(pdo.getEffectiveClass())) {
+          GuiProvider<?> guiProvider = GuiProviderFactory.getInstance().createGuiProvider(pdo);
+          if (guiProvider != null) {
+            return guiProvider.createGraphic();
+          }
         }
       }
     }

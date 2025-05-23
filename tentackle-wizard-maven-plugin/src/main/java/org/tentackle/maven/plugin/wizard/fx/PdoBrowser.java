@@ -344,31 +344,34 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
   }
 
   private void showDataObjects(List<DataObject> dataObjects) {
-    if (!dataObjects.isEmpty()) {
+    if (dataObjects != null && !dataObjects.isEmpty()) {
       int columnCount = 0;
-      for (DataNode node : dataObjects.getFirst().getNodes()) {
-        final int columnIndex = columnCount;
-        TableColumn<DataNode, String> column = new TableColumn<>(node.getName());
-        column.setCellValueFactory(callback -> new StringPropertyBase() {
-          @Override
-          public DataNode getBean() {
-            return callback.getValue();
-          }
+      List<DataNode> nodes = dataObjects.getFirst().getNodes();
+      if (nodes != null) {
+        for (DataNode node : nodes) {
+          final int columnIndex = columnCount;
+          TableColumn<DataNode, String> column = new TableColumn<>(node.getName());
+          column.setCellValueFactory(callback -> new StringPropertyBase() {
+            @Override
+            public DataNode getBean() {
+              return callback.getValue();
+            }
 
-          @Override
-          public String getName() {
-            return node.getName();
-          }
+            @Override
+            public String getName() {
+              return node.getName();
+            }
 
-          @Override
-          public String getValue() {
-            return getBean().getNodes().get(columnIndex).getValue();
-          }
-        });
-        rowDetailsTable.getColumns().add(column);
-        columnCount++;
+            @Override
+            public String getValue() {
+              return getBean().getNodes().get(columnIndex).getValue();
+            }
+          });
+          rowDetailsTable.getColumns().add(column);
+          columnCount++;
+        }
+        rowDetailsTable.getItems().setAll(dataObjects);
       }
-      rowDetailsTable.getItems().setAll(dataObjects);
     }
   }
 

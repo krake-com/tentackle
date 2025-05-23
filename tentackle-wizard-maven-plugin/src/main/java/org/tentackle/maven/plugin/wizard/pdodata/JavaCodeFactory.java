@@ -30,6 +30,7 @@ import org.tentackle.sql.DataType;
 import org.tentackle.sql.DataTypeFactory;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -206,16 +207,19 @@ public class JavaCodeFactory {
 
   private String createComponentCode(String varName, DataObject component) {
     StringBuilder buf = new StringBuilder();
-    if (component.isHidden()) {
-      buf.append(HIDDEN_COMMENT);
-    }
-    if (distinctVariables || getVariableCount(varName).get() == 1) {
-      buf.append(component.getType()).append(' ');
-    }
-    buf.append(varName).append(" = on(").append(component.getType()).append(".class);")
-       .append(toIdComment(component.getPdo())).append('\n');
-    for (DataNode node : component.getNodes()) {
-      buf.append(createNodeCode(varName, node));
+    List<DataNode> nodes = component.getNodes();
+    if (nodes != null) {
+      if (component.isHidden()) {
+        buf.append(HIDDEN_COMMENT);
+      }
+      if (distinctVariables || getVariableCount(varName).get() == 1) {
+        buf.append(component.getType()).append(' ');
+      }
+      buf.append(varName).append(" = on(").append(component.getType()).append(".class);")
+         .append(toIdComment(component.getPdo())).append('\n');
+      for (DataNode node : nodes) {
+        buf.append(createNodeCode(varName, node));
+      }
     }
     return buf.toString();
   }
@@ -223,24 +227,27 @@ public class JavaCodeFactory {
   private String createListCode(String varName, DataList list) {
     StringBuilder buf = new StringBuilder();
     if (list.getRelation() != null && isGenerating(!list.getRelation().getStereotypes().contains(NOTEST_STEREOTYPE), list)) {
-      for (DataObject object : list.getNodes()) {
-        String objectName = createVarName(object.getType());
-        NonCompositeRelation listRelation = object.getNmRelation();
-        if (listRelation != null && isGenerating(true, list)) {
-          Relation relation = listRelation.getRelation();
-          Relation nmRelation = relation.getNmRelation();
-          buf.append(varName).append(".get").append(relation.getNmMethodName()).append("().add(Objects.requireNonNull(on(")
-             .append(nmRelation.getForeignEntity()).append(".class).selectByUniqueDomainKey(")
-             .append(extractUdkLiteral(listRelation.getRelatedPdo())).append(")));")
-             .append(toIdComment(listRelation.getRelatedPdo())).append('\n');
-        }
-        else {
-          buf.append(createComponentCode(objectName, object));
-          if (list.isHidden()) {
-            buf.append(HIDDEN_COMMENT);
+      List<DataObject> nodes = list.getNodes();
+      if (nodes != null) {
+        for (DataObject object : list.getNodes()) {
+          String objectName = createVarName(object.getType());
+          NonCompositeRelation listRelation = object.getNmRelation();
+          if (listRelation != null && isGenerating(true, list)) {
+            Relation relation = listRelation.getRelation();
+            Relation nmRelation = relation.getNmRelation();
+            buf.append(varName).append(".get").append(relation.getNmMethodName()).append("().add(Objects.requireNonNull(on(")
+               .append(nmRelation.getForeignEntity()).append(".class).selectByUniqueDomainKey(")
+               .append(extractUdkLiteral(listRelation.getRelatedPdo())).append(")));")
+               .append(toIdComment(listRelation.getRelatedPdo())).append('\n');
           }
-          buf.append(varName).append('.').append(list.getRelation().getGetterName())
-             .append("().add(").append(objectName).append(");\n");
+          else {
+            buf.append(createComponentCode(objectName, object));
+            if (list.isHidden()) {
+              buf.append(HIDDEN_COMMENT);
+            }
+            buf.append(varName).append('.').append(list.getRelation().getGetterName())
+               .append("().add(").append(objectName).append(");\n");
+          }
         }
       }
     }
