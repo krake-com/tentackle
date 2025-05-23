@@ -383,7 +383,8 @@ public class DataNodeFactory {
                                              PersistentDomainObject<?> parentPdo, boolean hidden, Relation compositeRelation) {
     DataObject dataObject;
     if (pdo == null) {
-      dataObject = new DataObject(null, name, null, null, null, null, null, hidden, null);
+      Entity entity = compositeRelation == null ? null : compositeRelation.getForeignEntity();
+      dataObject = new DataObject(null, name, comment, null, entity, null, null, hidden, null);
     }
     else {
       dataObject = getDataObject(pdo, name, comment, parentPdo, hidden, compositeRelation);

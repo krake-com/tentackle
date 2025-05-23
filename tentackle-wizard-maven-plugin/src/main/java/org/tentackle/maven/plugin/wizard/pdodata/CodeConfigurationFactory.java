@@ -23,6 +23,7 @@ import org.tentackle.model.Relation;
 import org.tentackle.sql.datatypes.StringType;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -61,8 +62,11 @@ public class CodeConfigurationFactory {
     if (component.getRelation() != null && component.getRelation().getStereotypes().contains(JavaCodeFactory.NOTEST_STEREOTYPE)) {
       configuration.put(configPath, Boolean.FALSE);
     }
-    for (DataNode node : component.getNodes()) {
-      analyzeNode(configuration, configPath, node);
+    List<DataNode> nodes = component.getNodes();
+    if (nodes != null) {
+      for (DataNode node : nodes) {
+        analyzeNode(configuration, configPath, node);
+      }
     }
   }
 
@@ -100,11 +104,14 @@ public class CodeConfigurationFactory {
       if (relation.getStereotypes().contains(JavaCodeFactory.NOTEST_STEREOTYPE)) {
         configuration.put(configPath, Boolean.FALSE);
       }
-      for (DataObject object : list.getNodes()) {
-        if (object.getNmRelation() != null) {
-          configuration.put(configPath, Boolean.TRUE);    // allow NM relations to be skipped
+      List<DataObject> nodes = list.getNodes();
+      if (nodes != null) {
+        for (DataObject object : nodes) {
+          if (object.getNmRelation() != null) {
+            configuration.put(configPath, Boolean.TRUE);    // allow NM relations to be skipped
+          }
+          analyzeComponent(configuration, configPath, object);
         }
-        analyzeComponent(configuration, configPath, object);
       }
     }
   }

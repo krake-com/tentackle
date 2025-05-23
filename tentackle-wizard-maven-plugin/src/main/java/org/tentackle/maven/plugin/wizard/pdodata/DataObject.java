@@ -63,7 +63,7 @@ public class DataObject implements DataNode {
                     Entity entity, Relation relation, NonCompositeRelation nmRelation, boolean hidden,
                     SqlCondition sqlCondition) {
     this.pdo = pdo;
-    this.type = pdo.getEffectiveClass().getSimpleName();
+    this.type = pdo == null ? (entity == null ? null : entity.getName()) : pdo.getEffectiveClass().getSimpleName();
     this.name = name;
     this.comment = comment;
     this.nodes = nodes;
@@ -140,7 +140,7 @@ public class DataObject implements DataNode {
    * @return the object ID
    */
   public long getId() {
-    return pdo.getId();
+    return pdo == null ? 0 : pdo.getId();
   }
 
   /**
@@ -149,7 +149,7 @@ public class DataObject implements DataNode {
    * @return the object serial
    */
   public long getSerial() {
-    return pdo.getSerial();
+    return pdo == null ? 0 : pdo.getSerial();
   }
 
   /**
