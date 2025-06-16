@@ -82,20 +82,20 @@
     <javac.lint>all,-processing,-this-escape</javac.lint>
     <javac.version>24</javac.version>
 
-    <asm.version>9.7.1</asm.version>
+    <asm.version>9.8</asm.version>
     <freemarker.version>2.3.34</freemarker.version>
-    <groovy.version>4.0.26</groovy.version>
+    <groovy.version>4.0.27</groovy.version>
     <h2.version>2.3.232</h2.version>
     <ikonli.version>12.3.1</ikonli.version>
     <javafx.version>24.0.1</javafx.version>
-    <jruby.version>9.4.12.0</jruby.version>
-    <junit.version>5.12.1</junit.version>
+    <jruby.version>10.0.0.1</jruby.version>
+    <junit.version>5.13.1</junit.version>
     <log4j2.version>2.24.3</log4j2.version>
     <mavengem.wagon.version>1.0.3</mavengem.wagon.version>
     <plexus.archiver.version>4.10.0</plexus.archiver.version>
-    <plexus.java.version>1.4.0</plexus.java.version>
-    <poi.version>5.4.0</poi.version>
-    <postgresql.version>42.7.5</postgresql.version>
+    <plexus.java.version>1.5.0</plexus.java.version>
+    <poi.version>5.4.1</poi.version>
+    <postgresql.version>42.7.7</postgresql.version>
     <slf4j.version>2.0.17</slf4j.version>
     <testng.version>7.11.0</testng.version>
     <wagon.ssh.version>3.5.3</wagon.ssh.version>
@@ -103,11 +103,11 @@
     <maven.version>3.9.0</maven.version>
     <maven.artifact.transfer.version>0.13.1</maven.artifact.transfer.version>
     <maven.dependency.tree.version>3.3.0</maven.dependency.tree.version>
-    <maven.file.management.version>3.1.0</maven.file.management.version>
+    <maven.file.management.version>3.2.0</maven.file.management.version>
     <maven.plugin.annotations.version>3.14.0</maven.plugin.annotations.version>
 
-    <maven.archetype.plugin.version>3.3.1</maven.archetype.plugin.version>
-    <maven.clean.plugin.version>3.4.1</maven.clean.plugin.version>
+    <maven.archetype.plugin.version>3.4.0</maven.archetype.plugin.version>
+    <maven.clean.plugin.version>3.5.0</maven.clean.plugin.version>
     <maven.compiler.plugin.version>3.14.0</maven.compiler.plugin.version>
     <maven.dependency.plugin.version>3.8.1</maven.dependency.plugin.version>
     <maven.deploy.plugin.version>3.1.4</maven.deploy.plugin.version>
@@ -118,14 +118,14 @@
     <maven.jar.plugin.version>3.4.2</maven.jar.plugin.version>
     <maven.javadoc.plugin.version>3.11.2</maven.javadoc.plugin.version>
     <maven.jxr.plugin.version>3.6.0</maven.jxr.plugin.version>
-    <maven.owasp.plugin.version>12.1.0</maven.owasp.plugin.version>
+    <maven.owasp.plugin.version>12.1.3</maven.owasp.plugin.version>
     <maven.plugin.plugin.version>3.15.0</maven.plugin.plugin.version>
     <maven.plugin.report.plugin.version>3.15.1</maven.plugin.report.plugin.version>
     <maven.project.info.reports.plugin.version>3.6.2</maven.project.info.reports.plugin.version>
     <maven.resources.plugin.version>3.3.1</maven.resources.plugin.version>
     <maven.site.plugin.version>3.12.1</maven.site.plugin.version>
     <maven.source.plugin.version>3.3.1</maven.source.plugin.version>
-    <maven.surefire.plugin.version>3.5.2</maven.surefire.plugin.version>
+    <maven.surefire.plugin.version>3.5.3</maven.surefire.plugin.version>
     <maven.versions.plugin.version>2.17.1</maven.versions.plugin.version>
 
     <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
