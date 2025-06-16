@@ -7,7 +7,7 @@
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-parent</artifactId>
-  <version>21.17.0.0-SNAPSHOT</version>
+  <version>21.16.3.0</version>
   <packaging>pom</packaging>
 
   <name>Tentackle Parent</name>
@@ -135,7 +135,7 @@
     <tentackle.manifestDirectory>${project.build.directory}/generated-resources/manifest</tentackle.manifestDirectory>
     <netbeans.hint.license>tentackle</netbeans.hint.license>
 
-    <wurbelizer.version>21.6.3.0</wurbelizer.version>
+    <wurbelizer.version>21.6.4.0</wurbelizer.version>
     <!-- override the default wurbelDir for multi-module project -->
     <wurbel.wurbelDir>${rootBasedir}/target/wurbel</wurbel.wurbelDir>
 
@@ -844,6 +844,25 @@
         </plugins>
       </build>
     </profile>
+
+    <profile>
+      <!-- deploy to maven central -->
+      <id>publish</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.sonatype.central</groupId>
+            <artifactId>central-publishing-maven-plugin</artifactId>
+            <version>0.7.0</version>
+            <extensions>true</extensions>
+            <configuration>
+              <publishingServerId>central</publishingServerId>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
   </profiles>
 
 </project>
