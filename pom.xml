@@ -86,7 +86,7 @@
     <freemarker.version>2.3.34</freemarker.version>
     <groovy.version>4.0.27</groovy.version>
     <h2.version>2.3.232</h2.version>
-    <ikonli.version>12.3.1</ikonli.version>
+    <ikonli.version>12.4.0</ikonli.version>
     <javafx.version>24.0.1</javafx.version>
     <jruby.version>10.0.0.1</jruby.version>
     <junit.version>5.13.1</junit.version>
