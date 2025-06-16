@@ -857,6 +857,7 @@
             <extensions>true</extensions>
             <configuration>
               <publishingServerId>central</publishingServerId>
+              <deploymentName>tentackle</deploymentName>
             </configuration>
           </plugin>
         </plugins>
