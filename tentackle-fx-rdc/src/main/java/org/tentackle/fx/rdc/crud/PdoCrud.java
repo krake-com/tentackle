@@ -127,13 +127,13 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
 
   private PdoEditor<T> editor;                      // the editor
   private ObservableList<T> pdoList;                // optional list of PDOs
-  private int pdoListIndex;                         // index in list
+  private int pdoListIndex;                         // index in the list of PDOs
   private boolean editable;                         // editable requested by the application
-  private boolean modal;                            // true if dialog is modal
+  private boolean modal;                            // true if the dialog is modal
   private EventListenerProxy<PdoEvent> eventProxy;  // event proxy to maintain PdoEvents registered on the View
   private Node newIcon;                             // create new PDO
   private Node newCopyIcon;                         // create new PDO as copy from existing one
-  private boolean shiftDown;                        // true if shift key is down
+  private boolean shiftDown;                        // true if the shift key is down
   private boolean mouseOverNewButton;               // true if mouse over newButton
 
   private final SimpleBooleanProperty editing  = new SimpleBooleanProperty();   // is editing allowed effectively?
@@ -317,37 +317,37 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   private void initialize() {
     securityButton.setGraphic(Fx.createGraphic("security"));
     securityButton.setTooltip(new Tooltip(resources.getString("security")));
-    securityButton.setOnAction(e -> security());
+    securityButton.setOnAction(_ -> security());
 
     previousButton.setGraphic(Fx.createGraphic("up"));
     previousButton.setTooltip(new Tooltip(resources.getString("up")));
-    previousButton.setOnAction(e -> previous());
+    previousButton.setOnAction(_ -> previous());
 
     nextButton.setGraphic(Fx.createGraphic("down"));
     nextButton.setTooltip(new Tooltip(resources.getString("down")));
-    nextButton.setOnAction(e -> next());
+    nextButton.setOnAction(_ -> next());
     setPdoList(null);
 
     treeButton.setGraphic(Fx.createGraphic("tree"));
     treeButton.setTooltip(new Tooltip(resources.getString("tree")));
-    treeButton.setOnAction(e -> tree());
+    treeButton.setOnAction(_ -> tree());
 
     findButton.setGraphic(Fx.createGraphic("search"));
-    findButton.setOnAction(e -> find());
+    findButton.setOnAction(_ -> find());
 
     newIcon = Fx.createGraphic("new");
     newCopyIcon = Fx.createGraphic("copy");
     newButton.setGraphic(newIcon);
-    newButton.setOnMouseEntered(event -> {
+    newButton.setOnMouseEntered(_ -> {
       mouseOverNewButton = true;
       updateNewButton();
     });
-    newButton.setOnMouseExited(event -> {
+    newButton.setOnMouseExited(_ -> {
       mouseOverNewButton = false;
       updateNewButton();
     });
-    newButton.setOnAction(e -> newPdo());
-    newButton.setOnMousePressed(event -> {
+    newButton.setOnAction(_ -> newPdo());
+    newButton.setOnMousePressed(_ -> {
       // onAction will not be triggered if the shift-key is down during mouse click
       if (shiftDown) {
         newPdo();   // not newButton.doClick(), as this would invoke newPdo twice for some obscure reason
@@ -355,16 +355,16 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
     });
 
     saveButton.setGraphic(Fx.createGraphic("save"));
-    saveButton.setOnAction(e -> save());
+    saveButton.setOnAction(_ -> save());
 
     deleteButton.setGraphic(Fx.createGraphic("delete"));
-    deleteButton.setOnAction(e -> delete());
+    deleteButton.setOnAction(_ -> delete());
 
     printButton.setGraphic(Fx.createGraphic("print"));
-    printButton.setOnAction(e -> print());
+    printButton.setOnAction(_ -> print());
 
     cancelButton.setGraphic(Fx.createGraphic("cancel"));
-    cancelButton.setOnAction(e -> cancel());
+    cancelButton.setOnAction(_ -> cancel());
     cancelButton.setCancelButton(true);
   }
 
@@ -530,7 +530,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
       showValidationResults(ex);
     }
     catch (NotFoundException nfe) {
-      // lock timed out and another user updated the PDO or lock was transferred to another user or removed
+      // lock timed out, and another user updated the PDO or lock was transferred to another user or removed
       LOGGER.info("saving " + getPdo().toGenericString() + " failed: " + nfe.getLocalizedMessage());
       Fx.error(getView(), MessageFormat.format(RdcFxRdcBundle.getString("{0} MODIFIED BY_ANOTHER USER MEANWHILE"), getPdo()));
       T pdo = getPdo().reload();

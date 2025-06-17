@@ -135,7 +135,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   private FxTableView<T> tableView;             // the table showing the results
   private TotalsTableView<T> totalsView;        // the (optional) table showing the totals
   private FxTreeView<T> treeView;               // the tree showing the results
-  private boolean treeShown;                    // true if tree shown, else table
+  private boolean treeShown;                    // true if the tree shown, else table
   private TreeItem<T> rootItem;                 // root item to detect top level nodes
   private boolean tableViewInvalid;             // true if tableview is invalid
   private boolean treeViewInvalid;              // true if tree-view is invalid
@@ -146,7 +146,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   private String noDataMessage;                 // optional message to be displayed when there is no data in the table
   private Node searchIcon;                      // replacing search
   private Node searchPlusIcon;                  // adding search
-  private boolean shiftDown;                    // true if shift key is down
+  private boolean shiftDown;                    // true if the shift key is down
   private boolean mouseOverFindButton;          // true if mouse over findButton
 
 
@@ -187,7 +187,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   /**
    * Sets the double click handler.<br>
    * If the search dialog is non-modal and the user double-clicks on a row of the table view,
-   * this handler will be invoked instead of the default (showing the PDO editor, if any provided).
+   * this handler will be invoked instead of the default (showing the PDO-editor, if any provided).
    *
    * @param doubleClickHandler the handler, null to clear
    */
@@ -277,7 +277,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
               else {
                 Rdc.displayCrudStage(firstPdo.reload(), items, true, Modality.NONE, getStage(), null, crud -> {
                   pdoCrud = crud;
-                  // event filter will be removed when stage is hidden (see RdcUtilities)
+                  // event filter will be removed when the stage is hidden (see RdcUtilities)
                   crud.addPdoEventFilter(PdoEvent.ANY, e -> {
                     if (e.getEventType() == PdoEvent.UPDATE) {    // INSERT or DELETE doesn't happen in this config
                       T updatedPdo = firstPdo.reload();
@@ -347,7 +347,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     treeView = Fx.create(TreeView.class);
     treeView.setCellFactory(guiProvider.getTreeCellFactory());
     wrongTypeSelected = new SimpleBooleanProperty();
-    treeView.getSelectionModel().selectedItemProperty().addListener((obs, ov, nv) ->
+    treeView.getSelectionModel().selectedItemProperty().addListener((_, _, nv) ->
             wrongTypeSelected.set(nv == null || nv.getValue() == null ||
                                   !pdo.getClass().isAssignableFrom(nv.getValue().getClass())));
 
@@ -371,7 +371,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     }
     ObjectProperty<EventHandler<ActionEvent>> searchActionProperty = finder.getSearchActionProperty();
     if (searchActionProperty != null) {
-      searchActionProperty.set(e -> findButton.doClick());
+      searchActionProperty.set(_ -> findButton.doClick());
     }
 
     if (viewSelectionPending) {
@@ -665,8 +665,8 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
 
     itemsListener = null;   // to GC -> will remove WeakInvalidationListener eventually
     if (!items.isEmpty()) {
-      // show totals only if result is not empty
-      itemsListener = o -> setTotals(finder.createTotals(items));
+      // show totals only if the result is not empty
+      itemsListener = _ -> setTotals(finder.createTotals(items));
       items.addListener(new WeakInvalidationListener(itemsListener));
       itemsListener.invalidated(items);    // show totals first time, if any totals at all
     }
@@ -695,7 +695,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    */
   public void filterResult() {
     String text = filterField.getText();
-    String filterText = StringNormalizer.getInstance().normalize(text);   // removes leading ! and -
+    String filterText = StringNormalizer.getInstance().normalize(text);   // removes leading '!' and '-'
     if (!StringHelper.isAllWhitespace(filterText)) {
       boolean inverted = text.startsWith("!") || text.startsWith("-");
       List<T> filteredResult = getItems().stream().
@@ -746,7 +746,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   /**
    * Returns whether the tree is shown instead of the table.
    *
-   * @return true if tree shown, else table shown
+   * @return true, if the tree is shown, else the table is shown
    */
   public boolean isTreeShown() {
     return treeShown;
@@ -776,7 +776,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    * @return the table view
    */
   public FxTreeView<T> getTreeView() {
-    showTree();    // make sure tree is shown and valid
+    showTree();    // make sure the tree is shown and valid
     return treeView;
   }
 
@@ -797,7 +797,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
           T listPdo = items.get(index);
           T treePdo = item.getValue();
           if (listPdo.getSerial() != treePdo.getSerial()) {
-            // item was modified in tree
+            // item was modified in the tree
             ((List) items.getSource()).set(items.getSourceIndex(index), treePdo);
           }
           index++;
@@ -815,7 +815,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    * @return the table view
    */
   public FxTableView<T> getTableView() {
-    showTable();    // make sure table is shown and valid
+    showTable();    // make sure the table is shown and valid
     return tableView;
   }
 
@@ -860,7 +860,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   private void initialize() {
     treeButton.setGraphic(Fx.createGraphic("tree"));
     treeButton.setTooltip(new Tooltip(resources.getString("tree")));
-    treeButton.setOnAction(e -> {
+    treeButton.setOnAction(_ -> {
       if (treeShown) {
         showTable();
       }
@@ -870,22 +870,22 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     });
 
     filterButton.setGraphic(Fx.createGraphic("filter"));
-    filterButton.setOnAction(e -> filterResult());
-    filterField.setOnAction(e -> filterButton.doClick());
+    filterButton.setOnAction(_ -> filterResult());
+    filterField.setOnAction(_ -> filterButton.doClick());
 
     searchIcon = Fx.createGraphic("search");
     searchPlusIcon = Fx.createGraphic("add");
     findButton.setGraphic(searchIcon);
-    findButton.setOnMouseEntered(event -> {
+    findButton.setOnMouseEntered(_ -> {
       mouseOverFindButton = true;
       updateFindButton();
     });
-    findButton.setOnMouseExited(event -> {
+    findButton.setOnMouseExited(_ -> {
       mouseOverFindButton = false;
       updateFindButton();
     });
-    findButton.setOnAction(e -> find());
-    findButton.setOnMousePressed(event -> {
+    findButton.setOnAction(_ -> find());
+    findButton.setOnMousePressed(_ -> {
       // onAction will not be triggered if the shift-key is down during mouse click
       if (shiftDown) {
         find();   // not findButton.doClick(), as this would invoke find twice for some obscure reason
@@ -893,13 +893,13 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     });
 
     newButton.setGraphic(Fx.createGraphic("new"));
-    newButton.setOnAction(e -> createPdo());
+    newButton.setOnAction(_ -> createPdo());
 
     okButton.setGraphic(Fx.createGraphic("ok"));
-    okButton.setOnAction(e -> close());
+    okButton.setOnAction(_ -> close());
 
     cancelButton.setGraphic(Fx.createGraphic("close"));
-    cancelButton.setOnAction(e -> cancel());
+    cancelButton.setOnAction(_ -> cancel());
     cancelButton.setCancelButton(true);
 
     tablePane = Fx.create(BorderPane.class);
@@ -953,7 +953,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   }
 
   /**
-   * Creates the placeholder node for the empty search result in table view.
+   * Creates the placeholder node for the empty search result in the table view.
    *
    * @return the node, null to use table-view's default placeholder
    */
