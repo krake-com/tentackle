@@ -350,7 +350,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
     newButton.setOnMousePressed(event -> {
       // onAction will not be triggered if the shift-key is down during mouse click
       if (shiftDown) {
-        newPdo();   // not newButton.doClick(), as this would invoke newPdo twice for some obscure reason
+        newButton.doClick();
       }
     });
 

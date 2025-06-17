@@ -19,15 +19,15 @@
 
 package org.tentackle.fx.component;
 
+import org.tentackle.fx.FxComponent;
+import org.tentackle.fx.FxUtilities;
+import org.tentackle.fx.InfoPopupSupported;
+
 import javafx.animation.PauseTransition;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.stage.PopupWindow;
 import javafx.util.Duration;
-
-import org.tentackle.fx.FxComponent;
-import org.tentackle.fx.FxUtilities;
-import org.tentackle.fx.InfoPopupSupported;
 
 import static org.tentackle.fx.FxComponentDelegate.INFO_STYLE;
 
@@ -56,6 +56,14 @@ public class FxButton extends Button implements InfoPopupSupported {
    */
   private PopupWindow infoPopup;
 
+  /**
+   * True if a doClick timer is running.<br>
+   * No additional fire() should be invoked in the meantime from FX.
+   * (see shift-mouse-hack in PdoCrud and PdoSearch: Button thinks
+   * key is down and button armed -> fire() invoked a second time from mouse listener)
+   */
+  private boolean doClickRunning;
+
 
   /**
    * Creates a button with an empty string for its label.
@@ -75,9 +83,11 @@ public class FxButton extends Button implements InfoPopupSupported {
    * @param pressTime the time to "hold down" the button, in milliseconds
    */
   public void doClick(double pressTime) {
+    doClickRunning = true;
     PauseTransition pause = new PauseTransition(Duration.millis(pressTime));
     pause.setOnFinished(e -> {
       disarm();
+      doClickRunning = false;
       fire();
     });
     arm();
@@ -96,20 +106,22 @@ public class FxButton extends Button implements InfoPopupSupported {
 
   @Override
   public void fire() {
-    if (!isFocusTraversable() && !isCancelButton()) {
-      /*
-       * If the button is not focus traversable, it will not receive the focus when clicked.
-       * As a consequence, an opposite FxComponent will not lose its focus which in turn
-       * means, that the model is not updated. If the action handler of this button
-       * depends on it, it will not see the last user's input.
-       * In such cases we must perform the model update explicitly before the event gets fired.
-       */
-      Node node = getScene().getFocusOwner();
-      if (node instanceof FxComponent) {
-        FxUtilities.getInstance().focusLost((FxComponent) node);
+    if (!doClickRunning) {
+      if (!isFocusTraversable() && !isCancelButton()) {
+        /*
+         * If the button is not focus traversable, it will not receive the focus when clicked.
+         * As a consequence, an opposite FxComponent will not lose its focus, which in turn
+         * means that the model is not updated. If the action handler of this button
+         * depends on it, it will not see the last user's input.
+         * In such cases, we must perform the model update explicitly before the event gets fired.
+         */
+        Node node = getScene().getFocusOwner();
+        if (node instanceof FxComponent) {
+          FxUtilities.getInstance().focusLost((FxComponent) node);
+        }
       }
+      super.fire();
     }
-    super.fire();
   }
 
 
