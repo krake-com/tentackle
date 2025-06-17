@@ -888,7 +888,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     findButton.setOnMousePressed(_ -> {
       // onAction will not be triggered if the shift-key is down during mouse click
       if (shiftDown) {
-        find();   // not findButton.doClick(), as this would invoke find twice for some obscure reason
+        findButton.doClick();
       }
     });
 
