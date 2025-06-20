@@ -56,7 +56,8 @@ public class ${application}RemoteDbSessionImpl extends RemoteDbSessionImpl imple
     String username = sessionInfo.getUserName();
     User user = Pdo.create(User.class, context).selectByUniqueDomainKey(username);
     if (user == null) {
-      LOGGER.warning("attempt to login for unknown user {0}", username);
+      // don't log the username, since it could be the password (mixed up by the user accidently)
+      LOGGER.warning("attempt to login for unknown user");
     }
     else {
       if (Objects.equals(user.hash(sessionInfo.getPassword()), user.selectPasswordHash())) {
@@ -108,8 +109,9 @@ public class ${application}RemoteDbSessionImpl extends RemoteDbSessionImpl imple
           session.makeCurrent();
           String message = null;
           if (user == null) {
-            message = MessageFormat.format(ServerBundle.getString("bad login attempt with {0} as {1} from {2}"),
-                                           sessionInfo.getApplicationName(), sessionInfo.getUserName(), sessionInfo.getHostInfo());
+            // don't log the username, since it could be the password (mixed up by the user accidently)
+            message = MessageFormat.format(ServerBundle.getString("bad login attempt with {0} from {1}"),
+                                           sessionInfo.getApplicationName(), sessionInfo.getHostInfo());
           }
           else if (loggedIn) {
             message = MessageFormat.format(ServerBundle.getString("user {0} logged out from {1} with {2}, session {3}"),
