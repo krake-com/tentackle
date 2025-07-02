@@ -349,10 +349,40 @@ public record Position3D(&#64;Bindable(options="AUTOSELECT") int x,
   @(property.getScopeAsKeyword())@@(getClassName())@ @(property.getFromName())@(@(property.getType())@ @(property.getName())@) {
 @[
         if (withBuilder) {
-          if (property.isMutable()) {
+          boolean settersFound = false;
+          for (Property prop: properties) {
+            if (prop.isMutable()) {
+              settersFound = true;
+              break;
+            }
+          }
+          if (settersFound) {
+            if (!property.isMutable()) {
+]@
+    @(getClassName())@ object = toBuilder().@(property.getBuilderName())@(@(property.getName())@).build();
+@[
+            }
+            else {
 ]@
     @(getClassName())@ object = toBuilder().build();
+@[
+            }
+
+            for (Property prop: properties) {
+              if (prop.isMutable()) {
+                if (prop == property) {
+]@
     object.@(property.getSetterName())@(@(property.getName())@);
+@[
+                }
+                else {
+]@
+    object.@(prop.getSetterName())@(this.@(prop.getName())@);
+@[
+                }
+              }
+            }
+]@
     return object;
 @[
           }
@@ -405,7 +435,7 @@ public record Position3D(&#64;Bindable(options="AUTOSELECT") int x,
               if (prop.isMutable()) {
                 if (prop == property) {
 ]@
-    object.@(prop.getSetterName())@(@(prop.getName())@);
+    object.@(property.getSetterName())@(@(property.getName())@);
 @[
                 }
                 else {
