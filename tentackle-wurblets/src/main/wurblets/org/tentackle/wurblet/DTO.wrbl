@@ -364,25 +364,66 @@ public record Position3D(&#64;Bindable(options="AUTOSELECT") int x,
         }
         else {
           StringBuilder argBuf = new StringBuilder();
+          boolean settersFound = false;
           for (Property prop: properties) {
-            if (argBuf.length() > 0) {
-              argBuf.append(", ");
-            }
             if (prop == property) {
-              argBuf.append(prop.getName());
+              if (prop.isMutable()) {
+                settersFound = true;
+              }
+              else {
+                if (argBuf.length() > 0) {
+                  argBuf.append(", ");
+                }
+                argBuf.append(prop.getName());
+              }
             }
             else {
               if (prop.isInherited()) {
+                if (argBuf.length() > 0) {
+                  argBuf.append(", ");
+                }
                 argBuf.append(prop.getGetterName() + "()");
               }
               else {
-                argBuf.append("this." + prop.getName());
+                if (prop.isMutable()) {
+                  settersFound = true;
+                }
+                else {
+                  if (argBuf.length() > 0) {
+                    argBuf.append(", ");
+                  }
+                  argBuf.append("this." + prop.getName());
+                }
               }
             }
           }
+          if (settersFound) {
+]@
+    @(getClassName())@ object = new @(getClassName())@(@(argBuf)@);
+@[
+            for (Property prop: properties) {
+              if (prop.isMutable()) {
+                if (prop == property) {
+]@
+    object.@(prop.getSetterName())@(@(prop.getName())@);
+@[
+                }
+                else {
+]@
+    object.@(prop.getSetterName())@(this.@(prop.getName())@);
+@[
+                }
+              }
+            }
+]@
+    return object;
+@[
+          }
+          else {
 ]@
     return new @(getClassName())@(@(argBuf)@);
 @[
+          }
         }
 ]@
   }
