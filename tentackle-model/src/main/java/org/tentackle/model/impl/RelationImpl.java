@@ -119,7 +119,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
   /** clear-on-remote-save relation flag. */
   public static final String REMOTECLEAR = "remoteclear";
 
-  /** map list relation to reversed 1:1 object relation. */
+  /** map list relation to the reversed 1:1 object relation. */
   public static final String REVERSED = "reversed";
 
   /** skip relation in snapshots or copies. */
@@ -131,7 +131,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
   /** add toString value to the partOfNormText. */
   public static final String PART_OF_NORMTEXT = "normtext";
 
-  /** add blunt method to interface. */
+  /** add blunt method to the interface. */
   public static final String BLUNT_DECLARED = "blunt";
 
   /** cached selection flag. */
@@ -755,9 +755,8 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
         if (relationType != RelationType.OBJECT) {
           throw createModelException("embedded relations must be 1:1");
         }
-        relationType = RelationType.OBJECT;
         selectionCached = false;
-        selectionTypeDetermined = false;    // don't switch to cached, if parent is cached
+        selectionTypeDetermined = false;    // don't switch to caching mode if parent is cached
         selectionType = SelectionType.EMBEDDED;
         composite = true;
       }
@@ -823,6 +822,10 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
 
         if (foreignAttribute == null && methodArgs.isEmpty()) {   // may be any attribute(s), if methodArgs are set
           throw createModelException("relation " + getName() + " does not map to a foreign attribute in " + foreignEntity);
+        }
+
+        if (bluntDeclared && (!tracked || !composite)) {
+          throw createModelException("blunt list relations must be tracked and composite");
         }
       }
       else {
@@ -1321,8 +1324,8 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
   /**
    * Gets the unique build name of the relation.
    *
-   * @param tolower is true if first letter is lowercase, else uppercase
-   * @return the setter/getter method name in main class
+   * @param tolower is true if the first letter is lowercase, else uppercase
+   * @return the setter/getter method name in the main class
    */
   private String buildName(boolean tolower) {
     String str = name == null ? className : name;
