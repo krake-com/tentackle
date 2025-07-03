@@ -53,6 +53,7 @@ import java.util.StringTokenizer;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 
 interface PdoUtilitiesHolder {
@@ -173,7 +174,7 @@ public class PdoUtilities {
    */
   public String getSingular(Class<?> clazz) {
     return singularMap.get(clazz.getName());
-    // don't refer to Pdo because default implementation uses PdoUtilities in return (-> would loop)
+    // don't refer to Pdo because the default implementation uses PdoUtilities in return (-> would loop)
   }
 
 
@@ -185,7 +186,7 @@ public class PdoUtilities {
    */
   public String getPlural(Class<?> clazz) {
     return pluralMap.get(clazz.getName());
-    // don't refer to Pdo because default implementation uses PdoUtilities in return (-> would loop)
+    // don't refer to Pdo because the default implementation uses PdoUtilities in return (-> would loop)
   }
 
 
@@ -320,7 +321,7 @@ public class PdoUtilities {
    * Virgin objects are not deleted.
    *
    * @param pdos the list of object to delete
-   * @return the number of objects deleted, -1 if error  (some object wasn't deleted)
+   * @return the number of objects deleted, -1 if error (some object wasn't deleted)
    */
   public int deleteCollection (Collection<? extends PersistentDomainObject<?>> pdos) {
     int deleted = 0;
@@ -420,14 +421,25 @@ public class PdoUtilities {
    */
   public boolean isCollectionModified(Collection<? extends PersistentDomainObject<?>> pdos) {
     // TrackedArrayLists are modified if elements added, replaced or removed
-    if (pdos instanceof TrackedList<?> &&
-        ((TrackedList<?>) pdos).isModified())  {
+    if (pdos instanceof TrackedList<?> trackedList && trackedList.isModified())  {
       return true;
     }
-    // check attributes
+    // check the elements
+    return isCollectionContaining(pdos, PersistentDomainObject::isModified);
+  }
+
+  /**
+   * Returns whether a collection contains at least one PDO matching a certain condition.
+   *
+   * @param pdos the PDOs
+   * @param predicate the predicate
+   * @return true if some PDO matches the condition
+   * @param <T> the PDO type
+   */
+  public <T extends PersistentDomainObject<?>>  boolean isCollectionContaining(Collection<T> pdos, Predicate<T> predicate) {
     if (pdos != null) {
-      for (PersistentDomainObject<?> obj: pdos)  {
-        if (obj != null && obj.isModified()) {
+      for (T pdo: pdos)  {
+        if (pdo != null && predicate.test(pdo)) {
           return true;
         }
       }
@@ -435,11 +447,30 @@ public class PdoUtilities {
     return false;
   }
 
+  /**
+   * Returns whether a collection contains only PDOs that don't match a certain condition.
+   *
+   * @param pdos the PDOs
+   * @param predicate the predicate
+   * @return true if all PDOs don't match the condition
+   * @param <T> the PDO type
+   */
+  public <T extends PersistentDomainObject<?>>  boolean isCollectionNotContaining(Collection<T> pdos, Predicate<T> predicate) {
+    if (pdos != null) {
+      for (T pdo: pdos)  {
+        if (pdo != null && predicate.test(pdo)) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
 
   /**
    * Saves a list of PDOs.<br>
    * All objects with isPersistable() == true will be saved.
-   * If modifiedOnly is true only isModified() objects will be saved.
+   * If modifiedOnly is true, only isModified() objects will be saved.
    * All objects with isPersistable() == false and isNew() == false
    * are removed!
    * By definition, a {@link TrackedList} must *NOT* contain untracked objects.
@@ -449,7 +480,7 @@ public class PdoUtilities {
    *
    * @param pdos the list to save
    * @param modifiedOnly is true if only modified objects are saved
-   * @param usePersist true to use persist() instead of save() and replace objects in collection
+   * @param usePersist true to use persist() instead of save() and replace objects in the collection
    * @return the number of objects saved, -1 if some error
    */
   @SuppressWarnings("unchecked")
@@ -520,7 +551,7 @@ public class PdoUtilities {
   /**
    * Saves a list of PDOs.<br>
    * All objects with isPersistable() == true will be saved.
-   * If modifiedOnly is true only isModified() objects will be saved.
+   * If modifiedOnly is true, only isModified() objects will be saved.
    * All objects with isPersistable() == false and isNew() == false
    * are removed!
    * By definition, a {@link TrackedList} must *NOT* contain untracked objects.
@@ -554,7 +585,7 @@ public class PdoUtilities {
    *
    * @param idString the id string "classid:objectid"
    * @return the key
-   * @throws PersistenceException if not an id string or invalid class id
+   * @throws PersistenceException if not an id string or invalid class-id
    */
   public IdentifiableKey<PersistentDomainObject<?>> idStringToIdentifiableKey(String idString) {
     if (idString != null) {
@@ -653,7 +684,7 @@ public class PdoUtilities {
           PdoMember relation = memberMap.get(relationName);
           if (relation != null && relation.getType() == PdoMember.Type.RELATION) {
             if (withRelations && !relation.isComponent() && !relation.isParent()) {
-              // non-component object relation instead of object id
+              // non-component object relation instead of the object id
               member = new PdoMember(relation.getType(), relation.getName(), relation.getGetter(), relation.getSetter(),
                                      false, false, member.isDomainKey(), relation.getComment(), member.getOrdinal());
             }

@@ -189,6 +189,11 @@ For more options, see {\@link DbModelWurblet}.
 ]@
   private @(transientModifier)@boolean @(rel.getVariableName())@Loaded;
 @[
+              if (rel.isBluntDeclared()) {
+]@
+  private @(transientModifier)@boolean @(rel.getVariableName())@BluntLoaded;
+@[
+              }
             }
             if (rel.isComposite())  {
               if (rel.getRelationType() == RelationType.OBJECT || rel.isTracked()) {
@@ -417,9 +422,33 @@ For more options, see {\@link DbModelWurblet}.
 @[
           }
           else if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER) {
+            if (rel.isBluntDeclared() && rel.isComposite() && rel.isTracked() && rel.getRelationType() == RelationType.LIST) {
+              // if the application invokes the regular getter after having used the blunt-getter and all PDOs are new,
+              // merge with the PDOs from the database.
+              // This is the case if the application uses the blunt-getter to add new PDOs to the list and avoid reading
+              // the (probably very large) list of already existing ones.
+              // The framework, however, uses the blunt-getter only for load-joins.
+              // In that case, all PDOs are not new and its sufficient to just clear the blunt-flag.
+              // Notice: xxxBluntLoaded implies xxxLoaded!
+]@
+    if (@(var)@BluntLoaded) {
+      @(var)@BluntLoaded = false;
+      if (!isNew()) {
+        if (PdoUtilities.getInstance().isCollectionNotContaining(@(var)@, Predicate.not(PersistentDomainObject::isNew))) {
+          @(rel.getDeclaredJavaType(false))@ allNew = @(var)@;
+          @(var)@ = @(createRelationSelectCode(rel))@;
+          @(var)@.addAll(allNew);
+        }
+      }
+    }
+    else if (!@(var)@Loaded) {
+@[
+            }
+            else {
 ]@
     if (!@(var)@Loaded) {
 @[
+            }
             if (rel.isComposite())  {
               if (rel.getRelationType() == RelationType.LIST) {
                 String condition = "isNew()";
@@ -577,6 +606,13 @@ For more options, see {\@link DbModelWurblet}.
         @(var)@.setImmutable(true);
       }
       @(var)@Loaded = true;
+@[
+              if (rel.isBluntDeclared()) {
+]@
+      @(var)@BluntLoaded = true;
+@[
+              }
+]@
     }
     return @(var)@;
   }
@@ -1247,6 +1283,19 @@ For more options, see {\@link DbModelWurblet}.
 ]@
       }
       save(@(var)@, @(rel.isTracked() ? "true" : "false")@);
+@[
+          if (rel.isBluntDeclared()) {
+            // force reload of list since we must assume that PDOs were added bluntly
+            // while other PDOs already existed in database
+]@
+      if (@(var)@BluntLoaded) {
+        @(var)@ = null;
+        @(var)@Loaded = false;
+        @(var)@BluntLoaded = false;
+      }
+@[
+          }
+]@
     }
 @[
         }
@@ -1748,6 +1797,11 @@ For more options, see {\@link DbModelWurblet}.
 ]@
     @(var)@Loaded = snapshot.@(var)@Loaded;
 @[
+            if (rel.isBluntDeclared() && rel.getRelationType() == RelationType.LIST) {
+]@
+    @(var)@BluntLoaded = snapshot.@(var)@BluntLoaded;
+@[
+            }
           }
           if (rel.getRelationType() == RelationType.OBJECT && !rel.isEmbedding()) {
 ]@
