@@ -434,12 +434,10 @@ For more options, see {\@link DbModelWurblet}.
 ]@
     if (@(var)@BluntLoaded) {
       @(var)@BluntLoaded = false;
-      if (!isNew()) {
-        if (@(var)@.stream().allMatch(PersistentDomainObject::isNew)) {
-          @(rel.getDeclaredJavaType(false))@ allNew = @(var)@;
-          @(var)@ = @(createRelationSelectCode(rel))@;
-          @(var)@.addAll(allNew);
-        }
+      if (!isNew() && @(var)@.stream().allMatch(PersistentDomainObject::isNew)) {
+        @(rel.getDeclaredJavaType(false))@ allNew = @(var)@;
+        @(var)@ = @(createRelationSelectCode(rel))@;
+        @(var)@.addAll(allNew);
       }
     }
     else if (!@(var)@Loaded) {
