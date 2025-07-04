@@ -53,7 +53,6 @@ import java.util.StringTokenizer;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 
 
 interface PdoUtilitiesHolder {
@@ -413,57 +412,19 @@ public class PdoUtilities {
 
 
   /**
-   * Checks whether some objects in the list are modified.<br>
-   * Useful for recursive optimizations.
+   * Checks whether elements of a collection are modified.<br>
+   * If the collection is a {@link TrackedList}, {@link TrackedList#isModified()} is invoked as well
+   * to detect whether some elements were added, removed or replaced.<br>
+   * The method returns false if the collection is empty or null.
    *
    * @param pdos the objects
    * @return true if modified
    */
   public boolean isCollectionModified(Collection<? extends PersistentDomainObject<?>> pdos) {
-    // TrackedArrayLists are modified if elements added, replaced or removed
     if (pdos instanceof TrackedList<?> trackedList && trackedList.isModified())  {
       return true;
     }
-    // check the elements
-    return isCollectionContaining(pdos, PersistentDomainObject::isModified);
-  }
-
-  /**
-   * Returns whether a collection contains at least one PDO matching a certain condition.
-   *
-   * @param pdos the PDOs
-   * @param predicate the predicate
-   * @return true if some PDO matches the condition
-   * @param <T> the PDO type
-   */
-  public <T extends PersistentDomainObject<?>>  boolean isCollectionContaining(Collection<T> pdos, Predicate<T> predicate) {
-    if (pdos != null) {
-      for (T pdo: pdos)  {
-        if (pdo != null && predicate.test(pdo)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  /**
-   * Returns whether a collection contains only PDOs that don't match a certain condition.
-   *
-   * @param pdos the PDOs
-   * @param predicate the predicate
-   * @return true if all PDOs don't match the condition
-   * @param <T> the PDO type
-   */
-  public <T extends PersistentDomainObject<?>>  boolean isCollectionNotContaining(Collection<T> pdos, Predicate<T> predicate) {
-    if (pdos != null) {
-      for (T pdo: pdos)  {
-        if (pdo != null && predicate.test(pdo)) {
-          return false;
-        }
-      }
-    }
-    return true;
+    return pdos != null && pdos.stream().anyMatch(PersistentDomainObject::isModified);
   }
 
 
