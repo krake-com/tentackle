@@ -437,7 +437,12 @@ For more options, see {\@link DbModelWurblet}.
       if (!isNew() && @(var)@.stream().allMatch(PersistentDomainObject::isNew)) {
         @(rel.getDeclaredJavaType(false))@ allNew = @(var)@;
         @(var)@ = @(createRelationSelectCode(rel))@;
-        @(var)@.addAll(allNew);
+        if (isImmutable()) {
+          @(var)@.setImmutable(true);
+        }
+        else {
+          @(var)@.addAll(allNew);
+        }
       }
     }
     else if (!@(var)@Loaded) {
