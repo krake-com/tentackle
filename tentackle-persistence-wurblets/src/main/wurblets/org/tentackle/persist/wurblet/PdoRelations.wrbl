@@ -430,11 +430,12 @@ For more options, see {\@link DbModelWurblet}.
               // The framework, however, uses the blunt-getter only for load-joins.
               // In that case, all PDOs are not new and its sufficient to just clear the blunt-flag.
               // Notice: xxxBluntLoaded implies xxxLoaded!
+              // Notice: Stream#allMatch returns true if collection is empty
 ]@
     if (@(var)@BluntLoaded) {
       @(var)@BluntLoaded = false;
       if (!isNew()) {
-        if (PdoUtilities.getInstance().isCollectionNotContaining(@(var)@, Predicate.not(PersistentDomainObject::isNew))) {
+        if (@(var)@.stream().allMatch(PersistentDomainObject::isNew)) {
           @(rel.getDeclaredJavaType(false))@ allNew = @(var)@;
           @(var)@ = @(createRelationSelectCode(rel))@;
           @(var)@.addAll(allNew);
