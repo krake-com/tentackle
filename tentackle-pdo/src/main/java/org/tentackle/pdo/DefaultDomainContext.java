@@ -50,7 +50,7 @@ public class DefaultDomainContext implements DomainContext {
    * the session.
    */
   private transient Session session;
-  private transient boolean sessionValid;     // false if not created by constructor, i.e. sent over wire
+  private transient boolean sessionValid;     // false if not created by constructor, i.e., sent over wire
 
   /**
    * session immutable flag.
@@ -61,7 +61,7 @@ public class DefaultDomainContext implements DomainContext {
    * the root entity, null if none.
    * <p>
    * Notice that the root-entity is transient!
-   * For remote sessions the rootId and rootClassId will be transferred.
+   * For remote sessions, the rootId and rootClassId will be transferred.
    */
   private transient PersistentDomainObject<?> rootEntity;
 
@@ -106,7 +106,7 @@ public class DefaultDomainContext implements DomainContext {
    * The context name chain.<br>
    * Array is faster to serialize/deserialize than List.
    */
-  private String[] names;                     // null if unnamed (internal only)
+  private String[] names;                     // null for unnamed (internal only)
   private transient List<String> namesList;   // lazy unmodifiable list for external API
 
 
@@ -169,13 +169,13 @@ public class DefaultDomainContext implements DomainContext {
   public void setSession(Session session) {
     if (sessionValid) {
       if (isSessionThreadLocal()) {
-        if (session != null && session != getSession()) {
+        if (session != null && session != Session.getCurrentSession()) {
           // A thread-local session cannot be changed to another fixed session.
           // To do so, a new context is necessary.
-          // Same session as thread-local is ok, however.
+          // The same session as thread-local is ok, however.
           throw new PersistenceException("illegal attempt to change the thread-local session of " +
                                          getClass().getSimpleName() + " '" + this +
-                                         "' from " + getSession() + " to " + session);
+                                         "' from " + Session.getCurrentSession() + " to " + session);
         }
         // else no change: requested session is null or the same as the thread-local session
       }
@@ -227,7 +227,7 @@ public class DefaultDomainContext implements DomainContext {
 
   @Override
   public int getSessionInstanceNumber() {
-    // the instance-no must be 0 for dynamic thread-local session (due to sorting, e.g. in caches)
+    // the instance-no must be 0 for dynamic thread-local session (due to sorting, e.g., in caches)
     return session == null ? 0 : session.getInstanceNumber();
   }
 
@@ -487,7 +487,6 @@ public class DefaultDomainContext implements DomainContext {
         throw new PersistenceException(rootEntity.toGenericString() + " is not a root entity");
       }
       if (po.getId() == rootId && po.getRootClassId() == rootClassId) {
-        // just update the link
         this.rootEntity = rootEntity;
         return this;
       }
