@@ -123,6 +123,8 @@ public class EntityFactoryImpl implements EntityFactory {
   @Override
   public Entity createEntity(Document document, ModelDefaults modelDefaults) throws ModelException {
 
+    consumePendingComment();
+
     // parse the model (syntax only)
     List<Line> lines = document.getLines();
 
