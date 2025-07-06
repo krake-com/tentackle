@@ -74,7 +74,7 @@ public class EntityPrinterTest {
 " * ## relations\n" +
 " * # the invoice lines\n" +
 " * InvoiceLine:\n" +
-" *     relation = composite referenced list,\n" +
+" *     relation = component referenced list,\n" +
 " *     link = setInvoice position,\n" +
 " *     name = Lines,\n" +
 " *     @NotNull\n" +

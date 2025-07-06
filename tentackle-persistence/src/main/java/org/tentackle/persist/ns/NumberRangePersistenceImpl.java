@@ -398,7 +398,7 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
     context.applyTo(numberPool);
   }
 
-  // selects the composite list of NumberRange numberRangeList via NumberRange#numberPoolId
+  // selects the component list of NumberRange numberRangeList via NumberRange#numberPoolId
   // @wurblet selectByNumberPoolId PdoSelectList --tracked numberPoolId
 
   //</editor-fold>//GEN-END:relations

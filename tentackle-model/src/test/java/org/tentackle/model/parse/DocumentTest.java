@@ -70,7 +70,7 @@ public class DocumentTest {
 "   \n" +
 "#relations\n" +
 "InvoiceLine:\n" +
-"     relation = composite referenced list,\n" +
+"     relation = component referenced list,\n" +
 "     link = setInvoice indexed,\n" +
 "     select = lazy\n" +
 "\n   " +
@@ -245,7 +245,7 @@ public class DocumentTest {
       assertEquals(line.getLineType(), LineType.COMMENT);
 
       //  "InvoiceLine:\n" +
-      //  "     relation = composite referenced list,\n" +
+      //  "     relation = component referenced list,\n" +
       //  "     link = setInvoice indexed,\n" +
       //  "     select = lazy\n" +
       line = iter.next();
@@ -253,7 +253,7 @@ public class DocumentTest {
       RelationLine rl = (RelationLine) line;
       assertEquals(rl.getClassName(), "InvoiceLine");
       assertEquals(rl.getProperties().size(), 3);
-      assertEquals(rl.getProperties().get("relation"), "composite referenced list");
+      assertEquals(rl.getProperties().get("relation"), "component referenced list");
 
       //  "\n   " +
       line = iter.next();

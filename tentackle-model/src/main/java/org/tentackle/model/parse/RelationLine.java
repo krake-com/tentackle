@@ -33,14 +33,14 @@ import java.util.Map;
  *
  * Properties:<p>
  *
- * relation = &lt;object|list|reversed&gt; [composite] [tracked] [referenced] [processed] [readonly|writeonly|nomethod]
+ * relation = &lt;object|list|reversed&gt; [composite|component] [tracked] [referenced] [processed] [readonly|writeonly|nomethod]
  *            [serialized] [remoteclear] [reversed] [shallow] [immutable] [normtext] [blunt]
  * <ul>
  *    <li>object: single object association [1:1]. This is the default.</li>
  *    <li>reversed: non-composite list relation that contains max. one object (reversed 1:1 object relation)</li>
  *    <li>list: list of objects [1:N]. ([N:M] see below nm = ...)</li>
- *    <li>composite: relation points to a component (default if related entity's type is embedded)</li>
- *    <li>tracked: modification state of object or list is tracked</li>
+ *    <li>composite/component: the relation points to a component (default if the related entity's type is embedded)</li>
+ *    <li>tracked: modification state of the object or list is tracked</li>
  *    <li>referenced: set the parent reference on select and construction</li>
  *    <li>processed: invokes a processXXX-method on initialization, after select and before save</li>
  *    <li>readonly: don't generate set-method</li>
@@ -49,7 +49,7 @@ import java.util.Map;
  *    <li>serialized (only if lazy and not composite): lazy non-composite references are transient by default. "serialized" makes them non-transient.</li>
  *    <li>remoteclear: clear serialized relation before save (i.e. sending to server)</li>
  *    <li>shallow: exclude this relation in snapshots or copies</li>
- *    <li>immutable: set this relation immutable after initial load</li>
+ *    <li>immutable: set this relation immutable after the initial load</li>
  *    <li>normtext: add the toString value of this relation to the normtext. If this is a list, add toStrings of all PDOs.</li>
  *    <li>blunt: the blunt-method becomes part of the persistence interface.</li>
  * </ul>
@@ -62,7 +62,7 @@ import java.util.Map;
  *    <li>always: fetched on every get (default if cached)</li>
  *    <li>eager: fetched in advance whenever the main class is fetched</li>
  *    <li>lazy: fetched within the first get only (default if not cached)</li>
- *    <li>embedded: fetched by parent (default if related entity's type is embedded)</li>
+ *    <li>embedded: fetched by parent (default if the related entity's type is embedded)</li>
  *    <li>cached: use caching select methods if possible (only for objects-relations)</li>
  *    <li>wurbletargs: additional arguments passed to the PdoSelectList-wurblet (only for list-relations)<br>
  *        Example: <code>select = lazy | -pilePosition</code></li>
@@ -90,14 +90,14 @@ import java.util.Map;
  * <ul>
  *    <li>second and more arguments passed to selectBy- or deleteBy-method. Only applicable to list relations.<br>
  *      Example: <code>args = forCreditor[isCreditor()] lineType[CalculationLineType.ON_CALCULATION]</code><br>
- *      The first argument cannot be overwritten. For lists it is <code>&lt;name-of-current-entity&gt;Id[getId()]</code><br>
+ *      The first argument cannot be overwritten. For lists, it is <code>&lt;name-of-current-entity&gt;Id[getId()]</code><br>
  *      For object relations it is <code>id[get&lt;name-of-relation&gt;Id()]</code>
  *    </li>
  * </ul>
  *
  * method = &lt;methodname&gt;
  * <ul>
- *    <li>methodname: is the part of the method names, i.e. select[By]&lt;methodname&gt;, delete[By]&lt;methodname&gt;,
+ *    <li>methodname: is the part of the method names, i.e., select[By]&lt;methodname&gt;, delete[By]&lt;methodname&gt;,
  *    set&lt;methodname&gt;<br>
  *    [By] is added for lists.</li>
  * </ul>

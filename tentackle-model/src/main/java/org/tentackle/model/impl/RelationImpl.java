@@ -92,8 +92,10 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
   public static final String COUNT = "count";
 
 
-  /** composite relation flag. */
+  /** composite relation flag (belongs to a composite parent). */
   public static final String COMPOSITE = "composite";
+  /** synonym to 'composite' (preferred wording in the model and application sources). */
+  public static final String COMPONENT = "component";
 
   /** tracked relation flag. */
   public static final String TRACKED = "tracked";
@@ -365,6 +367,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
               String token = stok.nextToken();
               switch (token.toLowerCase(Locale.ROOT)) {
                 case COMPOSITE:
+                case COMPONENT:
                   setComposite(true);
                   break;
 
@@ -723,7 +726,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
       buf.append("embedded ");    // implies composite, but that's not printed
     }
     else if (composite) {
-      buf.append("composite ");
+      buf.append("component ");
     }
     if (getRelationType() == RelationType.LIST && !reversed) {
       buf.append("list of ");
@@ -792,7 +795,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
 
       if (getEntity().isEmbedded()) {
         if (composite && !foreignEntity.isEmbedded()) {
-          throw createModelException("composite relations not allowed for embedded entities");
+          throw createModelException("component relations not allowed for embedded entities");
         }
         if (reversed) {
           throw createModelException("reversed relations not allowed for embedded entities");
@@ -803,11 +806,11 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
       }
 
       if (composite && !isEmbedding() && selectionType != SelectionType.LAZY && selectionType != SelectionType.EAGER) {
-        throw createModelException("composite relations must be eager or lazy");
+        throw createModelException("component relations must be eager or lazy");
       }
 
       if (reversed && (composite || relationType != RelationType.LIST)) {
-        throw createModelException("reversed 1:1 mapping only allowed for non-composite list relations");
+        throw createModelException("reversed 1:1 mapping only allowed for non-component list relations");
       }
 
       if (relationType == RelationType.LIST) {
@@ -815,7 +818,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
           throw createModelException("cached select is not allowed for list relations");
         }
         if (deletionCascaded && !composite) {
-          throw createModelException("cascaded delete is not allowed for non-composite list relations");
+          throw createModelException("cascaded delete is not allowed for non-component list relations");
         }
 
         if (foreignAttribute == null && methodArgs.isEmpty()) {   // may be any attribute(s), if methodArgs are set
@@ -823,7 +826,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
         }
 
         if (bluntDeclared && (!tracked || !composite)) {
-          throw createModelException("blunt list relations must be tracked and composite");
+          throw createModelException("blunt list relations must be tracked component");
         }
       }
       else {
@@ -850,10 +853,10 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
       }
 
       if (composite && selectionCached) {
-        throw createModelException("cached select is not allowed for composite relations");
+        throw createModelException("cached select is not allowed for component relations");
       }
       if (processed && !composite) {
-        throw createModelException("processed only allowed for composite relations");
+        throw createModelException("processed only allowed for component relations");
       }
 
       if (serialized) {
@@ -861,12 +864,12 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
           throw createModelException("cached select is not allowed for serialized relations");
         }
         if (isComposite() || selectionType != SelectionType.LAZY && selectionType != SelectionType.EAGER) {
-          throw createModelException("serialized is only allowed for lazy or eager non-composite relations");
+          throw createModelException("serialized is only allowed for lazy or eager non-component relations");
         }
       }
 
       if (nmName != null && (!composite || relationType == RelationType.OBJECT)) {
-        throw createModelException("nm-relations must be composite lists");
+        throw createModelException("nm-relations must be component lists");
       }
 
       if (selectionWurbletArguments != null && relationType != RelationType.LIST) {
@@ -878,7 +881,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
       if (countAttribute != null) {
         if (relationType != RelationType.LIST || reversed || !composite) {
           throw createModelException(
-          "counter attribute only allowed for composite non-reversed list relations");
+          "counter attribute only allowed for component non-reversed list relations");
         }
         if (entity.getOptions().getTrackType() != TrackType.FULLTRACKED) {
           throw createModelException("entity must be FULLTRACKED to support counter attributes");

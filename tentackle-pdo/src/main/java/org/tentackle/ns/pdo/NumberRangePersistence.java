@@ -166,7 +166,7 @@ public interface NumberRangePersistence extends PersistentObject<NumberRange> {
   void setNumberPool(NumberPool numberPool);
 
   /**
-   * Selects the composite list of NumberRange numberRangeList via NumberRange#numberPoolId.
+   * Selects the component list of NumberRange numberRangeList via NumberRange#numberPoolId.
    *
    * @param numberPoolId the ID of the number pool
    * @return the list of NumberRange
