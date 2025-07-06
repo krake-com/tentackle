@@ -1131,9 +1131,9 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
   /**
-   * Gets the attribute @(attr.getName())@.
+   * Gets the attribute @(attr.getName())@.@(createMultiLineComment("   * ", attr.getOptions().getLongComment()))@
    *
-   * \@return @(attr.getOptions().getComment())@
+   * \@return @(createDocTagComment(attr))@
    */
   \@Persistent(ordinal=@(attr.getOrdinal())@, comment=@(StringHelper.toDoubleQuotes(attr.getOptions().getComment()))@)
 @[
@@ -1178,9 +1178,9 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
   /**
-   * Sets the attribute @(attr.getName())@.
+   * Sets the attribute @(attr.getName())@.@(createMultiLineComment("   * ", attr.getOptions().getLongComment()))@
    *
-   * \@param @(attr.getName())@ @(attr.getOptions().getComment())@
+   * \@param @(attr.getName())@ @(createDocTagComment(attr))@
    */
 @[
           }
@@ -1288,9 +1288,9 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
   /**
-   * Gets the modification state of @(attr.getName())@.
+   * Gets the modification state of '@(attr.getName())@'.
    *
-   * \@return true if @(attr)@ has been modified
+   * \@return true if '@(attr.getName())@' has been modified
    */
 @[
             }
@@ -1330,9 +1330,9 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
   /**
-   * Gets the last persisted value of @(attr)@.
+   * Gets the last persisted value of '@(attr.getName())@'.
    *
-   * \@return the last persisted value
+   * \@return the last persisted value of '@(attr.getName())@'
    */
 @[
             }

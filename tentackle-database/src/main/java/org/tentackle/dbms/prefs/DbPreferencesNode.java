@@ -341,7 +341,7 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
   /**
    * Gets the attribute user.
    *
-   * @return name of user, null if system
+   * @return the name of user, null if system
    */
   @Persistent(ordinal=1, comment="name of user, null if system")
   public String getUser()    {
@@ -351,7 +351,7 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
   /**
    * Sets the attribute user.
    *
-   * @param user name of user, null if system
+   * @param user the name of user, null if system
    */
   public void setUser(String user) {
     if (!Objects.equals(this.user, user)) {
@@ -363,7 +363,7 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
   /**
    * Gets the attribute name.
    *
-   * @return name of the node
+   * @return the name of the node
    */
   @Persistent(ordinal=2, comment="name of the node")
   public String getName()    {
@@ -373,7 +373,7 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
   /**
    * Sets the attribute name.
    *
-   * @param name name of the node
+   * @param name the name of the node
    */
   public void setName(String name) {
     if (!Objects.equals(this.name, name)) {
@@ -385,7 +385,7 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
   /**
    * Gets the attribute parentId.
    *
-   * @return ID of parent-node, 0 if root-node
+   * @return the ID of parent-node, 0 if root-node
    */
   @Persistent(ordinal=3, comment="ID of parent-node, 0 if root-node")
   public long getParentId()    {
@@ -395,7 +395,7 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
   /**
    * Sets the attribute parentId.
    *
-   * @param parentId ID of parent-node, 0 if root-node
+   * @param parentId the ID of parent-node, 0 if root-node
    */
   public void setParentId(long parentId) {
     if (this.parentId != parentId) {
@@ -407,7 +407,7 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
   /**
    * Gets the attribute rootNodeId.
    *
-   * @return ID of the root-node
+   * @return the ID of the root-node
    */
   @Persistent(ordinal=4, comment="ID of the root-node")
   public long getRootNodeId()    {
@@ -417,7 +417,7 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
   /**
    * Sets the attribute rootNodeId.
    *
-   * @param rootNodeId ID of the root-node
+   * @param rootNodeId the ID of the root-node
    */
   public void setRootNodeId(long rootNodeId) {
     if (this.rootNodeId != rootNodeId) {

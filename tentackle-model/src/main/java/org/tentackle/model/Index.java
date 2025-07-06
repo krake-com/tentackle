@@ -27,7 +27,7 @@ import java.util.List;
  *
  * @author harald
  */
-public interface Index extends ModelElement {
+public interface Index extends ModelElement, Commented {
 
   /**
    * Gets the entity this index belongs to.
@@ -37,19 +37,12 @@ public interface Index extends ModelElement {
   Entity getEntity();
 
   /**
-   * Creates the database index name for given entity.
+   * Creates the database index name for the given entity.
    *
    * @param entity the entity
-   * @return the effective sql name
+   * @return the effective SQL name
    */
   String createDatabaseIndexName(Entity entity);
-
-  /**
-   * Gets the comment.
-   *
-   * @return the comment
-   */
-  String getComment();
 
   /**
    * Returns whether the index is unique.
@@ -89,9 +82,9 @@ public interface Index extends ModelElement {
   void validate() throws ModelException;
 
   /**
-   * Creates the index creation sql code.
+   * Creates the index creation SQL code.
    *
-   * @param backend the backend to create sql code for
+   * @param backend the backend to create SQL code for
    * @param entity the entity to create the index for
    * @return the SQL code
    */

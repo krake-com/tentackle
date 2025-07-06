@@ -95,17 +95,17 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
 
   /** ID of the number pool. */
   private long numberPoolId;
-  /** the last persisted value of numberPoolId. */
+  /** the last persisted value of 'numberPoolId'. */
   private long numberPoolIdPersisted;
 
   /** begin of range. */
   private long begin;
-  /** the last persisted value of begin. */
+  /** the last persisted value of 'begin'. */
   private long beginPersisted;
 
   /** end of range. */
   private long end;
-  /** the last persisted value of end. */
+  /** the last persisted value of 'end'. */
   private long endPersisted;
 
   //</editor-fold>//GEN-END:declare
@@ -257,7 +257,7 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
   /**
    * Sets the attribute numberPoolId.
    *
-   * @param numberPoolId ID of the number pool
+   * @param numberPoolId the ID of the number pool
    */
   private void setNumberPoolId(long numberPoolId) {
     if (this.numberPoolId != numberPoolId) {
@@ -361,9 +361,9 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
   }
 
   /**
-   * Gets numberPool without performing a select if not loaded.
+   * Gets the relation numberPool without performing a database query if not loaded.
    *
-   * @return numberPool NumberPool
+   * @return the numberPool
    */
   public NumberPool getNumberPoolBlunt() {
     return numberPool;
@@ -377,9 +377,9 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
   }
 
   /**
-   * Sets numberPool without setting any attributes.
+   * Sets the relation numberPool without updating any further attributes.
    *
-   * @param numberPool NumberPool
+   * @param numberPool the numberPool
    */
   public void setNumberPoolBlunt(NumberPool numberPool) {
     this.numberPool = numberPool;
@@ -398,7 +398,7 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
     context.applyTo(numberPool);
   }
 
-  // selects composite list of NumberRange numberRangeList via NumberRange#numberPoolId
+  // selects the composite list of NumberRange numberRangeList via NumberRange#numberPoolId
   // @wurblet selectByNumberPoolId PdoSelectList --tracked numberPoolId
 
   //</editor-fold>//GEN-END:relations

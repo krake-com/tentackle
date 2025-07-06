@@ -25,15 +25,7 @@ import java.util.List;
  *
  * @author harald
  */
-public interface CommonOptions {
-
-
-  /**
-   * The comment.
-   *
-   * @return the comment
-   */
-  String getComment();
+public interface CommonOptions extends Commented {
 
   /**
    * Gets the list of custom stereotypes.

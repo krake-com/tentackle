@@ -57,9 +57,9 @@ For more options, see {\@link ModelWurblet}.
 ]@
 
   /**
-   * Gets @(rel)@.
+   * Gets the @(rel)@.@(createMultiLineComment("   * ", rel.getLongComment()))@
    *
-   * \@return @(var)@ @(rel.getComment())@
+   * \@return @(createDocTagComment(rel.getComment()))@
    */
   \@Bindable
 @[
@@ -96,9 +96,9 @@ For more options, see {\@link ModelWurblet}.
 ]@
 
   /**
-   * Gets @(var)@ without performing a select if not loaded.
+   * Gets the relation @(var)@ without performing a database query if not loaded.
    *
-   * \@return @(var)@ @(rel.getComment())@
+   * \@return @(createDocTagComment(rel.getComment()))@
    */
   @(type)@ @(rel.getGetterName())@Blunt();
 @[
@@ -141,9 +141,9 @@ For more options, see {\@link ModelWurblet}.
 ]@
 
   /**
-   * Sets @(rel)@.
+   * Sets the @(rel)@.@(createMultiLineComment("   * ", rel.getLongComment()))@
    *
-   * \@param @(var)@ @(rel.getComment())@
+   * \@param @(var)@ @(createDocTagComment(rel.getComment()))@
 @[
         if (linkMethodIndexed) {
 ]@
@@ -193,17 +193,17 @@ For more options, see {\@link ModelWurblet}.
 ]@
 
   /**
-   * Selects @(rel)@.
+   * Selects the @(rel)@.
    *
 @[
             for (MethodArgument arg : rel.getMethodArgs()) {
               Attribute attr = arg.getForeignAttribute();
 ]@
-   * \@param @(attr.getName())@ @(attr.getOptions().getComment())@
+   * \@param @(attr.getName())@ @(createDocTagComment(attr))@
 @[
             }
 ]@
-   * \@return @(rel.getComment())@
+   * \@return @(createDocTagComment(rel.getComment()))@
    */
   @(rel.getDeclaredJavaType(true))@ @(createRelationSelectMethodName(rel))@(@(declaredArgs)@);
 @[
@@ -211,17 +211,17 @@ For more options, see {\@link ModelWurblet}.
 ]@
 
   /**
-   * Deletes @(rel)@.
+   * Deletes the @(rel)@.
    *
 @[
               for (MethodArgument arg : rel.getMethodArgs()) {
                 Attribute attr = arg.getForeignAttribute();
 ]@
-   * \@param @(attr.getName())@ @(attr.getOptions().getComment())@
+   * \@param @(attr.getName())@ @(createDocTagComment(attr))@
 @[
               }
 ]@
-   * \@return @(rel.getComment())@
+   * \@return the number of deleted PDOs
    */
   int @(createListRelationDeleteMethodName(rel))@(@(declaredArgs)@);
 @[

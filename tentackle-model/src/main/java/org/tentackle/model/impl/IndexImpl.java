@@ -66,7 +66,7 @@ import java.util.StringTokenizer;
  * where:
  * <ul>
  *   <li>{@code name}: is the index name (the table-name will be prepended, separated by an underscore)</li>
- *   <li>{@code column}: is either the database column-name of the entity attribute name. Columns of embedded entities
+ *   <li>{@code column}: is the database column-name of the entity attribute name. Columns of embedded entities
  *   are defined by prepending the corresponding dotted path to the column. For multi-column types the
  *   column consists of the attribute's column name, followed by a hash, followed by the column name within the datatype.</li>
  *   <li>{@code function}: is a function name</li>
@@ -98,6 +98,7 @@ public class IndexImpl implements Index {
   private int ordinal;
   private String name;
   private String comment;
+  private String longComment;
   private boolean unique;
   private boolean optional;
   private String filterCondition;
@@ -288,7 +289,7 @@ public class IndexImpl implements Index {
             column = column.substring(sepNdx + 1);
           }
 
-          // check if column name exists
+          // check if the column name exists
           for (Attribute attribute : attrEntity.getAttributes()) {
             if (attribute.getColumnName().equals(attrName) ||
                 attribute.getName().equals(attrName)) {
@@ -357,6 +358,11 @@ public class IndexImpl implements Index {
   }
 
   @Override
+  public String getLongComment() {
+    return longComment;
+  }
+
+  @Override
   public boolean isUnique() {
     return unique;
   }
@@ -383,6 +389,10 @@ public class IndexImpl implements Index {
 
   public void setComment(String comment) {
     this.comment = comment;
+  }
+
+  public void setLongComment(String longComment) {
+    this.longComment = longComment;
   }
 
   public void setUnique(boolean unique) {
@@ -418,7 +428,7 @@ public class IndexImpl implements Index {
   }
 
   /**
-   * Returns whether index is already parsed.<br>
+   * Returns whether the index is already parsed.<br>
    * Indexes are parsed delayed because some attributes may be added later when
    * the whole model is known.
    *
@@ -444,7 +454,7 @@ public class IndexImpl implements Index {
     if (diag != null) {
       throw createModelException(diag);
     }
-    // leading underscore is ok, because index name gets the tablename prepended
+    // the leading underscore is ok, because the index name gets the tablename prepended
 
     for (Backend backend: factory.getBackends()) {
       try {
@@ -512,7 +522,7 @@ public class IndexImpl implements Index {
 
 
   /**
-   * Checks whether other index is logically equal to this index.
+   * Checks whether the other index is logically equal to this index.
    *
    * @param otherIndex the other index
    * @return true if equal

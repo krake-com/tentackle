@@ -44,9 +44,9 @@ For more options, see {\@link ModelWurblet}.
 ]@
 
   /**
-   * Gets the attribute @(attr)@.
+   * Gets the attribute '@(attr)@'.@(createMultiLineComment("   * ", attr.getOptions().getLongComment()))@
    *
-   * \@return @(attr.getOptions().getComment())@
+   * \@return @(createDocTagComment(attr))@
    */
   \@Persistent(ordinal=@(attr.getOrdinal())@, comment=@(StringHelper.toDoubleQuotes(attr.getOptions().getComment()))@)
 @[
@@ -76,7 +76,7 @@ For more options, see {\@link ModelWurblet}.
         if (attr.getOptions().isReadOnly()) {
 ]@
 
-  // @(attr)@ is readonly, no setter.
+  // '@(attr)@' is readonly, no setter.
 @[
         }
         else {
@@ -86,9 +86,9 @@ For more options, see {\@link ModelWurblet}.
 ]@
 
   /**
-   * Sets the attribute @(attr)@.
+   * Sets the attribute '@(attr)@'.@(createMultiLineComment("   * ", attr.getOptions().getLongComment()))@
    *
-   * \@param @(attr.getName())@ @(attr.getOptions().getComment())@
+   * \@param @(attr.getName())@ @(createDocTagComment(attr))@
    */
 @[
             for (String annotation: attr.getOptions().getAnnotations()) {
@@ -112,7 +112,7 @@ For more options, see {\@link ModelWurblet}.
 ]@
 
   /**
-   * Gets the modification state of @(attr)@.
+   * Gets the modification state of '@(attr)@'.
    *
    * \@return true if modified
    */
@@ -123,7 +123,7 @@ For more options, see {\@link ModelWurblet}.
 ]@
 
   /**
-   * Gets the last persisted value of @(attr)@.
+   * Gets the last persisted value of '@(attr)@'.
    *
    * \@return the last persisted value
    */
@@ -135,9 +135,9 @@ For more options, see {\@link ModelWurblet}.
 ]@
 
   /**
-   * Gets the database timezone for @(attr)@.
+   * Gets the database timezone for '@(attr)@'.
    *
-   * \@return the timezone configuration to read/write from/to the backend.
+   * \@return the timezone configuration to read/write from/to the backend
    */
   Calendar get@(methodSuffix)@TimezoneConfig();
 @[
@@ -156,7 +156,7 @@ For more options, see {\@link ModelWurblet}.
 ]@
 
   /**
-   * Selects @(getEntity())@ by its unique domain key.
+   * Selects the @(getEntity())@ by its unique domain key.
    *
 @[
           String returnType = isGenerified() ? "T" : getPdoClassName();

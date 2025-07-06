@@ -86,6 +86,7 @@ public abstract class CommonOptionsImpl implements CommonOptions, Cloneable {
   private final SourceInfo sourceInfo;
 
   private String comment;
+  private String longComment;
   private List<String> stereotypes;
   private StringBuilder bindOptions;
   private boolean noDeclare;
@@ -314,6 +315,21 @@ public abstract class CommonOptionsImpl implements CommonOptions, Cloneable {
    */
   public void setComment(String comment) {
     this.comment = comment;
+  }
+
+
+  @Override
+  public String getLongComment() {
+    return longComment;
+  }
+
+  /**
+   * Sets the long comment.
+   *
+   * @param longComment the long comment
+   */
+  public void setLongComment(String longComment) {
+    this.longComment = longComment;
   }
 
   @Override

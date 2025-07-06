@@ -63,80 +63,80 @@ public interface NumberRangePersistence extends PersistentObject<NumberRange> {
 
 
   /**
-   * Gets the attribute numberPoolId.
+   * Gets the attribute 'numberPoolId'.
    *
-   * @return ID of the number pool
+   * @return the ID of the number pool
    */
   @Persistent(ordinal=0, comment="ID of the number pool")
   long getNumberPoolId();
 
   /**
-   * Gets the modification state of numberPoolId.
+   * Gets the modification state of 'numberPoolId'.
    *
    * @return true if modified
    */
   boolean isNumberPoolIdModified();
 
   /**
-   * Gets the last persisted value of numberPoolId.
+   * Gets the last persisted value of 'numberPoolId'.
    *
    * @return the last persisted value
    */
   long getNumberPoolIdPersisted();
 
   /**
-   * Gets the attribute begin.
+   * Gets the attribute 'begin'.
    *
-   * @return begin of range
+   * @return the begin of range
    */
   @Persistent(ordinal=1, comment="begin of range")
   long getBegin();
 
   /**
-   * Sets the attribute begin.
+   * Sets the attribute 'begin'.
    *
-   * @param begin begin of range
+   * @param begin the begin of range
    */
   void setBegin(long begin);
 
   /**
-   * Gets the modification state of begin.
+   * Gets the modification state of 'begin'.
    *
    * @return true if modified
    */
   boolean isBeginModified();
 
   /**
-   * Gets the last persisted value of begin.
+   * Gets the last persisted value of 'begin'.
    *
    * @return the last persisted value
    */
   long getBeginPersisted();
 
   /**
-   * Gets the attribute end.
+   * Gets the attribute 'end'.
    *
-   * @return end of range
+   * @return the end of range
    */
   @Persistent(ordinal=2, comment="end of range")
   long getEnd();
 
   /**
-   * Sets the attribute end.
+   * Sets the attribute 'end'.
    *
-   * @param end end of range
+   * @param end the end of range
    */
   void setEnd(long end);
 
   /**
-   * Gets the modification state of end.
+   * Gets the modification state of 'end'.
    *
    * @return true if modified
    */
   boolean isEndModified();
 
   /**
-   * Gets the last persisted value of end.
+   * Gets the last persisted value of 'end'.
    *
    * @return the last persisted value
    */
@@ -150,26 +150,26 @@ public interface NumberRangePersistence extends PersistentObject<NumberRange> {
 
 
   /**
-   * Gets NumberPool numberPool via numberPoolId.
+   * Gets the NumberPool numberPool via numberPoolId.
    *
-   * @return numberPool NumberPool
+   * @return the numberPool
    */
   @Bindable
-  @Persistent(ordinal=0, comment="NumberPool", component=false, parent=true)
+  @Persistent(ordinal=0, comment="numberPool", component=false, parent=true)
   NumberPool getNumberPool();
 
   /**
-   * Sets NumberPool numberPool via numberPoolId.
+   * Sets the NumberPool numberPool via numberPoolId.
    *
-   * @param numberPool NumberPool
+   * @param numberPool the numberPool
    */
   void setNumberPool(NumberPool numberPool);
 
   /**
-   * Selects composite list of NumberRange numberRangeList via NumberRange#numberPoolId.
+   * Selects the composite list of NumberRange numberRangeList via NumberRange#numberPoolId.
    *
-   * @param numberPoolId ID of the number pool
-   * @return NumberRange
+   * @param numberPoolId the ID of the number pool
+   * @return the list of NumberRange
    */
   TrackedList<NumberRange> selectByNumberPoolId(long numberPoolId);
 

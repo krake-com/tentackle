@@ -25,7 +25,7 @@ import java.util.List;
  *
  * @author harald
  */
-public interface Relation extends ModelElement {
+public interface Relation extends ModelElement, Commented {
 
   /**
    * Gets the entity this relation belongs to.
@@ -75,13 +75,6 @@ public interface Relation extends ModelElement {
    * @return the defining relation
    */
   Relation getDefiningNmRelation();
-
-  /**
-   * Gets the comment.
-   *
-   * @return the comment
-   */
-  String getComment();
 
   /**
    * Gets the name of the related class.

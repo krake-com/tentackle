@@ -76,13 +76,13 @@ For more options, see {\@link DbModelWurblet}.
         if (!generateMock && isAttracked()) {
           if (isFullTracked()) {
 ]@
-  /** the last persisted value of @(attr)@. */
+  /** the last persisted value of '@(attr.getName())@'. */
   @(protection)@ @(attr.getJavaType())@ @(attr.getName())@Persisted;
 @[
           }
           else {
 ]@
-  /** true if @(attr)@ has been modified. */
+  /** true if '@(attr.getName())@' has been modified. */
   @(protection)@ boolean @(attr.getName())@Modified;
 @[
           }

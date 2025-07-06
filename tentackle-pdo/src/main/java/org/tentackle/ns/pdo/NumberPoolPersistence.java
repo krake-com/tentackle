@@ -83,7 +83,7 @@ public interface NumberPoolPersistence extends PersistentObject<NumberPool> {
 
 
   /**
-   * Gets the attribute name.
+   * Gets the attribute 'name'.
    *
    * @return the number pool name
    */
@@ -93,86 +93,86 @@ public interface NumberPoolPersistence extends PersistentObject<NumberPool> {
   String getName();
 
   /**
-   * Sets the attribute name.
+   * Sets the attribute 'name'.
    *
    * @param name the number pool name
    */
   void setName(String name);
 
   /**
-   * Gets the modification state of name.
+   * Gets the modification state of 'name'.
    *
    * @return true if modified
    */
   boolean isNameModified();
 
   /**
-   * Gets the last persisted value of name.
+   * Gets the last persisted value of 'name'.
    *
    * @return the last persisted value
    */
   String getNamePersisted();
 
   /**
-   * Gets the attribute realm.
+   * Gets the attribute 'realm'.
    *
-   * @return pool realm, optional
+   * @return the pool realm, optional
    */
   @Persistent(ordinal=1, comment="pool realm, optional")
   String getRealm();
 
   /**
-   * Sets the attribute realm.
+   * Sets the attribute 'realm'.
    *
-   * @param realm pool realm, optional
+   * @param realm the pool realm, optional
    */
   void setRealm(String realm);
 
   /**
-   * Gets the modification state of realm.
+   * Gets the modification state of 'realm'.
    *
    * @return true if modified
    */
   boolean isRealmModified();
 
   /**
-   * Gets the last persisted value of realm.
+   * Gets the last persisted value of 'realm'.
    *
    * @return the last persisted value
    */
   String getRealmPersisted();
 
   /**
-   * Gets the attribute description.
+   * Gets the attribute 'description'.
    *
-   * @return short description
+   * @return the short description
    */
   @Persistent(ordinal=2, comment="short description")
   String getDescription();
 
   /**
-   * Sets the attribute description.
+   * Sets the attribute 'description'.
    *
-   * @param description short description
+   * @param description the short description
    */
   void setDescription(String description);
 
   /**
-   * Gets the modification state of description.
+   * Gets the modification state of 'description'.
    *
    * @return true if modified
    */
   boolean isDescriptionModified();
 
   /**
-   * Gets the last persisted value of description.
+   * Gets the last persisted value of 'description'.
    *
    * @return the last persisted value
    */
   String getDescriptionPersisted();
 
   /**
-   * Gets the attribute online.
+   * Gets the attribute 'online'.
    *
    * @return true if online, else offline
    */
@@ -180,116 +180,116 @@ public interface NumberPoolPersistence extends PersistentObject<NumberPool> {
   boolean isOnline();
 
   /**
-   * Sets the attribute online.
+   * Sets the attribute 'online'.
    *
    * @param online true if online, else offline
    */
   void setOnline(boolean online);
 
   /**
-   * Gets the modification state of online.
+   * Gets the modification state of 'online'.
    *
    * @return true if modified
    */
   boolean isOnlineModified();
 
   /**
-   * Gets the last persisted value of online.
+   * Gets the last persisted value of 'online'.
    *
    * @return the last persisted value
    */
   boolean isOnlinePersisted();
 
   /**
-   * Gets the attribute lowWaterMark.
+   * Gets the attribute 'lowWaterMark'.
    *
-   * @return minimum number count before request to fill up from uplink, 0 to disable
+   * @return the minimum number count before request to fill up from uplink, 0 to disable
    */
   @Persistent(ordinal=4, comment="minimum number count before request to fill up from uplink, 0 to disable")
   long getLowWaterMark();
 
   /**
-   * Sets the attribute lowWaterMark.
+   * Sets the attribute 'lowWaterMark'.
    *
-   * @param lowWaterMark minimum number count before request to fill up from uplink, 0 to disable
+   * @param lowWaterMark the minimum number count before request to fill up from uplink, 0 to disable
    */
   void setLowWaterMark(long lowWaterMark);
 
   /**
-   * Gets the modification state of lowWaterMark.
+   * Gets the modification state of 'lowWaterMark'.
    *
    * @return true if modified
    */
   boolean isLowWaterMarkModified();
 
   /**
-   * Gets the last persisted value of lowWaterMark.
+   * Gets the last persisted value of 'lowWaterMark'.
    *
    * @return the last persisted value
    */
   long getLowWaterMarkPersisted();
 
   /**
-   * Gets the attribute requestSize.
+   * Gets the attribute 'requestSize'.
    *
-   * @return number count to request from uplink, 0 to disable
+   * @return the number count to request from uplink, 0 to disable
    */
   @Persistent(ordinal=5, comment="number count to request from uplink, 0 to disable")
   long getRequestSize();
 
   /**
-   * Sets the attribute requestSize.
+   * Sets the attribute 'requestSize'.
    *
-   * @param requestSize number count to request from uplink, 0 to disable
+   * @param requestSize the number count to request from uplink, 0 to disable
    */
   void setRequestSize(long requestSize);
 
   /**
-   * Gets the modification state of requestSize.
+   * Gets the modification state of 'requestSize'.
    *
    * @return true if modified
    */
   boolean isRequestSizeModified();
 
   /**
-   * Gets the last persisted value of requestSize.
+   * Gets the last persisted value of 'requestSize'.
    *
    * @return the last persisted value
    */
   long getRequestSizePersisted();
 
   /**
-   * Gets the attribute uplink.
+   * Gets the attribute 'uplink'.
    *
-   * @return uplink configuration (optional)
+   * @return the uplink configuration (optional)
    */
   @Persistent(ordinal=6, comment="uplink configuration (optional)")
   @NotNull(condition="$slave")
   String getUplink();
 
   /**
-   * Sets the attribute uplink.
+   * Sets the attribute 'uplink'.
    *
-   * @param uplink uplink configuration (optional)
+   * @param uplink the uplink configuration (optional)
    */
   void setUplink(String uplink);
 
   /**
-   * Gets the modification state of uplink.
+   * Gets the modification state of 'uplink'.
    *
    * @return true if modified
    */
   boolean isUplinkModified();
 
   /**
-   * Gets the last persisted value of uplink.
+   * Gets the last persisted value of 'uplink'.
    *
    * @return the last persisted value
    */
   String getUplinkPersisted();
 
   /**
-   * Selects NumberPool by its unique domain key.
+   * Selects the NumberPool by its unique domain key.
    *
    * @param name the number pool name
    * @return the NumberPool, null if no such PDO
@@ -304,12 +304,12 @@ public interface NumberPoolPersistence extends PersistentObject<NumberPool> {
 
 
   /**
-   * Gets composite list of NumberRange numberRangeList via NumberRange#numberPoolId.
+   * Gets the composite list of NumberRange numberRangeList via NumberRange#numberPoolId.
    *
-   * @return numberRangeList NumberRange
+   * @return the list of NumberRange
    */
   @Bindable
-  @Persistent(ordinal=0, comment="NumberRange")
+  @Persistent(ordinal=0, comment="list of NumberRange")
   TrackedList<NumberRange> getNumberRangeList();
 
   /**

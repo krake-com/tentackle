@@ -405,7 +405,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   /**
    * Gets the attribute objectId.
    *
-   * @return object id
+   * @return the object id
    */
   @Persistent(ordinal=0, comment="object id")
   public long getObjectId()    {
@@ -415,7 +415,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   /**
    * Sets the attribute objectId.
    *
-   * @param objectId object id
+   * @param objectId the object id
    */
   public void setObjectId(long objectId) {
     assertMutable();
@@ -425,7 +425,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   /**
    * Gets the attribute objectClassId.
    *
-   * @return object class id
+   * @return the object class id
    */
   @Persistent(ordinal=1, comment="object class id")
   public int getObjectClassId()    {
@@ -435,7 +435,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   /**
    * Sets the attribute objectClassId.
    *
-   * @param objectClassId object class id
+   * @param objectClassId the object class id
    */
   public void setObjectClassId(int objectClassId) {
     assertMutable();
@@ -445,7 +445,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   /**
    * Gets the attribute objectClassName.
    *
-   * @return object classname (if classid == 0)
+   * @return the object classname (if classid == 0)
    */
   @Persistent(ordinal=2, comment="object classname (if classid == 0)")
   public String getObjectClassName()    {
@@ -455,7 +455,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   /**
    * Sets the attribute objectClassName.
    *
-   * @param objectClassName object classname (if classid == 0)
+   * @param objectClassName the object classname (if classid == 0)
    */
   public void setObjectClassName(String objectClassName) {
     assertMutable();
@@ -465,7 +465,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   /**
    * Gets the attribute txId.
    *
-   * @return transaction id (optional)
+   * @return the transaction id (optional)
    */
   @Persistent(ordinal=3, comment="transaction id (optional)")
   public long getTxId()    {
@@ -475,7 +475,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   /**
    * Sets the attribute txId.
    *
-   * @param txId transaction id (optional)
+   * @param txId the transaction id (optional)
    */
   public void setTxId(long txId) {
     assertMutable();
@@ -485,7 +485,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   /**
    * Gets the attribute txName.
    *
-   * @return transaction name (optional)
+   * @return the transaction name (optional)
    */
   @Persistent(ordinal=4, comment="transaction name (optional)")
   public String getTxName()    {
@@ -495,7 +495,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   /**
    * Sets the attribute txName.
    *
-   * @param txName transaction name (optional)
+   * @param txName the transaction name (optional)
    */
   public void setTxName(String txName) {
     assertMutable();
@@ -505,7 +505,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   /**
    * Gets the attribute modType.
    *
-   * @return modification type
+   * @return the modification type
    */
   @Persistent(ordinal=5, comment="modification type")
   public ModificationType getModType()    {
@@ -515,7 +515,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   /**
    * Sets the attribute modType.
    *
-   * @param modType modification type
+   * @param modType the modification type
    */
   public void setModType(ModificationType modType) {
     assertMutable();
@@ -525,7 +525,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   /**
    * Gets the attribute when.
    *
-   * @return time of event
+   * @return the time of event
    */
   @Persistent(ordinal=6, comment="time of event")
   public Timestamp getWhen()    {
@@ -535,7 +535,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   /**
    * Sets the attribute when.
    *
-   * @param when time of event
+   * @param when the time of event
    */
   public void setWhen(Timestamp when) {
     Timestamp.setUTC(when, false);
@@ -547,7 +547,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   /**
    * Gets the attribute userId.
    *
-   * @return user id
+   * @return the user id
    */
   @Persistent(ordinal=7, comment="user id")
   public long getUserId()    {
@@ -557,7 +557,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   /**
    * Sets the attribute userId.
    *
-   * @param userId user id
+   * @param userId the user id
    */
   public void setUserId(long userId) {
     assertMutable();
@@ -572,7 +572,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   /**
    * Gets the attribute processed.
    *
-   * @return processing time
+   * @return the processing time
    */
   @Persistent(ordinal=9, comment="processing time")
   public Timestamp getProcessed()    {
@@ -582,7 +582,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   /**
    * Sets the attribute processed.
    *
-   * @param processed processing time
+   * @param processed the processing time
    */
   public void setProcessed(Timestamp processed) {
     Timestamp.setUTC(processed, false);

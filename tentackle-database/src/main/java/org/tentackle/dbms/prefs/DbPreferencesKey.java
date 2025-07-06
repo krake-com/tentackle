@@ -341,7 +341,7 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
   /**
    * Gets the attribute nodeId.
    *
-   * @return ID of the preferences-node
+   * @return the ID of the preferences-node
    */
   @Persistent(ordinal=1, comment="ID of the preferences-node")
   public long getNodeId()    {
@@ -351,7 +351,7 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
   /**
    * Sets the attribute nodeId.
    *
-   * @param nodeId ID of the preferences-node
+   * @param nodeId the ID of the preferences-node
    */
   public void setNodeId(long nodeId) {
     if (this.nodeId != nodeId) {
@@ -363,7 +363,7 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
   /**
    * Gets the attribute rootNodeId.
    *
-   * @return ID of the root-node
+   * @return the ID of the root-node
    */
   @Persistent(ordinal=2, comment="ID of the root-node")
   public long getRootNodeId()    {
@@ -373,7 +373,7 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
   /**
    * Sets the attribute rootNodeId.
    *
-   * @param rootNodeId ID of the root-node
+   * @param rootNodeId the ID of the root-node
    */
   public void setRootNodeId(long rootNodeId) {
     if (this.rootNodeId != rootNodeId) {
@@ -385,7 +385,7 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
   /**
    * Gets the attribute key.
    *
-   * @return name of the key
+   * @return the name of the key
    */
   @Persistent(ordinal=3, comment="name of the key")
   public String getKey()    {
@@ -395,7 +395,7 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
   /**
    * Sets the attribute key.
    *
-   * @param key name of the key
+   * @param key the name of the key
    */
   public void setKey(String key) {
     if (!Objects.equals(this.key, key)) {
@@ -407,7 +407,7 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
   /**
    * Gets the attribute value.
    *
-   * @return value of the key
+   * @return the value of the key
    */
   @Persistent(ordinal=4, comment="value of the key")
   public String getValue()    {
@@ -417,7 +417,7 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
   /**
    * Sets the attribute value.
    *
-   * @param value value of the key
+   * @param value the value of the key
    */
   public void setValue(String value) {
     if (!Objects.equals(this.value, value)) {

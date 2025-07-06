@@ -50,8 +50,8 @@ import static org.tentackle.sql.Backend.SQL_WHERE;
  *
  * ## attributes
  * [NOPKEY]
- * # ID corresponds to the PDO's id
- * # copy of the token from the PDO (names edited... blocked by model api)
+ * ## ID corresponds to the PDO's id
+ * ## copy of the token from the PDO (names edited... blocked by model api)
  * long           lockedBy          lockedby          userId of token lock holder
  * Timestamp      lockedSince       lockedsince       time since token lock given to user
  * Timestamp      lockExpiry        lockexpiry        time when token lock expires
@@ -220,7 +220,7 @@ public class DbTokenLock extends AbstractDbObject<DbTokenLock> implements TokenL
   /**
    * Gets the attribute lockedBy.
    *
-   * @return userId of token lock holder
+   * @return the userId of token lock holder
    */
   @Persistent(ordinal=0, comment="userId of token lock holder")
   public long getLockedBy()    {
@@ -230,7 +230,7 @@ public class DbTokenLock extends AbstractDbObject<DbTokenLock> implements TokenL
   /**
    * Sets the attribute lockedBy.
    *
-   * @param lockedBy userId of token lock holder
+   * @param lockedBy the userId of token lock holder
    */
   public void setLockedBy(long lockedBy) {
     assertMutable();
@@ -240,7 +240,7 @@ public class DbTokenLock extends AbstractDbObject<DbTokenLock> implements TokenL
   /**
    * Gets the attribute lockedSince.
    *
-   * @return time since token lock given to user
+   * @return the time since token lock given to user
    */
   @Persistent(ordinal=1, comment="time since token lock given to user")
   public Timestamp getLockedSince()    {
@@ -250,7 +250,7 @@ public class DbTokenLock extends AbstractDbObject<DbTokenLock> implements TokenL
   /**
    * Sets the attribute lockedSince.
    *
-   * @param lockedSince time since token lock given to user
+   * @param lockedSince the time since token lock given to user
    */
   public void setLockedSince(Timestamp lockedSince) {
     Timestamp.setUTC(lockedSince, false);
@@ -262,7 +262,7 @@ public class DbTokenLock extends AbstractDbObject<DbTokenLock> implements TokenL
   /**
    * Gets the attribute lockExpiry.
    *
-   * @return time when token lock expires
+   * @return the time when token lock expires
    */
   @Persistent(ordinal=2, comment="time when token lock expires")
   public Timestamp getLockExpiry()    {
@@ -272,7 +272,7 @@ public class DbTokenLock extends AbstractDbObject<DbTokenLock> implements TokenL
   /**
    * Sets the attribute lockExpiry.
    *
-   * @param lockExpiry time when token lock expires
+   * @param lockExpiry the time when token lock expires
    */
   public void setLockExpiry(Timestamp lockExpiry) {
     Timestamp.setUTC(lockExpiry, false);
@@ -284,7 +284,7 @@ public class DbTokenLock extends AbstractDbObject<DbTokenLock> implements TokenL
   /**
    * Gets the attribute pdoClassId.
    *
-   * @return class ID of the PDO
+   * @return the class ID of the PDO
    */
   @Persistent(ordinal=3, comment="class ID of the PDO")
   public int getPdoClassId()    {
@@ -294,7 +294,7 @@ public class DbTokenLock extends AbstractDbObject<DbTokenLock> implements TokenL
   /**
    * Sets the attribute pdoClassId.
    *
-   * @param pdoClassId class ID of the PDO
+   * @param pdoClassId the class ID of the PDO
    */
   public void setPdoClassId(int pdoClassId) {
     assertMutable();

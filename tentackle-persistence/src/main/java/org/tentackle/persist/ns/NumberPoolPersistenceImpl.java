@@ -116,37 +116,37 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
 
   /** the number pool name. */
   private String name;
-  /** the last persisted value of name. */
+  /** the last persisted value of 'name'. */
   private String namePersisted;
 
   /** pool realm, optional. */
   private String realm;
-  /** the last persisted value of realm. */
+  /** the last persisted value of 'realm'. */
   private String realmPersisted;
 
   /** short description. */
   private String description;
-  /** the last persisted value of description. */
+  /** the last persisted value of 'description'. */
   private String descriptionPersisted;
 
   /** true if online, else offline. */
   private boolean online;
-  /** the last persisted value of online. */
+  /** the last persisted value of 'online'. */
   private boolean onlinePersisted;
 
   /** minimum number count before request to fill up from uplink, 0 to disable. */
   private long lowWaterMark;
-  /** the last persisted value of lowWaterMark. */
+  /** the last persisted value of 'lowWaterMark'. */
   private long lowWaterMarkPersisted;
 
   /** number count to request from uplink, 0 to disable. */
   private long requestSize;
-  /** the last persisted value of requestSize. */
+  /** the last persisted value of 'requestSize'. */
   private long requestSizePersisted;
 
   /** uplink configuration (optional). */
   private String uplink;
-  /** the last persisted value of uplink. */
+  /** the last persisted value of 'uplink'. */
   private String uplinkPersisted;
 
   //</editor-fold>//GEN-END:declare
@@ -574,9 +574,9 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   }
 
   /**
-   * Gets numberRangeList without performing a select if not loaded.
+   * Gets the relation numberRangeList without performing a database query if not loaded.
    *
-   * @return numberRangeList NumberRange
+   * @return the list of NumberRange
    */
   public TrackedList<NumberRange> getNumberRangeListBlunt() {
     if (!numberRangeListLoaded) {
@@ -614,13 +614,12 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
 
 
   /**
-   * Deletes referencing composite relations.
-   * This method is invoked from deleteReferencingRelations() or saveReferencingRelations().
-   * When invoked from saveReferencingRelations() lazy relations not
-   * already loaded will be considered to be unchanged, i.e.
-   * need no update or insert.
+   * Deletes the referencing composite relations.<br>
+   * This method is invoked from {@code deleteReferencingRelations()} or {@code saveReferencingRelations()}.<br>
+   * When invoked from {@code saveReferencingRelations()}, lazy relations not already loaded
+   * will be considered as unchanged, i.e., no need to update or insert.
    *
-   * @param delete is true if invoked from deleteReferencingRelations()
+   * @param delete is true if invoked from {@code deleteReferencingRelations()}
    */
   private void deleteReferencingRelations(boolean delete)  {
     if (delete) {
@@ -718,7 +717,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   }
 
   /**
-   * Updates the components in snapshot object.<br>
+   * Updates the components in the snapshot object.<br>
    * The snapshot object is assumed to be a clone of this object.
    *
    * @param snapshot the snapshot
