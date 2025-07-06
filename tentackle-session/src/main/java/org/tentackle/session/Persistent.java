@@ -45,10 +45,10 @@ public @interface Persistent {
 
   /**
    * Returns whether this is a component of the PDO.<br>
-   * This is true for all members/attributes and composite relations.
-   * It is false for all non-composite relations.
+   * This is true for all members/attributes and component relations.
+   * It is false for all non-component relations.
    *
-   * @return true if this is a component, false if a non-composite relation
+   * @return true if this is a component, false if a non-component relation
    */
   boolean component() default true;
 
@@ -56,7 +56,7 @@ public @interface Persistent {
    * Returns whether this is the relation to the parent PDO.<br>
    * The parent PDO provides a composite relation to this PDO.
    *
-   * @return true if this is a component and the annotated relation points to the composite parent.
+   * @return true if this is a component and the annotated relation points to the component's parent.
    */
   boolean parent() default false;
 

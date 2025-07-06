@@ -127,7 +127,7 @@ public interface StoredBundleKeyPersistence extends PersistentObject<StoredBundl
   void setBundle(StoredBundle bundle);
 
   /**
-   * Selects the composite list of StoredBundleKey keys via StoredBundleKey#bundleId.
+   * Selects the component list of StoredBundleKey keys via StoredBundleKey#bundleId.
    *
    * @param bundleId the bundle id
    * @return the keys

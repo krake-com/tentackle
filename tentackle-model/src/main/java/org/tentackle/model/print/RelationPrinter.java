@@ -82,7 +82,7 @@ public class RelationPrinter {
       // need relation line
       lead(buf).append(RelationImpl.RELATION).append(" =");
       if (relation.isComposite()) {
-        buf.append(' ').append(RelationImpl.COMPOSITE);
+        buf.append(' ').append(RelationImpl.COMPONENT);
       }
       if (relation.isTracked() && !relation.getEntity().isTracked()) {
         buf.append(' ').append(RelationImpl.TRACKED);

@@ -31,7 +31,7 @@ index invoice_date := invoice_date
 
 ## relations
 InvoiceLine:
-     relation = composite referenced list,
+     relation = component referenced list,
      link = setInvoice position,
      comment = the invoice lines,
      name = lines,

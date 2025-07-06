@@ -37,15 +37,15 @@ import org.tentackle.session.TableName;
  * [cached]
  * String(64)   password                      password        hashed password [MUTE]
  * boolean      loginAllowed                  login_allowed   true if login is allowed
- * boolean      passwordChangeable            passwd_chgbl    user allowed to change its own password?
- * boolean      changingPreferencesAllowed	  prefs_chgbl     user allowed to maintain its own preferences?
- * boolean      systemPreferencesOnly         prefs_system    user restricted to system preferences only?
+ * boolean      passwordChangeable            passwd_chgbl    true if user is allowed to change its own password
+ * boolean      changingPreferencesAllowed	  prefs_chgbl     true if user is allowed to maintain its own preferences
+ * boolean      systemPreferencesOnly         prefs_system    true if user is restricted to system preferences only
  *
  * ${symbol_pound}${symbol_pound} indexes
  *
  * ${symbol_pound}${symbol_pound} relations
  * User2Group:
- *    relation = composite list,
+ *    relation = component list,
  *    name = nmLinks,
  *    method = UserId,
  *    nm = UserGroup UserGroups

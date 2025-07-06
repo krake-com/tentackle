@@ -40,7 +40,7 @@ import org.tentackle.session.TableName;
  *
  * ${symbol_pound}${symbol_pound} relations
  * User2Group:
- *    relation = composite list,
+ *    relation = component list,
  *    name = nmLinks,
  *    method = UserGroupId,
  *    nm = User Users

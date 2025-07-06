@@ -330,7 +330,7 @@ public class StoredBundleKeyPersistenceImpl extends AbstractPersistentObject<Sto
     context.applyTo(bundle);
   }
 
-  // selects the composite list of StoredBundleKey keys via StoredBundleKey#bundleId
+  // selects the component list of StoredBundleKey keys via StoredBundleKey#bundleId
   // @wurblet selectByBundleId PdoSelectList --tracked bundleId
 
   //</editor-fold>//GEN-END:relations

@@ -28,6 +28,7 @@ module org.tentackle.model {
   exports org.tentackle.model.print;
 
   requires transitive org.tentackle.sql;
+  requires java.desktop;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.model.service.Hook;
 
