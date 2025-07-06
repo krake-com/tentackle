@@ -93,7 +93,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
 
 
   /**
-   * Gets the attribute objectClassName.
+   * Gets the attribute 'objectClassName'.
    *
    * @return the protected classname, null if an entity
    */
@@ -102,7 +102,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   String getObjectClassName();
 
   /**
-   * Sets the attribute objectClassName.
+   * Sets the attribute 'objectClassName'.
    *
    * @param objectClassName the protected classname, null if an entity
    */
@@ -110,7 +110,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   void setObjectClassName(String objectClassName);
 
   /**
-   * Gets the attribute objectClassId.
+   * Gets the attribute 'objectClassId'.
    *
    * @return the protected object's class id, 0 if not an entity
    */
@@ -119,7 +119,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   int getObjectClassId();
 
   /**
-   * Sets the attribute objectClassId.
+   * Sets the attribute 'objectClassId'.
    *
    * @param objectClassId the protected object's class id, 0 if not an entity
    */
@@ -127,7 +127,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   void setObjectClassId(int objectClassId);
 
   /**
-   * Gets the attribute objectId.
+   * Gets the attribute 'objectId'.
    *
    * @return the id of the protected object, 0 if all instances or not an entity
    */
@@ -136,7 +136,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   long getObjectId();
 
   /**
-   * Sets the attribute objectId.
+   * Sets the attribute 'objectId'.
    *
    * @param objectId the id of the protected object, 0 if all instances or not an entity
    */
@@ -144,7 +144,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   void setObjectId(long objectId);
 
   /**
-   * Gets the attribute domainContextClassId.
+   * Gets the attribute 'domainContextClassId'.
    *
    * @return the class id of the DomainContext's context entity, 0 if all contexts
    */
@@ -153,7 +153,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   int getDomainContextClassId();
 
   /**
-   * Sets the attribute domainContextClassId.
+   * Sets the attribute 'domainContextClassId'.
    *
    * @param domainContextClassId the class id of the DomainContext's context entity, 0 if all contexts
    */
@@ -161,7 +161,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   void setDomainContextClassId(int domainContextClassId);
 
   /**
-   * Gets the attribute domainContextId.
+   * Gets the attribute 'domainContextId'.
    *
    * @return the id of DomainContext's context object, 0 if all instances
    */
@@ -170,7 +170,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   long getDomainContextId();
 
   /**
-   * Sets the attribute domainContextId.
+   * Sets the attribute 'domainContextId'.
    *
    * @param domainContextId the id of DomainContext's context object, 0 if all instances
    */
@@ -178,7 +178,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   void setDomainContextId(long domainContextId);
 
   /**
-   * Gets the attribute granteeClassId.
+   * Gets the attribute 'granteeClassId'.
    *
    * @return the class id of the entity the permissions are granted to, 0 if all classes
    */
@@ -187,7 +187,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   int getGranteeClassId();
 
   /**
-   * Sets the attribute granteeClassId.
+   * Sets the attribute 'granteeClassId'.
    *
    * @param granteeClassId the class id of the entity the permissions are granted to, 0 if all classes
    */
@@ -195,7 +195,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   void setGranteeClassId(int granteeClassId);
 
   /**
-   * Gets the attribute granteeId.
+   * Gets the attribute 'granteeId'.
    *
    * @return the id of the entity the permissions are granted to, 0 if all grantees
    */
@@ -204,7 +204,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   long getGranteeId();
 
   /**
-   * Sets the attribute granteeId.
+   * Sets the attribute 'granteeId'.
    *
    * @param granteeId the id of the entity the permissions are granted to, 0 if all grantees
    */
@@ -212,7 +212,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   void setGranteeId(long granteeId);
 
   /**
-   * Gets the attribute priority.
+   * Gets the attribute 'priority'.
    *
    * @return the priority or evaluation order, 0 is highest or first
    */
@@ -221,7 +221,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   int getPriority();
 
   /**
-   * Sets the attribute priority.
+   * Sets the attribute 'priority'.
    *
    * @param priority the priority or evaluation order, 0 is highest or first
    */
@@ -229,7 +229,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   void setPriority(int priority);
 
   /**
-   * Gets the attribute permissions.
+   * Gets the attribute 'permissions'.
    *
    * @return the permissions as a comma-separated list
    */
@@ -238,7 +238,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   String getPermissions();
 
   /**
-   * Sets the attribute permissions.
+   * Sets the attribute 'permissions'.
    *
    * @param permissions the permissions as a comma-separated list
    */
@@ -246,7 +246,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   void setPermissions(String permissions);
 
   /**
-   * Gets the attribute allowed.
+   * Gets the attribute 'allowed'.
    *
    * @return the false if denied, true if allowed
    */
@@ -255,7 +255,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   boolean isAllowed();
 
   /**
-   * Sets the attribute allowed.
+   * Sets the attribute 'allowed'.
    *
    * @param allowed the false if denied, true if allowed
    */
@@ -263,7 +263,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   void setAllowed(boolean allowed);
 
   /**
-   * Gets the attribute message.
+   * Gets the attribute 'message'.
    *
    * @return the user message
    */
@@ -272,7 +272,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   String getMessage();
 
   /**
-   * Sets the attribute message.
+   * Sets the attribute 'message'.
    *
    * @param message the user message
    */

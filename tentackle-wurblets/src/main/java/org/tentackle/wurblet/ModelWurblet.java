@@ -1098,4 +1098,43 @@ public class ModelWurblet extends AbstractJavaWurblet {
     });
   }
 
+  /**
+   * Creates a multi-line long comment.
+   *
+   * @param lead the comment lead (spaces plus asterisk or double slash) plus a space
+   * @param comment the long comment
+   * @return the output to be inserted into a comment block within a wurblet
+   */
+  public String createMultiLineComment(String lead, String comment) {
+    StringBuilder buf = new StringBuilder();
+    if (!StringHelper.isAllWhitespace(comment)) {
+      comment.lines().forEach(line -> buf.append("<br>\n").append(lead).append(line));
+    }
+    return buf.toString();
+  }
+
+  /**
+   * Creates a comment for the param and return doc tags.
+   *
+   * @param comment the comment
+   * @return the tag comment
+   */
+  public String createDocTagComment(String comment) {
+    if (StringHelper.startsWithAnyOf(comment, "the ", "The ", "THE ") == null) {
+      comment = "the " + comment;
+    }
+    return comment;
+  }
+
+  /**
+   * Creates a comment for the param and return doc tags.
+   *
+   * @param attribute the attribute
+   * @return the tag comment
+   */
+  public String createDocTagComment(Attribute attribute) {
+    String comment = attribute.getOptions().getComment();
+    return attribute.getDataType().isBool() ? comment : createDocTagComment(comment);
+  }
+
 }

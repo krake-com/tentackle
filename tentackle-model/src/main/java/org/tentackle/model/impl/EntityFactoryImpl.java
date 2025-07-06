@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 /**
  * The default entity model factory.
@@ -166,16 +167,19 @@ public class EntityFactoryImpl implements EntityFactory {
           break;    // nothing to do
 
         case COMMENT:
-          // remember last comment line
+          // remember the last comment line(s)
           String comment = ((CommentLine) line).getComment();
           if (comment != null && !comment.isEmpty() && comment.charAt(0) == '#') {
             // comments starting with double hash '##' are completely ignored
             continue;
           }
-          setPendingComment(comment);
+          addPendingComment(comment);
           if (entity.getName() == null) {
-            // collect comment lines as long as name is not set
-            entity.getOptions().setComment(pendingComment);
+            // collect comment lines as long as the name is not set
+            entity.getOptions().setLongComment(pendingComment);
+            if (StringHelper.isAllWhitespace(entity.getOptions().getComment())) {
+              entity.getOptions().setComment(toShortComment(pendingComment));
+            }
           }
           break;
 
@@ -254,7 +258,7 @@ public class EntityFactoryImpl implements EntityFactory {
       }
     }
 
-    // find associated attributes associated to object relations
+    // find associated attributes associated with object relations
     for (Relation relation: entity.getRelations()) {
       if (relation.getRelationType() == RelationType.OBJECT) {
         MethodArgument firstArg = relation.getMethodArgs().getFirst();
@@ -276,7 +280,7 @@ public class EntityFactoryImpl implements EntityFactory {
       entity.getAttributes().addFirst(classIdAttribute);    // comes first
     }
 
-    // move from start to end of model
+    // move from start to end of the model
     entity.getAttributes().remove(idAttribute);
     entity.getAttributes().remove(serialAttribute);
     if (!entity.isEmbedded() && entity.getSuperEntityName() == null) {
@@ -342,7 +346,10 @@ public class EntityFactoryImpl implements EntityFactory {
     IndexImpl index = createIndex(entity, line.getSourceInfo());
     index.setSourceLine(line);    // delayed parsing!
     String comment = consumePendingComment();
-    index.setComment(comment);
+    if (comment != null) {
+      index.setLongComment(comment);
+      index.setComment(toShortComment(comment));
+    }
     entity.getIndexes().add(index);
   }
 
@@ -453,8 +460,14 @@ public class EntityFactoryImpl implements EntityFactory {
     AttributeImpl attribute = createAttribute(entity, line.getSourceInfo(), false);
     attribute.parse(entity, line);
     String comment = consumePendingComment();
+    if (comment != null) {
+      attribute.getOptions().setLongComment(comment);
+      if (StringHelper.isAllWhitespace(attribute.getOptions().getComment())) {
+        attribute.getOptions().setComment(toShortComment(comment));
+      }
+    }
     if (StringHelper.isAllWhitespace(attribute.getOptions().getComment())) {
-      attribute.getOptions().setComment(comment);
+      attribute.getOptions().setComment(attribute.getName());
     }
     entity.getAttributes().add(attribute);
   }
@@ -471,11 +484,19 @@ public class EntityFactoryImpl implements EntityFactory {
     RelationImpl relation = createRelation(entity, line.getSourceInfo());
     relation.parse(entity, line);
     String comment = consumePendingComment();
-    if (StringHelper.isAllWhitespace(relation.getComment())) {
-      relation.setComment(comment);
+    if (comment != null) {
+      relation.setLongComment(comment);
+      if (StringHelper.isAllWhitespace(relation.getComment())) {
+        relation.setComment(toShortComment(comment));
+      }
     }
     if (StringHelper.isAllWhitespace(relation.getComment())) {
-      relation.setComment(relation.getName());
+      if (relation.getRelationType() == RelationType.LIST && Objects.equals(relation.getName(), relation.getClassName())) {
+        relation.setComment("list of " + relation.getClassName());
+      }
+      else {
+        relation.setComment(StringHelper.firstToLower(relation.getName()));
+      }
     }
     entity.getRelations().add(relation);
   }
@@ -484,10 +505,17 @@ public class EntityFactoryImpl implements EntityFactory {
   /**
    * Adds a pending comment line.
    *
-   * @param commentLine the comment line
+   * @param commentLine the comment line to append
    */
-  protected void setPendingComment(String commentLine) {
-    pendingComment = commentLine;
+  protected void addPendingComment(String commentLine) {
+    if (!StringHelper.isAllWhitespace(commentLine)) {
+      if (pendingComment == null) {
+        pendingComment = commentLine;
+      }
+      else {
+        pendingComment += '\n' + commentLine;
+      }
+    }
   }
 
 
@@ -499,7 +527,35 @@ public class EntityFactoryImpl implements EntityFactory {
   protected String consumePendingComment() {
     String str = pendingComment;
     pendingComment = null;
-    return str;
+    return StringHelper.isAllWhitespace(str) ? null : str;
+  }
+
+
+  /**
+   * Takes a probably multi-line comment and extracts the first line w/o trailing punctuation characters.
+   *
+   * @param comment the comment defined in the model
+   * @return the comment header, null if empty comment
+   */
+  protected String toShortComment(String comment) {
+    if (comment == null || comment.isEmpty()) {
+      return null;
+    }
+    StringBuilder header = new StringBuilder(StringHelper.firstLine(comment));
+    // cut trailing punctuation characters
+    int lastNdx = header.length() - 1;
+    while (lastNdx >= 0) {
+      char ch = header.charAt(lastNdx);
+      if (Character.isWhitespace(ch) || ch == '.' || ch == ',' || ch == ';' || ch == ':' || ch == '!') {
+        header.deleteCharAt(lastNdx);
+      }
+      else {
+        break;
+      }
+      lastNdx--;
+    }
+    String trimmed = header.toString().trim();
+    return trimmed.isEmpty() ? null : trimmed;
   }
 
 }

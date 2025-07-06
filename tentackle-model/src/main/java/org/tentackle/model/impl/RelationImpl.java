@@ -154,6 +154,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
   private RelationLine sourceLine;
   private String name;
   private String comment;
+  private String longComment;
   private String className;
   private RelationType relationType;
   private AccessScope accessScope;
@@ -737,9 +738,6 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
     else {
       buf.append('?').append(getName()).append('?');
     }
-    if (!StringHelper.isAllWhitespace(comment) && (foreignEntity == null || !comment.equals(foreignEntity.toString()))) {
-      buf.append(" (").append(comment).append(')');
-    }
     return buf.toString();
   }
 
@@ -973,6 +971,11 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
   @Override
   public String getComment() {
     return comment;
+  }
+
+  @Override
+  public String getLongComment() {
+    return longComment;
   }
 
   @Override
@@ -1215,6 +1218,10 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
 
   public void setComment(String comment) {
     this.comment = comment;
+  }
+
+  public void setLongComment(String longComment) {
+    this.longComment = longComment;
   }
 
   public void setComposite(boolean composite) {

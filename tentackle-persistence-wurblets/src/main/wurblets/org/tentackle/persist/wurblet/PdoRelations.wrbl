@@ -305,9 +305,9 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
   /**
-   * Gets @(rel)@.
+   * Gets the @(rel)@.@(createMultiLineComment("   * ", rel.getLongComment()))@
    *
-   * \@return @(var)@ @(rel.getComment())@
+   * \@return @(createDocTagComment(rel.getComment()))@
    */
   \@Persistent(ordinal=@(rel.getOrdinal())@, comment=@(StringHelper.toDoubleQuotes(rel.getComment()))@)
 @[
@@ -596,9 +596,9 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
   /**
-   * Gets @(var)@ without performing a select if not loaded.
+   * Gets the relation @(var)@ without performing a database query if not loaded.
    *
-   * \@return @(var)@ @(rel.getComment())@
+   * \@return @(createDocTagComment(rel.getComment()))@
    */
 @[
               }
@@ -633,9 +633,9 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
   /**
-   * Gets @(var)@ without performing a select if not loaded.
+   * Gets the relation @(var)@ without performing a database query if not loaded.
    *
-   * \@return @(var)@ @(rel.getComment())@
+   * \@return @(createDocTagComment(rel.getComment()))@
    */
 @[
               }
@@ -769,9 +769,9 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
   /**
-   * Sets @(rel)@.
+   * Sets the @(rel)@.@(createMultiLineComment("   * ", rel.getLongComment()))@
    *
-   * \@param @(var)@ @(rel.getComment())@
+   * \@param @(var)@ @(createDocTagComment(rel.getComment()))@
 @[
         if (linkMethodIndex != null) {
 ]@
@@ -924,9 +924,9 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
   /**
-   * Sets @(var)@ without setting any attributes.
+   * Sets the relation @(var)@ without updating any further attributes.
    *
-   * \@param @(var)@ @(rel.getComment())@
+   * \@param @(var)@ @(createDocTagComment(rel.getComment()))@
    */
   @(scope)@ void @(rel.getSetterName())@Blunt(@(type)@ @(var)@) {
     this.@(var)@ = @(var)@;
@@ -1021,13 +1021,12 @@ For more options, see {\@link DbModelWurblet}.
 
 
   /**
-   * Deletes referencing composite relations.
-   * This method is invoked from deleteReferencingRelations() or saveReferencingRelations().
-   * When invoked from saveReferencingRelations() lazy relations not
-   * already loaded will be considered to be unchanged, i.e.
-   * need no update or insert.
+   * Deletes the referencing composite relations.<br>
+   * This method is invoked from {\@code deleteReferencingRelations()} or {\@code saveReferencingRelations()}.<br>
+   * When invoked from {\@code saveReferencingRelations()}, lazy relations not already loaded
+   * will be considered as unchanged, i.e., no need to update or insert.
    *
-   * \@param delete is true if invoked from deleteReferencingRelations()
+   * \@param delete is true if invoked from {\@code deleteReferencingRelations()}
    */
   private void deleteReferencingRelations(boolean delete)  {
 @[
@@ -1162,13 +1161,12 @@ For more options, see {\@link DbModelWurblet}.
 
 
   /**
-   * Deletes referenced composite relations.
-   * This method is invoked from deleteReferencedRelations() or saveReferencedRelations().
-   * When invoked from saveReferencedRelations() lazy relations not
-   * already loaded will be considered to be unchanged, i.e.
-   * need no update or insert.
+   * Deletes the referenced composite relations.<br>
+   * This method is invoked from {\@code deleteReferencedRelations()} or {\@code saveReferencedRelations()}.<br>
+   * When invoked from {\@code saveReferencedRelations()}, lazy relations not already loaded
+   * will be considered as unchanged, i.e., no need to update or insert.
    *
-   * \@param delete is true if invoked from deleteReferencedRelations()
+   * \@param delete is true if invoked from {\@code deleteReferencedRelations()}
    */
   private void deleteReferencedRelations(boolean delete)  {
 @[
@@ -1735,7 +1733,7 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
   /**
-   * Updates the components in snapshot object.<br>
+   * Updates the components in the snapshot object.<br>
    * The snapshot object is assumed to be a clone of this object.
    *
    * \@param snapshot the snapshot
@@ -1918,7 +1916,7 @@ For more options, see {\@link DbModelWurblet}.
             if (wurbletArgSet.add(wurbletArgs)) {
 ]@
 
-  // selects @(rel)@
+  // selects the @(rel)@
 @[
               if (rel.isReversed()) {
 ]@
@@ -1946,7 +1944,7 @@ For more options, see {\@link DbModelWurblet}.
           if (attribute != null && rel.isComposite() && !rel.isDeletionCascaded() && !useDatabaseRefInt) {
 ]@
 
-  // deletes @(rel)@
+  // deletes the @(rel)@
   // \@wurblet @(createListRelationDeleteMethodName(rel))@ PdoDeleteBy @(createRelationWurbletArgString(rel))@
 @[
           }
