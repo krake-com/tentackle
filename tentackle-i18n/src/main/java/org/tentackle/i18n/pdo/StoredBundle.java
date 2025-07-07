@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.i18n.pdo;
 
 import org.tentackle.common.Compare;
@@ -27,7 +26,6 @@ import org.tentackle.session.ClassId;
 import org.tentackle.session.TableName;
 
 import java.io.Serializable;
-
 
 /*
  * @> $mapping

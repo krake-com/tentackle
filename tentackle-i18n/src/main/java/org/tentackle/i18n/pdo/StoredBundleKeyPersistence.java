@@ -116,7 +116,7 @@ public interface StoredBundleKeyPersistence extends PersistentObject<StoredBundl
    * @return the bundle
    */
   @Bindable
-  @Persistent(ordinal=0, comment="bundle", component=false, parent=true)
+  @Persistent(ordinal=0, comment="the bundle", component=false, parent=true)
   StoredBundle getBundle();
 
   /**
