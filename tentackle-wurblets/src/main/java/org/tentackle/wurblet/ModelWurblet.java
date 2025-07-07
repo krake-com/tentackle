@@ -64,7 +64,7 @@ import java.util.regex.Pattern;
  * The following wurblet options are parsed:
  * <ul>
  * <li><em>--method=&lt;method-name&gt;:</em> optional name of the generated method. Defaults to the wurblet tag.</li>
- * <li><em>--model=&lt;mapping&gt;:</em> optional model mapping. Derived from source file, if missing.</li>
+ * <li><em>--model=&lt;mapping&gt;:</em> optional model mapping. Derived from the source file, if missing.</li>
  * <li><em>--remote:</em> force generating remote code. Taken from model-defaults, if missing.</li>
  * <li><em>--noremote:</em> don't generate remote code. Taken from model-defaults, if missing.</li>
  * </ul>
@@ -79,13 +79,13 @@ public class ModelWurblet extends AbstractJavaWurblet {
   private static final Map<String, String> PACKAGE_CACHE = new ConcurrentHashMap<>();
 
   /**
-   * The name of the model directory.
+   * The name of the model directory.<br>
    * This is the model of the project's current (maven) module.
    */
   private String modelDirName;
 
   /**
-   * Names of other model dirs.
+   * Names of other model dirs.<br>
    * Those models will be loaded *before* the model in modelDirName and
    * represent models of other modules that are dependencies of the current module
    * (i.e. the current model refers to).
@@ -122,13 +122,13 @@ public class ModelWurblet extends AbstractJavaWurblet {
   /** true if --remote option set. */
   private boolean remote;
 
-  /** the pdo classname if isPdo == true, the operation classname if isPdo == false, null if class cannot be determined. */
+  /** the pdo classname if isPdo == true, the operation classname if isPdo == false, null if the class cannot be determined. */
   private String pdoClassName;
 
   /** true if PDO-level operation. */
   private boolean isOperation;
 
-  /** true if missing model file is ok. */
+  /** true if a missing model file is ok. */
   private boolean missingModelOk;
 
   /** the backends that are going to be used. */
@@ -154,7 +154,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
   /**
    * Gets the optional model defaults.
    *
-   * @return the defaults, null if none
+   * @return the defaults, null for none
    */
   public ModelDefaults getModelDefaults() {
     return modelDefaults;
@@ -205,7 +205,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
         }
       }
 
-      // may be an interface that extends PersistentObject<Blah>
+      // maybe an interface that extends PersistentObject<Blah>
       String persistentIface = getContainer().getProperty(Wurbler.PROPSPACE_WURBLET, JavaSourceType.EXTENDS + 0);
       if (persistentIface != null) {
         int ndx = persistentIface.indexOf('<');
@@ -345,7 +345,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
    * Final concrete PDO classes must not use generics.
    * Otherwise, the generated wurblet code will not compile.
    *
-   * @return true if class is generified
+   * @return true if the class is generified
    */
   public boolean isGenerified() {
     String definition = getContainer().getProperty(Wurbler.PROPSPACE_WURBLET, JavaSourceType.DEFINITION);
@@ -395,7 +395,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
     if (modelName == null) {
       modelName = getOption("model");
       if (modelName == null) {
-        // determine from source file
+        // determine from the source file
         modelName = getPdoClassName();
       }
       if (modelName == null) {
@@ -471,7 +471,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
 
   /**
    * Gets the option if set.<br>
-   * Options come in two flavours:
+   * Options come in two flavors:
    * <ol>
    * <li>without a value. Example: --remote</li>
    * <li>with a value. Example: --model=modlog.map</li>
@@ -767,7 +767,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
               "errors in model loaded from directory '" + modelDirName + "'", true, mex);
       if (model instanceof TentackleWurbletsModel tentackleWurbletsModel && mex.getElement() != null &&
           tentackleWurbletsModel.getLoadingException() == null) {
-        // delay first exception to concrete classes if exception could be associated to entities
+        // delay first exception to concrete classes if exception could be associated with entities
         tentackleWurbletsModel.setLoadingException(wex);
       }
       else  {
@@ -904,7 +904,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
   }
 
   /**
-   * Checks whether attribute is the pdo ID.
+   * Checks whether the attribute is the pdo ID.
    *
    * @param attribute the attribute
    * @return true if pdo id
@@ -914,7 +914,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
   }
 
   /**
-   * Checks whether attribute is the pdo serial.
+   * Checks whether the attribute is the pdo serial.
    *
    * @param attribute the attribute
    * @return true if pdo serial
@@ -924,7 +924,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
   }
 
   /**
-   * Checks whether attribute is the pdo ID or serial.
+   * Checks whether the attribute is the pdo ID or serial.
    *
    * @param attribute the attribute
    * @return true if pdo id or serial
@@ -934,7 +934,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
   }
 
   /**
-   * Checks whether attribute is derived from a superclass.
+   * Checks whether the attribute is derived from a superclass.
    *
    * @param attribute the attribute
    * @return true if derived from superclass
@@ -944,7 +944,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
   }
 
   /**
-   * Adds a string to a comma separated list.
+   * Adds a string to a comma-separated list.
    *
    * @param builder the string builder
    * @param appendStr the string to append
@@ -957,7 +957,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
   }
 
   /**
-   * Prepends a string to a comma separated list.
+   * Prepends a string to a comma-separated list.
    *
    * @param builder the string builder
    * @param prependStr the string to prepend
@@ -982,7 +982,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
 
   /**
    * Creates the java code to access an attribute or column.<br>
-   * Relations are separated by dots. For multi-column types, the
+   * Chained relations will be shown separated by dots. For multi-column types, the
    * column is separated from the attribute by a hash.
    *
    * @param entity the entity where the path begins
@@ -1075,7 +1075,7 @@ public class ModelWurblet extends AbstractJavaWurblet {
    *
    * @param className the simple classname
    * @return the package name (never null)
-   * @throws WurbelException if package could not be determined
+   * @throws WurbelException if the package could not be determined
    */
   public String determinePackageName(String className) throws WurbelException {
     final String packageName = getPackageName();    // default is the same package
@@ -1120,8 +1120,17 @@ public class ModelWurblet extends AbstractJavaWurblet {
    * @return the tag comment
    */
   public String createDocTagComment(String comment) {
-    if (StringHelper.startsWithAnyOf(comment, "the ", "The ", "THE ") == null) {
-      comment = "the " + comment;
+    if (comment != null) {
+      comment = comment.trim();
+      String prefix = StringHelper.startsWithAnyOf(comment, "the ", "The ", "THE ");
+      if (prefix == null) {
+        comment = "the " + firstToLowerCase(comment);
+      }
+      else if (prefix.equals("The ")) {
+        // the and first word in lower-case
+        comment = "the " + firstToLowerCase(comment.substring(prefix.length()));
+      }
+      // else: THE -> leave all in uppercase?
     }
     return comment;
   }
@@ -1135,6 +1144,32 @@ public class ModelWurblet extends AbstractJavaWurblet {
   public String createDocTagComment(Attribute attribute) {
     String comment = attribute.getOptions().getComment();
     return attribute.getDataType().isBool() ? comment : createDocTagComment(comment);
+  }
+
+  /**
+   * Creates a comment for the param and return doc tags.
+   *
+   * @param relation the relation
+   * @return the tag comment
+   */
+  public String createDocTagComment(Relation relation) {
+    return createDocTagComment(relation.getComment());
+  }
+
+  /**
+   * Converts the first character to lowercase if only the first is uppercase.
+   *
+   * @param str the string
+   * @return the converted string
+   */
+  public String firstToLowerCase(String str) {
+    if (str != null && str.length() >= 2) {
+      if (Character.isUpperCase(str.charAt(0)) && !Character.isUpperCase(str.charAt(1))) {
+        return StringHelper.firstToLower(str);
+      }
+      // else leave "ID", for example, unchanged!
+    }
+    return str;
   }
 
 }

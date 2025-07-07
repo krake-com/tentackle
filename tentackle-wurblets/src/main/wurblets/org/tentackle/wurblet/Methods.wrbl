@@ -48,7 +48,7 @@ For more options, see {\@link ModelWurblet}.
    *
    * \@return @(createDocTagComment(attr))@
    */
-  \@Persistent(ordinal=@(attr.getOrdinal())@, comment=@(StringHelper.toDoubleQuotes(attr.getOptions().getComment()))@)
+  \@Persistent(ordinal=@(attr.getOrdinal())@, comment=@(StringHelper.toDoubleQuotes(createDocTagComment(attr)))@)
 @[
           for (String annotation: attr.getOptions().getAnnotations()) {
             AnnotationOption anno = new AnnotationOption(annotation);
