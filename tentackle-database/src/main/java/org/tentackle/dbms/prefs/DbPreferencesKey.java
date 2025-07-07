@@ -343,7 +343,7 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
    *
    * @return the ID of the preferences-node
    */
-  @Persistent(ordinal=1, comment="ID of the preferences-node")
+  @Persistent(ordinal=1, comment="the ID of the preferences-node")
   public long getNodeId()    {
     return nodeId;
   }
@@ -365,7 +365,7 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
    *
    * @return the ID of the root-node
    */
-  @Persistent(ordinal=2, comment="ID of the root-node")
+  @Persistent(ordinal=2, comment="the ID of the root-node")
   public long getRootNodeId()    {
     return rootNodeId;
   }
@@ -387,7 +387,7 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
    *
    * @return the name of the key
    */
-  @Persistent(ordinal=3, comment="name of the key")
+  @Persistent(ordinal=3, comment="the name of the key")
   public String getKey()    {
     return key;
   }
@@ -409,7 +409,7 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
    *
    * @return the value of the key
    */
-  @Persistent(ordinal=4, comment="value of the key")
+  @Persistent(ordinal=4, comment="the value of the key")
   public String getValue()    {
     return value;
   }

@@ -122,7 +122,7 @@ public interface StoredBundlePersistence extends PersistentObject<StoredBundle> 
    * @return the keys
    */
   @Bindable
-  @Persistent(ordinal=0, comment="keys")
+  @Persistent(ordinal=0, comment="the keys")
   TrackedList<StoredBundleKey> getKeys();
 
   /**

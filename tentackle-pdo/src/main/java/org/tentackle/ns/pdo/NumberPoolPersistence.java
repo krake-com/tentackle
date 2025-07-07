@@ -118,7 +118,7 @@ public interface NumberPoolPersistence extends PersistentObject<NumberPool> {
    *
    * @return the pool realm, optional
    */
-  @Persistent(ordinal=1, comment="pool realm, optional")
+  @Persistent(ordinal=1, comment="the pool realm, optional")
   String getRealm();
 
   /**
@@ -147,7 +147,7 @@ public interface NumberPoolPersistence extends PersistentObject<NumberPool> {
    *
    * @return the short description
    */
-  @Persistent(ordinal=2, comment="short description")
+  @Persistent(ordinal=2, comment="the short description")
   String getDescription();
 
   /**
@@ -205,7 +205,7 @@ public interface NumberPoolPersistence extends PersistentObject<NumberPool> {
    *
    * @return the minimum number count before request to fill up from uplink, 0 to disable
    */
-  @Persistent(ordinal=4, comment="minimum number count before request to fill up from uplink, 0 to disable")
+  @Persistent(ordinal=4, comment="the minimum number count before request to fill up from uplink, 0 to disable")
   long getLowWaterMark();
 
   /**
@@ -234,7 +234,7 @@ public interface NumberPoolPersistence extends PersistentObject<NumberPool> {
    *
    * @return the number count to request from uplink, 0 to disable
    */
-  @Persistent(ordinal=5, comment="number count to request from uplink, 0 to disable")
+  @Persistent(ordinal=5, comment="the number count to request from uplink, 0 to disable")
   long getRequestSize();
 
   /**
@@ -263,7 +263,7 @@ public interface NumberPoolPersistence extends PersistentObject<NumberPool> {
    *
    * @return the uplink configuration (optional)
    */
-  @Persistent(ordinal=6, comment="uplink configuration (optional)")
+  @Persistent(ordinal=6, comment="the uplink configuration (optional)")
   @NotNull(condition="$slave")
   String getUplink();
 
@@ -309,7 +309,7 @@ public interface NumberPoolPersistence extends PersistentObject<NumberPool> {
    * @return the list of NumberRange
    */
   @Bindable
-  @Persistent(ordinal=0, comment="list of NumberRange")
+  @Persistent(ordinal=0, comment="the list of NumberRange")
   TrackedList<NumberRange> getNumberRangeList();
 
   /**

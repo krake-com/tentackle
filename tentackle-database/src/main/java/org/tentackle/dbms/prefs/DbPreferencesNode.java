@@ -343,7 +343,7 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
    *
    * @return the name of user, null if system
    */
-  @Persistent(ordinal=1, comment="name of user, null if system")
+  @Persistent(ordinal=1, comment="the name of user, null if system")
   public String getUser()    {
     return user;
   }
@@ -365,7 +365,7 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
    *
    * @return the name of the node
    */
-  @Persistent(ordinal=2, comment="name of the node")
+  @Persistent(ordinal=2, comment="the name of the node")
   public String getName()    {
     return name;
   }
@@ -387,7 +387,7 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
    *
    * @return the ID of parent-node, 0 if root-node
    */
-  @Persistent(ordinal=3, comment="ID of parent-node, 0 if root-node")
+  @Persistent(ordinal=3, comment="the ID of parent-node, 0 if root-node")
   public long getParentId()    {
     return parentId;
   }
@@ -409,7 +409,7 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
    *
    * @return the ID of the root-node
    */
-  @Persistent(ordinal=4, comment="ID of the root-node")
+  @Persistent(ordinal=4, comment="the ID of the root-node")
   public long getRootNodeId()    {
     return rootNodeId;
   }
