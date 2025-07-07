@@ -307,7 +307,7 @@ For more options, see {\@link DbModelWurblet}.
   /**
    * Gets the @(rel)@.@(createMultiLineComment("   * ", rel.getLongComment()))@
    *
-   * \@return @(createDocTagComment(rel.getComment()))@
+   * \@return @(createDocTagComment(rel))@
    */
   \@Persistent(ordinal=@(rel.getOrdinal())@, comment=@(StringHelper.toDoubleQuotes(rel.getComment()))@)
 @[
@@ -598,7 +598,7 @@ For more options, see {\@link DbModelWurblet}.
   /**
    * Gets the relation @(var)@ without performing a database query if not loaded.
    *
-   * \@return @(createDocTagComment(rel.getComment()))@
+   * \@return @(createDocTagComment(rel))@
    */
 @[
               }
@@ -635,7 +635,7 @@ For more options, see {\@link DbModelWurblet}.
   /**
    * Gets the relation @(var)@ without performing a database query if not loaded.
    *
-   * \@return @(createDocTagComment(rel.getComment()))@
+   * \@return @(createDocTagComment(rel))@
    */
 @[
               }
@@ -771,7 +771,7 @@ For more options, see {\@link DbModelWurblet}.
   /**
    * Sets the @(rel)@.@(createMultiLineComment("   * ", rel.getLongComment()))@
    *
-   * \@param @(var)@ @(createDocTagComment(rel.getComment()))@
+   * \@param @(var)@ @(createDocTagComment(rel))@
 @[
         if (linkMethodIndex != null) {
 ]@
@@ -926,7 +926,7 @@ For more options, see {\@link DbModelWurblet}.
   /**
    * Sets the relation @(var)@ without updating any further attributes.
    *
-   * \@param @(var)@ @(createDocTagComment(rel.getComment()))@
+   * \@param @(var)@ @(createDocTagComment(rel))@
    */
   @(scope)@ void @(rel.getSetterName())@Blunt(@(type)@ @(var)@) {
     this.@(var)@ = @(var)@;

@@ -59,24 +59,24 @@ For more options, see {\@link ModelWurblet}.
   /**
    * Gets the @(rel)@.@(createMultiLineComment("   * ", rel.getLongComment()))@
    *
-   * \@return @(createDocTagComment(rel.getComment()))@
+   * \@return @(createDocTagComment(rel))@
    */
   \@Bindable
 @[
           if (rel.isComposite()) {
 ]@
-  \@Persistent(ordinal=@(rel.getOrdinal())@, comment=@(StringHelper.toDoubleQuotes(rel.getComment()))@)
+  \@Persistent(ordinal=@(rel.getOrdinal())@, comment=@(StringHelper.toDoubleQuotes(createDocTagComment(rel)))@)
 @[
           }
           else {
             if (oppRel != null && oppRel.isComposite()) {
 ]@
-  \@Persistent(ordinal=@(rel.getOrdinal())@, comment=@(StringHelper.toDoubleQuotes(rel.getComment()))@, component=false, parent=true)
+  \@Persistent(ordinal=@(rel.getOrdinal())@, comment=@(StringHelper.toDoubleQuotes(createDocTagComment(rel)))@, component=false, parent=true)
 @[
             }
             else {
 ]@
-  \@Persistent(ordinal=@(rel.getOrdinal())@, comment=@(StringHelper.toDoubleQuotes(rel.getComment()))@, component=false)
+  \@Persistent(ordinal=@(rel.getOrdinal())@, comment=@(StringHelper.toDoubleQuotes(createDocTagComment(rel)))@, component=false)
 @[
             }
           }
@@ -98,7 +98,7 @@ For more options, see {\@link ModelWurblet}.
   /**
    * Gets the relation @(var)@ without performing a database query if not loaded.
    *
-   * \@return @(createDocTagComment(rel.getComment()))@
+   * \@return @(createDocTagComment(rel))@
    */
   @(type)@ @(rel.getGetterName())@Blunt();
 @[
@@ -113,7 +113,7 @@ For more options, see {\@link ModelWurblet}.
    * \@return list of @(nmRel.getVariableName())@
    */
   \@Bindable
-  \@Persistent(ordinal=@(rel.getOrdinal())@, comment=@(StringHelper.toDoubleQuotes(nmVar))@, component=false)
+  \@Persistent(ordinal=@(rel.getOrdinal())@, comment=@(StringHelper.toDoubleQuotes(createDocTagComment(nmVar)))@, component=false)
   TrackedList<@(nmRel.getDeclaredJavaType(false))@> get@(nmName)@();
 @[
         }
@@ -143,7 +143,7 @@ For more options, see {\@link ModelWurblet}.
   /**
    * Sets the @(rel)@.@(createMultiLineComment("   * ", rel.getLongComment()))@
    *
-   * \@param @(var)@ @(createDocTagComment(rel.getComment()))@
+   * \@param @(var)@ @(createDocTagComment(rel))@
 @[
         if (linkMethodIndexed) {
 ]@
@@ -203,7 +203,7 @@ For more options, see {\@link ModelWurblet}.
 @[
             }
 ]@
-   * \@return @(createDocTagComment(rel.getComment()))@
+   * \@return @(createDocTagComment(rel))@
    */
   @(rel.getDeclaredJavaType(true))@ @(createRelationSelectMethodName(rel))@(@(declaredArgs)@);
 @[
