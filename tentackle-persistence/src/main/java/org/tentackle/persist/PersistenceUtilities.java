@@ -58,7 +58,7 @@ public class PersistenceUtilities extends DbUtilities {
       obj = (T) Pdo.create((Class) clazz);
     }
     else {
-      // try low-level object
+      // try the low-level object
       obj = super.createObject(clazz);
     }
     return obj;
@@ -79,7 +79,7 @@ public class PersistenceUtilities extends DbUtilities {
       }
     }
     else {
-      // may be a low-level object?
+      // maybe a low-level object?
       obj = super.selectObject(session, clazz, objectId, loadLazyReferences);
     }
     return obj;
@@ -146,11 +146,13 @@ public class PersistenceUtilities extends DbUtilities {
 
   @Override
   public void notifyRollback(Db session, long txNumber) {
+    super.notifyRollback(session, txNumber);
     LockManager.getInstance().rollback(session, txNumber);
   }
 
   @Override
   public void notifyCommit(Db session, long txNumber) {
+    super.notifyCommit(session, txNumber);
     LockManager.getInstance().commit(session, txNumber);
   }
 }

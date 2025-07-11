@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.dbms;
 
 import org.tentackle.log.Logger;
@@ -26,8 +25,6 @@ import org.tentackle.session.SessionUtilities;
 
 import java.util.Map;
 import java.util.WeakHashMap;
-
-
 
 /**
  * Counter to track modifications for a class/table.<br>
@@ -39,16 +36,30 @@ public class ModificationTally {
 
   private static final Logger LOGGER = Logger.get(ModificationTally.class);
 
+  /**
+   * Simple non-atomic counter for modifications within a transaction of a session.<br>
+   * Allows correction of the pending count when a transaction is rolled back.
+   */
+  private static class SessionCount {
+    private long count;
 
-  private final DbModificationTracker tracker;        // the mod tracker
-  private final DbModification dbModification;        // the persisted modification object
-  private DbObjectClassVariables<?> clazzVar;         // the classvariables if tablename belongs to a PDO, null if just a name
-  private Boolean isTableSerialProvided;              // true if table serial is managed by table, null if not known yet
-  private String tableSerialTableName;                // if tableSerialValid holds the tableserial's tablename
-  private long lastSerial;                            // last (known) serial for the table
-  private long pendingCount;                          // number of pending counts
-  private final Map<Session, Object> sessionsInTx;    // sessions running a transaction during countPending()
+    private void increment() {
+      ++count;
+    }
 
+    private long get() {
+      return count;
+    }
+  }
+
+  private final DbModificationTracker tracker;            // the mod tracker
+  private final DbModification dbModification;            // the persisted modification object
+  private DbObjectClassVariables<?> clazzVar;             // the classvariables if tablename belongs to a PDO, null if just a name
+  private Boolean isTableSerialProvided;                  // true if the table maintains a tableserial, null if not known yet
+  private String tableSerialTableName;                    // if tableSerialValid holds the tableserial's tablename
+  private long lastSerial;                                // last (known) serial for the table
+  private long pendingCount;                              // number of pending counts
+  private final Map<Session, SessionCount> sessionsInTx;  // sessions running a transaction during countPending()
 
   /**
    * Creates a modification counter for a given tracked name.
@@ -84,7 +95,6 @@ public class ModificationTally {
     }
   }
 
-
   /**
    * Gets the modification PO.
    *
@@ -109,32 +119,40 @@ public class ModificationTally {
    * @param session the session persisting the modification, null if thread-local session
    */
   public synchronized void countPending(Session session) {
-    if (session == null) {
-      session = Session.getCurrentSession();
-      if (session == null) {
-        throw new PersistenceException("no thread-local session to count modification for " + dbModification);
+    if (!tracker.isLocalClientMode()) {
+      session = getEffectiveSession(session);
+      if (session.isTxRunning()) {
+        sessionsInTx.computeIfAbsent(session, _ -> new SessionCount()).increment();
       }
-    }
-    if (session.isRemote()) {
-      throw new PersistenceException(session, "modification counting not allowed for remote sessions");
-    }
-    if (session.isTxRunning() && !tracker.isLocalClientMode()) {
-      sessionsInTx.putIfAbsent(session, null);
     }
     ++pendingCount;
   }
 
+  /**
+   * Rolls back the pending count for a given session.<br>
+   * Avoids invalidation of the associated caches when a transaction
+   * is rolled back that caused the whole count.
+   *
+   * @param session the session rolled back
+   */
+  public synchronized void rollbackPending(Session session) {
+    if (!tracker.isLocalClientMode()) {
+      SessionCount sessionCount = sessionsInTx.remove(getEffectiveSession(session));
+      if (sessionCount != null) {
+        // adjust the pending count since the modifications for this session were rolled back
+        pendingCount -= sessionCount.get();
+      }
+    }
+  }
 
   /**
    * Gets the pending count.
    *
-   * @return the pending count, 0 if none
+   * @return the pending count, 0 for none
    */
   public synchronized long getPendingCount() {
     return pendingCount;
   }
-
-
 
   /**
    * Sets the last serial.
@@ -148,21 +166,19 @@ public class ModificationTally {
   /**
    * Gets the latest serial updated by this counter.<br>
    *
-   * @return the latest serial from last update plus pending count
+   * @return the latest serial from the last update plus pending count
    */
   public synchronized long getLatestSerial() {
     return lastSerial + pendingCount;
   }
-
-
 
   /**
    * Performs the physical pending count if pending count &gt; 0.
    */
   public synchronized void performPendingCount() {
     if (pendingCount > 0) {
-      // don't flush to database because listeners could be triggered that may not see the uncommitted data
-      // committed
+      // don't flush to the database because listeners could be triggered
+      // that may not see the uncommitted data committed
       sessionsInTx.keySet().removeIf(session -> !session.isTxRunning());
       if (sessionsInTx.isEmpty()) {
         LOGGER.fine("increment serial for {0} by {1}", dbModification, pendingCount);
@@ -179,7 +195,6 @@ public class ModificationTally {
       }
     }
   }
-
 
   /**
    * Adds this counter to the modification table.
@@ -198,6 +213,25 @@ public class ModificationTally {
     return dbModification.refresh();
   }
 
+
+  /**
+   * Maps to the effective session if the session is null (thread-local).
+   *
+   * @param session the session
+   * @return the real session, always not null
+   */
+  private Session getEffectiveSession(Session session) {
+    if (session == null) {
+      session = Session.getCurrentSession();
+      if (session == null) {
+        throw new PersistenceException("no thread-local session to count modification for " + dbModification);
+      }
+    }
+    if (session.isRemote()) {
+      throw new PersistenceException(session, "modification counting not allowed for remote sessions");
+    }
+    return session;
+  }
 
   /**
    * Determines whether table serial is valid for this pdo class.

@@ -130,7 +130,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     }
 
     /**
-     * Returns whether this is the master listener.
+     * Returns whether this is the master-listener.
      *
      * @return true if master listener
      */
@@ -206,8 +206,8 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
      * Creates a modification entry.<br>
      * For internal use only!
      *
-     * @param tableName the table name of the class, null if master serial
-     * @param id the table name id, 0 if master serial
+     * @param tableName the table name of the class, null if master-serial
+     * @param id the table name id, 0 for master serial
      * @param serial the last serial seen
      */
     private TableEntry(String tableName, long id, long serial) {
@@ -316,7 +316,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
 
 
 
-  private final List<Runnable> shutdownRunnables;                   // runnables to be run once when thread is stopped
+  private final List<Runnable> shutdownRunnables;                   // runnables to be run once when the thread is stopped
   private final Map<String, ModificationTally> countersByName;      // map of modification counters (tableName:counter)
   private final Map<Long, ModificationTally> countersById;          // map of modification counters (id:counter)
   private final Set<ListenerEntry> listenerEntries;                 // modification listeners
@@ -328,7 +328,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   private final Set<DelayedEvent> delayedEvents;                    // delayed events
   private long delayedSleepInterval;                                // != 0 if this is the next max. sleep interval
   private DbModification masterModification;                        // po to access the master serial
-  private boolean localClientMode;                                  // true if local session and not a server
+  private boolean localClientMode;                                  // true if the local session and not a server
   private long lastPollTime;                                        // last polling time
   private Map<String, IdSerialTuple> remoteSerials;                 // initial id/serial/name tuples of the remote server's tracker (null if local)
 
@@ -343,7 +343,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
 
     /*
      * This is not a daemon thread!
-     * As long as this thread is running the JVM will not terminate.
+     * As long as this thread is running, the JVM will not terminate.
      */
     setDaemon(false);
     setPriority(MAX_PRIORITY);    // runs periodically as reliable as possible
@@ -396,7 +396,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     // clear counters
     countersById.clear();
     countersByName.clear();
-    // check if modification table is initialized
+    // check if the modification table is initialized
     try {
       masterModification = new DbModification((Db) session);
       selectMasterSerial();
@@ -482,12 +482,12 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   }
 
   /**
-   * Returns whether tracker runs in local client mode.<br>
+   * Returns whether the tracker runs in local client mode.<br>
    * In this mode, modifications will be persisted immediately.
-   * This is necessary for applications without a middle tier server,
-   * i.e. directly talking to the database.<p>
-   * In servers, however, modifications will be persisted delayed,
-   * when no transactions are running that refer to the modified tables.<p>
+   * This is necessary for applications without a middle-tier server,
+   * i.e., directly talking to the database.<p>
+   * In servers, however, modifications will be persisted delayed
+   * when no transactions are running anymore that refer to the modified tables.<p>
    * Important: in local client mode, the thread-local session must be valid,
    * because the session used to persist the modification count must be the
    * same as the current transaction, if any.
@@ -626,6 +626,19 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   }
 
   /**
+   * Adjusts the pending counts in all {@link ModificationTally}s.<br>
+   * Eliminates cache invalidations if the whole pending count was due to the transaction rolled back.
+   *
+   * @param session the session with a rolled back transaction
+   */
+  @Override
+  public void rollbackModification(Session session) {
+    for (ModificationTally counter : countersByName.values()) {
+      counter.rollbackPending(session);
+    }
+  }
+
+  /**
    * Invalidates the modification table and re-initializes all entries and counters.
    */
   @Override
@@ -679,7 +692,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   protected void lockInternal() {
     long currentTime = System.currentTimeMillis();
     if (currentTime - lastPollTime > getSleepInterval() >> 1) {
-      // don't poll too often, at most each half sleep interval
+      // don't poll too often, at most each half-sleep interval
       lastPollTime = currentTime;
 
       try {
@@ -690,15 +703,15 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
         if (!ExceptionHelper.handleException(
             true, t,
             new ExceptionHelper.Handler<>(ReconnectedException.class, rx -> {
-              // reconnected: just log and start over.
+              // reconnected: only log and start over.
               // requires Db.enableReconnection(true, >0) on the tracker's session
               LOGGER.warning("reconnection successful -> resuming normal operation ...", rx);
             }),
             new ExceptionHelper.Handler<>(SessionClosedException.class, sx -> {
-              // if remote: session has been closed by the server (deadlock, timeout, whatever)
-              // if local: database server has closed the session
-              // reopen once and treat as if polling was ok
-              // if the session could not be re-opened: the process will terminate
+              // if remote: session has been closed by the server (deadlock, timeout, whatever).
+              // if local: database server has closed the session.
+              // reopen once and treat as if polling was ok.
+              // if the session could not be re-opened: the process will terminate.
               if (isReOpenOnceEnabled()) {
                 LOGGER.severe("session " + getSession() + " closed unexpectedly -> trying to re-open ...", sx);
                 getSession().reOpen();
@@ -721,7 +734,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * that the tracker's session is a lead session for applications such as desktop clients.
    * Those applications must be "killable" by closing the lead session.
    * <p>
-   * Override this method, if application follows other rules.
+   * Override this method if the application follows other rules.
    *
    * @return true if try to re-open, false to propagate exception as usual
    */
@@ -798,7 +811,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
 
   /**
    * Returns the new master serial if modified.<br>
-   * The method is provided to allow extensions, for example listening for other events on other tables.
+   * The method is provided to allow extensions, for example, listening for other events on other tables.
    *
    * @return the updated master serial, null if unchanged
    */
@@ -890,7 +903,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     if (session.isRemote())  {
       IdSerialTuple tuple = getRemoteIdSerial(tableName);   // try fast lookup first (to save a roundtrip)
       if (tuple == null) {
-        // not in initial map? -> get it from remote server (and optionally create it)
+        // not in the initial map? -> get it from the remote server (and optionally create it)
         try {
           tuple = ((DbModificationTrackerRemoteDelegate) session.getRemoteDelegate(getRemoteDelegateId())).selectIdSerialForName(tableName);
         }
@@ -907,7 +920,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
 
 
   /**
-   * Flushes all pending modification counts to database.
+   * Flushes all pending modification counts to the database.
    */
   private void performPendingCounts() {
     for (ModificationTally counter: countersByName.values()) {
@@ -934,7 +947,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
       remoteSerials = null;   // no more valid
 
       if (serial < masterEntry.serial) {
-        // new serial is less than current serial: force complete re-initialization
+        // the new serial is less than the current serial: force complete re-initialization
         invalidate();
       }
 
@@ -944,13 +957,13 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
       for (IdSerialTuple idSer: selectAllIdSerials()) {
 
         if (idSer.getId() > 0) {
-          // update last serial of counter (if configured)
+          // update the last serial of counter (if configured)
           ModificationTally counter = countersById.get(idSer.getId());
           if (counter != null) {
             counter.setLastSerial(idSer.getSerial());
           }
-          // this updates also counters that don't have a listener
-          // e.g. countModification invoked without a listener registered
+          // updates counters that don't have a listener as well,
+          // e.g., countModification invoked without a listener registered
         }
 
         TableEntry tableEntry = tableEntriesById.get(idSer.getId());     // serial changed for entry
