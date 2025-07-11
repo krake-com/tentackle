@@ -630,11 +630,12 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * Eliminates cache invalidations if the whole pending count was due to the transaction rolled back.
    *
    * @param session the session with a rolled back transaction
+   * @param txNumber the transaction number
    */
   @Override
-  public void rollbackModification(Session session) {
+  public void rollbackModification(Session session, long txNumber) {
     for (ModificationTally counter : countersByName.values()) {
-      counter.rollbackPending(session);
+      counter.rollbackPending(session, txNumber);
     }
   }
 
