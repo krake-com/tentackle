@@ -21,14 +21,16 @@ package org.tentackle.session;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.task.AbstractTask;
 
+
 interface ModificationTrackerHolder {
   ModificationTracker INSTANCE = ServiceFactory.createService(ModificationTracker.class);
 }
 
+
 /**
  * Tracks global PDO changes.
  * <p>
- * The pro tracker maintains its own session.
+ * The PDO tracker maintains its own session.
  * The application can request an exclusive use of this session for a
  * (short) period of time and release it afterward.
  *
@@ -65,7 +67,7 @@ public interface ModificationTracker extends SessionTaskDispatcher, ExclusiveSes
   /**
    * Submits a session task invoking the given runnable within a transaction of the tracker's session.
    *
-   * @param txName the transaction name, null if default <code>"&lt;ModificationTracker&gt;"</code>
+   * @param txName the transaction name, null for default <code>"&lt;ModificationTracker&gt;"</code>
    * @param runnable the runnable to be executed once
    */
   static void transaction(String txName, Runnable runnable) {
@@ -115,6 +117,14 @@ public interface ModificationTracker extends SessionTaskDispatcher, ExclusiveSes
    * @return the modification serial
    */
   long countModification(Session session, String name);
+
+  /**
+   * Invoked whenever a transaction is rolled back.<br>
+   * Allows the tracker to adjust the pending counts.
+   *
+   * @param session the session rolled back
+   */
+  void rollbackModification(Session session);
 
   /**
    * Registers a pure runnable to be executed if the pdo tracker is terminated

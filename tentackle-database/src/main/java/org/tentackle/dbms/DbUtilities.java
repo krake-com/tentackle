@@ -25,6 +25,7 @@ import org.tentackle.common.ServiceFactory;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
 import org.tentackle.io.ReconnectionPolicy;
 import org.tentackle.session.BackendConfiguration;
+import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionPoolProvider;
@@ -71,9 +72,7 @@ public class DbUtilities {
   }
 
 
-
   private ConnectionManager connectionManager;
-
 
   /**
    * Creates the db utitities.
@@ -83,7 +82,7 @@ public class DbUtilities {
   }
 
   /**
-   * Creates a session-less object for given class.
+   * Creates a session-less object for the given class.
    *
    * @param <T> the object type
    * @param clazz the object class
@@ -97,7 +96,6 @@ public class DbUtilities {
     }
     return object;
   }
-
 
   /**
    * Loads an object from the database.
@@ -122,7 +120,6 @@ public class DbUtilities {
     return object;
   }
 
-
   /**
    * Determines whether table serial is valid for this pdo class.
    *
@@ -144,7 +141,6 @@ public class DbUtilities {
     }
   }
 
-
   /**
    * Gets the default connection manager.
    *
@@ -156,7 +152,6 @@ public class DbUtilities {
     }
     return connectionManager;
   }
-
 
   /**
    * Gets the session pool provider.
@@ -177,7 +172,6 @@ public class DbUtilities {
     // overridden in PersistenceUtilities
     return null;
   }
-
 
   /**
    * Creates a reconnection policy for a given session.
@@ -217,9 +211,8 @@ public class DbUtilities {
     };
   }
 
-
   /**
-   * Performs any clean up when a remote user session is closed.
+   * Performs any cleanup when a remote user session is closed.
    *
    * @param remoteSession the remote session
    */
@@ -227,14 +220,13 @@ public class DbUtilities {
     // the default does nothing
   }
 
-
   /**
    * Adds a session to a session group.<br>
    * Creates a new group if the session with the given groupId does not belong to a group yet.
    *
    * @param session the session to add to a group
    * @param sessionGroupId the session ID or session group ID to group with
-   * @param fromRemote true if initiated from remote client
+   * @param fromRemote true if initiated from the remote client
    */
   public void addToSessionGroup(Db session, int sessionGroupId, boolean fromRemote) {
     if (sessionGroupId <= 0) {
@@ -276,9 +268,8 @@ public class DbUtilities {
     }
   }
 
-
   /**
-   * Close session groups if session is a root session of a group.
+   * Close session groups if the session is a root session of a group.
    *
    * @param session the closing session
    */
@@ -297,7 +288,6 @@ public class DbUtilities {
       }
     }
   }
-
 
   /**
    * Applies the given backend configuration to properties.
@@ -343,7 +333,7 @@ public class DbUtilities {
    * @param txNumber the transaction number
    */
   public void notifyRollback(Db session, long txNumber) {
-    // nothing to do
+    ModificationTracker.getInstance().rollbackModification(session);
   }
 
   /**
@@ -378,10 +368,9 @@ public class DbUtilities {
   }
 
 
-
   /**
    * Converts a resultset to a list of DTOs.<br>
-   * Works for builder- and setter pattern and all registered {@link DataType}s.<br>
+   * Works for the builder- and setter pattern and all registered {@link DataType}s.<br>
    * Constructor pattern works for records, but not for classes, since in Java the parameters are unnamed.
    * <p>
    * For the builder pattern see the DTO wurblet.<br>
@@ -389,7 +378,7 @@ public class DbUtilities {
    * For the record pattern the canonical constructor is used.
    * <p>
    * The method- and columnnames are matched case-insensitive with all underscores removed.<br>
-   * For primitive members of the DTO class the result set must not contain null values, of course.
+   * For primitive members of the DTO-class the result set must not contain null values, of course.
    *
    * @param rs the resultset
    * @param clazz the DTO class
@@ -408,7 +397,7 @@ public class DbUtilities {
     }
 
     String[] columnNames;                                         // converted column names
-    Method builderMethod;                                         // static method to create a builder, if builder pattern is used
+    Method builderMethod;                                         // static method to create a builder, if the builder pattern is used
     Class<?> builderClass;                                        // the class of the builder
     int columnCount = rs.getColumnCount();                        // number of result columns
     List<T> dtos = new ArrayList<>();                             // returned list of DTOs
@@ -462,7 +451,7 @@ public class DbUtilities {
       }
     }
 
-    // check for builder pattern (see DTO.wrbl)
+    // check for the builder pattern (see DTO.wrbl)
     // This is even possible for records!
     try {
       builderMethod = clazz.getDeclaredMethod("builder");
@@ -544,6 +533,7 @@ public class DbUtilities {
 
     return dtos;
   }
+
 
   private String normalizeColumnName(String name) {
     return name.replace("_", "").toLowerCase(Locale.ROOT); // remove underscores and convert to lowercase
