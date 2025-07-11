@@ -1398,6 +1398,7 @@ public class Db implements Session, Cloneable {
    *
    * @return the current transaction counter, 0 if no transaction in progress
    */
+  @Override
   public long getTxNumber()  {
     return transaction == null ? 0 : transaction.getTxNumber();
   }
