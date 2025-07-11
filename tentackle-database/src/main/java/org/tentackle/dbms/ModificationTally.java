@@ -41,15 +41,29 @@ public class ModificationTally {
    * Allows correction of the pending count when a transaction is rolled back.
    */
   private static class SessionCount {
+    private long txNumber;
     private long count;
 
-    private void increment() {
-      ++count;
+    private SessionCount(long txNumber) {
+      this.txNumber = txNumber;
+    }
+
+    private void count(long txNumber) {
+      if (txNumber == this.txNumber) {
+        ++count;
+      }
+      else {
+        // another transaction: the last one was committed, obviously.
+        // switch to the new tx and restart the counter.
+        this.txNumber = txNumber;
+        count = 1;
+      }
     }
 
     private long get() {
       return count;
     }
+
   }
 
   private final DbModificationTracker tracker;            // the mod tracker
@@ -122,7 +136,8 @@ public class ModificationTally {
     if (!tracker.isLocalClientMode()) {
       session = getEffectiveSession(session);
       if (session.isTxRunning()) {
-        sessionsInTx.computeIfAbsent(session, _ -> new SessionCount()).increment();
+        long txNumber = session.getTxNumber();
+        sessionsInTx.computeIfAbsent(session, _ -> new SessionCount(txNumber)).count(txNumber);
       }
     }
     ++pendingCount;
@@ -139,7 +154,7 @@ public class ModificationTally {
     if (!tracker.isLocalClientMode()) {
       SessionCount sessionCount = sessionsInTx.remove(getEffectiveSession(session));
       if (sessionCount != null) {
-        // adjust the pending count since the modifications for this session were rolled back
+        // adjust the pending count since the modifications for the last transaction of this session were rolled back
         pendingCount -= sessionCount.get();
       }
     }

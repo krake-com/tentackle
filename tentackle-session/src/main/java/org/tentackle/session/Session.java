@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.session;
 
 import org.tentackle.misc.Provider;
@@ -43,7 +42,7 @@ public interface Session extends Comparable<Session>, AutoCloseable {
   /**
    * Gets the session used by the current thread.<br>
    *
-   * @return the session, null if current thread is not using a session
+   * @return the session, null if the current thread is not using a session
    */
   static Session getCurrentSession() {
     return SessionThreadLocalHolder.TL_SESSION.get();
@@ -62,7 +61,7 @@ public interface Session extends Comparable<Session>, AutoCloseable {
   /**
    * Asserts that a thread-local session is set.<br>
    *
-   * @throws PersistenceException if thread-local session is null
+   * @throws PersistenceException if the thread-local session is null
    */
   static void assertCurrentSessionValid() {
     getSession();
@@ -72,7 +71,7 @@ public interface Session extends Comparable<Session>, AutoCloseable {
    * Gets the thread-local session.<br>
    *
    * @return the session, never null
-   * @throws PersistenceException if thread-local session is null
+   * @throws PersistenceException if the thread-local session is null
    */
   static Session getSession() {
     Session session = getCurrentSession();
@@ -113,7 +112,7 @@ public interface Session extends Comparable<Session>, AutoCloseable {
   }
 
   /**
-   * Applies this session to a session dependable object.<br>
+   * Applies this session to a session-dependable object.<br>
    * The method must invoke <code>obj.setSession()</code> only if the session really differs.
    * This prevents infinite loops in object circular references.
    *
@@ -214,7 +213,7 @@ public interface Session extends Comparable<Session>, AutoCloseable {
    * If the session is closed, a PersistenceException is thrown.<br>
    * The cloned session will always be non-grouped.
    *
-   * @param sessionName the name of the cloned session, null if same as this session
+   * @param sessionName the name of the cloned session, null if the same as this session
    * @return the cloned session
    */
   Session clone(String sessionName);
@@ -242,7 +241,7 @@ public interface Session extends Comparable<Session>, AutoCloseable {
    * does not correspond to the values at the effective beginning of the transaction,
    * a {@link PersistenceException} is thrown.
    *
-   * @param txName is the optional transaction name, null if none
+   * @param txName is the optional transaction name, null for none
    * @param transactionIsolation the transaction isolation level, null or {@link TransactionIsolation#DEFAULT} if default
    * @param transactionWritability the transaction writabilty, null or {@link TransactionWritability#DEFAULT} if default
    *
@@ -254,7 +253,7 @@ public interface Session extends Comparable<Session>, AutoCloseable {
    * Starts a transaction.<br>
    * Does nothing if a transaction is already running!
    *
-   * @param txName is the optional transaction name, null if none
+   * @param txName is the optional transaction name, null for none
    *
    * @return the tx-voucher, 0 if no tx begun
    */
@@ -307,10 +306,19 @@ public interface Session extends Comparable<Session>, AutoCloseable {
   /**
    * Gets the transaction name if a tx is currently running.
    *
-   * @return the tx name, null if none or no tx running.
+   * @return the tx name, null for none or no tx running.
    * @see #isTxRunning()
    */
   String getTxName();
+
+  /**
+   * Gets the current transaction number.<br>
+   * Tx numbers are unique per session.
+   *
+   * @return the current transaction number, invalid if no transaction is in progress
+   * @see #isTxRunning()
+   */
+  long getTxNumber();
 
   /**
    * Runs code within a transaction.
@@ -405,7 +413,7 @@ public interface Session extends Comparable<Session>, AutoCloseable {
   int getInstanceNumber();
 
   /**
-   * Sets the exclusive owner thread. <p> Allows to detect other threads
+   * Sets the exclusive owner thread. <p> Allows detecting other threads
    * accidentally using this session.
    *
    * @param ownerThread the owner thread, null to clear
@@ -420,7 +428,7 @@ public interface Session extends Comparable<Session>, AutoCloseable {
   Thread getOwnerThread();
 
   /**
-   * Sets the session's alive state.
+   * Sets the session's alive-state.
    *
    * @param alive is true to signal it's alive, false to clear
    */
@@ -435,8 +443,8 @@ public interface Session extends Comparable<Session>, AutoCloseable {
   boolean isAlive();
 
   /**
-   * Sets the auto keep alive interval.<br>
-   * If set, the session will be setAlive every keepAliveInterval milliseconds
+   * Sets the auto keep-alive interval.<br>
+   * If set, the session will be setAlive all keepAliveInterval milliseconds
    * by the {@link SessionKeepAliveDaemon}.
    * Useful for remote sessions to prevent them from being closed by
    * the remote server due to timeout.
@@ -447,7 +455,7 @@ public interface Session extends Comparable<Session>, AutoCloseable {
 
 
   /**
-   * Gets the auto keep alive interval.
+   * Gets the auto keep-alive interval.
    *
    * @return the interval in ms, 0 if disabled
    */
@@ -470,7 +478,7 @@ public interface Session extends Comparable<Session>, AutoCloseable {
   /**
    * Gets the session's state.
    *
-   * @return true if session is open, else false
+   * @return true if the session is open, else false
    */
   boolean isOpen();
 
@@ -490,7 +498,7 @@ public interface Session extends Comparable<Session>, AutoCloseable {
    * Gets the remote session.
    *
    * @return the remote session
-   * @throws PersistenceException if session is not remote
+   * @throws PersistenceException if the session is not remote
    * @see #isRemote()
    */
   RemoteSession getRemoteSession();
@@ -504,7 +512,7 @@ public interface Session extends Comparable<Session>, AutoCloseable {
 
   /**
    * Gets the dispatcher for this session.<br>
-   * The dispatcher can be used to submit asynchronous tasks in a serial manner.
+   * The dispatcher can be used to submit asynchronous tasks serially.
    * The returned dispatcher is configured to shut down if idle for a given timeout.
    *
    * @return the dispatcher
@@ -521,7 +529,7 @@ public interface Session extends Comparable<Session>, AutoCloseable {
    * @param <T> the value's type
    * @param key the property key
    * @param value the property value
-   * @return the old value, null if key is new
+   * @return the old value, null if the key is new
    */
   <T extends Serializable> T setProperty(String key, T value);
 
@@ -535,17 +543,17 @@ public interface Session extends Comparable<Session>, AutoCloseable {
   <T extends Serializable> T getProperty(String key);
 
   /**
-   * Registers a post commit.<br>
-   * Post commits are invoked <em>after</em> the successful physical commit of a transaction.
-   * They must be registered from within a transactional method, i.e. a transaction must be running.<br>
+   * Registers a post-commit.<br>
+   * Post-commits are invoked <em>after</em> the successful physical commit of a transaction.
+   * They must be registered from within a transactional method, i.e., a transaction must be running.<br>
    * They are executed in reverse order of their registration, which is the expected behavior for
    * nested transactions.<br>
-   * Post commits are intended for non-transactional purposes, such as firing events. Any attempt
-   * to register a post commit directly or indirectly from within another post commit will throw a
+   * Post-commits are intended for non-transactional purposes, such as firing events. Any attempt
+   * to register a post-commit directly or indirectly from within another post-commit will throw a
    * {@link PersistenceException}.<br>
-   * Notice that post commits are executed in the same JVM they were registered.
+   * Notice that post-commits are executed in the same JVM they were registered.
    *
-   * @param postCommit the post commit
+   * @param postCommit the post-commit
    */
   void postCommit(Consumer<Session> postCommit);
 
