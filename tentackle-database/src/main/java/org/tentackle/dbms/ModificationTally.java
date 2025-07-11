@@ -60,8 +60,10 @@ public class ModificationTally {
       }
     }
 
-    private long get() {
-      return count;
+    private long get(long txNumber) {
+      // the count is only valid if it belongs to the transaction rolled back.
+      // Case: tx1 caused counts and commits, tx2 does not cause any counts but is rolled back.
+      return this.txNumber == txNumber ? count : 0;
     }
 
   }
@@ -148,14 +150,15 @@ public class ModificationTally {
    * Avoids invalidation of the associated caches when a transaction
    * is rolled back that caused the whole count.
    *
-   * @param session the session rolled back
+   * @param session the session
+   * @param txNumber the transaction number
    */
-  public synchronized void rollbackPending(Session session) {
+  public synchronized void rollbackPending(Session session, long txNumber) {
     if (!tracker.isLocalClientMode()) {
       SessionCount sessionCount = sessionsInTx.remove(getEffectiveSession(session));
       if (sessionCount != null) {
         // adjust the pending count since the modifications for the last transaction of this session were rolled back
-        pendingCount -= sessionCount.get();
+        pendingCount -= sessionCount.get(txNumber);
       }
     }
   }

@@ -333,7 +333,7 @@ public class DbUtilities {
    * @param txNumber the transaction number
    */
   public void notifyRollback(Db session, long txNumber) {
-    ModificationTracker.getInstance().rollbackModification(session);
+    ModificationTracker.getInstance().rollbackModification(session, txNumber);
   }
 
   /**

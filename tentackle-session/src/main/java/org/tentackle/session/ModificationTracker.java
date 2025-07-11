@@ -122,9 +122,10 @@ public interface ModificationTracker extends SessionTaskDispatcher, ExclusiveSes
    * Invoked whenever a transaction is rolled back.<br>
    * Allows the tracker to adjust the pending counts.
    *
-   * @param session the session rolled back
+   * @param session the session
+   * @param txNumber the transaction number
    */
-  void rollbackModification(Session session);
+  void rollbackModification(Session session, long txNumber);
 
   /**
    * Registers a pure runnable to be executed if the pdo tracker is terminated
