@@ -543,6 +543,7 @@ public class Db implements Session, Cloneable {
   private boolean logModificationDeferred;                    // true if log to memory rather than dbms
   private List<ModificationLog> modificationLogList;          // in-memory modification-log for current transaction
   private DbTransaction transaction;                          // the running transaction
+  private Map<String, Object> transactionProperties;          // application specific properties
   private Deque<Consumer<Session>> postCommits;               // post commits
   private boolean postCommitsRunning;                         // flag to inhibit registering post commits while running them
   private int immediatelyRolledBack;                          // txLevel > 0 if a transaction has been rolled back by rollbackImmediately (only for local Db)
@@ -1455,6 +1456,42 @@ public class Db implements Session, Cloneable {
     return immediatelyRolledBack;
   }
 
+  /**
+   * Sets an application-specific transaction property.<br>
+   * For local sessions, properties can be set while a transaction is running.
+   * The properties are cleared when a new transaction begins but survive
+   * a commit or rollback. Thus, they can be queried before or after the transaction
+   * has ended, for example, by a {@link CommitTxRunnable} or a post-commit.
+   *
+   * @param key the key
+   * @param value the value
+   * @return the old value, null if none
+   */
+  public synchronized Object setTransactionProperty(String key, Object value) {
+    assertNotRemote();
+    assertTxRunning();
+    if (transactionProperties == null) {
+      transactionProperties = new HashMap<>();
+    }
+    return transactionProperties.put(key, value);
+  }
+
+  /**
+   * Gets a transaction property.
+   *
+   * @param key the key
+   * @return the value, null no such key
+   */
+  public synchronized Object getTransactionProperty(String key) {
+    return transactionProperties == null ? null : transactionProperties.get(key);
+  }
+
+  /**
+   * Clears all transaction properties.
+   */
+  public synchronized void clearTransactionProperties() {
+    transactionProperties = null;
+  }
 
   @Override
   public <T, E extends Exception> T transaction(String txName, Provider<T, E> txe) throws E {
@@ -1575,7 +1612,7 @@ public class Db implements Session, Cloneable {
     else {
 
       alive = true;
-
+      transactionProperties = null;
       immediatelyRolledBack = 0;  // the first begin clears all pending immediate rollbacks() ...
 
       if (setAutoCommit(c -> {

@@ -333,7 +333,10 @@ public class DbUtilities {
    * @param txNumber the transaction number
    */
   public void notifyRollback(Db session, long txNumber) {
-    ModificationTracker.getInstance().rollbackModification(session, txNumber);
+    if (Boolean.TRUE.equals(session.getTransactionProperty(ModificationTally.SESSION_COUNT_PENDING))) {
+      // may be costly if a lot of counters are registered
+      ModificationTracker.getInstance().rollbackModification(session, txNumber);
+    }
   }
 
   /**
