@@ -37,6 +37,12 @@ public class ModificationTally {
   private static final Logger LOGGER = Logger.get(ModificationTally.class);
 
   /**
+   * Property to flag a session that it performed a countPending and must be
+   * checked after rollback.
+   */
+  public static final String SESSION_COUNT_PENDING = "ModificationTally_Session";
+
+  /**
    * Simple non-atomic counter for modifications within a transaction of a session.<br>
    * Allows correction of the pending count when a transaction is rolled back.
    */
@@ -135,11 +141,15 @@ public class ModificationTally {
    * @param session the session persisting the modification, null if thread-local session
    */
   public synchronized void countPending(Session session) {
+    // this method is only invoked for local sessions, never remote
     if (!tracker.isLocalClientMode()) {
       session = getEffectiveSession(session);
       if (session.isTxRunning()) {
         long txNumber = session.getTxNumber();
-        sessionsInTx.computeIfAbsent(session, _ -> new SessionCount(txNumber)).count(txNumber);
+        sessionsInTx.computeIfAbsent(session, s -> {
+          ((Db) s).setTransactionProperty(SESSION_COUNT_PENDING, Boolean.TRUE);
+          return new SessionCount(txNumber);
+        }).count(txNumber);
       }
     }
     ++pendingCount;
