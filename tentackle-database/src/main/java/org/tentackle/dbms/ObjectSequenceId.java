@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.dbms;
 
 import org.tentackle.session.PersistenceException;
@@ -24,12 +23,10 @@ import org.tentackle.session.PersistenceException;
 import java.util.HashMap;
 import java.util.Map;
 
-
-
 /**
  * An {@link IdSource} to create unique object IDs from a database sequence.
  * <p>
- * To reduce the number of roundtrips the sequence is multiplied by a sequence-multiplier and a
+ * To reduce the number of roundtrips, the sequence is multiplied by a sequence-multiplier and a
  * counter just incremented within that range.
  * <p>
  * The creation of the sequence is backend-specific. For example, postgres expects:
@@ -38,6 +35,7 @@ import java.util.Map;
  * </pre>
  *
  * @author harald
+ * @see ObjectId
  */
 public class ObjectSequenceId extends AbstractIdSource {
 
@@ -67,10 +65,9 @@ public class ObjectSequenceId extends AbstractIdSource {
   private static final StatementId SELECT_ID = new StatementId();
 
 
-
   /**
    * Gets a sequence id source.<br>
-   * Id sources are unique by name.
+   * ID sources are unique by name.
    *
    * @param name the unique sequence name
    * @param sequenceMultiplier the sequence multiplier
@@ -97,7 +94,7 @@ public class ObjectSequenceId extends AbstractIdSource {
 
   /**
    * Gets a sequence id source.<br>
-   * Id sources are unique by name.
+   * ID sources are unique by name.
    *
    * @param name the unique sequence name
    * @return the ID source
@@ -105,8 +102,6 @@ public class ObjectSequenceId extends AbstractIdSource {
   public static synchronized ObjectSequenceId get(String name) {
     return get(name, SEQUENCE_MULTIPLIER, GLOBAL_MULTIPLIER);
   }
-
-
 
 
   /**
@@ -120,7 +115,7 @@ public class ObjectSequenceId extends AbstractIdSource {
   private final int globalMultiplier;
 
   /**
-   * IDs created for current sequence.
+   * IDs created for the current sequence.
    */
   private int idCount;
 
@@ -145,13 +140,11 @@ public class ObjectSequenceId extends AbstractIdSource {
     idCount = sequenceMultiplier; // initially consumed -> force select
   }
 
-
   @Override
   public boolean isLockFree() {
     // database sequences are not part of transactions and therefore non-blocking
     return true;
   }
-
 
   @Override
   public synchronized long nextId(Db db) {
@@ -159,7 +152,7 @@ public class ObjectSequenceId extends AbstractIdSource {
     assertDbNotRemote(db);
 
     if (idCount >= sequenceMultiplier) {
-      // get new offset from sequence
+      // get the new offset from the sequence
       try {
         PreparedStatementWrapper stmt = db.getPreparedStatement(new StatementKey(SELECT_ID, getClass()), false,
                                                                 b -> b.sqlNextFromSequence(getName())

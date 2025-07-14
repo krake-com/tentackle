@@ -24,8 +24,13 @@ import java.io.Serializable;
  * A Runnable that gets invoked before a physical commit.<br>
  * The commit runnable is {@link Serializable} and transferred to
  * the server, if registered at a remote client.
+ * <p>
+ * This is a low-level feature accessible from the persistence layer only,
+ * which will probably be removed with the release of Tentackle TRIP.<br>
+ * Application-level domain-logic should use pre-commits instead.
  *
  * @see Db#registerCommitTxRunnable(CommitTxRunnable)
+ * @see org.tentackle.session.Session#preCommit(java.util.function.Consumer)
  */
 @FunctionalInterface
 public interface CommitTxRunnable extends Serializable {
