@@ -37,10 +37,11 @@ public class ModificationTally {
   private static final Logger LOGGER = Logger.get(ModificationTally.class);
 
   /**
-   * Property to flag a session that it performed a countPending and must be
-   * checked after rollback.
+   * Transaction property to rollback pending counts.<br>
+   * Set to {@link Boolean#TRUE} when the session performed a countPending within transaction and
+   * that pending count must be adjusted when the transaction is rolled back.
    */
-  public static final String SESSION_COUNT_PENDING = "ModificationTally_Session";
+  public static final Object SESSION_COUNT_PENDING = ModificationTally.class;
 
   /**
    * Simple non-atomic counter for modifications within a transaction of a session.<br>

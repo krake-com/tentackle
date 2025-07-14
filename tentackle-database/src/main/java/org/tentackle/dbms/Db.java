@@ -543,7 +543,7 @@ public class Db implements Session, Cloneable {
   private boolean logModificationDeferred;                    // true if log to memory rather than dbms
   private List<ModificationLog> modificationLogList;          // in-memory modification-log for current transaction
   private DbTransaction transaction;                          // the running transaction
-  private Map<String, Object> transactionProperties;          // application specific properties
+  private Map<Object, Object> transactionProperties;          // application specific properties
   private Deque<Consumer<Session>> postCommits;               // post commits
   private boolean postCommitsRunning;                         // flag to inhibit registering post commits while running them
   private int immediatelyRolledBack;                          // txLevel > 0 if a transaction has been rolled back by rollbackImmediately (only for local Db)
@@ -1467,7 +1467,7 @@ public class Db implements Session, Cloneable {
    * @param value the value
    * @return the old value, null if none
    */
-  public synchronized Object setTransactionProperty(String key, Object value) {
+  public synchronized Object setTransactionProperty(Object key, Object value) {
     assertNotRemote();
     assertTxRunning();
     if (transactionProperties == null) {
@@ -1482,7 +1482,7 @@ public class Db implements Session, Cloneable {
    * @param key the key
    * @return the value, null no such key
    */
-  public synchronized Object getTransactionProperty(String key) {
+  public synchronized Object getTransactionProperty(Object key) {
     return transactionProperties == null ? null : transactionProperties.get(key);
   }
 
