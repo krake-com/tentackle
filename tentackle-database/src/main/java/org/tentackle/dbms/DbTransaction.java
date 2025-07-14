@@ -384,7 +384,7 @@ public class DbTransaction {
    * @return the runnables, null or empty if none
    */
   public Collection<CommitTxRunnable> getCommitTxRunnables() {
-    return commitTxRunnables.values();
+    return commitTxRunnables == null ? null : commitTxRunnables.values();
   }
 
 
@@ -423,7 +423,7 @@ public class DbTransaction {
    * @return the runnables, null or empty if none
    */
   public Collection<RollbackTxRunnable> getRollbackTxRunnables() {
-    return rollbackTxRunnables.values();
+    return rollbackTxRunnables == null ? null : rollbackTxRunnables.values();
   }
 
 

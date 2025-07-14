@@ -367,6 +367,28 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   }
 
   /**
+   * Invokes the pre-commits, if any.<br>
+   * Useful for special test scenarios, since tests are usually rolled back.
+   * Must be invoked explicitly from within the test.
+   */
+  protected void runPreCommits() {
+    if (session instanceof Db db) {
+      db.runPreCommits();
+    }
+  }
+
+  /**
+   * Invokes the pre-commits, if any.<br>
+   * Useful for special test scenarios, since tests are usually rolled back.
+   * Must be invoked explicitly from within the test.
+   */
+  protected void runPostCommits() {
+    if (session instanceof Db db) {
+      db.runPostCommits();
+    }
+  }
+
+  /**
    * Invokes the {@link CommitTxRunnable}s, if any.<br>
    * Useful for special test scenarios.
    * Must be invoked explicitly from within the test.
