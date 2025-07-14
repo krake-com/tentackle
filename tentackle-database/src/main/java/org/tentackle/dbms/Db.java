@@ -545,7 +545,9 @@ public class Db implements Session, Cloneable {
   private DbTransaction transaction;                          // the running transaction
   private Map<Object, Object> transactionProperties;          // application specific properties
   private Deque<Consumer<Session>> postCommits;               // post commits
-  private boolean postCommitsRunning;                         // flag to inhibit registering post commits while running them
+  private boolean postCommitsRunning;                         // flag to inhibit registering post-commits while running them
+  private Deque<Consumer<Session>> preCommits;                // pre commits
+  private boolean preCommitsRunning;                          // flag to inhibit registering pre-commits while running them
   private int immediatelyRolledBack;                          // txLevel > 0 if a transaction has been rolled back by rollbackImmediately (only for local Db)
   private volatile boolean alive;                             // true = connection is still in use, false = connection has timed out
   private long keepAliveInterval;                             // the auto keep alive interval in ms, 0 = no keep alive
@@ -1919,9 +1921,7 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Runs the post commits in reverse order of registration.<br>
-   * Post commits are registered for the session, not the transaction,
-   * i.e. they are not transferred via RMI to the middle tier like {@link CommitTxRunnable}s or {@link RollbackTxRunnable}s.
+   * Runs the post-commits in reverse order of their registration.
    */
   protected void runPostCommits() {
     try {
@@ -1935,6 +1935,41 @@ public class Db implements Session, Cloneable {
     }
     finally {
       postCommitsRunning = false;
+    }
+  }
+
+
+  @Override
+  public void preCommit(Consumer<Session> preCommit) {
+    if (isTxRunning()) {
+      if (preCommitsRunning) {
+        throw new PersistenceException(this, "pre-commits cannot be registered from within another pre-commit");
+      }
+      if (preCommits == null) {
+        preCommits = new ArrayDeque<>();
+      }
+      preCommits.push(preCommit);
+    }
+    else {
+      throw new PersistenceException(this, "pre-commits can only be registered from within a running transaction");
+    }
+  }
+
+  /**
+   * Runs the pre-commits in reverse order of their registration.
+   */
+  protected void runPreCommits() {
+    try {
+      preCommitsRunning = true;
+      if (preCommits != null) {
+        for (Consumer<Session> preCommit : preCommits) {
+          preCommit.accept(this);
+        }
+        preCommits = null;
+      }
+    }
+    finally {
+      preCommitsRunning = false;
     }
   }
 
@@ -2103,6 +2138,7 @@ public class Db implements Session, Cloneable {
           if (autoCommit) {
             throw new PersistenceException(this, "no client transaction running");
           }
+          runPreCommits();
           committed = resources.rdel.commit(txVoucher);
           if (committed) {
             autoCommit = true;   // now outside tx again
@@ -2133,6 +2169,7 @@ public class Db implements Session, Cloneable {
           if (transaction.isTxLevelValid() && transaction.getTxLevel() != 1) {
             LOGGER.warning(this + ": txLevel=" + transaction.getTxLevel() + ", should be 1");
           }
+          runPreCommits();
           transaction.commit();
           logCommitTx();
           setAutoCommit(null);    // according to the specs: this will commit!
@@ -2195,6 +2232,7 @@ public class Db implements Session, Cloneable {
           if (rolledBack) {
             autoCommit = true;   // now outside tx again
             postCommits = null;
+            preCommits = null;
           }
           else {
             throw new PersistenceException(this, "no server transaction running");
@@ -2248,6 +2286,7 @@ public class Db implements Session, Cloneable {
             long txNo = getTxNumber();
             transaction = null;
             postCommits = null;
+            preCommits = null;
             rolledBack = true;
             DbUtilities.getInstance().notifyRollback(this, txNo);
           }
@@ -2299,6 +2338,7 @@ public class Db implements Session, Cloneable {
         }
         transaction = null;
         postCommits = null;
+        preCommits = null;
         // remember the txLevel for pending rollback()s, if any will arrive from the application
         immediatelyRolledBack = currentTxLevel;
       }
@@ -2309,7 +2349,7 @@ public class Db implements Session, Cloneable {
       try {
         ManagedConnection c = resources.con;
         if (c != null && !c.isClosed()) {
-          // check low level transaction state
+          // check low-level transaction state
           boolean connectionInTransaction = false;
           try {
             connectionInTransaction = c.getConnection().getAutoCommit();
@@ -2887,6 +2927,8 @@ public class Db implements Session, Cloneable {
 
     postCommits = null;
     postCommitsRunning = false;
+    preCommits = null;
+    preCommitsRunning = false;
     ownerThread = null;
     autoCommit = true;
 

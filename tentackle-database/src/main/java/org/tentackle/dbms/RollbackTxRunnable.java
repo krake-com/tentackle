@@ -24,6 +24,9 @@ import java.io.Serializable;
  * A Runnable that gets invoked before a physical rollback.<br>
  * The rollback runnable is {@link Serializable} and transferred to
  * the server, if registered at a remote client.
+ * <p>
+ * This is a low-level feature accessible from the persistence layer only,
+ * which will probably be removed with the release of Tentackle TRIP.
  *
  * @see Db#registerRollbackTxRunnable(RollbackTxRunnable)
  */

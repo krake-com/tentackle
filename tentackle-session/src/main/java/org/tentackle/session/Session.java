@@ -557,4 +557,20 @@ public interface Session extends Comparable<Session>, AutoCloseable {
    */
   void postCommit(Consumer<Session> postCommit);
 
+  /**
+   * Registers a pre-commit.<br>
+   * Pre-commits are invoked immediately <em>before</em> the physical commit of a transaction.
+   * They must be registered from within a transactional method, i.e., a transaction must be running.<br>
+   * They are executed in reverse order of their registration, which is the expected behavior for
+   * nested transactions.<br>
+   * Pre-commits are intended for final computations that must be performed at the end of a
+   * transaction immediately before committing.
+   * Any attempt to register a pre-commit directly or indirectly from within another pre-commit will throw a
+   * {@link PersistenceException}.<br>
+   * Notice that pre-commits are executed in the same JVM they were registered.
+   *
+   * @param preCommit the pre-commit
+   */
+  void preCommit(Consumer<Session> preCommit);
+
 }

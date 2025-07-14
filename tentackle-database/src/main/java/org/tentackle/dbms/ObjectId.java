@@ -16,23 +16,18 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.dbms;
 
 import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.Backend;
 
-import java.io.Serial;
-
 import static org.tentackle.common.Constants.CN_ID;
-
-
 
 /**
  * An {@link IdSource} to create unique object IDs.
  * <p>
- * Only used if backend does not support sequences.<br>
- * Provides some degree of optimization to update the table only once at end of transaction.
+ * Only used if the backend does not support sequences.<br>
+ * Provides some degree of optimization to update the table only once at the end of the transaction.
  *
  * @author harald
  * @see ObjectSequenceId
@@ -46,8 +41,7 @@ public class ObjectId extends AbstractIdSource {
 
   private long lastId;                // last ID
   private long lastTxCount;           // for optimization within larger transactions
-  private boolean registerTxPending;  // true if we need to register final update in Db
-
+  private boolean registerTxPending;  // true if we need to register the final update as a pre-commit
 
   /**
    * Creates an object id.
@@ -59,14 +53,11 @@ public class ObjectId extends AbstractIdSource {
   }
 
 
-
-
   @Override
   public boolean isLockFree() {
     // becomes part of transaction and therefore is not lock-free
     return false;
   }
-
 
   @Override
   public synchronized long nextId(Db db) {
@@ -116,21 +107,14 @@ public class ObjectId extends AbstractIdSource {
         }
         lastId++;
         if (registerTxPending) {
-          // register final update for end of transaction
-          db.registerCommitTxRunnable(new CommitTxRunnable() {
-            @Serial
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public void commit(Db db) {
-              PreparedStatementWrapper updateStatement = db.getPreparedStatement(new StatementKey(UPDATE_ID, getClass()), false,
-                b -> Backend.SQL_UPDATE + getName() + Backend.SQL_SET + CN_ID + Backend.SQL_EQUAL_PAR
-              );
-              updateStatement.setLong(1, lastId);   // set current value of ID
-              assertOneRowAffected(db, updateStatement.executeUpdate());
-            }
+          // register the final update for the end of transaction
+          db.preCommit(_ -> {
+            PreparedStatementWrapper updateStatement = db.getPreparedStatement(new StatementKey(UPDATE_ID, getClass()), false,
+                                                                               b -> Backend.SQL_UPDATE + getName() + Backend.SQL_SET + CN_ID + Backend.SQL_EQUAL_PAR
+            );
+            updateStatement.setLong(1, lastId);   // set the current value of ID
+            assertOneRowAffected(db, updateStatement.executeUpdate());
           });
-
           registerTxPending = false;
         }
 
