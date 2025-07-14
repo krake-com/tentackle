@@ -1923,7 +1923,7 @@ public class Db implements Session, Cloneable {
   /**
    * Runs the post-commits in reverse order of their registration.
    */
-  protected void runPostCommits() {
+  public void runPostCommits() {
     try {
       postCommitsRunning = true;
       if (postCommits != null) {
@@ -1958,7 +1958,7 @@ public class Db implements Session, Cloneable {
   /**
    * Runs the pre-commits in reverse order of their registration.
    */
-  protected void runPreCommits() {
+  public void runPreCommits() {
     try {
       preCommitsRunning = true;
       if (preCommits != null) {
