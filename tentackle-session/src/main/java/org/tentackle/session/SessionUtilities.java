@@ -23,7 +23,6 @@ import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.ServiceFinder;
 import org.tentackle.common.StringHelper;
-import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.misc.Identifiable;
 
 import java.rmi.NoSuchObjectException;
@@ -239,32 +238,6 @@ public class SessionUtilities {
   public synchronized void keepAliveIntervalChanged(Session session) {
     startKeepAliveDaemonIfNotRunning();
     keepAliveDaemon.keepAliveIntervalChanged(session);
-  }
-
-
-  /**
-   * Inspects an expiration set and determines whether at least one object has been removed.
-   *
-   * @param lastSerial the last known tableserial, &le;0 if unknown
-   * @param expireSet the expiration set
-   * @param maxSerial the current tableserial
-   * @return true if some object removed
-   */
-  public boolean isSomeRemoved(long lastSerial, List<IdSerialTuple> expireSet, long maxSerial) {
-    // determine whether some objects have been removed or not
-    boolean someRemoved = false;
-    for (IdSerialTuple idSer: expireSet) {
-      if (lastSerial > 0 && idSer.getSerial() - lastSerial > 1) {
-        // gap in tableSerials or gap at start: delete() invoked at least once
-        someRemoved = true;
-        break;
-      }
-      lastSerial = idSer.getSerial();
-    }
-    if (maxSerial > lastSerial) {
-      someRemoved = true;  // no expired PDOs found or gap at end
-    }
-    return someRemoved;
   }
 
 

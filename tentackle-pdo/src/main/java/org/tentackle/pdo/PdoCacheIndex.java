@@ -16,26 +16,20 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.pdo;
 
 import org.tentackle.log.Logger;
 import org.tentackle.session.Session;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-
+import java.util.function.Consumer;
 
 /**
  * Cache index.<br>
- *
- * Holds the mapping of keys to objects.
+ * Holds the mapping of unique keys to PDOs.
  *
  * @param <T> the {@link PersistentDomainObject} type
  * @param <C> the {@link Comparable} type
@@ -44,475 +38,6 @@ import java.util.TreeMap;
 public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C extends Comparable<? super C>> {
 
   private static final Logger LOGGER = Logger.get(PdoCacheIndex.class);
-
-
-  private final String name;                    // symbolic name of the index
-  private final Map<CacheKey, T> cacheMap;      // map of cache indexes to PDOs
-  private final Set<CacheKey> missingSet;       // set of keys for missing PDOs (not in database)
-
-  private PdoCache<T> cache;                    // the associated cache, null if not already added
-  private long accessCount;                     // for statistics if fineLoggable
-  private long missCount;                       // number of cache-misses
-  private boolean inToString;                   // to avoid recursive calls (the object could be part of the toString() evaluation)
-
-
-  /**
-   * Create a new index.<br>
-   *
-   * @param name is the symbolic name of the index (for diagnostics only).
-   *  @param sorted true if cache will use TreeMap to allow sorted subsets, false for unsorted hashed
-   */
-  public PdoCacheIndex(String name, boolean sorted)  {
-    this.name = name;
-    cacheMap  = sorted ? new TreeMap<>() : new HashMap<>();
-    missingSet = new HashSet<>();
-  }
-
-  /**
-   * Create a new unsorted index.<br>
-   *
-   * @param name is the symbolic name of the index (for diagnostics only).
-   */
-  public PdoCacheIndex(String name) {
-    this(name, false);
-  }
-
-
-  /**
-   * Select an PersistentDomainObject by key from db.
-   * This method needs to be implemented for each index.
-   *
-   * @param context the domain context to select the object from
-   * @param key is the Comparable used to uniquely identify the object (can be null)
-   *
-   * @return the selected object or null if it does not exist.
-   */
-  public abstract T select(DomainContext context, C key);
-
-
-  /**
-   * Extracts the {@link Comparable} that uniquely identifies the object from that object.<br>
-   * This method needs to be implemented for each index.
-   *
-   * @param object is the object to extract the key from (never null)
-   *
-   * @return the {@link Comparable}, null if the object must not be added to the cache
-   *
-   */
-  public abstract C extract(T object);
-
-
-  /**
-   * Adds the key to the set of missing PDOs.
-   *
-   * @param ck the internal key
-   */
-  protected void addToMissing(CacheKey ck) {
-    missingSet.add(ck);
-  }
-
-  /**
-   * Removes the key from the set of missing PDOs.
-   *
-   * @param ck the internal key
-   */
-  protected void removeFromMissing(CacheKey ck) {
-    missingSet.remove(ck);
-  }
-
-  /**
-   * Returns whether key is known to belong to a missing PDO.
-   *
-   * @param ck the internal key
-   * @return true if known to be missing, false if unknown
-   */
-  protected boolean isMissing(CacheKey ck) {
-    return missingSet.contains(ck);
-  }
-
-  /**
-   * Clears all keys for missing PDOs.
-   */
-  protected void clearMissing() {
-    missingSet.clear();
-  }
-
-  /**
-   * maintain the link to the cache
-   * (package scope because implementation detail that cannot be changed)
-   *
-   * @param cache is the cache to assign this index to. null = remove index from cache
-   */
-  protected void assignCache(PdoCache<T> cache) {
-    if (cache != null)  {
-      if (this.cache != null) {
-        throw new PdoCacheException(this + " is already assigned to " + this.cache);
-      }
-    }
-    else  {
-      // clear assignment
-      if (this.cache == null) {
-        throw new PdoCacheException(this + " is not assigned to any cache");
-      }
-    }
-    this.cache = cache;
-  }
-
-
-  /**
-   * Checks if index is assigned to cache.
-   *
-   * @param cache the cache to check
-   * @return true if assigned
-   */
-  protected boolean isAssignedToCache(PdoCache<T> cache)  {
-    return this.cache == cache;
-  }
-
-
-
-  @Override
-  public String toString()  {
-    return "index '" + name + "'";
-  }
-
-
-  /**
-   * Clears the contents of the cache index.
-   */
-  protected void clear()  {
-    cacheMap.clear();
-    clearMissing();
-  }
-
-
-  /**
-   * Gets the number of objects in this index.
-   *
-   * @return the number of objects
-   */
-  protected int size()  {
-    return cacheMap.size();
-  }
-
-
-  /**
-   * Gets the cache index statistics as a printable string.
-   *
-   * @return the string for cache stats
-   */
-  protected String printStatistics()  {
-    int rate = (int)(100L - missCount * 100L / (accessCount == 0 ? 1 : accessCount));
-    return "size=" + size() + ", accesses=" + accessCount + ", misses=" + missCount + ", hit rate=" + rate + "%";
-  }
-
-
-  /**
-   * Clears the cache statistics.
-   */
-  protected void clearStatistics()  {
-    accessCount = 0;
-    missCount   = 0;
-  }
-
-
-
-  /**
-   * We can not be sure that the application did not alter an object which is already
-   * in cache in such a way that this would alter the ordering with respect to the
-   * cacheMap. Furthermore, the CacheKey might be a copy of a primitive type since
-   * it must have been converted to a Comparable (e.g. long -> Long).
-   * As a consequence, we MUST check every object retrieved from cache that
-   * its key has NOT been altered. If so, the complete cache MUST be invalidated
-   * (cause the ordering of the tree is corrupted in an unknown way).
-   * This is done in PdoCache.
-   */
-  private void assertKeyIsUnchanged(T object, CacheKey ck) {
-    // assert that key was not changed in object by application
-    CacheKey objck = new CacheKey(object.getPersistenceDelegate().getDomainContext(), extract(object));
-    if (objck.compareTo(ck) != 0) {
-      throw new PdoCacheException(object,
-                                  "modified key detected in " + this + " for " + object.toGenericString() +
-                                  ", expected='" + ck + "', found='" + objck + "'");
-    }
-  }
-
-
-  /**
-   * log invalid CacheKey.
-   */
-  private void logInvalidKey(Throwable t)  {
-    LOGGER.warning("illegal access to " + this, t);
-  }
-
-
-
-  /**
-   * Gets the PDO from cache by key.
-   *
-   * @param context the domain context
-   * @param key the Comparable that uniquely identifies the object
-   *
-   * @return the result holding the PDO and the internal cache key
-   */
-  protected CacheResult get(DomainContext context, C key) {
-
-    CacheKey ck;
-    try {
-      ck = new CacheKey(cache.processContext(context), key);
-    }
-    catch (PdoCacheException e)  {
-      // no need to invalidate the whole cache, but a hint to application prob
-      logInvalidKey(e);
-      return null;
-    }
-
-    T obj = cacheMap.get(ck);
-
-    accessCount++;
-    if (obj == null) {
-      missCount++;
-    }
-
-    LOGGER.finer(() -> this + (obj == null ? ": cache miss for '" : ": cache hit for '") + ck + "', " + printStatistics());
-
-    if (obj != null)  {
-      // this will throw an Exception and forces invalidation of the cache!
-      assertKeyIsUnchanged(obj, ck);
-    }
-
-    return new CacheResult(obj, ck);
-  }
-
-
-  /**
-   * Gets all objects maintained by this cache index.
-   *
-   * @param verifyKey true if the cache key should be verified
-   * @return the objects in a collection
-   */
-  protected List<T> getObjects(boolean verifyKey) {
-    List<T> col = new ArrayList<>(cacheMap.size());
-    // check keys for not changed
-    for (Map.Entry<CacheKey, T> entry: cacheMap.entrySet()) {
-      T object = entry.getValue();
-      if (verifyKey) {
-        assertKeyIsUnchanged(object, entry.getKey());
-      }
-      col.add(object);
-    }
-    return col;
-  }
-
-
-  /**
-   * Gets all objects maintained by this cache index.
-   *
-   * @return the objects in a collection
-   */
-  protected List<T> getObjects() {
-    return getObjects(true);
-  }
-
-
-  /**
-   * Gets a subset of objects.
-   *
-   * @param context the domain context
-   * @param fromKey the start of range (including)
-   * @param toKey the end of range (excluding)
-   * @return the objects with fromKey &le; object &lt; toKey.
-   */
-  protected List<T> getObjects(DomainContext context, C fromKey, C toKey) {
-
-    context = cache.processContext(context);
-
-    if (cacheMap instanceof TreeMap<?, ?>) {
-      CacheKey fromCk;
-      CacheKey toCk;
-
-      try {
-        fromCk = new CacheKey(context, fromKey);
-        toCk = new CacheKey(context, toKey);
-      }
-      catch (PdoCacheException e) {
-        logInvalidKey(e);
-        return Collections.emptyList();
-      }
-
-      Set<Map.Entry<CacheKey, T>> entries = ((TreeMap<CacheKey, T>) cacheMap).subMap(fromCk, toCk).entrySet();
-      List<T> list = new ArrayList<>();    // entries.size() will iterate to count size. too expensive!
-
-      for (Map.Entry<CacheKey, T> entry : entries) {
-        T object = entry.getValue();
-        assertKeyIsUnchanged(object, entry.getKey());
-        list.add(object);
-      }
-
-      return list;
-    }
-    else {
-      throw new PdoCacheException("cache must be sorted to support sub-mapping");
-    }
-  }
-
-
-  /**
-   * Returns whether the cache is readonly.
-   *
-   * @return true if readonly
-   */
-  protected boolean isReadOnly() {
-    return cache != null && cache.isReadOnly();
-  }
-
-
-  /**
-   * Process the PDO.<br>
-   * If cache is readonly, the context will be replaced
-   * by a session-thread-local context and the pdo will be
-   * made immutable.<br>
-   * If the context is a root context it will be replaced
-   * by the corresponding non-root context.
-   *
-   * @param pdo the PDO
-   */
-  protected void processPdo(T pdo) {
-    DomainContext context = pdo.getPersistenceDelegate().getDomainContext();
-    DomainContext processedContext = cache.processContext(context);
-    if (processedContext != context) {
-      pdo.getPersistenceDelegate().setDomainContextImmutable(false);   // for sure
-      pdo.getPersistenceDelegate().setDomainContext(processedContext);
-    }
-    if (isReadOnly()) {
-      pdo.getPersistenceDelegate().setFinallyImmutable();
-      pdo.getPersistenceDelegate().setDomainContextImmutable(true);
-      pdo.getPersistenceDelegate().setSessionImmutable(true);
-    }
-  }
-
-
-  /**
-   * Adds an object to the index.<br>
-   * Does not throw an exception if it is already in cache.
-   *
-   * @param object the object to append (never null)
-   *
-   * @return true if added, false if object already in index or key in object evaluated to null
-   */
-  protected boolean add(T object) {
-    processPdo(object);
-    try {
-      C keyValue = extract(object);
-      if (keyValue != null) {
-        return cacheMap.put(new CacheKey(object.getPersistenceDelegate().getDomainContext(), keyValue), object) == null;
-      }
-      return false;
-    }
-    catch (PdoCacheException e)  {
-      logInvalidKey(e);
-      return false;
-    }
-  }
-
-
-
-  /**
-   * Adds a unique object to the index.<br>
-   * Unique violations usually indicate an error in comparing
-   * contexts or that the context of a cached object was changed
-   * accidentally.
-   *
-   * @param object the object to append (never null)
-   */
-  protected void addUnique(T object) {
-    processPdo(object);
-    C keyValue = extract(object);
-    if (keyValue != null) {
-      CacheKey ck;
-      try {
-        ck = new CacheKey(object.getPersistenceDelegate().getDomainContext(), keyValue);
-      }
-      catch (PdoCacheException e) {
-        logInvalidKey(e);
-        return;   // don't add to index (but no reason to invalidate the cache)
-      }
-      if (cacheMap.put(ck, object) != null) {
-        throw new PdoCacheException(object,
-                                    "unique cache violation detected in " + this + " for " + object.toGenericString() +
-                                    ", key = " + ck);
-      }
-    }
-  }
-
-
-
-
-
-  /**
-   * Removes an object from this cache index.<br>
-   * Does not throw an exception if it not in cache.
-   * For use by PdoCache.remove() only.
-   *
-   * @param object the object to remove (never null)
-   *
-   * @return true if object removed
-   */
-  protected boolean remove(T object) {
-    try {
-      C key = extract(object);
-      return key != null &&
-             cacheMap.remove(new CacheKey(object.getPersistenceDelegate().getDomainContext(), key)) != null;
-    }
-    catch (PdoCacheException e)  {
-      logInvalidKey(e);
-      return false;
-    }
-  }
-
-
-  /**
-   * Remove an object from this cache index.<br>
-   * Assumes that the object really is in cache.
-   *
-   * @param object the object to remove (never null)
-   */
-  protected void removeExisting(T object) {
-    CacheKey ck;
-    C keyValue = extract(object);
-    if (keyValue != null) {   // null keys cannot be in the cache and are silently skipped
-      try {
-        ck = new CacheKey(object.getPersistenceDelegate().getDomainContext(), keyValue);
-      }
-      catch (PdoCacheException e) {
-        logInvalidKey(e);
-        return;   // nothing removed (but no reason to invalidate cache)
-      }
-      if (cacheMap.remove(ck) == null) {
-        throw new PdoCacheException(object,
-                                    "remove from cache failed from " + this + " for " + object.toGenericString() +
-                                    ", key='" + ck + "'");
-      }
-    }
-  }
-
-
-  /**
-   * Removes all objects for given session from index.
-   * <p>
-   * This will also remove objects that have changed their session
-   * but were originally stored with given session.
-   * Avoids memory leaks if application is misbehaving.
-   *
-   * @param session the session
-   */
-  protected void removeObjectsForSession(Session session) {
-    cacheMap.keySet().removeIf(key ->
-            key.context.getSession() == session ||    // == is ok here
-            key.sessionInstanceNumber == session.getInstanceNumber());
-  }
-
-
 
   /**
    * The key for the cache map.<br>
@@ -525,7 +50,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
   public final class CacheKey implements Comparable<CacheKey> {
 
     private final DomainContext context;      // the context the object lives in
-    private final int sessionInstanceNumber;  // to avoid memory leaks if application changed the session of an object
+    private final int sessionInstanceNumber;  // to avoid memory leaks if the application changed the session of an object
     private final C key;                      // the comparable that uniquely identifies the object
 
     /**
@@ -603,14 +128,8 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
     }
 
     @Override
-    public synchronized String toString()  {
-      if (!inToString)  {
-        inToString = true;
-        String str = context.toDiagnosticString() + ", value '" + key + "'";
-        inToString = false;
-        return str;
-      }
-      return "?";
+    public String toString()  {
+      return context.toDiagnosticString() + ", value '" + key + '\'';
     }
   }
 
@@ -618,7 +137,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
   /**
    * The result from a cache query.
    */
-  public final class CacheResult {
+  protected final class CacheResult {
 
     private final T pdo;
     private final CacheKey cacheKey;
@@ -645,6 +164,410 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
     public CacheKey getCacheKey() {
       return cacheKey;
     }
+  }
+
+
+  private final String name;                    // symbolic name of the index
+  private final TreeMap<CacheKey, T> cacheMap;  // map of cache indexes to PDOs
+  private final Set<CacheKey> missingSet;       // set of keys for missing PDOs (not in the database)
+
+  private PdoCache<T> cache;                    // the cache, null if not already added
+  private long accessCount;                     // for statistics if fineLoggable
+  private long missCount;                       // number of cache-misses
+
+
+  /**
+   * Create a new index.<br>
+   *
+   * @param name is the symbolic name of the index (for diagnostics only).
+   */
+  public PdoCacheIndex(String name)  {
+    this.name = name;
+    cacheMap  = new TreeMap<>();
+    missingSet = new HashSet<>();
+  }
+
+
+  @Override
+  public String toString()  {
+    StringBuilder sb = new StringBuilder();
+    if (cache != null) {
+      sb.append(cache).append(", ");
+    }
+    sb.append("index '").append(name).append('\'');
+    return sb.toString();
+  }
+
+  /**
+   * Select a PDO by key from db.<br>
+   * This method needs to be implemented for each index.
+   *
+   * @param context the domain context to select the object from
+   * @param key the Comparable used to uniquely identify the object (can be null)
+   *
+   * @return the selected object or null if it does not exist.
+   */
+  public abstract T select(DomainContext context, C key);
+
+  /**
+   * Extracts the {@link Comparable} that uniquely identifies the object from that object.<br>
+   * This method needs to be implemented for each index.
+   *
+   * @param object the object to extract the key from (never null)
+   *
+   * @return the {@link Comparable}, null if the object must not be added to the cache
+   *
+   */
+  public abstract C extract(T object);
+
+
+  /**
+   * Adds the key to the set of missing PDOs.
+   *
+   * @param ck the internal key
+   */
+  protected void addToMissing(CacheKey ck) {
+    missingSet.add(ck);
+  }
+
+  /**
+   * Removes the key from the set of missing PDOs.
+   *
+   * @param ck the internal key
+   */
+  protected void removeFromMissing(CacheKey ck) {
+    missingSet.remove(ck);
+  }
+
+  /**
+   * Returns whether the key is known to belong to a missing PDO.
+   *
+   * @param ck the internal key
+   * @return true if known to be missing, false if unknown
+   */
+  protected boolean isMissing(CacheKey ck) {
+    return missingSet.contains(ck);
+  }
+
+  /**
+   * Clears all keys for missing PDOs.
+   */
+  protected void clearMissing() {
+    missingSet.clear();
+  }
+
+  /**
+   * Maintain the link to the cache.<br>
+   * (package scope because implementation detail that cannot be changed)
+   *
+   * @param cache the cache to assign this index, null to remove index from the cache
+   */
+  protected void assignCache(PdoCache<T> cache) {
+    if (cache != null)  {
+      if (this.cache != null) {
+        throw new PdoCacheException(this + " is already assigned to " + this.cache);
+      }
+    }
+    else  {
+      // clear assignment
+      if (this.cache == null) {
+        throw new PdoCacheException(this + " is not assigned to any cache");
+      }
+    }
+    this.cache = cache;
+  }
+
+  /**
+   * Checks if the index is assigned to cache.
+   *
+   * @param cache the cache to check
+   * @return true if assigned
+   */
+  protected boolean isAssignedToCache(PdoCache<T> cache)  {
+    return this.cache == cache;
+  }
+
+  /**
+   * Clears the contents of the cache index.
+   */
+  protected void clear()  {
+    cacheMap.clear();
+    clearMissing();
+  }
+
+  /**
+   * Gets the number of objects in this index.
+   *
+   * @return the number of objects
+   */
+  protected int size()  {
+    return cacheMap.size();
+  }
+
+  /**
+   * Gets the cache index statistics as a printable string.
+   *
+   * @return the string for cache stats
+   */
+  protected String printStatistics()  {
+    int rate = (int)(100L - missCount * 100L / (accessCount == 0 ? 1 : accessCount));
+    return "size=" + size() + ", accesses=" + accessCount + ", misses=" + missCount + ", hit rate=" + rate + "%";
+  }
+
+  /**
+   * Clears the cache statistics.
+   */
+  protected void clearStatistics()  {
+    accessCount = 0;
+    missCount   = 0;
+  }
+
+  /**
+   * Gets the PDO from the cache by key.
+   *
+   * @param context the domain context
+   * @param key the Comparable that uniquely identifies the object
+   *
+   * @return the result holding the PDO and the internal cache key
+   */
+  protected CacheResult get(DomainContext context, C key) {
+
+    CacheKey ck;
+    try {
+      ck = new CacheKey(cache.processContext(context), key);
+    }
+    catch (PdoCacheException e)  {
+      // no need to invalidate the whole cache, but a hint to application prob
+      logInvalidKey(e);
+      return null;
+    }
+
+    T obj = cacheMap.get(ck);
+
+    accessCount++;
+    if (obj == null) {
+      missCount++;
+    }
+
+    LOGGER.finer(() -> this + (obj == null ? ": cache miss for '" : ": cache hit for '") + ck + "', " + printStatistics());
+
+    if (obj != null)  {
+      // this will throw an Exception and forces invalidation of the cache!
+      assertKeyIsUnchanged(obj, ck);
+    }
+
+    return new CacheResult(obj, ck);
+  }
+
+  /**
+   * Walks through all objects maintained by this cache index.
+   *
+   * @param verifyKey true if the cache key should be verified
+   * @param consumer the consumer to process the object
+   */
+  protected void walk(boolean verifyKey, Consumer<T> consumer) {
+    for (Map.Entry<CacheKey, T> entry: cacheMap.entrySet()) {
+      T pdo = entry.getValue();
+      if (verifyKey) {
+        assertKeyIsUnchanged(pdo, entry.getKey());
+      }
+      consumer.accept(pdo);
+    }
+  }
+
+  /**
+   * Walks through a subset of objects.
+   *
+   * @param context the domain context
+   * @param fromKey the start of range
+   * @param fromInclusive {@code true} if the low endpoint is to be included in the returned view
+   * @param toKey the end of range
+   * @param toInclusive {@code true} if the high endpoint is to be included in the returned view
+   * @param consumer the consumer
+   */
+  protected void walk(DomainContext context, C fromKey, boolean fromInclusive, C toKey, boolean toInclusive,
+                      Consumer<T> consumer) {
+
+    context = cache.processContext(context);
+    cacheMap.subMap(new CacheKey(context, fromKey), fromInclusive, new CacheKey(context, toKey), toInclusive)
+            .forEach((key, pdo) -> {
+              assertKeyIsUnchanged(pdo, key);
+              consumer.accept(pdo);
+            });
+  }
+
+  /**
+   * Returns whether the cache is readonly.
+   *
+   * @return true if readonly
+   */
+  protected boolean isReadOnly() {
+    return cache != null && cache.isReadOnly();
+  }
+
+  /**
+   * Process the PDO.<br>
+   * If cache is readonly, the context will be replaced
+   * by a session-thread-local context and the pdo will be
+   * made immutable.<br>
+   * If the context is a root context, it will be replaced
+   * by the corresponding non-root context.
+   *
+   * @param pdo the PDO
+   */
+  protected void processPdo(T pdo) {
+    PersistentObject<T> pd = pdo.getPersistenceDelegate();
+    DomainContext context = pd.getDomainContext();
+    DomainContext processedContext = cache.processContext(context);
+    if (processedContext != context) {
+      pd.setDomainContextImmutable(false);   // for sure
+      pd.setDomainContext(processedContext);
+    }
+    if (isReadOnly()) {
+      pd.setFinallyImmutable();
+      pd.setDomainContextImmutable(true);
+      pd.setSessionImmutable(true);
+    }
+  }
+
+  /**
+   * Adds an object to the index.<br>
+   * Does not throw an exception if it is already in cache.
+   *
+   * @param object the object to append (never null)
+   *
+   * @return true if added, false if the object was replaced in index or the key in the object evaluated to null
+   */
+  protected boolean add(T object) {
+    processPdo(object);
+    try {
+      C keyValue = extract(object);
+      if (keyValue != null) {
+        return cacheMap.put(new CacheKey(object.getPersistenceDelegate().getDomainContext(), keyValue), object) == null;
+      }
+      return false;
+    }
+    catch (PdoCacheException e)  {
+      logInvalidKey(e);
+      return false;
+    }
+  }
+
+  /**
+   * Adds a unique object to the index.<br>
+   * Unique violations usually indicate an error in comparing
+   * contexts or that the context of a cached object was changed
+   * accidentally.
+   *
+   * @param object the object to append (never null)
+   */
+  protected void addUnique(T object) {
+    processPdo(object);
+    C keyValue = extract(object);
+    if (keyValue != null) {
+      CacheKey ck;
+      try {
+        ck = new CacheKey(object.getPersistenceDelegate().getDomainContext(), keyValue);
+      }
+      catch (PdoCacheException e) {
+        logInvalidKey(e);
+        return;   // don't add to index (but no reason to invalidate the cache)
+      }
+      if (cacheMap.put(ck, object) != null) {
+        throw new PdoCacheException(object,
+                                    "unique cache violation detected in " + this + " for " + object.toGenericString() +
+                                    ", key = " + ck);
+      }
+    }
+  }
+
+  /**
+   * Removes an object from this cache index.<br>
+   * Does not throw an exception if it not in the cache.
+   * For use by PdoCache.remove() only.
+   *
+   * @param object the object to remove (never null)
+   *
+   * @return true if the object was removed
+   */
+  protected boolean remove(T object) {
+    try {
+      C key = extract(object);
+      return key != null &&
+             cacheMap.remove(new CacheKey(object.getPersistenceDelegate().getDomainContext(), key)) != null;
+    }
+    catch (PdoCacheException e)  {
+      logInvalidKey(e);
+      return false;
+    }
+  }
+
+  /**
+   * Remove an object from this cache index.<br>
+   * Assumes that the object really is in the cache.
+   *
+   * @param object the object to remove (never null)
+   */
+  protected void removeExisting(T object) {
+    CacheKey ck;
+    C keyValue = extract(object);
+    if (keyValue != null) {   // null keys cannot be in the cache and are silently skipped
+      try {
+        ck = new CacheKey(object.getPersistenceDelegate().getDomainContext(), keyValue);
+      }
+      catch (PdoCacheException e) {
+        logInvalidKey(e);
+        return;   // nothing removed (but no reason to invalidate the cache)
+      }
+      if (cacheMap.remove(ck) == null) {
+        throw new PdoCacheException(object,
+                                    "remove from cache failed from " + this + " for " + object.toGenericString() +
+                                    ", key='" + ck + "'");
+      }
+    }
+  }
+
+  /**
+   * Removes all objects for given session from index.
+   * <p>
+   * This will also remove objects that have changed their session
+   * but were originally stored with the given session.
+   * Avoids memory leaks if the application is misbehaving.
+   *
+   * @param session the session
+   */
+  protected void removeObjectsForSession(Session session) {
+    cacheMap.keySet().removeIf(key ->
+                                 key.context.getSession() == session ||    // == is ok here
+                                 key.sessionInstanceNumber == session.getInstanceNumber());
+  }
+
+
+  /**
+   * We cannot be sure that the application did not alter an object which is already
+   * in cache in such a way that this would alter the ordering with respect to the
+   * cacheMap. Furthermore, the CacheKey might be a copy of a primitive type since
+   * it must have been converted to a Comparable (e.g.: long -> Long).
+   * As a consequence, we MUST check every object retrieved from the cache that
+   * its key has NOT been altered. If so, the complete cache MUST be invalidated
+   * (cause the ordering of the tree is corrupted in an unknown way).
+   * This is done in PdoCache.
+   */
+  private void assertKeyIsUnchanged(T object, CacheKey key) {
+    // assert that the key was not changed in the object by application
+    CacheKey objectKey = new CacheKey(object.getPersistenceDelegate().getDomainContext(), extract(object));
+    if (objectKey.compareTo(key) != 0) {
+      throw new PdoCacheException(object,
+                                  "modified key detected in " + this + " for " + object.toGenericString() +
+                                  ", expected='" + key + "', found='" + objectKey + "'");
+    }
+  }
+
+  /**
+   * log invalid CacheKey.
+   */
+  private void logInvalidKey(Throwable t)  {
+    LOGGER.warning("illegal access to " + this, t);
   }
 
 }

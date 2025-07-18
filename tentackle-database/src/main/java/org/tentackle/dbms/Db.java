@@ -101,7 +101,7 @@ import java.util.function.Consumer;
  * and a server, whereas "server" is not necessarily a database server,
  * because sessions can be either local or remote.<br>
  * A local session talks to a database backend via a {@link ConnectionManager}
- * which is responsible for the physical JDBC-connection. However, there
+ * which is responsible for the physical JDBC connection. However, there
  * is no 1:1 relationship between a session and a physical connection. This is up
  * to the connection manager.
  * Local sessions are used in client applications running in 2-tier mode
@@ -117,11 +117,11 @@ import java.util.function.Consumer;
  * by the {@link SessionInfo} passed to the session.
  * <p>
  * Local sessions can be either a DataSource bound via JNDI or a direct
- * JDBC connection. JNDI is used in application servers, for example running
+ * JDBC connection. JNDI is used in application servers, for example, running
  * a JRuby on Rails application from within Glassfish (see tentackle-web).<br>
  * JDBC connections are for standalone 2-tier applications or Tentackle application servers.
  * <br>
- * For local sessions via JDBC the file contains at least the following properties:
+ * For local sessions via JDBC, the file contains at least the following properties:
  *
  * <pre>
  * url=jdbc-url[|backend-type]
@@ -177,7 +177,7 @@ import java.util.function.Consumer;
  *  use {@code ~~} instead.
  *  </li>
  *  <li>
- *  By default the credentials used to connect to the backend are the same as the ones in the session info.
+ *  By default, the credentials used to connect to the backend are the same as the ones in the session info.
  *  However, if a technical user must be used, the configuration for the backend may be defined in another
  *  property file.
  *  <pre>
@@ -208,7 +208,7 @@ import java.util.function.Consumer;
  * </ul>
  * <p>
  * For remote sessions, the properties (session info) will be sent to the server.
- * This can be used to set some application specific options or to tune the session.
+ * This can be used to set some application-specific options or to tune the session.
  *
  * @author harald
  */
@@ -403,14 +403,14 @@ public class Db implements Session, Cloneable {
                 }
               }
             }
-            // else: cleanup unreferenced session. If unref, there cannot be anyone be interested in
+            // Else: cleanup unreferenced session. If unref, there cannot be anyone be interested in
             // this event, because nobody has a reference to it.
 
             if (rcon != null && rses != null) {
               if (crashed) {
-                // don't rses.close() if crashed, because connection may block!
+                // don't rses.close() if crashed, because the connection may block!
                 // do it from a background thread instead.
-                // remote side must time out anyway. (or has already timed out)
+                // the remote side must time out anyway. (or has already timed out)
                 // this is especially useful if this is a server running against another server.
                 REMOTE_CLOSING_EXECUTOR.submit(() -> remoteClose(rses));
               }
@@ -429,7 +429,7 @@ public class Db implements Session, Cloneable {
               ManagedConnection c = con;
               if (c != null) {    // if attached
                 try {
-                  c.closePreparedStatements(true);   // cleanup all pending statements
+                  c.closePreparedStatements(true);   // clean up all pending statements
                 }
                 catch (RuntimeException ex) {
                   LOGGER.warning("closing prepared statements failed for " + name, ex);
@@ -530,16 +530,16 @@ public class Db implements Session, Cloneable {
   private SessionPool dbPool;                                 // != null if this Db is managed by a SessionPool
   private int poolId;                                         // the poolid if dbPool != null
   private SessionInfo sessionInfo;                            // session information
-  private Db clonedFromDb;                                    // the original session if this is a cloned one
+  private Db clonedFromDb;                                    // the original session if this session is cloned
   private volatile boolean autoCommit;                        // true if autocommit on, else false
   private boolean countModificationAllowed = true;            // allow modification count
   private boolean logModificationAllowed = true;              // allow modification log
-  private boolean readOnly;                                   // true if database is readonly
+  private boolean readOnly;                                   // true if the database is readonly
   private IdSource defaultIdSource;                           // default ID-Source (if not overridden in derivates)
   private int fetchSize;                                      // default fetchsize, 0 = drivers default
   private int maxRows;                                        // maximum rows per resultset, 0 = no limit
-  private boolean logModificationTxEnabled;                   // true if log transaction begin/commit in modification log
-  private long logModificationTxId;                           // transaction id. !=0 if 'commit' is pending in modification log
+  private boolean logModificationTxEnabled;                   // true if log the transaction begin/commit in the modification log
+  private long logModificationTxId;                           // transaction id. !=0 if 'commit' is pending in the modification log
   private boolean logModificationDeferred;                    // true if log to memory rather than dbms
   private List<ModificationLog> modificationLogList;          // in-memory modification-log for current transaction
   private DbTransaction transaction;                          // the running transaction
@@ -550,18 +550,15 @@ public class Db implements Session, Cloneable {
   private boolean preCommitsRunning;                          // flag to inhibit registering pre-commits while running them
   private int immediatelyRolledBack;                          // txLevel > 0 if a transaction has been rolled back by rollbackImmediately (only for local Db)
   private volatile boolean alive;                             // true = connection is still in use, false = connection has timed out
-  private long keepAliveInterval;                             // the auto keep alive interval in ms, 0 = no keep alive
+  private long keepAliveInterval;                             // the auto keep-alive interval in ms, 0 = no keep alive
   private volatile Thread ownerThread;                        // the exclusive owner thread
   private WeakReference<SessionTaskDispatcher> dispatcherRef; // task dispatcher for asynchronous tasks
   private Map<String, Serializable> applicationProperties;    // application-specific properties
   private ReconnectionPolicy<Db> reconnectionPolicy;          // reconnection policy, null if none (default)
   private int batchSize;                                      // >1 if JDBC batching should be used for certain prepared statements
-
   // for RMI remote connections
-  private RMIClientSocketFactory csf;                         // client socket factory, null if system default
+  private RMIClientSocketFactory csf;                         // client socket factory, null for system default
   private RemoteDelegate[] delegates;                         // the delegates per session
-
-
 
 
   /**
@@ -570,7 +567,7 @@ public class Db implements Session, Cloneable {
    * or denied access by the application server,
    * the method {@link #handleConnectException} is invoked.
    *
-   * @param conMgr the connection manager if local connection (ignored if remote)
+   * @param conMgr the connection manager for the local connection (ignored if remote)
    * @param sessionInfo session information
    */
   public Db(ConnectionManager conMgr, SessionInfo sessionInfo) {
@@ -708,8 +705,9 @@ public class Db implements Session, Cloneable {
         }
 
         /*
-         * Check that server matches expected version. The server checks the client's version in rcon.login() below. So,
-         * we have a double check.
+         * Check that the server matches the expected version.
+         * The server checks the client's version in rcon.login() below.
+         * So, we have a double check.
          */
         sessionInfo.checkServerVersion(rcon.getServerVersion());
 
@@ -723,7 +721,7 @@ public class Db implements Session, Cloneable {
         sessionId = rdel.getSessionId();
       }
       else {
-        // direct connection to database
+        // direct connection to the database
         sessionId = conMgr.login(this);
       }
 
@@ -808,7 +806,7 @@ public class Db implements Session, Cloneable {
     if (mc != null) {
       buf.append('|').append(mc.getName());
     }
-    if (isTxRunning() && transaction != null) {   // during open autoCommit is still false
+    if (isTxRunning() && transaction != null) {   // during open, autoCommit is still false
       buf.append('|').append(transaction);
     }
     return buf.toString();
@@ -823,8 +821,7 @@ public class Db implements Session, Cloneable {
    * as final, since they must not be overridden!
    *
    * @param session the session to compare this session with
-   * @return  a negative integer, zero, or a positive integer as this object
-   *          is less than, equal to, or greater than the specified object.
+   * @return the comparison result of the instance numbers
    */
   @Override
   public final int compareTo(Session session) {
@@ -905,7 +902,7 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Returns whether session is readonly.
+   * Returns whether the session is readonly.
    *
    * @return true if readonly.
    */
@@ -993,7 +990,7 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Asserts session is not used by another thread than the ownerthread.
+   * Asserts this session is not used by another thread than the owner thread.
    */
   public void assertOwnerThread() {
     Thread ownrThread = getOwnerThread();
@@ -1087,7 +1084,7 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Logs exception if scavenger thread, else throws it.
+   * Logs exception if this is the scavenger thread, else throws it.
    *
    * @param rex the runtime exception
    */
@@ -1105,8 +1102,8 @@ public class Db implements Session, Cloneable {
   /**
    * Checks whether the session is still in use.
    * Whenever a {@link StatementWrapper} or {@link PreparedStatementWrapper} is used
-   * (i.e. executeQuery or executeUpdate), the session is set to be alive.
-   * Some other thread may clear this flag regularly and check whether it has
+   * (i.e., executeQuery or executeUpdate), the session is set to be alive.
+   * Another thread may clear this flag regularly and check whether it has
    * been set in the meantime.
    *
    * @return true if connection still in use, false if not used since last setAlive(false).
@@ -1118,7 +1115,7 @@ public class Db implements Session, Cloneable {
   }
 
   /**
-   * Sets the session's alive state.
+   * Sets the session's alive-state.
    *
    * @param alive is true to signal it's alive, false to clear
    */
@@ -1179,7 +1176,7 @@ public class Db implements Session, Cloneable {
 
   /**
    * Gets the dispatcher for this session.<br>
-   * The dispatcher can be used to submit asynchronous tasks in a serial manner.
+   * The dispatcher can be used to submit asynchronous tasks serially.
    * The returned dispatcher is configured to shut down if idle for a given timeout.
    *
    * @return the dispatcher
@@ -1317,7 +1314,7 @@ public class Db implements Session, Cloneable {
    * @param millis the milliseconds between connection retries
    */
   public void enableReconnection(boolean blocking, long millis) {
-    reconnectionPolicy = DbUtilities.getInstance().createReconnectionPolicy(this, blocking, millis);
+    reconnectionPolicy = DbUtilities.getInstance().createReconnectionPolicy(blocking, millis);
   }
 
   /**
@@ -1330,11 +1327,11 @@ public class Db implements Session, Cloneable {
   /**
    * Reconnects the session if a reconnection policy is defined.
    *
-   * @return true if reconnected, false if reconnection disabled or non-blocking in background
+   * @return true if reconnected, false if reconnection is disabled or runs non-blocking (in background)
    */
   public boolean optionallyReconnect() {
     if (reconnectionPolicy != null) {
-      Reconnector.getInstance().submit(reconnectionPolicy);
+      Reconnector.getInstance().submit(reconnectionPolicy, this);
       return reconnectionPolicy.isBlocking();
     }
     return false;
@@ -1387,7 +1384,7 @@ public class Db implements Session, Cloneable {
   /**
    * Gets the connection state.
    *
-   * @return true if session is open, else false
+   * @return true if the session is open, else false
    */
   @Override
   public boolean isOpen() {
@@ -1505,7 +1502,7 @@ public class Db implements Session, Cloneable {
         }
       });
       if (sh.get() == null) {
-        // call tree too long? -> just use the classname (better than nothing...)
+        // call-tree too long? -> use the classname (better than nothing...)
         txName = txe.getClass().getSimpleName();
         int ndx = txName.indexOf('$');    // cut useless info $$Lambda$0/123456789
         if (ndx > 0) {
@@ -1548,8 +1545,8 @@ public class Db implements Session, Cloneable {
   /**
    * Creates a transaction.
    *
-   * @param txName the transaction name, null if &lt;unnamed&gt;
-   * @param fromRemote true if initiated from remote client
+   * @param txName the transaction name, null for &lt;unnamed&gt;
+   * @param fromRemote true if initiated from the remote client
    * @return the transaction
    */
   protected DbTransaction createTransaction(String txName, boolean fromRemote) {
@@ -1577,7 +1574,7 @@ public class Db implements Session, Cloneable {
    * Starts a transaction.<br>
    * Just increments the transaction level if a transaction is already running.
    *
-   * @param txName is the optional transaction name, null if none
+   * @param txName is the optional transaction name, null for none
    * @param fromRemote true if invocation from remote client via {@link DbRemoteDelegate#begin}
    * @param transactionIsolation the transaction isolation level, null or {@link TransactionIsolation#DEFAULT} if default
    * @param transactionWritability the transaction writabilty, null or {@link TransactionWritability#DEFAULT} if default
@@ -1606,29 +1603,29 @@ public class Db implements Session, Cloneable {
           throw PersistenceException.createFromRemoteException(this, e);
         }
       }
-      // else: only the outermost transaction is initiated by the remote client
-      // there is no transaction nesting level at the client side!
+      // Else: the remote client initiates only the outermost transaction.
+      // There is no transaction nesting level at the client side!
       // However, if remote methods are invoked within a tx, those methods running
       // at the server may increase the nesting level > 1.
     }
     else {
 
       alive = true;
-      transactionProperties = null;
-      immediatelyRolledBack = 0;  // the first begin clears all pending immediate rollbacks() ...
 
       if (setAutoCommit(c -> {
-          // new transaction
-          assertNoTxRunning();
-          if (transactionIsolation != null && transactionIsolation != TransactionIsolation.DEFAULT) {
-            c.setTransactionIsolation(transactionIsolation.getLevel());
-          }
-          if (transactionWritability != null && transactionWritability != TransactionWritability.DEFAULT) {
-            c.setReadOnly(transactionWritability.getWritable());
-          }
-        })) {
+        // new transaction
+        assertNoTxRunning();
+        if (transactionIsolation != null && transactionIsolation != TransactionIsolation.DEFAULT) {
+          c.setTransactionIsolation(transactionIsolation.getLevel());
+        }
+        if (transactionWritability != null && transactionWritability != TransactionWritability.DEFAULT) {
+          c.setReadOnly(transactionWritability.getWritable());
+        }
+      })) {
 
+        immediatelyRolledBack = 0;  // the first begin() clears all pending immediate rollbacks() ...
         modificationLogList = null;
+        transactionProperties = null;
         transaction = createTransaction(txName, fromRemote);
         txVoucher = transaction.getTxVoucher();
         LOGGER.fine("{0}: begin transaction, voucher {1}", this, txVoucher);
@@ -1648,7 +1645,7 @@ public class Db implements Session, Cloneable {
                                                "cannot change a running read-only transaction to read-write" :
                                                "cannot change a running read-write transaction to read-only");
         }
-        transaction.incrementTxLevel(txName);    // just increment the nesting level
+        transaction.incrementTxLevel(txName);    // increment the nesting level
         LOGGER.fine("{0}: nested begin", this);
       }
     }
@@ -1782,7 +1779,7 @@ public class Db implements Session, Cloneable {
   }
 
   /**
-   * Checks whether current transaction was initiated by a remote client.
+   * Checks whether the current transaction was initiated by a remote client.
    *
    * @return true if tx is a remote client transaction
    */
@@ -1986,7 +1983,7 @@ public class Db implements Session, Cloneable {
   public DbTransactionHandle registerCommitTxRunnable(CommitTxRunnable commitRunnable) {
     /*
      Since CommitTxRunnables (and RollbackTxRunnables) are always executed at the local session's side,
-     they need to be Serializable in order to be transferred from the remote client to the server.
+     they need to be Serializable to be transferred from the remote client to the server.
      That's why an annotation like @PreCommit, similar to @PostCommit, wouldn't work since we cannot transfer
      method references, which are by definition not serializable.
      That's why commit- and rollback-runnables are only available at the persistence implementation layer
@@ -2116,7 +2113,7 @@ public class Db implements Session, Cloneable {
   /**
    * Commits a transaction if the corresponding "begin()" has started it.
    * The corresponding "begin()" is determined by the txVoucher parameter.
-   * If it fits to the issued voucher the tx will be committed.
+   * If it fits to the issued voucher, the tx will be committed.
    * If it is 0, nothing will happen.
    * In all other cases an exception will be thrown.
    *
@@ -2188,7 +2185,7 @@ public class Db implements Session, Cloneable {
       else {
         // no voucher, no change (this is ok)
         LOGGER.fine("{0}: nested commit", this);
-        transaction.decrementTxLevel();   // just decrement the tx level
+        transaction.decrementTxLevel();   // decrement the tx level
       }
     }
 
@@ -2315,7 +2312,7 @@ public class Db implements Session, Cloneable {
    * Applications should use {@link #rollback(long)}.<br>
    * Invocations of this method will be logged as a warning.
    *
-   * @param cause the cause of the rollback, may be null
+   * @param cause the cause of the rollback, null for none
    */
   public void rollbackImmediately(Throwable cause) {
 
@@ -2471,7 +2468,7 @@ public class Db implements Session, Cloneable {
    * This is an optional number describing groups of sessions,
    * which is particularly useful in RMI-servers: if one connection
    * fails, all others should be closed as well.
-   * Groups are only meaningful for local sessions, i.e.
+   * Groups are only meaningful for local sessions, i.e.,
    * for remote sessions the group instance refers to that of the RMI-server.
    *
    * @param groupId is the group number, 0 = no group
@@ -2601,7 +2598,7 @@ public class Db implements Session, Cloneable {
    * Sets the exclusive owner thread.
    * <p>
    * Allows detecting other threads accidentally using this session.<br>
-   * Caution: don't forget to clear!
+   * Caution: remember to clear!
    *
    * @param ownerThread the owner thread, null to clear
    */
@@ -2690,7 +2687,7 @@ public class Db implements Session, Cloneable {
    * result set is closed.
    *
    * @param stmtKey the statement key
-   * @param alwaysPrepare true if always do a physical prepare
+   * @param alwaysPrepare true if always do a physical preparing
    * @param resultSetType one of ResultSet.TYPE_...
    * @param resultSetConcurrency one of ResultSet.CONCUR_...
    * @param sqlSupplier the SQL supplier
@@ -2719,7 +2716,7 @@ public class Db implements Session, Cloneable {
    * Uses {@link ResultSet#TYPE_FORWARD_ONLY} and {@link ResultSet#CONCUR_READ_ONLY}.
    *
    * @param stmtKey the statement key
-   * @param alwaysPrepare true if always do a physical prepare
+   * @param alwaysPrepare true if always do a physical preparing
    * @param sqlSupplier the SQL supplier
    *
    * @return the prepared statement for this session
@@ -2775,12 +2772,11 @@ public class Db implements Session, Cloneable {
    * Adds a statement with its related PDO to the current batch.<br>
    * Does nothing if there is no batched transaction running.<br>
    * <p>
-   * IMPORTANT: only insert, update or delete statements that refer to a <em>single</em> row
-   * are allowed for auto batching!
+   * IMPORTANT: only statements that insert/update/delete a <em>single</em> row are allowed for auto batching!
    *
    * @param modType the statement type
    * @param statement the statement to batch
-   * @param object the object to insert, update or delete
+   * @param object the object
    * @param rootClassId the root class ID
    */
   @SuppressWarnings("rawtypes")
@@ -2819,8 +2815,8 @@ public class Db implements Session, Cloneable {
    * Applications must use begin/commit instead.
    * Furthermore, the database will be attached and detached.
    * <p>
-   * The method differs from the JDBC-method: a commit is *NOT* issued
-   * if the autoCommit boolean value wouldn't change.
+   * The method differs from the JDBC method: a commit is *NOT* issued
+   * if the autoCommit boolean value doesn't change.
    * This allows nested setAutoCommit(false) in large transactions.
    *
    * @param txStarter connection consumer invoked immediately when a transaction is begun (sets autocommit to false), null for autocommit = true
@@ -2957,7 +2953,7 @@ public class Db implements Session, Cloneable {
 
       Db newDb = (Db) super.clone();
 
-      if (sessionInfo != null) { // we need a new session info cause some things may be stored here!
+      if (sessionInfo != null) { // we need a new session-info cause some things may be stored here!
         SessionInfo clonedInfo = sessionInfo.clone();
         if (sessionName != null) {
           clonedInfo.setSessionName(sessionName);
@@ -3075,10 +3071,10 @@ public class Db implements Session, Cloneable {
   /**
    * Prepares a {@link RemoteDelegate}.
    * <p>
-   * The delegates for the AbstractDbObject-classes "live" in the session, i.e. the remote session.
+   * The delegates for the AbstractDbObject-classes "live" in the session, i.e., the remote session.
    * Thus, delegates are unique per class AND session!
    * In order for the AbstractDbObject-derived classes to quickly map to the corresponding delegate,
-   * the delegates get a unique handle, i.e. an index to an array of delegates, which in
+   * the delegates get a unique handle, i.e., an index to an array of delegates, which in
    * turn is unique among ALL sessions.
    *
    * @param clazz is the AbstractDbObject-class
@@ -3132,7 +3128,6 @@ public class Db implements Session, Cloneable {
 
     // check if delegate already fetched from RMI-server
     if (delegates[delegateId] == null) {
-      // we need to prepare it
       assertOpen();
       try {
         RemoteDelegate delegate = resources.rses.getRemoteDelegate(remoteClasses[delegateId].getName());
@@ -3143,7 +3138,6 @@ public class Db implements Session, Cloneable {
         throw PersistenceException.createFromRemoteException(this, e);
       }
     }
-    // already created
     return delegates[delegateId];
   }
 
@@ -3195,7 +3189,7 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Sets the modification allowed state.
+   * Sets the modification-allowed state.<br>
    * Useful to turn off modlog for a special (temporary) session doing
    * certain tasks that should not be logged.
    * The state will be handed over to the remote session as well.
@@ -3238,14 +3232,14 @@ public class Db implements Session, Cloneable {
    * Note: the deferred state will be reset to false after each begin/commit/rollback.
    * <p>
    * Important: if the deferred state is changed within a transaction and there are
-   * already modifications made, i.e. modlogs were created, the deferred state will
+   * already modifications made, i.e., modlogs were created, the deferred state will
    * *not* be changed! Furthermore, if the deferred state is changed to false.
-   * the modlogs are removed from the database (but kept in memory).
+   * The modlogs are removed from the database (but kept in memory).
    * As a consequence, the in-memory modlogs will always contain the whole transaction
    * or nothing. Only {@link #popModificationLogsOfTransaction()} removes the logs
    * collected so far or the end of the transaction.
    *
-   * @param logModificationDeferred true to defer logs for the rest of current transaction, false to un-defer
+   * @param logModificationDeferred true to defer logs for the rest of the current transaction, false to "un-defer"
    */
   public void setLogModificationDeferred(boolean logModificationDeferred) {
     assertOpen();
@@ -3269,7 +3263,7 @@ public class Db implements Session, Cloneable {
           }
         }
         else  {
-          // don't turn off until end of transaction!
+          // don't turn off until the end of the transaction!
           return;
         }
       }
@@ -3289,7 +3283,7 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Pushes a {@link ModificationLog} to the list of modlogs of the current transaction.
+   * Pushes a {@link ModificationLog} to the list of modlogs for the current transaction.
    * <p>
    * Notice: only allowed for local databases!
    *
@@ -3305,8 +3299,8 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Returns the {@link ModificationLog}s of the current transaction.
-   * Upon return the list of logs is cleared.
+   * Returns the {@link ModificationLog}s of the current transaction.<br>
+   * Upon return, the list of logs is cleared.
    * <p>
    * Works for local and remote databases.
    *
@@ -3344,7 +3338,7 @@ public class Db implements Session, Cloneable {
 
   /**
    * Set the default {@link IdSource}.<br>
-   * This is the source that is used to generate unique object IDs
+   * This is the source used to generate unique object IDs
    * if classes did not configure their own source.
    *
    * @param idSource New value of property idSource.

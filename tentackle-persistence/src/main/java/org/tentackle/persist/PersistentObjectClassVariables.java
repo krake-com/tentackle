@@ -147,9 +147,19 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   public final StatementId selectAllStatementId = new StatementId();
 
   /**
-   * prepared statement ID for {@link AbstractPersistentObject#selectAllWithExpiredTableSerials}.
+   * prepared statement ID for {@link AbstractPersistentObject#selectAny}.
+   */
+  public final StatementId selectAnyStatementId = new StatementId();
+
+  /**
+   * prepared statement ID for {@link AbstractPersistentObject#selectAllWithExpiredTableSerials(long)}.
    */
   public final StatementId selectAllWithExpiredTableSerialsStatementId = new StatementId();
+
+  /**
+   * prepared statement ID for {@link AbstractPersistentObject#selectAllWithExpiredTableSerials(long, long)}.
+   */
+  public final StatementId selectAllWithExpiredTableSerialsStatement2Id = new StatementId();
 
   /**
    * prepared statement ID for {@link AbstractPersistentObject#selectLatest(long, int)}.

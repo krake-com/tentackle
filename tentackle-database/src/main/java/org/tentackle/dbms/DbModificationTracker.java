@@ -485,15 +485,19 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * Returns whether the tracker runs in local client mode.<br>
    * In this mode, modifications will be persisted immediately.
    * This is necessary for applications without a middle-tier server,
-   * i.e., directly talking to the database.<p>
-   * In servers, however, modifications will be persisted delayed
-   * when no transactions are running anymore that refer to the modified tables.<p>
+   * for example, desktop standalone applications directly talking to the database.
+   * <p>
+   * In multi-tier applications, however, modifications will be persisted delayed
+   * by the middle-tier (connected to the database) when no transactions are running
+   * anymore that refer to the modified tables.
+   * <p>
    * Important: in local client mode, the thread-local session must be valid,
    * because the session used to persist the modification count must be the
    * same as the current transaction, if any.
    *
    * @return true if in local client mode, false if remote client or server
    */
+  @Override
   public boolean isLocalClientMode() {
     return localClientMode;
   }
@@ -545,12 +549,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     return new IdSerialTuple(entry.id, entry.serial);
   }
 
-  /**
-   * Gets the serial for a given class.
-   *
-   * @param clazz the tracked class
-   * @return the table serial
-   */
   @Override
   public long getSerial(Class<?> clazz) {
     String name = SessionUtilities.getInstance().getTableName(clazz.getName());
@@ -564,12 +562,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     return getSerial(name);
   }
 
-  /**
-   * Gets the serial for a given modification name.
-   *
-   * @param name the modification name
-   * @return the table serial
-   */
   @Override
   public long getSerial(String name) {
     return getIdSerialForName(name).getSerial();
@@ -605,14 +597,15 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
 
   /**
    * Counts the modification for a table.<br>
-   * Used by the persistence layer to update the modification table.
+   * Used by the persistence layer to update the modification table.<br>
+   * Never invoked for remote sessions!
    *
    * @param session the session persisting the modification, null if thread-local session
    * @param tableName the table name
    * @return the table serial (guessed lowest, could be higher already)
    */
   @Override
-  public long countModification (Session session, String tableName) {
+  public long countModification(Session session, String tableName) {
     ModificationTally counter = getCounter(tableName);
     // put pending count
     counter.countPending(session);
@@ -623,6 +616,13 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     // else optimize:
     // return the guessed minimum table serial (pending count is done in next poll())
     return counter.getLatestSerial();
+  }
+
+  @Override
+  public void addDeletion(Session session, String tableName, long id, long tableSerial) {
+    if (!localClientMode && isAlive()) {
+      getCounter(tableName).addDeletion(session, new IdSerialTuple(id, -tableSerial));
+    }
   }
 
   /**
@@ -919,7 +919,6 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     }
   }
 
-
   /**
    * Flushes all pending modification counts to the database.
    */
@@ -937,7 +936,8 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    */
   private void poll() {
 
-    if (!getSession().isRemote()) {
+    boolean isLocalSession = !getSession().isRemote();
+    if (isLocalSession) {
       performPendingCounts();
     }
 
@@ -957,14 +957,12 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
 
       for (IdSerialTuple idSer: selectAllIdSerials()) {
 
-        if (idSer.getId() > 0) {
+        if (isLocalSession && idSer.getId() > 0) {
           // update the last serial of counter (if configured)
           ModificationTally counter = countersById.get(idSer.getId());
           if (counter != null) {
             counter.setLastSerial(idSer.getSerial());
           }
-          // updates counters that don't have a listener as well,
-          // e.g., countModification invoked without a listener registered
         }
 
         TableEntry tableEntry = tableEntriesById.get(idSer.getId());     // serial changed for entry
@@ -976,7 +974,9 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
               Set<ModificationEventDetail> details = detailMap.computeIfAbsent(listenerEntry.listener, _ -> new HashSet<>());
               // create a new one
               if (!listenerEntry.isMaster()) {
-                getCounter(listenerEntry.tableEntry.tableName);   // configure counter if not yet done
+                if (isLocalSession) {
+                  getCounter(listenerEntry.tableEntry.tableName);   // configure counter if not yet done
+                }
                 details.add(listenerEntry.createDetail(idSer.getSerial()));
               }
             }
@@ -1071,7 +1071,9 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   private void refreshTableEntries() {
     remoteSerials = null;
     for (TableEntry entry: tableEntriesByName.values()) {
-      getCounter(entry.tableName);
+      if (!getSession().isRemote()) {
+        getCounter(entry.tableName);
+      }
       IdSerialTuple idSer = selectIdSerialForName(entry.tableName);
       if (idSer != null) {
         entry.id = idSer.getId();
@@ -1119,7 +1121,11 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     else  {
       addTaskAndWait(task);
     }
-    return countersByName.get(tableName);
+    ModificationTally tally = countersByName.get(tableName);
+    if (tally == null) {
+      throw new PersistenceException("configuration of counter failed for " + tableName);
+    }
+    return tally;
   }
 
   /**

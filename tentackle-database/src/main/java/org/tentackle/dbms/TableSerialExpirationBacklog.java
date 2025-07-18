@@ -16,101 +16,149 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.dbms;
 
-import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.log.Logger;
 import org.tentackle.misc.IdSerialTuple;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-
 /**
- * Keeps a backlog of expiration sets.<br>
- * Used in RMI-servers to reduce database roundtrips for clients
- * requesting the expiration info for their local caches.
+ * Keeps a backlog of expiration sets.
  *
+ * @see ModificationTally
  * @author harald
  */
 public class TableSerialExpirationBacklog {
 
-  private static final int DEFAULT_SIZE = 64;          // should be enough for the 99% case
+  private static final Logger LOG = Logger.get(TableSerialExpirationBacklog.class);
+
+  private static final int DEFAULT_SIZE = 64;          // should be enough for the 99% case (master data)
 
 
+  /**
+   * Holds a list of expired id/tableserial tuples.
+   */
+  private static class ExpirationList {
 
-  // holds a set of expiration info
-  private static class ExpirationSet implements Cloneable {
+    private final long minSerial;                       // > minSerial
+    private final long maxSerial;                       // <= maxSerial
+    private final Map<Long, IdSerialTuple> tupleMap;    // abs(tableserial):id/tableserial
 
-    private long minSerial;                         // > minSerial
-    private long maxSerial;                         // <= maxSerial
-    private final List<IdSerialTuple> idSerTuples;  // pairs of id/tableserial
-
-    private ExpirationSet(long minSerial, long maxSerial, List<IdSerialTuple> idSerTuples) {
-      this.minSerial    = minSerial;
-      this.maxSerial    = maxSerial;
-      this.idSerTuples  = idSerTuples;
+    private ExpirationList(long minSerial, long maxSerial, Collection<IdSerialTuple> tuples) {
+      this.minSerial = minSerial;
+      this.maxSerial = maxSerial;
+      tupleMap = new TreeMap<>();
+      addMissing(tuples);
     }
 
-    @Override
-    public ExpirationSet clone() {
-      try {
-        return (ExpirationSet) super.clone();
+    private void addMissing(Collection<IdSerialTuple> tuples) {
+      if (tuples != null) {
+        // add only those tableserial not already in the map
+        tuples.forEach(tuple -> tupleMap.putIfAbsent(Math.abs(tuple.getSerial()), tuple));
       }
-      catch (CloneNotSupportedException ex) {
-        throw new TentackleRuntimeException(ex);    // this shouldn't happen, since we are Cloneable
-      }
+    }
+
+    private Collection<IdSerialTuple> getTuples() {
+      return tupleMap.values();
     }
   }
 
 
-
   // the backlog
-  private final ExpirationSet[] expirations;      // array of expirations
+  private final String name;                      // the name of the backlog
+  private ExpirationList[] expirations;           // array of expirations
   private int nextNdx;                            // round-robin index
+  private long minSerial;                         // min serial of all expiration sets
+  private long maxSerial;                         // max serial of all expiration sets
 
   // synchronization lock
   private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
-
-
   /**
    * Creates a backlog.
    *
+   * @param name the name of the backlog
    * @param size the size of the backlog
    */
-  public TableSerialExpirationBacklog(int size) {
-    expirations = new ExpirationSet[size];      // should be enough for the 99% case
-    for (int i=0; i < size; i++) {
-      expirations[i] = null;    // null = unused yet
-    }
+  public TableSerialExpirationBacklog(String name, int size) {
+    this.name = name;
+    expirations = new ExpirationList[size];      // should be enough for the 99% case
   }
 
   /**
    * Creates a backlog with a default size.
+   *
+   * @param name the name of the backlog
    */
-  public TableSerialExpirationBacklog() {
-    this(DEFAULT_SIZE);
+  public TableSerialExpirationBacklog(String name) {
+    this(name, DEFAULT_SIZE);
   }
 
+  @Override
+  public String toString() {
+    return name + "[" + minSerial + "-" + maxSerial + "]";
+  }
 
   /**
    * Adds an expiration set to the backlog.
    *
    * @param minSerial the lower serial bound of the query (minSerial &lt; tableSerial)
    * @param maxSerial the upper serial bound of the query (tableSerial &le; maxSerial)
-   * @param idSerTuples the expiration info as pairs of id/tableserial.
+   * @param tuples the expiration info as pairs of id/tableserial.
+   * @param mergeHistory true to merge the {@link TableSerialHistory}
    */
-  public void addExpiration(long minSerial, long maxSerial, List<IdSerialTuple> idSerTuples) {
-    if (idSerTuples != null && !idSerTuples.isEmpty()) {
+  public void addExpiration(long minSerial, long maxSerial, Collection<IdSerialTuple> tuples, boolean mergeHistory) {
+    if (tuples != null && !tuples.isEmpty()) {
+      if (minSerial >= maxSerial) {
+        LOG.warning("illegal tableserial range [{0}-{1}] refused to add to expiration backlog {2}", minSerial, maxSerial, this);
+        return;
+      }
+
+      LOG.fine("adding expiration set {0}-{1}[{2}] for {3}",
+               minSerial, maxSerial, tuples.size(), name);
+
       lock.writeLock().lock();
       try {
-        expirations[nextNdx++] = new ExpirationSet(minSerial, maxSerial, idSerTuples);
+        // Min- and maxSerial ranges of expirations may overlap, i.e. [3-8] followed by [5-10] is perfectly ok,
+        // since we could have rollbacks (in this case from 5-8).
+        // However, the maxSerials must not be decreasing!
+        if (maxSerial < this.maxSerial) {
+          LOG.severe("expiration range [{0}-{1}] added unexpectedly to expiration backlog {2} -> ignored",
+                      minSerial, maxSerial, this);
+          return;
+        }
+
+        // add expiration set round-robin
+        ExpirationList expiration = new ExpirationList(minSerial, maxSerial, tuples);
+        expirations[nextNdx++] = expiration;
         if (nextNdx >= expirations.length) {
           nextNdx = 0;
+        }
+
+        if (mergeHistory) {
+          // only for the local server
+          expiration.addMissing(TableSerialHistory.getInstance().retrieve(name, minSerial, maxSerial, true));
+        }
+
+        // update minserial from the next oldest or from 1st set
+        expiration = expirations[nextNdx];
+        if (expiration != null) {
+          this.minSerial = expiration.minSerial;
+        }
+        else if (nextNdx == 1) {
+          // this was the first added to the array of expirations
+          this.minSerial = minSerial;
+        }
+
+        // update maxserial always from added set
+        if (maxSerial > this.maxSerial) {
+          this.maxSerial = maxSerial;
         }
       }
       finally {
@@ -121,29 +169,72 @@ public class TableSerialExpirationBacklog {
 
 
   /**
-   * Gets the expiration backlog for a given range of table-serials.
+   * Gets the expiration backlog for a given range of table-serials.<br>
+   * An id of 0 indicates a rolled back insert or update.<br>
+   * A negative tableserial indicates a deletion.
    *
    * @param minSerial the lower serial bound of the query (minSerial &lt; tableSerial)
    * @param maxSerial the upper serial bound of the query (tableSerial &le; maxSerial)
-   * @return the expiration info as pairs of id/tableserial, null if given range was not found in the backlog
+   * @return the expiration set as tuples of id/tableserial, ordered by abs(tableserial), null if the given range was not found in the backlog
    */
-  public List<IdSerialTuple> getExpiration(long minSerial, long maxSerial) {
+  public TreeSet<IdSerialTuple> getExpiration(long minSerial, long maxSerial) {
 
-    // extract matching sets
-    ExpirationSet[] matchedExps = new ExpirationSet[expirations.length];
-    int matchCount = 0;
+    // sort by abs(tableserial)
+    TreeSet<IdSerialTuple> expireSet = new TreeSet<>(Comparator.comparingLong(tuple -> Math.abs(tuple.getSerial())));
+    boolean found = false;
+
     lock.readLock().lock();
     try {
-      // we start at current nextNdx: this is the oldest entry
+      if (minSerial < this.minSerial) {
+        LOG.warning("expiration backlog {0} queried for outdated range [{1}-{2}]", this, minSerial, maxSerial);
+        int size = expirations.length;
+        lock.readLock().unlock();
+        lock.writeLock().lock();
+        try {
+          if (size == expirations.length) {   // not doubled by another thread while upgrading to write-lock
+            // double the size
+            ExpirationList[] oldExpirations = expirations;
+            expirations = new ExpirationList[oldExpirations.length << 1];
+            System.arraycopy(oldExpirations, 0, expirations, 0, oldExpirations.length);
+            LOG.info("expiration backlog {0} enlarged to {1} entries", this, expirations.length);
+          }
+          lock.readLock().lock();
+        }
+        finally {
+          lock.writeLock().unlock();
+        }
+        return null;    // ask the database!
+      }
+
+      // we start at current nextNdx - 1: that's the newest entry
+      // and go back until maxSerial < minSerial
       int ndx = nextNdx;
-      for (int i=0; i < expirations.length; i++) {
+      int count = 0;    // number of slots to check
+      while (count < expirations.length) {
+        if (--ndx < 0) {
+          ndx = expirations.length - 1;
+        }
+        count++;
+        ExpirationList expiration = expirations[ndx];
+        if (expiration == null || expiration.maxSerial < minSerial) {
+          break;
+        }
+      }
+      // go forward.
+      // the direction is important since tableserials may overlap due to rollback!
+      while (count-- > 0) {
         if (ndx >= expirations.length) {
           ndx = 0;
         }
-        ExpirationSet exp = expirations[ndx++];
-        if (exp != null && exp.maxSerial >= minSerial && exp.minSerial <= maxSerial) {
-          // add to list of matched sets
-          matchedExps[matchCount++] = exp;
+        ExpirationList expiration = expirations[ndx++];
+        if (expiration != null && expiration.maxSerial >= minSerial && expiration.minSerial <= maxSerial) {
+          found = true;   // at least one matching set found
+          for (IdSerialTuple tuple : expiration.getTuples()) {
+            long serial = Math.abs(tuple.getSerial());
+            if (serial > minSerial && serial <= maxSerial) {
+              expireSet.add(tuple);
+            }
+          }
         }
       }
     }
@@ -151,104 +242,7 @@ public class TableSerialExpirationBacklog {
       lock.readLock().unlock();
     }
 
-    while (matchCount > 0) {
-      // merge the sets. note that a merge creates a clone, so there's no need for synchronization
-      matchedExps = merge(matchedExps, matchCount);
-      if (matchedExps.length == matchCount) {
-        // cannot be merged any further
-        for (int m=0; m < matchCount; m++) {
-          ExpirationSet exp = matchedExps[m];
-          if (exp.minSerial <= minSerial && exp.maxSerial >= maxSerial) {
-
-            // create the result of unique id/tableserial pairs, sorted by id + tableserial
-            Set<IdSerialTuple> setById = new TreeSet<>((IdSerialTuple o1, IdSerialTuple o2) -> {
-              // order by id + tableserial descending
-              int rv = Long.compare(o2.getId(), o1.getId());
-              if (rv == 0) {
-                rv = Long.compare(o2.getSerial(), o1.getSerial());
-              }
-              return rv;
-            });
-
-            for (IdSerialTuple idSer: exp.idSerTuples) {
-              if (idSer.getSerial() > minSerial && idSer.getSerial() <= maxSerial) {
-                setById.add(idSer);
-              }
-            }
-
-            // only take the id/tableserial with the highest tableserial for duplicate ids
-            List<IdSerialTuple> expireList = new ArrayList<>();
-
-            IdSerialTuple lastIdSer = null;
-            for (IdSerialTuple idSer: setById) {
-              if (lastIdSer != null && lastIdSer.getId() != idSer.getId()) {
-                expireList.add(lastIdSer);
-              }
-              lastIdSer = idSer;
-            }
-            if (lastIdSer != null) {
-              expireList.add(lastIdSer);
-            }
-
-            return expireList;
-          }
-        }
-        // no usable range found
-        break;
-      }
-
-      matchCount = matchedExps.length;
-      // continue merge...
-    }
-
-    return null;    // no such range in backlog: ask the database!
-  }
-
-
-
-  /**
-   * Merge expiration sets.
-   *
-   * @param expSets the expiration sets to merge
-   * @return the merged sets
-   */
-  private ExpirationSet[] merge(ExpirationSet[] expSets, int count) {
-    ExpirationSet[] mergedSets = new ExpirationSet[count];
-    mergedSets[0] = expSets[0].clone();
-    int mergeCount = 1;
-    for (int i=1; i < count; i++) {
-      ExpirationSet exp = expSets[i];
-      boolean merged = false;
-      for (int j=0; j < mergeCount; j++) {
-        ExpirationSet mexp = mergedSets[j];
-        if (exp.maxSerial >= mexp.minSerial && exp.minSerial <= mexp.minSerial) {
-          mexp.minSerial = exp.minSerial;
-          if (exp.maxSerial > mexp.maxSerial) {
-            mexp.maxSerial = exp.maxSerial;
-          }
-          merged = true;
-        }
-        if (exp.minSerial <= mexp.maxSerial && exp.maxSerial >= mexp.maxSerial) {
-          mexp.maxSerial = exp.maxSerial;
-          if (exp.minSerial < mexp.minSerial) {
-            mexp.minSerial = exp.minSerial;
-          }
-          merged = true;
-        }
-        if (merged) {
-          mexp.idSerTuples.addAll(exp.idSerTuples);
-          break;
-        }
-      }
-      if (!merged) {
-        // not merged: add a clone to merged sets
-        mergedSets[mergeCount++] = exp.clone();
-      }
-    }
-    // cut result array in size
-    ExpirationSet[] nMergedSets = new ExpirationSet[mergeCount];
-    System.arraycopy(mergedSets, 0, nMergedSets, 0, mergeCount);
-    return nMergedSets;
+    return found ? expireSet : null;
   }
 
 }

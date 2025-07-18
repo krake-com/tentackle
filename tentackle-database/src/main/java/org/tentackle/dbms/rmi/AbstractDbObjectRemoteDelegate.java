@@ -20,10 +20,12 @@
 
 package org.tentackle.dbms.rmi;
 
-import java.rmi.RemoteException;
-import java.util.List;
 import org.tentackle.dbms.AbstractDbObject;
 import org.tentackle.misc.IdSerialTuple;
+
+import java.rmi.RemoteException;
+import java.util.Collection;
+import java.util.List;
 
 
 
@@ -74,9 +76,7 @@ public interface AbstractDbObjectRemoteDelegate<P extends AbstractDbObject<P>> e
 
   List<IdSerialTuple> selectExpiredTableSerials(long oldSerial, long maxSerial) throws RemoteException;
 
-  List<IdSerialTuple> getExpirationBacklog(long minSerial, long maxSerial) throws RemoteException;
-
-  List<IdSerialTuple> getExpiredTableSerials(long oldSerial, long maxSerial) throws RemoteException;
+  Collection<IdSerialTuple> getExpiredTableSerials(long oldSerial, long maxSerial) throws RemoteException;
 
   List<P> selectObjectsWithExpiredTableSerials(long oldSerial) throws RemoteException;
 

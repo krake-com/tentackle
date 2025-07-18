@@ -52,12 +52,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
 /**
- * A jdbc connection managed by the ConnectionManager.<br>
- *
- * The connection provides some additional features
- * such as a prepared statement cache
- * and translates SQLExceptions to PersistenceExceptions.
- * The ConnectionManager is responsible to attach and detach
+ * A JDBC connection managed by the {@link ConnectionManager}.
+ * <p>
+ * The connection provides some additional features such as a prepared statement cache
+ * and translates {@link SQLException}s to {@link PersistenceException}s.
+ * The {@link ConnectionManager} is responsible for attaching and detaching
  * the connection to a session.
  *
  * @author harald
@@ -66,7 +65,7 @@ public class ManagedConnection {
 
   /**
    * Minimum milliseconds a connection remains attached before being logged.<br>
-   * 0 to disable, -1 to log every detach.
+   * 0 to disable, -1 to log every detach().
    * <p>
    * For analysis and debugging purposes only.
    */
@@ -92,14 +91,14 @@ public class ManagedConnection {
   private static Pattern mdcFilter;
 
   /**
-   * Optionally enable statement checks for resultSetType and resultSetConcurrency.
+   * Optionally, enable statement checks for resultSetType and resultSetConcurrency.
    */
   private static boolean checkStatementResultSetParameters;
 
   /**
    * Logging level to log nested selects.<br>
    * When enabled, selects running in parallel on the same connection will be logged.
-   * This is usually means, that from within a loop processing a result set, a method is invoked,
+   * This usually means that from within a loop processing a result set, a method is invoked,
    * that in turn triggers another select (which may be perfectly ok or an unwanted side effect).
    */
   private static Level logLevelForParallelOpenResultSets;
@@ -129,7 +128,7 @@ public class ManagedConnection {
   /**
    * Sets the minimum milliseconds a connection remains attached before being logged.
    *
-   * @param millis milliseconds, 0 to disable, -1 to log every detach
+   * @param millis milliseconds, 0 to disable, -1 to log every detach()
    */
   public static void setLogMinAttachMillis(long millis) {
     logMinAttachMillis = millis;
@@ -195,7 +194,7 @@ public class ManagedConnection {
   /**
    * Returns whether to check that requested resulttype and concurrency matches the prepared statement reused.
    *
-   * @return true if check is enabled
+   * @return true if the check is enabled
    */
   public static boolean isCheckingStatementResultSetParameters() {
     return checkStatementResultSetParameters;
@@ -222,7 +221,7 @@ public class ManagedConnection {
   /**
    * Sets the logging level to log nested selects.<br>
    * If enabled, selects running in parallel on the same connection will be logged.
-   * This is usually means, that from within a loop processing a result set, a method is invoked,
+   * This usually means that from within a loop processing a result set, a method is invoked,
    * that in turn triggers another select.
    *
    * @param level the logging level, null to disable
@@ -285,7 +284,7 @@ public class ManagedConnection {
   private static class Resources implements Runnable {
     private Connection connection;  // the wrapped connection, null if closed
     private String name;            // the name of the managed connection
-    private boolean dead;           // connection is dead (comlink error detected)
+    private boolean dead;           // the connection is dead (comlink error detected)
     private ManagedConnection me;   // != null if programmatic cleanup
 
     Resources(Connection connection) {
@@ -343,7 +342,7 @@ public class ManagedConnection {
   private int counterForClearWarnings;                    // current counter
   private StatementHistory currentStatement;              // statement history while not in transaction
   private long connectionInactivityTimeoutMs;             // optional database connection inactivity timeout
-  private boolean connectionKeepAliveEnabled;             // optional periodical dummy select to prevent premature close of idle connection
+  private boolean connectionKeepAliveEnabled;             // optional periodical fake-select to prevent premature close of idle connection
 
   private final List<StatementHistory> statementHistory;                        // statement history while in transaction
   private final Map<StatementKey,PreparedStatementWrapper> preparedStatements;  // all prepared statements for this connection (stmtId:statement)
@@ -356,7 +355,7 @@ public class ManagedConnection {
    *
    * @param manager the connection manager
    * @param backend the backend
-   * @param connection the low level JDBC connection
+   * @param connection the low-level JDBC connection
    */
   public ManagedConnection(ConnectionManager manager, Backend backend, Connection connection) {
     this.manager = Objects.requireNonNull(manager, "manager");
@@ -403,10 +402,10 @@ public class ManagedConnection {
   }
 
   /**
-   * Gets the low level connection.
+   * Gets the low-level connection.
    *
    * @return the physical connection, never null
-   * @throws PersistenceException if connection is closed
+   * @throws PersistenceException if the connection is closed
    */
   public Connection getConnection() {
     Connection c = resources.connection;
@@ -435,7 +434,7 @@ public class ManagedConnection {
   }
 
   /**
-   * Returns whether dummy selects are sent periodically to the backend.
+   * Returns whether fake selects are sent periodically to the backend.
    *
    * @return true if idle connections kept alive
    */
@@ -444,7 +443,7 @@ public class ManagedConnection {
   }
 
   /**
-   * Sets the optional flag to send dummy selects periodically to the backend.
+   * Sets the optional flag to send fake selects periodically to the backend.
    *
    * @param connectionKeepAliveEnabled true to keep idle connections alive
    */
@@ -470,7 +469,6 @@ public class ManagedConnection {
     return establishedSince;
   }
 
-
   /**
    * Sets the epochal time when this connection should be closed, if unused.
    *
@@ -489,29 +487,26 @@ public class ManagedConnection {
     return expireAt;
   }
 
-
   /**
    * Gets the epochal time when this connection was attached.
    *
-   * @return the epochal time of last attach, 0 if not attached
+   * @return the epochal time of the last attach(), 0 if not attached
    */
   public long getAttachedSince() {
     return attachedSince;
   }
 
-
   /**
    * Gets the epochal time when this connection was detached.
    * <p>
-   * Note that newly created connections get their detach time initialized
+   * Note that newly created connections get their detach-time initialized
    * from the current system time.
    *
-   * @return the epochal time of last detach, 0 if attached
+   * @return the epochal time of the last detach(), 0 if attached
    */
   public long getDetachedSince() {
     return detachedSince;
   }
-
 
   /**
    * Sets the connection index.
@@ -532,14 +527,13 @@ public class ManagedConnection {
     return index;
   }
 
-
   /**
    * Marks a connection being dead.
    * <p>
    * Marking connections dead allows connection managers like
    * {@link MpxConnectionManager} to re-open connections before
    * being attached next time. Notice that not all connection managers
-   * honour the dead-flag (makes only sense in servers, anyway).
+   * honor the dead-flag (makes only sense in servers, anyway).
    *
    * @param dead true if marked dead, false not dead
    */
@@ -551,7 +545,8 @@ public class ManagedConnection {
   }
 
   /**
-   * Returns whether connection is marked dead
+   * Returns whether the connection is marked dead.
+   *
    * @return true if dead
    */
   public boolean isDead() {
@@ -559,7 +554,7 @@ public class ManagedConnection {
   }
 
   /**
-   * Returns whether timeout is enabled and connection wasn't use for a long time and needs verification.
+   * Returns whether timeout is enabled and the connection wasn't used for a long time and needs verification.
    *
    * @return return true if {@link #verifyConnection()} should be invoked before use
    */
@@ -568,7 +563,7 @@ public class ManagedConnection {
   }
 
   /**
-   * Returns whether timeout is enabled and connection wasn't use for a long time and needs verification.
+   * Returns whether timeout is enabled and the connection wasn't used for a long time and needs verification.
    *
    * @param currentTimeMillis the current epochal time in milliseconds
    * @return return true if {@link #verifyConnection()} should be invoked before use
@@ -579,9 +574,9 @@ public class ManagedConnection {
   }
 
   /**
-   * Checks whether connection is still valid.<p>
+   * Checks whether the connection is still valid.<p>
    * Usually implemented by the backend via a "SELECT 1" query.<br>
-   * If the check fails the connection is marked dead.
+   * If the check fails, the connection is marked dead.
    *
    * @return true if connection still valid, false if invalid
    * @see Backend#getDummySelect()
@@ -589,7 +584,7 @@ public class ManagedConnection {
   public boolean verifyConnection() {
     try (Statement stmt = getConnection().createStatement()) {
       // Can be invoked at any time, even if another statement is currently running
-      // on this connection (submitted from another thread) since JDBC-drivers are thread-safe these days.
+      // on this connection (submitted from another thread) since JDBC drivers are thread-safe these days.
       // However, the invocation may be blocked until the other statement finishes.
       stmt.executeQuery(getBackend().getDummySelect());
       lastVerified = System.currentTimeMillis();
@@ -600,7 +595,6 @@ public class ManagedConnection {
       return false;
     }
   }
-
 
   /**
    * Attaches a connection to a session.
@@ -638,7 +632,6 @@ public class ManagedConnection {
     LOGGER.finer("{0} attached to {1}, count={2}", db, this, attachCount);
   }
 
-
   /**
    * Checks whether a session is attached to this connection.
    *
@@ -648,19 +641,17 @@ public class ManagedConnection {
     return db != null;
   }
 
-
   /**
    * Returns whether a transaction is running.
    *
-   * @return true if connection is attached to a session in transaction
+   * @return true if the connection is attached to a session in transaction
    */
   public boolean isTxRunning() {
     return isAttached() && db.isTxRunning();
   }
 
-
   /**
-   * Returns whether connection has expired.<br>
+   * Returns whether the connection has expired.<br>
    * Expired connections should be closed and reopened.
    *
    * @return true if expired
@@ -668,7 +659,6 @@ public class ManagedConnection {
   public boolean isExpired() {
     return expireAt > 0 && expireAt < detachedSince;
   }
-
 
   /**
    * Detaches a session from a connection.
@@ -733,7 +723,6 @@ public class ManagedConnection {
     }
   }
 
-
   /**
    * Gets tha attached session.
    *
@@ -742,7 +731,6 @@ public class ManagedConnection {
   public Db getSession() {
     return db;
   }
-
 
   /**
    * Gets the unique instance number.
@@ -753,7 +741,6 @@ public class ManagedConnection {
     return instanceNumber;
   }
 
-
   /**
    * Gets the backend id.
    *
@@ -762,7 +749,6 @@ public class ManagedConnection {
   public String getBackendId() {
     return backendId;
   }
-
 
   /**
    * Gets the connection name.
@@ -777,7 +763,6 @@ public class ManagedConnection {
     }
     return buf.toString();
   }
-
 
   @Override
   public String toString() {
@@ -803,55 +788,14 @@ public class ManagedConnection {
     return buf.toString();
   }
 
-
-  /**
-   * Checks whether the mapped diagnostic context is valid for statistics logging.
-   *
-   * @return true if loggable
-   * @see #mdcFilter
-   */
-  protected boolean isMDCValid() {
-    if (mdcFilter == null) {
-      return true;
-    }
-    MappedDiagnosticContext mdc = LOGGER.getMappedDiagnosticContext();
-    return mdc != null && mdc.matchesPattern(mdcFilter);
-  }
-
-
-  /**
-   * Logs the execution start of a statement during a transaction.<br>
-   * The execution start is the current epochal time.
-   * The execution end must be set via {@link StatementHistory#end()}
-   *
-   * @param statement the statement
-   * @param sql optional SQL string if statement does not provide it
-   * @return the history with an execution start of now and execution end not set, never null
-   */
-  StatementHistory logStatementHistory(StatementWrapper statement, String sql) {
-    StatementHistory history = new StatementHistory(statement, sql);
-    if (isTxRunning()) {
-      statementHistory.add(history);
-      if (maxStatementsPerTransaction != 0 && statementHistory.size() > maxStatementsPerTransaction) {
-        throw new PersistenceException(db, "transaction limit of statements exceeded (" + maxStatementsPerTransaction + ")");
-      }
-    }
-    else  {
-      currentStatement = history;
-    }
-    return history;
-  }
-
-
   /**
    * Gets the statement history.<br>
    *
-   * @return the statements executed during last attachment
+   * @return the statements executed during the last attachment
    */
   public List<StatementHistory> getStatementHistory() {
     return statementHistory;
   }
-
 
   /**
    * Adds a pending result set.
@@ -930,7 +874,6 @@ public class ManagedConnection {
     }
     return rsList;
   }
-
 
   /**
    * Creates a diagnostic string.
@@ -1018,24 +961,6 @@ public class ManagedConnection {
     return buf.toString();
   }
 
-  private StringBuilder logStatementHistory(Collection<StatementHistory> statementHistory) {
-    StringBuilder buf = new StringBuilder();
-    for (StatementHistory stmt : statementHistory) {
-      buf.append("\n    ").append(stmt);
-    }
-    return buf;
-  }
-
-  /**
-   * asserts that a connection is attached
-   */
-  private void assertAttached() {
-    if (db == null) {
-      throw new PersistenceException("connection " + this + " not attached to any Db");
-    }
-  }
-
-
   /**
    * Gets the current transaction isolation level.
    *
@@ -1066,7 +991,6 @@ public class ManagedConnection {
       throw createFromSqlException("setting transaction isolation level to " + txIsolation + " failed", sx);
     }
   }
-
 
   /**
    * Gets the read-only mode.
@@ -1102,7 +1026,8 @@ public class ManagedConnection {
   /**
    * Sets the autocommit feature.
    * <p>
-   * Restores the default transaction isolation level and read-only mode, if set to true and isolation or read-only mode was changed.
+   * Restores the default transaction isolation level and read-only mode, if set to true,
+   * and isolation or read-only mode was changed.
    *
    * @param autoCommit true to enable autocommit, false to disable.
    */
@@ -1119,7 +1044,6 @@ public class ManagedConnection {
     }
   }
 
-
   /**
    * Gets the autocommit value.
    *
@@ -1134,7 +1058,6 @@ public class ManagedConnection {
     }
   }
 
-
   /**
    * Performs a commit.
    */
@@ -1147,7 +1070,6 @@ public class ManagedConnection {
       throw createFromSqlException("commit failed", ex);
     }
   }
-
 
   /**
    * Performs a rollback.
@@ -1168,7 +1090,6 @@ public class ManagedConnection {
       throw createFromSqlException("rollback failed: " + toDiagnosticString(), ex);
     }
   }
-
 
   /**
    * Creates an unnamed savepoint in the current transaction.
@@ -1235,7 +1156,6 @@ public class ManagedConnection {
     }
   }
 
-
   /**
    * Remembers a statement as running.
    *
@@ -1261,7 +1181,6 @@ public class ManagedConnection {
     }
   }
 
-
   /**
    * Cancels the(all) currently running statement(s).<br>
    * May be invoked from any thread.
@@ -1282,30 +1201,6 @@ public class ManagedConnection {
       iter.remove();
     }
   }
-
-
-
-  /**
-   * Unmark all prepared statements that are marked ready.
-   */
-  private void unmarkPreparedStatements() {
-    // unmark all statements marked ready
-    for (PreparedStatementWrapper stmt: preparedStatements.values()) {
-      if (stmt != null && stmt.isMarkedReady()) {
-        try {
-          stmt.consume();
-        }
-        catch (RuntimeException ex) {
-          // just log (if not cancelled)
-          if (!stmt.isCancelled()) {
-            LOGGER.warning("unmarking statement failed: " + stmt, ex);
-          }
-        }
-      }
-    }
-  }
-
-
 
   /**
    * Reads all warnings, logs and clears them.
@@ -1330,7 +1225,7 @@ public class ManagedConnection {
           stmt.getStatement().clearWarnings();
         }
       }
-      // as this statement is called when there are no more running statements
+      // as this statement is called when there are no more running statements,
       // we ignore the unprepared running statements.
     }
     catch (SQLException e) {
@@ -1339,8 +1234,6 @@ public class ManagedConnection {
       }
     }
   }
-
-
 
   /**
    * Sets the countForClearWarnings trigger.
@@ -1360,8 +1253,6 @@ public class ManagedConnection {
     return maxCountForClearWarnings;
   }
 
-
-
   /**
    * Increments a counter and empties the warnings on the connection
    * and all prepared statements if a trigger value is reached.
@@ -1378,7 +1269,242 @@ public class ManagedConnection {
     }
   }
 
+  /**
+   * Closes the connection.<br>
+   * Closing an already closed connection is allowed.
+   */
+  public void close() {
+    if (!isClosed()) {
+      try {
+        // rollback before close to prevent an implicit commit (JDBC implementation specific behavior)
+        if (!getConnection().getAutoCommit())  {
+          LOGGER.warning("closing connection while in transaction:\n{0}", this::toDiagnosticString);
+          getConnection().rollback();
+        }
+      }
+      catch (SQLException ex) {
+        if (!resources.dead) {
+          LOGGER.warning("low level rollback failed: {0}", ex.getMessage());
+        }
+      }
 
+      logAndClearWarnings();
+      forceDetached();
+      closePreparedStatements(false);
+
+      closeImpl();
+    }
+  }
+
+  /**
+   * Gets the connection's closed state.
+   *
+   * @return true if the connection is closed
+   */
+  public boolean isClosed() {
+    return resources.connection == null;
+  }
+
+  /**
+   * Closes prepared statements.
+   *
+   * @param onlyMarkedReady true if close only pending statements, false if all
+   */
+  public void closePreparedStatements(boolean onlyMarkedReady) {
+    // close all statements
+    for (Iterator<PreparedStatementWrapper> iter = preparedStatements.values().iterator(); iter.hasNext(); ) {
+      PreparedStatementWrapper stmt = iter.next();
+      if (!stmt.isClosed() &&   // if not already closed
+          (!onlyMarkedReady || stmt.isMarkedReady())) { // or all or only pending
+        try {
+          stmt.close();
+        }
+        catch (RuntimeException ex) {
+          // log that, we need to close them all
+          if (!resources.dead) {
+            LOGGER.warning("closing statement failed: " + stmt, ex);
+          }
+        }
+      }
+      if (onlyMarkedReady) {
+        iter.remove();
+      }
+    }
+    if (!onlyMarkedReady) {
+      preparedStatements.clear();
+    }
+  }
+
+  /**
+   * Removes a closed prepared statement.
+   *
+   * @param st the statement
+   */
+  public void removePreparedStatement(PreparedStatementWrapper st) {
+    if (!st.isClosed()) {
+      throw new PersistenceException(db, "statement still open: " + st);
+    }
+    StatementKey key = st.getStatementKey();
+    if (key != null) {
+      // if not a one-shot
+      preparedStatements.remove(st.getStatementKey());
+    }
+  }
+
+  /**
+   * Creates a non-prepared statement.<br>
+   *
+   * One-shot statements (i.e., non-prepared statements) must attach the db as soon as they
+   * are instantiated. The db is detached after executeUpdate or after executeQuery when
+   * its result set is closed.
+   *
+   * @param resultSetType a result set type; one of
+   *        <code>ResultSet.TYPE_FORWARD_ONLY</code>,
+   *        <code>ResultSet.TYPE_SCROLL_INSENSITIVE</code>, or
+   *        <code>ResultSet.TYPE_SCROLL_SENSITIVE</code>
+   * @param resultSetConcurrency a concurrency type; one of
+   *        <code>ResultSet.CONCUR_READ_ONLY</code> or
+   *        <code>ResultSet.CONCUR_UPDATABLE</code>
+   * @return a new <code>Statement</code> object that will generate
+   *         <code>ResultSet</code> objects with the given type and
+   *         concurrency
+   */
+  public StatementWrapper createStatement (int resultSetType, int resultSetConcurrency) {
+    try {
+      Statement stmt = getConnection().createStatement(resultSetType, resultSetConcurrency);
+      return new StatementWrapper(this, stmt);
+    }
+    catch (SQLException ex) {
+      throw createFromSqlException("creating statement failed for " + this, ex);
+    }
+  }
+
+  /**
+   * Creates a prepared statement.
+   *
+   * @param statementKey the statement key, null if one-shot
+   * @param sql the SQL code
+   * @param resultSetType the result set type
+   * @param resultSetConcurrency the result set concurrency
+   * @return the statement
+   */
+  public PreparedStatementWrapper createPreparedStatement(StatementKey statementKey, String sql,
+                                                          int resultSetType, int resultSetConcurrency) {
+    try {
+      sql = backend.optimizeSql(sql);
+      return new PreparedStatementWrapper(
+              this,
+              getConnection().prepareStatement(sql, resultSetType, resultSetConcurrency),
+              statementKey,
+              sql);
+    }
+    catch (SQLException e) {
+      throw createFromSqlException("creating prepared statement failed", e);
+    }
+  }
+
+  /**
+   * Gets a prepared statement.<br>
+   *
+   * The statement will be reused if already prepared.
+   * Else it will be prepared according to the statement definition in BackendStatement.
+   *
+   * @param statementKey the unique statement key
+   * @param alwaysPrepare true if always do a physical preparing
+   * @param resultSetType one of ResultSet.TYPE_...
+   * @param resultSetConcurrency one of ResultSet.CONCUR_...
+   * @param sqlSupplier the SQL supplier
+   * @return the prepared statement for this connection
+   */
+  public PreparedStatementWrapper getPreparedStatement (StatementKey statementKey, boolean alwaysPrepare,
+                                                        int resultSetType, int resultSetConcurrency,
+                                                        SqlSupplier sqlSupplier)  {
+
+    if (statementKey == null) {
+      throw new PersistenceException("statement key required");
+    }
+    assertAttached();
+
+    PreparedStatementWrapper prepStmt = preparedStatements.get(statementKey);
+
+    if (prepStmt == null || prepStmt.isClosed() || alwaysPrepare) {
+      prepStmt = createPreparedStatement(statementKey, sqlSupplier.get(backend).toString(), resultSetType, resultSetConcurrency);
+      preparedStatements.put(statementKey, prepStmt);
+      LOGGER.finer("statement {0} prepared on {1}", prepStmt, this);
+    }
+    else  {
+      // already created: check that parameters are the same
+      if (checkStatementResultSetParameters) {
+        checkStatement(prepStmt, resultSetType, resultSetConcurrency);
+      }
+      LOGGER.finer("statement {0} re-used on {1}", prepStmt, this);
+    }
+
+    return prepStmt;
+  }
+
+  /**
+   * Checks for a dead communications link.<br>
+   * If the link is down, for example, the database server closed it,
+   * the connection is marked dead.
+   *
+   * @param ex the SQL exception
+   * @return true if the connection is dead
+   */
+  public boolean checkForDeadLink(SQLException ex) {
+    if (!isDead() && backend.isCommunicationLinkException(ex)) {
+      // some severe comlink error, probably closed by server
+      setDead(true);
+    }
+    return isDead();
+  }
+
+  /**
+   * Creates a {@link PersistenceException} or {@link SessionClosedException} depending on the SQL error.<br>
+   * If the session was reconnected, a {@link ReconnectedException} is thrown.
+   *
+   * @param message the message
+   * @param sx the SQL exception
+   * @return the persistence exception
+   */
+  public PersistenceException createFromSqlException(String message, SQLException sx) {
+    PersistenceException persistenceException;
+    if (checkForDeadLink(sx)) {
+      persistenceException = new SessionClosedException(db, message, sx);
+      Db ldb = db;
+      if (ldb != null && ldb.optionallyReconnect()) {
+        throw new ReconnectedException(persistenceException);
+      }
+    }
+    else {
+      persistenceException = new PersistenceException(db, message, sx);
+    }
+    return persistenceException;
+  }
+
+
+  /**
+   * Logs the execution start of a statement during a transaction.<br>
+   * The execution start is the current epochal time.
+   * The execution end must be set via {@link StatementHistory#end()}
+   *
+   * @param statement the statement
+   * @param sql optional SQL string if statement does not provide it
+   * @return the history with an execution start of now and execution end not set, never null
+   */
+  StatementHistory logStatementHistory(StatementWrapper statement, String sql) {
+    StatementHistory history = new StatementHistory(statement, sql);
+    if (isTxRunning()) {
+      statementHistory.add(history);
+      if (maxStatementsPerTransaction != 0 && statementHistory.size() > maxStatementsPerTransaction) {
+        throw new PersistenceException(db, "transaction limit of statements exceeded (" + maxStatementsPerTransaction + ")");
+      }
+    }
+    else  {
+      currentStatement = history;
+    }
+    return history;
+  }
 
   /**
    * Forces the connection to be detached from the session.<br>
@@ -1386,7 +1512,7 @@ public class ManagedConnection {
    */
   void forceDetached() {
     if (isAttached()) {
-      // database is still attached
+      // the database is still attached
       LOGGER.warning("forcing detach of connection {0}, attached to {1}", this, db);
       // close pending statements
       closePreparedStatements(true);
@@ -1421,32 +1547,39 @@ public class ManagedConnection {
 
 
   /**
-   * Closes the connection.<br>
-   * Closing an already closed connection is allowed.
+   * Checks whether the mapped diagnostic context is valid for statistics logging.
+   *
+   * @return true if loggable
+   * @see #mdcFilter
    */
-  public void close() {
-    if (!isClosed()) {
-      try {
-        // rollback before close to prevent an implicit commit (JDBC implementation specific behaviour)
-        if (!getConnection().getAutoCommit())  {
-          LOGGER.warning("closing connection while in transaction:\n{0}", this::toDiagnosticString);
-          getConnection().rollback();
-        }
-      }
-      catch (SQLException ex) {
-        if (!resources.dead) {
-          LOGGER.warning("low level rollback failed: {0}", ex.getMessage());
-        }
-      }
-
-      logAndClearWarnings();
-      forceDetached();
-      closePreparedStatements(false);
-
-      closeImpl();
+  protected boolean isMDCValid() {
+    if (mdcFilter == null) {
+      return true;
     }
+    MappedDiagnosticContext mdc = LOGGER.getMappedDiagnosticContext();
+    return mdc != null && mdc.matchesPattern(mdcFilter);
   }
 
+
+  /**
+   * Unmark all prepared statements that are marked ready.
+   */
+  private void unmarkPreparedStatements() {
+    // unmark all statements marked ready
+    for (PreparedStatementWrapper stmt: preparedStatements.values()) {
+      if (stmt != null && stmt.isMarkedReady()) {
+        try {
+          stmt.consume();
+        }
+        catch (RuntimeException ex) {
+          // just log (if not canceled)
+          if (!stmt.isCancelled()) {
+            LOGGER.warning("unmarking statement failed: " + stmt, ex);
+          }
+        }
+      }
+    }
+  }
 
   /**
    * Closes the connection.
@@ -1456,205 +1589,31 @@ public class ManagedConnection {
     cleanable.clean();
   }
 
-
   /**
-   * Gets the connection's closed state.
+   * Creates a StringBuilder from the statement history.
    *
-   * @return true if connection is closed
+   * @param statementHistory the history
+   * @return the builder
    */
-  public boolean isClosed() {
-    return resources.connection == null;
+  private StringBuilder logStatementHistory(Collection<StatementHistory> statementHistory) {
+    StringBuilder buf = new StringBuilder();
+    for (StatementHistory stmt : statementHistory) {
+      buf.append("\n    ").append(stmt);
+    }
+    return buf;
   }
 
-
   /**
-   * Closes prepared statements.
-   *
-   * @param onlyMarkedReady true if close only pending statements, false if all
+   * asserts that a connection is attached
    */
-  public void closePreparedStatements(boolean onlyMarkedReady) {
-    // close all statements
-    for (Iterator<PreparedStatementWrapper> iter = preparedStatements.values().iterator(); iter.hasNext(); ) {
-      PreparedStatementWrapper stmt = iter.next();
-      if (!stmt.isClosed() &&   // if not already closed
-          (!onlyMarkedReady || stmt.isMarkedReady())) { // or all or only pending
-        try {
-          stmt.close();
-        }
-        catch (RuntimeException ex) {
-          // just log, we need to close them all
-          if (!resources.dead) {
-            LOGGER.warning("closing statement failed: " + stmt, ex);
-          }
-        }
-      }
-      if (onlyMarkedReady) {
-        iter.remove();
-      }
-    }
-    if (!onlyMarkedReady) {
-      preparedStatements.clear();
+  private void assertAttached() {
+    if (db == null) {
+      throw new PersistenceException("connection " + this + " not attached to any Db");
     }
   }
 
-
   /**
-   * Removes a closed prepared statement.
-   *
-   * @param st the statement
-   */
-  public void removePreparedStatement(PreparedStatementWrapper st) {
-    if (!st.isClosed()) {
-      throw new PersistenceException(db, "statement still open: " + st);
-    }
-    StatementKey key = st.getStatementKey();
-    if (key != null) {
-      // if not a one-shot
-      preparedStatements.remove(st.getStatementKey());
-    }
-  }
-
-
-  /**
-   * Creates a non-prepared statement.<br>
-   *
-   * One-shot statements (i.e. non-prepared statements) must attach the db as soon as they
-   * are instantiated. The db is detached after executeUpdate or after executeQuery when
-   * its result set is closed.
-   *
-   * @param resultSetType a result set type; one of
-   *        <code>ResultSet.TYPE_FORWARD_ONLY</code>,
-   *        <code>ResultSet.TYPE_SCROLL_INSENSITIVE</code>, or
-   *        <code>ResultSet.TYPE_SCROLL_SENSITIVE</code>
-   * @param resultSetConcurrency a concurrency type; one of
-   *        <code>ResultSet.CONCUR_READ_ONLY</code> or
-   *        <code>ResultSet.CONCUR_UPDATABLE</code>
-   * @return a new <code>Statement</code> object that will generate
-   *         <code>ResultSet</code> objects with the given type and
-   *         concurrency
-   */
-  public StatementWrapper createStatement (int resultSetType, int resultSetConcurrency) {
-    try {
-      Statement stmt = getConnection().createStatement(resultSetType, resultSetConcurrency);
-      return new StatementWrapper(this, stmt);
-    }
-    catch (SQLException ex) {
-      throw createFromSqlException("creating statement failed for " + this, ex);
-    }
-  }
-
-
-  /**
-   * Creates a prepared statement.
-   *
-   * @param statementKey the statement key, null if one-shot
-   * @param sql the sql code
-   * @param resultSetType the result set type
-   * @param resultSetConcurrency the result set concurrency
-   * @return the statement
-   */
-  public PreparedStatementWrapper createPreparedStatement(StatementKey statementKey, String sql,
-                                                          int resultSetType, int resultSetConcurrency) {
-    try {
-      sql = backend.optimizeSql(sql);
-      return new PreparedStatementWrapper(
-              this,
-              getConnection().prepareStatement(sql, resultSetType, resultSetConcurrency),
-              statementKey,
-              sql);
-    }
-    catch (SQLException e) {
-      throw createFromSqlException("creating prepared statement failed", e);
-    }
-  }
-
-
-  /**
-   * Gets a prepared statement.<br>
-   *
-   * The statement will be reused if already prepared.
-   * Else it will be prepared according to the statement definition in BackendStatement.
-   *
-   * @param statementKey the unique statement key
-   * @param alwaysPrepare true if always do a physical prepare
-   * @param resultSetType one of ResultSet.TYPE_...
-   * @param resultSetConcurrency one of ResultSet.CONCUR_...
-   * @param sqlSupplier the SQL supplier
-   * @return the prepared statement for this connection
-   */
-  public PreparedStatementWrapper getPreparedStatement (StatementKey statementKey, boolean alwaysPrepare,
-                                                        int resultSetType, int resultSetConcurrency,
-                                                        SqlSupplier sqlSupplier)  {
-
-    if (statementKey == null) {
-      throw new PersistenceException("statement key required");
-    }
-    assertAttached();
-
-    PreparedStatementWrapper prepStmt = preparedStatements.get(statementKey);
-
-    if (prepStmt == null || prepStmt.isClosed() || alwaysPrepare) {
-      // we need to prepare it
-      prepStmt = createPreparedStatement(statementKey, sqlSupplier.get(backend).toString(), resultSetType, resultSetConcurrency);
-      preparedStatements.put(statementKey, prepStmt);
-      LOGGER.finer("statement {0} prepared on {1}", prepStmt, this);
-    }
-    else  {
-      // already created: check that parameters are the same
-      if (checkStatementResultSetParameters) {
-        checkStatement(prepStmt, resultSetType, resultSetConcurrency);
-      }
-      LOGGER.finer("statement {0} re-used on {1}", prepStmt, this);
-    }
-
-    return prepStmt;
-  }
-
-
-  /**
-   * Checks for a dead communications link.<br>
-   * If the link is down, for example the database server closed it,
-   * the connection is marked dead.
-   *
-   * @param ex the sql exception
-   * @return true if connection is dead
-   */
-  public boolean checkForDeadLink(SQLException ex) {
-    if (!isDead() && backend.isCommunicationLinkException(ex)) {
-      // some severe comlink error, probably closed by server
-      setDead(true);
-    }
-    return isDead();
-  }
-
-
-  /**
-   * Creates a {@link PersistenceException} or {@link SessionClosedException} depending on the SQL error.<br>
-   * If the session was reconnected, a {@link ReconnectedException} is returned.
-   *
-   * @param message the message
-   * @param sx the SQL exception
-   * @return the persistence exception
-   */
-  public PersistenceException createFromSqlException(String message, SQLException sx) {
-    PersistenceException persistenceException;
-    if (checkForDeadLink(sx)) {
-      persistenceException = new SessionClosedException(db, message, sx);
-      Db ldb = db;
-      if (ldb != null && ldb.optionallyReconnect()) {
-        throw new ReconnectedException(persistenceException);
-      }
-    }
-    else {
-      persistenceException = new PersistenceException(db, message, sx);
-    }
-    return persistenceException;
-  }
-
-
-
-  /**
-   * Check that requested resulttype and concurrency matches the prepared statement to reuse.
+   * Check that the requested result type and concurrency matches the prepared statement to reuse.
    *
    * @param prepStmt the prepared statement
    * @param resultSetType the requested result set type
@@ -1677,7 +1636,9 @@ public class ManagedConnection {
     }
   }
 
-
+  /**
+   * Restores the transaction defaults.
+   */
   private void restoreTransactionDefaults() {
     if (txIsolation != defaultTxIsolation) {
       setTransactionIsolation(defaultTxIsolation);

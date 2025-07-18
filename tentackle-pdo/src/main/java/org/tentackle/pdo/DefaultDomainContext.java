@@ -284,8 +284,6 @@ public class DefaultDomainContext implements DomainContext {
    */
   @Override
   public String toString()  {
-    // context does not include Session.toString() because DomainContext.toString() is
-    // heavily used in GUIs to show the user's context.
     return getContextId() == 0 ? "" : getContextPdo().toString();
   }
 
@@ -331,13 +329,13 @@ public class DefaultDomainContext implements DomainContext {
   /**
    * Compares this domain context with another domain context.<br>
    * The default implementation just compares the class, the contextId
-   * and the session.<br>
-   * Checking against the null context returns 1.
+   * and the session instance number.
    *
    * @param otherContext the context to compare this context to
    */
   @Override
   public int compareTo(DomainContext otherContext) {
+    // the hashcode of a class is unique within the JVM
     int rv = Integer.compare(getClass().hashCode(), otherContext.getClass().hashCode());
     if (rv == 0) {
       rv = Long.compare(getContextId(), otherContext.getContextId());

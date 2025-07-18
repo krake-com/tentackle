@@ -332,7 +332,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
    * @return the backlog
    */
   protected TableSerialExpirationBacklog createBacklog() {
-    return new TableSerialExpirationBacklog();
+    return new TableSerialExpirationBacklog(tableName);
   }
 
 

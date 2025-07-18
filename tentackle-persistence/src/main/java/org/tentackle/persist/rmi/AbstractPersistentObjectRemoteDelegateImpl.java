@@ -34,6 +34,7 @@ import org.tentackle.session.NotFoundException;
 
 import java.lang.reflect.InvocationTargetException;
 import java.rmi.RemoteException;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -306,6 +307,18 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
   }
 
   @Override
+  public List<T> selectAny(DomainContext cb, Collection<Long> ids) throws RemoteException {
+    try {
+      setDomainContext(cb);
+      dbObject.assertRootEntity();
+      return dbObject.selectAny(ids);
+    }
+    catch (RuntimeException e) {
+      throw createException(e);
+    }
+  }
+
+  @Override
   @SuppressWarnings("unchecked")
   public T select(DomainContext cb, long id, boolean forUpdate, boolean tokenLocked) throws RemoteException {
     try {
@@ -366,6 +379,19 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
   }
 
   @Override
+  public List<T> selectAnyForCache(DomainContext cb, Collection<Long> ids) throws RemoteException {
+    try {
+      setDomainContext(cb);
+      dbObject.assertRootEntity();
+      // load via cache, if there is a cache at all
+      return dbObject.selectAnyCached(ids);
+    }
+    catch (RuntimeException e) {
+      throw createException(e);
+    }
+  }
+
+  @Override
   public T selectForCache(DomainContext cb, long id) throws RemoteException {
     try {
       // load via cache, if there is a cache at all
@@ -394,6 +420,18 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
       setDomainContext(cb);
       dbObject.assertRootEntity();
       return dbObject.selectAllWithExpiredTableSerials(oldSerial);
+    }
+    catch (RuntimeException e) {
+      throw createException(e);
+    }
+  }
+
+  @Override
+  public List<T> selectAllWithExpiredTableSerials(DomainContext cb, long oldSerial, long maxSerial) throws RemoteException {
+    try {
+      setDomainContext(cb);
+      dbObject.assertRootEntity();
+      return dbObject.selectAllWithExpiredTableSerials(oldSerial, maxSerial);
     }
     catch (RuntimeException e) {
       throw createException(e);

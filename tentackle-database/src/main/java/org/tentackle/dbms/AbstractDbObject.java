@@ -38,7 +38,9 @@ import java.io.Serial;
 import java.lang.reflect.InvocationTargetException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.TreeSet;
 
 import static org.tentackle.sql.Backend.SQL_ALLSTAR;
 import static org.tentackle.sql.Backend.SQL_AND;
@@ -1943,11 +1945,11 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * update path get at least the serial updated or are not touched at all.
    * The default is to leave unmodified objects untouched.
    * However, in some applications it is necessary to update the master object if some of its children are updated (usually
-   * to trigger something, e.g. a cache-update).<p>
+   * to trigger something, for example, a cache-update).<p>
    * The default implementation returns false.
    * Override this method to change to 'true'.
    *
-   * @return true if update serial even if object is unchanged
+   * @return true if update serial even if the object is unchanged
    * @see #updateObject
    */
   public boolean isUpdatingSerialEvenIfNotModified()  {
@@ -1963,7 +1965,9 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   protected void initModification(ModificationType modType) {
     if (isCountingModification(modType))  {
       setTableSerial(countModification());
-      // will never return on failure -> errorHandler
+      if (modType == DbModificationType.DELETE) {
+        ModificationTracker.getInstance().addDeletion(getSession(), getTableName(), getId(), getTableSerial());
+      }
     }
   }
 
@@ -2465,7 +2469,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Determines the objects with a tableSerial starting at a given serial.
-   * Useful to clean up caches for example.
+   * Useful to clean up the caches for example.
    *
    * @param oldSerial non-inclusive lower bound for tableSerial (&gt; oldSerial)
    * @return pairs of longs, the first being the ID, the second the tableserial, never null
@@ -2502,92 +2506,106 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    *
    * @param oldSerial non-inclusive lower bound for tableSerial (&gt; oldSerial)
    * @param maxSerial inclusive upper bound for tableSerial (&le; maxSerial)
-   * @return pairs of longs, the first being the ID, the second the tableserial, never null
+   * @return list of id/tableserial tuples, sorted by tableserial + id, never null
    */
   public List<IdSerialTuple> selectExpiredTableSerials(long oldSerial, long maxSerial) {
-    if (getSession().isRemote())  {
-      try {
-        return getRemoteDelegate().selectExpiredTableSerials(oldSerial, maxSerial);
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
-    }
-    else  {
-      // local
-      PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectExpiredTableSerials2StatementId,
-                                                         b -> createSelectExpiredTableSerials2Sql());
-      st.setLong(1, oldSerial);
-      st.setLong(2, maxSerial);
-      List<IdSerialTuple> expireList = new ArrayList<>();
-      try (ResultSetWrapper rs = st.executeQuery()) {
-        while (rs.next()) {
-          expireList.add(new IdSerialTuple(rs.getLong(1), rs.getLong(2)));
+    if (maxSerial > oldSerial) {
+      if (getSession().isRemote()) {
+        try {
+          return getRemoteDelegate().selectExpiredTableSerials(oldSerial, maxSerial);
         }
-        return expireList;
+        catch (RemoteException e) {
+          throw PersistenceException.createFromRemoteException(this, e);
+        }
       }
+      else {
+        // local
+        PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectExpiredTableSerials2StatementId,
+                                                           b -> createSelectExpiredTableSerials2Sql());
+        st.setLong(1, oldSerial);
+        st.setLong(2, maxSerial);
+        List<IdSerialTuple> expireList = new ArrayList<>();
+        try (ResultSetWrapper rs = st.executeQuery()) {
+          while (rs.next()) {
+            expireList.add(new IdSerialTuple(rs.getLong(1), rs.getLong(2)));
+          }
+          return expireList;
+        }
+      }
+    }
+    else {
+      return new ArrayList<>();
     }
   }
 
 
   /**
-   * Gets the expiration backlog for a given range of tableserials.
-   * Note that the backlog is maintained only if DbGlobal.serverDb != null.
-   *
-   * @param minSerial the lower serial bound of the query (minSerial &lt; tableSerial)
-   * @param maxSerial the upper serial bound of the query (tableSerial &le; maxSerial)
-   * @return the expiration info as pairs of id/tableserial, null if given range was not found in the backlog
-   */
-  public List<IdSerialTuple> getExpirationBacklog(long minSerial, long maxSerial) {
-    if (getSession().isRemote())  {
-      try {
-        return getRemoteDelegate().getExpirationBacklog(minSerial, maxSerial);
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
-    }
-    else  {
-      // local
-      return getClassVariables().expirationBacklog.getExpiration(minSerial, maxSerial);
-    }
-  }
-
-
-  /**
-   * Combines {@link #selectExpiredTableSerials} and {@link #getExpirationBacklog}.<br>
-   * A physical database query is only done if the requested range is not in the backlog.
-   * Used in RMI-servers to reduces database roundtrips.
+   * Gets the expirations for a given range of tableserials.<br>
+   * The expirations are returned as a list of {@link IdSerialTuple}s with
+   * the serial being the tableserial of the corresponding PDO.<br>
+   * A negative tableserial indicates a deletion. Tuples with an id of 0
+   * indicate a rolled back insert or update or an object that was updated more than once.
+   * <p>
+   * A physical database query is only done if the requested range is not yet cached in the
+   * {@link TableSerialExpirationBacklog}.
+   * <p>
+   * The returned tableserials should not have any gaps.
+   * If there are gaps, the caller cannot derive which PDOs were deleted,
+   * updated or inserted in a rolled back transaction or updated more than once.
+   * Caches, for example, must be invalidated completely in such a case.
+   * <p>
+   * Please notice, for serverless applications running in local client mode,
+   * there <em>will</em> be gaps for deletions, rollbacks and multiple updates.
    *
    * @param oldSerial non-inclusive lower bound for tableSerial (&gt; oldSerial)
    * @param maxSerial inclusive upper bound for tableSerial (&le; maxSerial)
-   * @return pairs of longs, the first being the ID, the second the tableserial, never null
+   * @return the id/tableserial tuples sorted by abs(tableserial), never null
+   * @see ModificationTracker#isLocalClientMode()
    */
-  public List<IdSerialTuple> getExpiredTableSerials(long oldSerial, long maxSerial) {
-    if (getSession().isRemote())  {
-      try {
-        return getRemoteDelegate().getExpiredTableSerials(oldSerial, maxSerial);
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
-    }
-    else  {
-      List<IdSerialTuple> exp;
-      final TableSerialExpirationBacklog backlog = getClassVariables().expirationBacklog;
-      synchronized(backlog) {
-        // try to get from backlog
-        exp = backlog.getExpiration(oldSerial, maxSerial);
-        if (exp == null) {
-          // no info in backlog: physically select
-          exp = selectExpiredTableSerials(oldSerial, maxSerial);
-          backlog.addExpiration(oldSerial, maxSerial, exp);
-          LOGGER.fine("added expiration set {0}-{1}[{2}] for {3}",
-                      oldSerial, maxSerial, exp.size(), getTableName());
+  public Collection<IdSerialTuple> getExpiredTableSerials(long oldSerial, long maxSerial) {
+    Collection<IdSerialTuple> exp;
+    if (maxSerial > oldSerial) {
+      if (getSession().isRemote()) {
+        // remote apps always use the backlog
+        TreeSet<IdSerialTuple> expSet = getClassVariables().expirationBacklog.getExpiration(oldSerial, maxSerial);
+        if (expSet == null || expSet.isEmpty() || Math.abs(expSet.last().getId()) < maxSerial) {
+          // no backlog info or backlog info is outdated (or there is a gap...)
+          try {
+            exp = getRemoteDelegate().getExpiredTableSerials(oldSerial, maxSerial);
+            // exp is always != null and already contains the merged history from the local server
+            getClassVariables().expirationBacklog.addExpiration(oldSerial, maxSerial, exp, false);
+            // Adding to the expiration backlog is only necessary for remote servers.
+            // In remote clients it's used only once by the PdoCache to determine the updates.
+            // However, this feature may also be used for application-specific purposes.
+          }
+          catch (RemoteException e) {
+            throw PersistenceException.createFromRemoteException(this, e);
+          }
+        }
+        else {
+          exp = expSet;
         }
       }
-      return exp;
+      else {
+        boolean useBacklog = !ModificationTracker.getInstance().isLocalClientMode();
+        TreeSet<IdSerialTuple> expSet = useBacklog ? getClassVariables().expirationBacklog.getExpiration(oldSerial, maxSerial) : null;
+        if (expSet == null || expSet.isEmpty() || Math.abs(expSet.last().getId()) < maxSerial) {
+          // no backlog info or backlog info is outdated (or there is a gap...)
+          exp = selectExpiredTableSerials(oldSerial, maxSerial);
+          if (useBacklog && !exp.isEmpty()) {
+            getClassVariables().expirationBacklog.addExpiration(oldSerial, maxSerial, exp, true);
+            exp = getClassVariables().expirationBacklog.getExpiration(oldSerial, maxSerial);    // must exist!
+          }
+        }
+        else {
+          exp = expSet;
+        }
+      }
     }
+    else {
+      exp = new ArrayList<>();
+    }
+    return exp;
   }
 
 

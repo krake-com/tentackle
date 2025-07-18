@@ -54,8 +54,7 @@ public class Reconnector {
 
   private static final Logger LOGGER = Logger.get(Reconnector.class);
 
-
-  private static final int LOG_MODULO = 1000;                       // n'th failed retry to log
+  private static final int LOG_MODULO = 1000;                       // modulo failed retry to log
 
 
   private final AtomicInteger threadNumber = new AtomicInteger();   // thread counter
@@ -75,12 +74,12 @@ public class Reconnector {
    * @param <T> the resource type
    * @param policy the reconnection policy
    */
-  public <T> void submit(ReconnectionPolicy<T> policy) {
+  public <T> void submit(ReconnectionPolicy<T> policy, T resource) {
     if (policy.isBlocking()) {
-      reconnect(policy);
+      reconnect(policy, resource);
     }
     else {
-      executorService.submit(() -> (Runnable) () -> reconnect(policy));
+      executorService.submit(() -> (Runnable) () -> reconnect(policy, resource));
     }
   }
 
@@ -93,14 +92,15 @@ public class Reconnector {
    *
    * @param <T> the resource type
    * @param policy the reconnection policy
+   * @param resource the resource to reconnect
    */
-  protected <T> void reconnect(ReconnectionPolicy<T> policy) {
+  protected <T> void reconnect(ReconnectionPolicy<T> policy, T resource) {
     for (int count=0; ; count++) {    // until successfully reconnected
       long millis = policy.timeToReconnect();
       if (millis > 0) {
         try {
           Thread.sleep(millis);
-          policy.getConsumer().accept(policy.getConnector().get());
+          policy.reconnect(resource);
           break;
         }
         catch (InterruptedException ix) {

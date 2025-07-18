@@ -112,17 +112,27 @@ public interface ModificationTracker extends SessionTaskDispatcher, ExclusiveSes
    * Counts the modification for a given name.<br>
    * Used to trigger modification events.
    *
-   * @param session the session persisting the modification, null if thread-local session
+   * @param session the session persisting the modification, null if thread-local session (never remote)
    * @param name a unique name to track modifications
    * @return the modification serial
    */
   long countModification(Session session, String name);
 
   /**
+   * Adds a deletion to the previously counted modifications.
+   *
+   * @param session the session persisting the modification, null if thread-local session (never remote)
+   * @param name a unique name to track modifications
+   * @param id the ID of the object that was deleted
+   * @param tableSerial the modification serial obtained from {@link #countModification(Session, String)}
+   */
+  void addDeletion(Session session, String name, long id, long tableSerial);
+
+  /**
    * Invoked whenever a transaction is rolled back.<br>
    * Allows the tracker to adjust the pending counts.
    *
-   * @param session the session
+   * @param session the transaction's session (never remote)
    * @param txNumber the transaction number
    */
   void rollbackModification(Session session, long txNumber);
@@ -164,5 +174,16 @@ public interface ModificationTracker extends SessionTaskDispatcher, ExclusiveSes
    * Forces the tracking info to be rebuilt.
    */
   void invalidate();
+
+  /**
+   * Returns whether the tracker runs in local client mode.<br>
+   * In this mode, there is no middle-tier server and the clients
+   * are directly connected to the database.<br>
+   * Although this mode isn't recommended, it is an option for simple desktop applications
+   * with only very few parallel users.
+   *
+   * @return true if in local client mode, false if remote client or server
+   */
+  boolean isLocalClientMode();
 
 }

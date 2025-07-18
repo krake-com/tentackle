@@ -4,17 +4,15 @@
 <p>
 usage:<br>
 &#064;wurblet &lt;tag&gt; PdoCache
-    [--secure] [--preload] [--mutable] [--udk]
-    [--strategy=LRU|LFU|FORGET] [--maxsize=&lt;n&gt;] [--keepquota=&lt;p&gt;] [--configure=&lt;method&gt;]
+    [--mutable] [--udk]
+    [--strategy=PRELOAD|LRU|LFU|FORGET] [--maxsize=&lt;n&gt;] [--keepquota=&lt;p&gt;] [--configure=&lt;method&gt;]
     [index1] [index2] ...
 <p>
 arguments:
 <ul>
-<li><em>--secure:</em> if cache must check read permission for each access (default is no check).</li>
-<li><em>--preload:</em> the first access will load all entities at once.</li>
 <li><em>--mutable:</em> generates a non-shared cache, i.e. mutable PDOs (by default a shared readonly cache is generated).</li>
 <li><em>--udk:</em> add index for the unique domain key.</li>
-<li><em>--strategy=LRU|LFU|FORGET:</em> the caching strategy (default is FORGET).</li>
+<li><em>--strategy=PRELOAD|LRU|LFU|FORGET:</em> the caching strategy (default is PRELOAD).</li>
 <li><em>--maxsize=&lt;n&gt;:</em> the cache size (if not preloaded).</li>
 <li><em>--keepquota=&lt;p&gt;:</em> percentage of entries to keep when applying caching strategy. Default is 50.</li>
 <li><em>--configure=&lt;method&gt;:</em> an optional method to further configure the cache.</li>
@@ -27,7 +25,7 @@ if the method returns {\@code null} for PDOs that should not be part of the inde
 <p>
 Example:
 <pre>
-  // &#064;wurblet cache PdoCache --preload --udk objectId code[codeIfUser]
+  // &#064;wurblet cache PdoCache --udk objectId code[codeIfUser]
 </pre>
 <p>
 For more options, see {\@link DbModelWurblet}.
@@ -40,8 +38,6 @@ For more options, see {\@link DbModelWurblet}.
     boolean isAbstract = getEntity().isAbstract();
     String pdoType     = isAbstract ? "T" : pdoName;
 
-    boolean secure     = false;
-    boolean preload    = false;
     boolean mutable    = false;
     boolean delayed    = true;
     boolean genudk     = false;
@@ -52,13 +48,7 @@ For more options, see {\@link DbModelWurblet}.
     String configure   = null;
 
     for (String arg: getOptionArgs())  {
-      if (arg.equals("preload")) {
-        preload = true;
-      }
-      else if (arg.equals("secure")) {
-        secure = true;
-      }
-      else if (arg.equals("mutable")) {
+      if (arg.equals("mutable")) {
         mutable = true;
       }
       else if (arg.equals("immediate")) {
@@ -81,7 +71,7 @@ For more options, see {\@link DbModelWurblet}.
       }
     }
 
-    if (secure && !getEntity().isRootEntity()) {
+    if (!getEntity().isRootEntity()) {
       throw new WurbelException(getEntity() + " is not a root-entity");
     }
     if (getEntity().getInheritanceType() == InheritanceType.PLAIN) {
@@ -151,7 +141,7 @@ For more options, see {\@link DbModelWurblet}.
 
     \@SuppressWarnings("unchecked")
     private static <X extends @(pdoName)@<X>> PdoCache<X> createCache() {
-      PdoCache<X> cache = (PdoCache<X>) Pdo.createCache(@(pdoName)@.class, @(preload ? "true" : "false")@, @(mutable ? "false" : "true")@, @(secure ? "true" : "false")@);
+      PdoCache<X> cache = (PdoCache<X>) Pdo.createCache(@(pdoName)@.class, @(mutable ? "false" : "true")@);
       Pdo.listen(cache::expire, @(listenNames)@);
 @[
       if (strategy != null) {
@@ -288,7 +278,7 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
     private static PdoCache<@(pdoName)@> createCache() {
-      PdoCache<@(pdoName)@> cache = Pdo.createCache(@(pdoName)@.class, @(preload ? "true" : "false")@, @(mutable ? "false" : "true")@, @(secure ? "true" : "false")@);
+      PdoCache<@(pdoName)@> cache = Pdo.createCache(@(pdoName)@.class, @(mutable ? "false" : "true")@);
       Pdo.listen(cache::expire, @(listenNames)@);
 @[
       if (strategy != null) {
@@ -484,7 +474,7 @@ For more options, see {\@link DbModelWurblet}.
   \@Override
   public void expireCache(long maxSerial) {
     super.expireCache(maxSerial);
-    CacheHolder.CACHE.expire(null, getTableName(), maxSerial);
+    CacheHolder.CACHE.expire(getSession(), getTableName(), maxSerial);
   }
 
   \@Override
@@ -646,6 +636,11 @@ For more options, see {\@link DbModelWurblet}.
   \@Override
   public List<@(pdoType)@> selectAllCached() {
     return @(filterBegin)@getCache().selectAll(getDomainContext())@(filterEnd)@;
+  }
+
+  \@Override
+  public List<@(pdoType)@> selectAnyCached(Collection<Long> ids) {
+    return @(filterBegin)@getCache().selectAny(getDomainContext(), ids)@(filterEnd)@;
   }
 @[
   }

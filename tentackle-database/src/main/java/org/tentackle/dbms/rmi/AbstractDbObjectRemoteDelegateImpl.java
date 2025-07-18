@@ -24,7 +24,10 @@ import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.session.PersistenceException;
 
 import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 
 /**
@@ -41,7 +44,7 @@ public class AbstractDbObjectRemoteDelegateImpl<P extends AbstractDbObject<P>>
 
 
   /**
-   * persistent object associated to the delegate's session.
+   * persistent object associated with the delegate's session.
    */
   protected P dbObject;
 
@@ -60,7 +63,7 @@ public class AbstractDbObjectRemoteDelegateImpl<P extends AbstractDbObject<P>>
   @Override
   public void initialize() {
     /*
-     * instantiate a singe object and connect to db.
+     * Instantiate a single object and connect to db.
      * This object is used for all methods not returning a new object and thus
      * minimizes object construction.
      */
@@ -255,19 +258,14 @@ public class AbstractDbObjectRemoteDelegateImpl<P extends AbstractDbObject<P>>
   }
 
   @Override
-  public List<IdSerialTuple> getExpirationBacklog(long minSerial, long maxSerial) throws RemoteException {
+  public Collection<IdSerialTuple> getExpiredTableSerials(long oldSerial, long maxSerial) throws RemoteException {
     try {
-      return dbObject.getExpirationBacklog(minSerial, maxSerial);
-    }
-    catch (RuntimeException e) {
-      throw createException(e);
-    }
-  }
-
-  @Override
-  public List<IdSerialTuple> getExpiredTableSerials(long oldSerial, long maxSerial) throws RemoteException {
-    try {
-      return dbObject.getExpiredTableSerials(oldSerial, maxSerial);
+      Collection<IdSerialTuple> expiredTableSerials = dbObject.getExpiredTableSerials(oldSerial, maxSerial);
+      if (expiredTableSerials instanceof Set) {
+        // local servers internally use a TreeSet with its own comparator, which is not serializable.
+        expiredTableSerials = new ArrayList<>(expiredTableSerials);
+      }
+      return expiredTableSerials;
     }
     catch (RuntimeException e) {
       throw createException(e);

@@ -31,7 +31,6 @@ import org.tentackle.session.ModificationListenerAdapter;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
-import org.tentackle.session.SessionUtilities;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -545,19 +544,19 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
       }
       else {
         // get tableserial/id-pairs
-        boolean someRemoved = false;
-        List<IdSerialTuple> nodeExpireSet = null;
-        List<IdSerialTuple> keyExpireSet = null;
+        boolean rebuildRoots = false;
+        Collection<IdSerialTuple> nodeExpireSet = null;
+        Collection<IdSerialTuple> keyExpireSet = null;
         if (nodeMaxSerial > 0) {
           nodeExpireSet = new DbPreferencesNode(db).getExpiredTableSerials(nodeTableSerial, nodeMaxSerial);
-          if (SessionUtilities.getInstance().isSomeRemoved(nodeTableSerial, nodeExpireSet, nodeMaxSerial)) {
-            someRemoved = true;
+          if (isRebuildNecessary(nodeTableSerial, nodeExpireSet, nodeMaxSerial)) {
+            rebuildRoots = true;
           }
         }
-        if (!someRemoved && keyMaxSerial > 0) {
+        if (!rebuildRoots && keyMaxSerial > 0) {
           keyExpireSet = new DbPreferencesKey(db).getExpiredTableSerials(keyTableSerial, keyMaxSerial);
-          if (SessionUtilities.getInstance().isSomeRemoved(keyTableSerial, keyExpireSet, keyMaxSerial)) {
-            someRemoved = true;
+          if (isRebuildNecessary(keyTableSerial, keyExpireSet, keyMaxSerial)) {
+            rebuildRoots = true;
           }
         }
 
@@ -568,7 +567,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
 
         Map<Long,DbPreferencesNode> idNodeMap = new HashMap<>();    // related nodes map by ID
 
-        if (!someRemoved) {
+        if (!rebuildRoots) {
           if (nodeExpireSet != null) {
             // figure out roots to update
             List<DbPreferencesNode> prefNodes =
@@ -583,11 +582,11 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
             }
             else {
               // removed in the meantime???
-              someRemoved = true;
+              rebuildRoots = true;
             }
           }
 
-          if (!someRemoved && keyExpireSet != null) {
+          if (!rebuildRoots && keyExpireSet != null) {
             // update keys
             List<DbPreferencesKey> prefKeys =
                 new DbPreferencesKey(db).selectObjectsWithExpiredTableSerials(keyTableSerial);
@@ -609,12 +608,12 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
               }
             }
             else {
-              someRemoved = true;
+              rebuildRoots = true;
             }
           }
         }
 
-        if (someRemoved) {
+        if (rebuildRoots) {
           // rebuild all roots
           for (Root root: roots.values()) {
             rebuildRoot(db, root);
@@ -991,6 +990,23 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
       }
     }
     return keys;
+  }
+
+  private boolean isRebuildNecessary(long lastSerial, Collection<IdSerialTuple> expireSet, long maxSerial) {
+    boolean rebuildNecessary = false;
+    for (IdSerialTuple idSer: expireSet) {
+      long serial = idSer.getSerial();
+      if (serial < 0 ||   // deletion from gap history
+          lastSerial > 0 && serial - lastSerial > 1) {  // gap in tableSerials
+        rebuildNecessary = true;
+        break;
+      }
+      lastSerial = serial;
+    }
+    if (maxSerial > lastSerial) {
+      rebuildNecessary = true;  // no expired PDOs found or gap at the end
+    }
+    return rebuildNecessary;
   }
 
 }
