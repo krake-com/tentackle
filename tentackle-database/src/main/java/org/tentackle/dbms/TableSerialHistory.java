@@ -18,7 +18,6 @@
 
 package org.tentackle.dbms;
 
-import org.tentackle.common.Constants;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.misc.IdSerialTuple;
@@ -42,8 +41,8 @@ interface TableSerialHistoryHolder {
  * When loading the tableserials from the database via {@link AbstractDbObject#selectExpiredTableSerials(long, long)},
  * gaps will be present for deletions, rolled back updates or inserts and PDOs updated more than once
  * since the last query.<br>
- * This singleton maintains those modifications in memory as complementary information.<br>
- * {@link IdSerialTuple}s with a positive tableserial and an ID of 0 are for inserts or updates.
+ * This singleton maintains the history of all modifications in memory as complementary information.
+ * {@link IdSerialTuple}s with a positive tableserial and an ID of 0 are for (possible) gaps of inserts or updates.
  * A negative tableserial with a positive ID describes a deletion.<br>
  * The history is only maintained by the server connected to the database and used by the
  * {@link TableSerialExpirationBacklog} to fill the gaps in its expiration sets.<br>
@@ -68,11 +67,7 @@ public class TableSerialHistory {
   }
 
 
-  /**
-   * The modification tracker of the local server usually polls the modification table once a second.
-   * This timeout should be more than enough even for heavy load scenarios.
-   */
-  private static final long DEFAULT_TIMEOUT = Constants.MINUTE_MS;
+  private static final int DEFAULT_SIZE = 1024;     // should be enough for the 99% case (master data)
 
 
   /**
@@ -83,47 +78,41 @@ public class TableSerialHistory {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    private final long epochal;   // necessary for purging old gaps only
-
     /**
      * Creates a history entry.
      *
      * @param id the object ID, 0 for insert/update rollback
      * @param tableSerial the modification tableserial, negative for delete
-     * @param epochal the epochal
      */
-    private History(long id, long tableSerial, long epochal) {
+    private History(long id, long tableSerial) {
       super(id, tableSerial);
       if (tableSerial == 0 ||
           tableSerial < 0 && id == 0) {
         throw new IllegalArgumentException("invalid gap id=" + id + " tableSerial=" + tableSerial);
       }
-      this.epochal = epochal;
     }
   }
 
 
-  private final long timeout;                                   // the timeout in ms
-  private final Map<String, TreeMap<Long, History>> history;    // [tablename:[abs(tableserial):gap]]
-  private long lastCleanup;                                     // epochal of last cleanup run
+  private final int size;                                       // max. number of history entries per tablename
+  private final Map<String, TreeMap<Long, History>> tableMap;   // [tablename:[abs(tableserial):gap]]
 
 
   /**
    * Creates the history singleton.
    *
-   * @param timeout the timeout in ms
+   * @param size the max. number of history entries per tablename
    */
-  public TableSerialHistory(long timeout) {
-    this.timeout = timeout;
-    history = new HashMap<>();
-    lastCleanup = System.currentTimeMillis();
+  public TableSerialHistory(int size) {
+    this.size = size;
+    tableMap = new HashMap<>();
   }
 
   /**
-   * Creates the history singleton with a default timeout.
+   * Creates the history singleton with a default size.
    */
   public TableSerialHistory() {
-    this(DEFAULT_TIMEOUT);
+    this(DEFAULT_SIZE);
   }
 
 
@@ -136,9 +125,9 @@ public class TableSerialHistory {
    */
   public synchronized void memorize(String tableName, long id, long tableSerial) {
     long epochal = System.currentTimeMillis();
-    history.computeIfAbsent(tableName, _ -> new TreeMap<>())
-           .put(Math.abs(tableSerial), new History(id, tableSerial, epochal));
-    purge(epochal);
+    TreeMap<Long, History> histories = tableMap.computeIfAbsent(tableName, _ -> new TreeMap<>());
+    histories.put(Math.abs(tableSerial), new History(id, tableSerial));
+    purge(histories);
   }
 
   /**
@@ -159,11 +148,11 @@ public class TableSerialHistory {
    */
   public synchronized void memorize(String tableName, Collection<IdSerialTuple> tuples) {
     long epochal = System.currentTimeMillis();
-    TreeMap<Long, History> map = history.computeIfAbsent(tableName, _ -> new TreeMap<>());
+    TreeMap<Long, History> histories = tableMap.computeIfAbsent(tableName, _ -> new TreeMap<>());
     tuples.forEach(tuple ->
-                     map.put(Math.abs(tuple.getSerial()),
-                             new History(tuple.getId(), tuple.getSerial(), epochal)));
-    purge(epochal);
+                     histories.put(Math.abs(tuple.getSerial()),
+                             new History(tuple.getId(), tuple.getSerial())));
+    purge(histories);
   }
 
   /**
@@ -176,7 +165,7 @@ public class TableSerialHistory {
    * @return the non-empty list of gaps sorted by abs(tableserial), null for none
    */
   public synchronized Collection<IdSerialTuple> retrieve(String tableName, long minSerial, long maxSerial, boolean forget) {
-    TreeMap<Long, History> gaps = history.get(tableName);
+    TreeMap<Long, History> gaps = tableMap.get(tableName);
     if (gaps != null) {
       Collection<IdSerialTuple> tuples = new ArrayList<>();
       Iterator<Map.Entry<Long, History>> iter = gaps.subMap(minSerial, false, maxSerial, true)
@@ -193,12 +182,9 @@ public class TableSerialHistory {
   }
 
 
-  private void purge(long epochal) {
-    if (epochal - lastCleanup >= timeout) {
-      lastCleanup = epochal;
-      long oldest = epochal - timeout;
-      history.values().forEach(
-        m -> m.entrySet().removeIf(e -> e.getValue().epochal < oldest));
+  private void purge(TreeMap<Long, History> histories) {
+    while (histories.size() > size) {
+      histories.remove(histories.firstKey());
     }
   }
 

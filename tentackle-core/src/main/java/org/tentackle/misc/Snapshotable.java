@@ -44,7 +44,7 @@ public interface Snapshotable<T> {
   T createSnapshot();
 
   /**
-   * Reverts the state of this object to given snapshot.
+   * Reverts the state of this object to the given snapshot.
    *
    * @param snapshot the snapshot to revert to
    */
@@ -60,7 +60,7 @@ public interface Snapshotable<T> {
   /**
    * Gets all snapshots.<br>
    * The list contains the snapshots in the order they were taken,
-   * i.e. first snapshot comes first.
+   * i.e., the first snapshot comes first.
    *
    * @return the list of snapshots for this object, empty list if none taken so far
    */
@@ -92,14 +92,14 @@ public interface Snapshotable<T> {
   /**
    * Returns whether this is a deep copy.
    *
-   * @return true if object is a copy
+   * @return true if this object is a copy
    */
   boolean isCopy();
 
   /**
    * Marks this object as a copy.
    *
-   * @param copy true if change to a copy, else change to non-copied object
+   * @param copy true if change to a copy, else change to the non-copied object
    */
   void setCopy(boolean copy);
 

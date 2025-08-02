@@ -38,7 +38,8 @@ public class TableSerialExpirationBacklog {
 
   private static final Logger LOG = Logger.get(TableSerialExpirationBacklog.class);
 
-  private static final int DEFAULT_SIZE = 64;          // should be enough for the 99% case (master data)
+  private static final int DEFAULT_SIZE = 256;  // should be enough for the 99% case (master data)
+  private static final int MAX_SIZE = 4096;     // max. size (auto enlarge)
 
 
   /**
@@ -114,55 +115,58 @@ public class TableSerialExpirationBacklog {
    * @param mergeHistory true to merge the {@link TableSerialHistory}
    */
   public void addExpiration(long minSerial, long maxSerial, Collection<IdSerialTuple> tuples, boolean mergeHistory) {
-    if (tuples != null && !tuples.isEmpty()) {
+    if (tuples != null) {
       if (minSerial >= maxSerial) {
         LOG.warning("illegal tableserial range [{0}-{1}] refused to add to expiration backlog {2}", minSerial, maxSerial, this);
-        return;
       }
+      else {
+        LOG.fine("adding expiration set {0}-{1}[{2}] for {3}",
+                 minSerial, maxSerial, tuples.size(), name);
 
-      LOG.fine("adding expiration set {0}-{1}[{2}] for {3}",
-               minSerial, maxSerial, tuples.size(), name);
+        lock.writeLock().lock();
+        try {
+          // Min- and maxSerial ranges of expirations may overlap, i.e. [3-8] followed by [5-10] is perfectly ok,
+          // since we could have rollbacks (in this case from 5-8).
+          // However, the maxSerials must not be decreasing!
+          if (maxSerial < this.maxSerial) {
+            LOG.severe("expiration range [{0}-{1}] added unexpectedly to expiration backlog {2} -> ignored",
+                       minSerial, maxSerial, this);
+          }
+          else {
+            // add expiration set round-robin
+            ExpirationList expiration = new ExpirationList(minSerial, maxSerial, tuples);
+            if (mergeHistory) {
+              // only for the local server
+              expiration.addMissing(TableSerialHistory.getInstance().retrieve(name, minSerial, maxSerial, true));
+            }
 
-      lock.writeLock().lock();
-      try {
-        // Min- and maxSerial ranges of expirations may overlap, i.e. [3-8] followed by [5-10] is perfectly ok,
-        // since we could have rollbacks (in this case from 5-8).
-        // However, the maxSerials must not be decreasing!
-        if (maxSerial < this.maxSerial) {
-          LOG.severe("expiration range [{0}-{1}] added unexpectedly to expiration backlog {2} -> ignored",
-                      minSerial, maxSerial, this);
-          return;
-        }
+            if (!expiration.tupleMap.isEmpty()) {
 
-        // add expiration set round-robin
-        ExpirationList expiration = new ExpirationList(minSerial, maxSerial, tuples);
-        expirations[nextNdx++] = expiration;
-        if (nextNdx >= expirations.length) {
-          nextNdx = 0;
-        }
+              expirations[nextNdx++] = expiration;
+              if (nextNdx >= expirations.length) {
+                nextNdx = 0;
+              }
 
-        if (mergeHistory) {
-          // only for the local server
-          expiration.addMissing(TableSerialHistory.getInstance().retrieve(name, minSerial, maxSerial, true));
-        }
+              // update minSerial from the next oldest or from the added set, if the first at all
+              expiration = expirations[nextNdx];
+              if (expiration != null) {
+                this.minSerial = expiration.minSerial;
+              }
+              else if (nextNdx == 1) {
+                // this was the first added to the array of expirations
+                this.minSerial = minSerial;
+              }
 
-        // update minserial from the next oldest or from 1st set
-        expiration = expirations[nextNdx];
-        if (expiration != null) {
-          this.minSerial = expiration.minSerial;
+              // update maxSerial always from added set
+              if (maxSerial > this.maxSerial) {
+                this.maxSerial = maxSerial;
+              }
+            }
+          }
         }
-        else if (nextNdx == 1) {
-          // this was the first added to the array of expirations
-          this.minSerial = minSerial;
+        finally {
+          lock.writeLock().unlock();
         }
-
-        // update maxserial always from added set
-        if (maxSerial > this.maxSerial) {
-          this.maxSerial = maxSerial;
-        }
-      }
-      finally {
-        lock.writeLock().unlock();
       }
     }
   }
@@ -191,12 +195,15 @@ public class TableSerialExpirationBacklog {
         lock.readLock().unlock();
         lock.writeLock().lock();
         try {
-          if (size == expirations.length) {   // not doubled by another thread while upgrading to write-lock
-            // double the size
-            ExpirationList[] oldExpirations = expirations;
-            expirations = new ExpirationList[oldExpirations.length << 1];
-            System.arraycopy(oldExpirations, 0, expirations, 0, oldExpirations.length);
-            LOG.info("expiration backlog {0} enlarged to {1} entries", this, expirations.length);
+          if (size == expirations.length) {   // not enlarged by another thread while upgrading to write-lock
+            // enlarge, if possible
+            int newSize = enlargeSize(size);
+            if (newSize > size) {
+              ExpirationList[] newExpirations = new ExpirationList[newSize];
+              System.arraycopy(expirations, 0, newExpirations, 0, size);
+              expirations = newExpirations;
+              LOG.info("expiration backlog {0} enlarged to {1} entries", this, newSize);
+            }
           }
           lock.readLock().lock();
         }
@@ -243,6 +250,22 @@ public class TableSerialExpirationBacklog {
     }
 
     return found ? expireSet : null;
+  }
+
+
+  /**
+   * Computes the enlarged size.<br>
+   * Invoked when there is an outdated query.
+   *
+   * @param size the current size
+   * @return the enlarged size, same if no more enlargement possible
+   */
+  protected int enlargeSize(int size) {
+    size <<= 1;
+    if (size > MAX_SIZE) {
+      size = MAX_SIZE;
+    }
+    return size;
   }
 
 }

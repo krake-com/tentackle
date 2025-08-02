@@ -251,6 +251,10 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
       refreshIds.clear();
       removeIds.clear();
     }
+
+    private boolean isExpired() {
+      return !removeIds.isEmpty() || !refreshIds.isEmpty();
+    }
   }
 
   private final Class<T> clazz;                               // the PersistentDomainObject class
@@ -950,7 +954,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
         DomainContext clonedContext = effectiveContext.clone();  // clone to avoid further modification
         saLists.put(clonedContext, sal);
       }
-      else {
+      else if (sal.isExpired()) {
         // the list is cached: update or append all PDOs in refreshIds
         Map<Long, T> loadedMap = new TreeMap<>();   // updated or inserted PDOs
 
@@ -991,6 +995,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
                   sal.list.remove(i--);   // could be expensive, but should happen rarely
                   size--;
                 }
+                reloadedObject = null;
                 LOGGER.finer(() -> this + ": object " + pdo.toGenericString() +
                                    " removed from list for context " + context.toDiagnosticString());
               }
