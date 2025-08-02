@@ -26,9 +26,7 @@ import org.junit.platform.commons.logging.Logger;
 import org.junit.platform.commons.logging.LoggerFactory;
 import org.opentest4j.AssertionFailedError;
 
-import org.tentackle.dbms.CommitTxRunnable;
 import org.tentackle.dbms.Db;
-import org.tentackle.dbms.RollbackTxRunnable;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelException;
 import org.tentackle.pdo.DomainContext;
@@ -48,7 +46,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Set;
 
 
@@ -82,8 +79,8 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   private final boolean closeIt;                // true if we're the first test that created the session
   private final TransactionType txType;         // transaction handling
   private final boolean commit;                 // true if commit transaction, else rollback (default)
-  private boolean rollbackLogged;               // true to log the rollback, even if test succeeds
-  private long txVoucher;                       // transaction voucher for current test class
+  private boolean rollbackLogged;               // true to log the rollback, even if the test succeeds
+  private long txVoucher;                       // transaction voucher for the current test class
 
 
   /**
@@ -121,7 +118,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   /**
    * Returns whether statements rolled back are always logged.
    *
-   * @return true to log even if test succeeds, false is default
+   * @return true to log even if the test succeeds, false is default
    */
   public boolean isRollbackLogged() {
     return rollbackLogged;
@@ -130,7 +127,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   /**
    * Sets whether to log the statements rolled back.<br>
    * By default, the statements are not logged if the test succeeds.
-   * Sometimes, however, it is nice to log the statements that were executed during the test.
+   * Sometimes, however, it is nice to log the statements executed during the test.
    * <p>
    * Notice that the flag is reset to false when the transaction ends.
    *
@@ -348,7 +345,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
           session.rollback(txVoucher);
         }
         else {
-          // don't log rollback if test succeeds
+          // don't log rollback if the test succeeds
           session.rollbackSilently(txVoucher);
         }
       }
@@ -379,34 +376,6 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
     }
   }
 
-  /**
-   * Invokes the {@link CommitTxRunnable}s, if any.<br>
-   * Useful for special test scenarios.
-   * Must be invoked explicitly from within the test.
-   */
-  protected void executeCommitTxRunnables() {
-    if (session instanceof Db db) {
-      Collection<CommitTxRunnable> runnables = db.getCommitTxRunnables();
-      if (runnables != null) {
-        runnables.forEach(runnable -> runnable.commit(db));
-      }
-    }
-  }
-
-  /**
-   * Invokes the {@link RollbackTxRunnable}s, if any.<br>
-   * Useful for special test scenarios.
-   * Must be invoked explicitly from within the test.
-   */
-  protected void executeRollbackTxRunnables() {
-    if (session instanceof Db db) {
-      Collection<RollbackTxRunnable> runnables = db.getRollbackTxRunnables();
-      if (runnables != null) {
-        runnables.forEach(runnable -> runnable.rollback(db));
-      }
-    }
-  }
-
 
   /**
    * Runs the given class in another JVM and waits for termination.<br>
@@ -426,7 +395,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
       if (!classPath.endsWith(":")) {
         classPath += ":";
       }
-      classPath += modulePath;    // just append the module path to the classpath
+      classPath += modulePath;    // append the module path to the classpath
     }
     String[] cmd = {
         javaHome + File.separator + "bin" + File.separator + "java",
@@ -445,7 +414,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   }
 
   /**
-   * Waits for process to terminate and write stdout and stderr to the junit log.
+   * Waits for the process to terminate and write stdout and stderr to the junit log.
    *
    * @param process the process
    * @throws IOException if some IO failed

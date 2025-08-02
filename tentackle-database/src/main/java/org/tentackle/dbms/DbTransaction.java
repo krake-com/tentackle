@@ -28,7 +28,6 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
@@ -64,8 +63,6 @@ public class DbTransaction {
   private volatile boolean alive;       // alive flag to detect idle transactions
 
   private Map<DbTransactionHandle, PersistenceVisitor> visitors;            // the visitors
-  private Map<DbTransactionHandle, CommitTxRunnable> commitTxRunnables;     // the commit runnables
-  private Map<DbTransactionHandle, RollbackTxRunnable> rollbackTxRunnables; // the rollback runnables
   private Map<SavepointHandle, Savepoint> savepoints;                       // the savepoints
 
 
@@ -73,8 +70,8 @@ public class DbTransaction {
    * Creates a transaction.
    *
    * @param db the session
-   * @param txName the transaction name, null if &lt;unnamed&gt;
-   * @param fromRemote true if initiated from remote client
+   * @param txName the transaction name, null for &lt;unnamed&gt;
+   * @param fromRemote true if initiated from the remote client
    */
   public DbTransaction(Db db, String txName, boolean fromRemote) {
 
@@ -87,7 +84,7 @@ public class DbTransaction {
     creationTime = System.currentTimeMillis();
     timeKeeper = new TimeKeeper();
 
-    // create new commit/rollback voucher
+    // create a new commit/rollback voucher
     long magic;
     do {
       magic = UUID.randomUUID().getLeastSignificantBits();
@@ -110,7 +107,7 @@ public class DbTransaction {
 
 
   /**
-   * Gets the statements batch.
+   * Gets the statements-batch.
    *
    * @return the batch, null if no auto batching
    */
@@ -350,84 +347,6 @@ public class DbTransaction {
 
 
   /**
-   * Registers a {@link CommitTxRunnable} to be invoked just before
-   * committing a transaction.<br>
-   * The order of execution corresponds to the order of registration.<br>
-   * Runnables may create other runnables up to {@link #maxTxRunnableDepth} recursion depth.
-   *
-   * @param commitRunnable the runnable to register
-   * @return the handle for the runnable
-   */
-  public DbTransactionHandle registerCommitTxRunnable(CommitTxRunnable commitRunnable) {
-    if (commitTxRunnables == null)  {
-      commitTxRunnables = new LinkedHashMap<>();
-    }
-    DbTransactionHandle handle = new DbTransactionHandle(txNumber, ++handleCount);
-    commitTxRunnables.put(handle, commitRunnable);
-    return handle;
-  }
-
-  /**
-   * Unregisters a {@link CommitTxRunnable}.
-   *
-   * @param handle the runnable's handle to unregister
-   * @return the runnable if removed, null if not registered
-   */
-  public CommitTxRunnable unregisterCommitTxRunnable(DbTransactionHandle handle) {
-    return commitTxRunnables == null ? null : commitTxRunnables.remove(handle);
-  }
-
-
-  /**
-   * Gets the currently registered commit runnables.
-   *
-   * @return the runnables, null or empty if none
-   */
-  public Collection<CommitTxRunnable> getCommitTxRunnables() {
-    return commitTxRunnables == null ? null : commitTxRunnables.values();
-  }
-
-
-  /**
-   * Registers a {@link RollbackTxRunnable} to be invoked just before
-   * rolling back a transaction.<br>
-   * The order of execution corresponds to the order of registration.<br>
-   * Runnables may create other runnables up to {@link #maxTxRunnableDepth} recursion depth.
-   *
-   * @param rollbackRunnable the runnable to register
-   * @return the handle for the runnable
-   */
-  public DbTransactionHandle registerRollbackTxRunnable(RollbackTxRunnable rollbackRunnable) {
-    if (rollbackTxRunnables == null)  {
-      rollbackTxRunnables = new LinkedHashMap<>();
-    }
-    DbTransactionHandle handle = new DbTransactionHandle(txNumber, ++handleCount);
-    rollbackTxRunnables.put(handle, rollbackRunnable);
-    return handle;
-  }
-
-  /**
-   * Unregisters a {@link RollbackTxRunnable}.
-   *
-   * @param handle the runnable's handle to unregister
-   * @return the runnable that was removed, null if not registered
-   */
-  public RollbackTxRunnable unregisterRollbackTxRunnable(DbTransactionHandle handle) {
-    return rollbackTxRunnables == null ? null : rollbackTxRunnables.remove(handle);
-  }
-
-
-  /**
-   * Gets the currently registered rollback runnables.
-   *
-   * @return the runnables, null or empty if none
-   */
-  public Collection<RollbackTxRunnable> getRollbackTxRunnables() {
-    return rollbackTxRunnables == null ? null : rollbackTxRunnables.values();
-  }
-
-
-  /**
    * Performs the commit.<br>
    * Finishes any pending batched statements.<br>
    * Executes all commit runnables and removes them.<br>
@@ -435,24 +354,6 @@ public class DbTransaction {
   public void commit() {
     if (batch != null) {
       batch.execute(true);
-    }
-    if (commitTxRunnables != null) {
-      /*
-       * execute pending commit runnables.
-       * Notice: the runnables should throw PersistenceException on failure!
-       * Runnables may create other runnables up to maxTxRunnableDepth recursion depth.
-       */
-      int depth = 0;
-      while (!commitTxRunnables.isEmpty()) {
-        for (Map.Entry<DbTransactionHandle, CommitTxRunnable> entry : Map.copyOf(commitTxRunnables).entrySet()) {
-          entry.getValue().commit(db);
-          commitTxRunnables.remove(entry.getKey());
-        }
-        if (++depth > maxTxRunnableDepth) {
-          throw new PersistenceException(getSession(), "commit runnables nesting level too deep");
-        }
-      }
-      commitTxRunnables = null;
     }
     DbTransactionFactory.getInstance().finish(this, false);
   }
@@ -463,24 +364,6 @@ public class DbTransaction {
    * Executes all rollback runnables and removes them.
    */
   public void rollback() {
-    if (rollbackTxRunnables != null) {
-      /*
-       * execute pending rollback runnables.
-       * Notice: the runnables should throw PersistenceException on failure!
-       * Runnables may create other runnables up to maxTxRunnableDepth recursion depth.
-       */
-      int depth = 0;
-      while (!rollbackTxRunnables.isEmpty()) {
-        for (Map.Entry<DbTransactionHandle, RollbackTxRunnable> entry : Map.copyOf(rollbackTxRunnables).entrySet()) {
-          entry.getValue().rollback(db);
-          rollbackTxRunnables.remove(entry.getKey());
-        }
-        if (++depth > maxTxRunnableDepth) {
-          throw new PersistenceException(getSession(), "rollback runnables nesting level too deep");
-        }
-      }
-      rollbackTxRunnables = null;
-    }
     DbTransactionFactory.getInstance().finish(this, true);
   }
 
@@ -508,18 +391,18 @@ public class DbTransaction {
 
 
   /**
-   * Sets the alive flag.
+   * Sets the alive-flag.
    *
-   * @param alive true if alive, false if reset after poll
+   * @param alive true if alive, false if reset after polling
    */
   public void setAlive(boolean alive) {
     this.alive = alive;
   }
 
   /**
-   * Gets the alive flag.
+   * Gets the alive-flag.
    *
-   * @return true if alive, false if reset after poll and not marked alive since then
+   * @return true if alive, false if reset after polling and not marked alive since then
    */
   public boolean isAlive() {
     return alive;

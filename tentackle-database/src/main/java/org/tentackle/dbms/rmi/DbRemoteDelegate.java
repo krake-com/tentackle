@@ -18,11 +18,9 @@
 
 package org.tentackle.dbms.rmi;
 
-import org.tentackle.dbms.CommitTxRunnable;
 import org.tentackle.dbms.DbTransactionHandle;
 import org.tentackle.dbms.ModificationLog;
 import org.tentackle.dbms.PersistenceVisitor;
-import org.tentackle.dbms.RollbackTxRunnable;
 import org.tentackle.session.SavepointHandle;
 import org.tentackle.session.TransactionIsolation;
 import org.tentackle.session.TransactionWritability;
@@ -76,18 +74,6 @@ public interface DbRemoteDelegate extends RemoteDelegate {
   boolean setLogModificationDeferred(boolean flag) throws RemoteException;
 
   List<ModificationLog> popModificationLogsOfTransaction() throws RemoteException;
-
-  DbTransactionHandle registerCommitTxRunnable(CommitTxRunnable runnable) throws RemoteException;
-
-  CommitTxRunnable unregisterCommitTxRunnable(DbTransactionHandle handle) throws RemoteException;
-
-  Collection<CommitTxRunnable> getCommitTxRunnables() throws RemoteException;
-
-  DbTransactionHandle registerRollbackTxRunnable(RollbackTxRunnable runnable) throws RemoteException;
-
-  RollbackTxRunnable unregisterRollbackTxRunnable(DbTransactionHandle handle) throws RemoteException;
-
-  Collection<RollbackTxRunnable> getRollbackTxRunnables() throws RemoteException;
 
   DbTransactionHandle registerPersistenceVisitor(PersistenceVisitor visitor) throws RemoteException;
 

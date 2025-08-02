@@ -18,13 +18,11 @@
 
 package org.tentackle.dbms.rmi;
 
-import org.tentackle.dbms.CommitTxRunnable;
 import org.tentackle.dbms.Db;
 import org.tentackle.dbms.DbTransactionHandle;
 import org.tentackle.dbms.DbUtilities;
 import org.tentackle.dbms.ModificationLog;
 import org.tentackle.dbms.PersistenceVisitor;
-import org.tentackle.dbms.RollbackTxRunnable;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SavepointHandle;
 import org.tentackle.session.TransactionIsolation;
@@ -53,7 +51,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
 
     super(session, dbClass);
 
-    // figure out private begin method
+    // figure out the private begin method
     try {
       beginMethod = dbClass.getDeclaredMethod("begin", String.class, Boolean.TYPE, TransactionIsolation.class, TransactionWritability.class);
       beginMethod.setAccessible(true);
@@ -280,68 +278,6 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
   public Collection<PersistenceVisitor> getPersistenceVisitors() throws RemoteException {
     try {
       return getSession().getPersistenceVisitors();
-    }
-    catch (RuntimeException ex)  {
-      throw createException(ex);
-    }
-  }
-
-
-  @Override
-  public DbTransactionHandle registerCommitTxRunnable(CommitTxRunnable runnable) throws RemoteException {
-    try {
-      return getSession().registerCommitTxRunnable(runnable);
-    }
-    catch (RuntimeException ex)  {
-      throw createException(ex);
-    }
-  }
-
-  @Override
-  public CommitTxRunnable unregisterCommitTxRunnable(DbTransactionHandle handle) throws RemoteException {
-    try {
-      return getSession().unregisterCommitTxRunnable(handle);
-    }
-    catch (RuntimeException ex)  {
-      throw createException(ex);
-    }
-  }
-
-  @Override
-  public Collection<CommitTxRunnable> getCommitTxRunnables() throws RemoteException {
-    try {
-      return getSession().getCommitTxRunnables();
-    }
-    catch (RuntimeException ex)  {
-      throw createException(ex);
-    }
-  }
-
-
-  @Override
-  public DbTransactionHandle registerRollbackTxRunnable(RollbackTxRunnable runnable) throws RemoteException {
-    try {
-      return getSession().registerRollbackTxRunnable(runnable);
-    }
-    catch (RuntimeException ex)  {
-      throw createException(ex);
-    }
-  }
-
-  @Override
-  public RollbackTxRunnable unregisterRollbackTxRunnable(DbTransactionHandle handle) throws RemoteException {
-    try {
-      return getSession().unregisterRollbackTxRunnable(handle);
-    }
-    catch (RuntimeException ex)  {
-      throw createException(ex);
-    }
-  }
-
-  @Override
-  public Collection<RollbackTxRunnable> getRollbackTxRunnables() throws RemoteException {
-    try {
-      return getSession().getRollbackTxRunnables();
     }
     catch (RuntimeException ex)  {
       throw createException(ex);
