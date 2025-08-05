@@ -271,7 +271,8 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl>, Clon
       if (getOptions().getBindOptions().contains(CommonOptionsImpl.BIND_SIZE)) {
         getOptions().removeBindOption(CommonOptionsImpl.BIND_SIZE);
         // size option set: replace by [MAXCOLS=<size>][,SCALE=<scale] if not already defined in model
-        if (getSize() != null && !getOptions().getBindOptions().contains(Constants.BIND_MAXCOLS)) {
+        // <=0 is ignored, as it is not a valid size value anyway and String(0) is used to represent a large string.
+        if (getSize() != null && getSize() > 0 && !getOptions().getBindOptions().contains(Constants.BIND_MAXCOLS)) {
           getOptions().addBindOption(Constants.BIND_MAXCOLS + "=" + getSize());
         }
         if (getScale() != null && !getOptions().getBindOptions().contains(Constants.BIND_SCALE)) {
