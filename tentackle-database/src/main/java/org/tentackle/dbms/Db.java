@@ -1923,11 +1923,12 @@ public class Db implements Session, Cloneable {
   public void runPostCommits() {
     try {
       postCommitsRunning = true;
-      if (postCommits != null) {
-        for (Consumer<Session> postCommit : postCommits) {
+      Deque<Consumer<Session>> pcs = postCommits;
+      postCommits = null; // in case a post-commit runs another transaction: clear now!
+      if (pcs != null) {
+        for (Consumer<Session> postCommit : pcs) {
           postCommit.accept(this);
         }
-        postCommits = null;
       }
     }
     finally {
