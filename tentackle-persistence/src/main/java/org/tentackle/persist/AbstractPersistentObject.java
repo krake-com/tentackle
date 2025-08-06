@@ -1872,8 +1872,17 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
         JoinedSelect<T> js = getEagerJoinedSelect();
         PreparedStatementWrapper st = getPreparedStatement(stmtId,
                 b -> {
-                  StringBuilder sql = new StringBuilder(createSelectSql(b, forUpdate));
-                  sql.append(getSqlClassIdCondition());
+                  StringBuilder sql;
+                  String sqlClassIdCondition = getSqlClassIdCondition();
+                  if (!sqlClassIdCondition.isEmpty() && forUpdate) {
+                    sql = createSelectAllByIdInnerSql(b);
+                    sql.append(sqlClassIdCondition);
+                    b.buildSelectSql(sql, forUpdate, 0, 0);
+                  }
+                  else {
+                    sql = new StringBuilder(createSelectSql(b, forUpdate));
+                    sql.append(sqlClassIdCondition);
+                  }
                   if (js != null) {
                     js.createJoinedSql(pdo, sql);
                   }
