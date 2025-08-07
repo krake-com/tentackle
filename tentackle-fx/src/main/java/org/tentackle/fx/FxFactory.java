@@ -116,7 +116,8 @@ public interface FxFactory {
 
   /**
    * Creates a notification popup.<br>
-   * Swallows accidental events to prevent being hidden before becoming visible to the user.
+   * Swallows accidental events to prevent being hidden before becoming visible to the user
+   * and enables auto-hide.
    *
    * @return the popup
    */
@@ -160,9 +161,9 @@ public interface FxFactory {
   /**
    * Creates an empty configuration from a template object.
    *
-   * @param <S> the type of the objects contained within the table's items list
+   * @param <S> the type of the objects contained within the table's item list
    * @param template a template object
-   * @param name the table's name, null if basename from effective class of template
+   * @param name the table's name, null to use the basename from the effective class of the template
    * @return the table configuration
    */
   <S> TableConfiguration<S> createTableConfiguration(S template, String name);
@@ -170,9 +171,9 @@ public interface FxFactory {
   /**
    * Creates an empty configuration for a class.
    *
-   * @param <S> the type of the objects contained within the table's items list
+   * @param <S> the type of the objects contained within the table's item list
    * @param objectClass the object class
-   * @param name the table's name, null if basename of object class
+   * @param name the table's name, null to use the basename of the object class
    * @return the table configuration
    */
   <S> TableConfiguration<S> createTableConfiguration(Class<S> objectClass, String name);

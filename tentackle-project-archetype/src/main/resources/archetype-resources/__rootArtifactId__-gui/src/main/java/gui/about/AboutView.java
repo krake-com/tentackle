@@ -31,7 +31,7 @@ public class AboutView extends AbstractFxController {
    * @param owner the popup owner
    */
   public static void show(Object owner) {
-    Popup popup = new Popup();
+    Popup popup = FxFactory.getInstance().createNotificationPopup();
     Parent notification =
       FxFactory.getInstance()
                .createNotificationBuilder()
