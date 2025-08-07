@@ -21,6 +21,11 @@
   -fx-alignment: center-left;
 }
 
+#titleLabel {
+  -fx-font-weight: bold;
+  -fx-font-size: 18;
+}
+
 #buttonBox {   /* HBox does not have a style class */
   -fx-padding: 10 10 10 10;
   -fx-spacing: 10.0;

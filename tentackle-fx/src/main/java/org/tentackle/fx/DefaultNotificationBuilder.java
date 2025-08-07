@@ -182,6 +182,13 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
       }
       headerBox.getChildren().add(icon);
     }
+    String headerTitle = getTitle();
+    if (headerTitle != null && !headerTitle.isBlank()) {
+      FxLabel titleLabel = new FxLabel();
+      titleLabel.setId("titleLabel");
+      titleLabel.setText(headerTitle);
+      headerBox.getChildren().add(titleLabel);
+    }
     if (text != null) {
       FxLabel label = new FxLabel();
       label.setText(text);
@@ -291,7 +298,7 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
 
   @Override
   public String getTitle() {
-    return title != null ? title :
+    return title != null || text != null ? title :
              switch (type) {
                case INFORMATION -> FxFxBundle.getString("INFORMATION");
                case WARNING -> FxFxBundle.getString("WARNING");
