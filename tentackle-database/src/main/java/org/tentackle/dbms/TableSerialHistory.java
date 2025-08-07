@@ -22,7 +22,6 @@ import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.misc.IdSerialTuple;
 
-import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -37,20 +36,23 @@ interface TableSerialHistoryHolder {
 
 
 /**
- * Keeps track of committed deletions and committed or rolled back updates or inserts in memory.<br>
+ * Keeps track of all committed or rolled back deletions, updates or inserts in memory.<br>
  * When loading the tableserials from the database via {@link AbstractDbObject#selectExpiredTableSerials(long, long)},
  * gaps will be present for deletions, rolled back updates or inserts and PDOs updated more than once
- * since the last query.<br>
- * This singleton maintains the history of all modifications in memory as complementary information.
- * {@link IdSerialTuple}s with a positive tableserial and an ID of 0 are for (possible) gaps of inserts or updates.
- * A negative tableserial with a positive ID describes a deletion.<br>
- * The history is only maintained by the server connected to the database and used by the
- * {@link TableSerialExpirationBacklog} to fill the gaps in its expiration sets.<br>
+ * since the last query.
+ * Those {@code id/tableserial} tuples are picked up by the {@link TableSerialExpirationBacklog} to fill
+ * the gaps in its expiration sets avoiding unnecessary cache invalidations.<br>
+ * An {@link IdSerialTuple}s with a positive tableserial and an ID of 0 represents an insert or update.
+ * A negative tableserial with a positive ID describes a deletion.
+ * The history is only maintained by the server connected to the database. Intermediate servers or clients
+ * retrieve their expiration sets from the remote server.<br>
  * Consulting the expiration backlog usually happens when the {@link org.tentackle.session.ModificationTracker}
  * detects a modification and invokes the corresponding listeners, such as PDO-caches, which in turn
  * ask the expiration backlog for the modifications.<br>
- * If, for some reason, the modifications are counted for an entity type, but the expiration backlog is never
- * consulted (no PdoCache?), the deletions will be removed silently after a certain amount of time.
+ * If, for some reason, the modifications are counted for an entity type but the expiration backlog is never
+ * consulted (no PdoCache?), the oldest history entries will be silently removed if the maximum size is reached.
+ * This may be ok if the entity is updated frequently but not queried often via the cache,
+ * for example. Otherwise, the maximum size of the history should be increased for the given entity type (tablename).
  *
  * @see ModificationTally
  */
@@ -66,45 +68,53 @@ public class TableSerialHistory {
     return TableSerialHistoryHolder.INSTANCE;
   }
 
+  private static final int DEFAULT_MAX_SIZE = 1024;     // should be enough for the 99% case (master data)
 
-  private static final int DEFAULT_SIZE = 1024;     // should be enough for the 99% case (master data)
 
+  private static class History {
 
-  /**
-   * A tableserial history entry.
-   */
-  private static class History extends IdSerialTuple {
+    private final TreeMap<Long, IdSerialTuple> history;   // abs(tableserial):tuple
+    private int maxSize;
 
-    @Serial
-    private static final long serialVersionUID = 1L;
+    private History(int maxSize) {
+      this.maxSize = maxSize;
+      history = new TreeMap<>();
+    }
 
-    /**
-     * Creates a history entry.
-     *
-     * @param id the object ID, 0 for insert/update rollback
-     * @param tableSerial the modification tableserial, negative for delete
-     */
-    private History(long id, long tableSerial) {
-      super(id, tableSerial);
+    private void add(IdSerialTuple tuple) {
+      long tableSerial = tuple.getSerial();
+      long id = tuple.getId();
       if (tableSerial == 0 ||
           tableSerial < 0 && id == 0) {
-        throw new IllegalArgumentException("invalid gap id=" + id + " tableSerial=" + tableSerial);
+        throw new IllegalArgumentException("invalid history entry: id=" + id + ", tableSerial=" + tableSerial);
+      }
+
+      history.put(Math.abs(tableSerial), tuple);
+
+      if (history.size() > maxSize) {
+        // max 1 to remove since we add only 1 at a time
+        history.remove(history.firstKey());
       }
     }
+
+    private void add(long id, long tableSerial) {
+      add(new IdSerialTuple(id, tableSerial));
+    }
+
   }
 
-
-  private final int size;                                       // max. number of history entries per tablename
-  private final Map<String, TreeMap<Long, History>> tableMap;   // [tablename:[abs(tableserial):gap]]
+  private final int maxSize;                        // max. number of history entries per tablename
+  private final Map<String, History> tableMap;      // [tablename:history]
 
 
   /**
    * Creates the history singleton.
    *
-   * @param size the max. number of history entries per tablename
+   * @param maxSize the initial max. number of history entries per tablename
+   * @see #setMaxSize(String, int)
    */
-  public TableSerialHistory(int size) {
-    this.size = size;
+  public TableSerialHistory(int maxSize) {
+    this.maxSize = maxSize;
     tableMap = new HashMap<>();
   }
 
@@ -112,7 +122,7 @@ public class TableSerialHistory {
    * Creates the history singleton with a default size.
    */
   public TableSerialHistory() {
-    this(DEFAULT_SIZE);
+    this(DEFAULT_MAX_SIZE);
   }
 
 
@@ -124,10 +134,7 @@ public class TableSerialHistory {
    * @param tableSerial the object's tableserial, negative if deletion
    */
   public synchronized void memorize(String tableName, long id, long tableSerial) {
-    long epochal = System.currentTimeMillis();
-    TreeMap<Long, History> histories = tableMap.computeIfAbsent(tableName, _ -> new TreeMap<>());
-    histories.put(Math.abs(tableSerial), new History(id, tableSerial));
-    purge(histories);
+    getHistory(tableName).add(id, tableSerial);
   }
 
   /**
@@ -137,7 +144,7 @@ public class TableSerialHistory {
    * @param tuple the id/tableserial tuple
    */
   public void memorize(String tableName, IdSerialTuple tuple) {
-    memorize(tableName, tuple.getId(), tuple.getSerial());
+    getHistory(tableName).add(tuple);
   }
 
   /**
@@ -147,12 +154,8 @@ public class TableSerialHistory {
    * @param tuples the gaps
    */
   public synchronized void memorize(String tableName, Collection<IdSerialTuple> tuples) {
-    long epochal = System.currentTimeMillis();
-    TreeMap<Long, History> histories = tableMap.computeIfAbsent(tableName, _ -> new TreeMap<>());
-    tuples.forEach(tuple ->
-                     histories.put(Math.abs(tuple.getSerial()),
-                             new History(tuple.getId(), tuple.getSerial())));
-    purge(histories);
+    History history = getHistory(tableName);
+    tuples.forEach(history::add);
   }
 
   /**
@@ -164,12 +167,15 @@ public class TableSerialHistory {
    * @param forget true to remove the returned entries from memory
    * @return the non-empty list of gaps sorted by abs(tableserial), null for none
    */
-  public synchronized Collection<IdSerialTuple> retrieve(String tableName, long minSerial, long maxSerial, boolean forget) {
-    TreeMap<Long, History> gaps = tableMap.get(tableName);
-    if (gaps != null) {
+  public synchronized Collection<IdSerialTuple> retrieve(String tableName,
+                                                         long minSerial, long maxSerial,
+                                                         boolean forget) {
+    History history = tableMap.get(tableName);
+    if (history != null) {
       Collection<IdSerialTuple> tuples = new ArrayList<>();
-      Iterator<Map.Entry<Long, History>> iter = gaps.subMap(minSerial, false, maxSerial, true)
-                                                    .entrySet().iterator();
+      Iterator<Map.Entry<Long, IdSerialTuple>> iter =
+        history.history.subMap(minSerial, false, maxSerial, true)
+                       .entrySet().iterator();
       while (iter.hasNext()) {
         tuples.add(iter.next().getValue());
         if (forget) {
@@ -181,11 +187,44 @@ public class TableSerialHistory {
     return null;
   }
 
-
-  private void purge(TreeMap<Long, History> histories) {
-    while (histories.size() > size) {
-      histories.remove(histories.firstKey());
+  /**
+   * Sets the maximum size of the history.
+   *
+   * @param tableName the tablename
+   * @param maxSize the new size
+   */
+  public synchronized void setMaxSize(String tableName, int maxSize) {
+    History history = tableMap.get(tableName);
+    if (history != null) {
+      history.maxSize = maxSize;
     }
+  }
+
+  /**
+   * Gets the maximum size of the history.
+   *
+   * @param tableName the tablename
+   * @return the size
+   */
+  public synchronized int getNaxSize(String tableName) {
+    History history = tableMap.get(tableName);
+    return history != null ? history.maxSize : 0;
+  }
+
+  /**
+   * Gets the number of history entries currently available.
+   *
+   * @param tableName the tablename
+   * @return the number of history entries
+   */
+  public synchronized int getSize(String tableName) {
+    History history = tableMap.get(tableName);
+    return history != null ? history.history.size() : 0;
+  }
+
+
+  private History getHistory(String tableName) {
+    return tableMap.computeIfAbsent(tableName, _ -> new History(maxSize));
   }
 
 }
