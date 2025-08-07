@@ -24,10 +24,10 @@ import org.tentackle.misc.IdSerialTuple;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 interface TableSerialHistoryHolder {
@@ -81,7 +81,7 @@ public class TableSerialHistory {
       history = new TreeMap<>();
     }
 
-    private void add(IdSerialTuple tuple) {
+    private synchronized void add(IdSerialTuple tuple) {
       long tableSerial = tuple.getSerial();
       long id = tuple.getId();
       if (tableSerial == 0 ||
@@ -91,8 +91,8 @@ public class TableSerialHistory {
 
       history.put(Math.abs(tableSerial), tuple);
 
-      if (history.size() > maxSize) {
-        // max 1 to remove since we add only 1 at a time
+      while (history.size() > maxSize) {
+        // could be more than 1 if maxSize was reduced
         history.remove(history.firstKey());
       }
     }
@@ -115,7 +115,7 @@ public class TableSerialHistory {
    */
   public TableSerialHistory(int maxSize) {
     this.maxSize = maxSize;
-    tableMap = new HashMap<>();
+    tableMap = new ConcurrentHashMap<>();
   }
 
   /**
@@ -133,7 +133,7 @@ public class TableSerialHistory {
    * @param id the object's ID, 0 for an update or insert
    * @param tableSerial the object's tableserial, negative if deletion
    */
-  public synchronized void memorize(String tableName, long id, long tableSerial) {
+  public void memorize(String tableName, long id, long tableSerial) {
     getHistory(tableName).add(id, tableSerial);
   }
 
@@ -153,9 +153,11 @@ public class TableSerialHistory {
    * @param tableName the tablename
    * @param tuples the gaps
    */
-  public synchronized void memorize(String tableName, Collection<IdSerialTuple> tuples) {
+  public void memorize(String tableName, Collection<IdSerialTuple> tuples) {
     History history = getHistory(tableName);
-    tuples.forEach(history::add);
+    synchronized (history) {
+      tuples.forEach(history::add);
+    }
   }
 
   /**
@@ -167,22 +169,24 @@ public class TableSerialHistory {
    * @param forget true to remove the returned entries from memory
    * @return the non-empty list of gaps sorted by abs(tableserial), null for none
    */
-  public synchronized Collection<IdSerialTuple> retrieve(String tableName,
+  public Collection<IdSerialTuple> retrieve(String tableName,
                                                          long minSerial, long maxSerial,
                                                          boolean forget) {
     History history = tableMap.get(tableName);
     if (history != null) {
-      Collection<IdSerialTuple> tuples = new ArrayList<>();
-      Iterator<Map.Entry<Long, IdSerialTuple>> iter =
-        history.history.subMap(minSerial, false, maxSerial, true)
-                       .entrySet().iterator();
-      while (iter.hasNext()) {
-        tuples.add(iter.next().getValue());
-        if (forget) {
-          iter.remove();
+      synchronized (history) {
+        Collection<IdSerialTuple> tuples = new ArrayList<>();
+        Iterator<Map.Entry<Long, IdSerialTuple>> iter =
+          history.history.subMap(minSerial, false, maxSerial, true)
+                         .entrySet().iterator();
+        while (iter.hasNext()) {
+          tuples.add(iter.next().getValue());
+          if (forget) {
+            iter.remove();
+          }
         }
+        return tuples.isEmpty() ? null : tuples;
       }
-      return tuples.isEmpty() ? null : tuples;
     }
     return null;
   }
@@ -193,10 +197,12 @@ public class TableSerialHistory {
    * @param tableName the tablename
    * @param maxSize the new size
    */
-  public synchronized void setMaxSize(String tableName, int maxSize) {
+  public void setMaxSize(String tableName, int maxSize) {
     History history = tableMap.get(tableName);
     if (history != null) {
-      history.maxSize = maxSize;
+      synchronized (history) {
+        history.maxSize = maxSize;
+      }
     }
   }
 
@@ -206,9 +212,14 @@ public class TableSerialHistory {
    * @param tableName the tablename
    * @return the size
    */
-  public synchronized int getNaxSize(String tableName) {
+  public int getNaxSize(String tableName) {
     History history = tableMap.get(tableName);
-    return history != null ? history.maxSize : 0;
+    if (history != null) {
+      synchronized (history) {
+        return history.maxSize;
+      }
+    }
+    return 0;
   }
 
   /**
@@ -219,7 +230,12 @@ public class TableSerialHistory {
    */
   public synchronized int getSize(String tableName) {
     History history = tableMap.get(tableName);
-    return history != null ? history.history.size() : 0;
+    if (history != null) {
+      synchronized (history) {
+        return history.history.size();
+      }
+    }
+    return 0;
   }
 
 
