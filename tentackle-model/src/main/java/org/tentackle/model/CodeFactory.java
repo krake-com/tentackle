@@ -186,10 +186,10 @@ public class CodeFactory {
 
 
   /**
-   * Creates the table creation sql code.
+   * Creates the table creation SQL code.
    *
    * @param entity the entity
-   * @param backend the backend to create sql code for
+   * @param backend the backend to create SQL code for
    * @return the SQL code
    * @throws ModelException if model inconsistent
    */
@@ -307,14 +307,19 @@ public class CodeFactory {
       buf.append(backend.sqlCreateIndex(entity.getTableName(), index.createDatabaseIndexName(entity),
                                         index.isUnique(), index.getFilterCondition(), columnNames));
     }
+
+    if (index.getComment() != null) {
+      buf.append(backend.sqlCreateIndexComment(entity.getTableName(), index.createDatabaseIndexName(entity),
+                                               index.getComment()));
+    }
     return buf.toString();
   }
 
   /**
-   * Creates the foreign key creation sql code.
+   * Creates the foreign key creation SQL code.
    *
    * @param foreignKey the foreign key
-   * @param backend the backend to create sql code for
+   * @param backend the backend to create SQL code for
    * @return the SQL code
    */
   public String createSqlForeignKey(ForeignKey foreignKey, Backend backend) {

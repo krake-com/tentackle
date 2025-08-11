@@ -330,6 +330,16 @@ public class Postgres extends AbstractSql92Backend {
   }
 
   @Override
+  public String getIndexMetaDataCommentColumnName() {
+    return "REMARKS";
+  }
+
+  @Override
+  public String sqlCreateIndexComment(String tableName, String indexName, String comment) {
+    return NonStandardCommons.sqlCreateCommentOnIndex(this, tableName, indexName, comment);
+  }
+
+  @Override
   public String sqlAlterColumnType(String tableName, String columnName, String comment, SqlType sqlType,
                                    int size, int scale, boolean nullable, Object defaultValue) {
     return  SQL_ALTER_TABLE + tableName +
@@ -398,7 +408,7 @@ public class Postgres extends AbstractSql92Backend {
 
     // ideal backend: name, comment, null and default can be changed separately from type,size and scale
     if (nameChanged) {
-      strategies.add(MigrationStrategy.NAME);   // comes first because next steps refer to the new column name
+      strategies.add(MigrationStrategy.NAME);   // comes first because the next steps refer to the new column name
     }
     if (typeChanged || sizeChanged || scaleChanged) {
       strategies.add(MigrationStrategy.TYPE);
