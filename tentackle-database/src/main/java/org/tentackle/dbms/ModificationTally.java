@@ -86,7 +86,7 @@ public class ModificationTally {
     }
 
     private void rollback() {
-      if (tableSerials != null) {
+      if (tableSerials != null && isTableSerialProvided()) {
         // overwrite deletion gaps, if any
         tableSerials.forEach(tableSerial -> TableSerialHistory.getInstance().memorize(trackedName, 0, tableSerial));
       }
@@ -98,7 +98,6 @@ public class ModificationTally {
   private final DbModification dbModification;            // the persisted modification object
   private final Map<Session, SessionCount> sessionsInTx;  // sessions running a transaction during countPending()
   private DbObjectClassVariables<?> clazzVar;             // the class variables if tablename belongs to a PDO, null for a generic name
-  private Boolean isTableSerialProvided;                  // true if the table maintains a tableserial, null if not known yet
   private String tableSerialTableName;                    // the table name, if the tracked name is a table with a tableserial column
   private long lastSerial;                                // last (known) serial for the table
   private long pendingCount;                              // number of pending counts
@@ -139,6 +138,10 @@ public class ModificationTally {
     }
     else  {
       LOGGER.info("counter created for {0} assigned to class variable {1}", trackedName, clazzVar);
+    }
+
+    if (clazzVar != null) {
+      tableSerialTableName = DbUtilities.getInstance().determineTableSerialTableName(clazzVar);
     }
   }
 
@@ -185,8 +188,10 @@ public class ModificationTally {
                     .addModification(txNumber, lastSerial + pendingCount);
         ((Db) session).setTransactionProperty(SESSION_COUNT_PENDING, Boolean.TRUE);
       }
-      // add to possible gaps
-      TableSerialHistory.getInstance().memorize(trackedName, 0, lastSerial + pendingCount);
+      if (isTableSerialProvided()) {
+        // add to possible gaps
+        TableSerialHistory.getInstance().memorize(trackedName, 0, lastSerial + pendingCount);
+      }
     }
   }
 
@@ -208,7 +213,9 @@ public class ModificationTally {
       if (session.isTxRunning()) {
         ((Db) session).setTransactionProperty(SESSION_COUNT_PENDING, Boolean.TRUE);
       }
-      TableSerialHistory.getInstance().memorize(trackedName, tuple);
+      if (isTableSerialProvided()) {
+        TableSerialHistory.getInstance().memorize(trackedName, tuple);
+      }
     }
   }
 
@@ -283,7 +290,7 @@ public class ModificationTally {
         LOGGER.fine("increment serial for {0} by {1}", dbModification, pendingCount);
         if (dbModification.countModification(pendingCount) != 2)  {
           // probably the record doesn't exist? create it!
-          dbModification.addToModificationTable(clazzVar != null, getTableSerialTableName());
+          dbModification.addToModificationTable(clazzVar != null, tableSerialTableName);
           // try again
           if (dbModification.countModification(pendingCount) != 2)  {
             throw new PersistenceException(dbModification, "updating modification count failed");
@@ -299,7 +306,7 @@ public class ModificationTally {
    * Adds this counter to the modification table.
    */
   public void addToModificationTable()  {
-    dbModification.addToModificationTable(clazzVar != null, getTableSerialTableName());
+    dbModification.addToModificationTable(clazzVar != null, tableSerialTableName);
     setLastSerial(getModificationCount());
   }
 
@@ -332,22 +339,8 @@ public class ModificationTally {
     return session;
   }
 
-  /**
-   * Determines whether table serial is valid for this pdo class.
-   *
-   * @return the tablename holding the tableserial, null if no tableserial
-   */
-  private synchronized String getTableSerialTableName() {
-    if (isTableSerialProvided == null) {   // not known yet
-      isTableSerialProvided = false;
-      if (clazzVar != null) {
-        tableSerialTableName = DbUtilities.getInstance().determineTableSerialTableName(clazzVar);
-        if (tableSerialTableName != null) {
-          isTableSerialProvided = true;
-        }
-      }
-    }
-    return tableSerialTableName;
+  private boolean isTableSerialProvided() {
+    return tableSerialTableName != null;
   }
 
 }

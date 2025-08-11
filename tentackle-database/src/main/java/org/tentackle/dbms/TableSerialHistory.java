@@ -37,6 +37,7 @@ interface TableSerialHistoryHolder {
 
 /**
  * Keeps track of all committed or rolled back deletions, updates or inserts in memory.<br>
+ * Applies to entities with a tableserial.<br>
  * When loading the tableserials from the database via {@link AbstractDbObject#selectExpiredTableSerials(long, long)},
  * gaps will be present for deletions, rolled back updates or inserts and PDOs updated more than once
  * since the last query.
