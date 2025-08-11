@@ -159,6 +159,11 @@ public class Db2 extends AbstractSql2003Backend {
   }
 
   @Override
+  public String sqlCreateIndexComment(String tableName, String indexName, String comment) {
+    return NonStandardCommons.sqlCreateCommentOnIndex(this, tableName, indexName, comment);
+  }
+
+  @Override
   public String sqlAddColumn(String tableName, String columnName, String comment, SqlType sqlType, int size, int scale,
           boolean nullable, Object defaultValue) {
     return  SQL_ALTER_TABLE + tableName +
@@ -192,9 +197,9 @@ public class Db2 extends AbstractSql2003Backend {
   }
 
   /**
-   * Appends the continuation sequence to a sql statement.
+   * Appends the continuation sequence to a SQL statement.
    *
-   * @param sql the sql code
+   * @param sql the SQL code
    * @return the modified code
    */
   private String appendContinuationString(String sql) {

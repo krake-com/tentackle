@@ -39,8 +39,8 @@ public class IndexMigrator {
   /**
    * The migration result.
    *
-   * @param dropSql the sql code to drop or rename indexes
-   * @param createSql the sql code to create indexes
+   * @param dropSql the SQL code to drop or rename indexes
+   * @param createSql the SQL code to create indexes
    */
   public record Result(String dropSql, String createSql) {
 
@@ -59,15 +59,15 @@ public class IndexMigrator {
 
   private final Backend backend;                  // the backend
   private final Entity entity;                    // the entity to migrate the index for
-  private final Index index;                      // the index to migrate, null if no such index in model
-  private final IndexMetaData indexMetaData;      // the index metadata, null if key does not exist
+  private final Index index;                      // the index to migrate, null if no such index in the model
+  private final IndexMetaData indexMetaData;      // the index metadata, null if the key does not exist
 
 
   /**
    * Creates a migrator.
    *
    * @param entity the entity
-   * @param index the index to migrate, null if no such index in model
+   * @param index the index to migrate, null if no such index in the model
    * @param backend the backend
    * @param indexMetaData the foreign metadata, null if key does not exist
    */
@@ -99,7 +99,7 @@ public class IndexMigrator {
   /**
    * Gets the index to migrate.
    *
-   * @return the index, null if no such index in model
+   * @return the index, null if no such index in the model
    */
   public Index getIndex() {
     return index;
@@ -108,7 +108,7 @@ public class IndexMigrator {
   /**
    * Gets the index metadata.
    *
-   * @return the meta date, null if no such index in database
+   * @return the meta-data, null if no such index in the database
    */
   public IndexMetaData getIndexMetaData() {
     return indexMetaData;
@@ -130,12 +130,27 @@ public class IndexMigrator {
       dropSql.append(dropIndex());
     }
     else {
-      // check if index has changed in its configuration. If so -> drop and re-create
+      // check if the index has changed in its configuration. If so -> drop and re-create
       StringBuilder buf = new StringBuilder();
       if (isLogicallyDifferent(backend, index, indexMetaData, buf)) {
         dropSql.append(buf);
         dropSql.append(dropIndex());
         createSql.append(createIndex());
+      }
+      else {
+        // check if only the comment has changed
+        String dbComment = indexMetaData.getComment();
+        if (dbComment == null || dbComment.isBlank()) {
+          dbComment = "";
+        }
+        String modelComment = index.getComment();
+        if (modelComment == null || modelComment.isBlank()) {
+          modelComment = "";
+        }
+        if (!Objects.equals(dbComment, modelComment)) {
+          createSql.append(backend.sqlAlterIndexComment(entity.getTableName(), index.createDatabaseIndexName(entity),
+                                                        modelComment));
+        }
       }
     }
 
@@ -149,7 +164,7 @@ public class IndexMigrator {
    * @param backend the backend
    * @param modelIndex the index as defined in the model
    * @param dbIndex the index existing in the database
-   * @param commentBuf comment buffer to show the difference, null if none
+   * @param commentBuf comment buffer to show the difference, null for none
    * @return true if they are different, false if logically equal
    */
   public static boolean isLogicallyDifferent(Backend backend, Index modelIndex, IndexMetaData dbIndex, StringBuilder commentBuf) {
@@ -201,7 +216,7 @@ public class IndexMigrator {
   /**
    * Creates the index.
    *
-   * @return the sql
+   * @return the SQL code
    */
   private String createIndex() {
     return index.sqlCreateIndex(backend, entity);
@@ -210,7 +225,7 @@ public class IndexMigrator {
   /**
    * Drops the index.
    *
-   * @return the sql
+   * @return the SQL code
    */
   private String dropIndex() {
     return backend.sqlDropIndex(indexMetaData.getTableMetaData().getSchemaName(),

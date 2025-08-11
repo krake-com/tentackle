@@ -41,6 +41,7 @@ public class IndexMetaData {
   private String indexName;                                 // the index name (without schema)
   private boolean unique;                                   // true if unique index
   private String filterCondition;                           // filter condition
+  private String comment;                                   // the comment
 
 
   /**
@@ -69,6 +70,10 @@ public class IndexMetaData {
     }
     unique = !resultSet.getBoolean("NON_UNIQUE");
     filterCondition = resultSet.getString("FILTER_CONDITION");
+    String remarksColumnName = tableMetaData.getModelMetaData().getBackend().getIndexMetaDataCommentColumnName();
+    if (remarksColumnName != null) {
+      comment = resultSet.getString(remarksColumnName);
+    }
 
     validate();
   }
@@ -90,7 +95,7 @@ public class IndexMetaData {
   /**
    * Gets the table.
    *
-   * @return the table meta data
+   * @return the table meta-data
    */
   public TableMetaData getTableMetaData() {
     return tableMetaData;
@@ -133,7 +138,7 @@ public class IndexMetaData {
   }
 
   /**
-   * Sets whether index is unique.
+   * Sets whether the index is unique.
    *
    * @param unique true if unique
    */
@@ -157,6 +162,24 @@ public class IndexMetaData {
    */
   public void setFilterCondition(String filterCondition) {
     this.filterCondition = filterCondition;
+  }
+
+  /**
+   * Gets the comment.
+   *
+   * @return the comment, null if none
+   */
+  public String getComment() {
+    return comment;
+  }
+
+  /**
+   * Sets the comment.
+   *
+   * @param comment the comment, null if none
+   */
+  public void setComment(String comment) {
+    this.comment = comment;
   }
 
   /**

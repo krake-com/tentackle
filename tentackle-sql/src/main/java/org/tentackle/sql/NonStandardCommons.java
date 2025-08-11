@@ -66,6 +66,33 @@ public class NonStandardCommons {
   }
 
   /**
+   * Creates a COMMENT ON INDEX statement.
+   *
+   * @param backend the backend
+   * @param tableName the table name with optional schema separated by a dot
+   * @param indexName the index name
+   * @param comment optional comment, null if none
+   * @return the SQL code including the closing semicolon and newline
+   */
+  public static String sqlCreateCommentOnIndex(Backend backend, String tableName, String indexName, String comment) {
+    StringBuilder buf = new StringBuilder("COMMENT ON INDEX ");
+    int ndx = tableName.indexOf('.');
+    if (ndx > 0) {
+      buf.append(tableName, 0, ndx + 1);    // prepend schema
+    }
+    buf.append(indexName);
+    buf.append(" IS ");
+    if (comment == null) {
+      buf.append("NULL");
+    }
+    else  {
+      buf.append(backend.toQuotedString(comment));
+    }
+    buf.append(backend.getStatementSeparator()).append('\n');
+    return buf.toString();
+  }
+
+  /**
    * Creates the SQL string to create a sequence.
    *
    * @param name the sequence name

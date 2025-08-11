@@ -315,7 +315,7 @@ public interface Backend {
    * @param username the username
    * @param password the password
    * @return the created connection
-   * @throws SQLException if connection could not be established
+   * @throws SQLException if the connection could not be established
    */
   Connection createConnection(String url, String username, char[] password) throws SQLException;
 
@@ -325,7 +325,7 @@ public interface Backend {
    * Important: the connection of the metadata is open!
    *
    * @param backendInfo the backend info
-   * @return the metadata, may be more than one if schemas set in backendInfo
+   * @return the metadata
    * @throws SQLException if failed
    */
   DatabaseMetaData[] getMetaData(BackendInfo backendInfo) throws SQLException;
@@ -371,13 +371,13 @@ public interface Backend {
   boolean isReservedSchemaName(String name);
 
   /**
-   * Creates a select statement string from an inner sql string.
+   * Creates a select statement string from an inner SQL string.
    * <p>
    * {@code sqlBuilder} is anything as {@code [SELECT] FROM... WHERE... ORDER BY...}.<br>
    * It is decorated with a leading {@code SELECT}, if missing, plus optional clauses
    * like for the given parameters.
    *
-   * @param sqlBuilder the sql builder, initially containing the inner sql without leading {@code SELECT}.
+   * @param sqlBuilder the SQL builder, initially containing the inner SQL without leading {@code SELECT}.
    * @param writeLock true select should write lock
    * @param limit the limit value, &le; 0 if no limit clause
    * @param offset the offset value, &le; 0 if no offset clause
@@ -385,11 +385,11 @@ public interface Backend {
   void buildSelectSql(StringBuilder sqlBuilder, boolean writeLock, int limit, int offset);
 
   /**
-   * Creates a select statement string from an inner sql string.
+   * Creates a select statement string from an inner SQL string.
    * <p>
    * Same as {@link #buildSelectSql(StringBuilder, boolean, int, int)}, but for strings.
    *
-   * @param sql the sql without leading {@code SELECT}.
+   * @param sql the SQL without leading {@code SELECT}.
    * @param writeLock true select should write lock
    * @param limit the limit value, &le; 0 if no limit clause
    * @param offset the offset value, &le; 0 if no offset clause
@@ -421,7 +421,7 @@ public interface Backend {
   /**
    * Gets the empty string.<br>
    * Some dbms (most famous: Oracle) handle empty strings as null.
-   * In such cases the empty string (e.g. Oracle) may consist of a single blank,
+   * In such cases the empty string (e.g., Oracle) may consist of a single blank,
    * or whatever.
    *
    * @return the empty string (never null)
@@ -452,15 +452,15 @@ public interface Backend {
   String getCoalesceKeyword();
 
   /**
-   * Determines whether backend allows expressions referring to tables being updated.
+   * Determines whether the backend allows expressions referring to tables being updated.
    *
    * @return true if allowed
    */
   boolean isExpressionReferringToTableBeingUpdatedSupported();
 
   /**
-   * True if backend provides locking-free sequences.<br>
-   * Sequences must not take part in transactions, i.e. no read- or write-locks!
+   * Returns whether the backend provides locking-free sequences.<br>
+   * Sequences must not take part in transactions, i.e., no read- or write-locks!
    *
    * @return true if database supports sequences
    */
@@ -468,7 +468,7 @@ public interface Backend {
 
   /**
    * Gets the string before the table alias.<br>
-   * In most databases the " AS " is optional and some
+   * In most databases the {@code " AS "} is optional and some
    * don't accept it all.
    *
    * @return the as-string
@@ -476,7 +476,7 @@ public interface Backend {
   String sqlAsBeforeTableAlias();
 
   /**
-   * Returns whether backend requires an alias for a sub-select.
+   * Returns whether backend requires an alias for a sub select.
    *
    * @return true if sub-select needs an alias.
    */
@@ -519,10 +519,10 @@ public interface Backend {
   String sqlCreateSchema(String name);
 
   /**
-   * Create comment sql code that is interpreted as a comment by the backend.
+   * Create comment SQL code that is interpreted as a comment by the backend.
    *
    * @param text any text, single or multiline
-   * @return the comment, null if text was null
+   * @return the comment, null if the text was null
    */
   String sqlComment(String text);
 
@@ -533,7 +533,7 @@ public interface Backend {
    * @param joinedTableName the joined tablename
    * @param joinedTableAlias the joined table alias, null if none
    * @param join the join expression
-   * @return the sql code
+   * @return the SQL code
    */
   String sqlJoin(JoinType type, String joinedTableName, String joinedTableAlias, String join);
 
@@ -545,9 +545,9 @@ public interface Backend {
    *  sqlFunction("max", CN_ID) --&gt; "MAX(id)"
    * </pre>
    *
-   * @param functionName the function name, will be translated to uppercase
-   * @param expression the expression, may be null
-   * @return the sql code
+   * @param functionName the function name (will be translated to uppercase)
+   * @param expression the expression (can be null)
+   * @return the SQL code
    */
   String sqlFunction(String functionName, String expression);
 
@@ -567,7 +567,7 @@ public interface Backend {
   boolean isConstraintException(SQLException ex);
 
   /**
-   * Determines whether exception is a communication error.
+   * Determines whether the exception is a communication error.
    *
    * @param ex the exception
    * @return true if comlink down or alike
@@ -575,10 +575,10 @@ public interface Backend {
   boolean isCommunicationLinkException(SQLException ex);
 
   /**
-   * Determines whether exception is transient and retrying the transaction may succeed.<br>
+   * Determines whether the exception is transient and retrying the transaction may succeed.<br>
    * Typical transient exceptions are thrown when a deadlock is detected or when serialized transaction isolation is used.
    * <p>
-   * Other transient errors are not covered by this method (e.g. connection timeouts, etc...).
+   * Other transient errors are not covered by this method (e.g., connection timeouts, etc...).
    *
    * @param ex the exception
    * @return true if retrying the transaction may succeed
@@ -586,15 +586,15 @@ public interface Backend {
   boolean isTransientTransactionException(SQLException ex);
 
   /**
-   * Returns the maximum size for a given SQL-type.<br>
+   * Returns the maximum size for a given SQL type.<br>
    *
    * @param sqlType the SQL-type
-   * @return the maximum size, 0 if unlimited, -1 if type without size
+   * @return the maximum size, 0 if unlimited, -1 for types without a size
    */
   int getMaxSize(SqlType sqlType);
 
   /**
-   * Returns the maximum scale for a given SQL-type and size.<br>
+   * Returns the maximum scale for a given SQL type and size.<br>
    *
    * @param sqlType the SQL-type
    * @param size the size, 0 if unlimited
@@ -603,7 +603,7 @@ public interface Backend {
   int getMaxScale(SqlType sqlType, int size);
 
   /**
-   * Gets the default size if no size given in model.
+   * Gets the default size if no size given in the model.
    *
    * @param sqlType the SQL-type
    * @return the default size, 0 if no default size
@@ -612,7 +612,7 @@ public interface Backend {
 
   /**
    * Gets the default schema name.<br>
-   * Some backends store the objects in a default schema, if no explicit schema is given.
+   * Some backends store the objects in a default schema if no explicit schema is given.
    *
    * @return the default schema, null if none
    */
@@ -626,7 +626,7 @@ public interface Backend {
   Set<String> getReservedWords();
 
   /**
-   * Asserts that given string is a valid name and usage.
+   * Asserts that the given string is a valid name and usage.
    *
    * @param nameType the type/usage of the name
    * @param name the name
@@ -698,16 +698,16 @@ public interface Backend {
   IndexColumnMetaData createIndexColumnMetaData(IndexMetaData indexMetaData);
 
   /**
-   * Converts the java SQL-type to the database type name.
+   * Converts the java SQL type to the database type name.
    *
-   * @param sqlType the java sql type
+   * @param sqlType the java SQL type
    * @param size the column's size
    * @return the corresponding type string
    */
   String sqlTypeToString(SqlType sqlType, int size);
 
   /**
-   * Converts an sqltype, size and scale to a database type declaration.
+   * Converts the given SQL type, size and scale to a database type declaration.
    *
    * @param sqlType the SQL type
    * @param size the size
@@ -720,7 +720,7 @@ public interface Backend {
    * Converts an sqltype, size, scale, nullable and default value to a database type declaration.
    *
    * @param columnName the database column name
-   * @param sqlType the JDBC sql type
+   * @param sqlType the JDBC SQL type
    * @param size the optional size
    * @param scale the optional scale
    * @param nullable true if NULL, else NOT NULL
@@ -733,7 +733,7 @@ public interface Backend {
   /**
    * Converts a type and value to a literal string.
    *
-   * @param sqlType the sql type
+   * @param sqlType the SQL type
    * @param value the value
    * @return the constant
    */
@@ -754,7 +754,7 @@ public interface Backend {
   String getStatementSeparator();
 
   /**
-   * Gets all strings that begin a single line comment.
+   * Gets all strings that start a single line comment.
    *
    * @return the single line comment strings, usually {@code "--"}
    */
@@ -836,7 +836,7 @@ public interface Backend {
    *
    * @param columnName the database column name
    * @param comment optional comment, null if none
-   * @param sqlType the JDBC sql type
+   * @param sqlType the JDBC SQL type
    * @param size the optional size
    * @param scale the optional scale
    * @param nullable true if NULL, else NOT NULL
@@ -852,7 +852,7 @@ public interface Backend {
    * Checks whether the column's default corresponds to the model's default value.
    *
    * @param column the column to inspect
-   * @param sqlType the sql type
+   * @param sqlType the SQL type
    * @param defaultValue the model's default value
    * @return true if same
    */
@@ -864,27 +864,27 @@ public interface Backend {
    * @param column old column meta data
    * @param columnName new column name
    * @param comment new comment
-   * @param sqlType new sql type
+   * @param sqlType new SQL type
    * @param size new size
    * @param scale new scale
    * @param nullable new nullable
    * @param defaultValue new default
-   * @return the strategies in order to achieve the migration
+   * @return the strategies to achieve the migration
    */
   MigrationStrategy[] getMigrationStrategy(ColumnMetaData column, String columnName, String comment, SqlType sqlType,
                                            int size, int scale, boolean nullable, Object defaultValue);
 
   /**
-   * Generate sql code to rename a table.
+   * Generate SQL code to rename a table.
    *
    * @param tableName the old tablename (with leading schema, if any)
-   * @param newTableName the new tablename (without schema)
+   * @param newTableName the new tablename (without the schema name)
    * @return the SQL code
    */
   String sqlRenameTable(String tableName, String newTableName);
 
   /**
-   * Generates sql code to rename a column.
+   * Generates SQL code to rename a column.
    *
    * @param tableName the tablename
    * @param oldColumnName the old column name
@@ -910,7 +910,7 @@ public interface Backend {
    * @param oldColumnName the old column name
    * @param newColumnName the new column name
    * @param comment optional comment, null if none
-   * @param sqlType the JDBC sql type
+   * @param sqlType the JDBC SQL type
    * @param size the optional size
    * @param scale the optional scale
    * @param nullable true if NULL, else NOT NULL
@@ -921,12 +921,12 @@ public interface Backend {
                                      int size, int scale, boolean nullable, Object defaultValue);
 
   /**
-   * Generates sql code to add a column.
+   * Generates SQL code to add a column.
    *
    * @param tableName the tablename
    * @param columnName the new column name
    * @param comment optional comment, null if none
-   * @param sqlType the JDBC sql type
+   * @param sqlType the JDBC SQL type
    * @param size the optional size
    * @param scale the optional scale
    * @param nullable true if NULL, else NOT NULL
@@ -937,7 +937,7 @@ public interface Backend {
                       int size, int scale, boolean nullable, Object defaultValue);
 
   /**
-   * Generates sql code to drop a column.
+   * Generates SQL code to drop a column.
    *
    * @param tableName the tablename
    * @param columnName the new column name
@@ -946,12 +946,12 @@ public interface Backend {
   String sqlDropColumn(String tableName, String columnName);
 
   /**
-   * Generates sql code to change the datatype of a column.
+   * Generates SQL code to change the datatype of a column.
    *
    * @param tableName the tablename
    * @param columnName the new column name
    * @param comment optional comment, null if none
-   * @param sqlType the JDBC sql type
+   * @param sqlType the JDBC SQL type
    * @param size the optional size
    * @param scale the optional scale
    * @param nullable true if NULL, else NOT NULL
@@ -965,15 +965,15 @@ public interface Backend {
    *
    * @param tableName the tablename
    * @param columnName the column name
-   * @param sqlType the sql type
+   * @param sqlType the SQL type
    * @param defaultValue the optional default value if defined in the model
-   * @param migrated true if column is migrated, false if added
+   * @param migrated true if the column is migrated, false if added
    * @return the SQL code
    */
   String sqlUpdateToNotNull(String tableName, String columnName, SqlType sqlType, Object defaultValue, boolean migrated);
 
   /**
-   * Generates sql code to change the null-constraint of a column.
+   * Generates SQL code to change the null-constraint of a column.
    *
    * @param tableName the tablename
    * @param columnName the new column name
@@ -983,18 +983,18 @@ public interface Backend {
   String sqlAlterColumnNullConstraint(String tableName, String columnName, boolean nullable);
 
   /**
-   * Generates sql code to change the default value a column.
+   * Generates SQL code to change the default value of a column.
    *
    * @param tableName the tablename
    * @param columnName the new column name
-   * @param sqlType the JDBC sql type
+   * @param sqlType the JDBC SQL type
    * @param defaultValue the optional default value
    * @return the SQL code, null if need {@link #sqlAlterColumnType}
    */
   String sqlAlterColumnDefault(String tableName, String columnName, SqlType sqlType, Object defaultValue);
 
   /**
-   * Generates SQL code to create the comment for an attribute.<br>
+   * Generates SQL code to create the comment for an attribute.
    *
    * @param tableName the table name
    * @param columnName the column name
@@ -1004,62 +1004,7 @@ public interface Backend {
   String sqlCreateColumnComment(String tableName, String columnName, String comment);
 
   /**
-   * Generates the CREATE INDEX statement.
-   *
-   * @param tableName the table name
-   * @param indexName the name of the index
-   * @param unique true if index is unique
-   * @param filterCondition the filter condition (null if none)
-   * @param columnNames the column names (with a leading '-' if descending). Simple function-based indexes are also supported.
-   * @return the SQL code
-   */
-  String sqlCreateIndex(String tableName, String indexName, boolean unique, String filterCondition, String... columnNames);
-
-  /**
-   * Generates the DROP INDEX statement.
-   *
-   * @param schemaName the optional schema, null if none
-   * @param tableNameWithoutSchema the table name without the schema
-   * @param indexName the name of the index
-   * @return the SQL code
-   */
-  String sqlDropIndex(String schemaName, String tableNameWithoutSchema, String indexName);
-
-  /**
-   * Generates the DROP TABLE statement.
-   *
-   * @param schemaName the optional schema, null if none
-   * @param tableNameWithoutSchema the table name without the schema
-   * @return the SQL code
-   */
-  String sqlDropTable(String schemaName, String tableNameWithoutSchema);
-
-  /**
-   * Generates the ALTER TABLE statement to add a foreign key constraint.
-   *
-   * @param referencingTableName the referencing foreign table name
-   * @param referencingColumnName the referencing foreign column name
-   * @param referencedTableName the referenced primary table name
-   * @param referencedColumnName the referenced primary column name
-   * @param foreignKeyName the name of the foreign key
-   * @param composite true if referencing table is a component of the referenced table
-   * @return the SQL code
-   */
-  String sqlCreateForeignKey(String referencingTableName, String referencingColumnName,
-                             String referencedTableName, String referencedColumnName,
-                             String foreignKeyName, boolean composite);
-
-  /**
-   * Generates the sql statement to drop a foreign key constraint.
-   *
-   * @param referencingTableName the referencing foreign table name
-   * @param foreignKeyName the name of the foreign key
-   * @return the SQL code
-   */
-  String sqlDropForeignKey(String referencingTableName, String foreignKeyName);
-
-  /**
-   * Generates SQL code to alter the comment for an attribute.<br>
+   * Generates SQL code to alter the comment for an attribute.
    *
    * @param tableName the table name
    * @param columnName the column name
@@ -1069,12 +1014,94 @@ public interface Backend {
   String sqlAlterColumnComment(String tableName, String columnName, String comment);
 
   /**
-   * Generate SQL-code for joining a table to an existing select.
+   * Generates the CREATE INDEX statement.
+   *
+   * @param tableName the table name
+   * @param indexName the name of the index
+   * @param unique true if the index is unique
+   * @param filterCondition the filter condition (null if none)
+   * @param columnNames the column names (with leading '-' if descending). Simple function-based indexes are also supported.
+   * @return the SQL code
+   */
+  String sqlCreateIndex(String tableName, String indexName, boolean unique, String filterCondition, String... columnNames);
+
+  /**
+   * Gets the column name for the comment of within an index meta-data result set.
+   *
+   * @return the column name, null if not supported by the backend
+   */
+  String getIndexMetaDataCommentColumnName();
+
+  /**
+   * Generates SQL code to create the comment for an index.
+   *
+   * @param tableName the table name
+   * @param indexName the name of the index
+   * @param comment optional comment, null if none
+   * @return the SQL-code, empty string if not supported by the backend
+   */
+  String sqlCreateIndexComment(String tableName, String indexName, String comment);
+
+  /**
+   * Generates SQL code to alter the comment for an index.
+   *
+   * @param tableName the table name
+   * @param indexName the name of the index
+   * @param comment optional comment, null if none
+   * @return the SQL-code (the empty string if not supported by the backend)
+   */
+  String sqlAlterIndexComment(String tableName, String indexName, String comment);
+
+  /**
+   * Generates the DROP INDEX statement.
+   *
+   * @param schemaName the optional schema, null for none
+   * @param tableNameWithoutSchema the table name without the schema
+   * @param indexName the name of the index
+   * @return the SQL code
+   */
+  String sqlDropIndex(String schemaName, String tableNameWithoutSchema, String indexName);
+
+  /**
+   * Generates the DROP TABLE statement.
+   *
+   * @param schemaName the optional schema, null for none
+   * @param tableNameWithoutSchema the table name without the schema
+   * @return the SQL code
+   */
+  String sqlDropTable(String schemaName, String tableNameWithoutSchema);
+
+  /**
+   * Generates the ALTER TABLE statement to add a foreign key constraint.
+   *
+   * @param referencingTableName the name of the referencing foreign table
+   * @param referencingColumnName the referencing foreign column name
+   * @param referencedTableName the referenced primary table name
+   * @param referencedColumnName the referenced primary column name
+   * @param foreignKeyName the name of the foreign key
+   * @param composite true if the referencing table is a component of the referenced table
+   * @return the SQL code
+   */
+  String sqlCreateForeignKey(String referencingTableName, String referencingColumnName,
+                             String referencedTableName, String referencedColumnName,
+                             String foreignKeyName, boolean composite);
+
+  /**
+   * Generates the SQL statement to drop a foreign key constraint.
+   *
+   * @param referencingTableName the name of the referencing foreign table
+   * @param foreignKeyName the name of the foreign key
+   * @return the SQL code
+   */
+  String sqlDropForeignKey(String referencingTableName, String foreignKeyName);
+
+  /**
+   * Generate SQL-code for joining a table with an existing {@code SELECT}.
    *
    * @param type the join type
-   * @param addColumns true if columns of joined table should be added to the result set
+   * @param addColumns true if columns of the joined table should be added to the result set
    * @param select the original select statement
-   * @param joinSelect the select to join with the original sql or just a tablename
+   * @param joinSelect the select to join with the original SQL or just a tablename
    * @param joinSelectIdAlias extra id alias to add to the joined select, null if none
    * @param joinAlias the alias of the joined select
    * @param join the join clause
@@ -1083,12 +1110,12 @@ public interface Backend {
                       String joinSelect, String joinSelectIdAlias, String joinAlias, String join);
 
   /**
-   * Generate SQL-code for joining a table to an existing select.
+   * Generate SQL-code for joining a table with an existing {@code SELECT}.
    *
    * @param type the join type
-   * @param addColumns true if columns of joined table should be added to the result set
+   * @param addColumns true if columns of the joined table should be added to the result set
    * @param select the original select statement
-   * @param joinSelect the select to join with the original sql or just a tablename
+   * @param joinSelect the select to join with the original SQL or just a tablename
    * @param joinSelectIdAlias extra id alias to add to the joined select, null if none
    * @param joinAlias the alias of the joined select
    * @param join the join clause
@@ -1133,8 +1160,8 @@ public interface Backend {
    * Any remaining WHERE 1=1 will be removed too.
    * If you don't want your statements getting optimized, use lowercase for those keywords.
    *
-   * @param sql the original sql code
-   * @return the optimized sql code
+   * @param sql the original SQL code
+   * @return the optimized SQL code
    */
   String optimizeSql(String sql);
 
@@ -1142,12 +1169,12 @@ public interface Backend {
    * Returns whether the backend supports releasing savepoints explicitly.
    * If not, the savepoints are released when the transaction finishs.
    *
-   * @return true if release is supported, else false
+   * @return true if the feature is supported, else false
    */
   boolean isReleaseSavepointSupported();
 
   /**
-   * Returns whether the backend support CLOB types.<br>
+   * Returns whether the backend supports CLOB types.<br>
    * If not, it will be emulated as VARCHAR with the maximum possible size.
    *
    * @return true if supported, false if treat as varchar
@@ -1162,7 +1189,7 @@ public interface Backend {
   boolean isUUIDSupported();
 
   /**
-   * Returns whether function based indexes are supported.
+   * Returns whether function-based indexes are supported.
    *
    * @return true if supported
    */
@@ -1171,7 +1198,7 @@ public interface Backend {
   /**
    * Returns whether backend supports filtered indexes.
    *
-   * @return true if supported, false if model will raise an error if filtered index is used
+   * @return true if supported, false if model will raise an error if a filtered index is used
    */
   boolean isFilteredIndexSupported();
 
@@ -1179,8 +1206,8 @@ public interface Backend {
    * Some database support drop index/constraint/column {@code IF EXISTS}.<br>
    * This may be useful if migration scripts are generated against non-production databases
    * that contain test indexes etc...<br>
-   * Notice, that those temporary DDL changes should better use the temporary prefix (see {@link #isTemporaryName(String)}) in
-   * order to be ignored by the migrator.
+   * Please notice that those temporary DDL changes should better use the temporary prefix
+   * (see {@link #isTemporaryName(String)}) to be ignored by the migrator.
    *
    * @param dropIfExists true if {@code IF EXISTS} should be used
    */
@@ -1194,7 +1221,7 @@ public interface Backend {
   boolean isDropIfExistsEnabled();
 
   /**
-   * Converts a backend specific type name to an internal name used by driver specific methods.
+   * Converts a backend-specific type name to an internal name used by driver-specific methods.
    *
    * @param sqlTypeName the original type used in SQL scripts
    * @return the JDBC internal name
@@ -1202,7 +1229,7 @@ public interface Backend {
   String toInternalType(String sqlTypeName);
 
   /**
-   * Returns whether the backend supports given array operator.
+   * Returns whether the backend supports the given array operator.
    *
    * @param operator the array operator
    * @return true if supported

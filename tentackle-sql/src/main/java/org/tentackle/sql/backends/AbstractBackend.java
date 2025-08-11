@@ -757,6 +757,21 @@ public abstract class AbstractBackend implements Backend {
   }
 
   @Override
+  public String getIndexMetaDataCommentColumnName() {
+    return null;
+  }
+
+  @Override
+  public String sqlCreateIndexComment(String tableName, String indexName, String comment) {
+    return "";
+  }
+
+  @Override
+  public String sqlAlterIndexComment(String tableName, String indexName, String comment) {
+    return sqlCreateIndexComment(tableName, indexName, comment);   // usually the same
+  }
+
+  @Override
   public String sqlDropIndex(String schemaName, String tableNameWithoutSchema, String indexName) {
     StringBuilder buf = new StringBuilder("DROP INDEX ");
     if (isDropIfExistsEnabled()) {
