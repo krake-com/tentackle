@@ -28,6 +28,7 @@ import org.tentackle.fx.container.FxHBox;
 import org.tentackle.fx.rdc.Rdc;
 import org.tentackle.fx.rdc.security.SecurityDialogFactory;
 import org.tentackle.fx.rdc.table.TablePopup;
+import org.tentackle.fx.table.TableCellType;
 import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.pdo.AdminExtension;
 import org.tentackle.pdo.AdminExtension.SessionData;
@@ -120,7 +121,7 @@ public class SessionsView extends AbstractFxController {
 
   /**
    * Gets the button box.<br>
-   * Used to add additional buttons, for example to close the stage.
+   * Used to add additional buttons, for example, to close the stage.
    *
    * @return the button box
    */
@@ -150,6 +151,7 @@ public class SessionsView extends AbstractFxController {
    *
    * @return the table config
    */
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   protected TableConfiguration<SessionData> createTableConfiguration() {
     TableConfiguration<SessionData> config = FxFactory.getInstance().createTableConfiguration(SessionData.class, null);
     config.setBaseBundleName(getClass().getName());
@@ -159,7 +161,8 @@ public class SessionsView extends AbstractFxController {
     config.addColumn("applicationId", resources.getString("appl.-ID"));
     config.addColumn("clientVersion", resources.getString("version"));
     config.addColumn("locale", resources.getString("locale"));
-    config.addColumn("timeZone", resources.getString("timezone"));
+    config.addColumn("timeZone", resources.getString("timezone"))
+            .setCellType((TableCellType) new SessionsViewTimezoneCellType());
     config.addColumn("vmInfo", resources.getString("VM"));
     config.addColumn("osInfo", resources.getString("OS"));
     config.addColumn("hostInfo", resources.getString("hostname"));
@@ -186,7 +189,7 @@ public class SessionsView extends AbstractFxController {
   /**
    * Kills or sends a logout request to all marked user sessions.
    *
-   * @param kill true to kill, else just send logout request
+   * @param kill true to kill, else send logout request
    */
   private void killSessions(boolean kill) {
     Set<SessionData> sessionData = new LinkedHashSet<>();
@@ -228,7 +231,7 @@ public class SessionsView extends AbstractFxController {
           refresh();
         }
         else {
-          // logout requires manual refresh since the request is executed by the remote tracker and may be ignored at all
+          // logout requires manual refresh since the request is executed by the remote tracker and may be completely ignored
           Fx.info(getView(), resources.getString("logout request submitted"));
         }
       });
