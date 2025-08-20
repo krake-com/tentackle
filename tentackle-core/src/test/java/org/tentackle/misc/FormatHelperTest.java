@@ -34,6 +34,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -140,7 +141,8 @@ public class FormatHelperTest {
 
   @Test
   public void testZonedDateTime() {
-    ZonedDateTime zonedDateTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+    ZoneId zoneId = ZoneId.of("Europe/Paris");    // the zone returned when parsing CET/CEST
+    ZonedDateTime zonedDateTime = ZonedDateTime.now(zoneId).truncatedTo(ChronoUnit.SECONDS);
     String str = FormatHelper.formatZonedDateTime(zonedDateTime);
     Reporter.log(str + "<br>", true);
     ZonedDateTime zdt = FormatHelper.parseZonedDateTime(str);
