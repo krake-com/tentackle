@@ -43,7 +43,9 @@ public class SessionsViewTimezoneCellType extends AbstractTableCellType<String> 
   @Override
   public void updateItem(FxTableCell<?, String> tableCell, String item) {
     tableCell.setText(item);
-    tableCell.setTooltip(createTooltip(tableCell));
+    if (tableCell.getTooltip() == null) {
+      tableCell.setTooltip(createTooltip(tableCell));
+    }
   }
 
   @Override
@@ -54,17 +56,15 @@ public class SessionsViewTimezoneCellType extends AbstractTableCellType<String> 
 
   private Tooltip createTooltip(FxTableCell<?, String> tableCell) {
     Tooltip tooltip = new Tooltip();
-    tooltip.activatedProperty().addListener((t, o, n) -> {
-      if (n) {
-        String tzText = tableCell.getItem();
-        if (tzText != null) {
-          int ndx = tzText.indexOf(" (");
-          if (ndx >= 0) {
-            tzText = tzText.substring(0, ndx);    // cut off the offset (see AdminExtensionAdapterRemoteDelegateImpl)
-            TimeZone timeZone = TimeZone.getTimeZone(tzText);
-            if (timeZone.getID().equals(tzText)) {    // if not the fallback to GMT
-              tooltip.setText(FormatHelper.formatShortZonedDateTime(ZonedDateTime.now(timeZone.toZoneId())));
-            }
+    tooltip.setOnShowing(e -> {
+      String tzText = tableCell.getItem();
+      if (tzText != null) {
+        int ndx = tzText.indexOf(" (");
+        if (ndx >= 0) {
+          tzText = tzText.substring(0, ndx);    // cut off the offset (see AdminExtensionAdapterRemoteDelegateImpl)
+          TimeZone timeZone = TimeZone.getTimeZone(tzText);
+          if (timeZone.getID().equals(tzText)) {    // if not the fallback to GMT
+            tooltip.setText(FormatHelper.formatShortZonedDateTime(ZonedDateTime.now(timeZone.toZoneId())));
           }
         }
       }
