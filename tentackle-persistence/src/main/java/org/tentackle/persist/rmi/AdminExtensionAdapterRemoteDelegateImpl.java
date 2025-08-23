@@ -20,6 +20,7 @@ package org.tentackle.persist.rmi;
 
 import org.tentackle.app.LogoutEvent;
 import org.tentackle.common.Compare;
+import org.tentackle.common.Constants;
 import org.tentackle.common.Timestamp;
 import org.tentackle.dbms.Db;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
@@ -35,8 +36,6 @@ import org.tentackle.session.SessionInfo;
 import java.io.Serial;
 import java.io.Serializable;
 import java.rmi.RemoteException;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -157,8 +156,6 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDelegateImpl<
     @Serial
     private static final long serialVersionUID = 1L;
 
-    private static final ThreadLocal<NumberFormat> OFFSET_FMT = ThreadLocal.withInitial(() -> new DecimalFormat("+#0.#"));
-
     private final long userId;
     private final String userName;
     private final Timestamp since;
@@ -191,8 +188,8 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDelegateImpl<
       osInfo = info.getOsInfo();
       hostInfo = info.getHostInfo();
       if (info.getTimeZone() != null) {
-        double tzOffsetH = info.getTimeZone().getOffset(System.currentTimeMillis()) / 3600000.0;
-        timeZone = info.getTimeZone().getID() + " (" + OFFSET_FMT.get().format(tzOffsetH) + "h)";
+        int offMin = info.getTimeZone().getOffset(System.currentTimeMillis()) / (int) Constants.MINUTE_MS;
+        timeZone = info.getTimeZone().getID() + " (" + String.format("%+d:%02d", offMin / 60, offMin % 60) + ")";
       }
       else {
         timeZone = null;
