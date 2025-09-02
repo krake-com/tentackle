@@ -84,15 +84,15 @@
 
     <asm.version>9.8</asm.version>
     <freemarker.version>2.3.34</freemarker.version>
-    <groovy.version>4.0.28</groovy.version>
+    <groovy.version>5.0.0</groovy.version>
     <h2.version>2.3.232</h2.version>
     <ikonli.version>12.4.0</ikonli.version>
     <javafx.version>24.0.2</javafx.version>
-    <jruby.version>10.0.1.0</jruby.version>
+    <jruby.version>10.0.2.0</jruby.version>
     <junit.version>5.13.4</junit.version>
     <log4j2.version>2.25.1</log4j2.version>
     <mavengem.wagon.version>1.0.3</mavengem.wagon.version>
-    <plexus.archiver.version>4.10.0</plexus.archiver.version>
+    <plexus.archiver.version>4.10.1</plexus.archiver.version>
     <plexus.java.version>1.5.0</plexus.java.version>
     <poi.version>5.4.1</poi.version>
     <postgresql.version>42.7.7</postgresql.version>
