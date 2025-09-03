@@ -21,10 +21,12 @@ package org.tentackle.common;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.spi.ResourceBundleControlProvider;
 
@@ -35,20 +37,16 @@ import java.util.spi.ResourceBundleControlProvider;
  *
  * @author harald
  */
-// @Service does not work in tentackle-common, since there is no analyze maven plugin available at this build step yet.
+// @Service does not work in tentackle-common, since there is no analyze-maven-plugin available at this build step yet.
 // Needs explicit config in resources/services/META-INF.
 @Service(BundleFactory.class)
 public class DefaultBundleFactory implements BundleFactory {
-  /**
-   * Notice: @Service annotation cannot be used because tentackle-maven-plugin depends
-   * on tentackle-common, i.e. this cannot be analyzed.
-   * META-INF/services must be edited manually!
-   */
 
   private final List<ResourceBundleControlProvider> providers;    // the control providers, null if none
   private final Map<String, ResourceBundle.Control> controlMap;   // map of basenames to controls
   private final Map<String, BundleSupport> moduleBundlesMap;      // map of basenames to annotated bundles in modules
-  private ClassLoader classLoader;                                // another classloader, null if default
+  private final Set<String> noControlBundles;                     // set of basenames with annotated bundles in automatic or unnamed modules
+  private ClassLoader classLoader;                                // another classloader, null for default loader
 
   /**
    * Creates the bundle factory.
@@ -57,10 +55,19 @@ public class DefaultBundleFactory implements BundleFactory {
     providers = createProviders();
     controlMap = new ConcurrentHashMap<>();
     moduleBundlesMap = new HashMap<>();
+    noControlBundles = new HashSet<>();
     for (BundleSupport support : BundleSupport.getBundles(getClass().getClassLoader())) {
       if (support.getModuleInfo() != null) {
         moduleBundlesMap.put(support.getBundleName(), support);
         moduleBundlesMap.put(support.getClassName(), support);
+      }
+      else {
+        // Found a bundle support in an automatic or unnamed module, which is not recommended but sometimes necessary
+        // if the artifact cannot be made fully modular for some reason (for ex. tentackle swing legacy modules).
+        // Since controls (see i18n module) are not supported for automatic or unnamed modules,
+        // they must be ignored for those bundles to prevent exceptions.
+        noControlBundles.add(support.getBundleName());
+        noControlBundles.add(support.getClassName());
       }
     }
   }
@@ -87,7 +94,7 @@ public class DefaultBundleFactory implements BundleFactory {
 
   @Override
   public ResourceBundle.Control getControl(String baseName) {
-    if (providers != null) {
+    if (providers != null && !noControlBundles.contains(baseName)) {
       ResourceBundle.Control control = controlMap.get(baseName);
       if (control != null) {
         return control;
