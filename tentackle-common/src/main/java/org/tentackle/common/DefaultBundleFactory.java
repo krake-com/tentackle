@@ -56,12 +56,13 @@ public class DefaultBundleFactory implements BundleFactory {
     controlMap = new ConcurrentHashMap<>();
     moduleBundlesMap = new HashMap<>();
     noControlBundles = new HashSet<>();
+    boolean modular = ModuleSorter.INSTANCE.isModular();
     for (BundleSupport support : BundleSupport.getBundles(getClass().getClassLoader())) {
       if (support.getModuleInfo() != null) {
         moduleBundlesMap.put(support.getBundleName(), support);
         moduleBundlesMap.put(support.getClassName(), support);
       }
-      else {
+      else if (modular) {
         // Found a bundle support in an automatic or unnamed module, which is not recommended but sometimes necessary
         // if the artifact cannot be made fully modular for some reason (for ex. tentackle swing legacy modules).
         // Since controls (see i18n module) are not supported for automatic or unnamed modules,
