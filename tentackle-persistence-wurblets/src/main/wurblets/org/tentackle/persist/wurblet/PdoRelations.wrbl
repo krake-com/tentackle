@@ -1999,13 +1999,13 @@ For more options, see {\@link DbModelWurblet}.
         if (rel.getEmbeddingEntity() != null) {
           methodName = rel.getPathName() + methodName;
 ]@
-    po.addReferencingClass(@(rel.getEmbeddingEntity().getName())@.class, "@(methodName)@");
+    po.addReferencingClass(@(rel.getEmbeddingEntity().getClassId())@, "@(methodName)@");  // @(rel.getEmbeddingEntity().getName())@
 @[
         }
         else {
           for (Entity leaf: rel.getEntity().getLeafEntities()) {
 ]@
-    po.addReferencingClass(@(leaf.getName())@.class, "@(methodName)@");
+    po.addReferencingClass(@(leaf.getClassId())@, "@(methodName)@");  // @(leaf.getName())@
 @[
           }
         }

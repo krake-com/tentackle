@@ -3038,7 +3038,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Adds a PDO class referencing this PDO clazz.
+   * Adds a PDO class referencing this PDO class.
    * <p>
    * The method name can also contain dots to denote a chain of methods that must be invoked.
    *
@@ -3046,23 +3046,70 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @param clazz the class to add
    * @param methodPath the method path name, null if default <code>"isReferencing&lt;ClassBaseName&gt;"</code>
    * @return true if added, false if already in the map
-   * @see #removeReferencingClass
+   * @see #removeReferencingClass(Class, String)
    */
   public <R extends PersistentDomainObject<R>> boolean addReferencingClass(Class<R> clazz, String methodPath) {
     return getClassVariables().addReferencingClass(getPersistenceClass(clazz), methodPath);
   }
 
   /**
-   * Removes a PDO class referencing this PDO clazz.
+   * Adds a PDO class referencing this PDO class.
+   * <p>
+   * Same as {@link #addReferencingClass(Class, String)} but by classId to avoid referencing the
+   * PDO's class that can be part of another (yet unknown) module.
+   *
+   * @param classId the class id
+   * @param methodPath the method path name, null if default <code>"isReferencing&lt;ClassBaseName&gt;"</code>
+   * @return true if added, false if already in the map
+   * @see #removeReferencingClass(int, String)
+   */
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  public boolean addReferencingClass(int classId, String methodPath) {
+    String className = SessionUtilities.getInstance().getClassName(classId);
+    if (className == null) {
+      throw new PersistenceException("unknown class id " + classId);
+    }
+    try {
+      return addReferencingClass((Class) Class.forName(className), methodPath);
+    }
+    catch (ClassNotFoundException nfx) {
+      throw new PersistenceException("class not found " + className, nfx);
+    }
+  }
+
+  /**
+   * Removes a PDO class referencing this PDO class.
    *
    * @param <R> the PDO type
    * @param clazz the class to add
    * @param methodPath the method path name, null if default <code>"isReferencing&lt;ClassBaseName&gt;"</code>
    * @return true if removed, false if not in the map
-   * @see #removeReferencingClass
+   * @see #addReferencingClass(Class, String)
    */
   public <R extends PersistentDomainObject<R>> boolean removeReferencingClass(Class<R> clazz, String methodPath) {
     return getClassVariables().removeReferencingClass(getPersistenceClass(clazz), methodPath);
+  }
+
+  /**
+   * Removes a PDO class referencing this PDO class.
+   *
+   * @param classId the class id
+   * @param methodPath the method path name, null if default <code>"isReferencing&lt;ClassBaseName&gt;"</code>
+   * @return true if removed, false if not in the map
+   * @see #addReferencingClass(int, String)
+   */
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  public boolean removeReferencingClass(int classId, String methodPath) {
+    String className = SessionUtilities.getInstance().getClassName(classId);
+    if (className == null) {
+      throw new PersistenceException("unknown class id " + classId);
+    }
+    try {
+      return removeReferencingClass((Class) Class.forName(className), methodPath);
+    }
+    catch (ClassNotFoundException nfx) {
+      throw new PersistenceException("class not found " + className, nfx);
+    }
   }
 
 
@@ -3083,7 +3130,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     }
     throw new PersistenceException(this, "persistence class not compatible: " + persistenceClass);
   }
-
 
 
   /**
@@ -3136,7 +3182,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * <pre>
    *  return CN_ID + "," + CN_PRINTED + " DESC";
    * </pre>
-   * Returning just the field name is sufficient for a single field with sort ascending.
+   * Returning just the field name is enough for a single field with sort ascending.
    * The default is null, i.e., no order-by-clause will be added.
    *
    * @return the order by appendix string, null if no "order by"
