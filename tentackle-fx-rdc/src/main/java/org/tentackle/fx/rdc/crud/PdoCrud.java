@@ -134,7 +134,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   private Node newIcon;                             // create new PDO
   private Node newCopyIcon;                         // create new PDO as copy from existing one
   private boolean shiftDown;                        // true if the shift key is down
-  private boolean mouseOverNewButton;               // true if mouse over newButton
+  private boolean mouseOverNewButton;               // true if the mouse is over the newButton
 
   private final SimpleBooleanProperty editing  = new SimpleBooleanProperty();   // is editing allowed effectively?
   private final SimpleBooleanProperty pdoIsNew = new SimpleBooleanProperty();   // pdo is new?
@@ -253,7 +253,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
       noViewLabel.setVisible(false);
       editor.getView().setVisible(true);
       editing.set(isEditable() && editor.isEditAllowed());
-      // make contents editable if application requested it and the pdo is editable
+      // make contents editable if the application requested it and the pdo is editable
       editor.setChangeable(isEditing());
     }
     else {
@@ -263,26 +263,32 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
     }
     pdoIsNew.set(pdo.isNew());
 
-    editor.getContainer().clearErrors();          // clears any pending error messages
-    editor.getContainer().invalidateSavedView();  // don't triggerViewModified via updateView
-    editor.getContainer().updateView();           // map model to view
-
-    getContainer().saveView();                    // triggerViewModified when view has changed
-
-    updateTitle();
-    updateButtons();
-
     if (isEditing() && !pdo.isNew() && pdo.isTokenLockProvided()) {
       try {
-        pdo.requestTokenLock();
+        try {
+          pdo.requestTokenLock();
+        }
+        catch (NotFoundException nx) {
+          LOGGER.warning(nx.getMessage());
+          editor.setPdo(pdo.reloadTokenLocked());
+        }
       }
       catch (LockException lx) {
         editing.set(false);
         editor.setChangeable(false);
         deleteButton.setDisable(true);
-        Platform.runLater(() -> Fx.info(getView(), PdoUtilities.getInstance().lockExceptionToString(lx, pdo)));
+        Platform.runLater(() -> Fx.info(getView(), PdoUtilities.getInstance().lockExceptionToString(lx, getPdo())));
       }
     }
+
+    editor.getContainer().clearErrors();          // clears any pending error messages
+    editor.getContainer().invalidateSavedView();  // don't triggerViewModified via updateView
+    editor.getContainer().updateView();           // map model to view
+
+    getContainer().saveView();                    // triggerViewModified when the view has changed
+
+    updateTitle();
+    updateButtons();
   }
 
   /**
@@ -530,7 +536,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
       showValidationResults(ex);
     }
     catch (NotFoundException nfe) {
-      // lock timed out, and another user updated the PDO or lock was transferred to another user or removed
+      // lock timed out, and another user updated the PDO, or lock was transferred to another user or removed
       LOGGER.info("saving " + getPdo().toGenericString() + " failed: " + nfe.getLocalizedMessage());
       Fx.error(getView(), MessageFormat.format(RdcFxRdcBundle.getString("{0} MODIFIED BY_ANOTHER USER MEANWHILE"), getPdo()));
       T pdo = getPdo().reload();

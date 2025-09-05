@@ -47,6 +47,8 @@ public interface AbstractPersistentObjectRemoteDelegate<T extends PersistentDoma
 
   T select(DomainContext cb, long id, boolean forUpdate, boolean tokenLocked) throws RemoteException;
 
+  T selectTokenLocked(DomainContext cb, long id) throws RemoteException;
+
   List<T> selectAll(DomainContext cb) throws RemoteException;
 
   List<T> selectAny(DomainContext cb, Collection<Long> ids) throws RemoteException;

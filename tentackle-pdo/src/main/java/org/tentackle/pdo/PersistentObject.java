@@ -580,13 +580,17 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   /**
    * Requests a token lock.
    * <p>
-   * Throws a {@link LockException} if locked by another user.
+   * Throws a {@link LockException} if locked by another user
+   * or a {@link org.tentackle.session.NotFoundException} if removed or updated in the meantime.
    */
   void requestTokenLock();
 
   /**
    * Releases a token lock.<br>
    * Use this method if a PDO needs to be unlocked without being persisted.
+   * <p>
+   * Throws a {@link LockException} if locked by another user
+   * or a {@link org.tentackle.session.NotFoundException} if removed or updated in the meantime.
    */
   void releaseTokenLock();
 
@@ -655,6 +659,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   /**
    * Loads a PDO from the database by its unique ID and applies a token lock.<br>
    * Same as {@link #select(long)} followed by {@link #requestTokenLock()}, but requires only a single roundtrip if remote.
+   * Runs within its own transaction if none is currently running.
    * <p>
    * Throws a {@link LockException}, if locked by another user.
    *
@@ -684,6 +689,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   /**
    * Reloads the object and applies a token lock.<br>
    * Same as {@link #reload()} followed by {@link #requestTokenLock()}, but requires only a single roundtrip if remote.
+   * Runs within its own transaction if none is currently running.
    * <p>
    * Throws a {@link LockException}, if locked by another user.
    *

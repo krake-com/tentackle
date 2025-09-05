@@ -330,6 +330,16 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
   }
 
   @Override
+  public T selectTokenLocked(DomainContext cb, long id) throws RemoteException {
+    try {
+      return newInstance(cb).getPersistenceDelegate().selectTokenLocked(id);
+    }
+    catch (RuntimeException e) {
+      throw createException(e);
+    }
+  }
+
+  @Override
   public List<T> selectByNormText(DomainContext cb, String normText) throws RemoteException {
     try {
       setDomainContext(cb);

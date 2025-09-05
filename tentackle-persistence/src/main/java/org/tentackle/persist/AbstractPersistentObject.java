@@ -216,6 +216,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   public static final String TX_UPDATE_TOKENLOCK        = "update lock";
   /** update tokenlock only **/
   public static final String TX_UPDATE_TOKENLOCK_ONLY   = "update lock only";
+  /** select tokenlocked **/
+  public static final String TX_SELECT_TOKENLOCKED      = "select locked";
 
 
 
@@ -1847,6 +1849,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
   /**
    * Loads a PDO from the database by its unique ID.<br>
+   * A {@link PersistenceException} is thrown if {@code forUpdate} or {@code tokenLocked} is true
+   * and there is no transaction running.
    *
    * @param id is the object id
    * @param forUpdate true if select FOR UPDATE
@@ -1868,14 +1872,12 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
         }
       }
       else {
-        StatementId stmtId;
-        if (forUpdate) {
+        if (forUpdate || tokenLocked) {
           getSession().assertTxRunning();
-          stmtId = getClassVariables().selectForUpdateStatementId;
         }
-        else {
-          stmtId = getClassVariables().selectObjectStatementId;
-        }
+        StatementId stmtId = forUpdate ?
+                               getClassVariables().selectForUpdateStatementId :
+                               getClassVariables().selectObjectStatementId;
         JoinedSelect<T> js = getEagerJoinedSelect();
         PreparedStatementWrapper st = getPreparedStatement(stmtId,
                 b -> {
@@ -1913,7 +1915,35 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
   @Override
   public T selectTokenLocked(long id) {
-    return select(id, false, true);
+    Db db = getSession();
+    if (db.isRemote()) {
+      try {
+        DomainContext context = getDomainContext();
+        T obj = getRemoteDelegate().selectTokenLocked(context, id);
+        configureRemoteObject(context, obj);
+        return obj;
+      }
+      catch (RemoteException e) {
+        RuntimeException rex = PersistenceException.createFromRemoteException(this, e);
+        if (rex instanceof LockException lx) {
+          applyTokenLockInfo(lx.getTokenLockInfo());
+        }
+        throw rex;
+      }
+    }
+
+    long txVoucher = db.begin(TX_SELECT_TOKENLOCKED);
+    try {
+      return select(id, false, true);
+    }
+    catch (PersistenceException px) {
+      db.rollback(txVoucher, !px.isTemporary());
+      throw px;
+    }
+    catch (RuntimeException rx) {
+      db.rollback(txVoucher);
+      throw new PersistenceException(this, rx);
+    }
   }
 
   @Override
@@ -4228,7 +4258,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       assertRootEntity();
       assertWritePermission();
 
-      long txVoucher = db.begin(TX_UPDATE_TOKENLOCK);
+      long txVoucher = db.begin(TX_UPDATE_TOKENLOCK_ONLY);
       try {
         if (db.isPersistenceOperationAllowed(this, DbModificationType.UPDATE)) {
           PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateTokenLockOnlyStatementId,
