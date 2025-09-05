@@ -3875,31 +3875,13 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
            CN_EDITEDBY + SQL_EQUAL_PAR_COMMA +
            CN_EDITEDSINCE + SQL_EQUAL_PAR_COMMA +
            CN_EDITEDEXPIRY + SQL_EQUAL_PAR + SQL_WHERE +
-           CN_ID + SQL_EQUAL_PAR + SQL_AND + SQL_LEFT_PARENTHESIS +
-           CN_EDITEDBY + SQL_EQUAL_PAR + SQL_OR +                  // the current user holds the token
-           CN_EDITEDBY + SQL_EQUAL_ZERO + SQL_OR +                 // no one holding the token
-           CN_EDITEDEXPIRY + SQL_LESS_PAR + SQL_OR +               // token expired
-           CN_EDITEDEXPIRY + SQL_ISNULL + SQL_RIGHT_PARENTHESIS;     // or not set at all (pathologic case)
-  }
-
-  /**
-   * Creates the SQL code for the {@link #updateTokenLock} statement with mod counting.
-   *
-   * @return the SQL code
-   */
-  public String createUpdateTokenLockWithCountSql() {
-    assertTokenLockProvided();
-    return SQL_UPDATE + getTopSuperTableName() + SQL_SET +
-           CN_SERIAL + SQL_EQUAL + CN_SERIAL + SQL_PLUS_ONE + SQL_COMMA +
-           CN_TABLESERIAL + SQL_EQUAL_PAR_COMMA +
-           CN_EDITEDBY + SQL_EQUAL_PAR_COMMA +
-           CN_EDITEDSINCE + SQL_EQUAL_PAR_COMMA +
-           CN_EDITEDEXPIRY + SQL_EQUAL_PAR + SQL_WHERE +
-           CN_ID + SQL_EQUAL_PAR + SQL_AND + SQL_LEFT_PARENTHESIS +
-           CN_EDITEDBY + SQL_EQUAL_PAR + SQL_OR +                  // the current user holds the token
-           CN_EDITEDBY + SQL_EQUAL_ZERO + SQL_OR +                 // no one holding the token
-           CN_EDITEDEXPIRY + SQL_LESS_PAR + SQL_OR +               // token expired
-           CN_EDITEDEXPIRY + SQL_ISNULL + SQL_RIGHT_PARENTHESIS;   // or not set at all (pathologic case)
+           CN_ID + SQL_EQUAL_PAR + SQL_AND + CN_SERIAL + SQL_EQUAL_PAR + SQL_AND +
+           SQL_LEFT_PARENTHESIS +
+           CN_EDITEDBY + SQL_EQUAL_PAR + SQL_OR +                 // the current user holds the token
+           CN_EDITEDBY + SQL_EQUAL_ZERO + SQL_OR +                // no one holding the token
+           CN_EDITEDEXPIRY + SQL_LESS_PAR + SQL_OR +              // token expired
+           CN_EDITEDEXPIRY + SQL_ISNULL +                         // or not set at all (pathologic case)
+           SQL_RIGHT_PARENTHESIS;
   }
 
   /**
@@ -3924,6 +3906,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   public String createSelectTokenLockSql() {
     assertTokenLockProvided();
     return SQL_SELECT + CN_EDITEDBY + SQL_COMMA + CN_EDITEDSINCE + SQL_COMMA + CN_EDITEDEXPIRY +
+           SQL_COMMA + CN_SERIAL +
            SQL_FROM + getTopSuperTableName() + SQL_WHERE + CN_ID + SQL_EQUAL_PAR;
   }
 
@@ -4076,7 +4059,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Applies the given token lock info.
+   * Applies the given token lock info to this PDO.
    *
    * @param tokenLockInfo the editedBy info
    */
@@ -4089,31 +4072,26 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
   /**
-   * Updates the token lock columns in the database record.<br>
-   * Will *NOT* log modification and *NOT* update the serial-counter!
-   * Must be called from within the application where appropriate.
+   * Updates the token lock columns in the database.<br>
+   * This method will <em>not</em> log modification and <em>not</em> update the serial-counter.
    * <p>
-   * 2 cases:
+   * If {@code tokenExpiry == 0}, the lock will be released.<br>
+   * If the operation was successful, {@code editedBy} is set to 0, {@code editExpiry} is set to null
+   * and {@code editedSince} is set to {@code curTime}.
+   * Releasing an already released token is not considered as an error
+   * and will just update the release timestamp.
    * <p>
-   * If expiry == 0, the "token" is released.
-   * True is returned if the operation was successful and editedBy will hold 0 while editedSince
-   * holds the current (release) time. False is returned if the token could not
-   * be released and nothing is changed. This is usually the case when another
-   * user holds the token (and indicates some logic errors in the application, btw.)
-   * EditedBy and editedSince are updated in the object to reflect the current values
-   * in the database.
-   * Notice: releasing an already released token is not considered to be an error.
-   * This will simply update the release timestamp.
+   * If {@code tokenExpiry > 0}, a new lock for the given {@code userId} and {@code curTime} is requested.<br>
+   * {@code editedBy} is set to the user's ID, {@code editExpiry} holds the expiration timestamp
+   * and {@code editedSince} the {@code curTime}.
+   * Requesting an already requested token will simply renew the lock, i.e., update {@code editExpiry} and
+   * {@code editedSince} accordingly.
    * <p>
-   * If expiry &gt; 0, a new token for the current user is requested.
-   * True is returned if the token could be exclusively acquired. EditedBy and
-   * editedSince are updated accordingly.
-   * If false: the object is in use by another user and editedSince and editedId
-   * holds this user and his timestamp.
-   * Notice: requesting an already requested token will simply renew the token.
-   * <p>
-   * The method does not check getTokenLockTimeout()! This is due to the application.
-   * Applications should use updateTokenLock(tokenExpiry). This is an internal implementation only.
+   * Whether the operation was successful or not, the values for {@code editedBy}, {@code editedSince} and {@code editedExpiry}
+   * are updated in this PDO with the values from the database.<br>
+   * A {@link LockException} is thrown in case another user is holding the lock.
+   * A {@link NotFoundException} is thrown if the PDO was updated or removed in the meantime,
+   * which indicates some logic error in the application (missing {@code @Transaction}, for example).
    *
    * @param tokenExpiry holds the time the token will expire. Null to release token.
    * @param userId is the current user (unused if tokenExpiry is null)
@@ -4151,8 +4129,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
           st.setTimestamp(2, curTime);
           st.setTimestamp(3, tokenExpiry);
           st.setLong(4, getId());
-          st.setLong(5, userId);
-          st.setTimestamp(6, curTime);
+          st.setLong(5, getSerial());
+          st.setLong(6, userId);
+          st.setTimestamp(7, curTime);
 
           if (st.executeUpdate() == 1) {
             // update was successful
@@ -4163,7 +4142,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
             db.commit(txVoucher);
           }
           else {
-            // no success: another user is currently holding the token
+            // no success: another user is currently holding the token, or PDO was updated in the meantime
             st = getPreparedStatement(getClassVariables().selectTokenLockStatementId, _ -> createSelectTokenLockSql());
             st.setLong(1, getId());
             try (ResultSetWrapper rs = st.executeQuery()) {
@@ -4171,10 +4150,14 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
                 setEditedBy(rs.getLong(CN_EDITEDBY));
                 setEditedSince(rs.getTimestamp(CN_EDITEDSINCE));
                 setEditedExpiry(rs.getTimestamp(CN_EDITEDEXPIRY));
+                long curSerial = rs.getLong(CN_SERIAL);
+                if (curSerial != getSerial()) {
+                  throw new NotFoundException(this, "PDO was updated in the meantime with serial " + curSerial, getSerial());
+                }
                 throw new LockException(db, new TokenLockInfo(getEditedBy(), getEditedSince(), getEditedExpiry()));
               }
               else {
-                throw new NotFoundException(this, "could not retrieve token lock", -1);
+                throw new NotFoundException(this, "PDO was removed in the meantime", -1);
               }
             }
           }
@@ -4196,30 +4179,26 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Updates the token lock columns in the database record.<br>
-   * Will *NOT* log modification and *NOT* update the serial-counter!
-   * Must be called from within the application where appropriate.
+   * Updates the token lock columns in the database.<br>
+   * This method will <em>not</em> log modification and <em>not</em> update the serial-counter.
    * <p>
-   * 2 cases:
+   * If {@code tokenExpiry == 0}, the lock will be released.<br>
+   * If the operation was successful, {@code editedBy} is set to 0, {@code editExpiry} is set to null
+   * and {@code editedSince} will hold the release timestamp.
+   * Releasing an already released token is not considered as an error
+   * and will just update the release timestamp.
    * <p>
-   * If expiry == 0, the "token" is released.
-   * True is returned if the operation was successful and editedBy will hold 0 while editedSince
-   * holds the current (release) time. False is returned if the token could not
-   * be released and nothing is changed. This is usually the case when another
-   * user holds the token (and indicates some logic errors in the application, btw.)
-   * EditedBy and editedSince are updated in the object to reflect the current values
-   * in the database.
-   * Notice: releasing an already released token is not considered to be an error.
-   * This will simply update the release timestamp.
+   * If {@code tokenExpiry > 0}, a new lock for the current user is requested.<br>
+   * {@code editedBy} is set to the user's ID, {@code editExpiry} holds the expiration timestamp
+   * and {@code editedSince} the timestamp when the lock was requested.
+   * Requesting an already requested token will simply renew the lock, i.e., update {@code editExpiry} and
+   * {@code editedSince} accordingly.
    * <p>
-   * If expiry &gt; 0, a new token for the current user is requested.
-   * True is returned if the token could be exclusively acquired. EditedBy and
-   * editedSince are updated accordingly.
-   * If false: the object is in use by another user and editedSince and editedId
-   * holds this user and his timestamp.
-   * Notice: requesting an already requested token will simply renew the token.
-   * <p>
-   * The method does not check getTokenLockTimeout()! This is due to the application.
+   * Whether the operation was successful or not, the values for {@code editedBy}, {@code editedSince} and {@code editedExpiry}
+   * are updated in this PDO with the values from the database.<br>
+   * A {@link LockException} is thrown in case another user is holding the lock.
+   * A {@link NotFoundException} is thrown if the PDO was updated or removed in the meantime,
+   * which indicates some logic error in the application (missing {@code @Transaction}, for example).
    *
    * @param tokenExpiry holds the time the token will expire. Null to release token.
    */
