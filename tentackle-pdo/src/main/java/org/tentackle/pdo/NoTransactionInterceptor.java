@@ -16,9 +16,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.pdo;
 
+import org.tentackle.common.RemoteMethod;
 import org.tentackle.reflect.AbstractInterceptor;
 import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.session.PersistenceException;
@@ -48,9 +48,12 @@ public final class NoTransactionInterceptor extends AbstractInterceptor {
 
     if (orgProxy instanceof SessionProvider) {
       Session session = ((SessionProvider) orgProxy).getSession();
-      if (session.isTxRunning()) {
+
+      if (!(session.isRemote() && orgMethod.isAnnotationPresent(RemoteMethod.class)) && // see TransactionInterceptor
+          session.isTxRunning()) {
+
         boolean cachedOnly = ((NoTransaction) getAnnotation()).cachedOnly();
-        // may be an operation as well, hence the test
+        // could be an operation as well, hence the test
         PersistentDomainObject<?> pdo = orgProxy instanceof PdoProvider ?
                                         ((PdoProvider) orgProxy).getPdo() : null;
         if (pdo != null && !pdo.getPersistenceDelegate().isRootEntity()) {

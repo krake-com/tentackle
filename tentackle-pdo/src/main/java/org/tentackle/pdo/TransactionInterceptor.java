@@ -21,6 +21,7 @@ package org.tentackle.pdo;
 import org.tentackle.common.Constants;
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.common.InterruptedRuntimeException;
+import org.tentackle.common.RemoteMethod;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
 import org.tentackle.reflect.AbstractInterceptor;
@@ -45,7 +46,7 @@ public final class TransactionInterceptor extends AbstractInterceptor {
 
   private String transactionName;                         // the transaction name from the annotation
   private boolean running;                                // true if tx must be running already
-  private boolean rollbackSilently;                       // true if don't log rollbacks
+  private boolean rollbackSilently;                       // true: don't log rollbacks
   private TransactionIsolation transactionIsolation;      // the isolation level
   private TransactionWritability transactionWritability;  // the writability
   private boolean transactionRetry;                       // whether to retry the transaction after a transient exception
@@ -81,6 +82,15 @@ public final class TransactionInterceptor extends AbstractInterceptor {
     if (orgProxy instanceof SessionProvider sessionProvider) {
       Session session = sessionProvider.getSession();
 
+      if (session.isRemote() && orgMethod.isAnnotationPresent(RemoteMethod.class)) {
+        // If the session is remote and the implementation method is annotated with @RemoteMethod,
+        // then delegate to the TransactionInterceptor at the remote server.
+        // The presence of @RemoteMethod indicates that there is a RemoteMethod wurblet,
+        // and the generated code will delegate the invocation to the remote server.
+        // This saves two network round trips (begin and commit).
+        return method.invoke(proxy, args);
+      }
+
       if (running) {
         if (session.isTxRunning()) {
           if (Constants.NAME_UNKNOWN.equals(transactionName) || transactionName.equals(session.getTxName())) {
@@ -112,14 +122,14 @@ public final class TransactionInterceptor extends AbstractInterceptor {
                 session.rollbackSilently(txVoucher);
               }
               else {
-                // cause is a non-temporary PersistenceException (usually some database error such as a constraint exception) -> log the details
+                // the cause is a non-temporary PersistenceException (usually some database error such as a constraint exception) -> log the details
                 session.rollback(txVoucher);
               }
             }
             catch (RuntimeException rex) {
-              // rollback may fail for several reasons, usually some subsequent database errors. Those errors
+              // rollback may fail for several reasons, usually some further database errors. Those errors
               // are mapped to a PersistenceException and just cluttering the logfile, if logged.
-              // Other exceptions like NPEs, however, definitely provide useful information, that must be logged.
+              // Other exceptions like NPEs, however, definitely provide useful information that must be logged.
               if (ExceptionHelper.extractException(PersistenceException.class, true, rex) == null) {
                 LOGGER.severe("rollback failed after " + t.getClass().getSimpleName() + " (" + t.getMessage() + ")", rex);
               }
