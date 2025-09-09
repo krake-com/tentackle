@@ -44,7 +44,7 @@ public class DefaultScriptRunner implements ScriptRunner {
   /**
    * The next SQL code to execute as a statement.
    *
-   * @param sql the SQL statement to execute
+   * @param sql        the SQL statement to execute
    * @param nextOffset the offset where to start searching for the next statement within the script
    */
   public record SQLCode(String sql, int nextOffset) {
@@ -58,7 +58,7 @@ public class DefaultScriptRunner implements ScriptRunner {
   /**
    * Creates a script runner.
    *
-   * @param backend the backend
+   * @param backend    the backend
    * @param connection the SQL connection
    * @see AbstractBackend#createScriptRunner(Connection)
    */
@@ -99,7 +99,10 @@ public class DefaultScriptRunner implements ScriptRunner {
         if (!sqlCode.sql.isBlank()) {
           List<Object> resultList = new ArrayList<>();
           int columnCount = 0;
-          if (statement.execute(sqlCode.sql)) {
+          long millis = System.currentTimeMillis();
+          boolean isResultSet = statement.execute(sqlCode.sql);
+          millis = System.currentTimeMillis() - millis;
+          if (isResultSet) {
             ResultSet resultSet = statement.getResultSet();
             do {
               while (resultSet.next()) {
@@ -114,7 +117,7 @@ public class DefaultScriptRunner implements ScriptRunner {
           }
           String statementWarnings = getWarnings(statement.getWarnings());
           statement.clearWarnings();
-          scriptRunnerResults.add(new ScriptRunnerResult(sqlCode.sql, offset, statementWarnings, columnCount, resultList.toArray()));
+          scriptRunnerResults.add(new ScriptRunnerResult(sqlCode.sql, offset, statementWarnings, millis, columnCount, resultList.toArray()));
         }
         if (sqlCode.nextOffset > offset) {
           offset = sqlCode.nextOffset;
@@ -126,7 +129,7 @@ public class DefaultScriptRunner implements ScriptRunner {
       String connectionWarnings = getWarnings(connection.getWarnings());
       connection.clearWarnings();
       if (!connectionWarnings.isEmpty()) {
-        scriptRunnerResults.add(new ScriptRunnerResult("", 0, connectionWarnings, 0,"Connection Warnings"));
+        scriptRunnerResults.add(new ScriptRunnerResult("", 0, connectionWarnings, 0L, 0, "Connection Warnings"));
       }
       return scriptRunnerResults;
     }
@@ -144,7 +147,7 @@ public class DefaultScriptRunner implements ScriptRunner {
    *
    * @param script the SQL script
    * @param offset the offset where to start in the script to find the next statement
-   * @return the next SQL code to send to the database, null if end of script found
+   * @return the next SQL code to send to the database, null if the end of the script found
    */
   public SQLCode determineNextSqlCode(String script, int offset) {
 
@@ -200,13 +203,13 @@ public class DefaultScriptRunner implements ScriptRunner {
             String match = StringHelper.startsWithAnyOf(script, offset, backend.getSingleLineComments());
             if (match != null) {
               offset += match.length();
-              // skip to next line
+              // skip to the next line
               int ndx = script.indexOf('\n', offset);
               if (ndx >= offset) {
                 offset = ndx - 1;    // +1 will be added below
               }
               else {
-                break;    // end of script
+                break;    // end of the script
               }
             }
             else if ((match = StringHelper.startsWithAnyOf(script, offset, backend.getBlockCommentBegins())) != null) {
@@ -225,7 +228,7 @@ public class DefaultScriptRunner implements ScriptRunner {
       offset++;
     }
 
-    // if some "within..."s are still true at the end of the script,
+    // if some "within..." are still true at the end of the script,
     // just leave it up to the backend to deal with that and don't throw an exception.
 
     return sql.isEmpty() ? null : new SQLCode(sql.toString(), offset);
@@ -246,11 +249,11 @@ public class DefaultScriptRunner implements ScriptRunner {
     ResultSetMetaData metaData = resultSet.getMetaData();
     int columnCount = metaData.getColumnCount();
     if (resultList.isEmpty()) {
-      for (int r=1; r <= columnCount; r++) {
+      for (int r = 1; r <= columnCount; r++) {
         resultList.add(metaData.getColumnName(r));
       }
     }
-    for (int r=1; r <= columnCount; r++) {
+    for (int r = 1; r <= columnCount; r++) {
       resultList.add(resultSet.getObject(r));
     }
     return columnCount;

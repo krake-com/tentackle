@@ -24,10 +24,11 @@ package org.tentackle.sql;
  * @param sql the SQL code executed
  * @param offset the offset within the SQL script
  * @param warnings optional warnings, empty string if none, never null
+ * @param millis the number of milliseconds the SQL code took to execute
  * @param columnCount the number of columns, if result sets were returned, 0 if count only
  * @param results the results returned from the statement, empty if none, never null
  */
-public record ScriptRunnerResult(String sql, int offset, String warnings, int columnCount, Object... results) {
+public record ScriptRunnerResult(String sql, int offset, String warnings, long millis, int columnCount, Object... results) {
 
   @Override
   public String toString() {
