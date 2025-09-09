@@ -42,6 +42,7 @@ public abstract class SessionProviderAwareInterceptor extends AbstractIntercepto
       if (session == null) {
         throw new PersistenceException("no session provided by " + sessionProvider);
       }
+      return session;
     }
     throw new PersistenceException(EffectiveClassProvider.getEffectiveClass(orgProxy) + " is not a SessionProvider");
   }
