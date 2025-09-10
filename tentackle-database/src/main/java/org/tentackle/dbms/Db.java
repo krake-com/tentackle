@@ -189,7 +189,7 @@ import java.util.function.Consumer;
  *  <pre>
  *  batchsize=size
  *  </pre>
- *  if the size is &gt; 1. The persistence layer collects matching statements and executes them within batches.
+ *  If the size is &gt; 1. The persistence layer collects matching statements and executes them within batches.
  *  See {@link DbBatch}.
  *  </li>
  * </ul>
@@ -979,7 +979,7 @@ public class Db implements Session, Cloneable {
    *
    * @param txName the transaction name
    * @param script the SQL script
-   * @return the results
+   * @return the results, never null
    */
   public List<ScriptRunnerResult> runScript(String txName, String script) {
     return transaction(txName, () -> {

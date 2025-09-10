@@ -83,12 +83,15 @@ public class SqlScriptTest extends AbstractPdoTest {
       """;
 
 
+  public SqlScriptTest() {
+    super(TransactionType.METHOD);
+  }
 
   @Test(groups = "local")
   public void runScript() {
     if (getSession() instanceof Db db) {
       try (StatementWrapper statement = db.createStatement()) {
-        // in case test failed in the middle before
+        // in case the test failed in the middle before
         statement.executeUpdate("DROP TABLE IF EXISTS blah");
       }
       List<ScriptRunnerResult> results = db.runScript("sqlScriptTest", SCRIPT);
@@ -103,6 +106,50 @@ public class SqlScriptTest extends AbstractPdoTest {
     }
     else {
       throw new SkipException("session is not a Db instance");    // ... for whatever reason
+    }
+  }
+
+  @Test(groups = "local")
+  public void testTimeout() {
+    if (getSession() instanceof Db db) {
+      ScriptRunner scriptRunner = db.getBackend().createScriptRunner(db.connection().getConnection());
+      scriptRunner.setExecutionTimeout(2);
+      try {
+        scriptRunner.run("SELECT PG_SLEEP(10);");
+      }
+      catch (ScriptRunnerException ex) {
+        List<ScriptRunnerResult> results = ex.getResults();
+        assertEquals(results.size(), 0);
+        assertEquals(ex.getMessage(), """
+          script execution failed at offset 0: SELECT PG_SLEEP(10) ...
+          ERROR: canceling statement due to user request""");
+      }
+    }
+  }
+
+  @Test(groups = "local")
+  public void testCancel() {
+    if (getSession() instanceof Db db) {
+      ScriptRunner scriptRunner = db.getBackend().createScriptRunner(db.connection().getConnection());
+      try {
+        new Thread(() -> {
+          try {
+            Thread.sleep(2000);
+            scriptRunner.cancel();
+          }
+          catch (InterruptedException e) {
+            throw new RuntimeException(e);
+          }
+        }).start();
+        scriptRunner.run("SELECT PG_SLEEP(10);");
+      }
+      catch (ScriptRunnerException ex) {
+        List<ScriptRunnerResult> results = ex.getResults();
+        assertEquals(results.size(), 0);
+        assertEquals(ex.getMessage(), """
+          script execution failed at offset 0: SELECT PG_SLEEP(10) ...
+          ERROR: canceling statement due to user request""");
+      }
     }
   }
 

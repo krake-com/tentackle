@@ -30,6 +30,13 @@ import org.tentackle.session.SessionProvider;
 public abstract class SessionProviderAwareInterceptor extends AbstractInterceptor {
 
   /**
+   * Parent constructor.
+   */
+  public SessionProviderAwareInterceptor() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  /**
    * Returns the session from the given proxy.<br>
    * Throws {@link PersistenceException} if the proxy is not a {@link SessionProvider} or the session is null.
    *

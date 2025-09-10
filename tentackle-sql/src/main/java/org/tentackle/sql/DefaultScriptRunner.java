@@ -18,6 +18,7 @@
 
 package org.tentackle.sql;
 
+import org.tentackle.common.ExceptionHelper;
 import org.tentackle.common.StringHelper;
 import org.tentackle.sql.backends.AbstractBackend;
 
@@ -29,6 +30,8 @@ import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Default implementation of a script runner.
@@ -38,8 +41,12 @@ public class DefaultScriptRunner implements ScriptRunner {
   private final Backend backend;
   private final Connection connection;
   private final boolean posixEscapeSyntaxSupported;
+  private final AtomicBoolean cancelled;
+  private final AtomicReference<Statement> statementRef;
 
   private boolean escapeProcessing = true;              // as per JDBC specs enabled by default
+  private int maxRows;                                  // optional max. number of rows in resultsets
+  private int executionTimeout;                         // optional query timeout in seconds, 0 for none
 
   /**
    * The next SQL code to execute as a statement.
@@ -66,6 +73,8 @@ public class DefaultScriptRunner implements ScriptRunner {
     this.backend = backend;
     this.connection = connection;
     this.posixEscapeSyntaxSupported = determinePosixEscapeSyntaxSupported();
+    this.cancelled = new AtomicBoolean();
+    this.statementRef = new AtomicReference<>();
   }
 
   @Override
@@ -89,36 +98,70 @@ public class DefaultScriptRunner implements ScriptRunner {
   }
 
   @Override
+  public void setMaxRows(int maxRows) {
+    this.maxRows = maxRows;
+  }
+
+  @Override
+  public int getMaxRows() {
+    return maxRows;
+  }
+
+  @Override
+  public void setExecutionTimeout(int executionTimeout) {
+    this.executionTimeout = executionTimeout;
+  }
+
+  @Override
+  public int getExecutionTimeout() {
+    return executionTimeout;
+  }
+
+  @Override
   public List<ScriptRunnerResult> run(String script) {
     SQLCode sqlCode = null;
     int offset = 0;
+    List<ScriptRunnerResult> scriptRunnerResults = new ArrayList<>();
+
     try (Statement statement = connection.createStatement()) {
       statement.setEscapeProcessing(escapeProcessing);
-      List<ScriptRunnerResult> scriptRunnerResults = new ArrayList<>();
-      while ((sqlCode = determineNextSqlCode(script, offset)) != null) {
+      if (maxRows > 0) {
+        statement.setMaxRows(maxRows);
+      }
+      if (executionTimeout > 0) {
+        statement.setQueryTimeout(executionTimeout);
+      }
+      statementRef.set(statement);
+
+      while (!cancelled.get() && (sqlCode = determineNextSqlCode(script, offset)) != null) {
+
         if (!sqlCode.sql.isBlank()) {
-          List<Object> resultList = new ArrayList<>();
-          int columnCount = 0;
-          long millis = System.currentTimeMillis();
-          boolean isResultSet = statement.execute(sqlCode.sql);
-          millis = System.currentTimeMillis() - millis;
-          if (isResultSet) {
-            ResultSet resultSet = statement.getResultSet();
-            do {
-              while (resultSet.next()) {
-                columnCount = extractResults(resultSet, resultList);
+            long millis = System.currentTimeMillis();
+            boolean isResultSet = statement.execute(sqlCode.sql);
+            millis = System.currentTimeMillis() - millis;
+            StringBuilder warnings = new StringBuilder();
+            if (isResultSet) {
+              // since we execute statement by statement, we should not create more than one result set,
+              // but one never knows...
+              do {
+                ResultSet resultSet = statement.getResultSet();
+                List<Object> resultList = new ArrayList<>();
+                int columnCount = extractResults(resultSet, warnings, resultList);
+                extractWarnings(statement.getWarnings(), warnings);
+                statement.clearWarnings();
+                scriptRunnerResults.add(new ScriptRunnerResult(sqlCode.sql, offset, warnings.toString(), millis, columnCount, resultList.toArray()));
+                warnings.setLength(0);
               }
+              while (statement.getMoreResults());   // this closes the current result set
             }
-            while (statement.getMoreResults());
-            resultSet.close();
-          }
-          else {
-            resultList.add(statement.getUpdateCount());
-          }
-          String statementWarnings = getWarnings(statement.getWarnings());
-          statement.clearWarnings();
-          scriptRunnerResults.add(new ScriptRunnerResult(sqlCode.sql, offset, statementWarnings, millis, columnCount, resultList.toArray()));
+            int updateCount = statement.getUpdateCount();
+            if (updateCount != -1) {
+              extractWarnings(statement.getWarnings(), warnings);
+              scriptRunnerResults.add(new ScriptRunnerResult(sqlCode.sql, offset, warnings.toString(), millis, 0, updateCount));
+            }
+            statement.clearWarnings();
         }
+
         if (sqlCode.nextOffset > offset) {
           offset = sqlCode.nextOffset;
         }
@@ -126,21 +169,39 @@ public class DefaultScriptRunner implements ScriptRunner {
           throw new BackendException("malformed SQL script");   // avoid endless loops
         }
       }
-      String connectionWarnings = getWarnings(connection.getWarnings());
+
+      StringBuilder warnings = new StringBuilder();
+      extractWarnings(connection.getWarnings(), warnings);
       connection.clearWarnings();
-      if (!connectionWarnings.isEmpty()) {
-        scriptRunnerResults.add(new ScriptRunnerResult("", 0, connectionWarnings, 0L, 0, "Connection Warnings"));
+      if (!warnings.isEmpty()) {
+        scriptRunnerResults.add(new ScriptRunnerResult("", 0, warnings.toString(), 0L, 0, "Connection Warnings"));
       }
       return scriptRunnerResults;
     }
     catch (SQLException ex) {
       if (sqlCode != null) {
-        throw new BackendException("script execution failed at offset " + offset + ": " + sqlCode.sql, ex);
+        throw new ScriptRunnerException("script execution failed at offset " + offset + ": " +
+                                        StringHelper.firstLine(sqlCode.sql) + " ...\n" +
+                                        ExceptionHelper.concatenateMessages(ex),
+                                        scriptRunnerResults, ex);
       }
-      throw new BackendException("script runner failed", ex);
+      throw new ScriptRunnerException("script runner failed", scriptRunnerResults, ex);
     }
   }
 
+  @Override
+  public void cancel() {
+    cancelled.set(true);
+    try {
+      Statement statement = statementRef.get();
+      if (statement != null && !statement.isClosed()) {
+        statement.cancel();
+      }
+    }
+    catch (SQLException sx) {
+      throw new BackendException("canceling script failed", sx);
+    }
+  }
 
   /**
    * Determines the next SQL code to execute.
@@ -245,30 +306,33 @@ public class DefaultScriptRunner implements ScriptRunner {
   }
 
 
-  private int extractResults(ResultSet resultSet, List<Object> resultList) throws SQLException {
+  private int extractResults(ResultSet resultSet, StringBuilder warnings, List<Object> resultList) throws SQLException {
     ResultSetMetaData metaData = resultSet.getMetaData();
     int columnCount = metaData.getColumnCount();
-    if (resultList.isEmpty()) {
-      for (int r = 1; r <= columnCount; r++) {
-        resultList.add(metaData.getColumnName(r));
+    boolean first = true;
+    while (resultSet.next()) {
+      if (first) {
+        for (int columnIndex = 1; columnIndex <= columnCount; columnIndex++) {
+          resultList.add(metaData.getColumnName(columnIndex));
+        }
+        first = false;
       }
-    }
-    for (int r = 1; r <= columnCount; r++) {
-      resultList.add(resultSet.getObject(r));
+      for (int columnIndex = 1; columnIndex <= columnCount; columnIndex++) {
+        resultList.add(resultSet.getObject(columnIndex));
+      }
+      extractWarnings(resultSet.getWarnings(), warnings);
     }
     return columnCount;
   }
 
-  private String getWarnings(SQLWarning warning) {
-    StringBuilder warnings = new StringBuilder();
+  private void extractWarnings(SQLWarning warning, StringBuilder buf) {
     while (warning != null) {
-      if (!warnings.isEmpty()) {
-        warnings.append('\n');
+      if (!buf.isEmpty()) {
+        buf.append('\n');
       }
-      warnings.append(warning.getMessage());
+      buf.append(warning.getMessage());
       warning = warning.getNextWarning();
     }
-    return warnings.toString();
   }
 
 }

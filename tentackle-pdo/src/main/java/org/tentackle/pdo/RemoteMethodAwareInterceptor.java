@@ -30,6 +30,13 @@ public abstract class RemoteMethodAwareInterceptor extends SessionProviderAwareI
   private Boolean remoteMethodAnnotationPresent;
 
   /**
+   * Parent constructor.
+   */
+  public RemoteMethodAwareInterceptor() {
+    // see -Xlint:missing-explicit-ctor since Java 16
+  }
+
+  /**
    * Returns whether the given method is annotated with {@link RemoteMethod}.
    *
    * @param orgMethod the method to check

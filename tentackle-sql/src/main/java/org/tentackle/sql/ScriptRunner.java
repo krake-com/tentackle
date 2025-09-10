@@ -56,6 +56,36 @@ public interface ScriptRunner {
   boolean isEscapeProcessingEnabled();
 
   /**
+   * Sets the maximum number of rows to be returned by each statement within the script.<br>
+   * The limit must be set before executing the script!
+   *
+   * @param maxRows the maximum number of rows, 0 if no limit (default)
+   */
+  void setMaxRows(int maxRows);
+
+  /**
+   * Gets the maximum number of rows to be returned by each statement within the script.
+   *
+   * @return the maximum number of rows, 0 if no limit (default)
+   */
+  int getMaxRows();
+
+  /**
+   * Sets the execution timeout for each statement in seconds.<br>
+   * The timeout must be set before executing the script!
+   *
+   * @param seconds the timeout in seconds, 0 if no timeout (default)
+   */
+  void setExecutionTimeout(int seconds);
+
+  /**
+   * Gets the execution timeout in seconds.
+   *
+   * @return the timeout in seconds, 0 if no timeout (default)
+   */
+  int getExecutionTimeout();
+
+  /**
    * Runs the SQL script.
    * <p>
    * Throws {@link BackendException} if script execution failed.
@@ -64,5 +94,10 @@ public interface ScriptRunner {
    * @return the results, never null
    */
   List<ScriptRunnerResult> run(String script);
+
+  /**
+   * Cancels the script execution.
+   */
+  void cancel();
 
 }
