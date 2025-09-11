@@ -1619,7 +1619,7 @@ public class Db implements Session, Cloneable {
           c.setTransactionIsolation(transactionIsolation.getLevel());
         }
         if (transactionWritability != null && transactionWritability != TransactionWritability.DEFAULT) {
-          c.setReadOnly(transactionWritability.getWritable());
+          c.setReadOnly(!transactionWritability.getWritable());
         }
       })) {
 
