@@ -31,6 +31,7 @@ public class ScriptRunnerException extends BackendException {
   @Serial
   private static final long serialVersionUID = 1L;
 
+  private final String sql;
   @SuppressWarnings("serial")
   private final List<ScriptRunnerResult> results;
 
@@ -38,12 +39,23 @@ public class ScriptRunnerException extends BackendException {
    * Creates a new ScriptRunnerException.
    *
    * @param  message the detail message
-   * @param  results the results collected so far
+   * @param sql the SQL code that failed
+   * @param  results the successful results collected so far
    * @param  cause the cause
    */
-  public ScriptRunnerException(String message, List<ScriptRunnerResult> results, Throwable cause) {
+  public ScriptRunnerException(String message, String sql, List<ScriptRunnerResult> results, Throwable cause) {
     super(message, cause);
+    this.sql = sql;
     this.results = results;
+  }
+
+  /**
+   * Gets the SQL code that failed.
+   *
+   * @return the SQL code
+   */
+  public String getSql() {
+    return sql;
   }
 
   /**
@@ -54,4 +66,5 @@ public class ScriptRunnerException extends BackendException {
   public List<ScriptRunnerResult> getResults() {
     return results;
   }
+
 }

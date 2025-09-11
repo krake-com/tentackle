@@ -20,6 +20,7 @@ package org.tentackle.sql;
 
 import java.sql.Connection;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * SQL script runner.
@@ -88,7 +89,8 @@ public interface ScriptRunner {
   /**
    * Runs the SQL script.
    * <p>
-   * Throws {@link BackendException} if script execution failed.
+   * Throws {@link ScriptRunnerException} if the execution of some SQL statement within the failed.<br>
+   * Throws {@link BackendException} if some other error occurred.
    *
    * @param script the SQL script
    * @return the results, never null
@@ -99,5 +101,26 @@ public interface ScriptRunner {
    * Cancels the script execution.
    */
   void cancel();
+
+  /**
+   * Returns whether the script execution was canceled.
+   *
+   * @return true if canceled
+   */
+  boolean isCanceled();
+
+  /**
+   * Adds a listener to be notified when each statement is submitted to the backend.
+   *
+   * @param listener the SQL code being executed by the backend
+   */
+  void addExecutionListener(Consumer<String> listener);
+
+  /**
+   * Adds a listener to be notified when each statement is successfully executed.
+   *
+   * @param listener the execution result
+   */
+  void addResultListener(Consumer<ScriptRunnerResult> listener);
 
 }

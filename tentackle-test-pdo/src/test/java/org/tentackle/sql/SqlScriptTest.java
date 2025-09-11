@@ -29,6 +29,7 @@ import org.tentackle.pdo.testng.AbstractPdoTest;
 import java.util.List;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.fail;
 
 /**
  * Physically runs a script against the test backend.
@@ -115,13 +116,15 @@ public class SqlScriptTest extends AbstractPdoTest {
       ScriptRunner scriptRunner = db.getBackend().createScriptRunner(db.connection().getConnection());
       scriptRunner.setExecutionTimeout(2);
       try {
-        scriptRunner.run("SELECT PG_SLEEP(10);");
+        scriptRunner.addExecutionListener(s -> assertEquals(s, "SELECT PG_SLEEP(10)"));
+        scriptRunner.addResultListener(r -> fail("should not reach here: " + r));
+        scriptRunner.run("-- just a comment\nSELECT PG_SLEEP(10);");
       }
       catch (ScriptRunnerException ex) {
         List<ScriptRunnerResult> results = ex.getResults();
         assertEquals(results.size(), 0);
         assertEquals(ex.getMessage(), """
-          script execution failed at offset 0: SELECT PG_SLEEP(10) ...
+          script execution failed at line 2: SELECT PG_SLEEP(10) ...
           ERROR: canceling statement due to user request""");
       }
     }
@@ -147,7 +150,7 @@ public class SqlScriptTest extends AbstractPdoTest {
         List<ScriptRunnerResult> results = ex.getResults();
         assertEquals(results.size(), 0);
         assertEquals(ex.getMessage(), """
-          script execution failed at offset 0: SELECT PG_SLEEP(10) ...
+          script execution failed at line 1: SELECT PG_SLEEP(10) ...
           ERROR: canceling statement due to user request""");
       }
     }
