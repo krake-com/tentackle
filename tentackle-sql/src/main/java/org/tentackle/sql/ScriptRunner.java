@@ -87,9 +87,43 @@ public interface ScriptRunner {
   int getExecutionTimeout();
 
   /**
+   * Sets the connection to read-only mode during execution.<br>
+   * If the connection is already in read-only mode, this method has no effect,
+   * even if {@code readOnly} is false.
+   * The connection is switched back to read-write mode after the script execution
+   * if the connection was in read-write mode before.
+   *
+   * @param readOnly true if read-only
+   */
+  void setReadOnly(boolean readOnly);
+
+  /**
+   * Returns whether the connection is used in read-only mode.
+   *
+   * @return true if read-only
+   */
+  boolean isReadOnly();
+
+  /**
+   * Requests that the script should be executed within a transaction.<br>
+   * If there is already a transaction running, this method has no effect,
+   * even if {@code transactional} is false.
+   *
+   * @param transactional true if start a transaction if none is running
+   */
+  void setTransactional(boolean transactional);
+
+  /**
+   * Returns whether the script is executed within a transaction.
+   *
+   * @return true if transactional
+   */
+  boolean isTransactional();
+
+  /**
    * Runs the SQL script.
    * <p>
-   * Throws {@link ScriptRunnerException} if the execution of some SQL statement within the failed.<br>
+   * Throws {@link ScriptRunnerException} if the execution of some SQL statement within the script failed.<br>
    * Throws {@link BackendException} if some other error occurred.
    *
    * @param script the SQL script

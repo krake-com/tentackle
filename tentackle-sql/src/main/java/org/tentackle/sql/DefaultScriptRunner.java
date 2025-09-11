@@ -50,6 +50,8 @@ public class DefaultScriptRunner implements ScriptRunner {
   private boolean escapeProcessing = true;              // as per JDBC specs enabled by default
   private int maxRows;                                  // optional max. number of rows in resultsets
   private int executionTimeout;                         // optional query timeout in seconds, 0 for none
+  private boolean readOnly;                             // optional read-only flag for the connection
+  private boolean transactional;                        // true if the script is enclosed in a transaction
 
   /**
    * The next SQL code to execute as a statement.
@@ -119,13 +121,45 @@ public class DefaultScriptRunner implements ScriptRunner {
   }
 
   @Override
+  public void setReadOnly(boolean readOnly) {
+    this.readOnly = readOnly;
+  }
+
+  @Override
+  public boolean isReadOnly() {
+    return readOnly;
+  }
+
+  @Override
+  public void setTransactional(boolean transactional) {
+    this.transactional = transactional;
+  }
+
+  @Override
+  public boolean isTransactional() {
+    return transactional;
+  }
+
+  @Override
   public List<ScriptRunnerResult> run(String script) {
     canceled.set(false);
     SQLCode sqlCode = null;
     int offset = 0;
     List<ScriptRunnerResult> scriptRunnerResults = new ArrayList<>();
 
+    boolean oldReadOnly = false;
+    boolean oldTransactional = false;
+
     try (Statement statement = connection.createStatement()) {
+      oldReadOnly = connection.isReadOnly();
+      if (!oldReadOnly && readOnly) {
+        connection.setReadOnly(true);
+      }
+      oldTransactional = !connection.getAutoCommit();
+      if (!oldTransactional && transactional) {
+        connection.setAutoCommit(false);
+      }
+
       statement.setEscapeProcessing(escapeProcessing);
       if (maxRows > 0) {
         statement.setMaxRows(maxRows);
@@ -181,7 +215,7 @@ public class DefaultScriptRunner implements ScriptRunner {
       extractWarnings(connection.getWarnings(), warnings);
       connection.clearWarnings();
       if (!warnings.isEmpty()) {
-        ScriptRunnerResult result = new ScriptRunnerResult("", 0, warnings.toString(), 0L, 0, "Connection Warnings");
+        ScriptRunnerResult result = new ScriptRunnerResult("", 0, warnings.toString(), 0L, 0);
         scriptRunnerResults.add(result);
         fireResultListeners(result);
       }
@@ -196,6 +230,23 @@ public class DefaultScriptRunner implements ScriptRunner {
                                         sqlCode.sql, scriptRunnerResults, ex);
       }
       throw new BackendException("script execution failed", ex);
+    }
+    finally {
+      try {
+        if (connection.getAutoCommit() == oldTransactional) {
+          // commit the transaction if it was started by this script runner
+          connection.setAutoCommit(true);
+          // if there was an SQLException during script execution, the transaction is already rolled back
+        }
+        if (connection.isReadOnly() != oldReadOnly) {
+          // switch back to read-write if read-only was set by this script runner
+          connection.setReadOnly(false);
+        }
+      }
+      catch (SQLException sx) {
+        // this should not happen! We have no logger... Hmm...
+        scriptRunnerResults.add(new ScriptRunnerResult("", 0, ExceptionHelper.concatenateMessages(sx), 0L, 0));
+      }
     }
   }
 

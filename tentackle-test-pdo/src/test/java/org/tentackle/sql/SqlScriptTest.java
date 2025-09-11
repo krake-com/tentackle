@@ -115,6 +115,8 @@ public class SqlScriptTest extends AbstractPdoTest {
     if (getSession() instanceof Db db) {
       ScriptRunner scriptRunner = db.getBackend().createScriptRunner(db.connection().getConnection());
       scriptRunner.setExecutionTimeout(2);
+      scriptRunner.setTransactional(true);  // ignored (due to TransactionType.METHOD)
+      scriptRunner.setReadOnly(false);      // ignored (true would throw an exception since a tx is already running)
       try {
         scriptRunner.addExecutionListener(s -> assertEquals(s, "SELECT PG_SLEEP(10)"));
         scriptRunner.addResultListener(r -> fail("should not reach here: " + r));
