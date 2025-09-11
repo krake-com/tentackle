@@ -33,15 +33,28 @@ public record ScriptRunnerResult(String sql, int offset, String warnings, long m
   @Override
   public String toString() {
     StringBuilder buf = new StringBuilder();
-    buf.append(sql).append(" ->");
+    buf.append(sql).append(" ->")
+       .append(columnCount > 0 ? '\n' : ' ').append(resultToString());
+    if (!warnings.isEmpty()) {
+      buf.append("\nWarnings: ").append(warnings);
+    }
+    return buf.toString();
+  }
 
+  /**
+   * Converts the results to a string.
+   *
+   * @return the string representation
+   */
+  public String resultToString() {
+    StringBuilder buf = new StringBuilder();
     if (columnCount > 0) {
       // result set returned: align column widths
       int[] width = new int[columnCount];
       int r = 0;
       for (Object result : results) {
         if (result == null) {
-          result = "null";
+          result = "<null>";
         }
         int colWidth = result.toString().length();
         int colNdx = r++ % columnCount;
@@ -52,20 +65,19 @@ public record ScriptRunnerResult(String sql, int offset, String warnings, long m
       r = 0;
       for (Object result : results) {
         int colNdx = r++ % columnCount;
-        if (colNdx == 0) {
-          buf.append('\n');
+        if (!buf.isEmpty()) {
+        buf.append(colNdx == 0 ? '\n' : ' ');
         }
-        buf.append(String.format(" %-" + width[colNdx] + "s", result));
+        buf.append(String.format("%-" + width[colNdx] + "s", result));
       }
     }
     else {
       for (Object result : results) {
-        buf.append(' ').append(result);
+        if (!buf.isEmpty()) {
+          buf.append(' ');
+        }
+        buf.append(result);
       }
-    }
-
-    if (!warnings.isEmpty()) {
-      buf.append("\nWarnings: ").append(warnings);
     }
     return buf.toString();
   }

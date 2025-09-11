@@ -74,10 +74,10 @@ public class SqlScriptTest extends AbstractPdoTest {
       INSERT INTO blah(name, id) VALUES('didoedel2', 2) -> 1
       INSERT INTO blah(name, id) VALUES('didoedeldu3', 3) -> 1
       SELECT * FROM blah ORDER BY id ->
-       name        id
-       doedel1     1\s
-       didoedel2   2\s
-       didoedeldu3 3\s
+      name        id
+      doedel1     1\s
+      didoedel2   2\s
+      didoedeldu3 3\s
       UPDATE blah SET id=id+1000 -> 3
       DELETE FROM blah WHERE id > 1001 -> 2
       DROP TABLE blah -> 0
