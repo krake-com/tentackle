@@ -1618,15 +1618,15 @@ public class Db implements Session, Cloneable {
       immediatelyRolledBack = 0;  // the first begin clears all pending immediate rollbacks() ...
 
       if (setAutoCommit(c -> {
-          // new transaction
-          assertNoTxRunning();
-          if (transactionIsolation != null && transactionIsolation != TransactionIsolation.DEFAULT) {
-            c.setTransactionIsolation(transactionIsolation.getLevel());
-          }
-          if (transactionWritability != null && transactionWritability != TransactionWritability.DEFAULT) {
-            c.setReadOnly(transactionWritability.getWritable());
-          }
-        })) {
+        // new transaction
+        assertNoTxRunning();
+        if (transactionIsolation != null && transactionIsolation != TransactionIsolation.DEFAULT) {
+          c.setTransactionIsolation(transactionIsolation.getLevel());
+        }
+        if (transactionWritability != null && transactionWritability != TransactionWritability.DEFAULT) {
+          c.setReadOnly(!transactionWritability.getWritable());
+        }
+      })) {
 
         modificationLogList = null;
         transaction = createTransaction(txName, fromRemote);
