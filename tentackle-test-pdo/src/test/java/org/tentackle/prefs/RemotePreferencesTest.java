@@ -90,7 +90,7 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
   public void writePreferences() throws Exception {
 
     Process process = AbstractPdoTest.runClass(AddAndRemovePrefsInServer.class);
-    Thread.sleep(1500);
+    Thread.sleep(3000);
 
     SessionInfo sessionInfo = Pdo.createSessionInfo("client");
 
