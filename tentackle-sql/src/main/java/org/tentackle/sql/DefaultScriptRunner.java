@@ -182,11 +182,11 @@ public class DefaultScriptRunner implements ScriptRunner {
             // but one never knows...
             do {
               ResultSet resultSet = statement.getResultSet();
-              List<Object> resultList = new ArrayList<>();
-              int columnCount = extractResults(resultSet, warnings, resultList);
+              Results results = extractResults(resultSet, warnings);
               extractWarnings(statement.getWarnings(), warnings);
               statement.clearWarnings();
-              ScriptRunnerResult result = new ScriptRunnerResult(sqlCode.sql, offset, warnings.toString(), millis, columnCount, resultList.toArray());
+              ScriptRunnerResult result = new ScriptRunnerResult(sqlCode.sql, offset, warnings.toString(), millis, results.columnCount,
+                                                                 results.columnTypes, results.columnNames, results.data.toArray());
               scriptRunnerResults.add(result);
               warnings.setLength(0);
               fireResultListeners(result);
@@ -196,7 +196,7 @@ public class DefaultScriptRunner implements ScriptRunner {
           int updateCount = statement.getUpdateCount();
           if (updateCount != -1) {
             extractWarnings(statement.getWarnings(), warnings);
-            ScriptRunnerResult result = new ScriptRunnerResult(sqlCode.sql, offset, warnings.toString(), millis, 0, updateCount);
+            ScriptRunnerResult result = new ScriptRunnerResult(sqlCode.sql, offset, warnings.toString(), millis, updateCount);
             scriptRunnerResults.add(result);
             fireResultListeners(result);
           }
@@ -215,7 +215,7 @@ public class DefaultScriptRunner implements ScriptRunner {
       extractWarnings(connection.getWarnings(), warnings);
       connection.clearWarnings();
       if (!warnings.isEmpty()) {
-        ScriptRunnerResult result = new ScriptRunnerResult("", 0, warnings.toString(), 0L, 0);
+        ScriptRunnerResult result = new ScriptRunnerResult(warnings.toString());
         scriptRunnerResults.add(result);
         fireResultListeners(result);
       }
@@ -245,7 +245,7 @@ public class DefaultScriptRunner implements ScriptRunner {
       }
       catch (SQLException sx) {
         // this should not happen! We have no logger... Hmm...
-        scriptRunnerResults.add(new ScriptRunnerResult("", 0, ExceptionHelper.concatenateMessages(sx), 0L, 0));
+        scriptRunnerResults.add(new ScriptRunnerResult(ExceptionHelper.concatenateMessages(sx)));
       }
     }
   }
@@ -400,23 +400,25 @@ public class DefaultScriptRunner implements ScriptRunner {
   }
 
 
-  private int extractResults(ResultSet resultSet, StringBuilder warnings, List<Object> resultList) throws SQLException {
+  private record Results(int columnCount, int[] columnTypes, String[] columnNames, List<Object> data) { }
+
+  private Results extractResults(ResultSet resultSet, StringBuilder warnings) throws SQLException {
+    List<Object> data = new ArrayList<>();
     ResultSetMetaData metaData = resultSet.getMetaData();
     int columnCount = metaData.getColumnCount();
-    boolean first = true;
+    int[] columnTypes = new int[columnCount];
+    String[] columnNames = new String[columnCount];
+    for (int columnIndex = 1; columnIndex <= columnCount; columnIndex++) {
+      columnTypes[columnIndex - 1] = metaData.getColumnType(columnIndex);
+      columnNames[columnIndex - 1] = metaData.getColumnName(columnIndex);
+    }
     while (resultSet.next()) {
-      if (first) {
-        for (int columnIndex = 1; columnIndex <= columnCount; columnIndex++) {
-          resultList.add(metaData.getColumnName(columnIndex));
-        }
-        first = false;
-      }
       for (int columnIndex = 1; columnIndex <= columnCount; columnIndex++) {
-        resultList.add(resultSet.getObject(columnIndex));
+        data.add(resultSet.getObject(columnIndex));
       }
       extractWarnings(resultSet.getWarnings(), warnings);
     }
-    return columnCount;
+    return new Results(columnCount, columnTypes, columnNames, data);
   }
 
   private void extractWarnings(SQLWarning warning, StringBuilder buf) {

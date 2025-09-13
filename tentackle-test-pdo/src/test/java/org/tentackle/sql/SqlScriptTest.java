@@ -50,8 +50,8 @@ public class SqlScriptTest extends AbstractPdoTest {
       CREATE INDEX blah_name ON blah (name);
       
       INSERT INTO blah(name, id) VALUES('doedel1', 1);
-      INSERT INTO blah(name, id) VALUES('didoedel2', 2);
-      INSERT INTO blah(name, id) VALUES('didoedeldu3', 3);
+      INSERT INTO blah(name, id) VALUES('didoedel2', 20);
+      INSERT INTO blah(name, id) VALUES('didoedeldu3', 300);
       
       SELECT * FROM blah ORDER BY id;
       UPDATE blah SET id=id+1000;
@@ -71,13 +71,13 @@ public class SqlScriptTest extends AbstractPdoTest {
       COMMENT ON COLUMN blah.id IS 'object id' -> 0
       CREATE INDEX blah_name ON blah (name) -> 0
       INSERT INTO blah(name, id) VALUES('doedel1', 1) -> 1
-      INSERT INTO blah(name, id) VALUES('didoedel2', 2) -> 1
-      INSERT INTO blah(name, id) VALUES('didoedeldu3', 3) -> 1
+      INSERT INTO blah(name, id) VALUES('didoedel2', 20) -> 1
+      INSERT INTO blah(name, id) VALUES('didoedeldu3', 300) -> 1
       SELECT * FROM blah ORDER BY id ->
-      name        id
-      doedel1     1\s
-      didoedel2   2\s
-      didoedeldu3 3\s
+      name        id\s
+      doedel1       1
+      didoedel2    20
+      didoedeldu3 300
       UPDATE blah SET id=id+1000 -> 3
       DELETE FROM blah WHERE id > 1001 -> 2
       DROP TABLE blah -> 0
