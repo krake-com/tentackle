@@ -26,13 +26,15 @@ package org.tentackle.sql;
  * @param warnings optional warnings, empty string if none, never null
  * @param millis the number of milliseconds the SQL code took to execute
  * @param columnCount the number of columns, if result sets were returned, 0 for update count only
- * @param columnTypes the {@code java.sql.Types} of the columns, if a result set was returned, null if update count
+ * @param columnTypes the {@link java.sql.Types} of the columns, if a result set was returned, null if update count
  * @param columnNames the column names, if a result set was returned, null if update count
  * @param data the result objects returned from the statement, empty if the result set was empty, a single int for update count, never null
  */
 public record ScriptRunnerResult(String sql, int offset, String warnings, long millis,
                                  int columnCount, int[] columnTypes, String[] columnNames,
                                  Object... data) {
+
+  private static final String NULL_STRING = String.valueOf((Object) null);
 
   /**
    * Constructor for update count only.
@@ -101,7 +103,7 @@ public record ScriptRunnerResult(String sql, int offset, String warnings, long m
       int r = 0;
       for (Object result : data) {
         if (result == null) {
-          result = "<null>";
+          result = NULL_STRING;
         }
         int colWidth = result.toString().length();
         int colNdx = r++ % columnCount;

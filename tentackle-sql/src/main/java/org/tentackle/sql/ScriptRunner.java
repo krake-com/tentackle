@@ -19,7 +19,9 @@
 package org.tentackle.sql;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -146,15 +148,29 @@ public interface ScriptRunner {
   /**
    * Adds a listener to be notified when each statement is submitted to the backend.
    *
-   * @param listener the SQL code being executed by the backend
+   * @param listener the listener receives the SQL code
    */
   void addExecutionListener(Consumer<String> listener);
 
   /**
    * Adds a listener to be notified when each statement is successfully executed.
    *
-   * @param listener the execution result
+   * @param listener the listener receives the runner result
    */
   void addResultListener(Consumer<ScriptRunnerResult> listener);
+
+  /**
+   * Adds a listener to be notified when each result set has been processed.<br>
+   * Since the result set is positioned after the end of the last row,
+   * the listener must invoke {@link ResultSet#beforeFirst()} to process it again.
+   * <p>
+   * The backend must support {@link ResultSet#TYPE_SCROLL_INSENSITIVE}
+   * to be able to use this feature.
+   * <p>
+   * The result set is closed after all result set listeners have been notified.
+   *
+   * @param listener the listener receives the SQL code and the result set
+   */
+  void addResultSetListener(BiConsumer<String, ResultSet> listener);
 
 }

@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -44,14 +45,17 @@ public class DefaultScriptRunner implements ScriptRunner {
   private final boolean posixEscapeSyntaxSupported;
   private final AtomicBoolean canceled = new AtomicBoolean();
   private final AtomicReference<Statement> statementRef = new AtomicReference<>();
-  private final List<Consumer<String>> executionListeners = new ArrayList<>();
-  private final List<Consumer<ScriptRunnerResult>> resultListeners = new ArrayList<>();
 
   private boolean escapeProcessing = true;              // as per JDBC specs enabled by default
   private int maxRows;                                  // optional max. number of rows in resultsets
   private int executionTimeout;                         // optional query timeout in seconds, 0 for none
   private boolean readOnly;                             // optional read-only flag for the connection
   private boolean transactional;                        // true if the script is enclosed in a transaction
+
+  protected final List<Consumer<String>> executionListeners = new ArrayList<>();
+  protected final List<Consumer<ScriptRunnerResult>> resultListeners = new ArrayList<>();
+  protected final List<BiConsumer<String, ResultSet>> resultSetListeners = new ArrayList<>();
+
 
   /**
    * The next SQL code to execute as a statement.
@@ -150,7 +154,8 @@ public class DefaultScriptRunner implements ScriptRunner {
     boolean oldReadOnly = false;
     boolean oldTransactional = false;
 
-    try (Statement statement = connection.createStatement()) {
+    try (Statement statement = createStatement(connection)) {
+
       oldReadOnly = connection.isReadOnly();
       if (!oldReadOnly && readOnly) {
         connection.setReadOnly(true);
@@ -190,6 +195,7 @@ public class DefaultScriptRunner implements ScriptRunner {
               scriptRunnerResults.add(result);
               warnings.setLength(0);
               fireResultListeners(result);
+              fireResultSetListeners(sqlCode.sql, resultSet);
             }
             while (statement.getMoreResults());   // this closes the current result set
           }
@@ -277,6 +283,11 @@ public class DefaultScriptRunner implements ScriptRunner {
   @Override
   public void addResultListener(Consumer<ScriptRunnerResult> listener) {
     resultListeners.add(listener);
+  }
+
+  @Override
+  public void addResultSetListener(BiConsumer<String, ResultSet> listener) {
+    resultSetListeners.add(listener);
   }
 
   /**
@@ -397,6 +408,29 @@ public class DefaultScriptRunner implements ScriptRunner {
    */
   protected void fireResultListeners(ScriptRunnerResult result) {
     resultListeners.forEach(listener -> listener.accept(result));
+  }
+
+  /**
+   * Fires result set listeners.
+   *
+   * @param sql the SQL statement
+   * @param resultSet the result set
+   */
+  protected void fireResultSetListeners(String sql, ResultSet resultSet) {
+    resultSetListeners.forEach(listener -> listener.accept(sql, resultSet));
+  }
+
+  /**
+   * Creates the statement.
+   *
+   * @param connection the connection to use for creating the statement
+   * @return the statement
+   * @throws SQLException if some backend error
+   */
+  protected Statement createStatement(Connection connection) throws SQLException {
+    return resultSetListeners.isEmpty() ?
+             connection.createStatement() :
+             connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
   }
 
 
