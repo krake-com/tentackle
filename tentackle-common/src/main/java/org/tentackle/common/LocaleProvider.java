@@ -18,9 +18,12 @@
 
 package org.tentackle.common;
 
+import java.util.Currency;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.concurrent.ConcurrentHashMap;
 
 interface LocaleProviderHolder {
   LocaleProvider INSTANCE = ServiceFactory.createService(LocaleProvider.class, LocaleProvider.class);
@@ -32,7 +35,7 @@ interface LocaleProviderHolder {
  *
  * @author harald
  */
-// @Service does not work in tentackle-common, since there is no analyze maven plugin available at this build step yet.
+// @Service does not work in tentackle-common, since there is no analyze-maven-plugin available at this build step yet.
 // Needs explicit config in resources/services/META-INF.
 @Service(LocaleProvider.class)    // defaults to self
 public class LocaleProvider {
@@ -66,6 +69,11 @@ public class LocaleProvider {
    * The effective initial locale on startup.
    */
   private Locale effectiveInitialLocale;
+
+  /**
+   * Map of locales to default currencies.
+   */
+  private final Map<Locale, Currency> currencyMap = new ConcurrentHashMap<>();
 
 
   /**
@@ -133,7 +141,7 @@ public class LocaleProvider {
   /**
    * Asserts that a thread-local Locale is set.
    *
-   * @throws TentackleRuntimeException if thread-local locale is null
+   * @throws TentackleRuntimeException if the thread-local locale is null
    */
   public void assertCurrentLocaleValid() {
     if (getCurrentLocale() == null) {
@@ -193,7 +201,7 @@ public class LocaleProvider {
   }
 
   /**
-   * Returns whether given locale is covered by the effective locales.
+   * Returns whether the given locale is covered by the effective locales.
    *
    * @param locale the locale
    * @return true if locale would map to a valid effective locale
@@ -235,7 +243,7 @@ public class LocaleProvider {
    * Converts a tag to a supported locale.
    *
    * @param tag the tag
-   * @return the locale, null if tag is empty or null
+   * @return the locale, null if the tag is empty or null
    * @see #toTag(Locale)
    */
   public Locale fromTag(String tag) {
@@ -273,5 +281,31 @@ public class LocaleProvider {
     return locale;
   }
 
+  /**
+   * Derives the currency from the given locale.<br>
+   * If the locale does not specify a country, the country is derived from the system property {@code "user.country"}.
+   *
+   * @param locale the locale
+   * @return the currency, never null
+   */
+  public Currency getCurrency(Locale locale) {
+    if (locale.getCountry().isEmpty()) {    // country is mandatory to determine the currency from a locale
+      String countryCode = System.getProperty("user.country");
+      if (countryCode != null) {
+        locale = Locale.of(locale.getLanguage(), countryCode.toUpperCase(Locale.ROOT));
+        // Never null. Even uncommon combinations, such as de_US, are allowed.
+      }
+    }
+    return Currency.getInstance(locale);
+  }
+
+  /**
+   * Gets the currency for the current locale.
+   *
+   * @return the currency, never null
+   */
+  public Currency getCurrency() {
+    return currencyMap.computeIfAbsent(getLocale(), this::getCurrency);
+  }
 
 }

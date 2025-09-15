@@ -23,7 +23,6 @@ import java.io.Serial;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
-import java.util.Currency;
 
 /**
  * Money value derived from BigDecimal.<br>
@@ -42,7 +41,7 @@ public class BMoney extends BigDecimal implements Cloneable {
    * Creates a BMoney value.
    *
    * @param val double-representation of the number
-   * @param scale the digits after comma the value should be rounded to
+   * @param scale the digits after the comma (the value will be rounded to)
    */
   public BMoney (double val, int scale)   {
     super(BigDecimal.valueOf(val).setScale(scale, RoundingMode.HALF_UP).unscaledValue(), scale);
@@ -52,7 +51,7 @@ public class BMoney extends BigDecimal implements Cloneable {
    * Creates a BMoney value.
    *
    * @param  val     the string
-   * @param  scale   the digits after comma the value should be rounded to
+   * @param  scale   digits after the comma (the value will be rounded to)
    */
   public BMoney (String val, int scale)  {
     super(new BigDecimal(val).setScale(scale, RoundingMode.HALF_UP).unscaledValue(), scale);
@@ -106,7 +105,7 @@ public class BMoney extends BigDecimal implements Cloneable {
    * the currency of the current locale.
    */
   public BMoney ()  {
-    this(Currency.getInstance(LocaleProvider.getInstance().getCurrentLocale()).getDefaultFractionDigits());
+    this(LocaleProvider.getInstance().getCurrency().getDefaultFractionDigits());
   }
 
 
@@ -127,7 +126,7 @@ public class BMoney extends BigDecimal implements Cloneable {
   /**
    * Checks if this money value is negative.
    *
-   * @return true if number is negative
+   * @return true if the number is negative
    */
   public boolean isNegative() {
     return signum() < 0;
@@ -136,7 +135,7 @@ public class BMoney extends BigDecimal implements Cloneable {
   /**
    * Checks if this money value is positive.
    *
-   * @return true if number is positive
+   * @return true if the number is positive
    */
   public boolean isPositive() {
     return signum() > 0;
@@ -145,7 +144,7 @@ public class BMoney extends BigDecimal implements Cloneable {
   /**
    * Checks if this money value is zero.
    *
-   * @return true if number is zero
+   * @return true if the number is zero
    */
   public boolean isZero() {
     return signum() == 0;
@@ -235,7 +234,7 @@ public class BMoney extends BigDecimal implements Cloneable {
 
   /**
    * Returns the smallest positive value.<br>
-   * Ex.: if scale is 2 --&gt; 0.01 will be returned.
+   * Ex.: if the scale is 2 --&gt; 0.01 will be returned.
    *
    * @return the smallest positive value
    */
@@ -253,7 +252,7 @@ public class BMoney extends BigDecimal implements Cloneable {
    * Example: 234,77 will become "two three four"
    * </pre>
    *
-   * @return the value as a words
+   * @return the value as words
    */
   public String toWords() {
     String digits = setScale(0, RoundingMode.DOWN).toString();
