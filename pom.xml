@@ -7,7 +7,7 @@
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-parent</artifactId>
-  <version>24.0-SNAPSHOT</version>
+  <version>25.17.0.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Tentackle Parent</name>
@@ -80,14 +80,14 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <dependency.locations.enabled>false</dependency.locations.enabled>
     <javac.lint>all,-processing,-this-escape</javac.lint>
-    <javac.version>24</javac.version>
+    <javac.version>25</javac.version>
 
     <asm.version>9.8</asm.version>
     <freemarker.version>2.3.34</freemarker.version>
     <groovy.version>5.0.0</groovy.version>
     <h2.version>2.3.232</h2.version>
     <ikonli.version>12.4.0</ikonli.version>
-    <javafx.version>24.0.2</javafx.version>
+    <javafx.version>25</javafx.version>
     <jruby.version>10.0.2.0</jruby.version>
     <junit.version>5.13.4</junit.version>
     <log4j2.version>2.25.1</log4j2.version>
@@ -136,7 +136,7 @@
     <tentackle.manifestDirectory>${project.build.directory}/generated-resources/manifest</tentackle.manifestDirectory>
     <netbeans.hint.license>tentackle</netbeans.hint.license>
 
-    <wurbelizer.version>24.0-SNAPSHOT</wurbelizer.version>
+    <wurbelizer.version>25.6.5.0-SNAPSHOT</wurbelizer.version>
     <!-- override the default wurbelDir for multi-module project -->
     <wurbel.wurbelDir>${rootBasedir}/target/wurbel</wurbel.wurbelDir>
 
