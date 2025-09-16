@@ -213,7 +213,7 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
       copyButton.setId("copyButton");
       copyButton.setFocusTraversable(false);
       copyButton.setTooltip(new Tooltip(FxFxBundle.getString("COPY TO CLIPBOARD")));
-      copyButton.setOnAction(event -> Fx.copyToClipboard(details));
+      copyButton.setOnAction(_ -> Fx.copyToClipboard(details));
       detailsStackPane.getChildren().add(copyButton);
       borderPane.setCenter(detailsStackPane);
     }
@@ -232,7 +232,7 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
         closeButton.setDefaultButton(true);
       }
       closeButton.setTooltip(new Tooltip(FxFxBundle.getString("CLOSE")));
-      closeButton.setOnAction(event -> hide.run());
+      closeButton.setOnAction(_ -> hide.run());
       borderStackPane.getChildren().add(closeButton);
     }
     else {
@@ -246,7 +246,7 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
       for (ButtonConfig buttonConfig : buttonConfigs) {
         Button button = buttonConfig.getButton();
         button.setId("button" + buttonIndex++);
-        button.setOnAction(event -> {
+        button.setOnAction(_ -> {
           if (buttonConfig.action() != null) {
             buttonConfig.action().run();
           }
@@ -288,7 +288,7 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
           fadeOutTransition.setToValue(0.0);
           transition.getChildren().add(fadeOutTransition);
         }
-        transition.setOnFinished(event -> hide.run());
+        transition.setOnFinished(_ -> hide.run());
       }
       transition.play();
     }

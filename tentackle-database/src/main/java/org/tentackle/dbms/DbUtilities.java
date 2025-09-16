@@ -41,8 +41,6 @@ import java.lang.reflect.RecordComponent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 
 interface DbUtilitiesHolder {
@@ -174,41 +172,14 @@ public class DbUtilities {
   }
 
   /**
-   * Creates a reconnection policy for a given session.
+   * Creates a reconnection policy.
    *
-   * @param session the session
    * @param blocking true if reconnection blocks the current thread, else non-blocking in background
    * @param millis the (minimum) time in milliseconds between retries
    * @return the policy
    */
-  public ReconnectionPolicy<Db> createReconnectionPolicy(Db session, boolean blocking, long millis) {
-    return new ReconnectionPolicy<>() {
-
-      @Override
-      public String toString() {
-        return session.toString();
-      }
-
-      @Override
-      public boolean isBlocking() {
-        return blocking;
-      }
-
-      @Override
-      public long timeToReconnect() {
-        return millis;
-      }
-
-      @Override
-      public Supplier<Db> getConnector() {
-        return () -> session;
-      }
-
-      @Override
-      public Consumer<Db> getConsumer() {
-        return Db::reOpen;
-      }
-    };
+  public ReconnectionPolicy<Db> createReconnectionPolicy(boolean blocking, long millis) {
+    return new DefaultReconnectionPolicy(blocking, millis);
   }
 
   /**

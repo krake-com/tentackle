@@ -50,19 +50,16 @@ public interface PdoCacheFactory {
 
 
   /**
-   * Creates a PDO-cache.<br>
-   * Multiple calls on this method return the same object reference,
-   * since PDO-caches are singletons per PDO-type.
+   * Creates a preloading PDO-cache.<br>
+   * Since PDO-caches are singletons per PDO-type, invoking this method
+   * more than once for the same class will throw a {@link org.tentackle.session.PersistenceException}.
    *
    * @param <T> the PDO type
    * @param clazz is the PDO-class managed by the cache
-   * @param preload is true if preload all objects in domain context of cache
-   * @param readOnly true if cache is readonly
-   * @param checkSecurity true if read permission is checked
+   * @param readOnly true if the cache is readonly
    * @return the cache
    */
-  <T extends PersistentDomainObject<T>> PdoCache<T> createCache(
-          Class<T> clazz, boolean preload, boolean readOnly, boolean checkSecurity);
+  <T extends PersistentDomainObject<T>> PdoCache<T> createCache(Class<T> clazz, boolean readOnly);
 
   /**
    * Creates an index for a PDO-cache.

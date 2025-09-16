@@ -108,7 +108,7 @@ public class ObjectId extends AbstractIdSource {
         lastId++;
         if (registerTxPending) {
           // register the final update for the end of transaction
-          db.preCommit(s -> {
+          db.preCommit(_ -> {
             PreparedStatementWrapper updateStatement = db.getPreparedStatement(new StatementKey(UPDATE_ID, getClass()), false,
                                                                                b -> Backend.SQL_UPDATE + getName() + Backend.SQL_SET + CN_ID + Backend.SQL_EQUAL_PAR
             );

@@ -88,7 +88,7 @@ public class LoginApplication extends FxApplication {
         stage.widthProperty().addListener((observable, oldValue, newValue) -> stage.setX(splashX - newValue.doubleValue() / 2.0 ));
         stage.heightProperty().addListener((observable, oldValue, newValue) -> stage.setY(splashY - newValue.doubleValue() / 2.0));
       }
-      stage.setOnShown(e -> {
+      stage.setOnShown(_ -> {
         if (splashScreen != null) {
           Platform.runLater(splashScreen::close);
         }

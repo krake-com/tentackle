@@ -23,11 +23,8 @@ import org.tentackle.common.ExceptionHelper;
 import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
-import org.tentackle.reflect.AbstractInterceptor;
-import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
-import org.tentackle.session.SessionProvider;
 import org.tentackle.session.SessionUtilities;
 import org.tentackle.session.TransactionIsolation;
 import org.tentackle.session.TransactionWritability;
@@ -38,14 +35,14 @@ import java.lang.reflect.Method;
 /**
  * Implementation of the {@link Transaction} interception.
  */
-public final class TransactionInterceptor extends AbstractInterceptor {
+public final class TransactionInterceptor extends RemoteMethodAwareInterceptor {
 
   private static final Logger LOGGER = Logger.get(TransactionInterceptor.class);
 
 
   private String transactionName;                         // the transaction name from the annotation
   private boolean running;                                // true if tx must be running already
-  private boolean rollbackSilently;                       // true if don't log rollbacks
+  private boolean rollbackSilently;                       // true: don't log rollbacks
   private TransactionIsolation transactionIsolation;      // the isolation level
   private TransactionWritability transactionWritability;  // the writability
   private boolean transactionRetry;                       // whether to retry the transaction after a transient exception
@@ -78,62 +75,67 @@ public final class TransactionInterceptor extends AbstractInterceptor {
   public Object proceed(Object proxy, Method method, Object[] args,
                         Object orgProxy, Method orgMethod, Object[] orgArgs) throws Throwable {
 
-    if (orgProxy instanceof SessionProvider sessionProvider) {
-      Session session = sessionProvider.getSession();
+    Session session = getSession(orgProxy);
 
-      if (running) {
-        if (session.isTxRunning()) {
-          if (Constants.NAME_UNKNOWN.equals(transactionName) || transactionName.equals(session.getTxName())) {
-            return method.invoke(proxy, args);
-          }
-          throw new PersistenceException(session, "unexpected transaction named '" + session.getTxName() +
-                                                  "' running (expected '" + transactionName + "')");
+    if (session.isRemote() && isRemoteMethod(orgMethod)) {
+      // If the session is remote and the implementation method is annotated with @RemoteMethod,
+      // then delegate to the TransactionInterceptor at the remote server.
+      // The presence of @RemoteMethod indicates that there is a RemoteMethod wurblet,
+      // and the generated code will delegate the invocation to the remote server.
+      // This saves two network round trips (begin and commit).
+      return method.invoke(proxy, args);
+    }
+
+    if (running) {
+      if (session.isTxRunning()) {
+        if (Constants.NAME_UNKNOWN.equals(transactionName) || transactionName.equals(session.getTxName())) {
+          return method.invoke(proxy, args);
         }
-        throw new PersistenceException(session, "no transaction running");
+        throw new PersistenceException(session, "unexpected transaction named '" + session.getTxName() +
+                                                "' running (expected '" + transactionName + "')");
       }
-      else {
-        String txName = Constants.NAME_UNKNOWN.equals(transactionName) ?
+      throw new PersistenceException(session, "no transaction running");
+    }
+    else {
+      String txName = Constants.NAME_UNKNOWN.equals(transactionName) ?
                         (orgMethod.getDeclaringClass().getSimpleName() + "#" + orgMethod.getName()) :
                         transactionName;
-        TransactionRetryPolicy retryPolicy = transactionRetry ? PdoUtilities.getInstance().getTransactionRetryPolicy(transactionRetryPolicy) : null;
 
-        for (int retryCount = 1; ; retryCount++) {
-          long txVoucher = session.begin(txName, transactionIsolation, transactionWritability);
+      TransactionRetryPolicy retryPolicy = transactionRetry ? PdoUtilities.getInstance().getTransactionRetryPolicy(transactionRetryPolicy) : null;
+
+      for (int retryCount = 1; ; retryCount++) {
+        long txVoucher = session.begin(txName, transactionIsolation, transactionWritability);
+        try {
+          Object result = method.invoke(proxy, args);
+          session.commit(txVoucher);
+          return result;
+        }
+        catch (Throwable t) {
+          // transaction failed!
           try {
-            Object result = method.invoke(proxy, args);
-            session.commit(txVoucher);
-            return result;
+            if (rollbackSilently || txVoucher == 0 || SessionUtilities.getInstance().isSilentRollbackSufficient(t)) {
+              // silent rollback requested, nested tx, temporary or application-specific exception (domain logic) -> no detailed logging
+              session.rollbackSilently(txVoucher);
+            }
+            else {
+              // the cause is a non-temporary PersistenceException (usually some database error such as a constraint exception) -> log the details
+              session.rollback(txVoucher);
+            }
           }
-          catch (Throwable t) {
-            // transaction failed!
-            try {
-              if (rollbackSilently || txVoucher == 0 || SessionUtilities.getInstance().isSilentRollbackSufficient(t)) {
-                // silent rollback requested, nested tx, temporary or application-specific exception (domain logic) -> no detailed logging
-                session.rollbackSilently(txVoucher);
-              }
-              else {
-                // cause is a non-temporary PersistenceException (usually some database error such as a constraint exception) -> log the details
-                session.rollback(txVoucher);
-              }
+          catch (RuntimeException rex) {
+            // rollback may fail for several reasons, usually some further database errors. Those errors
+            // are mapped to a PersistenceException and just cluttering the logfile, if logged.
+            // Other exceptions like NPEs, however, definitely provide useful information that must be logged.
+            if (ExceptionHelper.extractException(PersistenceException.class, true, rex) == null) {
+              LOGGER.severe("rollback failed after " + t.getClass().getSimpleName() + " (" + t.getMessage() + ")", rex);
             }
-            catch (RuntimeException rex) {
-              // rollback may fail for several reasons, usually some subsequent database errors. Those errors
-              // are mapped to a PersistenceException and just cluttering the logfile, if logged.
-              // Other exceptions like NPEs, however, definitely provide useful information, that must be logged.
-              if (ExceptionHelper.extractException(PersistenceException.class, true, rex) == null) {
-                LOGGER.severe("rollback failed after " + t.getClass().getSimpleName() + " (" + t.getMessage() + ")", rex);
-              }
-            }
+          }
 
-            if (txVoucher == 0 || !isRetrying(retryPolicy, txName, retryCount, t)) {
-              throw t;
-            }
+          if (txVoucher == 0 || !isRetrying(retryPolicy, txName, retryCount, t)) {
+            throw t;
           }
         }
       }
-    }
-    else  {
-      throw new PersistenceException(EffectiveClassProvider.getEffectiveClass(orgProxy) + " is not a SessionProvider");
     }
   }
 

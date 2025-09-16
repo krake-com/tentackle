@@ -109,7 +109,7 @@ public final class ModuleSorter {
   }
 
   /**
-   * Gets the modules infos ordered by dependency.<br>
+   * Gets the modules-infos ordered by dependency.<br>
    * Modules at the top of the dependency hierarchy come last,
    * modules without further dependencies come first.
    *
@@ -117,6 +117,15 @@ public final class ModuleSorter {
    */
   public List<ModuleInfo> getModuleInfos() {
     return sortedModules;
+  }
+
+  /**
+   * Returns whether the application is running in modular mode.
+   *
+   * @return true if modular
+   */
+  public boolean isModular() {
+    return !sortedModules.isEmpty();
   }
 
   /**
@@ -295,7 +304,7 @@ public final class ModuleSorter {
 
     @Override
     public int compareTo(SortKey o) {
-      int rv = Integer.compare(o.ordinal, ordinal);   // higher sequence comes first
+      int rv = Integer.compare(o.ordinal, ordinal);   // the higher sequence comes first
       if (rv == 0) {
         rv = name.compareTo(o.name);
       }

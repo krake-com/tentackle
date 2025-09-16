@@ -127,7 +127,7 @@ public class NamedCounter {
    * @return the atomic value
    */
   protected AtomicLong getCounter(String name) {
-    return counters.computeIfAbsent(name, n -> new AtomicLong());
+    return counters.computeIfAbsent(name, _ -> new AtomicLong());
   }
 
 }

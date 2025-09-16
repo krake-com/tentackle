@@ -18,6 +18,7 @@
 
 package org.tentackle.sql;
 
+import org.tentackle.common.ExceptionHelper;
 import org.tentackle.common.StringHelper;
 import org.tentackle.sql.backends.AbstractBackend;
 
@@ -29,6 +30,10 @@ import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /**
  * Default implementation of a script runner.
@@ -38,13 +43,24 @@ public class DefaultScriptRunner implements ScriptRunner {
   private final Backend backend;
   private final Connection connection;
   private final boolean posixEscapeSyntaxSupported;
+  private final AtomicBoolean canceled = new AtomicBoolean();
+  private final AtomicReference<Statement> statementRef = new AtomicReference<>();
 
   private boolean escapeProcessing = true;              // as per JDBC specs enabled by default
+  private int maxRows;                                  // optional max. number of rows in resultsets
+  private int executionTimeout;                         // optional query timeout in seconds, 0 for none
+  private boolean readOnly;                             // optional read-only flag for the connection
+  private boolean transactional;                        // true if the script is enclosed in a transaction
+
+  protected final List<Consumer<String>> executionListeners = new ArrayList<>();
+  protected final List<Consumer<ScriptRunnerResult>> resultListeners = new ArrayList<>();
+  protected final List<BiConsumer<String, ResultSet>> resultSetListeners = new ArrayList<>();
+
 
   /**
    * The next SQL code to execute as a statement.
    *
-   * @param sql the SQL statement to execute
+   * @param sql        the SQL statement to execute
    * @param nextOffset the offset where to start searching for the next statement within the script
    */
   public record SQLCode(String sql, int nextOffset) {
@@ -58,7 +74,7 @@ public class DefaultScriptRunner implements ScriptRunner {
   /**
    * Creates a script runner.
    *
-   * @param backend the backend
+   * @param backend    the backend
    * @param connection the SQL connection
    * @see AbstractBackend#createScriptRunner(Connection)
    */
@@ -89,33 +105,110 @@ public class DefaultScriptRunner implements ScriptRunner {
   }
 
   @Override
+  public void setMaxRows(int maxRows) {
+    this.maxRows = maxRows;
+  }
+
+  @Override
+  public int getMaxRows() {
+    return maxRows;
+  }
+
+  @Override
+  public void setExecutionTimeout(int executionTimeout) {
+    this.executionTimeout = executionTimeout;
+  }
+
+  @Override
+  public int getExecutionTimeout() {
+    return executionTimeout;
+  }
+
+  @Override
+  public void setReadOnly(boolean readOnly) {
+    this.readOnly = readOnly;
+  }
+
+  @Override
+  public boolean isReadOnly() {
+    return readOnly;
+  }
+
+  @Override
+  public void setTransactional(boolean transactional) {
+    this.transactional = transactional;
+  }
+
+  @Override
+  public boolean isTransactional() {
+    return transactional;
+  }
+
+  @Override
   public List<ScriptRunnerResult> run(String script) {
+    canceled.set(false);
     SQLCode sqlCode = null;
     int offset = 0;
-    try (Statement statement = connection.createStatement()) {
+    List<ScriptRunnerResult> scriptRunnerResults = new ArrayList<>();
+
+    boolean oldReadOnly = false;
+    boolean oldTransactional = false;
+
+    try (Statement statement = createStatement(connection)) {
+
+      oldReadOnly = connection.isReadOnly();
+      if (!oldReadOnly && readOnly) {
+        connection.setReadOnly(true);
+      }
+      oldTransactional = !connection.getAutoCommit();
+      if (!oldTransactional && transactional) {
+        connection.setAutoCommit(false);
+      }
+
       statement.setEscapeProcessing(escapeProcessing);
-      List<ScriptRunnerResult> scriptRunnerResults = new ArrayList<>();
-      while ((sqlCode = determineNextSqlCode(script, offset)) != null) {
+      if (maxRows > 0) {
+        statement.setMaxRows(maxRows);
+      }
+      if (executionTimeout > 0) {
+        statement.setQueryTimeout(executionTimeout);
+      }
+      statementRef.set(statement);
+
+      while (!canceled.get() && (sqlCode = determineNextSqlCode(script, offset)) != null) {
+
         if (!sqlCode.sql.isBlank()) {
-          List<Object> resultList = new ArrayList<>();
-          int columnCount = 0;
-          if (statement.execute(sqlCode.sql)) {
-            ResultSet resultSet = statement.getResultSet();
+          fireExecutionListeners(sqlCode.sql);
+          long millis = System.currentTimeMillis();
+          boolean isResultSet = statement.execute(sqlCode.sql);
+          millis = System.currentTimeMillis() - millis;
+          StringBuilder warnings = new StringBuilder();
+          if (isResultSet) {
+            // since we execute statement by statement, we should not create more than one result set,
+            // but one never knows...
             do {
-              while (resultSet.next()) {
-                columnCount = extractResults(resultSet, resultList);
-              }
+              ResultSet resultSet = statement.getResultSet();
+              Results results = extractResults(resultSet, warnings);
+              extractWarnings(statement.getWarnings(), warnings);
+              statement.clearWarnings();
+              ScriptRunnerResult result = new ScriptRunnerResult(sqlCode.sql, offset, warnings.toString(), millis, results.columnCount,
+                                                                 results.columnTypes, results.columnNames, results.data.toArray());
+              scriptRunnerResults.add(result);
+              warnings.setLength(0);
+              fireResultListeners(result);
+              fireResultSetListeners(sqlCode.sql, resultSet);
             }
-            while (statement.getMoreResults());
-            resultSet.close();
+            while (statement.getMoreResults());   // this closes the current result set
           }
-          else {
-            resultList.add(statement.getUpdateCount());
+          int updateCount = statement.getUpdateCount();
+          if (updateCount != -1) {
+            extractWarnings(statement.getWarnings(), warnings);
+            ScriptRunnerResult result = new ScriptRunnerResult(sqlCode.sql, offset, warnings.toString(), millis, updateCount);
+            scriptRunnerResults.add(result);
+            fireResultListeners(result);
           }
-          String statementWarnings = getWarnings(statement.getWarnings());
           statement.clearWarnings();
-          scriptRunnerResults.add(new ScriptRunnerResult(sqlCode.sql, offset, statementWarnings, columnCount, resultList.toArray()));
         }
+
         if (sqlCode.nextOffset > offset) {
           offset = sqlCode.nextOffset;
         }
@@ -123,28 +216,86 @@ public class DefaultScriptRunner implements ScriptRunner {
           throw new BackendException("malformed SQL script");   // avoid endless loops
         }
       }
-      String connectionWarnings = getWarnings(connection.getWarnings());
+
+      StringBuilder warnings = new StringBuilder();
+      extractWarnings(connection.getWarnings(), warnings);
       connection.clearWarnings();
-      if (!connectionWarnings.isEmpty()) {
-        scriptRunnerResults.add(new ScriptRunnerResult("", 0, connectionWarnings, 0,"Connection Warnings"));
+      if (!warnings.isEmpty()) {
+        ScriptRunnerResult result = new ScriptRunnerResult(warnings.toString());
+        scriptRunnerResults.add(result);
+        fireResultListeners(result);
       }
       return scriptRunnerResults;
     }
     catch (SQLException ex) {
       if (sqlCode != null) {
-        throw new BackendException("script execution failed at offset " + offset + ": " + sqlCode.sql, ex);
+        throw new ScriptRunnerException("script execution failed at line " +
+                                        (StringHelper.countOccurrences(script.substring(0, sqlCode.nextOffset), '\n') + 1) + ": " +
+                                        StringHelper.firstLine(sqlCode.sql) + " ...\n" +
+                                        ExceptionHelper.concatenateMessages(ex),
+                                        sqlCode.sql, scriptRunnerResults, ex);
       }
-      throw new BackendException("script runner failed", ex);
+      throw new BackendException("script execution failed", ex);
+    }
+    finally {
+      try {
+        if (connection.getAutoCommit() == oldTransactional) {
+          // commit the transaction if it was started by this script runner
+          connection.setAutoCommit(true);
+          // if there was an SQLException during script execution, the transaction is already rolled back
+        }
+        if (connection.isReadOnly() != oldReadOnly) {
+          // switch back to read-write if read-only was set by this script runner
+          connection.setReadOnly(false);
+        }
+      }
+      catch (SQLException sx) {
+        // this should not happen! We have no logger... Hmm...
+        scriptRunnerResults.add(new ScriptRunnerResult(ExceptionHelper.concatenateMessages(sx)));
+      }
     }
   }
 
+  @Override
+  public void cancel() {
+    canceled.set(true);
+    try {
+      Statement statement = statementRef.get();
+      if (statement != null && !statement.isClosed()) {
+        statement.cancel();
+      }
+    }
+    catch (SQLException sx) {
+      throw new BackendException("canceling script failed", sx);
+    }
+  }
+
+  @Override
+  public boolean isCanceled() {
+    return canceled.get();
+  }
+
+  @Override
+  public void addExecutionListener(Consumer<String> listener) {
+    executionListeners.add(listener);
+  }
+
+  @Override
+  public void addResultListener(Consumer<ScriptRunnerResult> listener) {
+    resultListeners.add(listener);
+  }
+
+  @Override
+  public void addResultSetListener(BiConsumer<String, ResultSet> listener) {
+    resultSetListeners.add(listener);
+  }
 
   /**
    * Determines the next SQL code to execute.
    *
    * @param script the SQL script
    * @param offset the offset where to start in the script to find the next statement
-   * @return the next SQL code to send to the database, null if end of script found
+   * @return the next SQL code to send to the database, null if the end of the script found
    */
   public SQLCode determineNextSqlCode(String script, int offset) {
 
@@ -200,13 +351,13 @@ public class DefaultScriptRunner implements ScriptRunner {
             String match = StringHelper.startsWithAnyOf(script, offset, backend.getSingleLineComments());
             if (match != null) {
               offset += match.length();
-              // skip to next line
+              // skip to the next line
               int ndx = script.indexOf('\n', offset);
               if (ndx >= offset) {
                 offset = ndx - 1;    // +1 will be added below
               }
               else {
-                break;    // end of script
+                break;    // end of the script
               }
             }
             else if ((match = StringHelper.startsWithAnyOf(script, offset, backend.getBlockCommentBegins())) != null) {
@@ -225,7 +376,7 @@ public class DefaultScriptRunner implements ScriptRunner {
       offset++;
     }
 
-    // if some "within..."s are still true at the end of the script,
+    // if some "within..." are still true at the end of the script,
     // just leave it up to the backend to deal with that and don't throw an exception.
 
     return sql.isEmpty() ? null : new SQLCode(sql.toString(), offset);
@@ -241,31 +392,77 @@ public class DefaultScriptRunner implements ScriptRunner {
     return backend.isPosixEscapeSyntaxSupported();
   }
 
-
-  private int extractResults(ResultSet resultSet, List<Object> resultList) throws SQLException {
-    ResultSetMetaData metaData = resultSet.getMetaData();
-    int columnCount = metaData.getColumnCount();
-    if (resultList.isEmpty()) {
-      for (int r=1; r <= columnCount; r++) {
-        resultList.add(metaData.getColumnName(r));
-      }
-    }
-    for (int r=1; r <= columnCount; r++) {
-      resultList.add(resultSet.getObject(r));
-    }
-    return columnCount;
+  /**
+   * Fires execution listeners.
+   *
+   * @param sql the SQL statement
+   */
+  protected void fireExecutionListeners(String sql) {
+    executionListeners.forEach(listener -> listener.accept(sql));
   }
 
-  private String getWarnings(SQLWarning warning) {
-    StringBuilder warnings = new StringBuilder();
-    while (warning != null) {
-      if (!warnings.isEmpty()) {
-        warnings.append('\n');
+  /**
+   * Fires result listeners.
+   *
+   * @param result the result
+   */
+  protected void fireResultListeners(ScriptRunnerResult result) {
+    resultListeners.forEach(listener -> listener.accept(result));
+  }
+
+  /**
+   * Fires result set listeners.
+   *
+   * @param sql the SQL statement
+   * @param resultSet the result set
+   */
+  protected void fireResultSetListeners(String sql, ResultSet resultSet) {
+    resultSetListeners.forEach(listener -> listener.accept(sql, resultSet));
+  }
+
+  /**
+   * Creates the statement.
+   *
+   * @param connection the connection to use for creating the statement
+   * @return the statement
+   * @throws SQLException if some backend error
+   */
+  protected Statement createStatement(Connection connection) throws SQLException {
+    return resultSetListeners.isEmpty() ?
+             connection.createStatement() :
+             connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+  }
+
+
+  private record Results(int columnCount, int[] columnTypes, String[] columnNames, List<Object> data) { }
+
+  private Results extractResults(ResultSet resultSet, StringBuilder warnings) throws SQLException {
+    List<Object> data = new ArrayList<>();
+    ResultSetMetaData metaData = resultSet.getMetaData();
+    int columnCount = metaData.getColumnCount();
+    int[] columnTypes = new int[columnCount];
+    String[] columnNames = new String[columnCount];
+    for (int columnIndex = 1; columnIndex <= columnCount; columnIndex++) {
+      columnTypes[columnIndex - 1] = metaData.getColumnType(columnIndex);
+      columnNames[columnIndex - 1] = metaData.getColumnName(columnIndex);
+    }
+    while (resultSet.next()) {
+      for (int columnIndex = 1; columnIndex <= columnCount; columnIndex++) {
+        data.add(resultSet.getObject(columnIndex));
       }
-      warnings.append(warning.getMessage());
+      extractWarnings(resultSet.getWarnings(), warnings);
+    }
+    return new Results(columnCount, columnTypes, columnNames, data);
+  }
+
+  private void extractWarnings(SQLWarning warning, StringBuilder buf) {
+    while (warning != null) {
+      if (!buf.isEmpty()) {
+        buf.append('\n');
+      }
+      buf.append(warning.getMessage());
       warning = warning.getNextWarning();
     }
-    return warnings.toString();
   }
 
 }

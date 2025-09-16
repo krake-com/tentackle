@@ -119,6 +119,10 @@ public class Date extends java.sql.Date implements Freezable {
     frozen = true;
   }
 
+  @Override
+  public boolean isFrozen() {
+    return frozen;
+  }
 
   /**
    * {@inheritDoc}

@@ -29,6 +29,7 @@ import org.tentackle.pdo.testng.AbstractPdoTest;
 import java.util.List;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.fail;
 
 /**
  * Physically runs a script against the test backend.
@@ -49,8 +50,8 @@ public class SqlScriptTest extends AbstractPdoTest {
       CREATE INDEX blah_name ON blah (name);
       
       INSERT INTO blah(name, id) VALUES('doedel1', 1);
-      INSERT INTO blah(name, id) VALUES('didoedel2', 2);
-      INSERT INTO blah(name, id) VALUES('didoedeldu3', 3);
+      INSERT INTO blah(name, id) VALUES('didoedel2', 20);
+      INSERT INTO blah(name, id) VALUES('didoedeldu3', 300);
       
       SELECT * FROM blah ORDER BY id;
       UPDATE blah SET id=id+1000;
@@ -70,25 +71,28 @@ public class SqlScriptTest extends AbstractPdoTest {
       COMMENT ON COLUMN blah.id IS 'object id' -> 0
       CREATE INDEX blah_name ON blah (name) -> 0
       INSERT INTO blah(name, id) VALUES('doedel1', 1) -> 1
-      INSERT INTO blah(name, id) VALUES('didoedel2', 2) -> 1
-      INSERT INTO blah(name, id) VALUES('didoedeldu3', 3) -> 1
+      INSERT INTO blah(name, id) VALUES('didoedel2', 20) -> 1
+      INSERT INTO blah(name, id) VALUES('didoedeldu3', 300) -> 1
       SELECT * FROM blah ORDER BY id ->
-       name        id
-       doedel1     1\s
-       didoedel2   2\s
-       didoedeldu3 3\s
+      name        id\s
+      doedel1       1
+      didoedel2    20
+      didoedeldu3 300
       UPDATE blah SET id=id+1000 -> 3
       DELETE FROM blah WHERE id > 1001 -> 2
       DROP TABLE blah -> 0
       """;
 
 
+  public SqlScriptTest() {
+    super(TransactionType.METHOD);
+  }
 
   @Test(groups = "local")
   public void runScript() {
     if (getSession() instanceof Db db) {
       try (StatementWrapper statement = db.createStatement()) {
-        // in case test failed in the middle before
+        // in case the test failed in the middle before
         statement.executeUpdate("DROP TABLE IF EXISTS blah");
       }
       List<ScriptRunnerResult> results = db.runScript("sqlScriptTest", SCRIPT);
@@ -103,6 +107,54 @@ public class SqlScriptTest extends AbstractPdoTest {
     }
     else {
       throw new SkipException("session is not a Db instance");    // ... for whatever reason
+    }
+  }
+
+  @Test(groups = "local")
+  public void testTimeout() {
+    if (getSession() instanceof Db db) {
+      ScriptRunner scriptRunner = db.getBackend().createScriptRunner(db.connection().getConnection());
+      scriptRunner.setExecutionTimeout(2);
+      scriptRunner.setTransactional(true);  // ignored (due to TransactionType.METHOD)
+      scriptRunner.setReadOnly(false);      // ignored (true would throw an exception since a tx is already running)
+      try {
+        scriptRunner.addExecutionListener(s -> assertEquals(s, "SELECT PG_SLEEP(10)"));
+        scriptRunner.addResultListener(r -> fail("should not reach here: " + r));
+        scriptRunner.run("-- just a comment\nSELECT PG_SLEEP(10);");
+      }
+      catch (ScriptRunnerException ex) {
+        List<ScriptRunnerResult> results = ex.getResults();
+        assertEquals(results.size(), 0);
+        assertEquals(ex.getMessage(), """
+          script execution failed at line 2: SELECT PG_SLEEP(10) ...
+          ERROR: canceling statement due to user request""");
+      }
+    }
+  }
+
+  @Test(groups = "local")
+  public void testCancel() {
+    if (getSession() instanceof Db db) {
+      ScriptRunner scriptRunner = db.getBackend().createScriptRunner(db.connection().getConnection());
+      try {
+        new Thread(() -> {
+          try {
+            Thread.sleep(2000);
+            scriptRunner.cancel();
+          }
+          catch (InterruptedException e) {
+            throw new RuntimeException(e);
+          }
+        }).start();
+        scriptRunner.run("SELECT PG_SLEEP(10);");
+      }
+      catch (ScriptRunnerException ex) {
+        List<ScriptRunnerResult> results = ex.getResults();
+        assertEquals(results.size(), 0);
+        assertEquals(ex.getMessage(), """
+          script execution failed at line 1: SELECT PG_SLEEP(10) ...
+          ERROR: canceling statement due to user request""");
+      }
     }
   }
 

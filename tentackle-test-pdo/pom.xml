@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>21.16.4.0-SNAPSHOT</version>
+    <version>24.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>tentackle-test-pdo</artifactId>
@@ -94,6 +94,19 @@
     </testResources>
 
     <plugins>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <dependencies>
+          <!-- override auto detection of junit -->
+          <dependency>
+            <groupId>org.apache.maven.surefire</groupId>
+            <artifactId>surefire-testng</artifactId>
+            <version>${maven.surefire.plugin.version}</version>
+          </dependency>
+        </dependencies>
+      </plugin>
 
       <plugin>
         <groupId>org.tentackle</groupId>

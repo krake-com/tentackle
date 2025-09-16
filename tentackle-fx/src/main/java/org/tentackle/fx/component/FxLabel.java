@@ -98,10 +98,10 @@ public class FxLabel extends Label {
    */
   protected void configureContextMenu(ContextMenu contextMenu) {
     MenuItem copyItem = new MenuItem(FxFxBundle.getString("COPY TO CLIPBOARD"));
-    copyItem.setOnAction(event -> Fx.copyToClipboard(getText()));
+    copyItem.setOnAction(_ -> Fx.copyToClipboard(getText()));
     contextMenu.getItems().add(copyItem);
     MenuItem scratchItem = new MenuItem(FxFxBundle.getString("COPY TO SCRATCHPAD"));
-    scratchItem.setOnAction(event -> {
+    scratchItem.setOnAction(_ -> {
       Popup popup = FxFactory.getInstance().createNotificationPopup();
       Parent notification = FxFactory.getInstance().createNotificationBuilder()
                                      .content(new TextArea(getText()))

@@ -26,6 +26,7 @@ import org.tentackle.pdo.TokenLockInfo;
 import org.tentackle.persist.AbstractPersistentObject;
 
 import java.rmi.RemoteException;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -46,7 +47,11 @@ public interface AbstractPersistentObjectRemoteDelegate<T extends PersistentDoma
 
   T select(DomainContext cb, long id, boolean forUpdate, boolean tokenLocked) throws RemoteException;
 
+  T selectTokenLocked(DomainContext cb, long id) throws RemoteException;
+
   List<T> selectAll(DomainContext cb) throws RemoteException;
+
+  List<T> selectAny(DomainContext cb, Collection<Long> ids) throws RemoteException;
 
   RemoteResultSetCursor<T> selectAllAsCursor(DomainContext cb) throws RemoteException;
 
@@ -58,9 +63,13 @@ public interface AbstractPersistentObjectRemoteDelegate<T extends PersistentDoma
 
   List<T> selectAllForCache(DomainContext cb) throws RemoteException;
 
+  List<T> selectAnyForCache(DomainContext cb, Collection<Long> ids) throws RemoteException;
+
   T selectForCache(DomainContext cb, long id) throws RemoteException;
 
   List<T> selectAllWithExpiredTableSerials(DomainContext cb, long oldSerial) throws RemoteException;
+
+  List<T> selectAllWithExpiredTableSerials(DomainContext cb, long oldSerial, long maxSerial) throws RemoteException;
 
   boolean isReferenced(DomainContext cb, long id) throws RemoteException;
 

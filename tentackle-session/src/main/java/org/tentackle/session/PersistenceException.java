@@ -37,7 +37,7 @@ public class PersistenceException extends TentackleRuntimeException {
 
   /**
    * Creates a RuntimeException from a {@link RemoteException}.<br>
-   * Returns the first RuntimeException in chain.
+   * Returns the first RuntimeException in the chain.
    * If the first non-RemoteException is not a RuntimeException, the exception
    * is wrapped by a PersistenceException.
    *
@@ -129,7 +129,7 @@ public class PersistenceException extends TentackleRuntimeException {
    * Constructs a new database runtime exception for a given identifiable
    * with <code>null</code> as its detail message.
    *
-   * @param identifiable the identifiable object
+   * @param identifiable an identifiable object
    */
   public PersistenceException(Identifiable identifiable) {
     super();
@@ -225,7 +225,7 @@ public class PersistenceException extends TentackleRuntimeException {
   /**
    * Gets the persistent object.
    *
-   * @return the object, null if exception is not related to an object
+   * @return the object, null if the exception is not related to an object
    */
   public Identifiable getIdentifiable() {
     return identifiable;
@@ -237,6 +237,19 @@ public class PersistenceException extends TentackleRuntimeException {
       lazyMessage = SessionUtilities.getInstance().createLazyExceptionMessage(super.getMessage(), getCause(), getIdentifiable(), getSession()).toString();
     }
     return lazyMessage;
+  }
+
+  /**
+   * Evaluates the message for {@link #getMessage()}.<br>
+   * Used to evaluate the message text within transactions if the logging
+   * happens later when the transaction is already rolled back or
+   * the exception is logged at the remote side.
+   *
+   * @return this exception
+   */
+  public PersistenceException evaluate() {
+    getMessage();
+    return this;
   }
 
   /**

@@ -167,18 +167,18 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
   @FXML
   private void initialize() {
     pdoView = Fx.load(PdoView.class);
-    pdoView.addSelectedItemListener((obs, old, newValue) -> updateRowDetails(newValue == null ? null : newValue.getValue()));
+    pdoView.addSelectedItemListener((_, _, newValue) -> updateRowDetails(newValue == null ? null : newValue.getValue()));
     innerSplitPane.getItems().add(pdoView.getView());
     rowDetailsTable = Fx.create(TableView.class);
     MenuItem copyFQCNItem = Fx.create(MenuItem.class);
-    copyFQCNItem.setOnAction(e -> PdoBrowserUtils.copyFQCN(getSelectedDetailDataNode()));
+    copyFQCNItem.setOnAction(_ -> PdoBrowserUtils.copyFQCN(getSelectedDetailDataNode()));
     MenuItem copyTableItem = Fx.create(MenuItem.class);
-    copyTableItem.setOnAction(e -> PdoBrowserUtils.copyTableName(getSelectedDetailDataNode()));
+    copyTableItem.setOnAction(_ -> PdoBrowserUtils.copyTableName(getSelectedDetailDataNode()));
     MenuItem copyClassIdItem = Fx.create(MenuItem.class);
-    copyClassIdItem.setOnAction(e -> PdoBrowserUtils.copyClassId(getSelectedDetailDataNode()));
-    MenuItem copySqlItem = PdoBrowserUtils.createCopySqlItem(e -> PdoBrowserUtils.copySql(getSelectedDetailDataNode()));
+    copyClassIdItem.setOnAction(_ -> PdoBrowserUtils.copyClassId(getSelectedDetailDataNode()));
+    MenuItem copySqlItem = PdoBrowserUtils.createCopySqlItem(_ -> PdoBrowserUtils.copySql(getSelectedDetailDataNode()));
     MenuItem genCodeItem = Fx.create(MenuItem.class);
-    genCodeItem.setOnAction(e -> {
+    genCodeItem.setOnAction(_ -> {
       DataNode node = getSelectedDetailDataNode();
       if (node instanceof DataObject dataObj) {
         // no fine control, but useful to quickly create referenced master data
@@ -187,13 +187,13 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     });
     genCodeItem.setText("copy Java code to clipboard");
     ContextMenu rowDetailsContextMenu = new ContextMenu(copyFQCNItem, copyTableItem, copyClassIdItem, copySqlItem, genCodeItem);
-    rowDetailsContextMenu.addEventHandler(WindowEvent.WINDOW_SHOWING, e -> {
+    rowDetailsContextMenu.addEventHandler(WindowEvent.WINDOW_SHOWING, _ -> {
       genCodeItem.setVisible(getSelectedDetailDataNode() instanceof DataObject);
       PdoBrowserUtils.configureContextMenu(getSelectedDetailDataNode(), copyFQCNItem,
                                            copyTableItem, copyClassIdItem, copySqlItem);
     });
     rowDetailsTable.getSelectionModel().selectedItemProperty().addListener(
-      (obs, old, current) ->
+      (_, _, current) ->
         rowDetailsTable.setContextMenu(current == null ? null : rowDetailsContextMenu));
     outerSplitPane.getItems().add(rowDetailsTable);
 
@@ -209,15 +209,15 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
 
     loadButton.setGraphic(Fx.createGraphic("reload"));
     loadButton.setDisable(true);
-    loadButton.setOnAction(e -> run());
+    loadButton.setOnAction(_ -> run());
     byIdButton.setGraphic(Fx.createGraphic("id"));
     byIdButton.setDisable(true);
-    byIdButton.setOnAction(e -> loadById());
+    byIdButton.setOnAction(_ -> loadById());
     finderButton.setGraphic(Fx.createGraphic("search"));
     finderButton.setDisable(true);
     memorizeButton.setGraphic(Fx.createGraphic("copy"));
     memorizeButton.setDisable(true);
-    memorizeButton.selectedProperty().addListener((obs, old, newValue) -> {
+    memorizeButton.selectedProperty().addListener((_, _, newValue) -> {
       if (newValue) {
         if (dataObject != null) {
           memorizedDataObject = dataObject;
@@ -232,13 +232,13 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
       showDiff();
     });
     configCodeButton.setGraphic(Fx.createGraphic("preferences"));
-    configCodeButton.setOnAction(e -> JavaCodeFactorySettings.show(getView()));
+    configCodeButton.setOnAction(_ -> JavaCodeFactorySettings.show(getView()));
     configPathsButton.setGraphic(Fx.createGraphic("tree"));
-    configPathsButton.setOnAction(e -> editCodePaths());
+    configPathsButton.setOnAction(_ -> editCodePaths());
     configPathsButton.setDisable(true);
     generateButton.setGraphic(Fx.createGraphic("generate"));
     generateButton.setDisable(true);
-    generateButton.setOnAction(e -> generateCode());
+    generateButton.setOnAction(_ -> generateCode());
     closeButton.setGraphic(Fx.createGraphic("close"));
     closeButton.setOnAction(this::close);
 
@@ -281,7 +281,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
     pdosContextMenu.getItems().addFirst(Fx.create(SeparatorMenuItem.class));
     MenuItem reloadPdoItem = Fx.create(MenuItem.class);
     reloadPdoItem.setText("reload");
-    reloadPdoItem.setOnAction(e -> reloadPdos());
+    reloadPdoItem.setOnAction(_ -> reloadPdos());
     pdosContextMenu.getItems().addFirst(reloadPdoItem);
   }
 
@@ -452,7 +452,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
       GuiProvider<?> guiProvider = getGuiProvider(proxy);
       if (guiProvider != null && guiProvider.isFinderAvailable()) {
         finderButton.setDisable(false);
-        finderButton.setOnAction(e -> {
+        finderButton.setOnAction(_ -> {
           finder = guiProvider.createFinder();
           finder.setPdo(proxy);
           Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
@@ -466,7 +466,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
           FxButton cancelButton = Fx.create(Button.class);
           cancelButton.setText("cancel");
           cancelButton.setGraphic(Fx.createGraphic("cancel"));
-          cancelButton.setOnAction(e1 -> {
+          cancelButton.setOnAction(_ -> {
             stage.close();
             finder = null;
             run();
@@ -474,7 +474,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
           FxButton findButton = Fx.create(Button.class);
           findButton.setText("find");
           findButton.setGraphic(Fx.createGraphic("search"));
-          findButton.setOnAction(e2 -> {
+          findButton.setOnAction(_ -> {
             pdos = finder.runSearch().stream().map(pdo -> new PdoWrapper((PersistentDomainObject<?>) pdo)).toList();
             pdosTableView.updateView();
             stage.close();
@@ -574,7 +574,7 @@ public class PdoBrowser extends AbstractFxController implements DomainContextPro
         CheckBox checkBox = Fx.create(CheckBox.class);
         checkBox.setText(entry.getKey());
         checkBox.setSelected(entry.getValue());
-        checkBox.setOnAction(e -> entry.setValue(checkBox.isSelected()));
+        checkBox.setOnAction(_ -> entry.setValue(checkBox.isSelected()));
         vBox.getChildren().add(checkBox);
       }
       scrollPane.setContent(vBox);

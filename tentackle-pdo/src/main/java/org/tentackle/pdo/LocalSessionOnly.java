@@ -16,30 +16,26 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.dbms;
+package org.tentackle.pdo;
 
-import java.io.Serializable;
+import org.tentackle.reflect.Interception;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * A Runnable that gets invoked before a physical commit.<br>
- * The commit runnable is {@link Serializable} and transferred to
- * the server, if registered at a remote client.
+ * Annotation to express that the annotated method must be executed with a local session only.
  * <p>
- * This is a low-level feature accessible from the persistence layer only,
- * which will probably be removed with the release of Tentackle TRIP.<br>
- * Application-level domain-logic should use pre-commits instead.
- *
- * @see Db#registerCommitTxRunnable(CommitTxRunnable)
- * @see org.tentackle.session.Session#preCommit(java.util.function.Consumer)
+ * There is no {@code RemoteSessionOnly} annotation, because remote method invocations always
+ * end up in a local session.
  */
-@FunctionalInterface
-public interface CommitTxRunnable extends Serializable {
-
-  /**
-   * Performs any processing necessary before commit.
-   *
-   * @param db the session
-   */
-  void commit(Db db);
+@Documented
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+@Interception(implementedBy=LocalSessionOnlyInterceptor.class)
+public @interface LocalSessionOnly {
 
 }

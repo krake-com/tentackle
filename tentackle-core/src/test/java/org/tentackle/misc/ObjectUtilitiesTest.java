@@ -33,7 +33,6 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Currency;
 import java.util.TimeZone;
 
 import static org.testng.Assert.assertEquals;
@@ -51,7 +50,7 @@ public class ObjectUtilitiesTest {
   @Test
   public void testConverters() {
 
-    int moneyScale = Currency.getInstance(LocaleProvider.getInstance().getLocale()).getDefaultFractionDigits();
+    int moneyScale = LocaleProvider.getInstance().getCurrency().getDefaultFractionDigits();
 
     assertEquals(ObjectUtilities.getInstance().convert(String.class, this), MAGIC_WORD);
     assertEquals(ObjectUtilities.getInstance().convert(Character.TYPE, MAGIC_WORD), (Character) MAGIC_WORD.charAt(0));

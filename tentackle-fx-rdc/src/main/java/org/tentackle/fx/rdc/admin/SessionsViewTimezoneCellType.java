@@ -56,7 +56,7 @@ public class SessionsViewTimezoneCellType extends AbstractTableCellType<String> 
 
   private Tooltip createTooltip(FxTableCell<?, String> tableCell) {
     Tooltip tooltip = new Tooltip();
-    tooltip.setOnShowing(e -> {
+    tooltip.setOnShowing(_ -> {
       String tzText = tableCell.getItem();
       if (tzText != null) {
         int ndx = tzText.indexOf(" (");

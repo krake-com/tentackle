@@ -83,6 +83,10 @@ public class Binary<T extends Serializable> implements Serializable, Cloneable, 
     frozen = true;
   }
 
+  @Override
+  public boolean isFrozen() {
+    return frozen;
+  }
 
   /**
    * {@inheritDoc}

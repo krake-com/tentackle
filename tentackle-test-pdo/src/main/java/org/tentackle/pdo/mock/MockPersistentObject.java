@@ -38,6 +38,7 @@ import org.tentackle.session.Session;
 import org.tentackle.validate.ValidationScope;
 
 import java.io.Serial;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -286,7 +287,7 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
   }
 
   @Override
-  public List<IdSerialTuple> getExpiredTableSerials(long oldSerial, long maxSerial) {
+  public Collection<IdSerialTuple> getExpiredTableSerials(long oldSerial, long maxSerial) {
     throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
@@ -392,18 +393,28 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
   }
 
   @Override
+  public List<T> selectAny(Collection<Long> ids) {
+    throw new UnsupportedOperationException(UNSUPPORTED);
+  }
+
+  @Override
+  public List<T> selectAnyCached(Collection<Long> ids) {
+    return selectAny(ids);
+  }
+
+  @Override
   public List<T> selectLatest(long greaterId, int limit) {
     throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public T selectCached(long id) {
-    throw new UnsupportedOperationException(UNSUPPORTED);
+    return select(id);
   }
 
   @Override
   public List<T> selectAllCached() {
-    throw new UnsupportedOperationException(UNSUPPORTED);
+    return selectAll();
   }
 
   @Override
@@ -617,6 +628,11 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
   }
 
   @Override
+  public List<T> selectAnyForCache(Collection<Long> ids) {
+    return selectAny(ids);
+  }
+
+  @Override
   public T selectCachedOnly(long id) {
     throw new UnsupportedOperationException(UNSUPPORTED);
   }
@@ -776,6 +792,11 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
 
   @Override
   public List<T> selectAllWithExpiredTableSerials(long oldSerial) {
+    throw new UnsupportedOperationException(UNSUPPORTED);
+  }
+
+  @Override
+  public List<T> selectAllWithExpiredTableSerials(long oldSerial, long maxSerial) {
     throw new UnsupportedOperationException(UNSUPPORTED);
   }
 

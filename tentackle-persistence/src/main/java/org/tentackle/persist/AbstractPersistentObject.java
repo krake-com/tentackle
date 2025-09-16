@@ -87,6 +87,7 @@ import java.util.function.Supplier;
 
 import static org.tentackle.sql.Backend.SQL_ALLSTAR;
 import static org.tentackle.sql.Backend.SQL_AND;
+import static org.tentackle.sql.Backend.SQL_ARRAY_ANY;
 import static org.tentackle.sql.Backend.SQL_COMMA;
 import static org.tentackle.sql.Backend.SQL_EQUAL;
 import static org.tentackle.sql.Backend.SQL_EQUAL_PAR;
@@ -124,7 +125,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   private static final long serialVersionUID = 1L;
 
   private transient boolean contextImmutable;     // true if domain context cannot be changed anymore
-  private T pdo;                                  // the pdo instance this is a delegate for
+  private T pdo;                                  // the pdo this is a delegate for
   private boolean persistable = true;             // true if persistable (default)
 
   private long editedBy;                          // if != 0 : holds the userId of token holder
@@ -132,14 +133,14 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   private Timestamp editedExpiry;                 // time when token expires
 
   /**
-   * all persistent objects have a "NormText", i.e. a phonetically normalized text which can be searched
+   * all persistent objects have a "NormText", i.e., a phonetically normalized text which can be searched
    * made protected here, so all subclasses can directly access it.
    */
   private String normText;
 
   /**
    * Optional id of the root entity.<br>
-   * Improves performance in selects in composite entities.
+   * Improves the performance of SQL-selects in composite entities.
    */
   private long rootId;
 
@@ -158,9 +159,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   private String columnPrefix;                        // prefix for embedded columns
 
   // for PdoCache
-  private transient long cacheAccessCount;        // access counter (if caching strategy is MOU)
-  private transient long cacheAccessTime;         // last access time (if caching strategy is LRU)
-  private transient boolean expired;              // true = object is expired in all caches it belongs to
+  private transient long cacheAccessCount;        // access counter (if the caching strategy is LFU)
+  private transient long cacheAccessTime;         // last access time (if the caching strategy is LRU)
+  private transient boolean expired;              // true = the object is expired in all caches it belongs to
 
   // snapshot
   private transient List<WeakReference<T>> snapshots;   // taken snapshots, null if none
@@ -215,6 +216,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   public static final String TX_UPDATE_TOKENLOCK        = "update lock";
   /** update tokenlock only **/
   public static final String TX_UPDATE_TOKENLOCK_ONLY   = "update lock only";
+  /** select tokenlocked **/
+  public static final String TX_SELECT_TOKENLOCKED      = "select locked";
 
 
 
@@ -356,7 +359,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Updates the components in snapshot object.<br>
+   * Updates the components in the snapshot object.<br>
    * The snapshot object is assumed to be a clone of this object.
    * <p>
    * There is no createAttributesInSnapshot, since the snapshot is cloned and all attributes are either immutable or frozen.
@@ -370,7 +373,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Reverts the state of this object to given snapshot.
+   * Reverts the state of this object to the given snapshot.
    * <p>
    * The method must be implemented.
    * The default implementation just throws PersistenceException.
@@ -390,7 +393,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Creates a deep copy of this PDO.<br>
    * The copied PDO and its components, if any, are <em>new</em> (<code>id=0</code>).
    * <p>
-   * Since only loaded components are copied (i.e. the object <em>as is</em>, which
+   * Since only loaded components are copied (i.e., the object <em>as is</em>, which
    * is the contract for {@link org.tentackle.misc.Snapshotable}),
    * consider to invoke {@link #loadComponents(boolean)} before {@code copy()}
    * to get a logically complete copy of the aggregate.
@@ -402,17 +405,17 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   public T copy() {
     T copiedPdo = on();
     AbstractPersistentObject copiedPo = (P) copiedPdo.getPersistenceDelegate();
-    DomainContext ctx = copiedPo.getDomainContext();    // may be another root-context
+    DomainContext ctx = copiedPo.getDomainContext();    // could be another root-context
     copiedPo.objectIsCopy = true;                       // controls how the snapshot is applied!
     copiedPo.applySnapshot(pdo.createSnapshot());
     copiedPo.setModified(true);
-    copiedPo.setDomainContext(ctx);                     // restore root context, if reverted from snapshot
+    copiedPo.setDomainContext(ctx);                     // restore the root context if reverted from the snapshot
     return copiedPdo;
   }
 
 
   /**
-   * Applies given snapshot.
+   * Applies the given snapshot.
    *
    * @param snapshot the snapshot to apply
    */
@@ -435,7 +438,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   @SuppressWarnings({ "unchecked", "rawtypes" })
   protected void revertAttributesToSnapshot(AbstractPersistentObject snapshot) {
-    // Important: no snapshot<T,P> cause of inheritance problems
+    // Important: no "snapshot<T, P>" cause of inheritance problems
     super.revertAttributesToSnapshot(snapshot);
 
     contextImmutable = snapshot.contextImmutable;
@@ -458,7 +461,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   @SuppressWarnings("rawtypes")
   protected void revertComponentsToSnapshot(AbstractPersistentObject snapshot) {
-    // Important: no snapshot<T,P> cause of inheritance problems
+    // Important: no "snapshot<T, P>" cause of inheritance problems
     // default implementation does nothing
   }
 
@@ -532,7 +535,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Asserts that given snapshot is valid for this object.
+   * Asserts that the given snapshot is valid for this object.
    *
    * @param snapshot the snapshot
    */
@@ -763,7 +766,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
   /**
-   * Presets the attributes with initial values, if the PDO is persisted the first time.<br>
+   * Presets the attributes with initial values if the PDO is persisted the first time.<br>
    * The method is invoked <em>before</em> the PDO is validated.
    */
   protected void presetVirgin() {
@@ -898,7 +901,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       Objects.requireNonNull(context, "context");
       assertDomainContextMutable();
       if (isRootEntity()) {
-        // if this is a root entity: replace with root context
+        // if this is a root entity: replace holder with root context
         setSessionHolder(context.getRootContext(pdo));
       }
       else  {
@@ -983,7 +986,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Gets the application oriented class variables for this object.<br>
+   * Gets the application-oriented class variables for this object.<br>
    * Class variables for classes derived from AbstractPersistentObject are kept in an
    * instance of {@link PersistentObjectClassVariables}.<p>
    *
@@ -1018,7 +1021,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Gets the table alias.
    *
-   * @return the alias, null if class does not map to a database table
+   * @return the alias, null if the class does not map to a database table
    */
   public String getTableAlias () {
     return getClassVariables().getTableAlias();
@@ -1135,12 +1138,12 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
   /**
-   * Tells whether this object is composite (i.e. has composite relations).<br>
+   * Tells whether this object is composite (i.e., has composite relations).<br>
    * The method is overridden by the PdoRelations-wurblet if at least one
    * relation is flagged as "composite".
    * The default implementation returns false.
    *
-   * @return true if object is composite, false if not.
+   * @return true if the object is a composite, false if not
    */
   @Override
   public boolean isComposite() {
@@ -1152,18 +1155,18 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * {@inheritDoc}
    * <p>
-   * By default the method throws a PersistenceException telling that it is not implemented
+   * By default, the method throws a PersistenceException telling that it is not implemented
    * if isComposite() returns true.
    *
    * @param onlyLoaded true if return only already loaded components (lazy composite relations)
-   * @return the map of all components, including this object.
+   * @return the map of all components, including this object
    */
   @Override
   public IdentifiableMap<? extends PersistentDomainObject<?>> loadComponents(boolean onlyLoaded) {
     if (isComposite()) {
       throw new PersistenceException("method not implemented");
     }
-    // else: this is not a composite (or an embedded object) -> just return me
+    // else: this is not a composite (or an embedded object) -> return me
     return new IdentifiableMap<>(this.getPdo());
   }
 
@@ -1328,7 +1331,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * The method is usually used by the presentation layer
    * to check for duplicates.
    * The default implementation invokes findByUniqueDomainKey(getUniqueDomainKey())
-   * and throws {@link UnsupportedOperationException} if one of those methods are not implemented
+   * and throws {@link UnsupportedOperationException} if one of those methods is not implemented
    * (which is the default).
    *
    * @return the duplicate object, null if no duplicate
@@ -1348,10 +1351,11 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Determines whether object is cacheable or not.
+   * Determines whether the object is cacheable or not.<br>
    * The default implementation always returns true, but apps
    * can use this as a filter.
-   * @return true if object is cacheable
+   *
+   * @return true if the object is cacheable
    */
   @Override
   public boolean isCacheable()  {
@@ -1360,10 +1364,11 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Checks whether object has been marked expired.
-   * Expired objects will be reloaded from the database by
-   * the cache when the object is retrieved again.
-   * @return true if object is expired (in cache)
+   * Checks whether the object has been marked expired.<br>
+   * When an expired object is retrieved from the cache,
+   * it is reloaded from the database.
+   *
+   * @return true if the object is expired in cache
    */
   @Override
   public boolean isExpired() {
@@ -1372,7 +1377,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
   /**
    * Sets this object's expiration flag.
-   * @param expired true if object is expired
+   *
+   * @param expired true if the object is expired
    */
   @Override
   public void setExpired(boolean expired) {
@@ -1381,6 +1387,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
   /**
    * Gets the last cache access time.
+   *
    * @return the last cache access time
    */
   @Override
@@ -1399,7 +1406,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
   /**
-   * mark cache access (count and set current system-time)
+   * Mark cache access (count and set current system-time).
    */
   @Override
   public void markCacheAccess() {
@@ -1409,7 +1416,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
   /**
-   * @return true if object is cached
+   * Returns whether the object is located in a cache.
+   *
+   * @return true if the object is cached
    */
   @Override
   public boolean isCached() {
@@ -1716,7 +1725,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
   /**
-   * Reads the next row from a result set within a joined select.<br>
+   * Reads the next row from a result set within a "joined select".<br>
    * The results may come in any order. Thus, it is possible to sort the results
    * according to the domain's requirements.
    *
@@ -1728,7 +1737,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
   /**
-   * Reads the next row from a result set within a joined select.<br>
+   * Reads the next row from a result set within a "joined select".<br>
    * The results may come in any order. Thus, it is possible to sort the results
    * according to the domain's requirements.
    *
@@ -1748,7 +1757,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       nextPdo = derivePdoFromPo(nextPdo, nextPo, lastCheckedRoot);
       T knownPdo = js.nextPdo(nextPdo);
       if (knownPdo != nextPdo) {
-        // already in list
+        // already in the list
         nextPdo = knownPdo;
         nextPo = (P) nextPdo.getPersistenceDelegate();
       }
@@ -1757,7 +1766,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       // stay within same PDO
       nextPdo = js.currentPdo();
     }
-    // skip to first join
+    // skip to the first join
     rs.skip(nextPo.getColumnCount());
 
     for (Join<? super T,?> join: js.getJoins()) {
@@ -1771,7 +1780,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     AbstractPersistentObject joinedPo = (AbstractPersistentObject) joinedPdo.getPersistenceDelegate();
 
     if (rs.getObject(rs.findColumn(CN_ID)) != null) {
-      // only if not all columns null.
+      // Only if not all columns null.
       // This is the case if ID is null (which is not nullable)
       // -> this one is valid:
       joinedPo = joinedPo.readFromResultSetWrapper(rs);
@@ -1781,7 +1790,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       }
     }
 
-    // skip to next join
+    // skip to the next join
     int columnCount = joinedPo != null ? joinedPo.getColumnCount() : 0;
     if (join.isExplicitIdAliasRequired()) {
       columnCount++;
@@ -1813,7 +1822,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
         }
       }
       else  {
-        // joined: until end of resultset or first PDO completed
+        // joined: until the end of resultset or first PDO completed
         js.initialize(null);
         while (pDo == null && rs.next()) {
           readJoinedRow(rs, js);
@@ -1840,6 +1849,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
   /**
    * Loads a PDO from the database by its unique ID.<br>
+   * A {@link PersistenceException} is thrown if {@code forUpdate} or {@code tokenLocked} is true
+   * and there is no transaction running.
    *
    * @param id is the object id
    * @param forUpdate true if select FOR UPDATE
@@ -1861,14 +1872,12 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
         }
       }
       else {
-        StatementId stmtId;
-        if (forUpdate) {
+        if (forUpdate || tokenLocked) {
           getSession().assertTxRunning();
-          stmtId = getClassVariables().selectForUpdateStatementId;
         }
-        else {
-          stmtId = getClassVariables().selectObjectStatementId;
-        }
+        StatementId stmtId = forUpdate ?
+                               getClassVariables().selectForUpdateStatementId :
+                               getClassVariables().selectObjectStatementId;
         JoinedSelect<T> js = getEagerJoinedSelect();
         PreparedStatementWrapper st = getPreparedStatement(stmtId,
                 b -> {
@@ -1906,7 +1915,35 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
   @Override
   public T selectTokenLocked(long id) {
-    return select(id, false, true);
+    Db db = getSession();
+    if (db.isRemote()) {
+      try {
+        DomainContext context = getDomainContext();
+        T obj = getRemoteDelegate().selectTokenLocked(context, id);
+        configureRemoteObject(context, obj);
+        return obj;
+      }
+      catch (RemoteException e) {
+        RuntimeException rex = PersistenceException.createFromRemoteException(this, e);
+        if (rex instanceof LockException lx) {
+          applyTokenLockInfo(lx.getTokenLockInfo());
+        }
+        throw rex;
+      }
+    }
+
+    long txVoucher = db.begin(TX_SELECT_TOKENLOCKED);
+    try {
+      return select(id, false, true);
+    }
+    catch (PersistenceException px) {
+      db.rollback(txVoucher, !px.isTemporary());
+      throw px;
+    }
+    catch (RuntimeException rx) {
+      db.rollback(txVoucher);
+      throw new PersistenceException(this, rx);
+    }
   }
 
   @Override
@@ -1922,7 +1959,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       DomainContext clonedContext = getDomainContext().getClonedContext();
       if (clonedContext != null &&
           clonedContext.isRootContext() && clonedContext.getRootClassId() == getClassId()) {
-        // was cloned from a valid root-entity of same class
+        // was cloned from a valid root-entity of the same class
         reloadId = clonedContext.getRootId();   // take that id for reload operation
         // shorthand for: invoice.on("anotherContext").select(invoice.getId())
         // this behaviour also avoids programming errors, since the developer would
@@ -1987,7 +2024,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Just a holder for the object- and class-ID of the last successfully security-checked root entity.
    * Used in list queries of components that don't belong to the current root context. In such cases,
-   * the security manager will be asked only once, if the components all belong to the same root (which
+   * the security manager will be asked only once if the components all belong to the same root (which
    * is often the case).
    */
   private static class RootInfo {
@@ -2028,13 +2065,13 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       if (!po.isReadAllowed()) {
         return null;
       }
-      // special case for PDOs being programmatically either root entity or component.
+      // The special case for PDOs being programmatically either root entity or component.
       // Those PDOs must be modeled like a normal component, but with [root] in the global options,
       // with \@wurblet MethodsImpl --noisroot option and the isRootEntity() method overridden to return
-      // true or false according to the domain logic.
+      // true or false, according to the domain logic.
       // The component will then point to the logical parent, either as a component or just a non-composite relation.
       //
-      // If loaded from within such a root-entity context, make it immutable, since it's loaded like a component,
+      // If loaded from within such a root-entity context, make it immutable, since it's loaded like a component
       // but must not be updated and therefore not modified!
       if (po.getRootId() != 0 && po.getRootClassId() != 0 &&              // related to some other entity
           po.getRootId() == context.getRootId() && po.getRootClassId() == context.getRootClassId()) {
@@ -2048,7 +2085,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       int poRootClassId = po.getRootClassId();
       if (poRootId != 0 && poRootId != context.getRootId() ||
           poRootClassId != 0 && poRootClassId != context.getRootClassId()) {
-        // component not loaded from within its root entity context: make it immutable to
+        // the component is not loaded from within its root entity context: make it immutable to
         // prevent modifying the wrong object within the RE's component tree
         po.setFinallyImmutable();
         // explicitly check the root-entity's security rules (if any)
@@ -2066,7 +2103,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
               }
             }
             else {
-              // no permission for root-entity -> component does not exist as the root doesn't for this user as well
+              // no permission for the root-entity!
+              // -> the component does not exist as the root doesn't for this user as well
               return null;
             }
           }
@@ -2137,7 +2175,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
   /**
-   * Creates the inner sql text to select the ID field.
+   * Creates the inner SQL text to select the ID field.
    * <p>
    * Returns something like:
    * <pre>
@@ -2166,7 +2204,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Creates the inner sql text to select the ID field.
+   * Creates the inner SQL text to select the ID field.
    * <p>
    * Returns something like:
    * <pre>
@@ -2190,7 +2228,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    *
    * @param backend the backend
    * @param not true to find all not matching the normtext
-   * @return the sql code
+   * @return the SQL code
    */
   public String createSelectByNormTextSql(Backend backend, boolean not) {
     StringBuilder sql = new StringBuilder(SQL_SELECT);
@@ -2216,7 +2254,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     /**
    * Creates the SQL code for the selectSerial statement.
    *
-   * @return the sql code
+   * @return the SQL code
    */
   @Override
   public String createSelectSerialSql() {
@@ -2226,7 +2264,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Creates the SQL code for the selectMaxId statement.
    *
-   * @return the sql code
+   * @return the SQL code
    */
   @Override
   public String createSelectMaxIdSql() {
@@ -2236,7 +2274,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Creates the SQL code for the selectMaxTableSerial statement.
    *
-   * @return the sql code
+   * @return the SQL code
    */
   @Override
   public String createSelectMaxTableSerialSql() {
@@ -2244,10 +2282,10 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
   /**
-   * Creates the SQL code for the dummy update statement.<br>
-   * Useful get an exclusive lock within a transaction.
+   * Creates the SQL code for the fake update statement.<br>
+   * Useful to get an exclusive lock within a transaction.
    *
-   * @return the sql code
+   * @return the SQL code
    */
   @Override
   public String createDummyUpdateSql() {
@@ -2257,7 +2295,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Creates the SQL code for the serial update statement.
    *
-   * @return the sql code
+   * @return the SQL code
    */
   @Override
   public String createUpdateSerialSql() {
@@ -2268,7 +2306,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Creates the SQL code for the serial + tableSerial update statement.
    *
-   * @return the sql code
+   * @return the SQL code
    */
   @Override
   public String createUpdateSerialAndTableSerialSql() {
@@ -2280,7 +2318,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Creates the SQL code for the first statement to select expired table serials.
    *
-   * @return the sql code
+   * @return the SQL code
    */
   @Override
   public String createSelectExpiredTableSerials1Sql() {
@@ -2295,7 +2333,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Creates the SQL code for the second statement to select expired table serials.
    *
-   * @return the sql code
+   * @return the SQL code
    */
   @Override
   public String createSelectExpiredTableSerials2Sql() {
@@ -2459,11 +2497,11 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Creates SQL-code for select all.<br>
+   * Creates SQL code for select all.<br>
    * Appends context condition and order by clause if configured.
    *
    * @param backend the backend
-   * @return the sql code
+   * @return the SQL code
    */
   public String createSelectAllSql(Backend backend) {
     StringBuilder sql = new StringBuilder(SQL_SELECT);
@@ -2479,18 +2517,66 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
   /**
-   * Creates SQL-code for {@link #selectAllWithExpiredTableSerials}.<br>
+   * Creates SQL code for select any.<br>
+   * Appends context condition and order by clause if configured.
+   *
+   * @param backend the backend
+   * @return the SQL code
+   */
+  public String createSelectAnySql(Backend backend) {
+    StringBuilder sql = new StringBuilder(SQL_SELECT);
+    sql.append(createSelectAllInnerSql(backend));
+    sql.append(SQL_AND).append(CN_ID).
+        append(Backend.SQL_EQUAL).append(Backend.SQL_ARRAY_ANY_PAR);
+    sql.append(getSqlClassIdCondition());
+    sql.append(getSqlContextCondition());
+    String orderSuffix = orderBy();
+    if (orderSuffix != null)  {
+      sql.append(SQL_ORDERBY);
+      sql.append(orderSuffix);
+    }
+    return sql.toString();
+  }
+
+  /**
+   * Creates SQL code for {@link #selectAllWithExpiredTableSerials(long)}.<br>
    * Appends context condition and order by clause if configured.<br>
    * By default, the result is sorted by tableserial + id.
    *
    * @param backend the backend
-   * @return the sql code
+   * @return the SQL code
    */
   public String createSelectAllWithExpiredTableSerialsSql(Backend backend) {
     StringBuilder sql = new StringBuilder(SQL_SELECT);
     sql.append(createSelectAllInnerSql(backend));
     sql.append(SQL_AND).
         append(CN_TABLESERIAL).append(">?");
+    sql.append(getSqlClassIdCondition());
+    sql.append(getSqlContextCondition());
+    sql.append(SQL_ORDERBY);
+    String orderSuffix = orderBy();
+    if (orderSuffix != null)  {
+      sql.append(orderSuffix);
+    }
+    else {
+      sql.append(CN_TABLESERIAL).append(SQL_COMMA).append(CN_ID);
+    }
+    return sql.toString();
+  }
+
+  /**
+   * Creates SQL code for {@link #selectAllWithExpiredTableSerials(long, long)}.<br>
+   * Appends context condition and order by clause if configured.<br>
+   * By default, the result is sorted by tableserial + id.
+   *
+   * @param backend the backend
+   * @return the SQL code
+   */
+  public String createSelectAllWithExpiredTableSerialsSql2(Backend backend) {
+    StringBuilder sql = new StringBuilder(SQL_SELECT);
+    sql.append(createSelectAllInnerSql(backend));
+    sql.append(SQL_AND).append(CN_TABLESERIAL).append(">?");
+    sql.append(SQL_AND).append(CN_TABLESERIAL).append("<=?");
     sql.append(getSqlClassIdCondition());
     sql.append(getSqlContextCondition());
     sql.append(SQL_ORDERBY);
@@ -2538,6 +2624,39 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
+   * Gets the result set for any objects in the current context for given ids.
+   *
+   * @param js the optional join config, null if no joins
+   * @param ids the object IDs
+   * @return the result set
+   */
+  public ResultSetWrapper resultAny(JoinedSelect<T> js, Collection<Long> ids)  {
+
+    getSession().assertNotRemote();
+    assertRootContextIsAccepted();
+
+    PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectAnyStatementId,
+                                                       b -> {
+                                                         StringBuilder sql = new StringBuilder(createSelectAnySql(b));
+                                                         if (js != null) {
+                                                           js.createJoinedSql(pdo, sql);
+                                                         }
+                                                         return sql.toString();
+                                                       }
+    );
+
+    int ndx = 1;
+    long contextId = getContextId();
+    if (contextId >= 0) {
+      st.setLong(ndx++, contextId);
+    }
+    st.setArray(ndx, Long.class, 0, ids, SQL_ARRAY_ANY);
+
+    return st.executeQuery();
+  }
+
+
+  /**
    * Gets the result set for all objects in the current context with a given expired tableserial.
    *
    * @param js the optional join config, null if no joins
@@ -2560,15 +2679,47 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     );
 
     st.setLong(1, oldSerial);
-    int ndx = 2;
     long contextId = getContextId();
     if (contextId >= 0) {
-      st.setLong(ndx, contextId);
+      st.setLong(2, contextId);
     }
 
     return st.executeQuery();
   }
 
+
+  /**
+   * Gets the result set for all objects in the current context with a given expired tableserials.
+   *
+   * @param js the optional join config, null if no joins
+   * @param oldSerial the last known tableserial
+   * @param maxSerial the highest tableserial
+   * @return the result set
+   */
+  public ResultSetWrapper resultAllWithExpiredTableSerials(JoinedSelect<T> js, long oldSerial, long maxSerial)  {
+
+    getSession().assertNotRemote();
+    assertRootContextIsAccepted();
+
+    PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectAllWithExpiredTableSerialsStatement2Id,
+                                                       b -> {
+                                                         StringBuilder sql = new StringBuilder(createSelectAllWithExpiredTableSerialsSql2(b));
+                                                         if (js != null) {
+                                                           js.createJoinedSql(pdo, sql);
+                                                         }
+                                                         return sql.toString();
+                                                       }
+    );
+
+    st.setLong(1, oldSerial);
+    st.setLong(2, maxSerial);
+    long contextId = getContextId();
+    if (contextId >= 0) {
+      st.setLong(3, contextId);
+    }
+
+    return st.executeQuery();
+  }
 
 
   /**
@@ -2608,7 +2759,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Selects all records in current context as a list.
+   * Selects all records in the current context as a list.
    *
    * @return the list of objects, never null
    * @see #resultAll
@@ -2636,6 +2787,40 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
   @Override
+  public List<T> selectAny(Collection<Long> ids) {
+    if (getSession().isRemote())  {
+      try {
+        DomainContext context = getDomainContext();
+        List<T> list = getRemoteDelegate().selectAny(context, ids);
+        configureRemoteObjects(context, list);
+        return list;
+      }
+      catch (RemoteException e) {
+        throw PersistenceException.createFromRemoteException(this, e);
+      }
+    }
+
+    if (getBackend().isArrayOperatorSupported(SQL_ARRAY_ANY)) {
+      JoinedSelect<T> js = getEagerJoinedSelect();
+      List<T> list = new ArrayList<>();
+      try (ResultSetWrapper rs = resultAny(js, ids)) {
+        executeQueryToList(rs, js, list);
+        return list;
+      }
+    }
+    else {
+      List<T> list = new ArrayList<>();
+      for (long id : ids) {
+        T obj = on().select(id);
+        if (obj != null) {
+          list.add(obj);
+        }
+      }
+      return list;
+    }
+  }
+
+  @Override
   public List<T> selectAllWithExpiredTableSerials(long oldSerial) {
     if (getSession().isRemote())  {
       try {
@@ -2657,9 +2842,31 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     }
   }
 
+  @Override
+  public List<T> selectAllWithExpiredTableSerials(long oldSerial, long maxSerial) {
+    if (getSession().isRemote())  {
+      try {
+        DomainContext context = getDomainContext();
+        List<T> list = getRemoteDelegate().selectAllWithExpiredTableSerials(context, oldSerial, maxSerial);
+        configureRemoteObjects(context, list);
+        return list;
+      }
+      catch (RemoteException e) {
+        throw PersistenceException.createFromRemoteException(this, e);
+      }
+    }
+
+    JoinedSelect<T> js = getEagerJoinedSelect();
+    List<T> list = new ArrayList<>();
+    try (ResultSetWrapper rs = resultAllWithExpiredTableSerials(js, oldSerial, maxSerial)) {
+      executeQueryToList(rs, js, list);
+      return list;
+    }
+  }
+
 
   /**
-   * Selects all records in current context as a cursor
+   * Selects all records in the current context as a cursor.
    *
    * @return the cursor
    * @see #resultAllCursor
@@ -2747,70 +2954,41 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Expires the cache according to the serial numbers.<br>
+   * Expires the cache according to the tableserial numbers.<br>
    *
    * If objects of this class are cached, the
    * cache must be expired on updates, etc...
-   * Furthermore, if there is a cache, isCountingModification() MUST return true,
-   * in order for countModification() to invalidate the cache for the local JVM.
+   * Furthermore, if there is a cache, isCountingModification() <em>must</em> return {@code true},
+   * in order for {@link #countModification()} to invalidate the cache for the local JVM.
    * Classes with a cache must override this method!
    * The implementation with the PdoCache should look like this:
    * <pre>
    *    super.expireCache(maxSerial);   // in case inherited cache overridden
-   *    cache.expire(maxSerial);
+   *    CacheHolder.CACHE.expire(getSession(), getTableName(), maxSerial);
    * </pre>
-   * while "cache" has been declared by the wurblet {@code PdoCache}.
+   * See the wurblet {@code PdoCache.wrbl}.
    *
-   * @param maxSerial is the new tableSerial this object will get
+   * @param maxSerial the new tableSerial this object will get
    * @see PdoCache
    */
   public void expireCache(long maxSerial)  {
     // default does nothing
   }
 
-
-  /**
-   * Gets the object via cache.<br>
-   * If there is no cache (i.e. the method is not overridden),
-   * the default implementation just loads from the db.
-   *
-   * @param id the unique object ID
-   * @return the object, null if no such object
-   * @see #selectObject(long)
-   */
   @Override
   public T selectCached(long id)  {
     return select(id);
   }
 
-  /**
-   * Gets the object via cache only.<br>
-   * If there is no cache (i.e. the method is not overridden),
-   * the default implementation just loads from the db.
-   *
-   * @param id the unique object ID
-   * @return the object, null if no such object
-   * @see #selectObject(long)
-   */
   @Override
   public T selectCachedOnly(long id)  {
     return select(id);
   }
 
-
-  /**
-   * Gets all objects in context via cache.
-   * If there is no cache (i.e. the method is not overridden),
-   * the default implementation gets it from the db.
-   *
-   * @return the list, never null
-   * @see #selectAll()
-   */
   @Override
   public List<T> selectAllCached()  {
     return selectAll();
   }
-
 
   @Override
   public List<T> selectAllForCache() {
@@ -2827,6 +3005,30 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     }
     else {
       list = selectAll();
+    }
+    return list;
+  }
+
+  @Override
+  public List<T> selectAnyCached(Collection<Long> ids) {
+    return selectAny(ids);
+  }
+
+  @Override
+  public List<T> selectAnyForCache(Collection<Long> ids) {
+    List<T> list;
+    if (getSession().isRemote()) {
+      try {
+        DomainContext context = getDomainContext();
+        list = getRemoteDelegate().selectAnyForCache(context, ids);
+        configureRemoteObjects(context, list);
+      }
+      catch (RemoteException e) {
+        throw PersistenceException.createFromRemoteException(this, e);
+      }
+    }
+    else {
+      list = selectAny(ids);
     }
     return list;
   }
@@ -2853,12 +3055,12 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * {@inheritDoc}
    * <p>
-   * Overridden to expire the cache if object is using the tableserial.
+   * Overridden to expire the cache if the object is using the tableserial.
    */
   @Override
-  public long countModification ()  {
+  public long countModification() {
     long tableSerial = super.countModification();
-    if (tableSerial >= 0)  {
+    if (tableSerial >= 0) {
       expireCache(tableSerial);
     }
     return tableSerial;
@@ -2866,31 +3068,78 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Adds a PDO class that is referencing this PDO clazz.
+   * Adds a PDO class referencing this PDO class.
    * <p>
    * The method name can also contain dots to denote a chain of methods that must be invoked.
    *
    * @param <R> the PDO type
    * @param clazz the class to add
    * @param methodPath the method path name, null if default <code>"isReferencing&lt;ClassBaseName&gt;"</code>
-   * @return true if added, false if already in map
-   * @see #removeReferencingClass
+   * @return true if added, false if already in the map
+   * @see #removeReferencingClass(Class, String)
    */
   public <R extends PersistentDomainObject<R>> boolean addReferencingClass(Class<R> clazz, String methodPath) {
     return getClassVariables().addReferencingClass(getPersistenceClass(clazz), methodPath);
   }
 
   /**
-   * Removes a PDO class that is referencing this PDO clazz.
+   * Adds a PDO class referencing this PDO class.
+   * <p>
+   * Same as {@link #addReferencingClass(Class, String)} but by classId to avoid referencing the
+   * PDO's class that can be part of another (yet unknown) module.
+   *
+   * @param classId the class id
+   * @param methodPath the method path name, null if default <code>"isReferencing&lt;ClassBaseName&gt;"</code>
+   * @return true if added, false if already in the map
+   * @see #removeReferencingClass(int, String)
+   */
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  public boolean addReferencingClass(int classId, String methodPath) {
+    String className = SessionUtilities.getInstance().getClassName(classId);
+    if (className == null) {
+      throw new PersistenceException("unknown class id " + classId);
+    }
+    try {
+      return addReferencingClass((Class) Class.forName(className), methodPath);
+    }
+    catch (ClassNotFoundException nfx) {
+      throw new PersistenceException("class not found " + className, nfx);
+    }
+  }
+
+  /**
+   * Removes a PDO class referencing this PDO class.
    *
    * @param <R> the PDO type
    * @param clazz the class to add
    * @param methodPath the method path name, null if default <code>"isReferencing&lt;ClassBaseName&gt;"</code>
-   * @return true if removed, false if not in map
-   * @see #removeReferencingClass
+   * @return true if removed, false if not in the map
+   * @see #addReferencingClass(Class, String)
    */
   public <R extends PersistentDomainObject<R>> boolean removeReferencingClass(Class<R> clazz, String methodPath) {
     return getClassVariables().removeReferencingClass(getPersistenceClass(clazz), methodPath);
+  }
+
+  /**
+   * Removes a PDO class referencing this PDO class.
+   *
+   * @param classId the class id
+   * @param methodPath the method path name, null if default <code>"isReferencing&lt;ClassBaseName&gt;"</code>
+   * @return true if removed, false if not in the map
+   * @see #addReferencingClass(int, String)
+   */
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  public boolean removeReferencingClass(int classId, String methodPath) {
+    String className = SessionUtilities.getInstance().getClassName(classId);
+    if (className == null) {
+      throw new PersistenceException("unknown class id " + classId);
+    }
+    try {
+      return removeReferencingClass((Class) Class.forName(className), methodPath);
+    }
+    catch (ClassNotFoundException nfx) {
+      throw new PersistenceException("class not found " + className, nfx);
+    }
   }
 
 
@@ -2911,7 +3160,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     }
     throw new PersistenceException(this, "persistence class not compatible: " + persistenceClass);
   }
-
 
 
   /**
@@ -2958,16 +3206,16 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Gets the natural ordering to be added in WHERE-clauses following "ORDER BY ".
+   * Gets the natural ordering to be added in WHERE-clauses following "ORDER BY".
    * The wurblets will use it if --sort option set.
    * Example:
    * <pre>
    *  return CN_ID + "," + CN_PRINTED + " DESC";
    * </pre>
-   * For a single field with sort ascending returning the fieldname is sufficient.
-   * The default is null, i.e. no order-by-clause will be added.
+   * Returning just the field name is enough for a single field with sort ascending.
+   * The default is null, i.e., no order-by-clause will be added.
    *
-   * @return the order by appendix string, null if no order by
+   * @return the order by appendix string, null if no "order by"
    */
   public String orderBy() {
     return null;
@@ -3045,7 +3293,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * if existing) or created (if not existing).
    * The operation is only done in memory, not in persistent storage.
    *
-   * @return true if token lock set or updated, false if token lock cleared or PDO does not provide a token lock
+   * @return true if token lock set or updated, false if token lock cleared, or PDO does not provide a token lock
    */
   public boolean clearTokenLock() {
     if (isTokenLockProvided()) {
@@ -3189,12 +3437,12 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
         DomainContext poContext = po.getDomainContext();
         if (poContext.getRootId() == context.getRootId() &&
             poContext.getRootClassId() == context.getRootClassId()) {
-          // component that refers to the same root entity: use same context instance
+          // component that refers to the same root entity: use the same context instance
           po.setDomainContext(context);
         }
         // else: use a different context instance
       }
-      // loaded from database: not modified yet and hence no validation pending
+      // loaded from the database: not modified yet and hence no validation pending
       po.validated = true;
     }
   }
@@ -3221,7 +3469,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     if (!getDomainContext().isRootContext()) {
       /*
        * This will also prevent components from being saved alone,
-       * i.e. not from within their root entity.
+       * i.e., not from within their root entity.
        * (possible only in servers)
        */
       throw new PersistenceException(this, "unexpected non-root domain context");
@@ -3273,7 +3521,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * This method must not be used from within the application!
    *
    * @param <X> the pdo type
-   * @param pdos the list of object to delete
+   * @param pdos the list of the objects to delete
    */
   @SuppressWarnings("rawtypes")
   protected <X extends PersistentDomainObject<X>> void delete(Collection<X> pdos) {
@@ -3319,7 +3567,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Deletes all objects in oldList that are not in newList.<br>
+   * Deletes all objects in the oldCollection that are not in the newCollection.<br>
    * This method is provided to save components in PDOs only.
    * This method must not be used from within the application!
    *
@@ -3412,7 +3660,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     if (getSession().isRemote())  {
       assertPersistable();
 
-      // execute in 3-tier client
+      // execute in the 3-tier client
       clearOnRemoteSave();
       prepareSave();
 
@@ -3534,7 +3782,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     if (getSession().isRemote())  {
       assertPersistable();
 
-      // execute in 3-tier client
+      // execute in the 3-tier client
       clearOnRemoteSave();
       prepareSave();
 
@@ -3569,10 +3817,10 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * update path get at least the serial updated or are not touched at all.
    * The default is to leave unmodified objects untouched, except root entities.
    * However, in some applications it is necessary to update the master object if some of its children are updated (usually
-   * to trigger something, e.g. a cache-update).<p>
+   * to trigger something, e.g., a cache-update).<p>
    * The default implementation returns true if this is a root entity.
    *
-   * @return true if update serial even if object is unchanged
+   * @return true if update serial even if the object is unchanged
    * @see #updateObject
    */
   @Override
@@ -3614,10 +3862,10 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
   /**
    * By default, objects don't need to include the editedBy/Since/Expiry columns in the
-   * database table.
-   * Override this method if object contains such columns, i.e. global model option [TOKENLOCK] set.
+   * database table.<br>
+   * Override this method if the object contains such columns, i.e., global model option [TOKENLOCK] set.
    *
-   * @return true if object is using the edited lock columns, false if not.
+   * @return true if the object is using the edited lock columns, false if not.
    */
   @Override
   public boolean isTokenLockProvided()  {
@@ -3641,7 +3889,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   @Override
   public long getTokenLockTimeout() {
-    // if token lock columns are provided the default timeout is 1 hour
+    // if token lock columns are provided, the default timeout is 1 hour
     return isTokenLockProvided() ? Constants.HOUR_MS : 0;
   }
 
@@ -3649,7 +3897,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Creates the SQL code for the {@link #updateTokenLock} statement.
    *
-   * @return the sql code
+   * @return the SQL code
    */
   public String createUpdateTokenLockSql() {
     assertTokenLockProvided();
@@ -3657,37 +3905,19 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
            CN_EDITEDBY + SQL_EQUAL_PAR_COMMA +
            CN_EDITEDSINCE + SQL_EQUAL_PAR_COMMA +
            CN_EDITEDEXPIRY + SQL_EQUAL_PAR + SQL_WHERE +
-           CN_ID + SQL_EQUAL_PAR + SQL_AND + SQL_LEFT_PARENTHESIS +
-           CN_EDITEDBY + SQL_EQUAL_PAR + SQL_OR +                  // the current user holds the token
-           CN_EDITEDBY + SQL_EQUAL_ZERO + SQL_OR +                 // no one holding the token
-           CN_EDITEDEXPIRY + SQL_LESS_PAR + SQL_OR +               // token expired
-           CN_EDITEDEXPIRY + SQL_ISNULL + SQL_RIGHT_PARENTHESIS;     // or not set at all (pathologic case)
-  }
-
-  /**
-   * Creates the SQL code for the {@link #updateTokenLock} statement with mod counting.
-   *
-   * @return the sql code
-   */
-  public String createUpdateTokenLockWithCountSql() {
-    assertTokenLockProvided();
-    return SQL_UPDATE + getTopSuperTableName() + SQL_SET +
-           CN_SERIAL + SQL_EQUAL + CN_SERIAL + SQL_PLUS_ONE + SQL_COMMA +
-           CN_TABLESERIAL + SQL_EQUAL_PAR_COMMA +
-           CN_EDITEDBY + SQL_EQUAL_PAR_COMMA +
-           CN_EDITEDSINCE + SQL_EQUAL_PAR_COMMA +
-           CN_EDITEDEXPIRY + SQL_EQUAL_PAR + SQL_WHERE +
-           CN_ID + SQL_EQUAL_PAR + SQL_AND + SQL_LEFT_PARENTHESIS +
-           CN_EDITEDBY + SQL_EQUAL_PAR + SQL_OR +                  // the current user holds the token
-           CN_EDITEDBY + SQL_EQUAL_ZERO + SQL_OR +                 // no one holding the token
-           CN_EDITEDEXPIRY + SQL_LESS_PAR + SQL_OR +               // token expired
-           CN_EDITEDEXPIRY + SQL_ISNULL + SQL_RIGHT_PARENTHESIS;   // or not set at all (pathologic case)
+           CN_ID + SQL_EQUAL_PAR + SQL_AND + CN_SERIAL + SQL_EQUAL_PAR + SQL_AND +
+           SQL_LEFT_PARENTHESIS +
+           CN_EDITEDBY + SQL_EQUAL_PAR + SQL_OR +                 // the current user holds the token
+           CN_EDITEDBY + SQL_EQUAL_ZERO + SQL_OR +                // no one holding the token
+           CN_EDITEDEXPIRY + SQL_LESS_PAR + SQL_OR +              // token expired
+           CN_EDITEDEXPIRY + SQL_ISNULL +                         // or not set at all (pathologic case)
+           SQL_RIGHT_PARENTHESIS;
   }
 
   /**
    * Creates the SQL code for the {@link #updateTokenLockOnly} statement.
    *
-   * @return the sql code
+   * @return the SQL code
    */
   public String createUpdateTokenLockOnlySql() {
     assertTokenLockProvided();
@@ -3701,18 +3931,19 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Creates the SQL code for the select in {@link #updateTokenLock} statement.
    *
-   * @return the sql code
+   * @return the SQL code
    */
   public String createSelectTokenLockSql() {
     assertTokenLockProvided();
     return SQL_SELECT + CN_EDITEDBY + SQL_COMMA + CN_EDITEDSINCE + SQL_COMMA + CN_EDITEDEXPIRY +
+           SQL_COMMA + CN_SERIAL +
            SQL_FROM + getTopSuperTableName() + SQL_WHERE + CN_ID + SQL_EQUAL_PAR;
   }
 
   /**
    * Creates the SQL code for the {@link #transferTokenLock} statement without tableserial.
    *
-   * @return the sql code
+   * @return the SQL code
    */
   public String createTransferTokenLockSql() {
     assertTokenLockProvided();
@@ -3725,7 +3956,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Creates the SQL code for the {@link #transferTokenLock} statement with tableserial.
    *
-   * @return the sql code
+   * @return the SQL code
    */
   public String createTransferTokenLockWithTableSerialSql() {
     assertTokenLockProvided();
@@ -3760,7 +3991,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Requests an edited by lock.
+   * Requests a token lock.
    * <p>
    * Throws a {@link LockException}, if locked by another user.
    */
@@ -3790,7 +4021,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
   /**
-   * Checks whether this object is edited locked by given user.
+   * Checks whether this object is edited locked by the given user.
    *
    * @param userId the user's ID
    * @return true locked
@@ -3818,7 +4049,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Gets the time since when this object is being edited.
    *
-   * @return the time, null if not being edited.
+   * @return the timestamp, null if not being edited
    */
   @Override
   public Timestamp getEditedSince() {
@@ -3839,7 +4070,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Gets the time since when this object is being edited.
    *
-   * @return the time, null if not being edited.
+   * @return the timestamp, null if not being edited.
    */
   @Override
   public Timestamp getEditedExpiry() {
@@ -3858,7 +4089,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Applies the given token lock info.
+   * Applies the given token lock info to this PDO.
    *
    * @param tokenLockInfo the editedBy info
    */
@@ -3871,31 +4102,26 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
   /**
-   * Updates the token lock columns in the database record.<br>
-   * Will *NOT* log modification and *NOT* update the serial-counter!
-   * Must be called from within application where appropriate.
+   * Updates the token lock columns in the database.<br>
+   * This method will <em>not</em> log modification and <em>not</em> update the serial-counter.
    * <p>
-   * 2 cases:
+   * If {@code tokenExpiry == 0}, the lock will be released.<br>
+   * If the operation was successful, {@code editedBy} is set to 0, {@code editExpiry} is set to null
+   * and {@code editedSince} is set to {@code curTime}.
+   * Releasing an already released token is not considered as an error
+   * and will just update the release timestamp.
    * <p>
-   * If expiry == 0, the "token" is released.
-   * True is returned if operation was successful and editedBy will hold 0 while editedSince
-   * holds the current (release) time. False is returned if token could not
-   * be released and nothing is changed. This is usually the case when another
-   * user holds the token (and indicates some logic errors in the application, btw.)
-   * EditedBy and editedSince are updated in the object to reflect the current values
-   * in the database.
-   * Notice: releasing an already released token is not considered to be an error.
-   * This will simply update the release timestamp.
+   * If {@code tokenExpiry > 0}, a new lock for the given {@code userId} and {@code curTime} is requested.<br>
+   * {@code editedBy} is set to the user's ID, {@code editExpiry} holds the expiration timestamp
+   * and {@code editedSince} the {@code curTime}.
+   * Requesting an already requested token will simply renew the lock, i.e., update {@code editExpiry} and
+   * {@code editedSince} accordingly.
    * <p>
-   * If expiry &gt; 0, a new token for the current user is requested.
-   * True is returned if the token could be exclusively acquired. EditedBy and
-   * editedSince are updated accordingly.
-   * If false: the object is in use by another user and editedSince and editedId
-   * holds this user and his timestamp.
-   * Notice: requesting an already requested token will simply renew the token.
-   * <p>
-   * The method does not check getTokenLockTimeout()! This is due to the application.
-   * Applications should use updateTokenLock(tokenExpiry). This is an internal implementation only.
+   * Whether the operation was successful or not, the values for {@code editedBy}, {@code editedSince} and {@code editedExpiry}
+   * are updated in this PDO with the values from the database.<br>
+   * A {@link LockException} is thrown in case another user is holding the lock.
+   * A {@link NotFoundException} is thrown if the PDO was updated or removed in the meantime,
+   * which indicates some logic error in the application (missing {@code @Transaction}, for example).
    *
    * @param tokenExpiry holds the time the token will expire. Null to release token.
    * @param userId is the current user (unused if tokenExpiry is null)
@@ -3926,15 +4152,16 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
         long txVoucher = db.begin(TX_UPDATE_TOKENLOCK);
         try {
           PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateTokenLockStatementId,
-                                                             b -> createUpdateTokenLockSql());
+                                                             _ -> createUpdateTokenLockSql());
           long newUser = tokenExpiry != null ? userId : 0;
 
           st.setLong(1, newUser);
           st.setTimestamp(2, curTime);
           st.setTimestamp(3, tokenExpiry);
           st.setLong(4, getId());
-          st.setLong(5, userId);
-          st.setTimestamp(6, curTime);
+          st.setLong(5, getSerial());
+          st.setLong(6, userId);
+          st.setTimestamp(7, curTime);
 
           if (st.executeUpdate() == 1) {
             // update was successful
@@ -3945,18 +4172,22 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
             db.commit(txVoucher);
           }
           else {
-            // no success: another user is currently holding the token
-            st = getPreparedStatement(getClassVariables().selectTokenLockStatementId, b -> createSelectTokenLockSql());
+            // no success: another user is currently holding the token, or PDO was updated in the meantime
+            st = getPreparedStatement(getClassVariables().selectTokenLockStatementId, _ -> createSelectTokenLockSql());
             st.setLong(1, getId());
             try (ResultSetWrapper rs = st.executeQuery()) {
               if (rs.next()) {
                 setEditedBy(rs.getLong(CN_EDITEDBY));
                 setEditedSince(rs.getTimestamp(CN_EDITEDSINCE));
                 setEditedExpiry(rs.getTimestamp(CN_EDITEDEXPIRY));
+                long curSerial = rs.getLong(CN_SERIAL);
+                if (curSerial != getSerial()) {
+                  throw new NotFoundException(this, "PDO was updated in the meantime with serial " + curSerial, getSerial());
+                }
                 throw new LockException(db, new TokenLockInfo(getEditedBy(), getEditedSince(), getEditedExpiry()));
               }
               else {
-                throw new NotFoundException(this, "could not retrieve token lock", -1);
+                throw new NotFoundException(this, "PDO was removed in the meantime", -1);
               }
             }
           }
@@ -3978,30 +4209,26 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Updates the token lock columns in the database record.<br>
-   * Will *NOT* log modification and *NOT* update the serial-counter!
-   * Must be called from within application where appropriate.
+   * Updates the token lock columns in the database.<br>
+   * This method will <em>not</em> log modification and <em>not</em> update the serial-counter.
    * <p>
-   * 2 cases:
+   * If {@code tokenExpiry == 0}, the lock will be released.<br>
+   * If the operation was successful, {@code editedBy} is set to 0, {@code editExpiry} is set to null
+   * and {@code editedSince} will hold the release timestamp.
+   * Releasing an already released token is not considered as an error
+   * and will just update the release timestamp.
    * <p>
-   * If expiry == 0, the "token" is released.
-   * True is returned if operation was successful and editedBy will hold 0 while editedSince
-   * holds the current (release) time. False is returned if token could not
-   * be released and nothing is changed. This is usually the case when another
-   * user holds the token (and indicates some logic errors in the application, btw.)
-   * EditedBy and editedSince are updated in the object to reflect the current values
-   * in the database.
-   * Notice: releasing an already released token is not considered to be an error.
-   * This will simply update the release timestamp.
+   * If {@code tokenExpiry > 0}, a new lock for the current user is requested.<br>
+   * {@code editedBy} is set to the user's ID, {@code editExpiry} holds the expiration timestamp
+   * and {@code editedSince} the timestamp when the lock was requested.
+   * Requesting an already requested token will simply renew the lock, i.e., update {@code editExpiry} and
+   * {@code editedSince} accordingly.
    * <p>
-   * If expiry &gt; 0, a new token for the current user is requested.
-   * True is returned if the token could be exclusively acquired. EditedBy and
-   * editedSince are updated accordingly.
-   * If false: the object is in use by another user and editedSince and editedId
-   * holds this user and his timestamp.
-   * Notice: requesting an already requested token will simply renew the token.
-   * <p>
-   * The method does not check getTokenLockTimeout()! This is due to the application.
+   * Whether the operation was successful or not, the values for {@code editedBy}, {@code editedSince} and {@code editedExpiry}
+   * are updated in this PDO with the values from the database.<br>
+   * A {@link LockException} is thrown in case another user is holding the lock.
+   * A {@link NotFoundException} is thrown if the PDO was updated or removed in the meantime,
+   * which indicates some logic error in the application (missing {@code @Transaction}, for example).
    *
    * @param tokenExpiry holds the time the token will expire. Null to release token.
    */
@@ -4012,7 +4239,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
   /**
    * Update the token-lock attributes to persistent storage.<br>
-   * No check is done whether locked or not and there is no serial
+   * No check is done whether locked or not, and there is no serial
    * update and no modlog. Used by daemons to clean up.
    */
   public void updateTokenLockOnly() {
@@ -4031,11 +4258,11 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       assertRootEntity();
       assertWritePermission();
 
-      long txVoucher = db.begin(TX_UPDATE_TOKENLOCK);
+      long txVoucher = db.begin(TX_UPDATE_TOKENLOCK_ONLY);
       try {
         if (db.isPersistenceOperationAllowed(this, DbModificationType.UPDATE)) {
           PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateTokenLockOnlyStatementId,
-                                                             b -> createUpdateTokenLockOnlySql());
+                                                             _ -> createUpdateTokenLockOnlySql());
           st.setLong(1, getEditedBy());
           st.setTimestamp(2, getEditedSince());
           st.setTimestamp(3, getEditedExpiry());
@@ -4085,7 +4312,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
         try {
           boolean withTableSerial = isTableSerialProvided();
           PreparedStatementWrapper st = getPreparedStatement(getClassVariables().transferTokenLockStatementId,
-                  b -> withTableSerial ? createTransferTokenLockWithTableSerialSql() : createTransferTokenLockSql());
+                  _ -> withTableSerial ? createTransferTokenLockWithTableSerialSql() : createTransferTokenLockSql());
           long newTableSerial = countModification();    // this will roll back and terminate on error
           if (withTableSerial) {
             setTableSerial(newTableSerial);
@@ -4214,7 +4441,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * been modified. The modified-attribute is cleared whenever the
    * object is persisted.
    *
-   * @param modified is true if object is flagged modified, false if not.
+   * @param modified is true if the object is flagged modified, false if not
    */
   @Override
   public void setModified(boolean modified) {
@@ -4251,7 +4478,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Checks write permission for this object.
    *
-   * @throws SecurityException if no write permission
+   * @throws SecurityException if there is no write permission
    */
   protected void assertWritePermission() {
     if (!isWriteAllowed()) {
@@ -4262,7 +4489,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Checks read permission for this object.
    *
-   * @throws SecurityException if no read permission
+   * @throws SecurityException if there is no read permission
    */
   protected void assertReadPermission() {
     if (!isReadAllowed()) {

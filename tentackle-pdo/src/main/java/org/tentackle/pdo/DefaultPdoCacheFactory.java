@@ -73,11 +73,11 @@ public class DefaultPdoCacheFactory implements PdoCacheFactory {
 
   @Override
   public synchronized <T extends PersistentDomainObject<T>> PdoCache<T> createCache(
-          Class<T> clazz, boolean preload, boolean readOnly, boolean checkSecurity) {
+          Class<T> clazz, boolean readOnly) {
     if (cacheMap.get(clazz) != null) {
       throw new PersistenceException("pdo cache already registered for " + clazz);
     }
-    PdoCache<T> cache = new PdoCache<>(clazz, preload, readOnly, checkSecurity);
+    PdoCache<T> cache = new PdoCache<>(clazz, readOnly);
     cacheMap.put(clazz, cache);
     return cache;
   }

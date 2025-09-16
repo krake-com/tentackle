@@ -1994,20 +1994,17 @@ For more options, see {\@link DbModelWurblet}.
 @[
       // register referencing classes and the methods
       for (Relation rel: refRels) {
+        Entity refEntity = rel.getEntity();
         String methodName = "isReferencing" + rel.getClassName() + "By" +
                             StringHelper.firstToUpper(getFirstMethodAttribute(rel).getName());
         if (rel.getEmbeddingEntity() != null) {
+          refEntity = rel.getEmbeddingEntity();
           methodName = rel.getPathName() + methodName;
-]@
-    po.addReferencingClass(@(rel.getEmbeddingEntity().getName())@.class, "@(methodName)@");
-@[
         }
-        else {
-          for (Entity leaf: rel.getEntity().getLeafEntities()) {
+        for (Entity leaf: refEntity.getLeafEntities()) {
 ]@
-    po.addReferencingClass(@(leaf.getName())@.class, "@(methodName)@");
+    po.addReferencingClass(@(leaf.getClassId())@, "@(methodName)@");  // @(leaf.getName())@
 @[
-          }
         }
       }
 ]@

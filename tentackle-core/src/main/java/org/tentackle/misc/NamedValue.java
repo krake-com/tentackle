@@ -81,7 +81,7 @@ public class NamedValue<T> {
    * @return the atomic reference
    */
   protected AtomicReference<T> getReference(String name) {
-    return references.computeIfAbsent(name, n -> new AtomicReference<>());
+    return references.computeIfAbsent(name, _ -> new AtomicReference<>());
   }
 
 }

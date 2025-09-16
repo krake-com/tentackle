@@ -18,10 +18,7 @@
 
 package org.tentackle.pdo;
 
-import org.tentackle.reflect.AbstractInterceptor;
-import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.session.PersistenceException;
-import org.tentackle.session.SessionProvider;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
@@ -30,7 +27,7 @@ import java.lang.reflect.Method;
 /**
  * Implementation of the {@link PostCommit} interception.
  */
-public final class PostCommitInterceptor extends AbstractInterceptor {
+public final class PostCommitInterceptor extends SessionProviderAwareInterceptor {
 
   /**
    * Creates a {@link PostCommit} interceptor.
@@ -52,20 +49,16 @@ public final class PostCommitInterceptor extends AbstractInterceptor {
       throw new PersistenceException("method '" + orgMethod + "' does not return void, but " + orgMethod.getReturnType().getName());
     }
 
-    if (orgProxy instanceof SessionProvider sessionProvider) {
-      sessionProvider.getSession().postCommit(s -> {
-        try {
-          method.invoke(proxy, args);
-        }
-        catch (IllegalAccessException | InvocationTargetException e) {
-          throw new PersistenceException(s, "post-commit failed", e);
-        }
-      });
-      return null;
-    }
-    else {
-      throw new PersistenceException(EffectiveClassProvider.getEffectiveClass(orgProxy) + " is not a SessionProvider");
-    }
+    getSession(orgProxy).postCommit(s -> {
+      try {
+        method.invoke(proxy, args);
+      }
+      catch (IllegalAccessException | InvocationTargetException e) {
+        throw new PersistenceException(s, "post-commit failed", e);
+      }
+    });
+
+    return null;
   }
 
 }

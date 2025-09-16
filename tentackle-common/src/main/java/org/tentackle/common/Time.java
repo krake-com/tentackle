@@ -116,6 +116,10 @@ public class Time extends java.sql.Time implements Freezable {
     frozen = true;
   }
 
+  @Override
+  public boolean isFrozen() {
+    return frozen;
+  }
 
   /**
    * {@inheritDoc}

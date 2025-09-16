@@ -40,7 +40,6 @@ import java.time.OffsetTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.TemporalAccessor;
-import java.util.Currency;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -222,14 +221,14 @@ public class ObjectUtilities {
    * Checks whether a given number is zero.
    *
    * @param number the number
-   * @return true if number is zero
+   * @return true if the number is zero
    */
   public boolean isZero(Number number) {
     return switch (number) {
       case null -> false;
       case BMoney bMoney -> bMoney.isZero();
-      case BigInteger bigInteger -> number.equals(BigInteger.ZERO);
-      case BigDecimal bigDecimal -> number.equals(BigDecimal.ZERO);
+      case BigInteger _ -> number.equals(BigInteger.ZERO);
+      case BigDecimal _ -> number.equals(BigDecimal.ZERO);
       case Double v -> v == 0.0d;
       case Float v -> v == 0.0f;
       default -> number.longValue() == 0;
@@ -262,7 +261,7 @@ public class ObjectUtilities {
       return new DMoney((BigDecimal) value);
     }
     if (value instanceof Number) {
-      return new DMoney(((Number) value).doubleValue(), Currency.getInstance(LocaleProvider.getInstance().getLocale()).getDefaultFractionDigits());
+      return new DMoney(((Number) value).doubleValue(), LocaleProvider.getInstance().getCurrency().getDefaultFractionDigits());
     }
     else {
       String str = value.toString();
@@ -275,7 +274,7 @@ public class ObjectUtilities {
       return new BMoney((BigDecimal) value);
     }
     if (value instanceof Number) {
-      return new BMoney(((Number) value).doubleValue(), Currency.getInstance(LocaleProvider.getInstance().getLocale()).getDefaultFractionDigits());
+      return new BMoney(((Number) value).doubleValue(), LocaleProvider.getInstance().getCurrency().getDefaultFractionDigits());
     }
     String str = value.toString();
     return new BMoney(str, FormatHelper.determineScale(str));

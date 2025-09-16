@@ -30,9 +30,11 @@ import org.tentackle.model.Index;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelException;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.ScriptRunnerResult;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 
@@ -64,7 +66,7 @@ public class DbTestUtilities {
    *
    * @param db the low-level database session
    * @return the SQL script
-   * @throws ModelException if model is inconsistent
+   * @throws ModelException if the model is inconsistent
    * @see Model#loadFromResources(boolean)
    */
   public String createPopulateScript(Db db) throws ModelException {
@@ -110,9 +112,10 @@ public class DbTestUtilities {
    *
    * @param db the low-level session
    * @param script the SQL script
+   * @return the results, never null
    */
-  public void runScript(Db db, String script) {
-    db.runScript("populate", script);
+  public List<ScriptRunnerResult> runScript(Db db, String script) {
+    return db.runScript("populate", script);
   }
 
 }

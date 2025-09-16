@@ -19,19 +19,38 @@
 package org.tentackle.pdo;
 
 /**
- * Caching strategy for the PDO-cache.
+ * Eviction strategy for the PDO-cache.
  *
  * @author harald
  */
 public enum PdoCacheStrategy {
 
-  /** forget all entries if maxSize reached (default) **/
+  /**
+   * Preload all PDOs.<br>
+   * This is the default and works for the majority of master-data entities.<br>
+   * The first select from the cache will load all entities from the database
+   * so that further selects will not need a physical load from the database.
+   */
+  PRELOAD,
+
+  /**
+   * If a PDO is not in the cache, it will be loaded from the database.<br>
+   * When the maximum size of the cache reached, the cache is purged completely.
+   */
   FORGET,
 
-  /** least recently used **/
+  /**
+   * If a PDO is not in the cache, it will be loaded from the database.<br>
+   * When the maximum size of the cache reached, the least recently used PDOs
+   * are removed from the cache, according to a keep-quota.
+   */
   LRU,
 
-  /** least frequently used **/
+  /**
+   * If a PDO is not in the cache, it will be loaded from the database.<br>
+   * When the maximum size of the cache reached, the least frequently used PDOs
+   * are removed from the cache, according to a keep-quota.
+   */
   LFU
 
 }

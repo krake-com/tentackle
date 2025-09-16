@@ -30,6 +30,7 @@ import org.tentackle.misc.SerialNumbered;
 import org.tentackle.misc.Snapshotable;
 import org.tentackle.security.Permission;
 import org.tentackle.security.SecurityResult;
+import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Persistent;
 import org.tentackle.session.SessionDependable;
@@ -37,6 +38,7 @@ import org.tentackle.validate.ScopeConfigurator;
 import org.tentackle.validate.Validateable;
 import org.tentackle.validate.ValidationFailedException;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -397,48 +399,77 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   long getModificationCount();
 
   /**
-   * Gets the expired table serials.<br>
-   * A physical database query is only done if the requested range is not in the backlog.
-   * Used to reduce roundtrips for remote sessions.
+   * Gets the expirations for a given range of tableserials.<br>
+   * The expirations are returned as a list of {@link IdSerialTuple}s with
+   * the serial being the tableserial of the corresponding PDO.<br>
+   * A negative tableserial indicates a deletion. Tuples with an id of 0
+   * indicate a rolled back insert or update or an object that was updated more than once.
+   * <p>
+   * A physical database query is only done if the requested range is not yet cached in the
+   * backlog.
+   * <p>
+   * The returned tableserials should not have any gaps.
+   * If there are gaps, the caller cannot derive which PDOs were deleted,
+   * updated or inserted in a rolled back transaction or updated more than once.
+   * Caches, for example, must be invalidated completely in such a case.
+   * <p>
+   * Please notice, for serverless applications running in local client mode,
+   * there <em>will</em> be gaps for deletions, rollbacks and multiple updates.
    *
    * @param oldSerial non-inclusive lower bound for tableSerial (&gt; oldSerial)
-   * @param maxSerial inclusive upper bound for tableSerial (&le; maxSerial)
-   * @return pairs of longs, the first being the ID, the second the tableserial, never null
+   * @param maxSerial inclusive upper bound for tableSerial (&le; maxSerial), 0 up to the end
+   * @return the id/tableserial tuples sorted by abs(tableserial), never null
+   * @see ModificationTracker#isLocalClientMode()
    */
-  List<IdSerialTuple> getExpiredTableSerials(long oldSerial, long maxSerial);
+  Collection<IdSerialTuple> getExpiredTableSerials(long oldSerial, long maxSerial);
 
   /**
-   * Determines the objects with a tableSerial starting at a given serial.
-   * Useful to clean up caches for example.
+   * Determines the id/tableserial tuples for PDOs in the database with a higher
+   * tableserial than the given {@code oldSerial}.<br>
+   * Since this queries the database, deletions, rollbacks and multiple updates
+   * of the same PDO will create gaps within the tableserials.
    *
-   * @param oldSerial non-inclusive lower bound for tableSerial (&gt; oldSerial)
-   * @return pairs of longs, the first being the ID, the second the tableserial, never null
+   * @param oldSerial exclusive lower bound for tableSerial (&gt; oldSerial)
+   * @return the expiration tuples, sorted by tableserial+id, never null
    */
   List<IdSerialTuple> selectExpiredTableSerials(long oldSerial);
 
   /**
-   * Determines the objects with their tableSerial within a given range.
-   * Useful to clean up caches.
+   * Determines the id/tableserial tuples for PDOs in the database within a
+   * given range of tableserials.<br>
+   * Since this queries the database, deletions, rollbacks and multiple updates
+   * of the same PDO will create gaps within the tableserials.
    *
    * @param oldSerial non-inclusive lower bound for tableSerial (&gt; oldSerial)
    * @param maxSerial inclusive upper bound for tableSerial (&le; maxSerial)
-   * @return pairs of longs, the first being the ID, the second the tableserial, never null
+   * @return the expiration tuples, sorted by tableserial+id, never null
    */
   List<IdSerialTuple> selectExpiredTableSerials(long oldSerial, long maxSerial);
 
   /**
-   * Selects all pdos with a tableSerial starting at a given serial.<br>
-   * Useful to update expired objects in a batch.
+   * Selects all PDOs with a higher tableserial than the given {@code oldSerial}.<br>
+   * Since this queries the database, deletions, rollbacks and multiple updates
+   * of the same PDO will create gaps within the tableserials.
    *
-   * @param oldSerial non-inclusive lower bound for tableSerial (&gt; oldSerial)
+   * @param oldSerial exclusive lower bound for tableSerial (&gt; oldSerial)
    * @return the list of objects, never null
    */
   List<T> selectAllWithExpiredTableSerials(long oldSerial);
 
   /**
-   * Selects all id,serial-pairs of this class as a list of {@link IdSerialTuple}.
+   * Selects all PDOs within a given range of tableserials.<br>
+   * Since this queries the database, deletions, rollbacks and multiple updates
+   * of the same PDO will create gaps within the tableserials.
    *
-   * @return the list of objects
+   * @param oldSerial exclusive lower bound for tableSerial (&gt; oldSerial)
+   * @return the list of objects, never null
+   */
+  List<T> selectAllWithExpiredTableSerials(long oldSerial, long maxSerial);
+
+  /**
+   * Selects all id/serial pairs of this class as a list of {@link IdSerialTuple}s.
+   *
+   * @return the list of tuples
    */
   List<IdSerialTuple> selectAllIdSerial();
 
@@ -549,13 +580,17 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   /**
    * Requests a token lock.
    * <p>
-   * Throws a {@link LockException} if locked by another user.
+   * Throws a {@link LockException} if locked by another user
+   * or a {@link org.tentackle.session.NotFoundException} if removed or updated in the meantime.
    */
   void requestTokenLock();
 
   /**
    * Releases a token lock.<br>
    * Use this method if a PDO needs to be unlocked without being persisted.
+   * <p>
+   * Throws a {@link LockException} if locked by another user
+   * or a {@link org.tentackle.session.NotFoundException} if removed or updated in the meantime.
    */
   void releaseTokenLock();
 
@@ -624,6 +659,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   /**
    * Loads a PDO from the database by its unique ID and applies a token lock.<br>
    * Same as {@link #select(long)} followed by {@link #requestTokenLock()}, but requires only a single roundtrip if remote.
+   * Runs within its own transaction if none is currently running.
    * <p>
    * Throws a {@link LockException}, if locked by another user.
    *
@@ -653,6 +689,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   /**
    * Reloads the object and applies a token lock.<br>
    * Same as {@link #reload()} followed by {@link #requestTokenLock()}, but requires only a single roundtrip if remote.
+   * Runs within its own transaction if none is currently running.
    * <p>
    * Throws a {@link LockException}, if locked by another user.
    *
@@ -678,6 +715,14 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   List<T> selectAll();
 
   /**
+   * Selects any objects of given IDs.
+   *
+   * @param ids the object IDs
+   * @return the list of objects
+   */
+  List<T> selectAny(Collection<Long> ids);
+
+  /**
    * Selects all records in current context as a cursor.
    *
    * @return the cursor
@@ -696,7 +741,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
 
   /**
    * Gets the object via cache.<br>
-   * If there is no cache, the default implementation just loads from the database.
+   * If there is no cache, the default implementation invokes {@link #select(long)}.
    *
    * @param id the unique object ID
    * @return the object, null if no such object
@@ -706,7 +751,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
 
   /**
    * Gets the object via cache only.<br>
-   * If there is no cache, the default implementation just loads from the database.
+   * If there is no cache, the default implementation invokes {@link #select(long)}.
    *
    * @param id the unique object ID
    * @return the object, null if no such object
@@ -716,7 +761,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
 
   /**
    * Gets all objects in context via cache.<br>
-   * If there is no cache, the default implementation load from the database.
+   * If there is no cache, the default implementation invokes {@link #selectAll()}.
    *
    * @return the list, never null
    * @see #selectAll()
@@ -733,6 +778,27 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * @throws PersistenceException if the session is not remote
    */
   List<T> selectAllForCache();
+
+  /**
+   * Selects any objects of given IDs from the cache.
+   * <br>
+   * If there is no cache, the default implementation just loads from the database.
+   *
+   * @param ids the object IDs
+   * @return the list of objects
+   */
+  List<T> selectAnyCached(Collection<Long> ids);
+
+  /**
+   * Selects any objects of given IDs.
+   * <p>
+   * The method is used mainly by {@link PdoCache} as an optimization to retrieve
+   * multiple PDOs at once from the remote server cache.
+   *
+   * @param ids the object IDs
+   * @return the list of objects
+   */
+  List<T> selectAnyForCache(Collection<Long> ids);
 
   /**
    * Selects a PDO to be loaded into the cache.

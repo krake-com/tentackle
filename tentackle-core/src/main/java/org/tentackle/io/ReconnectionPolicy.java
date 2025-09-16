@@ -18,9 +18,6 @@
 
 package org.tentackle.io;
 
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-
 /**
  * Policy to reconnect a dead resource.
  *
@@ -31,10 +28,10 @@ public interface ReconnectionPolicy<T> {
 
   /**
    * Determines what happens to the thread encountering a dead resource.<br>
-   * If blockung, the thread will wait until the resource is up again.<br>
-   * If non-blocking, the thread will simply receive the exception.
+   * If blocking, the thread must wait until the resource is up again.<br>
+   * If non-blocking, the thread will just submit the reconnection.
    *
-   * @return true if blocking, false if thread continues
+   * @return true if blocking, false if the thread continues
    */
   boolean isBlocking();
 
@@ -47,17 +44,10 @@ public interface ReconnectionPolicy<T> {
   long timeToReconnect();
 
   /**
-   * Gets the supplier to connect the resource.
+   * Reconnects the resource.
    *
-   * @return the connector
+   * @param resource the resource to reconnect
    */
-  Supplier<T> getConnector();
-
-  /**
-   * Gets the consumer to apply the reconnected resource.
-   *
-   * @return the consumer
-   */
-  Consumer<T> getConsumer();
+  void reconnect(T resource);
 
 }
