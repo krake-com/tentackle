@@ -18,6 +18,7 @@
 
 package org.tentackle.pdo;
 
+import org.testng.Reporter;
 import org.testng.annotations.Test;
 
 import org.tentackle.ns.pdo.NumberPool;
@@ -40,6 +41,8 @@ public class SnapshotTest extends AbstractPdoTest {
 
   @Test(groups = "local")
   public void createSnapshots() {
+    Reporter.log("SnapshotTest.createSnapshots <br>", true);
+
     // pool is a composite, fine for testing
     NumberPool numberPool = on(NumberPool.class);
     numberPool.setName(SNAPSHOT_POOL);
@@ -94,6 +97,8 @@ public class SnapshotTest extends AbstractPdoTest {
 
   @Test(groups = "local")
   public void createCopies() {
+    Reporter.log("SnapshotTest.createCopies <br>", true);
+
     NumberPool numberPool = on(NumberPool.class);
     numberPool.setName(COPY_POOL);
     numberPool.setOnline(true);
@@ -126,4 +131,5 @@ public class SnapshotTest extends AbstractPdoTest {
       assertFalse(range.isImmutable());
     }
   }
+
 }

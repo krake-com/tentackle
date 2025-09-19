@@ -18,6 +18,7 @@
 
 package org.tentackle.persist;
 
+import org.testng.Reporter;
 import org.testng.annotations.Test;
 
 import org.tentackle.dbms.Db;
@@ -27,10 +28,9 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.testng.AbstractPdoTest;
+import org.tentackle.persist.server.TestServer;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SessionInfo;
-
-
 
 /**
  * Tests for persisted preferences.
@@ -114,6 +114,8 @@ public class RemoteTransactionTest implements DomainContextProvider {
 
   @Test(groups = "remote1", dependsOnGroups = "local")
   public void testTransactions() throws Exception {
+    Reporter.log("RemoteTransactionTest.testTransactions <br>", true);
+
     Process process = AbstractPdoTest.runClass(TestServer.class, "duration=5000");
     Thread.sleep(3500);
     try {

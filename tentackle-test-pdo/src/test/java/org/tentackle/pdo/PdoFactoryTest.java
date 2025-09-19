@@ -19,6 +19,7 @@
 package org.tentackle.pdo;
 
 import org.testng.Assert;
+import org.testng.Reporter;
 import org.testng.annotations.Test;
 
 import org.tentackle.pdo.pdofactory.CollectiveInvoice;
@@ -44,6 +45,7 @@ public class PdoFactoryTest {
 
   @Test(groups = "local")
   public void testPdoFactory() {
+    Reporter.log("PdoFactoryTest.testPdoFactory <br>", true);
 
     Map<String, String> domainObjectMap = new TreeMap<>();
     domainObjectMap.put("org.tentackle.pdo.pdofactory.SingleInvoice", "org.tentackle.pdo.pdofactory.SingleInvoiceDomainImpl");
@@ -73,12 +75,12 @@ public class PdoFactoryTest {
 
     Assert.assertTrue(invoice instanceof Invoice);
     Assert.assertTrue(SingleInvoice.class.isAssignableFrom(invoice.getClass()));
-    Assert.assertNotEquals(SingleInvoice.class, invoice.getClass());
-    Assert.assertEquals(SingleInvoice.class, invoice.getEffectiveClass());
+    Assert.assertNotEquals(invoice.getClass(), SingleInvoice.class);
+    Assert.assertEquals(invoice.getEffectiveClass(), SingleInvoice.class);
     invoice.setInvoiceNo("HarrHarr");
-    Assert.assertEquals("1234.00", invoice.getSumAsString());
-    Assert.assertEquals("1234.00", LogItInterceptor.lastResult);
-    Assert.assertEquals("BlahDomain", invoice.toString());
+    Assert.assertEquals(invoice.getSumAsString(), "1234.00");
+    Assert.assertEquals(LogItInterceptor.lastResult, "1234.00");
+    Assert.assertEquals(invoice.toString(), "BlahDomain");
     Assert.assertEquals(invoice.getEffectiveClass(), SingleInvoice.class);
     Assert.assertEquals(pdoFactory.getDomainClass(SingleInvoice.class.getName()), SingleInvoiceDomainImpl.class);
     Assert.assertEquals(invoice.getDomainDelegate().getClass(), SingleInvoiceDomainImpl.class);
@@ -89,10 +91,10 @@ public class PdoFactoryTest {
     Assert.assertTrue(collinv instanceof Invoice);
     collinv.setInvoiceNo("HarrHarr");
     collinv.sumup();
-    Assert.assertEquals("HarrHarr", collinv.getInvoiceNo());
-    Assert.assertEquals("9999.00", collinv.getSumAsString());
-    Assert.assertEquals("9999.00", LogItInterceptor.lastResult);
-    Assert.assertEquals("CollectiveBlahDomain", collinv.toString());
+    Assert.assertEquals(collinv.getInvoiceNo(), "HarrHarr");
+    Assert.assertEquals(collinv.getSumAsString(), "9999.00");
+    Assert.assertEquals(LogItInterceptor.lastResult, "9999.00");
+    Assert.assertEquals(collinv.toString(), "CollectiveBlahDomain");
     Assert.assertEquals(collinv.getEffectiveClass(), CollectiveInvoice.class);
     Assert.assertEquals(pdoFactory.getDomainClass(CollectiveInvoice.class.getName()), CollectiveInvoiceDomainImpl.class);
     Assert.assertEquals(collinv.getDomainDelegate().getClass(), CollectiveInvoiceDomainImpl.class);
@@ -121,7 +123,7 @@ public class PdoFactoryTest {
     };
 
     SomeOperation someOper = operationFactory.create(SomeOperation.class);
-    Assert.assertEquals("hello", someOper.echo("hello"));
+    Assert.assertEquals(someOper.echo("hello"), "hello");
   }
 
 }

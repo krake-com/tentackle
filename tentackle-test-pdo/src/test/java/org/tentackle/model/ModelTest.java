@@ -28,6 +28,7 @@ public class ModelTest {
 
   @Test
   public void loadFromClasspath() {
+    Reporter.log("ModelTest.loadFromClasspath <br>", true);
     Model model = Model.getInstance();
     model.clearModel();
     try {

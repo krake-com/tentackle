@@ -60,6 +60,12 @@
       <optional>true</optional>   <!-- don't mix up classpath order -->
     </dependency>
 
+      <dependency>
+          <groupId>org.tentackle</groupId>
+          <artifactId>tentackle-log-log4j2v</artifactId>
+          <version>${project.version}</version>
+          <scope>test</scope>
+      </dependency>
     <dependency>
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>
@@ -106,6 +112,11 @@
             <version>${maven.surefire.plugin.version}</version>
           </dependency>
         </dependencies>
+        <configuration>
+          <suiteXmlFiles>
+            <suiteXmlFile>src/test/testng.xml</suiteXmlFile>
+          </suiteXmlFiles>
+        </configuration>
       </plugin>
 
       <plugin>

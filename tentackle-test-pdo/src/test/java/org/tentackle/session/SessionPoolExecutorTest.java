@@ -42,6 +42,8 @@ public class SessionPoolExecutorTest extends AbstractPdoTest {
 
   @Test
   public void testSequential() {
+    Reporter.log("SessionPoolExecutorTest.testSequential <br>", true);
+
     SessionPool pool = SessionPoolFactory.getInstance().create("testpool", getSession(), 1,1,1, POOL_SIZE,0,0);
     SessionPooledExecutor executor = new SessionPooledExecutor(pool);
     AtomicInteger sum = new AtomicInteger();
@@ -52,7 +54,7 @@ public class SessionPoolExecutorTest extends AbstractPdoTest {
     }
 
     try {
-      Thread.sleep(2000);   // 100 * 10ms -> max 1000ms, so 2000 should be enough
+      Thread.sleep(2000);   // 100 * 10 ms -> max 1000 ms, so 2000 should be enough
       executor.shutdown();
     }
     catch (InterruptedException e) {
@@ -68,6 +70,8 @@ public class SessionPoolExecutorTest extends AbstractPdoTest {
 
   @Test
   public void testParallel() {
+    Reporter.log("SessionPoolExecutorTest.testParallel <br>", true);
+
     SessionPool pool = SessionPoolFactory.getInstance().create("testpool", getSession(), 1,1,1, POOL_SIZE,0,0);
     SessionPooledExecutor executor = new SessionPooledExecutor(pool);
 
@@ -85,7 +89,7 @@ public class SessionPoolExecutorTest extends AbstractPdoTest {
     );
 
     try {
-      Thread.sleep(2000);   // 100 * 10ms -> max 1000ms, so 2000 should be enough
+      Thread.sleep(2000);   // 100 * 10 ms -> max 1000 ms, so 2000 should be enough
       executor.shutdown();
     }
     catch (InterruptedException e) {

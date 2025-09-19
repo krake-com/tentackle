@@ -37,8 +37,41 @@ public class BatchingTest extends AbstractPdoTest {
   /**
    * Inserts without batching.
    */
-  @Test(groups = "local", priority = 0)
-  public void testInserts() {
+  @Test(groups = "local", priority = 1)
+  public void testSimpleInserts() {
+    Reporter.log("BatchingTest.testSimpleInserts <br>", true);
+    runSimpleInserts();
+  }
+
+  /**
+   * Inserts with batching.
+   */
+  @Test(groups = "local", priority = 1)
+  public void testBatchInserts() {
+    Reporter.log("BatchingTest.testBatchInserts <br>", true);
+    runBatchInserts();
+  }
+
+  /**
+   * Test again after DB warmup.
+   */
+  @Test(groups = "local", priority = 2)
+  public void testAgainSimpleInserts() {
+    Reporter.log("BatchingTest.testAgainSimpleInserts <br>", true);
+    runSimpleInserts();
+  }
+
+  /**
+   * Test again after DB warmup.
+   */
+  @Test(groups = "local", priority = 2)
+  public void testAgainBatchInserts() {
+    Reporter.log("BatchingTest.testAgainBatchInserts <br>", true);
+    runBatchInserts();
+  }
+
+
+  private void runSimpleInserts() {
     Db session = (Db) getSession();
     ModificationLog log = new ModificationLog(session, DbModificationType.INSERT);
     TimeKeeper timeKeeper = new TimeKeeper();
@@ -49,11 +82,7 @@ public class BatchingTest extends AbstractPdoTest {
     Reporter.log("elapsed time for " + COUNT + " simple inserts: " + timeKeeper.millis() + " ms <br>", true);
   }
 
-  /**
-   * Inserts with batching.
-   */
-  @Test(groups = "local", priority = 1)
-  public void testBatchInserts() {
+  private void runBatchInserts() {
     Db session = (Db) getSession();
     ModificationLog log = new ModificationLog(session, DbModificationType.INSERT);
     log.setSerial(1);
@@ -80,15 +109,6 @@ public class BatchingTest extends AbstractPdoTest {
     }
     timeKeeper.end();
     Reporter.log("elapsed time for " + COUNT + " batch inserts: " + timeKeeper.millis() + " ms <br>", true);
-  }
-
-  /**
-   * Test again after DB warmup.
-   */
-  @Test(groups = "local", priority = 2)
-  public void testAgainBoth() {
-    testBatchInserts();
-    testInserts();
   }
 
 }

@@ -32,7 +32,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
 /**
- * Number source tests.
+ * Number-source tests.
  *
  * @author harald
  */
@@ -43,6 +43,7 @@ public class NumberSourceTest extends AbstractPdoTest {
 
   @Test(groups = "local")
   public void printMembers() {
+    Reporter.log("NumberSourceTest.printMembers <br>", true);
     for (PdoMember member: PdoUtilities.getInstance().getMembers(NumberPool.class)) {
       Reporter.log(member + "<br>");
     }
@@ -50,7 +51,7 @@ public class NumberSourceTest extends AbstractPdoTest {
 
   @Test(groups = "local")
   public void createAndRetrieveNumbers() {
-
+    Reporter.log("NumberSourceTest.createAndRetrieveNumbers <br>", true);
     // create pool
     NumberPool numberPool = on(NumberPool.class);
     numberPool.setName(POOL_NAME);

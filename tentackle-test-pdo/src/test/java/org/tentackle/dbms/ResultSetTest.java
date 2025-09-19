@@ -20,6 +20,7 @@
 package org.tentackle.dbms;
 
 import org.testng.Assert;
+import org.testng.Reporter;
 import org.testng.annotations.Test;
 
 import org.tentackle.ns.pdo.NumberPool;
@@ -28,7 +29,7 @@ import org.tentackle.pdo.testng.AbstractPdoTest;
 import java.util.List;
 
 /**
- * Number source tests.
+ * ResultSet tests.
  *
  * @author harald
  */
@@ -122,6 +123,8 @@ public class ResultSetTest extends AbstractPdoTest {
 
   @Test(groups = "local")
   public void retrieveDTOs() {
+
+    Reporter.log("ResultSetTest.retrieveDTOs <br>", true);
 
     // create some pools
     NumberPool numberPool = on(NumberPool.class);

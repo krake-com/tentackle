@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.prefs;
+package org.tentackle.prefs.other;
 
 import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.common.Timestamp;
@@ -32,6 +32,8 @@ import org.tentackle.log.Logger;
 import org.tentackle.misc.Identifiable;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.persist.app.ServerApplication;
+import org.tentackle.prefs.PersistedPreferences;
+import org.tentackle.prefs.RemotePreferencesTest;
 import org.tentackle.session.AbstractSessionTask;
 import org.tentackle.session.LoginFailedException;
 import org.tentackle.session.ModificationTracker;
@@ -122,7 +124,7 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
       @Override
       public void run() {
         try {
-          PersistedPreferences prefs = PersistedPreferences.systemNodeForPackage(AddAndRemovePrefsInServer.class).node("other");
+          PersistedPreferences prefs = PersistedPreferences.systemNodeForPackage(AddAndRemovePrefsInServer.class);
           prefs.put(RemotePreferencesTest.KEY_4, RemotePreferencesTest.VALUE_4);
           prefs.flush();
         }
@@ -142,7 +144,7 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
       @Override
       public void run() {
         try {
-          PersistedPreferences prefs = PersistedPreferences.systemNodeForPackage(AddAndRemovePrefsInServer.class).node("other");
+          PersistedPreferences prefs = PersistedPreferences.systemNodeForPackage(AddAndRemovePrefsInServer.class);
           prefs.removeNode();
           prefs.flush();
         }
@@ -164,7 +166,7 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
         try {
           // always stop because we're not running within a transaction (there is no DbPreNode/Key.deleteAll)
           for (DbPreferencesNode node : new DbPreferencesNode((Db) getSession()).selectAllObjects()) {
-            node.deletePlain();     // don't trigger modcounts
+            node.deletePlain();     // don't trigger modification counts
             for (DbPreferencesKey key : new DbPreferencesKey((Db) getSession()).selectByNodeId(node.getId())) {
               key.deletePlain();
             }
@@ -181,7 +183,7 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
 
   private void runTests() {
     try {
-      cleanupData();    // in case some garbage remained from failed test
+      cleanupData();    // in case some garbage remained from the failed test
       System.out.println(new Timestamp() + ": server started");
       sleep(3000);  // wait for startup and client to log in
       addPreferences();
@@ -195,7 +197,7 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
       cleanupData();
       System.out.println(new Timestamp() + ": preferences cleaned up");
     }
-    sleep(3000);    // allow client to logout
+    sleep(3000);    // allow client to log out
   }
 
 
