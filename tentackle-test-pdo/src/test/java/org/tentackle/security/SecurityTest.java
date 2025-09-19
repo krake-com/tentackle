@@ -19,6 +19,7 @@
 package org.tentackle.security;
 
 import org.testng.Assert;
+import org.testng.Reporter;
 import org.testng.annotations.Test;
 
 import org.tentackle.security.permissions.AllPermission;
@@ -27,6 +28,7 @@ import org.tentackle.security.permissions.ReadPermission;
 import org.tentackle.security.permissions.WritePermission;
 
 /**
+ * Security tests.
  *
  * @author harald
  */
@@ -34,6 +36,7 @@ public class SecurityTest {
 
   @Test(groups = "local")
   public void testPermissions() {
+    Reporter.log("SecurityTest.testPermissions <br>", true);
 
     // configured permissions
     @SuppressWarnings("unchecked")

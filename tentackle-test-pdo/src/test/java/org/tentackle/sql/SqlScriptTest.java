@@ -90,6 +90,8 @@ public class SqlScriptTest extends AbstractPdoTest {
 
   @Test(groups = "local")
   public void runScript() {
+    Reporter.log("SqlScriptTest.runScript <br>", true);
+
     if (getSession() instanceof Db db) {
       try (StatementWrapper statement = db.createStatement()) {
         // in case the test failed in the middle before
@@ -112,6 +114,8 @@ public class SqlScriptTest extends AbstractPdoTest {
 
   @Test(groups = "local")
   public void testTimeout() {
+    Reporter.log("SqlScriptTest.testTimeout <br>", true);
+
     if (getSession() instanceof Db db) {
       ScriptRunner scriptRunner = db.getBackend().createScriptRunner(db.connection().getConnection());
       scriptRunner.setExecutionTimeout(2);
@@ -134,6 +138,8 @@ public class SqlScriptTest extends AbstractPdoTest {
 
   @Test(groups = "local")
   public void testCancel() {
+    Reporter.log("SqlScriptTest.testCancel <br>", true);
+
     if (getSession() instanceof Db db) {
       ScriptRunner scriptRunner = db.getBackend().createScriptRunner(db.connection().getConnection());
       try {

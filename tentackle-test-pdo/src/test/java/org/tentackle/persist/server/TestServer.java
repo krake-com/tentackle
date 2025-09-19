@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.persist;
+package org.tentackle.persist.server;
 
 import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.common.Version;
@@ -111,7 +111,7 @@ public class TestServer extends ServerApplication {
    * <p>
    * where:<br>
    * duration = optional time in ms the server will be running.
-   * Default is 10000ms (10s).
+   * Default is 10000 ms (10 s).
    *
    * @param args command line arguments
    */

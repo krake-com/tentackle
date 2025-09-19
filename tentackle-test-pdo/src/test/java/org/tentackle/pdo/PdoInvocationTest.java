@@ -15,6 +15,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
 package org.tentackle.pdo;
 
 import org.testng.Reporter;
@@ -28,7 +29,7 @@ import org.tentackle.security.pdo.SecurityPersistence;
 /**
  * Determines the overhead of the {@link org.tentackle.pdo.PdoInvocationHandler}.
  * <p>
- * Because of the hotspot compiler's optimizations the results are highly questionable.
+ * Because of the hotspot compiler's optimizations, the results are highly questionable.
  */
 public class PdoInvocationTest {
 
@@ -37,6 +38,7 @@ public class PdoInvocationTest {
 
   @Test(groups = "local")
   public void invocations1() {
+    Reporter.log("PdoInvocationTest.invocations1 <br>", true);
 
     Security security = Pdo.create(Security.class);
     SecurityPersistence securityPersistence = (SecurityPersistence) security.getPersistenceDelegate();
@@ -67,6 +69,7 @@ public class PdoInvocationTest {
 
   @Test(groups = "local")
   public void invocations2() {
+    Reporter.log("PdoInvocationTest.invocations2 <br>", true);
 
     TimeKeeper timeKeeper = new TimeKeeper();
     SecurityPersistenceImpl[] securityImpls = new SecurityPersistenceImpl[SIZE];

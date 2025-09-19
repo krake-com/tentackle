@@ -18,12 +18,14 @@
 
 package org.tentackle.prefs;
 
+import org.testng.Reporter;
 import org.testng.annotations.Test;
 
 import org.tentackle.dbms.prefs.DbPreferences;
 import org.tentackle.log.Logger;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.testng.AbstractPdoTest;
+import org.tentackle.prefs.other.AddAndRemovePrefsInServer;
 import org.tentackle.session.AbstractSessionTask;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.Session;
@@ -41,7 +43,6 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
-
 
 /**
  * Tests for persisted preferences.
@@ -67,7 +68,7 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
 
 
   // synchronized because it's the modtracker's thread
-  // Reporter.log doesn't work from other than test thread!
+  // Reporter.log doesn't work from other than the test thread!
   @Override
   public synchronized void childAdded(NodeChangeEvent evt) {
     nodeEvents.add(evt);
@@ -88,6 +89,7 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
 
   @Test(groups = "remote2", dependsOnGroups = "remote1")  // must be the last test!
   public void writePreferences() throws Exception {
+    Reporter.log("RemotePreferencesTest.writePreferences <br>", true);
 
     Process process = AbstractPdoTest.runClass(AddAndRemovePrefsInServer.class);
     Thread.sleep(3000);
@@ -105,7 +107,7 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
 
             @Override
             public void run() {
-              // switch session from within running tracker's thread is allowed
+              // switch session from within the running tracker's thread is allowed
               tracker.getSession().close();
               tracker.setSession(session.clone(null));
               tracker.setSleepInterval(250);   // fast polling for tests
@@ -113,7 +115,7 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
           });
       }
       else {
-        tracker.setSession(session.clone(null));    // set or change session
+        tracker.setSession(session.clone(null));    // set or change the session
         tracker.setSleepInterval(250);          // fast polling for tests
         tracker.start();
       }

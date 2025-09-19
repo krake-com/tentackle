@@ -38,7 +38,7 @@ public class IllegalModelNamesTest {
 
   @Test
   public void createMethodNames() {
-
+    Reporter.log("IllegalModelNamesTest.createMethodNames <br>", true);
     Set<String> illegalNames = new TreeSet<>();
     Set<String> confusingNames = new TreeSet<>();
 

@@ -29,12 +29,14 @@ import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 /**
- * Simple connection test to in-memory H2 database.
+ * Simple connection test to in-memory H2-database.
  */
 public class H2ConnectionTest {
 
   @Test
   public void openSession() {
+    Reporter.log("H2ConnectionTest.openSession <br>", true);
+
     try {
       Db session = (Db) Pdo.createSession(Pdo.createSessionInfo("h2"));
       assertTrue(session.getBackend().isDatabaseInMemory(session.getUrl()));

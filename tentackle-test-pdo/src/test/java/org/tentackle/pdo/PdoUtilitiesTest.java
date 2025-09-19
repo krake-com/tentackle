@@ -19,6 +19,7 @@
 package org.tentackle.pdo;
 
 import org.testng.Assert;
+import org.testng.Reporter;
 import org.testng.annotations.Test;
 
 import java.util.MissingResourceException;
@@ -34,6 +35,8 @@ public class PdoUtilitiesTest {
 
   @Test(groups = "local")
   public void testNames() {
+    Reporter.log("PdoUtilitiesTest.testNames <br>", true);
+
     for (String pdoName: PdoUtilities.getInstance().getClassNames()) {
       try {
         Class<?> clazz = Class.forName(pdoName);
