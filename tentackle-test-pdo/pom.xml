@@ -60,12 +60,15 @@
       <optional>true</optional>   <!-- don't mix up classpath order -->
     </dependency>
 
-      <dependency>
-          <groupId>org.tentackle</groupId>
-          <artifactId>tentackle-log-log4j2v</artifactId>
-          <version>${project.version}</version>
-          <scope>test</scope>
-      </dependency>
+    <dependency>
+      <!-- switch TT logging to target/logs/test.log
+           since the console is blocked in windows by the first process
+           and there are tests running in parallel in this module -->
+      <groupId>org.tentackle</groupId>
+      <artifactId>tentackle-log-log4j2v</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>

@@ -27,6 +27,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -117,7 +118,13 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
     }
   }
 
-
+  /**
+   * A reference to a class that is referencing this class.
+   *
+   * @param methods the method chain
+   * @param priority the priority, lower indicates a higher priority
+   * @param methodPath the method path name
+   */
   protected record ForeignReference(Method[] methods, int priority, String methodPath) implements Comparable<ForeignReference> {
 
     /**
@@ -133,7 +140,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
             int mv = o1.length - o2.length;   // no Integer.compare here!
             if (mv == 0) {
               for (int i=0; i < o1.length && mv == 0; i++) {
-                mv = Integer.compare(o1[i].hashCode(), o2[i].hashCode());
+                mv = o1[i].toString().compareTo(o2[i].toString());
               }
             }
             return mv;
@@ -146,7 +153,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
 
 
   /**
-   * Referencing classes and their isReferencing-methods.
+   * References from other classes.
    */
   protected final Set<ForeignReference> foreignReferences = new TreeSet<>();
 
@@ -182,8 +189,8 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
   public int columnCount;
 
   /**
-   * true if prepared statements should always be prepared (i.e. if
-   * the statement is changing for some reason, e.g. the table name).
+   * true if prepared statements should always be prepared (i.e., if
+   * the statement is changing for some reason, e.g., the table name).
    */
   public boolean alwaysPrepare;
 
@@ -279,7 +286,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
   public final TableSerialExpirationBacklog expirationBacklog;
 
   /**
-   * the source for obtaining a new ID.
+   * The source for getting a new ID.
    */
   public IdSource idSource;
 
@@ -369,11 +376,11 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
    * @return the idSource
    */
   public synchronized IdSource getIdSource(Db db) {
-    if (idSource == null) {  // setup IdSource once for this class
+    if (idSource == null) {  // set up IdSource once for this class
       // check property "idsource = ..."
       String idConfig = getProperty(Db.IDSOURCE);
       if (idConfig == null) {
-        // no such property: use default id source from Db
+        // no such property: use the default id source from Db
         idSource = db.getDefaultIdSource();
       }
       else  {
@@ -393,7 +400,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
    * Provided to be overridden.
    *
    * @param clazz the referencing class
-   * @return the priority
+   * @return the priority, lower numbers indicate a higher priority
    */
   protected int determineReferencePriority(Class<? extends AbstractDbObject<?>> clazz) {
     // all objects get the same priority by default
@@ -401,7 +408,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
   }
 
   /**
-   * Adds a PDO class that is referencing the class of this class variable holder.
+   * Adds a PDO class referencing the class of this class variable holder.
    * <p>
    * The referencing class must provide a static method <code>isReferencing&lt;ClassBasename&gt;</code>,
    * while <code>ClassBaseName</code> is the {@link #classBaseName} of the referenced class.
@@ -411,7 +418,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
    *
    * @param clazz the class to add
    * @param methodPath the method path name, null if default <code>"isReferencing&lt;ClassBaseName&gt;"</code>
-   * @return true if added, false if already in map
+   * @return true if added, false if already in the map
    * @see #removeReferencingClass
    */
   public boolean addReferencingClass(Class<? extends AbstractDbObject<?>> clazz, String methodPath) {
@@ -421,13 +428,12 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
     }
   }
 
-
   /**
-   * Removes a PDO class that is referencing the class from this class variable holder.
+   * Removes a PDO class referencing the class from this class variable holder.
    *
    * @param clazz the class to be removed
    * @param methodPath the method path name, null if default
-   * @return true if removed, false if not in map
+   * @return true if removed, false if not in the map
    * @see #addReferencingClass
    */
   public boolean removeReferencingClass(Class<? extends AbstractDbObject<?>> clazz, String methodPath) {
@@ -436,7 +442,6 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
       return foreignReferences.remove(ref);
     }
   }
-
 
 
   private ForeignReference createForeignReference(Class<? extends AbstractDbObject<?>> clazz, String methodPath) {
@@ -509,7 +514,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
    * @param foreignReferences the foreign references
    * @return true if referenced
    */
-  protected boolean isReferencedImpl(Db db, long id, Set<ForeignReference> foreignReferences) {
+  protected boolean isReferencedImpl(Db db, long id, Collection<ForeignReference> foreignReferences) {
     for (ForeignReference ref : foreignReferences) {
       try {
         @SuppressWarnings("unchecked")
@@ -532,7 +537,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
 
 
   /**
-   * Gets the delegateId of the class, i.e. subclass of AbstractDbObject.<br>
+   * Gets the delegateId of the class, i.e., subclass of AbstractDbObject.<br>
    * If the remoteDelegateId is 0, it will be prepared
    * The delegateId is unique for each class. It is valid only in remote connections and
    * is the same for all remote sessions.

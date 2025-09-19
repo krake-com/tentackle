@@ -1982,15 +1982,16 @@ For more options, see {\@link DbModelWurblet}.
 
   // add referencing classes and their methods
   static {
+    CLASSVARIABLES.setForeignReferencesInitializer(() -> {
 @[
         if (getEntity().isAbstract()) {
 ]@
-    \@SuppressWarnings("unchecked")
+      \@SuppressWarnings("unchecked")
 @[
         }
 ]@
-    AbstractPersistentObject<?,?> po = (AbstractPersistentObject<?,?>)
-        Pdo.create(@(pdoName)@.class).getPersistenceDelegate();
+      AbstractPersistentObject<?,?> po = (AbstractPersistentObject<?,?>)
+          Pdo.create(@(pdoName)@.class).getPersistenceDelegate();
 @[
       // register referencing classes and the methods
       for (Relation rel: refRels) {
@@ -2003,11 +2004,12 @@ For more options, see {\@link DbModelWurblet}.
         }
         for (Entity leaf: refEntity.getLeafEntities()) {
 ]@
-    po.addReferencingClass(@(leaf.getClassId())@, "@(methodName)@");  // @(leaf.getName())@
+      po.addReferencingClass(@(leaf.getClassId())@, "@(methodName)@");  // @(leaf.getName())@
 @[
         }
       }
 ]@
+    });
   }
 @[
       }

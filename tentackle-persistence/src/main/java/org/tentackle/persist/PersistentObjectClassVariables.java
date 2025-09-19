@@ -54,11 +54,11 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
 
   /**
-   * Creates a PDO classvariable.
+   * Creates a PDO class-variable.
    *
    * @param pdoClass the PDO's class (i.e. interface)
    * @param poClass the class of the persistence implementation
-   * @param tableAlias the table alias to be used in joined selects
+   * @param tableAlias the table alias to be used in joined select statements
    * @param superClassVariables the class variables of the superclass, null if not inherited
    * @param eagerJoins the optional eager joins, null of empty if none
    * @param <T> the PDO class type
@@ -80,7 +80,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    *
    * @param pdoClass the PDO's class (i.e. interface)
    * @param poClass the class of the persistence implementation
-   * @param tableAlias the table alias to be used in joined selects
+   * @param tableAlias the table alias to be used in joined select statements
    * @param <T> the PDO class type
    * @param <P> the persistence class type
    */
@@ -111,7 +111,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   public final String pdoClassBaseName;
 
   /**
-   * The table alias to be used in joined selects.
+   * The table alias to be used in joined select statements.
    */
   public final String tableAlias;
 
@@ -232,15 +232,20 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
 
   /**
-   * Columns for single table inheritance select clause.
+   * Columns for single table inheritance select-clause.
    */
   private String sqlColumnNames;
 
   /**
-   * SQL string " AND xx.classId IN (...)" for single table inheritance.
+   * SQL string {@code " AND xx.classId IN (...)"} for single table inheritance.
    */
   private String sqlClassIdCondition;
 
+  /**
+   * Initializes the foreign references once if not yet done.<br>
+   * null if initialized or no initialization needed.
+   */
+  private Runnable foreignReferencesInitializer;
 
   /**
    * Constructs a classvariable.<p>
@@ -248,7 +253,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    *
    * @param pdoClass the PDO's class (i.e. interface)
    * @param poClass the class of the persistence implementation
-   * @param tableAlias the table alias to be used in joined selects
+   * @param tableAlias the table alias to be used in joined select statements
    * @param superClassVariables the class variables of the superclass, null if not inherited
    * @param eagerJoins the optional eager joins, null of empty if none
    */
@@ -273,7 +278,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    *
    * @param pdoClass the PDO's class (i.e. interface)
    * @param poClass the class of the persistence implementation
-   * @param tableAlias the table alias to be used in joined selects
+   * @param tableAlias the table alias to be used in joined select statements
    */
   public PersistentObjectClassVariables(Class<T> pdoClass, Class<P> poClass, String tableAlias)  {
     this(pdoClass, poClass, tableAlias, null, null);
@@ -375,7 +380,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   /**
    * Gets the effective eager joins.
    *
-   * @return the joins, null if none
+   * @return the joins, null for none
    */
   public List<Join<? super T, ?>> getEagerJoins() {
     if (effectiveEagerJoinsPending) {
@@ -403,7 +408,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    * <p>
    * If the class has no tablename, it is derived from its superclasses.
    *
-   * @return the tablename, null if class does not map to any database table
+   * @return the tablename, null if the class does not map to any database table
    */
   public String getTableName () {
     if (effectiveTableNamePending) {
@@ -430,7 +435,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    * <p>
    * If the class has no tablename, it is derived from its superclasses.
    *
-   * @return the alias, null if class does not map to any database table
+   * @return the alias, null if the class does not map to any database table
    */
   public String getTableAlias () {
     if (effectiveTableAliasPending) {
@@ -453,7 +458,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
 
   /**
-   * Gets the full column name with optional table alias.
+   * Gets the full column name with the optional table alias.
    *
    * @param name the short name
    * @return the full name
@@ -465,7 +470,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   /**
    * Gets the full column name with optional table alias and prefix.
    *
-   * @param prefix the column prefix for embedded entities, null if none
+   * @param prefix the column prefix for embedded entities, null for none
    * @param name the short name
    * @return the full name
    */
@@ -522,11 +527,31 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   }
 
 
+  /**
+   * Sets the initializer for the foreign references.<br>
+   * The initializer is a runnable that invokes {@link #addReferencingClass(Class, String)} for each foreign reference.
+   * It is invoked once from {@link #isReferenced(Db, long)} and usually points to a
+   * static method in the persistence implementation of the referenced class.
+   *
+   * @param initializer the initializer to be executed once
+   */
+  public void setForeignReferencesInitializer(Runnable initializer) {
+    synchronized(foreignReferences) {
+      foreignReferencesInitializer = initializer;
+    }
+  }
+
   @Override
   public boolean isReferenced(Db db, long id) {
     PersistentObjectClassVariables<? super T, ? super P> cv = this;
     boolean referenced = false;
     while (!referenced && cv != null) {
+      synchronized (cv.foreignReferences) {
+        if (cv.foreignReferencesInitializer != null) {
+          cv.foreignReferencesInitializer.run();
+          cv.foreignReferencesInitializer = null;
+        }
+      }
       referenced = cv.isReferencedImpl(db, id, cv.foreignReferences);
       cv = cv.superClassVariables;
     }
@@ -631,13 +656,13 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    * Only root-entities are writable.
    * Components are not writable by default (because only the root can be persisted).
    * <p>
-   * Notice that the persistence layer will not invoke isWriteAllowed on components,
+   * Notice that the persistence layer will not invoke isWriteAllowed on components
    * because the root is already checked when saving or deleting a PDO. Remember that
-   * only root entities can be persisted by the application!
+   * the application can persist only root entities!
    *
    * @param object the object to check the security rules for.
    *
-   * @return false if operation is denied
+   * @return false if the operation is denied
    */
   public boolean isWriteAllowed(AbstractPersistentObject<?,?> object) {
     return !isSecurityEnabled() ||
@@ -652,7 +677,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    *
    * @param object the object to check the security rules for.
    *
-   * @return false if operation is denied
+   * @return false if the operation is denied
    */
   public boolean isViewAllowed(AbstractPersistentObject<?,?> object) {
     if (isSecurityEnabled()) {
@@ -676,7 +701,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    *
    * @param object the object to check the security rules for.
    *
-   * @return false if operation is denied
+   * @return false if the operation is denied
    */
   public boolean isEditAllowed(AbstractPersistentObject<?,?> object) {
     return !isSecurityEnabled() ||
@@ -761,11 +786,10 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    * <p>
    * Overridden to determine the priority according to the presence of a cache:
    * <ol>
-   *  <li>high: class provides a preloading cache (low volume data, usually master data)</li>
+   *  <li>high: class provides a preloading cache (low-volume data, usually master data)</li>
    *  <li>medium: class provides a non-preloading cache (medium volume data)</li>
-   *  <li>low: class provides no cache (high volume, usually transaction data)</li>
+   *  <li>low: class provides no cache (high-volume, usually transaction data)</li>
    * </ol>
-   * Notice that the cache must be named "cache". This is the case for wurblet generated caches.
    */
   @Override
   protected int determineReferencePriority(Class<? extends AbstractDbObject<?>> clazz) {
