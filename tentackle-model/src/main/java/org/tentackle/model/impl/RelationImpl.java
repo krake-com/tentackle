@@ -824,7 +824,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl>, Cloneab
           throw createModelException("cascaded delete is not allowed for non-composite list relations");
         }
 
-        if (foreignAttribute == null) {
+        if (foreignAttribute == null && methodArgs.isEmpty()) {   // may be any attribute(s), if methodArgs are set
           throw createModelException("relation " + getName() + " does not map to a foreign attribute in " + foreignEntity);
         }
       }
