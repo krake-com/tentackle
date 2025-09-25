@@ -209,6 +209,14 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
   protected boolean generateHeaderComment;
 
   /**
+   * Check for reserved backend-specific names.<br>
+   * Asserts that column-, schema-, table- and index-names don't
+   * conflict with reserved words of the configured backends.
+   */
+  @Parameter(defaultValue = "true")
+  private boolean checkBackendSpecificNames;
+
+  /**
    * Check for reserved table names.<br>
    * Invokes {@link org.tentackle.sql.metadata.MetaDataUtilities#isReservedTable(String)}.
    */
@@ -446,14 +454,16 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
         }
       }
 
-      Set<Backend> validatedBackends = new HashSet<>();
-      for (BackendInfo backendInfo : backendInfos.values()) {
-        validatedBackends.add(backendInfo.getBackend());
+      if (checkBackendSpecificNames) {
+        Set<Backend> validatedBackends = new HashSet<>();
+        for (BackendInfo backendInfo : backendInfos.values()) {
+          validatedBackends.add(backendInfo.getBackend());
+        }
+        for (BackendInfo backendInfo : connectableBackendInfos.values()) {
+          validatedBackends.add(backendInfo.getBackend());
+        }
+        Model.getInstance().getEntityFactory().setBackends(validatedBackends);
       }
-      for (BackendInfo backendInfo : connectableBackendInfos.values()) {
-        validatedBackends.add(backendInfo.getBackend());
-      }
-      Model.getInstance().getEntityFactory().setBackends(validatedBackends);
 
       return true;
     }
