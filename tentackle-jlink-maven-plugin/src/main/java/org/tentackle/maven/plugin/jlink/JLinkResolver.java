@@ -152,7 +152,7 @@ public class JLinkResolver {
 
     /**
      * Returns whether this is a plain modular application.<br>
-     * Plain modular means that all requirements are met by real modules.
+     * Plain modular means that real modules meet all requirements.
      * If not plain, the jlink tool is used to build a runtime image only
      * and the application modules are placed on the module-path explicitly.
      *
@@ -301,7 +301,7 @@ public class JLinkResolver {
     /**
      * Returns whether the module path is not empty.
      *
-     * @return true if module-path must be configured
+     * @return true if the module-path must be configured
      */
     public boolean isModulePathRequired() {
       return modular && !modulePath.isEmpty();
@@ -354,7 +354,7 @@ public class JLinkResolver {
     /**
      * Returns whether the class path is not empty.
      *
-     * @return true if classpath must be configured
+     * @return true if the classpath must be configured
      */
     public boolean isClassPathRequired() {
       return !extraClassPathElements.isEmpty() || !classPath.isEmpty();
@@ -377,7 +377,7 @@ public class JLinkResolver {
           needSep = true;
         }
         if (".".equals(element) && !prefix.isEmpty()) {
-          // translate dot prefixed by a directory to the directory alone (without trailing slash)
+          // translate dot prefixed by a directory to the directory alone (without the trailing slash)
           buf.append(prefix, 0, prefix.length() - 1);
         }
         else {
@@ -481,7 +481,7 @@ public class JLinkResolver {
 
     if (result.isModular()) {
       mojo.getLog().debug("building a modular application");
-      // check if all requirements are met by real modules.
+      // check if real modules meet all requirements.
       // this is the only way to use jlink for application modules.
       Set<ModularArtifact> unresolvedModules = new LinkedHashSet<>();
       for (String requiredModule : requiredModules) {
@@ -506,11 +506,11 @@ public class JLinkResolver {
             result.addToClassPath(unresolvedModule.getArtifact());
           }
           else {
-            mojo.getLog().info("required " + unresolvedModule + " is not a full-blown module");
-            result.addToModulePath(unresolvedModule);   // must go to module path!
+            mojo.getLog().warn("required " + unresolvedModule + " is not a full-blown module");
+            result.addToModulePath(unresolvedModule);   // must go to the module path!
           }
         }
-        mojo.getLog().info("linking runtime modules only: project dependencies moved to the module-path");
+        mojo.getLog().warn("linking runtime modules only: project dependencies moved to the module-path");
         result.addRuntimeModuleNames(runtimeModules);
         for (ModularArtifact artifact: modules.values()) {
           addToModuleOrClasspath(artifact, result);
@@ -527,7 +527,7 @@ public class JLinkResolver {
 
     // add modules not referenced by anyone
     List<ModularArtifact> allModules = new ArrayList<>();
-    allModules.addAll(automaticModules.values());    // automatic come first because they may provide services
+    allModules.addAll(automaticModules.values());    // automatic modules come first because they may provide services
     allModules.addAll(modules.values());
     for (ModularArtifact artifact: allModules) {
       String moduleName = artifact.getModuleName();
@@ -562,7 +562,7 @@ public class JLinkResolver {
   }
 
   private Map<Artifact, JavaModuleDescriptor> loadArtifacts() throws MojoExecutionException {
-    // build file to artifact map
+    // build file to the artifact map
     Map<File, Artifact> artifactMap = new LinkedHashMap<>();  // keep order
     for (Artifact artifact: artifacts) {
       File artifactFile = artifact.getFile();
@@ -579,7 +579,7 @@ public class JLinkResolver {
       }
     }
     catch (MojoExecutionException mx) {
-      // don't abort, just continue with the current JDK and hope the best
+      // don't abort, just continue with the current JDK and hope for the best
       mojo.getLog().warn(mx.getMessage());
     }
 
