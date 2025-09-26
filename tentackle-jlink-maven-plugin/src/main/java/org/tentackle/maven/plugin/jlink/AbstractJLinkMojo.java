@@ -58,7 +58,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   public static final String DEST_CLASSPATH = "cp";
 
   /**
-   * Name of the destination subfolder containing the modulepath artifacts.
+   * Name of the destination subfolder containing the module-path artifacts.
    */
   public static final String DEST_MODULEPATH = "mp";
 
@@ -88,10 +88,25 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   private String mainClass;
 
   /**
-   * Dependencies that should go to the classpath instead of modulepath.
+   * Dependencies that should go to the classpath instead of the module-path.
    */
   @Parameter
   private List<ClasspathDependency> classpathDependencies;
+
+  /**
+   * Controls the behavior if an automatic module is required.
+   *
+   * <ul>
+   *   <li>default: log such modules as warnings</li>
+   *   <li>true: log as an error and let the build fail</li>
+   *   <li>false: log as info</li>
+   * </ul>
+   *
+   * This flag is ignored, if a classpath application is built,
+   * i.e., no {@link #mainModule} is given.
+   */
+  @Parameter
+  protected Boolean failOnAutomaticRequired;
 
   /**
    * Extra directories to copy to the image.
@@ -136,7 +151,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   private File saveOpts;
 
   /**
-   * Enables the auto update feature.
+   * Enables the auto-update feature.
    * <p>
    * For the <code>jlink</code> gaol an extra update script will be generated
    * via the {@link JLinkMojo#getUpdateTemplate()}.
@@ -161,7 +176,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    * List of full-blown modules that should be moved to the module path explicitly.<br>
    * By default, all full-blown modules are passed to the jlink tool. If a module is listed
    * for the module path only, the module it will be moved to the <code>mp</code> folder instead.<br>
-   * This may become necessary, if a 3rd-party full-blown module (illegally!) requires automatic modules, which
+   * This may become necessary if a 3rd-party full-blown module (illegally!) requires automatic modules, which
    * would cause all artifacts to be moved to the module path by this plugin automatically, since the
    * jlink tool can only handle full-blown modules.
    * <p>
@@ -236,7 +251,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
 
   /**
    * Extra jre or jdk modules to add to the image.<br>
-   * Useful to add the runtime localization module or extra tools in bin.
+   * Useful to add the runtime localization module or extra tools in the bin-directory.
    * <p>
    * Example:
    *
@@ -266,7 +281,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   /**
    * Extra variables for template or artifact generation.
    * <p>
-   * For example the subproject's basedir:
+   * For example, the subproject's basedir:
    * <pre>
    *  &lt;variables&gt;
    *    &lt;project&gt;${project.basedir}&lt;/project&gt;
@@ -358,10 +373,20 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   /**
    * Returns whether the update feature is enabled.
    *
-   * @return true if generate artifacts with auto-update feature
+   * @return true if generate artifacts with the auto-update feature
    */
   public boolean isWithUpdater() {
     return withUpdater;
+  }
+
+  /**
+   * Returns the policy if an automatic module is required.
+   *
+   * @return the policy, null if not configured
+   * @see #failOnAutomaticRequired
+   */
+  public Boolean getFailOnAutomaticRequired() {
+    return failOnAutomaticRequired;
   }
 
   /**
@@ -509,7 +534,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   /**
    * Gets optional extra classpath elements.<br>
    *
-   * @return pathnames relative to the image root, null if none
+   * @return the pathnames relative to the image root, null for none
    */
   public List<String> getExtraClasspathElements() {
     return extraClasspathElements;
@@ -627,7 +652,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    * Returns whether an artifact should be moved to the classpath explicitly.
    *
    * @param artifact the artifact
-   * @return true if move to classpath, else modulepath
+   * @return true if move to classpath, else module-path
    */
   public boolean isClasspathDependency(Artifact artifact) {
     if (classpathDependencies != null) {
@@ -672,7 +697,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
     // run jlink
     createJLinkImage(result);
 
-    // copy artifacts not covered by jlink to modulepath and classpath subdirectories
+    // copy artifacts not covered by jlink to module-path and classpath subdirectories
     copyArtifacts(result);
 
     // copy resources such as backend.properties or logging config to the conf subdirectory
@@ -841,7 +866,7 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    *
    * @param pluginTemplate the plugin's name of the template
    * @param projectTemplate the project's name of the template
-   * @param overwrite true if overwrite existing template, false if leave unchanged
+   * @param overwrite true if overwrite the existing template, false if leave unchanged
    * @throws MojoExecutionException if installation failed
    */
   protected void installTemplate(String pluginTemplate, String projectTemplate, boolean overwrite) throws MojoExecutionException {
@@ -861,12 +886,11 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   }
 
   /**
-   * Logs the toolrunner's output at info level.
+   * Logs the {@link ToolRunner}'s output at info level.
    *
-   * @param runner the toolrunner
-   * @throws MojoExecutionException if runner not invoked so far
+   * @param runner the ToolRunner
    */
-  protected void logToolOutput(ToolRunner runner) throws MojoExecutionException {
+  protected void logToolOutput(ToolRunner runner) {
     String out = runner.getOutputAsString();
     if (!out.isEmpty()) {
       getLog().info(out);
