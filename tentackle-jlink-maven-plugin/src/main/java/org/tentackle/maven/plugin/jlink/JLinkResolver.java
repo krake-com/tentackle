@@ -500,15 +500,32 @@ public class JLinkResolver {
         result.setPlainModular(true);
       }
       else {
+        Boolean failOnAutomaticRequired = mojo.getFailOnAutomaticRequired();
+        boolean failDueToAutomaticRequired = false;
         for (ModularArtifact unresolvedModule: unresolvedModules) {
           if (mojo.isClasspathDependency(unresolvedModule.getArtifact())) {
             // moved to the classpath explicitly (already moved to the automatic modules, see above)
             result.addToClassPath(unresolvedModule.getArtifact());
           }
           else {
-            mojo.getLog().warn("required " + unresolvedModule + " is not a full-blown module");
+            String msg = "required " + unresolvedModule + " is not a full-blown module";
+            if (Boolean.TRUE.equals(failOnAutomaticRequired)) {
+              failDueToAutomaticRequired = true;
+              mojo.getLog().error(msg);
+            }
+            else {
+              if (failOnAutomaticRequired == null) {
+                mojo.getLog().warn(msg);
+              }
+              else {
+                mojo.getLog().info(msg);
+              }
+            }
             result.addToModulePath(unresolvedModule);   // must go to the module path!
           }
+        }
+        if (failDueToAutomaticRequired) {
+          throw new MojoExecutionException("required automatic modules found (failOnAutomaticRequired=" + failOnAutomaticRequired + ")");
         }
         mojo.getLog().warn("linking runtime modules only: project dependencies moved to the module-path");
         result.addRuntimeModuleNames(runtimeModules);
