@@ -24,6 +24,7 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.session.AlreadyLoggedInException;
 import org.tentackle.session.LoginFailedException;
+import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.SessionInfo;
 
 import java.text.MessageFormat;
@@ -102,7 +103,8 @@ public class ${application}RemoteDbSessionImpl extends RemoteDbSessionImpl imple
     if (session != null && !session.isRemote()) {
       try {
         ${application}SessionInfo sessionInfo = (${application}SessionInfo) getClientSessionInfo();
-        if (!sessionInfo.isCloned()) {    // if main session
+        if (!sessionInfo.isCloned() &&     // if user's main session
+            !ModificationTracker.getInstance().isTerminationRequested()) {    // and no emergency shutdown requested
           DomainContext context = Pdo.createDomainContext(session);
           User user = Application.getInstance().getUser(context, sessionInfo.getUserId());
           LocaleProvider.getInstance().setCurrentLocale(sessionInfo.getLocale());
