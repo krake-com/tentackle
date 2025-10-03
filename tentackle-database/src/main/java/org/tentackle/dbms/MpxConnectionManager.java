@@ -31,9 +31,9 @@ import java.util.Date;
  * Multiplexing connection manager.<br>
  *
  * A connection manager for applications with a large number of session instances,
- * e.g. application servers. The manager will multiplex N session instances against
+ * for example, application servers. The manager will multiplex N session instances against
  * M connections, allowing N &gt; M. This is not to be mixed up with session-pooling, as connection
- * multiplexing is completely transparent to the application whereas pooling requires
+ * multiplexing is completely transparent to the application, whereas pooling requires
  * some handling to request and release a session.
  *
  * @author harald
@@ -42,8 +42,8 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
   private static final Logger LOGGER = Logger.get(MpxConnectionManager.class);
 
-  private static final int MAX_LOOP = 100;        // max. number of sleep-with-retry if no connection available
-  private static final int BASE_MS = 50;          // base milliseconds to sleep before next try
+  private static final int MAX_LOOP = 100;        // max. sleep-with-retry if no connection available
+  private static final int BASE_MS = 50;          // base milliseconds to sleep before the next try
   private static final long REQ_MUTEX_MS = 1000;  // request connections mutex wait timeout
   private static final long DONE_MUTEX_MS = 500;  // done connections mutex wait timeout
 
@@ -77,7 +77,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   /** connection inactivity timeout in ms. */
   private long connectionInactivityTimeoutMs;
 
-  /** periodical dummy select to prevent premature close of idle connections. */
+  /** periodical fake-select to prevent premature close of idle connections. */
   private boolean connectionKeepAlive;
 
 
@@ -125,7 +125,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     infoLogSize = maxConSize / 4;
     warnLogSize = maxConSize / 2;
 
-    // setup initial connections
+    // set up initial connections
     unConList = new int[iniSize];
 
     // connections are brought up in an extra thread
@@ -147,7 +147,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
    * Start with 8 connections.
    * Add 2 connections at a time if all connections are in use.
    * Don't drop below 4 connections.
-   * Maximum of 40 connections, i.e. concurrent db operations (i.e. info above 10, warning above 20)
+   * Maximum of 40 connections, i.e., concurrent db operations (i.e., info above 10, warning above 20)
    * Within 12 to 36h (approx. once a day), close and reopen connections
    * (allows updates of the database server's QEPs, prepared statements cache, etc...).
    *
@@ -163,11 +163,11 @@ public class MpxConnectionManager extends DefaultConnectionManager {
    * Sets the connection inactivity timeout in minutes.<br>
    * By default, connections that weren't used for a long time (&ge; <code>minMinutes/2</code> minutes)
    * are checked for being still alive via {@link ManagedConnection#verifyConnection()} before being attached.
-   * This assertion is sufficient for databases that usually don't close inactive sessions.<br>
-   * Some databases, however, enforce inactivity timeouts with much shorter intervals,
+   * This assertion is enough for databases that usually don't close inactive sessions.<br>
+   * Some databases, however, enforce inactivity timeouts with much shorter intervals
    * that cannot be deactivated or configured to a large enough value.<br>
    * In those cases, the connection verification timeout should be configured appropriately,
-   * i.e. less than the database's value.
+   * i.e., less than the database's value.
    *
    * @param connectionInactivityTimeout idle verification timeout in minutes, 0 for default (minMinutes/2)
    */
@@ -191,18 +191,18 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   }
 
   /**
-   * Returns whether to send dummy selects to the backend periodically.
+   * Returns whether to send fake-selects to the backend periodically.
    *
-   * @return true if dummy selects are sent periodically to prevent premature close of idle connections
+   * @return true if fake-selects are sent periodically to prevent premature close of idle connections
    */
   public boolean isConnectionKeepAlive() {
     return connectionKeepAlive;
   }
 
   /**
-   * Sets whether to send dummy selects to the backend periodically.
+   * Sets whether to send fake-selects to the backend periodically.
    *
-   * @param connectionKeepAlive true to periodically send dummy selects to prevent premature close of idle connections
+   * @param connectionKeepAlive true to periodically send fake-selects to prevent premature close of idle connections
    */
   public void setConnectionKeepAlive(boolean connectionKeepAlive) {
     this.connectionKeepAlive = connectionKeepAlive;
@@ -220,7 +220,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
       ix = null;
       connectThread.interrupt();
       try {
-        connectThread.join();   // wait until connect thread terminates
+        connectThread.join();   // wait until the connect-thread terminates
         break;
       }
       catch (InterruptedException ex) {
@@ -239,7 +239,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   /**
    * Gets the number of connections when to start info logging.
    * <p>
-   * The default is 1/4th of the maximum number of connections.
+   * The default is 1/4th of the maximum connections.
    *
    * @return the info level
    */
@@ -297,7 +297,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     removeSessionIndex(index);
     LOGGER.fine("{0} logged out from {1}, id={2}", session, this, session.getSessionId());
     try {
-      // check that connection is not attached, if so, detach it!
+      // check that the connection is not attached, if so, detach it!
       freeConnection(session.getConnection());
     }
     finally {
@@ -317,6 +317,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
   @Override
   public void attach(Db session) {
+    assertNotShutdown();
     assertSessionBelongsToMe(session);
 
     int loopCount = 0;   // number of retries so far
@@ -327,7 +328,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
         ManagedConnection con = session.getConnection();
         if (con != null) {
-          // already attached (e.g. within transaction)
+          // already attached (e.g., within transaction)
           con.attachSession(session);   // just increment the attach-count
           break;
         }
@@ -357,8 +358,8 @@ public class MpxConnectionManager extends DefaultConnectionManager {
       }
 
       /*
-       * continue un-synchronized (allow other threads to use the connection manager).
-       * In order not to stop all clients for the duration of establishing new connections
+       * continue without synchronization (allow other threads to use the connection manager).
+       * In order not to stop all clients for the duration of establishing new connections,
        * this is done in the connectThread. We will just trigger the thread and wait.
        */
       boolean request = false;
@@ -411,6 +412,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
         synchronized (doneMtx) {
           try {
             doneMtx.wait(DONE_MUTEX_MS);
+            assertNotShutdown();
           }
           catch (InterruptedException ex) {
             // daemon thread is terminated via shutdown()!
@@ -447,8 +449,8 @@ public class MpxConnectionManager extends DefaultConnectionManager {
         else {
           if (!con.getAutoCommit()) {
             /*
-             * The connection has been detached even though a transaction is still running!
-             * This is bad and indicates some MT problem or that some thread keeps on using
+             * The connection has been detached, even though a transaction is still running!
+             * This is bad and indicates some MT problem, or that some thread keeps on using
              * a Db even if there has been an exception causing a rollback.
              * Anyway: mark the connection dead so that it is closed and cleaned up.
              * The Db is also closed to prevent any further use.
@@ -518,18 +520,18 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   /**
    * Frees a connection and adds it to the unattached list.
    *
-   * @param con the connection, may be null if no more attached
+   * @param con the connection (can be null if no more attached)
    */
   protected void freeConnection(ManagedConnection con) {
-    // check that connection is not attached, if so, detach it!
+    // check that the connection is not attached, if so, detach it!
     if (con != null) {
       con.forceDetached();
       if (con.isDead()) {
-        // remove connection if dead and check to reopen
+        // remove the connection if dead and check to reopen
         cleanupDeadConnection(con);
         /*
          * Crashed due to a dead server connection. This is a strong indicator that the database is facing some
-         * severe problems. Because we don't know how many unattached connections are down we will probe them here. This
+         * severe problems. Because we don't know how many unattached connections are down, we will probe them here. This
          * is a little time-consuming but better than waiting for other clients to crash.
          */
         int[] newUnConList = new int[unConList.length];
@@ -560,11 +562,11 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   /**
    * Adds the index of an unused connection to the freelist.
    *
-   * @param index the index of the connection in the connections list
+   * @param index the index of the connection in the connection list
    */
   protected void pushUnattached(int index) {
     if (unConCount >= unConList.length) {
-      // list is full, enlarge it
+      // the list is full -> enlarge it
       int[] nUnConList = new int[unConList.length << 1];
       System.arraycopy(unConList, 0, nUnConList, 0, unConList.length);
       for (int j=unConList.length; j < nUnConList.length; j++) {
@@ -578,7 +580,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   /**
    * Gets a connection from the unattached freelist.
    *
-   * @return the index to the connections list, -1 if no more unattached found
+   * @return the index to the connection list, -1 if no more unattached found
    */
   protected int popUnattached() {
     return unConCount > 0 ? unConList[--unConCount] : -1;
@@ -616,7 +618,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
                        maxConSize + " (unattached=" + unConCount + ")";
           if (conSize + count > getWarnLogSize()) {
             // Half of the connections concurrently in use in most cases tells us that the database server
-            // is reaching its limits, i.e. the operations take too long. Or maxConSize is simply too low.
+            // is reaching its limits, i.e., the operations take too long. Or maxConSize is simply too low.
             // Log attached connections.
             StringBuilder buf = new StringBuilder(msg).append("\n\n  attached connections:");
             for (ManagedConnection con: ManagedConnectionMonitor.getInstance().getManagedConnections()) {
@@ -635,7 +637,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     }
 
     for (int i=0; i < count; i++) {
-      ManagedConnection con = createConnection(backendInfo);  // may take some time dep. on the db backend...
+      ManagedConnection con = createConnection(backendInfo);  // may take some time depending on the db backend...
       synchronized(this) {
         pushUnattached(addConnection(con));   // add to established connections and unattached freelist
       }
@@ -650,7 +652,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
    * connection list.
    */
   private void cleanupDeadConnection(ManagedConnection con) {
-    // marked dead: close it (hard close) and remove it from connection list
+    // marked dead: close it (hard close) and remove it from the connection list
     removeConnection(con.getIndex());
     try {
       LOGGER.warning("{0}: closing connection {1}", this, con);
@@ -662,7 +664,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   }
 
   /**
-   * checks whether the number of connections dropped below minSize.
+   * Checks whether the number of connections dropped below minSize.
    * If so, reopen missing connections.
    */
   private void reopenConnections() {
@@ -687,6 +689,11 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     }
   }
 
+  private void assertNotShutdown() {
+    if (shutdownRequested) {
+      throw new PersistenceException(this + " is shut down");
+    }
+  }
 
   /**
    * The connection management thread.<br>
@@ -695,7 +702,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   private static class ConnectionThread extends Thread {
 
     private final Object requestMtx;                            // connections requested mutex
-    private final WeakReference<MpxConnectionManager> cmRef;    // weak ref to check for garbage collected connection manager
+    private final WeakReference<MpxConnectionManager> cmRef;    // weak reference to check for garbage-collected connection manager
     private boolean lastAttemptFailed;                          // true if the last connection attempt failed
 
     ConnectionThread(MpxConnectionManager mgr) {
@@ -717,7 +724,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
             requestMtx.wait(REQ_MUTEX_MS);
           }
           catch (InterruptedException ex) {
-            // check termination condition below (mgr == null)
+            // check the termination condition below (mgr == null)
           }
 
           MpxConnectionManager mgr = cmRef.get();
@@ -745,7 +752,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
                   sleep(REQ_MUTEX_MS);  // limit CPU usage
                 }
                 catch (InterruptedException ix) {
-                  // next round checks whether mgr == null (see above)
+                  // the next round checks whether mgr == null (see above)
                 }
               }
               else {
