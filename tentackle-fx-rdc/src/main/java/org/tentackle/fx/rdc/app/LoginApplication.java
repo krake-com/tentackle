@@ -34,10 +34,11 @@ import org.tentackle.session.SessionInfo;
 
 import javafx.application.ColorScheme;
 import javafx.application.Platform;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import java.awt.Rectangle;
 import java.awt.SplashScreen;
 import java.util.Locale;
 
@@ -63,6 +64,7 @@ public class LoginApplication extends FxApplication {
     // see -Xlint:missing-explicit-ctor since Java 16
   }
 
+
   @Override
   public void startApplication(Stage stage) {
     try {
@@ -78,25 +80,25 @@ public class LoginApplication extends FxApplication {
       Scene scene = Fx.createScene(controller.getView());
       stage.setScene(scene);
       stage.initStyle(StageStyle.TRANSPARENT);
+
+      // move the center of the login window to the center of the screen
+      Rectangle2D screenSize = Screen.getPrimary().getVisualBounds();
+      // this does the trick to avoid flickering on the screen due to the window first displayed and then moved
+      stage.widthProperty().addListener((_, _, newWidth) ->
+                                          stage.setX((screenSize.getWidth() - newWidth.doubleValue()) / 2.0));
+      stage.heightProperty().addListener((_, _, newHeight) ->
+                                           stage.setY((screenSize.getHeight() - newHeight.doubleValue()) / 2.0));
+
       SplashScreen splashScreen = SplashScreen.getSplashScreen();
-      if (splashScreen != null) {
-        // move center of login window to center of splash screen
-        Rectangle bounds = splashScreen.getBounds();
-        int splashX = bounds.x + bounds.width / 2;
-        int splashY = bounds.y + bounds.height / 2;
-        // this does the trick to avoid flickering on the screen due to the window first displayed and then moved
-        stage.widthProperty().addListener((observable, oldValue, newValue) -> stage.setX(splashX - newValue.doubleValue() / 2.0 ));
-        stage.heightProperty().addListener((observable, oldValue, newValue) -> stage.setY(splashY - newValue.doubleValue() / 2.0));
-      }
       stage.setOnShown(_ -> {
         if (splashScreen != null) {
           Platform.runLater(splashScreen::close);
         }
         if (((DesktopApplication<?>) Application.getInstance()).isAutoLogin()) {
-          controller.autoLogin();   // login w/o option to edit the user and/or password
+          controller.autoLogin();   // log in w/o option to edit the user and/or password
         }
         else if (sessionInfo.getUserName() != null && sessionInfo.getPassword() != null) {
-          controller.login();       // perform a login once, allow the user to edit if login fails
+          controller.login();       // perform a login once, allow the user to edit if the login fails
         }
       });
       Fx.show(stage);
@@ -108,7 +110,6 @@ public class LoginApplication extends FxApplication {
     }
   }
 
-
   @Override
   public void showApplicationStatus(String msg, double progress) {
     if (controller.getView().isVisible()) {
@@ -119,7 +120,6 @@ public class LoginApplication extends FxApplication {
       LOGGER.info(msg);
     }
   }
-
 
   /**
    * Creates the session info to be passed to the login controller.
@@ -138,10 +138,10 @@ public class LoginApplication extends FxApplication {
 
     // provide user and password from backend properties, if given
     EncryptedProperties props = sessionInfo.getProperties();
-    if (username == null) {   // if not overridden by command line
+    if (username == null) {   // if not overridden by the command line
       sessionInfo.setUserName(props.getProperty(Constants.BACKEND_USER, sessionInfo.getUserName()));
     }
-    if (password == null) {   // if not overridden by command line: get from properties, if set
+    if (password == null) {   // if not overridden by the command line: get from properties, if set
       sessionInfo.setPassword(props.getPropertyAsChars(Constants.BACKEND_PASSWORD));
     }
 
@@ -162,14 +162,14 @@ public class LoginApplication extends FxApplication {
 
 
   /**
-   * Updates the session with username and password from the process environment.
+   * Updates the session with the username and password from the process environment.
    *
    * @param sessionInfo the session info to update
    */
   protected void updateSessionInfoFromEnvironment(SessionInfo sessionInfo) {
     Cryptor cryptor = Cryptor.getInstance();
     if (cryptor != null) {
-      // Get user/passwd from environment.
+      // Get user/passwd from the environment.
       // Must be encrypted to provide a minimum level of security.
       // Used by the auto-update feature when restarting the updated application
       // (see org.tentackle.fx.rdc.update.LoginFailedWithUpdateHandler.passSessionInfoViaEnvironment)
@@ -189,7 +189,6 @@ public class LoginApplication extends FxApplication {
       }
     }
   }
-
 
   /**
    * Loads the login controller.<br>
