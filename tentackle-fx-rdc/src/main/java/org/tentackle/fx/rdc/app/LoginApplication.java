@@ -34,11 +34,14 @@ import org.tentackle.session.SessionInfo;
 
 import javafx.application.ColorScheme;
 import javafx.application.Platform;
+import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import java.awt.GraphicsEnvironment;
+import java.awt.Rectangle;
 import java.awt.SplashScreen;
 import java.util.Locale;
 
@@ -81,15 +84,14 @@ public class LoginApplication extends FxApplication {
       stage.setScene(scene);
       stage.initStyle(StageStyle.TRANSPARENT);
 
-      // move the center of the login window to the center of the screen
-      Rectangle2D screenSize = Screen.getPrimary().getVisualBounds();
+      SplashScreen splashScreen = GraphicsEnvironment.isHeadless() ? null : SplashScreen.getSplashScreen();
+      Point2D center = determineLoginWindowCenter(splashScreen);
       // this does the trick to avoid flickering on the screen due to the window first displayed and then moved
       stage.widthProperty().addListener((_, _, newWidth) ->
-                                          stage.setX((screenSize.getWidth() - newWidth.doubleValue()) / 2.0));
+                                          stage.setX(center.getX() - newWidth.doubleValue() / 2.0));
       stage.heightProperty().addListener((_, _, newHeight) ->
-                                           stage.setY((screenSize.getHeight() - newHeight.doubleValue()) / 2.0));
+                                           stage.setY(center.getY() - newHeight.doubleValue() / 2.0));
 
-      SplashScreen splashScreen = SplashScreen.getSplashScreen();
       stage.setOnShown(_ -> {
         if (splashScreen != null) {
           Platform.runLater(splashScreen::close);
@@ -150,16 +152,46 @@ public class LoginApplication extends FxApplication {
     if (sessionInfo.getUserName() == null) {
       updateSessionInfoFromEnvironment(sessionInfo);
     }
-
     if (sessionInfo.getUserName() == null) {
       sessionInfo.setUserName(System.getProperty("user.name"));
     }
-
     application.applyProperties(sessionInfo.getProperties());
 
     return sessionInfo;
   }
 
+
+  /**
+   * Determines the center of the login window.
+   *
+   * @param splashScreen the splash screen, null for none or headless mode
+   * @return the center where to position the login window
+   */
+  protected Point2D determineLoginWindowCenter(SplashScreen splashScreen) {
+    Screen screen = Screen.getPrimary();
+    LOGGER.info("primary screen: {0}", screen);
+    Rectangle2D screenSize = screen.getVisualBounds();
+    double screenCenterX = screenSize.getWidth() / 2.0;
+    double screenCenterY = screenSize.getHeight() / 2.0;
+    // try to match the center of the splash screen if available and not in headless mode
+    if (splashScreen != null) {
+      Rectangle splashBounds = splashScreen.getBounds();
+      // check the plausibility of the coordinates since there is a bug in AWT (at least on Linux)
+      // that returns wrong bounds if fractional desktop scaling is enabled
+      if (splashBounds.getX() <= screenCenterX && screenCenterX <= splashBounds.getMaxX() &&
+          splashBounds.getY() <= screenCenterY && screenCenterY <= splashBounds.getMaxY()) {
+        // the splash screen covers the center of the screen -> coordinates are correct
+        return new Point2D(splashBounds.getX() + splashBounds.getWidth() / 2.0,
+                           splashBounds.getY() + splashBounds.getHeight() / 2.0);
+      }
+      else {
+        LOGGER.warning("possibly wrong splash screen coordinates: {0}, AWT screen bounds: {1}",
+                       splashBounds,
+                       GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().getBounds());
+      }
+    }
+    return new Point2D(screenCenterX, screenCenterY);
+  }
 
   /**
    * Updates the session with the username and password from the process environment.
