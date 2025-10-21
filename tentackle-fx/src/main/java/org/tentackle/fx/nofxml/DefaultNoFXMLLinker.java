@@ -46,7 +46,7 @@ import java.util.ResourceBundle;
 @Service(NoFXMLLinker.class)
 public class DefaultNoFXMLLinker implements NoFXMLLinker {
 
-  private static final Logger LOG = Logger.get(DefaultNoFXMLLinker.class);
+  private static final Logger LOGGER = Logger.get(DefaultNoFXMLLinker.class);
 
   private static final String INITIALIZE_METHOD_NAME = "initialize";
 
@@ -84,7 +84,7 @@ public class DefaultNoFXMLLinker implements NoFXMLLinker {
             if (Node.class.isAssignableFrom(noFXMLField.getType())) {
               throw new FxRuntimeException("node is null: " + noFXMLField);
             }
-            LOG.warning("unsupported field annotated with @NoFXML: {0} -> ignored", noFXMLField);
+            LOGGER.warning("unsupported field annotated with @NoFXML: {0} -> ignored", noFXMLField);
           }
         }
         catch (IllegalAccessException | IllegalArgumentException ex) {
@@ -190,7 +190,7 @@ public class DefaultNoFXMLLinker implements NoFXMLLinker {
         }
       }
       else {
-        LOG.warning("unsupported method annotated with @NoFXML: {0} -> ignored", method);
+        LOGGER.warning("unsupported method annotated with @NoFXML: {0} -> ignored", method);
       }
     }
   }

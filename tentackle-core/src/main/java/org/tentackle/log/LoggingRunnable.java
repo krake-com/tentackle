@@ -24,18 +24,18 @@ import org.tentackle.log.Logger.Level;
 /**
  * A logging runnable.<br>
  * Logs start and duration times.
- * 
+ *
  * @author harald
  */
 public class LoggingRunnable implements Runnable {
-  
+
     private final Logger logger;
     private final Level level;
     private final Runnable runnable;
-    
+
     /**
      * Creates a logging runnable.
-     * 
+     *
      * @param logger the logger
      * @param level the logging level
      * @param runnable the runnable
@@ -50,14 +50,14 @@ public class LoggingRunnable implements Runnable {
     public void run() {
       if (logger.isLoggable(level)) {
         long startMillis = System.currentTimeMillis();
-        logger.log(level, "start runnable " + runnable, null);
+        logger.log(level, "start runnable " + runnable);
         runnable.run();
         long duration = System.currentTimeMillis() - startMillis;
-        logger.log(level, "done runnable " + runnable + " (" + duration + "ms)", null);
+        logger.log(level, "done runnable " + runnable + " (" + duration + "ms)");
       }
       else  {
         runnable.run();
       }
     }
-    
+
 }

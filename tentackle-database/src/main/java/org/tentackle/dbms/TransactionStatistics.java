@@ -105,7 +105,7 @@ public class TransactionStatistics {
           if (clear) {
             buf.append("\n    (cleared)");
           }
-          LOGGER.log(level, buf.toString(), null);
+          LOGGER.log(level, buf.toString());
         }
         catch (RuntimeException rex) {
           LOGGER.severe("cannot log transaction statistics", rex);

@@ -833,7 +833,7 @@ public class ManagedConnection {
               }
             }
           }
-          LOGGER.log(logLevelForParallelOpenResultSets, buf.toString(), null);
+          LOGGER.log(logLevelForParallelOpenResultSets, buf.toString());
         }
       }
     }

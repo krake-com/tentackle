@@ -361,7 +361,7 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
         }
         else {
           message.append(": ").append(realCause.getMessage());
-          LOGGER.log(loggingLevel, message.toString(), null);
+          LOGGER.log(loggingLevel, message.toString());
         }
       }
 

@@ -930,7 +930,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   public void log(String name, Level level, String message) throws RemoteException {
     try {
       Logger logger = name == null ? LOGGER : loggers.computeIfAbsent(name, LoggerFactory::getLogger);
-      logger.log(level, message, null);
+      logger.log(level, message);
     }
     catch (RuntimeException ex)  {
       throw new RemoteException("log() failed", ex);

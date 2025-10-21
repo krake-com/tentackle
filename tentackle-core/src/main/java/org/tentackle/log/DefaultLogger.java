@@ -104,6 +104,11 @@ public class DefaultLogger implements Logger {
     doLog(level, cause, messageSupplier);
   }
 
+  @Override
+  public void log(Level level, String message, Object... params) {
+    doLog(level, message, null, params);
+  }
+
 
   @Override
   public void finer(String message) {

@@ -44,7 +44,7 @@ interface StatementTracerHolder {
 @Service(StatementTracer.class)   // defaults to self
 public class StatementTracer {
 
-  private static final Logger LOG = Logger.get(StatementTracer.class);
+  private static final Logger LOGGER = Logger.get(StatementTracer.class);
 
   /**
    * The singleton.
@@ -158,7 +158,7 @@ public class StatementTracer {
       statement.setStackTrace("\n[" + Thread.currentThread() + "] @ " + new Timestamp() + ": " +
                               ExceptionHelper.getStackTraceAsString(new StatementTraceException(statement.getSession())));
       if (logLevel != null) {
-        LOG.log(logLevel, statement.toString(), null);
+        LOGGER.log(logLevel, statement.toString());
       }
     }
     else {

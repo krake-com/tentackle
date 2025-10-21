@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Base implementation for class mappers.<br>
- * Implements lenient (superclass/interface) and package (class basenames) lookup.
+ * Implements lenient (superclass/interface) and package (class base names) lookup.
  *
  * @author harald
  * @param <S> the service type mapped to
@@ -47,7 +47,13 @@ public abstract class AbstractClassMapper<S> {
   private final String name;
 
   /**
-   * Creates a classmapper.
+   * the log level.
+   */
+  private Logger.Level logLevel = Logger.Level.FINE;
+
+
+  /**
+   * Creates a class mapper.
    *
    * @param name the mapper's name
    */
@@ -62,6 +68,14 @@ public abstract class AbstractClassMapper<S> {
    * @return the array of package names, null or empty array if none.
    */
   public abstract String[] getPackageNames();
+
+  /**
+   * Gets the mapping of service names.<br>
+   * The key is the name of the service to map, and the value is the name of the mapped object.
+   *
+   * @return the names-map, never null.
+   */
+  public abstract Map<String,S> getNameMap();
 
 
   /**
@@ -78,14 +92,51 @@ public abstract class AbstractClassMapper<S> {
     return getName();
   }
 
+  /**
+   * Sets the log level.
+   *
+   * @param logLevel the log level
+   */
+  public void setLogLevel(Logger.Level logLevel) {
+    this.logLevel = logLevel;
+  }
 
   /**
-   * Gets the mapping of service names.<br>
-   * The key is name of the service to map and the value is the name of the mapped object.
+   * Gets the log level.<br>
+   * The default is {@link Logger.Level#FINE}.
    *
-   * @return the names map, never null.
+   * @return the log level
    */
-  public abstract Map<String,S> getNameMap();
+  public Logger.Level getLogLevel() {
+    return logLevel;
+  }
+
+  /**
+   * Maps with concurrent hashmap cache.
+   *
+   * @param className the name of the class to map
+   * @param lenient true if try superclasses/interfaces
+   * @return the mapped object, never null
+   * @throws ClassNotFoundException if no mapping found for {@code className}
+   */
+  public S map(String className, boolean lenient) throws ClassNotFoundException {
+    S mappedClazz = classMap.get(className);    // no computeIfAbsent cause of CNF ex below
+    if (mappedClazz == null) {
+      mappedClazz = mapNameWithPackages(className, lenient);
+      if (mappedClazz == null) {
+        throw new ClassNotFoundException("no " + name + " mapping for '" + className +
+                                         (lenient ? "' in packages " + getPackageNamesAsString() : "'"));
+      }
+      // not synchronized is ok cause of ConcurrentHashMap.
+      // putting a key/value pair more than once in a multithreaded application is ok as well.
+      if (classMap.put(className, mappedClazz) == null) {
+        // we log only if really added. This is because a class may be added twice
+        // if mapNameWithPackages instantiates a class that itself invokes mapping again
+        LOGGER.log(logLevel, "{0}: added {1} -> {2}", name, className, mappedClazz);
+      }
+    }
+    return mappedClazz;
+  }
 
 
   /**
@@ -97,15 +148,15 @@ public abstract class AbstractClassMapper<S> {
   private S mapInterfaces(Class<?> clazz) {
     // check all super interfaces
     S result = null;
-    for (Class<?> interfaze: clazz.getInterfaces()) {
-      result = getNameMap().get(interfaze.getName());
+    for (Class<?> iFace: clazz.getInterfaces()) {
+      result = getNameMap().get(iFace.getName());
       if (result != null) {
         // mapping found
         break;
       }
       else {
         // no mapping: recursively check superinterface
-        result = mapInterfaces(interfaze);
+        result = mapInterfaces(iFace);
         if (result != null) {
           break;
         }
@@ -113,7 +164,6 @@ public abstract class AbstractClassMapper<S> {
     }
     return result;
   }
-
 
   /**
    * Maps a classname.
@@ -141,7 +191,7 @@ public abstract class AbstractClassMapper<S> {
         if (superClass == null) {
           break;    // is an interface or record, or we reached Object.class
         }
-        className = superClass.getCanonicalName();  // continue with name of superclass
+        className = superClass.getCanonicalName();  // continue with the name of superclass
       }
       // no mapping found for an object-class so far or interface: try interfaces
       return initialClass == null ? null : mapInterfaces(initialClass);
@@ -152,7 +202,13 @@ public abstract class AbstractClassMapper<S> {
     }
   }
 
-
+  /**
+   * Finds a class with support for array suffixes.
+   *
+   * @param className the class name
+   * @return the class
+   * @throws ClassNotFoundException if the class cannot be found
+   */
   private Class<?> findClass(String className) throws ClassNotFoundException {
     int arrayNdx = className.indexOf('[');
     String arraySuffix = null;
@@ -170,6 +226,12 @@ public abstract class AbstractClassMapper<S> {
     return clazz;
   }
 
+  /**
+   * Finds the superclass of a class with support for arrays.
+   *
+   * @param clazz the class
+   * @return the superclass
+   */
   private Class<?> findSuperClass(Class<?> clazz) {
     if (clazz.isArray()) {
       int dimensions = 1;
@@ -188,7 +250,6 @@ public abstract class AbstractClassMapper<S> {
     }
     return clazz.getSuperclass();
   }
-
 
   /**
    * Maps a classname and optionally applies package names.
@@ -212,40 +273,8 @@ public abstract class AbstractClassMapper<S> {
     return mapName(className, lenient);
   }
 
-
-
   /**
-   * Maps with concurrent hashmap cache.
-   *
-   * @param className the name of the class to map
-   * @param lenient true if try superclasses/interfaces
-   * @return the mapped object, never null
-   * @throws ClassNotFoundException if no mapping found for {@code className}
-   */
-  public S map(String className, boolean lenient) throws ClassNotFoundException {
-    S mappedClazz = classMap.get(className);    // no computeIfAbsent cause of CNF ex below
-    if (mappedClazz == null) {
-      mappedClazz = mapNameWithPackages(className, lenient);
-      if (mappedClazz == null) {
-        throw new ClassNotFoundException("no " + name + " mapping for '" + className +
-                                         (lenient ? "' in packages " + getPackageNamesAsString() : "'"));
-      }
-      // not synchronized is ok cause of ConcurrentHashMap.
-      // putting a key/value pair more than once in a multithreaded application is ok as well.
-      if (classMap.put(className, mappedClazz) == null) {
-        // we log only if really added. This is because a class may be added twice
-        // if mapNameWithPackages instantiates a class that itself invokes mapping again
-        LOGGER.info("{0}: added {1} -> {2}", name, className, mappedClazz.toString());
-      }
-    }
-    LOGGER.fine("{0}: mapped {1} -> {2}", name, className, mappedClazz.toString());
-    return mappedClazz;
-  }
-
-
-
-  /**
-   * Gets the packages names as a String as follows:
+   * Gets the package names as a String as follows:
    * [package1, package2, ... ]
    *
    * @return the package names

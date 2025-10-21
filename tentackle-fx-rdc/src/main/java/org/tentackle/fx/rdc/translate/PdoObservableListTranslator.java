@@ -45,7 +45,7 @@ import java.util.List;
 public class PdoObservableListTranslator<T extends PersistentDomainObject<T>, C extends List<T>>
        extends ObservableListTranslator<T, C> {
 
-  private static final Logger LOG = Logger.get(PdoObservableListTranslator.class);
+  private static final Logger LOGGER = Logger.get(PdoObservableListTranslator.class);
 
   /**
    * Creates a translator for components maintaining a list of PDOs.
@@ -67,7 +67,7 @@ public class PdoObservableListTranslator<T extends PersistentDomainObject<T>, C 
       }
       catch (RdcRuntimeException | PdoRuntimeException px) {
         // may be an abstract type?
-        LOG.warning("no GuiProvider for " + elemClass + " (" + px.getMessage() + ") -> fallback to default table configuration provider");
+        LOGGER.warning("no GuiProvider for " + elemClass + " (" + px.getMessage() + ") -> fallback to default table configuration provider");
       }
     }
 

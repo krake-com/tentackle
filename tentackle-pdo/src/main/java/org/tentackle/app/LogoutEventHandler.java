@@ -32,7 +32,7 @@ import java.util.function.Consumer;
 @MasterSerialEventService(LogoutEvent.class)
 public class LogoutEventHandler implements Consumer<LogoutEvent> {
 
-  private static final Logger LOG = Logger.get(LogoutEventHandler.class);
+  private static final Logger LOGGER = Logger.get(LogoutEventHandler.class);
 
   public LogoutEventHandler() {
     // see -Xlint:missing-explicit-ctor since Java 16
@@ -40,7 +40,7 @@ public class LogoutEventHandler implements Consumer<LogoutEvent> {
 
   @Override
   public void accept(LogoutEvent logoutEvent) {
-    LOG.warning("logout requested by remote server");
+    LOGGER.warning("logout requested by remote server");
     // terminating the ModificationTracker terminates the whole application (by default)
     ModificationTracker.getInstance().terminate();
   }

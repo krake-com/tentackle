@@ -35,7 +35,7 @@ import java.util.function.Function;
  */
 public class AutoCompletionController {
 
-  private static final Logger LOG = Logger.get(AutoCompletionController.class);
+  private static final Logger LOGGER = Logger.get(AutoCompletionController.class);
 
   private final TextInputControl component;
   private final Function<String, List<List<SubString>>> suggestionGenerator;
@@ -97,7 +97,7 @@ public class AutoCompletionController {
       }
     });
 
-    backgroundService.setOnFailed(event -> LOG.warning("suggestions could not be determined", event.getSource().getException()));
+    backgroundService.setOnFailed(event -> LOGGER.warning("suggestions could not be determined", event.getSource().getException()));
   }
 
   /**

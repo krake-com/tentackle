@@ -84,7 +84,7 @@ public class ManagedConnectionMonitor extends Thread {
   }
 
 
-  private static final Logger LOG = Logger.get(ManagedConnectionMonitor.class);
+  private static final Logger LOGGER = Logger.get(ManagedConnectionMonitor.class);
 
   private static final int WARN_CONNECTIONS_CLOSE_COUNT = 600;    // warning level for excessive connection consumption
   private static final int INFO_CONNECTIONS_CLOSE_COUNT = 60;     // info level for excessive connection consumption
@@ -131,14 +131,14 @@ public class ManagedConnectionMonitor extends Thread {
   @Override
   public void run() {
     started();
-    LOG.info("{0} started", getName());
+    LOGGER.info("{0} started", getName());
     for (;;) {    // loops forever
       try {
         pause();
         loop();
       }
       catch (RuntimeException rx) {
-        LOG.severe("verification failed -> keep on running...", rx);
+        LOGGER.severe("verification failed -> keep on running...", rx);
       }
     }
   }
@@ -175,13 +175,13 @@ public class ManagedConnectionMonitor extends Thread {
     }
 
     if (closeCount >= WARN_CONNECTIONS_CLOSE_COUNT) {
-      LOG.warning(LOG_MESSAGE, closeCount);
+      LOGGER.warning(LOG_MESSAGE, closeCount);
     }
     else if (closeCount >= INFO_CONNECTIONS_CLOSE_COUNT) {
-      LOG.info(LOG_MESSAGE, closeCount);
+      LOGGER.info(LOG_MESSAGE, closeCount);
     }
     else {
-      LOG.fine(LOG_MESSAGE, closeCount);
+      LOGGER.fine(LOG_MESSAGE, closeCount);
     }
   }
 
@@ -197,7 +197,7 @@ public class ManagedConnectionMonitor extends Thread {
         currentTimeMillis - managedConnection.getLastVerified() >= managedConnection.getConnectionInactivityTimeoutMs()) {
 
       if (managedConnection.verifyConnection()) {
-        LOG.fine("{0} verified", managedConnection);
+        LOGGER.fine("{0} verified", managedConnection);
       }
       // else marked DEAD! -> will be cleaned up when used again
     }

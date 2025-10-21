@@ -57,7 +57,7 @@ public class DbTransactionFactory {
   }
 
 
-  private static final Logger LOG = Logger.get(DbTransactionFactory.class);
+  private static final Logger LOGGER = Logger.get(DbTransactionFactory.class);
 
   private static final String TX_IDLE_INTERVAL = "txIdleInterval";
   private static final String TX_IDLE_TIMEOUT = "txIdleTimeout";
@@ -270,7 +270,7 @@ public class DbTransactionFactory {
     public void run() {
       while (!terminationRequested) {
         if (configChanged) {
-          LOG.info("{0} running with interval={1} ms, maxIdleCount={2}", getName(), txIdleInterval, txIdleTimeout);
+          LOGGER.info("{0} running with interval={1} ms, maxIdleCount={2}", getName(), txIdleInterval, txIdleTimeout);
           configChanged = false;
         }
         try {
@@ -292,7 +292,7 @@ public class DbTransactionFactory {
               // If we encounter an unreferenced tx, it must have been detached within the transaction or some other weird condition.
               Long txId = entry.getKey();
               TxIdleCounter idleCounter = idleMap.remove(txId);
-              LOG.severe("unreferenced transaction {0} detected", idleCounter == null ? txId : idleCounter);
+              LOGGER.severe("unreferenced transaction {0} detected", idleCounter == null ? txId : idleCounter);
               iter.remove();
             }
             else {
@@ -305,7 +305,7 @@ public class DbTransactionFactory {
                     idleMap.computeIfAbsent(transaction.getTxNumber(), txNumber -> new TxIdleCounter(transaction)).count() > txIdleTimeout) {
                   String msg = "idle transaction " + transaction.getSession() + " timed out after " +
                                 txIdleTimeout * txIdleInterval / Constants.SECOND_MS + " s";
-                  LOG.warning(msg);
+                  LOGGER.warning(msg);
                   idleMap.remove(transaction.getTxNumber());
                   iter.remove();
                   Db session = transaction.getSession();
@@ -317,11 +317,11 @@ public class DbTransactionFactory {
                       createTxCleanupThread(mc, con).start();
                     }
                     else {
-                      LOG.warning("managed connection {0} already closed", mc);
+                      LOGGER.warning("managed connection {0} already closed", mc);
                     }
                   }
                   else {
-                    LOG.warning("managed connection already detached from session {0}", session);
+                    LOGGER.warning("managed connection already detached from session {0}", session);
                   }
                 }
               }
@@ -332,12 +332,12 @@ public class DbTransactionFactory {
           // daemon thread is terminated via requestTermination()
         }
         catch (RuntimeException ex) {
-          LOG.severe("cleanup transactions failed", ex);
+          LOGGER.severe("cleanup transactions failed", ex);
         }
       }
 
       supervisorTerminated();
-      LOG.info("{0} terminated", getName());
+      LOGGER.info("{0} terminated", getName());
     }
 
     private static Thread createTxCleanupThread(ManagedConnection mc, Connection con) {
@@ -345,18 +345,18 @@ public class DbTransactionFactory {
         @Override
         public void run() {
           try {
-            LOG.warning("performing low-level rollback and close of {0}", con);
+            LOGGER.warning("performing low-level rollback and close of {0}", con);
             // really low level (as if the database closed it suddenly)
             try {
               con.rollback();
             }
             catch (SQLException sr) {
-              LOG.warning("low-level rollback failed", sr);
+              LOGGER.warning("low-level rollback failed", sr);
             }
             con.close();   // just close -> leave the cleanup to the thread stuck in transaction
           }
           catch (SQLException | RuntimeException ex) {
-            LOG.warning("closing JDBC connection failed", ex);
+            LOGGER.warning("closing JDBC connection failed", ex);
           }
         }
       };

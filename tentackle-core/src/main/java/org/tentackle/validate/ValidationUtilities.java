@@ -894,7 +894,7 @@ public class ValidationUtilities {
 
 
   private void logTest(Validator validator, ValidationContext validationContext) {
-    LOGGER.log(testLogLevel, "applying " + validator + " to " + validationContext, null);
+    LOGGER.log(testLogLevel, "applying " + validator + " to " + validationContext);
   }
 
 }

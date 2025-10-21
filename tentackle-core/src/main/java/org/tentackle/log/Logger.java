@@ -96,8 +96,7 @@ public interface Logger {
 
 
   /**
-   * Checks if a message of the given level would actually be logged
-   * by this logger.
+   * Returns whether this logger will log the given level.
    *
    * @param level the logging level
    * @return true if the given logging level is currently being logged
@@ -146,7 +145,7 @@ public interface Logger {
    *
    * @param level   the logging level
    * @param message the message
-   * @param cause   the Throwable associated with log message, null if none
+   * @param cause   the throwable
    */
   void log(Level level, String message, Throwable cause);
 
@@ -154,7 +153,16 @@ public interface Logger {
    * Logs a message.
    *
    * @param level   the logging level
-   * @param cause   the Throwable associated with log message, null if none
+   * @param message the message
+   * @param params  message parameters
+   */
+  void log(Level level, String message, Object... params);
+
+  /**
+   * Logs a message.
+   *
+   * @param level           the logging level
+   * @param cause           the throwable, null for none
    * @param messageSupplier the message supplier
    */
   void log(Level level, Throwable cause, Supplier<String> messageSupplier);

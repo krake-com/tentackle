@@ -50,7 +50,7 @@ interface PropertiesUtilitiesHolder {
 @Service(PropertiesUtilities.class)   // defaults to self
 public class PropertiesUtilities {
 
-  private static final Logger LOG = Logger.get(PropertiesUtilities.class);
+  private static final Logger LOGGER = Logger.get(PropertiesUtilities.class);
 
   /**
    * The singleton.
@@ -91,7 +91,7 @@ public class PropertiesUtilities {
         int priority = annotation == null || annotation.priority() == 0 ? defaultPriority : annotation.priority();
         boolean stopIfFound = annotation != null && annotation.stopIfNotFound();
         prioritizedResources.add(new PrioritizedResource(resourceClass.getConstructor().newInstance(), priority, stopIfFound));
-        LOG.info("properties resource {0} loaded with priority {1}", resourceClass.getName(), priority);
+        LOGGER.info("properties resource {0} loaded with priority {1}", resourceClass.getName(), priority);
         defaultPriority -= 100;
       }
       if (prioritizedResources.isEmpty()) {
@@ -138,7 +138,7 @@ public class PropertiesUtilities {
       if (applied) {
         someApplied = true;
         if (prioritizedResource.stopIfFound()) {
-          LOG.fine("loading properties stopped after {0}", prioritizedResource.resource.getClass().getName());
+          LOGGER.fine("loading properties stopped after {0}", prioritizedResource.resource.getClass().getName());
           break;
         }
       }
@@ -186,7 +186,7 @@ public class PropertiesUtilities {
         String value = System.getenv(envName);
         if (value != null) {
           Object oldValue = properties.setProperty(propertyName, value);
-          LOG.fine("property {0} overridden by environment variable {1}: {2} -> {3}", propertyName, envName, oldValue, value);
+          LOGGER.fine("property {0} overridden by environment variable {1}: {2} -> {3}", propertyName, envName, oldValue, value);
           applied = true;
         }
       }

@@ -61,7 +61,7 @@ public final class LogInterceptor extends AbstractInterceptor {
     Object value = method.invoke(proxy, args);
     if (timeKeeper != null) {
       timeKeeper.end();
-      LOGGER.log(level, orgMethod.toGenericString() + " took " + timeKeeper.millisToString() + "ms", null);
+      LOGGER.log(level, orgMethod.toGenericString() + " took " + timeKeeper.millisToString() + "ms");
     }
     return value;
   }

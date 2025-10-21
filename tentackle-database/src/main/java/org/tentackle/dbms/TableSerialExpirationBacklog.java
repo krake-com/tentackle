@@ -36,7 +36,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class TableSerialExpirationBacklog {
 
-  private static final Logger LOG = Logger.get(TableSerialExpirationBacklog.class);
+  private static final Logger LOGGER = Logger.get(TableSerialExpirationBacklog.class);
 
   private static final int DEFAULT_SIZE = 256;  // should be enough for the 99% case (master data)
   private static final int MAX_SIZE = 4096;     // max. size (auto enlarge)
@@ -117,11 +117,11 @@ public class TableSerialExpirationBacklog {
   public void addExpiration(long minSerial, long maxSerial, Collection<IdSerialTuple> tuples, boolean mergeHistory) {
     if (tuples != null) {
       if (minSerial >= maxSerial) {
-        LOG.warning("illegal tableserial range [{0}-{1}] refused to add to expiration backlog {2}", minSerial, maxSerial, this);
+        LOGGER.warning("illegal tableserial range [{0}-{1}] refused to add to expiration backlog {2}", minSerial, maxSerial, this);
       }
       else {
-        LOG.fine("adding expiration set {0}-{1}[{2}] for {3}",
-                 minSerial, maxSerial, tuples.size(), name);
+        LOGGER.fine("adding expiration set {0}-{1}[{2}] for {3}",
+                    minSerial, maxSerial, tuples.size(), name);
 
         lock.writeLock().lock();
         try {
@@ -129,8 +129,8 @@ public class TableSerialExpirationBacklog {
           // since we could have rollbacks (in this case from 5-8).
           // However, the maxSerials must not be decreasing!
           if (maxSerial < this.maxSerial) {
-            LOG.severe("expiration range [{0}-{1}] added unexpectedly to expiration backlog {2} -> ignored",
-                       minSerial, maxSerial, this);
+            LOGGER.severe("expiration range [{0}-{1}] added unexpectedly to expiration backlog {2} -> ignored",
+                          minSerial, maxSerial, this);
           }
           else {
             // add expiration set round-robin
@@ -190,7 +190,7 @@ public class TableSerialExpirationBacklog {
     lock.readLock().lock();
     try {
       if (minSerial < this.minSerial) {
-        LOG.warning("expiration backlog {0} queried for outdated range [{1}-{2}]", this, minSerial, maxSerial);
+        LOGGER.warning("expiration backlog {0} queried for outdated range [{1}-{2}]", this, minSerial, maxSerial);
         int size = expirations.length;
         lock.readLock().unlock();
         lock.writeLock().lock();
@@ -202,7 +202,7 @@ public class TableSerialExpirationBacklog {
               ExpirationList[] newExpirations = new ExpirationList[newSize];
               System.arraycopy(expirations, 0, newExpirations, 0, size);
               expirations = newExpirations;
-              LOG.info("expiration backlog {0} enlarged to {1} entries", this, newSize);
+              LOGGER.info("expiration backlog {0} enlarged to {1} entries", this, newSize);
             }
           }
           lock.readLock().lock();

@@ -38,11 +38,11 @@ public class LoggerOutputStream extends ByteArrayOutputStream {
 
   private final Logger logger;    // the logger
   private final Level  level;     // one of LogLevel
-  
-  
+
+
   /**
    * Creates a logger output stream.
-   * 
+   *
    * @param logger the logger
    * @param level one of {@link Level#SEVERE}, etc...
    * @param size the buffer size
@@ -52,42 +52,42 @@ public class LoggerOutputStream extends ByteArrayOutputStream {
     this.logger = logger;
     this.level  = level;
   }
-  
+
   /**
    * Creates a logger output stream with a default buffer size.
-   * 
+   *
    * @param logger the logger
    * @param level one of {@link Level#SEVERE}, etc...
    */
   public LoggerOutputStream(Logger logger, Level level) {
     this(logger, level, 512);
   }
-  
+
   /**
    * Creates a logger output stream with a default buffer size
    * and {@link Level#SEVERE}.
-   * 
+   *
    * @param logger the logger
    */
   public LoggerOutputStream(Logger logger)  {
-    this(logger, Level.SEVERE); 
+    this(logger, Level.SEVERE);
   }
-  
+
   @Override
   public void flush() {
-    logger.log(level, toString(), null);    // print Bytearray output stream
+    logger.log(level, toString());    // print Bytearray output stream
     reset();
   }
-  
+
   @Override
   public void close() {
     flush();
   }
-  
-  
+
+
   /**
    * Logs an exception stacktrace to the logger.
-   * 
+   *
    * @param e the exception
    * @param logger the logger
    * @param level the logging level
@@ -98,13 +98,13 @@ public class LoggerOutputStream extends ByteArrayOutputStream {
     PrintStream ps = new PrintStream(new LoggerOutputStream(logger, level, size));
     ps.println(e);
     e.printStackTrace(ps);
-    ps.close(); 
+    ps.close();
   }
-  
+
   /**
    * Logs an exception stacktrace to the logger with a default buffer size
    * and {@link Level#SEVERE}.
-   * 
+   *
    * @param e the exception
    * @param logger the logger
    */
@@ -116,11 +116,11 @@ public class LoggerOutputStream extends ByteArrayOutputStream {
    * Logs an exception stacktrace to the logger with a default buffer size
    * and {@link Level#SEVERE} to
    * the default logger of the util package.
-   * 
+   *
    * @param e the exception
    */
   public static void logException(Exception e)  {
     logException(e, LOGGER, Level.SEVERE, 512);
   }
-  
+
 }
