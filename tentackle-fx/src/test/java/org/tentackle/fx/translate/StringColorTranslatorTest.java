@@ -19,12 +19,14 @@
 
 package org.tentackle.fx.translate;
 
-import javafx.scene.paint.Color;
 import org.testng.annotations.Test;
+
+import javafx.scene.paint.Color;
 
 import static org.testng.Assert.assertEquals;
 
 /**
+ * Tests for color translator.
  *
  * @author harald
  */

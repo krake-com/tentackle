@@ -24,6 +24,7 @@ import org.tentackle.fx.FxTextComponent;
 import org.tentackle.misc.FormatHelper;
 
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.MessageFormat;
 import java.text.ParseException;
 
@@ -35,8 +36,13 @@ import java.text.ParseException;
  */
 public abstract class NumberStringTranslator<M extends Number> extends ValueStringTranslator<M> {
 
-  private String pattern;         // the cached pattern
-  private DecimalFormat format;   // the cached format
+  private static final String DIGITS = "0123456789";
+
+  protected String pattern;             // the cached pattern
+  protected DecimalFormat format;       // the cached format
+  protected String signedValidChars;    // cached valid chars for signed numbers
+  protected String unsignedValidChars;  // cached valid chars for unsigned numbers
+
 
   /**
    * Creates a number translator.
@@ -47,6 +53,52 @@ public abstract class NumberStringTranslator<M extends Number> extends ValueStri
     super(component);
   }
 
+  @Override
+  public String getValidChars() {
+    if (signedValidChars == null) {
+      initializeValidChars();
+    }
+    FxTextComponent component = getComponent();
+    return component != null && component.isUnsigned() ? unsignedValidChars : signedValidChars;
+  }
+
+  /**
+   * Gets the default pattern according to the type.
+   *
+   * @return the pattern
+   */
+  public abstract String getDefaultPattern();
+
+
+  /**
+   * Gets the decimal format.
+   *
+   * @return the decimal format
+   */
+  protected DecimalFormat getFormat() {
+    FxTextComponent component = getComponent();
+    String pat = component == null ? null : component.getPattern();
+    if (pat == null) {
+      pat = getDefaultPattern();
+    }
+    if (format == null || !pat.equals(pattern)) {
+      pattern = pat;
+      format = new DecimalFormat(pattern);
+      if (component != null) {
+        FormatHelper.setScale(format, component.getScale());
+      }
+    }
+    return format;
+  }
+
+  /**
+   * Initializes the valid chars from the format.
+   */
+  protected void initializeValidChars() {
+    DecimalFormatSymbols symbols = getFormat().getDecimalFormatSymbols();
+    unsignedValidChars = DIGITS + symbols.getDecimalSeparator() + symbols.getGroupingSeparator();
+    signedValidChars = unsignedValidChars + symbols.getMinusSign();
+  }
 
   /**
    * Parses a string to a number.
@@ -68,36 +120,6 @@ public abstract class NumberStringTranslator<M extends Number> extends ValueStri
       }
     }
     return null;
-  }
-
-  @Override
-  public String getValidChars() {
-    return getComponent().isUnsigned() ? ".,0123456789" : ".,-0123456789";
-  }
-
-  /**
-   * Gets the default pattern according to the type.
-   *
-   * @return the pattern
-   */
-  public abstract String getDefaultPattern();
-
-  /**
-   * Gets the decimal format.
-   *
-   * @return the decimal format
-   */
-  protected DecimalFormat getFormat() {
-    String pat = getComponent().getPattern();
-    if (pat == null) {
-      pat = getDefaultPattern();
-    }
-    if (format == null || !pat.equals(pattern)) {
-      pattern = pat;
-      format = new DecimalFormat(pattern);
-      FormatHelper.setScale(format, getComponent().getScale());
-    }
-    return format;
   }
 
 }
