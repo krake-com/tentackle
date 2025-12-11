@@ -62,7 +62,7 @@ public class DbTransactionFactory {
   private static final String TX_IDLE_INTERVAL = "txIdleInterval";
   private static final String TX_IDLE_TIMEOUT = "txIdleTimeout";
 
-  private static final long DEFAULT_TX_IDLE_INTERVAL = Constants.SECOND_MS;     // default is to check every second
+  private static final long DEFAULT_TX_IDLE_INTERVAL = Constants.SECOND_MS;     // the default is to check every second
   private static final int DEFAULT_TX_IDLE_TIMEOUT = 60;                        // 1 minute idle transaction timeout
 
 
@@ -110,7 +110,7 @@ public class DbTransactionFactory {
    *
    * @param db the session
    * @param txName the transaction name, null if &lt;unnamed&gt;
-   * @param fromRemote true if initiated from remote client
+   * @param fromRemote true if initiated from the remote client
    */
   public DbTransaction create(Db db, String txName, boolean fromRemote) {
     DbTransaction transaction = new DbTransaction(db, txName, fromRemote);
@@ -133,7 +133,7 @@ public class DbTransactionFactory {
     if (collectingStatistics) {
       statistics.countTransaction(transaction, rolledBack);
     }
-    finishedTransactions.add(txId);   // hand over to supervisor thread asynchronously
+    finishedTransactions.add(txId);   // hand over to the supervisor thread asynchronously
   }
 
   /**
@@ -230,7 +230,7 @@ public class DbTransactionFactory {
    * It also closes sessions with transactions being idle too long.
    * The thread is started when the first transaction (local sessions only!) is created.
    * For remote sessions, the thread will never be started and the {@code DbTransactionFactory} is just dummy,
-   * for example in a remote {@code ServerApplication}.
+   * for example, in a remote {@code ServerApplication}.
    */
   private class TransactionSupervisor extends Thread {
 
@@ -302,18 +302,18 @@ public class DbTransactionFactory {
               }
               else {
                 if (txIdleTimeout > 0 &&
-                    idleMap.computeIfAbsent(transaction.getTxNumber(), txNumber -> new TxIdleCounter(transaction)).count() > txIdleTimeout) {
+                    idleMap.computeIfAbsent(transaction.getTxNumber(), _ -> new TxIdleCounter(transaction)).count() > txIdleTimeout) {
                   String msg = "idle transaction " + transaction.getSession() + " timed out after " +
                                 txIdleTimeout * txIdleInterval / Constants.SECOND_MS + " s";
-                  LOGGER.warning(msg);
                   idleMap.remove(transaction.getTxNumber());
                   iter.remove();
                   Db session = transaction.getSession();
                   ManagedConnection mc = session.getConnection();
                   if (mc != null) {
-                    final Connection con = mc.getConnection();
+                    LOGGER.warning(msg + ":\n" + mc.toDiagnosticString());  // with statements!
+                    Connection con = mc.getConnection();
                     if (con != null) {
-                      // do that in a separate thread, if it gets stuck, the supervisor still keeps running
+                      // do that in a separate thread (if it gets stuck, the supervisor still keeps running!)
                       createTxCleanupThread(mc, con).start();
                     }
                     else {
@@ -321,7 +321,7 @@ public class DbTransactionFactory {
                     }
                   }
                   else {
-                    LOGGER.warning("managed connection already detached from session {0}", session);
+                    LOGGER.warning(msg + " (managed connection already detached from session {0})", session);
                   }
                 }
               }

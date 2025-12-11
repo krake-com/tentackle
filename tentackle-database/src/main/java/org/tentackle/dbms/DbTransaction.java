@@ -298,12 +298,13 @@ public class DbTransaction {
     if (isTxLevelValid()) {
       buf.append('.').append(txLevel);
     }
-    buf.append('-').append(txName);
+    buf.append("-[").append(txName);
     if (nestedTxNames != null) {
       for (Iterator<String> iterator = nestedTxNames.descendingIterator(); iterator.hasNext(); ) {
-        buf.append('>').append(iterator.next());
+        buf.append(" > ").append(iterator.next());
       }
     }
+    buf.append(']');
     return buf.toString();
   }
 
