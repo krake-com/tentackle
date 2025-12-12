@@ -146,7 +146,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
   /**
    * Optional class id of the root entity.<br>
-   * Improves performance in selects in composite entities
+   * Improves performance in SELECTs for composite entities
    * if the components belong to different kinds of root entities.
    */
   private int rootClassId;
@@ -1466,7 +1466,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * If there is a transaction running in batched mode, the statement will be executed via JDBC batching.
    * Otherwise, the method is equivalent to {@link #getPreparedStatement(StatementId, SqlSupplier)}.
    * <p>
-   * The method must only be used for inserts, updates and delete of a single row!
+   * The method must only be used for inserts, updates, and delete of a single row!
    *
    * @param modType the modification type
    * @param stmtId the statement ID
@@ -1934,7 +1934,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
     long txVoucher = db.begin(TX_SELECT_TOKENLOCKED);
     try {
-      return select(id, false, true);
+      T obj = select(id, false, true);
+      db.commit(txVoucher);
+      return obj;
     }
     catch (PersistenceException px) {
       db.rollback(txVoucher, !px.isTemporary());
@@ -3774,7 +3776,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Implementation of persist bypassing the invocation handler.
+   * Implementation of persist() bypassing the invocation handler.
    *
    * @return the persisted PDO
    */
@@ -4124,8 +4126,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * which indicates some logic error in the application (missing {@code @Transaction}, for example).
    *
    * @param tokenExpiry holds the time the token will expire. Null to release token.
-   * @param userId is the current user (unused if tokenExpiry is null)
-   * @param curTime is the current system time
+   * @param userId the current user (unused if tokenExpiry is null)
+   * @param curTime the current system-time
    */
   public void updateTokenLock(Timestamp tokenExpiry, long userId, Timestamp curTime) {
     Db db = getSession();
@@ -4478,11 +4480,11 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Checks write permission for this object.
    *
-   * @throws SecurityException if there is no write permission
+   * @throws SecurityException if there is no write-permission
    */
   protected void assertWritePermission() {
     if (!isWriteAllowed()) {
-      throw new SecurityException(this, "no write permission");
+      throw new SecurityException(this, "no write-permission");
     }
   }
 
@@ -4493,7 +4495,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   protected void assertReadPermission() {
     if (!isReadAllowed()) {
-      throw new SecurityException(this, "no read permission");
+      throw new SecurityException(this, "no read-permission");
     }
   }
 
