@@ -132,10 +132,15 @@ public class LocaleProvider {
    * Sets the locale used by the current thread.<br>
    * The locale is stored as {@link ThreadLocal}.
    *
-   * @param locale the locale
+   * @param locale the locale, null to remove the thread-local locale
    */
   public void setCurrentLocale(Locale locale) {
-    tlLocale.set(locale);
+    if (locale == null) {
+      tlLocale.remove();
+    }
+    else {
+      tlLocale.set(locale);
+    }
   }
 
   /**

@@ -52,10 +52,15 @@ public interface Session extends Comparable<Session>, AutoCloseable {
    * Sets the session used by the current thread.<br>
    * The session is stored as {@link ThreadLocal}.
    *
-   * @param session the db
+   * @param session the session, null to clear
    */
   static void setCurrentSession(Session session) {
-    SessionThreadLocalHolder.TL_SESSION.set(session);
+    if (session == null) {
+      SessionThreadLocalHolder.TL_SESSION.remove();
+    }
+    else {
+      SessionThreadLocalHolder.TL_SESSION.set(session);
+    }
   }
 
   /**
