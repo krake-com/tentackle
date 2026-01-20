@@ -51,6 +51,8 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
   private static final Logger LOGGER = Logger.get(TrackedArrayList.class);
 
+  // CAUTION: any changes to the serializable fields must be reflected in
+  // org.tentackle.trip.providers.TrackedArrayListComponentProvider!
   private boolean noNulls;                          // true if adding null-values throws an NPE
   private boolean modified;                         // initial modification parameter or from setModified(true)
   private boolean removed;                          // some object has been removed
@@ -77,6 +79,15 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
     setModified(modified);
   }
 
+  /**
+   * Creates a tracked ArrayList.<br>
+   * Notice that the list is initially marked 'modified'!
+   *
+   * @param initialCapacity is the initial size of the list
+   */
+  public TrackedArrayList(int initialCapacity) {
+    this(initialCapacity, true);
+  }
 
   /**
    * Creates a tracked ArrayList.
@@ -88,7 +99,6 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
     setModified(modified);
   }
 
-
   /**
    * Creates a tracked ArrayList.<br>
    * Notice that the list is initially marked 'modified'!
@@ -97,7 +107,6 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   public TrackedArrayList() {
     this(true);
   }
-
 
   /**
    * Creates a list from a collection.<br>

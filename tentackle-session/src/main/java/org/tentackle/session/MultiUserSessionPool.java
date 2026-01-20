@@ -28,32 +28,29 @@ package org.tentackle.session;
 public interface MultiUserSessionPool {
 
   /**
-   * Gets a session from the pool for a given session info.
+   * Gets a session from the pool for given session info.
    *
    * @param sessionInfo the session info
    * @return the session, never null
    */
   Session get(SessionInfo sessionInfo);
 
-
   /**
-   * Returns a session back to the pool.<br>
+   * Returns a session to the pool.<br>
    * Returning a closed session will remove it from the pool.
    *
    * @param session the session
    */
   void put(Session session);
 
-
   /**
-   * Closes all sessions currently open for a given session info.<br>
+   * Closes all sessions currently open for given session info.<br>
    * Useful to force logout for a user.<br>
-   * It is not an error, if there were no open sessions for the session info at all.
+   * It is not an error if there were no open sessions for the session info at all.
    *
    * @param sessionInfo the session info
    */
   void close(SessionInfo sessionInfo);
-
 
   /**
    * Gets the name of this pool.
@@ -62,21 +59,19 @@ public interface MultiUserSessionPool {
    */
   String getName();
 
-
   /**
    * Gets the maximum pool size per session info.
    *
    * @return the max. number of concurrent session instances, 0 = unlimited
    */
-  int getMaxSize();
+  int getMaximumSize();
 
   /**
    * Gets the maximum pool size for all sessions.
    *
    * @return the max. number of concurrent session instances, 0 = unlimited
    */
-  int getMaxTotalSize();
-
+  int getMaximumTotalSize();
 
   /**
    * Gets the current number of session instances.
@@ -85,12 +80,10 @@ public interface MultiUserSessionPool {
    */
   int getSize();
 
-
   /**
-   * Closes all sessions in the pool, cleans up and makes the pool unusable.
+   * Closes all sessions in the pool, cleans up, and makes the pool unusable.
    */
   void shutdown();
-
 
   /**
    * Returns whether the pool is shutdown.

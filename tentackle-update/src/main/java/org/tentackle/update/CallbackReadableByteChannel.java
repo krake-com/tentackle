@@ -77,4 +77,5 @@ public class CallbackReadableByteChannel implements ReadableByteChannel {
   public int getSize() {
     return size;
   }
+
 }

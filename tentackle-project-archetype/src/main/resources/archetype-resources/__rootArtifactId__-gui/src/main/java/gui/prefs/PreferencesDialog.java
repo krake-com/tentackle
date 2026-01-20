@@ -65,7 +65,7 @@ public class PreferencesDialog extends AbstractFxController {
     saveButton.setGraphic(Fx.createGraphic("save"));
     saveButton.setOnAction(e -> {
       try {
-        ${application}Preferences.getInstance().sync();
+        ${application}Preferences.getInstance().getSystemPrefs().sync();
         getStage().hide();
       }
       catch (BackingStoreException ex) {

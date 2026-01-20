@@ -61,7 +61,7 @@ public interface SessionFactory {
   /**
    * Creates a session for a pool.<br>
    * Notice that this method is provided for {@link SessionPool} implementations only.
-   * Applications must use {@link SessionPool#getSession()} instead.
+   * Applications must use {@link SessionPool#get()} instead.
    *
    * @param sessionPool the pool requesting a new session
    * @param sessionInfo the session info

@@ -33,8 +33,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Queue;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicLong;
 
 interface DbTransactionFactoryHolder {
   DbTransactionFactory INSTANCE = ServiceFactory.createService(DbTransactionFactory.class, DbTransactionFactory.class);
@@ -77,6 +79,9 @@ public class DbTransactionFactory {
   private boolean collectingStatistics;
   private volatile boolean terminationRequested;
 
+  // the transaction counter
+  private static final AtomicLong TX_COUNT = new AtomicLong();
+
 
   /**
    * Creates the transaction factory.
@@ -113,7 +118,7 @@ public class DbTransactionFactory {
    * @param fromRemote true if initiated from the remote client
    */
   public DbTransaction create(Db db, String txName, boolean fromRemote) {
-    DbTransaction transaction = new DbTransaction(db, txName, fromRemote);
+    DbTransaction transaction = new DbTransaction(db, createVoucher(fromRemote), txName, TX_COUNT.incrementAndGet());
     transactions.put(transaction.getTxNumber(), new WeakReference<>(transaction));
     ensureSupervisorAlive();
     return transaction;
@@ -210,6 +215,25 @@ public class DbTransactionFactory {
       terminationRequested = true;
       transactionSupervisor.interrupt();
     }
+  }
+
+
+  /**
+   * Creates a new transaction voucher.
+   *
+   * @param fromRemote true if the transaction was started at the remote client
+   * @return the voucher
+   */
+  protected long createVoucher(boolean fromRemote) {
+    // create a new commit/rollback voucher
+    long magic;
+    do {
+      magic = UUID.randomUUID().getLeastSignificantBits();
+    }
+    while (magic == 0);
+
+    // remote are negative, local positive
+    return (fromRemote && magic > 0 || !fromRemote && magic < 0) ? -magic : magic;
   }
 
 

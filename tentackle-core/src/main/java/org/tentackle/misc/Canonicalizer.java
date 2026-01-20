@@ -37,9 +37,9 @@ public class Canonicalizer<T> {
   private final Map<T,T> objectMap;   // the object map
 
   /**
-   * Creates a canonicalizer.
+   * Creates a {@code Canonicalizer}.
    *
-   * @param threadSafe true if we need a threadsafe canonicalizer
+   * @param threadSafe true if we need a threadsafe {@code Canonicalizer}
    * @param limit the maximum size of the internal map, 0 if unlimited
    */
   public Canonicalizer(boolean threadSafe, int limit) {
@@ -48,7 +48,7 @@ public class Canonicalizer<T> {
   }
 
   /**
-   * Creates a non-threadsafe unlimited canonicalizer.
+   * Creates a non-threadsafe unlimited {@code Canonicalizer}.
    */
   public Canonicalizer() {
     this(false, 0);

@@ -18,8 +18,7 @@
 
 package org.tentackle.update;
 
-import java.rmi.Remote;
-import java.rmi.RemoteException;
+import org.tentackle.trip.Remote;
 
 /**
  * RMI service to provide the update info for an application.
@@ -27,12 +26,11 @@ import java.rmi.RemoteException;
 public interface UpdateService extends Remote {
 
   /**
-   * Gets the info how to download and install the update.
+   * Gets the info, how to download and install the update.
    *
    * @param info the client application info
    * @return the update info
-   * @throws RemoteException if download info cannot be determined
    */
-  UpdateInfo getUpdateInfo(ClientInfo info) throws RemoteException;
+  UpdateInfo getUpdateInfo(ClientInfo info);
 
 }

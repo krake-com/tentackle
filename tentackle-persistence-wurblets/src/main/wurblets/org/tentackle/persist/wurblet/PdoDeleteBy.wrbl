@@ -78,53 +78,38 @@ For more options, see {\@link DbModelWurblet}.
       PrintStream remoteOut = genInc.getInterfaceStream();
 ]@
     if (getSession().isRemote())  {
-      try {
 @[
       if (getContextAttribute() != null)  {
 ]@
 @{to remoteOut}@
-  int @(methodName)@(@(pcs(params, "DomainContext context"))@) throws RemoteException;
+  int @(methodName)@(@(pcs(params, "DomainContext context"))@);
 @{to implOut}@
 
   \@Override
-  public int @(methodName)@(@(pcs(params, "DomainContext context"))@) throws RemoteException {
-    try {
-      setDomainContext(context);
-      return dbObject.@(methodName)@(@(iparms)@);
-    }
-    catch (RuntimeException e) {
-      throw createException(e);
-    }
+  public int @(methodName)@(@(pcs(params, "DomainContext context"))@) {
+    setDomainContext(context);
+    return dbObject.@(methodName)@(@(iparms)@);
   }
 @{to}@
-        return getRemoteDelegate().@(methodName)@(@(pcs(iparms, "getDomainContext()"))@);
+      return getRemoteDelegate().@(methodName)@(@(pcs(iparms, "getDomainContext()"))@);
 @[
       }  // end if contextLine
       else  {
 ]@
 @{to remoteOut}@
-  int @(methodName)@(@(params)@) throws RemoteException;
+  int @(methodName)@(@(params)@);
 @{to implOut}@
 
   \@Override
-  public int @(methodName)@(@(params)@) throws RemoteException {
+  public int @(methodName)@(@(params)@) {
 @{to implOut}@
-    try {
-      return dbObject.@(methodName)@(@(iparms)@);
-    }
-    catch (RuntimeException e) {
-      throw createException(e);
-    }
+    return dbObject.@(methodName)@(@(iparms)@);
   }
 @{to}@
-        return getRemoteDelegate().@(methodName)@(@(iparms)@);
+      return getRemoteDelegate().@(methodName)@(@(iparms)@);
 @[
       }
 ]@
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(getSession(), e);
-      }
     }
     // else: local mode
 @[

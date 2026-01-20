@@ -25,16 +25,12 @@ import org.tentackle.common.ServiceFinder;
 import org.tentackle.common.StringHelper;
 import org.tentackle.misc.Identifiable;
 
-import java.rmi.NoSuchObjectException;
-import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 
 interface SessionUtilitiesHolder {
@@ -334,86 +330,6 @@ public class SessionUtilities {
 
     return buf;
   }
-
-
-  /**
-   * Creates a RuntimeException from a {@link RemoteException}.<br>
-   * Returns the first RuntimeException in chain.
-   * If the first non-RemoteException is not a RuntimeException, the exception
-   * is wrapped by a PersistenceException.
-   *
-   * @param relatedObject the optional related object, only used if remote cause is not a {@link PersistenceException}
-   * @param remoteException the remote exception
-   * @return the runtime exception
-   */
-  public RuntimeException createFromRemoteException(Object relatedObject, RemoteException remoteException) {
-
-    // find the first cause in chain which is not a RemoteException
-    Throwable remoteCause = remoteException;
-
-    boolean remoteClosed;
-    if (remoteCause instanceof NoSuchObjectException) {
-      remoteClosed = true;
-    }
-    else {
-      remoteClosed = false;
-      while (remoteCause instanceof RemoteException && remoteCause.getCause() != null) {
-        remoteCause = remoteCause.getCause();
-      }
-    }
-
-    RuntimeException pex;
-
-    if (remoteCause instanceof RuntimeException) {
-      pex = (RuntimeException) remoteCause;
-    }
-    else  {
-      // other exception found
-      if (remoteClosed) {
-        if (relatedObject instanceof Identifiable) {
-          pex = new SessionClosedException((Identifiable) relatedObject, remoteCause);
-        }
-        else if (relatedObject instanceof Session) {
-          pex = new SessionClosedException((Session) relatedObject, remoteCause);
-        }
-        else {
-          pex = new SessionClosedException((relatedObject != null ? relatedObject.toString() : ""), remoteCause);
-        }
-      }
-      else {
-        if (relatedObject instanceof Identifiable) {
-          pex = new PersistenceException((Identifiable) relatedObject, remoteCause);
-        }
-        else if (relatedObject instanceof Session) {
-          pex = new PersistenceException((Session) relatedObject, remoteCause);
-        }
-        else {
-          pex = new PersistenceException((relatedObject != null ? relatedObject.toString() : ""), remoteCause);
-        }
-      }
-    }
-
-    StackWalker walker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
-    List<StackTraceElement> stack = walker.walk(s -> s.filter(sf -> ExceptionHelper.isClassValuableForStackTrace(sf.getClassName()))
-                                                      .map(sf -> new StackTraceElement(sf.getDeclaringClass().getName(), sf.getMethodName(), sf.getFileName(), sf.getLineNumber()))
-                                                      .collect(Collectors.toList()));
-    if (stack.isEmpty()) {
-      // pathological case: don't filter
-      walker.walk(s -> s.map(sf -> new StackTraceElement(sf.getDeclaringClass().getName(), sf.getMethodName(), sf.getFileName(), sf.getLineNumber()))
-                        .collect(Collectors.toList()));
-    }
-    StackTraceElement[] localTrace = new StackTraceElement[stack.size()];
-    stack.toArray(localTrace);
-    StackTraceElement[] remoteTrace = pex.getStackTrace();
-    StackTraceElement[] trace = new StackTraceElement[localTrace.length + remoteTrace.length];
-    System.arraycopy(remoteTrace, 0, trace, 0, remoteTrace.length);
-    trace[remoteTrace.length] = new StackTraceElement(">>>>> REMOTE METHOD INVOCATION >>>>>", "", "", 0);
-    System.arraycopy(localTrace, 1, trace, remoteTrace.length + 1, localTrace.length - 1);
-    pex.setStackTrace(trace);
-
-    return pex;
-  }
-
 
 
   /**

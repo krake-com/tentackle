@@ -130,7 +130,8 @@ public class Login extends AbstractFxController {
    */
   public void presetUserAndPassword(BackendConfiguration backendConfiguration) {
     if (backendConfiguration != null && backendConfiguration.getUrl() != null &&
-        backendConfiguration.getUrl().startsWith(Constants.BACKEND_RMI_URL_INTRO) &&
+        !backendConfiguration.getUrl().startsWith(Constants.BACKEND_JDBC_URL_INTRO) &&
+        !backendConfiguration.getUrl().startsWith(Constants.BACKEND_JNDI_URL_INTRO) &&
         backendConfiguration.getUser() != null) {
       // copy the user and password from the backend config
       // (for jdbc/jndi the user/pw is used to connect to the database only)
@@ -263,8 +264,9 @@ public class Login extends AbstractFxController {
         BackendConfiguration backendConfiguration = BackendConfiguration.getBackendConfigurations(
             sessionInfo.getApplicationName(), systemPrefs).get(configName);
         if (backendConfiguration != null) {
-          if (backendConfiguration.getUrl().startsWith(Constants.BACKEND_RMI_URL_INTRO) &&
-              backendConfiguration.getUser() != null) {
+          if (backendConfiguration.getUser() != null &&
+              !backendConfiguration.getUrl().startsWith(Constants.BACKEND_JNDI_URL_INTRO) &&
+              !backendConfiguration.getUrl().startsWith(Constants.BACKEND_JDBC_URL_INTRO)) {
             // preset user/pw if fixed backend config is remote and user set
             usernameField.setText(backendConfiguration.getUser());
             if (backendConfiguration.getPassword() != null) {

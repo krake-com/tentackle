@@ -30,6 +30,17 @@ module org.tentackle.pdo {
   exports org.tentackle.security.pdo;
   exports org.tentackle.security.permissions;
 
+  // necessary for TRIP
+  opens org.tentackle.app to org.tentackle.core;
+  opens org.tentackle.apt.pdo to org.tentackle.core;
+  opens org.tentackle.ns to org.tentackle.core;
+  opens org.tentackle.ns.pdo to org.tentackle.core;
+  opens org.tentackle.pdo to org.tentackle.core;
+  opens org.tentackle.pdo.trip to org.tentackle.core;
+  opens org.tentackle.security to org.tentackle.core;
+  opens org.tentackle.security.pdo to org.tentackle.core;
+  opens org.tentackle.security.permissions to org.tentackle.core;
+
   requires transitive org.tentackle.session;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.pdo.service.Hook;

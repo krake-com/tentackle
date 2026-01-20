@@ -44,7 +44,7 @@ public abstract class WebApplication<T> extends AbstractServerApplication {
    * Creates an instance of a web application.
    *
    * @param name the application name, null for default name
-   * @param version the application version, null for default version
+   * @param version the application version, null for the default version
    */
   public WebApplication(String name, String version) {
     super(name, version);
@@ -66,7 +66,7 @@ public abstract class WebApplication<T> extends AbstractServerApplication {
 
 
   /**
-   * Removes a mapping between a web session key and a user session info.<br>
+   * Removes a mapping between a web session key and user session info.<br>
    * This is usually done in the logout controller.
    * If there is no such session, the method will do nothing.
    *
@@ -78,7 +78,7 @@ public abstract class WebApplication<T> extends AbstractServerApplication {
 
 
   /**
-   * Gets the web session keys for a user session info.<br>
+   * Gets the web session keys for user session info.<br>
    *
    * @param sessionInfo the user session info
    * @return the web session keys, never null
@@ -101,7 +101,7 @@ public abstract class WebApplication<T> extends AbstractServerApplication {
       SessionPool sessionPool = getSessionPool();
       Db session = null;
       if (sessionPool != null) {
-        session = (Db) sessionPool.getSession();
+        session = (Db) sessionPool.get();
       }
       else {
         MultiUserSessionPool remoteSessionPool = getRemoteSessionPool();
@@ -128,12 +128,12 @@ public abstract class WebApplication<T> extends AbstractServerApplication {
     if (getSessionPool() != null) {   // only if not a remote server!
       /*
        * dereference session info (possible target for the GC).
-       * If (due to tight memory or timeout) the session info gets garbage
-       * collected the user must log in again.
+       * If (due to tight memory or timeout) the session info gets garbage-collected,
+       *  the user must log in again.
        */
       ((Db) session).setSessionInfo(null);
     }
-    session.getPool().putSession(session);    // always pooled, works also for MultiUserDbPool
+    session.getPool().put(session);    // always pooled, works also for MultiUserDbPool
   }
 
 

@@ -198,24 +198,18 @@ For more options, see {\@link DbModelWurblet}.
       if (isPdoProvidingArguments()) {
 ]@
     if (getSession().isRemote())  {
-      try {
 @[
       if (cursor != null) {
 ]@
 @{to remoteOut}@
-  RemoteResultSetCursor @(methodName)@(@(pcs(params, pdoType + " obj"))@) throws RemoteException;
+  RemoteResultSetCursor @(methodName)@(@(pcs(params, pdoType + " obj"))@);
 @{to implOut}@
 
   \@Override
-  public RemoteResultSetCursor @(methodName)@(@(pcs(params, pdoType + " obj"))@) throws RemoteException {
-    try {
-      obj.setSession(getSession());
-      obj.assertRootEntity();
-      return createRemoteResultSetCursorDelegate(obj.@(methodName)@(@(iparms)@));
-    }
-    catch (RuntimeException e) {
-      throw createException(e);
-    }
+  public RemoteResultSetCursor @(methodName)@(@(pcs(params, pdoType + " obj"))@) {
+    obj.setSession(getSession());
+    obj.assertRootEntity();
+    return createRemoteResultSetCursorDelegate(obj.@(methodName)@(@(iparms)@));
   }
 @{to}@
         return new ResultSetCursor<>(getSession(), getRemoteDelegate().
@@ -225,54 +219,39 @@ For more options, see {\@link DbModelWurblet}.
       else {
 ]@
 @{to remoteOut}@
-  @(rmiListType)@ @(methodName)@(@(pcs(params, pdoType + " obj"))@) throws RemoteException;
+  @(rmiListType)@ @(methodName)@(@(pcs(params, pdoType + " obj"))@);
 @{to implOut}@
 
   \@Override
-  public @(rmiListType)@ @(methodName)@(@(pcs(params, pdoType + " obj"))@) throws RemoteException {
-    try {
-      obj.setSession(getSession());
-      return obj.@(methodName)@(@(iparms)@);
-    }
-    catch (RuntimeException e) {
-      throw createException(e);
-    }
+  public @(rmiListType)@ @(methodName)@(@(pcs(params, pdoType + " obj"))@) {
+    obj.setSession(getSession());
+    return obj.@(methodName)@(@(iparms)@);
   }
 @{to}@
-        @(listType)@ list = getRemoteDelegate().@(methodName)@(@(pcs(iparms, "me()"))@);
-        configureRemoteObjects(getDomainContext(), list);
-        return list;
+      @(listType)@ list = getRemoteDelegate().@(methodName)@(@(pcs(iparms, "me()"))@);
+      configureRemoteObjects(getDomainContext(), list);
+      return list;
 @[
       }
 ]@
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
     }
 @[
       }
       else {
 ]@
     if (getSession().isRemote())  {
-      try {
 @[
       if (cursor != null) {
 ]@
 @{to remoteOut}@
-  RemoteResultSetCursor @(methodName)@(@(pcs(params, "DomainContext context"))@) throws RemoteException;
+  RemoteResultSetCursor @(methodName)@(@(pcs(params, "DomainContext context"))@);
 @{to implOut}@
 
   \@Override
-  public RemoteResultSetCursor @(methodName)@(@(pcs(params, "DomainContext context"))@) throws RemoteException {
-    try {
-      setDomainContext(context);
-      dbObject.assertRootEntity();
-      return createRemoteResultSetCursorDelegate(dbObject.@(methodName)@(@(iparms)@));
-    }
-    catch (RuntimeException e) {
-      throw createException(e);
-    }
+  public RemoteResultSetCursor @(methodName)@(@(pcs(params, "DomainContext context"))@) {
+    setDomainContext(context);
+    dbObject.assertRootEntity();
+    return createRemoteResultSetCursorDelegate(dbObject.@(methodName)@(@(iparms)@));
   }
 @{to}@
         return new ResultSetCursor<>(getSession(), getRemoteDelegate().
@@ -282,30 +261,21 @@ For more options, see {\@link DbModelWurblet}.
       else {
 ]@
 @{to remoteOut}@
-  @(rmiListType)@ @(methodName)@(@(pcs(params, "DomainContext context"))@) throws RemoteException;
+  @(rmiListType)@ @(methodName)@(@(pcs(params, "DomainContext context"))@);
 @{to implOut}@
 
   \@Override
-  public @(rmiListType)@ @(methodName)@(@(pcs(params, "DomainContext context"))@) throws RemoteException {
-    try {
-      setDomainContext(context);
-      return dbObject.@(methodName)@(@(iparms)@);
-    }
-    catch (RuntimeException e) {
-      throw createException(e);
-    }
+  public @(rmiListType)@ @(methodName)@(@(pcs(params, "DomainContext context"))@) {
+    setDomainContext(context);
+    return dbObject.@(methodName)@(@(iparms)@);
   }
 @{to}@
-        @(listType)@ list = getRemoteDelegate().@(methodName)@(@(pcs(iparms, "getDomainContext()"))@);
-        configureRemoteObjects(getDomainContext(), list);
-        return list;
+      @(listType)@ list = getRemoteDelegate().@(methodName)@(@(pcs(iparms, "getDomainContext()"))@);
+      configureRemoteObjects(getDomainContext(), list);
+      return list;
 @[
       }
 ]@
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
     }
 @[
       }

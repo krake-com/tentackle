@@ -23,8 +23,11 @@ module org.tentackle.database {
 
   exports org.tentackle.dbms;
   exports org.tentackle.dbms.prefs;
-  exports org.tentackle.dbms.prefs.rmi;
-  exports org.tentackle.dbms.rmi;
+  exports org.tentackle.dbms.prefs.trip;
+  exports org.tentackle.dbms.trip;
+
+  opens org.tentackle.dbms to org.tentackle.core;           // necessary for TRIP
+  opens org.tentackle.dbms.prefs to org.tentackle.core;     // necessary for TRIP
 
   requires transitive org.tentackle.session;
   requires transitive org.tentackle.sql;

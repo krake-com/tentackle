@@ -22,18 +22,16 @@ package org.tentackle.i18n.pdo;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.dbms.StatementId;
-import org.tentackle.i18n.pdo.rmi.StoredBundleKeyRemoteDelegate;
+import org.tentackle.i18n.pdo.trip.StoredBundleKeyRemoteDelegate;
 import org.tentackle.misc.TrackedList;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentObjectService;
 import org.tentackle.persist.AbstractPersistentObject;
 import org.tentackle.persist.PersistentObjectClassVariables;
-import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.sql.Backend;
 
 import java.io.Serial;
-import java.rmi.RemoteException;
 import java.util.Objects;
 
 
@@ -340,14 +338,9 @@ public class StoredBundleKeyPersistenceImpl extends AbstractPersistentObject<Sto
   @Override
   public TrackedList<StoredBundleKey> selectByBundleId(long bundleId) {
     if (getSession().isRemote())  {
-      try {
-        TrackedList<StoredBundleKey> list = getRemoteDelegate().selectByBundleId(getDomainContext(), bundleId);
-        configureRemoteObjects(getDomainContext(), list);
-        return list;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      TrackedList<StoredBundleKey> list = getRemoteDelegate().selectByBundleId(getDomainContext(), bundleId);
+      configureRemoteObjects(getDomainContext(), list);
+      return list;
     }
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_BUNDLE_ID_STMT,
       b -> {
@@ -371,4 +364,3 @@ public class StoredBundleKeyPersistenceImpl extends AbstractPersistentObject<Sto
 
 
 }
-

@@ -938,7 +938,7 @@ For more options, see {\@link DbModelWurblet}.
     }
 
 
-    // gerenate setSession and setDomainContext for referenced objects (necessary for RMI)
+    // gerenate setSession and setDomainContext for referenced objects (necessary for TRIP)
     if (generateSetSession)  {
 ]@
 

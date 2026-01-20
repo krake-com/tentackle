@@ -20,8 +20,10 @@
  * tentackle-session module.
  */
 module org.tentackle.session {
-
   exports org.tentackle.session;
+
+  // TRIP
+  opens org.tentackle.session to org.tentackle.core;
 
   requires transitive org.tentackle.core;
 

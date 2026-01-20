@@ -20,9 +20,8 @@ package org.tentackle.update;
 
 import org.tentackle.common.Cryptor;
 import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.trip.TripReferencable;
 
-import java.io.Serial;
-import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -31,10 +30,8 @@ import java.net.URL;
 /**
  * Update info sent back to the client.
  */
-public class UpdateInfo implements Serializable {
-
-  @Serial
-  private static final long serialVersionUID = 1L;
+@TripReferencable(TripReferencable.NEVER)
+public class UpdateInfo {
 
   // transfer as strings because it may be encrypted
   private final String version;
@@ -135,4 +132,5 @@ public class UpdateInfo implements Serializable {
            ", updateExecutor='" + getUpdateExecutor() + '\'' +
            '}';
   }
+
 }

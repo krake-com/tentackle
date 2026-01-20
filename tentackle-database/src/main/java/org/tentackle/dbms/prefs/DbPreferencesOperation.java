@@ -21,14 +21,14 @@ package org.tentackle.dbms.prefs;
 import org.tentackle.dbms.AbstractDbOperation;
 import org.tentackle.dbms.Db;
 import org.tentackle.dbms.DbOperationClassVariables;
-import org.tentackle.dbms.prefs.rmi.DbPreferencesOperationRemoteDelegate;
+import org.tentackle.dbms.prefs.trip.DbPreferencesOperationRemoteDelegate;
 import org.tentackle.log.Logger;
 import org.tentackle.prefs.PersistedPreferencesFactory;
-import org.tentackle.session.PersistenceException;
+import org.tentackle.trip.TripDeduplicatable;
+import org.tentackle.trip.TripReferencable;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -53,33 +53,34 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
 
   /**
    * Holds all nodes and keys for a user- or system-root along with its version.
+   *
+   * @param serial    the serial version of the preferences tree.
+   * @param prefNodes all prefnodes.
+   * @param prefKeys  all prefkeys.
    */
-  public static class RefreshInfo implements Serializable {
-    @Serial
-    private static final long serialVersionUID = 1L;
+    @TripReferencable(TripReferencable.NEVER)
+    @TripDeduplicatable(TripDeduplicatable.NEVER)
+    public record RefreshInfo(long serial,
+                              @SuppressWarnings("serial") Collection<DbPreferencesNode> prefNodes,
+                              @SuppressWarnings("serial") Collection<DbPreferencesKey> prefKeys)
+           implements Serializable {
 
-    /** the serial version of the preferences tree. */
-    public final long serial;
-    /** all prefnodes. */
-    @SuppressWarnings("serial")
-    public final Collection<DbPreferencesNode> prefNodes;
-    /** all prefkeys. */
-    @SuppressWarnings("serial")
-    public final Collection<DbPreferencesKey> prefKeys;
+      @Serial
+      private static final long serialVersionUID = 1L;
 
-    /**
-     * Creates a refresh info.
-     *
-     * @param serial the serial version of the node tree
-     * @param prefNodes the persistent nodes
-     * @param prefKeys the persistent keys
-     */
-    public RefreshInfo(long serial, Collection<DbPreferencesNode> prefNodes, Collection<DbPreferencesKey> prefKeys) {
-      this.serial = serial;
-      this.prefNodes = prefNodes;
-      this.prefKeys = prefKeys;
+      /**
+       * Creates a refresh-info.
+       *
+       * @param serial    the serial version of the node tree
+       * @param prefNodes the persistent nodes
+       * @param prefKeys  the persistent keys
+       */
+      public RefreshInfo(long serial, Collection<DbPreferencesNode> prefNodes, Collection<DbPreferencesKey> prefKeys) {
+        this.serial = serial;
+        this.prefNodes = prefNodes;
+        this.prefKeys = prefKeys;
+      }
     }
-  }
 
 
   @Override
@@ -119,12 +120,7 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
   public DbPreferences loadRootTree(String user, boolean forced) {
     Db db = getSession();
     if (db.isRemote()) {
-      try {
-        return getRemoteDelegate().loadRootTree(user, forced);
-      }
-      catch (RemoteException rex) {
-        throw PersistenceException.createFromRemoteException(user, rex);
-      }
+      return getRemoteDelegate().loadRootTree(user, forced);
     }
     else {
       return forced ? loadRoot(db, user) : DbPreferencesFactory.getInstance().getRootTree(db, user);
@@ -142,12 +138,7 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
   public RefreshInfo loadRefreshInfo(DbPreferences node, long serial) {
     Db db = getSession();
     if (db.isRemote()) {
-      try {
-        return getRemoteDelegate().loadRefreshInfo(node.getUser(), serial);
-      }
-      catch (RemoteException rex) {
-        throw PersistenceException.createFromRemoteException(node, rex);
-      }
+      return getRemoteDelegate().loadRefreshInfo(node.getUser(), serial);
     }
     else {
       DbPreferencesFactory factory = DbPreferencesFactory.getInstance();
@@ -193,13 +184,8 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
 
     Db db = getSession();
     if (db.isRemote()) {
-      try {
-        updated = getRemoteDelegate().flush(node, sync);
-        // updated ids and serials will be provided by the mod listeners
-      }
-      catch (RemoteException rex) {
-        throw PersistenceException.createFromRemoteException("<system>", rex);
-      }
+      updated = getRemoteDelegate().flush(node, sync);
+      // updated ids and serials will be provided by the mod listeners
     }
     else {
       if (!PersistedPreferencesFactory.getInstance().isReadOnly()) {
@@ -243,7 +229,7 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
     children.put(rootNode.getId(), root);   // add root to simplify buildChild below
 
     if (!rootNode.isNew()) {
-      // build whole subtree
+      // build the whole subtree
       Map<Long,DbPreferencesNode> subNodes = new HashMap<>();
 
       for (DbPreferencesNode prefNode : rootNode.selectByRootNodeId(rootNode.getId())) {

@@ -32,7 +32,7 @@ import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.PersistentObjectService;
 import org.tentackle.persist.AbstractPersistentObject;
 import org.tentackle.persist.PersistentObjectClassVariables;
-import org.tentackle.persist.security.rmi.SecurityRemoteDelegate;
+import org.tentackle.persist.security.trip.SecurityRemoteDelegate;
 import org.tentackle.security.pdo.Security;
 import org.tentackle.security.pdo.SecurityPersistence;
 import org.tentackle.session.PersistenceException;
@@ -41,7 +41,6 @@ import org.tentackle.session.SessionUtilities;
 import org.tentackle.sql.Backend;
 
 import java.io.Serial;
-import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -319,12 +318,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
 
   @Override
   public void assertRemoteSecurityManagerInitialized() {
-    try {
-      getRemoteDelegate().assertRemoteSecurityManagerInitialized(getDomainContext());
-    }
-    catch (RemoteException e) {
-      throw PersistenceException.createFromRemoteException(this, e);
-    }
+    getRemoteDelegate().assertRemoteSecurityManagerInitialized(getDomainContext());
   }
 
   @Override
@@ -406,14 +400,9 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   @Override
   public List<Security> selectByGrantee(int granteeClassId, long granteeId) {
     if (getSession().isRemote())  {
-      try {
-        List<Security> list = getRemoteDelegate().selectByGrantee(getDomainContext(), granteeClassId, granteeId);
-        configureRemoteObjects(getDomainContext(), list);
-        return list;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      List<Security> list = getRemoteDelegate().selectByGrantee(getDomainContext(), granteeClassId, granteeId);
+      configureRemoteObjects(getDomainContext(), list);
+      return list;
     }
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_GRANTEE_STMT,
       b -> {
@@ -451,14 +440,9 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   @Override
   public TrackedList<Security> selectByObject(int objectClassId, long objectId) {
     if (getSession().isRemote())  {
-      try {
-        TrackedList<Security> list = getRemoteDelegate().selectByObject(getDomainContext(), objectClassId, objectId);
-        configureRemoteObjects(getDomainContext(), list);
-        return list;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      TrackedList<Security> list = getRemoteDelegate().selectByObject(getDomainContext(), objectClassId, objectId);
+      configureRemoteObjects(getDomainContext(), list);
+      return list;
     }
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_OBJECT_STMT,
       b -> {
@@ -496,14 +480,9 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   @Override
   public TrackedList<Security> selectByObjectClass(String objectClassName) {
     if (getSession().isRemote())  {
-      try {
-        TrackedList<Security> list = getRemoteDelegate().selectByObjectClass(getDomainContext(), objectClassName);
-        configureRemoteObjects(getDomainContext(), list);
-        return list;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      TrackedList<Security> list = getRemoteDelegate().selectByObjectClass(getDomainContext(), objectClassName);
+      configureRemoteObjects(getDomainContext(), list);
+      return list;
     }
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_OBJECT_CLASS_STMT,
       b -> {
@@ -537,14 +516,9 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   @Override
   public TrackedList<Security> selectByDomainContext(int domainContextClassId, long domainContextId) {
     if (getSession().isRemote())  {
-      try {
-        TrackedList<Security> list = getRemoteDelegate().selectByDomainContext(getDomainContext(), domainContextClassId, domainContextId);
-        configureRemoteObjects(getDomainContext(), list);
-        return list;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      TrackedList<Security> list = getRemoteDelegate().selectByDomainContext(getDomainContext(), domainContextClassId, domainContextId);
+      configureRemoteObjects(getDomainContext(), list);
+      return list;
     }
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_DOMAIN_CONTEXT_STMT,
       b -> {
@@ -582,12 +556,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   @Override
   public int deleteByGrantee(int granteeClassId, long granteeId) {
     if (getSession().isRemote())  {
-      try {
-        return getRemoteDelegate().deleteByGrantee(granteeClassId, granteeId);
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(getSession(), e);
-      }
+      return getRemoteDelegate().deleteByGrantee(granteeClassId, granteeId);
     }
     // else: local mode
     // check security rules at class level
@@ -625,12 +594,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   @Override
   public int deleteByObject(int objectClassId, long objectId) {
     if (getSession().isRemote())  {
-      try {
-        return getRemoteDelegate().deleteByObject(objectClassId, objectId);
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(getSession(), e);
-      }
+      return getRemoteDelegate().deleteByObject(objectClassId, objectId);
     }
     // else: local mode
     // check security rules at class level
@@ -671,12 +635,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   @Override
   public int deleteByObjectClass(String objectClassName) {
     if (getSession().isRemote())  {
-      try {
-        return getRemoteDelegate().deleteByObjectClass(objectClassName);
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(getSession(), e);
-      }
+      return getRemoteDelegate().deleteByObjectClass(objectClassName);
     }
     // else: local mode
     // check security rules at class level
@@ -714,12 +673,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   @Override
   public int deleteByDomainContext(int domainContextClassId, long domainContextId) {
     if (getSession().isRemote())  {
-      try {
-        return getRemoteDelegate().deleteByDomainContext(domainContextClassId, domainContextId);
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(getSession(), e);
-      }
+      return getRemoteDelegate().deleteByDomainContext(domainContextClassId, domainContextId);
     }
     // else: local mode
     // check security rules at class level

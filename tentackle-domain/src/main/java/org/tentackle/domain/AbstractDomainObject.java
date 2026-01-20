@@ -27,6 +27,7 @@ import org.tentackle.pdo.PersistenceDelegate;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.session.Session;
+import org.tentackle.trip.TripReferencable;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -39,6 +40,7 @@ import java.util.List;
  * @param <D> the domain object class
  * @author harald
  */
+@TripReferencable(TripReferencable.NEVER)  // only proxies are referenced, not implementations
 public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, D extends AbstractDomainObject<T,D>>
        implements DomainObject<T>, EffectiveClassProvider<T>, Serializable {
 
@@ -46,7 +48,7 @@ public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, 
   private static final long serialVersionUID = 1L;
 
 
-  private T pdo;   // the pdo instance this is a delegate for
+  private T pdo;   // instance of the PDO this is a delegate for
 
 
 
@@ -125,11 +127,11 @@ public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, 
   /**
    * Gets the string representation of this domain object.
    * <p>
-   * The default implementation returns the domain key, if this is a root entity.
+   * The default implementation returns the domain key if this is a root entity.
    * If a component, its single-name will be returned.
    * If evaluating the domain key failed, the generic string is returned
    * along with the exception in parentheses.
-   * This is due to the fact that toString should never throw
+   * This is because {@code toString()} should never throw
    * an exception as it is used for logging and debugging.
    *
    * @return the string representation

@@ -34,7 +34,8 @@ public class AddPrefsInOtherJVM {
 
   // not annotated with @Test because invoked from shell!
   private static void addNode() throws Exception {
-    try (Session session = SessionFactory.getInstance().create()) {
+    Session session = SessionFactory.getInstance().create();
+    try {
       session.makeCurrent();
 
       ModificationTracker tracker = ModificationTracker.getInstance();
@@ -50,9 +51,12 @@ public class AddPrefsInOtherJVM {
 
       tracker.terminate();
     }
+    finally {
+      session.close();
+    }
   }
 
-  public static void main(String[] args) {
+  static void main(String[] args) {
     try {
       addNode();
     }

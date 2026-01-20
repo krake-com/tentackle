@@ -25,6 +25,7 @@ import org.tentackle.pdo.Operation;
 import org.tentackle.pdo.PersistenceDelegate;
 import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.session.Session;
+import org.tentackle.trip.TripReferencable;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -37,6 +38,7 @@ import java.util.List;
  * @param <T> the operation type
  * @param <D> the domain implementation type
  */
+@TripReferencable(TripReferencable.NEVER)    // only proxies are referenced, not implementations
 public abstract class AbstractDomainOperation<T extends Operation<T>, D extends AbstractDomainOperation<T,D>>
        implements DomainOperation<T>, EffectiveClassProvider<T>, Serializable {
 
@@ -44,7 +46,7 @@ public abstract class AbstractDomainOperation<T extends Operation<T>, D extends 
   private static final long serialVersionUID = 1L;
 
 
-  private T operation;   // the operation instance this is a delegate for
+  private T operation;   // instance of the operation this is a delegate for
 
 
   /**

@@ -65,7 +65,7 @@ package org.tentackle.session;
  *   </li>
  *   <li>
  *   To send an event from the server to the client, use the method
- *   <code>org.tentackle.dbms.rmi.RemoteDbSessionImpl#addMasterSerialEvent</code>, which is part of the
+ *   <code>org.tentackle.dbms.trip.RemoteDbSessionImpl#addMasterSerialEvent</code>, which is part of the
  *   module <code>tentackle-database</code>.
  *   </li>
  * </ul>

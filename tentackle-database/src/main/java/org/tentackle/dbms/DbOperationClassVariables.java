@@ -20,7 +20,7 @@
 
 package org.tentackle.dbms;
 
-import org.tentackle.dbms.rmi.AbstractDbOperationRemoteDelegate;
+import org.tentackle.dbms.trip.AbstractDbOperationRemoteDelegate;
 
 
 /**
@@ -63,7 +63,7 @@ public class DbOperationClassVariables<P extends AbstractDbOperation<P>> {
    * If the remoteDelegateId is 0, it will be prepared
    * The delegateId is unique for each class. It is valid only in remote connections and
    * is the same for all remote Db's.
-   * The RMI-server creates a delegate for each subclass of AbstractDbOperation (DbOperationRemoteDelegateImpl resp.)
+   * The TRIP-server creates a delegate for each subclass of AbstractDbOperation (DbOperationRemoteDelegateImpl resp.)
    *
    * @return the delegate id
    */

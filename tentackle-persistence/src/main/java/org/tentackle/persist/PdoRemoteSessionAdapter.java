@@ -18,22 +18,22 @@
 
 package org.tentackle.persist;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.dbms.RemoteSessionAdapter;
+import org.tentackle.dbms.trip.RemoteDbSession;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextDependable;
 import org.tentackle.pdo.PdoRemoteSession;
-import org.tentackle.dbms.rmi.RemoteDbSession;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.SecurityManager;
 import org.tentackle.security.SecurityResult;
 import org.tentackle.session.PersistenceException;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
 /**
- * Adapter for a remote session.<br>
- * Hides the RMI stuff.
+ * Extended remote session adapter providing PDO-related services.
  *
  * @author harald
  */

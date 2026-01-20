@@ -37,17 +37,23 @@ module org.tentackle.core {
   exports org.tentackle.validate.scope;
   exports org.tentackle.validate.validator;
   exports org.tentackle.validate.severity;
+  exports org.tentackle.trip;
+  exports org.tentackle.trip.builder;
+  exports org.tentackle.trip.types;
+  exports org.tentackle.trip.impl;
+  exports org.tentackle.trip.provider;
+  exports org.tentackle.trip.remote;
+  exports org.tentackle.trip.transport;
 
   requires transitive org.tentackle.common;
 
   requires transitive java.prefs;
   requires transitive java.management;
-  requires transitive java.rmi;
   requires java.logging;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.service.Hook;
 
-  // Providers for Logger and ScriptingLanguage exist, that are not modularized yet and therefore automatic modules.
+  // Providers for Logger and ScriptingLanguage exist that are not modularized yet and therefore automatic modules.
   // If tentackle-core is loaded from a jimage file, the META-INFs of such dependencies may be invisible (sometimes,
   // not always...; the real cause is unknown, but that's the observation at least up to JDK 16).
   // The following workaround makes them visible:

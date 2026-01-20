@@ -34,7 +34,7 @@ import java.util.Objects;
  *
  * @author harald
  */
-public class LockException extends PersistenceException implements Loggable {
+public final class LockException extends PersistenceException implements Loggable {
 
   @Serial
   private static final long serialVersionUID = 1L;

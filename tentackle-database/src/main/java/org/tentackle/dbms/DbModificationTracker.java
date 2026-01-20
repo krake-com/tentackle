@@ -20,7 +20,7 @@ package org.tentackle.dbms;
 
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.common.Service;
-import org.tentackle.dbms.rmi.DbModificationTrackerRemoteDelegate;
+import org.tentackle.dbms.trip.DbModificationTrackerRemoteDelegate;
 import org.tentackle.io.ReconnectedException;
 import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;
@@ -41,7 +41,6 @@ import org.tentackle.session.SessionClosedException;
 import org.tentackle.session.SessionUtilities;
 import org.tentackle.task.Task;
 
-import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -831,13 +830,8 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   protected long selectMasterSerial() {
     Db session = getSession();
     if (session.isRemote()) {
-      try {
-        return extractMasterSerial(((DbModificationTrackerRemoteDelegate)
-                                      session.getRemoteDelegate(getRemoteDelegateId())).selectMasterSerial());
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(session, e);
-      }
+      return extractMasterSerial(((DbModificationTrackerRemoteDelegate)
+                                    session.getRemoteDelegate(getRemoteDelegateId())).selectMasterSerial());
     }
     else {
       return masterModification.selectMasterSerial();
@@ -855,12 +849,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   protected List<IdSerialNameTuple> selectAllIdSerialNames() {
     Db session = getSession();
     if (session.isRemote()) {
-      try {
-        return ((DbModificationTrackerRemoteDelegate) session.getRemoteDelegate(getRemoteDelegateId())).selectAllIdSerialNames();
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(session, e);
-      }
+      return ((DbModificationTrackerRemoteDelegate) session.getRemoteDelegate(getRemoteDelegateId())).selectAllIdSerialNames();
     }
     else {
       List<IdSerialNameTuple> tuples = new ArrayList<>();
@@ -880,15 +869,10 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    */
   protected List<IdSerialTuple> selectAllIdSerials() {
     Db session = getSession();
-    if (session.isRemote())  {
-      try {
-        return ((DbModificationTrackerRemoteDelegate) session.getRemoteDelegate(getRemoteDelegateId())).selectAllIdSerials();
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(session, e);
-      }
+    if (session.isRemote()) {
+      return ((DbModificationTrackerRemoteDelegate) session.getRemoteDelegate(getRemoteDelegateId())).selectAllIdSerials();
     }
-    else  {
+    else {
       return masterModification.selectAllIdSerial();
     }
   }
@@ -901,20 +885,15 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    */
   protected IdSerialTuple selectIdSerialForName(String tableName) {
     Db session = getSession();
-    if (session.isRemote())  {
+    if (session.isRemote()) {
       IdSerialTuple tuple = getRemoteIdSerial(tableName);   // try fast lookup first (to save a roundtrip)
       if (tuple == null) {
         // not in the initial map? -> get it from the remote server (and optionally create it)
-        try {
-          tuple = ((DbModificationTrackerRemoteDelegate) session.getRemoteDelegate(getRemoteDelegateId())).selectIdSerialForName(tableName);
-        }
-        catch (RemoteException e) {
-          throw PersistenceException.createFromRemoteException(session, e);
-        }
+        tuple = ((DbModificationTrackerRemoteDelegate) session.getRemoteDelegate(getRemoteDelegateId())).selectIdSerialForName(tableName);
       }
       return tuple;
     }
-    else  {
+    else {
       return masterModification.selectIdSerial(tableName);
     }
   }

@@ -70,7 +70,7 @@ For more options, see {\@link DbModelWurblet}.
 
     if (!generateMock) {
       if (isRemote()) {
-        new RemoteIncludes(this);   // create RMI-files if they don't exist yet
+        new RemoteIncludes(this);   // create TRIP-files if they don't exist yet
         String delegateType = NamingRules.getInstance().getPdoRemoteInterface(isPdo() ? pdoClass : mainClass);
         if (getEntity().isAbstract()) {
           delegateType += "<T,P>";

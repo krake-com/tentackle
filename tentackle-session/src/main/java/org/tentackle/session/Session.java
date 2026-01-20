@@ -18,6 +18,7 @@
 
 package org.tentackle.session;
 
+import org.tentackle.misc.Poolable;
 import org.tentackle.misc.Provider;
 import org.tentackle.misc.TrackedList;
 
@@ -37,7 +38,7 @@ interface SessionThreadLocalHolder {
  *
  * @author harald
  */
-public interface Session extends Comparable<Session>, AutoCloseable {
+public interface Session extends Comparable<Session>, Poolable<Session> {
 
   /**
    * Gets the session used by the current thread.<br>
@@ -52,10 +53,15 @@ public interface Session extends Comparable<Session>, AutoCloseable {
    * Sets the session used by the current thread.<br>
    * The session is stored as {@link ThreadLocal}.
    *
-   * @param session the db
+   * @param session the session, null to clear
    */
   static void setCurrentSession(Session session) {
-    SessionThreadLocalHolder.TL_SESSION.set(session);
+    if (session == null) {
+      SessionThreadLocalHolder.TL_SESSION.remove();
+    }
+    else {
+      SessionThreadLocalHolder.TL_SESSION.set(session);
+    }
   }
 
   /**
@@ -80,6 +86,7 @@ public interface Session extends Comparable<Session>, AutoCloseable {
     }
     return session;
   }
+
 
   /**
    * Makes this session the current session for this thread.
@@ -142,9 +149,6 @@ public interface Session extends Comparable<Session>, AutoCloseable {
       }
     }
   }
-
-
-
 
   /**
    * Gets the session's name.
@@ -255,23 +259,23 @@ public interface Session extends Comparable<Session>, AutoCloseable {
    *
    * @param txName is the optional transaction name, null for none
    *
-   * @return the tx-voucher, 0 if no tx begun
+   * @return the transaction voucher, 0 if no transaction begun
    */
   long begin(String txName);
 
   /**
    * Starts a transaction.<br> Does nothing if a transaction is already running!
    *
-   * @return the tx-voucher, 0 if no tx begun
+   * @return the transaction voucher, 0 if no transaction begun
    */
   long begin();
 
   /**
    * Commits a transaction if the corresponding {@link #begin()} has started it.
    *
-   * @param txVoucher the transaction voucher, 0 if ignore (nested tx)
+   * @param txVoucher the transaction voucher, 0 if ignore (nested transaction)
    *
-   * @return true if tx was really committed, false if not.
+   * @return true if the transaction was really committed, false if not
    */
   boolean commit(long txVoucher);
 
@@ -279,9 +283,9 @@ public interface Session extends Comparable<Session>, AutoCloseable {
    * Rolls back a transaction if the corresponding {@link #begin()} has started it.<br>
    * The rollback is logged as INFO along with all statements.
    *
-   * @param txVoucher the transaction voucher, 0 if ignore (nested tx)
+   * @param txVoucher the transaction voucher, 0 if ignore (nested transaction)
    *
-   * @return true if tx was really rolled back, false if not.
+   * @return true if the transaction was really rolled back, false if not
    */
   boolean rollback(long txVoucher);
 
@@ -290,35 +294,47 @@ public interface Session extends Comparable<Session>, AutoCloseable {
    * Same as {@link #rollback} but without logging. Used for expected rollbacks
    * or rollbacks not related to persistence exceptions.
    *
-   * @param txVoucher the transaction voucher, 0 if ignore (nested tx)
+   * @param txVoucher the transaction voucher, 0 if ignore (nested transaction)
    *
-   * @return true if tx was really rolled back, false if not.
+   * @return true if the transaction was really rolled back, false if not
    */
   boolean rollbackSilently(long txVoucher);
 
   /**
-   * Determines whether a tx is currently running.
+   * Determines whether a transaction is currently running.
    *
-   * @return true if tx running.
+   * @return true if transaction running.
    */
   boolean isTxRunning();
 
   /**
-   * Gets the transaction name if a tx is currently running.
+   * Gets the transaction name if a transaction is currently running.
    *
-   * @return the tx name, null for none or no tx running.
+   * @return the transaction name, null for none or no transaction running.
    * @see #isTxRunning()
    */
   String getTxName();
 
   /**
    * Gets the current transaction number.<br>
-   * Tx numbers are unique per session.
+   * Transaction numbers are unique per session.
    *
    * @return the current transaction number, invalid if no transaction is in progress
    * @see #isTxRunning()
    */
   long getTxNumber();
+
+  /**
+   * Gets the transaction nesting level.
+   * <p>
+   * The nesting level is maintained separately for client and server sessions.
+   * Starting a nested transaction for a remote session increments the level
+   * only for the remote session, and starting a nested transaction for a server session
+   * increments the level only at the server side.
+   *
+   * @return the nesting level, starting at 1, 0 if no transaction running
+   */
+  int getTxLevel();
 
   /**
    * Runs code within a transaction.
@@ -437,7 +453,7 @@ public interface Session extends Comparable<Session>, AutoCloseable {
   /**
    * Checks whether the session is still in use.
    *
-   * @return true if session still in use, false if not used since last
+   * @return true if the session is still in use, false if not used since last
    * setAlive(false).
    */
   boolean isAlive();
@@ -453,7 +469,6 @@ public interface Session extends Comparable<Session>, AutoCloseable {
    */
   void setKeepAliveInterval(long keepAliveInterval);
 
-
   /**
    * Gets the auto keep-alive interval.
    *
@@ -467,20 +482,6 @@ public interface Session extends Comparable<Session>, AutoCloseable {
    * @return true if pooled, false if not pooled
    */
   boolean isPooled();
-
-  /**
-   * Gets the session pool.
-   *
-   * @return the db pool, null = not pooled
-   */
-  SessionPool getPool();
-
-  /**
-   * Gets the session's state.
-   *
-   * @return true if the session is open, else false
-   */
-  boolean isOpen();
 
   /**
    * Gets the persistence locality of this session.<br>
@@ -546,8 +547,8 @@ public interface Session extends Comparable<Session>, AutoCloseable {
    * Registers a post-commit.<br>
    * Post-commits are invoked <em>after</em> the successful physical commit of a transaction.
    * They must be registered from within a transactional method, i.e., a transaction must be running.<br>
-   * They are executed in reverse order of their registration, which is the expected behavior for
-   * nested transactions.<br>
+   * They are executed in reverse order of their transaction level, but per level in registration order,
+   * which is the expected behavior for nested transactions.<br>
    * Post-commits are intended for non-transactional purposes, such as firing events. Any attempt
    * to register a post-commit directly or indirectly from within another post-commit will throw a
    * {@link PersistenceException}.<br>
@@ -561,8 +562,8 @@ public interface Session extends Comparable<Session>, AutoCloseable {
    * Registers a pre-commit.<br>
    * Pre-commits are invoked immediately <em>before</em> the physical commit of a transaction.
    * They must be registered from within a transactional method, i.e., a transaction must be running.<br>
-   * They are executed in reverse order of their registration, which is the expected behavior for
-   * nested transactions.<br>
+   * They are executed in reverse order of their transaction level, but per level in registration order,
+   * which is the expected behavior for nested transactions.<br>
    * Pre-commits are intended for final computations that must be performed at the end of a
    * transaction immediately before committing.
    * Any attempt to register a pre-commit directly or indirectly from within another pre-commit will throw a

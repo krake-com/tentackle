@@ -1,0 +1,627 @@
+/*
+ * Tentackle - https://tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+package org.tentackle.trip.types;
+
+import org.tentackle.common.StringHelper;
+import org.tentackle.reflect.ReflectionHelper;
+import org.tentackle.trip.Deserializer;
+import org.tentackle.trip.DictionaryEntry;
+import org.tentackle.trip.OpCode;
+import org.tentackle.trip.Reference;
+import org.tentackle.trip.TripComponent;
+import org.tentackle.trip.TripInstanceCreator;
+import org.tentackle.trip.TripInstantiationException;
+import org.tentackle.trip.TripRuntimeException;
+import org.tentackle.trip.TripStream;
+import org.tentackle.trip.TripType;
+import org.tentackle.trip.TripTypeCategory;
+import org.tentackle.trip.impl.DefaultOpCode;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InaccessibleObjectException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Consumer;
+
+/**
+ * Fallback for objects w/o a dedicated trip type.<br>
+ * This is the core type for the majority of objects.
+ * <p>
+ * The serialization format is as follows:
+ * <ul>
+ *   <li>The opcode {@link DefaultOpCode#OBJECT}.</li>
+ *   <li>The dictionary entry if new for this stream.<br>
+ *       Otherwise, the ordinal according to the dictionary.</li>
+ *   <li>Followed by one of:
+ *     <ul>
+ *        <li>The null code if the object is null.</li>
+ *        <li>The reference if the same or equal object was already sent.</li>
+ *        <li>The reference if the object is referencable or de-duplicatable
+ *            and for each component, if not the component's default value:
+ *          <ul>
+ *            <li>The component's ordinal, according to the dictionary, if not simply the next.</li>
+ *            <li>The component's serialization according to its type.</li>
+ *          </ul>
+ *          </li>The opcode {@link DefaultOpCode#END}</li>
+ *        </li>
+ *     </ul>
+ *   </li>
+ * </ul>
+ *
+ * For the receiver, the following deviations from the sender's class definition are
+ * tolerated and handled gracefully:
+ * <ul>
+ *   <li>Unknown components will silently be ignored.</li>
+ *   <li>Components missing in the stream will be initialized with their default value.
+ *       Side effect: if the sender omits a component with a default value,
+ *       and the receiver's default differs from the server's default, the component will
+ *       be initialized with the different receiver's default.</li>
+ * </ul>
+ * All other deviations are not tolerated and result in a {@link TripRuntimeException},
+ * especially unknown classes or type changes. Ideally, the receiver's code base of the
+ * serialized objects should be identical to the sender's code base. If this is not practical,
+ * both should match as closely as possible. In general, applications should compare their
+ * version numbers when connecting to a remote tier and fail if incompatible,
+ * just like Tentackle applications do by default.
+ * <p>
+ * If a class does not provide a no-args constructor, the object can still be created
+ * if exactly one of its constructors is annotated with {@link org.tentackle.reflect.CanonicalConstructor}
+ * and the corresponding fields are annotated with {@link org.tentackle.reflect.CanonicalField}.
+ * Another option is to provide a {@link org.tentackle.trip.TripInstanceCreator}. The components
+ * could also be configured with a {@link org.tentackle.trip.TripComponentProvider}.
+ * <p>
+ * Application-specific object types should extend this class and annotate
+ * it with @{@link org.tentackle.trip.TripTypeService}.
+ *
+ * @param <T> the type
+ */
+// created by ObjectTypeBuilder, not mapped by @TripTypeService
+public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
+
+  private static final OpCode OP_CODE = DefaultOpCode.OBJECT;
+
+  private final TripComponent<T, ?>[] components;
+  private final Constructor<T> canonicalConstructor;
+  private final Member[] canonicalMembers;
+  private final ReflectionHelper.CanonicalBuilderInfo canonicalBuilderInfo;
+  private final boolean delayedConstruction;
+
+  /**
+   * Creates the type.
+   *
+   * @param clazz the object's class
+   */
+  public ObjectTripType(Class<T> clazz) {
+    super(clazz, TripTypeCategory.CLASS, TripTypeCategory.INTERFACE);
+    canonicalConstructor = ReflectionHelper.getCanonicalConstructor(clazz);
+    canonicalMembers = createCanonicalMembers(canonicalConstructor);
+    canonicalBuilderInfo = ReflectionHelper.getCanonicalBuilderInfo(clazz);
+    delayedConstruction = canonicalConstructor != null || canonicalBuilderInfo != null;
+    components = createComponents(createInitializedDefault());
+  }
+
+  @Override
+  public boolean isDeduplicateable(T value) {
+    if (deduplicationEnabled) {
+      if (deduplicatableMethod == null) {
+        // all objects are not de-duplicatable, except when explicitly marked as de-duplicatable
+        return Boolean.TRUE.equals(deduplicatable);
+      }
+      try {
+        return (Boolean) deduplicatableMethod.invoke(value);
+      }
+      catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+        throw new TripRuntimeException("cannot invoke deduplicateable method", e);
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Returns whether the object construction is delayed.<br>
+   * Delayed construction means that the object does not provide a no-args constructor
+   * or must be created by a builder.
+   *
+   * @return true if delayed construction, false otherwise
+   */
+  public boolean isDelayedConstruction() {
+    return delayedConstruction;
+  }
+
+  /**
+   * Gets the canonical constructor.
+   *
+   * @return the constructor, null if not provided
+   * @see org.tentackle.reflect.CanonicalConstructor
+   */
+  public Constructor<T> getCanonicalConstructor() {
+    return canonicalConstructor;
+  }
+
+  /**
+   * Gets the canonical members.
+   *
+   * @return the members, empty if not provided
+   * @see org.tentackle.reflect.CanonicalField
+   * @see org.tentackle.reflect.CanonicalGetter
+   */
+  public Member[] getCanonicalMembers() {
+    return canonicalMembers;
+  }
+
+  /**
+   * Gets the canonical builder info.
+   *
+   * @return the builder info, null if not provided
+   * @see org.tentackle.reflect.CanonicalBuilder
+   */
+  public ReflectionHelper.CanonicalBuilderInfo getCanonicalBuilderInfo() {
+    return canonicalBuilderInfo;
+  }
+
+  @Override
+  public TripComponent<T, ?>[] getComponents() {
+    return components;
+  }
+
+  @Override
+  public void write(T value, TripStream stream) {
+    stream.getSerializer().serializeOpCode(getOpCode());
+    sendDictionary(stream);
+    if (value == null) {
+      sendNull(stream);
+    }
+    else {
+      Reference<T> reference = sendReference(stream, value);
+      if (reference == null || reference.isObjectFollowing()) {
+        prepareWrite(value);
+        writeComponents(value, stream);
+      }
+    }
+  }
+
+  @Override
+  public T read(TripStream stream, OpCode opCode) {
+    return read(stream, opCode, null);
+  }
+
+  @Override
+  public T read(TripStream stream, OpCode opCode, Consumer<T> initializer) {
+    Deserializer deserializer = stream.getDeserializer();
+    DictionaryEntry entry = null;
+
+    if (opCode == getOpCode()) {
+      // determine the dictionary entry from the stream, if provided
+      opCode = deserializer.deserializeOpCode();
+      if (opCode == DefaultOpCode.DICTIONARY || opCode.isOrdinal()) {
+        entry = receiveDictionary(stream, opCode);
+        opCode = deserializer.deserializeOpCode();
+      }
+
+      if (opCode == DefaultOpCode.NULL) {
+        return null;
+      }
+    }
+    // else: non-final type invoked as a component of another object (see below in readComponents)
+
+    if (entry == null) {
+      // invoked as a component of another object. (see below)
+      // this trip type is already the runtime-type!
+      entry = stream.getDictionaryEntry(getObjectClass());
+    }
+
+    T value;
+    if (canonicalConstructor == null && canonicalBuilderInfo == null) {
+      value = createInitializedDefault();
+      if (initializer != null) {
+        initializer.accept(value);
+      }
+    }
+    else {
+      value = null;
+    }
+
+    boolean readContent = true;
+    Reference<T> reference = null;
+    if (opCode.isReference()) {
+      reference = receiveReference(stream, opCode);
+      readContent = reference.isObjectFollowing();
+      if (readContent) {
+        opCode = deserializer.deserializeOpCode();    // fetch the next opcode for loop below
+        if (value != null) {
+          stream.addReference(reference, value, isDeduplicateable(value));
+        }
+        // else: if canonical, components cannot back-reference until the value is created.
+      }
+      else {
+        value = reference.getObject();
+        if (value == null) {
+          throw new TripRuntimeException("reference " + reference + " has no object");
+        }
+      }
+    }
+
+    if (readContent) {
+      value = readComponents(stream, opCode, entry, reference, value, initializer);
+      validateRead(value);
+    }
+    return value;
+  }
+
+
+  /**
+   * Gets the opcode for this trip type.<br>
+   * The default is {@link DefaultOpCode#OBJECT}.
+   * Can be overridden by subclasses.
+   *
+   * @return the opcode
+   */
+  protected OpCode getOpCode() {
+    return OP_CODE;
+  }
+
+  @Override
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  protected TripComponent<T, ?>[] createComponents(T object) {
+    TripComponent<T, ?>[] tripComponents = super.createComponents(object);
+    if (object == null) {
+      // canonical components must come first (ordered according to the canonical constructor)
+      TripComponent<T, ?>[] allComponents = new TripComponent[tripComponents.length];
+      int otherIndex = getCanonicalMembers().length;    // offset for all other components
+      for (TripComponent<T, ?> tripComponent : tripComponents) {
+        int canonicalIndex = getCanonicalIndex(tripComponent.getName());
+        if (canonicalIndex >= 0) {
+          allComponents[canonicalIndex] = tripComponent;
+        }
+        else {
+          if (otherIndex >= allComponents.length) {
+            // Some components could not be assigned to canonical members.
+            // For example, a @CanonicalMethod name does not correspond to any of the declared fields
+            // In such a case a TripComponentProvider must be used!
+            throw new TripRuntimeException("unmatched canonical members in " + getObjectClass());
+          }
+          allComponents[otherIndex++] = tripComponent;
+        }
+      }
+      return allComponents;
+    }
+    // no canonical fields
+    return tripComponents;
+  }
+
+  /**
+   * Writes the components of the object.
+   *
+   * @param value the object to write
+   * @param stream the stream to write to
+   */
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  protected void writeComponents(T value, TripStream stream) {
+    int lastOrdinal = -1;
+    for (TripComponent<T, ?> component : getComponents()) {
+      Object componentValue = component.getValue(value);
+      // send the component if it's not the default value
+      if (!component.hasDefaultValue() ||
+          !Objects.equals(componentValue, component.getDefaultValue())) {
+        // send ordinal of the component in the dictionary
+        stream.writeNextOrdinal(lastOrdinal, component.getOrdinal());
+        lastOrdinal = component.getOrdinal();
+        if (componentValue == null) {
+          // default is not null -> send null code
+          sendNull(stream);
+        }
+        else {
+          TripType componentType = component.getType();
+          if (!componentType.isFinal()) {
+            // if the component type is not final: determine the type dynamically
+            componentType = stream.getType(componentValue.getClass());
+          }
+          componentType.write(componentValue, stream);
+        }
+      }
+    }
+    sendEnd(stream);
+  }
+
+  /**
+   * Reads the components of the object.
+   *
+   * @param stream the stream to read from
+   * @param opCode the next opcode
+   * @param entry the dictionary entry
+   * @param reference the optional reference
+   * @param value the object, null for delayed construction
+   * @param initializer the object initializer invoked after the new object is created
+   * @param componentValues optional map to store the component values instead of the object itself
+   * @return the object
+   */
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  protected T readComponents(TripStream stream, OpCode opCode, DictionaryEntry entry,
+                             Reference<T> reference, T value, Consumer<T> initializer,
+                             Map<TripComponent<T, ?>, Object> componentValues) {
+
+    Deserializer deserializer = stream.getDeserializer();
+    int canonicalFieldCount = 0;    // number of canonical fields read from the stream
+    Object[] canonicalArgs = canonicalConstructor == null ? null : new Object[getCanonicalMembers().length];
+    Object canonicalBuilder = null;
+    if (canonicalBuilderInfo != null) {
+      try {
+        try {
+          canonicalBuilder = canonicalBuilderInfo.constructor().newInstance();
+        }
+        catch (IllegalAccessException ix) {
+          canonicalBuilderInfo.constructor().setAccessible(true);
+          canonicalBuilder = canonicalBuilderInfo.constructor().newInstance();
+        }
+      }
+      catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+        throw new TripInstantiationException(getObjectClass(), "cannot create instance canonical builder", e);
+      }
+    }
+
+    if (reference != null) {
+      reference.markReceived();
+    }
+
+    int lastOrdinal = -1;
+    while (opCode != DefaultOpCode.END) {
+      int ordinal;
+      if (opCode.isOrdinal()) {
+        lastOrdinal = ordinal = stream.readNextOrdinal(lastOrdinal, opCode);   // component ordinal in the dictionary
+        opCode = deserializer.deserializeOpCode();
+      }
+      else {
+        ordinal = ++lastOrdinal;
+      }
+      TripComponent component = entry.getTypeComponent(ordinal);
+      // component may be null if not provided locally -> take type from dictionary.
+      // the componentType is the compile-time type!
+      TripType componentType = component == null ? entry.getComponent(ordinal).getType() : component.getType();
+      Object componentValue;
+
+      if (opCode == DefaultOpCode.NULL) {
+        componentValue = null;
+      }
+      else {
+        if (!componentType.isFinal()) {
+          componentType = deriveType(stream, opCode);
+          if (componentType.isDictionaryBased()) {
+            // the next opcode is a reference or the component ordinal
+            opCode = deserializer.deserializeOpCode();
+          }
+        }
+        componentValue = componentType.read(stream, opCode);
+      }
+      if (component != null) {
+        if (componentValues == null) {
+          if (value != null) {
+            component.setValue(value, componentValue);
+          }
+          else {
+            if (canonicalBuilderInfo != null) {
+              Method method = canonicalBuilderInfo.getMethod(component.getName());
+              if (method == null) {
+                throw new TripInstantiationException(getObjectClass(), "no builder method for " + component);
+              }
+              try {
+                method.invoke(canonicalBuilder, componentValue);
+              }
+              catch (IllegalAccessException | InvocationTargetException e) {
+                // the method must be public (no setAccessible)
+                throw new TripInstantiationException(getObjectClass(), "cannot invoke builder method " + method, e);
+              }
+            }
+            else if (canonicalConstructor != null) {
+              int canonicalIndex = getCanonicalIndex(component.getName());
+              if (canonicalIndex >= 0) {
+                canonicalArgs[canonicalIndex] = componentValue;
+                if (++canonicalFieldCount == canonicalArgs.length) {
+                  // we got all canonical fields -> create the object
+                  try {
+                    try {
+                      value = canonicalConstructor.newInstance(canonicalArgs);
+                    }
+                    catch (IllegalAccessException ix) {
+                      canonicalConstructor.setAccessible(true);
+                      value = canonicalConstructor.newInstance(canonicalArgs);
+                    }
+                    if (initializer != null) {
+                      initializer.accept(value);
+                    }
+                  }
+                  catch (InaccessibleObjectException | InstantiationException | IllegalAccessException |
+                         InvocationTargetException e) {
+                    throw new TripInstantiationException(getObjectClass(), "cannot create instance via canonical constructor", e);
+                  }
+                  if (reference != null) {
+                    stream.addReference(reference, value, isDeduplicateable(value));
+                    // from now on, components may back-reference the object
+                  }
+                }
+              }
+            }
+          }
+        }
+        else {
+          componentValues.put(component, componentValue);
+        }
+      }
+      // next component
+      opCode = deserializer.deserializeOpCode();
+    }
+
+    if (canonicalBuilderInfo != null) {
+      try {
+        value = (T) canonicalBuilderInfo.buildMethod().invoke(canonicalBuilder);
+      }
+      catch (IllegalAccessException | InvocationTargetException e) {
+        throw new TripInstantiationException(getObjectClass(),
+                                             "cannot create value via builder " +
+                                             canonicalBuilderInfo.constructor().getDeclaringClass(),
+                                             e);
+      }
+    }
+
+    return value;
+  }
+
+  /**
+   * Reads the components of the object.
+   *
+   * @param stream the stream to read from
+   * @param opCode the next opcode
+   * @param entry the dictionary entry
+   * @param reference the optional reference
+   * @param value the object, null for delayed construction
+   * @param initializer the object initializer invoked after the new object is created
+   * @return the object
+   */
+  protected T readComponents(TripStream stream, OpCode opCode, DictionaryEntry entry,
+                             Reference<T> reference, T value, Consumer<T> initializer) {
+
+    Map<TripComponent<T, ?>, Object> componentValues = null;
+    TripInstanceCreator<T> instanceCreator = getInstanceCreator();
+    if (instanceCreator != null && instanceCreator.isCreationFromValuesSupported(getObjectClass())) {
+      // Delegate the construction to the instance creator.
+      // The creator is responsible for _all_ components, not only the constructor's parameters!
+      componentValues = new LinkedHashMap<>();
+    }
+
+    value = readComponents(stream, opCode, entry, reference, value, initializer, componentValues);
+
+    if (componentValues != null) {
+      value = instanceCreator.create(getObjectClass(), componentValues);
+    }
+
+    return value;
+  }
+
+  /**
+   * Creates an instance of the class with its no-args constructor.<br>
+   * If the class provides a constructor annotated with {@link org.tentackle.reflect.CanonicalConstructor},
+   * the construction will be delayed and this method returns null.
+   *
+   * @return the instance, null if delayed or interface or abstract class
+   */
+  @Override
+  protected T createInitializedDefault() {
+    return delayedConstruction ? null : super.createInitializedDefault();
+  }
+
+  /**
+   * Creates the canonical members.<br>
+   * The members can be provided by {@link org.tentackle.reflect.CanonicalField} or
+   * {@link org.tentackle.reflect.CanonicalGetter} annotations.
+   * Alternatively, the constructor's parameter can be annotated with {@link org.tentackle.reflect.CanonicalName}
+   * and there is a declared field or a public getter method with a matching name.
+   * The annotation can also be mixed.
+   *
+   * @param constructor the canonical constructor, null if not provided
+   * @return the fields and/or methods
+   */
+  protected Member[] createCanonicalMembers(Constructor<T> constructor) {
+    Class<T> clazz = getObjectClass();
+    Member[] canonicalMembers = ReflectionHelper.getCanonicalMembers(clazz);
+    if (constructor != null && canonicalMembers.length != constructor.getParameterCount()) {
+      // no or not all fields/methods are annotated with @CanonicalField/@CanonicalGetter
+      // -> try to find the fields according to the constructor's parameter canonical names
+      String[] canonicalNames = ReflectionHelper.getCanonicalNames(constructor);
+      if (canonicalNames.length == constructor.getParameterCount()) {
+        Member[] members = new Member[canonicalNames.length];
+        for (int i = 0; i < members.length; i++) {
+          String canonicalName = canonicalNames[i];
+          if (canonicalName != null) {   // if name provided either by CanonicalName or "javac -parameter"
+            for (Member canonicalMember : canonicalMembers) {
+              if (canonicalName.equals(canonicalMember instanceof Method method ?
+                                         ReflectionHelper.getFieldName(method) :
+                                         canonicalMember.getName())) {
+                // found a @CanonicalField/@CanonicalGetter for the same name as the constructor parameter
+                // in this case, the ordinal parameter of the annotation is ignored.
+                members[i] = canonicalMember;
+                break;
+              }
+            }
+            if (members[i] == null) {
+              try {
+                members[i] = clazz.getDeclaredField(canonicalNames[i]);
+              }
+              catch (NoSuchFieldException e) {
+                // try to find a matching getter
+                Class<?> parameterType = constructor.getParameterTypes()[i];
+                String methodName = (Boolean.TYPE.equals(parameterType) ? "is" : "get") +
+                                    StringHelper.firstToUpper(canonicalNames[i]);
+                try {
+                  Method method = clazz.getMethod(methodName);
+                  if (ReflectionHelper.isGetter(method) && method.getReturnType().equals(parameterType)) {
+                    members[i] = method;
+                  }
+                  else {
+                    throw new TripRuntimeException("method " + methodName + " is not a getter for "
+                                                   + canonicalNames[i], e);
+                  }
+                }
+                catch (NoSuchMethodException ex) {
+                  throw new TripRuntimeException("cannot find field or getter for member " + canonicalNames[i]
+                                                 + " in " + clazz, e);
+                }
+              }
+            }
+          }
+        }
+        // fill up the missing members from the annotated canonical members
+        // assumed that the ordinals in the annotations are in the correct order (value is irrelevant)
+        int memberIndex = 0;
+        for (int i = 0; i < members.length; i++) {
+          if (members[i] == null && memberIndex < canonicalMembers.length) {
+            members[i] = canonicalMembers[memberIndex++];
+          }
+        }
+        canonicalMembers = members;
+      }
+    }
+    return canonicalMembers;
+  }
+
+  /**
+   * Gets the index of the given field in the canonical constructor.
+   *
+   * @param componentName the name of the component
+   * @return the index, or -1 if not a canonical component
+   */
+  protected int getCanonicalIndex(String componentName) {
+    Member[] members = getCanonicalMembers();
+    for (int i = 0; i < members.length; i++) {
+      Member member = members[i];
+      if ((member instanceof Field field &&
+           field.getName().equals(componentName))
+          ||
+          (member instanceof Method method &&
+           ReflectionHelper.getFieldName(method).equals(componentName))) {
+        return i;
+      }
+    }
+    return -1;  // not a canonical field
+  }
+
+}

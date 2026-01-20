@@ -83,7 +83,14 @@ public interface Snapshotable<T> {
   void discardSnapshots();
 
   /**
-   * Creates a deep copy of this object.
+   * Creates a copy of this object.<br>
+   * This is done by creating a snapshot and then reverting it into a new object.
+   * <p>
+   * The copy is semantically equivalent to this object, but not necessarily
+   * in all aspects. For example, a copied PDO and all of its components
+   * contain the same data, but they are all <em>new</em>, i.e., with their id
+   * and serial reset to 0.<br>
+   * For a technically identical deep copy, consider {@link org.tentackle.trip.TripFactory#copy(Object)}.
    *
    * @return the copied object
    */

@@ -19,18 +19,15 @@
 package org.tentackle.update;
 
 import org.tentackle.common.StringHelper;
+import org.tentackle.trip.TripReferencable;
 
-import java.io.Serial;
-import java.io.Serializable;
 import java.util.Objects;
 
 /**
  * Client application info sent to the update server.
  */
-public class ClientInfo implements Serializable {
-
-  @Serial
-  private static final long serialVersionUID = 1L;
+@TripReferencable(TripReferencable.NEVER)
+public class ClientInfo {
 
   private final String application;
   private final String version;
@@ -39,7 +36,7 @@ public class ClientInfo implements Serializable {
   private final InstallationType installationType;
 
   /**
-   * Creates a client application info.
+   * Creates a client application-info.
    *
    * @param application the client application name
    * @param version the client application version
@@ -55,7 +52,7 @@ public class ClientInfo implements Serializable {
   }
 
   /**
-   * Creates a client application info.<br>
+   * Creates a client application-info.<br>
    * Platform and architecture are determined from the system properties.
    *
    * @param application the client application name

@@ -39,6 +39,13 @@ public class ${application}DomainContext extends DefaultDomainContext {
     super(session);
   }
 
+  /**
+   * Creates a mutable domain context with a thread-local session.
+   */
+  public ${application}DomainContext() {
+    super();
+  }
+
   @Override
   public ${application}SessionInfo getSessionInfo() {
     return (${application}SessionInfo) super.getSessionInfo();

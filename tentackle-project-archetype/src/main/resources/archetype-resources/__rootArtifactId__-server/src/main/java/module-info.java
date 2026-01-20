@@ -10,7 +10,7 @@
  */
 module ${package}.server {
   exports ${package}.server;
-  exports ${package}.server.rmi;
+  exports ${package}.server.trip;
 
   requires transitive ${package}.persist;
   requires ${package}.domain;

@@ -60,7 +60,7 @@ public class CopyOnWriteCollection<E> implements Collection<E>, Serializable {
   private Collection<E> collection;
 
   /**
-   * Flag initially true if collection is not cloned.<br>
+   * Flag initially true if the collection is not cloned.<br>
    * Transient to avoid cloning after serialization because the deserialized
    * collection is already a copy of the original collection.
    */
@@ -107,6 +107,13 @@ public class CopyOnWriteCollection<E> implements Collection<E>, Serializable {
     this(collection, false);
   }
 
+  /**
+   * Creates a wrapper for an empty collection.
+   */
+  public CopyOnWriteCollection() {
+    this(new ImmutableArrayList<>(), false);
+  }
+
 
   /**
    * Gets the cloned collection.
@@ -128,7 +135,7 @@ public class CopyOnWriteCollection<E> implements Collection<E>, Serializable {
   }
 
   /**
-   * Returns whether collection is cloned.
+   * Returns whether the collection is cloned.
    *
    * @return true if cloned
    */

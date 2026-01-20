@@ -23,7 +23,7 @@ module org.tentackle.i18n {
 
   exports org.tentackle.i18n;
   exports org.tentackle.i18n.pdo;
-  exports org.tentackle.i18n.pdo.rmi;
+  exports org.tentackle.i18n.pdo.trip;
 
   requires transitive org.tentackle.persistence;
   requires transitive org.tentackle.domain;

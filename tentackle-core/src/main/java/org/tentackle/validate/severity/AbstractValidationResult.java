@@ -62,7 +62,7 @@ public abstract class AbstractValidationResult implements ValidationResult {
     this.validationContext = Objects.requireNonNull(validationContext, "validationContext");
     this.message = message;
     this.errorCode = errorCode != null ? errorCode : validator.getErrorCode();
-    // extract early in case result is passed back via rmi to the client
+    // extract early in case the result is passed back via TRIP to the client
     configuredScopes = validator.getConfiguredScopes(validationContext);
     validationPath = validationContext.getValidationPath();
   }

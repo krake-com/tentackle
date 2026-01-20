@@ -16,15 +16,14 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.session;
 
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.log.Logger;
 import org.tentackle.task.AbstractTask;
+import org.tentackle.trip.TripStreamClosedException;
 
 import java.io.Serial;
-import java.rmi.NoSuchObjectException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -93,7 +92,7 @@ public class SessionKeepAliveTask extends AbstractTask {
           LOGGER.fine("setAlive still pending for {0}", session);
         }
         catch (ExecutionException eex) {
-          boolean remoteClosed = session.isRemote() && ExceptionHelper.extractException(true, eex, NoSuchObjectException.class) != null;
+          boolean remoteClosed = session.isRemote() && ExceptionHelper.extractException(true, eex, TripStreamClosedException.class) != null;
           if (!session.isOpen() || remoteClosed) {
             // this is usually a race condition, when sessions are closed while the keepalive task is running in parallel
             LOGGER.info("session {0} closed in the meantime{1}", session, remoteClosed ? " by remote server" : "");
@@ -133,6 +132,7 @@ public class SessionKeepAliveTask extends AbstractTask {
   public String toString() {
     return "keep alive " + session.getName();
   }
+
 
   /**
    * Creates the alive callable.

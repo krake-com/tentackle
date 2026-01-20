@@ -1,0 +1,161 @@
+/*
+ * Tentackle - https://tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+package org.tentackle.trip.types;
+
+import org.tentackle.trip.Deserializer;
+import org.tentackle.trip.OpCode;
+import org.tentackle.trip.Reference;
+import org.tentackle.trip.Serializer;
+import org.tentackle.trip.TripFactory;
+import org.tentackle.trip.TripStream;
+import org.tentackle.trip.TripType;
+import org.tentackle.trip.TripTypeService;
+import org.tentackle.trip.impl.DefaultOpCode;
+
+
+interface ShortPrimitiveTypeHolder {
+  TripType<Short> INSTANCE = TripFactory.getInstance().getType(Short.TYPE);
+}
+
+
+/**
+ * Trip type for {@code short[]} array.
+ */
+@TripTypeService(short[].class)
+public final class ShortPrimitiveArrayTripType extends AbstractPredefinedArrayTripType<short[]> {
+
+  /**
+   * Creates the type.
+   */
+  public ShortPrimitiveArrayTripType() {
+    super(short[].class);
+  }
+
+  @Override
+  public void write(short[] value, TripStream stream) {
+    Serializer serializer = stream.getSerializer();
+    if (value == null) {
+      serializer.serializeOpCode(DefaultOpCode.NULL);
+    }
+    else {
+      TripType<Short> shortTripType = ShortPrimitiveTypeHolder.INSTANCE;
+      if (writeArrayHeader(value, stream)) {
+        int skip = 0;
+        int ndx = 0;
+        int blockStart = -1;
+        for (short shortValue : value) {
+          int blockLen = blockStart == -1 ? 0 : ndx - blockStart;
+          if (shortValue != 0) {
+            if (skip > 0) {
+              writeSkip(skip, serializer);    // skip 1 and short1 0 occupy 2 bytes both the same
+              skip = 0;
+            }
+            if (shortValue >= Byte.MIN_VALUE && shortValue <= Byte.MAX_VALUE) {
+              if (blockStart == -1) {
+                blockStart = ndx;
+              }
+              else if (blockLen == 255) {
+                flushBlock(serializer, value, blockStart, blockLen);
+                blockStart = ndx;
+              }
+              // add small characterValue to the block
+            }
+            else {
+              if (blockStart != -1) {
+                flushBlock(serializer, value, blockStart, blockLen);
+                blockStart = -1;
+              }
+              shortTripType.write(shortValue, stream);
+            }
+          }
+          else {
+            skip++;
+            if (blockStart != -1) {
+              if (blockLen > 1) {
+                flushBlock(serializer, value, blockStart, blockLen);
+              }
+              else {
+                shortTripType.write(value[blockStart], stream);
+              }
+              blockStart = -1;
+            }
+          }
+          ndx++;
+        }
+        if (blockStart != -1) {
+          int blockLen = ndx - blockStart;
+          if (blockLen > 1) {
+            flushBlock(serializer, value, blockStart, blockLen);
+          }
+          else {
+            shortTripType.write(value[blockStart], stream);
+          }
+        }
+        else if (skip > 0) {
+          writeSkip(skip, serializer);
+        }
+      }
+    }
+  }
+
+  @Override
+  public short[] read(TripStream stream, OpCode opCode) {
+    if (opCode == DefaultOpCode.NULL) {
+      return null;
+    }
+    TripType<Short> shortTripType = ShortPrimitiveTypeHolder.INSTANCE;
+    Deserializer deserializer = stream.getDeserializer();
+    Reference<short[]> reference = receiveReference(stream, deserializer.deserializeOpCode());
+    if (reference.isObjectFollowing()) {
+      int length = readArrayLength(deserializer, opCode);
+      short[] result = new short[length];
+      int count = 0;
+      while (count < length) {
+        opCode = deserializer.deserializeOpCode();
+        switch (opCode) {
+          case DefaultOpCode.SKIP -> count += deserializer.deserializeInt();
+          case DefaultOpCode.SKIP2 -> count += deserializer.deserializeShortAsUnsigned();
+          case DefaultOpCode.SKIP1 -> count += deserializer.deserializeByteAsUnsigned();
+          case DefaultOpCode.SHORTN -> {
+            int blockLen = deserializer.deserializeByteAsUnsigned();
+            while (blockLen-- > 0) {
+              result[count++] = deserializer.deserializeByte();
+            }
+          }
+          case null, default -> result[count++] = shortTripType.read(stream, opCode);
+        }
+      }
+      stream.addReference(reference, result, false);
+      reference.markReceived();
+      return result;
+    }
+    else {
+      return reference.getObject();
+    }
+  }
+
+  private void flushBlock(Serializer serializer, short[] value, int blockStart, int blockLen) {
+    serializer.serializeOpCode(DefaultOpCode.SHORTN);
+    serializer.serializeUnsignedAsByte(blockLen);
+    while (blockLen-- > 0) {
+      serializer.serializeByte((byte) value[blockStart++]);
+    }
+  }
+
+}

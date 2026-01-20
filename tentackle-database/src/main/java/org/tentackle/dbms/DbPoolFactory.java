@@ -39,16 +39,19 @@ public class DbPoolFactory implements SessionPoolFactory {
 
   @Override
   public SessionPool create(String name, Session session,
-                            int iniSize, int incSize, int minSize, int maxSize, long maxIdleMinutes, long maxUsageMinutes) {
+                            int initialSize, int incrementSize, int minimumSize, int maximumSize,
+                            long idleMinutes, long usageMinutes) {
     Db db = (Db) session;
     return new DbPool(name, db.getConnectionManager(), db.getSessionInfo(), db.getSessionGroupId(),
-                      iniSize, incSize, minSize, maxSize, maxIdleMinutes, maxUsageMinutes);
+                      initialSize, incrementSize, minimumSize, maximumSize, idleMinutes, usageMinutes);
   }
 
   @Override
-  public MultiUserSessionPool create(String name, Session session, int maxSize, int maxTotalSize, long maxIdleMinutes, long maxUsageMinutes) {
+  public MultiUserSessionPool create(String name, Session session, int maximumSize, int maximumTotalSize,
+                                     long idleMinutes, long usageMinutes) {
     Db db = (Db) session;
-    return new MultiUserDbPool(name, db.getConnectionManager(), db.getSessionGroupId(), maxSize, maxTotalSize, maxIdleMinutes, maxUsageMinutes);
+    return new MultiUserDbPool(name, db.getConnectionManager(), db.getSessionGroupId(), maximumSize,
+                               maximumTotalSize, idleMinutes, usageMinutes);
   }
 
 }

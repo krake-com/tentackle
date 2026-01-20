@@ -188,13 +188,22 @@ public abstract class AbstractClassMapper<S> {
           initialClass = superClass = findClass(className);
         }
         superClass = findSuperClass(superClass);
-        if (superClass == null) {
+        if (superClass == null) {   // go up to and including Object.class!
           break;    // is an interface or record, or we reached Object.class
         }
-        className = superClass.getCanonicalName();  // continue with the name of superclass
+        // continue with the name of superclass
+        className = superClass.getEnclosingClass() != null && superClass.isMemberClass() ?
+                      superClass.getName() : superClass.getCanonicalName();
       }
-      // no mapping found for an object-class so far or interface: try interfaces
-      return initialClass == null ? null : mapInterfaces(initialClass);
+      // no mapping found for class and all superclasses: try interfaces
+      while (initialClass != null && initialClass != Object.class) {
+        S value = mapInterfaces(initialClass);
+        if (value != null) {
+          return value;
+        }
+        initialClass = initialClass.getSuperclass();
+      }
+      return null;
     }
     else  {
       // exact match required

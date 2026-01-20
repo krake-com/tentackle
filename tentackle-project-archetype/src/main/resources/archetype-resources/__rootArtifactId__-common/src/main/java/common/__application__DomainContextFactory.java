@@ -20,6 +20,11 @@ import org.tentackle.session.Session;
 public class ${application}DomainContextFactory extends DefaultDomainContextFactory {
 
   @Override
+  public DomainContext create() {
+    return new ${application}DomainContext();
+  }
+
+  @Override
   public DomainContext create(Session session) {
     return new ${application}DomainContext(session);
   }

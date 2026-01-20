@@ -47,6 +47,14 @@ public interface DomainContextFactory {
 
 
   /**
+   * Creates a mutable domain context with a thread-local session.
+   *
+   * @return the domain context
+   * @see Session#makeCurrent()
+   */
+  DomainContext create();
+
+  /**
    * Creates a mutable domain context.
    *
    * @param session the session, null if thread-local

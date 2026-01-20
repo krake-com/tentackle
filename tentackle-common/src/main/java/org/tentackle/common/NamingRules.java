@@ -65,7 +65,7 @@ public class NamingRules {
   private static final String REMOTE_IMPL_SUFFIX = "RemoteDelegateImpl";
 
   /** sub package for remote classes. */
-  private static final String REMOTE_SUB_PACKAGE = ".rmi";
+  private static final String REMOTE_SUB_PACKAGE = ".trip";
 
 
   public NamingRules() {

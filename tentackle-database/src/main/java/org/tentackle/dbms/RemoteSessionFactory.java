@@ -19,7 +19,7 @@
 package org.tentackle.dbms;
 
 import org.tentackle.common.ServiceFactory;
-import org.tentackle.dbms.rmi.RemoteDbSession;
+import org.tentackle.dbms.trip.RemoteDbSession;
 import org.tentackle.session.RemoteSession;
 
 interface RemoteSessionFactoryHolder {

@@ -31,6 +31,7 @@ import org.tentackle.reflect.ReflectionHelper;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
+import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -358,7 +359,7 @@ public class ValidationUtilities {
                 try {
                   return field.get(parentObject);
                 }
-                catch (IllegalAccessException ex2) {
+                catch (InaccessibleObjectException | IllegalAccessException ex2) {
                   throw new ValidationRuntimeException("cannot access field " + field, ex2);
                 }
               }
@@ -376,7 +377,7 @@ public class ValidationUtilities {
                   return method.invoke(parentObject);
                 }
               }
-              catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+              catch (InaccessibleObjectException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
                 throw new ValidationRuntimeException("cannot invoke method " + method, ex);
               }
             };

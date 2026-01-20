@@ -33,22 +33,21 @@ import static java.util.Calendar.YEAR;
 
 
 /**
- * Timestamp with UTC option.
+ * Timestamp with a UTC option.
  * <p>
  * Differs from {@code java.sql.Timestamp} when
  * serialized/deserialized in different timezones.
  * By default, if timestamps are serialized and deserialized in different timezones,
- * their representation may differ according to the GMT-offset and/or daylight saving.
+ * their representation may differ, according to the GMT offset and/or daylight saving.
  * This is okay for most cases. In some cases, however, a timestamp
- * should not be converted, i.e. regarded as <em>fixed</em> and related to some
- * timezone by convention, for example UTC. This is what the UTC-attribute
- * and the tentackle model's [UTC]-option is provided for.
+ * should not be converted, i.e., regarded as <em>fixed</em> and related to some
+ * timezone by convention, for example, UTC. This is what the UTC attribute
+ * and the tentackle model's [UTC]-option are provided for.
  * <p>
  * Furthermore, tentackle timestamps can be frozen, i.e. made immutable.
  *
  * @author harald
  */
-@SuppressWarnings("deprecation")
 public class Timestamp extends java.sql.Timestamp implements Freezable {
 
   @Serial
@@ -73,7 +72,7 @@ public class Timestamp extends java.sql.Timestamp implements Freezable {
    * Sets the UTC flag null-safe.<br>
    * Method provided to reduce generated code.
    *
-   * @param timestamp the timestamp, may be null
+   * @param timestamp the timestamp (ignored if null)
    * @param utc the UTC flag
    */
   public static void setUTC(Timestamp timestamp, boolean utc) {
@@ -93,30 +92,47 @@ public class Timestamp extends java.sql.Timestamp implements Freezable {
   }
 
 
-  private boolean utc;                  // true if timestamp is always UTC
-  private boolean frozen;               // true if timestamp cannot be modified anymore
+  private boolean utc;                  // true if the timestamp is always UTC
+  private boolean frozen;               // true if the timestamp cannot be modified anymore
+
 
   /**
-   * Constructs a
-   * <code>Timestamp</code> object using a milliseconds time value. The integral
-   * seconds are stored in the underlying date value; the fractional seconds are
-   * stored in the
-   * <code>nanos</code> field of the
-   * <code>Timestamp</code> object.
+   * Constructs a <code>Timestamp</code> object based on the epochal time based in milliseconds.
    *
-   * @param time milliseconds since January 1, 1970, 00:00:00 GMT. A negative
-   * number is the number of milliseconds before January 1, 1970, 00:00:00 GMT.
-   * @see java.util.Calendar
+   * @param time milliseconds since January 1, 1970, 00:00:00 GMT
+   * @param utc true if the timestamp is not translated to the local timezone when serialized
+   * @see #setUTC(boolean)
+   */
+  public Timestamp(long time, boolean utc) {
+    super(time);
+    setUTC(utc);
+  }
+
+  /**
+   * Constructs a <code>Timestamp</code> object based on the epochal time based in milliseconds.
+   *
+   * @param time milliseconds since January 1, 1970, 00:00:00 GMT
    */
   public Timestamp(long time) {
-    super(time);
+    this(time, false);
+  }
+
+  /**
+   * Creates the current timestamp.
+   *
+   * @param utc true if the timestamp is not translated to the local timezone when serialized
+   * @see #setUTC(boolean)
+   */
+  public Timestamp(boolean utc) {
+    this(System.currentTimeMillis());
+    setUTC(utc);
   }
 
   /**
    * Creates the current timestamp.
    */
   public Timestamp() {
-    this(System.currentTimeMillis());
+    this(false);
   }
 
   /**
@@ -134,7 +150,8 @@ public class Timestamp extends java.sql.Timestamp implements Freezable {
   /**
    * Sets the UTC flag.
    * <p>
-   * Timestamps with UTC set are serialized and deserialized without timezone.
+   * Timestamps with UTC=true are serialized and deserialized without being
+   * adjusted to the local timezone.
    *
    * @param utc the UTC flag
    */
@@ -145,7 +162,7 @@ public class Timestamp extends java.sql.Timestamp implements Freezable {
   /**
    * Gets the UTC flag.
    *
-   * @return true if timestamp is UTC
+   * @return true if the timestamp is UTC
    */
   public boolean isUTC() {
     return utc;
@@ -180,7 +197,7 @@ public class Timestamp extends java.sql.Timestamp implements Freezable {
   }
 
   // others overridden to check for frozen.
-  // those methods are deprecated anyway, but may still be used by an application
+  // those methods are deprecated anyway but may still be used by an application
 
   @Deprecated
   @Override
@@ -233,8 +250,8 @@ public class Timestamp extends java.sql.Timestamp implements Freezable {
 
   /**
    * Save the state of this object to a stream.
-   *
-   * @serialData the value YYYYMMDDHHMMSS is emitted. This allows serializing
+   * <p>
+   * If utc, the value {@code YYYYMMDDHHMMSS} is emitted. This allows serializing
    * and deserializing in different timezones without changing the timestamp.
    *
    * @param s the stream

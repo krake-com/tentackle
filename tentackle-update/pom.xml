@@ -17,7 +17,7 @@
   <dependencies>
     <dependency>
       <groupId>org.tentackle</groupId>
-      <artifactId>tentackle-common</artifactId>
+      <artifactId>tentackle-core</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>

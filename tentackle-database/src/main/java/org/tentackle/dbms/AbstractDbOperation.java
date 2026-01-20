@@ -18,7 +18,7 @@
 
 package org.tentackle.dbms;
 
-import org.tentackle.dbms.rmi.AbstractDbOperationRemoteDelegate;
+import org.tentackle.dbms.trip.AbstractDbOperationRemoteDelegate;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionDependable;

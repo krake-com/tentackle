@@ -27,6 +27,19 @@
 
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>tentackle-persistence</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>   <!-- don't mix up classpath order -->
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tentackle-domain</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>   <!-- don't mix up classpath order -->
+    </dependency>
+
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>tentackle-pdo</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -45,19 +58,6 @@
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
       <optional>true</optional>
-    </dependency>
-
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tentackle-persistence</artifactId>
-      <version>${project.version}</version>
-      <optional>true</optional>   <!-- don't mix up classpath order -->
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tentackle-domain</artifactId>
-      <version>${project.version}</version>
-      <optional>true</optional>   <!-- don't mix up classpath order -->
     </dependency>
 
     <dependency>

@@ -26,6 +26,7 @@ import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.ImmutableException;
 import org.tentackle.misc.PropertiesUtilities;
+import org.tentackle.trip.TripReferencable;
 
 import java.io.FileNotFoundException;
 import java.io.Serial;
@@ -41,6 +42,7 @@ import java.util.TimeZone;
  *
  * @author harald
  */
+@TripReferencable(TripReferencable.NEVER)
 public class DefaultSessionInfo implements SessionInfo, Cloneable {
 
   @Serial
@@ -60,7 +62,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
   private String clientVersion;                 // the version of the client
   private long since;                           // logged in since
   private String propertiesName;                // filename of backend properties
-  private EncryptedProperties properties;       // db properties (send over via RMI)
+  private EncryptedProperties properties;       // db properties (send over via TRIP)
   private boolean immutable;                    // true if session info is immutable
   private boolean finallyImmutable;             // true if finally immutable
   private Logger.Level immutableLoggingLevel;   // optional logging for immutable violations instead of exception

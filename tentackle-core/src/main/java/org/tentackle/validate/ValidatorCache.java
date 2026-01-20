@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.validate;
 
 import org.tentackle.common.Service;
@@ -35,15 +34,15 @@ interface ValidatorCacheHolder {
 
 
 /**
- * Holds all fixed validators for a class.
+ * Holds all fixed validators cached for all classes.
  * <p>
- * All validators bound by an annotation are considered fixed and can be cached.
+ * All validators bound by an annotation are considered fixed and can be cached.<br>
+ * This is a singleton.
  *
  * @author harald
  */
 @Service(ValidatorCache.class)    // defaults to self
 public class ValidatorCache {
-
 
   /**
    * The singleton.
@@ -63,7 +62,6 @@ public class ValidatorCache {
    */
   private record FieldMethodKey(Field field, Method method) {}
 
-
   /**
    * Map of field validators by clazz
    */
@@ -80,7 +78,6 @@ public class ValidatorCache {
   private final Map<Class<?>, List<Validator>> objectMap;
 
 
-
   /**
    * Creates a validator cache.
    */
@@ -90,7 +87,6 @@ public class ValidatorCache {
     objectMap       = new ConcurrentHashMap<>();
   }
 
-
   /**
    * Invalidates the cache.
    */
@@ -99,7 +95,6 @@ public class ValidatorCache {
     fieldMethodMap.clear();
     objectMap.clear();
   }
-
 
   /**
    * Gets all validators for all annotated fields or methods.<br>
@@ -111,12 +106,11 @@ public class ValidatorCache {
    */
   public List<Validator> getFieldValidators(Class<?> clazz) {
     return fieldMap.computeIfAbsent(clazz,
-            k -> ValidationUtilities.getInstance().getFieldValidators(clazz, null));
+            c -> ValidationUtilities.getInstance().getFieldValidators(c, null));
   }
 
-
   /**
-   * Get validators for an annotated fields and/or method.<br>
+   * Get validators for an annotated field and/or method.<br>
    *
    * @param field the field, null if none
    * @param method the (getter-)method, null if none
@@ -125,19 +119,18 @@ public class ValidatorCache {
   public List<Validator> getFieldValidators(Field field, Method method) {
     FieldMethodKey key = new FieldMethodKey(field, method);
     return fieldMethodMap.computeIfAbsent(key,
-            k -> ValidationUtilities.getInstance().getFieldValidators(field, method, null));
+            k -> ValidationUtilities.getInstance().getFieldValidators(k.field, k.method, null));
   }
 
-
   /**
-   * Gets all validators for annotated class.
+   * Gets all validators for an annotated class.
    *
    * @param clazz the class to inspect
    * @return the list of field validators
    */
   public List<Validator> getObjectValidators(Class<?> clazz) {
     return objectMap.computeIfAbsent(clazz,
-            k -> ValidationUtilities.getInstance().getObjectValidators(clazz, null));
+            c -> ValidationUtilities.getInstance().getObjectValidators(c, null));
   }
 
 }

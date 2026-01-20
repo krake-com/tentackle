@@ -18,7 +18,6 @@
 
 package org.tentackle.dbms;
 
-import org.tentackle.misc.Identifiable;
 import org.tentackle.misc.SerialNumbered;
 import org.tentackle.session.SessionDependable;
 
@@ -27,7 +26,7 @@ import org.tentackle.session.SessionDependable;
  *
  * @author harald
  */
-public interface ModificationLoggable extends Identifiable, SerialNumbered, SessionDependable {
+public interface ModificationLoggable extends SerialNumbered, SessionDependable {
 
   /**
    * Creates a {@link ModificationLog}.

@@ -54,7 +54,7 @@ public interface ModificationLogFactory {
 
   /**
    * Creates an empty modification log for a given session.<br>
-   * Useful for reading the log or as an RMI-proxy.
+   * Useful for reading the log or as an TRIP-proxy.
    *
    * @param db the session
    * @return the created modlog

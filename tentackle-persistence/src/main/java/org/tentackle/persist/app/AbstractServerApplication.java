@@ -29,7 +29,7 @@ import org.tentackle.dbms.DbTransactionFactory;
 import org.tentackle.dbms.ManagedConnection;
 import org.tentackle.dbms.MpxConnectionManager;
 import org.tentackle.dbms.StatementStatistics;
-import org.tentackle.dbms.rmi.RemoteDelegateInvocationHandler;
+import org.tentackle.dbms.trip.RemoteDbDelegateInvocationHandler;
 import org.tentackle.log.Logger;
 import org.tentackle.pdo.PdoFactory;
 import org.tentackle.prefs.PersistedPreferencesFactory;
@@ -64,14 +64,14 @@ public abstract class AbstractServerApplication extends AbstractApplication
   private SessionPool sessionPool;                    // the session pool for local sessions
   private MultiUserSessionPool remoteSessionPool;     // the session pool for remote sessions
   private ConnectionManager connectionManager;        // the connection manager
-  private boolean runsInContainer;                    // true if application is running within a container (tomcat, EE)
+  private boolean runsInContainer;                    // true if the application is running within a container (tomcat, EE)
 
 
   /**
    * Creates a server.
    *
    * @param name the application name, null for default name
-   * @param version the application version, null for default version
+   * @param version the application version, null for the default version
    */
   public AbstractServerApplication(String name, String version) {
     super(name, version);
@@ -162,14 +162,14 @@ public abstract class AbstractServerApplication extends AbstractApplication
    */
   public SessionPool createSessionPool() {
     // cannot be done via SessionPoolFactory because the pool uses another connection manager,
-    // and ConnectionManager is low-level persistence layer, i.e. not available to the factory's module.
+    // and ConnectionManager is a low-level persistence layer, i.e., not available to the factory's module.
     return new DbPool(getConnectionManager(), getSessionInfo()) {
 
       @Override
-      public Db getSession() {
-        Db db = super.getSession();
-        // get a fresh copy of a session info.
-        // wipe out old session info, i.e. force application to set the correct info
+      public Db get() {
+        Db db = (Db) super.get();
+        // get a fresh copy of a session-info.
+        // wipe out old session info, i.e., force the application to set the correct info
         SessionInfo sessionInfo = getSessionInfo().clone();
         db.setSessionInfo(sessionInfo);
         sessionInfo.setUserId(0);
@@ -187,13 +187,13 @@ public abstract class AbstractServerApplication extends AbstractApplication
    * @return the session pool
    */
   public MultiUserSessionPool createRemoteSessionPool() {
-    // 100 remote sessions should be ok for most proxy rmi servers. Should be smaller than the local server's pool maxSize anyway.
+    // 100 remote sessions should be ok for most proxy TRIP servers. Should be smaller than the local server's pool maxSize anyway.
     // Timeouts make no sense at all for pooling of remote client sessions ("get" when logged in and "close with put" on logout,
-    // i.e. there are no idle sessions and the session must remain open until logout).
+    // i.e., there are no idle sessions and the session must remain open until logout).
     if (getSession().getSessionGroupId() == 0) {
-      // if not grouped so far, build a new session group within the remote server with a single session at start
+      // if not grouped so far, build a new session group within the remote server with a single session initially
       // so that all sessions of the session pool are grouped properly with the server's main session.
-      // this will close all those sessions if the main session died due to a modtracker crash or whatever.
+      // this will close all those sessions if the main session died due to a modification tracker crash or whatever.
       getSession().groupWith(getSession().getSessionId());
     }
     return SessionPoolFactory.getInstance().create("remote-pool", getSession(), 0, 100, 0L, 0L);
@@ -229,7 +229,7 @@ public abstract class AbstractServerApplication extends AbstractApplication
    * @param sessionInfo the session info
    */
   protected void configureSessionInfo(SessionInfo sessionInfo) {
-    sessionInfo.setSessionName("SRV");    // server's main session (will be used by the modtracker)
+    sessionInfo.setSessionName("SRV");    // server's main session (will be used by the modification tracker)
 
     // load properties
     EncryptedProperties sessionProps = null;
@@ -243,7 +243,7 @@ public abstract class AbstractServerApplication extends AbstractApplication
     }
 
     if (sessionProps != null) {
-      // merge (local properties override those from file or classpath)
+      // merge (local properties override those from a file or classpath)
       for (String key: getProperties().stringPropertyNames()) {
         sessionProps.setProperty(key, getProperties().getProperty(key));
       }
@@ -274,7 +274,7 @@ public abstract class AbstractServerApplication extends AbstractApplication
     configure();
 
     LOGGER.fine("finish startup");
-    // finish startup and start the RMI service
+    // finish startup and start the TRIP service
     finishStartup();
   }
 
@@ -388,7 +388,7 @@ public abstract class AbstractServerApplication extends AbstractApplication
   @Override
   protected void activateStatistics() {
     super.activateStatistics();
-    RemoteDelegateInvocationHandler.setCollectingStatistics(true);    // will be logged when session is closed
+    RemoteDbDelegateInvocationHandler.setCollectingStatistics(true);    // will be logged when session is closed
     ManagedConnection.setCollectingStatistics(true);
     ManagedConnection.setLogStatisticsMillis(Constants.SECOND_MS * 30);
     ManagedConnection.setLogLevelForParallelOpenResultSets(Logger.Level.INFO);

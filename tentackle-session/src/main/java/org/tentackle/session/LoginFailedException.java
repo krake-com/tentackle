@@ -28,7 +28,7 @@ import java.io.Serial;
 
 
 /**
- * RMI servers should throw a LoginFailedException if authentication fails (or
+ * TRIP servers should throw LoginFailedException if authentication fails (or
  * any other reason)
  *
  * @author harald

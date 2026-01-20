@@ -39,7 +39,6 @@ import org.tentackle.pdo.AdminExtension;
 import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.prefs.PersistedPreferencesFactory;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.pdo.Security;
 
@@ -118,9 +117,7 @@ public class MainController extends AbstractFxController implements DomainContex
     sessionsItem.setOnAction(e -> manageSessions());
 
     preferencesItem.setGraphic(Fx.createGraphic("preferences"));
-    preferencesItem.setDisable(
-            !PersistedPreferencesFactory.getInstance().isSystemOnly() ||
-            !SecurityFactory.getInstance().getSecurityManager().evaluate(
+    preferencesItem.setDisable(!SecurityFactory.getInstance().getSecurityManager().evaluate(
                 getDomainContext(), SecurityFactory.getInstance().getExecutePermission(), PreferencesDialog.class).isAccepted());
     preferencesItem.setOnAction(e -> PreferencesDialog.show());
 

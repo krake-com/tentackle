@@ -19,6 +19,7 @@
 package org.tentackle.dbms;
 
 import org.tentackle.common.StringHelper;
+import org.tentackle.misc.PoolSlot;
 import org.tentackle.session.MultiUserSessionPool;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
@@ -39,10 +40,10 @@ public class MultiUserDbPool implements MultiUserSessionPool {
   private final String name;
   private final ConnectionManager conMgr;
   private final int sessionGroupId;
-  private final int maxSize;
-  private final int maxTotalSize;
-  private final long maxIdleMinutes;
-  private final long maxUsageMinutes;
+  private final int maximumSize;
+  private final int maximumTotalSize;
+  private final long idleMinutes;
+  private final long usageMinutes;
 
   private Map<SessionInfo, MultiPoolImpl> poolMap;              // maintained pools per session info (user), null if shut down
   private final AtomicInteger size = new AtomicInteger();       // total number of sessions
@@ -54,19 +55,19 @@ public class MultiUserDbPool implements MultiUserSessionPool {
    * @param name the name of the pool, null if "default-multi"
    * @param conMgr the connection manager for local sessions, null if remote
    * @param sessionGroupId the session group ID to use for all sessions
-   * @param maxSize the maximum number of sessions per session info, 0 = unlimited
-   * @param maxTotalSize the maximum total number of sessions, 0 = unlimited
-   * @param maxIdleMinutes the idle timeout in minutes to close unused sessions per session info, 0 = unlimited
-   * @param maxUsageMinutes the max. used time in minutes per session info, 0 = unlimited
+   * @param maximumSize the maximum number of sessions per session info, 0 = unlimited
+   * @param maximumTotalSize the maximum total number of sessions, 0 = unlimited
+   * @param idleMinutes the idle timeout in minutes to close unused sessions per session info, 0 = unlimited
+   * @param usageMinutes the maximum used time in minutes per session info, 0 = unlimited
    */
-  public MultiUserDbPool(String name, ConnectionManager conMgr, int sessionGroupId, int maxSize, int maxTotalSize, long maxIdleMinutes, long maxUsageMinutes) {
+  public MultiUserDbPool(String name, ConnectionManager conMgr, int sessionGroupId, int maximumSize, int maximumTotalSize, long idleMinutes, long usageMinutes) {
     this.name = Objects.requireNonNullElse(name, "default-multi");
     this.conMgr = conMgr;
     this.sessionGroupId = sessionGroupId;
-    this.maxSize = maxSize;
-    this.maxTotalSize = maxTotalSize;
-    this.maxIdleMinutes = maxIdleMinutes;
-    this.maxUsageMinutes = maxUsageMinutes;
+    this.maximumSize = maximumSize;
+    this.maximumTotalSize = maximumTotalSize;
+    this.idleMinutes = idleMinutes;
+    this.usageMinutes = usageMinutes;
 
     poolMap = new HashMap<>();
   }
@@ -74,12 +75,12 @@ public class MultiUserDbPool implements MultiUserSessionPool {
 
   @Override
   public synchronized Session get(SessionInfo sessionInfo) {
-    return getPool(sessionInfo).getSession();
+    return getPool(sessionInfo).get();
   }
 
   @Override
   public synchronized void put(Session session) {
-    getPool(session.getSessionInfo()).putSession(session);
+    getPool(session.getSessionInfo()).put(session);
   }
 
   @Override
@@ -96,13 +97,13 @@ public class MultiUserDbPool implements MultiUserSessionPool {
   }
 
   @Override
-  public int getMaxSize() {
-    return maxSize;
+  public int getMaximumSize() {
+    return maximumSize;
   }
 
   @Override
-  public int getMaxTotalSize() {
-    return maxTotalSize;
+  public int getMaximumTotalSize() {
+    return maximumTotalSize;
   }
 
   @Override
@@ -141,12 +142,13 @@ public class MultiUserDbPool implements MultiUserSessionPool {
    * This method is provided to override the default in {@link DbPool}, which is used a private subclass
    * in {@code MultiUserDbPool}.
    *
-   * @param pooledDb the pooled session
+   * @param slot the pool's session slot
    * @return true if it can be removed
    */
-  protected boolean isPooledDbRemovable(PooledDb pooledDb) {
+  protected boolean isSlotRemovable(PoolSlot<Session> slot) {
     return true;
   }
+
 
   /**
    * Asserts that this pool wasn't shutdown.
@@ -215,20 +217,20 @@ public class MultiUserDbPool implements MultiUserSessionPool {
 
     /**
      * Counter per pooled session name.<br>
-     * This is just cosmetics, but avoids confused users (see comment above).
+     * This is just cosmetics but avoids confused users (see comment above).
      */
     private final Map<String, Integer> nameCounterMap = new HashMap<>();
 
     private MultiPoolImpl(String name, ConnectionManager conMgr, SessionInfo sessionInfo, int sessionGroupId) {
-      // iniSize 0  -> make sure that createSessionInfo uses nextSessionName
+      // iniSize 0 -> make sure that createSessionInfo uses nextSessionName
       // minSize -1 -> shutdown sub-pool when all sessions closed
-      // maxSize 0  -> unlimited in super class, but limited in createDbInstances below!
-      super(name, conMgr, sessionInfo, sessionGroupId, 0, 1, -1, 0, maxIdleMinutes, maxUsageMinutes);
+      // maxSize 0 -> unlimited in super class, but limited in createSlots below!
+      super(name, conMgr, sessionInfo, sessionGroupId, 0, 1, -1, 0, idleMinutes, usageMinutes);
     }
 
     @Override
-    public boolean isPooledDbRemovable(PooledDb pooledDb) {
-      return MultiUserDbPool.this.isPooledDbRemovable(pooledDb) && super.isPooledDbRemovable(pooledDb);
+    public boolean isSlotRemovable(PoolSlot<Session> poolSlot) {
+      return MultiUserDbPool.this.isSlotRemovable(poolSlot) && super.isSlotRemovable(poolSlot);
     }
 
     @Override
@@ -264,39 +266,40 @@ public class MultiUserDbPool implements MultiUserSessionPool {
     }
 
     @Override
-    protected int createDbInstances(int num) {
-      if (maxTotalSize > 0) {
+    protected int createSlots(int num) {
+      if (maximumTotalSize > 0) {
         int sz = size.get();
-        if (sz + num > maxTotalSize) {
-          num = maxTotalSize - sz;
+        if (sz + num > maximumTotalSize) {
+          num = maximumTotalSize - sz;
           if (num <= 0) {
-            PersistenceException pex = new PersistenceException("cannot create more session instances, max. total pool size " + maxTotalSize + " reached");
+            PersistenceException pex = new PersistenceException("cannot create more session instances, max. total pool size " + maximumTotalSize + " reached");
             pex.setTemporary(true);
             throw pex;
           }
         }
       }
-      if (maxSize > 0) {
+      if (maximumSize > 0) {
         int sz = getSize();
-        if (sz + num > maxSize) {
-          num = maxSize - sz;
+        if (sz + num > maximumSize) {
+          num = maximumSize - sz;
           if (num <= 0) {
-            PersistenceException pex = new PersistenceException("cannot create more session instances, max. pool size per session " + maxSize + " reached");
+            PersistenceException pex = new PersistenceException("cannot create more session instances, max. pool size per session " + maximumSize + " reached");
             pex.setTemporary(true);
             throw pex;
           }
         }
       }
-      int created = super.createDbInstances(num);
+      int created = super.createSlots(num);
       size.addAndGet(created);
       return created;
     }
 
     @Override
-    protected void removeDbIndex(int index) {
-      super.removeDbIndex(index);
+    protected void removeSlotIndex(int index) {
+      super.removeSlotIndex(index);
       size.decrementAndGet();
     }
+
 
     private void setNextSessionName(String nextSessionName, boolean nextSessionCloned) {
       if (nextSessionName != null) {
@@ -304,7 +307,7 @@ public class MultiUserDbPool implements MultiUserSessionPool {
         if (ndx >= 0 && ndx < nextSessionName.length() - 1) {
           String slotStr = nextSessionName.substring(ndx + 1);
           if (StringHelper.isAllDigits(slotStr)) {  // pooled name!
-            nextSessionName = nextSessionName.substring(0, ndx);    // cut original slot number
+            nextSessionName = nextSessionName.substring(0, ndx);    // cut the original slot number
             nameCounterMap.putIfAbsent(nextSessionName, 0);
           }
         }
@@ -312,7 +315,6 @@ public class MultiUserDbPool implements MultiUserSessionPool {
       this.nextSessionName = nextSessionName;
       this.nextSessionCloned = nextSessionCloned;
     }
-
   }
 
 }

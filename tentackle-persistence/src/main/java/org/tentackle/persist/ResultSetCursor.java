@@ -24,14 +24,13 @@ import org.tentackle.misc.ScrollableResource;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.persist.rmi.RemoteResultSetCursor;
+import org.tentackle.persist.trip.RemoteResultSetCursor;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 
 import java.io.Serial;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Cleaner.Cleanable;
-import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -77,7 +76,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
           try {
             remoteCursor.close();
           }
-          catch (RemoteException ex) {
+          catch (RuntimeException ex) {
             LOGGER.severe("cleanup " + remoteCursor + " failed", ex);
           }
         }
@@ -260,7 +259,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
         this.row = resources.remoteCursor.setRow(row);
         return this.row == row;
       }
-      catch (RemoteException ex) {
+      catch (RuntimeException ex) {
         throw new PersistenceException(session, ex);
       }
     }
@@ -291,7 +290,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
         row = rv ? 1 : 0;
         return rv;
       }
-      catch (RemoteException ex) {
+      catch (RuntimeException ex) {
         throw new PersistenceException(session, ex);
       }
     }
@@ -343,7 +342,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
         row = resources.remoteCursor.last();
         return row > 0;
       }
-      catch (RemoteException ex) {
+      catch (RuntimeException ex) {
         throw new PersistenceException(session, ex);
       }
     }
@@ -380,7 +379,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
         }
         return rv;
       }
-      catch (RemoteException ex) {
+      catch (RuntimeException ex) {
         throw new PersistenceException(session, ex);
       }
     }
@@ -422,7 +421,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
         }
         return rv;
       }
-      catch (RemoteException ex) {
+      catch (RuntimeException ex) {
         throw new PersistenceException(session, ex);
       }
     }
@@ -451,7 +450,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
         row = resources.remoteCursor.scroll(rows);
         return row == expectedRow;
       }
-      catch (RemoteException ex) {
+      catch (RuntimeException ex) {
         throw new PersistenceException(session, ex);
       }
     }
@@ -473,7 +472,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
         row = 0;
         return;
       }
-      catch (RemoteException ex) {
+      catch (RuntimeException ex) {
         throw new PersistenceException(session, ex);
       }
     }
@@ -499,7 +498,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
         row = resources.remoteCursor.afterLast();
         return;
       }
-      catch (RemoteException ex) {
+      catch (RuntimeException ex) {
         throw new PersistenceException(session, ex);
       }
     }
@@ -534,7 +533,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
       try {
         return resources.remoteCursor.isAfterLast();
       }
-      catch (RemoteException ex) {
+      catch (RuntimeException ex) {
         throw new PersistenceException(session, ex);
       }
     }
@@ -556,7 +555,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
           configureRemoteObject(obj);
           return obj;
         }
-        catch (RemoteException ex) {
+        catch (RuntimeException ex) {
           throw new PersistenceException(session, ex);
         }
       }
@@ -599,21 +598,16 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
   @Override
   public List<T> toList() {
     List<T> list;
-    if (session.isRemote())  {
-      try {
-        // this is faster than a getObject()-loop because it saves rmi-roundtrips
-        list = resources.remoteCursor.toList();    // unchecked
-        if (list != null) {
-          for (T obj: list) {
-            configureRemoteObject(obj);
-          }
+    if (session.isRemote()) {
+      // this is faster than a getObject()-loop because it saves TRIP roundtrips
+      list = resources.remoteCursor.toList();    // unchecked
+      if (list != null) {
+        for (T obj : list) {
+          configureRemoteObject(obj);
         }
       }
-      catch (RemoteException ex) {
-        throw PersistenceException.createFromRemoteException(session, ex);
-      }
     }
-    else  {
+    else {
       list = new ArrayList<>();
       toList(list);
     }
@@ -642,15 +636,10 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
    */
   @Override
   public void setFetchSize(int rows) {
-    if (session.isRemote())  {
-      try {
-        resources.remoteCursor.setFetchSize(rows);
-      }
-      catch (RemoteException ex) {
-        throw PersistenceException.createFromRemoteException(session, ex);
-      }
+    if (session.isRemote()) {
+      resources.remoteCursor.setFetchSize(rows);
     }
-    else  {
+    else {
       resources.rs.setFetchSize(rows);
     }
   }
@@ -662,13 +651,8 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
    */
   @Override
   public int getFetchSize() {
-    if (session.isRemote())  {
-      try {
-        return resources.remoteCursor.getFetchSize();
-      }
-      catch (RemoteException ex) {
-        throw PersistenceException.createFromRemoteException(session, ex);
-      }
+    if (session.isRemote()) {
+      return resources.remoteCursor.getFetchSize();
     }
     return resources.rs.getFetchSize();
   }
@@ -706,28 +690,23 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
 
     if (!isClosed()) {
       if (session.isRemote()) {
-        try {
-          // this is faster than a get()-loop because it saves rmi-roundtrips
-          list = resources.remoteCursor.fetch();    // unchecked
-          if (list != null) {
-            for (T obj : list) {
-              configureRemoteObject(obj);
-            }
-            row += list.size();
-            if (firstInvoked) {
-              firstInvoked = false;
-              row--;    // subtract cause row started at 1, not 0
-            }
-            if (list.isClosed()) {
-              resources.remoteCursor = null;    // already closed on remote side
-            }
+        // this is faster than a get()-loop because it saves TRIP roundtrips
+        list = resources.remoteCursor.fetch();    // unchecked
+        if (list != null) {
+          for (T obj : list) {
+            configureRemoteObject(obj);
           }
-          else {
+          row += list.size();
+          if (firstInvoked) {
+            firstInvoked = false;
+            row--;    // subtract cause row started at 1, not 0
+          }
+          if (list.isClosed()) {
             resources.remoteCursor = null;    // already closed on remote side
           }
         }
-        catch (RemoteException ex) {
-          throw PersistenceException.createFromRemoteException(session, ex);
+        else {
+          resources.remoteCursor = null;    // already closed on remote side
         }
       }
       else {

@@ -67,7 +67,7 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
   private final List<PreferenceChangeEvent> keyEvents = new ArrayList<>();
 
 
-  // synchronized because it's the modtracker's thread
+  // synchronized because it's the modification tracker's thread
   // Reporter.log doesn't work from other than the test thread!
   @Override
   public synchronized void childAdded(NodeChangeEvent evt) {
@@ -95,8 +95,9 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
     Thread.sleep(3000);
 
     SessionInfo sessionInfo = Pdo.createSessionInfo("client");
+    Session session = Pdo.createSession(sessionInfo);
 
-    try (Session session = Pdo.createSession(sessionInfo)) {
+    try {
       session.makeCurrent();
       ModificationTracker tracker = ModificationTracker.getInstance();
       if (tracker.isAlive()) {
@@ -135,11 +136,11 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
       assertTrue(keyEvents.isEmpty());
 
       // add node and key in other jvm
-      Thread.sleep(3000);   // give time for modtracker to fire events
+      Thread.sleep(3000);   // give time for the modification tracker to fire events
 
 
       assertEquals(nodeEvents.size(), 1);
-      NodeChangeEvent nodeEvent = nodeEvents.get(0);
+      NodeChangeEvent nodeEvent = nodeEvents.getFirst();
       assertEquals(nodeEvent.getParent(), prefs);
       assertEquals(nodeEvent.getChild().absolutePath(), "/org/tentackle/prefs/other");
       assertFalse(((DbPreferences) nodeEvent.getChild()).getPersistentNode().isRemoved());
@@ -151,7 +152,7 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
       nodeEvents.clear();
 
       assertEquals(keyEvents.size(), 1);
-      PreferenceChangeEvent keyEvent = keyEvents.get(0);
+      PreferenceChangeEvent keyEvent = keyEvents.getFirst();
       assertEquals(keyEvent.getNode().absolutePath(), "/org/tentackle/prefs/other");
       assertEquals(keyEvent.getKey(), KEY_4);
       assertEquals(keyEvent.getNewValue(), VALUE_4);
@@ -159,17 +160,17 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
       keyEvents.clear();
 
       // remove node and key in other jvm
-      Thread.sleep(5000);   // give time for modtracker to fire events
+      Thread.sleep(5000);   // give time for the modification tracker to fire events
 
       assertEquals(nodeEvents.size(), 1);
-      nodeEvent = nodeEvents.get(0);
+      nodeEvent = nodeEvents.getFirst();
       assertEquals(nodeEvent.getParent(), prefs);
       assertEquals(nodeEvent.getChild().absolutePath(), "/org/tentackle/prefs/other");
       assertTrue(((DbPreferences) nodeEvent.getChild()).getPersistentNode().isRemoved());
       assertFalse(((DbPreferences) nodeEvent.getChild()).getPersistentNode().isNew());    // and persisted!
 
       assertEquals(keyEvents.size(), 1);
-      keyEvent = keyEvents.get(0);
+      keyEvent = keyEvents.getFirst();
       assertEquals(keyEvent.getNode().absolutePath(), "/org/tentackle/prefs/other");
       assertEquals(keyEvent.getKey(), KEY_4);
       assertNull(keyEvent.getNewValue());
@@ -181,6 +182,7 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
     finally {
       ModificationTracker.getInstance().terminate();
       AbstractPdoTest.waitForProcess(process);
+      session.close();
     }
   }
 

@@ -88,7 +88,7 @@ public class SessionPooledExecutor {
    * Gets the size of the thread pool.<br>
    * The default implementation returns the maximum size of the session pool.<br>
    * If the session pool is unlimited, the thread pool will be unlimited too.<br>
-   * Override this method, if sizes differ.<br>
+   * Override this method if sizes differ.<br>
    * Caution: using an unlimited or larger thread pool with a limited or smaller session pool will
    * cause an exception when all sessions are in use!
    *
@@ -96,7 +96,7 @@ public class SessionPooledExecutor {
    * @see #createExecutorService()
    */
   public int getThreadPoolSize() {
-    return sessionPool.getMaxSize();
+    return sessionPool.getMaximumSize();
   }
 
   /**
@@ -108,7 +108,7 @@ public class SessionPooledExecutor {
   }
 
   /**
-   * Submits a task for execution in background by a thread pool.
+   * Submits a task for execution in the background by a thread pool.
    *
    * @param task the task to execute
    * @param successHandler the handler to be invoked when the task finished successfully, null if none
@@ -120,7 +120,7 @@ public class SessionPooledExecutor {
       Session session = null;
       RuntimeException failEx = null;
       try {
-        session = sessionPool.getSession();
+        session = sessionPool.get();
         session.makeCurrent();
         if (task instanceof SessionDependable) {
           ((SessionDependable) task).setSession(session);
@@ -146,7 +146,7 @@ public class SessionPooledExecutor {
       finally {
         if (session != null) {
           session.clearCurrent();
-          sessionPool.putSession(session);
+          sessionPool.put(session);
         }
       }
 
@@ -231,10 +231,10 @@ public class SessionPooledExecutor {
 
   /**
    * Creates the executor service.<br>
-   * For unlimited session pools the thread pool will also be unlimited and
-   * the number of threads will be adjusted automatically, i.e. new threads are created when
-   * necessary (tasks are not queued) and unused threads are removed when no more used for a certain amount of time.<br>
-   * For limited session pools a fixed size thread pool is used and tasks queued, if all threads are in use.
+   * For unlimited session pools the thread pool will also be unlimited, and
+   * the number of threads will be adjusted automatically. New threads are created when
+   * necessary (tasks are not queued), and unused threads are removed when no more used for a certain amount of time.<br>
+   * For limited session pools a fixed size thread pool is used, and tasks queued if all threads are in use.
    *
    * @return the executor service
    * @see #getThreadPoolSize()

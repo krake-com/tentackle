@@ -19,7 +19,7 @@
 package org.tentackle.dbms;
 
 import org.tentackle.common.Timestamp;
-import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
+import org.tentackle.dbms.trip.RemoteDbSessionImpl;
 import org.tentackle.io.ReconnectedException;
 import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;

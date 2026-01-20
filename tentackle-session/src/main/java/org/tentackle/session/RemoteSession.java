@@ -32,12 +32,11 @@ public interface RemoteSession {
    * Gets the client session info.
    * <p>
    * The server may set certain values in the session info that may be
-   * of interest for the client application, for example the user-ID.
+   * of interest for the client application, for example, the user-ID.
    *
    * @return the session info
    */
   SessionInfo getClientSessionInfo();
-
 
   /**
    * Logs a message at the server-side.<br>
@@ -58,7 +57,7 @@ public interface RemoteSession {
   void log(String name, Logger.Level level, String message);
 
   /**
-   * Logs the RMI-statistics at the server-side.<br>
+   * Logs the TRIP-statistics at the server-side.<br>
    * Uses the static logger of the remote session implementation class.
    *
    * @param level the logging level

@@ -12,7 +12,7 @@ import ${package}.pdo.MessageType;
 import ${package}.pdo.md.OrgUnit;
 import ${package}.pdo.td.Message;
 import ${package}.pdo.td.persist.MessagePersistence;
-import ${package}.persist.td.rmi.MessageRemoteDelegate;
+import ${package}.persist.td.trip.MessageRemoteDelegate;
 
 import org.tentackle.common.Freezable;
 import org.tentackle.common.RemoteMethod;
@@ -33,7 +33,6 @@ import org.tentackle.session.Session;
 import org.tentackle.sql.Backend;
 
 import java.io.Serial;
-import java.rmi.RemoteException;
 import java.util.Objects;
 
 /**

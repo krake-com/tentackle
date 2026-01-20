@@ -20,7 +20,6 @@ package org.tentackle.dbms;
 
 import org.tentackle.common.Service;
 import org.tentackle.misc.Identifiable;
-import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionUtilities;
@@ -45,7 +44,7 @@ public class DbSessionUtilities extends SessionUtilities {
   public Throwable alignExceptionCause(Throwable t) {
     if (t instanceof SQLException sx &&
         (sx.getCause() != null || // for ex. java.sql.SQLIntegrityConstraintViolationException points to oracle.jdbc.OracleDatabaseException
-         !"java.sql".equals(ReflectionHelper.getPackageName(t.getClass().getName())))) {
+         !"java.sql".equals(t.getClass().getPackageName()))) {
       // if some JDBC-driver specific exception (usually not in the classpath of a remote client)
       StackTraceElement[] trace = t.getStackTrace();
       SQLException next = sx.getNextException();

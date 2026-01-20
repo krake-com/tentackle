@@ -46,7 +46,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * from the same thread. Any attempt to unlock from a different thread will result
  * in an {@link IllegalMonitorStateException}.<br>
  * If different threads may lock and unlock, counter-based synchronization should be used instead.
- * For example, RMI services requests via threads from a threadpool and consecutive RMI-requests
+ * For example, TRIP services requests via threads from a threadpool and consecutive TRIP-requests
  * may be serviced by different threads.<br>
  * With counter-based synchronization, it is strongly recommended to provide
  * an application-specific locking key for each lock/unlock operation. This ensures

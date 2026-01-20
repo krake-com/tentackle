@@ -22,7 +22,6 @@ import org.tentackle.common.FileHelper;
 import org.tentackle.common.TentackleRuntimeException;
 
 import java.io.IOException;
-import java.io.Serial;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -30,10 +29,6 @@ import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.rmi.RemoteException;
-import java.rmi.server.RMIClientSocketFactory;
-import java.rmi.server.RMIServerSocketFactory;
-import java.rmi.server.UnicastRemoteObject;
 import java.util.Map;
 import java.util.OptionalLong;
 import java.util.StringTokenizer;
@@ -42,14 +37,9 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Server side update service implementation.
  */
-public abstract class AbstractUpdateServiceImpl extends UnicastRemoteObject implements UpdateService {
+public abstract class AbstractUpdateServiceImpl implements UpdateService {
 
-  @Serial
-  private static final long serialVersionUID = 1L;
-
-  @SuppressWarnings("serial")
   private final Map<String, Long> downloadSizes = new ConcurrentHashMap<>();      // size in bytes of the download ZIPs
-  @SuppressWarnings("serial")
   private final Map<String, String> checksumHashes = new ConcurrentHashMap<>();   // checksum hashes of the download ZIPs
 
   private String updateURL;
@@ -57,28 +47,12 @@ public abstract class AbstractUpdateServiceImpl extends UnicastRemoteObject impl
   /**
    * Creates an update service object.
    *
-   * @param port the tcp-port, 0 = system default
    * @param updateURL the http url where to download the updates from
-   * @throws RemoteException if failed to export object
    */
-  public AbstractUpdateServiceImpl(int port, String updateURL) throws RemoteException {
-    super(port);
+  public AbstractUpdateServiceImpl(String updateURL) {
     setUpdateURL(updateURL);
   }
 
-  /**
-   * Creates an update service object.
-   *
-   * @param port the tcp-port, 0 = system default
-   * @param updateURL the http url where to download the updates from
-   * @param csf the client socket factory
-   * @param ssf the server socket factory
-   * @throws RemoteException if failed to export object
-   */
-  public AbstractUpdateServiceImpl(int port, String updateURL, RMIClientSocketFactory csf, RMIServerSocketFactory ssf) throws RemoteException {
-    super(port, csf, ssf);
-    setUpdateURL(updateURL);
-  }
 
   /**
    * Gets the artifact name excluding the version.
@@ -119,7 +93,7 @@ public abstract class AbstractUpdateServiceImpl extends UnicastRemoteObject impl
 
 
   @Override
-  public UpdateInfo getUpdateInfo(ClientInfo clientInfo) throws RemoteException {
+  public UpdateInfo getUpdateInfo(ClientInfo clientInfo) {
     try {
       URL zipURL = createZipURL(clientInfo);
       URL checksumURL = createChecksumURL(clientInfo);
@@ -129,7 +103,7 @@ public abstract class AbstractUpdateServiceImpl extends UnicastRemoteObject impl
       return createUpdateInfo(getVersion(), zipURL, checksumHash, size, updateExecutor);
     }
     catch (IOException ex) {
-      throw new RemoteException("cannot create update info", ex);
+      throw new RuntimeException("cannot create update info", ex);
     }
   }
 
@@ -235,8 +209,7 @@ public abstract class AbstractUpdateServiceImpl extends UnicastRemoteObject impl
     String zipUrlStr = zipURL.toString();
     Long size = downloadSizes.get(zipUrlStr);
     if (size == null) {
-      try {
-        HttpClient client = HttpClient.newHttpClient();
+      try (HttpClient client = HttpClient.newHttpClient()) {
         HttpRequest request = HttpRequest.newBuilder()
             .uri(zipURL.toURI())
             .method("HEAD", HttpRequest.BodyPublishers.noBody())

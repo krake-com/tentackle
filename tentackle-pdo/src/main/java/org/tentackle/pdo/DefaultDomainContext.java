@@ -23,6 +23,7 @@ import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
+import org.tentackle.trip.TripSerializable;
 
 import java.io.ObjectStreamException;
 import java.io.Serial;
@@ -35,6 +36,7 @@ import java.util.List;
  *
  * @author harald
  */
+@TripSerializable(prepare = "prepareSerialization", validate = "clearSessionValid")
 public class DefaultDomainContext implements DomainContext {
 
   @Serial
@@ -44,7 +46,7 @@ public class DefaultDomainContext implements DomainContext {
   private static final List<String> UNNAMED_LIST = List.of("");
 
 
-  // attributes are transient because session could be remote (is serializable)
+  // attributes are transient because the session could be remote (is serializable)
 
   /**
    * the session.
@@ -115,15 +117,12 @@ public class DefaultDomainContext implements DomainContext {
    * Creates a default context.
    *
    * @param session the session, null if thread-local
-   * @param sessionImmutable true if session cannot be changed anymore
+   * @param sessionImmutable true if the session cannot be changed anymore
    */
   public DefaultDomainContext(Session session, boolean sessionImmutable) {
     this.session = session;     // don't use setSession() as this will also assertPermissions
     this.sessionValid = true;
     this.sessionImmutable = sessionImmutable;
-    if (session == null) {
-      Session.assertCurrentSessionValid();
-    }
   }
 
   /**
@@ -133,6 +132,13 @@ public class DefaultDomainContext implements DomainContext {
    */
   public DefaultDomainContext(Session session) {
     this(session, false);
+  }
+
+  /**
+   * Creates a default context with a thread-local session.
+   */
+  public DefaultDomainContext() {
+    this(null, false);
   }
 
 
@@ -164,7 +170,6 @@ public class DefaultDomainContext implements DomainContext {
     return session;
   }
 
-
   @Override
   public void setSession(Session session) {
     if (sessionValid) {
@@ -192,7 +197,7 @@ public class DefaultDomainContext implements DomainContext {
       }
     }
     else {
-      // first setting after deserialization (DomainContext was not created by constructor!)
+      // first invocation after deserialization (this DomainContext not created by constructor)
       this.session = session;
       if (session == null) {
         Session.assertCurrentSessionValid();
@@ -202,11 +207,17 @@ public class DefaultDomainContext implements DomainContext {
     }
   }
 
+  /**
+   * Invoked after TRIP deserialization.
+   */
+  public void clearSessionValid() {
+    sessionValid = false;
+  }
 
   /**
    * Sets the session to immutable.
    *
-   * @param sessionImmutable true if session cannot be changed anymore
+   * @param sessionImmutable true if the session cannot be changed anymore
    */
   @Override
   public void setSessionImmutable(boolean sessionImmutable) {
@@ -223,8 +234,6 @@ public class DefaultDomainContext implements DomainContext {
     return sessionImmutable;
   }
 
-
-
   @Override
   public int getSessionInstanceNumber() {
     // the instance-no must be 0 for dynamic thread-local session (due to sorting, e.g., in caches)
@@ -240,23 +249,19 @@ public class DefaultDomainContext implements DomainContext {
     return s.getSessionInfo();
   }
 
-
   @Override
   public void assertPermissions() {
   }
-
 
   @Override
   public PersistentDomainObject<?> getContextPdo()  {
     return null;
   }
 
-
   @Override
   public long getContextId()  {
     return 0;
   }
-
 
   @Override
   public boolean isWithinContext(long contextId, int contextClassId) {
@@ -273,7 +278,6 @@ public class DefaultDomainContext implements DomainContext {
     return false;
   }
 
-
   /**
    * Gets the string representation of this context.
    * The default implementation returns the string of the context object,
@@ -287,7 +291,6 @@ public class DefaultDomainContext implements DomainContext {
     return getContextId() == 0 ? "" : getContextPdo().toString();
   }
 
-
   @Override
   public String toGenericString() {
     if (chainedName == null) {
@@ -299,7 +302,6 @@ public class DefaultDomainContext implements DomainContext {
     }
     return chainedName;
   }
-
 
   @Override
   public String toDiagnosticString() {
@@ -325,10 +327,9 @@ public class DefaultDomainContext implements DomainContext {
     return buf.toString();
   }
 
-
   /**
    * Compares this domain context with another domain context.<br>
-   * The default implementation just compares the class, the contextId
+   * The default implementation just compares the class, the contextId,
    * and the session instance number.
    *
    * @param otherContext the context to compare this context to
@@ -346,12 +347,9 @@ public class DefaultDomainContext implements DomainContext {
     return rv;
   }
 
-
   /**
-   * {@inheritDoc}
-   * <p>
    * Overridden to check whether contexts are equal.<br>
-   * The default implementation checks the class, the contextId and session for equality.
+   * The default implementation checks the class, the contextId, and session for equality.
    * Checking against the null context returns false.
    */
   @Override
@@ -455,12 +453,10 @@ public class DefaultDomainContext implements DomainContext {
     return context;
   }
 
-
   @Override
   public boolean isRootContext() {
     return getRootClassId() != 0;
   }
-
 
   @Override
   public DomainContext getRootContext(PersistentDomainObject<?> rootEntity) {
@@ -498,7 +494,7 @@ public class DefaultDomainContext implements DomainContext {
   }
 
   /**
-   * This does the trick to set up the non-transient rootId and rootClassId when sent via rmi the first time.
+   * Just in case we serialize via JOS.
    *
    * @return me
    * @throws ObjectStreamException to fulfill the signature only
@@ -507,11 +503,19 @@ public class DefaultDomainContext implements DomainContext {
   @Serial
   // public! Otherwise, writeReplace would not be invoked in subclasses!
   public Object writeReplace() throws ObjectStreamException {
+    prepareSerialization();
+    return this;
+  }
+
+  /**
+   * Prepares the object for serialization.<br>
+   * This does the trick to set up the non-transient rootId and rootClassId when serialized the first time.
+   */
+  public void prepareSerialization() {
     if (rootEntity != null && rootClassId == 0) {
       rootClassId = rootEntity.getPersistenceDelegate().getClassId();
       rootId = rootEntity.getPersistenceDelegate().getId();
     }
-    return this;
   }
 
   @Override

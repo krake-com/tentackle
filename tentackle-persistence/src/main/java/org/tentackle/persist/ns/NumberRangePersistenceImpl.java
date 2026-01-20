@@ -30,14 +30,12 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentObjectService;
 import org.tentackle.persist.AbstractPersistentObject;
 import org.tentackle.persist.PersistentObjectClassVariables;
-import org.tentackle.persist.ns.rmi.NumberRangeRemoteDelegate;
+import org.tentackle.persist.ns.trip.NumberRangeRemoteDelegate;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.sql.Backend;
 
 import java.io.Serial;
-import java.rmi.RemoteException;
-
 
 
 /**
@@ -408,14 +406,9 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
   @Override
   public TrackedList<NumberRange> selectByNumberPoolId(long numberPoolId) {
     if (getSession().isRemote())  {
-      try {
-        TrackedList<NumberRange> list = getRemoteDelegate().selectByNumberPoolId(getDomainContext(), numberPoolId);
-        configureRemoteObjects(getDomainContext(), list);
-        return list;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      TrackedList<NumberRange> list = getRemoteDelegate().selectByNumberPoolId(getDomainContext(), numberPoolId);
+      configureRemoteObjects(getDomainContext(), list);
+      return list;
     }
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_NUMBER_POOL_ID_STMT,
       b -> {
@@ -438,4 +431,3 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
   //</editor-fold>//GEN-END:selectByNumberPoolId
 
 }
-

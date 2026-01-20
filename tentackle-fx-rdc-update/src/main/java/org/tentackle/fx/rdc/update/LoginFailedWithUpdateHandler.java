@@ -39,9 +39,9 @@ import org.tentackle.misc.BlockingHolder;
 import org.tentackle.misc.Holder;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.VersionIncompatibleException;
-import org.tentackle.update.ClientInfo;
 import org.tentackle.update.ClientUpdateUtilities;
 import org.tentackle.update.InstallationType;
+import org.tentackle.update.ClientInfo;
 import org.tentackle.update.UpdateInfo;
 import org.tentackle.update.UpdateService;
 
@@ -85,7 +85,7 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
   @SuppressWarnings("unchecked")
   public Runnable handle(Exception ex) {
     if (ex instanceof VersionIncompatibleException ||
-        // or SSL certificate changed due to new server version
+        // or SSL certificate changed due to a new server version
         ExceptionHelper.extractException(true, ex, SSLHandshakeException.class) != null) {
 
       InstallationType installationType = ClientUpdateUtilities.getInstance().determineInstallationType();
@@ -99,7 +99,7 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
             if (!updateInfo.getVersion().equals(clientInfo.getVersion())) {
               return createUpdateRunnable(clientInfo, updateInfo, installationType);
             }
-            // else: version is okay, but TLS handshake didn't work -> proceed with standard impl below
+            // else: the version is okay, but TLS handshake didn't work -> proceed with standard impl below
           }
           catch (Exception rx) {
             LOGGER.warning("getting update info failed", rx);
@@ -215,8 +215,8 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
    * @return the service object, null if no service configured
    */
   protected UpdateService createUpdateService() {
-    String serviceUrl = getApplication().getPropertyIgnoreCase("updateService");
-    return serviceUrl == null ? null : ClientUpdateUtilities.getInstance().getUpdateService(serviceUrl, null);
+    String updateService = getApplication().getPropertyIgnoreCase("updateService");
+    return updateService == null ? null : ClientUpdateUtilities.getInstance().getUpdateService(updateService);
   }
 
   /**

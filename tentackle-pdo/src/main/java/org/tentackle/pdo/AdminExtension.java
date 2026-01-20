@@ -31,7 +31,7 @@ import java.util.List;
 public interface AdminExtension extends DomainContextDependable {
 
   /**
-   * Provides information about a logged in client session.
+   * Provides information about a logged-in client session.
    */
   interface SessionData {
 

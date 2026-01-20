@@ -9,8 +9,8 @@ package ${package}.server;
 
 import ${package}.common.Version;
 import ${package}.pdo.md.User;
-import ${package}.server.rmi.${application}RemoteDbConnectionImpl;
-import ${package}.server.rmi.UpdateServiceImpl;
+import ${package}.server.trip.${application}RemoteDbConnectionImpl;
+import ${package}.server.trip.UpdateServiceImpl;
 
 import org.tentackle.log.Logger;
 import org.tentackle.pdo.DomainContext;
@@ -49,7 +49,7 @@ public class ${application}Server extends ServerApplication {
     String updateService = getProperty("updateService");
     String updateURL = getProperty("updateURL");
     if (updateService != null && updateURL != null) {
-      ServerUpdateUtilities.getInstance().exportUpdateService(updateService, updateURL, UpdateServiceImpl.class);
+      ServerUpdateUtilities.getInstance().startUpdateService(updateService, updateURL, UpdateServiceImpl.class);
       LOGGER.info("update service for version {0} started at {1}", Version.RELEASE, updateService);
     }
   }

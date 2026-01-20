@@ -32,6 +32,7 @@ import javafx.fxml.FXML;
 import javafx.scene.Parent;
 import javafx.stage.Stage;
 import java.lang.reflect.Field;
+import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.Method;
 import java.util.List;
 
@@ -130,7 +131,7 @@ public abstract class AbstractFxController implements FxController, ScopeConfigu
           throw new FxRuntimeException(field + " annotated with @FXML was not injected");
         }
       }
-      catch (IllegalAccessException | IllegalArgumentException ex) {
+      catch (InaccessibleObjectException | IllegalAccessException | IllegalArgumentException ex) {
         throw new FxRuntimeException("cannot verify " + field, ex);
       }
     }

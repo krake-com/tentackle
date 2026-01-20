@@ -37,6 +37,11 @@ public class DefaultDomainContextFactory implements DomainContextFactory {
   }
 
   @Override
+  public DomainContext create() {
+    return new DefaultDomainContext();
+  }
+
+  @Override
   public DomainContext create(Session session) {
     return new DefaultDomainContext(session);
   }

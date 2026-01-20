@@ -34,18 +34,17 @@ import static java.util.Calendar.YEAR;
  * <p>
  * Differs from {@code java.sql.Date} when
  * serialized/deserialized in different timezones. Databases don't provide a
- * time and therefore no timezone for a date, i.e. when sent over wire to different
- * locations a date should always remain the same for all timezones. In
+ * time and therefore no timezone for a date, i.e., when sent over wire to different
+ * locations, a date should always remain the same for all timezones. In
  * {@code java.sql.Data}, however, the epochal time is serialized which may lead
  * to a different date when deserialized in another timezone. In {@link Date}
- * the effective date is serialized as YYYYMMDD to provide the same semantics
+ * the effective date is serialized as {@code YYYYMMDD} to provide the same semantics
  * as databases do.
  * <p>
- * Furthermore, tentackle dates can be frozen, i.e. made immutable.
+ * Furthermore, tentackle dates can be frozen, i.e., made immutable.
  *
  * @author harald
  */
-@SuppressWarnings("deprecation")
 public class Date extends java.sql.Date implements Freezable {
 
   @Serial
@@ -84,9 +83,7 @@ public class Date extends java.sql.Date implements Freezable {
    * time components to the time in the default time zone (the time zone of the
    * Java virtual machine running the application) that corresponds to zero GMT.
    *
-   * @param date milliseconds since January 1, 1970, 00:00:00 GMT not to exceed
-   * the milliseconds representation for the year 8099. A negative number
-   * indicates the number of milliseconds before January 1, 1970, 00:00:00 GMT.
+   * @param date epochal milliseconds since January 1, 1970, 00:00:00 GMT
    */
   public Date(long date) {
     super(date);
@@ -136,7 +133,7 @@ public class Date extends java.sql.Date implements Freezable {
   }
 
   // others overridden to check for frozen.
-  // those methods are deprecated anyway, but may still be used by an application
+  // those methods are deprecated anyway but may still be used by an application
 
   @Deprecated
   @Override
@@ -189,9 +186,10 @@ public class Date extends java.sql.Date implements Freezable {
 
   /**
    * Save the state of this object to a stream.
-   *
-   * @serialData the value YYYYMMDD is emitted. This allows serializing
+   * <p>
+   * The value {@code YYYYMMDD} is emitted. This allows serializing
    * and deserializing in different timezones without changing the date.
+   *
    * @param s the stream
    * @throws IOException if writing to stream failed
    */

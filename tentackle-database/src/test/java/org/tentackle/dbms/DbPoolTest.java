@@ -26,10 +26,12 @@ import org.tentackle.session.DefaultSessionInfo;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionPool;
+import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendInfo;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Session pool and connection manager test.
@@ -47,7 +49,7 @@ public class DbPoolTest {
   private class UserThread extends Thread {
 
     private volatile boolean stopRequested;
-    private volatile int selectCount;
+    private final AtomicInteger selectCount = new AtomicInteger();
 
     private UserThread(int index) {
       super("USER" + (index + 1));
@@ -57,14 +59,13 @@ public class DbPoolTest {
     @Override
     public void run() {
       while (!stopRequested) {
-        Db db = (Db) pool.getSession();
+        Db db = (Db) pool.get();
         db.setOwnerThread(Thread.currentThread());
-        PreparedStatementWrapper st = db.getPreparedStatement(new StatementKey(SELECT_ONE_STATEMENT_ID, getClass()), false,
-          b -> b.getDummySelect()
-        );
+        PreparedStatementWrapper st = db.getPreparedStatement(new StatementKey(SELECT_ONE_STATEMENT_ID, getClass()),
+                                                              false, Backend::getDummySelect);
         try (ResultSetWrapper rs = st.executeQuery()) {
           if (rs.next()) {
-            selectCount += rs.getInt(1);
+            selectCount.addAndGet(rs.getInt(1));
           }
           else  {
             throw new PersistenceException("cannot read 1");
@@ -72,7 +73,7 @@ public class DbPoolTest {
         }
         finally {
           db.setOwnerThread(null);
-          pool.putSession(db);
+          pool.put(db);
         }
       }
     }
@@ -98,7 +99,7 @@ public class DbPoolTest {
     }
 
     try {
-      Thread.sleep(30000);    // give'm half a minute to run at full speed...
+      Thread.sleep(30000);    // give them half a minute to run at full speed...
     }
     catch (InterruptedException ex) {
       Reporter.log(ex.getMessage() + "<br/>");
@@ -112,7 +113,7 @@ public class DbPoolTest {
       if (!thread.isAlive()) {
         failedThreads.add(thread);
         Reporter.log(thread.getName() + ": " + thread.selectCount + " selects, *** DIED ***<br/>");
-        totalSelects += thread.selectCount;
+        totalSelects += thread.selectCount.get();
         continue;
       }
       thread.stopRequested = true;
@@ -120,7 +121,7 @@ public class DbPoolTest {
         thread.interrupt();
         thread.join();
         Reporter.log(thread.getName() + ": " + thread.selectCount + " selects<br/>");
-        totalSelects += thread.selectCount;
+        totalSelects += thread.selectCount.get();
       }
       catch (InterruptedException ex) {
         Reporter.log(ex.getMessage() + "<br/>");

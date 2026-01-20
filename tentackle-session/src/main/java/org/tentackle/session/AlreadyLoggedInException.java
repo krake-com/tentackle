@@ -19,6 +19,9 @@
 package org.tentackle.session;
 
 import org.tentackle.misc.FormatHelper;
+import org.tentackle.reflect.CanonicalConstructor;
+import org.tentackle.reflect.CanonicalGetter;
+import org.tentackle.trip.TripIgnore;
 
 import java.io.Serial;
 import java.text.MessageFormat;
@@ -48,12 +51,23 @@ public class AlreadyLoggedInException extends LoginFailedException {
     this.loginInfo = loginInfo;
   }
 
+  /**
+   * Creates an {@code AlreadyLoggedInException}.
+   *
+   * @param loginInfo the login session info
+   */
+  @CanonicalConstructor
+  public AlreadyLoggedInException(SessionInfo loginInfo) {
+    this.loginInfo = loginInfo;
+  }
+
 
   /**
    * Gets the application session info.
    *
    * @return the session info
    */
+  @CanonicalGetter(ordinal = 0)
   public SessionInfo getLoginInfo() {
     return loginInfo;
   }
@@ -61,12 +75,20 @@ public class AlreadyLoggedInException extends LoginFailedException {
   /**
    * {@inheritDoc}
    * <p>
-   * Overridden due to localized message.
+   * Overridden due to the localized message.
    */
   @Override
+  @TripIgnore   // always created from loginInfo
   public String getMessage() {
     return MessageFormat.format(SessionBundle.getString("YOU ARE ALREADY LOGGED IN AT {0} SINCE {1}"),
                                 loginInfo.getHostInfo(),
                                 FormatHelper.formatShortTimestamp(new Date(loginInfo.getSince())));
   }
+
+  @Override
+  @TripIgnore   // not used
+  public Throwable getCause() {
+    return super.getCause();
+  }
+
 }

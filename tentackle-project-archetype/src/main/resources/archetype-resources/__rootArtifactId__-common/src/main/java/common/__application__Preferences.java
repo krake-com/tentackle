@@ -11,12 +11,12 @@ import org.tentackle.bind.Bindable;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.prefs.CompositePreferences;
-import org.tentackle.prefs.PersistedPreferencesFactory;
 
 
 interface ${application}PreferencesHolder {
   ${application}Preferences INSTANCE = ServiceFactory.createService(${application}Preferences.class);
 }
+
 
 /**
  * Preferences for ${application}.
@@ -31,7 +31,7 @@ public class ${application}Preferences extends CompositePreferences {
 
 
   public ${application}Preferences() {
-    super(PersistedPreferencesFactory.getInstance().isSystemOnly());
+    super(true);
   }
 
   /**

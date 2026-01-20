@@ -12,7 +12,7 @@ import ${package}.pdo.md.User2Group;
 import ${package}.pdo.md.UserGroup;
 import ${package}.pdo.md.persist.UserPersistence;
 import ${package}.persist.PersistenceBundle;
-import ${package}.persist.md.rmi.UserRemoteDelegate;
+import ${package}.persist.md.trip.UserRemoteDelegate;
 
 import org.tentackle.common.RemoteMethod;
 import org.tentackle.dbms.DbModificationType;
@@ -39,7 +39,6 @@ import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationUtilities;
 
 import java.io.Serial;
-import java.rmi.RemoteException;
 import java.text.MessageFormat;
 import java.util.Iterator;
 import java.util.List;
@@ -113,7 +112,7 @@ public class UserPersistenceImpl extends OrgUnitPersistenceImpl<User, UserPersis
    * Implements the handling of passwords. The hash is not part of the PDO and thus
    * not transferred over the wire along with user PDOs.
    * It is recommended to use SSL at least during authentication/login and for User-PDOs in general.
-   * This will encrypt the rmi-calls below.
+   * This will encrypt the TRIP calls below.
    */
 
   private static final StatementId SELECT_PASSWORD_STMT = new StatementId();

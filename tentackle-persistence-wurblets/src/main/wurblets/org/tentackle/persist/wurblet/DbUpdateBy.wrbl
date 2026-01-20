@@ -61,27 +61,17 @@ For more options, see {\@link DbModelWurblet}.
       PrintStream remoteOut = genInc.getInterfaceStream();
 ]@
     if (getSession().isRemote())  {
-      try {
 @{to remoteOut}@
-  int @(methodName)@(@(params)@) throws RemoteException;
+  int @(methodName)@(@(params)@);
 @{to implOut}@
 
   \@Override
-  public int @(methodName)@(@(params)@) throws RemoteException {
+  public int @(methodName)@(@(params)@) {
 @{to implOut}@
-    try {
-      return dbObject.@(methodName)@(@(iparms)@);
-    }
-    catch (RuntimeException e) {
-      throw createException(e);
-    }
+    return dbObject.@(methodName)@(@(iparms)@);
   }
 @{to}@
-        return getRemoteDelegate().@(methodName)@(@(iparms)@);
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(getSession(), e);
-      }
+      return getRemoteDelegate().@(methodName)@(@(iparms)@);
     }
     // else: local mode
 @[

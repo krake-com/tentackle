@@ -153,58 +153,38 @@ For more options, see {\@link DbModelWurblet}.
       if (isPdoProvidingArguments()) {
 ]@
     if (getSession().isRemote())  {
-      try {
 @{to remoteOut}@
-  @(returnType)@ @(methodName)@(@(pcs(params, returnType + " obj"))@) throws RemoteException;
+  @(returnType)@ @(methodName)@(@(pcs(params, returnType + " obj"))@);
 @{to implOut}@
 
   \@Override
-  public @(returnType)@ @(methodName)@(@(pcs(params, returnType + " obj"))@) throws RemoteException {
-    try {
-      obj.setSession(getSession());
-      ((@(poType)@) obj.getPersistenceDelegate()).setOverloadable(true);
-      return obj.@(methodName)@(@(iparms)@);
-    }
-    catch (RuntimeException e) {
-      throw createException(e);
-    }
+  public @(returnType)@ @(methodName)@(@(pcs(params, returnType + " obj"))@) {
+    obj.setSession(getSession());
+    ((@(poType)@) obj.getPersistenceDelegate()).setOverloadable(true);
+    return obj.@(methodName)@(@(iparms)@);
   }
 @{to}@
-        @(returnType)@ obj = getRemoteDelegate().@(methodName)@(@(pcs(iparms, "me()"))@);
-        configureRemoteObject(getDomainContext(), obj);
-        return obj;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      @(returnType)@ obj = getRemoteDelegate().@(methodName)@(@(pcs(iparms, "me()"))@);
+      configureRemoteObject(getDomainContext(), obj);
+      return obj;
     }
 @[
       }
       else {
 ]@
     if (getSession().isRemote())  {
-      try {
 @{to remoteOut}@
-  @(returnType)@ @(methodName)@(@(pcs(params, "DomainContext context"))@) throws RemoteException;
+  @(returnType)@ @(methodName)@(@(pcs(params, "DomainContext context"))@);
 @{to implOut}@
 
   \@Override
-  public @(returnType)@ @(methodName)@(@(pcs(params, "DomainContext context"))@) throws RemoteException {
-    try {
-      return newInstance(context).@(methodName)@(@(iparms)@);
-    }
-    catch (RuntimeException e) {
-      throw createException(e);
-    }
+  public @(returnType)@ @(methodName)@(@(pcs(params, "DomainContext context"))@) {
+    return newInstance(context).@(methodName)@(@(iparms)@);
   }
 @{to}@
-        @(returnType)@ obj = getRemoteDelegate().@(methodName)@(@(pcs(iparms, "getDomainContext()"))@);
-        configureRemoteObject(getDomainContext(), obj);
-        return obj;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      @(returnType)@ obj = getRemoteDelegate().@(methodName)@(@(pcs(iparms, "getDomainContext()"))@);
+      configureRemoteObject(getDomainContext(), obj);
+      return obj;
     }
 @[
       }

@@ -19,14 +19,14 @@
 package org.tentackle.misc;
 
 /**
- * Something providing a serial number.
+ * Identifiable providing a serial number.
  * <p>
  * The serial may express a unique serial number or
- * a version or a sequence or whatever takes a long.
+ * a version or a sequence or whatever takes a long integer.
  *
  * @author harald
  */
-public interface SerialNumbered {
+public interface SerialNumbered extends Identifiable {
 
   /**
    * Gets the serial.
@@ -41,5 +41,5 @@ public interface SerialNumbered {
    * @return true if virgin object without a valid serial
    */
   boolean isVirgin();
-  
+
 }

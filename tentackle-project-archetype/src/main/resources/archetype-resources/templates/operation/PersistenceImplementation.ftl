@@ -13,9 +13,6 @@ import ${remotePackage}.${remoteInterface};
 </#if>
 
 import java.io.Serial;
-<#if remoteEnabled == "true">
-import java.rmi.RemoteException;
-</#if>
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentOperationService;
 import org.tentackle.persist.AbstractPersistentOperation;

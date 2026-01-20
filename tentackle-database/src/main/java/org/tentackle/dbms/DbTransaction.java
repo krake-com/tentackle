@@ -22,77 +22,49 @@ import org.tentackle.misc.TimeKeeper;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SavepointHandle;
 
+import java.io.Serial;
 import java.sql.Savepoint;
-import java.util.ArrayDeque;
 import java.util.Collection;
-import java.util.Deque;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Holder for transaction local data.
+ * Local transaction status.
  *
  * @author harald
  */
-public class DbTransaction {
+public class DbTransaction extends AbstractTransaction {
 
-  /**
-   * Maximum recursion depth of tx runnables.<br>
-   * To detect recursion loops when tx runnables create other runnables.
-   */
-  public static int maxTxRunnableDepth = 100;
+  // will not be serialized, but makes compiler happy
+  @Serial
+  private static final long serialVersionUID = 1L;
 
-  // the jvm-wide transaction counter
-  private static final AtomicLong TX_COUNT = new AtomicLong();
+  private transient final Db session;             // the session
+  private transient final DbBatch batch;          // statement batch, null if no batching (default)
+  private transient final long creationTime;      // epochal time in ms when started/created
+  private transient final TimeKeeper timeKeeper;  // to measure the exact duration
+  private transient int handleCount;              // the last handle number
+  private transient volatile boolean alive;       // alive flag to detect idle transactions
 
-  private static final String DEFAULT_TXNAME = "<unnamed>";
-
-  private final Db db;                  // the session
-  private final DbBatch batch;          // statement batch, null if no batching (default)
-  private final long creationTime;      // epochal time in ms when started/created
-  private final TimeKeeper timeKeeper;  // to measure the exact duration
-  private final long txNumber;          // the unique transaction number
-  private final String txName;          // optional transaction name
-  private final long txVoucher;         // the random voucher for commit or rollback
-  private int handleCount;              // the last handle number
-  private int txLevel;                  // number of nested begin() (only for local Db), Integer.MIN_VALUE if invalid
-  private Deque<String> nestedTxNames;  // transaction names for nested transactions
-  private volatile boolean alive;       // alive flag to detect idle transactions
-
-  private Map<DbTransactionHandle, PersistenceVisitor> visitors;            // the visitors
-  private Map<SavepointHandle, Savepoint> savepoints;                       // the savepoints
+  private transient Map<DbTransactionHandle, PersistenceVisitor> visitors;  // the visitors
+  private transient Map<SavepointHandle, Savepoint> savepoints;             // the savepoints
 
 
   /**
    * Creates a transaction.
    *
-   * @param db the session
+   * @param session the session
+   * @param txVoucher the transaction voucher
    * @param txName the transaction name, null for &lt;unnamed&gt;
-   * @param fromRemote true if initiated from the remote client
+   * @param txNumber the transaction number
    */
-  public DbTransaction(Db db, String txName, boolean fromRemote) {
-
-    this.db = db;
-    this.txName = txName == null ? DEFAULT_TXNAME : txName;
-
+  public DbTransaction(Db session, long txVoucher, String txName, long txNumber) {
+    super(txVoucher, txName, txNumber, 1);   // nesting level 1 = first begin
+    this.session = session;
+    super.setSession(session);
     batch = createBatch();    // null if no batching
-    txNumber = TX_COUNT.incrementAndGet();
-    txLevel = 1;      // nesting level 1 = first begin
     creationTime = System.currentTimeMillis();
     timeKeeper = new TimeKeeper();
-
-    // create a new commit/rollback voucher
-    long magic;
-    do {
-      magic = UUID.randomUUID().getLeastSignificantBits();
-    }
-    while (magic == 0);
-
-    // remote are negative, local positive
-    txVoucher = (fromRemote && magic > 0 || !fromRemote && magic < 0) ? -magic : magic;
   }
 
 
@@ -102,9 +74,15 @@ public class DbTransaction {
    * @return the session
    */
   public Db getSession() {
-    return db;
+    return session;
   }
 
+  @Override
+  public void setSession(Db session) {
+    if (session != this.session) {
+      throw new PersistenceException(this.session, "session of local transaction is final");
+    }
+  }
 
   /**
    * Gets the statements-batch.
@@ -114,7 +92,6 @@ public class DbTransaction {
   public DbBatch getBatch() {
     return batch;
   }
-
 
   /**
    * Gets the epochal creation time in ms.
@@ -135,118 +112,17 @@ public class DbTransaction {
   }
 
   /**
-   * Gets the transaction name.
-   *
-   * @return the name, never null
-   */
-  public String getTxName() {
-    return txName;
-  }
-
-
-  /**
-   * Gets the transaction number.
-   *
-   * @return the tx number
-   */
-  public long getTxNumber() {
-    return txNumber;
-  }
-
-
-  /**
-   * Gets the nesting level.
-   *
-   * @return the tx level
-   */
-  public int getTxLevel() {
-    return txLevel;
-  }
-
-
-  /**
-   * Marks the txLevel invalid.
-   * <p>
-   * Will suppress any checks and warnings.
-   */
-  public void invalidateTxLevel() {
-    txLevel = Integer.MIN_VALUE;
-    nestedTxNames = null;
-  }
-
-
-  /**
-   * Returns whether the txLevel is valid.
-   *
-   * @return true if valid
-   */
-  public boolean isTxLevelValid() {
-    return txLevel != Integer.MIN_VALUE;
-  }
-
-
-  /**
-   * Increments the transaction level.
-   *
-   * @param txName the optional transaction name
-   * @return the new tx level
-   */
-  public int incrementTxLevel(String txName) {
-    if (isTxLevelValid()) {
-      if (txName == null) {
-        txName = DEFAULT_TXNAME;
-      }
-      if (nestedTxNames == null) {
-        nestedTxNames = new ArrayDeque<>();
-      }
-      nestedTxNames.push(txName);
-      txLevel++;
-    }
-    return txLevel;
-  }
-
-
-  /**
-   * Decrements the transaction level.
-   *
-   * @return the new tx level
-   */
-  public int decrementTxLevel() {
-    if (isTxLevelValid()) {
-      if (txLevel <= 1) {
-        throw new PersistenceException(db, "unbalanced tx level");
-      }
-      --txLevel;
-      if (nestedTxNames != null) {
-        nestedTxNames.pop();
-      }
-    }
-    return txLevel;
-  }
-
-
-  /**
-   * Gets the transaction voucher.
-   *
-   * @return the voucher
-   */
-  public long getTxVoucher() {
-    return txVoucher;
-  }
-
-
-  /**
    * Asserts the validity of the given voucher.<br>
    * If the voucher does not match, a {@link PersistenceException} is thrown.
    *
    * @param txVoucher the voucher to test
    */
   public void assertValidTxVoucher(long txVoucher) {
-    if (this.txVoucher != txVoucher) {
-      throw new PersistenceException(db, "invalid voucher " + txVoucher);
+    if (getTxVoucher() != txVoucher) {
+      // don't expose the expected voucher!
+      throw new PersistenceException(session, "invalid voucher " + txVoucher);
     }
   }
-
 
   /**
    * Adds a savepoint to the transaction.
@@ -290,25 +166,6 @@ public class DbTransaction {
     return savepoints != null && !savepoints.isEmpty();
   }
 
-
-  @Override
-  public String toString() {
-    StringBuilder buf = new StringBuilder();
-    buf.append("TX").append(txNumber);
-    if (isTxLevelValid()) {
-      buf.append('.').append(txLevel);
-    }
-    buf.append("-[").append(txName);
-    if (nestedTxNames != null) {
-      for (Iterator<String> iterator = nestedTxNames.descendingIterator(); iterator.hasNext(); ) {
-        buf.append(" > ").append(iterator.next());
-      }
-    }
-    buf.append(']');
-    return buf.toString();
-  }
-
-
   /**
    * Registers a {@link PersistenceVisitor} to be invoked just before
    * performing a persistence operation.<br>
@@ -320,11 +177,10 @@ public class DbTransaction {
     if (visitors == null)  {
       visitors = new HashMap<>();
     }
-    DbTransactionHandle handle = new DbTransactionHandle(txNumber, ++handleCount);
+    DbTransactionHandle handle = new DbTransactionHandle(getTxNumber(), ++handleCount);
     visitors.put(handle, visitor);
     return handle;
   }
-
 
   /**
    * Unregisters a {@link PersistenceVisitor}.
@@ -336,7 +192,6 @@ public class DbTransaction {
     return visitors == null ? null : visitors.remove(handle);
   }
 
-
   /**
    * Gets the currently registered persistence visitors.
    *
@@ -345,7 +200,6 @@ public class DbTransaction {
   public Collection<PersistenceVisitor> getPersistenceVisitors() {
     return visitors.values();
   }
-
 
   /**
    * Performs the commit.<br>
@@ -359,7 +213,6 @@ public class DbTransaction {
     DbTransactionFactory.getInstance().finish(this, false);
   }
 
-
   /**
    * Performs a rollback.<br>
    * Executes all rollback runnables and removes them.
@@ -367,7 +220,6 @@ public class DbTransaction {
   public void rollback() {
     DbTransactionFactory.getInstance().finish(this, true);
   }
-
 
   /**
    * Checks whether a persistence operation is allowed.<br>
@@ -390,7 +242,6 @@ public class DbTransaction {
     return true;
   }
 
-
   /**
    * Sets the alive-flag.
    *
@@ -409,13 +260,14 @@ public class DbTransaction {
     return alive;
   }
 
+
   /**
    * Creates the statement batch for this transaction.
    *
    * @return the batch, null if no batching
    */
   protected DbBatch createBatch() {
-    int batchSize = db.getBatchSize();
+    int batchSize = session.getBatchSize();
     return batchSize > 1 ? new DbBatch(this, batchSize) : null;
   }
 

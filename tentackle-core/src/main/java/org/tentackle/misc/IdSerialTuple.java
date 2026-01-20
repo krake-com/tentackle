@@ -19,6 +19,9 @@
 package org.tentackle.misc;
 
 import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.reflect.CanonicalConstructor;
+import org.tentackle.reflect.CanonicalGetter;
+import org.tentackle.trip.TripReferencable;
 
 import java.io.Serial;
 
@@ -28,7 +31,8 @@ import java.io.Serial;
  *
  * @author harald
  */
-public class IdSerialTuple implements Identifiable, SerialNumbered, Cloneable, Comparable<IdSerialTuple> {
+@TripReferencable(TripReferencable.NEVER)
+public class IdSerialTuple implements SerialNumbered, Cloneable, Comparable<IdSerialTuple> {
 
   @Serial
   private static final long serialVersionUID = 1L;
@@ -50,6 +54,7 @@ public class IdSerialTuple implements Identifiable, SerialNumbered, Cloneable, C
    * @param id the object id
    * @param serial the serial number
    */
+  @CanonicalConstructor
   public IdSerialTuple(long id, long serial) {
     this.id = id;
     this.serial = serial;
@@ -87,9 +92,16 @@ public class IdSerialTuple implements Identifiable, SerialNumbered, Cloneable, C
     }
   }
 
+  @CanonicalGetter(ordinal = 0)
   @Override
   public long getId() {
     return id;
+  }
+
+  @CanonicalGetter(ordinal = 1)
+  @Override
+  public long getSerial() {
+    return serial;
   }
 
   @Override
@@ -100,11 +112,6 @@ public class IdSerialTuple implements Identifiable, SerialNumbered, Cloneable, C
   @Override
   public String toGenericString() {
     return toString();
-  }
-
-  @Override
-  public long getSerial() {
-    return serial;
   }
 
   @Override

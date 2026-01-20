@@ -44,7 +44,7 @@ interface CryptorHolder {
       return ServiceFactory.createService(Cryptor.class);
     }
     catch (TentackleRuntimeException rx) {
-      // no application specific cryptor configured! That's ok, although not recommended.
+      // no application-specific cryptor configured! That's ok, although not recommended.
       return null;
     }
   }
@@ -65,7 +65,7 @@ interface CryptorHolder {
  *    public class MyCryptor extends Cryptor {
  *
  *      public MyCryptor() {
- *        ...
+ *        // whatever
  *      }
  *    }
  * </pre>
@@ -75,7 +75,7 @@ interface CryptorHolder {
  * <p>
  * Notice: the security of symmetric encryption algorithms in general depends on the confidentiality of the passphrase. Thus, the passphrase
  * should ideally not be part of the application, but provided via some external media, a mounted USB-stick, manual input, PGP keyring, whatever.
- * However, in practice this isn't always feasible...
+ * However, in practice this isn't always doable.
  */
 public class Cryptor implements Function<String, String> {
 
@@ -89,7 +89,7 @@ public class Cryptor implements Function<String, String> {
   }
 
   /**
-   * Gets the application specific cryptor singleton.<br>
+   * Gets the application-specific cryptor singleton.<br>
    * Throws a {@link TentackleRuntimeException} if no cryptor defined.
    *
    * @return the cryptor, never null
@@ -106,6 +106,17 @@ public class Cryptor implements Function<String, String> {
   private final SecretKey key;
   private final Cipher cipher;
 
+
+  /**
+   * Creates a cryptor.
+   *
+   * @param key the secret key
+   * @param cipher the cipher
+   */
+  public Cryptor(SecretKey key, Cipher cipher) {
+    this.key = key;
+    this.cipher = cipher;
+  }
 
   /**
    * Creates a cryptor.<br>
@@ -190,6 +201,24 @@ public class Cryptor implements Function<String, String> {
     }
     catch (InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
       throw new TentackleRuntimeException("encryption failed", e);
+    }
+  }
+
+  /**
+   * Decrypts the data.
+   *
+   * @param encryptedData the encrypted byte array
+   * @param offset        the offset in the encrypted byte array
+   * @param length        the number of bytes to decrypt
+   * @return the decrypted data
+   */
+  public byte[] decrypt(byte[] encryptedData, int offset, int length) {
+    try {
+      cipher.init(Cipher.DECRYPT_MODE, key);
+      return cipher.doFinal(encryptedData, offset, length);
+    }
+    catch (InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
+      throw new TentackleRuntimeException("decryption failed", e);
     }
   }
 
@@ -315,18 +344,18 @@ public class Cryptor implements Function<String, String> {
 
   /**
    * Derive the unencrypted URL.<br>
-   * The URL is considered to be encrypted, if started with a fake protocol unsupported by the application in the given context.
+   * The URL is considered to be encrypted if started with a fake protocol unsupported by the application in the given context.
    * The first word after =~ is taken as the encrypted URL. Example:
    * <pre>
-   *   https://somehost.somedomain.org/login?id=~GK+AG1QIjpBaD51HP/kw9HzpdKZLt2FrInFxd1jtPWvGzaw5lcLcHy5RB/q9yEKQ&#38;user=100
+   *   {@code https://somehost.somedomain.org/login?id=~GK+AG1QIjpBaD51HP/kw9HzpdKZLt2FrInFxd1jtPWvGzaw5lcLcHy5RB/q9yEKQ&user=100}
    * </pre>
    * Hidden gem... ;)
    *
    * @param url the probably encrypted URL
-   * @param protocols the fake protocols not used by the application, such as "http:" or "https:"
+   * @param protocols the fake protocols not used by the application, such as {@code "http:"} or {@code "https:"}
    * @return the decrypted URL or the unchanged url, if no encryption pattern found
    */
-  public String deriveURL(String url, String[] protocols) {
+  public String deriveURL(String url, String... protocols) {
     for (String protocol: protocols) {
       if (url.startsWith(protocol)) {
         int ndx = url.indexOf("=~");

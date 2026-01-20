@@ -87,28 +87,18 @@ For more options, see {\@link DbModelWurblet}.
 ]@
     Db db = getSession();
     if (db.isRemote())  {
-      try {
 @{to remoteOut}@
-  @(rmiReturnType)@ @(methodName)@(@(params)@) throws RemoteException;
+  @(rmiReturnType)@ @(methodName)@(@(params)@);
 @{to implOut}@
 
   \@Override
-  public @(rmiReturnType)@ @(methodName)@(@(params)@) throws RemoteException {
-    try {
-      return newInstance().@(methodName)@(@(iparms)@);
-    }
-    catch (RuntimeException e) {
-      throw createException(e);
-    }
+  public @(rmiReturnType)@ @(methodName)@(@(params)@) {
+    return newInstance().@(methodName)@(@(iparms)@);
   }
 @{to}@
-        @(className)@ obj = getRemoteDelegate().@(methodName)@(@(iparms)@);
-        db.applyTo(obj);
-        return obj;
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      @(className)@ obj = getRemoteDelegate().@(methodName)@(@(iparms)@);
+      db.applyTo(obj);
+      return obj;
     }
 @[
     } // end if remote

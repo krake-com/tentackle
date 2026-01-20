@@ -252,7 +252,9 @@ public class DTOWurblet extends AbstractJavaWurblet {
   protected boolean withHashCode;       // true if generate hashCode method
   protected String validate;            // != null if validate after construction (java code)
   protected boolean withNames;          // true if generate name constants
-  protected boolean nott;               // true if don't use any Tentackle-specific dependencies
+  protected boolean nott;               // if true, don't use any Tentackle-specific dependencies
+  protected boolean canonical;          // if true, add @Canonical... annotations
+  protected boolean noFinal;            // if true, generate serialization-friendly code (JEP-500)
   protected String superClass;          // != null if subclass: super classname
   protected String modelSourceName;     // the name of the file containing the model
   protected int modelSourceLine;        // the first line number of the model
@@ -267,43 +269,50 @@ public class DTOWurblet extends AbstractJavaWurblet {
     super.run();
 
     for (String arg: getContainer().getArgs()) {
-      if ("--from".equals(arg)) {
+      String lArg = arg.toLowerCase(Locale.ROOT);
+      if ("--from".equals(lArg)) {
         withFrom = true;
       }
-      else if ("--with".equals(arg)) {
+      else if ("--with".equals(lArg)) {
         withFrom = true;
         asWithers = true;
       }
-      else if ("--equals".equals(arg)) {
+      else if ("--equals".equals(lArg)) {
         if (isRecord()) {
           throw new WurbelException("--equals option not allowed for records");
         }
         withEquals = true;
       }
-      else if ("--hashCode".equals(arg)) {
+      else if ("--hashcode".equals(lArg)) {
         if (isRecord()) {
           throw new WurbelException("--hashCode option not allowed for records");
         }
         withHashCode = true;
       }
-      else if ("--names".equals(arg)) {
+      else if ("--names".equals(lArg)) {
         withNames = true;
       }
-      else if ("--nott".equals(arg)) {
+      else if ("--nott".equals(lArg)) {
         nott = true;
       }
-      else if (arg.startsWith("--builderPrefix=")) {
+      else if ("--canonical".equals(lArg)) {
+        canonical = true;
+      }
+      else if ("--nofinal".equals(lArg)) {
+        noFinal = true;
+      }
+      else if (lArg.startsWith("--builderprefix=")) {
         builderPrefix = arg.substring(16);
         withBuilder = true;
       }
-      else if (arg.startsWith("--builder")) {
+      else if (lArg.startsWith("--builder")) {
         withBuilder = true;
         if (arg.length() > 10 && arg.charAt(9) == '[' && arg.charAt(10) == '@' &&
             arg.charAt(arg.length() - 1) == ']') {
           builderAnnotation = arg.substring(10, arg.length() - 1);
         }
       }
-      else if (arg.startsWith("--validate")) {
+      else if (lArg.startsWith("--validate")) {
         if (isRecord()) {
           throw new WurbelException("--validate option not allowed for records");
         }
@@ -317,6 +326,10 @@ public class DTOWurblet extends AbstractJavaWurblet {
       else if (filename == null && !arg.startsWith("--")) {
         filename = arg;
       }
+    }
+
+    if (nott && canonical) {
+      throw new WurbelException("--nott cannot be used with --canonical");
     }
 
     properties = new ArrayList<>();
