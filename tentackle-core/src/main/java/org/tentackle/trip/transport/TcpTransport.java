@@ -132,10 +132,21 @@ public class TcpTransport extends AbstractTransport {
    */
   protected ServerSocket createServerSocket() throws IOException {
     int backlog = getUriPars().getOrDefault("backlog", 50);
-    String host = getUri().getHost();
-    return host == null || host.isBlank() ?
-             getServerSocketFactory().createServerSocket(getUri().getPort(), backlog) :
-             getServerSocketFactory().createServerSocket(getUri().getPort(), backlog, InetAddress.getByName(host));
+    URI uri = getUri();
+    String host = uri.getHost();
+    int port = uri.getPort();
+    if (port < 0 || port > 0xffff) {
+      throw new TripRuntimeException("invalid port number " + port + " in URI " + uri);
+    }
+    if ("0".equals(host)) { // use 0.0.0.0 to bind on all IPV4 interfaces, 0 binds also IPV6
+      return getServerSocketFactory().createServerSocket(port, backlog);
+    }
+    else if (host != null) {
+      return getServerSocketFactory().createServerSocket(port, backlog, InetAddress.getByName(host));
+    }
+    else {
+      throw new TripRuntimeException("missing host in URI " + uri);
+    }
   }
 
 }

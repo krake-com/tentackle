@@ -21,7 +21,6 @@ package org.tentackle.io;
 import org.testng.annotations.Test;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Map;
 
 import static org.testng.Assert.assertEquals;
@@ -30,9 +29,9 @@ import static org.testng.Assert.assertEquals;
 public class UriHelperTest {
 
   @Test
-  void testIntegerParameters() throws URISyntaxException {
+  void testIntegerParameters() {
     Map<String, Integer> parameters = UriHelper.getQueryParameters(
-      new URI("trips://localhost:8080?min=5&max=10&ini=4&fail&text=ignored").getQuery(), Integer::parseInt);
+      URI.create("trips://localhost:8080?min=5&max=10&ini=4&fail&text=ignored").getQuery(), Integer::parseInt);
     assertEquals(parameters.size(), 3);
     assertEquals(parameters.get("min"), 5);
     assertEquals(parameters.get("max"), 10);

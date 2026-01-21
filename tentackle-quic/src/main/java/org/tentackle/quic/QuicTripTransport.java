@@ -36,6 +36,8 @@ import org.tentackle.trip.transport.AbstractTransport;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.URI;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -77,14 +79,17 @@ public class QuicTripTransport extends AbstractTransport {
     log.logWarning(true);
     log.logInfo(true);
 
-    Map<String, String> queryParameters = UriHelper.getQueryParameters(getUri().getQuery(), String::valueOf);
-    String alpnId = queryParameters.getOrDefault("alpnid", getUri().getScheme());
+    URI uri = getUri();
+
+    Map<String, String> queryParameters = UriHelper.getQueryParameters(uri.getQuery(), String::valueOf);
+    String alpnId = queryParameters.getOrDefault("alpnid", uri.getScheme());
     String keystoreType = queryParameters.get("kstype");    // keystore instance name
     String keystorePassword = queryParameters.getOrDefault("kspass", System.getProperty("javax.net.ssl.keyStorePassword"));
     String keystoreFile = queryParameters.getOrDefault("ksfile", System.getProperty("javax.net.ssl.keyStore"));
     String certificateAlias = queryParameters.get("ksalias");
     if (keystorePassword == null || keystoreFile == null || certificateAlias == null) {
-      throw new TripRuntimeException("keystore-password, keystore-file and certificate-alias must be specified");
+      throw new TripRuntimeException(
+        "keystore-password (kspass), keystore-file (ksfile) and certificate-alias (ksalias) must be specified");
     }
 
     ServerConnectionConfig serverConnectionConfig =
@@ -97,10 +102,23 @@ public class QuicTripTransport extends AbstractTransport {
       keyStore.load(new FileInputStream(keystoreFile), keystorePassword.toCharArray());
       ServerConnector.Builder builder =
         ServerConnector.builder()
-                       .withPort(getUri().getPort())
                        .withConfiguration(serverConnectionConfig)
                        .withKeyStore(keyStore, certificateAlias, keystorePassword.toCharArray())
                        .withLogger(log);
+      String host = uri.getHost();
+      int port = uri.getPort();
+      if (port < 0 || port > 0xffff) {
+        throw new TripRuntimeException("invalid port number " + port + " in URI " + uri);
+      }
+      if ("0".equals(host)) { // use 0.0.0.0 to bind on all IPV4 interfaces, 0 binds also IPV6
+        builder.withPort(port);
+      }
+      else if (host != null) {
+        builder.withSocket(new DatagramSocket(port, InetAddress.getByName(host)));
+      }
+      else {
+        throw new TripRuntimeException("missing host in URI " + uri);
+      }
       ServerConnector serverConnector = builder.build();
       serverConnector.registerApplicationProtocol(alpnId, new QuicProtocolConnectionFactory(this));
       serverConnector.start();
