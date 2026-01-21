@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.misc;
 
 import java.io.Serial;
@@ -26,13 +25,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
-
 /**
  * A map of {@link Identifiable}s.
  * <p>
  * By default, the map uses a hashing key composed by the class and object id.
- * The first invocation of one of the methods getAllSorted changes the
- * map to treemap (which is a bit slower).
+ * The first invocation of one of the methods {@link #getAllSorted()} or {@link #getAllSorted(Class)}
+ * changes the map to treemap (which is a bit slower).
  *
  * @param <T> the identifiable type
  * @author harald
@@ -42,27 +40,26 @@ public class IdentifiableMap<T extends Identifiable> implements Serializable {
   @Serial
   private static final long serialVersionUID = 1L;
 
-
   @SuppressWarnings("serial")
-  private final Map<IdentifiableKey<T>, T> objectMap;  // the object map (fast)
+  private Map<IdentifiableKey<T>, T> objectMap;         // the object map (fast)
   @SuppressWarnings("serial")
-  private Map<IdentifiableKey<T>, T> sortedObjectMap;  // the sorted object map (slow)
-
+  private Map<IdentifiableKey<T>, T> sortedObjectMap;   // the sorted object map (slow)
 
 
   /**
    * Creates an {@link Identifiable} map.
    */
   public IdentifiableMap() {
-    objectMap = new LinkedHashMap<>();
+    clear();
   }
 
 
   /**
    * Clears the map.
    */
-  public void clear() {
-    objectMap.clear();
+  public synchronized void clear() {
+    // creating new maps is faster than clear() for large maps
+    objectMap = new LinkedHashMap<>();
     sortedObjectMap = null;
   }
 
@@ -75,7 +72,6 @@ public class IdentifiableMap<T extends Identifiable> implements Serializable {
     this();
     add(object);
   }
-
 
   /**
    * Adds an object to the map.
@@ -94,7 +90,7 @@ public class IdentifiableMap<T extends Identifiable> implements Serializable {
   /**
    * Adds a collection to the map.
    * <p>
-   * Objects already in the map are replaced, but not counted.
+   * Objects already in the map are replaced but not counted.
    *
    * @param objects the collection
    * @return the number of objects added
@@ -109,15 +105,13 @@ public class IdentifiableMap<T extends Identifiable> implements Serializable {
     return count;
   }
 
-
-
   /**
    * Removes an object from the map.
    *
    * @param <P> the class type
    * @param clazz the object class
    * @param id the object ID
-   * @return the removed object, null if not in map
+   * @return the removed object, null if not in the map
    */
   @SuppressWarnings("unchecked")
   public <P extends T> P remove(Class<P> clazz, long id) {
@@ -128,12 +122,11 @@ public class IdentifiableMap<T extends Identifiable> implements Serializable {
     return (P) objectMap.remove(key);
   }
 
-
   /**
    * Removes an object from the map.
    *
    * @param object the object to remove
-   * @return the removed object, null if not in map
+   * @return the removed object, null if not in the map
    */
   public T remove(T object) {
     IdentifiableKey<T> key = new IdentifiableKey<>(object);
@@ -142,7 +135,6 @@ public class IdentifiableMap<T extends Identifiable> implements Serializable {
     }
     return objectMap.remove(key);
   }
-
 
   /**
    * Removes a collection from the map.
@@ -162,7 +154,6 @@ public class IdentifiableMap<T extends Identifiable> implements Serializable {
     return count;
   }
 
-
   /**
    * Retrieves an object from the map.
    *
@@ -176,9 +167,8 @@ public class IdentifiableMap<T extends Identifiable> implements Serializable {
     return (P) objectMap.get(new IdentifiableKey<>(clazz, id));
   }
 
-
   /**
-   * Gets all objects in map.
+   * Gets all objects in the map.
    * <p>
    * The returned objects are in the order they were appended.
    *
@@ -188,7 +178,6 @@ public class IdentifiableMap<T extends Identifiable> implements Serializable {
     return objectMap.values();
   }
 
-
   /**
    * Gets all objects sorted by class + ID.
    *
@@ -197,7 +186,6 @@ public class IdentifiableMap<T extends Identifiable> implements Serializable {
   public Collection<T> getAllSorted() {
     return getSortedMap().values();
   }
-
 
   /**
    * Gets all objects for a given class.
@@ -212,7 +200,6 @@ public class IdentifiableMap<T extends Identifiable> implements Serializable {
             subMap(new IdentifiableKey<>(clazz, Long.MIN_VALUE),
                    new IdentifiableKey<>(clazz, Long.MAX_VALUE)).values();
   }
-
 
 
   /**

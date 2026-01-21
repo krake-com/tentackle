@@ -46,7 +46,7 @@ public class TimeKeeper implements Cloneable, Comparable<TimeKeeper> {
   private static final String INVALID_DURATION_TEXT = "?";
 
 
-  private final long start;       // starting time in nanos
+  private long start;             // starting time in nanos
   private long end;               // ending time in nanos
   private boolean durationValid;  // true if end nanos valid
 
@@ -55,7 +55,7 @@ public class TimeKeeper implements Cloneable, Comparable<TimeKeeper> {
    * Creates a duration.
    * <p>
    * The initial starting time is retrieved from {@link System#nanoTime()}.<br>
-   * The duration is invalid as long as {@link #zero()} or {@link #end()} is invoked.
+   * The duration is invalid as long as {@link #end()} is invoked.
    *
    * @see #isValid()
    */
@@ -90,13 +90,14 @@ public class TimeKeeper implements Cloneable, Comparable<TimeKeeper> {
 
 
   /**
-   * Sets the duration to zero.
+   * Resets the duration.<br>
+   * The duration is invalid as long as {@link #end()} is invoked.
    *
    * @return the duration itself (for fluent style)
    */
-  public TimeKeeper zero() {
-    end = start;
-    durationValid = true;
+  public TimeKeeper reset() {
+    end = start = System.nanoTime();
+    durationValid = false;
     return this;
   }
 
@@ -117,7 +118,7 @@ public class TimeKeeper implements Cloneable, Comparable<TimeKeeper> {
   /**
    * Returns whether the duration is valid.
    *
-   * @return true if {@link #zero()} or {@link #end()} invoked at least once
+   * @return true if {@link #end()} invoked at least once
    */
   public boolean isValid() {
     return durationValid;

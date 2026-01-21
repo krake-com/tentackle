@@ -18,6 +18,7 @@
 
 package org.tentackle.misc;
 
+import org.tentackle.common.LocaleProvider;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.misc.time.AddShortcut;
@@ -33,6 +34,7 @@ import org.tentackle.misc.time.SmartDateTimeParser;
 import org.tentackle.misc.time.ZoneFilter;
 import org.tentackle.misc.time.ZoneShortcut;
 
+import java.text.DecimalFormatSymbols;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -252,7 +254,7 @@ public class DateTimeUtilities {
 
 
   /**
-   * Creates the date- and time utilities.
+   * Creates the date- and time-utilities.
    */
   public DateTimeUtilities() {
     // see -Xlint:missing-explicit-ctor since Java 16
@@ -286,10 +288,10 @@ public class DateTimeUtilities {
   }
 
   /**
-   * Converts a string to a temporal value of given type.
+   * Converts a string to a temporal value of the given type.
    *
    * @param temporalQuery the formatter query
-   * @param truncate the truncate method reference, null if type does not support it
+   * @param truncate the truncate method reference, null if the type does not support it
    * @param currentValueSupplier the supplier for the current/initial/default value, usually a reference to a method such as {@code ::now}
    * @param formatter the formatter
    * @param pattern the formatting pattern string
@@ -310,7 +312,7 @@ public class DateTimeUtilities {
 
   /**
    * Creates a zone offset from a string.<br>
-   * Returns the default offset, if the string is null or empty.
+   * Returns the default offset if the string is null or empty.
    * <p>
    * Throws {@link DateTimeException} if parsing failed.
    *
@@ -319,9 +321,11 @@ public class DateTimeUtilities {
    */
   public ZoneOffset parseOffset(String text) {
     if (text != null && !text.isEmpty()) {
+      // localized minus sign (swedish, for example)
+      char minusSign = DecimalFormatSymbols.getInstance(LocaleProvider.getInstance().getLocale()).getMinusSign();
       // make some adjustments for lazy input
       char c = text.charAt(0);
-      if (c == '-' || c == '+') {
+      if (c == '-' || c == minusSign || c == '+') {
         int colonNdx = text.indexOf(':');
         if (colonNdx == 2) {
           // leading zero missing (+2:30)
@@ -353,7 +357,7 @@ public class DateTimeUtilities {
 
   /**
    * Creates a timezone from a string.<br>
-   * Returns the default zone, if the string is null or empty.
+   * Returns the default zone if the string is null or empty.
    * <p>
    * Throws {@link DateTimeException} if parsing failed.
    *
@@ -381,7 +385,7 @@ public class DateTimeUtilities {
 
 
   /**
-   * Gets the current time/date of the same type as given instance.<br>
+   * Gets the current time/date of the same type as the given instance.<br>
    * Provides an implementation of the missing method {@link Temporal}#now(),
    * if the concrete temporal type is unknown.
    * <p>

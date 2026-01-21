@@ -35,10 +35,10 @@ import java.util.Arrays;
  * the transactional limits of blobs, because blobs usually are only valid within a transaction.
  * {@code Binary} instead provides a blob-like interface while remaining valid outside transactions.
  * <p>
- * Furthermore, binaries can be frozen, i.e. made immutable.
+ * Furthermore, binaries can be frozen, i.e., made immutable.
  * <p>
  * Keep in mind that the wrapped object is serialized when the Binary is created or setObject is invoked.
- * Any subsequent changes to the object are not reflected in the internal byte array.
+ * Any further changes to the object are not reflected in the internal byte array.
  *
  * @param <T> the serializable type
  */
@@ -48,7 +48,7 @@ public class Binary<T extends Serializable> implements Serializable, Cloneable, 
   private static final long serialVersionUID = 1L;
 
   /**
-   * initial default buffersize when reading from the database.
+   * initial default buffer size when reading from the database.
    */
   private static final int INITIAL_SIZE = 1024;
 
@@ -117,7 +117,8 @@ public class Binary<T extends Serializable> implements Serializable, Cloneable, 
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     Binary<?> binary = (Binary<?>) o;
-    return Arrays.equals(data, binary.data);
+    if (length != binary.length) return false;
+    return Arrays.equals(data, 0, length - 1, binary.data, 0, length - 1);
   }
 
   @Override
@@ -134,11 +135,11 @@ public class Binary<T extends Serializable> implements Serializable, Cloneable, 
    * Notice that stream.available() cannot be used according to sun's spec.
    * The stream is closed after creating the Binary.
    *
-   * @param stream the InputStream (associated to the database) to read from, may be null
+   * @param stream the InputStream (associated with the database) to read from may be null
    * @param bufSize the initial buffer size, 0 = default size (bufSize)
    * @param frozen true if binary is frozen
    *
-   * @return the new Binary or null if stream is null or empty.
+   * @return the new Binary or null if the stream is null or empty.
    * @throws java.io.IOException if reading from the input stream failed
    * @param <T> the serializable type
    */
@@ -182,9 +183,20 @@ public class Binary<T extends Serializable> implements Serializable, Cloneable, 
   }
 
   /**
+   * Gets the internal byte array of this {@code Binary}.<br>
+   * Only provided for serialization purposes.
+   * Don't mess around with it!
+   *
+   * @return the internal byte array
+   */
+  public byte[] getData() {
+    return data;
+  }
+
+  /**
    * Gets the stream to store the {@code Binary} in the database.
    *
-   * @return the stream associated to the database.
+   * @return the stream associated with the database.
    */
   public InputStream getInputStream() {
     return new ByteArrayInputStream(data);
@@ -195,10 +207,10 @@ public class Binary<T extends Serializable> implements Serializable, Cloneable, 
   /**
    * Retrieves the object encapsulated by the {@code Binary}.
    *
-   * @return the de-serialized object (retrieved from the db), or null if NULL-value
+   * @return the deserialized object (retrieved from the db), or null if NULL-value
    *
    * @throws java.io.IOException if reading the object failed
-   * @throws ClassNotFoundException if class of a serialized object cannot be found.
+   * @throws ClassNotFoundException if the class of a serialized object cannot be found.
    */
   @SuppressWarnings("unchecked")
   public T getObject() throws IOException, ClassNotFoundException {
@@ -215,7 +227,7 @@ public class Binary<T extends Serializable> implements Serializable, Cloneable, 
    * Sets the serializable.
    *
    * @param object the serializable object.
-   * @throws IOException if object could not be serialized
+   * @throws IOException if the object could not be serialized
    */
   public void setObject(T object) throws IOException {
     assertNotfrozen();
