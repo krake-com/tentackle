@@ -71,6 +71,12 @@ public class DefaultRegistry implements Registry {
 
   @Override
   public synchronized <T extends Remote> RemoteDelegate<T> register(T remoteObject) {
+    if (remoteObject == null) {
+      throw new TripRuntimeException("cannot register null object");
+    }
+    if (remoteObject.getClass().isInterface()) {
+      throw new TripRuntimeException("interfaces are not allowed: " + remoteObject.getClass());
+    }
     UUID id = reverseTargetMap.get(remoteObject);
     if (id != null) {
       String name = reverseNameMap.get(id);
