@@ -19,7 +19,6 @@
 package org.tentackle.trip.transport;
 
 import org.tentackle.io.CompressedInputStream;
-import org.tentackle.io.CompressedOutputStream;
 import org.tentackle.trip.TransportService;
 
 import java.io.InputStream;
@@ -53,7 +52,7 @@ public class CompressedEncryptedTransport extends EncryptedTransport {
 
   @Override
   protected OutputStream createEncryptingOutputStream(OutputStream outputStream) {
-    return new CompressedOutputStream(super.createEncryptingOutputStream(outputStream));
+    return new FastCompressedOutputStream(super.createEncryptingOutputStream(outputStream));
   }
 
   @Override

@@ -19,7 +19,6 @@
 package org.tentackle.trip.transport;
 
 import org.tentackle.io.CompressedInputStream;
-import org.tentackle.io.CompressedOutputStream;
 import org.tentackle.trip.Dictionary;
 import org.tentackle.trip.TransportService;
 import org.tentackle.trip.TripFactory;
@@ -80,8 +79,8 @@ public class CompressedTransport extends TcpTransport {
    * @return the compressed output stream
    */
   protected OutputStream createCompressedOutputStream(OutputStream outputStream) {
-    return new CompressedOutputStream(outputStream,
-                                      getUriPars().getOrDefault("mincompress", 1024));
+    return new FastCompressedOutputStream(outputStream,
+                                          getUriPars().getOrDefault("mincompress", 1024));
   }
 
   /**
