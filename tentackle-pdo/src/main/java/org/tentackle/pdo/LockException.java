@@ -39,6 +39,7 @@ public final class LockException extends PersistenceException implements Loggabl
   @Serial
   private static final long serialVersionUID = 1L;
 
+  @SuppressWarnings("serial")
   private final TokenLockInfo tokenLockInfo;
   private final String contextName;
 
