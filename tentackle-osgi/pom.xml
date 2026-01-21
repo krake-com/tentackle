@@ -14,7 +14,10 @@
   </parent>
 
   <artifactId>tentackle-parent-osgi</artifactId>
-  <!-- OSGI semantic versioning is restricted to x.y.z[.timestamp], i.e. leading java LTS version (11./12./...) must be omitted -->
+  <!--
+   OSGI semantic versioning is restricted to x.y.z[.timestamp].
+   Thus, the versioning is reduced to LTS.a.b, where a and b are not related to the original versions.
+   -->
   <version>25.0.0</version>
   <packaging>pom</packaging>
 
