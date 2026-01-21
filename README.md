@@ -32,7 +32,7 @@ Generate your project via the Tentackle Maven archetype:
 mvn archetype:generate \
     -DarchetypeGroupId=org.tentackle \
     -DarchetypeArtifactId=tentackle-project-archetype \
-    -DarchetypeVersion=25.17.0.0-SNAPSHOT
+    -DarchetypeVersion=25.17.0.0
 ```
 When all dependencies have been pulled from [Maven Central](https://search.maven.org/search?q=org.tentackle),
 you will be prompted for:
@@ -102,7 +102,7 @@ Take a look at the other logs in `jlink/server/target/jlink/logs` and
 Notice: on Windows, the scripts are named `server.cmd`, `daemon.cmd` and `client.cmd`.
 
 ## Explore the code with your favorite IDE
-You can use any Java IDE that supports at least Java 21, JPMS (Jigsaw) and Maven. 
+You can use any Java IDE that supports at least Java 25, JPMS (Jigsaw) and Maven. 
 There are no special plugins necessary. However, not all IDEs provide support
 for custom code folding regions, which are pretty nice to automatically collapse generated code.
 [IntelliJ](https://www.jetbrains.com/idea/) and [Netbeans](https://netbeans.apache.org/) work fine out of the box.
