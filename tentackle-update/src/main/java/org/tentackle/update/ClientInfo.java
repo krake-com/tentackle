@@ -34,8 +34,8 @@ public class ClientInfo {
   @CanonicalField(ordinal = 0) private final String application;
   @CanonicalField(ordinal = 1) private final String version;
   @CanonicalField(ordinal = 2) private final String platform;
-  @CanonicalField(ordinal = 3)private final String architecture;
-  @CanonicalField(ordinal = 4)private final InstallationType installationType;
+  @CanonicalField(ordinal = 3) private final String architecture;
+  @CanonicalField(ordinal = 4) private final InstallationType installationType;
 
   /**
    * Creates a client application-info.
