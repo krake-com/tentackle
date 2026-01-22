@@ -51,14 +51,14 @@ public class QuicTripConnectionPool extends AbstractConnectionPool {
     super(transport, dictionary);
     this.transport = transport;
     URI uri = transport.getUri();
+    if (uri.getPort() <= 0) {
+      throw new IllegalArgumentException("QUIC port number must be > 0, got " + uri.getPort() + " from URI " + uri);
+    }
     Map<String, String> queryParameters = UriHelper.getQueryParameters(uri.getQuery(), String::valueOf);
     String scheme = uri.getScheme();    // default alpnId is the same as the scheme
     String alpnId = queryParameters.getOrDefault("alpnid", scheme);
-    String quicScheme = queryParameters.getOrDefault("quicscheme", "http");
-    // switch to http(s) to open the connection
-    uri = URI.create(quicScheme + uri.toString().substring(scheme.length()));
     QuicClientConnection.Builder builder = QuicClientConnection.newBuilder()
-                                                               .uri(uri)
+                                                               .uri(uri)  // only host and port are used
                                                                .applicationProtocol(alpnId);
     if (!Boolean.parseBoolean(queryParameters.getOrDefault("certcheck", "false"))) {
       builder.noServerCertificateCheck();
