@@ -19,6 +19,8 @@
 package org.tentackle.update;
 
 import org.tentackle.common.StringHelper;
+import org.tentackle.reflect.CanonicalConstructor;
+import org.tentackle.reflect.CanonicalField;
 import org.tentackle.trip.TripReferencable;
 
 import java.util.Objects;
@@ -29,11 +31,11 @@ import java.util.Objects;
 @TripReferencable(TripReferencable.NEVER)
 public class ClientInfo {
 
-  private final String application;
-  private final String version;
-  private final String platform;
-  private final String architecture;
-  private final InstallationType installationType;
+  @CanonicalField(ordinal = 0) private final String application;
+  @CanonicalField(ordinal = 1) private final String version;
+  @CanonicalField(ordinal = 2) private final String platform;
+  @CanonicalField(ordinal = 3)private final String architecture;
+  @CanonicalField(ordinal = 4)private final InstallationType installationType;
 
   /**
    * Creates a client application-info.
@@ -43,6 +45,7 @@ public class ClientInfo {
    * @param platform the operating system
    * @param architecture the hardware architecture
    */
+  @CanonicalConstructor
   public ClientInfo(String application, String version, String platform, String architecture, InstallationType installationType) {
     this.application = Objects.requireNonNull(application);
     this.version = Objects.requireNonNull(version);
