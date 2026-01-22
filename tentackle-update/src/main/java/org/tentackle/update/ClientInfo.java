@@ -29,7 +29,7 @@ import java.util.Objects;
  * Client application info sent to the update server.
  */
 @TripReferencable(TripReferencable.NEVER)
-public class ClientInfo {
+public final class ClientInfo {
 
   @CanonicalField(ordinal = 0) private final String application;
   @CanonicalField(ordinal = 1) private final String version;
@@ -44,6 +44,7 @@ public class ClientInfo {
    * @param version the client application version
    * @param platform the operating system
    * @param architecture the hardware architecture
+   * @param installationType the installation type
    */
   @CanonicalConstructor
   public ClientInfo(String application, String version, String platform, String architecture, InstallationType installationType) {
