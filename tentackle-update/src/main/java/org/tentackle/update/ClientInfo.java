@@ -19,48 +19,29 @@
 package org.tentackle.update;
 
 import org.tentackle.common.StringHelper;
-import org.tentackle.reflect.CanonicalConstructor;
-import org.tentackle.reflect.CanonicalField;
+import org.tentackle.trip.TripDeduplicatable;
 import org.tentackle.trip.TripReferencable;
-
-import java.util.Objects;
 
 /**
  * Client application info sent to the update server.
+ *
+ * @param application  the client application name
+ * @param version      the client application version
+ * @param platform     the operating system
+ * @param architecture the hardware architecture
+ * @param installationType the installation type
  */
 @TripReferencable(TripReferencable.NEVER)
-public final class ClientInfo {
-
-  @CanonicalField(ordinal = 0) private final String application;
-  @CanonicalField(ordinal = 1) private final String version;
-  @CanonicalField(ordinal = 2) private final String platform;
-  @CanonicalField(ordinal = 3) private final String architecture;
-  @CanonicalField(ordinal = 4) private final InstallationType installationType;
-
-  /**
-   * Creates a client application-info.
-   *
-   * @param application the client application name
-   * @param version the client application version
-   * @param platform the operating system
-   * @param architecture the hardware architecture
-   * @param installationType the installation type
-   */
-  @CanonicalConstructor
-  public ClientInfo(String application, String version, String platform, String architecture, InstallationType installationType) {
-    this.application = Objects.requireNonNull(application);
-    this.version = Objects.requireNonNull(version);
-    this.platform = Objects.requireNonNull(platform);
-    this.architecture = Objects.requireNonNull(architecture);
-    this.installationType = Objects.requireNonNull(installationType);
-  }
+@TripDeduplicatable(TripDeduplicatable.NEVER)
+public record ClientInfo(String application, String version, String platform,
+                         String architecture, InstallationType installationType) {
 
   /**
    * Creates a client application-info.<br>
    * Platform and architecture are determined from the system properties.
    *
    * @param application the client application name
-   * @param version the client application version
+   * @param version     the client application version
    */
   public ClientInfo(String application, String version, InstallationType installationType) {
     this(application, version, StringHelper.getPlatform(), StringHelper.getArchitecture(), installationType);
@@ -71,7 +52,8 @@ public final class ClientInfo {
    *
    * @return the client application
    */
-  public String getApplication() {
+  @Override
+  public String application() {
     return application;
   }
 
@@ -80,7 +62,8 @@ public final class ClientInfo {
    *
    * @return the version the client application is currently running
    */
-  public String getVersion() {
+  @Override
+  public String version() {
     return version;
   }
 
@@ -89,7 +72,8 @@ public final class ClientInfo {
    *
    * @return the platform
    */
-  public String getPlatform() {
+  @Override
+  public String platform() {
     return platform;
   }
 
@@ -98,7 +82,8 @@ public final class ClientInfo {
    *
    * @return the architecture
    */
-  public String getArchitecture() {
+  @Override
+  public String architecture() {
     return architecture;
   }
 
@@ -107,7 +92,8 @@ public final class ClientInfo {
    *
    * @return the installation type
    */
-  public InstallationType getInstallationType() {
+  @Override
+  public InstallationType installationType() {
     return installationType;
   }
 

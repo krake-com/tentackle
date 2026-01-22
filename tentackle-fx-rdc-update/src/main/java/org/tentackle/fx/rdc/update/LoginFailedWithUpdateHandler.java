@@ -96,7 +96,7 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
             ClientInfo clientInfo = new ClientInfo(getApplication().getName(), getApplication().getVersion(), installationType);
             UpdateInfo updateInfo = service.getUpdateInfo(clientInfo);
             LOGGER.info("application update {0} -> {1}", clientInfo, updateInfo);
-            if (!updateInfo.getVersion().equals(clientInfo.getVersion())) {
+            if (!updateInfo.getVersion().equals(clientInfo.version())) {
               return createUpdateRunnable(clientInfo, updateInfo, installationType);
             }
             // else: the version is okay, but TLS handshake didn't work -> proceed with standard impl below
@@ -138,7 +138,7 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
       BlockingHolder<Boolean> answer = new BlockingHolder<>();    // wait for result!
       Platform.runLater(() -> showUpdateDialog(
         getView(), MessageFormat.format(UpdateFxRdcBundle.getString("{0}_{1}_OUTDATED_INSTALL_{2}"),
-                                        clientInfo.getApplication(), clientInfo.getVersion(), updateInfo.getVersion()),
+                                        clientInfo.application(), clientInfo.version(), updateInfo.getVersion()),
         answer));
       if (answer.get()) {
         update(updateInfo, installationType);

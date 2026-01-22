@@ -129,7 +129,7 @@ public abstract class AbstractUpdateServiceImpl implements UpdateService {
    * @return the executor name
    */
   protected String createUpdateExecutor(ClientInfo clientInfo) {
-    return clientInfo.getPlatform().contains("win") ? "update.cmd" : "update.sh";
+    return clientInfo.platform().contains("win") ? "update.cmd" : "update.sh";
   }
 
   /**
@@ -173,9 +173,9 @@ public abstract class AbstractUpdateServiceImpl implements UpdateService {
     buf.append(getUpdateURL())
        .append(getArtifactName())
        .append('-').append(getVersion())
-       .append('-').append(clientInfo.getPlatform())
-       .append('-').append(clientInfo.getArchitecture());
-    if (clientInfo.getInstallationType() == InstallationType.JPACKAGE) {
+       .append('-').append(clientInfo.platform())
+       .append('-').append(clientInfo.architecture());
+    if (clientInfo.installationType() == InstallationType.JPACKAGE) {
       buf.append("-pkg");
     }
     return buf.toString();
