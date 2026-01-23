@@ -243,7 +243,7 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
    */
   protected void update(UpdateInfo updateInfo, InstallationType installationType) {
     File updateDir = createUpdateDirectory(installationType);
-    LOGGER.info("using update directory {0}", updateDir);
+    LOGGER.info("using update directory: {0}", updateDir);
 
     File zipFile = ClientUpdateUtilities.getInstance().downloadZip(updateInfo, updateDir,
                    progress -> getApplication().showApplicationStatus(UpdateFxRdcBundle.getString("DOWNLOADING"), progress));
