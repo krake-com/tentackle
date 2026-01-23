@@ -35,6 +35,8 @@
     <cert.file>${symbol_dollar}{project.parent.basedir}/server/target/server.cer</cert.file>
     <cert.alias>server</cert.alias>
     <dbService>trips://localhost:8888/\${application}Server</dbService>
+    <updateService>tripe://localhost:8890/\${application}Update</updateService>
+    <daemon.password>daemon</daemon.password>
   </properties>
 
   <build>
@@ -77,6 +79,11 @@
               <input>${symbol_dollar}{cert.password}</input>
               <converter>@org.tentackle.common.Cryptor</converter>
               <property>encryptedCertPasswd</property>
+            </propertyDescriptor>
+            <propertyDescriptor>
+              <input>${symbol_dollar}{daemon.password}</input>
+              <converter>@org.tentackle.common.Cryptor</converter>
+              <property>encryptedDaemonPasswd</property>
             </propertyDescriptor>
           </propertyDescriptors>
         </configuration>
