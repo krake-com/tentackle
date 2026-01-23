@@ -94,7 +94,7 @@ public class QuicTripTransport extends AbstractTransport {
 
     ServerConnectionConfig serverConnectionConfig =
       ServerConnectionConfig.builder()
-                            .maxOpenPeerInitiatedBidirectionalStreams(getUriPars().getOrDefault("maxstreams", 12))
+                            .maxOpenPeerInitiatedBidirectionalStreams(getUriPars().getOrDefault("maxstreams", 128))
                             .build();
 
     try {
