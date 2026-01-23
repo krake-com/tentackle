@@ -20,8 +20,7 @@ package org.tentackle.update;
 
 import org.tentackle.common.Cryptor;
 import org.tentackle.common.TentackleRuntimeException;
-import org.tentackle.reflect.CanonicalConstructor;
-import org.tentackle.reflect.CanonicalField;
+import org.tentackle.trip.TripDeduplicatable;
 import org.tentackle.trip.TripReferencable;
 
 import java.net.MalformedURLException;
@@ -31,17 +30,21 @@ import java.net.URL;
 
 /**
  * Update info sent back to the client.
+ * <p>
+ * Notice: no more encrypted since there is now the "tripe" protocol
+ * that should be used instead.
+ *
+ * @param version the new application version
+ * @param urlStr the string representation of the ZIP-file's URL
+ * @param checksum the checksum hash to verify the downloaded file
+ * @param size the size of the ZIP file
+ * @param updateExecutor the filename to execute to perform the update
+ *
+ * @see ClientInfo
  */
 @TripReferencable(TripReferencable.NEVER)
-public final class UpdateInfo {
-
-  // transfer as strings because it may be encrypted
-  @CanonicalField(ordinal = 0) private final String version;
-  @CanonicalField(ordinal = 1) private final String urlStr;
-  @CanonicalField(ordinal = 2) private final String checksum;
-  @CanonicalField(ordinal = 3) private final String sizeStr;
-  @CanonicalField(ordinal = 4) private final String updateExecutor;
-  @CanonicalField(ordinal = 5) private final boolean encrypted;
+@TripDeduplicatable(TripDeduplicatable.NEVER)
+public record UpdateInfo(String version, String urlStr, String checksum, long size, String updateExecutor) {
 
   /**
    * Creates the update info.<br>
@@ -54,44 +57,7 @@ public final class UpdateInfo {
    * @param updateExecutor the filename to execute to perform the update
    */
   public UpdateInfo(String version, URL url, String checksum, long size, String updateExecutor) {
-    Cryptor cryptor = Cryptor.getInstance();
-    if (cryptor != null) {
-      this.version = cryptor.encrypt64(version);
-      this.urlStr = cryptor.encrypt64(url.toExternalForm());
-      this.checksum = cryptor.encrypt64(checksum);
-      this.sizeStr = cryptor.encrypt64(Long.toString(size));
-      this.updateExecutor = cryptor.encrypt64(updateExecutor);
-      this.encrypted = true;
-    }
-    else {
-      this.version = version;
-      this.urlStr = url.toExternalForm();
-      this.checksum = checksum;
-      this.sizeStr = Long.toString(size);
-      this.updateExecutor = updateExecutor;
-      this.encrypted = false;
-    }
-  }
-
-  // provided for TRIP only
-  @CanonicalConstructor
-  private UpdateInfo(String version, String urlStr, String checksum, String sizeStr, String updateExecutor, boolean encrypted) {
-    this.version = version;
-    this.urlStr = urlStr;
-    this.checksum = checksum;
-    this.sizeStr = sizeStr;
-    this.updateExecutor = updateExecutor;
-    this.encrypted = encrypted;
-  }
-
-  /**
-   * Gets the new application version.<br>
-   * Just an info that can be shown to the user.
-   *
-   * @return the new version
-   */
-  public String getVersion() {
-    return encrypted ? Cryptor.getInstance().decrypt64(version) : version;
+    this(version, url.toExternalForm(), checksum, size, updateExecutor);
   }
 
   /**
@@ -101,49 +67,11 @@ public final class UpdateInfo {
    */
   public URL getUrl() {
     try {
-      return new URI(encrypted ? Cryptor.getInstance().decrypt64(urlStr) : urlStr).toURL();
+      return new URI(urlStr).toURL();
     }
     catch (URISyntaxException | MalformedURLException mx) {
       throw new TentackleRuntimeException(mx);
     }
-  }
-
-  /**
-   * Gets the checksum hash to verify the download.
-   *
-   * @return the checksum hash
-   */
-  public String getChecksum() {
-    return encrypted ? Cryptor.getInstance().decrypt64(checksum) : checksum;
-  }
-
-  /**
-   * Gets the size of the ZIP file.
-   *
-   * @return the size
-   */
-  public long getSize() {
-    return Long.parseLong(encrypted ? Cryptor.getInstance().decrypt64(sizeStr) : sizeStr);
-  }
-
-  /**
-   * Gets the name of the file to perform the update.
-   *
-   * @return the updater, usually {@code "update.sh"} or {@code "update.cmd"}, depending on the platform
-   */
-  public String getUpdateExecutor() {
-    return encrypted ? Cryptor.getInstance().decrypt64(updateExecutor) : updateExecutor;
-  }
-
-  @Override
-  public String toString() {
-    return "UpdateInfo{" +
-           "version='" + getVersion() + '\'' +
-           ", url=" + getUrl() +
-           ", checksum='" + getChecksum() + '\'' +
-           ", size=" + getSize() +
-           ", updateExecutor='" + getUpdateExecutor() + '\'' +
-           '}';
   }
 
 }

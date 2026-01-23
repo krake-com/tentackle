@@ -238,7 +238,7 @@ public class ClientUpdateUtilities {
 
       // download the ZIP file into the update directory
       try (ReadableByteChannel readableByteChannel = new CallbackReadableByteChannel(
-               Channels.newChannel(updateInfo.getUrl().openStream()), updateInfo.getSize(), progressConsumer);
+               Channels.newChannel(updateInfo.getUrl().openStream()), updateInfo.size(), progressConsumer);
            FileOutputStream fileOutputStream = new FileOutputStream(zipFile);
            FileChannel fileChannel = fileOutputStream.getChannel()) {
 
@@ -254,7 +254,7 @@ public class ClientUpdateUtilities {
           digest.update(buffer, 0, count);
         }
       }
-      String expectedChecksum = updateInfo.getChecksum();
+      String expectedChecksum = updateInfo.checksum();
       String foundChecksum = StringHelper.fillLeft(new BigInteger(1, digest.digest()).toString(16), expectedChecksum.length(), '0');
       if (!foundChecksum.equals(expectedChecksum)) {
         throw new TentackleRuntimeException("checksum failed! (" + digest + ")\nexpected: " + expectedChecksum + "\nfound:    " + foundChecksum);

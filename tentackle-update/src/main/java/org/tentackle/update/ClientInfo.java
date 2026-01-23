@@ -30,6 +30,8 @@ import org.tentackle.trip.TripReferencable;
  * @param platform     the operating system
  * @param architecture the hardware architecture
  * @param installationType the installation type
+ *
+ * @see UpdateInfo
  */
 @TripReferencable(TripReferencable.NEVER)
 @TripDeduplicatable(TripDeduplicatable.NEVER)
