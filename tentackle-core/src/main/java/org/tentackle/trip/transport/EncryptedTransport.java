@@ -37,8 +37,9 @@ import java.net.URI;
  * Transport implementation for encrypted TCP.<br>
  * Uses a {@link org.tentackle.common.Cryptor} for symmetric encryption.
  * This kind of encryption is less secure than SSL since
- * the key is pre-shared between client and server.
- * However, it does not need a certificate.
+ * the key is pre-shared between the client and the server.
+ * However, it does not need a certificate and is sometimes just "good enough",
+ * for example, pragmatically used by the auto update service (see {@code org.tentackle.update}).
  */
 @TransportService(EncryptedTransport.PROTOCOL)
 public class EncryptedTransport extends TcpTransport {

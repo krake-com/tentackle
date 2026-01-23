@@ -32,6 +32,7 @@ import org.tentackle.trip.TripReferencable;
  * @param installationType the installation type
  *
  * @see UpdateInfo
+ * @see org.tentackle.trip.transport.EncryptedTransport
  */
 @TripReferencable(TripReferencable.NEVER)
 @TripDeduplicatable(TripDeduplicatable.NEVER)

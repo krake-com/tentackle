@@ -18,7 +18,6 @@
 
 package org.tentackle.update;
 
-import org.tentackle.common.Cryptor;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.trip.TripDeduplicatable;
 import org.tentackle.trip.TripReferencable;
@@ -41,14 +40,14 @@ import java.net.URL;
  * @param updateExecutor the filename to execute to perform the update
  *
  * @see ClientInfo
+ * @see org.tentackle.trip.transport.EncryptedTransport
  */
 @TripReferencable(TripReferencable.NEVER)
 @TripDeduplicatable(TripDeduplicatable.NEVER)
 public record UpdateInfo(String version, String urlStr, String checksum, long size, String updateExecutor) {
 
   /**
-   * Creates the update info.<br>
-   * The internal state is encrypted if a {@link Cryptor} is configured.
+   * Creates the update info.
    *
    * @param version the new application version
    * @param url the URL of the ZIP file the client must download
