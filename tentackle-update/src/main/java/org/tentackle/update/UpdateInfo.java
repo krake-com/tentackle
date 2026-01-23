@@ -20,6 +20,8 @@ package org.tentackle.update;
 
 import org.tentackle.common.Cryptor;
 import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.reflect.CanonicalConstructor;
+import org.tentackle.reflect.CanonicalField;
 import org.tentackle.trip.TripReferencable;
 
 import java.net.MalformedURLException;
@@ -31,15 +33,15 @@ import java.net.URL;
  * Update info sent back to the client.
  */
 @TripReferencable(TripReferencable.NEVER)
-public class UpdateInfo {
+public final class UpdateInfo {
 
   // transfer as strings because it may be encrypted
-  private final String version;
-  private final String url;
-  private final String checksum;
-  private final String size;
-  private final String updateExecutor;
-  private final boolean encrypted;
+  @CanonicalField(ordinal = 0) private final String version;
+  @CanonicalField(ordinal = 1) private final String urlStr;
+  @CanonicalField(ordinal = 2) private final String checksum;
+  @CanonicalField(ordinal = 3) private final String sizeStr;
+  @CanonicalField(ordinal = 4) private final String updateExecutor;
+  @CanonicalField(ordinal = 5) private final boolean encrypted;
 
   /**
    * Creates the update info.<br>
@@ -55,20 +57,31 @@ public class UpdateInfo {
     Cryptor cryptor = Cryptor.getInstance();
     if (cryptor != null) {
       this.version = cryptor.encrypt64(version);
-      this.url = cryptor.encrypt64(url.toExternalForm());
+      this.urlStr = cryptor.encrypt64(url.toExternalForm());
       this.checksum = cryptor.encrypt64(checksum);
-      this.size = cryptor.encrypt64(Long.toString(size));
+      this.sizeStr = cryptor.encrypt64(Long.toString(size));
       this.updateExecutor = cryptor.encrypt64(updateExecutor);
-      encrypted = true;
+      this.encrypted = true;
     }
     else {
       this.version = version;
-      this.url = url.toExternalForm();
+      this.urlStr = url.toExternalForm();
       this.checksum = checksum;
-      this.size = Long.toString(size);
+      this.sizeStr = Long.toString(size);
       this.updateExecutor = updateExecutor;
-      encrypted = false;
+      this.encrypted = false;
     }
+  }
+
+  // provided for TRIP only
+  @CanonicalConstructor
+  private UpdateInfo(String version, String urlStr, String checksum, String sizeStr, String updateExecutor, boolean encrypted) {
+    this.version = version;
+    this.urlStr = urlStr;
+    this.checksum = checksum;
+    this.sizeStr = sizeStr;
+    this.updateExecutor = updateExecutor;
+    this.encrypted = encrypted;
   }
 
   /**
@@ -88,7 +101,7 @@ public class UpdateInfo {
    */
   public URL getUrl() {
     try {
-      return new URI(encrypted ? Cryptor.getInstance().decrypt64(url) : url).toURL();
+      return new URI(encrypted ? Cryptor.getInstance().decrypt64(urlStr) : urlStr).toURL();
     }
     catch (URISyntaxException | MalformedURLException mx) {
       throw new TentackleRuntimeException(mx);
@@ -110,7 +123,7 @@ public class UpdateInfo {
    * @return the size
    */
   public long getSize() {
-    return Long.parseLong(encrypted ? Cryptor.getInstance().decrypt64(size) : size);
+    return Long.parseLong(encrypted ? Cryptor.getInstance().decrypt64(sizeStr) : sizeStr);
   }
 
   /**
