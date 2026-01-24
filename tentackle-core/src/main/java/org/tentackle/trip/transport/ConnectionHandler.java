@@ -137,8 +137,9 @@ public class ConnectionHandler implements Runnable {
     catch (TripRuntimeException e) {
       if (ExceptionHelper.extractException(IOException.class, true, e) != null) {
         // SSL handshake exception, peer closed, etc... -> just log the messages, no stacktrace
-        LOGGER.warning("connection " + new TransportClientInfo(transport, connectionName) +
-                       " aborted:\n" + ExceptionHelper.concatenateMessages(e), e);
+        LOGGER.warning("connection {0} aborted: {1}",
+                       new TransportClientInfo(transport, connectionName),
+                       ExceptionHelper.concatenateMessages(e));
         return;
       }
       throw e;
