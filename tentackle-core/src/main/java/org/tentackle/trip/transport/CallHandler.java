@@ -106,13 +106,13 @@ public class CallHandler implements Runnable {
       if (delegate == null) {
         throw new TripRuntimeException("no delegate found for remote id: " + remoteCall.remoteId());
       }
-      if (remoteCall instanceof InitialRemoteCall initialRemoteCall) {
-        InitialRemoteResponse response = delegate.invoke(initialRemoteCall);
-        stream.getType(InitialRemoteResponse.class).write(response, stream);
-      }
-      else if (remoteCall instanceof IdentifiedRemoteCall identifiedRemoteCall) {
+      if (remoteCall instanceof IdentifiedRemoteCall identifiedRemoteCall) {
         IdentifiedRemoteResponse response = delegate.invoke(identifiedRemoteCall);
         stream.getType(IdentifiedRemoteResponse.class).write(response, stream);
+      }
+      else if (remoteCall instanceof InitialRemoteCall initialRemoteCall) {
+        InitialRemoteResponse response = delegate.invoke(initialRemoteCall);
+        stream.getType(InitialRemoteResponse.class).write(response, stream);
       }
       else {
         throw new TripRuntimeException("unexpected remote call type: " + remoteCall.getClass());
