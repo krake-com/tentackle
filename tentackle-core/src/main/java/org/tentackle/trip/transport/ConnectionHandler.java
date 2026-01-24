@@ -18,6 +18,7 @@
 
 package org.tentackle.trip.transport;
 
+import org.tentackle.common.ExceptionHelper;
 import org.tentackle.log.Logger;
 import org.tentackle.trip.Deserializer;
 import org.tentackle.trip.DictionaryEntry;
@@ -130,7 +131,19 @@ public class ConnectionHandler implements Runnable {
    */
   @Override
   public void run() {
-    readMagic();
+    try {
+      readMagic();
+    }
+    catch (TripRuntimeException e) {
+      if (ExceptionHelper.extractException(IOException.class, true, e) != null) {
+        // SSL handshake exception, peer closed, etc... -> just log the messages, no stacktrace
+        LOGGER.warning("connection " + new TransportClientInfo(transport, connectionName) +
+                       " aborted:\n" + ExceptionHelper.concatenateMessages(e), e);
+        return;
+      }
+      throw e;
+    }
+
     UUID id = readUUID();
     TripStream stream = createStream(id);
     TransportClientInfo transportClientInfo = new TransportClientInfo(transport, connectionName, id);

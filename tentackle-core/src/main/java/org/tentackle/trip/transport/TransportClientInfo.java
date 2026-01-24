@@ -60,6 +60,16 @@ public record TransportClientInfo(Transport transport, String connectionName, UU
 
 
   /**
+   * Creates a new client-info w/o a client UUID.
+   *
+   * @param transport the transport
+   * @param connectionName the connection name
+   */
+  public TransportClientInfo(Transport transport, String connectionName) {
+    this(transport, connectionName, null);
+  }
+
+  /**
    * Gets the client host address.
    *
    * @return the address
@@ -75,7 +85,12 @@ public record TransportClientInfo(Transport transport, String connectionName, UU
 
   @Override
   public String toString() {
-    return transport + " >< " + connectionName + "|" + clientId;
+    StringBuilder buf = new StringBuilder();
+    buf.append(transport).append(" >< ").append(connectionName);
+    if (clientId != null) {
+      buf.append('|').append(clientId);
+    }
+    return buf.toString();
   }
 
 }
