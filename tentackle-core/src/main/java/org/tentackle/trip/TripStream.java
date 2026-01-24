@@ -193,7 +193,7 @@ public interface TripStream {
   DictionaryEntry receiveDictionary();
 
   /**
-   * Derives the concrete type from the given OpCode and stream.<br>
+   * Derives the concrete type from the given OpCode.<br>
    * If the returned derived type is dictionary-based, the next opcode must
    * be read from the stream, which is either a reference or an ordinal.
    *
@@ -203,7 +203,7 @@ public interface TripStream {
   TripType<?> deriveType(OpCode opCode);
 
   /**
-   * Derives the concrete type from the given OpCode and stream.<br>
+   * Derives the concrete type from the given OpCode.<br>
    * Same as {@link #deriveType(OpCode)} but reads the opcode.
    *
    * @return the type
