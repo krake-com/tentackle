@@ -109,7 +109,7 @@ public final class ProxyTripType<T> extends AbstractDictionaryBasedTripType<T> {
       // determine the dictionary entry from the stream, if provided
       opCode = deserializer.deserializeOpCode();
       if (opCode == DefaultOpCode.DICTIONARY || opCode.isOrdinal()) {
-        entry = receiveDictionary(stream, opCode);
+        entry = stream.receiveDictionary(opCode);
         opCode = deserializer.deserializeOpCode();
       }
 
@@ -147,8 +147,7 @@ public final class ProxyTripType<T> extends AbstractDictionaryBasedTripType<T> {
 
     if (readContent) {
       // get the type from the stream (either new dictionary entry or ordinal)
-      TripType<InvocationHandler> type = (TripType<InvocationHandler>) receiveDictionary(
-        stream, deserializer.deserializeOpCode()).getType();  // skip code OBJECT
+      TripType<InvocationHandler> type = (TripType<InvocationHandler>) stream.receiveDictionary().getType();  // skip code OBJECT
       Holder<T> proxyHolder = new Holder<>();
       Class<?>[] interfaces = entry.getProxyInterfaces();
       // the next opcode is a reference or the handler data

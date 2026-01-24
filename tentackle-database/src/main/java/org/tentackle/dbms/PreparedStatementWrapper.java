@@ -30,6 +30,7 @@ import org.tentackle.sql.DataType;
 import org.tentackle.sql.DataTypeFactory;
 import org.tentackle.sql.SqlType;
 import org.tentackle.sql.datatypes.ZonedDateTimeType;
+import org.tentackle.trip.TBinary;
 
 import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
@@ -68,11 +69,11 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
 
 
   private final StatementKey statementKey;              // the statement key, if not a one-shot statement
-  private int columnOffset;                             // offset to add to column index, default is 0
+  private int columnOffset;                             // offset to add to the column index, default is 0
   private Map<Integer,Object> parameters;               // execution parameters
   private boolean executionPending;                     // true if next setXXX(1, ...) will invoke addBatch
   private List<Map<Integer,Object>> batchParameters;    // batched execution parameters
-  private WeakReference<DbBatch> batchRef;              // set if currently batched (weak since object just vanishes after tx)
+  private WeakReference<DbBatch> batchRef;              // set if currently batched (weak since the object just vanishes after tx)
 
 
   /**
@@ -81,7 +82,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
    * @param con the connection
    * @param stmt the jdbc statement
    * @param statementKey the statement key if not a one-shot
-   * @param sql the original sql string that created the stmt
+   * @param sql the original SQL string that created the stmt
    */
   public PreparedStatementWrapper(ManagedConnection con, PreparedStatement stmt, StatementKey statementKey, String sql) {
 
@@ -93,7 +94,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
     Db db = getAttachedSession();
     // if not a one-shot statement
     if (db.getFetchSize() != 0) {
-      // set fixed fetchsize (0 = use drivers default)
+      // set fixed fetch size (0 = use drivers default)
       setFetchSize(db.getFetchSize());
     }
 
@@ -167,8 +168,8 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
    * The method is invoked immediately before setting the value into the statement, and only for that purpose!
    * This the p + columnOffset.
    *
-   * @param p the sql position
-   * @return the effective position
+   * @param p the SQL position
+   * @return effective position
    */
   private int effectivePosition(int p) {
     int ep = columnOffset + p;
@@ -187,7 +188,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
   /**
    * Sets the parameter to be remembered for diagnostics.
    *
-   * @param p the effective sql position
+   * @param p the effective SQL position
    * @param value the value of the parameter
    */
   protected void rememberParameter(int p, Object value) {
@@ -197,7 +198,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
   @Override
   protected void detachSession() {
     super.detachSession();
-    // new map because old reference is held in StatementHistory
+    // new map because the old reference is held in StatementHistory
     clearParametersImpl();
   }
 
@@ -235,7 +236,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
   }
 
   /**
-   * Returns whether statement is batched.
+   * Returns whether the statement is batched.
    *
    * @return true if used in a batched transaction
    */
@@ -1044,9 +1045,9 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
    * <li>an int representing the scale</li>
    * </ol>
    * This is due to most DBMS can't store arbitrary scaled decimals in
-   * a single column, i.e. all values in the column must have the same scale.
+   * a single column, i.e., all values in the column must have the same scale.
    *
-   * @param p the sql position
+   * @param p the SQL position
    * @param m the money value, null to set SQL NULL
    * @see #setDMoney(int, DMoney)
    */
@@ -1082,9 +1083,9 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
    * <li>an int representing the scale</li>
    * </ol>
    * This is due to most DBMS can't store arbitrary scaled decimals in
-   * a single column, i.e. all values in the column must have the same scale.
+   * a single column, i.e., all values in the column must have the same scale.
    *
-   * @param p the sql position
+   * @param p the SQL position
    * @param m the money value, null to set SQL NULL
    * @see #setBMoney(int, BMoney)
    */
@@ -1224,8 +1225,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
 
   /**
    * Sets the designated parameter to the given {@link Binary} value.
-   * will
-   * The driver converts this to an SQL <code>BLOB</code> value when it sends it to the
+   * The driver converts it to a <code>BLOB</code> value when it sends it to the
    * database.
    * The implementation translates the Binary into an InputStream and invokes
    * {@link PreparedStatement#setBlob(int, java.io.InputStream, long)}.
@@ -1234,6 +1234,34 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
    * @param b the parameter value, null if the value should be set to SQL NULL
    */
   public void setBinary(int p, Binary<?> b) {
+    try {
+      int ep = effectivePosition(p);
+      if (b == null || b.getLength() == 0) {
+        // "empty" binaries are treated as null
+        b = null;
+        getStatement().setNull(ep, Types.LONGVARBINARY);
+      }
+      else {
+        getStatement().setBlob(ep, b.getInputStream(), b.getLength());
+      }
+      rememberParameter(ep, b);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(getSession(), this.toString(), e);
+    }
+  }
+
+  /**
+   * Sets the designated parameter to the given {@link TBinary} value.
+   * The driver converts it to a <code>BLOB</code> value when it sends it to the
+   * database.
+   * The implementation translates the Binary into an InputStream and invokes
+   * {@link PreparedStatement#setBlob(int, java.io.InputStream, long)}.
+   *
+   * @param p the first parameter is 1, the second is 2, ...
+   * @param b the parameter value, null if the value should be set to SQL NULL
+   */
+  public void setTBinary(int p, TBinary<?> b) {
     try {
       int ep = effectivePosition(p);
       if (b == null || b.getLength() == 0) {

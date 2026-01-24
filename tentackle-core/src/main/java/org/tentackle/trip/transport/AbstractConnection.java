@@ -20,15 +20,12 @@ package org.tentackle.trip.transport;
 
 import org.tentackle.misc.Pool;
 import org.tentackle.trip.Connection;
+import org.tentackle.trip.Serializer;
 import org.tentackle.trip.Transport;
 import org.tentackle.trip.TripConstants;
-import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.TripStream;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.util.UUID;
 
 /**
  * Base class of a connection.
@@ -49,15 +46,19 @@ public abstract class AbstractConnection implements Connection {
   public AbstractConnection(Transport transport, TripStream stream) {
     this.transport = transport;
     this.stream = stream;
-    OutputStream outputStream = stream.getSerializer().getOutputStream();
-    try {
-      writeMagic(outputStream);
-      writeUUID(outputStream, transport.getId());
-      outputStream.flush();
-    }
-    catch (IOException e) {
-      throw new TripRuntimeException("cannot write magic and UUID to stream", e);
-    }
+
+    Serializer serializer = stream.getSerializer();
+
+    // write the 2-bytes magic number
+    serializer.serialize(TripConstants.MAGIC);
+
+    // write the transport ID
+    ByteBuffer bb = ByteBuffer.allocate(16);
+    bb.putLong(transport.getId().getMostSignificantBits());
+    bb.putLong(transport.getId().getLeastSignificantBits());
+    stream.getSerializer().serialize(bb.array());
+
+    serializer.flush();
   }
 
   @Override
@@ -99,17 +100,6 @@ public abstract class AbstractConnection implements Connection {
   @Override
   public String toString() {
     return getTransport().toString();
-  }
-
-  private void writeMagic(OutputStream outputStream) throws IOException {
-    outputStream.write(TripConstants.MAGIC);
-  }
-
-  private void writeUUID(OutputStream outputStream, UUID id) throws IOException {
-    ByteBuffer bb = ByteBuffer.allocate(16);
-    bb.putLong(id.getMostSignificantBits());
-    bb.putLong(id.getLeastSignificantBits());
-    outputStream.write(bb.array());
   }
 
 }

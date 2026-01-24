@@ -215,7 +215,7 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
       // determine the dictionary entry from the stream, if provided
       opCode = deserializer.deserializeOpCode();
       if (opCode == DefaultOpCode.DICTIONARY || opCode.isOrdinal()) {
-        entry = receiveDictionary(stream, opCode);
+        entry = stream.receiveDictionary(opCode);
         opCode = deserializer.deserializeOpCode();
       }
 
@@ -405,7 +405,7 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
       }
       else {
         if (!componentType.isFinal()) {
-          componentType = deriveType(stream, opCode);
+          componentType = stream.deriveType(opCode);
           if (componentType.isDictionaryBased()) {
             // the next opcode is a reference or the component ordinal
             opCode = deserializer.deserializeOpCode();

@@ -89,7 +89,7 @@ public class BinaryType extends AbstractDataType<Binary<? extends Serializable>>
   @Override
   public Binary<? extends Serializable> get(Backend backend, ResultSet resultSet, int[] pos, boolean mapNull, Integer size) throws SQLException {
     try {
-      return Binary.createBinary(resultSet.getBinaryStream(pos[0]), size == null ? 0 : size, true);
+      return Binary.create(resultSet.getBinaryStream(pos[0]), size == null ? 0 : size, true);
     }
     catch (IOException exception) {
       throw new SQLException("could not deserialize Binary", exception);

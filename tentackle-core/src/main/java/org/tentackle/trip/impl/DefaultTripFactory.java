@@ -36,6 +36,7 @@ import org.tentackle.trip.Transport;
 import org.tentackle.trip.TransportManager;
 import org.tentackle.trip.TripComponent;
 import org.tentackle.trip.TripComponentProvider;
+import org.tentackle.trip.TripConstants;
 import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.TripInstanceCreator;
 import org.tentackle.trip.TripRuntimeException;
@@ -54,6 +55,7 @@ import java.lang.reflect.RecordComponent;
 import java.net.URI;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -64,6 +66,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Service(TripFactory.class)
 public class DefaultTripFactory implements TripFactory {
+
+  private static final UUID NIL_UUID = new UUID(0, 0);
 
   private final ClassMapper typeClassMapper;              // maps base classes to trip types
   private final ClassMapper providerClassMapper;          // maps component providers to classes
@@ -273,8 +277,8 @@ public class DefaultTripFactory implements TripFactory {
           if (copyNotInvokedSoFar) {
             copyNotInvokedSoFar = false;
             // sender = server avoids temporary dictionary entries
-            serializerDictionary = createDictionary(UUID.randomUUID(), true);
-            deserializerDictionary = createDictionary(UUID.randomUUID(), false);
+            serializerDictionary = createDictionary(NIL_UUID, true);
+            deserializerDictionary = createDictionary(NIL_UUID, false);
           }
         }
       }
@@ -292,6 +296,43 @@ public class DefaultTripFactory implements TripFactory {
       return type.read(stream, opCode);
     }
     return null;
+  }
+
+  @Override
+  public void serialize(Object object, OutputStream out) {
+    Dictionary dictionary = createDictionary(NIL_UUID, true);
+    Serializer serializer = createSerializer(out);
+    serializer.serialize(TripConstants.MAGIC);
+    TripStream stream = TripFactory.getInstance().createStream(dictionary, serializer, null);
+    if (object == null) {
+      serializer.serializeOpCode(DefaultOpCode.NULL);
+    }
+    else {
+      TripType<Object> type = getType(object.getClass());
+      type.write(object, stream);
+    }
+    serializer.flush();
+  }
+
+  @Override
+  public Object deserialize(InputStream in) {
+      Dictionary dictionary = createDictionary(NIL_UUID, false);
+      Deserializer deserializer = createDeserializer(in);
+      byte[] magic = new byte[2];
+      deserializer.deserialize(magic, 0, 2);
+      if (magic[0] != TripConstants.MAGIC[0] || magic[1] != TripConstants.MAGIC[1]) {
+        throw new TripRuntimeException("invalid magic: " + HexFormat.ofDelimiter(", ").withPrefix("0x").formatHex(magic));
+      }
+      TripStream stream = TripFactory.getInstance().createStream(dictionary, null, deserializer);
+      OpCode opCode = deserializer.deserializeOpCode();
+      if (opCode == DefaultOpCode.NULL) {
+        return null;
+      }
+      TripType<?> type = stream.deriveType(opCode);
+      if (type.isDictionaryBased()) {
+        opCode = deserializer.deserializeOpCode();
+      }
+      return type.read(stream, opCode);
   }
 
   /**

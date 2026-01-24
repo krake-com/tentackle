@@ -167,4 +167,47 @@ public interface TripStream {
    */
   int readNextOrdinal(int lastOrdinal, OpCode opCode);
 
+  /**
+   * Updates the dictionary entry if the class is new for the stream
+   * and sends the class definition.<br>
+   * Otherwise, sends the ordinal of the dictionary entry.
+   *
+   * @param clazz the object's class
+   */
+  void sendDictionary(Class<?> clazz);
+
+  /**
+   * Receives the dictionary entry and adds it to the dictionary.
+   *
+   * @param opCode the opcode to read (already read from the stream)
+   * @return the dictionary entry
+   */
+  DictionaryEntry receiveDictionary(OpCode opCode);
+
+  /**
+   * Receives the dictionary entry and adds it to the dictionary.<br>
+   * Same as {@link #receiveDictionary(OpCode)} but reads the opcode.
+   *
+   * @return the dictionary entry
+   */
+  DictionaryEntry receiveDictionary();
+
+  /**
+   * Derives the concrete type from the given OpCode and stream.<br>
+   * If the returned derived type is dictionary-based, the next opcode must
+   * be read from the stream, which is either a reference or an ordinal.
+   *
+   * @param opCode the opcode (already read from the stream)
+   * @return the type
+   */
+  TripType<?> deriveType(OpCode opCode);
+
+  /**
+   * Derives the concrete type from the given OpCode and stream.<br>
+   * Same as {@link #deriveType(OpCode)} but reads the opcode.
+   *
+   * @return the type
+   */
+  TripType<?> deriveType();
+
 }

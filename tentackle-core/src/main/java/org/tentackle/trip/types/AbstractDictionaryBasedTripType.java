@@ -19,9 +19,6 @@
 package org.tentackle.trip.types;
 
 import org.tentackle.reflect.ReflectionHelper;
-import org.tentackle.trip.Deserializer;
-import org.tentackle.trip.OpCode;
-import org.tentackle.trip.PredefinedArrayType;
 import org.tentackle.trip.Remote;
 import org.tentackle.trip.TripComponent;
 import org.tentackle.trip.TripComponentProvider;
@@ -33,8 +30,6 @@ import org.tentackle.trip.TripInstantiationException;
 import org.tentackle.trip.TripReferencable;
 import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.TripSerializable;
-import org.tentackle.trip.TripStream;
-import org.tentackle.trip.TripType;
 import org.tentackle.trip.TripTypeCategory;
 
 import java.lang.reflect.Constructor;
@@ -374,51 +369,6 @@ public abstract class AbstractDictionaryBasedTripType<T> extends AbstractTripTyp
       return tripComponents.toArray(new TripComponent[0]);
     }
     return provider.getComponents(this);
-  }
-
-  /**
-   * Derives the concrete type from the given OpCode and stream.<br>
-   * If the returned derived type is dictionary-based, the next opcode must
-   * be read from the stream, which is either a reference or an ordinal.
-   *
-   * @param stream the stream to read from
-   * @param opCode the opcode (already read from the stream)
-   * @return the type
-   */
-  protected TripType<?> deriveType(TripStream stream, OpCode opCode) {
-    TripType<?> type;
-    if (opCode.isFixedType()) {
-      type = opCode.getFixedType();
-    }
-    else {
-      Deserializer deserializer = stream.getDeserializer();
-      if (opCode.isPredefinedArray()) {
-        char arrayCode = deserializer.deserializeChar();
-        PredefinedArrayType arrayType = PredefinedArrayType.valueOf(arrayCode);
-        if (arrayType == null) {
-          throw new TripRuntimeException("'" + arrayCode + "' is not a predefined array subtype");
-        }
-        type = opCode.getPredefinedArrayType(arrayType);
-      }
-      else {
-        assertDictionaryBased(opCode);
-        opCode = deserializer.deserializeOpCode();  // skip code OBJECT, RECORD, etc...
-        type = receiveDictionary(stream, opCode).getType();
-      }
-    }
-    return type;
-  }
-
-  /**
-   * Asserts that the given OpCode is dictionary-based.
-   *
-   * @param opCode the opcode to assert
-   */
-  protected void assertDictionaryBased(OpCode opCode) {
-    if (!opCode.isDictionaryBased()) {
-      // usually a trip type implementation error
-      throw new TripRuntimeException("OpCode " + opCode + " is not dictionary-based");
-    }
   }
 
 }

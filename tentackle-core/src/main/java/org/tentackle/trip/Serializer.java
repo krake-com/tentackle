@@ -56,6 +56,14 @@ public interface Serializer {
   void serialize(byte[] bytes, int offset, int length);
 
   /**
+   * Serializes a byte array.<br>
+   * Low-level method passes the bytes unmodified.
+   *
+   * @param bytes the byte array to serialize
+   */
+  void serialize(byte[] bytes);
+
+  /**
    * Serializes the given op code.
    *
    * @param opCode the op code

@@ -51,7 +51,7 @@ public final class ClassTripType extends AbstractTripType<Class<?>> {
     }
     else {
       serializer.serializeOpCode(DefaultOpCode.CLASS);
-      sendDictionary(value, stream);
+      stream.sendDictionary(value);
     }
   }
 
@@ -61,7 +61,7 @@ public final class ClassTripType extends AbstractTripType<Class<?>> {
       return null;
     }
     if (opCode == DefaultOpCode.CLASS) {
-      DictionaryEntry entry = receiveDictionary(stream, stream.getDeserializer().deserializeOpCode());
+      DictionaryEntry entry = stream.receiveDictionary();
       return stream.getClass(entry.getClassName());
     }
     return super.read(stream, opCode);

@@ -164,7 +164,7 @@ public final class ArrayTripType<T> extends AbstractDictionaryBasedTripType<T> {
       // determine the dictionary entry from the stream, if provided
       opCode = deserializer.deserializeOpCode();
       if (opCode == DefaultOpCode.DICTIONARY || opCode.isOrdinal()) {
-        entry = receiveDictionary(stream, opCode);
+        entry = stream.receiveDictionary(opCode);
         opCode = deserializer.deserializeOpCode();
       }
 
@@ -212,7 +212,7 @@ public final class ArrayTripType<T> extends AbstractDictionaryBasedTripType<T> {
         opCode = deserializer.deserializeOpCode();
         TripType<?> elementType = getComponentType();
         if (!elementType.isFinal()) {
-          elementType = deriveType(stream, opCode);
+          elementType = stream.deriveType(opCode);
           if (elementType.isDictionaryBased()) {
             opCode = deserializer.deserializeOpCode();
           }

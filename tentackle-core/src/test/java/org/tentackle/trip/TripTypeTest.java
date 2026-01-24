@@ -372,6 +372,15 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
   }
 
   @Test
+  @SuppressWarnings("rawtypes")
+  void testTBinary() throws IOException {
+    BMoney money = new BMoney(80000.0, 2);
+    TripType<TBinary> tripType = TripFactory.getInstance().getType(TBinary.class);
+    TBinary<BMoney> binary = new TBinary<>(money);
+    tunnel(binary, tripType);
+  }
+
+  @Test
   void testI18NText() {
     TripType<I18NText> tripType = TripFactory.getInstance().getType(I18NText.class);
     I18NText i18NText = new I18NText(Locale.ENGLISH, "Hello, World!");

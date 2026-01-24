@@ -37,6 +37,8 @@ import java.util.UUID;
  */
 public class EchoTransceiver {
 
+  private static final UUID NIL_UUID = new UUID(0, 0);
+
   private final ByteArrayOutputStream bos;
   private final MutableByteArrayInputStream bis;
   private final Serializer serializer;
@@ -78,8 +80,8 @@ public class EchoTransceiver {
    */
   public EchoTransceiver(boolean compressed, Cryptor cryptor) {
     // sender = server avoids temporary dictionary entries
-    this(TripFactory.getInstance().createDictionary(UUID.randomUUID(),true),
-         TripFactory.getInstance().createDictionary(UUID.randomUUID(),false),
+    this(TripFactory.getInstance().createDictionary(NIL_UUID, true),
+         TripFactory.getInstance().createDictionary(NIL_UUID, false),
          compressed, cryptor);
   }
 

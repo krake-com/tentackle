@@ -131,6 +131,11 @@ public class DefaultSerializer implements Serializer {
   }
 
   @Override
+  public void serialize(byte[] bytes) {
+    serialize(bytes, 0, bytes.length);
+  }
+
+  @Override
   public void serializeOpCode(OpCode opCode) {
     serializeUnsignedAsByte(opCode.toExternal());
   }

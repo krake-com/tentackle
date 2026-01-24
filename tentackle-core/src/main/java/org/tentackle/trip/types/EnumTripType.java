@@ -96,7 +96,7 @@ public class EnumTripType<T extends Enum<T>> extends AbstractDictionaryBasedTrip
       // determine the dictionary entry from the stream, if provided
       opCode = deserializer.deserializeOpCode();
       if (opCode == DefaultOpCode.DICTIONARY || opCode.isOrdinal()) {
-        entry = receiveDictionary(stream, opCode);
+        entry = stream.receiveDictionary(opCode);
         opCode = deserializer.deserializeOpCode();
       }
 

@@ -150,7 +150,7 @@ public class MapTripType<T extends Map> extends ObjectTripType<T> {
       // determine the dictionary entry from the stream, if provided
       opCode = deserializer.deserializeOpCode();
       if (opCode == DefaultOpCode.DICTIONARY || opCode.isOrdinal()) {
-        entry = receiveDictionary(stream, opCode);
+        entry = stream.receiveDictionary(opCode);
         opCode = deserializer.deserializeOpCode();
       }
 
@@ -200,7 +200,7 @@ public class MapTripType<T extends Map> extends ObjectTripType<T> {
             elementKey = null;    // map allows null keys, obviously
           }
           else {
-            TripType<?> elementType = deriveType(stream, opCode);
+            TripType<?> elementType = stream.deriveType(opCode);
             if (elementType.isDictionaryBased()) {
               opCode = deserializer.deserializeOpCode();
             }
@@ -213,7 +213,7 @@ public class MapTripType<T extends Map> extends ObjectTripType<T> {
             elementValue = null;    // map allows null values, obviously
           }
           else {
-            TripType<?> elementType = deriveType(stream, opCode);
+            TripType<?> elementType = stream.deriveType(opCode);
             if (elementType.isDictionaryBased()) {
               opCode = deserializer.deserializeOpCode();
             }

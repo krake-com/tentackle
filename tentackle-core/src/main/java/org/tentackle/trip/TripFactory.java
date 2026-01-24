@@ -268,4 +268,22 @@ public interface TripFactory {
    */
   <T> T copy(T object);
 
+  /**
+   * Serialize the given object to bytes.<br>
+   * The first 2 bytes contain the {@link TripConstants#MAGIC}.
+   *
+   * @param object the object to serialize
+   * @param out the output stream to write to
+   */
+  void serialize(Object object, OutputStream out);
+
+  /**
+   * Deserialize the given bytes to an object.<br>
+   * The first 2 bytes must contain the {@link TripConstants#MAGIC}.
+   *
+   * @param in the input stream to read from
+   * @return the deserialized object
+   */
+  Object deserialize(InputStream in);
+
 }

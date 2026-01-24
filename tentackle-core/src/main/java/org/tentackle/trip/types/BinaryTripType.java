@@ -18,10 +18,12 @@
 
 package org.tentackle.trip.types;
 
+import org.tentackle.common.AbstractBinary;
 import org.tentackle.common.Binary;
 import org.tentackle.trip.Deserializer;
 import org.tentackle.trip.OpCode;
 import org.tentackle.trip.Serializer;
+import org.tentackle.trip.TBinary;
 import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.TripStream;
 import org.tentackle.trip.TripTypeService;
@@ -29,13 +31,15 @@ import org.tentackle.trip.impl.DefaultOpCode;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.Serializable;
 
 /**
- * Trip type for {@link Binary}.
+ * Trip type for {@link Binary} and {@link TBinary}.
  */
-@TripTypeService(Binary.class)
-public final class BinaryTripType extends AbstractTripType<Binary<? extends Serializable>> {
+@TripTypeService(AbstractBinary.class)
+public final class BinaryTripType extends AbstractTripType<AbstractBinary<?>> {
+
+  private static final byte JOS_BINARY = 'J';
+  private static final byte TRIP_BINARY = 'T';
 
   /**
    * Creates the type.
@@ -47,20 +51,19 @@ public final class BinaryTripType extends AbstractTripType<Binary<? extends Seri
 
   @Override
   public boolean isFinal() {
-    // Binary is not final but cannot be treated as a regular object, since
-    // it's internal api is too specific.
-    // If this type is extended, the application must provide a custom trip type.
+    // AbstractBinary is not final, but its subtypes are final
     return true;
   }
 
   @Override
-  public void write(Binary<?> value, TripStream stream) {
+  public void write(AbstractBinary<?> value, TripStream stream) {
     Serializer serializer = stream.getSerializer();
     if (value == null) {
       serializer.serializeOpCode(DefaultOpCode.NULL);
     }
     else {
       serializer.serializeOpCode(DefaultOpCode.BINARY);
+      serializer.serializeByte(value instanceof Binary<?> ? JOS_BINARY : TRIP_BINARY);
       int length = value.getLength();
       serializer.serializeInt(length);
       serializer.serializeBoolean(value.isFrozen());
@@ -69,19 +72,22 @@ public final class BinaryTripType extends AbstractTripType<Binary<? extends Seri
   }
 
   @Override
-  public Binary<?> read(TripStream stream, OpCode opCode) {
-    Binary<?> value;
+  public AbstractBinary<?> read(TripStream stream, OpCode opCode) {
+    AbstractBinary<?> value;
     Deserializer deserializer = stream.getDeserializer();
     if (opCode == DefaultOpCode.BINARY) {
+      byte subType = deserializer.deserializeByte();
       int length = deserializer.deserializeInt();
       boolean frozen = deserializer.deserializeBoolean();
       byte[] data = new byte[length];
       deserializer.deserialize(data, 0, length);
       try {
-        value = Binary.createBinary(new ByteArrayInputStream(data), length, frozen);
+        value = subType == JOS_BINARY ?
+                  Binary.create(new ByteArrayInputStream(data), length, frozen) :
+                  TBinary.create(new ByteArrayInputStream(data), length, frozen);
       }
       catch (IOException e) {
-        throw new TripRuntimeException("cannot deserialize Binary", e);
+        throw new TripRuntimeException("cannot deserialize binary", e);
       }
     }
     else {

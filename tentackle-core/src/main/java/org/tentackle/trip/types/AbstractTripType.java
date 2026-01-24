@@ -18,12 +18,9 @@
 
 package org.tentackle.trip.types;
 
-import org.tentackle.trip.Dictionary;
-import org.tentackle.trip.DictionaryEntry;
 import org.tentackle.trip.OpCode;
 import org.tentackle.trip.Reference;
 import org.tentackle.trip.TripComponent;
-import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.TripStream;
 import org.tentackle.trip.TripType;
@@ -33,12 +30,6 @@ import org.tentackle.trip.impl.DefaultOpCode;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.util.function.Consumer;
-
-
-interface AbstractTripTypeHolder {
-  TripType<DictionaryEntry> DICTIONARY_INSTANCE = TripFactory.getInstance().getType(DictionaryEntry.class);
-}
-
 
 /**
  * Base class for all trip types.
@@ -271,38 +262,6 @@ public abstract class AbstractTripType<T> implements TripType<T> {
   }
 
   /**
-   * Updates the dictionary entry if the class is new for the stream
-   * and sends the class definition.<br>
-   * Otherwise, sends the ordinal of the dictionary entry.
-   *
-   * @param clazz the object's class
-   * @param stream the stream to write to
-   */
-  protected void sendDictionary(Class<?> clazz, TripStream stream) {
-    Dictionary dictionary = stream.getDictionary();
-    DictionaryEntry dictionaryEntry = stream.getDictionaryEntry(clazz);
-    if (dictionaryEntry == null || dictionary.isServer() && dictionaryEntry.isClientOnly()) {
-      synchronized (dictionary) {   // the dictionary is shared!
-        dictionaryEntry = stream.getDictionaryEntry(clazz);
-        if (dictionaryEntry == null || dictionary.isServer() && dictionaryEntry.isClientOnly()) {
-          // never talked about this class before, or client-only -> send the class definition
-          dictionaryEntry = dictionary.isServer() ?
-                              dictionary.createEntry(clazz) :
-                              dictionary.createTemporaryEntry(clazz);
-          AbstractTripTypeHolder.DICTIONARY_INSTANCE.write(dictionaryEntry, stream);
-          dictionary.addEntry(dictionaryEntry);
-        }
-        else {
-          stream.writeOrdinal(dictionaryEntry.getOrdinal());
-        }
-      }
-    }
-    else {
-      stream.writeOrdinal(dictionaryEntry.getOrdinal());
-    }
-  }
-
-  /**
    * Updates the dictionary entry if this type's object class is new for the stream
    * and sends the class definition.<br>
    * Otherwise, sends the ordinal of the dictionary entry.
@@ -310,28 +269,7 @@ public abstract class AbstractTripType<T> implements TripType<T> {
    * @param stream the stream to write to
    */
   protected void sendDictionary(TripStream stream) {
-    sendDictionary(getObjectClass(), stream);
-  }
-
-  /**
-   * Receives the dictionary entry and adds it to the dictionary.
-   *
-   * @param stream the stream to read from
-   * @param opCode the opcode to read (already read from the stream)
-   * @return the dictionary entry
-   */
-  protected DictionaryEntry receiveDictionary(TripStream stream, OpCode opCode) {
-    DictionaryEntry entry;
-    if (opCode == DefaultOpCode.DICTIONARY) {
-      entry = AbstractTripTypeHolder.DICTIONARY_INSTANCE.read(stream, opCode);
-      stream.getDictionary().addEntry(entry);
-    }
-    else {
-      // must be the ordinal
-      int ordinal = stream.readOrdinal(opCode);
-      entry = stream.getDictionaryEntry(ordinal);
-    }
-    return entry;
+    stream.sendDictionary(getObjectClass());
   }
 
 }

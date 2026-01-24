@@ -95,8 +95,7 @@ public class TreeSetTripType<T extends TreeSet> extends CollectionTripType<T> {
     if (hasComparator) {
       // get the type from the stream (either new dictionary entry or ordinal)
       deserializer.deserializeOpCode();   // skip OBJECT
-      TripType<Comparator> type = (TripType<Comparator>) receiveDictionary(
-        stream, deserializer.deserializeOpCode()).getType();
+      TripType<Comparator> type = (TripType<Comparator>) stream.receiveDictionary().getType();
       // the next opcode is a reference or the handler data
       Comparator comparator = type.read(stream, deserializer.deserializeOpCode());
       try {

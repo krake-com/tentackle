@@ -22,8 +22,6 @@ import org.tentackle.common.ExceptionHelper;
 import org.tentackle.log.Logger;
 import org.tentackle.trip.Deserializer;
 import org.tentackle.trip.DictionaryEntry;
-import org.tentackle.trip.OpCode;
-import org.tentackle.trip.PredefinedArrayType;
 import org.tentackle.trip.Serializer;
 import org.tentackle.trip.Transport;
 import org.tentackle.trip.TripConstants;
@@ -32,7 +30,6 @@ import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.TripStream;
 import org.tentackle.trip.TripStreamClosedException;
 import org.tentackle.trip.TripType;
-import org.tentackle.trip.impl.DefaultOpCode;
 import org.tentackle.trip.remote.IdentifiedRemoteResponse;
 import org.tentackle.trip.remote.InitialRemoteCall;
 import org.tentackle.trip.remote.InitialRemoteResponse;
@@ -155,7 +152,7 @@ public class ConnectionHandler implements Runnable {
       try {
         stream.clear();
         Deserializer deserializer = stream.getDeserializer();
-        tripType = deriveType(stream, deserializer.deserializeOpCode());
+        tripType = stream.deriveType();
         if (tripType.isDictionaryBased()) {   // all remote calls are dictionary-based
           Object call = tripType.read(stream, deserializer.deserializeOpCode());
           if (call instanceof RemoteCall remoteCall) {
@@ -265,51 +262,6 @@ public class ConnectionHandler implements Runnable {
     catch (IOException e) {
       throw new TripRuntimeException("reading UUID failed", e);
     }
-  }
-
-  private TripType<?> deriveType(TripStream stream, OpCode opCode) {
-    TripType<?> type;
-    if (opCode.isFixedType()) {
-      type = opCode.getFixedType();
-    }
-    else {
-      Deserializer deserializer = stream.getDeserializer();
-      if (opCode.isPredefinedArray()) {
-        char arrayCode = deserializer.deserializeChar();
-        PredefinedArrayType arrayType = PredefinedArrayType.valueOf(arrayCode);
-        if (arrayType == null) {
-          throw new TripRuntimeException("'" + arrayCode + "' is not a predefined array subtype");
-        }
-        type = opCode.getPredefinedArrayType(arrayType);
-      }
-      else {
-        assertDictionaryBased(opCode);
-        opCode = deserializer.deserializeOpCode();  // skip code OBJECT, RECORD, etc...
-        type = receiveDictionary(stream, opCode).getType();
-      }
-    }
-    return type;
-  }
-
-  private void assertDictionaryBased(OpCode opCode) {
-    if (!opCode.isDictionaryBased()) {
-      // usually a trip type implementation error
-      throw new TripRuntimeException("OpCode " + opCode + " is not dictionary-based");
-    }
-  }
-
-  private DictionaryEntry receiveDictionary(TripStream stream, OpCode opCode) {
-    DictionaryEntry entry;
-    if (opCode == DefaultOpCode.DICTIONARY) {
-      entry = dictionaryType.read(stream, opCode);
-      stream.getDictionary().addEntry(entry);
-    }
-    else {
-      // must be the ordinal
-      int ordinal = stream.readOrdinal(opCode);
-      entry = stream.getDictionaryEntry(ordinal);
-    }
-    return entry;
   }
 
 }

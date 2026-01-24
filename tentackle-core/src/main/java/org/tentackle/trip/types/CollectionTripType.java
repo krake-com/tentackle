@@ -144,7 +144,7 @@ public class CollectionTripType<T extends Collection> extends ObjectTripType<T> 
       // determine the dictionary entry from the stream, if provided
       opCode = deserializer.deserializeOpCode();
       if (opCode == DefaultOpCode.DICTIONARY || opCode.isOrdinal()) {
-        entry = receiveDictionary(stream, opCode);
+        entry = stream.receiveDictionary(opCode);
         opCode = deserializer.deserializeOpCode();
       }
 
@@ -193,7 +193,7 @@ public class CollectionTripType<T extends Collection> extends ObjectTripType<T> 
             value.add(null);  // collection allows null elements, obviously
           }
           else {
-            TripType<?> elementType = deriveType(stream, opCode);
+            TripType<?> elementType = stream.deriveType(opCode);
             if (elementType.isDictionaryBased()) {
               opCode = deserializer.deserializeOpCode();
             }

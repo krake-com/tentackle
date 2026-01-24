@@ -24,6 +24,7 @@ import org.tentackle.trip.Deserializer;
 import org.tentackle.trip.Dictionary;
 import org.tentackle.trip.DictionaryEntry;
 import org.tentackle.trip.OpCode;
+import org.tentackle.trip.PredefinedArrayType;
 import org.tentackle.trip.Reference;
 import org.tentackle.trip.Serializer;
 import org.tentackle.trip.TripConstants;
@@ -66,6 +67,7 @@ public class DefaultTripStream implements TripStream {
   private final Map<String, DictionaryEntry> dictionaryEntriesByName;
   private final Map<Class<?>, TripType<?>> tripTypes;
   private final TripFactory factory;
+  private final TripType<DictionaryEntry> dictTripType;
 
 
   /**
@@ -82,6 +84,7 @@ public class DefaultTripStream implements TripStream {
     dictionaryEntriesByName = new HashMap<>();
     tripTypes = new HashMap<>();
     factory = TripFactory.getInstance();
+    dictTripType = factory.getType(DictionaryEntry.class);
     clear();
   }
 
@@ -284,6 +287,83 @@ public class DefaultTripStream implements TripStream {
       return lastOrdinal + code - DefaultOpCode.ORDINAL_SKIP1.getCode() + 2;
     }
     return readOrdinal(opCode);
+  }
+
+  @Override
+  public void sendDictionary(Class<?> clazz) {
+    DictionaryEntry dictionaryEntry = getDictionaryEntry(clazz);
+    if (dictionaryEntry == null || dictionary.isServer() && dictionaryEntry.isClientOnly()) {
+      synchronized (dictionary) {   // the dictionary is shared!
+        dictionaryEntry = getDictionaryEntry(clazz);
+        if (dictionaryEntry == null || dictionary.isServer() && dictionaryEntry.isClientOnly()) {
+          // never talked about this class before, or client-only -> send the class definition
+          dictionaryEntry = dictionary.isServer() ?
+                              dictionary.createEntry(clazz) :
+                              dictionary.createTemporaryEntry(clazz);
+          dictTripType.write(dictionaryEntry, this);
+          dictionary.addEntry(dictionaryEntry);
+        }
+        else {
+          writeOrdinal(dictionaryEntry.getOrdinal());
+        }
+      }
+    }
+    else {
+      writeOrdinal(dictionaryEntry.getOrdinal());
+    }
+  }
+
+  @Override
+  public DictionaryEntry receiveDictionary(OpCode opCode) {
+    DictionaryEntry entry;
+    if (opCode == DefaultOpCode.DICTIONARY) {
+      entry = dictTripType.read(this, opCode);
+      getDictionary().addEntry(entry);
+    }
+    else {
+      // must be the ordinal
+      int ordinal = readOrdinal(opCode);
+      entry = getDictionaryEntry(ordinal);
+    }
+    return entry;
+  }
+
+  @Override
+  public DictionaryEntry receiveDictionary() {
+    return receiveDictionary(deserializer.deserializeOpCode());
+  }
+
+  @Override
+  public TripType<?> deriveType(OpCode opCode) {
+    TripType<?> type;
+    if (opCode.isFixedType()) {
+      type = opCode.getFixedType();
+    }
+    else {
+      Deserializer deserializer = getDeserializer();
+      if (opCode.isPredefinedArray()) {
+        char arrayCode = deserializer.deserializeChar();
+        PredefinedArrayType arrayType = PredefinedArrayType.valueOf(arrayCode);
+        if (arrayType == null) {
+          throw new TripRuntimeException("'" + arrayCode + "' is not a predefined array subtype");
+        }
+        type = opCode.getPredefinedArrayType(arrayType);
+      }
+      else {
+        if (!opCode.isDictionaryBased()) {
+          // usually a trip type implementation error
+          throw new TripRuntimeException("OpCode " + opCode + " is not dictionary-based");
+        }
+        // skip code OBJECT, RECORD, etc...
+        type = receiveDictionary().getType();
+      }
+    }
+    return type;
+  }
+
+  @Override
+  public TripType<?> deriveType() {
+    return deriveType(deserializer.deserializeOpCode());
   }
 
   /**

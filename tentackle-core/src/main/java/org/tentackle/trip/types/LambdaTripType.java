@@ -132,7 +132,7 @@ public final class LambdaTripType extends AbstractDictionaryBasedTripType<Object
       Object[] args = new Object[argCount];
       for (int i = 0; i < argCount; i++) {
         opCode = deserializer.deserializeOpCode();
-        TripType<?> argType = deriveType(stream, opCode);
+        TripType<?> argType = stream.deriveType(opCode);
         if (argType.isDictionaryBased()) {
           opCode = deserializer.deserializeOpCode();
         }
