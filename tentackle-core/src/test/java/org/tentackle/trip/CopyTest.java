@@ -20,13 +20,18 @@ package org.tentackle.trip;
 
 import org.testng.annotations.Test;
 
+import org.tentackle.common.ObjectSerializer;
 import org.tentackle.common.Timestamp;
 import org.tentackle.trip.impl.TestClass;
 import org.tentackle.trip.impl.TestSubClass;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotSame;
 import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertTrue;
 
 @SuppressWarnings("missing-explicit-ctor")
 public class CopyTest {
@@ -37,7 +42,18 @@ public class CopyTest {
     testObject.name = "test";
     testObject.age = 42;
     testObject.child = new TestSubClass(testObject, 100.0, new Timestamp());
-    TestClass copy = TripFactory.getInstance().copy(testObject);
+    TestClass copy = ObjectSerializer.getInstance().copy(testObject);   // uses TRIP under the hood
+    assertEquals(copy, testObject);
+    assertNotSame(copy, testObject);
+    assertNotSame(copy.child, testObject.child);
+    assertSame(((TestSubClass) copy.child).parent, copy);
+
+    // same as self-contained stream
+    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    ObjectSerializer.getInstance().serialize(testObject, bos);
+    Object selfContCopy = ObjectSerializer.getInstance().deserialize(new ByteArrayInputStream(bos.toByteArray()));
+    assertTrue(selfContCopy instanceof TestClass);
+    copy = (TestClass) selfContCopy;
     assertEquals(copy, testObject);
     assertNotSame(copy, testObject);
     assertNotSame(copy.child, testObject.child);
@@ -47,7 +63,7 @@ public class CopyTest {
   @Test
   void testArrayCopy() {
     String[] testArray = new String[]{"test1", "test2"};
-    String[] copy = TripFactory.getInstance().copy(testArray);
+    String[] copy = ObjectSerializer.getInstance().copy(testArray);   // uses TRIP under the hood
     assertEquals(copy, testArray);
     assertNotSame(copy, testArray);
   }

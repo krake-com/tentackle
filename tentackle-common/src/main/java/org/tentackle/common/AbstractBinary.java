@@ -37,11 +37,12 @@ import java.util.Arrays;
  * Keep in mind that the wrapped object is serialized when the binary is created by the result set
  * or setObject is invoked. Any further changes to the object are not reflected in the internal byte array.
  * <p>
- * See {@code org.tentackle.trip.TBinary} to serialize objects that don't implement {@link Serializable}.
+ * See {@link TBinary} to serialize objects that don't need to implement {@link Serializable}.
  *
  * @param <T> the serializable type
  */
-public abstract class AbstractBinary<T> implements Serializable, Cloneable, Freezable {
+public abstract sealed class AbstractBinary<T> implements Serializable, Cloneable, Freezable
+                permits Binary, TBinary {
 
   @Serial
   private static final long serialVersionUID = 1L;

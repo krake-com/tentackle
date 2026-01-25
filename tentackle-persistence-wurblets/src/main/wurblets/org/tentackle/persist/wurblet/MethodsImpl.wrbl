@@ -454,7 +454,8 @@ For more options, see {\@link DbModelWurblet}.
             DataType<?> dataType = getEffectiveDataType(attr);
             if (dataType.isPredefined()) {
               String getterMethod = createJdbcGetterName(attr);
-              if ("Binary".equals(attr.getDataType().getJavaType())) {
+              if ("Binary".equals(attr.getDataType().getJavaType()) ||
+                  "TBinary".equals(attr.getDataType().getJavaType())) {
                 // Binary getter takes additional buffer size argument
                 int bufsize = attr.getSize() == null ? 0 : attr.getSize();
                 if (useSetter)  {

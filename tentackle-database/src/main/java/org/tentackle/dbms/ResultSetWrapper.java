@@ -31,7 +31,7 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.DataType;
 import org.tentackle.sql.datatypes.ZonedDateTimeType;
-import org.tentackle.trip.TBinary;
+import org.tentackle.common.TBinary;
 
 import java.io.IOException;
 import java.io.Serializable;

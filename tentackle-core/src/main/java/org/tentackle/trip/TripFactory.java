@@ -255,35 +255,4 @@ public interface TripFactory {
    */
   <T> T createRemoteProxy(UUID remoteId, Transport transport, Class<?>... clazz);
 
-  /**
-   * Creates a deep copy of the given object.
-   * <p>
-   * Not to be mixed up with {@link org.tentackle.misc.Snapshotable#copy()} which returns
-   * a semantically equivalent copy, which is not necessarily a deep copy.
-   * For example, PDOs copied via snapshots are all <em>new</em> with an id and serial of 0.
-   *
-   * @param object the object to copy
-   * @return the copy
-   * @param <T> the object type
-   */
-  <T> T copy(T object);
-
-  /**
-   * Serialize the given object to bytes.<br>
-   * The first 2 bytes contain the {@link TripConstants#MAGIC}.
-   *
-   * @param object the object to serialize
-   * @param out the output stream to write to
-   */
-  void serialize(Object object, OutputStream out);
-
-  /**
-   * Deserialize the given bytes to an object.<br>
-   * The first 2 bytes must contain the {@link TripConstants#MAGIC}.
-   *
-   * @param in the input stream to read from
-   * @return the deserialized object
-   */
-  Object deserialize(InputStream in);
-
 }

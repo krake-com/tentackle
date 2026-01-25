@@ -16,15 +16,14 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.dbms.trip;
+package org.tentackle.sql.datatypes;
 
 import org.tentackle.common.Service;
+import org.tentackle.common.TBinary;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.DataType;
 import org.tentackle.sql.SqlType;
-import org.tentackle.sql.datatypes.AbstractDataType;
-import org.tentackle.trip.TBinary;
 
 import java.io.IOException;
 import java.sql.PreparedStatement;

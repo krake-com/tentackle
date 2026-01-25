@@ -27,7 +27,6 @@ import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.trip.Deserializer;
 import org.tentackle.trip.Dictionary;
 import org.tentackle.trip.OpCode;
-import org.tentackle.trip.PredefinedArray;
 import org.tentackle.trip.Registry;
 import org.tentackle.trip.Remote;
 import org.tentackle.trip.RemoteLookup;
@@ -36,7 +35,6 @@ import org.tentackle.trip.Transport;
 import org.tentackle.trip.TransportManager;
 import org.tentackle.trip.TripComponent;
 import org.tentackle.trip.TripComponentProvider;
-import org.tentackle.trip.TripConstants;
 import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.TripInstanceCreator;
 import org.tentackle.trip.TripRuntimeException;
@@ -55,7 +53,6 @@ import java.lang.reflect.RecordComponent;
 import java.net.URI;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -67,8 +64,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service(TripFactory.class)
 public class DefaultTripFactory implements TripFactory {
 
-  private static final UUID NIL_UUID = new UUID(0, 0);
-
   private final ClassMapper typeClassMapper;              // maps base classes to trip types
   private final ClassMapper providerClassMapper;          // maps component providers to classes
   private final ClassMapper creatorClassMapper;           // maps instance creators to classes
@@ -76,9 +71,7 @@ public class DefaultTripFactory implements TripFactory {
   private final Collection<OpCode> allOpCodes;            // all opcodes
   private final Map<Class<?>, TripType<?>> typeMap;       // map of concrete classes to trip types
   private final Map<String, Class<Transport>> transports; // protocol::transport map
-  private volatile boolean copyNotInvokedSoFar = true;    // for double-checked locking
-  private Dictionary serializerDictionary;                // serializer dictionary for the copy() method
-  private Dictionary deserializerDictionary;              // deserializer dictionary for the copy() method
+
 
   /**
    * Creates the factory.
@@ -267,73 +260,6 @@ public class DefaultTripFactory implements TripFactory {
     return new DefaultTransportManager();
   }
 
-  @Override
-  @SuppressWarnings("unchecked")
-  public <T> T copy(T object) {
-    if (object != null) {
-      if (copyNotInvokedSoFar) {
-        // create the dictionaries lazily
-        synchronized (this) {
-          if (copyNotInvokedSoFar) {
-            copyNotInvokedSoFar = false;
-            // sender = server avoids temporary dictionary entries
-            serializerDictionary = createDictionary(NIL_UUID, true);
-            deserializerDictionary = createDictionary(NIL_UUID, false);
-          }
-        }
-      }
-      // we need new streams due to thread-safety, but we can reuse the dictionaries
-      EchoTransceiver transceiver = new EchoTransceiver(serializerDictionary, deserializerDictionary, false, null);
-      TripStream stream = transceiver.getStream();
-      TripType<T> type = getType((Class<T>) object.getClass());
-      type.write(object, stream);
-      transceiver.echo();
-      stream = transceiver.getStream();   // switched!
-      OpCode opCode = stream.getDeserializer().deserializeOpCode();
-      if (type instanceof PredefinedArray<?> arrayType) {
-        return (T) arrayType.readWithType(stream, opCode);
-      }
-      return type.read(stream, opCode);
-    }
-    return null;
-  }
-
-  @Override
-  public void serialize(Object object, OutputStream out) {
-    Dictionary dictionary = createDictionary(NIL_UUID, true);
-    Serializer serializer = createSerializer(out);
-    serializer.serialize(TripConstants.MAGIC);
-    TripStream stream = TripFactory.getInstance().createStream(dictionary, serializer, null);
-    if (object == null) {
-      serializer.serializeOpCode(DefaultOpCode.NULL);
-    }
-    else {
-      TripType<Object> type = getType(object.getClass());
-      type.write(object, stream);
-    }
-    serializer.flush();
-  }
-
-  @Override
-  public Object deserialize(InputStream in) {
-      Dictionary dictionary = createDictionary(NIL_UUID, false);
-      Deserializer deserializer = createDeserializer(in);
-      byte[] magic = new byte[2];
-      deserializer.deserialize(magic, 0, 2);
-      if (magic[0] != TripConstants.MAGIC[0] || magic[1] != TripConstants.MAGIC[1]) {
-        throw new TripRuntimeException("invalid magic: " + HexFormat.ofDelimiter(", ").withPrefix("0x").formatHex(magic));
-      }
-      TripStream stream = TripFactory.getInstance().createStream(dictionary, null, deserializer);
-      OpCode opCode = deserializer.deserializeOpCode();
-      if (opCode == DefaultOpCode.NULL) {
-        return null;
-      }
-      TripType<?> type = stream.deriveType(opCode);
-      if (type.isDictionaryBased()) {
-        opCode = deserializer.deserializeOpCode();
-      }
-      return type.read(stream, opCode);
-  }
 
   /**
    * Creates a trip type for the given class.

@@ -25,6 +25,7 @@ import org.tentackle.common.Binary;
 import org.tentackle.common.DMoney;
 import org.tentackle.common.Date;
 import org.tentackle.common.I18NText;
+import org.tentackle.common.TBinary;
 import org.tentackle.common.Time;
 import org.tentackle.common.Timestamp;
 import org.tentackle.misc.TrackedArrayList;

@@ -30,7 +30,7 @@ import org.tentackle.sql.DataType;
 import org.tentackle.sql.DataTypeFactory;
 import org.tentackle.sql.SqlType;
 import org.tentackle.sql.datatypes.ZonedDateTimeType;
-import org.tentackle.trip.TBinary;
+import org.tentackle.common.TBinary;
 
 import java.lang.ref.WeakReference;
 import java.math.BigDecimal;

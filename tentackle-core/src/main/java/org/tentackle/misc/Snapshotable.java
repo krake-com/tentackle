@@ -90,7 +90,7 @@ public interface Snapshotable<T> {
    * in all aspects. For example, a copied PDO and all of its components
    * contain the same data, but they are all <em>new</em>, i.e., with their id
    * and serial reset to 0.<br>
-   * For a technically identical deep copy, consider {@link org.tentackle.trip.TripFactory#copy(Object)}.
+   * For a technically identical deep copy, consider {@link org.tentackle.common.ObjectSerializer#copy(Object)}.
    *
    * @return the copied object
    */

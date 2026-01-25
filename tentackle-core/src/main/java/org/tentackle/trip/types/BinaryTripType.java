@@ -23,7 +23,7 @@ import org.tentackle.common.Binary;
 import org.tentackle.trip.Deserializer;
 import org.tentackle.trip.OpCode;
 import org.tentackle.trip.Serializer;
-import org.tentackle.trip.TBinary;
+import org.tentackle.common.TBinary;
 import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.TripStream;
 import org.tentackle.trip.TripTypeService;

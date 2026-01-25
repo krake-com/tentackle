@@ -16,10 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.trip;
-
-import org.tentackle.common.AbstractBinary;
-import org.tentackle.common.Binary;
+package org.tentackle.common;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -29,7 +26,9 @@ import java.io.Serializable;
 
 /**
  * Datatype for storing an object in a database.<br>
- * Same as {@link Binary}, but uses TRIP-serialization under the hood.
+ * Same as {@link Binary}, but uses the application-specific {@link ObjectSerializer} implementation.
+ * Since {@code tentackle-core} is part of any Tentackle application, {@code org.tentackle.trip.impl.TripObjectSerializer}
+ * will be used by default.
  * <p>
  * Does not require the objects to be serializable implement {@link Serializable}.
  *
@@ -118,7 +117,7 @@ public final class TBinary<T> extends AbstractBinary<T> implements Serializable 
   @Override
   public T getObject() throws IOException, ClassNotFoundException {
     if (object == null && data != null && length > 0) {
-      return (T) TripFactory.getInstance().deserialize(getInputStream());
+      return (T) ObjectSerializer.getInstance().deserialize(getInputStream());
     }
     return object;
   }
@@ -140,7 +139,7 @@ public final class TBinary<T> extends AbstractBinary<T> implements Serializable 
     }
     else {
       ByteArrayOutputStream bos = new ByteArrayOutputStream();
-      TripFactory.getInstance().serialize(object, bos);
+      ObjectSerializer.getInstance().serialize(object, bos);
       data = bos.toByteArray();
       length = bos.size();
     }
