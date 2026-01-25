@@ -8,7 +8,7 @@
 /**
  * Persistence implementation module.
  */
-module ${package}.persist {
+open module ${package}.persist {
   exports ${package}.persist;
   exports ${package}.persist.md;
   exports ${package}.persist.md.trip;

@@ -34,8 +34,8 @@
     <cert.dir>${symbol_dollar}{project.build.directory}/jks</cert.dir>
     <cert.file>${symbol_dollar}{project.parent.basedir}/server/target/server.cer</cert.file>
     <cert.alias>server</cert.alias>
-    <dbService>trips://localhost:8888/\${application}Server</dbService>
-    <updateService>tripe://localhost:8890/\${application}Update</updateService>
+    <dbService>trips://localhost:8888/${application}Server</dbService>
+    <updateService>tripe://localhost:8890/${application}Update</updateService>
     <daemon.password>daemon</daemon.password>
   </properties>
 
