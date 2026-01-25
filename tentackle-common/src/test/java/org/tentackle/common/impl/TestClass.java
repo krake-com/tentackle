@@ -37,7 +37,7 @@ public sealed class TestClass implements Serializable permits TestSubClass {
   public BMoney money;
   public TestEnum color;
   public TestRecord person;
-  public Object someObject;
+  public Serializable someObject;
 
   public TestClass() {
   }
