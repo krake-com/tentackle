@@ -20,7 +20,7 @@ package org.tentackle.dbms;
 
 import org.testng.annotations.Test;
 
-import org.tentackle.trip.TripFactory;
+import org.tentackle.common.ObjectSerializer;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotSame;
@@ -34,7 +34,7 @@ public class RemotingTest {
   @Test
   public void testRemoteTransaction() {
     RemoteTransaction tx = new RemoteTransaction(-1234, "Test", 100, 1);
-    RemoteTransaction copy = TripFactory.getInstance().copy(tx);
+    RemoteTransaction copy = ObjectSerializer.getInstance().copy(tx);
     assertNotSame(copy, tx);
     assertEquals(copy.getTxVoucher(), tx.getTxVoucher());
     assertEquals(copy.getTxName(), tx.getTxName());
