@@ -18,7 +18,6 @@
 
 package org.tentackle.trip.types;
 
-import org.tentackle.trip.Deserializer;
 import org.tentackle.trip.OpCode;
 import org.tentackle.trip.Serializer;
 import org.tentackle.trip.TripFactory;
@@ -66,9 +65,8 @@ public final class LocaleTripType extends AbstractTripType<Locale> {
   @Override
   public Locale read(TripStream stream, OpCode opCode) {
     Locale value;
-    Deserializer deserializer = stream.getDeserializer();
     if (opCode == DefaultOpCode.LOCALE) {
-      String[] localeParts = LocaleTypeHolder.STRING_INSTANCE.read(stream, deserializer.deserializeOpCode())
+      String[] localeParts = LocaleTypeHolder.STRING_INSTANCE.read(stream, stream.receiveOpCode())
                                                              .split("_");
       value = switch (localeParts.length) {
         case 0 -> Locale.ROOT;

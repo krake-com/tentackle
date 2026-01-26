@@ -24,6 +24,7 @@ import org.tentackle.trip.RemoteDelegate;
 import org.tentackle.trip.Transport;
 import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.TripStream;
+import org.tentackle.trip.impl.DefaultOpCode;
 import org.tentackle.trip.remote.IdentifiedRemoteCall;
 import org.tentackle.trip.remote.IdentifiedRemoteResponse;
 import org.tentackle.trip.remote.InitialRemoteCall;
@@ -119,16 +120,9 @@ public class CallHandler implements Runnable {
       }
     }
     catch (Throwable t) {
-      // some protocol error (serializing the response failed)
-      LOGGER.severe("error handling " + remoteCall, t);
-      if (remoteCall instanceof IdentifiedRemoteCall) {
-        IdentifiedRemoteResponse response = new IdentifiedRemoteResponse(null, t);
-        stream.getType(IdentifiedRemoteResponse.class).write(response, stream);
-      }
-      else {
-        InitialRemoteResponse response = new InitialRemoteResponse(-1, null, t);
-        stream.getType(InitialRemoteResponse.class).write(response, stream);
-      }
+      // serializing the response failed
+      LOGGER.severe("failure processing " + remoteCall, t);
+      stream.sendError(DefaultOpCode.SERVER_SERIALIZATION_ERROR, t);
     }
     finally {
       TransportClientInfo.set(null);

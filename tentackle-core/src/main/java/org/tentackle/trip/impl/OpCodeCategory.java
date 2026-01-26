@@ -63,6 +63,11 @@ public enum OpCodeCategory {
    * @see DefaultOpCode#ARRAYN1
    * @see DefaultOpCode#ARRAYN2
    */
-  PREDEFINED_ARRAY
+  PREDEFINED_ARRAY,
+
+  /**
+   * Low-level serialization/deserialization error.
+   */
+  ERROR
 
 }

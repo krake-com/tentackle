@@ -83,13 +83,13 @@ public final class IntegerPrimitiveArrayTripType extends AbstractPredefinedArray
     }
     TripType<Integer> intTripType = IntegerPrimitiveTypeHolder.INSTANCE;
     Deserializer deserializer = stream.getDeserializer();
-    Reference<int[]> reference = receiveReference(stream, deserializer.deserializeOpCode());
+    Reference<int[]> reference = receiveReference(stream, stream.receiveOpCode());
     if (reference.isObjectFollowing()) {
       int length = readArrayLength(deserializer, opCode);
       int[] result = new int[length];
       int count = 0;
       while (count < length) {
-        opCode = deserializer.deserializeOpCode();
+        opCode = stream.receiveOpCode();
         switch (opCode) {
           case DefaultOpCode.SKIP -> count += deserializer.deserializeInt();
           case DefaultOpCode.SKIP2 -> count += deserializer.deserializeShortAsUnsigned();

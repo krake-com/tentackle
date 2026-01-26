@@ -119,14 +119,14 @@ public final class BooleanArrayTripType extends AbstractPredefinedArrayTripType<
       return null;
     }
     Deserializer deserializer = stream.getDeserializer();
-    Reference<Boolean[]> reference = receiveReference(stream, deserializer.deserializeOpCode());
+    Reference<Boolean[]> reference = receiveReference(stream, stream.receiveOpCode());
     if (reference.isObjectFollowing()) {
       TripType<Boolean> booleanTripType = BooleanTypeHolder.INSTANCE;
       int length = readArrayLength(deserializer, opCode);
       Boolean[] result = new Boolean[length];
       int count = 0;
       while (count < length) {
-        opCode = deserializer.deserializeOpCode();
+        opCode = stream.receiveOpCode();
         switch (opCode) {
           case DefaultOpCode.SKIP -> count += deserializer.deserializeInt();
           case DefaultOpCode.SKIP2 -> count += deserializer.deserializeShortAsUnsigned();

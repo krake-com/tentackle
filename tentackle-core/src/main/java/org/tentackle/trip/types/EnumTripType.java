@@ -18,7 +18,6 @@
 
 package org.tentackle.trip.types;
 
-import org.tentackle.trip.Deserializer;
 import org.tentackle.trip.DictionaryEntry;
 import org.tentackle.trip.OpCode;
 import org.tentackle.trip.TripComponent;
@@ -89,15 +88,14 @@ public class EnumTripType<T extends Enum<T>> extends AbstractDictionaryBasedTrip
   @Override
   @SuppressWarnings("unchecked")
   public T read(TripStream stream, OpCode opCode) {
-    Deserializer deserializer = stream.getDeserializer();
     DictionaryEntry entry = null;
 
     if (opCode == DefaultOpCode.ENUM) {
       // determine the dictionary entry from the stream, if provided
-      opCode = deserializer.deserializeOpCode();
+      opCode = stream.receiveOpCode();
       if (opCode == DefaultOpCode.DICTIONARY || opCode.isOrdinal()) {
         entry = stream.receiveDictionary(opCode);
-        opCode = deserializer.deserializeOpCode();
+        opCode = stream.receiveOpCode();
       }
 
       if (opCode == DefaultOpCode.NULL) {

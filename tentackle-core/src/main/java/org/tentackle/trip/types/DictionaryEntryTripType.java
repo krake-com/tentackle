@@ -19,7 +19,6 @@
 package org.tentackle.trip.types;
 
 import org.tentackle.reflect.ReflectionHelper;
-import org.tentackle.trip.Deserializer;
 import org.tentackle.trip.Dictionary;
 import org.tentackle.trip.DictionaryEntry;
 import org.tentackle.trip.DictionaryEntryComponent;
@@ -82,22 +81,21 @@ public final class DictionaryEntryTripType extends AbstractTripType<DictionaryEn
     if (opCode != DefaultOpCode.DICTIONARY) {
       throw new TripRuntimeException("unexpected opCode: " + opCode);
     }
-    Deserializer deserializer = stream.getDeserializer();
     Dictionary dictionary = stream.getDictionary();
-    int ordinal = stream.readOrdinal(deserializer.deserializeOpCode());
-    String className = DictionaryEntryTypeHolder.STRING_INSTANCE.read(stream, deserializer.deserializeOpCode());
-    boolean isProxy = DictionaryEntryTypeHolder.BOOLEAN_INSTANCE.read(stream, deserializer.deserializeOpCode());
-    opCode = deserializer.deserializeOpCode();
+    int ordinal = stream.readOrdinal(stream.receiveOpCode());
+    String className = DictionaryEntryTypeHolder.STRING_INSTANCE.read(stream, stream.receiveOpCode());
+    boolean isProxy = DictionaryEntryTypeHolder.BOOLEAN_INSTANCE.read(stream, stream.receiveOpCode());
+    opCode = stream.receiveOpCode();
     String[] componentNames;
     String[] componentTypes;
     if (DictionaryEntryTypeHolder.PREDEFINED_STRING_ARRAY != null) {
       componentNames = DictionaryEntryTypeHolder.PREDEFINED_STRING_ARRAY.readWithType(stream, opCode);
-      opCode = deserializer.deserializeOpCode();
+      opCode = stream.receiveOpCode();
       componentTypes = DictionaryEntryTypeHolder.PREDEFINED_STRING_ARRAY.readWithType(stream, opCode);
     }
     else {
       componentNames = DictionaryEntryTypeHolder.STRING_ARRAY_INSTANCE.read(stream, opCode);
-      opCode = deserializer.deserializeOpCode();
+      opCode = stream.receiveOpCode();
       componentTypes = DictionaryEntryTypeHolder.STRING_ARRAY_INSTANCE.read(stream, opCode);
     }
     DictionaryEntryComponent[] components = new DictionaryEntryComponent[componentNames.length];

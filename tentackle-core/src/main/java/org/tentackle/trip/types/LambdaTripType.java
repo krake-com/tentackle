@@ -19,7 +19,6 @@
 package org.tentackle.trip.types;
 
 import org.tentackle.log.Logger;
-import org.tentackle.trip.Deserializer;
 import org.tentackle.trip.OpCode;
 import org.tentackle.trip.Serializer;
 import org.tentackle.trip.TripFactory;
@@ -116,25 +115,24 @@ public final class LambdaTripType extends AbstractDictionaryBasedTripType<Object
   @Override
   public Object read(TripStream stream, OpCode opCode) {
     initialize();
-    Deserializer deserializer = stream.getDeserializer();
     if (opCode == DefaultOpCode.LAMBDA) {
-      Class<?> capturingClass = CLASS.read(stream, deserializer.deserializeOpCode());
-      String functionalInterfaceClassName = STRING.read(stream, deserializer.deserializeOpCode());
-      String functionalInterfaceMethodName = STRING.read(stream, deserializer.deserializeOpCode());
-      String functionalInterfaceMethodSignature = STRING.read(stream, deserializer.deserializeOpCode());
-      int implMethodKind = INTEGER.read(stream, deserializer.deserializeOpCode());
-      String implClassName = STRING.read(stream, deserializer.deserializeOpCode());
-      String implMethodName = STRING.read(stream, deserializer.deserializeOpCode());
-      String implMethodSignature = STRING.read(stream, deserializer.deserializeOpCode());
-      String instantiatedMethodType = STRING.read(stream, deserializer.deserializeOpCode());
+      Class<?> capturingClass = CLASS.read(stream, stream.receiveOpCode());
+      String functionalInterfaceClassName = STRING.read(stream, stream.receiveOpCode());
+      String functionalInterfaceMethodName = STRING.read(stream, stream.receiveOpCode());
+      String functionalInterfaceMethodSignature = STRING.read(stream, stream.receiveOpCode());
+      int implMethodKind = INTEGER.read(stream, stream.receiveOpCode());
+      String implClassName = STRING.read(stream, stream.receiveOpCode());
+      String implMethodName = STRING.read(stream, stream.receiveOpCode());
+      String implMethodSignature = STRING.read(stream, stream.receiveOpCode());
+      String instantiatedMethodType = STRING.read(stream, stream.receiveOpCode());
 
-      int argCount = INTEGER.read(stream, deserializer.deserializeOpCode());
+      int argCount = INTEGER.read(stream, stream.receiveOpCode());
       Object[] args = new Object[argCount];
       for (int i = 0; i < argCount; i++) {
-        opCode = deserializer.deserializeOpCode();
+        opCode = stream.receiveOpCode();
         TripType<?> argType = stream.deriveType(opCode);
         if (argType.isDictionaryBased()) {
-          opCode = deserializer.deserializeOpCode();
+          opCode = stream.receiveOpCode();
         }
         args[i] = argType.read(stream, opCode);
       }

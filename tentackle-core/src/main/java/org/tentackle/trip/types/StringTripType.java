@@ -132,15 +132,15 @@ public class StringTripType extends AbstractTripType<String> {
     OpCode orgCode = opCode;
 
     if (opCode == DefaultOpCode.STRING1_REF) {
-      opCode = deserializer.deserializeOpCode();
+      opCode = stream.receiveOpCode();
       orgCode = DefaultOpCode.STRING1;
     }
     else if (opCode == DefaultOpCode.STRING2_REF) {
-      opCode = deserializer.deserializeOpCode();
+      opCode = stream.receiveOpCode();
       orgCode = DefaultOpCode.STRING2;
     }
     else if (opCode == DefaultOpCode.STRING_REF) {
-      opCode = deserializer.deserializeOpCode();
+      opCode = stream.receiveOpCode();
       orgCode = DefaultOpCode.STRING;
     }
 

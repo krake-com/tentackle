@@ -18,7 +18,6 @@
 
 package org.tentackle.trip.types;
 
-import org.tentackle.trip.Deserializer;
 import org.tentackle.trip.OpCode;
 import org.tentackle.trip.Serializer;
 import org.tentackle.trip.TripFactory;
@@ -68,9 +67,8 @@ public final class TimeZoneTripType extends AbstractTripType<TimeZone> {
   @Override
   public TimeZone read(TripStream stream, OpCode opCode) {
     TimeZone value;
-    Deserializer deserializer = stream.getDeserializer();
     if (opCode == DefaultOpCode.LOCALE) {
-      value = TimeZone.getTimeZone(TimeZoneTypeHolder.STRING_INSTANCE.read(stream, deserializer.deserializeOpCode()));
+      value = TimeZone.getTimeZone(TimeZoneTypeHolder.STRING_INSTANCE.read(stream, stream.receiveOpCode()));
     }
     else {
       value = super.read(stream, opCode);

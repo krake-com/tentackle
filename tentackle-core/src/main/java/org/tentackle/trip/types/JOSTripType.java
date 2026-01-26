@@ -90,7 +90,7 @@ public final class JOSTripType extends AbstractTripType<Object> {
     Deserializer deserializer = stream.getDeserializer();
 
     if (opCode == DefaultOpCode.JOS) {
-      opCode = deserializer.deserializeOpCode();
+      opCode = stream.receiveOpCode();
       if (opCode == DefaultOpCode.NULL) {
         return null;
       }

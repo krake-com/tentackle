@@ -30,9 +30,8 @@ import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.TripStream;
 import org.tentackle.trip.TripStreamClosedException;
 import org.tentackle.trip.TripType;
-import org.tentackle.trip.remote.IdentifiedRemoteResponse;
-import org.tentackle.trip.remote.InitialRemoteCall;
-import org.tentackle.trip.remote.InitialRemoteResponse;
+import org.tentackle.trip.impl.DefaultOpCode;
+import org.tentackle.trip.impl.TripError;
 import org.tentackle.trip.remote.RemoteCall;
 
 import java.io.IOException;
@@ -151,10 +150,9 @@ public class ConnectionHandler implements Runnable {
       TripType<?> tripType = null;
       try {
         stream.clear();
-        Deserializer deserializer = stream.getDeserializer();
         tripType = stream.deriveType();
         if (tripType.isDictionaryBased()) {   // all remote calls are dictionary-based
-          Object call = tripType.read(stream, deserializer.deserializeOpCode());
+          Object call = tripType.read(stream, stream.receiveOpCode());
           if (call instanceof RemoteCall remoteCall) {
             // dispatch to call handler ...
             transport.getCallThreadPool().submit(transport.createCallHandler(stream, transportClientInfo, remoteCall))
@@ -172,39 +170,25 @@ public class ConnectionHandler implements Runnable {
           throw new TripRuntimeException("unexpected type received: " + tripType);
         }
       }
+      catch (TripError e) {
+        LOGGER.severe("serialization error received from client", e);
+        // ignore the call and continue reading from the stream
+      }
       catch (TripStreamClosedException tc) {
         LOGGER.fine("connection closed by client", tc);
         break;
       }
       catch (Throwable t) {
-        // some protocol error (deserializing the request failed)
-        // If the error stems from the client, the stream is usually corrupted and must be closed.
-        // We can try to send back some error message, but the client is usually no more listening.
-        // The stacktrace may also show a lot of follow-up errors that can be misleading,
-        // but one never knows...
+        // deserializing the remote call failed
         if (tripType == null) {
           LOGGER.severe("cannot derive remote call type", t);
         }
         else {
-          LOGGER.severe("error receiving remote call " + tripType, t);
-          if (RemoteCall.class.isAssignableFrom(tripType.getObjectClass())) {
-            try {
-              stream.clear();
-              if (InitialRemoteCall.class.isAssignableFrom(tripType.getObjectClass())) {
-                stream.getType(InitialRemoteResponse.class).write(new InitialRemoteResponse(-1, null, t), stream);
-              }
-              else {
-                stream.getType(IdentifiedRemoteResponse.class).write(new IdentifiedRemoteResponse(null, t), stream);
-              }
-              stream.getSerializer().flush();
-            }
-            catch (RuntimeException rx) {
-              // sending back failed: log the error and terminate the connection
-              LOGGER.severe("cannot send error response", rx);
-            }
-          }
+          LOGGER.severe("failed to deserialize remote call " + tripType, t);
         }
-        break;
+        stream.clearModifiable();
+        stream.sendError(DefaultOpCode.SERVER_DESERIALIZATION_ERROR, t);
+        break;    // close the connection since we don't know what's still in the stream
       }
     }
     LOGGER.info("connection " + transportClientInfo + " closed");

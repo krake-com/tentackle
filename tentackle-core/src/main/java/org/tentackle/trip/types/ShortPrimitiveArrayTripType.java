@@ -121,13 +121,13 @@ public final class ShortPrimitiveArrayTripType extends AbstractPredefinedArrayTr
     }
     TripType<Short> shortTripType = ShortPrimitiveTypeHolder.INSTANCE;
     Deserializer deserializer = stream.getDeserializer();
-    Reference<short[]> reference = receiveReference(stream, deserializer.deserializeOpCode());
+    Reference<short[]> reference = receiveReference(stream, stream.receiveOpCode());
     if (reference.isObjectFollowing()) {
       int length = readArrayLength(deserializer, opCode);
       short[] result = new short[length];
       int count = 0;
       while (count < length) {
-        opCode = deserializer.deserializeOpCode();
+        opCode = stream.receiveOpCode();
         switch (opCode) {
           case DefaultOpCode.SKIP -> count += deserializer.deserializeInt();
           case DefaultOpCode.SKIP2 -> count += deserializer.deserializeShortAsUnsigned();

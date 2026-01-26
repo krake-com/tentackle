@@ -116,13 +116,13 @@ public final class BytePrimitiveArrayTripType extends AbstractPredefinedArrayTri
     }
     TripType<Byte> byteTripType = BytePrimitiveTypeHolder.INSTANCE;
     Deserializer deserializer = stream.getDeserializer();
-    Reference<byte[]> reference = receiveReference(stream, deserializer.deserializeOpCode());
+    Reference<byte[]> reference = receiveReference(stream, stream.receiveOpCode());
     if (reference.isObjectFollowing()) {
       int length = readArrayLength(deserializer, opCode);
       byte[] result = new byte[length];
       int count = 0;
       while (count < length) {
-        opCode = deserializer.deserializeOpCode();
+        opCode = stream.receiveOpCode();
         switch (opCode) {
           case DefaultOpCode.SKIP -> count += deserializer.deserializeInt();
           case DefaultOpCode.SKIP2 -> count += deserializer.deserializeShortAsUnsigned();

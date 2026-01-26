@@ -18,7 +18,6 @@
 
 package org.tentackle.trip.types;
 
-import org.tentackle.trip.Deserializer;
 import org.tentackle.trip.OpCode;
 import org.tentackle.trip.Serializer;
 import org.tentackle.trip.TripFactory;
@@ -68,15 +67,14 @@ public final class StackTraceElementTripType extends AbstractTripType<StackTrace
   @Override
   public StackTraceElement read(TripStream stream, OpCode opCode) {
     StackTraceElement value;
-    Deserializer deserializer = stream.getDeserializer();
     if (opCode == DefaultOpCode.STACKTRACE_ELEMENT) {
-      value = new StackTraceElement(StackTraceElementTypeHolder.STRING_TYPE.read(stream, deserializer.deserializeOpCode()),
-                                    StackTraceElementTypeHolder.STRING_TYPE.read(stream, deserializer.deserializeOpCode()),
-                                    StackTraceElementTypeHolder.STRING_TYPE.read(stream, deserializer.deserializeOpCode()),
-                                    StackTraceElementTypeHolder.STRING_TYPE.read(stream, deserializer.deserializeOpCode()),
-                                    StackTraceElementTypeHolder.STRING_TYPE.read(stream, deserializer.deserializeOpCode()),
-                                    StackTraceElementTypeHolder.STRING_TYPE.read(stream, deserializer.deserializeOpCode()),
-                                    StackTraceElementTypeHolder.INTEGER_TYPE.read(stream, deserializer.deserializeOpCode()));
+      value = new StackTraceElement(StackTraceElementTypeHolder.STRING_TYPE.read(stream, stream.receiveOpCode()),
+                                    StackTraceElementTypeHolder.STRING_TYPE.read(stream, stream.receiveOpCode()),
+                                    StackTraceElementTypeHolder.STRING_TYPE.read(stream, stream.receiveOpCode()),
+                                    StackTraceElementTypeHolder.STRING_TYPE.read(stream, stream.receiveOpCode()),
+                                    StackTraceElementTypeHolder.STRING_TYPE.read(stream, stream.receiveOpCode()),
+                                    StackTraceElementTypeHolder.STRING_TYPE.read(stream, stream.receiveOpCode()),
+                                    StackTraceElementTypeHolder.INTEGER_TYPE.read(stream, stream.receiveOpCode()));
     }
     else {
       value = super.read(stream, opCode);

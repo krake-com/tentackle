@@ -81,7 +81,7 @@ public final class ZonedDateTimeTripType extends AbstractTripType<ZonedDateTime>
                                deserializer.deserializeByteAsUnsigned(),
                                deserializer.deserializeByteAsUnsigned(),
                                deserializer.deserializeInt(),
-                               ZoneId.of(ZonedDateTimeTypeHolder.STRING_INSTANCE.read(stream, deserializer.deserializeOpCode())));
+                               ZoneId.of(ZonedDateTimeTypeHolder.STRING_INSTANCE.read(stream, stream.receiveOpCode())));
     }
     else {
       value = super.read(stream, opCode);

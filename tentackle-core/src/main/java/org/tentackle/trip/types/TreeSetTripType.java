@@ -18,7 +18,6 @@
 
 package org.tentackle.trip.types;
 
-import org.tentackle.trip.Deserializer;
 import org.tentackle.trip.OpCode;
 import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.TripInstantiationException;
@@ -89,15 +88,14 @@ public class TreeSetTripType<T extends TreeSet> extends CollectionTripType<T> {
   @Override
   @SuppressWarnings({ "unchecked", "rawtypes" })
   protected CollectionHeader<T> readHeader(TripStream stream, OpCode opCode) {
-    Deserializer deserializer = stream.getDeserializer();
     int size = TreeSetTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode);
-    boolean hasComparator = TreeSetTypeHolder.BOOLEAN_TRIP_TYPE.read(stream, deserializer.deserializeOpCode());
+    boolean hasComparator = TreeSetTypeHolder.BOOLEAN_TRIP_TYPE.read(stream, stream.receiveOpCode());
     if (hasComparator) {
       // get the type from the stream (either new dictionary entry or ordinal)
-      deserializer.deserializeOpCode();   // skip OBJECT
+      stream.receiveOpCode();   // skip OBJECT
       TripType<Comparator> type = (TripType<Comparator>) stream.receiveDictionary().getType();
       // the next opcode is a reference or the handler data
-      Comparator comparator = type.read(stream, deserializer.deserializeOpCode());
+      Comparator comparator = type.read(stream, stream.receiveOpCode());
       try {
         return new CollectionHeader<>(size, comparatorConstructor.newInstance(comparator));
       }

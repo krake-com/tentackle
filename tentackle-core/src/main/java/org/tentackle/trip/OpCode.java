@@ -20,6 +20,8 @@ package org.tentackle.trip;
 
 import org.tentackle.misc.Convertible;
 
+import java.io.Serializable;
+
 /**
  * Operation Code.<br>
  * The op-code is the first byte of a serialized block and describes how
@@ -45,7 +47,7 @@ import org.tentackle.misc.Convertible;
  * </ul>
  *
  */
-public interface OpCode extends Convertible<Integer> {
+public interface OpCode extends Serializable, Convertible<Integer> {
 
   /**
    * Returns true if this OpCode is a reference.
@@ -92,6 +94,13 @@ public interface OpCode extends Convertible<Integer> {
    * @return the predefined array type
    */
   TripType<?> getPredefinedArrayType(PredefinedArrayType arrayType);
+
+  /**
+   * Returns whether the trip type is an error type.
+   *
+   * @return true if error-type, false otherwise
+   */
+  boolean isError();
 
   /**
    * Returns whether the trip type can be determined directly from the op-code.

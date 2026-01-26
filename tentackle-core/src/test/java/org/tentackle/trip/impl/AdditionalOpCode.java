@@ -77,6 +77,11 @@ public enum AdditionalOpCode implements OpCode {
   }
 
   @Override
+  public boolean isError() {
+    return false;
+  }
+
+  @Override
   public TripType<?> getFixedType() {
     throw new TripRuntimeException("not a fixed type");
   }

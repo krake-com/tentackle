@@ -126,13 +126,13 @@ public final class CharacterPrimitiveArrayTripType extends AbstractPredefinedArr
     }
     TripType<Character> charTripType = CharacterPrimitiveTypeHolder.INSTANCE;
     Deserializer deserializer = stream.getDeserializer();
-    Reference<char[]> reference = receiveReference(stream, deserializer.deserializeOpCode());
+    Reference<char[]> reference = receiveReference(stream, stream.receiveOpCode());
     if (reference.isObjectFollowing()) {
       int length = readArrayLength(deserializer, opCode);
       char[] result = new char[length];
       int count = 0;
       while (count < length) {
-        opCode = deserializer.deserializeOpCode();
+        opCode = stream.receiveOpCode();
         switch (opCode) {
           case DefaultOpCode.SKIP -> count += deserializer.deserializeInt();
           case DefaultOpCode.SKIP2 -> count += deserializer.deserializeShortAsUnsigned();

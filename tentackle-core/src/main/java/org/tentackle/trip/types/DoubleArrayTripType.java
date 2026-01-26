@@ -92,13 +92,13 @@ public final class DoubleArrayTripType extends AbstractPredefinedArrayTripType<D
     }
     TripType<Double> doubleTripType = DoubleTypeHolder.INSTANCE;
     Deserializer deserializer = stream.getDeserializer();
-    Reference<Double[]> reference = receiveReference(stream, deserializer.deserializeOpCode());
+    Reference<Double[]> reference = receiveReference(stream, stream.receiveOpCode());
     if (reference.isObjectFollowing()) {
       int length = readArrayLength(deserializer, opCode);
       Double[] result = new Double[length];
       int count = 0;
       while (count < length) {
-        opCode = deserializer.deserializeOpCode();
+        opCode = stream.receiveOpCode();
         switch (opCode) {
           case DefaultOpCode.SKIP -> count += deserializer.deserializeInt();
           case DefaultOpCode.SKIP2 -> count += deserializer.deserializeShortAsUnsigned();

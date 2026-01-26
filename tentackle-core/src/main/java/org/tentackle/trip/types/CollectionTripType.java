@@ -18,7 +18,6 @@
 
 package org.tentackle.trip.types;
 
-import org.tentackle.trip.Deserializer;
 import org.tentackle.trip.DictionaryEntry;
 import org.tentackle.trip.OpCode;
 import org.tentackle.trip.Reference;
@@ -137,15 +136,14 @@ public class CollectionTripType<T extends Collection> extends ObjectTripType<T> 
   @Override
   @SuppressWarnings("unchecked")
   public T read(TripStream stream, OpCode opCode, Consumer<T> initializer) {
-    Deserializer deserializer = stream.getDeserializer();
     DictionaryEntry entry = null;
 
     if (opCode == getOpCode()) {
       // determine the dictionary entry from the stream, if provided
-      opCode = deserializer.deserializeOpCode();
+      opCode = stream.receiveOpCode();
       if (opCode == DefaultOpCode.DICTIONARY || opCode.isOrdinal()) {
         entry = stream.receiveDictionary(opCode);
-        opCode = deserializer.deserializeOpCode();
+        opCode = stream.receiveOpCode();
       }
 
       if (opCode == DefaultOpCode.NULL) {
@@ -167,7 +165,7 @@ public class CollectionTripType<T extends Collection> extends ObjectTripType<T> 
       reference = receiveReference(stream, opCode);
       readContent = reference.isObjectFollowing();
       if (readContent) {
-        opCode = deserializer.deserializeOpCode();    // fetch the next opcode for loop below
+        opCode = stream.receiveOpCode();    // fetch the next opcode for loop below
       }
       else {
         value = reference.getObject();
@@ -186,7 +184,7 @@ public class CollectionTripType<T extends Collection> extends ObjectTripType<T> 
       }
 
       if (size > 0) {
-        opCode = deserializer.deserializeOpCode();
+        opCode = stream.receiveOpCode();
         int elementCount = 0;
         while (elementCount < size) {
           if (opCode == DefaultOpCode.NULL) {
@@ -195,19 +193,19 @@ public class CollectionTripType<T extends Collection> extends ObjectTripType<T> 
           else {
             TripType<?> elementType = stream.deriveType(opCode);
             if (elementType.isDictionaryBased()) {
-              opCode = deserializer.deserializeOpCode();
+              opCode = stream.receiveOpCode();
             }
             value.add(elementType.read(stream, opCode));
           }
           if (++elementCount < size) {
             // opcode for the next element
-            opCode = deserializer.deserializeOpCode();
+            opCode = stream.receiveOpCode();
           }
         }
       }
 
       if (getComponents().length > 0) {
-        value = readComponents(stream, deserializer.deserializeOpCode(), entry, reference, value, initializer);
+        value = readComponents(stream, stream.receiveOpCode(), entry, reference, value, initializer);
       }
 
       value = convert(value);

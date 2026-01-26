@@ -357,6 +357,19 @@ public enum DefaultOpCode implements OpCode {
   LAMBDA(0x79, OpCodeCategory.FIXED_TYPE, new LambdaTripType()),
 
 
+  /** client side serialization error. */
+  CLIENT_SERIALIZATION_ERROR(0x7B, OpCodeCategory.ERROR),
+
+  /** client side deserialization error. */
+  CLIENT_DESERIALIZATION_ERROR(0x7C, OpCodeCategory.ERROR),
+
+  /** server side serialization error. */
+  SERVER_SERIALIZATION_ERROR(0x7D, OpCodeCategory.ERROR),
+
+  /** server side deserialization error. */
+  SERVER_DESERIALIZATION_ERROR(0x7E, OpCodeCategory.ERROR),
+
+
   /** end marker. */
   END(0x7F);
 
@@ -415,6 +428,11 @@ public enum DefaultOpCode implements OpCode {
   @Override
   public boolean isPredefinedArray() {
     return category == OpCodeCategory.PREDEFINED_ARRAY;
+  }
+
+  @Override
+  public boolean isError() {
+    return category == OpCodeCategory.ERROR;
   }
 
   @Override

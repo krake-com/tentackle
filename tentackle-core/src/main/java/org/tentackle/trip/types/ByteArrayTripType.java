@@ -120,13 +120,13 @@ public final class ByteArrayTripType extends AbstractPredefinedArrayTripType<Byt
     }
     TripType<Byte> byteTripType = ByteTypeHolder.INSTANCE;
     Deserializer deserializer = stream.getDeserializer();
-    Reference<Byte[]> reference = receiveReference(stream, deserializer.deserializeOpCode());
+    Reference<Byte[]> reference = receiveReference(stream, stream.receiveOpCode());
     if (reference.isObjectFollowing()) {
       int length = readArrayLength(deserializer, opCode);
       Byte[] result = new Byte[length];
       int count = 0;
       while (count < length) {
-        opCode = deserializer.deserializeOpCode();
+        opCode = stream.receiveOpCode();
         switch (opCode) {
           case DefaultOpCode.SKIP -> count += deserializer.deserializeInt();
           case DefaultOpCode.SKIP2 -> count += deserializer.deserializeShortAsUnsigned();

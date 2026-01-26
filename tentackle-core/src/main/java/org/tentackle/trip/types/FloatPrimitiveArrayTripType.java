@@ -83,13 +83,13 @@ public final class FloatPrimitiveArrayTripType extends AbstractPredefinedArrayTr
     }
     TripType<Float> floatTripType = FloatPrimitiveTypeHolder.INSTANCE;
     Deserializer deserializer = stream.getDeserializer();
-    Reference<float[]> reference = receiveReference(stream, deserializer.deserializeOpCode());
+    Reference<float[]> reference = receiveReference(stream, stream.receiveOpCode());
     if (reference.isObjectFollowing()) {
       int length = readArrayLength(deserializer, opCode);
       float[] result = new float[length];
       int count = 0;
       while (count < length) {
-        opCode = deserializer.deserializeOpCode();
+        opCode = stream.receiveOpCode();
         switch (opCode) {
           case DefaultOpCode.SKIP -> count += deserializer.deserializeInt();
           case DefaultOpCode.SKIP2 -> count += deserializer.deserializeShortAsUnsigned();

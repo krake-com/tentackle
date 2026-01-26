@@ -92,13 +92,13 @@ public final class LongArrayTripType extends AbstractPredefinedArrayTripType<Lon
     }
     TripType<Long> longTripType = LongTypeHolder.INSTANCE;
     Deserializer deserializer = stream.getDeserializer();
-    Reference<Long[]> reference = receiveReference(stream, deserializer.deserializeOpCode());
+    Reference<Long[]> reference = receiveReference(stream, stream.receiveOpCode());
     if (reference.isObjectFollowing()) {
       int length = readArrayLength(deserializer, opCode);
       Long[] result = new Long[length];
       int count = 0;
       while (count < length) {
-        opCode = deserializer.deserializeOpCode();
+        opCode = stream.receiveOpCode();
         switch (opCode) {
           case DefaultOpCode.SKIP -> count += deserializer.deserializeInt();
           case DefaultOpCode.SKIP2 -> count += deserializer.deserializeShortAsUnsigned();

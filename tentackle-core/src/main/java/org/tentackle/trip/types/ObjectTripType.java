@@ -20,7 +20,6 @@ package org.tentackle.trip.types;
 
 import org.tentackle.common.StringHelper;
 import org.tentackle.reflect.ReflectionHelper;
-import org.tentackle.trip.Deserializer;
 import org.tentackle.trip.DictionaryEntry;
 import org.tentackle.trip.OpCode;
 import org.tentackle.trip.Reference;
@@ -208,15 +207,14 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
 
   @Override
   public T read(TripStream stream, OpCode opCode, Consumer<T> initializer) {
-    Deserializer deserializer = stream.getDeserializer();
     DictionaryEntry entry = null;
 
     if (opCode == getOpCode()) {
       // determine the dictionary entry from the stream, if provided
-      opCode = deserializer.deserializeOpCode();
+      opCode = stream.receiveOpCode();
       if (opCode == DefaultOpCode.DICTIONARY || opCode.isOrdinal()) {
         entry = stream.receiveDictionary(opCode);
-        opCode = deserializer.deserializeOpCode();
+        opCode = stream.receiveOpCode();
       }
 
       if (opCode == DefaultOpCode.NULL) {
@@ -248,7 +246,7 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
       reference = receiveReference(stream, opCode);
       readContent = reference.isObjectFollowing();
       if (readContent) {
-        opCode = deserializer.deserializeOpCode();    // fetch the next opcode for loop below
+        opCode = stream.receiveOpCode();    // fetch the next opcode for loop below
         if (value != null) {
           stream.addReference(reference, value, isDeduplicateable(value));
         }
@@ -361,7 +359,6 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
                              Reference<T> reference, T value, Consumer<T> initializer,
                              Map<TripComponent<T, ?>, Object> componentValues) {
 
-    Deserializer deserializer = stream.getDeserializer();
     int canonicalFieldCount = 0;    // number of canonical fields read from the stream
     Object[] canonicalArgs = canonicalConstructor == null ? null : new Object[getCanonicalMembers().length];
     Object canonicalBuilder = null;
@@ -389,7 +386,7 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
       int ordinal;
       if (opCode.isOrdinal()) {
         lastOrdinal = ordinal = stream.readNextOrdinal(lastOrdinal, opCode);   // component ordinal in the dictionary
-        opCode = deserializer.deserializeOpCode();
+        opCode = stream.receiveOpCode();
       }
       else {
         ordinal = ++lastOrdinal;
@@ -408,7 +405,7 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
           componentType = stream.deriveType(opCode);
           if (componentType.isDictionaryBased()) {
             // the next opcode is a reference or the component ordinal
-            opCode = deserializer.deserializeOpCode();
+            opCode = stream.receiveOpCode();
           }
         }
         componentValue = componentType.read(stream, opCode);
@@ -468,7 +465,7 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
         }
       }
       // next component
-      opCode = deserializer.deserializeOpCode();
+      opCode = stream.receiveOpCode();
     }
 
     if (canonicalBuilderInfo != null) {

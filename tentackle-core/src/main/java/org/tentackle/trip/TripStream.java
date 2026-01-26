@@ -210,4 +210,22 @@ public interface TripStream {
    */
   TripType<?> deriveType();
 
+  /**
+   * Receives the next OpCode from the stream.
+   * <p>
+   * Checks for the {@code }
+   *
+   * @return the OpCode
+   */
+  OpCode receiveOpCode();
+
+  /**
+   * Sends a TRIP error.<br>
+   * The error opcode is sent first, followed by the throwable's stack trace.
+   *
+   * @param errorOpCode the error opcode
+   * @param t the throwable
+   */
+  void sendError(OpCode errorOpCode, Throwable t);
+
 }

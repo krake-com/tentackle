@@ -20,7 +20,6 @@ package org.tentackle.trip.types;
 
 import org.tentackle.common.I18NText;
 import org.tentackle.common.ParameterString;
-import org.tentackle.trip.Deserializer;
 import org.tentackle.trip.OpCode;
 import org.tentackle.trip.Serializer;
 import org.tentackle.trip.TripFactory;
@@ -74,9 +73,8 @@ public final class I18NTextTripType extends AbstractTripType<I18NText> {
   @Override
   public I18NText read(TripStream stream, OpCode opCode) {
     I18NText value;
-    Deserializer deserializer = stream.getDeserializer();
     if (opCode == DefaultOpCode.I18NTEXT) {
-      String text = I18NTextTypeHolder.STRING_INSTANCE.read(stream, deserializer.deserializeOpCode());
+      String text = I18NTextTypeHolder.STRING_INSTANCE.read(stream, stream.receiveOpCode());
       try {
         value = new I18NText(new ParameterString(text));
       }

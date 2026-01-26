@@ -18,6 +18,8 @@
 
 package org.tentackle.trip.impl;
 
+import org.tentackle.common.ExceptionHelper;
+import org.tentackle.log.Logger;
 import org.tentackle.misc.Holder;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.trip.Deserializer;
@@ -31,6 +33,7 @@ import org.tentackle.trip.TripConstants;
 import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.TripStream;
+import org.tentackle.trip.TripStreamClosedException;
 import org.tentackle.trip.TripType;
 
 import java.util.Arrays;
@@ -45,6 +48,8 @@ import java.util.Map;
  * streams are not thread-safe and attaching streams to threads must be synchronized externally.
  */
 public class DefaultTripStream implements TripStream {
+
+  private static final Logger LOGGER = Logger.get(DefaultTripStream.class);
 
   private static final int INITIAL_REF_ARRAY_SIZE = 256;
   private static final int INITIAL_DICTIONARY_ARRAY_SIZE = 64;
@@ -330,7 +335,7 @@ public class DefaultTripStream implements TripStream {
 
   @Override
   public DictionaryEntry receiveDictionary() {
-    return receiveDictionary(deserializer.deserializeOpCode());
+    return receiveDictionary(receiveOpCode());
   }
 
   @Override
@@ -363,7 +368,44 @@ public class DefaultTripStream implements TripStream {
 
   @Override
   public TripType<?> deriveType() {
-    return deriveType(deserializer.deserializeOpCode());
+    return deriveType(receiveOpCode());
+  }
+
+  @Override
+  public OpCode receiveOpCode() {
+    OpCode opCode = deserializer.deserializeOpCode();
+    if (opCode.isError()) {
+      // read the stacktrace string (see CallHandler)
+      String stackTrace;
+      try {
+        stackTrace = TripFactory.getInstance().getType(String.class)
+                                .read(this, deserializer.deserializeOpCode());
+      }
+      catch (Throwable t) {
+        // connection closed before we could read the stacktrace?
+        // no linger-option set? (implementation-dependent)
+        stackTrace = ExceptionHelper.concatenateMessages(t);  // take our stack trace instead
+        // this will close the stream
+        TripStreamClosedException cx = new TripStreamClosedException(opCode + ": " + stackTrace, t);
+        LOGGER.severe("remote stacktrace incomplete", cx);
+        throw cx;
+      }
+      throw new TripError(opCode, stackTrace);
+    }
+    return opCode;
+  }
+
+  @Override
+  public void sendError(OpCode errorOpCode, Throwable t) {
+    if (errorOpCode.isError()) {
+      serializer.serializeOpCode(errorOpCode);
+      TripFactory.getInstance().getType(String.class).write(ExceptionHelper.concatenateMessages(t), this);
+      serializer.flush();
+    }
+    else {
+      // what??
+      LOGGER.severe("not an error opCode: {0}", errorOpCode);
+    }
   }
 
   /**

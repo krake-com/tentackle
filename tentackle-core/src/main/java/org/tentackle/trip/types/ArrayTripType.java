@@ -19,7 +19,6 @@
 package org.tentackle.trip.types;
 
 import org.tentackle.reflect.ReflectionHelper;
-import org.tentackle.trip.Deserializer;
 import org.tentackle.trip.DictionaryEntry;
 import org.tentackle.trip.OpCode;
 import org.tentackle.trip.Reference;
@@ -157,15 +156,14 @@ public final class ArrayTripType<T> extends AbstractDictionaryBasedTripType<T> {
   @Override
   @SuppressWarnings("unchecked")
   public T read(TripStream stream, OpCode opCode) {
-    Deserializer deserializer = stream.getDeserializer();
     DictionaryEntry entry = null;
 
     if (opCode == DefaultOpCode.ARRAY) {
       // determine the dictionary entry from the stream, if provided
-      opCode = deserializer.deserializeOpCode();
+      opCode = stream.receiveOpCode();
       if (opCode == DefaultOpCode.DICTIONARY || opCode.isOrdinal()) {
         entry = stream.receiveDictionary(opCode);
-        opCode = deserializer.deserializeOpCode();
+        opCode = stream.receiveOpCode();
       }
 
       if (opCode == DefaultOpCode.NULL) {
@@ -187,7 +185,7 @@ public final class ArrayTripType<T> extends AbstractDictionaryBasedTripType<T> {
       reference = receiveReference(stream, opCode);
       readContent = reference.isObjectFollowing();
       if (readContent) {
-        opCode = deserializer.deserializeOpCode();    // fetch the next opcode for loop below
+        opCode = stream.receiveOpCode();    // fetch the next opcode for loop below
       }
       else {
         value = reference.getObject();
@@ -199,7 +197,7 @@ public final class ArrayTripType<T> extends AbstractDictionaryBasedTripType<T> {
 
     if (readContent) {
       int length = ArrayTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode);
-      opCode = deserializer.deserializeOpCode();
+      opCode = stream.receiveOpCode();
       value = (T) Array.newInstance(getComponentClass(entry), length);
 
       if (reference != null) {
@@ -209,18 +207,18 @@ public final class ArrayTripType<T> extends AbstractDictionaryBasedTripType<T> {
 
       while (opCode != DefaultOpCode.END) {
         int arrayIndex = ArrayTypeHolder.INTEGER_TRIP_TYPE.read(stream, opCode);
-        opCode = deserializer.deserializeOpCode();
+        opCode = stream.receiveOpCode();
         TripType<?> elementType = getComponentType();
         if (!elementType.isFinal()) {
           elementType = stream.deriveType(opCode);
           if (elementType.isDictionaryBased()) {
-            opCode = deserializer.deserializeOpCode();
+            opCode = stream.receiveOpCode();
           }
         }
         Object element = elementType.read(stream, opCode);
         Array.set(value, arrayIndex, element);
         // next element
-        opCode = deserializer.deserializeOpCode();
+        opCode = stream.receiveOpCode();
       }
     }
     return value;

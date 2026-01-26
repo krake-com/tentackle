@@ -92,13 +92,13 @@ public final class StringArrayTripType extends AbstractPredefinedArrayTripType<S
     }
     TripType<String> stringTripType = StringTypeHolder.INSTANCE;
     Deserializer deserializer = stream.getDeserializer();
-    Reference<String[]> reference = receiveReference(stream, deserializer.deserializeOpCode());
+    Reference<String[]> reference = receiveReference(stream, stream.receiveOpCode());
     if (reference.isObjectFollowing()) {
       int length = readArrayLength(deserializer, opCode);
       String[] result = new String[length];
       int count = 0;
       while (count < length) {
-        opCode = deserializer.deserializeOpCode();
+        opCode = stream.receiveOpCode();
         switch (opCode) {
           case DefaultOpCode.SKIP -> count += deserializer.deserializeInt();
           case DefaultOpCode.SKIP2 -> count += deserializer.deserializeShortAsUnsigned();
