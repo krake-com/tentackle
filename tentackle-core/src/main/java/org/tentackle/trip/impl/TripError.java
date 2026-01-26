@@ -33,7 +33,7 @@ import java.io.Serial;
  *   since we don't know how far we got, the client appends a {@link DefaultOpCode#CLIENT_SERIALIZATION_ERROR}
  *   followed by the stacktrace as a string and re-throws the original exception.
  *   When the message is deserialized by the server and this code is seen,
- *   the client's stacktrace and is thrown as a {@code TripError}.</li>
+ *   the client's stacktrace is thrown as a {@code TripError}.</li>
  *
  *   <li>Deserialization error when receiving a {@link org.tentackle.trip.remote.RemoteCall}:
  *   the server sends back a {@link DefaultOpCode#SERVER_DESERIALIZATION_ERROR} followed by the stacktrace
@@ -46,11 +46,14 @@ import java.io.Serial;
  *   When received by the client, the server's stacktrace is thrown as a {@code TripError}.</li>
  *
  *   <li>Deserialization error when receiving a {@link org.tentackle.trip.remote.RemoteResponse}:
- *   The client sends a {@link DefaultOpCode#CLIENT_DESERIALIZATION_ERROR}}, closes the connection,
+ *   The client sends a {@link DefaultOpCode#CLIENT_DESERIALIZATION_ERROR}, closes the connection,
  *   and throws the original exception. If the server receives this, it will close the connection as well.
  *   </li>
  * </ol>
  *
+ * This control-flow reduces the number of follow-up exceptions just bloating the logs,
+ * allows to keep the connections open after serialization errors, and closes the
+ * connections after deserialization errors.
  */
 public class TripError extends TripRuntimeException {
 
