@@ -21,6 +21,7 @@ package org.tentackle.trip.impl;
 import org.tentackle.trip.OpCode;
 import org.tentackle.trip.Serializer;
 import org.tentackle.trip.TripRuntimeException;
+import org.tentackle.trip.TripStreamClosedException;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -114,7 +115,7 @@ public class DefaultSerializer implements Serializer {
       out.flush();
     }
     catch (IOException e) {
-      throw new TripRuntimeException("flushing to output stream failed", e);
+      throw new TripStreamClosedException("flushing to output stream failed", e);
     }
   }
 

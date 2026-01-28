@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 /**
  * The invocation handler for remote interfaces.
@@ -125,7 +126,7 @@ public class RemoteInvocationHandler implements InvocationHandler {
           return processResult(initialResponse.result());
         }
         else {
-          throw initialResponse.throwable();
+          throw new ExecutionException(initialResponse.throwable());    // caught below
         }
       }
       else {
@@ -138,9 +139,13 @@ public class RemoteInvocationHandler implements InvocationHandler {
           return processResult(identifiedResponse.result());
         }
         else {
-          throw identifiedResponse.throwable();
+          throw new ExecutionException(identifiedResponse.throwable());   // caught below
         }
       }
+    }
+    catch (ExecutionException ex) {
+      // exception during execution of the remote method at the server side
+      throw ex.getCause();
     }
     catch (TripError te) {
       if (te.getOpCode() == DefaultOpCode.SERVER_DESERIALIZATION_ERROR) {
@@ -155,13 +160,9 @@ public class RemoteInvocationHandler implements InvocationHandler {
       closeConnection(connection);
       throw new TripStreamClosedException(msg);
     }
-    catch (TripRuntimeException tr) {
-      // some deserialization error occurred at the client side
-      stream.sendError(DefaultOpCode.CLIENT_DESERIALIZATION_ERROR, tr);
-      closeConnection(connection);   // since we don't know what's still in the input stream, discard it
-      throw tr;
-    }
     catch (Throwable t) {
+      stream.sendError(DefaultOpCode.CLIENT_DESERIALIZATION_ERROR, t);
+      closeConnection(connection);   // since we don't know what's still in the input stream, discard it
       StringBuilder buf = new StringBuilder("error invoking remote method ").append(method);
       if (call != null) {
         buf.append('\n').append(call);

@@ -24,6 +24,7 @@ import org.tentackle.trip.RemoteDelegate;
 import org.tentackle.trip.Transport;
 import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.TripStream;
+import org.tentackle.trip.TripStreamClosedException;
 import org.tentackle.trip.impl.DefaultOpCode;
 import org.tentackle.trip.remote.IdentifiedRemoteCall;
 import org.tentackle.trip.remote.IdentifiedRemoteResponse;
@@ -118,6 +119,10 @@ public class CallHandler implements Runnable {
       else {
         throw new TripRuntimeException("unexpected remote call type: " + remoteCall.getClass());
       }
+    }
+    catch (TripStreamClosedException ce) {
+      LOGGER.warning("client closed connection while processing {0} ({1})", remoteCall, ce.getMessage());
+      throw ce;   // will be caught via ExecutionException in ConnectionHandler
     }
     catch (Throwable t) {
       // serializing the response failed

@@ -41,6 +41,7 @@ import java.nio.ByteBuffer;
 import java.util.HexFormat;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Handler for a new incoming connection.
@@ -148,11 +149,12 @@ public class ConnectionHandler implements Runnable {
 
     while (isConnectionAlive()) {
       TripType<?> tripType = null;
+      Object call = null;
       try {
         stream.clear();
         tripType = stream.deriveType();
         if (tripType.isDictionaryBased()) {   // all remote calls are dictionary-based
-          Object call = tripType.read(stream, stream.receiveOpCode());
+          call = tripType.read(stream, stream.receiveOpCode());
           if (call instanceof RemoteCall remoteCall) {
             // dispatch to call handler ...
             transport.getCallThreadPool().submit(transport.createCallHandler(stream, transportClientInfo, remoteCall))
@@ -174,9 +176,23 @@ public class ConnectionHandler implements Runnable {
         LOGGER.severe("serialization error received from client", e);
         // ignore the call and continue reading from the stream
       }
-      catch (TripStreamClosedException tc) {
-        LOGGER.fine("connection closed by client", tc);
+      catch (TripStreamClosedException ce) {
+        LOGGER.warning("connection closed by client");
         break;
+      }
+      catch (ExecutionException xe) {
+        if (xe.getCause() instanceof TripStreamClosedException ce) {
+          LOGGER.warning("client closed connection while sending response for {0} ({1})", call, ce.getMessage());
+          break;
+        }
+        try {
+          stream.clearModifiable();
+          stream.sendError(DefaultOpCode.SERVER_SERIALIZATION_ERROR, xe.getCause());
+        }
+        catch (TripStreamClosedException ce) {
+          LOGGER.warning("connection closed by client: {0}", ce.getMessage());
+          break;
+        }
       }
       catch (Throwable t) {
         // deserializing the remote call failed
