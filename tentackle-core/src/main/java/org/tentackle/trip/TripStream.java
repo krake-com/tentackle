@@ -154,9 +154,10 @@ public interface TripStream {
    * Writes the next ordinal to the stream, using optimization.
    *
    * @param lastOrdinal the last ordinal written, -1 for none
-   * @param ordinal the ordinal to write
+   * @param component the component to write the ordinal for
+   * @return the component ordinal
    */
-  void writeNextComponentOrdinal(int lastOrdinal, int ordinal);
+  int writeNextComponentOrdinal(int lastOrdinal, TripComponent<?, ?> component);
 
   /**
    * Reads the next ordinal from the stream, using optimization.

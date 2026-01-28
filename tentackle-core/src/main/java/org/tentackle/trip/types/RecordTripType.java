@@ -134,8 +134,7 @@ public class RecordTripType<T extends Record> extends AbstractDictionaryBasedTri
         for (TripComponent<T, ?> component : getComponents()) {
           Object componentValue = component.getValue(value);
           // send ordinal of the component in the dictionary
-          stream.writeNextComponentOrdinal(lastOrdinal, component.getOrdinal());
-          lastOrdinal = component.getOrdinal();
+          lastOrdinal = stream.writeNextComponentOrdinal(lastOrdinal, component);
           if (componentValue == null) {
             // default is not null -> send null code
             sendNull(stream);

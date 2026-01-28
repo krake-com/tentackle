@@ -323,8 +323,7 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
       if (!component.hasDefaultValue() ||
           !Objects.equals(componentValue, component.getDefaultValue())) {
         // send ordinal of the component in the dictionary
-        stream.writeNextComponentOrdinal(lastOrdinal, component.getOrdinal());
-        lastOrdinal = component.getOrdinal();
+        lastOrdinal = stream.writeNextComponentOrdinal(lastOrdinal, component);
         if (componentValue == null) {
           // default is not null -> send null code
           sendNull(stream);

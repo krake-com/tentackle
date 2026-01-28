@@ -29,6 +29,7 @@ import org.tentackle.trip.OpCode;
 import org.tentackle.trip.PredefinedArrayType;
 import org.tentackle.trip.Reference;
 import org.tentackle.trip.Serializer;
+import org.tentackle.trip.TripComponent;
 import org.tentackle.trip.TripConstants;
 import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.TripRuntimeException;
@@ -269,7 +270,8 @@ public class DefaultTripStream implements TripStream {
   }
 
   @Override
-  public void writeNextComponentOrdinal(int lastOrdinal, int ordinal) {
+  public int writeNextComponentOrdinal(int lastOrdinal, TripComponent<?, ?> component) {
+    int ordinal = component.getOrdinal();
     int diff = ordinal - lastOrdinal;
     if (diff > 1) {
       if (diff < 17) {
@@ -279,14 +281,16 @@ public class DefaultTripStream implements TripStream {
         writeComponentOrdinal(ordinal);
       }
     }
-    else if (diff < 1 || lastOrdinal < 0) {
-      // Always write the ordinal if we go back in sequence or for the first component.
-      // The first component must be written, because in case we need to send a directory entry
+    else if (diff < 1 ||
+             lastOrdinal < 0 && (component.getType().isDictionaryBased() || !component.getType().isFinal())) {
+      // Always write the ordinal if we go back in sequence or for the first dictionary-based component.
+      // The first ordinal must be written, because in case we need to send a directory entry
       // for the component, we wouldn't be able to determine whether it's for the parent
       // or the component.
       writeComponentOrdinal(ordinal);
     }
     // write nothing, if advance to the next ordinal
+    return ordinal;
   }
 
   @Override
