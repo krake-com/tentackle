@@ -234,64 +234,104 @@ public class DefaultTripStream implements TripStream {
   }
 
   @Override
-  public void writeOrdinal(int ordinal) {
+  public void writeComponentOrdinal(int ordinal) {
     if (ordinal >= Short.MIN_VALUE && ordinal <= Short.MAX_VALUE) {
       if (ordinal >= Byte.MIN_VALUE && ordinal <= Byte.MAX_VALUE) {
-        serializer.serializeOpCode(DefaultOpCode.ORDINAL1);
+        serializer.serializeOpCode(DefaultOpCode.COMPONENT_ORDINAL1);
         serializer.serializeByte((byte) ordinal);
       }
       else {
-        serializer.serializeOpCode(DefaultOpCode.ORDINAL2);
+        serializer.serializeOpCode(DefaultOpCode.COMPONENT_ORDINAL2);
         serializer.serializeShort((short) ordinal);
       }
     }
     else {
       if (ordinal >= TripConstants.INT3_MIN && ordinal <= TripConstants.INT3_MAX) {
-        serializer.serializeOpCode(DefaultOpCode.ORDINAL3);
+        serializer.serializeOpCode(DefaultOpCode.COMPONENT_ORDINAL3);
         serializer.serializeInt3(ordinal);
       }
       else {
-        serializer.serializeOpCode(DefaultOpCode.ORDINAL);
+        serializer.serializeOpCode(DefaultOpCode.COMPONENT_ORDINAL);
         serializer.serializeInt(ordinal);
       }
     }
   }
 
   @Override
-  public int readOrdinal(OpCode opCode) {
+  public int readComponentOrdinal(OpCode opCode) {
     return switch (opCode) {
-      case DefaultOpCode.ORDINAL -> deserializer.deserializeInt();
-      case DefaultOpCode.ORDINAL3 -> deserializer.deserializeInt3();
-      case DefaultOpCode.ORDINAL2 -> deserializer.deserializeShort();
-      case DefaultOpCode.ORDINAL1 -> deserializer.deserializeByte();
-      default -> throw new TripRuntimeException("not an ordinal opCode: " + opCode);
+      case DefaultOpCode.COMPONENT_ORDINAL -> deserializer.deserializeInt();
+      case DefaultOpCode.COMPONENT_ORDINAL3 -> deserializer.deserializeInt3();
+      case DefaultOpCode.COMPONENT_ORDINAL2 -> deserializer.deserializeShort();
+      case DefaultOpCode.COMPONENT_ORDINAL1 -> deserializer.deserializeByte();
+      default -> throw new TripRuntimeException("not a component ordinal opCode: " + opCode);
     };
   }
 
   @Override
-  public void writeNextOrdinal(int lastOrdinal, int ordinal) {
+  public void writeNextComponentOrdinal(int lastOrdinal, int ordinal) {
     int diff = ordinal - lastOrdinal;
     if (diff > 1) {
       if (diff < 17) {
-        getSerializer().serializeUnsignedAsByte(DefaultOpCode.ORDINAL_SKIP1.toExternal() + diff - 2);
+        getSerializer().serializeUnsignedAsByte(DefaultOpCode.COMPONENT_ORDINAL_SKIP1.toExternal() + diff - 2);
       }
       else {
-        writeOrdinal(ordinal);
+        writeComponentOrdinal(ordinal);
       }
     }
-    else if (diff < 1) {
-      writeOrdinal(ordinal);
+    else if (diff < 1 || lastOrdinal < 0) {
+      // Always write the ordinal if we go back in sequence or for the first component.
+      // The first component must be written, because in case we need to send a directory entry
+      // for the component, we wouldn't be able to determine whether it's for the parent
+      // or the component.
+      writeComponentOrdinal(ordinal);
     }
     // write nothing, if advance to the next ordinal
   }
 
   @Override
-  public int readNextOrdinal(int lastOrdinal, OpCode opCode) {
+  public int readNextComponentOrdinal(int lastOrdinal, OpCode opCode) {
     int code = opCode.getCode();
-    if (code >= DefaultOpCode.ORDINAL_SKIP1.getCode() && code <= DefaultOpCode.ORDINAL_SKIP15.getCode()) {
-      return lastOrdinal + code - DefaultOpCode.ORDINAL_SKIP1.getCode() + 2;
+    if (code >= DefaultOpCode.COMPONENT_ORDINAL_SKIP1.getCode() &&
+        code <= DefaultOpCode.COMPONENT_ORDINAL_SKIP15.getCode()) {
+      return lastOrdinal + code - DefaultOpCode.COMPONENT_ORDINAL_SKIP1.getCode() + 2;
     }
-    return readOrdinal(opCode);
+    return readComponentOrdinal(opCode);
+  }
+
+  @Override
+  public void writeDictionaryOrdinal(int ordinal) {
+    if (ordinal >= Short.MIN_VALUE && ordinal <= Short.MAX_VALUE) {
+      if (ordinal >= Byte.MIN_VALUE && ordinal <= Byte.MAX_VALUE) {
+        serializer.serializeOpCode(DefaultOpCode.DICTIONARY_ORDINAL1);
+        serializer.serializeByte((byte) ordinal);
+      }
+      else {
+        serializer.serializeOpCode(DefaultOpCode.DICTIONARY_ORDINAL2);
+        serializer.serializeShort((short) ordinal);
+      }
+    }
+    else {
+      if (ordinal >= TripConstants.INT3_MIN && ordinal <= TripConstants.INT3_MAX) {
+        serializer.serializeOpCode(DefaultOpCode.DICTIONARY_ORDINAL3);
+        serializer.serializeInt3(ordinal);
+      }
+      else {
+        serializer.serializeOpCode(DefaultOpCode.DICTIONARY_ORDINAL);
+        serializer.serializeInt(ordinal);
+      }
+    }
+  }
+
+  @Override
+  public int readDictionaryOrdinal(OpCode opCode) {
+    return switch (opCode) {
+      case DefaultOpCode.DICTIONARY_ORDINAL -> deserializer.deserializeInt();
+      case DefaultOpCode.DICTIONARY_ORDINAL3 -> deserializer.deserializeInt3();
+      case DefaultOpCode.DICTIONARY_ORDINAL2 -> deserializer.deserializeShort();
+      case DefaultOpCode.DICTIONARY_ORDINAL1 -> deserializer.deserializeByte();
+      default -> throw new TripRuntimeException("not a dictionary ordinal opCode: " + opCode);
+    };
   }
 
   @Override
@@ -309,12 +349,12 @@ public class DefaultTripStream implements TripStream {
           dictionary.addEntry(dictionaryEntry);
         }
         else {
-          writeOrdinal(dictionaryEntry.getOrdinal());
+          writeDictionaryOrdinal(dictionaryEntry.getOrdinal());
         }
       }
     }
     else {
-      writeOrdinal(dictionaryEntry.getOrdinal());
+      writeDictionaryOrdinal(dictionaryEntry.getOrdinal());
     }
   }
 
@@ -327,7 +367,7 @@ public class DefaultTripStream implements TripStream {
     }
     else {
       // must be the ordinal
-      int ordinal = readOrdinal(opCode);
+      int ordinal = readDictionaryOrdinal(opCode);
       entry = getDictionaryEntry(ordinal);
     }
     return entry;

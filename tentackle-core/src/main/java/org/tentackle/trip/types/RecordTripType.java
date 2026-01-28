@@ -134,7 +134,7 @@ public class RecordTripType<T extends Record> extends AbstractDictionaryBasedTri
         for (TripComponent<T, ?> component : getComponents()) {
           Object componentValue = component.getValue(value);
           // send ordinal of the component in the dictionary
-          stream.writeNextOrdinal(lastOrdinal, component.getOrdinal());
+          stream.writeNextComponentOrdinal(lastOrdinal, component.getOrdinal());
           lastOrdinal = component.getOrdinal();
           if (componentValue == null) {
             // default is not null -> send null code
@@ -162,7 +162,7 @@ public class RecordTripType<T extends Record> extends AbstractDictionaryBasedTri
     if (opCode == DefaultOpCode.RECORD) {
       // determine the dictionary entry from the stream, if provided
       opCode = stream.receiveOpCode();
-      if (opCode == DefaultOpCode.DICTIONARY || opCode.isOrdinal()) {
+      if (opCode == DefaultOpCode.DICTIONARY || opCode.isDictionaryOrdinal()) {
         entry = stream.receiveDictionary(opCode);
         opCode = stream.receiveOpCode();
       }
@@ -202,8 +202,8 @@ public class RecordTripType<T extends Record> extends AbstractDictionaryBasedTri
       int lastOrdinal = -1;
       while (opCode != DefaultOpCode.END) {
         int ordinal;
-        if (opCode.isOrdinal()) {
-          lastOrdinal = ordinal = stream.readNextOrdinal(lastOrdinal, opCode);   // component ordinal in the dictionary
+        if (opCode.isComponentOrdinal()) {
+          lastOrdinal = ordinal = stream.readNextComponentOrdinal(lastOrdinal, opCode);   // component ordinal in the dictionary
           opCode = stream.receiveOpCode();
         }
         else {

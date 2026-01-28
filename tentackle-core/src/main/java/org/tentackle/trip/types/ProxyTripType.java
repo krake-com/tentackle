@@ -106,7 +106,7 @@ public final class ProxyTripType<T> extends AbstractDictionaryBasedTripType<T> {
     if (opCode == DefaultOpCode.PROXY) {
       // determine the dictionary entry from the stream, if provided
       opCode = stream.receiveOpCode();
-      if (opCode == DefaultOpCode.DICTIONARY || opCode.isOrdinal()) {
+      if (opCode == DefaultOpCode.DICTIONARY || opCode.isDictionaryOrdinal()) {
         entry = stream.receiveDictionary(opCode);
         opCode = stream.receiveOpCode();
       }

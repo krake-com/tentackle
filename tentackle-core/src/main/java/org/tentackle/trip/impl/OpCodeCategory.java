@@ -36,12 +36,24 @@ public enum OpCodeCategory {
   /**
    * Ordinal type.
    *
-   * @see DefaultOpCode#ORDINAL
-   * @see DefaultOpCode#ORDINAL1
-   * @see DefaultOpCode#ORDINAL2
-   * @see DefaultOpCode#ORDINAL3
+   * @see DefaultOpCode#COMPONENT_ORDINAL
+   * @see DefaultOpCode#COMPONENT_ORDINAL1
+   * @see DefaultOpCode#COMPONENT_ORDINAL2
+   * @see DefaultOpCode#COMPONENT_ORDINAL3
+   * @see DefaultOpCode#COMPONENT_ORDINAL_SKIP1
+   * @see DefaultOpCode#COMPONENT_ORDINAL_SKIP15
    */
-  ORDINAL,
+  COMPONENT_ORDINAL,
+
+  /**
+   * Dictionary ordinal type.
+   *
+   * @see DefaultOpCode#DICTIONARY_ORDINAL
+   * @see DefaultOpCode#DICTIONARY_ORDINAL1
+   * @see DefaultOpCode#DICTIONARY_ORDINAL2
+   * @see DefaultOpCode#DICTIONARY_ORDINAL3
+   */
+  DICTIONARY_ORDINAL,
 
   /**
    * Fixed type.<br>

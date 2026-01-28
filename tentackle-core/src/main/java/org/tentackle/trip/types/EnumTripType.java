@@ -81,7 +81,7 @@ public class EnumTripType<T extends Enum<T>> extends AbstractDictionaryBasedTrip
       sendNull(stream);
     }
     else {
-      stream.writeOrdinal(value.ordinal());
+      stream.writeComponentOrdinal(value.ordinal());
     }
   }
 
@@ -93,7 +93,7 @@ public class EnumTripType<T extends Enum<T>> extends AbstractDictionaryBasedTrip
     if (opCode == DefaultOpCode.ENUM) {
       // determine the dictionary entry from the stream, if provided
       opCode = stream.receiveOpCode();
-      if (opCode == DefaultOpCode.DICTIONARY || opCode.isOrdinal()) {
+      if (opCode == DefaultOpCode.DICTIONARY || opCode.isDictionaryOrdinal()) {
         entry = stream.receiveDictionary(opCode);
         opCode = stream.receiveOpCode();
       }
@@ -110,7 +110,7 @@ public class EnumTripType<T extends Enum<T>> extends AbstractDictionaryBasedTrip
       entry = stream.getDictionaryEntry(getObjectClass());
     }
 
-    int ordinal = stream.readOrdinal(opCode);
+    int ordinal = stream.readComponentOrdinal(opCode);
     EnumTripComponent<T> component = (EnumTripComponent<T>) entry.getTypeComponent(ordinal);
     if (component == null) {
       throw new TripRuntimeException(getObjectClass() + " does not provide the enum constant " +

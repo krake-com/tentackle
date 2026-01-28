@@ -293,61 +293,74 @@ public enum DefaultOpCode implements OpCode {
   DICTIONARY(0x60),
 
   /** ordinal value (4 bytes). */
-  ORDINAL(0x61, OpCodeCategory.ORDINAL),
+  DICTIONARY_ORDINAL(0x61, OpCodeCategory.DICTIONARY_ORDINAL),
 
   /** small ordinal value (fits in 1 byte). */
-  ORDINAL1(0x62, OpCodeCategory.ORDINAL),
+  DICTIONARY_ORDINAL1(0x62, OpCodeCategory.DICTIONARY_ORDINAL),
 
   /** small ordinal value (fits in 2 bytes). */
-  ORDINAL2(0x63, OpCodeCategory.ORDINAL),
+  DICTIONARY_ORDINAL2(0x63, OpCodeCategory.DICTIONARY_ORDINAL),
 
   /** small ordinal value (fits in 3 bytes). */
-  ORDINAL3(0x64, OpCodeCategory.ORDINAL),
+  DICTIONARY_ORDINAL3(0x64, OpCodeCategory.DICTIONARY_ORDINAL),
+
+
+  /** ordinal value (4 bytes). */
+  COMPONENT_ORDINAL(0x65, OpCodeCategory.COMPONENT_ORDINAL),
+
+  /** small ordinal value (fits in 1 byte). */
+  COMPONENT_ORDINAL1(0x66, OpCodeCategory.COMPONENT_ORDINAL),
+
+  /** small ordinal value (fits in 2 bytes). */
+  COMPONENT_ORDINAL2(0x67, OpCodeCategory.COMPONENT_ORDINAL),
+
+  /** small ordinal value (fits in 3 bytes). */
+  COMPONENT_ORDINAL3(0x68, OpCodeCategory.COMPONENT_ORDINAL),
 
   /** skip one ordinal value. */
-  ORDINAL_SKIP1(0x65, OpCodeCategory.ORDINAL),
+  COMPONENT_ORDINAL_SKIP1(0x69, OpCodeCategory.COMPONENT_ORDINAL),
 
   /** skip two ordinal values. */
-  ORDINAL_SKIP2(0x66, OpCodeCategory.ORDINAL),
+  COMPONENT_ORDINAL_SKIP2(0x6A, OpCodeCategory.COMPONENT_ORDINAL),
 
   /** skip three ordinal values. */
-  ORDINAL_SKIP3(0x67, OpCodeCategory.ORDINAL),
+  COMPONENT_ORDINAL_SKIP3(0x6B, OpCodeCategory.COMPONENT_ORDINAL),
 
   /** skip four ordinal values. */
-  ORDINAL_SKIP4(0x68, OpCodeCategory.ORDINAL),
+  COMPONENT_ORDINAL_SKIP4(0x6C, OpCodeCategory.COMPONENT_ORDINAL),
 
   /** skip five ordinal values. */
-  ORDINAL_SKIP5(0x69, OpCodeCategory.ORDINAL),
+  COMPONENT_ORDINAL_SKIP5(0x6D, OpCodeCategory.COMPONENT_ORDINAL),
 
   /** skip six ordinal values. */
-  ORDINAL_SKIP6(0x6A, OpCodeCategory.ORDINAL),
+  COMPONENT_ORDINAL_SKIP6(0x6E, OpCodeCategory.COMPONENT_ORDINAL),
 
   /** skip seven ordinal values. */
-  ORDINAL_SKIP7(0x6B, OpCodeCategory.ORDINAL),
+  COMPONENT_ORDINAL_SKIP7(0x6F, OpCodeCategory.COMPONENT_ORDINAL),
 
   /** skip eight ordinal values. */
-  ORDINAL_SKIP8(0x6C, OpCodeCategory.ORDINAL),
+  COMPONENT_ORDINAL_SKIP8(0x70, OpCodeCategory.COMPONENT_ORDINAL),
 
   /** skip nine ordinal values. */
-  ORDINAL_SKIP9(0x6D, OpCodeCategory.ORDINAL),
+  COMPONENT_ORDINAL_SKIP9(0x71, OpCodeCategory.COMPONENT_ORDINAL),
 
   /** skip ten ordinal values. */
-  ORDINAL_SKIP10(0x6E, OpCodeCategory.ORDINAL),
+  COMPONENT_ORDINAL_SKIP10(0x72, OpCodeCategory.COMPONENT_ORDINAL),
 
   /** skip eleven ordinal values. */
-  ORDINAL_SKIP11(0x6F, OpCodeCategory.ORDINAL),
+  COMPONENT_ORDINAL_SKIP11(0x73, OpCodeCategory.COMPONENT_ORDINAL),
 
   /** skip twelve ordinal values. */
-  ORDINAL_SKIP12(0x70, OpCodeCategory.ORDINAL),
+  COMPONENT_ORDINAL_SKIP12(0x74, OpCodeCategory.COMPONENT_ORDINAL),
 
   /** skip thirteen ordinal values. */
-  ORDINAL_SKIP13(0x71, OpCodeCategory.ORDINAL),
+  COMPONENT_ORDINAL_SKIP13(0x75, OpCodeCategory.COMPONENT_ORDINAL),
 
   /** skip fourteen ordinal values. */
-  ORDINAL_SKIP14(0x72, OpCodeCategory.ORDINAL),
+  COMPONENT_ORDINAL_SKIP14(0x76, OpCodeCategory.COMPONENT_ORDINAL),
 
   /** skip fifteen ordinal values. */
-  ORDINAL_SKIP15(0x73, OpCodeCategory.ORDINAL),
+  COMPONENT_ORDINAL_SKIP15(0x77, OpCodeCategory.COMPONENT_ORDINAL),
 
 
   /** JOS wrapper. */
@@ -416,8 +429,13 @@ public enum DefaultOpCode implements OpCode {
   }
 
   @Override
-  public boolean isOrdinal() {
-    return category == OpCodeCategory.ORDINAL;
+  public boolean isComponentOrdinal() {
+    return category == OpCodeCategory.COMPONENT_ORDINAL;
+  }
+
+  @Override
+  public boolean isDictionaryOrdinal() {
+    return category == OpCodeCategory.DICTIONARY_ORDINAL;
   }
 
   @Override

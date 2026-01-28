@@ -51,7 +51,7 @@ import java.util.function.Consumer;
  * <ul>
  *   <li>The opcode {@link DefaultOpCode#OBJECT}.</li>
  *   <li>The dictionary entry if new for this stream.<br>
- *       Otherwise, the ordinal according to the dictionary.</li>
+ *       Otherwise, the dictionary-ordinal according to the dictionary.</li>
  *   <li>Followed by one of:
  *     <ul>
  *        <li>The null code if the object is null.</li>
@@ -212,7 +212,7 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
     if (opCode == getOpCode()) {
       // determine the dictionary entry from the stream, if provided
       opCode = stream.receiveOpCode();
-      if (opCode == DefaultOpCode.DICTIONARY || opCode.isOrdinal()) {
+      if (opCode == DefaultOpCode.DICTIONARY || opCode.isDictionaryOrdinal()) {
         entry = stream.receiveDictionary(opCode);
         opCode = stream.receiveOpCode();
       }
@@ -323,7 +323,7 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
       if (!component.hasDefaultValue() ||
           !Objects.equals(componentValue, component.getDefaultValue())) {
         // send ordinal of the component in the dictionary
-        stream.writeNextOrdinal(lastOrdinal, component.getOrdinal());
+        stream.writeNextComponentOrdinal(lastOrdinal, component.getOrdinal());
         lastOrdinal = component.getOrdinal();
         if (componentValue == null) {
           // default is not null -> send null code
@@ -384,8 +384,8 @@ public class ObjectTripType<T> extends AbstractDictionaryBasedTripType<T> {
     int lastOrdinal = -1;
     while (opCode != DefaultOpCode.END) {
       int ordinal;
-      if (opCode.isOrdinal()) {
-        lastOrdinal = ordinal = stream.readNextOrdinal(lastOrdinal, opCode);   // component ordinal in the dictionary
+      if (opCode.isComponentOrdinal()) {
+        lastOrdinal = ordinal = stream.readNextComponentOrdinal(lastOrdinal, opCode);   // component ordinal in the dictionary
         opCode = stream.receiveOpCode();
       }
       else {

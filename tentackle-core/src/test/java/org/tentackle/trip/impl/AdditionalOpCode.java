@@ -52,7 +52,12 @@ public enum AdditionalOpCode implements OpCode {
   }
 
   @Override
-  public boolean isOrdinal() {
+  public boolean isComponentOrdinal() {
+    return false;
+  }
+
+  @Override
+  public boolean isDictionaryOrdinal() {
     return false;
   }
 

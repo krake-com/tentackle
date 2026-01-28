@@ -62,7 +62,7 @@ public final class DictionaryEntryTripType extends AbstractTripType<DictionaryEn
   @Override
   public void write(DictionaryEntry value, TripStream stream) {
     stream.getSerializer().serializeOpCode(DefaultOpCode.DICTIONARY);
-    stream.writeOrdinal(value.getOrdinal());
+    stream.writeComponentOrdinal(value.getOrdinal());
     DictionaryEntryTypeHolder.STRING_INSTANCE.write(value.getClassName(), stream);
     DictionaryEntryTypeHolder.BOOLEAN_INSTANCE.write(value.isProxy(), stream);
     String[] componentNames = new String[value.getComponents().length];
@@ -82,7 +82,7 @@ public final class DictionaryEntryTripType extends AbstractTripType<DictionaryEn
       throw new TripRuntimeException("unexpected opCode: " + opCode);
     }
     Dictionary dictionary = stream.getDictionary();
-    int ordinal = stream.readOrdinal(stream.receiveOpCode());
+    int ordinal = stream.readComponentOrdinal(stream.receiveOpCode());
     String className = DictionaryEntryTypeHolder.STRING_INSTANCE.read(stream, stream.receiveOpCode());
     boolean isProxy = DictionaryEntryTypeHolder.BOOLEAN_INSTANCE.read(stream, stream.receiveOpCode());
     opCode = stream.receiveOpCode();

@@ -136,19 +136,19 @@ public interface TripStream {
   void clearModifiable();
 
   /**
-   * Writes the ordinal to the stream.
+   * Writes a component ordinal to the stream.
    *
    * @param ordinal the ordinal to write
    */
-  void writeOrdinal(int ordinal);
+  void writeComponentOrdinal(int ordinal);
 
   /**
-   * Reads the ordinal from the stream.
+   * Reads a component ordinal from the stream.
    *
    * @param opCode the ordinal OpCode
    * @return the ordinal
    */
-  int readOrdinal(OpCode opCode);
+  int readComponentOrdinal(OpCode opCode);
 
   /**
    * Writes the next ordinal to the stream, using optimization.
@@ -156,7 +156,7 @@ public interface TripStream {
    * @param lastOrdinal the last ordinal written, -1 for none
    * @param ordinal the ordinal to write
    */
-  void writeNextOrdinal(int lastOrdinal, int ordinal);
+  void writeNextComponentOrdinal(int lastOrdinal, int ordinal);
 
   /**
    * Reads the next ordinal from the stream, using optimization.
@@ -165,7 +165,22 @@ public interface TripStream {
    * @param opCode the ordinal OpCode
    * @return the ordinal
    */
-  int readNextOrdinal(int lastOrdinal, OpCode opCode);
+  int readNextComponentOrdinal(int lastOrdinal, OpCode opCode);
+
+  /**
+   * Writes a dictionary ordinal to the stream.
+   *
+   * @param ordinal the ordinal to write
+   */
+  void writeDictionaryOrdinal(int ordinal);
+
+  /**
+   * Reads a dictionary ordinal from the stream.
+   *
+   * @param opCode the ordinal OpCode
+   * @return the ordinal
+   */
+  int readDictionaryOrdinal(OpCode opCode);
 
   /**
    * Updates the dictionary entry if the class is new for the stream

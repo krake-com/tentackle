@@ -61,16 +61,28 @@ public interface OpCode extends Serializable, Convertible<Integer> {
   boolean isReference();
 
   /**
-   * Returns true if this OpCode is an ordinal.
+   * Returns true if this OpCode is a component ordinal.
    *
    * @return true if ordinal-code, else false
-   * @see org.tentackle.trip.impl.DefaultOpCode#ORDINAL
-   * @see org.tentackle.trip.impl.DefaultOpCode#ORDINAL1
-   * @see org.tentackle.trip.impl.DefaultOpCode#ORDINAL2
-   * @see org.tentackle.trip.impl.DefaultOpCode#ORDINAL3
-   * @see org.tentackle.trip.impl.DefaultOpCode#ORDINAL_SKIP1 - 7
+   * @see org.tentackle.trip.impl.DefaultOpCode#COMPONENT_ORDINAL
+   * @see org.tentackle.trip.impl.DefaultOpCode#COMPONENT_ORDINAL1
+   * @see org.tentackle.trip.impl.DefaultOpCode#COMPONENT_ORDINAL2
+   * @see org.tentackle.trip.impl.DefaultOpCode#COMPONENT_ORDINAL3
+   * @see org.tentackle.trip.impl.DefaultOpCode#COMPONENT_ORDINAL_SKIP1
+   * @see org.tentackle.trip.impl.DefaultOpCode#COMPONENT_ORDINAL_SKIP15
    */
-  boolean isOrdinal();
+  boolean isComponentOrdinal();
+
+  /**
+   * Returns true if this OpCode is a dictionary ordinal.
+   *
+   * @return true if ordinal-code, else false
+   * @see org.tentackle.trip.impl.DefaultOpCode#DICTIONARY_ORDINAL
+   * @see org.tentackle.trip.impl.DefaultOpCode#DICTIONARY_ORDINAL1
+   * @see org.tentackle.trip.impl.DefaultOpCode#DICTIONARY_ORDINAL2
+   * @see org.tentackle.trip.impl.DefaultOpCode#DICTIONARY_ORDINAL3
+   */
+  boolean isDictionaryOrdinal();
 
   /**
    * Returns true if this OpCode is dictionary-based.<br>
