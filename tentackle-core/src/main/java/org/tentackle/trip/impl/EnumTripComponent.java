@@ -95,4 +95,10 @@ public class EnumTripComponent<T extends Enum<T>> implements TripComponent<T, T>
   public void setValue(T parent, T value) {
     throw new TripRuntimeException("EnumTripComponent does not support setValue()");
   }
+
+  @Override
+  public String toString() {
+    return componentClass + " of " + tripType + " at ordinal " + ordinal;
+  }
+
 }

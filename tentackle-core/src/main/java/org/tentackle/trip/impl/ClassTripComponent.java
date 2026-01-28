@@ -99,4 +99,10 @@ public class ClassTripComponent<P> implements TripComponent<P, Class<?>> {
   public void setValue(P parent, Class<?> value) {
     throw new TripRuntimeException("ClassTripComponent does not support setValue()");
   }
+
+  @Override
+  public String toString() {
+    return componentClass + " of " + parentType + " at ordinal " + ordinal;
+  }
+
 }

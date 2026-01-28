@@ -125,7 +125,7 @@ public class RecordTripComponent<P extends Record, T> implements TripComponent<P
 
   @Override
   public String toString() {
-    return getName();
+    return "component " + recordComponent + " of " + parentType + " at ordinal " + ordinal;
   }
 
 }

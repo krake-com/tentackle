@@ -171,7 +171,14 @@ public class MethodTripComponent<P, T> implements TripComponent<P, T> {
 
   @Override
   public String toString() {
-    return getName();
+    StringBuilder buf = new StringBuilder();
+    buf.append("getter ").append(getter);
+    if (setter != null) {
+      buf.append(", setter ").append(setter);
+    }
+    buf.append(" of ").append(parentType)
+       .append(" at ordinal ").append(ordinal);
+    return buf.toString();
   }
 
 }

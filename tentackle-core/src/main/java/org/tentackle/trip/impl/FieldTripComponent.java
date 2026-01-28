@@ -167,7 +167,7 @@ public class FieldTripComponent<P, T> implements TripComponent<P, T> {
 
   @Override
   public String toString() {
-    return getName();
+    return "field " + field + " of " + parentType + " at ordinal " + ordinal;
   }
 
 }
