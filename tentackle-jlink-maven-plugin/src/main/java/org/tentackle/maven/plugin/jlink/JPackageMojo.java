@@ -178,6 +178,13 @@ public class JPackageMojo extends AbstractJLinkMojo {
   private File jpackageTool;
 
   /**
+   * Extra jpackage options.<br>
+   * Provided for platform-specific or hidden options.
+   */
+  @Parameter
+  private List<String> jpackageOptions;
+
+  /**
    * Toolchain for invocation of the <code>jpackage</code> tool only.<br>
    * Allows to create installers for older java runtime versions not supporting the jpackage tool yet.
    * <p>
@@ -385,6 +392,9 @@ public class JPackageMojo extends AbstractJLinkMojo {
                   .arg("@" + getMavenProject().getBuild().getDirectory() + File.separator + OPTIONS_IMAGE);
     if (verbosityLevel.isDebug()) {
       jpackageRunner.arg("--verbose");
+    }
+    if (jpackageOptions != null) {
+      jpackageOptions.forEach(jpackageRunner::arg);
     }
     getLog().debug(jpackageRunner.toString());
     getLog().info("creating application image");

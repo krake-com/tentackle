@@ -144,6 +144,13 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
   private File jlinkTool;
 
   /**
+   * Extra jlink options.<br>
+   * Provided for platform-specific or hidden options, such as {@code --upgrade-files}.
+   */
+  @Parameter
+  private List<String> jlinkOptions;
+
+  /**
    * The optional file holding the jlink options.<br>
    * Corresponds to the <code>jlink</code> option <code>--save-opts</code>.
    */
@@ -739,6 +746,9 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
     }
     if (noManPages) {
       jlinkRunner.arg("--no-man-pages");    // is this implemented in jlink at all???
+    }
+    if (jlinkOptions != null) {
+      jlinkOptions.forEach(jlinkRunner::arg);
     }
     result.generateJlinkModulePath(jlinkRunner);
     result.generateJlinkModules(jlinkRunner);
