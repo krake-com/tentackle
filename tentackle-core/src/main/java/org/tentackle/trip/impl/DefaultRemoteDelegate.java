@@ -42,8 +42,7 @@ import java.util.UUID;
  * <p>
  * Although this class is thread-safe, invocations on the target object
  * are <em>not</em> synchronized!
- * This must be done by the implementation of the remote object,
- * which is the same behavior as in Java RMI.
+ * This must be done by the implementation of the remote object.
  *
  * @param <T> the type of the remote object
  */

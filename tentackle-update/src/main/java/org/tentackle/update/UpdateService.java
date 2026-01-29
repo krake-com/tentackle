@@ -21,7 +21,7 @@ package org.tentackle.update;
 import org.tentackle.trip.Remote;
 
 /**
- * RMI service to provide the update info for an application.
+ * TRIP service to provide the update info for an application.
  */
 public interface UpdateService extends Remote {
 

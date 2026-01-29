@@ -136,19 +136,29 @@ import java.util.function.Consumer;
  * url=jndi:jdbc/erpPool
  * </pre>
  *
- * For remote sessions only one line is required at minimum:
+ * For remote sessions:
  *
  * <pre>
- * url=rmi://hostname[:port]/service
+ * url=transport://hostname[:port]/service[?parameters]
  *
  * Example:
- * url=rmi://gonzo.krake.local:28004/ErpServer
+ * url=trip://gonzo.krake.site:28004/ErpServer
  * </pre>
  *
- * The port is optional and defaults to 1099 (the default RMI registry).<br>
- * The initial socket factory type must correspond to the server's configuration (see {@link org.tentackle.dbms.trip.TripServer}).
- * If this is not the system's default (plain, unencrypted, uncompressed), it must be set via {@code socketfactory}.
- * Optionally, {@code ciphersuites} and {@code protocols} can be set (again, see {@link org.tentackle.dbms.trip.TripServer}).
+ * The currently supported transports are:
+ * <ul>
+ *   <li>{@code trip}: tentackle remote invocation protocol using TCP</li>
+ *   <li>{@code trips}: trip with SSL</li>
+ *   <li>{@code tripcs}: compressed + SSL</li>
+ *   <li>{@code tripe}: encrypted (pre-shared key, see {@link org.tentackle.common.Cryptor})</li>
+ *   <li>{@code tripce}: compressed + encrypted</li>
+ *   <li>{@code tripq}: trip over QUIC/RFC9000 (using kwik, the module {@code tentackle-quic} must
+ *   be configured as a runtime dependency for the transport to be found)</li>
+ *   <li>{@code tripcq}: compressed + QUIC</li>
+ * </ul>
+ * Further transports can easily be provided by implementing the {@link Transport} interface.
+ * <p>
+ * The hostname can be either an IP address or a DNS name.
  * <p>
  * Optionally, the following properties can be defined:
  * <p>
@@ -201,6 +211,9 @@ import java.util.function.Consumer;
  * <p>
  * For remote sessions, the properties (session info) will be sent to the server.
  * This can be used to set some application-specific options or to tune the session.
+ * <p>
+ * For servers, see {@link org.tentackle.dbms.trip.TripServer} for the service configurations.
+ * There are also the transport-specific parameters that go into the query-part of the URI.
  *
  * @author harald
  */
@@ -334,7 +347,7 @@ public class Db implements Session, Cloneable {
 
   private static final AtomicInteger INSTANCE_COUNTER = new AtomicInteger();  // global session instance counter
 
-  // for RMI remote connections
+  // for remote connections
   private static Class<?>[]         remoteClasses;        // the classes the delegates provide service for
   private static int                nextDelegateId;       // next handle per class
 

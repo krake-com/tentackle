@@ -12,7 +12,6 @@ import ${persistenceImplPackage}.${persistenceImplementation};
 import ${superPackage}.${superInterface};
 </#if>
 
-import java.rmi.RemoteException;
 import java.util.List;
 import org.tentackle.common.BMoney;
 import org.tentackle.common.Binary;
@@ -22,7 +21,7 @@ import org.tentackle.common.Time;
 import org.tentackle.common.Timestamp;
 import org.tentackle.misc.TrackedList;
 import org.tentackle.pdo.DomainContext;
-import org.tentackle.persist.rmi.RemoteResultSetCursor;
+import org.tentackle.persist.trip.RemoteResultSetCursor;
 
 /**
  * Remote delegate interface for {@link ${persistenceImplementation}}.

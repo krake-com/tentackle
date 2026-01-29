@@ -27,7 +27,7 @@ import org.tentackle.session.PersistenceException;
 import java.util.List;
 
 /**
- * Adapter hiding the rmi-stuff for the admin session extension.
+ * Adapter for the admin session extension.
  *
  * @author harald
  */

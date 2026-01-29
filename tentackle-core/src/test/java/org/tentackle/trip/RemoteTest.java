@@ -49,10 +49,10 @@ public class RemoteTest {
     catch (Exception e) {
       throw new TripRuntimeException("cannot initialize transport", e);
     }
-    // register at the server side (corresponds to old RMI RemoteDbConnectionImpl)
+    // register at the server side (corresponds to RemoteDbConnectionImpl)
     transport.getConnectionPool().getServerTransport().getRegistry().register(new DemoLoginImpl("1.0.0"), "login");
 
-    // the initial proxy at the client side (corresponds to old RMI RemoteDbConnection)
+    // the initial proxy at the client side (corresponds to RemoteDbConnection)
     RemoteLookup lookup = transport.getRemoteLookup();
     assertFalse(lookup instanceof Registry);
     UUID remoteId = lookup.lookup("login");
