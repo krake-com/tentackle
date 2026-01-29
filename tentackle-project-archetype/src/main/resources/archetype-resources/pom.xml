@@ -494,7 +494,7 @@
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>keytool-maven-plugin</artifactId>
-          <version>1.7</version>
+          <version>${maven.keytool.plugin.version}</version>
         </plugin>
       </plugins>
     </pluginManagement>
