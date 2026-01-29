@@ -20,7 +20,6 @@ package org.tentackle.quic;
 
 import tech.kwik.core.QuicStream;
 import tech.kwik.core.log.Logger;
-import tech.kwik.core.log.SysOutLogger;
 import tech.kwik.core.server.ServerConnectionConfig;
 import tech.kwik.core.server.ServerConnector;
 
@@ -73,8 +72,7 @@ public class QuicTripTransport extends AbstractTransport {
   public synchronized void accept() {
     super.accept();
 
-    // TODO: make kwik using Tentackle logger
-    Logger log = new SysOutLogger();
+    Logger log = new QuicLogger();
     log.timeFormat(Logger.TimeFormat.Long);
     log.logWarning(true);
     log.logInfo(true);
