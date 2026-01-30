@@ -3868,25 +3868,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   public String createTransferTokenLockSql() {
     assertTokenLockProvided();
     return SQL_UPDATE + getTopSuperTableName() + SQL_SET +
-           CN_SERIAL + SQL_EQUAL + CN_SERIAL + SQL_PLUS_ONE + SQL_COMMA +
            CN_EDITEDBY + SQL_EQUAL_PAR +
            SQL_WHERE + CN_ID + SQL_EQUAL_PAR + SQL_AND + CN_SERIAL + SQL_EQUAL_PAR;
   }
-
-  /**
-   * Creates the SQL code for the {@link #transferTokenLock} statement with tableserial.
-   *
-   * @return the SQL code
-   */
-  public String createTransferTokenLockWithTableSerialSql() {
-    assertTokenLockProvided();
-    return SQL_UPDATE + getTopSuperTableName() + SQL_SET +
-           CN_SERIAL + SQL_EQUAL + CN_SERIAL + SQL_PLUS_ONE + SQL_COMMA +
-           CN_EDITEDBY + SQL_EQUAL_PAR_COMMA +
-           CN_TABLESERIAL + SQL_EQUAL_PAR +
-           SQL_WHERE + CN_ID + SQL_EQUAL_PAR + SQL_AND + CN_SERIAL + SQL_EQUAL_PAR;
-  }
-
 
   /**
    * Gets the id of the user currently editing this object.
@@ -4216,27 +4200,16 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       assertWritePermission();
 
       if (db.isPersistenceOperationAllowed(this, DbModificationType.UPDATE)) {
-        // within a TX cause of countModification to invalidateCache
         long txVoucher = db.begin(TX_TRANSFER_TOKENLOCK);
         try {
-          boolean withTableSerial = isTableSerialProvided();
           PreparedStatementWrapper st = getPreparedStatement(getClassVariables().transferTokenLockStatementId,
-                  _ -> withTableSerial ? createTransferTokenLockWithTableSerialSql() : createTransferTokenLockSql());
-          long newTableSerial = countModification();    // this will roll back and terminate on error
-          if (withTableSerial) {
-            setTableSerial(newTableSerial);
-          }
+                                                             _ -> createTransferTokenLockSql());
           int ndx = 0;
           st.setLong(++ndx, userId);
           setEditedBy(userId);
-          if (withTableSerial) {
-            st.setLong(++ndx, getTableSerial());
-          }
           st.setLong(++ndx, getId());
           st.setLong(++ndx, getSerial());
           assertThisRowAffected(st.executeUpdate());
-
-          setSerial(getSerial() + 1);   // was incremented
 
           if (userId != 0) {
             // set/refresh the expiry

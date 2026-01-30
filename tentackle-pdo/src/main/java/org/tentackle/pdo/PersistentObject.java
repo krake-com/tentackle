@@ -630,19 +630,12 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * Allows taking over the token WITHOUT possessing it!
    * This method should be used with great care as it does not check
    * who owns the token and if there is a token at all.
-   * The serial will be increased, so the old user gets an error
-   * if trying to update.<br>
-   * Furthermore, the current object does *NOT* get the serial increased,
-   * thus preventing any update without reloading the object again!
-   * You have to use the returned PDO!
-   * <br>
-   * The modification table is updated because the serial is increased, and thus all caches must be invalidated.
    * <p>
    * CAUTION: the method is provided for rare corner cases like administration tools.
    * Don't use it for regular locking/unlocking!
    *
    * @param userId is the new user-ID. (special 0 = free token, even if we are not the owner!)
-   * @return the updated PDO
+   * @return the PDO with the updated token
    */
   T transferTokenLock(long userId);
 
