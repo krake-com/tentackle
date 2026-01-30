@@ -245,7 +245,7 @@ public class TripServer {
    */
   public void start() {
     // start the transports in alphabetical order
-    LOGGER.info("Tentackle TRIP-server " + getClass().getName() + " starting...");
+    LOGGER.info("TRIP-server " + getClass().getName() + " starting...");
     for (Map.Entry<String, URI> serviceEntry : services.entrySet()) {
       String name = serviceEntry.getKey();
       URI uri = serviceEntry.getValue();
