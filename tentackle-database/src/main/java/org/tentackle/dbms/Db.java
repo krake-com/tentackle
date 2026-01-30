@@ -20,6 +20,7 @@ package org.tentackle.dbms;
 
 import org.tentackle.common.Constants;
 import org.tentackle.common.EncryptedProperties;
+import org.tentackle.common.ExceptionHelper;
 import org.tentackle.daemon.Scavenger;
 import org.tentackle.dbms.trip.DbRemoteDelegate;
 import org.tentackle.dbms.trip.RemoteDbConnection;
@@ -56,8 +57,10 @@ import org.tentackle.trip.RemoteDelegate;
 import org.tentackle.trip.Transport;
 import org.tentackle.trip.TransportManager;
 import org.tentackle.trip.TripRuntimeException;
+import org.tentackle.trip.impl.TripError;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.Serializable;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Cleaner.Cleanable;
@@ -473,11 +476,22 @@ public class Db implements Session, Cloneable {
               }
             }
           }
+          catch (TripError te) {
+            if (te.isNoSuchDelegate()) {
+              LOGGER.warning("remote session {0} already closed by server", name);
+            }
+          }
           catch (PersistenceException pe) {
             throw pe;
           }
           catch (RuntimeException e) {
-            LOGGER.severe("closing session " + name + " failed", e);
+            IOException ioException = ExceptionHelper.extractException(IOException.class, true, e);
+            if (ioException != null) {
+              LOGGER.warning("backend {0} I/O error: {1}", name, ioException.getMessage());
+            }
+            else {
+              LOGGER.severe("closing session " + name + " failed", e);
+            }
           }
           finally {
             // whatever happened: make it unusable
@@ -749,7 +763,7 @@ public class Db implements Session, Cloneable {
         LOGGER.info("session {0} opened", this);
       }
     }
-    catch (Exception ex) {
+    catch (Throwable ex) {
       throw handleConnectException(ex);
     }
   }
@@ -1239,12 +1253,16 @@ public class Db implements Session, Cloneable {
    * Handles a connect-exception (in open or clone).
    * The method returns a PersistenceException.
    */
-  private PersistenceException handleConnectException(Exception e) {
+  private PersistenceException handleConnectException(Throwable e) {
     if (e instanceof LoginFailedException) {
       return (LoginFailedException) e;
     }
     if (e instanceof PersistenceException) {
       return (PersistenceException) e;
+    }
+    IOException ioException = ExceptionHelper.extractException(IOException.class, true, e);
+    if (ioException != null) {
+      e = ioException;    // this is the real cause!
     }
     return new PersistenceException(this, "connection error", e);
   }

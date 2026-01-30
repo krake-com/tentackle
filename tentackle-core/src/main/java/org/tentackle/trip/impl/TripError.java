@@ -82,4 +82,13 @@ public class TripError extends TripRuntimeException {
     return opCode;
   }
 
+  /**
+   * Returns whether the reason is no such delegate.
+   *
+   * @return true if the reason is no such delegate, false otherwise
+   */
+  public boolean isNoSuchDelegate() {
+    return opCode == DefaultOpCode.NO_SUCH_DELEGATE;
+  }
+
 }

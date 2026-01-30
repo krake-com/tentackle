@@ -370,6 +370,9 @@ public enum DefaultOpCode implements OpCode {
   LAMBDA(0x79, OpCodeCategory.FIXED_TYPE, new LambdaTripType()),
 
 
+  /** no such delegate UUID registered. */
+  NO_SUCH_DELEGATE(0x7A, OpCodeCategory.ERROR),
+
   /** client side serialization error. */
   CLIENT_SERIALIZATION_ERROR(0x7B, OpCodeCategory.ERROR),
 

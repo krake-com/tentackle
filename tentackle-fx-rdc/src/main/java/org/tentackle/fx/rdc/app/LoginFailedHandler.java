@@ -19,6 +19,7 @@
 
 package org.tentackle.fx.rdc.app;
 
+import org.tentackle.common.ExceptionHelper;
 import org.tentackle.fx.Fx;
 import org.tentackle.log.Logger;
 import org.tentackle.session.AlreadyLoggedInException;
@@ -126,8 +127,11 @@ public class LoginFailedHandler {
         if (application.getFxApplication() != null) {
           application.getFxApplication().setStopReason(98, ex);
         }
-        Fx.error(view, AppFxRdcBundle.getString("LOGIN FAILED!"), ex, () -> view.getScene().getWindow().hide());
-        // application terminates when error window is closed
+        Fx.error(view,
+                 AppFxRdcBundle.getString("LOGIN FAILED!") +
+                 "\n" + ExceptionHelper.concatenateMessages(ex), ex,
+                 () -> view.getScene().getWindow().hide());
+        // the application terminates when the error window is closed
       });
     }
 

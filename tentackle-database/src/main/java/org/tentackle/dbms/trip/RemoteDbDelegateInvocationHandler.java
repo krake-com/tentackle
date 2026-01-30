@@ -28,6 +28,7 @@ import org.tentackle.log.Logger.Level;
 import org.tentackle.log.MappedDiagnosticContext;
 import org.tentackle.misc.TimeKeeper;
 import org.tentackle.session.PersistenceException;
+import org.tentackle.session.Session;
 import org.tentackle.trip.TripRuntimeException;
 
 import java.lang.reflect.InvocationHandler;
@@ -349,7 +350,7 @@ public class RemoteDbDelegateInvocationHandler implements InvocationHandler {
     Db session = delegate.getSession();
     if (session != null) {
       session.setOwnerThread(null);
-      session.clearCurrent();
+      Session.setCurrentSession(null);
     }
     LocaleProvider.getInstance().setCurrentLocale(null);
   }

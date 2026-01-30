@@ -24,6 +24,7 @@ import org.tentackle.trip.impl.DefaultTripFactory;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.RecordComponent;
 import java.net.URI;
@@ -254,5 +255,16 @@ public interface TripFactory {
    * @param <T> the interface type
    */
   <T> T createRemoteProxy(UUID remoteId, Transport transport, Class<?>... clazz);
+
+  /**
+   * Creates a new invocation handler for the given class and remote id.<br>
+   * This method is invoked from {@link #createRemoteProxy(UUID, Transport, Class[])}.
+   *
+   * @param remoteId the ID of the remote delegate
+   * @param transport the transport to use
+   * @param clazz the interface(s) to create the invocation handler for
+   * @return the invocation handler
+   */
+  InvocationHandler createInvocationHandler(UUID remoteId, Transport transport, Class<?>... clazz);
 
 }

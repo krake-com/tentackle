@@ -22,6 +22,7 @@ import org.tentackle.log.Logger;
 import org.tentackle.trip.Remote;
 import org.tentackle.trip.RemoteDelegate;
 import org.tentackle.trip.Transport;
+import org.tentackle.trip.TripNoSuchDelegateException;
 import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.TripStream;
 import org.tentackle.trip.TripStreamClosedException;
@@ -106,7 +107,7 @@ public class CallHandler implements Runnable {
       prepareResponse();
       RemoteDelegate<Remote> delegate = transport.getRegistry().lookup(remoteCall.remoteId());
       if (delegate == null) {
-        throw new TripRuntimeException("no delegate found for remote id: " + remoteCall.remoteId());
+        throw new TripNoSuchDelegateException(remoteCall.remoteId());
       }
       if (remoteCall instanceof IdentifiedRemoteCall identifiedRemoteCall) {
         IdentifiedRemoteResponse response = delegate.invoke(identifiedRemoteCall);
@@ -123,6 +124,10 @@ public class CallHandler implements Runnable {
     catch (TripStreamClosedException ce) {
       LOGGER.warning("client closed connection while processing {0} ({1})", remoteCall, ce.getMessage());
       throw ce;   // will be caught via ExecutionException in ConnectionHandler
+    }
+    catch (TripNoSuchDelegateException nd) {
+      LOGGER.warning(nd.getMessage());
+      stream.sendError(DefaultOpCode.NO_SUCH_DELEGATE, nd);
     }
     catch (Throwable t) {
       // serializing the response failed

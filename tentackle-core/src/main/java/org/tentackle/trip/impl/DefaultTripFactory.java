@@ -46,6 +46,7 @@ import org.tentackle.trip.remote.RemoteInvocationHandler;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -237,7 +238,12 @@ public class DefaultTripFactory implements TripFactory {
       }
     }
     return (T) Proxy.newProxyInstance(clazz[0].getClassLoader(), clazz,
-                                      new RemoteInvocationHandler(remoteId, transport));
+                                      createInvocationHandler(remoteId, transport, clazz));
+  }
+
+  @Override
+  public InvocationHandler createInvocationHandler(UUID remoteId, Transport transport, Class<?>... clazz) {
+    return new RemoteInvocationHandler(remoteId, transport);
   }
 
   @Override
