@@ -74,18 +74,24 @@ public final class ThrowableTripType<T extends Throwable> extends ObjectTripType
 
     // no @CanonicalConstructor -> get constructor args from the values-map
     String message = null;
+    boolean hasMessage = false;
     Throwable cause = null;
+    boolean hasCause = false;
     StackTraceElement[] stackTrace = null;
+    boolean hasStackTrace = false;
     for (Map.Entry<TripComponent<T, ?>, Object> unassigned : componentValues.entrySet()) {
       TripComponent<T, ?> key = unassigned.getKey();
       if ("message".equals(key.getName())) {
         message = (String) unassigned.getValue();
+        hasMessage = true;
       }
       else if ("cause".equals(key.getName())) {
         cause = (Throwable) unassigned.getValue();
+        hasCause = true;
       }
       else if ("stackTrace".equals(key.getName())) {
         stackTrace = (StackTraceElement[]) unassigned.getValue();
+        hasStackTrace = true;
       }
       // If there are other components, either annotate with CanonicalConstructor or
       // add a TripComponentProvider/TripInstanceCreator add an application-specific TripType and
@@ -93,21 +99,54 @@ public final class ThrowableTripType<T extends Throwable> extends ObjectTripType
     }
 
     try {
-      if (cause != null) {
-        Constructor<T> constructor = getObjectClass().getDeclaredConstructor(String.class, Throwable.class);
-        value = constructor.newInstance(message, cause);
-      }
-      else {
-        Constructor<T> constructor = getObjectClass().getDeclaredConstructor(String.class);
-        value = constructor.newInstance(message);
+      for (Constructor<?> constructor : getObjectClass().getDeclaredConstructors()) {
+        if (hasCause && hasMessage) {
+          if (constructor.getParameterCount() == 2) {
+            if (constructor.getParameterTypes()[0] == String.class &&
+                constructor.getParameterTypes()[1] == Throwable.class) {
+              value = (T) constructor.newInstance(message, cause);
+              break;
+            }
+            if (constructor.getParameterTypes()[1] == String.class &&
+                constructor.getParameterTypes()[0] == Throwable.class) {
+              value = (T) constructor.newInstance(cause, message);
+              break;
+            }
+          }
+        }
+        else if (hasCause) {    // cause only
+          if (constructor.getParameterCount() == 1 &&
+              constructor.getParameterTypes()[0] == Throwable.class) {
+            value = (T) constructor.newInstance(cause);
+            break;
+          }
+        }
+        else if (hasMessage) {  // message only
+          if (constructor.getParameterCount() == 1 &&
+              constructor.getParameterTypes()[0] == String.class) {
+            value = (T) constructor.newInstance(message);
+            break;
+          }
+        }
+        else {  // no message and no cause
+          if (constructor.getParameterCount() == 0) {
+            value = (T) constructor.newInstance();
+            break;
+          }
+        }
       }
     }
-    catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+    catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
       // return wrapped exception
       value = (T) new TripInstantiationException(getObjectClass(), message, cause);
     }
 
-    if (stackTrace != null) {
+    if (value == null) {    // no matching constructor
+      // return wrapped exception
+      value = (T) new TripInstantiationException(getObjectClass(), message, cause);
+    }
+
+    if (hasStackTrace) {
       value.setStackTrace(stackTrace);
     }
     return value;

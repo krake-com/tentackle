@@ -377,7 +377,14 @@ public class ValidationUtilities {
                   return method.invoke(parentObject);
                 }
               }
-              catch (InaccessibleObjectException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+              catch (InvocationTargetException ix) {
+                Throwable cause = ix.getTargetException();
+                if (cause instanceof RuntimeException) {
+                  throw (RuntimeException) cause;
+                }
+                throw new ValidationRuntimeException(cause.getMessage(), cause);
+              }
+              catch (InaccessibleObjectException | IllegalAccessException | IllegalArgumentException ex) {
                 throw new ValidationRuntimeException("cannot invoke method " + method, ex);
               }
             };

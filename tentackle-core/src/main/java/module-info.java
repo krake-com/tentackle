@@ -39,6 +39,7 @@ module org.tentackle.core {
   exports org.tentackle.validate.severity;
   exports org.tentackle.trip;
   exports org.tentackle.trip.builder;
+  exports org.tentackle.trip.creators;
   exports org.tentackle.trip.types;
   exports org.tentackle.trip.impl;
   exports org.tentackle.trip.provider;
