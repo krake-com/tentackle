@@ -165,7 +165,7 @@ public class DefaultFxFactory implements FxFactory {
     viewTranslatorMap = new HashMap<>();
     for (Map.Entry<ValueTranslatorKey<?,?>, Class<ValueTranslator>> entry: translatorMap.entrySet()) {
       Class<?> viewClass = entry.getKey().viewClass();
-      DefaultClassMapper translators = viewTranslatorMap.computeIfAbsent(viewClass, k ->
+      DefaultClassMapper translators = viewTranslatorMap.computeIfAbsent(viewClass, _ ->
               new DefaultClassMapper(
                       viewClass.getSimpleName() + "-translator",
                       ServiceFactory.getClassLoader(Constants.DEFAULT_SERVICE_PATH, ValueTranslator.class.getName()),
@@ -257,12 +257,13 @@ public class DefaultFxFactory implements FxFactory {
       public void hide() {
         Long since = shownSince.get();
         // this prevents accidental events from hiding the popup before becoming visible to the user
-        if (since == null || System.currentTimeMillis() > since + 500) {    // 500 ms is short enough for a "fast" user
+        if ((since == null || System.currentTimeMillis() > since + 500) && isShowing()) {
+          // 500 ms is short enough for a "fast" user
           super.hide();
         }
       }
     };
-    popup.addEventFilter(WindowEvent.WINDOW_SHOWING, event -> shownSince.accept(System.currentTimeMillis()));
+    popup.addEventFilter(WindowEvent.WINDOW_SHOWING, _ -> shownSince.accept(System.currentTimeMillis()));
     popup.setAutoHide(true);
     return popup;
   }
@@ -328,7 +329,6 @@ public class DefaultFxFactory implements FxFactory {
     try {
       Parent view;
       if (viewClass != null) {
-        Constructor<? extends Parent> viewConstructor;
         if (resources != null) {
           try {
             view = viewClass.getConstructor(ResourceBundle.class).newInstance(resources);
@@ -353,7 +353,7 @@ public class DefaultFxFactory implements FxFactory {
       else {
         FXMLLoader loader = new FXMLLoader(fxmlUrl, resources, getBuilderFactory());
         if (annotatedClass != controllerClass) {
-          loader.setControllerFactory(cls -> {
+          loader.setControllerFactory(_ -> {
             try {
               return controllerClass.getConstructor().newInstance();
             }
