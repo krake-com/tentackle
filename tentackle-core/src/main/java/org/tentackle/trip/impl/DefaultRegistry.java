@@ -22,6 +22,7 @@ import org.tentackle.reflect.IndexedMethodCache;
 import org.tentackle.trip.Registry;
 import org.tentackle.trip.Remote;
 import org.tentackle.trip.RemoteDelegate;
+import org.tentackle.trip.RemoteRoot;
 import org.tentackle.trip.TripRuntimeException;
 
 import java.util.HashMap;
@@ -146,6 +147,9 @@ public class DefaultRegistry implements Registry {
    * @param <T> the type of the target object
    */
   protected <T extends Remote> RemoteDelegate<T> createRemoteDelegate(UUID remoteId, T remoteObject, IndexedMethodCache methodCache) {
+    if (remoteObject instanceof RemoteRoot remoteRoot) {
+      remoteRoot.setRegistryCoordinates(this, remoteId);
+    }
     return new DefaultRemoteDelegate<>(this, remoteId, remoteObject, methodCache);
   }
 

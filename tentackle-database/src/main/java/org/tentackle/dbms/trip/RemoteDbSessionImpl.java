@@ -18,7 +18,6 @@
 
 package org.tentackle.dbms.trip;
 
-
 import org.tentackle.dbms.Db;
 import org.tentackle.dbms.DbUtilities;
 import org.tentackle.log.Logger;
@@ -36,7 +35,9 @@ import org.tentackle.session.SessionFactory;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionPool;
 import org.tentackle.session.SessionPoolProvider;
+import org.tentackle.trip.Registry;
 import org.tentackle.trip.Remote;
+import org.tentackle.trip.RemoteRoot;
 import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.transport.TransportClientInfo;
 
@@ -63,7 +64,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author  harald
  */
-public abstract class RemoteDbSessionImpl implements RemoteDbSession {
+public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot {
 
   private static final Logger LOGGER = Logger.get(RemoteDbSessionImpl.class);
 
@@ -295,6 +296,8 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession {
   private int timeout;                                        // timeout in polling intervals of the RemoteDbSessionCleanupThread
   private int timeoutCount;                                   // consecutive timeouts
   private long closedSince;                                   // session closed since, 0 if still open
+  private Registry registry;                                  // the registry where the delegate is registered
+  private UUID remoteId;                                      // the remote delegate ID of this session
   private final AtomicBoolean modificationTrackerSession;     // true if this the remote ModificationTracker's session
   private final Queue<MasterSerialEvent> masterSerialEvents;  // master serial event queue
 
@@ -352,7 +355,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession {
         }
       }
       if (ex instanceof LoginFailedException) {
-        throw (LoginFailedException) ex;
+        throw ex;
       }
       throw new PersistenceException("could not setup remote session", ex);
     }
@@ -370,14 +373,37 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession {
 
   @Override
   public String toString() {
-    StringBuilder buf = new StringBuilder();
-    buf.append(getClass().getSimpleName()).append('#').append(sessionNumber)
-       .append(", timeout=").append(timeout)
-       .append(", client=").append(clientInfo)
-       .append(", host=").append(clientHost);
-    return buf.toString();
+    return getClass().getSimpleName() + '#' + sessionNumber +
+           ", timeout=" + timeout +
+           ", client=" + clientInfo +
+           ", host=" + clientHost;
   }
 
+  /**
+   * @inheritDoc
+   * <p>
+   * RemoteDbSessions, which are created by a {@link RemoteDbConnection} instance,
+   * are the root of all remote delegates related to this session. When the session
+   * is closed, the session should be unregistered, which in turn unregisters
+   * all related delegates recursively.
+   *
+   * @param registry the registry
+   * @param id the delegate ID
+   */
+  @Override
+  public void setRegistryCoordinates(Registry registry, UUID id) {
+    this.registry = registry;
+    this.remoteId = id;
+  }
+
+  @Override
+  public void unregisterFromRegistry() {
+    if (registry != null && remoteId != null) {
+      registry.unregister(remoteId);
+    }
+    registry = null;
+    remoteId = null;
+  }
 
   /**
    * Adds a master serial event.
@@ -825,6 +851,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession {
    */
   protected void cleanup(boolean crashed) {
     DbUtilities.getInstance().cleanupRemoteSession(this);
+    unregisterFromRegistry();
     if (resources != null) {
       resources.cleanup(crashed);
     }
