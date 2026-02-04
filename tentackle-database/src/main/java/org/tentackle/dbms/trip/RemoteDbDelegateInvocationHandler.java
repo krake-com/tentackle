@@ -254,7 +254,14 @@ public class RemoteDbDelegateInvocationHandler implements InvocationHandler {
     RemoteDbSessionImpl serverSession = delegate.getServerSession();
 
     if (!serverSession.isOpen()) {
+      // This will normally not happen since the session removes itself from the registry when it was closed,
+      // but probably in case of a race condition.
       throw new RemoteSessionClosedException(serverSession + " already closed since " + new Date(serverSession.getClosedSince()));
+    }
+
+    RemoteDbSessionInvocationFilter invocationFilter = serverSession.getInvocationFilter();
+    if (invocationFilter != null) {
+      invocationFilter.filter(proxy, method, args);
     }
 
     try {

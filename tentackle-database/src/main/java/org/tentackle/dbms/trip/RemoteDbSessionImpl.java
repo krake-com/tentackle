@@ -298,6 +298,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
   private long closedSince;                                   // session closed since, 0 if still open
   private Registry registry;                                  // the registry where the delegate is registered
   private UUID remoteId;                                      // the remote delegate ID of this session
+  private RemoteDbSessionInvocationFilter invocationFilter;   // optional invocation filter
   private final AtomicBoolean modificationTrackerSession;     // true if this the remote ModificationTracker's session
   private final Queue<MasterSerialEvent> masterSerialEvents;  // master serial event queue
 
@@ -403,6 +404,24 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
     }
     registry = null;
     remoteId = null;
+  }
+
+  /**
+   * Sets the invocation filter.
+   *
+   * @param invocationFilter the invocation filter, null for none (default)
+   */
+  public void setInvocationFilter(RemoteDbSessionInvocationFilter invocationFilter) {
+    this.invocationFilter = invocationFilter;
+  }
+
+  /**
+   * Gets the invocation filter.
+   *
+   * @return the invocation filter, null for none (default)
+   */
+  public RemoteDbSessionInvocationFilter getInvocationFilter() {
+    return invocationFilter;
   }
 
   /**
