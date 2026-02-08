@@ -19,6 +19,7 @@
       <groupId>org.tentackle</groupId>
       <artifactId>tentackle-core</artifactId>
       <version>${project.version}</version>
+      <optional>true</optional>   <!-- avoid transitive dependency -->
     </dependency>
   </dependencies>
 
