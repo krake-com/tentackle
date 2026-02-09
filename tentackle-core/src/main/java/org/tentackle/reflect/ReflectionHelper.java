@@ -598,7 +598,7 @@ public final class ReflectionHelper {
     }
     if (annotation != null) {
       Class<?> builderClass = annotation.value();
-      Constructor<?> builderConstructor = null;
+      Constructor<?> builderConstructor;
       try {
         builderConstructor = builderClass.getDeclaredConstructor();
       }
@@ -612,7 +612,8 @@ public final class ReflectionHelper {
           if (method.getReturnType().equals(clazz) && method.getParameterCount() == 0) {
             buildMethod = method;
           }
-          else if (method.getReturnType() == builderClass && method.getParameterCount() == 1) {
+          else if (method.getParameterCount() == 1 &&
+                   method.getReturnType() != Object.class && method.getReturnType().isAssignableFrom(builderClass)) {
             methods.put(method.getName(), method);
           }
         }
