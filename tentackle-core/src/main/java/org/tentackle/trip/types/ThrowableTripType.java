@@ -18,6 +18,7 @@
 
 package org.tentackle.trip.types;
 
+import org.tentackle.log.Logger;
 import org.tentackle.trip.DictionaryEntry;
 import org.tentackle.trip.OpCode;
 import org.tentackle.trip.Reference;
@@ -27,6 +28,7 @@ import org.tentackle.trip.TripStream;
 import org.tentackle.trip.impl.DefaultOpCode;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -39,6 +41,8 @@ import java.util.function.Consumer;
  */
 // created by ThrowableTypeBuilder, not mapped by @TripTypeService
 public final class ThrowableTripType<T extends Throwable> extends ObjectTripType<T> {
+
+  private static final Logger LOGGER = Logger.get(ThrowableTripType.class);
 
   private static final OpCode OP_CODE = DefaultOpCode.THROWABLE;
 
@@ -55,6 +59,34 @@ public final class ThrowableTripType<T extends Throwable> extends ObjectTripType
   public boolean isReferencable(T value) {
     // exceptions stand for their own
     return false;
+  }
+
+
+  @Override
+  protected T createInitializedDefault() {
+    try {
+      return super.createInitializedDefault();
+    }
+    catch (TripInstantiationException ix) {
+      // missing no-arg constructor?
+      LOGGER.warning("{0} -> trying common public constructors (consider providing a TripInstanceCreator!)", ix.getMessage());
+      try {
+        try {
+          return getObjectClass().getConstructor(String.class).newInstance((String) null);
+        }
+        catch (NoSuchMethodException e1) {
+          try {
+            return getObjectClass().getConstructor(Throwable.class).newInstance((Throwable) null);
+          }
+          catch (NoSuchMethodException e2) {
+            throw new TripInstantiationException(getObjectClass(), "no suitable public constructors for " + getObjectClass());
+          }
+        }
+      }
+      catch (InaccessibleObjectException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+        throw new TripInstantiationException(getObjectClass(), "cannot instantiate " + getObjectClass(), e);
+      }
+    }
   }
 
   @Override
