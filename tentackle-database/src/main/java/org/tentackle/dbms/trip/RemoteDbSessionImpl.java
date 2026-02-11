@@ -217,9 +217,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, RemoteRoot
           if (uuid != null) {
             con.getTransport().getRegistry().unregister(uuid);
           }
-          else {
-            LOGGER.warning("session {0} already unregistered", me);
-          }
+          // else: already unregistered -> not an error
         }
       }
       catch (RuntimeException ex) {
