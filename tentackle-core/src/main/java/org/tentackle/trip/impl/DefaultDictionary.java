@@ -150,10 +150,18 @@ public class DefaultDictionary implements Dictionary {
       }
       oldEntry = entriesByName.get(entry.getClassName());
       if (oldEntry != null) {
-        if (!oldEntry.isClientOnly()) {
-          throw new TripRuntimeException("duplicate class name: " + entry + ", existing: " + oldEntry);
+        if (oldEntry.isClientOnly()) {
+          // don't remove temporary client entries from entriesByOrdinal in server!
+          // We have to keep them in case older data is received via another connection
+          // from the same client in parallel (which is rare, but theoretically possible).
+          if (!server) {
+            // removing from the client dictionary is ok since the server will never send client entries back
+            entriesByOrdinal.remove(oldEntry.getOrdinal());
+          }
         }
-        entriesByOrdinal.remove(oldEntry.getOrdinal());
+        else {
+          throw new TripRuntimeException("duplicate ordinal and class name: " + entry + ", existing: " + oldEntry);
+        }
       }
       entriesByOrdinal.put(entry.getOrdinal(), entry);
       entriesByName.put(entry.getClassName(), entry);
