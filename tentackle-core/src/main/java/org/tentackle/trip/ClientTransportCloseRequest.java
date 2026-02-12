@@ -20,16 +20,29 @@ package org.tentackle.trip;
 
 /**
  * Return values of remote calls can implement this interface.<br>
- * It is used to programmatically request the client to close the transport
+ * It is used to programmatically request the client to release or close the transport(s)
  * after having received the return value of a remote method invocation.
  */
 public interface ClientTransportCloseRequest {
 
   /**
-   * Requests the client to close the transport that was used for the remote call.
+   * Requests the client to release the transport from the {@link TransportManager}.<br>
+   * This usually closes the transport and all its connections if the
+   * transport is used for only a single named remote object.
    *
-   * @return true to close the transport and all its connections, false otherwise
+   * @return true to release the transport, false otherwise
    */
-  boolean isTransportCloseRequested();
+  default boolean isTransportReleaseRequested() {
+    return false;
+  }
+
+  /**
+   * Requests the client to close all its transports.
+   *
+   * @return true to close all transports, false otherwise
+   */
+  default boolean isCloseAllTransportsRequested() {
+    return false;
+  }
 
 }

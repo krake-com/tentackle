@@ -76,7 +76,7 @@ public record UpdateInfo(String version, String urlStr, String checksum, long si
   }
 
   @Override
-  public boolean isTransportCloseRequested() {
+  public boolean isCloseAllTransportsRequested() {
     // Close the transport gracefully after having received the update info.
     // This avoids nasty socket reset exceptions in the server when the client terminates
     // after updating and restarts.

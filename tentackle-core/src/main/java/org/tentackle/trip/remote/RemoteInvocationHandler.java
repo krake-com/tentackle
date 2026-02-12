@@ -22,6 +22,7 @@ import org.tentackle.log.Logger;
 import org.tentackle.trip.ClientTransportCloseRequest;
 import org.tentackle.trip.Connection;
 import org.tentackle.trip.Transport;
+import org.tentackle.trip.TransportManager;
 import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.TripRuntimeException;
 import org.tentackle.trip.TripStream;
@@ -194,9 +195,15 @@ public class RemoteInvocationHandler implements InvocationHandler {
     if (result instanceof DelegateDescriptor(UUID id, Class<?>[] remoteInterfaces)) {
       return TripFactory.getInstance().createRemoteProxy(id, transport, remoteInterfaces);
     }
-    if (result instanceof ClientTransportCloseRequest closeRequest && closeRequest.isTransportCloseRequested()) {
-      LOGGER.fine("transport close requested");
-      transport.close();
+    if (result instanceof ClientTransportCloseRequest closeRequest) {
+      if (closeRequest.isCloseAllTransportsRequested()) {
+        LOGGER.info("close all transports requested");
+        TransportManager.getInstance().closeAllTransports();
+      }
+      else if (closeRequest.isTransportReleaseRequested()) {
+        LOGGER.info("transport release requested");
+        TransportManager.getInstance().releaseTransport(transport);
+      }
     }
     return result;
   }
