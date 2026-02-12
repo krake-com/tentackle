@@ -19,6 +19,7 @@
 package org.tentackle.update;
 
 import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.trip.ClientTransportCloseRequest;
 import org.tentackle.trip.TripDeduplicatable;
 import org.tentackle.trip.TripReferencable;
 
@@ -44,7 +45,8 @@ import java.net.URL;
  */
 @TripReferencable(TripReferencable.NEVER)
 @TripDeduplicatable(TripDeduplicatable.NEVER)
-public record UpdateInfo(String version, String urlStr, String checksum, long size, String updateExecutor) {
+public record UpdateInfo(String version, String urlStr, String checksum, long size, String updateExecutor)
+       implements ClientTransportCloseRequest {
 
   /**
    * Creates the update info.
@@ -71,6 +73,14 @@ public record UpdateInfo(String version, String urlStr, String checksum, long si
     catch (URISyntaxException | MalformedURLException mx) {
       throw new TentackleRuntimeException(mx);
     }
+  }
+
+  @Override
+  public boolean isTransportCloseRequested() {
+    // Close the transport gracefully after having received the update info.
+    // This avoids nasty socket reset exceptions in the server when the client terminates
+    // after updating and restarts.
+    return true;
   }
 
 }
