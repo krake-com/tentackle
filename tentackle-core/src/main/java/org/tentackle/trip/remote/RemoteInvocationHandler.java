@@ -175,7 +175,9 @@ public class RemoteInvocationHandler implements InvocationHandler {
       throw t;
     }
     finally {
-      transport.putConnection(connection);  // closed connections will be removed from the pool
+      if (!transport.isClosed()) {
+        transport.putConnection(connection);  // closed connections will be removed from the pool
+      }
     }
   }
 

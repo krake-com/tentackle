@@ -67,6 +67,7 @@ public abstract class AbstractTransport implements Transport {
   private Dictionary dictionary;                      // single dictionary for client transports
   private Registry registry;                          // the server's registry
   private RemoteLookup remoteLookup;                  // the cached remote lookup
+  private boolean closed;                             // true if the transport is closed (cannot be used anymore)
 
   /**
    * A server-side map with weak UUIDs mapped to weak references to dictionaries.
@@ -109,6 +110,7 @@ public abstract class AbstractTransport implements Transport {
 
   @Override
   public synchronized Connection getConnection() {
+    assertNotClosed();
     if (callThreadPool != null) {
       throw new TripRuntimeException("transport is in server mode");
     }
@@ -129,6 +131,7 @@ public abstract class AbstractTransport implements Transport {
 
   @Override
   public synchronized void accept() {
+    assertNotClosed();
     if (clientConnectionPool != null) {
       throw new TripRuntimeException("transport is in client mode");
     }
@@ -205,6 +208,7 @@ public abstract class AbstractTransport implements Transport {
   @Override
   public synchronized void close() {
     LOGGER.info("closing transport " + this);
+    closed = true;
     if (clientConnectionPool != null) {
       clientConnectionPool.shutdown();
       clientConnectionPool = null;
@@ -223,7 +227,7 @@ public abstract class AbstractTransport implements Transport {
 
   @Override
   public boolean isClosed() {
-    return clientConnectionPool == null && callThreadPool == null && connectionThreadPool == null;
+    return closed;
   }
 
   @Override
@@ -302,6 +306,16 @@ public abstract class AbstractTransport implements Transport {
       Thread.ofVirtual()
             .name("TRIP connection " + uri.getScheme() + " VThread ", 1)
             .factory());
+  }
+
+  /**
+   * Asserts that the transport is not closed.<br>
+   * A closed transport cannot be used anymore.
+   */
+  private void assertNotClosed() {
+    if (closed) {
+      throw new TripRuntimeException("transport " + this + " is closed");
+    }
   }
 
 }
