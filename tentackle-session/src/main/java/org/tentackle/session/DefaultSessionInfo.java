@@ -22,6 +22,7 @@ package org.tentackle.session;
 import org.tentackle.common.Constants;
 import org.tentackle.common.Cryptor;
 import org.tentackle.common.EncryptedProperties;
+import org.tentackle.common.LocaleProvider;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.ImmutableException;
@@ -36,7 +37,7 @@ import java.util.Objects;
 import java.util.TimeZone;
 
 /**
- * The default implementation for a session info.
+ * The default implementation for a session-info.
  * <p>
  * The password is encrypted if a {@link Cryptor} is configured.
  *
@@ -72,11 +73,11 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
   private String hostInfo;                      // info about the host(name)
   private TimeZone timeZone;                    // the timezone
   private boolean cloned;                       // true if session info is cloned
-  private boolean lockLinger;                   // true if locks are not removed when session is closed
+  private boolean lockLinger;                   // true if locks are not removed when the session is closed
 
 
   /**
-   * Creates a session info from an optional username, optional password and
+   * Creates a session-info from an optional username, optional password, and
    * a property file holding the connection parameters.
    *
    * @param username is the name of the user
@@ -90,7 +91,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
   }
 
   /**
-   * Creates a session info from a property file holding the connection parameters.
+   * Creates a session-info from a property file holding the connection parameters.
    *
    * @param propertiesName name of the session's properties file, null if {@code "backend"}
    */
@@ -99,7 +100,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
   }
 
   /**
-   * Creates a session info from the default properties file.<br>
+   * Creates a session-info from the default properties file.<br>
    * The property file's name is {@code "backend"}.
    */
   public DefaultSessionInfo()  {
@@ -266,7 +267,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
 
   @Override
   public Locale getLocale() {
-    return locale == null ? Locale.getDefault() : locale;
+    return locale == null ? LocaleProvider.getInstance().getLocale() : locale;
   }
 
   @Override
@@ -362,7 +363,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
 
 
   /**
-   * Clones a session info.<br>
+   * Clones a session-info.<br>
    * The password is copied, if not null.<br>
    * The properties are cloned as well.<br>
    * Cloned session infos are mutable by default and have no sessionName.
