@@ -21,7 +21,6 @@ package org.tentackle.trip.transport;
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.log.Logger;
 import org.tentackle.trip.Deserializer;
-import org.tentackle.trip.DictionaryEntry;
 import org.tentackle.trip.Serializer;
 import org.tentackle.trip.Transport;
 import org.tentackle.trip.TripConstants;
@@ -58,8 +57,6 @@ import java.util.concurrent.ExecutionException;
 public class ConnectionHandler implements Runnable {
 
   private static final Logger LOGGER = Logger.get(ConnectionHandler.class);
-
-  private final TripType<DictionaryEntry> dictionaryType = TripFactory.getInstance().getType(DictionaryEntry.class);
 
   private final Transport transport;
   private final String connectionName;
@@ -145,6 +142,7 @@ public class ConnectionHandler implements Runnable {
     UUID id = readUUID();
     TripStream stream = createStream(id);
     TransportClientInfo transportClientInfo = new TransportClientInfo(transport, connectionName, id);
+    boolean closedByClient = false;
     LOGGER.info("connection " + transportClientInfo + " opened");
 
     while (isConnectionAlive()) {
@@ -177,7 +175,7 @@ public class ConnectionHandler implements Runnable {
         // ignore the call and continue reading from the stream
       }
       catch (TripStreamClosedException ce) {
-        LOGGER.warning("connection closed by client");
+        closedByClient = true;
         break;
       }
       catch (ExecutionException xe) {
@@ -190,7 +188,7 @@ public class ConnectionHandler implements Runnable {
           stream.sendError(DefaultOpCode.SERVER_SERIALIZATION_ERROR, xe.getCause());
         }
         catch (TripStreamClosedException ce) {
-          LOGGER.warning("connection closed by client: {0}", ce.getMessage());
+          closedByClient = true;
           break;
         }
       }
@@ -207,7 +205,7 @@ public class ConnectionHandler implements Runnable {
         break;    // close the connection since we don't know what's still in the stream
       }
     }
-    LOGGER.info("connection " + transportClientInfo + " closed");
+    LOGGER.info("connection {0} closed{1}", transportClientInfo, closedByClient ? " by client" : "");
   }
 
   /**
