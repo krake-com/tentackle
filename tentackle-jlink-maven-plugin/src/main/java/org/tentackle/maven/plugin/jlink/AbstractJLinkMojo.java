@@ -27,6 +27,7 @@ import org.apache.maven.project.MavenProjectHelper;
 import org.apache.maven.project.artifact.ProjectArtifact;
 import org.codehaus.plexus.archiver.Archiver;
 import org.codehaus.plexus.archiver.ArchiverException;
+import org.codehaus.plexus.archiver.util.DefaultFileSet;
 import org.codehaus.plexus.archiver.zip.ZipArchiver;
 import org.codehaus.plexus.languages.java.jpms.LocationManager;
 
@@ -643,7 +644,9 @@ public abstract class AbstractJLinkMojo extends AbstractTentackleMojo {
    */
   public File createZipFile(File dir, String name) throws MojoExecutionException {
     File zipFile = new File(zipDirectory, name + "." + ZIP_EXTENSION);
-    zipArchiver.addDirectory(dir);
+    zipArchiver.addFileSet(DefaultFileSet.fileSet(dir).prefixed("")
+                                         .includeExclude(null, null)
+                                         .includeEmptyDirs(zipArchiver.getIncludeEmptyDirs()));
     zipArchiver.setDestFile(zipFile);
     try {
       zipArchiver.createArchive();
