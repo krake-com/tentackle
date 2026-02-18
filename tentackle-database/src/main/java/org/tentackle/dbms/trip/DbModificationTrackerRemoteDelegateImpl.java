@@ -45,7 +45,7 @@ public class DbModificationTrackerRemoteDelegateImpl<T extends DbModificationTra
    * Creates the master serial object from a long serial.
    * <p>
    * If {@link MasterSerialEvent}s are registered for this remote session,
-   * the next event will be polled from the queue, its serial set and that event returned.
+   * the next event will be polled from the queue, its serial set, and that event returned.
    *
    * @param serial the long master serial
    * @return the master serial object
@@ -64,7 +64,7 @@ public class DbModificationTrackerRemoteDelegateImpl<T extends DbModificationTra
           listEvent.add(nextEvent);
           nextEvent = getServerSession().pollMasterSerialEvent();
         }
-        // only one element is possible due to MasterSerialEvent.isOverridingOlderEvents(), see MasterSerialListEvent.add()
+        // could be reduced to one element due to MasterSerialEvent.isOverridingOlderEvents(), see MasterSerialListEvent.add()
         masterSerialEvent = listEvent.size() == 1 ? listEvent.get(0) : listEvent;
       }
       return masterSerialEvent;

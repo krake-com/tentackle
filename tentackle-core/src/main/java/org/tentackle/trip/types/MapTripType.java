@@ -21,8 +21,6 @@ package org.tentackle.trip.types;
 import org.tentackle.trip.DictionaryEntry;
 import org.tentackle.trip.OpCode;
 import org.tentackle.trip.Reference;
-import org.tentackle.trip.TripComponent;
-import org.tentackle.trip.TripComponentProvider;
 import org.tentackle.trip.TripFactory;
 import org.tentackle.trip.TripInstantiationException;
 import org.tentackle.trip.TripRuntimeException;
@@ -31,6 +29,7 @@ import org.tentackle.trip.TripType;
 import org.tentackle.trip.impl.DefaultOpCode;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.Set;
@@ -285,14 +284,10 @@ public class MapTripType<T extends Map> extends ObjectTripType<T> {
   }
 
   @Override
-  @SuppressWarnings({ "unchecked", "rawtypes" })
-  protected TripComponent<T, ?>[] createComponents(T object) {
-    // no super.createComponents since that would cause exceptions for JDK map classes!
-    TripComponentProvider<T> componentProvider = TripFactory.getInstance().getComponentProvider(getObjectClass());
-    if (componentProvider != null) {
-      return componentProvider.getComponents(this);
-    }
-    return new TripComponent[0];
+  protected boolean isFieldSerializable(Field field) {
+    // The fields in the java maps must not be serialized, since the components are serialized instead.
+    // Otherwise, we would get exceptions "module java.base does not open java.util to module org.tentackle.core"
+    return super.isFieldSerializable(field) && !field.getDeclaringClass().getName().startsWith("java.");
   }
 
   /**

@@ -80,7 +80,7 @@
     <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <dependency.locations.enabled>false</dependency.locations.enabled>
-    <javac.lint>all,-processing,-this-escape</javac.lint>
+    <javac.lint>all,-processing,-this-escape,-module</javac.lint>
     <javac.version>25</javac.version>
 
     <asm.version>9.9.1</asm.version>

@@ -26,11 +26,13 @@ module org.tentackle.common {
   requires transitive java.sql;
   requires transitive java.compiler;
 
-  // to get hold of other module's META-INF/xxxxx
+  // to get hold of other modules META-INF/xxxxx
   uses org.tentackle.common.ModuleHook;
 
-  // optional application specific factory. Defaults to self.
+  // optional application-specific factory. Defaults to self.
   uses org.tentackle.common.ServiceFactory;
+
+  opens org.tentackle.common to org.tentackle.core;   // necessary for TRIP
 
   provides org.tentackle.common.ModuleHook with org.tentackle.common.service.Hook;
 }

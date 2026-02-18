@@ -347,8 +347,7 @@ public abstract class AbstractDictionaryBasedTripType<T> extends AbstractTripTyp
       Collection<TripComponent<T, ?>> tripComponents = new ArrayList<>();
       int ordinal = 0;
       for (Field field : ReflectionHelper.getAllFields(getObjectClass(), null, true, null, true)) {
-        if (!Modifier.isTransient(field.getModifiers()) && !Modifier.isStatic(field.getModifiers()) &&
-            !field.isAnnotationPresent(TripIgnore.class)) {
+        if (isFieldSerializable(field)) {
           try {
             tripComponents.add(TripFactory.getInstance().createComponent(
               this, ordinal, field, object != null, object == null ? null : field.get(object)));
@@ -369,6 +368,19 @@ public abstract class AbstractDictionaryBasedTripType<T> extends AbstractTripTyp
       return tripComponents.toArray(new TripComponent[0]);
     }
     return provider.getComponents(this);
+  }
+
+
+  /**
+   * Checks whether the field is serializable.
+   *
+   * @param field the field to check
+   * @return true if serializable, false otherwise
+   */
+  protected boolean isFieldSerializable(Field field) {
+	  return !Modifier.isTransient(field.getModifiers()) &&
+           !Modifier.isStatic(field.getModifiers()) &&
+           !field.isAnnotationPresent(TripIgnore.class);
   }
 
 }

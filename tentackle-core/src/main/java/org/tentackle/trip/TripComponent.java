@@ -19,7 +19,7 @@
 package org.tentackle.trip;
 
 /**
- * Describes a component within a class, record or enum.
+ * Describes a component within a class, record, or enum.
  *
  * @param <P> the parent type
  * @param <T> the component type
