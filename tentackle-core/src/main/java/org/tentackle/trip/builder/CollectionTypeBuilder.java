@@ -18,12 +18,14 @@
 
 package org.tentackle.trip.builder;
 
+import org.tentackle.misc.CopyOnWriteCollection;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.trip.TripType;
 import org.tentackle.trip.TripTypeBuilder;
 import org.tentackle.trip.TripTypeBuilderService;
 import org.tentackle.trip.types.CollectionTripType;
 import org.tentackle.trip.types.ImmutableCollectionTripType;
+import org.tentackle.trip.types.ObjectTripType;
 import org.tentackle.trip.types.TreeSetTripType;
 
 import java.util.Collection;
@@ -52,6 +54,10 @@ public class CollectionTypeBuilder<T extends Collection<?>> implements TripTypeB
     }
     if (ReflectionHelper.isImmutableCollection(clazz)) {
       return new ImmutableCollectionTripType<>(clazz);
+    }
+    if (CopyOnWriteCollection.class.isAssignableFrom(clazz)) {
+      // does not extend a JDK collection, faster with ObjectTripType
+      return new ObjectTripType<>(clazz);
     }
     return new CollectionTripType<>(clazz);
   }

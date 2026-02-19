@@ -19,12 +19,13 @@
 
 package org.tentackle.misc;
 
+import org.tentackle.log.Logger;
+import org.tentackle.log.Logger.Level;
+
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import org.tentackle.log.Logger;
-import org.tentackle.log.Logger.Level;
 
 /**
  * An enhanced {@link ArrayList}.<br>
@@ -34,6 +35,7 @@ import org.tentackle.log.Logger.Level;
  * Useful if the list is contained in another collection.<br>
  * Notice that despite its name, {@link ImmutableArrayList}s are mutable by default. {@link #setImmutable} must be invoked
  * to make it immutable.<br>
+ * Cloning an immutable list returns a mutable copy.
  *
  * @author harald
  * @param <E> the element type
@@ -46,12 +48,11 @@ public class ImmutableArrayList<E> extends ArrayList<E> implements ImmutableColl
   private static final Logger LOGGER = Logger.get(ImmutableArrayList.class);
 
 
-
   private final int hash = new Object().hashCode();   // some hashcode
 
-  protected boolean simpleEqualsAndHashCode;          // true if equals and hashcode refer to list instance, not its contents
-  protected boolean immutable;                        // true if list is immutable
-  protected boolean finallyImmutable;                 // true if list is finally immutable
+  protected boolean simpleEqualsAndHashCode;          // true if equals and hashcode refer to the list instance, not its contents
+  protected boolean immutable;                        // true if the list is immutable
+  protected boolean finallyImmutable;                 // true if the list is finally immutable
   protected Level immutableLoggingLevel;              // optional logging for immutable violations instead of exception
 
 
@@ -116,11 +117,19 @@ public class ImmutableArrayList<E> extends ArrayList<E> implements ImmutableColl
     return simpleEqualsAndHashCode ? (this == o) : super.equals(o);
   }
 
+  @Override
+  @SuppressWarnings("unchecked")
+  public ImmutableArrayList<E> clone() {
+    ImmutableArrayList<E> list = (ImmutableArrayList<E>) super.clone();
+    list.immutable = false;
+    list.finallyImmutable = false;
+    return list;
+  }
 
   /**
    * Defines whether this list or any objects of this list may be changed.
    *
-   * @param immutable true if object is immutable
+   * @param immutable true if the object is immutable
    * @param withElements true if set elements as well if they implement {@link Immutable}
    */
   @Override
@@ -236,7 +245,6 @@ public class ImmutableArrayList<E> extends ArrayList<E> implements ImmutableColl
     return someRemoved;
   }
 
-
   @Override
   public E set(int index, E element) {
     E obj = super.set(index, element);
@@ -244,9 +252,9 @@ public class ImmutableArrayList<E> extends ArrayList<E> implements ImmutableColl
       try {
         assertMutable();
       }
-      catch (ImmutableException imex) {
+      catch (ImmutableException ix) {
         super.set(index, obj);
-        throw imex;
+        throw ix;
       }
     }
     return obj;
@@ -254,7 +262,7 @@ public class ImmutableArrayList<E> extends ArrayList<E> implements ImmutableColl
 
 
   /**
-   * Asserts that object is mutable.
+   * Asserts that the object is mutable.
    */
   protected void assertMutable() {
     if (isImmutable()) {

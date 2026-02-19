@@ -72,7 +72,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    * Creates a tracked ArrayList.
    *
    * @param initialCapacity is the initial size of the list
-   * @param modified is true if list is marked modified initially
+   * @param modified is true if the list is marked modified initially
    */
   public TrackedArrayList(int initialCapacity, boolean modified) {
     super(initialCapacity);
@@ -92,7 +92,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   /**
    * Creates a tracked ArrayList.
    *
-   * @param modified is true if list is marked modified initially
+   * @param modified is true if the list is marked modified initially
    */
   public TrackedArrayList(boolean modified) {
     super();
@@ -131,7 +131,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
   /**
    * Clones the list.<br>
-   * A cloned list is always not modified, mutable and does not contain any removed objects or snapshots.
+   * A cloned list is always not modified, mutable, and does not contain any removed objects or snapshots.
    */
   @Override
   @SuppressWarnings("unchecked")
@@ -165,19 +165,19 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
     snapshots.add(new WeakReference<>(snapshot));
     snapshot.removedObjects = removedObjects == null ? null : new LinkedHashSet<>(removedObjects);
     snapshot.snapshots = new ArrayList<>(snapshots);
-    // create snapshots for elements in new list.
-    // there is a 1:1 relation between the snapshot list and the element snapshots
+    // create snapshots for elements in the new list.
+    // there is a 1:1 relation between the snapshot list and the element snapshots,
     // and this relation must not be modified anymore! Hence, snapshots are immutable.
     snapshot.elementSnapshots = new ArrayList<>(size());
     boolean fineLoggable = LOGGER.isFineLoggable(); // faster than lambda because only one check if fine is not loggable
     for (E obj: snapshot) {
       if (obj instanceof Snapshotable) {
-        E elementsnapshot = ((Snapshotable<E>) obj).createSnapshot();
+        E elementSnapshot = ((Snapshotable<E>) obj).createSnapshot();
         if (fineLoggable) {
           LOGGER.fine("creating snapshot for " +
                       (obj instanceof Identifiable ? ((Identifiable) obj).toGenericString() : obj.toString()));
         }
-        snapshot.elementSnapshots.add(elementsnapshot);
+        snapshot.elementSnapshots.add(elementSnapshot);
       }
       else {
         if (fineLoggable) {
@@ -198,7 +198,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    * Otherwise, the state of the list will be reverted to the snapshot's state.
    *
    * @param snapshot the snapshot created by {@link #createSnapshot()}, null if noop
-   * @throws TentackleRuntimeException if not a snapshot or not my snapshot and this is not a copy
+   * @throws TentackleRuntimeException if not a snapshot or not my snapshot, and this is not a copy
    */
   @Override
   @SuppressWarnings("unchecked")
@@ -233,8 +233,8 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
         if (getSnapshotIndex(snapshot) >= 0) {
           TrackedArrayList<E> mySnapshot = (TrackedArrayList<E>) snapshot;
           super.clear();
-          // restore objects from snapshot.
-          // if object is a Snapshotable restore from elementsnapshots.
+          // restore objects from the snapshot.
+          // if the object is a Snapshotable restore from elementSnapshots.
           int i = 0;
           for (E obj : snapshot) {
             if (obj instanceof Snapshotable) {
@@ -367,7 +367,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    * Sets the modified state.
    *
    * @param modified is true to set modified to true,
-   *        false to clear all other flags including the list of removed Objects.
+   *        false to clear all other flags, including the list of removed Objects.
    */
   @Override
   public void setModified(boolean modified) {
@@ -521,7 +521,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
 
   /**
-   * Asserts that object is mutable and not a snapshot.
+   * Asserts that the object is mutable and not a snapshot.
    */
   @Override
   protected void assertMutable() {
@@ -581,7 +581,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    * Inserts the specified element at the specified position in this
    * list.<br>
    * Shifts the element currently at that position (if any) and
-   * any subsequent elements to the right (adds one to their indices).
+   * any following elements to the right (adds one to their indices).
    *
    * @param index index at which the specified element is to be inserted
    * @param element element to be inserted
@@ -630,7 +630,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   /**
    * Inserts all the elements in the specified collection into this
    * list, starting at the specified position.<br>
-   * Shifts the element currently at that position (if any) and any subsequent elements to
+   * Shifts the element currently at that position (if any) and any following elements to
    * the right (increases their indices).  The new elements will appear
    * in the list in the order that they are returned by the
    * specified collection's iterator.
@@ -672,7 +672,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
   /**
    * Removes the element at the specified position in this list.<br>
-   * Shifts any subsequent elements to the left (subtracts one from their
+   * Shifts any following elements to the left (subtracts one from their
    * indices). The removed object will be added to the list of removed
    * objects.
    *
@@ -687,7 +687,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   }
 
   /**
-   * Removes the first occurrence of the specified element from this list,
+   * Removes the first occurrence of the specified element from this list
    * if it is present.<br>
    * If the list does not contain the element, it is
    * unchanged.  More formally, removes the element with the lowest index
@@ -717,7 +717,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
   /**
    * Removes all objects that are contained in the given collection.<br>
-   * All removed object will be added to the list of removed objects.
+   * All removed objects will be added to the list of removed objects.
    *
    * @param collection the collection containing the objects to be removed from this list.
    * @return true if at least one object has been removed.
@@ -740,7 +740,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
   /**
    * Removes all objects that are not contained in the given collection.<br>
-   * All removed object will be added to the list of removed objects.
+   * All removed objects will be added to the list of removed objects.
    *
    * @param collection the collection containing the objects not to be removed from this list.
    * @return true if at least one object has been removed.
@@ -778,8 +778,8 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    * (If <code>toIndex==fromIndex</code>, this operation has no effect.)
    * All removed object will be added to the list of removed objects.
    *
-   * @param fromIndex index of first element to be removed
-   * @param toIndex index after last element to be removed
+   * @param fromIndex index of the first element to be removed
+   * @param toIndex index after the last element to be removed
    */
   @Override
   protected void removeRange(int fromIndex, int toIndex) {
@@ -852,7 +852,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    * The new element will replace the existing one <em>without</em> affecting the modification state
    * of the list!
    * Furthermore, no event will be fired.<br>
-   * Useful if parts of an object tree are reloaded (for example from the
+   * Useful if parts of an object tree are reloaded (for example, from the
    * database backend) and should not change the modification state
    * of the whole object tree.
    *
@@ -864,7 +864,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   @Override
   public E replaceSilently(int index, E element) {
     assertNullAllowed(element);
-    filterRemovedObjects();   // in case replaced object is in list of removed objects
+    filterRemovedObjects();   // in case the replaced object is in the list of removed objects
     return super.set(index, element);
   }
 

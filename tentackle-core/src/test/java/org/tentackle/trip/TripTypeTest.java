@@ -28,6 +28,9 @@ import org.tentackle.common.I18NText;
 import org.tentackle.common.TBinary;
 import org.tentackle.common.Time;
 import org.tentackle.common.Timestamp;
+import org.tentackle.misc.CopyOnWriteCollection;
+import org.tentackle.misc.CopyOnWriteList;
+import org.tentackle.misc.ImmutableArrayList;
 import org.tentackle.misc.TrackedArrayList;
 import org.tentackle.misc.TrackedList;
 import org.tentackle.reflect.CanonicalConstructor;
@@ -731,6 +734,26 @@ public class TripTypeTest implements Serializable { // serializable only for JOS
     assertNotSame(tunneledList, list);
     assertEquals(tunneledList.getRemovedObjects().size(), 1);
     assertEquals(tunneledList.getRemovedObjects().iterator().next(), "three");
+    assertSame(tunneledList, tunnel(list, type));
+  }
+
+  @Test
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  void testCopyOnWriteCollection() {
+    ImmutableArrayList<String> immutableList = new ImmutableArrayList<>();
+    immutableList.add("one");
+    immutableList.add(null);
+    immutableList.add("two");
+    immutableList.add("three");
+    immutableList.add("four");
+    immutableList.add("five");
+    immutableList.setImmutable(true);
+    CopyOnWriteCollection<String> list = new CopyOnWriteList<>(immutableList);
+    list.remove("three");
+    TripType<CopyOnWriteCollection> type = TripFactory.getInstance().getType(list.getClass());
+    CopyOnWriteCollection tunneledList = tunnel(list, type);
+    assertNotSame(tunneledList, list);
+    assertEquals(tunneledList.size(), 5);
     assertSame(tunneledList, tunnel(list, type));
   }
 
