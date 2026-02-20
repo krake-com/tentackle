@@ -41,6 +41,33 @@ public class DbModificationTrackerRemoteDelegateImpl<T extends DbModificationTra
     super(session, clazz);
   }
 
+
+  @Override
+  public void configureRemoteSession() {
+    getServerSession().setModificationTrackerSession(true);
+  }
+
+  @Override
+  public MasterSerial selectMasterSerial() {
+    return createMasterSerial(((DbModificationTracker) ModificationTracker.getInstance()).getMasterSerial());
+  }
+
+  @Override
+  public IdSerialTuple selectIdSerialForName(String tableName) {
+    return ((DbModificationTracker) ModificationTracker.getInstance()).getIdSerialForName(tableName);
+  }
+
+  @Override
+  public List<IdSerialTuple> selectAllIdSerials() {
+    return ((DbModificationTracker) ModificationTracker.getInstance()).getAllIdSerials();
+  }
+
+  @Override
+  public List<IdSerialNameTuple> selectAllIdSerialNames() {
+    return ((DbModificationTracker) ModificationTracker.getInstance()).getAllIdSerialNames();
+  }
+
+
   /**
    * Creates the master serial object from a long serial.
    * <p>
@@ -70,27 +97,6 @@ public class DbModificationTrackerRemoteDelegateImpl<T extends DbModificationTra
       return masterSerialEvent;
     }
     return new DefaultMasterSerial(serial);
-  }
-
-  @Override
-  public MasterSerial selectMasterSerial() {
-    getServerSession().setModificationTrackerSession(true);
-    return createMasterSerial(((DbModificationTracker) ModificationTracker.getInstance()).getMasterSerial());
-  }
-
-  @Override
-  public IdSerialTuple selectIdSerialForName(String tableName) {
-    return ((DbModificationTracker) ModificationTracker.getInstance()).getIdSerialForName(tableName);
-  }
-
-  @Override
-  public List<IdSerialTuple> selectAllIdSerials() {
-    return ((DbModificationTracker) ModificationTracker.getInstance()).getAllIdSerials();
-  }
-
-  @Override
-  public List<IdSerialNameTuple> selectAllIdSerialNames() {
-    return ((DbModificationTracker) ModificationTracker.getInstance()).getAllIdSerialNames();
   }
 
 }

@@ -31,6 +31,7 @@ import java.util.List;
  */
 public interface DbModificationTrackerRemoteDelegate extends RemoteDbDelegate {
 
+  void configureRemoteSession();
   MasterSerial selectMasterSerial();
   IdSerialTuple selectIdSerialForName(String tableName);
   List<IdSerialTuple> selectAllIdSerials();

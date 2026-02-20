@@ -330,7 +330,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   private boolean localClientMode;                                  // true if the local session and not a server
   private long lastPollTime;                                        // last polling time
   private Map<String, IdSerialTuple> remoteSerials;                 // initial id/serial/name tuples of the remote server's tracker (null if local)
-
+  private boolean remoteConfigPending;                              // true if remote session configuration pending
 
   /**
    * Creates a tracker to be configured.
@@ -392,6 +392,9 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   @Override
   public void setSession(Session session) {
     super.setSession(session);
+    if (session.isRemote()) {
+      remoteConfigPending = true;
+    }
     // clear counters
     countersById.clear();
     countersByName.clear();
@@ -494,7 +497,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * because the session used to persist the modification count must be the
    * same as the current transaction, if any.
    *
-   * @return true if in local client mode, false if remote client or server
+   * @return true if in local client mode, false if the remote client or server
    */
   @Override
   public boolean isLocalClientMode() {
@@ -504,7 +507,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   /**
    * Sets local client mode.
    *
-   * @param localClientMode true if in local client mode, false if remote client or server
+   * @param localClientMode true if in local client mode, false if the remote client or server
    * @see #isLocalClientMode()
    */
   public void setLocalClientMode(boolean localClientMode) {
@@ -708,8 +711,8 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
               LOGGER.warning("reconnection successful -> resuming normal operation ...", rx);
             }),
             new ExceptionHelper.Handler<>(SessionClosedException.class, sx -> {
-              // if remote: session has been closed by the server (deadlock, timeout, whatever).
-              // if local: database server has closed the session.
+              // if remote: the remote server has closed session (deadlock, timeout, whatever).
+              // if local: the database server has closed the session.
               // reopen once and treat as if polling was ok.
               // if the session could not be re-opened: the process will terminate.
               if (isReOpenOnceEnabled()) {
@@ -918,6 +921,11 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     boolean isLocalSession = !getSession().isRemote();
     if (isLocalSession) {
       performPendingCounts();
+    }
+    else if (remoteConfigPending) {
+      // do that only once!
+      ((DbModificationTrackerRemoteDelegate) getSession().getRemoteDelegate(getRemoteDelegateId())).configureRemoteSession();
+      remoteConfigPending = false;
     }
 
     Long serial = getModifiedMasterSerial();

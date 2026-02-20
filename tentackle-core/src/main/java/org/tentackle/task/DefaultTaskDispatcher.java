@@ -447,7 +447,6 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
       }
 
       if (isAlive()) {
-        // thread won't die
         LOGGER.severe(this + " does not terminate -> marking dispatcher killed!");
         killed = true;
       }
