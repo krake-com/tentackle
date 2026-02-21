@@ -46,7 +46,7 @@ public class NotInvokedInBuddyDelegateException extends TentackleRuntimeExceptio
    *
    * @param message the message
    */
-  NotInvokedInBuddyDelegateException(String message) {
+  public NotInvokedInBuddyDelegateException(String message) {
     super(message);
   }
 

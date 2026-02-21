@@ -25,6 +25,11 @@ import org.tentackle.trip.TripInstanceCreatorService;
 import java.sql.SQLException;
 import java.util.Map;
 
+/**
+ * Instance creator for {@link SQLException}.
+ *
+ * @see SQLExceptionComponentProvider
+ */
 @TripInstanceCreatorService(SQLException.class)
 public class SQLExceptionInstanceCreator implements TripInstanceCreator<SQLException> {
 

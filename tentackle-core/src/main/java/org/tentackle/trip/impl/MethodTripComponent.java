@@ -103,7 +103,7 @@ public class MethodTripComponent<P, T> implements TripComponent<P, T> {
   /**
    * Returns the underlying getter method.
    *
-   * @return the getter method
+   * @return the getter method, never null
    */
   public Method getGetter() {
     return getter;

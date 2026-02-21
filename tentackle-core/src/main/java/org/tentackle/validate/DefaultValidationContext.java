@@ -18,6 +18,8 @@
 
 package org.tentackle.validate;
 
+import org.tentackle.trip.TripReferencable;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +32,7 @@ import java.util.function.Supplier;
  *
  * @author harald
  */
+@TripReferencable(TripReferencable.NEVER)
 public class DefaultValidationContext implements ValidationContext {
 
   private final String validationPath;
@@ -47,7 +50,7 @@ public class DefaultValidationContext implements ValidationContext {
    * Creates a validation context.
    *
    * @param validationPath the validation path
-   * @param type the type of the object to validate, null if derive from object
+   * @param type the type of the object to validate, null if derive from the object
    * @param object the element to validate
    * @param parentObject the parent object containing the element
    * @param effectiveScope the effective validation scope
@@ -76,7 +79,7 @@ public class DefaultValidationContext implements ValidationContext {
    * if the pre-condition fails. Useful for lazy list relations, for example.
    *
    * @param validationPath the validation path
-   * @param type the type of the object to validate, null if derive from object
+   * @param type the type of the object to validate, null if derive from the object
    * @param objectSupplier the supplier providing the element to validate
    * @param parentObject the parent object containing the element
    * @param effectiveScope the effective validation scope
@@ -96,6 +99,19 @@ public class DefaultValidationContext implements ValidationContext {
     this.parentObject = parentObject;
     this.effectiveScope = effectiveScope;
     this.validationResults = validationResults;
+  }
+
+  /**
+   * For TRIP only.
+   */
+  protected DefaultValidationContext() {
+    this.validationPath = null;
+    this.type = null;
+    this.object = null;
+    this.objectSupplier = null;
+    this.parentObject = null;
+    this.effectiveScope = null;
+    this.validationResults = null;
   }
 
   @Override

@@ -16,15 +16,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.validate;
 
 import org.tentackle.log.Loggable;
+import org.tentackle.reflect.CanonicalConstructor;
+import org.tentackle.reflect.CanonicalGetter;
+import org.tentackle.trip.TripIgnore;
 
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
-
 
 /**
  * Exception thrown if a validation fails logically.
@@ -35,7 +36,7 @@ import java.util.List;
  * <ol>
  *   <li>holds the final validation results</li>
  *   <li>holds the results of a component collected so far, when the validation process has been aborted,
- *   for example due to the {@link org.tentackle.validate.validator.Fail}-validator</li>
+ *   for example, due to the {@link org.tentackle.validate.validator.Fail}-validator</li>
  * </ol>
  *
  * A validating method should be implemented as follows:
@@ -73,6 +74,7 @@ public class ValidationFailedException extends RuntimeException implements Logga
    * @param message the message
    * @param results the validation results
    */
+  @CanonicalConstructor
   public ValidationFailedException(String message, List<ValidationResult> results) {
     super(message);
     this.results = results == null ? new ArrayList<>() : results;
@@ -97,11 +99,24 @@ public class ValidationFailedException extends RuntimeException implements Logga
   }
 
 
+  @CanonicalGetter(ordinal = 0)
+  @Override
+  public String getMessage() {
+    return super.getMessage();
+  }
+
+  @TripIgnore
+  @Override
+  public Throwable getCause() {
+    return super.getCause();
+  }
+
   /**
    * Gets the validation results.
    *
    * @return the list of results, never null
    */
+  @CanonicalGetter(ordinal = 1)
   public List<ValidationResult> getResults() {
     return results;
   }

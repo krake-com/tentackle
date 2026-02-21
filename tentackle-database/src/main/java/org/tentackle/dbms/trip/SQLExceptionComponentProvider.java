@@ -31,6 +31,8 @@ import java.util.Collection;
 
 /**
  * Component provider for {@link SQLException}.
+ *
+ * @see SQLExceptionInstanceCreator
  */
 @TripComponentProviderService(SQLException.class)
 public class SQLExceptionComponentProvider extends ThrowableComponentProvider<SQLException> {

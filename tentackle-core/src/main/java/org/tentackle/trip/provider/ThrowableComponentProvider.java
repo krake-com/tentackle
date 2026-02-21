@@ -104,8 +104,8 @@ public class ThrowableComponentProvider<T extends Throwable> implements TripComp
   protected boolean addField(Collection<TripComponent<T, ?>> components, Field field,
                              TripType<T> type, int ordinal) {
 
-    if ("suppressedExceptions".equals(field.getName())) {
-      // skip suppressed exceptions!
+    if (field.getDeclaringClass() == Throwable.class && "suppressedExceptions".equals(field.getName())) {
+      // skipped since there is no setter, and it's rarely used by applications at all
       return false;
     }
 

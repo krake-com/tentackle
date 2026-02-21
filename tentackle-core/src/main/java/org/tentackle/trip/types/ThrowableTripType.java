@@ -26,10 +26,13 @@ import org.tentackle.trip.TripComponent;
 import org.tentackle.trip.TripInstantiationException;
 import org.tentackle.trip.TripStream;
 import org.tentackle.trip.impl.DefaultOpCode;
+import org.tentackle.trip.impl.FieldTripComponent;
+import org.tentackle.trip.impl.MethodTripComponent;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -45,6 +48,9 @@ public final class ThrowableTripType<T extends Throwable> extends ObjectTripType
   private static final Logger LOGGER = Logger.get(ThrowableTripType.class);
 
   private static final OpCode OP_CODE = DefaultOpCode.THROWABLE;
+
+
+  private boolean warningLogged;
 
   /**
    * Creates the type.
@@ -69,17 +75,62 @@ public final class ThrowableTripType<T extends Throwable> extends ObjectTripType
     }
     catch (TripInstantiationException ix) {
       // missing no-arg constructor?
-      LOGGER.warning("{0} -> trying common public constructors (consider providing a TripInstanceCreator!)", ix.getMessage());
+      if (!warningLogged) {
+        LOGGER.warning(
+          "{0} -> trying common constructors (consider providing a TripInstanceCreator!)",
+          ix.getMessage());
+        warningLogged = true;
+      }
       try {
         try {
-          return getObjectClass().getConstructor(String.class).newInstance((String) null);
+          try {
+            return getObjectClass().getDeclaredConstructor(String.class).newInstance((String) null);
+          }
+          catch (IllegalAccessException ia) {
+            Constructor<T> constructor = getObjectClass().getDeclaredConstructor(String.class);
+            constructor.setAccessible(true);
+            return constructor.newInstance((String) null);
+          }
         }
         catch (NoSuchMethodException e1) {
           try {
-            return getObjectClass().getConstructor(Throwable.class).newInstance((Throwable) null);
+            try {
+              return getObjectClass().getDeclaredConstructor(Throwable.class).newInstance((Throwable) null);
+            }
+            catch (IllegalAccessException ia) {
+              Constructor<T> constructor = getObjectClass().getDeclaredConstructor(Throwable.class);
+              constructor.setAccessible(true);
+              return constructor.newInstance((Throwable) null);
+            }
           }
           catch (NoSuchMethodException e2) {
-            throw new TripInstantiationException(getObjectClass(), "no suitable public constructors for " + getObjectClass());
+            try {
+              try {
+                return getObjectClass().getDeclaredConstructor(String.class, Throwable.class)
+                                       .newInstance(null, null);
+              }
+              catch (IllegalAccessException ia) {
+                Constructor<T> constructor = getObjectClass().getDeclaredConstructor(String.class, Throwable.class);
+                constructor.setAccessible(true);
+                return constructor.newInstance(null, null);
+              }
+            }
+            catch (NoSuchMethodException e3) {
+              try {
+                try {
+                  return getObjectClass().getDeclaredConstructor(Throwable.class, String.class)
+                                         .newInstance(null, null);
+                }
+                catch (IllegalAccessException ia) {
+                  Constructor<T> constructor = getObjectClass().getDeclaredConstructor(Throwable.class, String.class);
+                  constructor.setAccessible(true);
+                  return constructor.newInstance(null, null);
+                }
+              }
+              catch (NoSuchMethodException e4) {
+                throw new TripInstantiationException(getObjectClass(), "no suitable constructors for " + getObjectClass());
+              }
+            }
           }
         }
       }
@@ -111,6 +162,8 @@ public final class ThrowableTripType<T extends Throwable> extends ObjectTripType
     boolean hasCause = false;
     StackTraceElement[] stackTrace = null;
     boolean hasStackTrace = false;
+    Map<TripComponent<T, ?>, Object> otherComponentValues = new HashMap<>();
+
     for (Map.Entry<TripComponent<T, ?>, Object> unassigned : componentValues.entrySet()) {
       TripComponent<T, ?> key = unassigned.getKey();
       if ("message".equals(key.getName())) {
@@ -125,7 +178,12 @@ public final class ThrowableTripType<T extends Throwable> extends ObjectTripType
         stackTrace = (StackTraceElement[]) unassigned.getValue();
         hasStackTrace = true;
       }
-      // If there are other components, either annotate with CanonicalConstructor or
+      else if (key instanceof FieldTripComponent ||
+               key instanceof MethodTripComponent<T,?> methodTripComponent && methodTripComponent.getSetter() != null) {
+        // default handling (see comment below)
+        otherComponentValues.put(key, unassigned.getValue());
+      }
+      // If there are other components, you could also annotate with CanonicalConstructor or
       // add a TripComponentProvider/TripInstanceCreator add an application-specific TripType and
       // implement readComponents() method to handle them.
     }
@@ -136,12 +194,24 @@ public final class ThrowableTripType<T extends Throwable> extends ObjectTripType
           if (constructor.getParameterCount() == 2) {
             if (constructor.getParameterTypes()[0] == String.class &&
                 constructor.getParameterTypes()[1] == Throwable.class) {
-              value = (T) constructor.newInstance(message, cause);
+              try {
+                value = (T) constructor.newInstance(message, cause);
+              }
+              catch (IllegalAccessException ix) {
+                constructor.setAccessible(true);
+                value = (T) constructor.newInstance(message, cause);
+              }
               break;
             }
             if (constructor.getParameterTypes()[1] == String.class &&
                 constructor.getParameterTypes()[0] == Throwable.class) {
+              try {
               value = (T) constructor.newInstance(cause, message);
+              }
+              catch (IllegalAccessException ix) {
+                constructor.setAccessible(true);
+                value = (T) constructor.newInstance(cause, message);
+              }
               break;
             }
           }
@@ -149,26 +219,44 @@ public final class ThrowableTripType<T extends Throwable> extends ObjectTripType
         else if (hasCause) {    // cause only
           if (constructor.getParameterCount() == 1 &&
               constructor.getParameterTypes()[0] == Throwable.class) {
-            value = (T) constructor.newInstance(cause);
+            try {
+              value = (T) constructor.newInstance(cause);
+            }
+            catch (IllegalAccessException ix) {
+              constructor.setAccessible(true);
+              value = (T) constructor.newInstance(cause);
+            }
             break;
           }
         }
         else if (hasMessage) {  // message only
           if (constructor.getParameterCount() == 1 &&
               constructor.getParameterTypes()[0] == String.class) {
-            value = (T) constructor.newInstance(message);
+            try {
+              value = (T) constructor.newInstance(message);
+            }
+            catch (IllegalAccessException ix) {
+              constructor.setAccessible(true);
+              value = (T) constructor.newInstance(message);
+            }
             break;
           }
         }
         else {  // no message and no cause
           if (constructor.getParameterCount() == 0) {
-            value = (T) constructor.newInstance();
+            try {
+              value = (T) constructor.newInstance();
+            }
+            catch (IllegalAccessException ix) {
+              constructor.setAccessible(true);
+              value = (T) constructor.newInstance();
+            }
             break;
           }
         }
       }
     }
-    catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+    catch (InstantiationException | IllegalAccessException | InaccessibleObjectException | InvocationTargetException e) {
       // return wrapped exception
       value = (T) new TripInstantiationException(getObjectClass(), message, cause);
     }
@@ -181,6 +269,13 @@ public final class ThrowableTripType<T extends Throwable> extends ObjectTripType
     if (hasStackTrace) {
       value.setStackTrace(stackTrace);
     }
+
+    for (Map.Entry<TripComponent<T, ?>, Object> other : otherComponentValues.entrySet()) {
+      TripComponent<T, Object> key = (TripComponent<T, Object>) other.getKey();
+      Object val = other.getValue();
+      key.setValue(value, val);
+    }
+
     return value;
   }
 
