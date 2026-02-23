@@ -27,6 +27,7 @@ import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.NotificationBuilder;
+import org.tentackle.fx.ThemeUtilities;
 import org.tentackle.fx.rdc.app.DesktopApplication;
 import org.tentackle.fx.rdc.crud.PdoCrud;
 import org.tentackle.fx.rdc.search.PdoSearch;
@@ -113,6 +114,7 @@ public class RdcUtilities {
   private final Map<Class<?>, Set<PdoSearch<?>>> searchCache = new HashMap<>();
 
   private final boolean cachingEnabled;
+  private boolean darkMode;
 
 
   /**
@@ -124,6 +126,7 @@ public class RdcUtilities {
     // or when using BundleMonkey (application should be started w/o caching to see the changes immediately)
     cachingEnabled = application != null && !application.isServer() &&
                      application.getPropertyIgnoreCase("noRdcCache") == null;
+    darkMode = ThemeUtilities.getInstance().isDarkMode();
   }
 
 
@@ -228,6 +231,7 @@ public class RdcUtilities {
 
     Set<PdoCrud<?>> cruds;
     if (isCrudCachingEnabled(pdo)) {
+      detectThemeChanged();
       Class<T> pdoClass = pdo.getEffectiveClass();
       cruds = crudCache.computeIfAbsent(pdoClass, k -> new HashSet<>());
 
@@ -282,6 +286,7 @@ public class RdcUtilities {
    */
   public synchronized <T extends PersistentDomainObject<T>> Stage getCrud(T pdo, boolean editable) {
     if (isCrudCachingEnabled(pdo)) {
+      detectThemeChanged();
       Class<T> pdoClass = pdo.getEffectiveClass();
       Set<PdoCrud<?>> cruds = crudCache.get(pdoClass);
       if (cruds != null) {
@@ -392,6 +397,7 @@ public class RdcUtilities {
 
     Set<PdoSearch<?>> searches;
     if (isSearchCachingEnabled(pdo)) {
+      detectThemeChanged();
       Class<T> pdoClass = pdo.getEffectiveClass();
       searches = searchCache.computeIfAbsent(pdoClass, k -> new HashSet<>());
 
@@ -726,6 +732,18 @@ public class RdcUtilities {
    */
   protected <T extends PersistentDomainObject<T>> boolean isCrudCachingEnabled(T pdo) {
     return cachingEnabled;
+  }
+
+
+  /**
+   * Detects when the theme has changed and invalidates the caches.
+   */
+  protected void detectThemeChanged() {
+    boolean currentDarkMode = ThemeUtilities.getInstance().isDarkMode();
+    if (currentDarkMode != darkMode) {
+      darkMode = currentDarkMode;
+      invalidateCaches();
+    }
   }
 
 }

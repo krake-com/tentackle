@@ -34,6 +34,4 @@
     this.delegate = delegate;
   }
 
-  // @wurblet component Include \$currentDir/component.include
-
-  // @wurblet textcomponent Include \$currentDir/textcomponent.include
+  // @wurblet component Include \$componentIncludeDir/component.include

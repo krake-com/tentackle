@@ -26,8 +26,7 @@ import org.tentackle.common.StringHelper;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxController;
-import org.tentackle.fx.FxUtilities;
-import org.tentackle.fx.rdc.RdcUtilities;
+import org.tentackle.fx.ThemeUtilities;
 import org.tentackle.log.Logger;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PdoFactory;
@@ -51,7 +50,6 @@ import javafx.stage.WindowEvent;
 import java.text.MessageFormat;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.prefs.Preferences;
 
 /**
  * Java FX tentackle desktop application.
@@ -62,12 +60,6 @@ import java.util.prefs.Preferences;
 public abstract class DesktopApplication<C extends FxController>
        extends AbstractClientApplication
        implements ClassMappedListener {
-
-  /**
-   * Property to set the dark mode.
-   */
-  public static final String DARK_MODE = "darkMode";
-
 
   /** minimum milliseconds a status message should be visible to the user. */
   private static final long MESSAGE_MIN_MILLIS = 100;
@@ -88,7 +80,7 @@ public abstract class DesktopApplication<C extends FxController>
    * Creates an FX desktop application.
    *
    * @param name the application name, null for default name
-   * @param version the application version, null for default version
+   * @param version the application version, null for the default version
    */
   public DesktopApplication(String name, String version) {
     super(name, version);
@@ -150,7 +142,7 @@ public abstract class DesktopApplication<C extends FxController>
   /**
    * Returns the autologin flag.
    *
-   * @return true if user is logged w/o being asked for username/password, default is false
+   * @return true if the user is logged w/o being asked for username/password, default is false
    * @see Constants#BACKEND_AUTOLOGIN
    */
   public boolean isAutoLogin() {
@@ -178,12 +170,12 @@ public abstract class DesktopApplication<C extends FxController>
   /**
    * Performs the login and final startup of the application.
    * <p>
-   * The method must hide the view when the main application windows is displayed
+   * The method must hide the view when the main application window is displayed
    * after successful login.
    * <p>
    * Notice that this method is invoked from within the FX thread.
    *
-   * @param view the view to hide if login succeeded and application window visible
+   * @param view the view to hide if login succeeded and the application window is visible
    * @param sessionInfo the session info
    */
   public void login(Parent view, SessionInfo sessionInfo) {
@@ -248,7 +240,7 @@ public abstract class DesktopApplication<C extends FxController>
               final C controller = Fx.load(getMainControllerClass());
 
               showApplicationStatus(AppFxRdcBundle.getString("LAUNCH MAIN WINDOW..."), 0.99);
-              showApplicationStatus("", 1.0);   // time to read last message
+              showApplicationStatus("", 1.0);   // time to read the last message
               Platform.runLater(() -> {
                 try {
                   session.makeCurrent();
@@ -257,8 +249,8 @@ public abstract class DesktopApplication<C extends FxController>
                   configureMainStage(stage);
                   Scene scene = Fx.createScene(controller.getView());
                   stage.setScene(scene);
-                  stage.addEventHandler(WindowEvent.WINDOW_SHOWN, e -> {
-                    // all is fine, close the login scene, application keeps running since main window is shown
+                  stage.addEventHandler(WindowEvent.WINDOW_SHOWN, _ -> {
+                    // all is fine, close the login scene, the application keeps running since the main window is shown
                     try {
                       finishStartup();
                       view.getScene().getWindow().hide();
@@ -340,7 +332,7 @@ public abstract class DesktopApplication<C extends FxController>
         lastStatusMillis = System.currentTimeMillis();
       }
 
-      // make sure last message was displayed at least minMillis
+      // make sure the last message was displayed at least minMillis
       if (!Objects.equals(msg, lastStatusMessage)) {
         long now = System.currentTimeMillis();
         long remainingMillis = lastStatusMillis + minMillis - now;
@@ -395,14 +387,14 @@ public abstract class DesktopApplication<C extends FxController>
    * @return the handler
    */
   public Thread.UncaughtExceptionHandler getUncaughtExceptionHandler() {
-    return (t, e) -> {
+    return (_, e) -> {
       LOGGER.severe("unhandled exception detected", e);
       Platform.runLater(() -> {
         try {
           Fx.error(mainStage, e.getLocalizedMessage(), e);
         }
         catch (Throwable x) {
-          stop(99, x);    // there is something severe wrong -> terminate application immediately
+          stop(99, x);    // there is something severely wrong -> terminate application immediately
         }
       });
     };
@@ -432,40 +424,22 @@ public abstract class DesktopApplication<C extends FxController>
   @Override
   public void applyProperties(Properties properties) {
     super.applyProperties(properties);
-
-    Boolean darkMode = getConfiguredDarkMode();
-    if (darkMode != null) {
-      FxUtilities.getInstance().setDarkMode(darkMode);
-    }
+    ThemeUtilities.getInstance().applyThemePreferences(getThemePreferences());
   }
 
   /**
-   * Gets the configured dark mode.<br>
+   * Gets the configured dark mode and theme preferences.<br>
    * It can be configured via command line or user preferences.
    * If such configuration is missing, the mode is considered to be determined automatically according
    * to the desktop settings.
    *
    * @return null if automatic, TRUE if fixed dark mode, FALSE if fixed light mode
    */
-  public Boolean getConfiguredDarkMode() {
-    String darkModeStr = getPropertyIgnoreCase(DARK_MODE);
-    if (StringHelper.isAllWhitespace(darkModeStr)) {
-      darkModeStr = Preferences.userNodeForPackage(getClass()).get(DARK_MODE, null);
-    }
-    return darkModeStr == null ? null : Boolean.valueOf(darkModeStr);
-  }
-
-
-  /**
-   * Updates the dark mode.<br>
-   * All scenes get their CSS stylesheets updated and view refreshed.
-   *
-   * @param darkMode true if dark mode, false is light mode
-   */
-  public void updateDarkMode(boolean darkMode) {
-    RdcUtilities.getInstance().invalidateCaches();
-    FxUtilities.getInstance().setDarkMode(darkMode);
-    FxUtilities.getInstance().reapplyStyleSheets();
+  public ThemeUtilities.ThemePreferences getThemePreferences() {
+    String darkModeStr = getPropertyIgnoreCase(ThemeUtilities.DARK_MODE);
+    Boolean darkMode = darkModeStr == null ? null : Boolean.valueOf(darkModeStr);
+    String themeName = getPropertyIgnoreCase(ThemeUtilities.THEME_NAME);
+    return ThemeUtilities.getInstance().loadPreferences(getClass(), darkMode, themeName);
   }
 
 
@@ -516,8 +490,8 @@ public abstract class DesktopApplication<C extends FxController>
    */
   protected void registerColorSchemeListener() {
     Platform.getPreferences().colorSchemeProperty().subscribe(colorScheme -> {
-      if (getConfiguredDarkMode() == null) {
-        updateDarkMode(colorScheme == ColorScheme.DARK);
+      if (getThemePreferences().darkMode() == null) {
+        ThemeUtilities.getInstance().setDarkMode(colorScheme == ColorScheme.DARK);
       }
     });
   }
@@ -531,7 +505,7 @@ public abstract class DesktopApplication<C extends FxController>
   /**
    * {@inheritDoc}
    * <p>
-   * Whenever a PDO class is used the first time, pre-compile all validator scripts in background, if any.
+   * Whenever a PDO class is used the first time, pre-compile all validator scripts in the background, if any.
    * This usually improves UX snappiness.
    * <p>
    * The default implementation adds a {@link org.tentackle.task.Task} to the {@link ModificationTracker}.

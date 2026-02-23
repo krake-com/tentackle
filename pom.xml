@@ -62,10 +62,11 @@
     <module>tentackle-i18n</module>
     <module>tentackle-i18n-maven-plugin</module>
     <module>tentackle-fx</module>
-    <module>tentackle-wizard-maven-plugin</module>
+    <module>tentackle-fx-atlanta</module>
     <module>tentackle-fx-rdc</module>
     <module>tentackle-fx-rdc-poi</module>
     <module>tentackle-fx-rdc-update</module>
+    <module>tentackle-wizard-maven-plugin</module>
     <module>tentackle-web</module>
     <module>tentackle-test-pdo</module>
     <module>tentackle-test-fx-rdc</module>
@@ -84,6 +85,7 @@
     <javac.version>25</javac.version>
 
     <asm.version>9.9.1</asm.version>
+    <atlantafx.version>2.1.0</atlantafx.version>
     <freemarker.version>2.3.34</freemarker.version>
     <groovy.version>5.0.3</groovy.version>
     <h2.version>2.4.240</h2.version>
@@ -207,6 +209,18 @@
         <groupId>org.kordamp.ikonli</groupId>
         <artifactId>ikonli-materialdesign2-pack</artifactId>
         <version>${ikonli.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>io.github.mkpaz</groupId>
+        <artifactId>atlantafx-base</artifactId>
+        <version>${atlantafx.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
 
       <dependency>

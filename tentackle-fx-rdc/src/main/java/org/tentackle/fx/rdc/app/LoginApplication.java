@@ -25,7 +25,7 @@ import org.tentackle.common.Cryptor;
 import org.tentackle.common.EncryptedProperties;
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.Fx;
-import org.tentackle.fx.FxUtilities;
+import org.tentackle.fx.ThemeUtilities;
 import org.tentackle.fx.rdc.RdcRuntimeException;
 import org.tentackle.fx.rdc.login.Login;
 import org.tentackle.log.Logger;
@@ -71,11 +71,11 @@ public class LoginApplication extends FxApplication {
   @Override
   public void startApplication(Stage stage) {
     try {
-      Boolean darkMode = ((DesktopApplication<?>) Application.getInstance()).getConfiguredDarkMode();
-      if (darkMode == null) {
-        darkMode = Platform.getPreferences().getColorScheme() == ColorScheme.DARK;
+      ThemeUtilities.ThemePreferences themePreferences = ((DesktopApplication<?>) Application.getInstance()).getThemePreferences();
+      if (themePreferences.darkMode() == null) {
+        themePreferences = themePreferences.withDarkMode(Platform.getPreferences().getColorScheme() == ColorScheme.DARK);
       }
-      FxUtilities.getInstance().setDarkMode(darkMode);
+      ThemeUtilities.getInstance().applyThemePreferences(themePreferences);
 
       controller = loadLoginController();
       SessionInfo sessionInfo = createSessionInfo();

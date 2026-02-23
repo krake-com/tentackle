@@ -60,6 +60,9 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
     }
   }
 
+
+  private static final String CSS_NAME = "notification.css";
+
   private Type type = Type.NONE;
   private Node graphic;
   private String title;
@@ -265,8 +268,7 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
 
     URL cssURL = css == null ? getDefaultCSS() : css;
     if (cssURL != null) {
-      String stylesheetUrl = cssURL.toExternalForm();
-      parent.getStylesheets().addFirst(stylesheetUrl);
+      parent.getStylesheets().addFirst(cssURL.toExternalForm());
     }
     parent.getStyleClass().add("tt-notification");
 
@@ -316,7 +318,7 @@ public class DefaultNotificationBuilder implements NotificationBuilder {
    * @return the URL
    */
   protected URL getDefaultCSS() {
-    return NotificationBuilder.class.getResource("notification.css");
+    return ThemeUtilities.getInstance().getResourceURL(NotificationBuilder.class, CSS_NAME);
   }
 
 

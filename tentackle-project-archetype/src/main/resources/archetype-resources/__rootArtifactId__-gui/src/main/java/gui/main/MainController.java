@@ -31,6 +31,7 @@ import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.FxUtilities;
+import org.tentackle.fx.ThemeUtilities;
 import org.tentackle.fx.component.FxButton;
 import org.tentackle.fx.rdc.Rdc;
 import org.tentackle.fx.rdc.admin.SessionsView;
@@ -104,7 +105,7 @@ public class MainController extends AbstractFxController implements DomainContex
   public void initialize() {
 
     loadCenterImage();
-    FxUtilities.getInstance().darkModeProperty().subscribe(this::loadCenterImage);
+    ThemeUtilities.getInstance().darkModeProperty().subscribe(this::loadCenterImage);
 
     securityManagerItem.setGraphic(Fx.createGraphic("security"));
     securityManagerItem.setDisable(!SecurityDialogFactory.getInstance().isDialogAllowed(getDomainContext()));
@@ -204,7 +205,7 @@ public class MainController extends AbstractFxController implements DomainContex
   private void loadCenterImage() {
     // just to show something nice (to be replaced by some application relevant stuff)
     try (InputStream is = getClass().getResourceAsStream(
-      FxUtilities.getInstance().isDarkMode() ?
+      ThemeUtilities.getInstance().isDarkMode() ?
         "/${packageInPathFormat}/gui/images/tentackle-dark.png" : "/${packageInPathFormat}/gui/images/tentackle.png")) {
       borderPane.setCenter(new ImageView(new Image(is)));
     }

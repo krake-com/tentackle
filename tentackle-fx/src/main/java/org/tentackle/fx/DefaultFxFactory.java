@@ -245,7 +245,7 @@ public class DefaultFxFactory implements FxFactory {
   @Override
   public Scene createScene(Parent root) {
     Scene scene = new Scene(root);
-    FxUtilities.getInstance().applyStylesheets(scene);
+    ThemeUtilities.getInstance().applyStylesheets(scene);
     return scene;
   }
 

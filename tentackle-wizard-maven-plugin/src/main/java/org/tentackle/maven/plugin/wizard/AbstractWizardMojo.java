@@ -25,7 +25,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.shared.model.fileset.FileSet;
 
 import org.tentackle.fx.Fx;
-import org.tentackle.fx.FxUtilities;
+import org.tentackle.fx.ThemeUtilities;
 import org.tentackle.maven.AbstractTentackleMojo;
 import org.tentackle.model.EntityAliases;
 import org.tentackle.model.Model;
@@ -61,7 +61,7 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
    * Directory holding the status info.<br>
    * Used to store the next free classId per profile in case multiple PDOs are
    * generated without an intermediate mvn clean package/install or wurbel run.<br>
-   * Must be a subdir of the target directory to be removed via mvn clean.
+   * Must be a subdirectory of the target directory to be removed via mvn clean.
    */
   @Parameter(defaultValue = "${project.build.directory}/wizard")
   private File statusDir;
@@ -347,28 +347,31 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
     Thread.currentThread().setUncaughtExceptionHandler(getUncaughtExceptionHandler());    // overwrite existing handler for fx thread
   }
 
+  /**
+   * Configures the FX theme.
+   */
   protected void configureFx() {
     if (darkMode != null) {
-      FxUtilities.getInstance().setDarkMode(darkMode);
+      ThemeUtilities.getInstance().setDarkMode(darkMode);
     }
     else {
-      FxUtilities.getInstance().setDarkMode(Platform.getPreferences().getColorScheme() == ColorScheme.DARK);
+      ThemeUtilities.getInstance().setDarkMode(Platform.getPreferences().getColorScheme() == ColorScheme.DARK);
       Platform.getPreferences().colorSchemeProperty().subscribe(colorScheme -> {
-        FxUtilities.getInstance().setDarkMode(colorScheme == ColorScheme.DARK);
-        FxUtilities.getInstance().reapplyStyleSheets();
+        ThemeUtilities.getInstance().setDarkMode(colorScheme == ColorScheme.DARK);
       });
     }
   }
 
   /**
-   * Gets the stage, if this an interactive FX application.
+   * Gets the stage if this an interactive FX application.
    *
    * @return the stage, null if console application
    */
   protected abstract Stage getStage();
 
+
   private Thread.UncaughtExceptionHandler getUncaughtExceptionHandler() {
-    return (t, e) -> {
+    return (_, e) -> {
       getLog().error("unhandled exception detected", e);
       Stage stage = getStage();
       if (stage != null) {

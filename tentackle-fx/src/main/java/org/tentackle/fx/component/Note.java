@@ -20,6 +20,7 @@
 package org.tentackle.fx.component;
 
 import org.tentackle.fx.Fx;
+import org.tentackle.fx.ThemeUtilities;
 import org.tentackle.fx.component.skin.NoteSkin;
 
 import javafx.animation.FadeTransition;
@@ -405,7 +406,7 @@ public class Note extends PopupControl {
    * @return the URL
    */
   protected URL getCSS() {
-    return Note.class.getResource(CSS_NAME);
+    return ThemeUtilities.getInstance().getResourceURL(Note.class, CSS_NAME);
   }
 
 }

@@ -8,7 +8,7 @@
 package ${package}.client;
 
 import org.tentackle.fx.FxFactory;
-import org.tentackle.fx.FxUtilities;
+import org.tentackle.fx.ThemeUtilities;
 import org.tentackle.fx.rdc.app.LoginApplication;
 import org.tentackle.fx.rdc.login.Login;
 
@@ -23,7 +23,7 @@ public class ${application}LoginApplication extends LoginApplication {
   protected Login loadLoginController() {
     Login loginController = FxFactory.getInstance().createController(
       Login.class, null, null,
-      getClass().getResource(FxUtilities.getInstance().isDarkMode() ?
+      getClass().getResource(ThemeUtilities.getInstance().isDarkMode() ?
           "/${packageInPathFormat}/client/Login-dark.css" : "/${packageInPathFormat}/client/Login.css"));
     loginController.setInactivityTimeout(30);
     return loginController;
