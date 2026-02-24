@@ -2,6 +2,7 @@
 
 .tt-notification {
   -fx-background-color: -color-bg-default;
+  -fx-border-color: -color-border-default;
   -fx-border-style: solid;
 }
 
