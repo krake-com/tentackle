@@ -18,6 +18,8 @@
 
 package org.tentackle.fx;
 
+import org.tentackle.misc.ShortLongText;
+
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -26,9 +28,6 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.util.Callback;
-
-import org.tentackle.misc.ShortLongText;
-
 import java.util.List;
 
 /**
@@ -36,12 +35,13 @@ import java.util.List;
  */
 public class ShortLongTextCellFactory <T> implements Callback<ListView<T>, ListCell<T>> {
 
-  private static final double GRID_GAP = 20.0;  // visual gap between short and long text columns
+  private static final double GRID_GAP = 20.0;      // visual gap between short and long text columns
+  private static final double FONT_FACTOR = 1.1;    // to avoid trailing dots due to font size inaccuracies
 
-  private boolean listenerPending = true;       // true if add listener to check if popup closed
-  private boolean widthPending;                 // true if (re-)compute widths
-  private double shortWidth;                    // width for the short text column
-  private double longWidth;                     // width for the long text column
+  private boolean listenerPending = true;           // true if add listener to check if the popup was closed
+  private boolean widthPending;                     // true if (re-)compute widths
+  private double shortWidth;                        // width for the short text column
+  private double longWidth;                         // width for the long text column
 
   /**
    * Creates the short/long-text cell factory.
@@ -174,6 +174,8 @@ public class ShortLongTextCellFactory <T> implements Callback<ListView<T>, ListC
         shortWidth = Double.max(shortWidth, text.getLayoutBounds().getWidth());
       }
     }
+    shortWidth *= FONT_FACTOR;
+    longWidth *= FONT_FACTOR;
   }
 
 }
