@@ -20,7 +20,8 @@
    */
   -tt-info-color: -color-success-8;
 
-  -fx-font-size: 13px;
+  /* uncomment for size compatible with Modena */
+  /*-fx-font-size: 13px;*/
 }
 
 .tt-info {
