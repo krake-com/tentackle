@@ -661,6 +661,12 @@
             </goals>
             <configuration>
               <rules>
+                <requireProperty>
+                  <property>file.encoding</property>
+                  <message>file.encoding not set!</message>
+                  <regex>^UTF-8$</regex>
+                  <regexMessage>file.encoding must be UTF-8</regexMessage>
+                </requireProperty>
                 <requireJavaVersion>
                   <version>[${javac.version},)</version>
                   <message>[ERROR] The currently supported version of Java is ${javac.version} or higher</message>
