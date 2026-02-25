@@ -36,7 +36,7 @@ import java.util.List;
 public class ShortLongTextCellFactory <T> implements Callback<ListView<T>, ListCell<T>> {
 
   private static final double GRID_GAP = 20.0;      // visual gap between short and long text columns
-  private static final double FONT_FACTOR = 1.1;    // to avoid trailing dots due to font size inaccuracies
+  private static final double FONT_FACTOR = 1.2;    // to avoid trailing dots due to font size inaccuracies (default 13 vs theme 14)
 
   private boolean listenerPending = true;           // true if add listener to check if the popup was closed
   private boolean widthPending;                     // true if (re-)compute widths
