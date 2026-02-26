@@ -27,6 +27,11 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>tentackle-fx-atlanta</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>tentackle-fx-rdc</artifactId>
       <version>${project.version}</version>
     </dependency>
