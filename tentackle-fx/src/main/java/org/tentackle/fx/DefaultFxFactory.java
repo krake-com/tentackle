@@ -32,6 +32,7 @@ import org.tentackle.misc.Holder;
 import org.tentackle.reflect.DefaultClassMapper;
 import org.tentackle.reflect.ReflectionHelper;
 
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
@@ -394,7 +395,14 @@ public class DefaultFxFactory implements FxFactory {
         case ALL_INHERITED -> controller.getBinder().bindAllInherited();
       }
 
-      controller.configure();
+      if (Platform.isFxApplicationThread()) {
+        controller.configure();
+      }
+      else {
+        // configure() may contain operations that require the FX-thread.
+        // -> delegate to the FX-thread for sure
+        Platform.runLater(controller::configure);
+      }
 
       return controller;
     }
