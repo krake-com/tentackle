@@ -33,9 +33,10 @@ public class RdcThemeUtilities extends ThemeUtilities {
    * Creates the RDC theme utilities.
    *
    * @param themeName the default theme name
+   * @param fontSize the default font size
    */
-  public RdcThemeUtilities(String themeName) {
-    super(themeName);
+  public RdcThemeUtilities(String themeName, int fontSize) {
+    super(themeName, fontSize);
   }
 
   /**

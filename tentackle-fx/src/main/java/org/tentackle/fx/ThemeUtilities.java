@@ -28,6 +28,8 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.scene.Scene;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.stage.Window;
 import java.net.URL;
 import java.util.List;
@@ -111,6 +113,10 @@ public class ThemeUtilities {
    */
   private final StringProperty themeName = new SimpleStringProperty();
 
+  /**
+   * The default font.
+   */
+  private final Font defaultFont;
 
   private boolean styleUpdateEnabled = true;
   private boolean stylesApplied;
@@ -122,18 +128,20 @@ public class ThemeUtilities {
    * Creates the theme utilities.
    *
    * @param defaultThemeName the default theme name
+   * @param fontSize the default font size
    */
-  public ThemeUtilities(String defaultThemeName) {
+  public ThemeUtilities(String defaultThemeName, int fontSize) {
     themeName.set(defaultThemeName);
     darkModeProperty().subscribe(this::updateStyles);
     themeNameProperty().subscribe(this::updateStyles);
+    defaultFont = Font.font(Font.getDefault().getFamily(), FontWeight.NORMAL, fontSize);
   }
 
   /**
    * Creates the theme utilities with the default theme name.
    */
   public ThemeUtilities() {
-    this(DEFAULT_THEME_NAME);
+    this(DEFAULT_THEME_NAME, 13);
   }
 
 
@@ -329,6 +337,24 @@ public class ThemeUtilities {
    */
   public URL getResourceURL(Class<?> clazz, String name) {
     return clazz.getResource(name);
+  }
+
+  /**
+   * Gets the default font.
+   *
+   * @return the default font
+   */
+  public Font getDefaultFont() {
+    return defaultFont;
+  }
+
+  /**
+   * Gets the padding for auto-adjusting the width of a table column or tree table column.
+   *
+   * @return the padding in pixels
+   */
+  public double getAutoAdjustPadding() {
+    return 0;
   }
 
 

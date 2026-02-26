@@ -1460,7 +1460,7 @@ public class FxUtilities {
             if (cellFactory != null) {
               TableCell cell = (TableCell) cellFactory.call(column);
               if (cell != null) {
-                Font cellFont = cell.getFont();
+                Font cellFont = ThemeUtilities.getInstance().getDefaultFont();
                 // BOLD may not work if the header is styled with CSS, but that's ok for default configs
                 Font headerFont = Font.font(cellFont.getFamily(), FontWeight.BOLD, cellFont.getSize());
                 cell.getProperties().put("deferToParentPrefWidth", Boolean.TRUE); // see TableCellSkinBase
@@ -1477,6 +1477,7 @@ public class FxUtilities {
                   cell.updateIndex(row);
                   maxWidth = maxColumnWidth(maxWidth, cell, tableSkin);
                 }
+                maxWidth += ThemeUtilities.getInstance().getAutoAdjustPadding();
                 table.resizeColumn(column, maxWidth - column.getWidth());
               }
             }
@@ -1511,7 +1512,7 @@ public class FxUtilities {
             if (cellFactory != null) {
               TreeTableCell cell = (TreeTableCell) cellFactory.call(column);
               if (cell != null) {
-                Font cellFont = cell.getFont();
+                Font cellFont = ThemeUtilities.getInstance().getDefaultFont();
                 // BOLD may not work if the header is styled with CSS, but that's ok for default configs
                 Font headerFont = Font.font(cellFont.getFamily(), FontWeight.BOLD, cellFont.getSize());
                 cell.getProperties().put("deferToParentPrefWidth", Boolean.TRUE); // see TableCellSkinBase
@@ -1532,6 +1533,7 @@ public class FxUtilities {
                   maxWidth += 50;   // extra space for the navigation icon
                   firstVisibleColumn = false;
                 }
+                maxWidth += ThemeUtilities.getInstance().getAutoAdjustPadding();
                 table.resizeColumn(column, maxWidth - column.getWidth());
               }
             }

@@ -48,7 +48,7 @@ public class AtlantaThemeUtilities extends RdcThemeUtilities {
    * Creates the Atlanta FX utilities.
    */
   public AtlantaThemeUtilities() {
-    super(DEFAULT_THEME_NAME);
+    super(DEFAULT_THEME_NAME, 14);
   }
 
   @Override
@@ -81,4 +81,10 @@ public class AtlantaThemeUtilities extends RdcThemeUtilities {
     }
     return super.getResourceURL(clazz, name);
   }
+
+  @Override
+  public double getAutoAdjustPadding() {
+    return 16;
+  }
+
 }

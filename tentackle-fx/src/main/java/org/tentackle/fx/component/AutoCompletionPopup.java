@@ -19,6 +19,7 @@
 package org.tentackle.fx.component;
 
 import org.tentackle.fx.FxUtilities;
+import org.tentackle.fx.ThemeUtilities;
 import org.tentackle.fx.component.auto.AutoCompletionCellFactory;
 import org.tentackle.fx.component.auto.AutoCompletionController;
 import org.tentackle.fx.component.skin.AutoCompletionPopupSkin;
@@ -73,7 +74,7 @@ public class AutoCompletionPopup extends PopupControl {
     this.controller = controller;
     component = controller.getComponent();
     suggestions = FXCollections.observableArrayList();
-    cellFactoryProperty = new SimpleObjectProperty<>(new AutoCompletionCellFactory(component.getFont()));
+    cellFactoryProperty = new SimpleObjectProperty<>(createCellFactory());
     setAutoHide(true);
     getStyleClass().add(STYLE_CLASS);
   }
@@ -192,6 +193,14 @@ public class AutoCompletionPopup extends PopupControl {
     return new AutoCompletionPopupSkin(this);
   }
 
+  /**
+   * Creates the autocompletion cell factory.
+   *
+   * @return the cell factory
+   */
+  protected Callback<ListView<List<SubString>>, ListCell<List<SubString>>> createCellFactory() {
+    return new AutoCompletionCellFactory(ThemeUtilities.getInstance().getDefaultFont());
+  }
 
 
   // ------------------ CSS styling --------------------

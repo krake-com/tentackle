@@ -36,7 +36,7 @@ import java.util.List;
 public class ShortLongTextCellFactory <T> implements Callback<ListView<T>, ListCell<T>> {
 
   private static final double GRID_GAP = 20.0;      // visual gap between short and long text columns
-  private static final double FONT_FACTOR = 1.2;    // to avoid trailing dots due to font size inaccuracies (default 13 vs theme 14)
+  private static final double FONT_PADDING = 2.0;   // extra passing to avoid dots due to rounding errors
 
   private boolean listenerPending = true;           // true if add listener to check if the popup was closed
   private boolean widthPending;                     // true if (re-)compute widths
@@ -54,7 +54,7 @@ public class ShortLongTextCellFactory <T> implements Callback<ListView<T>, ListC
   public ListCell<T> call(ListView<T> listView) {
 
     if (listenerPending) {
-      listView.focusedProperty().addListener((observable, oldValue, newValue) -> {
+      listView.focusedProperty().addListener((_, oldValue, _) -> {
         if (oldValue) {   // was focused and is now unfocused (popup hidden)
           widthPending = true;
         }
@@ -80,7 +80,7 @@ public class ShortLongTextCellFactory <T> implements Callback<ListView<T>, ListC
         }
         else {
           if (widthPending) {
-            computeWidths(getFont(), listView.getItems());
+            computeWidths(ThemeUtilities.getInstance().getDefaultFont(), listView.getItems());
             widthPending = false;
           }
           if (gridPane == null) {
@@ -174,8 +174,8 @@ public class ShortLongTextCellFactory <T> implements Callback<ListView<T>, ListC
         shortWidth = Double.max(shortWidth, text.getLayoutBounds().getWidth());
       }
     }
-    shortWidth *= FONT_FACTOR;
-    longWidth *= FONT_FACTOR;
+    shortWidth += FONT_PADDING;
+    longWidth += FONT_PADDING;
   }
 
 }
