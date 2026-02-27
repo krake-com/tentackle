@@ -108,46 +108,50 @@ public class MainController extends AbstractFxController implements DomainContex
     ThemeUtilities.getInstance().darkModeProperty().subscribe(this::loadCenterImage);
 
     securityManagerItem.setGraphic(Fx.createGraphic("security"));
-    securityManagerItem.setDisable(!SecurityDialogFactory.getInstance().isDialogAllowed(getDomainContext()));
-    securityManagerItem.setOnAction(e ->
+    securityManagerItem.setOnAction(_ ->
             SecurityDialogFactory.getInstance().showDialog(getView(), on(Security.class).getClassId(), getDomainContext()));
 
     sessionsItem.setGraphic(Fx.createGraphic("session"));
-    sessionsItem.setDisable(!SecurityFactory.getInstance().getSecurityManager().evaluate(
-        getDomainContext(), SecurityFactory.getInstance().getExecutePermission(), AdminExtension.class).isAccepted());
-    sessionsItem.setOnAction(e -> manageSessions());
+    sessionsItem.setOnAction(_ -> manageSessions());
 
     preferencesItem.setGraphic(Fx.createGraphic("preferences"));
-    preferencesItem.setDisable(!SecurityFactory.getInstance().getSecurityManager().evaluate(
-                getDomainContext(), SecurityFactory.getInstance().getExecutePermission(), PreferencesDialog.class).isAccepted());
-    preferencesItem.setOnAction(e -> PreferencesDialog.show(getView()));
+    preferencesItem.setOnAction(_ -> PreferencesDialog.show(getView()));
 
     passwordItem.setGraphic(Fx.createGraphic("password"));
-    passwordItem.setOnAction(e -> ChangePasswordView.showDialog(getView(), PdoUtilities.getInstance().getUser(getDomainContext()), false));
+    passwordItem.setOnAction(_ -> ChangePasswordView.showDialog(getView(), PdoUtilities.getInstance().getUser(getDomainContext()), false));
 
     exitItem.setGraphic(Fx.createGraphic("exit"));
-    exitItem.setOnAction(e -> exit());
+    exitItem.setOnAction(_ -> exit());
 
     editUserItem.setGraphic(Fx.createGraphic(${application}GraphicProvider.REALM, "user"));
-    editUserItem.setOnAction(e -> edit(User.class));
+    editUserItem.setOnAction(_ -> edit(User.class));
 
     editUserGroupItem.setGraphic(Fx.createGraphic(${application}GraphicProvider.REALM, "usergroup"));
-    editUserGroupItem.setOnAction(e -> edit(UserGroup.class));
+    editUserGroupItem.setOnAction(_ -> edit(UserGroup.class));
 
     searchUserItem.setGraphic(Fx.createGraphic(${application}GraphicProvider.REALM, "user"));
-    searchUserItem.setOnAction(e -> search(User.class));
+    searchUserItem.setOnAction(_ -> search(User.class));
 
     searchUserGroupItem.setGraphic(Fx.createGraphic(${application}GraphicProvider.REALM, "usergroup"));
-    searchUserGroupItem.setOnAction(e -> search(UserGroup.class));
+    searchUserGroupItem.setOnAction(_ -> search(UserGroup.class));
 
     searchMessageItem.setGraphic(Fx.createGraphic(${application}GraphicProvider.REALM, "message"));
-    searchMessageItem.setOnAction(e -> search(Message.class));
+    searchMessageItem.setOnAction(_ -> search(Message.class));
 
     helpItem.setGraphic(Fx.createGraphic("help"));
-    helpItem.setOnAction(e -> help());
+    helpItem.setOnAction(_ -> help());
 
     aboutItem.setGraphic(Fx.createGraphic("about"));
-    aboutItem.setOnAction(e -> AboutView.show(getView()));
+    aboutItem.setOnAction(_ -> AboutView.show(getView()));
+  }
+
+  @Override
+  public void configure() {
+    securityManagerItem.setDisable(!SecurityDialogFactory.getInstance().isDialogAllowed(getDomainContext()));
+    sessionsItem.setDisable(!SecurityFactory.getInstance().getSecurityManager().evaluate(
+      getDomainContext(), SecurityFactory.getInstance().getExecutePermission(), AdminExtension.class).isAccepted());
+    preferencesItem.setDisable(!SecurityFactory.getInstance().getSecurityManager().evaluate(
+      getDomainContext(), SecurityFactory.getInstance().getExecutePermission(), PreferencesDialog.class).isAccepted());
   }
 
   /**
