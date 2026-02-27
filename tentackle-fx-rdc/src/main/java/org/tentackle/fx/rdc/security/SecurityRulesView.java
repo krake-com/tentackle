@@ -66,11 +66,12 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
   /**
    * Creates and shows the modal stage.
    *
+   * @param owner the owner window or view, null if none
    * @param clazz the secured non-PDO class, null if PDO
    * @param pdo the secured PDO, null if non-PDO clazz
    */
-  public static void show(Class<?> clazz, PersistentDomainObject<?> pdo) {
-    Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
+  public static void show(Object owner, Class<?> clazz, PersistentDomainObject<?> pdo) {
+    Stage stage = Fx.createStage(Modality.APPLICATION_MODAL, owner);
     SecurityRulesView controller = Fx.load(SecurityRulesView.class);
     if (pdo != null) {
       controller.setSecuredObject(pdo);

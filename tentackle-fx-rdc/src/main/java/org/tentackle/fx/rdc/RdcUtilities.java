@@ -144,9 +144,9 @@ public class RdcUtilities {
    * @param <T> the pdo type
    * @param pdo the pdo
    * @param pdoList the optional list of PDOs to navigate in the list
-   * @param editable true if user may edit the pdo, false if to view only
+   * @param editable true if the user may edit the pdo, false if to view only
    * @param modality the modality
-   * @param owner the owner, null if none
+   * @param owner the owner window, null if none
    * @param updatedPdo the consumer for the possibly changed pdo if modal, null if no consumer
    * @param configurator optional crud configurator
    */
@@ -159,16 +159,13 @@ public class RdcUtilities {
     if (crud != null) {   // if not already being edited
       Stage stage = crud.getStage();
       if (stage == null && Fx.getStage(crud.getView()) == null) {
-        // not bound to its own stage so far and not part of some other stage: create new stage
-        stage = Fx.createStage(modality);
-        if (owner != null) {
-          stage.initOwner(owner);
-        }
+        // not bound to its own stage so far and not part of some other stage: create the new stage
+        stage = Fx.createStage(modality, owner);
         Scene scene = Fx.createScene(crud.getView());
         stage.setScene(scene);
         crud.updateTitle();
         final Stage s = stage;
-        stage.addEventFilter(WindowEvent.WINDOW_SHOWN, e -> Platform.runLater(() -> {
+        stage.addEventFilter(WindowEvent.WINDOW_SHOWN, _ -> Platform.runLater(() -> {
           Point2D location = FxUtilities.getInstance().determinePreferredStageLocation(s);
           s.setX(location.getX());
           s.setY(location.getY());
@@ -179,15 +176,16 @@ public class RdcUtilities {
           e.consume();
           crud.cancel();
         });
-        stage.addEventFilter(WindowEvent.WINDOW_HIDING, e -> {
+        stage.addEventFilter(WindowEvent.WINDOW_HIDING, _ -> {
           T oldPdo = crud.getPdo();
-          if (oldPdo != null && oldPdo.getEditedBy() != 0 && oldPdo.isTokenLockableByMe()) { // my token lock still present (even if timed out)
-            // there was no WINDOW_CLOSE_REQUEST, the windows is forced to close by its owner.
-            // just unlock and don't ask the user (hiding event cannot be consumed)
+          if (oldPdo != null && oldPdo.getEditedBy() != 0 && oldPdo.isTokenLockableByMe()) {
+            // My token lock is still present (even if timed out).
+            // There was no WINDOW_CLOSE_REQUEST, the windows are forced to be closed by its owner.
+            // Just unlock and don't ask the user (hiding event cannot be consumed).
             crud.releaseTokenLock(oldPdo);
           }
         });
-        stage.addEventFilter(WindowEvent.WINDOW_HIDDEN, e -> {
+        stage.addEventFilter(WindowEvent.WINDOW_HIDDEN, _ -> {
           // clear all references to avoid memory leaks and side effects
           crud.setPdoList(null);
           crud.removeAllPdoEventListeners();
@@ -203,7 +201,7 @@ public class RdcUtilities {
       }
 
       if (modality != Modality.NONE && updatedPdo != null) {
-        stage.setOnHidden(event -> updatedPdo.accept(crud.getPdo()));
+        stage.setOnHidden(_ -> updatedPdo.accept(crud.getPdo()));
       }
       else {
         stage.setOnHidden(null);
@@ -215,14 +213,15 @@ public class RdcUtilities {
 
   /**
    * Gets a CRUD for a PDO.<br>
-   * If the PDO is already being edited the corresponding stage will be brought to front and null is returned.
+   * If the PDO is already being edited,
+   * the corresponding stage will be brought to the front and null is returned.
    *
    * @param <T> the pdo type
    * @param pdo the pdo
    * @param pdoList the optional list of PDOs to navigate in the list
-   * @param editable true if user may edit the pdo, false if to view only
+   * @param editable true if the user may edit the pdo, false if to view only
    * @param modality the modality
-   * @param owner the owner, null if none
+   * @param owner the owner window, null if none
    * @return the CRUD, null if there is already a CRUD editing this PDO.
    */
   @SuppressWarnings("unchecked")
@@ -233,20 +232,20 @@ public class RdcUtilities {
     if (isCrudCachingEnabled(pdo)) {
       detectThemeChanged();
       Class<T> pdoClass = pdo.getEffectiveClass();
-      cruds = crudCache.computeIfAbsent(pdoClass, k -> new HashSet<>());
+      cruds = crudCache.computeIfAbsent(pdoClass, _ -> new HashSet<>());
 
       for (Iterator<PdoCrud<?>> iter = cruds.iterator(); iter.hasNext(); ) {
         PdoCrud<T> crud = (PdoCrud<T>) iter.next();
         Stage stage = Fx.getStage(crud.getView());
         if (stage == null || (!stage.isShowing() && stage.getModality() == modality && stage.getOwner() == owner)) {
-          // not showing (i.e. unused), never used or same modality and owner
+          // not showing (unused), never used or same modality and owner
           crud.setEditable(editable);
           crud.setModal(modality != Modality.NONE);
           crud.setPdo(pdo);
           crud.setPdoList(pdoList);
           return crud;
         }
-        // is showing or other modality or different owner, i.e. part of some window which is showing
+        // is showing or other modality or different owner, i.e., part of some window which is showing
         if (Objects.equals(pdo, crud.getPdo()) && stage.isShowing() &&    // same PDO
             (crud.isEditing() || !editable)) {    // already being edited or just shown and view-only requested
           stage.toFront();
@@ -281,7 +280,7 @@ public class RdcUtilities {
    *
    * @param <T> the pdo type
    * @param pdo the pdo
-   * @param editable true if user may edit the pdo, false if to view only
+   * @param editable true if the user may edit the pdo, false if to view only
    * @return the CRUD showing stage, null if there is no such stage
    */
   public synchronized <T extends PersistentDomainObject<T>> Stage getCrud(T pdo, boolean editable) {
@@ -293,7 +292,7 @@ public class RdcUtilities {
         for (PdoCrud<?> crud : cruds) {
           Stage stage = Fx.getStage(crud.getView());
           if (stage != null) {
-            // is showing or other modality or different owner, i.e. part of some window which is showing
+            // is showing or other modality or different owner, i.e., part of some window which is showing
             if (Objects.equals(pdo, crud.getPdo()) && stage.isShowing() &&    // same PDO
                 (crud.isEditing() || !editable)) {    // already being edited or just shown and view-only requested
               stage.toFront();
@@ -313,8 +312,8 @@ public class RdcUtilities {
    * @param <T> the pdo type
    * @param pdo the pdo as a template
    * @param modality the modality
-   * @param owner the owner, null if none
-   * @param createPdoAllowed true if allow to create a new PDO from within the search dialog
+   * @param owner the owner window, null if none
+   * @param createPdoAllowed true if allow creating a new PDO from within the search dialog
    * @param selectedItems the consumer for the selected PDOs if modal, null if not modal
    */
   public <T extends PersistentDomainObject<T>> void displaySearchStage(
@@ -329,10 +328,10 @@ public class RdcUtilities {
    * @param <T> the pdo type
    * @param pdo the pdo as a template
    * @param modality the modality
-   * @param owner the owner, null if none
-   * @param createPdoAllowed true if allow to create a new PDO from within the search dialog
+   * @param owner the owner window, null if none
+   * @param createPdoAllowed true if allow creating a new PDO from within the search dialog
    * @param selectedItems the consumer for the selected PDOs if modal, null if not modal
-   * @param configurator the optional configurator for the PdoSearch
+   * @param configurator the optional configurator for the {@link PdoSearch}
    */
   public <T extends PersistentDomainObject<T>> void displaySearchStage(
                     T pdo, Modality modality, Window owner, boolean createPdoAllowed,
@@ -343,17 +342,14 @@ public class RdcUtilities {
     search.setCreatePdoAllowed(createPdoAllowed);
     Stage stage = search.getStage();
     if (stage == null && Fx.getStage(search.getView()) == null) {
-      // not bound to its own stage so far and not part of some other stage: create new stage
-      stage = Fx.createStage(modality);
-      if (owner != null) {
-        stage.initOwner(owner);
-      }
+      // not bound to its own stage so far and not part of some other stage: create the new stage
+      stage = Fx.createStage(modality, owner);
       Scene scene = Fx.createScene(search.getView());
       stage.setScene(scene);
       search.updateTitle();
       search.setSingleSelectMode(Fx.isModal(stage));
       final Stage s = stage;
-      stage.addEventFilter(WindowEvent.WINDOW_SHOWN, e -> Platform.runLater(() -> {
+      stage.addEventFilter(WindowEvent.WINDOW_SHOWN, _ -> Platform.runLater(() -> {
         Point2D location = FxUtilities.getInstance().determinePreferredStageLocation(s);
         s.setX(location.getX());
         s.setY(location.getY());
@@ -361,7 +357,7 @@ public class RdcUtilities {
       }));
       stage.addEventFilter(WindowEvent.WINDOW_HIDDEN,
               // run later to avoid clearing the modal return value
-              e -> Platform.runLater(() -> search.setItems(null)));
+              _ -> Platform.runLater(() -> search.setItems(null)));
     } // else: re-use stage
 
     if (configurator != null) {
@@ -373,7 +369,7 @@ public class RdcUtilities {
     }
 
     if (modality != Modality.NONE && selectedItems != null) {
-      stage.setOnHidden(event -> selectedItems.accept(search.getSelectedItems()));
+      stage.setOnHidden(_ -> selectedItems.accept(search.getSelectedItems()));
     }
     else {
       stage.setOnHidden(null);
@@ -399,7 +395,7 @@ public class RdcUtilities {
     if (isSearchCachingEnabled(pdo)) {
       detectThemeChanged();
       Class<T> pdoClass = pdo.getEffectiveClass();
-      searches = searchCache.computeIfAbsent(pdoClass, k -> new HashSet<>());
+      searches = searchCache.computeIfAbsent(pdoClass, _ -> new HashSet<>());
 
       for (Iterator<PdoSearch<?>> iter = searches.iterator(); iter.hasNext(); ) {
         PdoSearch<T> search = (PdoSearch<T>) iter.next();
@@ -435,10 +431,11 @@ public class RdcUtilities {
 
 
   /**
-   * Shows a question dialog whether to save, discard or cancel editing of a PDO.
+   * Shows a question dialog whether to save, discard, or cancel editing of a PDO.
    *
    * @param owner the owner window or node
-   * @param doIt consumer invoked with true to save, false to discard changes, null to cancel and do nothing
+   * @param doIt consumer invoked with true to save,
+   *             false to discard changes, null to cancel, and do nothing
    */
   public void showSaveDiscardCancelDialog(Object owner, Consumer<Boolean> doIt) {
     Holder<Boolean> result = new Holder<>();
@@ -460,11 +457,12 @@ public class RdcUtilities {
   /**
    * Shows the tree of a PDO in a modal scene.
    *
+   * @param owner the owner window or node
    * @param pdo the PDO
    * @param <T> the PDO type
    */
-  public <T extends PersistentDomainObject<T>> void showTree(T pdo) {
-    Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
+  public <T extends PersistentDomainObject<T>> void showTree(Object owner, T pdo) {
+    Stage stage = Fx.createStage(Modality.APPLICATION_MODAL, owner);
     TreeView<T> tree = Fx.create(TreeView.class);
     GuiProvider<T> guiProvider = GuiProviderFactory.getInstance().createGuiProvider(pdo);
     tree.setCellFactory(guiProvider.getTreeCellFactory());
@@ -485,7 +483,7 @@ public class RdcUtilities {
    * Use this method whenever some lengthy operation (database I/O, for example) would otherwise
    * block the event queue.
    * <p>
-   * The optional node will get the wait cursor set, while the task is executed in background.
+   * The optional node will get the wait cursor set, while the task is executed in the background.
    * <p>
    * The default implementation creates a {@link AbstractSessionTask} and runs it
    * on behalf of the {@link ModificationTracker}. If the runner itself is a {@link SessionDependable}
@@ -493,7 +491,7 @@ public class RdcUtilities {
    * and executed via {@link Platform#runLater(Runnable)}.<br>
    *
    * @param <V>      the type returned by the runner
-   * @param node     the optional node this background task is related to, null if none
+   * @param node     optional node this background task is related to, null if none
    * @param runner   the code running in another thread in parallel to the FX thread
    * @param updateUI optional UI updater invoked from within the FX event queue, null if none
    * @param failedUI optional UI updater invoked if execution failed, null if log only as error
@@ -551,7 +549,7 @@ public class RdcUtilities {
       ModificationTracker.getInstance().addTask(task);
     }
     else {
-      // no application and no tracker running ?
+      // no application and no tracker running?
       task.run();   // corner case in generic tools like PdoBrowser
     }
   }
@@ -624,7 +622,7 @@ public class RdcUtilities {
    *
    * @param dragboard the dragboard
    * @param context the domain context
-   * @return the PDOs, empty list if dragboard doesn't contain a pdo key or no such pdos
+   * @return the PDOs, empty list if the dragboard doesn't contain a PDO key or no such PDOs
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
   public List<PersistentDomainObject<?>> getPdosFromDragboard(Dragboard dragboard, DomainContext context) {
@@ -644,7 +642,7 @@ public class RdcUtilities {
    *
    * @param dragboard the dragboard
    * @param context the domain context
-   * @return the PDO, null if dragboard doesn't contain a pdo key or no such pdo
+   * @return the PDO, null if the dragboard doesn't contain a PDO key or no such PDO
    */
   public PersistentDomainObject<?> getPdoFromDragboard(Dragboard dragboard, DomainContext context) {
     List<PersistentDomainObject<?>> pdos = getPdosFromDragboard(dragboard, context);
@@ -653,7 +651,7 @@ public class RdcUtilities {
 
 
   /**
-   * Selects a file via file chooser dialog and remembers the decision in the user preferences.
+   * Selects a file via the file chooser dialog and remembers the decision in the user preferences.
    *
    * @param prefName the preferences name
    * @param prefKey the preferences key
@@ -693,7 +691,7 @@ public class RdcUtilities {
       catch (BackingStoreException bx) {
         // does no harm if not successful
         LOGGER.warning("cannot save user preferences {0}", prefs.absolutePath());
-        // log stacktrace only if level is FINE
+        // log stacktrace only if the level is FINE
         LOGGER.fine(filePath, bx);
       }
     }

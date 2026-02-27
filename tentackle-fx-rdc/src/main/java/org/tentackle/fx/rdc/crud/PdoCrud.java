@@ -403,8 +403,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
    * Shows the browser tree of the current PDO.
    */
   public void tree() {
-    Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
-    stage.initOwner(getStage());
+    Stage stage = Fx.createStage(Modality.APPLICATION_MODAL, getStage());
     TreeView<T> tree = Fx.create(TreeView.class);
     GuiProvider<T> guiProvider = Rdc.createGuiProvider(getPdo());
     tree.setCellFactory(guiProvider.getTreeCellFactory());
@@ -463,7 +462,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
    * Shows the security dialog.
    */
   public void security() {
-    SecurityDialogFactory.getInstance().showDialog(getPdo());
+    SecurityDialogFactory.getInstance().showDialog(getView(), getPdo());
   }
 
 

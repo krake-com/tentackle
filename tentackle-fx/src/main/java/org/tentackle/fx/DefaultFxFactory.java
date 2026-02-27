@@ -236,9 +236,15 @@ public class DefaultFxFactory implements FxFactory {
   }
 
   @Override
-  public Stage createStage(StageStyle stageStyle, Modality modality) {
+  public Stage createStage(StageStyle stageStyle, Modality modality, Object owner) {
     Stage stage = new Stage(stageStyle);
     stage.initModality(modality);
+    if (owner != null) {
+      Window window = FxUtilities.getInstance().getWindow(owner);
+      if (window != null) {
+        stage.initOwner(window);
+      }
+    }
     getConfigurator(Window.class).configure(stage);
     return stage;
   }

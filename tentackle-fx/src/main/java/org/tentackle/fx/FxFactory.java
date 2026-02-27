@@ -100,9 +100,10 @@ public interface FxFactory {
    *
    * @param stageStyle the style
    * @param modality the modality
+   * @param owner the view or window, null if none
    * @return the stage
    */
-  Stage createStage(StageStyle stageStyle, Modality modality);
+  Stage createStage(StageStyle stageStyle, Modality modality, Object owner);
 
 
   /**

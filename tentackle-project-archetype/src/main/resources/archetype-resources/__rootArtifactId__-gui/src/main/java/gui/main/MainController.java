@@ -110,7 +110,7 @@ public class MainController extends AbstractFxController implements DomainContex
     securityManagerItem.setGraphic(Fx.createGraphic("security"));
     securityManagerItem.setDisable(!SecurityDialogFactory.getInstance().isDialogAllowed(getDomainContext()));
     securityManagerItem.setOnAction(e ->
-            SecurityDialogFactory.getInstance().showDialog(on(Security.class).getClassId(), getDomainContext()));
+            SecurityDialogFactory.getInstance().showDialog(getView(), on(Security.class).getClassId(), getDomainContext()));
 
     sessionsItem.setGraphic(Fx.createGraphic("session"));
     sessionsItem.setDisable(!SecurityFactory.getInstance().getSecurityManager().evaluate(
@@ -120,7 +120,7 @@ public class MainController extends AbstractFxController implements DomainContex
     preferencesItem.setGraphic(Fx.createGraphic("preferences"));
     preferencesItem.setDisable(!SecurityFactory.getInstance().getSecurityManager().evaluate(
                 getDomainContext(), SecurityFactory.getInstance().getExecutePermission(), PreferencesDialog.class).isAccepted());
-    preferencesItem.setOnAction(e -> PreferencesDialog.show());
+    preferencesItem.setOnAction(e -> PreferencesDialog.show(getView()));
 
     passwordItem.setGraphic(Fx.createGraphic("password"));
     passwordItem.setOnAction(e -> ChangePasswordView.showDialog(getView(), PdoUtilities.getInstance().getUser(getDomainContext()), false));
@@ -189,7 +189,7 @@ public class MainController extends AbstractFxController implements DomainContex
    * Manages server sessions.
    */
   private void manageSessions() {
-    Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
+    Stage stage = Fx.createStage(Modality.APPLICATION_MODAL, getView());
     SessionsView controller = Fx.load(SessionsView.class);
     FxButton closeButton = Fx.create(Button.class);
     closeButton.setText(resources.getString("close"));

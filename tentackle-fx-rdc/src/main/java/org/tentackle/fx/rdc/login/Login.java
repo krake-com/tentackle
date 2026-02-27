@@ -60,7 +60,7 @@ public class Login extends AbstractFxController {
   private boolean backendFromSystemPrefs;     // if select backend from system preferences
   private char[] password;                    // password buffer
   private TimeoutThread timeoutThread;        // != null if timeout thread started
-  private boolean backendsEditable;           // true if user can edit the backends configuration
+  private boolean backendsEditable;           // true if the user can edit the backends configuration
   private int inactivityTimeout;              // inactivity timeout in seconds (0 if turned off)
   private long lastActivity;                  // last key press epochal time
 
@@ -107,19 +107,19 @@ public class Login extends AbstractFxController {
   private void initialize() {
     progressBar.setVisible(false);
     setCapsLockMessage(isCapsLock());
-    cancelButton.setOnAction(e -> cancel());
+    cancelButton.setOnAction(_ -> cancel());
     cancelButton.setGraphic(Fx.createGraphic("cancel"));
-    loginButton.setOnAction(e -> login());
+    loginButton.setOnAction(_ -> login());
     loginButton.setGraphic(Fx.createGraphic("login"));
     usernameField.setAutoSelect(true);
-    passwordField.setOnAction(e -> login());
+    passwordField.setOnAction(_ -> login());
     passwordField.setAutoSelect(true);
     // password needs listeners since it wouldn't work in unbound mode with character buffers
     passwordField.addViewToModelListener(() -> password = passwordField.getPassword());   // this clears the password in the component!
     passwordField.addModelToViewListener(() -> passwordField.setPassword(password));
     backendButton.setGraphic(Fx.createGraphic("edit"));
-    backendButton.setOnAction(e -> Backends.editBackends(sessionInfo.getApplicationName(), backendFromSystemPrefs, this::loadBackendConfigurations));
-    backendField.setOnAction(event -> presetUserAndPassword(backendField.getValue()));
+    backendButton.setOnAction(_ -> Backends.editBackends(getView(), sessionInfo.getApplicationName(), backendFromSystemPrefs, this::loadBackendConfigurations));
+    backendField.setOnAction(_ -> presetUserAndPassword(backendField.getValue()));
   }
 
 
@@ -176,7 +176,7 @@ public class Login extends AbstractFxController {
 
   /**
    * Sets the inactivity timeout.<br>
-   * If there is no keyboard input the application will terminate.
+   * If there is no keyboard input, the application will terminate.
    * This feature is only available for simple login dialogs with the backend configuration disabled.
    *
    * @param inactivityTimeout the timeout in seconds, 0 to disable
@@ -199,18 +199,18 @@ public class Login extends AbstractFxController {
     });
 
     getView().sceneProperty().addListener(
-        (observable, oldValue, newValue) -> {
+        (_, _, newValue) -> {
           if (newValue != null) {
             newValue.windowProperty().addListener(
-                (observable1, oldValue1, newValue1) -> {
+                (_, _, newValue1) -> {
                   if (newValue1 != null) {
-                    newValue1.addEventHandler(WindowEvent.WINDOW_SHOWN, event -> {
+                    newValue1.addEventHandler(WindowEvent.WINDOW_SHOWN, _ -> {
                       if (timeoutThread == null) {
                         timeoutThread = new TimeoutThread();
                         timeoutThread.start();
                       }
                     });
-                    newValue1.addEventHandler(WindowEvent.WINDOW_HIDDEN, event -> {
+                    newValue1.addEventHandler(WindowEvent.WINDOW_HIDDEN, _ -> {
                       if (timeoutThread != null) {
                         timeoutThread.interrupt();
                       }
@@ -330,20 +330,20 @@ public class Login extends AbstractFxController {
   }
 
   /**
-   * Determines whether the login pane should be visible according to the progress.
+   * Determines whether the login pane should be visible, according to the progress.
    *
    * @param progress &le; 0 login not begun yet, &ge; 1 for completed
-   * @return true if login pane should be visible
+   * @return true if the login pane should be visible
    */
   protected boolean determineLoginPaneVisibility(double progress) {
     return progress < 1.0;
   }
 
   /**
-   * Determines whether the progress bar should be visible according to the progress.
+   * Determines whether the progress bar should be visible, according to the progress.
    *
    * @param progress &le; 0 login not begun yet, &ge; 1 for completed
-   * @return true if progress bar should be visible
+   * @return true if the progress bar should be visible
    */
   protected boolean determineProgressBarVisibility(double progress) {
     return progress > 0.0 && progress < 1.0;
@@ -398,7 +398,7 @@ public class Login extends AbstractFxController {
   /**
    * Sets the caps-lock message.
    *
-   * @param capsLock the caps lock message
+   * @param capsLock the caps-lock message
    */
   private void setCapsLockMessage(boolean capsLock) {
     if (capsLock) {

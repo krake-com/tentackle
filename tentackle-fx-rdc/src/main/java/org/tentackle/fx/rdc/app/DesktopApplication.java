@@ -245,7 +245,7 @@ public abstract class DesktopApplication<C extends FxController>
                 try {
                   session.makeCurrent();
                   setMainController(controller);
-                  Stage stage = Fx.createStage(Modality.NONE);
+                  Stage stage = Fx.createStage(Modality.NONE, null);
                   configureMainStage(stage);
                   Scene scene = Fx.createScene(controller.getView());
                   stage.setScene(scene);

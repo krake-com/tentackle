@@ -79,7 +79,7 @@ public class PdoMojo extends AbstractWizardMojo {
         registerUncaughtExceptionHandler();
         PdoWizard wizard = Fx.load(PdoWizard.class);
         wizard.applyMojo(this);
-        stage = Fx.createStage(Modality.APPLICATION_MODAL);
+        stage = Fx.createStage(Modality.APPLICATION_MODAL, null);
         Scene scene = Fx.createScene(wizard.getView());
         stage.setScene(scene);
         stage.setTitle("PDO Wizard");

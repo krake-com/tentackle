@@ -143,7 +143,7 @@ public class SessionsView extends AbstractFxController {
    * Shows the security dialog.
    */
   protected void showSecurityDialog() {
-    SecurityDialogFactory.getInstance().showDialog(AdminExtension.class);
+    SecurityDialogFactory.getInstance().showDialog(getView(), AdminExtension.class);
   }
 
   /**
