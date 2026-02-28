@@ -94,12 +94,14 @@ public class RemoteInvocationHandler implements InvocationHandler {
       // send call
       try {
         if (methodIndex == null) {
-          InitialRemoteCall initialCall = new InitialRemoteCall(remoteId, method.getName(), method.getParameterTypes(), args);
+          InitialRemoteCall initialCall = new InitialRemoteCall(remoteId, method.getName(), method.getParameterTypes(),
+                                                                args == null || args.length == 0 ? null : args);
           call = initialCall;
           initialCallType.write(initialCall, stream);
         }
         else {
-          IdentifiedRemoteCall identifiedCall = new IdentifiedRemoteCall(remoteId, methodIndex, args);
+          IdentifiedRemoteCall identifiedCall = new IdentifiedRemoteCall(remoteId, methodIndex,
+                                                                         args == null || args.length == 0 ? null : args);
           call = identifiedCall;
           identifiedCallType.write(identifiedCall, stream);
         }
