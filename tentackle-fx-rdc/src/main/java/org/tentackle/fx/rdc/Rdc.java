@@ -242,8 +242,8 @@ public class Rdc {
    * @param editable true if the user may edit the pdo, false if to view only
    * @return the CRUD showing stage, null if there is no such stage
    */
-  public static <T extends PersistentDomainObject<T>> Stage getCrud(T pdo, boolean editable) {
-    return RdcUtilities.getInstance().getCrud(pdo, editable);
+  public static <T extends PersistentDomainObject<T>> Stage getCrudStage(T pdo, boolean editable) {
+    return RdcUtilities.getInstance().getCrudStage(pdo, editable);
   }
 
   /**

@@ -132,7 +132,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   private boolean modal;                            // true if the dialog is modal
   private EventListenerProxy<PdoEvent> eventProxy;  // event proxy to maintain PdoEvents registered on the View
   private Node newIcon;                             // create new PDO
-  private Node newCopyIcon;                         // create new PDO as copy from existing one
+  private Node newCopyIcon;                         // create the new PDO as a copy from an existing one
   private boolean shiftDown;                        // true if the shift key is down
   private boolean mouseOverNewButton;               // true if the mouse is over the newButton
 
@@ -173,6 +173,15 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
    */
   public boolean isEditing() {
     return editing.get();
+  }
+
+  /**
+   * Sets whether the PDO is being edited effectively.
+   *
+   * @param editing true if editing, else false
+   */
+  public void setEditing(boolean editing) {
+    this.editing.set(editing);
   }
 
   /**
@@ -252,14 +261,14 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
     if (editor.isViewAllowed()) {
       noViewLabel.setVisible(false);
       editor.getView().setVisible(true);
-      editing.set(isEditable() && editor.isEditAllowed());
+      setEditing(isEditable() && editor.isEditAllowed());
       // make contents editable if the application requested it and the pdo is editable
       editor.setChangeable(isEditing());
     }
     else {
       noViewLabel.setVisible(true);
       editor.getView().setVisible(false);
-      editing.set(false);    // no view -> no edit (no need to check again)
+      setEditing(false);    // no view -> no edit (no need to check again)
     }
     pdoIsNew.set(pdo.isNew());
 
@@ -274,7 +283,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
         }
       }
       catch (LockException lx) {
-        editing.set(false);
+        setEditing(false);
         editor.setChangeable(false);
         deleteButton.setDisable(true);
         Platform.runLater(() -> Fx.info(getView(), PdoUtilities.getInstance().lockExceptionToString(lx, getPdo())));
@@ -426,7 +435,11 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
     if (pdoListIndex > 0) {
       releasePdo(released -> {
         if (released) {
-          T prevPdo = pdoList.get(--pdoListIndex);
+          --pdoListIndex;
+          if (pdoListIndex < 0) {   // conservative aligned due to interim operations by application
+            pdoListIndex = 0;
+          }
+          T prevPdo = pdoList.get(pdoListIndex);
           if (prevPdo.isImmutable() && editable && prevPdo.isEditAllowed()) {
             prevPdo = prevPdo.reload();
           }
@@ -445,7 +458,11 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
     if (pdoListIndex < pdoList.size() - 1) {
       releasePdo(released -> {
         if (released) {
-          T nextPdo = pdoList.get(++pdoListIndex);
+          ++pdoListIndex;
+          if (pdoListIndex > pdoList.size() - 1) {  // conservative aligned due to interim operations by application
+            pdoListIndex = pdoList.size() - 1;
+          }
+          T nextPdo = pdoList.get(pdoListIndex);
           if (nextPdo.isImmutable() && editable && nextPdo.isEditAllowed()) {
             nextPdo = nextPdo.reload();
           }
@@ -800,7 +817,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
 
 
   private void setPdoImpl(T pdo) {
-    Stage stage = Rdc.getCrud(pdo, editable);
+    Stage stage = Rdc.getCrudStage(pdo, editable);
     if (stage != null) {
       stage.toFront();
     }

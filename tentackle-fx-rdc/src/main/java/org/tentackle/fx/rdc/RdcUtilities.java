@@ -273,6 +273,29 @@ public class RdcUtilities {
     return crud;
   }
 
+  /**
+   * Gets a CRUD that is being used for the PDO.
+   *
+   * @param pdo the PDO
+   * @param editable true if the pdo is being edited, false for viewed only, null for don't care
+   * @return the {@link PdoCrud}, null if not being shown or edited
+   * @param <T> the PDO type
+   */
+  @SuppressWarnings("unchecked")
+  public synchronized <T extends PersistentDomainObject<T>> PdoCrud<T> getCrudInUse(T pdo, Boolean editable) {
+    if (isCrudCachingEnabled(pdo)) {
+      Class<T> pdoClass = pdo.getEffectiveClass();
+      Set<PdoCrud<?>> pdoCruds = crudCache.get(pdoClass);
+      if (pdoCruds != null) {
+        for (PdoCrud<?> pdoCrud : pdoCruds) {
+          if (pdoCrud.getPdo() == pdo && (editable == null || editable == pdoCrud.isEditing())) {
+            return (PdoCrud<T>) pdoCrud;
+          }
+        }
+      }
+    }
+    return null;
+  }
 
   /**
    * Gets a CRUD stage for a PDO.<br>
@@ -283,7 +306,7 @@ public class RdcUtilities {
    * @param editable true if the user may edit the pdo, false if to view only
    * @return the CRUD showing stage, null if there is no such stage
    */
-  public synchronized <T extends PersistentDomainObject<T>> Stage getCrud(T pdo, boolean editable) {
+  public synchronized <T extends PersistentDomainObject<T>> Stage getCrudStage(T pdo, boolean editable) {
     if (isCrudCachingEnabled(pdo)) {
       detectThemeChanged();
       Class<T> pdoClass = pdo.getEffectiveClass();

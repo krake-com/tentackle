@@ -140,8 +140,8 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   private boolean tableViewInvalid;             // true if tableview is invalid
   private boolean treeViewInvalid;              // true if tree-view is invalid
   private boolean singleSelectMode;             // true if in (modal) single selection mode
-  private BooleanProperty wrongTypeSelected;    // true if wrong type in selected tree cell
-  private T createdPdo;                         // != null if new PDO has been created in modal mode
+  private BooleanProperty wrongTypeSelected;    // true if wrong type in the selected tree cell
+  private T createdPdo;                         // != null if the new PDO has been created in modal mode
   private Consumer<T> doubleClickHandler;       // handler to be invoked on double-click in non-modal mode
   private String noDataMessage;                 // optional message to be displayed when there is no data in the table
   private Node searchIcon;                      // replacing search
@@ -160,7 +160,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   /**
    * Gets the message displayed in tableview when there was no data found.
    *
-   * @return the placeholder message, null if default message, empty if no message at all
+   * @return the placeholder message, null if the default message, empty if no message at all
    */
   public String getNoDataMessage() {
     return noDataMessage;
@@ -169,7 +169,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   /**
    * Sets the message displayed in tableview when there was no data found.
    *
-   * @param noDataMessage the placeholder message, null if default message, empty if no message at all
+   * @param noDataMessage the placeholder message, null if the default message, empty if no message at all
    */
   public void setNoDataMessage(String noDataMessage) {
     this.noDataMessage = noDataMessage;
@@ -187,7 +187,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   /**
    * Sets the double click handler.<br>
    * If the search dialog is non-modal and the user double-clicks on a row of the table view,
-   * this handler will be invoked instead of the default (showing the PDO-editor, if any provided).
+   * this handler will be invoked instead of the default (showing the PDO-editor if any provided).
    *
    * @param doubleClickHandler the handler, null to clear
    */
@@ -264,7 +264,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
               if (isCrudShown()) {
                 pdoCrud.releasePdo(released -> {
                   if (released) {
-                    Stage stage = Rdc.getCrud(firstPdo, true);
+                    Stage stage = Rdc.getCrudStage(firstPdo, true);
                     if (stage != null) {
                       stage.toFront();
                     }
@@ -302,9 +302,9 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
                         ((List) items.getSource()).set(items.getSourceIndex(ndx), updatedPdo);
                       }
                     }
-                    else if (e.getEventType() == PdoEvent.READ) { // up/down button pressed
+                    else if (e.getEventType() == PdoEvent.READ) { // the up/down button was pressed
                       // do fast checks first (assumed the user did not change the selection)
-                      int ndx = treeViewInvalid ? tableView.getSelectionModel().getSelectedIndex() : -1;  // tree-view needs full search (may contain expanded items)
+                      int ndx = treeViewInvalid ? tableView.getSelectionModel().getSelectedIndex() : -1;  // the tree-view needs full search (may contain expanded items)
                       if (ndx > 0 && e.getPdo().equals(items.get(ndx - 1))) {
                         ndx--;
                       }
@@ -574,7 +574,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   /**
    * Filters the viewable PDOs from the list and converts to {@link ObservableList}.
    *
-   * @param pdos the pdos, null is treated as empty
+   * @param pdos list of PDOs, null is treated as empty
    * @return the PDOs with view permission
    */
   protected ObservableList<T> filterViewablePdos(List<T> pdos) {
@@ -623,7 +623,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
       treeView.setRoot(rootItem);
       treeView.setShowRoot(false);
       treeView.getSelectionModel().clearSelection();
-      // index from table works since we initialized the tree and nothing is expanded
+      // index from table has worked since we initialized the tree, and nothing is expanded
       int firstIndex = tableView.getSelectionModel().getSelectedIndex();
       if (firstIndex >= 0) {
         tableView.getSelectionModel().getSelectedIndices().forEach(treeView.getSelectionModel()::select);
