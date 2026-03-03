@@ -97,14 +97,14 @@ public @interface FxControllerService {
 
 
   /**
-   * Gets the fxml-URL for annotated controller.
+   * Gets the fxml-URL for the annotated controller.
    *
    * @return the fxml-URL or empty string if <code>&lt;controller-classname&gt;.fxml</code>
    */
   String url() default "";
 
   /**
-   * Gets the resource bundle for annotated controller.
+   * Gets the resource bundle for the annotated controller.
    *
    * @return the bundle url, empty string if <code>&lt;controller-classname&gt;.properties</code>, no resources if {@link #RESOURCES_NONE}
    */
@@ -118,16 +118,24 @@ public @interface FxControllerService {
   String css() default "";
 
   /**
-   * Returns whether controller should be unit tested.
+   * Enables dark-aware CSS.<br>
+   * If true and dark mode is enabled, the css-filename gets the suffix <code>-dark</code> before the extension.
+   *
+   * @return true if dark-aware, false if not (default)
+   */
+  boolean cssDarkAware() default false;
+
+  /**
+   * Returns whether the controller should be unit tested.
    *
    * @return true if create and bind for test (default), false if no test
    */
   boolean test() default true;
 
   /**
-   * Returns whether controller should be bound to the model.
+   * Returns whether the controller should be bound to the model.
    *
-   * @return the binding mode, BINDING.YES is the default
+   * @return binding mode, BINDING.YES is the default
    */
   BINDING binding() default BINDING.YES;
 

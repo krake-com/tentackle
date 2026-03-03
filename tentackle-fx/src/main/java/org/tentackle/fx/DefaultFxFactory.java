@@ -65,6 +65,9 @@ public class DefaultFxFactory implements FxFactory {
 
   private static final Logger LOGGER = Logger.get(DefaultFxFactory.class);
 
+  private static final String CSS_EXTENSION = ".css";
+  private static final String DARK_SUFFIX = "-dark";
+
 
   /**
    * The builder factory.
@@ -386,7 +389,18 @@ public class DefaultFxFactory implements FxFactory {
       if (cssUrl == null) {
         String cssName = service.css();
         if (cssName.isEmpty()) {
-          cssName = controllerClass.getSimpleName() + ".css";
+          cssName = controllerClass.getSimpleName();
+        }
+        if (service.cssDarkAware()) {
+          if (cssName.endsWith(CSS_EXTENSION)) {
+            cssName = cssName.substring(0, cssName.length() - CSS_EXTENSION.length()) + DARK_SUFFIX + CSS_EXTENSION;
+          }
+          else {
+            cssName += DARK_SUFFIX;
+          }
+        }
+        if (!cssName.endsWith(CSS_EXTENSION)) {
+          cssName += CSS_EXTENSION;
         }
         cssUrl = controllerClass.getResource(cssName);
       }
