@@ -387,7 +387,8 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   @Override
   public void configure() {
 
-    saveButton.disableProperty().bind(getContainer().viewModifiedProperty().or(pdoIsNew).and(editing).not());
+    saveButton.disableProperty().bind(getContainer().viewModifiedProperty().or(pdoIsNew).not());
+    saveButton.visibleProperty().bind(editing);
 
     eventProxy = new EventListenerProxy<>(getView());
 
