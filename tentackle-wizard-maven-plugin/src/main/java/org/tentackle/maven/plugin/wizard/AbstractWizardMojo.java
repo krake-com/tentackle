@@ -105,10 +105,19 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
 
 
   /**
-   * Enables dark mode.
+   * Enables dark mode.<br>
+   * If missing, the mode is determined from the desktop settings.
    */
   @Parameter
   private Boolean darkMode;
+
+  /**
+   * Selects the theme.<br>
+   * The AtlantaFX themes are: {@code Primer}, {@code Cupertino}, and {@code Nord}.<br>
+   * The default is {@code Primer}.
+   */
+  @Parameter
+  private String themeName;
 
 
   /**
@@ -351,14 +360,11 @@ public abstract class AbstractWizardMojo extends AbstractTentackleMojo {
    * Configures the FX theme.
    */
   protected void configureFx() {
-    if (darkMode != null) {
-      ThemeUtilities.getInstance().setDarkMode(darkMode);
-    }
-    else {
-      ThemeUtilities.getInstance().setDarkMode(Platform.getPreferences().getColorScheme() == ColorScheme.DARK);
-      Platform.getPreferences().colorSchemeProperty().subscribe(colorScheme -> {
-        ThemeUtilities.getInstance().setDarkMode(colorScheme == ColorScheme.DARK);
-      });
+    ThemeUtilities.ThemePreferences preferences = new ThemeUtilities.ThemePreferences(darkMode, themeName);
+    ThemeUtilities.getInstance().applyThemePreferences(preferences);
+    if (darkMode == null) {
+      Platform.getPreferences().colorSchemeProperty().subscribe(
+        colorScheme -> ThemeUtilities.getInstance().setDarkMode(colorScheme == ColorScheme.DARK));
     }
   }
 
