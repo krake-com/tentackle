@@ -391,7 +391,7 @@ public class DefaultFxFactory implements FxFactory {
         if (cssName.isEmpty()) {
           cssName = controllerClass.getSimpleName();
         }
-        if (service.cssDarkAware()) {
+        if (service.cssDarkAware() && ThemeUtilities.getInstance().isDarkMode()) {
           if (cssName.endsWith(CSS_EXTENSION)) {
             cssName = cssName.substring(0, cssName.length() - CSS_EXTENSION.length()) + DARK_SUFFIX + CSS_EXTENSION;
           }
