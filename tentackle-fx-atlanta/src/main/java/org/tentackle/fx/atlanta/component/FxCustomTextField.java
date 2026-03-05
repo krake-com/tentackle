@@ -41,7 +41,7 @@ import java.util.List;
 import java.util.function.Function;
 
 /**
- * Extended CustomTextField.
+ * Extended {@link CustomTextField}.
  *
  * @author harald
  */
@@ -79,7 +79,7 @@ public class FxCustomTextField extends CustomTextField implements FxTextComponen
 
   /**
    * Sets the delegate.<br>
-   * Useful for application specific needs.
+   * Useful for application-specific needs.
    *
    * @param delegate the delegate
    */

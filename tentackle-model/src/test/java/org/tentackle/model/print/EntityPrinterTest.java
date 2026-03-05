@@ -61,7 +61,7 @@ public class EntityPrinterTest {
 " * DMoney        tax           tax            tax (vat)\n" +
 " * Timestamp     printed       printed        first printed [UTC,DEFAULT \"1970-01-01 00:00:00\"]\n" +
 " * Double(10,2)  someDouble    some_double    digits with scale\n" +
-" * MyType<int>   extra         extra          some application specific type\n" +
+" * MyType<int>   extra         extra          some application-specific type\n" +
 " * Binary<Blah>  blah          blah           some binary object\n" +
 " * Boolean       testBool      testbool       some boolean [DEFAULT true]\n" +
 " * \n" +

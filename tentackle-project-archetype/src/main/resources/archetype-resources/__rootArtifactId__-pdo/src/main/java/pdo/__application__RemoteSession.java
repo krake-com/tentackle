@@ -8,7 +8,7 @@
 package ${package}.pdo;
 
 /**
- * Application specific remote session.
+ * Application-specific remote session.
  */
 public interface ${application}RemoteSession {
 

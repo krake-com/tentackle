@@ -36,7 +36,7 @@ import javafx.beans.property.ReadOnlyBooleanProperty;
 import java.lang.reflect.Type;
 
 /**
- * Extended ToggleSwitch.
+ * Extended {@link ToggleSwitch}.
  *
  * @author harald
  */
@@ -74,7 +74,7 @@ public class FxToggleSwitch extends ToggleSwitch implements FxComponent {
 
   /**
    * Sets the delegate.<br>
-   * Useful for application specific needs.
+   * Useful for application-specific needs.
    *
    * @param delegate the delegate
    */

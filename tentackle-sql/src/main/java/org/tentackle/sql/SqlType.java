@@ -188,7 +188,7 @@ public enum SqlType {
     }
   }),
 
-  /** Application specific. */
+  /** Application-specific. */
   JAVA_OBJECT(null, _ -> null);    // conversion not possible
 
 

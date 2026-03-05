@@ -588,7 +588,7 @@ public class Db implements Session, Cloneable {
   private List<ModificationLog> modificationLogList;          // in-memory modification-log for current transaction
   private DbTransaction transaction;                          // the running transaction (only for local sessions)
   private RemoteTransaction remoteTransaction;                // the running transaction (only for remote sessions)
-  private Map<Object, Object> transactionProperties;          // application specific properties
+  private Map<Object, Object> transactionProperties;          // application-specific properties
   private Map<CommitKey, Consumer<Session>> postCommits;      // post commits
   private boolean postCommitsRunning;                         // flag to inhibit registering post-commits while running them
   private Map<CommitKey, Consumer<Session>> preCommits;       // pre commits

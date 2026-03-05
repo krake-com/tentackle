@@ -13,7 +13,7 @@ import org.tentackle.session.Session;
 import java.io.Serial;
 
 /**
- * Application specific domain context.
+ * Application-specific domain context.
  */
 public class ${application}DomainContext extends DefaultDomainContext {
 

@@ -18,7 +18,7 @@ import org.tentackle.session.VersionIncompatibleException;
 import org.tentackle.trip.Transport;
 
 /**
- * Application specific remote connection.
+ * Application-specific remote connection.
  */
 public class ${application}RemoteDbConnectionImpl extends RemoteDbConnectionImpl implements ${application}Connection {
 

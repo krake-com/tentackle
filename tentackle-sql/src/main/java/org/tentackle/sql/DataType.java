@@ -189,7 +189,7 @@ public interface DataType<T> {
    * Gets the SQL type.<br>
    * For predefined types, the type must be the same for all backends and
    * the backend argument may be null.<br>
-   * Application specific types, however, can use different sql types for different backends
+   * Application-specific types, however, can use different SQL types for different backends,
    * and for those types the backend argument is always valid.
    *
    * @param backend the backend, not used by predefined types

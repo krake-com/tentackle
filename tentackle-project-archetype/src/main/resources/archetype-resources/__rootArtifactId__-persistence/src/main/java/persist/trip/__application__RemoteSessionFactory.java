@@ -13,7 +13,7 @@ import org.tentackle.dbms.trip.RemoteDbSession;
 import org.tentackle.pdo.PdoRemoteSession;
 
 /**
- * Application specific remote session factory.
+ * Application-specific remote session factory.
  */
 @Service(RemoteSessionFactory.class)
 public class ${application}RemoteSessionFactory implements RemoteSessionFactory {

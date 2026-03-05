@@ -547,7 +547,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
         break;
 
       default:
-        throw new PersistenceException("cannot set application specific types");
+        throw new PersistenceException("cannot set application-specific types");
     }
   }
 

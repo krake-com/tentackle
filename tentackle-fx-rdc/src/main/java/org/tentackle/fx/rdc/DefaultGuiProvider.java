@@ -218,7 +218,7 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
    * {@inheritDoc}
    * <p>
    * The default implementation creates the column configurations by analyzing the PDO class via reflection.<br>
-   * Application specific subclasses overriding this method should consider using {@link #createEmptyTableConfiguration(String)} or
+   * Application-specific subclasses overriding this method should consider using {@link #createEmptyTableConfiguration(String)} or
    * {@link #createEmptyTableConfiguration()} to create the empty configuration first.
    */
   @Override

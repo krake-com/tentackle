@@ -36,7 +36,7 @@ interface MetaDataUtilitiesHolder {
 
 /**
  * Database metadata utility methods.<br>
- * Replaceable by application specific implementation via {@link Service} annotation.
+ * Replaceable by application-specific implementation via {@link Service} annotation.
  *
  * @author harald
  */

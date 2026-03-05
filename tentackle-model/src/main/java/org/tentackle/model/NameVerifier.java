@@ -25,7 +25,7 @@ interface NameVerifierHolder {
 }
 
 /**
- * Enforces application specific rules for names.<br>
+ * Enforces application-specific rules for names.<br>
  * This is an additional check to the backend rules.
  */
 public interface NameVerifier {

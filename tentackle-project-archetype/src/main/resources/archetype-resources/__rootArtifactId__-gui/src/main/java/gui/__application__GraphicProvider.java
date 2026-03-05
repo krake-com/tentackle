@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Application specific icon provider.
+ * Application-specific icon provider.
  */
 @GraphicProviderService(${application}GraphicProvider.REALM)
 public class ${application}GraphicProvider extends IkonliGraphicProvider {

@@ -103,7 +103,7 @@ public interface DataTypeFactory {
   /**
    * Gets the special convertible type singleton.
    *
-   * @return the application specific wrapper type
+   * @return the application-specific wrapper type
    */
   ConvertibleType getConvertibleType();
 

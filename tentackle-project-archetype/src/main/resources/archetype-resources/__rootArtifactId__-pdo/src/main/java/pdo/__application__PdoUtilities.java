@@ -11,7 +11,7 @@ import org.tentackle.common.Service;
 import org.tentackle.pdo.PdoUtilities;
 
 /**
- * Application specific PDO utilities.<br>
+ * Application-specific PDO utilities.<br>
  * Extended to translate entity singular and plural.
  */
 @Service(PdoUtilities.class)

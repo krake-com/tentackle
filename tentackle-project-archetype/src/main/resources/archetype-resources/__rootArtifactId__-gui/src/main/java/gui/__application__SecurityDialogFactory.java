@@ -29,7 +29,7 @@ import org.tentackle.pdo.PersistentDomainObject;
 import java.util.function.Consumer;
 
 /**
- * Application specific security dialog factory.<br>
+ * Application-specific security dialog factory.<br>
  * Implements the selection of the grantee.
  */
 @Service(SecurityDialogFactory.class)

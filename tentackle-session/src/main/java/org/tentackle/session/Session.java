@@ -522,7 +522,7 @@ public interface Session extends Comparable<Session>, Poolable<Session> {
 
   /**
    * Sets a session property.<br>
-   * Session properties are application specific.<br>
+   * Session properties are application-specific.<br>
    * For remote sessions, the properties are delegated to the corresponding
    * local session at the remote side. Thus, session properties can be used
    * to share some application state between the client and the server.

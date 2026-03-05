@@ -73,7 +73,7 @@ public class FxCheckBox extends CheckBox implements FxComponent {
 
   /**
    * Sets the delegate.<br>
-   * Useful for application specific needs.
+   * Useful for application-specific needs.
    *
    * @param delegate the delegate
    */

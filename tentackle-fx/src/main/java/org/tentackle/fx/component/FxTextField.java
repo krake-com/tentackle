@@ -78,7 +78,7 @@ public class FxTextField extends TextField implements FxTextComponent {
 
   /**
    * Sets the delegate.<br>
-   * Useful for application specific needs.
+   * Useful for application-specific needs.
    *
    * @param delegate the delegate
    */

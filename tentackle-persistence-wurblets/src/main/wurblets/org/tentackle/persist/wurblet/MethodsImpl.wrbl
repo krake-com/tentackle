@@ -515,7 +515,7 @@ For more options, see {\@link DbModelWurblet}.
                 }
               }
             }
-            else {    // application specific type
+            else {    // application-specific type
               String rsGetter = "rs.get(" + dataType.getDataTypeConstant() + ", " + attr.getOptions().isMapNull() + ", " + attr.getSize() + ")";
               String modelCode = getModelCode(attr, rsGetter);
               if (useSetter) {
@@ -608,7 +608,7 @@ For more options, see {\@link DbModelWurblet}.
     @(jdbcCode)@;
 @[
 
-                // for multi column types, such as BMoney or application specific types
+                // for multi column types, such as BMoney or application-specific types
                 int diff = getEffectiveDataType(attr).getColumnCount(null) - 1;
                 if (diff == 1) {
 ]@
@@ -621,7 +621,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
                 }
               }
-              else {    // application specific type
+              else {    // application-specific type
                 String modelCode;
                 if (useGetter) {
                   modelCode = attr.getGetterName() + "()";
