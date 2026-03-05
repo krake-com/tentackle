@@ -64,7 +64,7 @@ import static org.tentackle.sql.Backend.SQL_WHEREALL;
  * to a logical {@link Session}, which can be either local or remote.
  * The application-specific configuration is achieved by implementing and/or
  * overriding methods (pure OO-approach). These methods are usually generated
- * by wurblets (see <a href="https://wurbelizer.org">wurbelizer.org</a>) according to a model.
+ * by wurblets (see <a href="https://wurbelizer.org">wurbelizer.org</a>), according to a model.
  *
  * @param <P> the persistent class type
  */
@@ -1127,7 +1127,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   /**
    * Reads the values from a result-set into this object.
    *
-   * @param rs is the result set (wrapper)
+   * @param rs is the result set (-wrapper)
    * @return the persistent object, never null
    */
   @SuppressWarnings("unchecked")
@@ -2148,7 +2148,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * Caches, for example, must be invalidated completely in such a case.
    * <p>
    * Please notice, for serverless applications running in local client mode,
-   * there <em>will</em> be gaps for deletions, rollbacks and multiple updates.
+   * there <em>will</em> be gaps for deletions, rollbacks, and multiple updates.
    *
    * @param oldSerial non-inclusive lower bound for tableSerial (&gt; oldSerial)
    * @param maxSerial inclusive upper bound for tableSerial (&le; maxSerial)
@@ -2263,7 +2263,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   /**
    * Prepares the object's attributes before the object is saved to the database.<br>
    * The default implementation does nothing.
-   * Used to set up, check and align values.
+   * Used to set up, check, and align values.
    * <p>
    * Notice that this method is invoked on the JDBC side only, i.e., local sessions,
    * not in remote clients.
@@ -2622,7 +2622,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   }
 
   /**
-   * Does any preprocessing before delete, insert or update.
+   * Does any preprocessing before delete, insert, or update.
    *
    * @param modType the modification type
    */
@@ -2636,7 +2636,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   }
 
   /**
-   * Does any postprocessing after the object has been updated, inserted or deleted.
+   * Does any postprocessing after the object has been updated, inserted, or deleted.
    *
    * @param modType the modification type
    */
@@ -2647,7 +2647,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   }
 
   /**
-   * Does any update postprocessing for objects not being updated.<br>
+   * Update postprocessing for objects not being updated.<br>
    * Necessary, because not modified for some reason, e.g., only components modified.<br>
    * The default implementation does nothing.
    *
@@ -2836,7 +2836,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    */
   protected void assertNotOverloaded() {
     if (!isOverloadable() && !isVirgin()) {
-      // overloading disabled and object is not virgin:
+      // overloading disabled and the object is not virgin:
       throw new PersistenceException(this, "object is already loaded");
     }
   }

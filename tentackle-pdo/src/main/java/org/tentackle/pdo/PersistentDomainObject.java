@@ -16,19 +16,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-
 package org.tentackle.pdo;
 
 import org.tentackle.reflect.EffectiveClassProvider;
-
 
 /**
  * A persistent domain object.
  * <p>
  * PDOs consist of a persistence- and a domain-part. Both are interfaces.
  * Their implementations are instantiated by a factory at runtime and
- * provided to the application by means of a dynamic proxy. Thus, the concrete implementation
+ * provided to the application by a dynamic proxy. Thus, the concrete implementation
  * is not known to the PDO-layer and can be replaced without changing a single
  * line of application code.
  *

@@ -42,7 +42,7 @@ import java.util.Objects;
 /**
  * A {@code AbstractPersistentOperation} provides methods that are not part of {@link PersistentOperation}s
  * and is associated to a {@link DomainContext}. Complex transactions usually are
- * {@code AbstractPersistentOperation}s. {@code AbstractPersistentOperation}s are remote capable.
+ * {@code AbstractPersistentOperation}s. {@code AbstractPersistentOperation}s are remoting capable.
  *
  * @param <T> the PO class (interface)
  * @param <P> the operation implementation class

@@ -413,7 +413,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * Caches, for example, must be invalidated completely in such a case.
    * <p>
    * Please notice, for serverless applications running in local client mode,
-   * there <em>will</em> be gaps for deletions, rollbacks and multiple updates.
+   * there <em>will</em> be gaps for deletions, rollbacks, and multiple updates.
    *
    * @param oldSerial non-inclusive lower bound for tableSerial (&gt; oldSerial)
    * @param maxSerial inclusive upper bound for tableSerial (&le; maxSerial), 0 up to the end
@@ -425,7 +425,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   /**
    * Determines the id/tableserial tuples for PDOs in the database with a higher
    * tableserial than the given {@code oldSerial}.<br>
-   * Since this queries the database, deletions, rollbacks and multiple updates
+   * Since this queries the database, deletions, rollbacks, and multiple updates
    * of the same PDO will create gaps within the tableserials.
    *
    * @param oldSerial exclusive lower bound for tableSerial (&gt; oldSerial)
@@ -436,7 +436,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   /**
    * Determines the id/tableserial tuples for PDOs in the database within a
    * given range of tableserials.<br>
-   * Since this queries the database, deletions, rollbacks and multiple updates
+   * Since this queries the database, deletions, rollbacks, and multiple updates
    * of the same PDO will create gaps within the tableserials.
    *
    * @param oldSerial non-inclusive lower bound for tableSerial (&gt; oldSerial)
@@ -447,7 +447,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
 
   /**
    * Selects all PDOs with a higher tableserial than the given {@code oldSerial}.<br>
-   * Since this queries the database, deletions, rollbacks and multiple updates
+   * Since this queries the database, deletions, rollbacks, and multiple updates
    * of the same PDO will create gaps within the tableserials.
    *
    * @param oldSerial exclusive lower bound for tableSerial (&gt; oldSerial)
@@ -457,7 +457,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
 
   /**
    * Selects all PDOs within a given range of tableserials.<br>
-   * Since this queries the database, deletions, rollbacks and multiple updates
+   * Since this queries the database, deletions, rollbacks, and multiple updates
    * of the same PDO will create gaps within the tableserials.
    *
    * @param oldSerial exclusive lower bound for tableSerial (&gt; oldSerial)

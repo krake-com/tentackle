@@ -31,16 +31,16 @@ import java.util.List;
  * Basically, a domain context is a {@link SessionHolder} with additional information
  * about the root entity and the application's context.<br>
  * All {@link PersistentDomainObject}s must refer to a {@code DomainContext}.
- * The DomainContext carries the application's higher level context
- * which can be used to hold domain-related information, for example to implement multi-tenancy.
- * As this is application specific, it is recommended to provide an application specific context
+ * The DomainContext carries the application's higher level context,
+ * which can be used to hold domain-related information, for example, to implement multi-tenancy.
+ * As this is application-specific, it is recommended to provide an application-specific context
  * via a {@link DomainContextFactory}.
  * <p>
  * By default, domain contexts are unnamed. By creating a named clone, the new context becomes the root of an application-specific sub context.
- * This sub context usually describes a distinct part of the application, like a module, task or purpose.
+ * This sub context usually describes a distinct part of the application, like a module, task, or purpose.
  * Named contexts can be used, for example, to inhibit or allow invocation of certain methods.
  * Another purpose is to ensure that a PDO being locked in a named context cannot be locked,
- * persisted or unlocked by the same user in another named context. Sub contexts may have any number of other sub contexts.
+ * persisted, or unlocked by the same user in another named context. Sub contexts may have any number of other sub contexts.
  * <p>
  * Furthermore, since all PDOs must be either a root-entity or a direct or indirect component of a root-entity,
  * each root-entity maintains its own copy of the domain context, which is known as
@@ -63,7 +63,7 @@ import java.util.List;
  * <pre>
  * TenantDependable -&gt; FiscalYearDependable -&gt; BookDependable.
  * </pre>
- * and the root entities of that contexts
+ * and the root entities of those contexts
  * <pre>
  * Tenant -&gt; FiscalYear -&gt; Book.
  * </pre>
@@ -100,7 +100,8 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
    * <p>
    * Same as {@link #clone()}, but appends the given name to the current context names.<br>
    * The new name must be different from the current ones,
-   * not null, not containing only whitespaces and not containing a colon (: is used to concatenate the context names in toGenericString).
+   * not null, not containing only whitespaces, and not containing a colon.
+   * The colon is used to concatenate the context names in {@link #toGenericString()}.
    *
    * @param name the name of the new context
    * @return the context's clone
@@ -126,11 +127,11 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
   /**
    * Gets the names of this context.
    * <p>
-   * Notice: the names must not be part in equals, hashCode or compareTo implementations,
+   * Notice: the names must not be part in equals, hashCode, or compareTo implementations,
    * because they denote only sub contexts. As a result, all sub contexts of the same
    * root context are considered <em>logically</em> equal from a multi-tenancy perspective.
    *
-   * @return the unmodifiable list of names, never null, never empty, the first element is always the empty string
+   * @return unmodifiable list of names, never null, never empty, the first element is always the empty string
    */
   List<String> getNames();
 
@@ -151,10 +152,10 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
 
   /**
    * Asserts that this context is allowed to be used by the current user.<br>
-   * Only invoked when session is updated after deserialization (objects traveling between JVMs).
+   * Only invoked when the session is updated after deserialization (objects traveling between JVMs).
    * <p>
    * If it is not allowed, a {@link PersistenceException} must be thrown.<br>
-   * Override the method in middle tier servers, usually only necessary in multi-tenant applications.
+   * Override the method in middle-tier servers, usually only necessary in multi-tenant applications.
    * The default implementation does nothing.
    */
   void assertPermissions();
@@ -176,15 +177,15 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
   long getContextId();
 
   /**
-   * Determines whether this context belongs to an inheritance hierarchy that
-   * is created from a given context object.
+   * Determines whether this context belongs to an inheritance hierarchy
+   * created from a given context object.
    * <p>
-   * The method is invoked from the security manager to check whether a
+   * The method is invoked by the security manager to check whether a
    * security rule applies to a given context. Note that contextClassId is the
    * class id of the context object's class.
    * <p>
    * The default implementation returns {@code contextId &lt; 0 || contextId == getContextId()}.<br>
-   * This is sufficient for zero or one level of context inheritance. For more than one
+   * This is enough for zero or one levels of context inheritance. For more than one
    * level this method must be overridden in each level. Example:
    * <pre>
    *  boolean isWithinContext(long contextId, int contextClassId) {
@@ -192,7 +193,7 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
    *           super.isWithinContext(contextId, contextClassId);
    *  }
    * </pre>
-   * If the object IDs of the context objects are unique among all context entities the
+   * If the object IDs of the context objects are unique among all context entities, the
    * contextClass can be ignored and the method reduces to:
    * <pre>
    *  boolean isWithinContext(long contextId, int contextClassId) {
@@ -269,7 +270,7 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
   /**
    * Gets the ID of the root entity.
    *
-   * @return the ID, 0 if root entity is new or there is no root entity
+   * @return the ID, 0 if the root entity is new or there is no root entity
    */
   long getRootId();
 
@@ -289,7 +290,7 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
    */
   default void applyTo(DomainContextDependable obj) {
     if (obj instanceof PersistentDomainObject<?> pdo) {
-      // fast without invocation handler
+      // faster without the invocation handler
       DomainContext otherCtx = pdo.getPersistenceDelegate().getDomainContext();
       if (otherCtx != this) {
         pdo.getPersistenceDelegate().setDomainContext(this);
