@@ -51,7 +51,7 @@ import java.util.ResourceBundle;
  * @author harald
  */
 @FxControllerService(binding = FxControllerService.BINDING.NO)
-public class Login extends AbstractFxController {
+public class Login extends AbstractFxController implements LoginController {
 
   private static final Logger LOGGER = Logger.get(Login.class);
 
@@ -224,6 +224,7 @@ public class Login extends AbstractFxController {
   /**
    * Sets the initial focus.
    */
+  @Override
   public void requestInitialFocus() {
     Platform.runLater(usernameField::requestFocus);
   }
@@ -233,6 +234,7 @@ public class Login extends AbstractFxController {
    *
    * @param sessionInfo the session info
    */
+  @Override
   public void setSessionInfo(SessionInfo sessionInfo) {
     this.sessionInfo = sessionInfo;
     setUsername(sessionInfo.getUserName());
@@ -296,6 +298,7 @@ public class Login extends AbstractFxController {
   /**
    * Logs in automatically.
    */
+  @Override
   public void autoLogin() {
     autoLogin = true;
     Platform.runLater(() -> {
@@ -310,6 +313,7 @@ public class Login extends AbstractFxController {
    *
    * @param progress &le; 0 login not begun yet, &ge; 1 for completed
    */
+  @Override
   public void setProgress(double progress) {
     if (progress <= 0.0 && !autoLogin) {
       progressBar.setProgress(0.0);
@@ -354,6 +358,7 @@ public class Login extends AbstractFxController {
    *
    * @param message the message
    */
+  @Override
   public void setMessage(String message) {
     messageLabel.setText(message);
   }
@@ -371,6 +376,7 @@ public class Login extends AbstractFxController {
   /**
    * Performs the login.
    */
+  @Override
   public void login() {
     if (progressBar.getProgress() <= 0.0) {
       sessionInfo.setUserName(usernameField.getText());

@@ -28,6 +28,7 @@ import org.tentackle.fx.Fx;
 import org.tentackle.fx.ThemeUtilities;
 import org.tentackle.fx.rdc.RdcRuntimeException;
 import org.tentackle.fx.rdc.login.Login;
+import org.tentackle.fx.rdc.login.LoginController;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.CommandLine;
 import org.tentackle.session.SessionInfo;
@@ -57,7 +58,7 @@ public class LoginApplication extends FxApplication {
   private static final Logger LOGGER = Logger.get(LoginApplication.class);
 
 
-  private Login controller;       // the login controller
+  private LoginController controller;       // the login controller
 
 
   /**
@@ -228,7 +229,7 @@ public class LoginApplication extends FxApplication {
    *
    * @return the login controller
    */
-  protected Login loadLoginController() {
+  protected LoginController loadLoginController() {
     return Fx.load(Login.class);
   }
 
