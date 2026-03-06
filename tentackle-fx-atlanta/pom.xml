@@ -136,6 +136,10 @@
               <name>componentIncludeDir</name>
               <value>${rootBasedir}/tentackle-fx/src/main/java/org/tentackle/fx/component/include</value>
             </property>
+            <property>
+              <name>containerIncludeDir</name>
+              <value>${rootBasedir}/tentackle-fx/src/main/java/org/tentackle/fx/container/include</value>
+            </property>
           </wurbletProperties>
 
           <filesets>

@@ -26,6 +26,10 @@ open module org.tentackle.fx.atlanta {
   exports org.tentackle.fx.atlanta.component.build;
   exports org.tentackle.fx.atlanta.component.config;
   exports org.tentackle.fx.atlanta.component.delegate;
+  exports org.tentackle.fx.atlanta.container;
+  exports org.tentackle.fx.atlanta.container.build;
+  exports org.tentackle.fx.atlanta.container.config;
+  exports org.tentackle.fx.atlanta.container.delegate;
 
   requires transitive org.tentackle.fx.rdc;
   requires transitive atlantafx.base;
