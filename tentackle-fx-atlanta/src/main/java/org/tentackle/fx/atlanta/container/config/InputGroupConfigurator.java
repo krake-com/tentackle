@@ -24,7 +24,6 @@ import atlantafx.base.layout.InputGroup;
 import org.tentackle.fx.ConfiguratorService;
 import org.tentackle.fx.container.config.PaneConfigurator;
 
-
 /**
  * Configures a {@link InputGroup}.
  *
