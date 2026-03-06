@@ -29,6 +29,7 @@ import org.tentackle.fx.component.FxComboBox;
 import org.tentackle.fx.component.FxLabel;
 import org.tentackle.fx.component.FxPasswordField;
 import org.tentackle.fx.component.FxTextField;
+import org.tentackle.fx.component.Note;
 import org.tentackle.fx.rdc.app.DesktopApplication;
 import org.tentackle.log.Logger;
 import org.tentackle.session.BackendConfiguration;
@@ -39,6 +40,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.Tooltip;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.GridPane;
@@ -95,6 +97,9 @@ public class Login extends AbstractFxController implements LoginController {
   @FXML
   private FxButton cancelButton;
 
+  @FXML
+  private FxButton revealButton;
+
 
   /**
    * Creates the login controller.
@@ -120,6 +125,17 @@ public class Login extends AbstractFxController implements LoginController {
     backendButton.setGraphic(Fx.createGraphic("edit"));
     backendButton.setOnAction(_ -> Backends.editBackends(getView(), sessionInfo.getApplicationName(), backendFromSystemPrefs, this::loadBackendConfigurations));
     backendField.setOnAction(_ -> presetUserAndPassword(backendField.getValue()));
+    revealButton.setGraphic(Fx.createGraphic("view"));
+    revealButton.setTooltip(new Tooltip(resources.getString("reveal password")));
+    revealButton.setOnAction(_ -> {
+      // show some feedback (because nothing changed visually, except perhaps the save button)
+      Note infoNote = Fx.create(Note.class);
+      infoNote.setType(Note.Type.STICKY);
+      infoNote.setPosition(Note.Position.LEFT);
+      infoNote.setText(passwordField.getText() == null ? resources.getString("empty password") : passwordField.getText());
+      infoNote.setFadeEffect(500, 1000, 1000);
+      infoNote.show(revealButton);
+    });
   }
 
 
@@ -321,6 +337,7 @@ public class Login extends AbstractFxController implements LoginController {
       cancelButton.setDisable(false);
       usernameField.setChangeable(true);
       passwordField.setChangeable(true);
+      revealButton.setDisable(false);
     }
     else {
       progressBar.setProgress(progress);
@@ -328,6 +345,7 @@ public class Login extends AbstractFxController implements LoginController {
       cancelButton.setDisable(true);
       usernameField.setChangeable(false);
       passwordField.setChangeable(false);
+      revealButton.setDisable(true);
     }
     loginPane.setVisible(determineLoginPaneVisibility(progress));
     progressBar.setVisible(determineProgressBarVisibility(progress));
