@@ -88,6 +88,7 @@ public class DefaultGraphicProvider extends IkonliGraphicProvider {
     nm.put("filter", "mdi2f-filter-outline");
     nm.put("generate", "mdi2c-cog");
     nm.put("help", "mdi2h-help");
+    nm.put("hide", "mdi2e-eye-off");
     nm.put("id", "mdi2i-id-card");
     nm.put("login", "mdi2l-login");
     nm.put("new", "mdi2s-shape-rectangle-plus");
