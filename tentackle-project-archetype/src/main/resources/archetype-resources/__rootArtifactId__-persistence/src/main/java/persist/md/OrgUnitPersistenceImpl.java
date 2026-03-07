@@ -11,7 +11,6 @@ import ${package}.pdo.md.OrgUnit;
 import ${package}.pdo.md.User;
 import ${package}.pdo.md.UserGroup;
 import ${package}.pdo.md.persist.OrgUnitPersistence;
-import ${package}.pdo.td.Message;
 import ${package}.persist.md.trip.OrgUnitRemoteDelegate;
 
 import org.tentackle.common.StringHelper;
@@ -28,7 +27,6 @@ import org.tentackle.pdo.PdoCache;
 import org.tentackle.pdo.PersistentObjectService;
 import org.tentackle.persist.AbstractPersistentObject;
 import org.tentackle.persist.PersistentObjectClassVariables;
-import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.JoinType;
