@@ -14,6 +14,7 @@ open module ${package}.gui {
 
   requires transitive ${package}.pdo;
   requires transitive org.tentackle.fx.rdc;
+  requires org.tentackle.fx.atlanta;
 
   provides org.tentackle.common.ModuleHook with ${package}.gui.service.Hook;
 }
