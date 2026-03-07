@@ -11,6 +11,7 @@ import ${package}.common.${application}DomainContext;
 import ${package}.gui.${application}GraphicProvider;
 import ${package}.gui.about.AboutView;
 import ${package}.gui.password.ChangePasswordView;
+import ${package}.gui.theme.ChangeThemeView;
 import ${package}.gui.prefs.PreferencesDialog;
 import ${package}.pdo.md.User;
 import ${package}.pdo.md.UserGroup;
@@ -66,6 +67,9 @@ public class MainController extends AbstractFxController implements DomainContex
   private MenuItem preferencesItem;
 
   @FXML
+  private MenuItem themeItem;
+
+  @FXML
   private MenuItem passwordItem;
 
   @FXML
@@ -116,6 +120,9 @@ public class MainController extends AbstractFxController implements DomainContex
 
     preferencesItem.setGraphic(Fx.createGraphic("preferences"));
     preferencesItem.setOnAction(_ -> PreferencesDialog.show(getView()));
+
+    themeItem.setGraphic(Fx.createGraphic("theme"));
+    themeItem.setOnAction(e -> ChangeThemeView.showDialog(Fx.getStage(getView())));
 
     passwordItem.setGraphic(Fx.createGraphic("password"));
     passwordItem.setOnAction(_ -> ChangePasswordView.showDialog(getView(), PdoUtilities.getInstance().getUser(getDomainContext()), false));

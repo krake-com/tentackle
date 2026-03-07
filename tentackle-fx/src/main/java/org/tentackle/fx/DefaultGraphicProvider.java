@@ -104,6 +104,7 @@ public class DefaultGraphicProvider extends IkonliGraphicProvider {
     nm.put("session", "mdi2l-lan-connect");
     nm.put("subtract", "mdi2m-minus");
     nm.put("table", "mdi2t-table");
+    nm.put("theme", "mdi2t-theme-light-dark");
     nm.put("tree", "mdi2f-file-tree");
     nm.put("unchecked", "mdi2c-checkbox-blank-outline");
     nm.put("unknown", "mdi2h-help-circle-outline");
