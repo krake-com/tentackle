@@ -12,10 +12,8 @@ import org.tentackle.fx.ThemeUtilities;
 import org.tentackle.fx.rdc.app.LoginApplication;
 import org.tentackle.fx.rdc.login.Login;
 
-import java.net.URL;
-
 /**
- * Login FX application with specific CSS configuration.
+ * The login FX-application with application-specific CSS configuration.
  */
 public class ${application}LoginApplication extends LoginApplication {
 

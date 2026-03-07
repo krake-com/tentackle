@@ -21,13 +21,13 @@ import org.tentackle.fx.NotificationBuilder;
 import org.tentackle.fx.component.FxLabel;
 
 /**
- * Controller for showing an about popup.
+ * Controller for showing an "about" popup window.
  */
 @FxControllerService(css = FxControllerService.RESOURCES_NONE)
 public class AboutView extends AbstractFxController {
 
   /**
-   * Shows the about popup.
+   * Shows the "about" popup window.
    *
    * @param owner the popup owner
    */
